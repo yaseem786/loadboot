@@ -1,0 +1,244 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Should You Take This Load? Free Load Score Tool for Truckers</title><meta name="description" content="Free tool that scores any freight load and tells you to take, negotiate, or pass — with a counter-offer based on your cost per mile."><link rel="canonical" href="https://loadboot.com/load-score.html">
+<meta property="og:title" content="Should You Take This Load? Free Load Score Tool for Truckers"><meta property="og:description" content="Free tool that scores any freight load and tells you to take, negotiate, or pass — with a counter-offer based on your cost per mile."><meta name="theme-color" content="#0F172A">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=6"><script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Loadboot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Professional truck dispatch services for owner-operators, fleets, and new-authority carriers — flat 5%, no contracts.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%"}</script><script async src="https://www.googletagmanager.com/gtag/js?id=G-C2ELQ7H8EM"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-C2ELQ7H8EM');</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Load Score","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free tool that tells truckers and owner-operators whether a freight load is worth taking, with a take-negotiate-pass verdict and a suggested counter-offer."}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to decide whether to take a freight load","step":[{"@type":"HowToStep","name":"Enter the offer","text":"Enter what the load pays, the loaded miles, and the deadhead miles to the pickup."},{"@type":"HowToStep","name":"Add your costs","text":"Enter your all-in cost per mile and how many days the load will take."},{"@type":"HowToStep","name":"Read the score and verdict","text":"The Load Score returns a 0-100 score and a take, negotiate, or pass verdict based on profit, deadhead, time, and market."},{"@type":"HowToStep","name":"Counter the rate","text":"Use the suggested counter-offer to negotiate a rate that hits your target margin before you accept."}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Should I take this load if the rate per mile looks good?","acceptedAnswer":{"@type":"Answer","text":"Not always. A high rate per mile can still lose you money once you add deadhead miles to the pickup, a weak market on the delivery end, or long detention. The Load Score above weighs all of that against your real cost per mile and gives you a clear answer."}},{"@type":"Question","name":"How do I decide if a load is worth taking?","acceptedAnswer":{"@type":"Answer","text":"Start with your true cost per mile, then subtract every mile you will drive &mdash; loaded and empty &mdash; plus the time it ties up your truck. If the load does not clear your costs with a healthy margin, you either negotiate or pass. The tool does this math for you in seconds."}},{"@type":"Question","name":"Does deadhead really matter that much?","acceptedAnswer":{"@type":"Answer","text":"Yes. Empty miles to the pickup burn fuel and hours but earn nothing, so they quietly drag down your real rate per mile. A load that looks like $2.40 a mile can fall under $2.00 once deadhead is counted &mdash; which is exactly what the Load Score reveals."}},{"@type":"Question","name":"What is a good profit margin on a freight load?","acceptedAnswer":{"@type":"Answer","text":"Most healthy owner-operators aim for at least a 20&ndash;30% margin over their all-in cost. Set your target in the tool and it will tell you the lowest rate you should accept and suggest a counter-offer to get there."}},{"@type":"Question","name":"Can Loadboot just find good loads for me?","acceptedAnswer":{"@type":"Answer","text":"Yes &mdash; that is the whole point of a dispatcher. We screen loads against numbers like these, negotiate the rate, and keep your truck on profitable freight. Flat 5%, no contracts."}}]}</script></head><body><script>(function(){try{if(sessionStorage.getItem('lb_seen'))return;}catch(e){}var o=document.createElement('div');o.id='lbSplash';o.innerHTML='<div class="lbs-logo"><span class="lbs-mark"><svg viewBox="0 0 56 56" fill="none"><g class="lbs-L"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/></g><path class="lbs-arrow" d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg></span><span class="lbs-word">oad<b>boot</b></span></div>';document.body.insertBefore(o,document.body.firstChild);try{sessionStorage.setItem('lb_seen','1');}catch(e){}setTimeout(function(){if(o&&o.parentNode)o.parentNode.removeChild(o);},1950);})();</script>
+<header id="hdr"><div class="wrap nav">
+<a class="logo" href="index.html"><span class="mark"><svg width="30" height="30" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg></span><span>oad<b style="color:var(--blue)">boot</b></span></a>
+<nav class="nav-links" id="nav"><a href="index.html" class="">Home</a><a href="services.html" class="">Services</a><a href="pricing.html" class="">Pricing</a><a href="load-score.html" class="active">Load Score</a><a href="blog.html" class="">Blog</a><a href="about.html" class="">About</a><a href="contact.html" class="">Contact</a><a href="dashboard.html" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a></nav>
+<div class="nav-actions"><a href="dashboard.html" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="contact.html" class="btn btn-primary hd-btn">Get Started <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+<button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+</div></header>
+<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div><div class="wrap" style="position:relative;z-index:1;max-width:820px">
+<span class="badge reveal"><span class="dot"></span> Loadboot Dispatch</span><h1 class="reveal d1">Should You Take This Load?</h1>
+<p class="lead reveal d2" style="margin:22px 0 28px">Paste in any load offer and get an instant score, a clear take / negotiate / pass verdict, and a smart counter-offer &mdash; built on your real cost per mile. Free, no signup.</p>
+<div class="hero-btns reveal d3"><a href="contact.html" class="btn btn-primary">Get Started <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="services.html" class="btn btn-ghost">All Services &rarr;</a></div></div></section><section style="padding-top:10px"><div class="wrap"><div class="ls-tool" id="loadscore">
+ <div class="ls-grid">
+  <div class="ls-inputs">
+   <h3>Load details</h3>
+   <p class="ls-cap">Punch in the offer. We score it against your real costs &mdash; instantly.</p>
+   <div class="ls-f"><label>Nickname this load <span style="color:var(--muted);font-weight:500">(optional)</span></label><input type="text" id="ls_label" placeholder="e.g. Dallas &rarr; Atlanta" oninput="lsRun()"></div>
+   <div class="ls-f"><label>What does the load pay? ($)</label><input type="number" id="ls_rate" value="2640" oninput="lsRun()"></div>
+   <div class="ls-row">
+    <div class="ls-f"><label>Loaded miles</label><input type="number" id="ls_loaded" value="781" oninput="lsRun()"></div>
+    <div class="ls-f"><label>Deadhead miles <span class="q" title="Empty miles you drive to reach the pickup. They cost fuel and time but earn nothing.">?</span></label><input type="number" id="ls_dead" value="120" oninput="lsRun()"></div>
+   </div>
+   <div class="ls-row">
+    <div class="ls-f"><label>Your cost / mile ($) <span class="q" title="All-in: truck payment, insurance, fuel, maintenance, food. Most owner-ops run $1.40-$1.80.">?</span></label><input type="number" id="ls_cpm" value="1.55" step="0.01" oninput="lsRun()"></div>
+    <div class="ls-f"><label>Days to run it</label><input type="number" id="ls_days" value="2" step="0.5" oninput="lsRun()"></div>
+   </div>
+   <button type="button" class="ls-est-toggle" onclick="lsToggleEst()"><span id="ls_est_caret">+</span> Not sure of your cost per mile? Estimate it</button>
+   <div class="ls-est" id="ls_est">
+    <div class="ls-row">
+     <div class="ls-f"><label>Fixed costs / month ($) <span class="q" title="Truck payment, insurance, permits, ELD, parking.">?</span></label><input type="number" id="ls_e_fixed" value="4200" oninput="lsEstimate()"></div>
+     <div class="ls-f"><label>Miles / month</label><input type="number" id="ls_e_miles" value="10000" oninput="lsEstimate()"></div>
+    </div>
+    <div class="ls-row">
+     <div class="ls-f"><label>Diesel ($/gal)</label><input type="number" id="ls_e_fuel" value="3.85" step="0.01" oninput="lsEstimate()"></div>
+     <div class="ls-f"><label>Truck MPG</label><input type="number" id="ls_e_mpg" value="6.5" step="0.1" oninput="lsEstimate()"></div>
+    </div>
+    <div class="ls-est-out" id="ls_e_out">Estimated cost per mile: <b>$0.00</b></div>
+   </div>
+   <div class="ls-row">
+    <div class="ls-f"><label>Extra pay &mdash; detention, FSC ($) <span class="q" title="Detention, fuel surcharge, layover or other accessorial pay you expect to collect.">?</span></label><input type="number" id="ls_xpay" value="0" oninput="lsRun()"></div>
+    <div class="ls-f"><label>Extra costs &mdash; tolls, lumper ($)</label><input type="number" id="ls_xcost" value="0" oninput="lsRun()"></div>
+   </div>
+   <div class="ls-f"><label>Where does it drop you? <span class="q" title="A weak market means you may sit or run cheap/empty to your next load.">?</span></label>
+    <select id="ls_market" oninput="lsRun()"><option value="strong">Strong freight area (easy reload)</option><option value="avg" selected>Average area</option><option value="weak">Weak / dead market</option></select></div>
+   <div class="ls-f"><label>Target profit margin (%)</label><input type="number" id="ls_margin" value="25" oninput="lsRun()"></div>
+  </div>
+  <div class="ls-result">
+   <div class="ls-score-wrap">
+    <div class="ls-gauge" id="ls_gauge"><div class="in"><div class="sc" id="ls_score">0</div><div class="of">/ 100</div></div></div>
+    <div class="ls-vbox"><div class="vlabel">The verdict</div><div class="ls-verdict" id="ls_verdict"><span class="dot"></span> &mdash;</div></div>
+   </div>
+   <div class="ls-metrics">
+    <div><span>Net profit</span><b id="ls_profit">$0</b></div>
+    <div><span>True rate / mile (all miles)</span><b id="ls_rpm">$0.00</b></div>
+    <div><span>Profit / day</span><b id="ls_pday">$0</b></div>
+    <div><span>Lost to deadhead</span><b id="ls_drag">$0</b></div>
+   </div>
+   <div class="ls-counter" id="ls_counter">&mdash;</div>
+   <div class="ls-insights" id="ls_insights"></div>
+   <div class="ls-actions">
+    <button type="button" class="ls-btn primary" onclick="lsAddCompare()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add to compare</button>
+    <button type="button" class="ls-btn" id="ls_copybtn" onclick="lsCopy()"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy summary</button>
+   </div>
+  </div>
+ </div>
+</div>
+<div class="ls-advisor" id="ls_advisor">
+ <div class="ls-adv-head"><span class="ls-adv-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg></span>
+  <div><h3>Smart Advisor</h3><p>Your dispatcher's read on this exact load &mdash; in plain English.</p></div></div>
+ <div class="ls-adv-rec" id="ls_adv_rec"></div>
+ <div class="ls-adv-cols">
+  <div class="ls-adv-box"><div class="ls-adv-t">What to tell the broker</div><p class="ls-adv-script" id="ls_adv_script"></p><button type="button" class="ls-adv-copy" id="ls_adv_copybtn" onclick="lsCopyScript()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy script</button></div>
+  <div class="ls-adv-box"><div class="ls-adv-t">Smart moves</div><div id="ls_adv_whatif"></div></div>
+ </div>
+</div>
+<div class="ls-compare" id="ls_compare">
+ <div class="ls-cmp-head"><h3>Comparing your loads &mdash; pick the winner</h3><button type="button" class="ls-cmp-clear" onclick="lsClearCmp()">Clear all</button></div>
+ <div class="ls-cmp-grid" id="ls_cmp_grid"></div>
+</div><p class="center" style="margin-top:22px;color:var(--muted);font-size:.9rem">Nothing you type is saved or sent anywhere &mdash; it all runs right in your browser.</p></div></section><section class="bg-soft"><div class="wrap" style="max-width:880px">
+<h2>How to know if a load is worth taking</h2>
+<p style="margin-top:14px">Every owner-operator faces the same question a dozen times a day: <em>should I take this load?</em> A broker throws a rate at you, the clock is ticking, and you have about thirty seconds to decide. Most drivers fall back on rate per mile &mdash; but that single number hides more than it shows. The Load Score tool above turns the offer into an honest answer by weighing everything that actually decides whether a load makes you money.</p>
+<h3 style="margin-top:26px">Why rate per mile alone will trick you</h3>
+<p>A load that reads $2.40 per mile sounds great until you count the 150 empty miles you will run just to reach the pickup. Those deadhead miles burn fuel and hours but pay nothing, so your real rate per mile drops fast. The same load can also strand you in a weak freight market where your next load runs cheap or empty. Time matters too: a load that ties up your truck for three days at a so-so rate can be worth less than a tighter one you can turn in a day. None of that shows up in the rate per mile &mdash; but all of it shows up in your bank account.</p>
+<h3 style="margin-top:22px">What the Loadboot Load Score measures</h3>
+<p>Instead of a single number, the Load Score blends five things real dispatchers weigh on every load: your profit margin after all-in costs, your true rate per mile across loaded <strong>and</strong> deadhead miles, how badly empty miles are dragging the rate, your profit per day, and the strength of the freight market where the load drops you. It rolls those into a score from 0 to 100 and a plain verdict &mdash; <strong>take it, negotiate, or pass</strong> &mdash; so you are not doing trucking math in your head at a truck stop.</p>
+<h3 style="margin-top:22px">Counter the offer &mdash; do not just accept or walk</h3>
+<p>The most profitable owner-operators rarely accept the first number, and they rarely hang up either. They counter. That is why the tool also gives you a suggested counter-offer: the exact total and rate per mile you should ask for to hit your target margin. Knowing that number before you call the broker back is the difference between hoping a load pays and knowing it does. If you want to sharpen the inputs first, run your numbers through our free <a href="tools.html">cost-per-mile and profit calculators</a>.</p>
+<h3 style="margin-top:22px">Let a dispatcher take this off your plate</h3>
+<p>This tool is free to use as often as you like &mdash; no signup, no catch. But if you would rather drive than screen loads all day, that is exactly what we do. A dedicated Loadboot dispatcher scores loads like this, negotiates the rate, and keeps your truck on freight that actually pays &mdash; flat 5%, no contracts. <a href="contact.html">Get started in two minutes</a> or <a href="services.html">see everything we handle</a>.</p>
+</div></section><section id="faq"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Questions</div><h2>Frequently asked questions</h2></div><div class="faq reveal"><details open><summary>Should I take this load if the rate per mile looks good?</summary><p>Not always. A high rate per mile can still lose you money once you add deadhead miles to the pickup, a weak market on the delivery end, or long detention. The Load Score above weighs all of that against your real cost per mile and gives you a clear answer.</p></details><details><summary>How do I decide if a load is worth taking?</summary><p>Start with your true cost per mile, then subtract every mile you will drive &mdash; loaded and empty &mdash; plus the time it ties up your truck. If the load does not clear your costs with a healthy margin, you either negotiate or pass. The tool does this math for you in seconds.</p></details><details><summary>Does deadhead really matter that much?</summary><p>Yes. Empty miles to the pickup burn fuel and hours but earn nothing, so they quietly drag down your real rate per mile. A load that looks like $2.40 a mile can fall under $2.00 once deadhead is counted &mdash; which is exactly what the Load Score reveals.</p></details><details><summary>What is a good profit margin on a freight load?</summary><p>Most healthy owner-operators aim for at least a 20&ndash;30% margin over their all-in cost. Set your target in the tool and it will tell you the lowest rate you should accept and suggest a counter-offer to get there.</p></details><details><summary>Can Loadboot just find good loads for me?</summary><p>Yes &mdash; that is the whole point of a dispatcher. We screen loads against numbers like these, negotiate the rate, and keep your truck on profitable freight. Flat 5%, no contracts.</p></details></div></div></section><section><div class="wrap"><div class="fcta reveal"><h2>Ready to keep your truck loaded?</h2>
+<p class="lead center" style="margin:14px auto 26px">Get a free quote today and see how much more your truck could be earning with a dispatcher in your corner.</p>
+<a href="contact.html" class="btn btn-primary">Get Started <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div></div></section><script>
+function lsNum(id){var e=document.getElementById(id);if(!e)return 0;var v=parseFloat(e.value);return isNaN(v)?0:v;}
+function lsM0(n){return (n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();}
+function lsM2(n){return (n<0?'-$':'$')+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function lsClamp(x){return Math.max(0,Math.min(1,x));}
+function lsToggleEst(){var p=document.getElementById('ls_est');if(!p)return;p.classList.toggle('open');var c=document.getElementById('ls_est_caret');if(c)c.textContent=p.classList.contains('open')?'−':'+';if(p.classList.contains('open'))lsEstimate();}
+function lsEstimate(){var fx=lsNum('ls_e_fixed'),mi=lsNum('ls_e_miles'),fuel=lsNum('ls_e_fuel'),mpg=lsNum('ls_e_mpg');
+ var fpm=mi>0?fx/mi:0;var fuelpm=mpg>0?fuel/mpg:0;var maint=0.15;var cpm=fpm+fuelpm+maint;
+ var out=document.getElementById('ls_e_out');if(out)out.innerHTML='Estimated cost per mile: <b>'+lsM2(cpm)+'</b> &nbsp;(applied above)';
+ var f=document.getElementById('ls_cpm');if(f){f.value=cpm.toFixed(2);}lsRun();}
+var lsLast=null;
+function lsRun(){
+ var rate=lsNum('ls_rate'),loaded=lsNum('ls_loaded'),dead=lsNum('ls_dead'),cpm=lsNum('ls_cpm');
+ var days=Math.max(0.5,lsNum('ls_days')),mkt=(document.getElementById('ls_market')||{}).value||'avg';
+ var xpay=lsNum('ls_xpay'),xcost=lsNum('ls_xcost');
+ var margin=lsNum('ls_margin')/100; if(margin<0)margin=0; if(margin>0.9)margin=0.9;
+ var total=loaded+dead; if(total<=0)total=1;
+ var cost=total*cpm+xcost;
+ var revenue=rate+xpay;
+ var profit=revenue-cost;
+ var rpmAll=revenue/total;
+ var pday=profit/days;
+ var deadCost=dead*cpm;
+ var rev=revenue>0?revenue:1;
+ var realMargin=profit/rev;
+ var dh=total>0?dead/total:0;
+ var sM=lsClamp(realMargin/0.35)*42;
+ var sR=lsClamp((rpmAll-1.2)/(2.5-1.2))*22;
+ var sD=lsClamp(1-dh/0.30)*14;
+ var sP=lsClamp(pday/600)*14;
+ var sK=(mkt==='strong'?8:(mkt==='avg'?4:0));
+ var score=Math.round(sM+sR+sD+sP+sK);
+ if(profit<=0)score=Math.min(score,18);
+ score=Math.max(0,Math.min(100,score));
+ var col,cls,label;
+ if(score>=72){col='#4ade80';cls='take';label='TAKE IT';}
+ else if(score>=48){col='#fbbf24';cls='neg';label='NEGOTIATE';}
+ else{col='#f87171';cls='pass';label='PASS';}
+ document.getElementById('ls_score').textContent=score;
+ var g=document.getElementById('ls_gauge');if(g)g.style.background='conic-gradient('+col+' '+(score*3.6)+'deg,#1f2b45 0deg)';
+ var v=document.getElementById('ls_verdict');if(v){v.className='ls-verdict '+cls;v.innerHTML='<span class="dot"></span> '+label;}
+ var pe=document.getElementById('ls_profit');pe.textContent=lsM0(profit);pe.className=profit>=0?'pos':'neg';
+ document.getElementById('ls_rpm').textContent=lsM2(rpmAll);
+ var pd=document.getElementById('ls_pday');pd.textContent=lsM0(pday);pd.className=pday>=0?'pos':'neg';
+ document.getElementById('ls_drag').textContent=lsM0(deadCost);
+ var counterTotal=(total*cpm+xcost)/(1-margin)-xpay;
+ var counterRpm=loaded>0?(counterTotal+xpay)/loaded:0;
+ var ce=document.getElementById('ls_counter');
+ if(realMargin>=margin){ce.innerHTML='Rate already clears your '+Math.round(margin*100)+'% margin target &mdash; <b>lock it in.</b>';}
+ else{ce.innerHTML='Counter at <b>'+lsM0(counterTotal)+'</b> ('+lsM2(counterRpm)+'/loaded mi) to hit your '+Math.round(margin*100)+'% margin.';}
+ var ins=[];
+ if(score>=72)ins.push(['good','The numbers work in your favor &mdash; this is a load worth taking.']);
+ if(profit<=0)ins.push(['bad','You lose '+lsM0(-profit)+' after your costs. Only run it to reposition &mdash; or counter hard.']);
+ else if(realMargin<margin*0.6)ins.push(['warn','Thin margin: just '+lsM0(profit)+' profit across '+Math.round(total).toLocaleString()+' miles.']);
+ if(dh>=0.15)ins.push(['warn','Deadhead is '+Math.round(dh*100)+'% of the trip &mdash; it costs ~'+lsM0(deadCost)+' and drags your real rate to '+lsM2(rpmAll)+'/mi.']);
+ else if(dead>0)ins.push(['good','Low deadhead &mdash; only '+Math.round(dead).toLocaleString()+' empty miles to pickup.']);
+ if(pday<500)ins.push(['warn','At '+lsM0(pday)+'/day this sits below a healthy ~$500/day target.']);
+ else ins.push(['good','Solid '+lsM0(pday)+' per day for your truck.']);
+ if(mkt==='weak')ins.push(['warn','It drops you in a weak market &mdash; line up a reload or add money for the empty miles back out.']);
+ else if(mkt==='strong')ins.push(['good','Leaves you in a strong freight area, so your reload should be easy.']);
+ var box=document.getElementById('ls_insights');
+ box.innerHTML=ins.slice(0,5).map(function(x){return '<div class="ins '+x[0]+'"><span class="b"></span><span>'+x[1]+'</span></div>';}).join('');
+ // ---- Smart Advisor (AI-style recommendation, script, what-if) ----
+ var rec;
+ if(cls==='take'){rec='<b>Take it.</b> At '+lsM2(rpmAll)+'/mi all-in, this load clears your costs with <b>'+lsM0(profit)+'</b> to spare'+(mkt==='strong'?' and leaves you in a strong freight area':'')+'. Lock it in before the broker hands it to the next driver.';}
+ else if(cls==='neg'){rec='<b>Don&rsquo;t say yes yet.</b> The bones are okay, but the margin is thin at '+lsM0(profit)+'. Counter to <b>'+lsM0(counterTotal)+'</b> and you turn a so-so load into a solid one. If they won&rsquo;t budge, you can walk.';}
+ else{rec='<b>Pass on this one.</b> After your real costs it nets <b>'+lsM0(profit)+'</b>'+(profit<=0?' &mdash; it actually loses money':'')+'. The only reason to touch it is to reposition out of a dead market.';}
+ var recEl=document.getElementById('ls_adv_rec');if(recEl)recEl.innerHTML=rec;
+ var script;
+ if(realMargin>=margin){script='Appreciate it &mdash; I can cover that load at '+lsM0(rate)+'. Send the rate con over and I&rsquo;ll get it booked.';}
+ else{script='Thanks for the offer. With the miles and where it delivers, I need '+lsM0(counterTotal)+' to make it work &mdash; about '+lsM2(counterRpm)+' a mile. Can you get me there?';}
+ window.lsScript=script.replace(/&mdash;/g,'—').replace(/&rsquo;/g,'’');
+ var scEl=document.getElementById('ls_adv_script');if(scEl)scEl.innerHTML='&ldquo;'+script+'&rdquo;';
+ var moves=[];
+ if(cls!=='take'&&(counterTotal-rate)>0)moves.push(['+$','Get <b>'+lsM0(counterTotal-rate)+'</b> more ('+lsM0(counterTotal)+' total) and it hits your '+Math.round(margin*100)+'% margin target.']);
+ if(dh>=0.12&&dead>0)moves.push(['DH','Find a closer pickup &mdash; those '+Math.round(dead).toLocaleString()+' empty miles cost you about '+lsM0(deadCost)+'.']);
+ if(pday<500&&days>1)moves.push(['T','Run it in '+(days-0.5)+' days instead of '+days+' and your day-rate climbs to '+lsM0(profit/Math.max(0.5,days-0.5))+'/day.']);
+ if(mkt==='weak')moves.push(['M','It ends in a weak market &mdash; book your reload before you roll, or add fuel money for the empty miles out.']);
+ if(!moves.length)moves.push(['OK','Numbers are clean and there are no red flags &mdash; book it and keep the truck moving.']);
+ var wf=document.getElementById('ls_adv_whatif');if(wf)wf.innerHTML=moves.slice(0,4).map(function(m){return '<div class="ls-adv-move"><span class="m">'+m[0]+'</span><span>'+m[1]+'</span></div>';}).join('');
+ var lbl=(document.getElementById('ls_label')||{}).value||'';
+ lsLast={label:lbl,score:score,cls:cls,vlabel:label,profit:profit,rpm:rpmAll,pday:pday,rate:rate,total:total,dead:dead,col:col};
+}
+var lsCmp=[];
+function lsRenderCmp(){
+ var wrap=document.getElementById('ls_compare'),grid=document.getElementById('ls_cmp_grid');
+ if(!wrap||!grid)return;
+ if(!lsCmp.length){wrap.classList.remove('show');grid.innerHTML='';return;}
+ wrap.classList.add('show');
+ var best=Math.max.apply(null,lsCmp.map(function(c){return c.score;}));
+ var order=lsCmp.map(function(c,i){return {c:c,i:i};}).sort(function(a,b){return b.c.score-a.c.score;});
+ grid.innerHTML=order.map(function(o){var c=o.c;var isBest=(c.score===best);
+  return '<div class="ls-cmp-card'+(isBest?' best':'')+'">'+(isBest?'<span class="ls-cmp-badge">Best pick</span>':'')+
+   '<button class="ls-cmp-x" onclick="lsRemoveCmp('+o.i+')" aria-label="Remove">&times;</button>'+
+   '<div class="nm">'+(c.label||'Untitled load')+'</div>'+
+   '<div class="cs">'+c.score+'<small> / 100</small></div>'+
+   '<div class="cv '+c.cls+'">'+c.vlabel+'</div>'+
+   '<div class="cr">Profit <b>'+lsM0(c.profit)+'</b> &middot; <b>'+lsM2(c.rpm)+'</b>/mi &middot; <b>'+lsM0(c.pday)+'</b>/day</div>'+
+   '</div>';}).join('');
+}
+function lsAddCompare(){if(!lsLast)lsRun();if(!lsLast)return;
+ var snap=JSON.parse(JSON.stringify(lsLast));
+ if(!snap.label)snap.label='Load '+(lsCmp.length+1);
+ lsCmp.push(snap);if(lsCmp.length>6)lsCmp.shift();lsRenderCmp();
+ var w=document.getElementById('ls_compare');if(w)w.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function lsRemoveCmp(i){lsCmp.splice(i,1);lsRenderCmp();}
+function lsClearCmp(){lsCmp=[];lsRenderCmp();}
+function lsCopy(){if(!lsLast)lsRun();if(!lsLast)return;var c=lsLast;
+ var t='Loadboot Load Score'+(c.label?' ('+c.label+')':'')+': '+c.score+'/100 — '+c.vlabel+'. '+
+  'Net profit '+lsM0(c.profit)+', true rate '+lsM2(c.rpm)+'/mi over '+Math.round(c.total).toLocaleString()+' miles, '+lsM0(c.pday)+'/day. Scored free at loadboot.com/load-score';
+ var btn=document.getElementById('ls_copybtn');
+ function ok(){if(btn){var o=btn.innerHTML;btn.innerHTML='Copied ✓';setTimeout(function(){btn.innerHTML=o;},1600);}}
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(function(){window.prompt('Copy this load summary:',t);});}
+ else{window.prompt('Copy this load summary:',t);}
+}
+function lsCopyScript(){var t=window.lsScript||'';var btn=document.getElementById('ls_adv_copybtn');
+ function ok(){if(btn){var o=btn.innerHTML;btn.innerHTML='Copied ✓';setTimeout(function(){btn.innerHTML=o;},1600);}}
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(function(){window.prompt('Copy this script:',t);});}
+ else{window.prompt('Copy this script:',t);}
+}
+if(document.getElementById('ls_rate')){lsRun();}else{document.addEventListener('DOMContentLoaded',function(){if(document.getElementById('ls_rate'))lsRun();});}
+</script>
+<footer><div class="wrap">
+<div class="foot-top">
+<div><div class="logo"><span class="mark"><svg width="30" height="30" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg></span><span>oad<b style="color:#60a5fa">boot</b></span></div>
+<div style="color:#60a5fa;font-weight:700;font-size:.92rem;margin-top:10px;letter-spacing:.01em">Keep your wheels earning.</div>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p>
+<div style="margin-top:14px;font-size:.9rem;line-height:1.85"><a href="mailto:hello@loadboot.com">hello@loadboot.com</a><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a><a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div>
+<div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
+<a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
+<a href="#" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 9H3v9h3V9zM4.5 3a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM18 9c-1.6 0-2.5.8-3 1.5V9H12v9h3v-5c0-1 .7-1.7 1.6-1.7s1.4.7 1.4 1.7v5h3v-5.4C21 10 19.7 9 18 9z"/></svg></a></div></div>
+<div><div class="foot-h">Get carrier tips &amp; better loads</div><p style="font-size:.92rem">Rate trends, compliance reminders, and dispatch tips.</p>
+<form class="news" onsubmit="event.preventDefault();this.innerHTML='<span style=\'color:#86efac;font-weight:600\'>Subscribed &mdash; thanks!</span>'"><input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Subscribe</button></form></div>
+</div>
+<div class="links5">
+<div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
+<div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a></div>
+<div><div class="foot-h">Carriers</div><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
+<div><div class="foot-h">Compliance</div><a href="services.html">Authority &amp; DOT Setup</a><a href="services.html">BOC-3 / UCR</a><a href="services.html">Form 2290</a><a href="services.html">IFTA</a></div>
+<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="pricing.html">Pricing</a><a href="load-score.html">Load Score Tool</a><a href="tools.html">Free Tools</a><a href="blog.html">Blog</a><a href="contact.html">Contact</a><a href="dashboard.html">Carrier Login</a></div>
+</div>
+<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
+<div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
+<span><a href="privacy.html" style="display:inline">Privacy Policy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="contact.html" style="display:inline">Contact</a></span></div>
+</div></footer>
+<div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html" class="btn btn-primary">Get Started</a></div>
+<a class="wa-btn" href="contact.html" rel="noopener" aria-label="Contact us"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.2-1.2l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1112 20zm4.4-5.6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 00-.7.3A2.9 2.9 0 006 9.9c0 1.7 1.3 3.4 1.4 3.6.2.2 2.5 3.9 6.1 5.2 2.2.8 2.5.6 3 .6s1.4-.6 1.6-1.1.2-1 .2-1.1-.2-.2-.5-.3z"/></svg></a>
+<script src="app.js?v=6"></script></body></html>

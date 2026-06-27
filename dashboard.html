@@ -1,0 +1,707 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carrier Portal | Loadboot</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0F172A"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot"><script async src="https://www.googletagmanager.com/gtag/js?id=G-C2ELQ7H8EM"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-C2ELQ7H8EM');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#0F172A;--navy2:#1E293B;--blue:#2563EB;--blue2:#1e40af;--orange:#F97316;--bg:#F4F6FB;--card:#fff;--muted:#64748B;--border:#E5E9F0;--soft:#EFF6FF;--green:#16a34a;--green-bg:#dcfce7;--amber:#d97706;--amber-bg:#fef3c7;--red:#dc2626;--red-bg:#fee2e2;--r:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--navy);background:var(--bg);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.logo{font-family:'Manrope',sans-serif}
+a{color:var(--blue)}
+.hidden{display:none!important}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-family:'Manrope';border:none;border-radius:11px;padding:12px 18px;cursor:pointer;font-size:.95rem;transition:.2s;background:var(--blue);color:#fff}
+.btn:hover{background:var(--blue2)}
+.btn.o{background:var(--orange)}.btn.o:hover{background:#ea6a0c}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--border)}.btn.ghost:hover{background:#f8fafc}
+.btn.sm{padding:8px 13px;font-size:.85rem;border-radius:9px}
+.btn.green{background:var(--green)}.btn.red{background:var(--red)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{font-family:inherit;font-size:1rem;color:var(--navy);width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 4px var(--soft)}
+label{font-weight:600;font-size:.85rem;display:block;margin-bottom:6px}
+.field{margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:700;padding:4px 10px;border-radius:20px}
+.badge.pending{background:var(--amber-bg);color:var(--amber)}.badge.approved{background:var(--green-bg);color:var(--green)}
+.badge.rejected{background:var(--red-bg);color:var(--red)}.badge.available{background:var(--soft);color:var(--blue)}
+.badge.booked{background:var(--amber-bg);color:var(--amber)}.badge.delivered{background:var(--green-bg);color:var(--green)}
+.badge.in_transit{background:var(--soft);color:var(--blue)}.badge.cancelled{background:var(--red-bg);color:var(--red)}
+.badge.active{background:var(--green-bg);color:var(--green)}
+.auth-wrap{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr}
+.auth-side{background:linear-gradient(160deg,#0b1220,#15233f 55%,#0b1220);color:#fff;padding:54px 50px;display:flex;flex-direction:column;justify-content:center}
+.auth-side .logo{display:flex;align-items:center;gap:3px;font-size:1.3rem;font-weight:800;margin-bottom:auto}
+.auth-side .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#1e3a8a,#0b1220);display:flex;align-items:center;justify-content:center}
+.auth-side h2{font-size:2rem;line-height:1.2;margin:24px 0 14px}
+.auth-side p{color:#cbd5e1;max-width:420px;line-height:1.6}
+.auth-stats{display:flex;gap:30px;margin-top:30px}
+.auth-stats .v{font-family:'Manrope';font-weight:800;font-size:1.5rem}
+.auth-stats .l{font-size:.8rem;color:#94a3b8}
+.auth-main{display:flex;align-items:center;justify-content:center;padding:40px}
+.auth-card{width:100%;max-width:380px}
+.auth-card h3{font-size:1.5rem;margin-bottom:4px}
+.auth-card .sub{color:var(--muted);margin-bottom:24px;font-size:.92rem}
+.auth-toggle{text-align:center;margin-top:18px;font-size:.9rem;color:var(--muted)}
+.auth-toggle a{cursor:pointer;font-weight:600}
+.note{font-size:.85rem;padding:11px 14px;border-radius:10px;margin-top:14px}
+.note.err{background:var(--red-bg);color:var(--red)}.note.ok{background:var(--green-bg);color:var(--green)}.note.info{background:var(--soft);color:var(--blue2)}
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.side{background:#0b1220;color:#cbd5e1;padding:22px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.side .logo{display:flex;align-items:center;gap:3px;color:#fff;font-weight:800;font-size:1.18rem;padding:6px 8px 22px}
+.side .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#0b1220);display:flex;align-items:center;justify-content:center}
+.side nav{display:flex;flex-direction:column;gap:3px}
+.side a.nav{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;color:#cbd5e1;cursor:pointer;font-weight:500;font-size:.93rem;text-decoration:none}
+.side a.nav:hover{background:rgba(255,255,255,.06);color:#fff}
+.side a.nav.active{background:var(--blue);color:#fff}
+.side a.nav svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9}
+.side .sep{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#64748b;padding:16px 12px 6px;font-weight:700}
+.side .who{margin-top:auto;padding:14px 10px 4px;border-top:1px solid #1e293b}
+.side .who b{color:#fff;display:block;font-size:.9rem;overflow-wrap:anywhere;line-height:1.3}.side .who span{display:block;font-size:.78rem;color:#94a3b8;overflow-wrap:anywhere;line-height:1.3}
+.main{padding:30px 36px;max-width:1180px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:14px;flex-wrap:wrap}
+.page-h h1{font-size:1.6rem}.page-h p{color:var(--muted);font-size:.92rem;margin-top:3px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:18px}
+.panel h3{font-size:1.05rem;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;display:flex;gap:14px;align-items:flex-start;transition:.2s}
+.kpi:hover{box-shadow:0 18px 40px -26px rgba(37,99,235,.45);transform:translateY(-2px);border-color:#dbeafe}
+.kpi-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-ic svg{width:22px;height:22px;stroke-width:2;fill:none}
+.kpi-ic.blue{background:#eff6ff;color:#2563eb}.kpi-ic.green{background:#dcfce7;color:#16a34a}.kpi-ic.orange{background:#ffedd5;color:#ea6a0c}.kpi-ic.violet{background:#ede9fe;color:#7c3aed}
+.kpi .v{font-family:'Manrope';font-weight:800;font-size:1.65rem;line-height:1}
+.kpi .l{color:var(--muted);font-size:.82rem;margin-top:4px}
+.kpi .trend{font-size:.72rem;font-weight:700;margin-top:6px;display:inline-flex;align-items:center;gap:3px}
+.kpi .trend.up{color:#16a34a}.kpi .trend.flat{color:#94a3b8}
+.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}
+.panel-head h3{margin:0}.panel-head .meta{font-size:.8rem;color:var(--muted)}
+.chartsvg{width:100%;height:auto;display:block}
+.chart-empty{text-align:center;color:var(--muted);font-size:.88rem;padding:26px 10px}
+.trk{display:flex;align-items:center;margin:4px 0}
+.trk .node{display:flex;flex-direction:column;align-items:center;flex:0 0 auto;width:86px;text-align:center}
+.trk .dot{width:30px;height:30px;border-radius:50%;background:#e2e8f0;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem}
+.trk .node.done .dot{background:#16a34a;color:#fff}.trk .node.cur .dot{background:#2563eb;color:#fff;box-shadow:0 0 0 5px #dbeafe}
+.trk .node small{font-size:.74rem;margin-top:7px;color:var(--muted)}.trk .node.cur small,.trk .node.done small{color:var(--navy);font-weight:600}
+.trk .bar{flex:1;height:3px;background:#e2e8f0;border-radius:2px;margin:0 -6px;margin-bottom:24px}
+.trk .bar.done{background:#16a34a}
+.load-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.load-meta div{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.load-meta span{font-size:.72rem;color:var(--muted);display:block;margin-bottom:2px}.load-meta b{font-family:'Manrope';font-size:1.02rem}
+.feed .fi{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.feed .fi:last-child{border-bottom:none}
+.feed .fic{width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.feed .fic svg{width:17px;height:17px;stroke-width:2;fill:none}
+.feed .ft{font-size:.9rem}.feed .fd{font-size:.78rem;color:var(--muted);margin-top:2px}
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qa a{display:flex;align-items:center;gap:9px;padding:13px 14px;border:1px solid var(--border);border-radius:12px;font-weight:600;font-size:.9rem;color:var(--navy);cursor:pointer;text-decoration:none;transition:.15s}
+.qa a:hover{border-color:#bfdbfe;background:#f8fafc}
+.qa a svg{width:18px;height:18px;stroke:var(--blue);stroke-width:2;fill:none}
+.verbadge{display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#16a34a;font-size:.76rem;font-weight:700;padding:5px 11px;border-radius:20px}
+@media(max-width:980px){.grid2{grid-template-columns:1fr}}
+.lb{display:flex;flex-direction:column;gap:14px}
+.lbc{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 20px;transition:.2s}
+.lbc:hover{box-shadow:0 18px 40px -28px rgba(37,99,235,.4);border-color:#dbeafe}
+.lbc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.lbc-lane{font-family:'Manrope';font-weight:800;font-size:1.16rem}.lbc-lane .ar{color:var(--blue);margin:0 7px}
+.lbc-sub{color:var(--muted);font-size:.85rem;margin-top:3px}
+.lbc-rate{text-align:right}.lbc-rate .r{font-family:'Manrope';font-weight:800;font-size:1.4rem}.lbc-rate .rpm{font-size:.82rem;color:var(--green);font-weight:700}
+.lbc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:16px 0}
+.lbc-grid .it{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:9px 12px}
+.lbc-grid .it span{display:block;font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.lbc-grid .it b{font-family:'Manrope';font-size:.92rem}
+.lbc-req{font-size:.86rem;color:#475569;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.lbc-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.eqchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.eqchips label{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--border);border-radius:10px;padding:8px 13px;cursor:pointer;font-size:.88rem;font-weight:600;user-select:none;transition:.15s}
+.eqchips input{position:absolute;opacity:0;width:0;height:0}
+.eqchips label.on{border-color:var(--blue);background:var(--soft);color:var(--blue)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px 12px;border-bottom:1px solid var(--border);font-size:.9rem}
+th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:none}
+.scroll{overflow-x:auto}
+.empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:.92rem}
+.gate-wrap{max-width:760px;margin:0 auto;padding:46px 22px}
+.gate-banner{background:linear-gradient(135deg,#0b1220,#1e3a8a);color:#fff;border-radius:18px;padding:26px 28px;margin-bottom:22px}
+.gate-banner h2{font-size:1.5rem;margin-bottom:8px}.gate-banner p{color:#cbd5e1;line-height:1.6}
+.gate-prog{height:8px;background:rgba(255,255,255,.15);border-radius:20px;margin-top:16px;overflow:hidden}
+.gate-prog i{display:block;height:100%;background:#4ade80;border-radius:20px;transition:.4s}
+.doc{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.doc .ic{width:42px;height:42px;border-radius:11px;background:var(--soft);color:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.doc .ic svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.9}
+.doc .info{flex:1}.doc .info b{font-family:'Manrope';font-size:.97rem}.doc .info span{display:block;font-size:.82rem;color:var(--muted)}
+.doc .act{display:flex;align-items:center;gap:10px}
+.gate-steps{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 4px}
+.gate-steps .gs{display:flex;align-items:center;gap:8px;font-size:.85rem;color:#cbd5e1;background:rgba(255,255,255,.07);padding:8px 12px;border-radius:10px}
+.gate-steps .gs span{width:20px;height:20px;border-radius:50%;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700}
+.gate-next{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-top:14px}
+.gate-next b{font-family:'Manrope'}.gate-next p{color:var(--navy);font-size:.92rem;line-height:1.55;margin-top:4px}
+.gate-callout{display:flex;gap:11px;align-items:flex-start;background:#fffbeb;border:1px solid #fde68a;border-radius:13px;padding:15px 17px;margin:0 0 18px;color:#92400e;font-size:.93rem;line-height:1.5}
+.gate-callout svg{flex-shrink:0;margin-top:1px}
+.gate-status{display:block;border-radius:13px;padding:15px 17px;margin-top:18px;font-size:.93rem;line-height:1.5}
+.gate-status.review{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.gate-status.action{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+.gate-status.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:#0b1220;color:#fff;padding:13px 20px;border-radius:12px;font-weight:600;font-size:.9rem;transition:.35s;z-index:99;box-shadow:0 20px 40px -16px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.spin{width:18px;height:18px;border:2px solid #cbd5e1;border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.center-load{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.menu-toggle{display:none;background:none;border:none;cursor:pointer}
+.side-close{display:none;position:absolute;top:14px;right:14px;background:rgba(255,255,255,.12);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:20px;line-height:1;cursor:pointer;align-items:center;justify-content:center}
+.side-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40}
+@media(min-width:881px){.side-backdrop{display:none!important}}
+.leaflet-tooltip.lbmap-tip{background:#0b1220;color:#fff;border:none;border-radius:7px;font-size:.72rem;font-weight:700;padding:3px 8px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.leaflet-tooltip.lbmap-tip:before{border:none!important;display:none}
+.trk-row{cursor:pointer;transition:background .15s}
+.trk-row:hover{background:var(--blue-soft,#eff6ff)}
+#lbSplash{position:fixed;inset:0;z-index:99999;background:#0b1220;display:flex;align-items:center;justify-content:center;animation:lbsOut .55s ease 1.3s forwards}
+.lbs-logo{display:flex;align-items:center;gap:4px}
+.lbs-mark{width:62px;height:62px;border-radius:16px;background:linear-gradient(135deg,#1e3a8a,#0b1220);box-shadow:0 0 0 1px rgba(255,255,255,.07),0 20px 50px -16px rgba(37,99,235,.5);display:flex;align-items:center;justify-content:center;animation:lbsPop .6s cubic-bezier(.2,.8,.2,1.25) both}
+.lbs-mark svg{width:40px;height:40px}
+.lbs-L{opacity:0;animation:lbsFade .4s ease .28s forwards}
+.lbs-arrow{opacity:0;transform:translateX(-9px);animation:lbsArrow .5s cubic-bezier(.2,.8,.2,1.4) .5s forwards}
+.lbs-word{font-family:'Manrope',Arial,sans-serif;font-weight:800;font-size:36px;color:#fff;letter-spacing:-1px;max-width:0;overflow:hidden;white-space:nowrap;opacity:0;animation:lbsWord .55s ease .6s forwards}
+.lbs-word b{color:#60a5fa}
+@keyframes lbsPop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes lbsFade{to{opacity:1}}
+@keyframes lbsArrow{to{opacity:1;transform:translateX(0)}}
+@keyframes lbsWord{to{opacity:1;max-width:260px}}
+@keyframes lbsOut{to{opacity:0;visibility:hidden}}
+@media(max-width:880px){.auth-wrap{grid-template-columns:1fr}.auth-side{display:none}.shell{grid-template-columns:1fr}.side{position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);transition:.3s;width:248px}.side.open{transform:none}.main{padding:18px}.kpis{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}.menu-toggle{display:inline-flex}.side-close{display:inline-flex}}
+</style></head>
+<body>
+<script>(function(){try{if(sessionStorage.getItem('lb_seen'))return;}catch(e){}var o=document.createElement('div');o.id='lbSplash';o.innerHTML='<div class="lbs-logo"><span class="lbs-mark"><svg viewBox="0 0 56 56" fill="none"><g class="lbs-L"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/></g><path class="lbs-arrow" d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg></span><span class="lbs-word">oad<b>boot</b></span></div>';document.body.insertBefore(o,document.body.firstChild);try{sessionStorage.setItem('lb_seen','1');}catch(e){}setTimeout(function(){if(o&&o.parentNode)o.parentNode.removeChild(o);},1950);})();</script>
+<div id="boot" class="center-load"><span class="spin"></span></div>
+
+<div id="auth" class="auth-wrap hidden">
+ <div class="auth-side">
+  <div class="logo"><span class="mark"><svg width="26" height="26" viewBox="0 0 56 56" fill="none"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg></span><span>oad<b style="color:#60a5fa">boot</b></span></div>
+  <div style="color:#60a5fa;font-weight:700;font-size:.95rem;margin-top:12px">Keep your wheels earning.</div>
+  <h2>Your loads, earnings &amp; dispatcher &mdash; all in one place.</h2>
+  <p>Create your carrier account, get verified, and let Loadboot keep your truck loaded. Flat 5%, no contracts.</p>
+  <div class="auth-stats"><div><div class="v">5%</div><div class="l">Flat dispatch fee</div></div><div><div class="v">24/7</div><div class="l">Dispatch support</div></div><div><div class="v">48</div><div class="l">States covered</div></div></div>
+ </div>
+ <div class="auth-main"><div class="auth-card">
+  <h3 id="authTitle">Welcome back</h3>
+  <div class="sub" id="authSub">Sign in to your carrier portal</div>
+  <div id="signupFields" style="display:none"><div class="field"><label>Company / business name</label><input id="f_company" placeholder="Your trucking company"></div>
+  <div class="field"><label>Your name</label><input id="f_name" placeholder="Full name"></div></div>
+  <div class="field"><label>Email address</label><input id="f_email" type="email" placeholder="you@email.com"></div>
+  <div class="field"><label>Password</label><input id="f_pass" type="password" placeholder="********"></div>
+  <button class="btn o" style="width:100%" id="authBtn" onclick="doAuth()">Sign in</button>
+  <div id="authNote"></div>
+  <div class="auth-toggle" id="authToggle">New carrier? <a onclick="toggleAuth(true)">Create an account</a></div>
+ </div></div>
+</div>
+
+<div id="gate" class="hidden"><div class="gate-wrap">
+ <div class="gate-banner">
+  <div style="font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;font-weight:700;margin-bottom:8px">Carrier onboarding</div>
+  <h2 id="gateHello">Welcome &mdash; let's get you verified</h2>
+  <p>You're almost in! To activate your account, upload the documents below so our team can verify your authority. As soon as they're approved, your full dashboard unlocks and you can start booking loads.</p>
+  <div class="gate-steps"><div class="gs"><span>1</span> Upload your documents</div><div class="gs"><span>2</span> We review &amp; verify</div><div class="gs"><span>3</span> Dashboard unlocks</div></div>
+  <div class="gate-prog"><i id="gateBar" style="width:0%"></i></div>
+  <div style="font-size:.85rem;color:#cbd5e1;margin-top:8px" id="gateCount">0 of 4 approved</div>
+ </div>
+ <div class="gate-callout"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span><b>Two quick steps:</b> Fill in your operation details and upload your documents. Once our team verifies them, your account is approved and your dashboard becomes fully functional.</span></div>
+ <h3 style="margin:6px 2px 12px;font-family:'Manrope'">1. Tell us about your operation</h3>
+ <div class="panel" style="margin-bottom:20px">
+  <div class="row">
+   <div class="field"><label>Contact name</label><input id="o_name"></div>
+   <div class="field"><label>Phone</label><input id="o_phone" placeholder="(555) 555-5555"></div>
+   <div class="field"><label>MC number</label><input id="o_mc" placeholder="MC-123456"></div>
+   <div class="field"><label>DOT number</label><input id="o_dot" placeholder="DOT-1234567"></div>
+   <div class="field"><label>Number of trucks</label><select id="o_trucks"><option value="">Select…</option><option>1</option><option>2-5</option><option>6-20</option><option>20+</option></select></div>
+   <div class="field"><label>Home base (city, state)</label><input id="o_base" placeholder="Dallas, TX"></div>
+  </div>
+  <div class="field"><label>How far will you deliver? (operating radius)</label><select id="o_radius"><option value="">Select…</option><option value="250">Local — within 250 miles</option><option value="500">Regional — within 500 miles</option><option value="1000">Multi-region — within 1,000 miles</option><option value="9999">OTR — anywhere (all 48 states)</option></select></div>
+  <label>Your equipment — select every type of truck/trailer you run</label>
+  <div class="eqchips" id="o_equip"></div>
+  <label style="margin-top:18px;display:block">Driver preferences &mdash; so we only bring you loads that fit how you run</label>
+  <div class="row">
+   <div class="field"><label>Minimum rate per mile ($)</label><input id="o_minrpm" type="number" step="0.01" placeholder="2.00"></div>
+   <div class="field"><label>Maximum deadhead (miles)</label><input id="o_maxdh" type="number" placeholder="150"></div>
+   <div class="field"><label>States you will NOT go to</label><input id="o_avoid" placeholder="e.g. NY, CA, NJ"></div>
+   <div class="field"><label>Drive on weekends?</label><select id="o_weekend"><option value="">Select…</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+   <div class="field"><label>Haul hazmat?</label><select id="o_hazmat"><option value="">Select…</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+   <div class="field"><label>Preferred contact method</label><select id="o_contact" onchange="toggleWa()"><option value="">Select…</option><option value="phone">Phone call</option><option value="text">Text / SMS</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option></select></div>
+   <div class="field" id="o_wawrap" style="display:none"><label>WhatsApp number</label><input id="o_whatsapp" placeholder="(555) 555-5555"></div>
+  </div>
+  <label style="margin-top:6px;display:block">Factoring</label>
+  <div class="row">
+   <div class="field"><label>Do you use a factoring company?</label><select id="o_factstatus" onchange="toggleFact()"><option value="">Select…</option><option value="have">Yes — I already use one</option><option value="recommend">No — please recommend one for me</option><option value="none">No — I don’t use factoring</option></select></div>
+   <div class="field" id="o_factcowrap" style="display:none"><label>Factoring company name</label><input id="o_factco" placeholder="e.g. RTS, Apex, TBS, OTR"></div>
+  </div>
+  <div style="margin-top:16px"><button class="btn" onclick="saveOnboarding()">Save my details</button><span id="o_saved" style="margin-left:12px;color:var(--green);font-weight:600;font-size:.88rem"></span></div>
+ </div>
+ <h3 style="margin:6px 2px 12px;font-family:'Manrope'">2. Required documents &mdash; upload each to get approved</h3>
+ <div id="gateDocs"></div>
+ <div id="gateStatusBox" class="gate-status review"><span>Upload all 4 required documents to continue.</span></div>
+ <button class="btn o" id="gateSubmitBtn" style="width:100%;margin-top:14px" onclick="submitDocs()" disabled>Upload all 4 documents to submit</button>
+ <div class="gate-next">
+  <b>What happens next?</b>
+  <p>After you submit, our dispatch team reviews your documents and replies <b>within 12 hours</b> with your account status. We'll email you at <b id="gateEmail">your email</b> the moment you're approved, and your dashboard goes live automatically.</p>
+  <p style="margin-top:8px;color:var(--muted);font-size:.85rem">Accepted file types: PDF, JPG, or PNG. Questions? Just reply to any of our emails.</p>
+ </div>
+ <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">
+  <button class="btn ghost sm" onclick="refreshGate()">Refresh status</button>
+  <button class="btn ghost sm" onclick="logout()">Sign out</button>
+ </div>
+ <input type="file" id="gateFile" class="hidden" accept=".pdf,.jpg,.jpeg,.png">
+</div></div>
+
+<div id="app" class="shell hidden">
+ <aside class="side" id="side">
+  <button class="side-close" onclick="closeSide()" aria-label="Close menu">&times;</button>
+  <div class="logo"><span class="mark"><svg width="26" height="26" viewBox="0 0 56 56" fill="none"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg></span><span>oad<b style="color:#60a5fa">boot</b></span></div>
+  <nav id="navCarrier"></nav>
+  <div class="who"><b id="whoName">&mdash;</b><span id="whoSub">&mdash;</span>
+   <a class="nav" onclick="logout()" style="margin-top:8px;padding-left:0"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign out</a>
+  </div>
+ </aside>
+ <div id="sideBackdrop" class="side-backdrop" onclick="closeSide()"></div>
+ <main class="main">
+  <div class="topbar">
+   <button class="menu-toggle" onclick="toggleSide()"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="2" fill="none"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+   <div class="page-h"><h1 id="pageTitle">Dashboard</h1><p id="pageSub"></p></div>
+   <button class="btn ghost sm" onclick="refreshView()">Refresh</button>
+  </div>
+  <div id="view"></div>
+ </main>
+</div>
+
+<div id="locGate" class="hidden" style="position:fixed;inset:0;z-index:200;background:rgba(11,18,32,.93);display:flex;align-items:center;justify-content:center;padding:24px">
+ <div style="background:#fff;border-radius:18px;max-width:430px;width:100%;padding:34px;text-align:center">
+  <div style="width:58px;height:58px;border-radius:50%;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
+  <h3>Location access required</h3>
+  <p id="locGateMsg" style="color:var(--muted);margin:10px 0 22px;line-height:1.55">Location access is required to use your carrier portal so your dispatcher can match and track your loads. Please allow location in your browser, then tap below.</p>
+  <button class="btn o" style="width:100%" onclick="requireLocation()">Enable location</button>
+  <p style="margin-top:14px;font-size:.82rem"><a onclick="logout()" style="color:var(--muted)">Sign out</a></p>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL="https://rwscphuhpjoudvljvmdk.supabase.co";
+const SUPABASE_KEY="sb_publishable_lHr4JKuHCZEkkjaEh7vx3A_ya_XLG4V";
+let sb=null;try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);}catch(e){console.error('Supabase library failed to load',e);}
+const REQUIRED=[
+ {k:'insurance',n:'Insurance Certificate (COI)',d:'Current Certificate of Insurance showing your coverage and limits.'},
+ {k:'w9',n:'W-9 Form',d:'Completed and signed IRS W-9.'},
+ {k:'authority',n:'Authority Letter',d:'Your FMCSA Operating Authority (MC) letter.'}
+];
+const EQUIPMENT=['Dry Van','Reefer','Flatbed','Step Deck','Hotshot','Power Only','Box Truck','Conestoga','Tanker','Car Hauler'];
+let ME=null,USER=null,gateTimer=null,curUploadType=null,signupMode=false,CUR='dash';
+const $=id=>document.getElementById(id);
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money=n=>'$'+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+const dt=d=>d?new Date(d).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'—';
+function fmtTime(t){if(!t)return '';var m=String(t).match(/^(\d{1,2}):(\d{2})/);if(!m)return t;var h=+m[1],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+m[2]+' '+ap;}
+const dtt=(d,t)=>{var s=dt(d),tt=fmtTime(t);return s==='—'?(tt||'—'):(s+(tt?(' · '+tt):''));};
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.remove('show'),2600);}
+function show(id){['boot','auth','gate','app'].forEach(x=>$(x).classList.add('hidden'));$(id).classList.remove('hidden');}
+
+function toggleAuth(s){signupMode=s;
+ $('authTitle').textContent=s?'Create your account':'Welcome back';
+ $('authSub').textContent=s?'Start your carrier profile — free':'Sign in to your carrier portal';
+ $('signupFields').style.display=s?'block':'none';
+ $('authBtn').textContent=s?'Create account':'Sign in';
+ $('authToggle').innerHTML=s?'Already have an account? <a onclick="toggleAuth(false)">Sign in</a>':'New carrier? <a onclick="toggleAuth(true)">Create an account</a>';
+ $('authNote').innerHTML='';}
+async function doAuth(){
+ const email=$('f_email').value.trim(),pass=$('f_pass').value,company=$('f_company').value.trim(),name=$('f_name').value.trim();
+ if(!email||!pass){authNote('err','Enter your email and password.');return;}
+ if(signupMode&&(!company||!name)){authNote('err','Please enter your company name and your name.');return;}
+ $('authBtn').disabled=true;
+ try{
+  if(signupMode){
+   const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{company,name}}});
+   if(error)throw error;
+   if(!data.session){authNote('ok','Account created! Check your email to confirm, then sign in.');toggleAuth(false);$('authBtn').disabled=false;return;}
+  }else{
+   const {error}=await sb.auth.signInWithPassword({email,password:pass});
+   if(error)throw error;
+  }
+  await boot();
+ }catch(e){authNote('err',e.message||'Something went wrong.');$('authBtn').disabled=false;}
+}
+function authNote(t,m){$('authNote').innerHTML='<div class="note '+t+'">'+esc(m)+'</div>';}
+async function logout(){await sb.auth.signOut();location.reload();}
+
+async function boot(){
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session){show('auth');return;}
+ USER=session.user;
+ const {data:prof,error}=await sb.from('profiles').select('*').eq('id',USER.id).single();
+ if(error||!prof){show('auth');return;}
+ ME=prof;
+ if(ME.role==='admin'){buildNav(true);show('app');go('admin_docs');return;}
+ if(ME.status!=='active'){show('gate');openGate();return;}
+ buildNav(false);show('app');go('dash');requireLocation();
+}
+
+function setVal(id,v){var e=document.getElementById(id);if(e)e.value=v==null?'':v;}
+function renderEqChips(containerId,selected){var sel=selected||[];document.getElementById(containerId).innerHTML=EQUIPMENT.map(function(e,i){var on=sel.indexOf(e)>=0;return '<label class="'+(on?'on':'')+'"><input type="checkbox" value="'+e+'"'+(on?' checked':'')+' onchange="this.parentNode.classList.toggle(\'on\',this.checked)"> '+e+'</label>';}).join('');}
+function getEqChips(containerId){return Array.prototype.slice.call(document.querySelectorAll('#'+containerId+' input:checked')).map(function(i){return i.value;});}
+async function openGate(){
+ $('gateHello').textContent='Welcome'+(ME.company?(', '+ME.company):'')+' — let’s get you verified';
+ $('gateEmail').textContent=ME.email||'your email';
+ setVal('o_name',ME.contact_name);setVal('o_phone',ME.phone);setVal('o_mc',ME.mc);setVal('o_dot',ME.dot);setVal('o_trucks',ME.truck_count);setVal('o_base',ME.home_base);setVal('o_radius',ME.radius_miles);
+ setVal('o_minrpm',ME.min_rpm);setVal('o_maxdh',ME.max_deadhead);setVal('o_avoid',ME.avoid_states);setVal('o_whatsapp',ME.whatsapp);setVal('o_factco',ME.factoring_company);setVal('o_contact',ME.contact_method);setVal('o_factstatus',ME.factoring_status);setYN('o_weekend',ME.weekend_ok);setYN('o_hazmat',ME.hazmat);toggleWa();toggleFact();
+ renderEqChips('o_equip',ME.equipment_types);
+ await refreshGate();if(gateTimer)clearInterval(gateTimer);gateTimer=setInterval(refreshGate,15000);}
+function ynBool(id){var el=$(id);var v=el?el.value:'';return v==='yes'?true:(v==='no'?false:null);}
+function setYN(id,v){var el=$(id);if(el)el.value=(v===true?'yes':(v===false?'no':''));}
+function toggleWa(){var w=$('o_wawrap');if(w&&$('o_contact'))w.style.display=($('o_contact').value==='whatsapp')?'':'none';var w2=$('s_wawrap');if(w2&&$('s_contact'))w2.style.display=($('s_contact').value==='whatsapp')?'':'none';}
+function toggleFact(){var w=$('o_factcowrap');if(w&&$('o_factstatus'))w.style.display=($('o_factstatus').value==='have')?'':'none';var w2=$('s_factcowrap');if(w2&&$('s_factstatus'))w2.style.display=($('s_factstatus').value==='have')?'':'none';}
+async function saveOnboarding(){
+ const upd={contact_name:$('o_name').value,phone:$('o_phone').value,mc:$('o_mc').value,dot:$('o_dot').value,truck_count:$('o_trucks').value,home_base:$('o_base').value,radius_miles:parseInt($('o_radius').value)||null,equipment_types:getEqChips('o_equip'),min_rpm:parseFloat($('o_minrpm').value)||null,max_deadhead:parseInt($('o_maxdh').value)||null,avoid_states:$('o_avoid').value||null,weekend_ok:ynBool('o_weekend'),hazmat:ynBool('o_hazmat'),contact_method:$('o_contact').value||null,whatsapp:$('o_whatsapp').value||null,factoring_status:$('o_factstatus').value||null,factoring_company:$('o_factco').value||null};
+ const {error}=await sb.from('profiles').update(upd).eq('id',USER.id);
+ if(error){toast(error.message);return;}
+ Object.assign(ME,upd);$('o_saved').textContent='Saved ✓';setTimeout(function(){$('o_saved').textContent='';},2500);
+}
+async function refreshGate(){
+ const {data:prof}=await sb.from('profiles').select('status,submitted_at').eq('id',USER.id).single();
+ if(prof&&prof.status==='active'){clearInterval(gateTimer);ME.status='active';buildNav(false);show('app');go('dash');requireLocation();toast('You are verified — welcome aboard!');return;}
+ const submitted=prof&&prof.submitted_at;
+ const {data:docs}=await sb.from('documents').select('*').eq('carrier_id',USER.id).order('created_at',{ascending:false});
+ const byType={};(docs||[]).forEach(d=>{if(!byType[d.type])byType[d.type]=d;});
+ let approved=0,uploaded=0,rejected=0;
+ $('gateDocs').innerHTML=REQUIRED.map(r=>{
+  const d=byType[r.k];let badge='<span class="badge pending">Not uploaded</span>',act='';
+  if(d){uploaded++;
+        if(d.status==='approved'){approved++;badge='<span class="badge approved">Approved</span>';}
+        else if(d.status==='rejected'){rejected++;badge='<span class="badge rejected">Rejected — re-upload</span>'+(d.review_note?' <span style="font-size:.8rem;color:var(--muted)">('+esc(d.review_note)+')</span>':'');}
+        else badge='<span class="badge pending">Under review</span>';}
+  act=(d&&d.status==='approved')?'':'<button class="btn sm ghost" onclick="pickFile(\''+r.k+'\')">'+(d?'Re-upload':'Upload')+'</button>';
+  return '<div class="doc"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><polyline points="14 3 14 8 19 8"/></svg></span><div class="info"><b>'+r.n+'</b><span>'+r.d+'</span></div><div class="act">'+badge+' '+act+'</div></div>';
+ }).join('');
+ $('gateBar').style.width=(approved/REQUIRED.length*100)+'%';
+ $('gateCount').textContent=approved+' of '+REQUIRED.length+' approved';
+ const allUp=uploaded===REQUIRED.length;
+ const box=$('gateStatusBox'),btn=$('gateSubmitBtn');
+ let scls='review',stext='';
+ if(rejected>0){scls='action';stext='<b>Action needed:</b> One or more documents were rejected. Re-upload them, then submit again.';}
+ else if(approved===REQUIRED.length){scls='ok';stext='<b>All documents approved.</b> Activating your account…';}
+ else if(submitted&&allUp){scls='review';stext='<b>Status: Under review.</b> Your documents are submitted &mdash; our team will reply within 12 hours with your account status. We\'ll email you the moment you\'re approved.';}
+ else if(allUp){scls='review';stext='All documents uploaded. Tap <b>Submit for review</b> below to send them to our team.';}
+ else{scls='review';stext='Upload all '+REQUIRED.length+' required documents to continue ('+uploaded+' of '+REQUIRED.length+' uploaded).';}
+ box.className='gate-status '+scls;box.innerHTML='<span>'+stext+'</span>';
+ const canSubmit=allUp&&(!submitted||rejected>0);
+ btn.disabled=!canSubmit;
+ btn.textContent=!allUp?('Upload all '+REQUIRED.length+' documents to submit ('+uploaded+'/'+REQUIRED.length+')'):(canSubmit?(submitted?'Resubmit for review':'Submit for review'):'Submitted — under review');
+}
+async function submitDocs(){
+ const btn=$('gateSubmitBtn');btn.disabled=true;
+ const {error}=await sb.from('profiles').update({submitted_at:new Date().toISOString()}).eq('id',USER.id);
+ if(error){toast(error.message);btn.disabled=false;return;}
+ toast('Documents submitted — we will reply within 12 hours!');
+ await refreshGate();
+ try{document.querySelector('.gate-wrap').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
+}
+function pickFile(type){curUploadType=type;$('gateFile').value='';$('gateFile').click();}
+$('gateFile').addEventListener('change',async e=>{
+ const file=e.target.files[0];if(!file)return;toast('Uploading…');
+ const path=USER.id+'/'+curUploadType+'_'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+ const {error:upErr}=await sb.storage.from('documents').upload(path,file);
+ if(upErr){toast('Upload failed: '+upErr.message);return;}
+ const {error}=await sb.from('documents').insert({carrier_id:USER.id,type:curUploadType,file_name:file.name,file_path:path,status:'pending'});
+ if(error){toast('Save failed: '+error.message);return;}
+ toast('Uploaded — under review.');refreshGate();
+});
+
+const NAV_CARRIER=[['dash','Dashboard'],['loads','Available Loads'],['myloads','My Loads'],['docs','Documents'],['pay','Payments'],['msgs','Messages'],['settings','Profile']];
+const NAV_ADMIN=[['admin_docs','Review Documents'],['admin_loads','Post & Manage Loads'],['admin_carriers','Carriers'],['admin_track','Driver Tracking'],['admin_pay','Settlements'],['admin_msgs','Messages']];
+function navIcon(){return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>';}
+function buildNav(isAdmin){
+ const items=isAdmin?NAV_ADMIN:NAV_CARRIER;
+ $('navCarrier').innerHTML=(isAdmin?'<div class="sep">Admin</div>':'')+items.map(i=>'<a class="nav" data-v="'+i[0]+'" onclick="go(\''+i[0]+'\')">'+navIcon()+' '+i[1]+'</a>').join('')
+  +(isAdmin?'':'<a class="nav" href="load-score.html" target="_blank">'+navIcon()+' Load Score Tool</a>');
+ $('whoName').textContent=ME.company||ME.contact_name||ME.email||'My account';
+ $('whoSub').textContent=(isAdmin?'Admin · ':'')+(ME.mc?('MC '+ME.mc):(ME.contact_name||ME.email||''));
+}
+function setActive(v){document.querySelectorAll('.side a.nav').forEach(a=>a.classList.toggle('active',a.dataset.v===v));}
+const TITLES={dash:['Dashboard',''],loads:['Available Loads','Loads ready to book.'],myloads:['My Loads','Loads you have booked.'],docs:['Documents','Your verification and load paperwork.'],pay:['Payments','Your settlements and payouts.'],msgs:['Messages','Talk to your dispatcher.'],settings:['Profile','Keep your carrier details current.'],admin_docs:['Review Documents','Approve or reject carrier documents.'],admin_loads:['Post & Manage Loads','Add loads for carriers to book.'],admin_carriers:['Carriers','All carriers and their status.'],admin_track:['Driver Tracking','Live location of your carriers.'],admin_pay:['Settlements','Record and track carrier payouts.'],admin_msgs:['Messages','Live chat with your carriers.']};
+function toggleSide(){var s=$('side'),b=$('sideBackdrop');var o=s.classList.toggle('open');if(b)b.style.display=o?'block':'none';}
+function closeSide(){var s=$('side'),b=$('sideBackdrop');if(s)s.classList.remove('open');if(b)b.style.display='none';}
+function go(v){if(window.msgChannel&&v!=='msgs'&&v!=='admin_msgs')closeChat();if(window.trackTimer&&v!=='admin_track'){clearInterval(window.trackTimer);window.trackTimer=null;}CUR=v;setActive(v);const t=TITLES[v]||['',''];$('pageTitle').textContent=t[0];$('pageSub').textContent=t[1];closeSide();refreshView();}
+function refreshView(){const f=({dash:vDash,loads:vLoads,myloads:vMyloads,docs:vDocs,pay:vPay,msgs:vMsgs,settings:vSettings,admin_docs:vAdminDocs,admin_loads:vAdminLoads,admin_carriers:vAdminCarriers,admin_track:vAdminTrack,admin_pay:vAdminPay,admin_msgs:vAdminMsgs})[CUR];$('view').innerHTML='<div class="panel"><span class="spin"></span></div>';if(f)f();}
+function kpiCard(c,ic,val,label,tr,trtxt){return '<div class="kpi"><span class="kpi-ic '+c+'"><svg viewBox="0 0 24 24" stroke="currentColor">'+ic+'</svg></span><div><div class="v">'+val+'</div><div class="l">'+label+'</div>'+(trtxt?'<div class="trend '+tr+'">'+(tr==='up'?'&#9650; ':'')+trtxt+'</div>':'')+'</div></div>';}
+function qa(v,ic,label){return '<a onclick="go(\''+v+'\')"><svg viewBox="0 0 24 24">'+ic+'</svg> '+label+'</a>';}
+function barChart(vals){var w=520,h=170,pad=22,n=vals.length,max=Math.max.apply(null,vals.concat([1])),gap=(w-pad*2)/n,bw=gap*0.5,s='';for(var i=0;i<n;i++){var bh=(h-pad-18)*(vals[i]/max),x=pad+i*gap+(gap-bw)/2,y=h-18-bh;s+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+Math.max(2,bh)+'" rx="4" fill="url(#bg)"/><text x="'+(x+bw/2)+'" y="'+(h-4)+'" text-anchor="middle" font-size="9" fill="#94a3b8">W'+(i+1)+'</text>';}return '<svg viewBox="0 0 '+w+' '+h+'" class="chartsvg"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#1e40af"/></linearGradient></defs>'+s+'</svg>';}
+function activeLoad(l){var idx=l.status==='delivered'?2:(l.status==='in_transit'?1:0),steps=['Booked','In Transit','Delivered'],t='<div style="font-family:Manrope;font-weight:800;font-size:1.12rem;margin-bottom:16px">'+esc(l.origin)+' &rarr; '+esc(l.destination)+'</div><div class="trk">';for(var i=0;i<3;i++){t+='<div class="node '+(i<idx?'done':(i===idx?'cur':''))+'"><span class="dot">'+(i<idx?'&#10003;':(i+1))+'</span><small>'+steps[i]+'</small></div>';if(i<2)t+='<div class="bar '+(i<idx?'done':'')+'"></div>';}t+='</div><div class="load-meta"><div><span>Rate</span><b>'+money(l.rate)+'</b></div><div><span>Miles</span><b>'+(l.miles||'—')+'</b></div><div><span>$ / mile</span><b>'+(l.miles?'$'+(l.rate/l.miles).toFixed(2):'—')+'</b></div></div>';return t;}
+function buildActivity(M,S,I){var a=[];M.slice(0,3).forEach(function(l){a.push({date:l.created_at,ic:I.check,t:'Booked <b>'+esc(l.origin)+' &rarr; '+esc(l.destination)+'</b>',d:money(l.rate)+' &middot; '+dt(l.created_at)});});S.slice(0,3).forEach(function(s){a.push({date:s.paid_at||s.created_at,ic:I.card,t:(s.status==='paid'?'Payment received':'Settlement created'),d:money(s.net)+' &middot; '+dt(s.paid_at||s.created_at)});});a.sort(function(x,y){return new Date(y.date)-new Date(x.date);});return a.slice(0,5);}
+
+async function vDash(){
+ const [{data:avail},{data:mine},{data:setl}]=await Promise.all([
+  sb.from('loads').select('id').eq('status','available'),
+  sb.from('loads').select('*').eq('assigned_to',USER.id).order('created_at',{ascending:false}),
+  sb.from('settlements').select('*').eq('carrier_id',USER.id).order('created_at',{ascending:false})]);
+ const M=mine||[],S=setl||[];
+ const active=M.filter(l=>l.status!=='delivered'&&l.status!=='cancelled').length;
+ const paid=S.filter(s=>s.status==='paid').reduce((a,s)=>a+Number(s.net||0),0);
+ const pending=S.filter(s=>s.status==='pending').reduce((a,s)=>a+Number(s.net||0),0);
+ const wk=6048e5,now=Date.now(),buckets=new Array(8).fill(0);
+ S.forEach(s=>{const i=Math.floor((now-new Date(s.paid_at||s.created_at).getTime())/wk);if(i>=0&&i<8)buckets[7-i]+=Number(s.net||0);});
+ const hasEarn=buckets.some(v=>v>0);
+ const I={truck:'<path d="M2 7h12v9H2zM14 10h4l3 3v3h-7z"/><circle cx="6.5" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>',cash:'<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',doc:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/>',chat:'<path d="M21 12a8 8 0 01-11.4 7.2L3 21l1.8-6.6A8 8 0 1121 12z"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',check:'<path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>'};
+ let html='<div class="kpis">'+
+  kpiCard('blue',I.truck,active,'Active loads','flat','On the road')+
+  kpiCard('violet',I.search,(avail||[]).length,'Loads available','up','Matched to you')+
+  kpiCard('green',I.cash,money(paid),'Paid out','up','All time')+
+  kpiCard('orange',I.clock,money(pending),'Pending payout','flat','Processing')+
+ '</div><div class="grid2"><div>';
+ html+='<div class="panel"><div class="panel-head"><h3>Earnings</h3><span class="meta">Last 8 weeks &middot; '+money(paid)+' paid</span></div>'+(hasEarn?barChart(buckets):'<div class="chart-empty">Your weekly earnings will appear here once you start running loads.</div>')+'</div>';
+ const act=M.find(l=>l.status==='booked'||l.status==='in_transit');
+ html+='<div class="panel"><div class="panel-head"><h3>Active load</h3>'+(act?'<span class="badge '+act.status+'">'+esc(act.status.replace("_"," "))+'</span>':'')+'</div>'+(act?activeLoad(act):'<div class="chart-empty">No active load right now.<br><a onclick="go(\'loads\')">Browse available loads &rarr;</a></div>')+'</div>';
+ html+='</div><div>';
+ html+='<div class="panel"><span class="verbadge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Verified carrier</span><h3 style="margin:12px 0 4px">Welcome back, '+esc(ME.company||'carrier')+'</h3><p style="color:var(--muted);font-size:.9rem">Your account is active. Book loads, track payments, and message your dispatcher any time.</p></div>';
+ html+='<div class="panel"><h3 style="margin-bottom:14px">Quick actions</h3><div class="qa">'+qa('loads',I.truck,'Find loads')+qa('pay',I.card,'Payments')+qa('docs',I.doc,'Documents')+qa('msgs',I.chat,'Messages')+'</div></div>';
+ html+='<div class="panel"><h3 style="margin-bottom:4px">Location sharing <span class="badge approved" style="font-size:.66rem">Required</span></h3><p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">Active while you use the portal — your dispatcher uses it to match and track your loads. <b id="locState">Status: off — please enable</b></p><button class="btn ghost" id="locBtn" onclick="requireLocation()">Re-enable location</button></div>';
+ const acts=buildActivity(M,S,I);
+ html+='<div class="panel feed"><h3 style="margin-bottom:6px">Recent activity</h3>'+(acts.length?acts.map(a=>'<div class="fi"><span class="fic"><svg viewBox="0 0 24 24" stroke="currentColor">'+a.ic+'</svg></span><div><div class="ft">'+a.t+'</div><div class="fd">'+a.d+'</div></div></div>').join(''):'<div class="chart-empty">No activity yet.</div>')+'</div>';
+ html+='</div></div>';
+ $('view').innerHTML=html;updateLocBtn();
+}
+var locWatch=null,locOk=false;
+function setLocState(t){var s=document.getElementById('locState');if(s)s.textContent=t;}
+function updateLocBtn(){setLocState(locOk?'Status: sharing live ✓':'Status: off — please enable');}
+function showLocGate(msg){var g=document.getElementById('locGate');if(g){if(msg)document.getElementById('locGateMsg').textContent=msg;g.classList.remove('hidden');}}
+function hideLocGate(){var g=document.getElementById('locGate');if(g)g.classList.add('hidden');}
+function saveLoc(pos){
+ locOk=true;hideLocGate();
+ setLocState('Status: sharing live ✓ ('+pos.coords.latitude.toFixed(3)+', '+pos.coords.longitude.toFixed(3)+')');
+ sb.from('profiles').update({last_lat:pos.coords.latitude,last_lng:pos.coords.longitude,last_loc_at:new Date().toISOString()}).eq('id',USER.id).then(function(r){if(r&&r.error)toast('Could not save location: '+r.error.message);});
+}
+function locErr(err){
+ locOk=false;updateLocBtn();
+ var why=err&&err.code===1?'You blocked location. Please allow it in your browser settings and tap “Enable location”.':'We could not get your location'+(err&&err.message?(' ('+err.message+')'):'')+'. Make sure location is on, then tap “Enable location”.';
+ showLocGate('Location access is required to use your carrier portal so your dispatcher can match and track your loads. '+why);
+}
+function requireLocation(){
+ if(!ME||ME.role==='admin')return;
+ if(!navigator.geolocation){showLocGate('Your device does not support location services, which are required to use the carrier portal.');return;}
+ if(locWatch!=null){navigator.geolocation.clearWatch(locWatch);locWatch=null;}
+ navigator.geolocation.getCurrentPosition(function(pos){
+   saveLoc(pos);
+   locWatch=navigator.geolocation.watchPosition(saveLoc,function(e){},{enableHighAccuracy:true,maximumAge:30000,timeout:30000});
+ },locErr,{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+}
+function timeago(ts){if(!ts)return '—';var s=Math.floor((Date.now()-new Date(ts).getTime())/1000);if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' hr ago';return Math.floor(s/86400)+' d ago';}
+async function vAdminTrack(){
+ const {data:cs}=await sb.from('profiles').select('id,company,contact_name,last_lat,last_lng,last_loc_at').eq('role','carrier').order('last_loc_at',{ascending:false,nullsFirst:false});
+ if(!cs||!cs.length){$('view').innerHTML='<div class="panel empty">No carriers yet.</div>';return;}
+ window.lbCarriers=(cs||[]).filter(c=>c.last_lat!=null);
+ if(!document.getElementById('trkMap')){
+  window.lbMap=null;window.lbMarkers={};window.dhPin=null;window.dhLine=null;
+  $('view').innerHTML=
+   '<div class="panel"><h3 style="margin:0 0 10px">Live driver map</h3>'
+   +'<div id="trkMap" style="height:360px;border-radius:12px;overflow:hidden;background:#0b1220"></div>'
+   +'<p style="color:var(--muted);font-size:.82rem;margin-top:8px">Markers show each carrier’s last shared position. Auto-refreshes every 20s. <button class="btn ghost sm" onclick="refreshView()">Refresh</button></p></div>'
+   +'<div class="panel"><h3 style="margin:0 0 8px">Deadhead to a pickup</h3>'
+   +'<p style="color:var(--muted);font-size:.86rem;margin:0 0 12px">On the phone with a broker? Pick a truck and type the pickup city to see the empty (deadhead) miles to that load.</p>'
+   +'<div class="row"><div class="field"><label>Truck</label><select id="dhCarrier"></select></div>'
+   +'<div class="field"><label>Pickup city</label><input id="dhCity" placeholder="Dallas, TX"></div>'
+   +'<div class="field"><label>&nbsp;</label><button class="btn" onclick="calcDeadhead()">Calculate deadhead</button></div></div>'
+   +'<div id="dhResult" style="margin-top:6px"></div></div>'
+   +'<div class="panel scroll"><table><thead><tr><th>Company</th><th>Driver</th><th>Where</th><th>Updated</th></tr></thead><tbody id="trkRows"></tbody></table></div>';
+ }
+ if(!window.trackTimer)window.trackTimer=setInterval(function(){if(CUR==='admin_track')vAdminTrack();},20000);
+ var sel=document.getElementById('dhCarrier');
+ if(sel){var cur=sel.value;sel.innerHTML=window.lbCarriers.length?window.lbCarriers.map(c=>'<option value="'+c.id+'">'+esc(c.company||c.contact_name||'Carrier')+'</option>').join(''):'<option value="">No truck sharing location yet</option>';if(cur)sel.value=cur;}
+ var tb=document.getElementById('trkRows');
+ if(tb){tb.innerHTML=cs.map(c=>{var has=c.last_lat!=null;return '<tr class="trk-row" onclick="focusCarrier(\''+c.id+'\')" title="Show this driver on the map"><td><b>'+esc(c.company||'—')+'</b></td><td>'+esc(c.contact_name||'—')+'</td><td id="city_'+c.id+'">'+(has?(Number(c.last_lat).toFixed(3)+', '+Number(c.last_lng).toFixed(3)):'<span style="color:var(--muted)">Not shared</span>')+'</td><td>'+(c.last_loc_at?timeago(c.last_loc_at):'—')+'</td></tr>';}).join('');}
+ ensureLeaflet(function(){
+  var el=document.getElementById('trkMap');if(!el)return;
+  if(!window.lbMap){window.lbMap=L.map('trkMap',{zoomControl:true}).setView([39.5,-98.35],4);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(window.lbMap);window.lbMarkers={};}
+  var pts=[];
+  window.lbCarriers.forEach(function(c){var k=c.id;var ll=[Number(c.last_lat),Number(c.last_lng)];pts.push(ll);
+   if(window.lbMarkers[k]){window.lbMarkers[k].setLatLng(ll);}else{window.lbMarkers[k]=L.circleMarker(ll,{radius:9,color:'#fff',weight:2,fillColor:'#2563EB',fillOpacity:1}).addTo(window.lbMap);window.lbMarkers[k].bindTooltip(esc(c.company||c.contact_name||'Carrier'),{permanent:true,direction:'right',offset:[9,0],className:'lbmap-tip'});}
+   window.lbMarkers[k].bindPopup('<b>'+esc(c.company||'Carrier')+'</b><br>'+esc(c.contact_name||'')+'<br>'+timeago(c.last_loc_at));
+   reverseGeocode(c.last_lat,c.last_lng,function(name){if(!name)return;var td=document.getElementById('city_'+k);if(td)td.innerHTML=esc(name);if(window.lbMarkers[k])window.lbMarkers[k].bindPopup('<b>'+esc(c.company||'Carrier')+'</b><br>'+esc(name)+'<br>'+timeago(c.last_loc_at));});
+  });
+  if(pts.length){try{window.lbMap.fitBounds(pts,{padding:[40,40],maxZoom:9});}catch(e){}}
+  setTimeout(function(){if(window.lbMap)window.lbMap.invalidateSize();},200);
+ });
+}
+function focusCarrier(id){var m=window.lbMarkers&&window.lbMarkers[id];var el=document.getElementById('trkMap');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});if(m&&window.lbMap){window.lbMap.setView(m.getLatLng(),9,{animate:true});m.openPopup();}else{toast('This driver hasn’t shared a location yet.');}}
+function calcDeadhead(){
+ var sel=document.getElementById('dhCarrier'),city=document.getElementById('dhCity'),out=document.getElementById('dhResult');
+ if(!sel||!sel.value){out.innerHTML='<span style="color:#dc2626">Pick a truck that is sharing its location.</span>';return;}
+ var c=(window.lbCarriers||[]).filter(x=>x.id===sel.value)[0];if(!c){out.innerHTML='<span style="color:#dc2626">That truck has no shared location.</span>';return;}
+ var q=(city.value||'').trim();if(!q){out.innerHTML='<span style="color:#dc2626">Enter a pickup city, e.g. “Dallas, TX”.</span>';return;}
+ out.innerHTML='<span class="spin"></span> Looking up '+esc(q)+'…';
+ geocode(q,function(g){if(!g){out.innerHTML='<span style="color:#dc2626">Could not find that city. Try “City, ST”.</span>';return;}
+  var mi=haversineMi(c.last_lat,c.last_lng,g.lat,g.lng)*1.2;
+  out.innerHTML='<div class="lbc-req"><b>'+esc(c.company||'Truck')+'</b> is about <b style="color:#F97316">'+Math.round(mi)+' mi</b> deadhead (driving) from <b>'+esc(q)+'</b>. Straight-line × 1.2 road estimate.</div>';
+  ensureLeaflet(function(){if(!window.lbMap)return;if(window.dhPin)window.lbMap.removeLayer(window.dhPin);if(window.dhLine)window.lbMap.removeLayer(window.dhLine);
+   window.dhPin=L.circleMarker([g.lat,g.lng],{radius:9,color:'#fff',weight:2,fillColor:'#F97316',fillOpacity:1}).addTo(window.lbMap).bindPopup('Pickup: '+esc(q)).openPopup();
+   window.dhLine=L.polyline([[Number(c.last_lat),Number(c.last_lng)],[g.lat,g.lng]],{color:'#F97316',dashArray:'6'}).addTo(window.lbMap);
+   try{window.lbMap.fitBounds([[Number(c.last_lat),Number(c.last_lng)],[g.lat,g.lng]],{padding:[50,50]});}catch(e){}});
+ });
+}
+function ensureLeaflet(cb){if(window.L){cb();return;}window._lfQ=window._lfQ||[];window._lfQ.push(cb);if(window._lfLoading)return;window._lfLoading=true;
+ var css=document.createElement('link');css.rel='stylesheet';css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';document.head.appendChild(css);
+ var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+ s.onload=function(){window._lfLoading=false;(window._lfQ||[]).forEach(function(f){try{f();}catch(e){}});window._lfQ=[];};
+ s.onerror=function(){window._lfLoading=false;window._lfFailed=true;var el=document.getElementById('trkMap');if(el)el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:.86rem;text-align:center;padding:20px">Map couldn’t load right now — driver locations are still listed in the table below, and the deadhead calculator works normally.</div>';};
+ document.head.appendChild(s);}
+function haversineMi(la1,lo1,la2,lo2){la1=Number(la1);lo1=Number(lo1);la2=Number(la2);lo2=Number(lo2);var R=3958.8,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180,a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)*Math.sin(dLo/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function geocode(q,cb){fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q='+encodeURIComponent(q)).then(r=>r.json()).then(function(j){if(j&&j.length)cb({lat:parseFloat(j[0].lat),lng:parseFloat(j[0].lon)});else cb(null);}).catch(function(){cb(null);});}
+function reverseGeocode(lat,lng,cb){window._rgCache=window._rgCache||{};var key=Number(lat).toFixed(3)+','+Number(lng).toFixed(3);if(window._rgCache[key]!==undefined){cb(window._rgCache[key]);return;}fetch('https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&lat='+lat+'&lon='+lng).then(r=>r.json()).then(function(j){var a=(j&&j.address)||{};var city=a.city||a.town||a.village||a.hamlet||a.county||'';var st=a.state||'';var name=(city||'')+((city&&st)?', ':'')+(st||'');window._rgCache[key]=name;cb(name);}).catch(function(){cb('');});}
+async function vLoads(){
+ const {data:loads}=await sb.from('loads').select('*').eq('status','available').order('created_at',{ascending:false});
+ let list=loads||[];
+ const myEq=(ME.equipment_types||[]).map(e=>(e||'').toLowerCase());
+ if(myEq.length)list=list.filter(l=>!l.equipment||myEq.indexOf((l.equipment||'').toLowerCase())>=0);
+ const note=myEq.length?('Showing loads matched to your equipment: <b>'+esc((ME.equipment_types||[]).join(', '))+'</b>. Update your equipment in Profile.'):'Set your equipment in <a onclick="go(\'settings\')">Profile</a> so we only show loads that fit your truck.';
+ if(!list.length){$('view').innerHTML='<div style="margin-bottom:14px;color:var(--muted);font-size:.88rem">'+note+'</div><div class="panel empty">No loads match your equipment right now — check back soon.</div>';return;}
+ $('view').innerHTML='<div style="margin-bottom:14px;color:var(--muted);font-size:.88rem">'+note+'</div><div class="lb">'+list.map(lbCard).join('')+'</div>';
+}
+function it(label,val){return '<div class="it"><span>'+label+'</span><b>'+esc(String(val))+'</b></div>';}
+function lbCard(l){
+ const rpm=l.miles?(l.rate/l.miles):0,total=(l.miles||0)+(l.deadhead||0),allin=total?(l.rate/total):0;
+ return '<div class="lbc"><div class="lbc-top"><div><div class="lbc-lane">'+esc(l.origin)+'<span class="ar">&rarr;</span>'+esc(l.destination)+'</div>'
+  +'<div class="lbc-sub">'+esc(l.commodity||'General freight')+(l.broker?(' &middot; '+esc(l.broker)):'')+'</div></div>'
+  +'<div class="lbc-rate"><div class="r">'+money(l.rate)+'</div>'+(rpm?'<div class="rpm">$'+rpm.toFixed(2)+' RPM</div>':'')+'</div></div>'
+  +'<div class="lbc-grid">'+it('Equipment',l.equipment||'—')+it('Weight',l.weight||'—')+it('Loaded miles',l.miles||'—')+it('Deadhead',l.deadhead!=null?(l.deadhead+' mi'):'—')+it('RPM',rpm?('$'+rpm.toFixed(2)):'—')+it('Pickup',dtt(l.pickup_date,l.pickup_time))+it('Deliver by',dtt(l.delivery_date,l.delivery_time))+'</div>'
+  +(l.requirements?'<div class="lbc-req"><b>Requirements:</b> '+esc(l.requirements)+'</div>':'')
+  +'<div class="lbc-foot"><span class="lbc-sub">Total trip '+total+' mi'+(allin?' &middot; all-in $'+allin.toFixed(2)+'/mi':'')+'</span><button class="btn" onclick="book(\''+l.id+'\')">Book this load</button></div></div>';
+}
+async function book(id){if(!confirm('Book this load?'))return;const {error}=await sb.rpc('book_load',{p_load:id});if(error){toast(error.message);return;}toast('Load booked!');go('myloads');}
+async function vMyloads(){
+ const {data:loads}=await sb.from('loads').select('*').eq('assigned_to',USER.id).order('created_at',{ascending:false});
+ if(!loads||!loads.length){$('view').innerHTML='<div class="panel empty">You have not booked any loads yet.</div>';return;}
+ $('view').innerHTML='<div class="panel scroll"><table><thead><tr><th>Lane</th><th>Equip</th><th>Rate</th><th>Pickup</th><th>Status</th></tr></thead><tbody>'+loads.map(l=>'<tr><td><b>'+esc(l.origin)+'</b> → '+esc(l.destination)+'</td><td>'+esc(l.equipment)+'</td><td><b>'+money(l.rate)+'</b></td><td>'+dt(l.pickup_date)+'</td><td><span class="badge '+l.status+'">'+esc(l.status)+'</span></td></tr>').join('')+'</tbody></table></div>';
+}
+async function vDocs(){
+ const {data:docs}=await sb.from('documents').select('*').eq('carrier_id',USER.id).order('created_at',{ascending:false});
+ let h='<div class="panel"><h3>Upload a document</h3><div class="row"><div class="field"><label>Type</label><select id="dType"><option value="rate_con">Rate Confirmation</option><option value="bol">BOL</option><option value="pod">POD</option><option value="insurance">Insurance</option><option value="other">Other</option></select></div><div class="field"><label>File</label><input type="file" id="dFile" accept=".pdf,.jpg,.jpeg,.png"></div></div><button class="btn" onclick="uploadDoc()">Upload</button></div>';
+ h+='<div class="panel scroll"><h3>Your documents</h3>'+((docs&&docs.length)?'<table><thead><tr><th>Type</th><th>File</th><th>Status</th><th>Date</th></tr></thead><tbody>'+docs.map(d=>'<tr><td>'+esc((d.type||'').replace(/_/g,' '))+'</td><td>'+esc(d.file_name||'—')+'</td><td><span class="badge '+(d.status||'pending')+'">'+esc(d.status||'pending')+'</span></td><td>'+dt(d.created_at)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">No documents yet.</div>')+'</div>';
+ $('view').innerHTML=h;
+}
+async function uploadDoc(){
+ const f=$('dFile').files[0],type=$('dType').value;if(!f){toast('Choose a file.');return;}toast('Uploading…');
+ const path=USER.id+'/'+type+'_'+Date.now()+'_'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+ const {error:e1}=await sb.storage.from('documents').upload(path,f);if(e1){toast(e1.message);return;}
+ const {error:e2}=await sb.from('documents').insert({carrier_id:USER.id,type,file_name:f.name,file_path:path,status:'pending'});if(e2){toast(e2.message);return;}
+ toast('Uploaded.');refreshView();
+}
+async function vPay(){
+ const {data:s}=await sb.from('settlements').select('*, loads(origin,destination)').eq('carrier_id',USER.id).order('created_at',{ascending:false});
+ if(!s||!s.length){$('view').innerHTML='<div class="panel empty">No settlements yet — they appear here after you run loads.</div>';return;}
+ $('view').innerHTML='<div class="panel scroll"><table><thead><tr><th>Load</th><th>Gross</th><th>Fee (5%)</th><th>Net</th><th>Status</th><th>Paid</th></tr></thead><tbody>'+s.map(x=>'<tr><td>'+(x.loads?esc(x.loads.origin+' → '+x.loads.destination):'—')+'</td><td>'+money(x.gross)+'</td><td>'+money(x.fee)+'</td><td><b>'+money(x.net)+'</b></td><td><span class="badge '+(x.status==='paid'?'approved':'pending')+'">'+esc(x.status)+'</span></td><td>'+dt(x.paid_at)+'</td></tr>').join('')+'</tbody></table></div>';
+}
+function bubble(m,viewer){const mine=m.sender===viewer;return '<div style="margin-bottom:10px;text-align:'+(mine?'right':'left')+'"><span style="display:inline-block;max-width:75%;padding:10px 14px;border-radius:12px;font-size:.92rem;line-height:1.45;background:'+(mine?'var(--blue);color:#fff':'#f1f5f9')+'">'+esc(m.body)+'</span></div>';}
+function chatShell(listId,boxId,sendFn,empty){return '<div class="panel"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="width:9px;height:9px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 4px #dcfce7"></span><b style="font-family:Manrope">Live chat with your dispatcher</b></div><div id="'+listId+'" style="height:420px;overflow:auto;margin-bottom:14px;padding-right:4px"></div><div style="display:flex;gap:10px"><input id="'+boxId+'" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\')'+sendFn+'()"><button class="btn" onclick="'+sendFn+'()">Send</button></div></div>';}
+async function vMsgs(){
+ $('view').innerHTML=chatShell('msgList','msgBox','sendMsg');
+ const {data:msgs}=await sb.from('messages').select('*').eq('carrier_id',USER.id).order('created_at');
+ $('msgList').innerHTML=(msgs&&msgs.length)?msgs.map(m=>bubble(m,'carrier')).join(''):'<div class="empty">No messages yet. Say hello to your dispatcher.</div>';
+ $('msgList').scrollTop=$('msgList').scrollHeight;
+ subscribeChat(USER.id,'msgList','carrier');
+}
+async function sendMsg(){const b=$('msgBox').value.trim();if(!b)return;$('msgBox').value='';const {error}=await sb.from('messages').insert({carrier_id:USER.id,sender:'carrier',body:b});if(error)toast(error.message);}
+function subscribeChat(carrierId,listId,viewer){
+ if(window.msgChannel){sb.removeChannel(window.msgChannel);window.msgChannel=null;}
+ window.msgChannel=sb.channel('chat-'+carrierId).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'carrier_id=eq.'+carrierId},function(p){var ml=document.getElementById(listId);if(!ml)return;var e=ml.querySelector('.empty');if(e)e.remove();ml.insertAdjacentHTML('beforeend',bubble(p.new,viewer));ml.scrollTop=ml.scrollHeight;}).subscribe();
+}
+function closeChat(){if(window.msgChannel){sb.removeChannel(window.msgChannel);window.msgChannel=null;}}
+var adminChatCarrier=null;
+async function vAdminMsgs(){
+ const {data:cs}=await sb.from('profiles').select('id,company,email,contact_name').eq('role','carrier').order('company');
+ if(!cs||!cs.length){$('view').innerHTML='<div class="panel empty">No carriers yet — messages appear once a carrier signs up.</div>';return;}
+ if(!adminChatCarrier||!cs.find(c=>c.id===adminChatCarrier))adminChatCarrier=cs[0].id;
+ const opts=cs.map(c=>'<option value="'+c.id+'"'+(c.id===adminChatCarrier?' selected':'')+'>'+esc(c.company||c.email)+'</option>').join('');
+ $('view').innerHTML='<div class="panel"><div class="field" style="max-width:340px;margin-bottom:0"><label>Carrier</label><select id="amSel" onchange="adminChatCarrier=this.value;loadAdminChat()">'+opts+'</select></div></div>'+chatShell('amList','amBox','adminSend');
+ loadAdminChat();
+}
+async function loadAdminChat(){
+ const {data:msgs}=await sb.from('messages').select('*').eq('carrier_id',adminChatCarrier).order('created_at');
+ const ml=$('amList');if(!ml)return;
+ ml.innerHTML=(msgs&&msgs.length)?msgs.map(m=>bubble(m,'admin')).join(''):'<div class="empty">No messages with this carrier yet.</div>';
+ ml.scrollTop=ml.scrollHeight;
+ subscribeChat(adminChatCarrier,'amList','admin');
+}
+async function adminSend(){const b=$('amBox').value.trim();if(!b)return;$('amBox').value='';const {error}=await sb.from('messages').insert({carrier_id:adminChatCarrier,sender:'admin',body:b});if(error)toast(error.message);}
+async function vSettings(){
+ const p=ME;
+ $('view').innerHTML='<div class="panel"><h3>Carrier profile</h3><div class="row"><div class="field"><label>Company</label><input id="s_company" value="'+esc(p.company)+'"></div><div class="field"><label>Contact name</label><input id="s_name" value="'+esc(p.contact_name)+'"></div><div class="field"><label>Phone</label><input id="s_phone" value="'+esc(p.phone)+'"></div><div class="field"><label>MC number</label><input id="s_mc" value="'+esc(p.mc)+'"></div><div class="field"><label>DOT number</label><input id="s_dot" value="'+esc(p.dot)+'"></div><div class="field"><label>Number of trucks</label><input id="s_trucks" value="'+esc(p.truck_count)+'"></div><div class="field"><label>Home base</label><input id="s_base" value="'+esc(p.home_base)+'"></div><div class="field"><label>Delivery radius (miles)</label><input id="s_radius" type="number" value="'+esc(p.radius_miles)+'"></div></div><label>Your equipment</label><div class="eqchips" id="s_equip"></div><label style="margin-top:14px;display:block">Driver preferences</label><div class="row"><div class="field"><label>Min rate per mile ($)</label><input id="s_minrpm" type="number" step="0.01" value="'+esc(p.min_rpm)+'"></div><div class="field"><label>Max deadhead (mi)</label><input id="s_maxdh" type="number" value="'+esc(p.max_deadhead)+'"></div><div class="field"><label>States to avoid</label><input id="s_avoid" value="'+esc(p.avoid_states)+'"></div><div class="field"><label>Drive on weekends?</label><select id="s_weekend"><option value="">Select…</option><option value="yes">Yes</option><option value="no">No</option></select></div><div class="field"><label>Haul hazmat?</label><select id="s_hazmat"><option value="">Select…</option><option value="yes">Yes</option><option value="no">No</option></select></div><div class="field"><label>Preferred contact</label><select id="s_contact" onchange="toggleWa()"><option value="">Select…</option><option value="phone">Phone call</option><option value="text">Text / SMS</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option></select></div><div class="field" id="s_wawrap" style="display:none"><label>WhatsApp number</label><input id="s_whatsapp" value="'+esc(p.whatsapp)+'"></div></div><label style="margin-top:6px;display:block">Factoring</label><div class="row"><div class="field"><label>Do you use a factoring company?</label><select id="s_factstatus" onchange="toggleFact()"><option value="">Select…</option><option value="have">Yes — I use one</option><option value="recommend">Recommend one for me</option><option value="none">No — I don’t use factoring</option></select></div><div class="field" id="s_factcowrap" style="display:none"><label>Factoring company</label><input id="s_factco" value="'+esc(p.factoring_company)+'"></div></div><div style="margin-top:16px"><button class="btn" onclick="saveProfile()">Save changes</button></div></div>';
+ renderEqChips('s_equip',ME.equipment_types);setVal('s_contact',p.contact_method);setVal('s_factstatus',p.factoring_status);setYN('s_weekend',p.weekend_ok);setYN('s_hazmat',p.hazmat);toggleWa();toggleFact();
+}
+async function saveProfile(){
+ const upd={company:$('s_company').value,contact_name:$('s_name').value,phone:$('s_phone').value,mc:$('s_mc').value,dot:$('s_dot').value,truck_count:$('s_trucks').value,home_base:$('s_base').value,radius_miles:parseInt($('s_radius').value)||null,equipment_types:getEqChips('s_equip'),min_rpm:parseFloat($('s_minrpm').value)||null,max_deadhead:parseInt($('s_maxdh').value)||null,avoid_states:$('s_avoid').value||null,weekend_ok:ynBool('s_weekend'),hazmat:ynBool('s_hazmat'),contact_method:$('s_contact').value||null,whatsapp:$('s_whatsapp').value||null,factoring_status:$('s_factstatus').value||null,factoring_company:$('s_factco').value||null};
+ const {error}=await sb.from('profiles').update(upd).eq('id',USER.id);if(error){toast(error.message);return;}
+ Object.assign(ME,upd);buildNav(false);toast('Profile saved.');
+}
+
+async function vAdminDocs(){
+ const {data:docs}=await sb.from('documents').select('*, profiles(company,email,mc)').eq('status','pending').order('created_at');
+ if(!docs||!docs.length){$('view').innerHTML='<div class="panel empty">No documents waiting for review.</div>';return;}
+ $('view').innerHTML='<div class="panel scroll"><table><thead><tr><th>Carrier</th><th>Type</th><th>File</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>'+docs.map(d=>'<tr><td><b>'+esc(d.profiles?(d.profiles.company||d.profiles.email):'—')+'</b></td><td>'+esc((d.type||'').replace(/_/g,' '))+'</td><td><a onclick="viewDoc(\''+esc(d.file_path)+'\')">'+esc(d.file_name||'view')+'</a></td><td>'+dt(d.created_at)+'</td><td><button class="btn sm green" onclick="reviewDoc(\''+d.id+'\',\'approved\')">Approve</button> <button class="btn sm red" onclick="reviewDoc(\''+d.id+'\',\'rejected\')">Reject</button></td></tr>').join('')+'</tbody></table></div>';
+}
+async function viewDoc(path){const {data,error}=await sb.storage.from('documents').createSignedUrl(path,3600);if(error){toast(error.message);return;}window.open(data.signedUrl,'_blank');}
+async function reviewDoc(id,status){let note=null;if(status==='rejected'){note=prompt('Reason for rejection (carrier will see this):')||'';}
+ const {error}=await sb.from('documents').update({status,review_note:note,reviewed_at:new Date().toISOString()}).eq('id',id);
+ if(error){toast(error.message);return;}toast('Document '+status+'.');refreshView();}
+async function vAdminLoads(){
+ const {data:loads}=await sb.from('loads').select('*, profiles(company)').order('created_at',{ascending:false}).limit(50);
+ let h='<div class="panel"><h3>Post a new load</h3><div class="row"><div class="field"><label>Origin</label><input id="l_o" placeholder="Dallas, TX"></div><div class="field"><label>Destination</label><input id="l_d" placeholder="Atlanta, GA"></div><div class="field"><label>Commodity / what is the load</label><input id="l_com" placeholder="Palletized general freight"></div><div class="field"><label>Weight</label><input id="l_w" placeholder="42,000 lbs"></div><div class="field"><label>Equipment</label><input id="l_e" placeholder="Dry Van"></div><div class="field"><label>Loaded miles</label><input id="l_m" type="number"></div><div class="field"><label>Deadhead miles</label><input id="l_dh" type="number"></div><div class="field"><label>Rate ($)</label><input id="l_r" type="number"></div><div class="field"><label>Broker</label><input id="l_b"></div><div class="field"><label>Pickup date</label><input id="l_p" type="date"></div><div class="field"><label>Pickup time</label><input id="l_pt" type="time"></div><div class="field"><label>Delivery date</label><input id="l_dd" type="date"></div><div class="field"><label>Delivery time</label><input id="l_dt" type="time"></div><div class="field full" style="grid-column:1/-1"><label>Requirements / notes</label><textarea id="l_req" style="min-height:70px" placeholder="Tarps required, appointment at delivery, driver assist, etc."></textarea></div></div><button class="btn" onclick="postLoad()">Post load</button></div>';
+ h+='<div class="panel scroll"><h3>All loads</h3>'+((loads&&loads.length)?'<table><thead><tr><th>Lane</th><th>Equip</th><th>Rate</th><th>Status</th><th>Carrier</th></tr></thead><tbody>'+loads.map(l=>'<tr><td>'+esc(l.origin)+' → '+esc(l.destination)+'</td><td>'+esc(l.equipment)+'</td><td>'+money(l.rate)+'</td><td><span class="badge '+l.status+'">'+esc(l.status)+'</span></td><td>'+(l.profiles?esc(l.profiles.company):'—')+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">No loads yet.</div>')+'</div>';
+ $('view').innerHTML=h;
+}
+async function postLoad(){
+ const o=$('l_o').value,d=$('l_d').value;if(!o||!d){toast('Origin and destination required.');return;}
+ const rec={origin:o,destination:d,commodity:$('l_com').value,weight:$('l_w').value,equipment:$('l_e').value,miles:parseInt($('l_m').value)||null,deadhead:parseInt($('l_dh').value)||null,rate:parseFloat($('l_r').value)||null,broker:$('l_b').value,requirements:$('l_req').value,pickup_date:$('l_p').value||null,delivery_date:$('l_dd').value||null,pickup_time:$('l_pt').value||null,delivery_time:$('l_dt').value||null,status:'available'};
+ await new Promise(function(res){geocode(o,function(g){if(g){rec.pickup_lat=g.lat;rec.pickup_lng=g.lng;}res();});});
+ const {error}=await sb.from('loads').insert(rec);if(error){toast(error.message);return;}toast('Load posted.');refreshView();
+}
+async function vAdminCarriers(){
+ const {data:cs}=await sb.from('profiles').select('*').eq('role','carrier').order('created_at',{ascending:false});
+ if(!cs||!cs.length){$('view').innerHTML='<div class="panel empty">No carriers signed up yet.</div>';return;}
+ const {data:docs}=await sb.from('documents').select('*').order('created_at',{ascending:false});
+ const byC={};(docs||[]).forEach(d=>{(byC[d.carrier_id]=byC[d.carrier_id]||[]).push(d);});
+ $('view').innerHTML=cs.map(c=>carrierCard(c,byC[c.id]||[])).join('');
+}
+function carrierCard(c,docs){
+ const eq=(c.equipment_types&&c.equipment_types.length)?c.equipment_types.join(', '):'—';
+ const radius=c.radius_miles?(c.radius_miles>=9999?'OTR — all 48 states':('within '+c.radius_miles+' mi')):'—';
+ const loc=c.last_lat!=null?('<a href="https://www.google.com/maps?q='+c.last_lat+','+c.last_lng+'" target="_blank">'+Number(c.last_lat).toFixed(3)+', '+Number(c.last_lng).toFixed(3)+' &middot; '+timeago(c.last_loc_at)+' &rarr;</a>'):'<span style="color:var(--muted)">Not shared yet</span>';
+ const docRows=docs.length?docs.map(d=>'<span style="display:inline-flex;align-items:center;gap:6px;margin:0 12px 8px 0"><span class="badge '+(d.status||'pending')+'">'+esc((d.type||'').replace(/_/g,' '))+'</span>'+(d.file_path?'<a onclick="viewDoc(\''+esc(d.file_path)+'\')" style="font-size:.82rem;cursor:pointer">view</a>':'')+'</span>').join(''):'<span style="color:var(--muted)">No documents uploaded yet</span>';
+ const head='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:16px"><div><h3 style="margin:0">'+esc(c.company||'—')+'</h3><div style="color:var(--muted);font-size:.86rem">'+esc(c.contact_name||'')+(c.contact_name?' &middot; ':'')+esc(c.email||'')+'</div></div><div style="display:flex;align-items:center;gap:10px"><span class="badge '+(c.status==='active'?'approved':'pending')+'">'+esc(c.status)+'</span>'+(c.status==='active'?'<button class="btn sm ghost" onclick="setCarrier(\''+c.id+'\',\'paused\')">Pause</button>':'<button class="btn sm green" onclick="setCarrier(\''+c.id+'\',\'active\')">Activate</button>')+'</div></div>';
+ const grid='<div class="lbc-grid">'+it('Phone',c.phone||'—')+it('MC number',c.mc||'—')+it('DOT number',c.dot||'—')+it('Trucks',c.truck_count||'—')+it('Home base',c.home_base||'—')+it('Delivery radius',radius)+'</div><div class="lbc-grid" style="margin-top:0"><div class="it" style="grid-column:1/-1"><span>Equipment</span><b>'+esc(eq)+'</b></div></div>';
+ const yn=function(v){return v===true?'Yes':(v===false?'No':'—');};
+ const contactTxt=c.contact_method?((c.contact_method.charAt(0).toUpperCase()+c.contact_method.slice(1))+((c.contact_method==='whatsapp'&&c.whatsapp)?(' · '+c.whatsapp):'')):'—';
+ const fact=c.factoring_status==='have'?('Uses '+(c.factoring_company?esc(c.factoring_company):'a factoring company')):(c.factoring_status==='recommend'?'Wants a recommendation':(c.factoring_status==='none'?'Does not use factoring':'—'));
+ const prefs='<div class="lbc-grid">'+it('Min rate/mile',c.min_rpm!=null?('$'+Number(c.min_rpm).toFixed(2)):'—')+it('Max deadhead',c.max_deadhead!=null?(c.max_deadhead+' mi'):'—')+it('Avoid states',c.avoid_states||'—')+it('Weekends',yn(c.weekend_ok))+it('Hazmat',yn(c.hazmat))+it('Preferred contact',contactTxt)+'</div><div class="lbc-grid" style="margin-top:0"><div class="it" style="grid-column:1/-1"><span>Factoring</span><b>'+fact+'</b></div></div>';
+ const sub=function(t){return '<div style="margin:16px 0 7px;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700">'+t+'</div>';};
+ return '<div class="panel">'+head+grid+sub('Driver preferences')+prefs+sub('Documents')+'<div>'+docRows+'</div>'+sub('Last known location')+'<div style="font-size:.9rem">'+loc+'</div></div>';
+}
+async function setCarrier(id,status){const {error}=await sb.from('profiles').update({status}).eq('id',id);if(error){toast(error.message);return;}toast('Carrier '+status+'.');refreshView();}
+async function vAdminPay(){
+ const {data:cs}=await sb.from('profiles').select('id,company').eq('role','carrier');
+ const {data:loads}=await sb.from('loads').select('id,origin,destination').not('assigned_to','is',null);
+ const {data:s}=await sb.from('settlements').select('*, profiles(company)').order('created_at',{ascending:false}).limit(50);
+ const opt=(cs||[]).map(c=>'<option value="'+c.id+'">'+esc(c.company||c.id)+'</option>').join('');
+ const lopt=(loads||[]).map(l=>'<option value="'+l.id+'">'+esc(l.origin+' → '+l.destination)+'</option>').join('');
+ let h='<div class="panel"><h3>Record a settlement</h3><div class="row"><div class="field"><label>Carrier</label><select id="p_c">'+opt+'</select></div><div class="field"><label>Load</label><select id="p_l"><option value="">—</option>'+lopt+'</select></div><div class="field"><label>Gross ($)</label><input id="p_g" type="number" oninput="calcNet()"></div><div class="field"><label>Net (auto, after 5%)</label><input id="p_n" readonly></div></div><button class="btn" onclick="addSettlement()">Add settlement</button></div>';
+ h+='<div class="panel scroll"><h3>Recent settlements</h3>'+((s&&s.length)?'<table><thead><tr><th>Carrier</th><th>Gross</th><th>Net</th><th>Status</th></tr></thead><tbody>'+s.map(x=>'<tr><td>'+(x.profiles?esc(x.profiles.company):'—')+'</td><td>'+money(x.gross)+'</td><td>'+money(x.net)+'</td><td><span class="badge '+(x.status==='paid'?'approved':'pending')+'">'+esc(x.status)+'</span> '+(x.status!=='paid'?'<button class="btn sm green" onclick="markPaid(\''+x.id+'\')">Mark paid</button>':'')+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">No settlements yet.</div>')+'</div>';
+ $('view').innerHTML=h;
+}
+function calcNet(){const g=parseFloat($('p_g').value)||0;$('p_n').value=(g*0.95).toFixed(2);}
+async function addSettlement(){const c=$('p_c').value,g=parseFloat($('p_g').value)||0;if(!c||!g){toast('Carrier and gross required.');return;}
+ const fee=g*0.05;const {error}=await sb.from('settlements').insert({carrier_id:c,load_id:$('p_l').value||null,gross:g,fee,net:g-fee,status:'pending'});if(error){toast(error.message);return;}toast('Settlement added.');refreshView();}
+async function markPaid(id){const {error}=await sb.from('settlements').update({status:'paid',paid_at:new Date().toISOString().slice(0,10)}).eq('id',id);if(error){toast(error.message);return;}toast('Marked paid.');refreshView();}
+
+if(!sb){$('boot').innerHTML='<div style="text-align:center;max-width:340px;padding:20px"><p style="color:#dc2626;font-weight:700">Couldn\'t load the portal.</p><p style="color:#64748b;font-size:.9rem;margin-top:6px">Please check your internet connection and refresh the page.</p></div>';}
+else{boot().catch(e=>{console.error(e);show('auth');});}
+</script>
+<script>
+if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;r=true;location.reload();});})}
+function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;max-width:92%';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#f97316;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){this.textContent='Updating…';if(w)w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
+</script>
+</body></html>
