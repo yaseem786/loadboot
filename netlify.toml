@@ -2,5 +2,5 @@
 # The Loadboot article-writer (a scheduled Claude session) runs build_site.py,
 # commits the updated /site, and pushes — Netlify auto-deploys on every push.
 [build]
-  publish = "site"
+  publish = "."
   command = "echo 'No build needed — serving prebuilt /site'"
