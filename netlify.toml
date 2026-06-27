@@ -1,6 +1,3 @@
-# Netlify serves the pre-built /site folder directly.
-# The Loadboot article-writer (a scheduled Claude session) runs build_site.py,
-# commits the updated /site, and pushes — Netlify auto-deploys on every push.
 [build]
+  command = ""
   publish = "."
-  command = "echo 'No build needed — serving prebuilt /site'"
