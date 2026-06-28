@@ -1,3 +1,9 @@
+# LoadBoot — build from source, publish ONLY the generated /site directory.
+# Source files (build_site.py, modules, dashboard.html, migrations/, docs/, images) live at
+# the repo root and are NOT published — Netlify serves /site only.
 [build]
-  command = ""
-  publish = "."
+  command = "python3 build_site.py"
+  publish = "site"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"

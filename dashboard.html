@@ -2,7 +2,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Carrier Portal | Loadboot</title>
 <meta name="robots" content="noindex">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0F172A"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot"><script async src="https://www.googletagmanager.com/gtag/js?id=G-C2ELQ7H8EM"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-C2ELQ7H8EM');</script>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0F172A"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot"><!-- GA4 intentionally removed from the authenticated carrier portal (no analytics on private operational data) -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -251,7 +251,7 @@ tr:last-child td{border-bottom:none}
   <button class="btn ghost sm" onclick="refreshGate()">Refresh status</button>
   <button class="btn ghost sm" onclick="logout()">Sign out</button>
  </div>
- <input type="file" id="gateFile" class="hidden" accept=".pdf,.jpg,.jpeg,.png">
+ <input type="file" id="gateFile" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif">
 </div></div>
 
 <div id="app" class="shell hidden">
@@ -274,15 +274,8 @@ tr:last-child td{border-bottom:none}
  </main>
 </div>
 
-<div id="locGate" class="hidden" style="position:fixed;inset:0;z-index:200;background:rgba(11,18,32,.93);display:flex;align-items:center;justify-content:center;padding:24px">
- <div style="background:#fff;border-radius:18px;max-width:430px;width:100%;padding:34px;text-align:center">
-  <div style="width:58px;height:58px;border-radius:50%;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
-  <h3>Location access required</h3>
-  <p id="locGateMsg" style="color:var(--muted);margin:10px 0 22px;line-height:1.55">Location access is required to use your carrier portal so your dispatcher can match and track your loads. Please allow location in your browser, then tap below.</p>
-  <button class="btn o" style="width:100%" onclick="requireLocation()">Enable location</button>
-  <p style="margin-top:14px;font-size:.82rem"><a onclick="logout()" style="color:var(--muted)">Sign out</a></p>
- </div>
-</div>
+<!-- Mandatory location gate removed: location sharing is now optional + consent-based (see the
+     "Location sharing" panel on the dashboard). The portal is fully usable without location. -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -303,6 +296,45 @@ const dt=d=>d?new Date(d).toLocaleDateString(undefined,{month:'short',day:'numer
 function fmtTime(t){if(!t)return '';var m=String(t).match(/^(\d{1,2}):(\d{2})/);if(!m)return t;var h=+m[1],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+m[2]+' '+ap;}
 const dtt=(d,t)=>{var s=dt(d),tt=fmtTime(t);return s==='—'?(tt||'—'):(s+(tt?(' · '+tt):''));};
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.remove('show'),2600);}
+/* ---- Document upload: client-side validation + real progress (standard upload, 6 MB cap) ---- */
+const LB_MAX_BYTES=6*1024*1024; // 6 MB. Standard (non-resumable) upload; server/bucket also enforces this.
+const LB_ALLOWED_EXT=['pdf','jpg','jpeg','png','webp','heic','heif'];
+const LB_ALLOWED_MIME=['application/pdf','image/jpeg','image/png','image/webp','image/heic','image/heif'];
+const LB_ACCEPT='.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif';
+const LB_MIME_BY_EXT={pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',heic:'image/heic',heif:'image/heif'};
+function validateDocFile(file){
+  if(!file) return 'Please choose a file.';
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(LB_ALLOWED_EXT.indexOf(ext)===-1) return 'Unsupported file type ".'+ext+'". Accepted: PDF, JPG, PNG, WEBP or HEIC.';
+  if(file.type && LB_ALLOWED_MIME.indexOf(file.type)===-1) return 'Unsupported format ('+file.type+'). Accepted: PDF, JPG, PNG, WEBP or HEIC.';
+  if(file.size===0) return 'That file appears to be empty.';
+  if(file.size>LB_MAX_BYTES) return 'File is too large ('+(file.size/1048576).toFixed(1)+' MB). The maximum is 6 MB.';
+  return null;
+}
+function lbProgress(pct){const t=$('toast');t.textContent='Uploading… '+pct+'%';t.classList.add('show');}
+async function uploadToDocs(file,type){
+  const v=validateDocFile(file); if(v) throw new Error(v);
+  const sres=await sb.auth.getSession();
+  const token=sres&&sres.data&&sres.data.session?sres.data.session.access_token:null;
+  if(!token) throw new Error('Your session expired — please sign in again.');
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  const path=USER.id+'/'+type+'_'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  await new Promise(function(resolve,reject){
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',SUPABASE_URL+'/storage/v1/object/documents/'+path.split('/').map(encodeURIComponent).join('/'));
+    xhr.setRequestHeader('authorization','Bearer '+token);
+    xhr.setRequestHeader('apikey',SUPABASE_KEY);
+    xhr.setRequestHeader('content-type',LB_MIME_BY_EXT[ext]||'application/octet-stream');
+    xhr.setRequestHeader('x-upsert','false');
+    xhr.upload.onprogress=function(ev){if(ev.lengthComputable)lbProgress(Math.round(ev.loaded/ev.total*100));};
+    xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){resolve();}else{var m='Upload failed.';try{m=JSON.parse(xhr.responseText).message||m;}catch(e){}reject(new Error(m+' ('+xhr.status+')'));}};
+    xhr.onerror=function(){reject(new Error('Network error during upload — please try again.'));};
+    xhr.send(file);
+  });
+  const ins=await sb.from('documents').insert({carrier_id:USER.id,type:type,file_name:file.name,file_path:path,status:'pending'});
+  if(ins.error) throw new Error('File uploaded but could not be recorded: '+ins.error.message);
+  return path;
+}
 function show(id){['boot','auth','gate','app'].forEach(x=>$(x).classList.add('hidden'));$(id).classList.remove('hidden');}
 
 function toggleAuth(s){signupMode=s;
@@ -330,7 +362,7 @@ async function doAuth(){
  }catch(e){authNote('err',e.message||'Something went wrong.');$('authBtn').disabled=false;}
 }
 function authNote(t,m){$('authNote').innerHTML='<div class="note '+t+'">'+esc(m)+'</div>';}
-async function logout(){await sb.auth.signOut();location.reload();}
+async function logout(){try{stopLocWatch();}catch(e){}await sb.auth.signOut();location.reload();}
 
 async function boot(){
  const {data:{session}}=await sb.auth.getSession();
@@ -341,7 +373,7 @@ async function boot(){
  ME=prof;
  if(ME.role==='admin'){buildNav(true);show('app');go('admin_docs');return;}
  if(ME.status!=='active'){show('gate');openGate();return;}
- buildNav(false);show('app');go('dash');requireLocation();
+ buildNav(false);show('app');go('dash');
 }
 
 function setVal(id,v){var e=document.getElementById(id);if(e)e.value=v==null?'':v;}
@@ -360,13 +392,13 @@ function toggleWa(){var w=$('o_wawrap');if(w&&$('o_contact'))w.style.display=($(
 function toggleFact(){var w=$('o_factcowrap');if(w&&$('o_factstatus'))w.style.display=($('o_factstatus').value==='have')?'':'none';var w2=$('s_factcowrap');if(w2&&$('s_factstatus'))w2.style.display=($('s_factstatus').value==='have')?'':'none';}
 async function saveOnboarding(){
  const upd={contact_name:$('o_name').value,phone:$('o_phone').value,mc:$('o_mc').value,dot:$('o_dot').value,truck_count:$('o_trucks').value,home_base:$('o_base').value,radius_miles:parseInt($('o_radius').value)||null,equipment_types:getEqChips('o_equip'),min_rpm:parseFloat($('o_minrpm').value)||null,max_deadhead:parseInt($('o_maxdh').value)||null,avoid_states:$('o_avoid').value||null,weekend_ok:ynBool('o_weekend'),hazmat:ynBool('o_hazmat'),contact_method:$('o_contact').value||null,whatsapp:$('o_whatsapp').value||null,factoring_status:$('o_factstatus').value||null,factoring_company:$('o_factco').value||null};
- const {error}=await sb.from('profiles').update(upd).eq('id',USER.id);
+ const {error}=await sb.rpc('update_my_carrier_profile',{p_company:ME.company||'',p_contact_name:upd.contact_name,p_phone:upd.phone,p_mc:upd.mc,p_dot:upd.dot,p_truck_count:upd.truck_count,p_home_base:upd.home_base,p_radius_miles:upd.radius_miles,p_equipment_types:upd.equipment_types,p_min_rpm:upd.min_rpm,p_max_deadhead:upd.max_deadhead,p_avoid_states:upd.avoid_states,p_weekend_ok:upd.weekend_ok,p_hazmat:upd.hazmat,p_contact_method:upd.contact_method,p_whatsapp:upd.whatsapp,p_factoring_status:upd.factoring_status,p_factoring_company:upd.factoring_company});
  if(error){toast(error.message);return;}
  Object.assign(ME,upd);$('o_saved').textContent='Saved ✓';setTimeout(function(){$('o_saved').textContent='';},2500);
 }
 async function refreshGate(){
  const {data:prof}=await sb.from('profiles').select('status,submitted_at').eq('id',USER.id).single();
- if(prof&&prof.status==='active'){clearInterval(gateTimer);ME.status='active';buildNav(false);show('app');go('dash');requireLocation();toast('You are verified — welcome aboard!');return;}
+ if(prof&&prof.status==='active'){clearInterval(gateTimer);ME.status='active';buildNav(false);show('app');go('dash');toast('You are verified — welcome aboard!');return;}
  const submitted=prof&&prof.submitted_at;
  const {data:docs}=await sb.from('documents').select('*').eq('carrier_id',USER.id).order('created_at',{ascending:false});
  const byType={};(docs||[]).forEach(d=>{if(!byType[d.type])byType[d.type]=d;});
@@ -397,7 +429,7 @@ async function refreshGate(){
 }
 async function submitDocs(){
  const btn=$('gateSubmitBtn');btn.disabled=true;
- const {error}=await sb.from('profiles').update({submitted_at:new Date().toISOString()}).eq('id',USER.id);
+ const {error}=await sb.rpc('submit_for_review');
  if(error){toast(error.message);btn.disabled=false;return;}
  toast('Documents submitted — we will reply within 12 hours!');
  await refreshGate();
@@ -405,13 +437,11 @@ async function submitDocs(){
 }
 function pickFile(type){curUploadType=type;$('gateFile').value='';$('gateFile').click();}
 $('gateFile').addEventListener('change',async e=>{
- const file=e.target.files[0];if(!file)return;toast('Uploading…');
- const path=USER.id+'/'+curUploadType+'_'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
- const {error:upErr}=await sb.storage.from('documents').upload(path,file);
- if(upErr){toast('Upload failed: '+upErr.message);return;}
- const {error}=await sb.from('documents').insert({carrier_id:USER.id,type:curUploadType,file_name:file.name,file_path:path,status:'pending'});
- if(error){toast('Save failed: '+error.message);return;}
- toast('Uploaded — under review.');refreshGate();
+ const file=e.target.files[0];if(!file)return;
+ const v=validateDocFile(file);if(v){toast(v);e.target.value='';return;}
+ try{await uploadToDocs(file,curUploadType);toast('Uploaded — under review.');refreshGate();}
+ catch(err){toast(err.message);}
+ e.target.value='';
 });
 
 const NAV_CARRIER=[['dash','Dashboard'],['loads','Available Loads'],['myloads','My Loads'],['docs','Documents'],['pay','Payments'],['msgs','Messages'],['settings','Profile']];
@@ -461,41 +491,48 @@ async function vDash(){
  html+='</div><div>';
  html+='<div class="panel"><span class="verbadge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Verified carrier</span><h3 style="margin:12px 0 4px">Welcome back, '+esc(ME.company||'carrier')+'</h3><p style="color:var(--muted);font-size:.9rem">Your account is active. Book loads, track payments, and message your dispatcher any time.</p></div>';
  html+='<div class="panel"><h3 style="margin-bottom:14px">Quick actions</h3><div class="qa">'+qa('loads',I.truck,'Find loads')+qa('pay',I.card,'Payments')+qa('docs',I.doc,'Documents')+qa('msgs',I.chat,'Messages')+'</div></div>';
- html+='<div class="panel"><h3 style="margin-bottom:4px">Location sharing <span class="badge approved" style="font-size:.66rem">Required</span></h3><p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">Active while you use the portal — your dispatcher uses it to match and track your loads. <b id="locState">Status: off — please enable</b></p><button class="btn ghost" id="locBtn" onclick="requireLocation()">Re-enable location</button></div>';
+ html+=locPanelHtml();
  const acts=buildActivity(M,S,I);
  html+='<div class="panel feed"><h3 style="margin-bottom:6px">Recent activity</h3>'+(acts.length?acts.map(a=>'<div class="fi"><span class="fic"><svg viewBox="0 0 24 24" stroke="currentColor">'+a.ic+'</svg></span><div><div class="ft">'+a.t+'</div><div class="fd">'+a.d+'</div></div></div>').join(''):'<div class="chart-empty">No activity yet.</div>')+'</div>';
  html+='</div></div>';
  $('view').innerHTML=html;updateLocBtn();
 }
-var locWatch=null,locOk=false;
-function setLocState(t){var s=document.getElementById('locState');if(s)s.textContent=t;}
-function updateLocBtn(){setLocState(locOk?'Status: sharing live ✓':'Status: off — please enable');}
-function showLocGate(msg){var g=document.getElementById('locGate');if(g){if(msg)document.getElementById('locGateMsg').textContent=msg;g.classList.remove('hidden');}}
-function hideLocGate(){var g=document.getElementById('locGate');if(g)g.classList.add('hidden');}
-function saveLoc(pos){
- locOk=true;hideLocGate();
- setLocState('Status: sharing live ✓ ('+pos.coords.latitude.toFixed(3)+', '+pos.coords.longitude.toFixed(3)+')');
- sb.from('profiles').update({last_lat:pos.coords.latitude,last_lng:pos.coords.longitude,last_loc_at:new Date().toISOString()}).eq('id',USER.id).then(function(r){if(r&&r.error)toast('Could not save location: '+r.error.message);});
-}
-function locErr(err){
- locOk=false;updateLocBtn();
- var why=err&&err.code===1?'You blocked location. Please allow it in your browser settings and tap “Enable location”.':'We could not get your location'+(err&&err.message?(' ('+err.message+')'):'')+'. Make sure location is on, then tap “Enable location”.';
- showLocGate('Location access is required to use your carrier portal so your dispatcher can match and track your loads. '+why);
-}
-function requireLocation(){
- if(!ME||ME.role==='admin')return;
- if(!navigator.geolocation){showLocGate('Your device does not support location services, which are required to use the carrier portal.');return;}
- if(locWatch!=null){navigator.geolocation.clearWatch(locWatch);locWatch=null;}
+var locWatch=null,locScope=null;
+function locPanelHtml(){return '<div class="panel"><h3 style="margin-bottom:4px">Location sharing <span class="badge" style="font-size:.66rem;background:#eff6ff;color:#2563EB">Optional</span></h3>'
+ +'<p style="color:var(--muted);font-size:.85rem;margin-bottom:10px">Sharing your location helps your dispatcher match nearby loads. It is <b>optional</b> &mdash; the portal works fully without it. You choose when to share, only your LoadBoot dispatcher can see it, and it stops when you revoke it or sign out. Precise location is stored only while you are sharing.</p>'
+ +'<div id="locState" style="font-size:.85rem;font-weight:600;margin-bottom:10px">Not sharing.</div>'
+ +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="locConsent(&apos;once&apos;)">Use my location once</button>'
+ +'<button class="btn sm ghost" onclick="locConsent(&apos;active_load&apos;)">Share while a load is active</button>'
+ +'<button class="btn sm ghost" id="locRevokeBtn" onclick="locRevoke()" style="display:none">Stop sharing</button></div></div>';}
+function setLocState(t){var el=document.getElementById('locState');if(el)el.textContent=t;}
+function pushLoc(pos){sb.rpc('update_my_location',{p_lat:pos.coords.latitude,p_lng:pos.coords.longitude}).then(function(r){if(r&&r.error)toast('Location not saved: '+r.error.message);});}
+async function locConsent(scope){
+ if(!navigator.geolocation){toast('Your device does not support location.');return;}
+ var ins=await sb.from('location_consents').insert({user_id:USER.id,scope:scope});
+ if(ins.error){toast('Could not record consent: '+ins.error.message);return;}
+ locScope=scope;var rb=document.getElementById('locRevokeBtn');if(rb)rb.style.display='';
+ setLocState('Getting your location\u2026');
  navigator.geolocation.getCurrentPosition(function(pos){
-   saveLoc(pos);
-   locWatch=navigator.geolocation.watchPosition(saveLoc,function(e){},{enableHighAccuracy:true,maximumAge:30000,timeout:30000});
- },locErr,{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+   pushLoc(pos);
+   if(scope==='active_load'){locWatch=navigator.geolocation.watchPosition(pushLoc,function(){},{enableHighAccuracy:true,maximumAge:30000,timeout:30000});}
+   setLocState(scope==='once'?'Shared once \u2713':'Sharing while a load is active \u2713');
+ },function(e){setLocState('Could not get location'+(e&&e.code===1?' (permission denied).':'.'));},{enableHighAccuracy:true,timeout:25000,maximumAge:0});
 }
+async function locRevoke(){
+ if(locWatch!=null){navigator.geolocation.clearWatch(locWatch);locWatch=null;}
+ await sb.from('location_consents').update({active:false,revoked_at:new Date().toISOString()}).eq('user_id',USER.id).eq('active',true);
+ locScope=null;var rb=document.getElementById('locRevokeBtn');if(rb)rb.style.display='none';
+ setLocState('Not sharing.');toast('Location sharing stopped.');
+}
+function stopLocWatch(){if(locWatch!=null){navigator.geolocation.clearWatch(locWatch);locWatch=null;}}
+window.addEventListener('beforeunload',stopLocWatch);
 function timeago(ts){if(!ts)return '—';var s=Math.floor((Date.now()-new Date(ts).getTime())/1000);if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' hr ago';return Math.floor(s/86400)+' d ago';}
 async function vAdminTrack(){
  const {data:cs}=await sb.from('profiles').select('id,company,contact_name,last_lat,last_lng,last_loc_at').eq('role','carrier').order('last_loc_at',{ascending:false,nullsFirst:false});
+ const {data:lcs}=await sb.from('location_consents').select('user_id').eq('active',true);
+ const _consented=new Set((lcs||[]).map(x=>x.user_id));
  if(!cs||!cs.length){$('view').innerHTML='<div class="panel empty">No carriers yet.</div>';return;}
- window.lbCarriers=(cs||[]).filter(c=>c.last_lat!=null);
+ window.lbCarriers=(cs||[]).filter(c=>c.last_lat!=null && _consented.has(c.id));
  if(!document.getElementById('trkMap')){
   window.lbMap=null;window.lbMarkers={};window.dhPin=null;window.dhLine=null;
   $('view').innerHTML=
@@ -580,16 +617,15 @@ async function vMyloads(){
 }
 async function vDocs(){
  const {data:docs}=await sb.from('documents').select('*').eq('carrier_id',USER.id).order('created_at',{ascending:false});
- let h='<div class="panel"><h3>Upload a document</h3><div class="row"><div class="field"><label>Type</label><select id="dType"><option value="rate_con">Rate Confirmation</option><option value="bol">BOL</option><option value="pod">POD</option><option value="insurance">Insurance</option><option value="other">Other</option></select></div><div class="field"><label>File</label><input type="file" id="dFile" accept=".pdf,.jpg,.jpeg,.png"></div></div><button class="btn" onclick="uploadDoc()">Upload</button></div>';
+ let h='<div class="panel"><h3>Upload a document</h3><div class="row"><div class="field"><label>Type</label><select id="dType"><option value="rate_con">Rate Confirmation</option><option value="bol">BOL</option><option value="pod">POD</option><option value="insurance">Insurance</option><option value="other">Other</option></select></div><div class="field"><label>File</label><input type="file" id="dFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif"><div style="font-size:.78rem;color:var(--muted);margin-top:6px">Accepted: PDF, JPG, PNG, WEBP, HEIC &middot; max 6 MB</div></div></div><button class="btn" onclick="uploadDoc()">Upload</button></div>';
  h+='<div class="panel scroll"><h3>Your documents</h3>'+((docs&&docs.length)?'<table><thead><tr><th>Type</th><th>File</th><th>Status</th><th>Date</th></tr></thead><tbody>'+docs.map(d=>'<tr><td>'+esc((d.type||'').replace(/_/g,' '))+'</td><td>'+esc(d.file_name||'—')+'</td><td><span class="badge '+(d.status||'pending')+'">'+esc(d.status||'pending')+'</span></td><td>'+dt(d.created_at)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">No documents yet.</div>')+'</div>';
  $('view').innerHTML=h;
 }
 async function uploadDoc(){
- const f=$('dFile').files[0],type=$('dType').value;if(!f){toast('Choose a file.');return;}toast('Uploading…');
- const path=USER.id+'/'+type+'_'+Date.now()+'_'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
- const {error:e1}=await sb.storage.from('documents').upload(path,f);if(e1){toast(e1.message);return;}
- const {error:e2}=await sb.from('documents').insert({carrier_id:USER.id,type,file_name:f.name,file_path:path,status:'pending'});if(e2){toast(e2.message);return;}
- toast('Uploaded.');refreshView();
+ const f=$('dFile').files[0],type=$('dType').value;
+ const v=validateDocFile(f);if(v){toast(v);return;}
+ try{await uploadToDocs(f,type);toast('Uploaded — under review.');refreshView();}
+ catch(err){toast(err.message);}
 }
 async function vPay(){
  const {data:s}=await sb.from('settlements').select('*, loads(origin,destination)').eq('carrier_id',USER.id).order('created_at',{ascending:false});
@@ -635,7 +671,10 @@ async function vSettings(){
 }
 async function saveProfile(){
  const upd={company:$('s_company').value,contact_name:$('s_name').value,phone:$('s_phone').value,mc:$('s_mc').value,dot:$('s_dot').value,truck_count:$('s_trucks').value,home_base:$('s_base').value,radius_miles:parseInt($('s_radius').value)||null,equipment_types:getEqChips('s_equip'),min_rpm:parseFloat($('s_minrpm').value)||null,max_deadhead:parseInt($('s_maxdh').value)||null,avoid_states:$('s_avoid').value||null,weekend_ok:ynBool('s_weekend'),hazmat:ynBool('s_hazmat'),contact_method:$('s_contact').value||null,whatsapp:$('s_whatsapp').value||null,factoring_status:$('s_factstatus').value||null,factoring_company:$('s_factco').value||null};
- const {error}=await sb.from('profiles').update(upd).eq('id',USER.id);if(error){toast(error.message);return;}
+ // Self-service profile edits go through the allowlist RPC (migration 0012). The RPC accepts
+ // ONLY these fields and updates only the caller's own row; role/status/email/etc. are unreachable.
+ const {error}=await sb.rpc('update_my_carrier_profile',{p_company:upd.company,p_contact_name:upd.contact_name,p_phone:upd.phone,p_mc:upd.mc,p_dot:upd.dot,p_truck_count:upd.truck_count,p_home_base:upd.home_base,p_radius_miles:upd.radius_miles,p_equipment_types:upd.equipment_types,p_min_rpm:upd.min_rpm,p_max_deadhead:upd.max_deadhead,p_avoid_states:upd.avoid_states,p_weekend_ok:upd.weekend_ok,p_hazmat:upd.hazmat,p_contact_method:upd.contact_method,p_whatsapp:upd.whatsapp,p_factoring_status:upd.factoring_status,p_factoring_company:upd.factoring_company});
+ if(error){toast(error.message);return;}
  Object.assign(ME,upd);buildNav(false);toast('Profile saved.');
 }
 
@@ -681,7 +720,7 @@ function carrierCard(c,docs){
  const sub=function(t){return '<div style="margin:16px 0 7px;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700">'+t+'</div>';};
  return '<div class="panel">'+head+grid+sub('Driver preferences')+prefs+sub('Documents')+'<div>'+docRows+'</div>'+sub('Last known location')+'<div style="font-size:.9rem">'+loc+'</div></div>';
 }
-async function setCarrier(id,status){const {error}=await sb.from('profiles').update({status}).eq('id',id);if(error){toast(error.message);return;}toast('Carrier '+status+'.');refreshView();}
+async function setCarrier(id,status){const {error}=await sb.rpc('admin_set_carrier_status',{p_carrier:id,p_status:status});if(error){toast(error.message);return;}toast('Carrier '+status+'.');refreshView();}
 async function vAdminPay(){
  const {data:cs}=await sb.from('profiles').select('id,company').eq('role','carrier');
  const {data:loads}=await sb.from('loads').select('id,origin,destination').not('assigned_to','is',null);

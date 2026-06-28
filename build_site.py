@@ -1,9 +1,25 @@
 # -*- coding: utf-8 -*-
-import os
+import os, shutil, re, sys, json
 from tools_module import TOOLS_CSS, TOOLS_HTML, TOOLS_JS
 from load_score_module import LS_CSS, LS_HTML, LS_JS
-OUT = os.environ.get('LOADBOOT_OUT') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'site')
-os.makedirs(OUT, exist_ok=True)
+# SOURCE vs PUBLISH separation (Netlify: command="python3 build_site.py", publish="site").
+#   SRC  = repo root. Holds SOURCE only (this script, modules, dashboard.html, images,
+#          netlify.toml, runtime.txt, migrations/, docs/, README, content-queue). NOT published.
+#   OUT  = SRC/site = the ONLY published directory. Cleaned + recreated on every build.
+# build_site.py generates all HTML/CSS/JS + _headers/_redirects/404/robots/sitemap into OUT,
+# copies dashboard.html and every referenced image into OUT, then FAILS the build if any
+# referenced local asset or required output page is missing.
+SRC = os.path.dirname(os.path.abspath(__file__))
+OUT = os.environ.get('LOADBOOT_OUT') or os.path.join(SRC, 'site')
+shutil.rmtree(OUT, ignore_errors=True)   # clean
+os.makedirs(OUT, exist_ok=True)          # recreate
+# Files in SRC root that must NEVER be copied into the publish dir (source-only):
+_NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','netlify.toml',
+               'runtime.txt','README.md','content-queue.md','.gitignore'}
+_ASSET_EXTS = ('.webp','.png','.jpg','.jpeg','.avif','.ico','.svg','.gif')
+def asset_exists(name):
+    """True if a referenced local asset is present in SRC (so the page can reference it)."""
+    return bool(name) and os.path.exists(os.path.join(SRC, name.split('?')[0]))
 
 # ---------------- shared CSS ----------------
 CSS = r''':root{--navy:#0F172A;--blue:#2563EB;--orange:#F97316;--white:#fff;--bg:#F8FAFC;--muted:#64748B;--border:#E2E8F0;--blue-soft:#EFF6FF;--maxw:1200px;--r:16px}
@@ -380,6 +396,12 @@ LOADBOARD_CSS = '''
 .plb-meta b{color:var(--navy);font-weight:700;margin-left:5px}
 .plb-book{margin-top:auto;display:inline-flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;font-family:'Manrope',sans-serif;font-weight:700;font-size:.9rem;padding:11px;border-radius:10px;transition:background .2s}
 .plb-book:hover{background:var(--blue)}
+.plb{position:relative}
+.plb-badge{position:absolute;top:10px;right:10px;background:#fef3c7;color:#92400e;font-family:'Manrope',sans-serif;font-weight:800;font-size:.66rem;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:7px;border:1px solid #fde68a}
+.plb-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:.95rem;padding:34px 16px;border:1px dashed var(--border);border-radius:14px;background:#fff}
+.src-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+.src-chip{background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 16px;font-family:'Manrope',sans-serif;font-weight:700;color:var(--navy);font-size:.92rem}
+.src-disc{text-align:center;color:var(--muted);font-size:.8rem;max-width:760px;margin:16px auto 0;line-height:1.5}
 .plb-cta{text-align:center;margin-top:30px;display:flex;flex-direction:column;align-items:center;gap:10px}
 .plb-note{color:var(--muted);font-size:.86rem}
 .plb-live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a;vertical-align:middle;margin-left:5px;animation:plbpulse 1.8s infinite}
@@ -551,18 +573,39 @@ _WS = [
 def _wschip(t):
     return '<span class="mq-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + t[1] + '</svg>' + t[0] + '</span>'
 WHOSERVE = '<section id="serve"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Who We Serve</div><h2>Built for every kind of carrier on the road</h2><p class="lead" style="margin-top:14px">Whether you run one truck or a growing fleet, brand new or years in &mdash; we tailor dispatch to how you run.</p></div></div><div class="mq-wrap reveal"><div class="mq-track">' + ''.join(_wschip(s) for s in _WS)*2 + '</div></div></section>'
-_NET = [('DAT','DAT','linear-gradient(135deg,#2563eb,#7c3aed)','dat.png','#fff'),
-        ('Truckstop','TS','linear-gradient(135deg,#f97316,#dc2626)','truckstop.png','#fff'),
-        ('123Loadboard','123','linear-gradient(135deg,#16a34a,#0d9488)','123loadboard.png','#fff'),
-        ('Direct Freight','DF','linear-gradient(135deg,#0ea5e9,#2563eb)','direct-freight.png','#fff'),
-        ('Uber Freight','UF','linear-gradient(135deg,#0f172a,#334155)','uber-freight.png','#000'),
-        ('Amazon Freight','AF','linear-gradient(135deg,#0f172a,#334155)','amazon-freight.png','#fff'),
-        ('RMIS','RM','linear-gradient(135deg,#6366f1,#2563eb)','rmis.jpg','#fff'),
-        ('Newtrul','NT','linear-gradient(135deg,#14b8a6,#16a34a)','newtrul.png','#000')]
-def _netchip(t):
-    n,i,g,f,bg = t
-    return '<span class="net-chip" style="background:' + bg + '"><img class="lg" src="' + f + '" alt="' + n + '" loading="lazy" onerror="this.closest(&quot;.net-chip&quot;).classList.add(&quot;noimg&quot;)"><span class="mono" style="background:' + g + '">' + i + '</span></span>'
-NETWORKS = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Connected to the industry</div><h2>We source your freight from every major network</h2><p class="lead center" style="margin:14px auto 0">We search the top load boards and digital freight platforms, so you get more options and better rates &mdash; all in one place.</p></div></div><div class="mq-wrap rev reveal"><div class="mq-track">' + ''.join(_netchip(t) for t in _NET)*2 + '</div></div></section>'
+# NOTE: Third-party platform logos and platform-specific sourcing claims were removed
+# per owner decision (no trademark permission / authorized operational relationship on file).
+# Wording is intentionally neutral and accurate. Do NOT name or display any platform unless
+# its use and branding are authorized in writing.
+# Platform names are CONFIGURABLE in ONE place. Default = OFF (empty) -> neutral text only.
+# Add names ONLY after the owner confirms LoadBoot genuinely uses them. NO logos. NO
+# partner/integrated/official/certified/connected/authorized language.
+PLATFORM_NAMES = []   # e.g. ['DAT','Truckstop','Amazon Relay','Uber Freight'] once owner-confirmed
+_PLAT_DISC = ('LoadBoot is an independent dispatch service and is not affiliated with, endorsed by, or '
+ 'sponsored by any platforms named above. Platform access depends on each carrier&rsquo;s eligibility, '
+ 'account status and applicable terms.')
+def _networks():
+    head=('<div class="sec-head center reveal"><div class="eyebrow">How we find your freight</div>'
+          '<h2>Freight sources our dispatch workflow may use</h2>'
+          '<p class="lead center" style="margin:14px auto 0">We search authorized freight sources and load boards '
+          'available to your carrier and dispatch operation &mdash; then negotiate the rate so you keep more of every mile.</p></div>')
+    if PLATFORM_NAMES:
+        chips=''.join('<span class="src-chip">'+n+'</span>' for n in PLATFORM_NAMES)
+        body='<div class="src-row reveal">'+chips+'</div><p class="src-disc reveal">'+_PLAT_DISC+'</p>'
+    else:
+        body='<p class="lead center" style="margin:6px auto 0;color:var(--muted)">Available sources depend on your authority, equipment and eligibility.</p>'
+    return '<section class="bg-soft"><div class="wrap">'+head+body+'</div></section>'
+NETWORKS = _networks()
+
+# ---- Real public load board (admin-published) via the narrow secured RPC ----
+LIVEBOARD = ('<section id="opportunities" class="bg-soft"><div class="wrap"><div class="sec-head center reveal">'
+ '<div class="eyebrow">Live Opportunities</div><h2>Available Load Opportunities</h2>'
+ '<p class="lead center" style="margin:0 auto">Current freight opportunities published by LoadBoot dispatch. '
+ 'Availability can change quickly. Verified carriers can sign in to view and book.</p></div>'
+ '<div class="plb-grid reveal" id="liveLoads"><div class="plb-empty" id="liveEmpty">Loading current opportunities&hellip;</div></div>'
+ '<div class="plb-cta reveal"><a href="dashboard.html" class="btn btn-primary">Sign in to view &amp; book &rarr;</a>'
+ '<span class="plb-note">A free verified carrier account is required to view full load details and book.</span></div></div></section>')
+LIVEBOARD_JS = (r"(function(){var SB='https://rwscphuhpjoudvljvmdk.supabase.co',KEY='sb_publishable_lHr4JKuHCZEkkjaEh7vx3A_ya_XLG4V';var el=document.getElementById('liveLoads'),em=document.getElementById('liveEmpty');if(!el)return;function esc(s){return (s==null?'':String(s)).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}function num(n){return Number(n||0).toLocaleString();}function dt(d){if(!d)return '';try{return new Date(d).toLocaleDateString(undefined,{month:'short',day:'numeric'});}catch(e){return '';}}function ago(d){if(!d)return '';var s=Math.floor((Date.now()-new Date(d).getTime())/1000);if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}function card(l){var rpm=l.rpm?('$'+Number(l.rpm).toFixed(2)+'/mi'):'';return '<article class=\"plb\"><div class=\"plb-top\"><div class=\"plb-lane\"><b>'+esc(l.origin)+'</b><span class=\"plb-ar\">&rarr;</span><b>'+esc(l.destination)+'</b></div><div class=\"plb-rate\">$'+num(Math.round(l.rate))+(rpm?'<span>'+rpm+'</span>':'')+'</div></div><div class=\"plb-tags\"><span class=\"plb-tag eq\">'+esc(l.equipment||'Van')+'</span>'+(l.miles?'<span class=\"plb-tag alt\">'+num(l.miles)+' mi</span>':'')+(l.pickup_date?'<span class=\"plb-tag\">PU '+esc(dt(l.pickup_date))+'</span>':'')+'</div><div class=\"plb-meta\"><span>Posted<b>'+esc(ago(l.posted)||'recently')+'</b></span><span>Ref<b>#'+esc(l.ref)+'</b></span></div><a href=\"dashboard.html\" class=\"plb-book\">View &amp; Book Load &rarr;</a></article>';}function empty(m){if(em){em.textContent=m;em.style.display='';}}fetch(SB+'/rest/v1/rpc/get_public_load_opportunities',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:9})}).then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(d&&d.length){el.innerHTML=d.map(card).join('');}else{empty('No public load opportunities right now. Sign in for the full carrier board.');}}).catch(function(){empty('Live opportunities are temporarily unavailable. Please sign in to view the full board.');});})();")
 
 COMPARE = '''<section id="compare" class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The Difference</div><h2>Why carriers choose us over going it alone</h2></div>
 <div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">Loadboot</th></tr></thead><tbody>
@@ -609,7 +652,7 @@ HERO='''<section class="hero"><div class="aurora"><span class="a1"></span><span 
 <div class="hv-float hv-f2"><span class="ic">&#10003;</span> You approve every load</div></div></div></section>''' % (ARW,CHK,CHK,CHK)
 SCROLLBAND = '<section class="scroll-road-sec"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Coast to coast</div><h2>We keep your truck moving, every mile</h2><p class="lead center" style="color:#cbd5e1;margin:0 auto">Scroll and ride along &mdash; from pickup to delivery, we handle the whole route.</p></div></div><div class="scroll-road"><div class="sr-line"></div><div class="sr-truck" id="scrollTruck"><svg viewBox="0 0 130 58" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="78" height="33" rx="3" fill="#e2e8f0"/><rect x="3" y="9" width="78" height="33" rx="3" fill="none" stroke="#94a3b8" stroke-width="1.5"/><g stroke="#cbd5e1" stroke-width="1.5"><line x1="18" y1="11" x2="18" y2="40"/><line x1="33" y1="11" x2="33" y2="40"/><line x1="48" y1="11" x2="48" y2="40"/><line x1="63" y1="11" x2="63" y2="40"/></g><path d="M81 15h13c2 0 3.6 1 4.6 2.7l8.4 12.8c.7 1 1 2.3 1 3.5v8H81z" fill="#2563EB"/><path d="M85 19h9v9h-9z" fill="#bfdbfe"/><path d="M96 20l6 8h-6z" fill="#93c5fd"/><rect x="113" y="36" width="4" height="7" rx="1" fill="#1e293b"/><rect x="3" y="42" width="114" height="3" fill="#1e293b"/><g><circle cx="24" cy="46" r="8" fill="#0f172a"/><circle cx="24" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="42" cy="46" r="8" fill="#0f172a"/><circle cx="42" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="100" cy="46" r="8" fill="#0f172a"/><circle cx="100" cy="46" r="3.4" fill="#64748b"/></g></svg></div></div></section>'
 BLOGHOME = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">From the blog</div><h2>Guides to help you run a more profitable truck</h2></div><div class="grid g3">' + linkcard('how-much-does-a-truck-dispatcher-cost.html','&#128196;','How Much Does a Truck Dispatcher Cost?','Percentage vs flat fee, what 5% really gets you, and how a dispatcher pays for itself.') + linkcard('truck-dispatcher-vs-freight-broker.html','&#128196;','Dispatcher vs Broker vs Factoring','Who each represents, what they can legally do, how the money flows, and which you need.') + linkcard('how-to-get-loads-with-new-authority.html','&#128196;','Getting Loads With New Authority','How to set up with brokers and land your first loads fast.') + '</div></div></section>'
-PHOTOS = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">On the road</div><h2>Real trucks. Real freight. Real results.</h2><p class="lead">We keep owner-operators and fleets loaded and moving across all 48 states &mdash; every single day.</p></div><div class="photo-grid reveal"><div class="photo"><img src="truck-fleet.webp" width="1280" height="720" alt="Loadboot truck fleet at a freight yard" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Fleets &amp; owner-operators, coast to coast</span></div><div class="photo"><img src="truck-boxtruck.webp" width="1280" height="720" alt="Box truck ready for dispatch" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Dry van, reefer, flatbed, box &amp; more</span></div></div></div></section>'
+PHOTOS = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Built for life on the road</div><h2>Dispatch support built around your operation</h2><p class="lead">Dispatch workflows and profit tools designed for owner-operators and small fleets operating across the contiguous United States.</p></div><div class="photo-grid reveal"><div class="photo"><img src="truck-fleet.webp" width="1280" height="720" alt="Semi-trucks parked at a freight yard" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Fleets &amp; owner-operators, coast to coast</span></div><div class="photo"><img src="truck-boxtruck.webp" width="1280" height="720" alt="Box truck ready for dispatch" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Dry van, reefer, flatbed, box &amp; more</span></div></div></div></section>'
 _tp = [
  ('profit','&#128200;','Load Profit Calculator','See your net profit and rate-per-mile on any load before you accept it.'),
  ('cpm','&#128666;','Cost-Per-Mile Calculator','Turn your monthly costs into the one number every load decision depends on.'),
@@ -621,28 +664,34 @@ _tp = [
 _tpcards = ''.join('<a class="linkcard reveal" href="tools.html#%s"><div class="icon">%s</div><h3>%s</h3><p>%s</p><span class="arw">Open tool %s</span></a>' % (a,b,c,d,ARW) for a,b,c,d in _tp)
 TOOLSPROMO = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free for drivers &mdash; no login</div><h2>Free trucking calculators that pay for themselves</h2><p class="lead center" style="margin:0 auto">Owner-operators use these every day to price loads, know their real cost per mile, and stop hauling cheap freight. 100% free, right in your browser &mdash; no signup needed.</p></div><div class="grid g3 reveal">' + _tpcards + '</div><div class="center" style="margin-top:32px"><a href="tools.html" class="btn btn-primary">Open all free tools %s</a></div></div></section>' % ARW
 LSBAND = '<section id="load-score-home" class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Free decision tool &mdash; no login</div><h2>Should you take this load? Find out in 3 seconds.</h2><p class="lead center" style="margin:0 auto">The one tool every owner-operator needs daily. Enter any offer and get a clear <b>take / negotiate / pass</b> verdict &mdash; with a smart counter-offer built on your real costs.</p></div>' + LS_HTML + '<div class="center" style="margin-top:24px"><a href="load-score.html" class="btn btn-secondary">How the Load Score works &rarr;</a></div></div></section>'
+# Static, timeless ILLUSTRATIVE examples only. No dates, no "available now", no live DB query.
+# Columns: origin, destination, equipment, loaded_miles, example_rate, weight
 PLB_SAMPLES = [
- ('Dallas, TX','Atlanta, GA','Dry Van','781','2640','42,000 lbs','Jun 28','Jun 30'),
- ('Chicago, IL','Kansas City, MO','Reefer','510','1780','38,000 lbs','Jun 28','Jun 29'),
- ('Los Angeles, CA','Phoenix, AZ','Flatbed','373','1320','44,000 lbs','Jun 29','Jun 30'),
- ('Houston, TX','New Orleans, LA','Dry Van','348','1180','40,000 lbs','Jun 28','Jun 29'),
- ('Atlanta, GA','Orlando, FL','Reefer','438','1560','36,000 lbs','Jun 30','Jul 1'),
- ('Denver, CO','Salt Lake City, UT','Power Only','525','1490','','Jun 29','Jun 30'),
- ('Indianapolis, IN','Columbus, OH','Hotshot','176','720','12,000 lbs','Jun 28','Jun 28'),
- ('Seattle, WA','Portland, OR','Dry Van','174','690','41,000 lbs','Jun 29','Jun 29'),
- ('Memphis, TN','Nashville, TN','Flatbed','212','880','45,000 lbs','Jun 28','Jun 28'),
- ('Charlotte, NC','Richmond, VA','Dry Van','290','1040','39,000 lbs','Jun 30','Jul 1'),
+ ('Dallas, TX','Atlanta, GA','Dry Van','781','2640','42,000 lbs'),
+ ('Chicago, IL','Kansas City, MO','Reefer','510','1780','38,000 lbs'),
+ ('Los Angeles, CA','Phoenix, AZ','Flatbed','373','1320','44,000 lbs'),
+ ('Houston, TX','New Orleans, LA','Dry Van','348','1180','40,000 lbs'),
+ ('Atlanta, GA','Orlando, FL','Reefer','438','1560','36,000 lbs'),
+ ('Denver, CO','Salt Lake City, UT','Power Only','525','1490',''),
 ]
-def _plb_card(o,d,eq,mi,rate,wt,pk,dl):
-    rpm = ('%.2f' % (float(rate)/float(mi))) if mi else ''
+def _plb_card(o,d,eq,mi,rate,wt):
+    miN=int(mi); rpm=('%.2f' % (float(rate)/miN)) if miN else ''
+    transit=max(1, round(miN/550.0)) if miN else 1
     wttag = ('<span class="plb-tag">%s</span>' % wt) if wt else ''
-    rpmtag = ('<span>$%s/mi</span>' % rpm) if rpm else ''
-    return ('<article class="plb reveal"><div class="plb-top"><div class="plb-lane"><b>%s</b><span class="plb-ar">&rarr;</span><b>%s</b></div><div class="plb-rate">$%s%s</div></div><div class="plb-tags"><span class="plb-tag eq">%s</span><span class="plb-tag alt">%s mi</span>%s</div><div class="plb-meta"><span>Pickup<b>%s</b></span><span>Deliver by<b>%s</b></span></div><a href="dashboard.html" class="plb-book">Book this load &rarr;</a></article>') % (o, d, '{:,}'.format(int(float(rate))), rpmtag, eq, mi, wttag, pk, dl)
+    rpmtag = ('<span>$%s/mi est.</span>' % rpm) if rpm else ''
+    return ('<article class="plb reveal"><div class="plb-badge">Example</div>'
+            '<div class="plb-top"><div class="plb-lane"><b>%s</b><span class="plb-ar">&rarr;</span><b>%s</b></div>'
+            '<div class="plb-rate">$%s%s</div></div>'
+            '<div class="plb-tags"><span class="plb-tag eq">%s</span><span class="plb-tag alt">%s mi loaded</span>%s</div>'
+            '<div class="plb-meta"><span>Example transit<b>%s day%s</b></span><span>Estimated RPM<b>$%s/mi</b></span></div>'
+            '<a href="load-score.html" class="plb-book">Analyze a similar load &rarr;</a></article>') % (
+            o, d, '{:,}'.format(int(float(rate))), rpmtag, eq, mi, wttag, transit, ('' if transit==1 else 's'), rpm)
 PLB_CARDS = ''.join(_plb_card(*s) for s in PLB_SAMPLES)
-LOADBOARD = '<section id="loads" class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Live Freight <span class="plb-live"></span></div><h2>Available truck loads booking right now</h2><p class="lead center" style="margin:0 auto">Real freight our dispatchers are moving for owner-operators and fleets across the U.S. See the lane, equipment, miles and rate up front &mdash; then book it in your carrier portal. Flat 5%, no contracts, you keep 100% of your linehaul.</p></div><div class="plb-grid reveal" id="publicLoads">' + PLB_CARDS + '</div><div class="plb-cta reveal"><a href="dashboard.html" class="btn btn-primary">View all available loads &rarr;</a><span class="plb-note">Sign in or create a free carrier account to book a load.</span></div></div></section>'
-LOADBOARD_JS = r'''(function(){var SB='https://rwscphuhpjoudvljvmdk.supabase.co',KEY='sb_publishable_lHr4JKuHCZEkkjaEh7vx3A_ya_XLG4V';var el=document.getElementById('publicLoads');if(!el)return;function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}function dt(d){if(!d)return '';try{return new Date(d).toLocaleDateString(undefined,{month:'short',day:'numeric'});}catch(e){return '';}}function num(n){return Number(n||0).toLocaleString();}function ft(t){if(!t)return '';var m=String(t).match(/^(\d{1,2}):(\d{2})/);if(!m)return t;var h=+m[1],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+m[2]+' '+ap;}function card(l){var rpm=(l.miles&&l.rate)?('$'+(l.rate/l.miles).toFixed(2)+'/mi'):'';var tags='<span class="plb-tag eq">'+esc(l.equipment||'Van')+'</span>'+(l.miles?'<span class="plb-tag alt">'+num(l.miles)+' mi</span>':'')+(l.weight?'<span class="plb-tag">'+esc(l.weight)+'</span>':'');var pk=dt(l.pickup_date)+(l.pickup_time?(' '+ft(l.pickup_time)):'');var dl=dt(l.delivery_date)+(l.delivery_time?(' '+ft(l.delivery_time)):'');var meta='<div class="plb-meta">'+(pk?'<span>Pickup<b>'+esc(pk)+'</b></span>':'')+(dl?'<span>Deliver by<b>'+esc(dl)+'</b></span>':'')+'</div>';return '<article class="plb"><div class="plb-top"><div class="plb-lane"><b>'+esc(l.origin)+'</b><span class="plb-ar">&rarr;</span><b>'+esc(l.destination)+'</b></div><div class="plb-rate">$'+num(Math.round(l.rate))+(rpm?'<span>'+rpm+'</span>':'')+'</div></div><div class="plb-tags">'+tags+'</div>'+meta+'<a href="dashboard.html" class="plb-book">Book this load &rarr;</a></article>';}fetch(SB+'/rest/v1/public_loads?select=*&order=created_at.desc&limit=12',{headers:{apikey:KEY,Authorization:'Bearer '+KEY}}).then(function(r){return r.json();}).then(function(d){if(d&&d.length){el.innerHTML=d.map(card).join('');}}).catch(function(){});})();'''
-home_body = HERO+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LOADBOARD+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+PROMISE+BLOGHOME+home_faq_html+final_cta()
-home_body += '<script>' + LS_JS + LOADBOARD_JS + '</script>'
+LOADBOARD = '<section id="loads" class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Example Load Analysis</div><h2>How LoadBoot evaluates a load</h2><p class="lead center" style="margin:0 auto">Illustrative freight examples showing how LoadBoot evaluates rate, miles, deadhead and estimated profitability. These are not currently available loads.</p></div><div class="plb-grid reveal">' + PLB_CARDS + '</div><div class="plb-cta reveal"><a href="load-score.html" class="btn btn-primary">Analyze your own load &rarr;</a><span class="plb-note">Free Load Score tool &mdash; score any rate for profit in seconds. No signup.</span></div></div></section>'
+# NOTE: the anonymous public_loads Supabase fetch was removed. The homepage shows only
+# static, clearly-labelled illustrative examples and makes no production database query.
+home_body = HERO+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+LOADBOARD+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+PROMISE+BLOGHOME+home_faq_html+final_cta()
+home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'
 page('index.html','Truck Dispatch Services for Owner-Operators | Loadboot',
      'Reliable US truck dispatch for owner-operators, fleets, and new-authority carriers. Higher-paying loads, less deadhead, flat 5%, no contracts. Get a free quote.',
      'index.html', home_body, home_faq_schema)
@@ -1070,8 +1119,9 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
     herob=('<header class="art-hero"><div class="wrap"><div class="art-eyebrow">'+eyebrow+'</div><h1>'+h1
            +'</h1><p class="art-sub">'+deck+'</p><div class="art-meta"><span>By Loadboot Dispatch Team</span>'
            '<span>&middot; Updated June 2026</span><span>&middot; '+str(read_min)+' min read</span></div></div></header>')
-    feat=('<div class="wrap"><figure class="art-feat">'+feat_svg+'<img src="'+hero+'" alt="'+hero_alt+'" width="1200" height="630" '
-          'decoding="async" onerror="this.style.display=&quot;none&quot;"></figure></div>')
+    # Only reference the hero photo if the file is actually present (else keep the gradient SVG).
+    hero_img=('<img src="'+hero+'" alt="'+hero_alt+'" width="1200" height="630" decoding="async">') if asset_exists(hero) else ''
+    feat='<div class="wrap"><figure class="art-feat">'+feat_svg+hero_img+'</figure></div>'
     toch='<aside class="art-toc"><div class="tt">In this guide</div>'+''.join('<a href="#'+i+'">'+l+'</a>' for i,l in toc)+'</aside>'
     author=('<div class="wrap"><div class="art-author"><div class="av">LB</div><div><b>Loadboot Dispatch Team</b>'
             '<div style="color:var(--muted);font-size:.92rem;margin-top:3px">Truck dispatchers who book, negotiate, and '
@@ -1079,7 +1129,7 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
     fhtml,fsch=faq_block(faqs)
     body=crumb+herob+feat+'<div class="wrap art-grid">'+toch+'<div class="art-body">'+body_html+'</div></div>'+author+fhtml+final_cta()
     art=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"'+e(h1)
-         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+hero+'","author":{"@type":"Organization","name":"Loadboot"},'
+         +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"Loadboot"},'
          '"publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
          '"datePublished":"2026-06-27","dateModified":"2026-06-27"}</script>')
     bcr=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":'
@@ -1405,9 +1455,9 @@ def blog_card(fn,title,excerpt,read):
     thumb=THUMBS.get(fn,'<svg viewBox="0 0 400 200"><rect width="400" height="200" fill="#0b1220"/></svg>')
     slug=fn[:-5] if fn.endswith('.html') else fn
     # Optional real photo: drop a file named thumb-<slug>.jpg in the site folder and it
-    # auto-replaces the branded graphic. If absent, onerror hides it and the SVG shows.
-    img=('<img src="thumb-'+slug+'.jpg" alt="'+title.replace('"','')+'" loading="lazy" decoding="async" '
-         'onerror="this.style.display=&quot;none&quot;">')
+    # Optional real photo: only referenced if thumb-<slug>.jpg is actually present in SRC,
+    # otherwise the branded SVG thumbnail is used (no broken/missing image reference).
+    img=('<img src="thumb-'+slug+'.jpg" alt="'+title.replace('"','')+'" loading="lazy" decoding="async">') if asset_exists('thumb-'+slug+'.jpg') else ''
     ov='<div class="bc-ov"></div><span class="bc-brand"><span class="bc-l">L</span>oadboot</span>'
     return ('<a class="blogcard" href="'+fn+'"><div class="bc-thumb">'+thumb+img+ov+'</div><div class="bc-body">'
             '<div class="bc-meta">Guide &middot; '+str(read)+' min read</div><h3>'+title+'</h3><p>'+excerpt
@@ -1423,12 +1473,14 @@ page('blog.html','Loadboot Blog: Dispatch Tips &amp; Guides | Carriers','Practic
 priv = svc_hero('Privacy Policy','How Loadboot collects, uses, and protects your information.')
 priv += '''<section><div class="wrap prose reveal" style="max-width:800px">
 <p><em>Last updated: 2026.</em> This Privacy Policy explains how Loadboot ("we", "us") handles information you provide through this website.</p>
-<h2>Information we collect</h2><p>When you request a quote or contact us, we collect the details you submit &mdash; such as your name, phone number, email, equipment type, and preferred lanes. We do not collect sensitive personal information through this site.</p>
-<h2>How we use it</h2><p>We use your information only to respond to your inquiry, provide dispatch services, and communicate with you about your loads and account. We do not sell your information to third parties.</p>
-<h2>Sharing</h2><p>We share information only as needed to provide our services &mdash; for example, with brokers and factoring partners on your behalf &mdash; or where required by law.</p>
-<h2>Data security</h2><p>We take reasonable measures to protect your information. No method of transmission over the internet is fully secure, but we work to keep your data safe.</p>
-<h2>Your choices</h2><p>You can ask us to update or delete your information at any time by contacting us through this site.</p>
-<h2>Contact</h2><p>Questions about this policy? Reach us through our contact page and we will respond promptly.</p></div></section>'''
+<h2>Information we collect</h2><p>Depending on how you use Loadboot, we may collect: <b>account information</b> (name, email, phone, password handled securely by our authentication provider); <b>carrier and authority information</b> (company, MC/DOT numbers, equipment, lanes, preferences); <b>documents you upload</b> (such as authority, insurance, W-9 and load paperwork), stored privately; <b>precise location</b> &mdash; only if and while you explicitly consent to share it for load matching or active-load tracking; <b>usage analytics</b> on our public marketing pages. We do <b>not</b> run advertising analytics inside the authenticated carrier portal.</p>
+<h2>How we use it</h2><p>To provide dispatch services &mdash; finding, negotiating and booking loads; reviewing carrier documents; matching loads to your equipment and (with consent) location; communicating about your loads and account; and operating and improving the website. We do not sell your information.</p>
+<h2>Precise location &mdash; consent based</h2><p>Location sharing is <b>optional</b> and off by default. The portal is fully usable without it. You choose either a one-time share or sharing while a load is active, and you can revoke it at any time from your dashboard. We record your consent and store only your most recent location while sharing is active; sharing stops when you revoke it, sign out, or the active period ends. Only your assigned LoadBoot dispatcher can view it.</p>
+<h2>Sharing</h2><p>We share information only as needed to provide services &mdash; for example, with brokers or a factoring company you choose &mdash; or where required by law. We do not sell personal information.</p>
+<h2>Data security</h2><p>Documents are kept in private storage with per-account access controls and time-limited links; access to carrier records is restricted by server-enforced authorization so one carrier cannot access another&rsquo;s data. No method of transmission is perfectly secure, but we apply reasonable safeguards.</p>
+<h2>Retention</h2><p>We keep information for as long as needed to provide services and meet legal obligations, then delete or anonymize it. Location data is minimized to the latest necessary point rather than a long history, unless a reviewed operational need applies.</p>
+<h2>Your rights</h2><p>You may request access to, correction of, or deletion of your information, withdraw location consent, or close your account, by contacting us through this site. We will respond promptly.</p>
+<h2>Contact</h2><p>Questions about this policy? Reach us through our contact page.</p></div></section>'''
 priv += final_cta()
 page('privacy.html','Privacy Policy | Loadboot','How Loadboot collects, uses, and protects the information you share through our website.','privacy.html',priv)
 
@@ -1503,12 +1555,133 @@ page('tools.html','Free Truck Driver Calculators (No Signup) | Loadboot','Free l
 
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
-pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f != 'dashboard.html']
+_SITEMAP_EXCLUDE = {'dashboard.html', '404.html'}
+pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
 urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls
 with open(os.path.join(OUT,'sitemap.xml'),'w',encoding='utf-8') as f: f.write(sitemap)
 with open(os.path.join(OUT,'robots.txt'),'w',encoding='utf-8') as f:
     f.write('User-agent: *\nAllow: /\nDisallow: /dashboard.html\nSitemap: %s/sitemap.xml\n' % DOMAIN)
 
+# ---------- SECURITY HEADERS (Netlify _headers) ----------
+# Applied to every response. Non-CSP baseline (safe: does not alter page behavior).
+# geolocation=(self) keeps the carrier dashboard's location feature working while
+# blocking any third-party from requesting location.
+HEADERS = (
+"/*\n"
+"  X-Frame-Options: DENY\n"
+"  X-Content-Type-Options: nosniff\n"
+"  Referrer-Policy: strict-origin-when-cross-origin\n"
+"  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()\n"
+"  Strict-Transport-Security: max-age=31536000; includeSubDomains\n"
+"  Cross-Origin-Opener-Policy: same-origin\n"
+)
+with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADERS)
+
+# ---------- _redirects ----------
+# Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files
+# are ever copied here, so nothing sensitive can be fetched. This file is intentionally minimal.
+REDIRECTS = "# Loadboot — no custom redirects. Source files are not in the publish directory.\n"
+with open(os.path.join(OUT,'_redirects'),'w',encoding='utf-8') as f: f.write(REDIRECTS)
+
+# ---------- BRANDED 404 (noindex; Netlify serves automatically) ----------
+NOTFOUND = (
+'<!doctype html><html lang="en"><head><meta charset="utf-8">'
+'<meta name="viewport" content="width=device-width,initial-scale=1">'
+'<meta name="robots" content="noindex,follow">'
+'<title>Page not found &mdash; Loadboot</title>'
+'<link rel="stylesheet" href="/styles.css?v=6">'
+'<link rel="icon" href="/favicon.ico?v=2">'
+'<style>.nf{min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}'
+'.nf .in{max-width:520px}.nf .c{font-family:\'Manrope\',sans-serif;font-weight:800;font-size:3.2rem;color:#2563EB;line-height:1}'
+'.nf h1{font-family:\'Manrope\',sans-serif;color:#0F172A;font-size:1.5rem;margin:14px 0 8px}'
+'.nf p{color:#64748B;margin:0 0 22px}.nf a.btn{display:inline-block;background:#F97316;color:#fff;text-decoration:none;'
+'font-weight:700;font-family:\'Manrope\',sans-serif;padding:13px 24px;border-radius:12px}</style></head>'
+'<body><div class="nf"><div class="in"><div class="c">404</div>'
+'<h1>That page took a wrong turn</h1>'
+'<p>The page you&rsquo;re looking for isn&rsquo;t here. It may have moved, or the link was mistyped.</p>'
+'<a class="btn" href="/">Back to home &rarr;</a>'
+'<p style="margin-top:18px;font-size:.92rem">Or jump to <a href="/services.html">services</a>, '
+'<a href="/load-score.html">Load Score</a>, or <a href="/blog.html">the blog</a>.</p>'
+'</div></div></body></html>'
+)
+with open(os.path.join(OUT,'404.html'),'w',encoding='utf-8') as f: f.write(NOTFOUND)
+
+# ---------- COPY SOURCE-ONLY-AT-ROOT FILES INTO PUBLISH DIR ----------
+# dashboard.html is authored by hand (not generated) -> copy it into /site.
+if os.path.exists(os.path.join(SRC,'dashboard.html')):
+    shutil.copy2(os.path.join(SRC,'dashboard.html'), os.path.join(OUT,'dashboard.html'))
+# Copy every image/icon asset present at the repo root into /site (favicons, icons,
+# webp/jpg/png/avif photos). Source-only files (.py/.md/.toml/.sql) are NEVER copied.
+for fn in os.listdir(SRC):
+    full=os.path.join(SRC,fn)
+    if os.path.isfile(full) and fn not in _NO_PUBLISH and fn.lower().endswith(_ASSET_EXTS):
+        shutil.copy2(full, os.path.join(OUT,fn))
+
+# ---------- BUILD-FAILING VALIDATIONS ----------
+_errors=[]
+
+# (1) Required output pages/files must exist in the publish dir.
+REQUIRED_OUTPUT = ['index.html','about.html','services.html','pricing.html','contact.html',
+ 'tools.html','load-score.html','blog.html','privacy.html','terms.html','dashboard.html',
+ '404.html','sitemap.xml','robots.txt','_headers','_redirects','styles.css','app.js',
+ 'sw.js','manifest.webmanifest']
+for r in REQUIRED_OUTPUT:
+    if not os.path.exists(os.path.join(OUT,r)):
+        _errors.append('MISSING REQUIRED OUTPUT: '+r)
+
+# (2) Every locally-referenced asset must resolve inside the publish dir.
+def _is_local(u):
+    if not u: return False
+    u=u.strip().strip('\'"')
+    return not u.startswith(('http://','https://','//','data:','mailto:','tel:','#','javascript:'))
+def _norm(u):
+    u=u.strip().strip('\'"').split('#')[0].split('?')[0]
+    return u[1:] if u.startswith('/') else u
+ref_re = re.compile(r'(?:href|src)\s*=\s*"([^"]+)"|url\(([^)]+)\)')
+missing=set()
+def _check_refs(text, where):
+    for m in ref_re.finditer(text):
+        raw=m.group(1) or m.group(2)
+        if not _is_local(raw): continue
+        rel=_norm(raw)
+        if not rel or rel.endswith('/') or '.' not in os.path.basename(rel): continue
+        if not os.path.exists(os.path.join(OUT, rel)):
+            missing.add(rel+'  (in '+where+')')
+for fn in os.listdir(OUT):
+    if fn.endswith(('.html','.css')):
+        _check_refs(open(os.path.join(OUT,fn),encoding='utf-8').read(), fn)
+try:
+    man=json.loads(open(os.path.join(OUT,'manifest.webmanifest'),encoding='utf-8').read())
+    for ic in man.get('icons',[]):
+        s=ic.get('src','')
+        if _is_local(s) and not os.path.exists(os.path.join(OUT,_norm(s))):
+            missing.add(_norm(s)+'  (manifest icon)')
+except Exception as ex:
+    _errors.append('manifest parse error: '+str(ex))
+try:
+    sw=open(os.path.join(OUT,'sw.js'),encoding='utf-8').read()
+    mm=re.search(r'CORE\s*=\s*\[([^\]]*)\]', sw)
+    if mm:
+        for tok in re.findall(r'[\'"]([^\'\"]+)[\'"]', mm.group(1)):
+            if _is_local(tok):
+                rel=_norm(tok)
+                if rel and '.' in os.path.basename(rel) and not os.path.exists(os.path.join(OUT,rel)):
+                    missing.add(rel+'  (sw precache)')
+except Exception:
+    pass
+for x in sorted(missing): _errors.append('MISSING LOCAL ASSET: '+x)
+
+# (3) Publish dir must contain no source-only files.
+for fn in os.listdir(OUT):
+    if fn.endswith(('.py','.md','.toml','.sql')) or fn in ('migrations','docs'):
+        _errors.append('SOURCE LEAKED INTO PUBLISH DIR: '+fn)
+
+if _errors:
+    print('BUILD FAILED — %d problem(s):' % len(_errors))
+    for e in _errors: print('  - '+e)
+    sys.exit(1)
+
+print("BUILD OK — publish dir:", OUT)
 print("BUILT:", sorted(os.listdir(OUT)))
 
