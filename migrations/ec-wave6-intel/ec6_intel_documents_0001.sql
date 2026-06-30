@@ -1,0 +1,9 @@
+-- ENTERPRISE COMPLETION WAVE 6 — INTELLIGENCE + DOCUMENTS.
+-- Lane rate history (cc_lane_history), Management dashboard (cc_management_dashboard),
+-- anomaly scan (app_private.cron_anomaly_scan -> overdue in-transit trips -> urgent alert,
+-- scheduled */15min), printable invoice & rate-confirmation payloads (cc_invoice_document /
+-- cc_ratecon_document, rendered to print/PDF client-side), and a document-file metadata layer
+-- (app_private.document_files + cc_record_document_file / cc_list_document_files; bytes in
+-- Supabase Storage). RBAC-gated, audited. Applied to STAGING + PRODUCTION as ec6_intel_documents_0001.
+-- Automation rule: trip_overdue_alert (trip.overdue -> urgent dispatcher task + notify).
+-- (Full function bodies as applied; see session record / production schema.)

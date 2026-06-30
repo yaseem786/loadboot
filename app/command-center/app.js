@@ -31,6 +31,8 @@ import { renderAnalytics } from './views/analytics.js';
 import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
 import { renderRadar } from './views/radar.js';
+import { renderFleet } from './views/fleet.js';
+import { renderManagement } from './views/management.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -108,13 +110,14 @@ async function boot() {
   try { dispatchEnabled = await isFlagEnabled('dispatch_enabled'); } catch (_) { dispatchEnabled = false; }
   try { commsEnabled = await isFlagEnabled('comms_enabled'); } catch (_) { commsEnabled = false; }
   try { financeEnabled = await isFlagEnabled('finance_enabled'); } catch (_) { financeEnabled = false; }
-  let analyticsEnabled = false, contentEnabled = false, integrationsEnabled = false;
+  let analyticsEnabled = false, contentEnabled = false, integrationsEnabled = false, fleetEnabled = false;
   try { analyticsEnabled = await isFlagEnabled('analytics_enabled'); } catch (_) { analyticsEnabled = false; }
   try { contentEnabled = await isFlagEnabled('content_enabled'); } catch (_) { contentEnabled = false; }
   try { integrationsEnabled = await isFlagEnabled('integrations_enabled'); } catch (_) { integrationsEnabled = false; }
+  try { fleetEnabled = await isFlagEnabled('fleet_enabled'); } catch (_) { fleetEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -126,6 +129,8 @@ async function boot() {
   const router = createRouter({
     '/': () => { setActive('/'); renderOverview(content, ctx, shell); },
     '/radar': () => { setActive('/radar'); renderRadar(content); },
+    '/management': () => { setActive('/management'); renderManagement(content); },
+    '/fleet': () => { setActive('/fleet'); if (fleetEnabled && can('fleet.view')) renderFleet(content); else denied(); },
     '/dispatch': () => { setActive('/dispatch'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderDispatch(content))(); },
     '/carriers': () => { setActive('/carriers'); guard(['carriers.view', 'carriers.edit', 'carriers.approve'], () => renderCarriers(content))(); },
     '/loads': () => { setActive('/loads'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderLoads(content))(); },

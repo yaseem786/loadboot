@@ -6,7 +6,8 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice } from '../../shared/api.js';
+import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice, invoiceDocument } from '../../shared/api.js';
+import { printDocument } from '../../shared/ui/printDoc.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -93,6 +94,7 @@ export function renderFinance(host) {
     let i; try { i = await getInvoice(id); } catch (e) { mount(drawer.body, el('div', { class: 'lb-state lb-error' }, humanizeError(e))); return; }
     const field = (k, v) => el('div', { class: 'cc-field' }, [el('span', null, k), el('b', null, v || '—')]);
     const actions = el('div', { class: 'cc-status-row', style: 'margin-top:12px' });
+    actions.appendChild(chip('Print / PDF', async () => { try { printDocument(await invoiceDocument(id)); } catch (e) { toast(humanizeError(e), 'error'); } }));
     if (can('finance.manage')) {
       if (i.status === 'draft') actions.appendChild(chip('Send invoice', () => setStatus(id, 'sent')));
       if (i.status === 'sent') actions.appendChild(chip('Mark paid', () => setStatus(id, 'paid')));

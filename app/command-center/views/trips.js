@@ -7,7 +7,8 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { dispatchOverview, listTrips, getTrip, createTrip, advanceTrip, addTripNote, getLoadsList, getCarriersDirectory } from '../../shared/api.js';
+import { dispatchOverview, listTrips, getTrip, createTrip, advanceTrip, addTripNote, getLoadsList, getCarriersDirectory, rateconDocument } from '../../shared/api.js';
+import { printDocument } from '../../shared/ui/printDoc.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -104,6 +105,7 @@ export function renderTrips(host) {
     const field = (k, v) => el('div', { class: 'cc-field' }, [el('span', null, k), el('b', null, v || '—')]);
 
     const advanceRow = el('div', { class: 'cc-status-row', style: 'margin-top:6px' });
+    advanceRow.appendChild(el('button', { class: 'cc-chip-btn', onClick: async () => { try { printDocument(await rateconDocument(id)); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Rate con (PDF)'));
     if (can('dispatch.manage')) {
       const nxt = NEXT[t.status];
       if (nxt) advanceRow.appendChild(el('button', { class: 'cc-chip-btn', onClick: () => advance(id, nxt) }, NEXT_LABEL[nxt]));
