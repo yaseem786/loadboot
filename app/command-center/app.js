@@ -47,6 +47,7 @@ import { renderActionCenter } from './views/actionCenter.js';
 import { renderOpsMap } from './views/opsMap.js';
 import { renderAnnouncements } from './views/announcements.js';
 import { renderCampaigns } from './views/campaigns.js';
+import { renderGoogleData } from './views/googleData.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -149,9 +150,11 @@ async function boot() {
   let announcementsEnabled = false, campaignsEnabled = false;
   try { announcementsEnabled = await isFlagEnabled('announcements_enabled'); } catch (_) { announcementsEnabled = false; }
   try { campaignsEnabled = await isFlagEnabled('campaigns_enabled'); } catch (_) { campaignsEnabled = false; }
+  let googleDataEnabled = false;
+  try { googleDataEnabled = await isFlagEnabled('google_data_enabled'); } catch (_) { googleDataEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled, announcements: announcementsEnabled, campaigns: campaignsEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled, announcements: announcementsEnabled, campaigns: campaignsEnabled, googleData: googleDataEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -188,6 +191,7 @@ async function boot() {
     '/map': () => { setActive('/map'); if (opsMapEnabled) renderOpsMap(content); else denied(); },
     '/announcements': () => { setActive('/announcements'); if (announcementsEnabled && can('announce.view')) renderAnnouncements(content); else denied(); },
     '/campaigns': () => { setActive('/campaigns'); if (campaignsEnabled && can('campaigns.view')) renderCampaigns(content); else denied(); },
+    '/google': () => { setActive('/google'); if (googleDataEnabled && can('analytics.view')) renderGoogleData(content); else denied(); },
     '/automations': () => { setActive('/automations'); if (automationsAdminEnabled) renderAutomationsAdmin(content); else denied(); },
     '/content': () => { setActive('/content'); if (contentEnabled && can('content.view')) renderContent(content); else denied(); },
     '/integrations': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); },

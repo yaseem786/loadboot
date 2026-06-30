@@ -19,6 +19,7 @@ const NAV = [
     { path: '/management', label: 'Management', icon: 'grid', perm: null },
     { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
     { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics' },
+    { path: '/google', label: 'Google Analytics', icon: 'trend', perm: 'analytics.view', flag: 'googleData' },
   ]},
   { group: 'Operations', items: [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },

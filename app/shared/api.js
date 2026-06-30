@@ -269,6 +269,22 @@ export const actionCenter = () => rpc('cc_action_center');
 // ---- Wave J: Live operations map ----
 export const opsMap = () => rpc('cc_ops_map');
 
+// ---- Phase 3/4: real Google Analytics 4 + Search Console (edge functions) ----
+export const ga4Insights = async (days = 28) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('ga4-insights', { body: { days } });
+  if (error) throw new Error((error && error.message) || 'GA4 request failed');
+  return data;
+};
+export const gscInsights = async (days = 28) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('gsc-insights', { body: { days } });
+  if (error) throw new Error((error && error.message) || 'Search Console request failed');
+  return data;
+};
+
 // ---- Wave L: Announcements & Broadcast (flag: announcements_enabled) ----
 export const createAnnouncement = (o = {}) => rpc('cc_create_announcement', { p_title: o.title, p_body: o.body ?? null, p_kind: o.kind ?? 'info', p_audience: o.audience ?? 'all_carriers', p_target_org: o.targetOrg ?? null, p_expires_at: o.expiresAt ?? null });
 export const listAnnouncements = (limit = 100) => rpc('cc_list_announcements', { p_limit: limit });
