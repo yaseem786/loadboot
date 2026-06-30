@@ -136,6 +136,8 @@ export const financeAnalytics = () => rpc('cc_finance_analytics');
 // Platform module registry (Phase 0 — module-factory foundation)
 export const listModules = () => rpc('cc_list_modules');
 export const moduleSummary = () => rpc('cc_module_summary');
+// Observability / system health (Phase 1)
+export const systemHealth = () => rpc('cc_system_health');
 export const listInvoices = (o = {}) => rpc('cc_list_invoices', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
 export const getInvoice = (id) => rpc('cc_get_invoice', { p_invoice: id });
 export const createInvoice = (tripId, dueDays) => rpc('cc_create_invoice', { p_trip: tripId, p_due_days: dueDays ?? 15 });
