@@ -140,6 +140,37 @@ export const listSettlements = (o = {}) => rpc('cc_list_settlements', { p_status
 export const createSettlement = (o = {}) => rpc('cc_create_settlement', { p_carrier: o.carrier, p_period_start: o.periodStart ?? null, p_period_end: o.periodEnd ?? null });
 export const decideSettlement = (id, decision) => rpc('cc_decide_settlement', { p_settlement: id, p_decision: decision });
 
+// ---- Wave 6 Analytics (flag: analytics_enabled) ----
+export const analyticsOverview = () => rpc('cc_analytics_overview');
+export const analyticsRevenue = (days) => rpc('cc_analytics_revenue', { p_days: days ?? 14 });
+export const analyticsOps = () => rpc('cc_analytics_ops');
+export const analyticsCarriers = (limit) => rpc('cc_analytics_carriers', { p_limit: limit ?? 8 });
+
+// ---- Wave 7 Content / Marketing (flag: content_enabled) ----
+export const contentOverview = () => rpc('cc_content_overview');
+export const listPosts = (o = {}) => rpc('cc_list_posts', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getPost = (id) => rpc('cc_get_post', { p_id: id });
+export const upsertPost = (o = {}) => rpc('cc_upsert_post', { p_id: o.id ?? null, p_title: o.title, p_slug: o.slug, p_excerpt: o.excerpt ?? null, p_body: o.body ?? null, p_tags: o.tags ?? [] });
+export const setPostStatus = (id, status) => rpc('cc_set_post_status', { p_id: id, p_status: status });
+export const listPages = () => rpc('cc_list_pages');
+export const upsertPage = (key, title, body) => rpc('cc_upsert_page', { p_key: key, p_title: title, p_body: body });
+
+// ---- Wave 8 Integrations / Webhooks (flag: integrations_enabled) ----
+export const integrationsOverview = () => rpc('cc_integrations_overview');
+export const listIntegrations = () => rpc('cc_list_integrations');
+export const listEndpoints = () => rpc('cc_list_endpoints');
+export const createEndpoint = (o = {}) => rpc('cc_create_endpoint', { p_name: o.name, p_url: o.url, p_event_types: o.eventTypes ?? [] });
+export const setEndpointActive = (id, active) => rpc('cc_set_endpoint_active', { p_id: id, p_active: active });
+export const testEndpoint = (id) => rpc('cc_test_endpoint', { p_id: id });
+export const listDeliveries = (o = {}) => rpc('cc_list_deliveries', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
+
+// ---- Wave 9 Carrier Pocket App (flag: carrier_pocket_enabled) — carrier-scoped, self-resolving ----
+export const pocketOverview = () => rpc('cc_pocket_overview');
+export const pocketTrips = (limit) => rpc('cc_pocket_trips', { p_limit: limit ?? 50 });
+export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: limit ?? 50 });
+export const pocketCompliance = () => rpc('cc_pocket_compliance');
+export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in

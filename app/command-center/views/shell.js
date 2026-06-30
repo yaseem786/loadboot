@@ -14,6 +14,7 @@ import { signOut } from '../../shared/session.js';
 const NAV = [
   { group: 'Overview', items: [
     { path: '/', label: 'Dashboard', icon: 'grid', perm: null },
+    { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
   ]},
   { group: 'Operations', items: [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
@@ -33,9 +34,13 @@ const NAV = [
   { group: 'Finance', items: [
     { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },
   ]},
+  { group: 'Marketing', items: [
+    { path: '/content', label: 'Content & posts', icon: 'doc', perm: 'content.view', flag: 'content' },
+  ]},
   { group: 'Administration', items: [
     { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },
     { path: '/audit', label: 'Audit log', icon: 'shield', perm: 'audit.view' },
+    { path: '/integrations', label: 'Integrations', icon: 'refresh', perm: 'integrations.view', flag: 'integrations' },
     { path: '/flags', label: 'Feature flags', icon: 'flag', perm: 'flags.manage' },
     { path: '/settings', label: 'Settings', icon: 'cog', perm: 'settings.manage' },
   ]},

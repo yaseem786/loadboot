@@ -27,6 +27,9 @@ import { renderCompliance } from './views/compliance.js';
 import { renderTrips } from './views/trips.js';
 import { renderComms } from './views/comms.js';
 import { renderFinance } from './views/finance.js';
+import { renderAnalytics } from './views/analytics.js';
+import { renderContent } from './views/content.js';
+import { renderIntegrations } from './views/integrations.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -104,9 +107,13 @@ async function boot() {
   try { dispatchEnabled = await isFlagEnabled('dispatch_enabled'); } catch (_) { dispatchEnabled = false; }
   try { commsEnabled = await isFlagEnabled('comms_enabled'); } catch (_) { commsEnabled = false; }
   try { financeEnabled = await isFlagEnabled('finance_enabled'); } catch (_) { financeEnabled = false; }
+  let analyticsEnabled = false, contentEnabled = false, integrationsEnabled = false;
+  try { analyticsEnabled = await isFlagEnabled('analytics_enabled'); } catch (_) { analyticsEnabled = false; }
+  try { contentEnabled = await isFlagEnabled('content_enabled'); } catch (_) { contentEnabled = false; }
+  try { integrationsEnabled = await isFlagEnabled('integrations_enabled'); } catch (_) { integrationsEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -127,6 +134,9 @@ async function boot() {
     '/trips': () => { setActive('/trips'); if (dispatchEnabled && can('dispatch.view')) renderTrips(content); else denied(); },
     '/comms': () => { setActive('/comms'); if (commsEnabled && can('comm.view')) renderComms(content); else denied(); },
     '/finance': () => { setActive('/finance'); if (financeEnabled && can('finance.view')) renderFinance(content); else denied(); },
+    '/analytics': () => { setActive('/analytics'); if (analyticsEnabled && can('analytics.view')) renderAnalytics(content); else denied(); },
+    '/content': () => { setActive('/content'); if (contentEnabled && can('content.view')) renderContent(content); else denied(); },
+    '/integrations': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); },
     '/staff': () => { setActive('/staff'); if (anyOf('users.manage', 'roles.manage', 'staff.suspend')) renderStaffRoles(content); else denied(); },
     '/audit': () => { setActive('/audit'); if (can('audit.view')) renderAudit(content); else renderPlaceholder(content, 'Not available', 'You do not have permission to view the audit log.'); },
     '/flags': () => { setActive('/flags'); if (can('flags.manage')) renderFlags(content); else renderPlaceholder(content, 'Not available', 'You do not have permission to manage feature flags.'); },
