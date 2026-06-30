@@ -90,6 +90,14 @@ export const listTasks = (o = {}) => rpc('cc_list_tasks', { p_status: o.status ?
 export const completeTask = (taskId) => rpc('cc_complete_task', { p_task: taskId });
 export const automationHealth = () => rpc('cc_automation_health');
 
+// ---- Wave 1 CRM (flag: crm_enabled) ----
+export const crmOverview = () => rpc('cc_crm_overview');
+export const crmListLeads = (o = {}) => rpc('cc_crm_list_leads', { p_stage: o.stage ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const crmGetLead = (id) => rpc('cc_crm_get_lead', { p_lead: id });
+export const crmCreateLead = (o = {}) => rpc('cc_crm_create_lead', { p_title: o.title, p_company: o.company ?? null, p_source: o.source ?? null, p_value: o.value ?? null });
+export const crmSetLeadStage = (id, stageKey) => rpc('cc_crm_set_lead_stage', { p_lead: id, p_stage_key: stageKey });
+export const crmAddActivity = (id, kind, body) => rpc('cc_crm_add_activity', { p_lead: id, p_kind: kind, p_body: body, p_due_at: null });
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in

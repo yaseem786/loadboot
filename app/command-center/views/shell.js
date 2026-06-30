@@ -22,6 +22,9 @@ const NAV = [
     { path: '/documents', label: 'Documents', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
     { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },
   ]},
+  { group: 'Sales', items: [
+    { path: '/crm', label: 'CRM & leads', icon: 'trend', perm: 'crm.view', flag: 'crm' },
+  ]},
   { group: 'Administration', items: [
     { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },
     { path: '/audit', label: 'Audit log', icon: 'shield', perm: 'audit.view' },
