@@ -98,6 +98,15 @@ export const crmCreateLead = (o = {}) => rpc('cc_crm_create_lead', { p_title: o.
 export const crmSetLeadStage = (id, stageKey) => rpc('cc_crm_set_lead_stage', { p_lead: id, p_stage_key: stageKey });
 export const crmAddActivity = (id, kind, body) => rpc('cc_crm_add_activity', { p_lead: id, p_kind: kind, p_body: body, p_due_at: null });
 
+// ---- Wave 2 Carrier Onboarding & Compliance (flag: compliance_enabled) ----
+export const complianceOverview = () => rpc('cc_compliance_overview');
+export const listOnboarding = (o = {}) => rpc('cc_list_onboarding', { p_stage: o.stage ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getCarrierCompliance = (carrierId) => rpc('cc_get_carrier_compliance', { p_carrier: carrierId });
+export const startOnboarding = (carrierId) => rpc('cc_start_onboarding', { p_carrier: carrierId });
+export const setCompliance = (o = {}) => rpc('cc_set_compliance', { p_carrier: o.carrier, p_requirement_key: o.requirement, p_status: o.status, p_expiry: o.expiry ?? null, p_note: o.note ?? null });
+export const decideOnboarding = (carrierId, decision, note) => rpc('cc_decide_onboarding', { p_carrier: carrierId, p_decision: decision, p_note: note ?? null });
+export const scanExpiring = (days) => rpc('cc_scan_expiring', { p_days: days ?? 30 });
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in

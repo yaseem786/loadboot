@@ -20,6 +20,7 @@ const NAV = [
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/documents', label: 'Documents', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
+    { path: '/compliance', label: 'Onboarding & compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
     { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },
   ]},
   { group: 'Sales', items: [
