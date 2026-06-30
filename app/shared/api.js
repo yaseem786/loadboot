@@ -119,6 +119,27 @@ export const createTrip = (o = {}) => rpc('cc_create_trip', {
 export const advanceTrip = (tripId, status, note, location) => rpc('cc_advance_trip', { p_trip: tripId, p_status: status, p_note: note ?? null, p_location: location ?? null });
 export const addTripNote = (tripId, note, location) => rpc('cc_add_trip_note', { p_trip: tripId, p_note: note, p_location: location ?? null });
 
+// ---- Wave 4 Communications (flag: comms_enabled) ----
+export const commOverview = () => rpc('cc_comm_overview');
+export const listThreads = (o = {}) => rpc('cc_list_threads', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getThread = (id) => rpc('cc_get_thread', { p_thread: id });
+export const createThread = (o = {}) => rpc('cc_create_thread', { p_subject: o.subject, p_body: o.body ?? null, p_related_type: o.relatedType ?? 'none', p_related_id: o.relatedId ?? null, p_channel: o.channel ?? 'in_app' });
+export const postMessage = (id, body, channel) => rpc('cc_post_message', { p_thread: id, p_body: body, p_channel: channel ?? null });
+export const setThreadStatus = (id, status) => rpc('cc_set_thread_status', { p_thread: id, p_status: status });
+export const listNotifications = (o = {}) => rpc('cc_list_notifications', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
+export const markNotification = (id, status) => rpc('cc_mark_notification', { p_id: id, p_status: status });
+export const listTemplates = () => rpc('cc_list_templates');
+
+// ---- Wave 5 Finance (flag: finance_enabled) ----
+export const financeOverview = () => rpc('cc_finance_overview');
+export const listInvoices = (o = {}) => rpc('cc_list_invoices', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getInvoice = (id) => rpc('cc_get_invoice', { p_invoice: id });
+export const createInvoice = (tripId, dueDays) => rpc('cc_create_invoice', { p_trip: tripId, p_due_days: dueDays ?? 15 });
+export const setInvoiceStatus = (id, status) => rpc('cc_set_invoice_status', { p_invoice: id, p_status: status });
+export const listSettlements = (o = {}) => rpc('cc_list_settlements', { p_status: o.status ?? null, p_limit: o.limit ?? 200 });
+export const createSettlement = (o = {}) => rpc('cc_create_settlement', { p_carrier: o.carrier, p_period_start: o.periodStart ?? null, p_period_end: o.periodEnd ?? null });
+export const decideSettlement = (id, decision) => rpc('cc_decide_settlement', { p_settlement: id, p_decision: decision });
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in

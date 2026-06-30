@@ -25,6 +25,8 @@ import { renderAutomation } from './views/automation.js';
 import { renderCRM } from './views/crm.js';
 import { renderCompliance } from './views/compliance.js';
 import { renderTrips } from './views/trips.js';
+import { renderComms } from './views/comms.js';
+import { renderFinance } from './views/finance.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -95,14 +97,16 @@ async function boot() {
 
   // optional engine flags (nav items hide when off, so production without the
   // automation backend never reaches its RPCs)
-  let automationEnabled = false, crmEnabled = false, complianceEnabled = false, dispatchEnabled = false;
+  let automationEnabled = false, crmEnabled = false, complianceEnabled = false, dispatchEnabled = false, commsEnabled = false, financeEnabled = false;
   try { automationEnabled = await isFlagEnabled('automation_core_enabled'); } catch (_) { automationEnabled = false; }
   try { crmEnabled = await isFlagEnabled('crm_enabled'); } catch (_) { crmEnabled = false; }
   try { complianceEnabled = await isFlagEnabled('compliance_enabled'); } catch (_) { complianceEnabled = false; }
   try { dispatchEnabled = await isFlagEnabled('dispatch_enabled'); } catch (_) { dispatchEnabled = false; }
+  try { commsEnabled = await isFlagEnabled('comms_enabled'); } catch (_) { commsEnabled = false; }
+  try { financeEnabled = await isFlagEnabled('finance_enabled'); } catch (_) { financeEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -121,6 +125,8 @@ async function boot() {
     '/crm': () => { setActive('/crm'); if (crmEnabled && can('crm.view')) renderCRM(content); else denied(); },
     '/compliance': () => { setActive('/compliance'); if (complianceEnabled && can('compliance.view')) renderCompliance(content); else denied(); },
     '/trips': () => { setActive('/trips'); if (dispatchEnabled && can('dispatch.view')) renderTrips(content); else denied(); },
+    '/comms': () => { setActive('/comms'); if (commsEnabled && can('comm.view')) renderComms(content); else denied(); },
+    '/finance': () => { setActive('/finance'); if (financeEnabled && can('finance.view')) renderFinance(content); else denied(); },
     '/staff': () => { setActive('/staff'); if (anyOf('users.manage', 'roles.manage', 'staff.suspend')) renderStaffRoles(content); else denied(); },
     '/audit': () => { setActive('/audit'); if (can('audit.view')) renderAudit(content); else renderPlaceholder(content, 'Not available', 'You do not have permission to view the audit log.'); },
     '/flags': () => { setActive('/flags'); if (can('flags.manage')) renderFlags(content); else renderPlaceholder(content, 'Not available', 'You do not have permission to manage feature flags.'); },
