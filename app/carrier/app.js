@@ -1,114 +1,298 @@
-// app.js — Carrier Pocket App bootstrap (mobile PWA shell).
-// Flow: validate env -> require session (else login) -> render shell + bottom-nav
-// router with safe placeholders. No private data is cached; offline shows a banner
-// and disables actions (no mutation queue in 2A).
-import { el, mount } from '../shared/ui/dom.js';
+// app.js — LoadBoot Carrier Portal (web + installable PWA). The single carrier-facing
+// app: carriers/clients create an account or sign in, then see ONLY their own data via
+// self-scoping cc_pocket_* RPCs (the server resolves the carrier org from the session;
+// no carrier-id parameter, so cross-carrier access is impossible).
+// Sections: Home (action center + onboarding/compliance + push), Trips (confirm + live
+// GPS + report issue), Finance (invoices + dispute), Support (raise an issue + history).
+// Admin/staff use the separate Command Center (/app/command-center/).
 import ENV from '../shared/env.js';
-import { getSession, getUser, signInWithPassword, signOut, onAuthChange } from '../shared/session.js';
-import { isFlagEnabled } from '../shared/api.js';
-import { mountOfflineBanner } from '../shared/connectivity.js';
-import { createRouter } from '../shared/router.js';
-import { humanizeError } from '../shared/errors.js';
-import { renderPlaceholder } from '../command-center/views/placeholder.js';
+import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
+import {
+  pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
+  pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
+  pocketReportIssue, pocketDisputeInvoice,
+} from '../shared/api.js';
+import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { registerAppSW } from '../shared/sw-register.js';
+import { mountOfflineBanner } from '../shared/connectivity.js';
 
-registerAppSW();
+registerAppSW(); // registers /app/sw.js — includes the Web Push handlers (Phase 5)
 const root = document.getElementById('lb-app');
 
-function fatal(message) {
-  mount(root, el('div', { class: 'ca-content' }, [
-    el('div', { class: 'ca-card' }, [el('h3', null, 'Unavailable'), el('p', { style: 'color:var(--lb-muted)' }, message)]),
-  ]));
-  root.setAttribute('aria-busy', 'false');
-}
+const h = (tag, attrs, kids) => { const e = document.createElement(tag); if (attrs) for (const k in attrs) { if (k === 'class') e.className = attrs[k]; else if (k === 'onclick') e.onclick = attrs[k]; else if (k === 'html') e.innerHTML = attrs[k]; else e.setAttribute(k, attrs[k]); } (Array.isArray(kids) ? kids : kids != null ? [kids] : []).forEach(c => e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c)); return e; };
+const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
+const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray' };
+const pill = (s) => h('span', { class: 'pk-pill ' + (TONE[s] || 'gray') }, (s || '').replace(/_/g, ' '));
 
-function renderLogin() {
-  const err = el('div', { class: 'err', role: 'alert' });
-  const email = el('input', { type: 'email', autocomplete: 'username', required: true });
-  const pass = el('input', { type: 'password', autocomplete: 'current-password', required: true });
-  const btn = el('button', { class: 'lb-btn lb-btn-primary', type: 'submit' }, 'Sign in');
-  const form = el('form', { onSubmit: async (e) => {
-    e.preventDefault(); err.textContent = ''; btn.disabled = true; btn.textContent = 'Signing in…';
-    try {
-      const { error } = await signInWithPassword(email.value.trim(), pass.value);
-      if (error) err.textContent = humanizeError(error); else { await boot(); return; }
-    } catch (ex) { err.textContent = humanizeError(ex); }
-    btn.disabled = false; btn.textContent = 'Sign in';
-  } }, [
-    el('label', null, 'Email'), email, el('label', null, 'Password'), pass, btn, err,
+function staffLink() {
+  return h('div', { class: 'pk-staff-link' }, [
+    document.createTextNode('Staff member? '),
+    h('a', { href: '/app/command-center/' }, 'Open the Command Center →'),
   ]);
-  mount(root, el('div', { class: 'ca-login' }, [
-    el('div', { class: 'brand', style: 'display:flex;gap:8px;align-items:center;justify-content:center;font-family:var(--lb-head);font-weight:800;font-size:1.3rem;margin-bottom:8px' },
-      [el('span', { class: 'dot', style: 'width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#2563EB,#1e3a8a);color:#fff;display:inline-flex;align-items:center;justify-content:center' }, 'L'), 'LoadBoot']),
-    el('p', { style: 'text-align:center;color:var(--lb-muted);font-size:.9rem;margin-bottom:10px' }, 'Carrier sign in'),
-    form,
+}
+
+// ---------- Login + self-registration ----------
+function loginView() {
+  let signupMode = false;
+  const email = h('input', { class: 'pk-in', type: 'email', placeholder: 'Email', autocomplete: 'username' });
+  const pass = h('input', { class: 'pk-in', type: 'password', placeholder: 'Password', autocomplete: 'current-password' });
+  const company = h('input', { class: 'pk-in', type: 'text', placeholder: 'Company name', autocomplete: 'organization' });
+  const name = h('input', { class: 'pk-in', type: 'text', placeholder: 'Your name', autocomplete: 'name' });
+  const signupFields = h('div', { style: 'display:none' }, [company, name]);
+  const err = h('div', { class: 'err' });
+  const title = h('h2', null, 'Welcome back');
+  const sub = h('div', { class: 'pk-muted', style: 'text-align:left;padding:0 0 6px' }, 'Sign in to manage your loads, trips, invoices, compliance and support.');
+  const btn = h('button', { class: 'pk-btn' }, 'Sign in');
+  const toggle = h('div', { class: 'pk-muted', style: 'text-align:left;margin-top:12px' });
+
+  function setMode(s) {
+    signupMode = s;
+    title.textContent = s ? 'Create your account' : 'Welcome back';
+    sub.textContent = s ? 'Start your carrier profile — it’s free.' : 'Sign in to manage your loads, trips, invoices, compliance and support.';
+    signupFields.style.display = s ? 'block' : 'none';
+    btn.textContent = s ? 'Create account' : 'Sign in';
+    err.textContent = '';
+    mount(toggle, s
+      ? [document.createTextNode('Already have an account? '), h('a', { onclick: () => setMode(false), style: 'color:#2563eb;cursor:pointer;font-weight:700' }, 'Sign in')]
+      : [document.createTextNode('New here? '), h('a', { onclick: () => setMode(true), style: 'color:#2563eb;cursor:pointer;font-weight:700' }, 'Create an account')]);
+  }
+
+  btn.onclick = async () => {
+    err.textContent = ''; err.style.color = '';
+    const em = email.value.trim(), pw = pass.value;
+    if (!em || !pw) { err.textContent = 'Enter your email and password.'; return; }
+    if (signupMode && (!company.value.trim() || !name.value.trim())) { err.textContent = 'Please enter your company name and your name.'; return; }
+    btn.disabled = true; btn.textContent = signupMode ? 'Creating…' : 'Signing in…';
+    try {
+      if (signupMode) {
+        const { data, error } = await signUp(em, pw, { company: company.value.trim(), name: name.value.trim() });
+        if (error) throw error;
+        if (!data || !data.session) { err.style.color = '#16a34a'; err.textContent = 'Account created! Check your email to confirm, then sign in.'; setMode(false); btn.disabled = false; return; }
+        boot(); return;
+      } else {
+        const { error } = await signInWithPassword(em, pw);
+        if (error) throw error;
+        boot(); return;
+      }
+    } catch (e) {
+      err.style.color = ''; err.textContent = (e && e.message) || 'Something went wrong.'; btn.disabled = false; btn.textContent = signupMode ? 'Create account' : 'Sign in';
+    }
+  };
+
+  mount(root, h('div', { class: 'pk-login' }, [
+    h('div', { class: 'pk-brand', style: 'font-size:20px;font-weight:800' }, [document.createTextNode('Load'), h('b', { style: 'color:#f97316' }, 'boot')]),
+    title, sub, email, pass, signupFields, err, btn, toggle, staffLink(),
+  ]));
+  setMode(false);
+  root.setAttribute('aria-busy', 'false');
+}
+
+function notCarrierView() {
+  mount(root, h('div', { class: 'pk-login' }, [
+    h('h2', null, 'No carrier account'),
+    h('div', { class: 'pk-muted', style: 'text-align:left' }, 'This sign-in is not linked to a carrier. If you believe this is an error, contact your dispatcher.'),
+    h('button', { class: 'pk-btn sec', onclick: async () => { await signOut(); boot(); } }, 'Sign out'),
+    staffLink(),
   ]));
   root.setAttribute('aria-busy', 'false');
 }
 
-const TABS = [
-  { path: '/', label: 'Home', icon: '🏠' },
-  { path: '/loads', label: 'Loads', icon: '📦' },
-  { path: '/docs', label: 'Documents', icon: '📄' },
-  { path: '/pay', label: 'Payments', icon: '💵' },
-  { path: '/account', label: 'Account', icon: '👤' },
-];
+async function appView() {
+  let ov; try { ov = await pocketOverview(); }
+  catch (e) { if (/carrier account/i.test(e && e.message || '')) { notCarrierView(); return; } mount(root, h('div', { class: 'pk-muted' }, 'Could not load. Pull to retry.')); return; }
 
-function renderShell(user) {
-  const content = el('div', { class: 'ca-content', id: 'ca-content' });
-  const tabs = TABS.map(t => el('a', { href: '#' + t.path, dataset: { path: t.path } },
-    [el('span', { class: 'ic', 'aria-hidden': 'true' }, t.icon), t.label]));
-  mount(root, el('div', { class: 'ca-shell' }, [
-    el('header', { class: 'ca-top' }, [
-      el('div', { class: 'brand' }, [el('span', { class: 'dot' }, 'L'), 'LoadBoot']),
-      el('button', { class: 'sign', onClick: async () => { await signOut(); location.reload(); } }, 'Sign out'),
-    ]),
-    content,
-    el('nav', { class: 'ca-tab' }, tabs),
-  ]));
-  function setActive(path) { tabs.forEach(a => a.classList.toggle('active', a.dataset.path === path)); }
-  return { content, setActive };
-}
+  let tab = 'home';
+  const top = h('div', { class: 'pk-top' }, [
+    h('div', { class: 'pk-brand' }, [document.createTextNode('Load'), h('b', null, 'boot'), document.createTextNode(' Carrier')]),
+    h('div', { class: 'pk-sub' }, ov.carrier || 'Carrier'),
+    h('h1', null, 'Welcome back'),
+    h('span', { class: 'pk-chip ' + (ov.compliance_ok ? 'ok' : 'warn') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
+  ]);
+  const TABS = [['home', 'Home'], ['trips', 'Trips'], ['finance', 'Finance'], ['support', 'Support']];
+  const tabs = h('div', { class: 'pk-tabs' }, TABS.map(([t, label]) =>
+    h('div', { class: 'pk-tab' + (t === tab ? ' active' : ''), onclick: () => { tab = t; render(); } }, label)));
+  const panel = h('div', { class: 'pk-wrap' });
 
-function home(content, user) {
-  mount(content, el('div', null, [
-    el('div', { class: 'ca-greeting' }, 'Welcome back'),
-    el('div', { class: 'ca-sub' }, (user && user.email) || ''),
-    el('div', { class: 'ca-status-banner' },
-      'This is the Phase 2A carrier app foundation. Your loads, documents, and payments will appear here as each module ships. For full account management, the web dashboard remains available.'),
-    el('div', { class: 'ca-card' }, [el('h3', null, 'Quick links'),
-      el('p', { style: 'color:var(--lb-muted);font-size:.88rem' }, 'Use the tabs below to navigate. The existing web dashboard remains fully functional for everything not yet here.')]),
-  ]));
+  function render() {
+    Array.from(tabs.children).forEach((c, i) => c.classList.toggle('active', TABS[i][0] === tab));
+    if (tab === 'trips') loadTrips();
+    else if (tab === 'finance') loadFinance();
+    else if (tab === 'support') loadSupport();
+    else loadHome();
+  }
+
+  // ---------- Home / Action center + onboarding/compliance + push ----------
+  async function loadHome() {
+    mount(panel, h('div', { class: 'pk-muted' }, 'Loading…'));
+    let c; try { c = await pocketCompliance(); } catch (_) { c = { requirements: [], mandatory_ok: ov.compliance_ok }; }
+    let anns = []; try { anns = await pocketAnnouncements(); } catch (_) { anns = []; }
+    const annCards = (anns || []).map(a => h('div', { class: 'pk-ann ' + (a.kind || 'info') }, [
+      h('div', { class: 'pk-ann-t' }, a.title),
+      a.body ? h('div', { class: 'pk-ann-b' }, a.body) : null,
+    ].filter(Boolean)));
+    const actions = [];
+    if (!c.mandatory_ok) actions.push(['Complete your compliance documents', 'compliance']);
+    if ((ov.invoices_due || 0) > 0) actions.push([money(ov.invoices_due) + ' in dispatch fees due', 'finance']);
+    const kpis = h('div', { class: 'pk-kpis' }, [
+      h('div', { class: 'pk-kpi' }, [h('div', { class: 'v' }, String(ov.trips_active || 0)), h('div', { class: 'l' }, 'Active trips')]),
+      h('div', { class: 'pk-kpi' }, [h('div', { class: 'v' }, String(ov.trips_delivered || 0)), h('div', { class: 'l' }, 'Delivered')]),
+      h('div', { class: 'pk-kpi' }, [h('div', { class: 'v' }, money(ov.invoices_due)), h('div', { class: 'l' }, 'Fees due')]),
+      h('div', { class: 'pk-kpi' }, [h('div', { class: 'v', style: 'font-size:15px;padding-top:7px' }, (ov.onboarding_stage || '—').replace(/_/g, ' ')), h('div', { class: 'l' }, 'Onboarding')]),
+    ]);
+    const actionCard = h('div', { class: 'pk-card' }, [
+      h('h3', null, 'Needs your attention'),
+      actions.length ? h('div', null, actions.map(([txt, go]) => h('div', { class: 'pk-row', onclick: () => { tab = go; render(); } }, [
+        h('div', { class: 't' }, txt), h('span', { class: 'pk-go' }, '›'),
+      ]))) : h('div', { class: 'pk-muted' }, 'All clear — nothing needs you right now. 🎉'),
+    ]);
+    const compCard = h('div', { class: 'pk-card' }, [
+      h('h3', null, 'Compliance — ' + (c.mandatory_ok ? 'all good ✓' : 'action needed')),
+      ...((c.requirements || []).map(r => h('div', { class: 'pk-row' }, [
+        h('div', null, [h('div', { class: 't' }, r.name), h('div', { class: 's' }, r.mandatory ? 'required' : 'optional')]),
+        pill(r.status),
+      ]))),
+    ]);
+    // Web Push (Phase 5) — enable notifications on this device
+    let pushCard = null;
+    if (pushSupported()) {
+      const status = h('span', { class: 'pk-pill gray' }, 'checking…');
+      const btn = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Enabling…';
+        try { await enablePush('Carrier device'); status.textContent = 'on'; status.className = 'pk-pill green'; ev.currentTarget.textContent = 'On ✓'; }
+        catch (e) { status.textContent = 'off'; ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Turn on'; alert((e && e.message) || 'Could not enable notifications.'); }
+      } }, 'Turn on');
+      isPushEnabled().then(on => { status.textContent = on ? 'on' : 'off'; status.className = 'pk-pill ' + (on ? 'green' : 'gray'); if (on) { btn.textContent = 'On ✓'; btn.disabled = true; } });
+      pushCard = h('div', { class: 'pk-card' }, [h('h3', null, 'Push notifications'),
+        h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
+          h('div', null, [h('div', { class: 't' }, 'Alerts for trips, payments & announcements'), h('div', { class: 's' }, 'On this device')]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, [status, btn])])]);
+    }
+    mount(panel, h('div', null, [...annCards, kpis, actionCard, pushCard, compCard].filter(Boolean)));
+  }
+
+  // ---------- Trips (confirm) + live GPS share + report issue ----------
+  async function loadTrips() {
+    mount(panel, h('div', { class: 'pk-muted' }, 'Loading…'));
+    let rows; try { rows = await pocketTrips(50); } catch (e) { mount(panel, h('div', { class: 'pk-muted' }, 'Failed to load.')); return; }
+    if (!rows || !rows.length) { mount(panel, h('div', { class: 'pk-card' }, h('div', { class: 'pk-muted' }, 'No trips yet.'))); return; }
+    mount(panel, h('div', { class: 'pk-card' }, [h('h3', null, 'My trips'), ...rows.map(t => {
+      const isActive = t.status === 'dispatched' || t.status === 'in_transit';
+      const confirm = (t.status === 'dispatched') ? h('button', { class: 'pk-btn sec pk-mini', onclick: async (ev) => {
+        ev.stopPropagation(); ev.currentTarget.disabled = true; try { await pocketConfirmTrip(t.id); ev.currentTarget.textContent = 'Confirmed ✓'; } catch (x) { ev.currentTarget.textContent = 'Error'; }
+      } }, 'Confirm') : null;
+      const share = isActive ? h('button', { class: 'pk-btn pk-mini', onclick: (ev) => shareLocation(ev, t.id) }, '📍 Share location') : null;
+      const formWrap = h('div');
+      const issueBtn = isActive ? h('button', { class: 'pk-btn sec pk-mini', onclick: () => {
+        if (formWrap.firstChild) { formWrap.innerHTML = ''; return; }
+        const kind = h('select', { class: 'pk-in' }, ['detention', 'layover', 'lumper', 'breakdown', 'weather', 'missed_appointment', 'other'].map(k => h('option', { value: k }, k.replace('_', ' '))));
+        const note = h('input', { class: 'pk-in', placeholder: 'Details (optional)' });
+        const send = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
+          try { await pocketReportIssue(t.id, kind.value, note.value.trim()); formWrap.innerHTML = ''; const ok = h('div', { class: 's', style: 'color:#16a34a' }, '✓ Reported to dispatch'); formWrap.appendChild(ok); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); }
+        } }, 'Send');
+        formWrap.appendChild(h('div', { class: 'pk-issueform' }, [kind, note, send]));
+      } }, '⚠ Report issue') : null;
+      return h('div', { class: 'pk-trip' }, [
+        h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
+          h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0))]),
+          pill(t.status),
+        ]),
+        (confirm || share || issueBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, share, issueBtn].filter(Boolean)) : null,
+        formWrap,
+      ].filter(Boolean));
+    })]));
+  }
+
+  function shareLocation(ev, tripId) {
+    const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Locating…';
+    if (!navigator.geolocation) { btn.textContent = 'GPS not available'; return; }
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        await pocketSetConsent(tripId, true);
+        await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'pocket');
+        btn.textContent = '📍 Location shared ✓';
+      } catch (x) { btn.textContent = 'Could not share'; btn.disabled = false; }
+    }, () => { btn.textContent = 'Permission denied'; btn.disabled = false; }, { enableHighAccuracy: true, timeout: 10000 });
+  }
+
+  // ---------- Finance (dispatch invoices) + dispute ----------
+  async function loadFinance() {
+    mount(panel, h('div', { class: 'pk-muted' }, 'Loading…'));
+    let rows; try { rows = await pocketInvoices(50); } catch (e) { mount(panel, h('div', { class: 'pk-muted' }, 'Failed to load.')); return; }
+    const due = (rows || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
+    mount(panel, h('div', null, [
+      h('div', { class: 'pk-card' }, [h('h3', null, 'Summary'), h('div', { class: 'pk-row' }, [h('div', { class: 't' }, 'Dispatch fees due'), h('b', null, money(due))])]),
+      h('div', { class: 'pk-card' }, [h('h3', null, 'Invoices'),
+        (rows && rows.length) ? h('div', null, rows.map(i => {
+          const dWrap = h('div');
+          const disputeBtn = (i.status === 'sent' || i.status === 'paid') ? h('button', { class: 'pk-btn sec pk-mini', onclick: () => {
+            if (dWrap.firstChild) { dWrap.innerHTML = ''; return; }
+            const reason = h('input', { class: 'pk-in', placeholder: 'Reason for dispute' });
+            const send = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+              if (!reason.value.trim()) { alert('Enter a reason.'); return; }
+              ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
+              try { await pocketDisputeInvoice(i.id, reason.value.trim()); dWrap.innerHTML = ''; dWrap.appendChild(h('div', { class: 's', style: 'color:#16a34a' }, '✓ Dispute opened')); }
+              catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not dispute.'); }
+            } }, 'Send');
+            dWrap.appendChild(h('div', { class: 'pk-issueform' }, [reason, send]));
+          } }, 'Dispute') : null;
+          return h('div', { class: 'pk-trip' }, [
+            h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
+              h('div', null, [h('div', { class: 't' }, i.invoice_no), h('div', { class: 's' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]),
+              pill(i.status),
+            ]),
+            disputeBtn ? h('div', { class: 'pk-trip-actions' }, [disputeBtn]) : null,
+            dWrap,
+          ].filter(Boolean));
+        })) : h('div', { class: 'pk-muted' }, 'No invoices yet.'),
+      ]),
+    ]));
+  }
+
+  // ---------- Support (raise an issue + history) ----------
+  async function loadSupport() {
+    const subj = h('input', { class: 'pk-in', placeholder: 'Subject (e.g. detention not applied)' });
+    const bodyIn = h('textarea', { class: 'pk-in', rows: '3', placeholder: 'Describe the issue…' });
+    const msg = h('div', { class: 'err' });
+    const listWrap = h('div');
+    const send = h('button', { class: 'pk-btn', onclick: async () => {
+      msg.textContent = ''; if (!subj.value.trim()) { msg.textContent = 'Subject is required.'; return; }
+      send.disabled = true; send.textContent = 'Sending…';
+      try { await pocketRaiseIssue(subj.value.trim(), bodyIn.value.trim()); subj.value = ''; bodyIn.value = ''; msg.style.color = '#16a34a'; msg.textContent = 'Sent — we’ll get back to you.'; await loadIssues(); }
+      catch (e) { msg.style.color = ''; msg.textContent = (e && e.message) || 'Could not send.'; }
+      send.disabled = false; send.textContent = 'Send to dispatch';
+    } }, 'Send to dispatch');
+    mount(panel, h('div', null, [
+      h('div', { class: 'pk-card' }, [h('h3', null, 'Raise an issue'), subj, bodyIn, msg, send]),
+      h('div', { class: 'pk-card' }, [h('h3', null, 'Your issues'), listWrap]),
+    ]));
+    async function loadIssues() {
+      mount(listWrap, h('div', { class: 'pk-muted' }, 'Loading…'));
+      let rows; try { rows = await pocketMyIssues(30); } catch (_) { mount(listWrap, h('div', { class: 'pk-muted' }, 'Failed to load.')); return; }
+      mount(listWrap, (rows && rows.length) ? h('div', null, rows.map(t => h('div', { class: 'pk-row' }, [
+        h('div', null, [h('div', { class: 't' }, t.subject), h('div', { class: 's' }, t.ref)]),
+        pill(t.status),
+      ]))) : h('div', { class: 'pk-muted' }, 'No issues yet.'));
+    }
+    loadIssues();
+  }
+
+  mount(root, h('div', null, [top, h('div', { class: 'pk-wrap' }, tabs), panel,
+    h('div', { class: 'pk-wrap' }, h('button', { class: 'pk-btn sec', onclick: async () => { await signOut(); boot(); } }, 'Sign out'))]));
+  root.setAttribute('aria-busy', 'false');
+  render();
 }
 
 async function boot() {
   root.setAttribute('aria-busy', 'true');
-  const session = await getSession();
-  if (!session) { renderLogin(); return; }
-
-  let enabled = true;
-  try { enabled = await isFlagEnabled('carrier_app_v2_enabled'); } catch (_) { enabled = false; }
-  if (!enabled) {
-    fatal('The new carrier app is not enabled yet. Please continue using the web dashboard for now.');
-    return;
-  }
-
-  const user = await getUser();
-  const { content, setActive } = renderShell(user);
-  mountOfflineBanner();
-  root.setAttribute('aria-busy', 'false');
-
-  const ph = (host, t, d) => renderPlaceholder(host, t, d);
-  const router = createRouter({
-    '/': () => { setActive('/'); home(content, user); },
-    '/loads': () => { setActive('/loads'); ph(content, 'Your loads', 'Active and available loads will appear here in a later phase.'); },
-    '/docs': () => { setActive('/docs'); ph(content, 'Documents', 'Upload and track your compliance documents here in a later phase.'); },
-    '/pay': () => { setActive('/pay'); ph(content, 'Payments', 'Settlement history and payment status will appear here in a later phase.'); },
-    '/account': () => { setActive('/account'); ph(content, 'Account', 'Profile and preferences will appear here in a later phase.'); },
-  }, { notFound: () => { setActive('/'); home(content, user); } });
-  router.start();
-
-  onAuthChange((s) => { if (!s) location.reload(); });
+  let session = null;
+  try { session = await getSession(); } catch (_) {}
+  if (!session) { loginView(); return; }
+  try { mountOfflineBanner(); } catch (_) {}
+  appView();
 }
 
-boot().catch((e) => fatal(e && e.lbFatal ? e.message : 'Unexpected error starting the app.'));
+onAuthChange((s) => { if (!s) location.reload(); });
+boot();

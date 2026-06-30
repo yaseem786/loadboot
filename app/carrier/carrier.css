@@ -26,3 +26,53 @@ body{background:var(--lb-bg)}
 .ca-login .err{color:var(--lb-red);font-size:.86rem;margin-top:12px;min-height:1em}
 .ca-status-banner{background:var(--lb-blue-soft);border:1px solid #bfdbfe;color:#1e40af;border-radius:var(--lb-r);
   padding:12px 14px;font-size:.88rem;margin-bottom:14px}
+
+/* ===== Unified carrier portal: Pocket UI (merged from pocket.css) ===== */
+#lb-app{max-width:480px;margin:0 auto;min-height:100vh;background:#f6f8fc;display:flex;flex-direction:column}
+.pk-top{background:linear-gradient(135deg,#0b1220,#1e293b);color:#fff;padding:calc(20px + env(safe-area-inset-top)) 18px 26px;border-radius:0 0 22px 22px}
+.pk-top .pk-brand{font-weight:800;font-size:18px;letter-spacing:-.3px}
+.pk-top .pk-brand b{color:#f97316}
+.pk-top .pk-sub{opacity:.7;font-size:12px;margin-top:2px}
+.pk-top h1{font-size:22px;margin:14px 0 2px;font-weight:800}
+.pk-chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.14)}
+.pk-chip.ok{background:#16a34a}.pk-chip.warn{background:#f59e0b}
+.pk-wrap{padding:16px;display:flex;flex-direction:column;gap:14px}
+.pk-kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pk-kpi{background:#fff;border:1px solid #e9eef5;border-radius:16px;padding:14px}
+.pk-kpi .v{font-size:24px;font-weight:800;color:#0b1220}
+.pk-kpi .l{font-size:12px;color:#64748b;margin-top:2px}
+.pk-card{background:#fff;border:1px solid #e9eef5;border-radius:16px;padding:14px}
+.pk-card h3{margin:0 0 10px;font-size:14px;font-weight:800;color:#0b1220}
+.pk-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #f1f5f9}
+.pk-row:last-child{border-bottom:none}
+.pk-row .t{font-weight:700;font-size:14px}
+.pk-row .s{font-size:12px;color:#64748b;margin-top:2px}
+.pk-pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:#eef2f7;color:#475569}
+.pk-pill.blue{background:#dbeafe;color:#1d4ed8}.pk-pill.green{background:#dcfce7;color:#15803d}
+.pk-pill.amber{background:#fef3c7;color:#b45309}.pk-pill.red{background:#fee2e2;color:#b91c1c}.pk-pill.gray{background:#eef2f7;color:#475569}
+.pk-tabs{display:flex;gap:8px;padding:0 16px}
+.pk-tab{flex:1;text-align:center;padding:10px;border-radius:12px;font-weight:700;font-size:13px;background:#fff;border:1px solid #e9eef5;color:#475569;cursor:pointer}
+.pk-tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.pk-btn{display:block;width:100%;padding:12px;border:none;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px}
+.pk-btn.sec{background:#eef2f7;color:#0b1220}
+.pk-in{width:100%;padding:12px;border:1px solid #d7dfea;border-radius:12px;font-size:15px;margin-top:8px;box-sizing:border-box}
+.pk-muted{color:#64748b;font-size:13px;text-align:center;padding:20px}
+.pk-login{padding:24px 18px;max-width:440px;margin:0 auto;width:100%;box-sizing:border-box}
+.pk-login h2{font-size:20px;margin:6px 0 4px}
+.pk-staff-link{margin-top:22px;padding-top:16px;border-top:1px solid #e9eef5;font-size:12px;color:#64748b;text-align:center}
+.pk-staff-link a{color:#2563eb;font-weight:700;text-decoration:none}
+textarea.pk-in{resize:vertical;font-family:inherit}
+.pk-go{color:#94a3b8;font-weight:700;font-size:18px}
+.pk-btn.pk-mini{width:auto;padding:7px 12px;margin:0;font-size:13px}
+.pk-trip{padding:10px 0;border-bottom:1px solid rgba(148,163,184,.18)}
+.pk-trip:last-child{border-bottom:0}
+.pk-trip-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.pk-ann{border-radius:12px;padding:12px 14px;margin-bottom:12px;border-left:5px solid #2563eb;background:#eff6ff}
+.pk-ann.warning{border-color:#d97706;background:#fffbeb}
+.pk-ann.emergency{border-color:#dc2626;background:#fef2f2}
+.pk-ann.promo{border-color:#7c3aed;background:#f5f3ff}
+.pk-ann-t{font-weight:800;font-size:15px}
+.pk-ann-b{font-size:13px;margin-top:3px;color:#334155}
+.pk-issueform{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;background:#f8fafc;border-radius:10px}
+.pk-issueform select.pk-in,.pk-issueform input.pk-in{margin:0}
+.err{font-size:.86rem;margin-top:10px;min-height:1em;color:var(--lb-red,#dc2626)}
