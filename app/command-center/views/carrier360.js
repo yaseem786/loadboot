@@ -6,8 +6,9 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
-import { carrier360 } from '../../shared/api.js';
+import { carrier360, fmcsaVerify } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
+import { can } from '../../shared/permissions.js';
 
 export function renderCarrier360(host, orgId) {
   mount(host, el('div', { class: 'cc-view' }, [
@@ -45,12 +46,27 @@ export function renderCarrier360(host, orgId) {
       kv('Factoring', p.factoring_status || '—'),
     ]);
 
+    const fmcsaStatus = el('div', { class: 'cc-sub', style: 'margin-top:8px' });
+    const canVerify = can('compliance.edit') || can('carriers.edit') || can('carriers.approve');
+    const verifyBtn = canVerify ? el('button', { class: 'lb-btn lb-btn-secondary lb-btn-sm', onClick: async (ev) => {
+      const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Verifying…'; fmcsaStatus.textContent = '';
+      if (!p.dot && !p.mc) { fmcsaStatus.textContent = 'No DOT or MC number on file to verify.'; btn.disabled = false; btn.textContent = 'Verify with FMCSA'; return; }
+      try {
+        const res = await fmcsaVerify({ carrierOrg: orgId, dot: p.dot, mc: p.mc });
+        const c = res.carrier || {};
+        fmcsaStatus.style.color = '#16a34a';
+        fmcsaStatus.textContent = '✓ FMCSA: ' + (c.legalName || '—') + ' · authority ' + (c.authority || '—') + ' · rating ' + (c.safetyRating || 'none') + (res.saved ? ' · saved' : '');
+        setTimeout(load, 800);
+      } catch (e) { fmcsaStatus.style.color = '#dc2626'; fmcsaStatus.textContent = humanizeError(e); }
+      btn.disabled = false; btn.textContent = 'Verify with FMCSA';
+    } }, 'Verify with FMCSA') : '';
     const safetyCard = card([
-      el('h4', { class: 'cc-card-title' }, 'Safety & authority'),
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Safety & authority'), verifyBtn]),
       kv('Authority', sc.authority_status || 'unknown'),
       kv('Safety rating', sc.safety_rating || 'none'),
       kv('Out of service', sc.out_of_service ? 'YES' : 'No'),
       kv('On-time delivery', sc.on_time_pct != null ? sc.on_time_pct + '%' : '—'),
+      fmcsaStatus,
     ]);
 
     const docs = d.documents || [];

@@ -269,6 +269,16 @@ export const actionCenter = () => rpc('cc_action_center');
 // ---- Wave J: Live operations map ----
 export const opsMap = () => rpc('cc_ops_map');
 
+// ---- Live integration: FMCSA carrier verification (edge function fmcsa-verify) ----
+export const fmcsaVerify = async (o = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('fmcsa-verify', { body: { carrier_org: o.carrierOrg ?? null, dot: o.dot ?? null, mc: o.mc ?? null } });
+  if (error) { const e = new Error((error && error.message) || 'FMCSA verification failed'); e.fn = 'fmcsa-verify'; throw e; }
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
+
 // ---- Wave G: staff scoped access (carrier-org selector for admin_assign_role) ----
 export const listCarrierOrgs = () => rpc('cc_list_carrier_orgs');
 
