@@ -21,6 +21,7 @@ import { renderSettings } from './views/settings.js';
 import { renderStaffRoles } from './views/staffRoles.js';
 import { renderAudit } from './views/audit.js';
 import { renderFlags } from './views/flags.js';
+import { renderAutomation } from './views/automation.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -89,8 +90,13 @@ async function boot() {
     }
   }
 
+  // optional engine flags (nav items hide when off, so production without the
+  // automation backend never reaches its RPCs)
+  let automationEnabled = false;
+  try { automationEnabled = await isFlagEnabled('automation_core_enabled'); } catch (_) { automationEnabled = false; }
+
   const user = await getUser();
-  const shell = renderShell(root, user);
+  const shell = renderShell(root, user, { automation: automationEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -105,6 +111,7 @@ async function boot() {
     '/carriers': () => { setActive('/carriers'); guard(['carriers.view', 'carriers.edit', 'carriers.approve'], () => renderCarriers(content))(); },
     '/loads': () => { setActive('/loads'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderLoads(content))(); },
     '/documents': () => { setActive('/documents'); guard(['documents.view', 'documents.review'], () => renderDocuments(content))(); },
+    '/automation': () => { setActive('/automation'); if (automationEnabled) renderAutomation(content); else renderPlaceholder(content, 'Not available', 'The automation engine is not enabled in this environment.'); },
     '/staff': () => { setActive('/staff'); if (anyOf('users.manage', 'roles.manage', 'staff.suspend')) renderStaffRoles(content); else denied(); },
     '/audit': () => { setActive('/audit'); if (can('audit.view')) renderAudit(content); else renderPlaceholder(content, 'Not available', 'You do not have permission to view the audit log.'); },
     '/flags': () => { setActive('/flags'); if (can('flags.manage')) renderFlags(content); else renderPlaceholder(content, 'Not available', 'You do not have permission to manage feature flags.'); },

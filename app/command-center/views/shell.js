@@ -20,6 +20,7 @@ const NAV = [
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/documents', label: 'Documents', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
+    { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },
   ]},
   { group: 'Administration', items: [
     { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },
@@ -37,22 +38,28 @@ function permVisible(item) {
   return can(item.perm);
 }
 
-export function renderShell(root, user) {
+export function renderShell(root, user, flags) {
+  flags = flags || {};
   const content = el('div', { class: 'cc-content', id: 'cc-content' });
   const linkEls = {};
   const badgeEls = {};
+
+  function visible(item) {
+    if (item.flag && !flags[item.flag]) return false;
+    return permVisible(item);
+  }
 
   const groups = NAV.map(g => {
     const items = g.items.map(item => {
       const badge = el('span', { class: 'cc-badge-count', hidden: true });
       badgeEls[item.path] = item.badge ? badge : null;
-      const a = el('a', { href: '#' + item.path, dataset: { path: item.path }, hidden: !permVisible(item) },
+      const a = el('a', { href: '#' + item.path, dataset: { path: item.path }, hidden: !visible(item) },
         [icon(item.icon, 18), el('span', null, item.label), item.badge ? badge : '']);
       linkEls[item.path] = a;
       return a;
     });
     // hide a whole group if every item is hidden
-    const anyVisible = g.items.some(permVisible);
+    const anyVisible = g.items.some(visible);
     return el('div', { hidden: !anyVisible }, [
       el('div', { class: 'cc-nav-group' }, g.group),
       el('nav', { class: 'cc-nav' }, items),
