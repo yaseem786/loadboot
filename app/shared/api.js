@@ -261,6 +261,13 @@ export const report = (kind, days = 30) => rpc('cc_report', { p_kind: kind, p_da
 export const listRules = () => rpc('cc_list_rules');
 export const setRuleEnabled = (key, enabled) => rpc('cc_set_rule_enabled', { p_key: key, p_enabled: enabled });
 
+// ---- Wave G: staff scoped access (carrier-org selector for admin_assign_role) ----
+export const listCarrierOrgs = () => rpc('cc_list_carrier_orgs');
+
+// ---- Wave H: staff team chat (flag: team_chat_enabled) ----
+export const postChat = (body, name) => rpc('cc_post_chat', { p_body: body, p_name: name ?? null });
+export const listChat = (after = 0, limit = 100) => rpc('cc_list_chat', { p_after: after, p_limit: limit });
+
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
 // They return one-by-one in later phases behind feature flags.

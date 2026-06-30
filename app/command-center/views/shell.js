@@ -47,6 +47,7 @@ const NAV = [
   { group: 'Communications', items: [
     { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },
     { path: '/notifications', label: 'Notifications', icon: 'bell', perm: null, flag: 'notificationsCenter' },
+    { path: '/chat', label: 'Team chat', icon: 'bell', perm: null, flag: 'teamChat' },
   ]},
   { group: 'Finance', items: [
     { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },

@@ -42,6 +42,7 @@ import { renderSupport } from './views/support.js';
 import { renderReports } from './views/reports.js';
 import { renderNotifications } from './views/notifications.js';
 import { renderAutomationsAdmin } from './views/automationsAdmin.js';
+import { renderChat } from './views/chat.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -130,16 +131,17 @@ async function boot() {
   try { formsEnabled = await isFlagEnabled('forms_enabled'); } catch (_) { formsEnabled = false; }
   try { seoEnabled = await isFlagEnabled('seo_enabled'); } catch (_) { seoEnabled = false; }
   // Control Tower Waves B–F flags (default OFF until the owner enables them)
-  let entity360Enabled = false, partnersEnabled = false, supportEnabled = false, reportsEnabled = false, automationsAdminEnabled = false, notificationsCenterEnabled = false;
+  let entity360Enabled = false, partnersEnabled = false, supportEnabled = false, reportsEnabled = false, automationsAdminEnabled = false, notificationsCenterEnabled = false, teamChatEnabled = false;
   try { entity360Enabled = await isFlagEnabled('entity360_enabled'); } catch (_) { entity360Enabled = false; }
   try { partnersEnabled = await isFlagEnabled('partners_enabled'); } catch (_) { partnersEnabled = false; }
   try { supportEnabled = await isFlagEnabled('support_enabled'); } catch (_) { supportEnabled = false; }
   try { reportsEnabled = await isFlagEnabled('reports_enabled'); } catch (_) { reportsEnabled = false; }
   try { automationsAdminEnabled = await isFlagEnabled('automations_admin_enabled'); } catch (_) { automationsAdminEnabled = false; }
   try { notificationsCenterEnabled = await isFlagEnabled('notifications_center_enabled'); } catch (_) { notificationsCenterEnabled = false; }
+  try { teamChatEnabled = await isFlagEnabled('team_chat_enabled'); } catch (_) { teamChatEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -172,6 +174,7 @@ async function boot() {
     '/support': () => { setActive('/support'); if (supportEnabled && can('support.view')) renderSupport(content); else denied(); },
     '/reports': () => { setActive('/reports'); if (reportsEnabled && can('reports.view')) renderReports(content); else denied(); },
     '/notifications': () => { setActive('/notifications'); if (notificationsCenterEnabled) renderNotifications(content); else denied(); },
+    '/chat': () => { setActive('/chat'); if (teamChatEnabled) renderChat(content); else denied(); },
     '/automations': () => { setActive('/automations'); if (automationsAdminEnabled) renderAutomationsAdmin(content); else denied(); },
     '/content': () => { setActive('/content'); if (contentEnabled && can('content.view')) renderContent(content); else denied(); },
     '/integrations': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); },
