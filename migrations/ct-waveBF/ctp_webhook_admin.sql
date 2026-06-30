@@ -1,0 +1,4 @@
+-- ctp_webhook_admin.sql — Phase 1 hardening. Staff-gated (integrations.view) RPCs for
+-- outbound webhook visibility + dead-letter retry: cc_list_webhook_endpoints,
+-- cc_list_webhook_deliveries(p_status,p_limit), cc_retry_webhook_delivery(p_id).
+-- Applied to staging + production via MCP.
