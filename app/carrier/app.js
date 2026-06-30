@@ -285,14 +285,29 @@ async function appView() {
   render();
 }
 
+// Reload only on a real sign-OUT transition (i.e. we had a session and then lost
+// it). We must NOT reload on the initial null session that Supabase emits on
+// subscribe for logged-out visitors — that would loop forever on the login screen.
+let _hadSession = false;
+let _authWatching = false;
+function watchAuth() {
+  if (_authWatching) return;
+  _authWatching = true;
+  onAuthChange((s) => {
+    if (s) { _hadSession = true; return; }
+    if (_hadSession) { _hadSession = false; location.reload(); }
+  });
+}
+
 async function boot() {
   root.setAttribute('aria-busy', 'true');
   let session = null;
   try { session = await getSession(); } catch (_) {}
   if (!session) { loginView(); return; }
+  _hadSession = true;
+  watchAuth();
   try { mountOfflineBanner(); } catch (_) {}
   appView();
 }
 
-onAuthChange((s) => { if (!s) location.reload(); });
 boot();
