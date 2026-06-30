@@ -30,6 +30,7 @@ import { renderFinance } from './views/finance.js';
 import { renderFinanceAnalytics } from './views/financeAnalytics.js';
 import { renderSystemModules } from './views/systemModules.js';
 import { renderSystemHealth } from './views/systemHealth.js';
+import { renderWebhooks } from './views/webhooks.js';
 import { renderAnalytics } from './views/analytics.js';
 import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
@@ -186,6 +187,7 @@ async function boot() {
     '/finance-analytics': () => { setActive('/finance-analytics'); if (financeEnabled && can('finance.view')) renderFinanceAnalytics(content); else denied(); },
     '/modules': () => { setActive('/modules'); if (can('settings.manage')) renderSystemModules(content); else denied(); },
     '/health': () => { setActive('/health'); renderSystemHealth(content); },
+    '/webhooks': () => { setActive('/webhooks'); if (can('integrations.view')) renderWebhooks(content); else denied(); },
     '/analytics': () => { setActive('/analytics'); if (analyticsEnabled && can('analytics.view')) renderAnalytics(content); else denied(); },
     '/web-analytics': () => { setActive('/web-analytics'); if (webAnalyticsEnabled && can('analytics.view')) renderAnalyticsWeb(content); else denied(); },
     '/forms': () => { setActive('/forms'); if (formsEnabled && can('forms.view')) renderForms(content); else denied(); },
