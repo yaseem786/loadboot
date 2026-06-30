@@ -376,3 +376,27 @@
 .cc-search-row b{flex:1;font-weight:600;font-size:14px}
 .cc-search-empty{padding:14px;color:var(--lb-muted,#64748b);font-size:13px}
 @media (max-width:900px){.cc-search-wrap{display:none}}
+
+/* ===== Control Tower Wave A: web analytics, forms, SEO ===== */
+.cc-row-click { cursor: pointer; transition: background .12s ease; }
+.cc-row-click:hover { background: var(--cc-hover, rgba(59,130,246,.06)); }
+.cc-table-tight td, .cc-table-tight th { padding: 7px 8px; font-size: 13px; }
+
+.cc-kv { display: flex; justify-content: space-between; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--lb-border, #eef2f7); font-size: 14px; }
+.cc-kv-k { color: var(--lb-muted, #64748b); flex: 0 0 38%; }
+.cc-kv-v { font-weight: 600; text-align: right; word-break: break-word; }
+
+.cc-conn-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.cc-conn-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--lb-border, #eef2f7); border-radius: 12px; background: var(--lb-card-2, #fafbfc); }
+
+.cc-toggle { border: 1px solid var(--lb-border, #d7dee8); background: #fff; color: var(--lb-muted, #64748b); border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: 12px; cursor: pointer; }
+.cc-toggle.on { background: #16a34a; border-color: #16a34a; color: #fff; }
+
+.cc-delta { font-weight: 700; font-size: 12px; }
+.cc-delta.up { color: #16a34a; }
+.cc-delta.down { color: #dc2626; }
+
+.cc-live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; margin-right: 6px; box-shadow: 0 0 0 0 rgba(22,163,74,.5); animation: cc-pulse 1.8s infinite; }
+@keyframes cc-pulse { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.45); } 70% { box-shadow: 0 0 0 7px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+
+.lb-btn-sm { padding: 5px 12px !important; font-size: 13px !important; }

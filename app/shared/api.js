@@ -210,9 +210,34 @@ export const rateconDocument = (trip) => rpc('cc_ratecon_document', { p_trip: tr
 export const listDocumentFiles = (ownerType, ownerId) => rpc('cc_list_document_files', { p_owner_type: ownerType, p_owner_id: ownerId });
 export const recordDocumentFile = (o = {}) => rpc('cc_record_document_file', { p_owner_type: o.ownerType, p_owner_id: o.ownerId, p_kind: o.kind ?? null, p_path: o.path, p_file_name: o.fileName, p_content_type: o.contentType ?? null, p_size: o.size ?? null });
 
-// NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
-// surface): web analytics, content/blog, page builder, fleet locations, smart matching,
-// rate intelligence, settlements, messages, Search Console. They return one-by-one in
-// later phases behind feature flags; do not re-add their RPC wrappers until then.
+// ---- Control Tower Wave A: first-party Web Analytics (flag: web_analytics_enabled) ----
+export const webLive = (minutes = 5) => rpc('cc_web_live', { p_minutes: minutes });
+export const webOverview = (days = 7) => rpc('cc_web_overview', { p_days: days });
+export const webPages = (days = 7, limit = 25) => rpc('cc_web_pages', { p_days: days, p_limit: limit });
+export const webReferrers = (days = 7, limit = 25) => rpc('cc_web_referrers', { p_days: days, p_limit: limit });
+export const webAiReferrals = (days = 30) => rpc('cc_web_ai_referrals', { p_days: days });
+
+// ---- Wave A: Forms inbox -> leads (flag: forms_enabled) ----
+export const formsOverview = () => rpc('cc_forms_overview');
+export const listForms = (o = {}) => rpc('cc_list_forms', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getForm = (id) => rpc('cc_get_form', { p_id: id });
+export const convertFormToLead = (id) => rpc('cc_convert_form_to_lead', { p_id: id });
+export const setFormStatus = (id, status, assignee) => rpc('cc_set_form_status', { p_id: id, p_status: status, p_assignee: assignee ?? null });
+
+// ---- Wave A: SEO control center (flag: seo_enabled) ----
+export const seoOverview = () => rpc('cc_seo_overview');
+export const listKeywords = (o = {}) => rpc('cc_list_keywords', { p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const upsertKeyword = (o = {}) => rpc('cc_upsert_keyword', { p_id: o.id ?? null, p_keyword: o.keyword, p_target_page: o.targetPage ?? null, p_position: o.position ?? null, p_priority: o.priority ?? null, p_intent: o.intent ?? null, p_notes: o.notes ?? null });
+export const listRedirects = (limit = 300) => rpc('cc_list_redirects', { p_limit: limit });
+export const createRedirect = (o = {}) => rpc('cc_create_redirect', { p_source: o.source, p_destination: o.destination, p_type: o.type ?? 301, p_reason: o.reason ?? null });
+export const toggleRedirect = (id, active) => rpc('cc_toggle_redirect', { p_id: id, p_active: active });
+
+// ---- Wave A: integration status shells (GA4 / Search Console / Resend / Twilio / Maps / FMCSA) ----
+export const integrationStatus = () => rpc('cc_integration_status');
+export const setIntegrationStatus = (provider, status, config) => rpc('cc_set_integration_status', { p_provider: provider, p_status: status, p_config: config ?? null });
+
+// NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
+// content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
+// They return one-by-one in later phases behind feature flags.
 
 export default { rpc };

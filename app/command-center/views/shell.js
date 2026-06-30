@@ -18,6 +18,7 @@ const NAV = [
     { path: '/radar', label: 'Ops Radar', icon: 'bell', perm: null },
     { path: '/management', label: 'Management', icon: 'grid', perm: null },
     { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
+    { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics' },
   ]},
   { group: 'Operations', items: [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
@@ -31,6 +32,10 @@ const NAV = [
   ]},
   { group: 'Sales', items: [
     { path: '/crm', label: 'CRM & leads', icon: 'trend', perm: 'crm.view', flag: 'crm' },
+    { path: '/forms', label: 'Forms inbox', icon: 'bell', perm: 'forms.view', flag: 'forms' },
+  ]},
+  { group: 'SEO & Website', items: [
+    { path: '/seo', label: 'SEO & redirects', icon: 'trend', perm: 'seo.view', flag: 'seo' },
   ]},
   { group: 'Communications', items: [
     { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },

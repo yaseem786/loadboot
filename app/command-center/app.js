@@ -33,6 +33,9 @@ import { renderIntegrations } from './views/integrations.js';
 import { renderRadar } from './views/radar.js';
 import { renderFleet } from './views/fleet.js';
 import { renderManagement } from './views/management.js';
+import { renderAnalyticsWeb } from './views/analyticsWeb.js';
+import { renderForms } from './views/forms.js';
+import { renderSeo } from './views/seo.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -115,9 +118,14 @@ async function boot() {
   try { contentEnabled = await isFlagEnabled('content_enabled'); } catch (_) { contentEnabled = false; }
   try { integrationsEnabled = await isFlagEnabled('integrations_enabled'); } catch (_) { integrationsEnabled = false; }
   try { fleetEnabled = await isFlagEnabled('fleet_enabled'); } catch (_) { fleetEnabled = false; }
+  // Control Tower Wave A flags (default OFF until the owner enables them in production)
+  let webAnalyticsEnabled = false, formsEnabled = false, seoEnabled = false;
+  try { webAnalyticsEnabled = await isFlagEnabled('web_analytics_enabled'); } catch (_) { webAnalyticsEnabled = false; }
+  try { formsEnabled = await isFlagEnabled('forms_enabled'); } catch (_) { formsEnabled = false; }
+  try { seoEnabled = await isFlagEnabled('seo_enabled'); } catch (_) { seoEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -142,6 +150,9 @@ async function boot() {
     '/comms': () => { setActive('/comms'); if (commsEnabled && can('comm.view')) renderComms(content); else denied(); },
     '/finance': () => { setActive('/finance'); if (financeEnabled && can('finance.view')) renderFinance(content); else denied(); },
     '/analytics': () => { setActive('/analytics'); if (analyticsEnabled && can('analytics.view')) renderAnalytics(content); else denied(); },
+    '/web-analytics': () => { setActive('/web-analytics'); if (webAnalyticsEnabled && can('analytics.view')) renderAnalyticsWeb(content); else denied(); },
+    '/forms': () => { setActive('/forms'); if (formsEnabled && can('forms.view')) renderForms(content); else denied(); },
+    '/seo': () => { setActive('/seo'); if (seoEnabled && can('seo.view')) renderSeo(content); else denied(); },
     '/content': () => { setActive('/content'); if (contentEnabled && can('content.view')) renderContent(content); else denied(); },
     '/integrations': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); },
     '/staff': () => { setActive('/staff'); if (anyOf('users.manage', 'roles.manage', 'staff.suspend')) renderStaffRoles(content); else denied(); },
