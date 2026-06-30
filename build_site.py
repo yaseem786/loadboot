@@ -356,6 +356,23 @@ LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org",
 GA_SNIPPET = ('<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag(\'js\',new Date());gtag(\'config\',\'%s\');</script>' % (GA_ID, GA_ID)) if GA_ID else ''
 HEADX = LOCALBIZ + GA_SNIPPET
 
+# First-party analytics beacon (privacy-safe). Posts pageviews to the context's Supabase
+# project via the public track_web_event RPC. Exposes window.lbTrack(type, extra) for events.
+# Internal traffic: append ?lb_internal=1 once to flag this browser as team/internal (excluded).
+_BEACON = ("<script>(function(){try{"
+  "var K='lb_aid',aid=localStorage.getItem(K);if(!aid){aid=Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(K,aid);}"
+  "var q=new URLSearchParams(location.search);if(q.get('lb_internal')==='1'){localStorage.setItem('lb_int','1');}var internal=localStorage.getItem('lb_int')==='1';"
+  "var ref=document.referrer||'',rh='';try{rh=ref?new URL(ref).hostname:'';}catch(e){}"
+  "var ua=navigator.userAgent||'';var dev=/Mobi|Android|iPhone|iPad/i.test(ua)?'mobile':'desktop';"
+  "var br=/Edg/i.test(ua)?'Edge':/Chrome/i.test(ua)?'Chrome':/Firefox/i.test(ua)?'Firefox':/Safari/i.test(ua)?'Safari':'Other';"
+  "var os=/Windows/i.test(ua)?'Windows':/Mac/i.test(ua)?'macOS':/Android/i.test(ua)?'Android':/iPhone|iPad|iOS/i.test(ua)?'iOS':/Linux/i.test(ua)?'Linux':'Other';"
+  "var EP='https://%s.supabase.co/rest/v1/rpc/track_web_event',AK='%s';"
+  "function send(p){try{fetch(EP,{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:p}),keepalive:true}).catch(function(){});}catch(e){}}"
+  "send({anon_id:aid,type:'pageview',page:location.pathname,referrer:ref,referrer_host:rh,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),device:dev,browser:br,os:os,language:navigator.language,timezone:(Intl.DateTimeFormat().resolvedOptions().timeZone||''),ua:ua,internal:internal});"
+  "window.lbTrack=function(t,x){var b=Object.assign({anon_id:aid,type:t,page:location.pathname},x||{});send(b);};"
+  "}catch(e){}})();</script>") % (APP_REF, APP_ANON)
+HEADX = HEADX + _BEACON
+
 def page(fname, title, desc, active, body, schema=''):
     doc = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
@@ -1613,18 +1630,20 @@ HEADERS = (
 # self for docs/styles/workers; the PINNED esm.sh module CDN for supabase-js. No
 # inline/eval scripts.
 _CSP_REF = APP_REF   # prod ref in production context, staging ref otherwise
+# Live operations map: Leaflet from cdnjs (script+style) and OpenStreetMap raster tiles
+# (img). circleMarkers are SVG, so no external marker images are needed.
 _APP_CSP = (
   "default-src 'self'; "
   "base-uri 'self'; "
   "object-src 'none'; "
   "frame-ancestors 'none'; "
-  "img-src 'self' data:; "
-  "style-src 'self' 'unsafe-inline'; "
+  "img-src 'self' data: https://*.tile.openstreetmap.org; "
+  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
   "font-src 'self' data:; "
-  "script-src 'self' https://esm.sh; "
+  "script-src 'self' https://esm.sh https://cdnjs.cloudflare.com; "
   "worker-src 'self'; "
   "manifest-src 'self'; "
-  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh"
+  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdnjs.cloudflare.com"
 ) % (_CSP_REF, _CSP_REF)
 APP_HEADERS = (
   "\n/app/*\n"

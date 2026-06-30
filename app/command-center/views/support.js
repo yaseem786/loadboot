@@ -6,7 +6,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
-import { supportOverview, listTickets, getTicket, createTicket, setTicketStatus } from '../../shared/api.js';
+import { supportOverview, listTickets, getTicket, createTicket, setTicketStatus, aiAssist, sendEmail } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -77,12 +77,41 @@ export function renderSupport(host) {
       const setS = async (s) => { try { await setTicketStatus(id, s); } catch (e) { alert(humanizeError(e)); return; } document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load(); };
       ['open', 'pending', 'resolved', 'closed'].filter(s => s !== t.status).forEach(s => actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => setS(s) }, s.charAt(0).toUpperCase() + s.slice(1))));
     }
+    // AI-drafted reply + send email to the requester (Gemini + Resend)
+    let replySection = '';
+    if (manage && t.requester_email) {
+      const replyBox = el('textarea', { class: 'cc-input', rows: '5', placeholder: 'Write a reply, or use “Draft with AI”…' });
+      const note = el('div', { class: 'cc-sub', style: 'margin-top:6px' });
+      const aiBtn = el('button', { class: 'lb-btn lb-btn-secondary lb-btn-sm', onClick: async (ev) => {
+        const b = ev.currentTarget; b.disabled = true; b.textContent = '✨ Drafting…'; note.textContent = '';
+        try { const r = await aiAssist('support_reply', { subject: t.subject, body: t.body }); replyBox.value = (r && r.text) || ''; }
+        catch (e) { note.style.color = '#dc2626'; note.textContent = humanizeError(e); }
+        b.disabled = false; b.textContent = '✨ Draft with AI';
+      } }, '✨ Draft with AI');
+      const sendBtn = el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async (ev) => {
+        const b = ev.currentTarget; const txt = replyBox.value.trim();
+        if (!txt) { note.style.color = '#dc2626'; note.textContent = 'Write a reply first.'; return; }
+        b.disabled = true; b.textContent = 'Sending…'; note.textContent = '';
+        try {
+          await sendEmail({ to: t.requester_email, subject: 'Re: ' + t.subject, text: txt });
+          note.style.color = '#16a34a'; note.textContent = '✓ Email sent to ' + t.requester_email;
+          try { await setTicketStatus(id, 'pending'); } catch (_) {}
+        } catch (e) { note.style.color = '#dc2626'; note.textContent = humanizeError(e); }
+        b.disabled = false; b.textContent = 'Send email reply';
+      } }, 'Send email reply');
+      replySection = el('div', { style: 'margin-top:14px' }, [
+        el('h4', { class: 'cc-card-title' }, 'Reply'),
+        replyBox, note,
+        el('div', { class: 'cc-drawer-actions', style: 'margin-top:8px' }, [aiBtn, sendBtn]),
+      ]);
+    }
     openDrawer(t.ref + ' · ' + t.subject, el('div', null, [
       kv('Status', t.status), kv('Priority', t.priority), kv('Category', t.category),
       kv('Requester', t.requester_name), kv('Email', t.requester_email), kv('Opened', fmtDateTime(t.created_at)),
       t.related_type ? kv('Related', t.related_type + ' ' + (t.related_id || '')) : '',
       el('div', { class: 'cc-kv', style: 'align-items:flex-start' }, [el('span', { class: 'cc-kv-k' }, 'Detail'), el('span', { class: 'cc-kv-v', style: 'white-space:pre-wrap' }, t.body || '—')]),
       actions.childNodes.length ? el('div', { style: 'margin-top:12px' }, actions) : '',
+      replySection,
     ]), { subtitle: 'Support ticket' });
   }
 

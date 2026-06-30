@@ -269,6 +269,24 @@ export const actionCenter = () => rpc('cc_action_center');
 // ---- Wave J: Live operations map ----
 export const opsMap = () => rpc('cc_ops_map');
 
+// ---- Live integration: AI assist (Gemini) + transactional email (Resend) ----
+export const aiAssist = async (task, ctx = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('ai-assist', { body: { task, ...ctx } });
+  if (error) throw new Error((error && error.message) || 'AI request failed');
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
+export const sendEmail = async (o = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('send-email', { body: { to: o.to, subject: o.subject, text: o.text, html: o.html ?? null } });
+  if (error) throw new Error((error && error.message) || 'Email failed');
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
+
 // ---- Live integration: FMCSA carrier verification (edge function fmcsa-verify) ----
 export const fmcsaVerify = async (o = {}) => {
   const { getClient } = await import('./supabaseClient.js');
