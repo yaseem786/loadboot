@@ -33,6 +33,15 @@ export async function signInWithPassword(email, password) {
   return sb.auth.signInWithPassword({ email, password });
 }
 
+// Carrier self-registration. The backend new-user trigger creates the carrier
+// profile (role='carrier') from this auth user; company/name ride along as
+// user metadata. If email confirmation is on, data.session is null and the
+// caller should ask the user to confirm via email before signing in.
+export async function signUp(email, password, meta = {}) {
+  const sb = await getClient();
+  return sb.auth.signUp({ email, password, options: { data: { company: meta.company || '', name: meta.name || '' } } });
+}
+
 export async function signOut() {
   const sb = await getClient();
   try { await sb.auth.signOut(); } catch (_) {}
