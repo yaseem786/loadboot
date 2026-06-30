@@ -465,3 +465,6 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 /* ===== Wave L: announcements + campaigns ===== */
 .cc-pill-violet { background:#ede9fe; color:#6d28d9; }
 .cc-pill-violet .cc-pill-dot { background:#7c3aed; }
+
+/* ===== Phase 3/4: Google data source label ===== */
+.cc-src { display:inline-block; background:#0b1220; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; margin-right:6px; }
