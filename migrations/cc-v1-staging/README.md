@@ -15,8 +15,18 @@ This is the exact, source-controlled SQL for the V1 Command Center backend **as 
 | `cc_v1_0029_drop_experimental_0021_0026_leftovers` | `0029_drop_experimental_leftovers.sql` (NEW) |
 | `cc_v1_0030_operator_surface` | `0030_operator_surface.sql` (NEW, reviewed replacement for experimental 0021) |
 | `cc_v1_0031_staging_owner_provisioning` | `0031_provision_staging_owner.sql` (NEW, staging-only) |
+| `cc_v1_0032_profile_write_contract` | `0032_profile_write_contract.sql` (NEW, staging-only; 0012B catch-up) |
 
 The experimental `0021`–`0026` are **NOT** applied and must not be re-applied unchanged.
+
+## Production-safe vs staging-only (separation)
+- **Production-safe (the reviewed delta):** `0015`, `0016`, `0017`, `0018`, `0019`, `0020`, `0030` —
+  RBAC, organizations/memberships, permission helpers, audit, feature flags/settings, privileged actions,
+  staff directory, operator RPC surface. The exact production rollout package is `../cc-v1-production/`.
+- **Staging-only (never apply to production):** the app `baseline`, `0029` (experimental-leftover
+  cleanup), `0031` (`provision_staging_owner`), `0032` (0012B catch-up — prod already has 0012B),
+  `SMOKE-TEST.sql`, and all demo carriers/loads/documents + synthetic Owner/Dispatcher rows + staging
+  reset/bootstrap utilities under `scripts/staging-reset/`.
 
 ## Re-apply (fresh staging) — exact order
 1. `docs/recreation-test/staging-baseline.sql`
