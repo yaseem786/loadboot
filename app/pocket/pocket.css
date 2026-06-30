@@ -47,3 +47,8 @@ textarea.pk-in { resize:vertical; font-family:inherit; }
 .pk-ann.promo { border-color:#7c3aed; background:#f5f3ff; }
 .pk-ann-t { font-weight:800; font-size:15px; }
 .pk-ann-b { font-size:13px; margin-top:3px; color:#334155; }
+
+/* Phase 5/6: issue/dispute inline forms */
+.pk-issueform { display:flex; flex-direction:column; gap:8px; margin-top:8px; padding:10px; background:#f8fafc; border-radius:10px; }
+.pk-issueform select.pk-in, .pk-issueform input.pk-in { margin:0; }
+.pk-pill.green { background:#dcfce7; color:#166534; } .pk-pill.gray { background:#eef2f7; color:#475569; }

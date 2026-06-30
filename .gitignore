@@ -1,3 +1,14 @@
 __pycache__/
 *.pyc
 loadboot_site.zip
+site/
+node_modules/
+PHASE-2A-v*.diff
+COMMITS.txt
+scripts/staging-apply.log
+scripts/staging-reset.log
+scripts/logs/
+loadboot-phase2a-v*.zip
+
+# Local-only secret (copy into Supabase, then delete). Never commit.
+VAPID_PRIVATE_KEY.local.txt

@@ -13,3 +13,20 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
   );
 });
+
+// ---- Web Push (Phase 5) ----
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text ? e.data.text() : '' }; }
+  const title = d.title || 'LoadBoot';
+  const options = { body: d.body || '', icon: '/favicon.ico', badge: '/favicon.ico', data: { url: d.url || './' }, vibrate: [80, 40, 80] };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) { c.navigate && c.navigate(url); return c.focus(); } }
+    if (clients.openWindow) return clients.openWindow(url);
+  }));
+});
