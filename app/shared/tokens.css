@@ -1,0 +1,73 @@
+/* tokens.css — shared design tokens + base components for both apps.
+   Kept framework-free; mirrors the marketing site's palette for brand continuity. */
+:root{
+  --lb-navy:#0F172A; --lb-blue:#2563EB; --lb-orange:#F97316;
+  --lb-bg:#F8FAFC; --lb-surface:#ffffff; --lb-muted:#64748B; --lb-border:#E2E8F0;
+  --lb-blue-soft:#EFF6FF; --lb-green:#16a34a; --lb-red:#dc2626; --lb-amber:#d97706;
+  --lb-r:14px; --lb-r-sm:10px; --lb-shadow:0 24px 50px -28px rgba(15,23,42,.35);
+  --lb-font:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --lb-head:'Manrope','Inter',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--lb-font);color:var(--lb-navy);background:var(--lb-bg);line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--lb-head);line-height:1.18;letter-spacing:-.02em;margin:0}
+a{color:var(--lb-blue);text-decoration:none}
+button{font-family:inherit}
+
+/* buttons */
+.lb-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid transparent;
+  border-radius:var(--lb-r-sm);padding:10px 16px;font-weight:700;font-size:.92rem;cursor:pointer;transition:.15s}
+.lb-btn-primary{background:var(--lb-blue);color:#fff}
+.lb-btn-primary:hover{background:#1d4ed8}
+.lb-btn-secondary{background:#fff;color:var(--lb-navy);border-color:var(--lb-border)}
+.lb-btn-secondary:hover{border-color:var(--lb-blue);color:var(--lb-blue)}
+.lb-btn-danger{background:var(--lb-red);color:#fff}
+.lb-btn:disabled{opacity:.5;cursor:not-allowed}
+.lb-btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--lb-blue);outline-offset:2px}
+
+/* states */
+.lb-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  text-align:center;color:var(--lb-muted);padding:48px 20px}
+.lb-spinner{width:30px;height:30px;border-radius:50%;border:3px solid var(--lb-border);
+  border-top-color:var(--lb-blue);animation:lbspin .8s linear infinite}
+@keyframes lbspin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.lb-spinner{animation-duration:2s}}
+.lb-error{color:var(--lb-red)}
+
+/* badges / chips */
+.lb-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;
+  background:var(--lb-blue-soft);color:var(--lb-blue)}
+.lb-badge-green{background:#dcfce7;color:#15803d}
+.lb-badge-amber{background:#fef3c7;color:#92400e}
+.lb-badge-red{background:#fee2e2;color:#b91c1c}
+.lb-badge-gray{background:#f1f5f9;color:#475569}
+
+/* tables */
+.lb-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.lb-table th,.lb-table td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--lb-border);vertical-align:top}
+.lb-table th{font-family:var(--lb-head);font-weight:700;color:var(--lb-muted);font-size:.78rem;
+  text-transform:uppercase;letter-spacing:.04em}
+.lb-table tr:hover td{background:var(--lb-bg)}
+
+/* cards */
+.lb-card{background:var(--lb-surface);border:1px solid var(--lb-border);border-radius:var(--lb-r);padding:20px}
+
+/* offline banner */
+.lb-offline{position:fixed;left:0;right:0;bottom:0;z-index:9000;background:var(--lb-amber);color:#fff;
+  font-weight:600;font-size:.9rem;text-align:center;padding:10px 14px}
+body.lb-is-offline .lb-needs-online{opacity:.5;pointer-events:none}
+
+/* toasts */
+#lb-toasts{position:fixed;right:16px;bottom:16px;z-index:9500;display:flex;flex-direction:column;gap:10px}
+.lb-toast{background:var(--lb-navy);color:#fff;padding:12px 16px;border-radius:var(--lb-r-sm);
+  font-size:.9rem;box-shadow:var(--lb-shadow);max-width:340px;opacity:1;transition:opacity .3s,transform .3s}
+.lb-toast.out{opacity:0;transform:translateY(8px)}
+.lb-toast-error{background:var(--lb-red)}
+.lb-toast-success{background:var(--lb-green)}
+
+/* placeholder panels (2A non-functional modules) */
+.lb-placeholder{border:1px dashed var(--lb-border);border-radius:var(--lb-r);padding:40px 24px;
+  text-align:center;color:var(--lb-muted);background:var(--lb-surface)}
+.lb-placeholder h3{color:var(--lb-navy);margin-bottom:8px}
+.lb-placeholder .lb-badge{margin-bottom:14px}

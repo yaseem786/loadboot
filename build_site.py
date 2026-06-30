@@ -21,6 +21,25 @@ def asset_exists(name):
     """True if a referenced local asset is present in SRC (so the page can reference it)."""
     return bool(name) and os.path.exists(os.path.join(SRC, name.split('?')[0]))
 
+# ============================================================================
+# DEPLOY CONTEXT + SUPABASE TARGETS (single source of truth — used by the public
+# load board, the app env-config, and the per-context CSP).
+#   production context => the PRODUCTION project ONLY.
+#   any preview/branch/dev context => the STAGING project ONLY (never production).
+# A preview that cannot resolve its staging key FAILS the build (see app section).
+# ============================================================================
+PROD_REF = 'rwscphuhpjoudvljvmdk'
+STAGING_REF = 'snslhvmkjusozgjelghi'
+PROD_ANON = os.environ.get('LOADBOOT_PROD_ANON_KEY') or 'sb_publishable_lHr4JKuHCZEkkjaEh7vx3A_ya_XLG4V'
+STAGING_ANON = os.environ.get('LOADBOOT_STAGING_ANON_KEY')   # required for preview builds
+_CTX = (os.environ.get('CONTEXT') or os.environ.get('LOADBOOT_CONTEXT') or 'dev').strip()
+IS_PRODUCTION_CTX = (_CTX == 'production')
+_BUILD_ID = (os.environ.get('COMMIT_REF') or os.environ.get('LOADBOOT_BUILD_ID') or 'dev')[:12]
+if IS_PRODUCTION_CTX:
+    APP_ENV, APP_REF, APP_ANON = 'production', PROD_REF, PROD_ANON
+else:
+    APP_ENV, APP_REF, APP_ANON = 'preview', STAGING_REF, STAGING_ANON
+
 # ---------------- shared CSS ----------------
 CSS = r''':root{--navy:#0F172A;--blue:#2563EB;--orange:#F97316;--white:#fff;--bg:#F8FAFC;--muted:#64748B;--border:#E2E8F0;--blue-soft:#EFF6FF;--maxw:1200px;--r:16px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -605,7 +624,18 @@ LIVEBOARD = ('<section id="opportunities" class="bg-soft"><div class="wrap"><div
  '<div class="plb-grid reveal" id="liveLoads"><div class="plb-empty" id="liveEmpty">Loading current opportunities&hellip;</div></div>'
  '<div class="plb-cta reveal"><a href="dashboard.html" class="btn btn-primary">Sign in to view &amp; book &rarr;</a>'
  '<span class="plb-note">A free verified carrier account is required to view full load details and book.</span></div></div></section>')
-LIVEBOARD_JS = (r"(function(){var SB='https://rwscphuhpjoudvljvmdk.supabase.co',KEY='sb_publishable_lHr4JKuHCZEkkjaEh7vx3A_ya_XLG4V';var el=document.getElementById('liveLoads'),em=document.getElementById('liveEmpty');if(!el)return;function esc(s){return (s==null?'':String(s)).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}function num(n){return Number(n||0).toLocaleString();}function dt(d){if(!d)return '';try{return new Date(d).toLocaleDateString(undefined,{month:'short',day:'numeric'});}catch(e){return '';}}function ago(d){if(!d)return '';var s=Math.floor((Date.now()-new Date(d).getTime())/1000);if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}function card(l){var rpm=l.rpm?('$'+Number(l.rpm).toFixed(2)+'/mi'):'';return '<article class=\"plb\"><div class=\"plb-top\"><div class=\"plb-lane\"><b>'+esc(l.origin)+'</b><span class=\"plb-ar\">&rarr;</span><b>'+esc(l.destination)+'</b></div><div class=\"plb-rate\">$'+num(Math.round(l.rate))+(rpm?'<span>'+rpm+'</span>':'')+'</div></div><div class=\"plb-tags\"><span class=\"plb-tag eq\">'+esc(l.equipment||'Van')+'</span>'+(l.miles?'<span class=\"plb-tag alt\">'+num(l.miles)+' mi</span>':'')+(l.pickup_date?'<span class=\"plb-tag\">PU '+esc(dt(l.pickup_date))+'</span>':'')+'</div><div class=\"plb-meta\"><span>Posted<b>'+esc(ago(l.posted)||'recently')+'</b></span><span>Ref<b>#'+esc(l.ref)+'</b></span></div><a href=\"dashboard.html\" class=\"plb-book\">View &amp; Book Load &rarr;</a></article>';}function empty(m){if(em){em.textContent=m;em.style.display='';}}fetch(SB+'/rest/v1/rpc/get_public_load_opportunities',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:9})}).then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(d&&d.length){el.innerHTML=d.map(card).join('');}else{empty('No public load opportunities right now. Sign in for the full carrier board.');}}).catch(function(){empty('Live opportunities are temporarily unavailable. Please sign in to view the full board.');});})();")
+# The public load board talks to a Supabase project. In PRODUCTION it uses the
+# production project. In ANY preview/branch/dev build it makes ZERO production
+# requests: the board renders an explicit "disabled in preview" state and never
+# fetches (staging has no public board data). This keeps a Deploy Preview fully
+# production-isolated. The SB/KEY literals below are only ever the PRODUCTION
+# project, and they are only emitted into the page when IS_PRODUCTION_CTX is true.
+_BOARD_SB = 'https://%s.supabase.co' % PROD_REF
+_BOARD_KEY = PROD_ANON
+LIVEBOARD_JS_PROD = (r"(function(){var SB='" + _BOARD_SB + r"',KEY='" + _BOARD_KEY + r"';var el=document.getElementById('liveLoads'),em=document.getElementById('liveEmpty');if(!el)return;function esc(s){return (s==null?'':String(s)).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}function num(n){return Number(n||0).toLocaleString();}function dt(d){if(!d)return '';try{return new Date(d).toLocaleDateString(undefined,{month:'short',day:'numeric'});}catch(e){return '';}}function ago(d){if(!d)return '';var s=Math.floor((Date.now()-new Date(d).getTime())/1000);if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}function card(l){var rpm=l.rpm?('$'+Number(l.rpm).toFixed(2)+'/mi'):'';return '<article class=\"plb\"><div class=\"plb-top\"><div class=\"plb-lane\"><b>'+esc(l.origin)+'</b><span class=\"plb-ar\">&rarr;</span><b>'+esc(l.destination)+'</b></div><div class=\"plb-rate\">$'+num(Math.round(l.rate))+(rpm?'<span>'+rpm+'</span>':'')+'</div></div><div class=\"plb-tags\"><span class=\"plb-tag eq\">'+esc(l.equipment||'Van')+'</span>'+(l.miles?'<span class=\"plb-tag alt\">'+num(l.miles)+' mi</span>':'')+(l.pickup_date?'<span class=\"plb-tag\">PU '+esc(dt(l.pickup_date))+'</span>':'')+'</div><div class=\"plb-meta\"><span>Posted<b>'+esc(ago(l.posted)||'recently')+'</b></span><span>Ref<b>#'+esc(l.ref)+'</b></span></div><a href=\"dashboard.html\" class=\"plb-book\">View &amp; Book Load &rarr;</a></article>';}function empty(m){if(em){em.textContent=m;em.style.display='';}}fetch(SB+'/rest/v1/rpc/get_public_load_opportunities',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:9})}).then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(d&&d.length){el.innerHTML=d.map(card).join('');}else{empty('No public load opportunities right now. Sign in for the full carrier board.');}}).catch(function(){empty('Live opportunities are temporarily unavailable. Please sign in to view the full board.');});})();")
+# Preview variant: NO network call at all — explicit disabled state.
+LIVEBOARD_JS_PREVIEW = (r"(function(){var em=document.getElementById('liveEmpty');if(em){em.textContent='Live load board is disabled in this preview environment.';em.style.display='';}})();")
+LIVEBOARD_JS = LIVEBOARD_JS_PROD if IS_PRODUCTION_CTX else LIVEBOARD_JS_PREVIEW
 
 COMPARE = '''<section id="compare" class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The Difference</div><h2>Why carriers choose us over going it alone</h2></div>
 <div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">Loadboot</th></tr></thead><tbody>
@@ -1555,13 +1585,14 @@ page('tools.html','Free Truck Driver Calculators (No Signup) | Loadboot','Free l
 
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
+# PROD_REF/STAGING_REF/context targets are defined once near the top of this file.
 _SITEMAP_EXCLUDE = {'dashboard.html', '404.html'}
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
 urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls
 with open(os.path.join(OUT,'sitemap.xml'),'w',encoding='utf-8') as f: f.write(sitemap)
 with open(os.path.join(OUT,'robots.txt'),'w',encoding='utf-8') as f:
-    f.write('User-agent: *\nAllow: /\nDisallow: /dashboard.html\nSitemap: %s/sitemap.xml\n' % DOMAIN)
+    f.write('User-agent: *\nAllow: /\nDisallow: /dashboard.html\nDisallow: /app/\nSitemap: %s/sitemap.xml\n' % DOMAIN)
 
 # ---------- SECURITY HEADERS (Netlify _headers) ----------
 # Applied to every response. Non-CSP baseline (safe: does not alter page behavior).
@@ -1576,7 +1607,34 @@ HEADERS = (
 "  Strict-Transport-Security: max-age=31536000; includeSubDomains\n"
 "  Cross-Origin-Opener-Policy: same-origin\n"
 )
-with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADERS)
+# PER-CONTEXT CSP for the Phase 2A apps ONLY (scoped to /app/*). Item 8: the CSP
+# permits the CONTEXT'S project ONLY — production builds allow the production
+# Supabase project, preview builds allow the staging project. Never both. Allows:
+# self for docs/styles/workers; the PINNED esm.sh module CDN for supabase-js. No
+# inline/eval scripts.
+_CSP_REF = APP_REF   # prod ref in production context, staging ref otherwise
+_APP_CSP = (
+  "default-src 'self'; "
+  "base-uri 'self'; "
+  "object-src 'none'; "
+  "frame-ancestors 'none'; "
+  "img-src 'self' data:; "
+  "style-src 'self' 'unsafe-inline'; "
+  "font-src 'self' data:; "
+  "script-src 'self' https://esm.sh; "
+  "worker-src 'self'; "
+  "manifest-src 'self'; "
+  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh"
+) % (_CSP_REF, _CSP_REF)
+APP_HEADERS = (
+  "\n/app/*\n"
+  "  X-Frame-Options: DENY\n"
+  "  X-Content-Type-Options: nosniff\n"
+  "  Referrer-Policy: no-referrer\n"
+  "  X-Robots-Tag: noindex, nofollow\n"
+  "  Content-Security-Policy: " + _APP_CSP + "\n"
+)
+with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADERS + APP_HEADERS)
 
 # ---------- _redirects ----------
 # Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files
@@ -1618,8 +1676,132 @@ for fn in os.listdir(SRC):
     if os.path.isfile(full) and fn not in _NO_PUBLISH and fn.lower().endswith(_ASSET_EXTS):
         shutil.copy2(full, os.path.join(OUT,fn))
 
+# ============================================================================
+# PHASE 2A APPLICATIONS (Command Center + Carrier Pocket App)
+# Emit the /app tree into the publish dir with an environment-specific config that
+# is asserted against the deploy CONTEXT: a PRODUCTION build may target ONLY the
+# production project; any PREVIEW/branch build may target ONLY the staging project.
+# A mismatch (or a missing required key) FAILS the build — never silently wrong.
+# ============================================================================
+APP_SRC = os.path.join(SRC, 'app')
+APP_OUT = os.path.join(OUT, 'app')
+# Static file types allowed into the publish dir for the apps. Source-only types
+# (.py/.md/.sql/.toml) are NEVER copied — enforced again by the recursive leak scan.
+_APP_OK_EXTS = ('.html', '.js', '.css', '.webmanifest', '.json', '.svg', '.png', '.webp', '.ico', '.gif', '.jpg', '.jpeg')
+
+# Deploy context + Supabase targets are resolved once near the top of this file
+# (PROD_REF/STAGING_REF/PROD_ANON/STAGING_ANON/_CTX/IS_PRODUCTION_CTX/APP_* /_BUILD_ID).
+if os.path.isdir(APP_SRC):
+    # 1) target env from context (production => prod ONLY, else staging ONLY)
+    _app_env, _app_ref, _app_anon = APP_ENV, APP_REF, APP_ANON
+
+    # 2) copy the app tree (allowed extensions only), preserving structure
+    for dirpath, dirnames, filenames in os.walk(APP_SRC):
+        rel = os.path.relpath(dirpath, APP_SRC)
+        dest_dir = APP_OUT if rel == '.' else os.path.join(APP_OUT, rel)
+        os.makedirs(dest_dir, exist_ok=True)
+        for fn in filenames:
+            if fn.lower().endswith(_APP_OK_EXTS):
+                shutil.copy2(os.path.join(dirpath, fn), os.path.join(dest_dir, fn))
+
+    # 3) write env-config.js (the ONLY place the project URL/key are injected).
+    #    The runtime (shared/env.js) re-asserts url<->projectId consistency.
+    if _app_env == 'production' and _app_ref != PROD_REF:
+        _APP_FATAL = 'production build must target the production project'
+    elif _app_env == 'preview' and _app_ref != STAGING_REF:
+        _APP_FATAL = 'preview build must target the staging project'
+    else:
+        _APP_FATAL = None
+    # Preview/branch deploys MUST have a staging key — refuse to fall back to prod.
+    if _app_env == 'preview' and not _app_anon and _CTX in ('deploy-preview', 'branch-deploy'):
+        _APP_FATAL = 'preview build is missing LOADBOOT_STAGING_ANON_KEY (refusing to target production)'
+
+    _app_url = 'https://%s.supabase.co' % _app_ref
+    _env_cfg = ('// GENERATED by build_site.py — do not edit. context=%s\n'
+                'window.__LB_ENV=%s;\n') % (
+        _CTX, json.dumps({
+            'environment': _app_env, 'supabaseUrl': _app_url,
+            'supabaseAnonKey': _app_anon or 'MISSING_STAGING_ANON_KEY',
+            'projectId': _app_ref, 'buildId': _BUILD_ID,
+        }))
+    with open(os.path.join(APP_OUT, 'env-config.js'), 'w', encoding='utf-8') as f:
+        f.write(_env_cfg)
+
+    # 4) generate the app service worker. Precache = the ACTUAL emitted static files
+    #    only (NO synthetic '/app/' directory URL that would 404). Each app's index
+    #    is precached so each app has its OWN offline shell. env-config.js + sw.js are
+    #    excluded (env identity must always come from the network).
+    _precache = []
+    for dirpath, dirnames, filenames in os.walk(APP_OUT):
+        for fn in filenames:
+            if fn in ('env-config.js', 'sw.js'):
+                continue
+            p = os.path.join(dirpath, fn)
+            url = '/app/' + os.path.relpath(p, APP_OUT).replace(os.sep, '/')
+            _precache.append(url)
+    _precache = sorted(set(_precache))
+    _cc_shell = '/app/command-center/index.html'
+    _ca_shell = '/app/carrier/index.html'
+    APP_SW = ("// GENERATED by build_site.py. App service worker (scope /app/).\n"
+        "// Caches ONLY the static shell allowlist below, and RESILIENTLY (one bad URL\n"
+        "// never wipes the cache). Network-only for everything else; NEVER caches API/\n"
+        "// auth/storage/document/money/location/profile data (all cross-origin Supabase).\n"
+        "// No mutation queue. Each app has its OWN offline shell — the carrier app never\n"
+        "// receives Command Center HTML and vice-versa.\n"
+        "const CACHE='lb-app-%s';\n"
+        "const CORE=%s;\n"
+        "const CC_SHELL=%s, CA_SHELL=%s;\n"
+        "self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){\n"
+        "  return Promise.allSettled(CORE.map(function(u){return c.add(u);}));   // resilient: per-URL\n"
+        "}).then(function(){return self.skipWaiting();}));});\n"
+        "self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){if(k!==CACHE&&k.indexOf('lb-app')===0)return caches.delete(k);}));}).then(function(){return self.clients.claim();}));});\n"
+        "self.addEventListener('message',function(e){if(e.data&&e.data.type==='LB_PURGE'){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('lb-app')===0;}).map(function(k){return caches.delete(k);}));}).then(function(){if(e.source&&e.source.postMessage)e.source.postMessage({type:'LB_PURGED'});}));}});\n"
+        "function shellFor(p){return p.indexOf('/app/carrier/')===0?CA_SHELL:(p.indexOf('/app/command-center/')===0?CC_SHELL:null);}\n"
+        "self.addEventListener('fetch',function(e){var r=e.request;var u=new URL(r.url);\n"
+        "  if(r.method!=='GET'||u.origin!==location.origin){return;}            // never touch cross-origin or writes\n"
+        "  if(u.pathname.indexOf('/app/')!==0){return;}                          // only manage the app scope\n"
+        "  if(u.pathname==='/app/env-config.js'){return;}                        // env identity: always network\n"
+        "  var isNav=(r.mode==='navigate')||(r.headers.get('accept')||'').indexOf('text/html')>=0;\n"
+        "  if(isNav){                                                            // navigations: app-shell model (per-app), works on/offline\n"
+        "    var s=shellFor(u.pathname);\n"
+        "    if(s){e.respondWith(caches.match(s).then(function(m){return m||fetch(s).catch(function(){return Response.error();});}));return;}\n"
+        "    return;                                                             // navigation outside a known app: let it pass through\n"
+        "  }\n"
+        "  if(CORE.indexOf(u.pathname)<0){return;}                               // not allowlisted: network-only (no caching)\n"
+        "  e.respondWith(caches.match(r).then(function(m){return m||fetch(r).then(function(res){if(res&&res.ok){var cp=res.clone();caches.open(CACHE).then(function(c){c.put(r,cp);});}return res;});}));\n"
+        "});\n") % (_BUILD_ID, json.dumps(_precache), json.dumps(_cc_shell), json.dumps(_ca_shell))
+    with open(os.path.join(APP_OUT, 'sw.js'), 'w', encoding='utf-8') as f:
+        f.write(APP_SW)
+else:
+    _APP_FATAL = None
+
+# ---------- PREVIEW REBIND (item 8: ENTIRE preview is staging-bound) ----------
+# The legacy dashboard.html (and any other copied artifact) hardcodes the PRODUCTION
+# Supabase project. In any non-production build we rewrite every production project
+# reference (URL + publishable key) to the STAGING project, so a Deploy Preview makes
+# ZERO production-backend requests. Production builds are left untouched.
+if not IS_PRODUCTION_CTX:
+    _sub_pairs = [('https://%s.supabase.co' % PROD_REF, 'https://%s.supabase.co' % STAGING_REF)]
+    if STAGING_ANON:
+        _sub_pairs.append((PROD_ANON, STAGING_ANON))
+    for dirpath, dirnames, filenames in os.walk(OUT):
+        for fn in filenames:
+            if fn.lower().endswith(('.html', '.js', '.css', '.json', '.webmanifest')):
+                p = os.path.join(dirpath, fn)
+                try:
+                    txt = open(p, encoding='utf-8').read()
+                    new = txt
+                    for a, b in _sub_pairs:
+                        new = new.replace(a, b)
+                    if new != txt:
+                        open(p, 'w', encoding='utf-8').write(new)
+                except Exception:
+                    pass
+
 # ---------- BUILD-FAILING VALIDATIONS ----------
 _errors=[]
+if os.path.isdir(APP_SRC) and _APP_FATAL:
+    _errors.append('APP ENV ASSERTION FAILED: ' + _APP_FATAL)
 
 # (1) Required output pages/files must exist in the publish dir.
 REQUIRED_OUTPUT = ['index.html','about.html','services.html','pricing.html','contact.html',
@@ -1672,10 +1854,59 @@ except Exception:
     pass
 for x in sorted(missing): _errors.append('MISSING LOCAL ASSET: '+x)
 
-# (3) Publish dir must contain no source-only files.
-for fn in os.listdir(OUT):
-    if fn.endswith(('.py','.md','.toml','.sql')) or fn in ('migrations','docs'):
-        _errors.append('SOURCE LEAKED INTO PUBLISH DIR: '+fn)
+# (3) Publish dir must contain NO source-only files, anywhere (recursive).
+#     Catches .py/.md/.sql/.toml and any stray migrations/docs dirs at any depth.
+for dirpath, dirnames, filenames in os.walk(OUT):
+    if 'migrations' in dirnames or 'docs' in dirnames:
+        for d in ('migrations','docs'):
+            if d in dirnames:
+                _errors.append('SOURCE DIR LEAKED INTO PUBLISH DIR: '+os.path.relpath(os.path.join(dirpath,d),OUT))
+    for fn in filenames:
+        if fn.lower().endswith(('.py','.md','.toml','.sql','.pyc')):
+            _errors.append('SOURCE LEAKED INTO PUBLISH DIR: '+os.path.relpath(os.path.join(dirpath,fn),OUT))
+
+# (4) Phase 2A app surface must be present and the env-config must match the context.
+if os.path.isdir(APP_SRC):
+    _app_required = ['app/env-config.js','app/sw.js',
+                     'app/command-center/index.html','app/command-center/app.js',
+                     'app/carrier/index.html','app/carrier/app.js',
+                     'app/shared/env.js','app/shared/supabaseClient.js','app/shared/api.js']
+    for r in _app_required:
+        if not os.path.exists(os.path.join(OUT, r)):
+            _errors.append('MISSING REQUIRED APP FILE: '+r)
+    # env-config must declare exactly the project ref expected for this context.
+    try:
+        _cfg_txt = open(os.path.join(OUT,'app','env-config.js'),encoding='utf-8').read()
+        _want_ref = PROD_REF if _CTX=='production' else STAGING_REF
+        if ('https://%s.supabase.co' % _want_ref) not in _cfg_txt:
+            _errors.append('APP ENV-CONFIG does not target expected project for context %s' % _CTX)
+        _bad_ref = STAGING_REF if _CTX=='production' else PROD_REF
+        if ('https://%s.supabase.co' % _bad_ref) in _cfg_txt:
+            _errors.append('APP ENV-CONFIG leaks the wrong project ref for context %s' % _CTX)
+        if 'service_role' in _cfg_txt:
+            _errors.append('APP ENV-CONFIG contains a service_role key (must never reach the browser)')
+    except Exception as ex:
+        _errors.append('APP ENV-CONFIG unreadable: '+str(ex))
+
+# (5) PREVIEW PRODUCTION-ISOLATION GATE (item 8): in any non-production build, the
+#     production project ref must NOT appear in ANY emitted artifact (html/js/css/
+#     json/webmanifest/_headers/_redirects). This proves a Deploy Preview makes zero
+#     production-backend requests at the artifact level.
+if not IS_PRODUCTION_CTX:
+    _iso_exts = ('.html', '.js', '.css', '.json', '.webmanifest', '.txt')
+    _iso_extra = {'_headers', '_redirects'}
+    _leaks = []
+    for dirpath, dirnames, filenames in os.walk(OUT):
+        for fn in filenames:
+            if fn.lower().endswith(_iso_exts) or fn in _iso_extra:
+                p = os.path.join(dirpath, fn)
+                try:
+                    if PROD_REF in open(p, encoding='utf-8', errors='ignore').read():
+                        _leaks.append(os.path.relpath(p, OUT))
+                except Exception:
+                    pass
+    for x in sorted(set(_leaks)):
+        _errors.append('PREVIEW PRODUCTION-ISOLATION: production ref present in '+x)
 
 if _errors:
     print('BUILD FAILED — %d problem(s):' % len(_errors))

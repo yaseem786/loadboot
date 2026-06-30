@@ -1,0 +1,28 @@
+/* carrier.css — mobile-first Carrier Pocket App shell. */
+body{background:var(--lb-bg)}
+.ca-shell{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;
+  background:var(--lb-bg);padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+.ca-top{position:sticky;top:0;z-index:10;background:var(--lb-navy);color:#fff;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ca-top .brand{display:flex;align-items:center;gap:8px;font-family:var(--lb-head);font-weight:800;font-size:1.05rem}
+.ca-top .brand .dot{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#2563EB,#1e3a8a);
+  display:inline-flex;align-items:center;justify-content:center;font-size:.78rem}
+.ca-top .sign{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:6px 10px;font-size:.8rem;font-weight:600}
+.ca-content{flex:1;padding:18px 16px;min-width:0}
+.ca-card{background:#fff;border:1px solid var(--lb-border);border-radius:var(--lb-r);padding:18px;margin-bottom:14px}
+.ca-card h3{font-size:1.05rem;margin-bottom:6px}
+.ca-greeting{font-family:var(--lb-head);font-weight:800;font-size:1.3rem;margin-bottom:4px}
+.ca-sub{color:var(--lb-muted);font-size:.9rem;margin-bottom:16px}
+.ca-tab{position:fixed;left:0;right:0;bottom:0;z-index:9000;background:#fff;border-top:1px solid var(--lb-border);
+  display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto}
+.ca-tab a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--lb-muted);
+  font-size:.7rem;font-weight:600;padding:4px 0;border-radius:8px}
+.ca-tab a .ic{font-size:1.15rem;line-height:1}
+.ca-tab a.active{color:var(--lb-blue)}
+.ca-login{max-width:400px;margin:0 auto;padding:8vh 20px 20px}
+.ca-login label{display:block;font-weight:600;font-size:.86rem;margin:12px 0 5px}
+.ca-login input{width:100%;border:1px solid var(--lb-border);border-radius:var(--lb-r-sm);padding:12px;font:inherit}
+.ca-login .lb-btn{width:100%;margin-top:18px}
+.ca-login .err{color:var(--lb-red);font-size:.86rem;margin-top:12px;min-height:1em}
+.ca-status-banner{background:var(--lb-blue-soft);border:1px solid #bfdbfe;color:#1e40af;border-radius:var(--lb-r);
+  padding:12px 14px;font-size:.88rem;margin-bottom:14px}
