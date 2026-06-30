@@ -3,12 +3,13 @@
 // (assign/revoke role, suspend/reactivate, revoke sessions) — each server-authorized
 // and audited. Server guards (self-mutation, last-owner) are surfaced as friendly errors.
 import { el, mount } from '../../shared/ui/dom.js';
-import { getStaffDirectory, getRolesCatalog, assignRole, revokeRole, setStaffStatus, revokeStaffSessions } from '../../shared/api.js';
+import { getStaffDirectory, getRolesCatalog, assignRole, revokeRole, setStaffStatus, revokeStaffSessions, listCarrierOrgs } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 let _roles = null;
+let _carrierOrgs = null;
 
 function badgeForStatus(s) {
   return el('span', { class: 'lb-badge ' + (s === 'active' ? 'lb-badge-green' : 'lb-badge-red') }, s);
@@ -70,23 +71,33 @@ function assignForm(staff, reload) {
     staff.map(s => el('option', { value: s.user_id }, s.email || s.user_id))));
   const roleSel = el('select', null, [el('option', { value: '' }, 'Select role…')].concat(
     (_roles || []).map(r => el('option', { value: r.role_key }, r.role_key))));
-  // Phase 2A: GLOBAL-scope assignments only. Org/carrier/load-scoped assignments
-  // require validated target selectors and are intentionally NOT exposed here, so the
-  // UI never sends a scoped assignment with a NULL target (the server rejects that too).
+  // Scope: global, or carrier-scoped (child access to one carrier). The server validates
+  // every assignment (grant-ceiling, owner protection, non-null target), so the UI only
+  // shapes the request. Carrier-scoped assignments require a target carrier organization.
+  const scopeSel = el('select', null, [
+    el('option', { value: 'global' }, 'Global (all access for the role)'),
+    el('option', { value: 'assigned_carrier' }, 'Carrier only (child access)'),
+  ]);
+  const carrierSel = el('select', { hidden: true }, [el('option', { value: '' }, 'Select carrier…')].concat(
+    (_carrierOrgs || []).map(c => el('option', { value: c.id }, c.name))));
+  scopeSel.addEventListener('change', () => { carrierSel.hidden = scopeSel.value !== 'assigned_carrier'; });
   const btn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
     if (!userSel.value || !roleSel.value) { toast('Pick a staff member and role.', 'error'); return; }
+    const scope = scopeSel.value;
+    if (scope === 'assigned_carrier' && !carrierSel.value) { toast('Pick a carrier for carrier-scoped access.', 'error'); return; }
     btn.disabled = true;
     try {
-      await assignRole({ userId: userSel.value, roleKey: roleSel.value, scopeType: 'global' });
-      toast('Role assigned (global).', 'success'); reload();
+      await assignRole({ userId: userSel.value, roleKey: roleSel.value, scopeType: scope,
+        carrierOrg: scope === 'assigned_carrier' ? carrierSel.value : null });
+      toast(scope === 'global' ? 'Role assigned (global).' : 'Role assigned (carrier-scoped).', 'success'); reload();
     } catch (ex) { toast(humanizeError(ex), 'error'); }
     btn.disabled = false;
-  } }, 'Assign global role');
+  } }, 'Assign role');
   return el('div', { class: 'lb-card', style: 'margin-bottom:18px' }, [
-    el('div', { style: 'font-family:var(--lb-head);font-weight:700;margin-bottom:10px' }, 'Assign a global role'),
-    el('div', { class: 'cc-toolbar' }, [userSel, roleSel, btn]),
+    el('div', { style: 'font-family:var(--lb-head);font-weight:700;margin-bottom:10px' }, 'Assign a role'),
+    el('div', { class: 'cc-toolbar' }, [userSel, roleSel, scopeSel, carrierSel, btn]),
     el('p', { style: 'color:var(--lb-muted);font-size:.8rem;margin-top:6px' },
-      'Phase 2A assigns GLOBAL roles only. Organization / carrier / load-scoped assignments arrive with validated target selectors in a later phase. You cannot modify your own assignments, grant beyond your own permissions, or grant Owner unless you are an Owner.'),
+      'Global grants the role everywhere; carrier-scoped grants it for a single carrier only (staff child access). You cannot modify your own assignments, grant beyond your own permissions, or grant Owner unless you are an Owner — the server enforces all three.'),
   ]);
 }
 
@@ -102,6 +113,7 @@ export async function renderStaffRoles(host) {
     showLoading(body, 'Loading staff…');
     try {
       if (!_roles) { try { _roles = await getRolesCatalog(); } catch (_) { _roles = []; } }
+      if (!_carrierOrgs) { try { _carrierOrgs = await listCarrierOrgs(); } catch (_) { _carrierOrgs = []; } }
       const staff = await getStaffDirectory();
       const table = el('table', { class: 'lb-table' }, [
         el('thead', null, el('tr', null, [el('th', null, 'Staff'), el('th', null, 'Status'),

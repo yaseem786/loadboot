@@ -88,6 +88,7 @@ export function renderCarriers(host) {
 
     mount(body, el('div', null, [
       el('div', { class: 'cc-drawer-title' }, [el('h3', null, c.company || 'Carrier'), statusPill(c.status)]),
+      el('a', { class: 'cc-360-link', href: '#/carrier?id=' + id, onClick: () => { document.getElementById('cc-drawer-root')?.remove(); } }, 'View full 360° record →'),
       card([
         field('Contact', c.contact_name), field('Email', c.email), field('Phone', c.phone),
         field('MC', c.mc), field('DOT', c.dot), field('Home base', c.home_base),
