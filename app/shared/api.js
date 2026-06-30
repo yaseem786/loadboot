@@ -269,6 +269,17 @@ export const actionCenter = () => rpc('cc_action_center');
 // ---- Wave J: Live operations map ----
 export const opsMap = () => rpc('cc_ops_map');
 
+// ---- Wave L: Announcements & Broadcast (flag: announcements_enabled) ----
+export const createAnnouncement = (o = {}) => rpc('cc_create_announcement', { p_title: o.title, p_body: o.body ?? null, p_kind: o.kind ?? 'info', p_audience: o.audience ?? 'all_carriers', p_target_org: o.targetOrg ?? null, p_expires_at: o.expiresAt ?? null });
+export const listAnnouncements = (limit = 100) => rpc('cc_list_announcements', { p_limit: limit });
+export const setAnnouncementActive = (id, active) => rpc('cc_set_announcement_active', { p_id: id, p_active: active });
+export const pocketAnnouncements = () => rpc('cc_pocket_announcements');
+
+// ---- Wave L: Campaign manager (flag: campaigns_enabled) ----
+export const createCampaign = (o = {}) => rpc('cc_create_campaign', { p_name: o.name, p_source: o.source ?? null, p_medium: o.medium ?? null, p_campaign: o.campaign, p_landing: o.landing ?? '/' });
+export const listCampaigns = (limit = 100) => rpc('cc_list_campaigns', { p_limit: limit });
+export const setCampaignActive = (id, active) => rpc('cc_set_campaign_active', { p_id: id, p_active: active });
+
 // ---- Live integration: AI assist (Gemini) + transactional email (Resend) ----
 export const aiAssist = async (task, ctx = {}) => {
   const { getClient } = await import('./supabaseClient.js');

@@ -7,7 +7,7 @@ import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signOut } from '../shared/session.js';
 import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
-  pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues,
+  pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
 } from '../shared/api.js';
 
 const root = document.getElementById('pk-app');
@@ -78,6 +78,11 @@ async function appView() {
   async function loadHome() {
     mount(panel, h('div', { class: 'pk-muted' }, 'Loading…'));
     let c; try { c = await pocketCompliance(); } catch (_) { c = { requirements: [], mandatory_ok: ov.compliance_ok }; }
+    let anns = []; try { anns = await pocketAnnouncements(); } catch (_) { anns = []; }
+    const annCards = (anns || []).map(a => h('div', { class: 'pk-ann ' + (a.kind || 'info') }, [
+      h('div', { class: 'pk-ann-t' }, a.title),
+      a.body ? h('div', { class: 'pk-ann-b' }, a.body) : null,
+    ].filter(Boolean)));
     const actions = [];
     if (!c.mandatory_ok) actions.push(['Complete your compliance documents', 'compliance']);
     if ((ov.invoices_due || 0) > 0) actions.push([money(ov.invoices_due) + ' in dispatch fees due', 'finance']);
@@ -100,7 +105,7 @@ async function appView() {
         pill(r.status),
       ]))),
     ]);
-    mount(panel, h('div', null, [kpis, actionCard, compCard]));
+    mount(panel, h('div', null, [...annCards, kpis, actionCard, compCard]));
   }
 
   // ---------- CP-B + CP-E: Trips (confirm) + live GPS share ----------

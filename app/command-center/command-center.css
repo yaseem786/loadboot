@@ -461,3 +461,7 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 .cc-map-row .cc-map-dot { margin-top:4px; }
 .cc-map-row-main { min-width:0; }
 @media (max-width:900px){ .cc-map-layout { flex-direction:column; } .cc-map-side { flex:auto; max-height:340px; } .cc-map-layout .cc-map-wrap { height:380px; } }
+
+/* ===== Wave L: announcements + campaigns ===== */
+.cc-pill-violet { background:#ede9fe; color:#6d28d9; }
+.cc-pill-violet .cc-pill-dot { background:#7c3aed; }
