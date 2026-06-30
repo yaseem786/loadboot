@@ -8,7 +8,9 @@ import { getSession, getUser, signInWithPassword, signOut } from '../shared/sess
 import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
+  pocketReportIssue, pocketDisputeInvoice,
 } from '../shared/api.js';
+import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 
 const root = document.getElementById('pk-app');
 const h = (tag, attrs, kids) => { const e = document.createElement(tag); if (attrs) for (const k in attrs) { if (k === 'class') e.className = attrs[k]; else if (k === 'onclick') e.onclick = attrs[k]; else if (k === 'html') e.innerHTML = attrs[k]; else e.setAttribute(k, attrs[k]); } (Array.isArray(kids) ? kids : kids != null ? [kids] : []).forEach(c => e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c)); return e; };
@@ -105,7 +107,22 @@ async function appView() {
         pill(r.status),
       ]))),
     ]);
-    mount(panel, h('div', null, [...annCards, kpis, actionCard, compCard]));
+    // Phase 5 — enable push notifications on this device
+    let pushCard = null;
+    if (pushSupported()) {
+      const status = h('span', { class: 'pk-pill gray' }, 'checking…');
+      const btn = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Enabling…';
+        try { await enablePush('Carrier device'); status.textContent = 'on'; status.className = 'pk-pill green'; ev.currentTarget.textContent = 'On ✓'; }
+        catch (e) { status.textContent = 'off'; ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Turn on'; alert((e && e.message) || 'Could not enable notifications.'); }
+      } }, 'Turn on');
+      isPushEnabled().then(on => { status.textContent = on ? 'on' : 'off'; status.className = 'pk-pill ' + (on ? 'green' : 'gray'); if (on) { btn.textContent = 'On ✓'; btn.disabled = true; } });
+      pushCard = h('div', { class: 'pk-card' }, [h('h3', null, 'Push notifications'),
+        h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
+          h('div', null, [h('div', { class: 't' }, 'Alerts for trips, payments & announcements'), h('div', { class: 's' }, 'On this device')]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, [status, btn])])]);
+    }
+    mount(panel, h('div', null, [...annCards, kpis, actionCard, pushCard, compCard].filter(Boolean)));
   }
 
   // ---------- CP-B + CP-E: Trips (confirm) + live GPS share ----------
@@ -119,12 +136,25 @@ async function appView() {
         ev.stopPropagation(); ev.currentTarget.disabled = true; try { await pocketConfirmTrip(t.id); ev.currentTarget.textContent = 'Confirmed ✓'; } catch (x) { ev.currentTarget.textContent = 'Error'; }
       } }, 'Confirm') : null;
       const share = isActive ? h('button', { class: 'pk-btn pk-mini', onclick: (ev) => shareLocation(ev, t.id) }, '📍 Share location') : null;
+      const formWrap = h('div');
+      const issueBtn = isActive ? h('button', { class: 'pk-btn sec pk-mini', onclick: () => {
+        if (formWrap.firstChild) { formWrap.innerHTML = ''; return; }
+        const kind = h('select', { class: 'pk-in' }, ['detention', 'layover', 'lumper', 'breakdown', 'weather', 'missed_appointment', 'other'].map(k => h('option', { value: k }, k.replace('_', ' '))));
+        const note = h('input', { class: 'pk-in', placeholder: 'Details (optional)' });
+        const send = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
+          try { await pocketReportIssue(t.id, kind.value, note.value.trim()); formWrap.innerHTML = ''; const ok = h('div', { class: 's', style: 'color:#16a34a' }, '✓ Reported to dispatch'); formWrap.appendChild(ok); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); }
+        } }, 'Send');
+        formWrap.appendChild(h('div', { class: 'pk-issueform' }, [kind, note, send]));
+      } }, '⚠ Report issue') : null;
       return h('div', { class: 'pk-trip' }, [
         h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
           h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0))]),
           pill(t.status),
         ]),
-        (confirm || share) ? h('div', { class: 'pk-trip-actions' }, [confirm, share].filter(Boolean)) : null,
+        (confirm || share || issueBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, share, issueBtn].filter(Boolean)) : null,
+        formWrap,
       ].filter(Boolean));
     })]));
   }
@@ -149,10 +179,28 @@ async function appView() {
     mount(panel, h('div', null, [
       h('div', { class: 'pk-card' }, [h('h3', null, 'Summary'), h('div', { class: 'pk-row' }, [h('div', { class: 't' }, 'Dispatch fees due'), h('b', null, money(due))])]),
       h('div', { class: 'pk-card' }, [h('h3', null, 'Invoices'),
-        (rows && rows.length) ? h('div', null, rows.map(i => h('div', { class: 'pk-row' }, [
-          h('div', null, [h('div', { class: 't' }, i.invoice_no), h('div', { class: 's' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]),
-          pill(i.status),
-        ]))) : h('div', { class: 'pk-muted' }, 'No invoices yet.'),
+        (rows && rows.length) ? h('div', null, rows.map(i => {
+          const dWrap = h('div');
+          const disputeBtn = (i.status === 'sent' || i.status === 'paid') ? h('button', { class: 'pk-btn sec pk-mini', onclick: () => {
+            if (dWrap.firstChild) { dWrap.innerHTML = ''; return; }
+            const reason = h('input', { class: 'pk-in', placeholder: 'Reason for dispute' });
+            const send = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+              if (!reason.value.trim()) { alert('Enter a reason.'); return; }
+              ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
+              try { await pocketDisputeInvoice(i.id, reason.value.trim()); dWrap.innerHTML = ''; dWrap.appendChild(h('div', { class: 's', style: 'color:#16a34a' }, '✓ Dispute opened')); }
+              catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not dispute.'); }
+            } }, 'Send');
+            dWrap.appendChild(h('div', { class: 'pk-issueform' }, [reason, send]));
+          } }, 'Dispute') : null;
+          return h('div', { class: 'pk-trip' }, [
+            h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
+              h('div', null, [h('div', { class: 't' }, i.invoice_no), h('div', { class: 's' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]),
+              pill(i.status),
+            ]),
+            disputeBtn ? h('div', { class: 'pk-trip-actions' }, [disputeBtn]) : null,
+            dWrap,
+          ].filter(Boolean));
+        })) : h('div', { class: 'pk-muted' }, 'No invoices yet.'),
       ]),
     ]));
   }

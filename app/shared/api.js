@@ -172,6 +172,22 @@ export const pocketCompliance = () => rpc('cc_pocket_compliance');
 export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
 export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', { p_subject: subject, p_body: body ?? null });
 export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
+// Phase 6 — carrier self-service
+export const pocketReportIssue = (trip, kind, note) => rpc('cc_pocket_report_issue', { p_trip: trip, p_kind: kind, p_note: note ?? null });
+export const pocketDisputeInvoice = (invoice, reason) => rpc('cc_pocket_dispute_invoice', { p_invoice: invoice, p_reason: reason });
+export const pocketUploadPod = (o = {}) => rpc('cc_pocket_upload_pod', { p_trip: o.trip, p_path: o.path, p_file_name: o.fileName ?? 'POD', p_content_type: o.contentType ?? null, p_size: o.size ?? null });
+// Phase 5 — web push (any authenticated user)
+export const savePushSubscription = (o = {}) => rpc('cc_save_push_subscription', { p_endpoint: o.endpoint, p_p256dh: o.p256dh, p_auth: o.auth, p_label: o.label ?? null, p_ua: o.ua ?? null });
+export const revokePushSubscription = (endpoint) => rpc('cc_revoke_push_subscription', { p_endpoint: endpoint });
+export const VAPID_PUBLIC_KEY = 'BMCVidsbziyvOFCZflK-uYgKxDR8DQizN6Z1ds2i1qGp2EqyT4M82wHoxiH5-hWIcQR6Sp3_P-Z20v5Yfp88x2c';
+export const sendPush = async (o = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('push-send', { body: { title: o.title, body: o.body, url: o.url ?? '/', audience: o.audience ?? null, user_ids: o.userIds ?? null } });
+  if (error) throw new Error((error && error.message) || 'Push failed');
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
 
 // ---- Wave 10 Advanced Ops & Intelligence ----
 export const opsRadar = () => rpc('cc_ops_radar');
