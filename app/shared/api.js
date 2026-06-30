@@ -85,6 +85,11 @@ export const revokeStaffSessions = (userId) =>
 export const assignLoad = (loadId, carrierId) => rpc('cc_assign_load', { p_load: loadId, p_carrier: carrierId });
 export const setLoadStatus = (loadId, status) => rpc('cc_set_load_status', { p_load: loadId, p_status: status });
 
+// ---- Automation Core (ac_v1) — tasks board + operational health (flag: automation_core_enabled) ----
+export const listTasks = (o = {}) => rpc('cc_list_tasks', { p_status: o.status ?? 'open', p_limit: o.limit ?? 100 });
+export const completeTask = (taskId) => rpc('cc_complete_task', { p_task: taskId });
+export const automationHealth = () => rpc('cc_automation_health');
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in
