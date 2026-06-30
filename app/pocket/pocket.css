@@ -31,3 +31,11 @@
 .pk-muted{color:#64748b;font-size:13px;text-align:center;padding:20px}
 .pk-login{padding:24px 18px}
 .pk-login h2{font-size:20px;margin:6px 0 16px}
+
+/* CP-A/B/C/E additions */
+textarea.pk-in { resize:vertical; font-family:inherit; }
+.pk-go { color:#94a3b8; font-weight:700; font-size:18px; }
+.pk-btn.pk-mini { width:auto; padding:7px 12px; margin:0; font-size:13px; }
+.pk-trip { padding:10px 0; border-bottom:1px solid rgba(148,163,184,.18); }
+.pk-trip:last-child { border-bottom:0; }
+.pk-trip-actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }

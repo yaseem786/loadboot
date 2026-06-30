@@ -170,6 +170,8 @@ export const pocketTrips = (limit) => rpc('cc_pocket_trips', { p_limit: limit ??
 export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: limit ?? 50 });
 export const pocketCompliance = () => rpc('cc_pocket_compliance');
 export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
+export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', { p_subject: subject, p_body: body ?? null });
+export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
 
 // ---- Wave 10 Advanced Ops & Intelligence ----
 export const opsRadar = () => rpc('cc_ops_radar');
@@ -260,6 +262,12 @@ export const report = (kind, days = 30) => rpc('cc_report', { p_kind: kind, p_da
 // ---- Wave F: Automations management (flag: automations_admin_enabled) ----
 export const listRules = () => rpc('cc_list_rules');
 export const setRuleEnabled = (key, enabled) => rpc('cc_set_rule_enabled', { p_key: key, p_enabled: enabled });
+
+// ---- Wave I: Action Center (personalized prioritized home) ----
+export const actionCenter = () => rpc('cc_action_center');
+
+// ---- Wave J: Live operations map ----
+export const opsMap = () => rpc('cc_ops_map');
 
 // ---- Wave G: staff scoped access (carrier-org selector for admin_assign_role) ----
 export const listCarrierOrgs = () => rpc('cc_list_carrier_orgs');
