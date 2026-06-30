@@ -236,6 +236,31 @@ export const toggleRedirect = (id, active) => rpc('cc_toggle_redirect', { p_id: 
 export const integrationStatus = () => rpc('cc_integration_status');
 export const setIntegrationStatus = (provider, status, config) => rpc('cc_set_integration_status', { p_provider: provider, p_status: status, p_config: config ?? null });
 
+// ---- Control Tower Wave B: entity 360 (flag: entity360_enabled) ----
+export const carrier360 = (org) => rpc('cc_carrier_360', { p_org: org });
+export const entityAudit = (o = {}) => rpc('cc_entity_audit', { p_target_type: o.targetType ?? null, p_target_id: o.targetId ?? null, p_org: o.org ?? null, p_limit: o.limit ?? 60 });
+
+// ---- Wave C: Brokers & Shippers (flag: partners_enabled) ----
+export const partnersOverview = () => rpc('cc_partners_overview');
+export const listPartners = (o = {}) => rpc('cc_list_partners', { p_kind: o.kind ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getPartner = (id) => rpc('cc_get_partner', { p_id: id });
+export const upsertPartner = (o = {}) => rpc('cc_upsert_partner', { p_id: o.id ?? null, p_kind: o.kind, p_name: o.name, p_mc: o.mc ?? null, p_contact_name: o.contactName ?? null, p_email: o.email ?? null, p_phone: o.phone ?? null, p_billing_terms: o.billingTerms ?? null, p_credit_limit: o.creditLimit ?? null, p_notes: o.notes ?? null });
+export const setPartnerStatus = (id, status) => rpc('cc_set_partner_status', { p_id: id, p_status: status });
+
+// ---- Wave D: Support / tickets (flag: support_enabled) ----
+export const supportOverview = () => rpc('cc_support_overview');
+export const listTickets = (o = {}) => rpc('cc_list_tickets', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getTicket = (id) => rpc('cc_get_ticket', { p_id: id });
+export const createTicket = (o = {}) => rpc('cc_create_ticket', { p_subject: o.subject, p_body: o.body ?? null, p_requester_name: o.requesterName ?? null, p_requester_email: o.requesterEmail ?? null, p_priority: o.priority ?? 'normal', p_category: o.category ?? null, p_related_type: o.relatedType ?? null, p_related_id: o.relatedId ?? null });
+export const setTicketStatus = (id, status, assignee) => rpc('cc_set_ticket_status', { p_id: id, p_status: status, p_assignee: assignee ?? null });
+
+// ---- Wave E: Reports center (flag: reports_enabled) ----
+export const report = (kind, days = 30) => rpc('cc_report', { p_kind: kind, p_days: days });
+
+// ---- Wave F: Automations management (flag: automations_admin_enabled) ----
+export const listRules = () => rpc('cc_list_rules');
+export const setRuleEnabled = (key, enabled) => rpc('cc_set_rule_enabled', { p_key: key, p_enabled: enabled });
+
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
 // They return one-by-one in later phases behind feature flags.

@@ -30,15 +30,23 @@ const NAV = [
     { path: '/compliance', label: 'Onboarding & compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
     { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },
   ]},
-  { group: 'Sales', items: [
+  { group: 'Sales & CRM', items: [
     { path: '/crm', label: 'CRM & leads', icon: 'trend', perm: 'crm.view', flag: 'crm' },
     { path: '/forms', label: 'Forms inbox', icon: 'bell', perm: 'forms.view', flag: 'forms' },
+    { path: '/partners', label: 'Brokers & shippers', icon: 'users', perm: 'partners.view', flag: 'partners' },
+  ]},
+  { group: 'Support', items: [
+    { path: '/support', label: 'Tickets', icon: 'bell', perm: 'support.view', flag: 'support' },
   ]},
   { group: 'SEO & Website', items: [
     { path: '/seo', label: 'SEO & redirects', icon: 'trend', perm: 'seo.view', flag: 'seo' },
   ]},
+  { group: 'Reporting', items: [
+    { path: '/reports', label: 'Reports', icon: 'doc', perm: 'reports.view', flag: 'reports' },
+  ]},
   { group: 'Communications', items: [
     { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },
+    { path: '/notifications', label: 'Notifications', icon: 'bell', perm: null, flag: 'notificationsCenter' },
   ]},
   { group: 'Finance', items: [
     { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },
@@ -48,6 +56,7 @@ const NAV = [
   ]},
   { group: 'Administration', items: [
     { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },
+    { path: '/automations', label: 'Automations', icon: 'refresh', perm: null, flag: 'automationsAdmin' },
     { path: '/audit', label: 'Audit log', icon: 'shield', perm: 'audit.view' },
     { path: '/integrations', label: 'Integrations', icon: 'refresh', perm: 'integrations.view', flag: 'integrations' },
     { path: '/flags', label: 'Feature flags', icon: 'flag', perm: 'flags.manage' },

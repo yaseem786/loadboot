@@ -36,6 +36,12 @@ import { renderManagement } from './views/management.js';
 import { renderAnalyticsWeb } from './views/analyticsWeb.js';
 import { renderForms } from './views/forms.js';
 import { renderSeo } from './views/seo.js';
+import { renderCarrier360 } from './views/carrier360.js';
+import { renderPartners } from './views/partners.js';
+import { renderSupport } from './views/support.js';
+import { renderReports } from './views/reports.js';
+import { renderNotifications } from './views/notifications.js';
+import { renderAutomationsAdmin } from './views/automationsAdmin.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -123,9 +129,17 @@ async function boot() {
   try { webAnalyticsEnabled = await isFlagEnabled('web_analytics_enabled'); } catch (_) { webAnalyticsEnabled = false; }
   try { formsEnabled = await isFlagEnabled('forms_enabled'); } catch (_) { formsEnabled = false; }
   try { seoEnabled = await isFlagEnabled('seo_enabled'); } catch (_) { seoEnabled = false; }
+  // Control Tower Waves B–F flags (default OFF until the owner enables them)
+  let entity360Enabled = false, partnersEnabled = false, supportEnabled = false, reportsEnabled = false, automationsAdminEnabled = false, notificationsCenterEnabled = false;
+  try { entity360Enabled = await isFlagEnabled('entity360_enabled'); } catch (_) { entity360Enabled = false; }
+  try { partnersEnabled = await isFlagEnabled('partners_enabled'); } catch (_) { partnersEnabled = false; }
+  try { supportEnabled = await isFlagEnabled('support_enabled'); } catch (_) { supportEnabled = false; }
+  try { reportsEnabled = await isFlagEnabled('reports_enabled'); } catch (_) { reportsEnabled = false; }
+  try { automationsAdminEnabled = await isFlagEnabled('automations_admin_enabled'); } catch (_) { automationsAdminEnabled = false; }
+  try { notificationsCenterEnabled = await isFlagEnabled('notifications_center_enabled'); } catch (_) { notificationsCenterEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -153,6 +167,12 @@ async function boot() {
     '/web-analytics': () => { setActive('/web-analytics'); if (webAnalyticsEnabled && can('analytics.view')) renderAnalyticsWeb(content); else denied(); },
     '/forms': () => { setActive('/forms'); if (formsEnabled && can('forms.view')) renderForms(content); else denied(); },
     '/seo': () => { setActive('/seo'); if (seoEnabled && can('seo.view')) renderSeo(content); else denied(); },
+    '/carrier': ({ query }) => { setActive('/carriers'); if (entity360Enabled && can('carriers.view')) renderCarrier360(content, query.get('id')); else denied(); },
+    '/partners': () => { setActive('/partners'); if (partnersEnabled && can('partners.view')) renderPartners(content); else denied(); },
+    '/support': () => { setActive('/support'); if (supportEnabled && can('support.view')) renderSupport(content); else denied(); },
+    '/reports': () => { setActive('/reports'); if (reportsEnabled && can('reports.view')) renderReports(content); else denied(); },
+    '/notifications': () => { setActive('/notifications'); if (notificationsCenterEnabled) renderNotifications(content); else denied(); },
+    '/automations': () => { setActive('/automations'); if (automationsAdminEnabled) renderAutomationsAdmin(content); else denied(); },
     '/content': () => { setActive('/content'); if (contentEnabled && can('content.view')) renderContent(content); else denied(); },
     '/integrations': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); },
     '/staff': () => { setActive('/staff'); if (anyOf('users.manage', 'roles.manage', 'staff.suspend')) renderStaffRoles(content); else denied(); },
