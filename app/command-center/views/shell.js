@@ -55,6 +55,7 @@ const NAV = [
   ]},
   { group: 'Finance', items: [
     { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },
+    { path: '/finance-analytics', label: 'Finance analytics', icon: 'trend', perm: 'finance.view', flag: 'finance' },
   ]},
   { group: 'Marketing', items: [
     { path: '/content', label: 'Content & posts', icon: 'doc', perm: 'content.view', flag: 'content' },

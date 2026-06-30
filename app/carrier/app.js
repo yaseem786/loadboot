@@ -41,6 +41,10 @@ const ic = (name) => ({
   pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
+// Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.
+const LOGO_SVG = '<svg width="26" height="26" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg>';
+const TAGLINE = 'Keep Your Wheels Earning';
+const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
 
 // horizontal/line-ish bar chart from [{label,value}]
 function miniBars(data, opts = {}) {
@@ -99,7 +103,10 @@ function authScreen() {
   };
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('Load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
+      h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
+        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('Load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
+        h('div', { class: 'cp-tagline' }, TAGLINE),
+      ])]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
     ]),
@@ -141,7 +148,10 @@ async function appView(user) {
   const bell = h('button', { class: 'cp-iconbtn', title: 'Notifications', onClick: () => go('support') }, icon('bell', 20));
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brand' }, [document.createTextNode('Load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
+      h('div', { class: 'cp-brandrow' }, [brandMark(), h('div', null, [
+        h('div', { class: 'cp-brand' }, [document.createTextNode('Load'), h('b', null, 'boot')]),
+        h('div', { class: 'cp-tagline light' }, TAGLINE),
+      ])]),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),

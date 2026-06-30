@@ -1,0 +1,5 @@
+-- ctm_finance_analytics.sql — cc_finance_analytics(): staff-gated finance analytics
+-- aggregate (monthly fee/gross/paid series, invoice status counts, AR aging buckets,
+-- top carriers by fee, totals). SECURITY DEFINER, gated on finance.view. Applied to
+-- staging + production via MCP apply_migration (this file is the source of record).
+-- See cc_finance_analytics in the database for the full body.
