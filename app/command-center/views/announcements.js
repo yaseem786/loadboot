@@ -5,8 +5,8 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
-import { listAnnouncements, createAnnouncement, setAnnouncementActive, listCarrierOrgs } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { listAnnouncements, createAnnouncement, setAnnouncementActive, listCarrierOrgs, sendPush } from '../../shared/api.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 const KIND_TONE = { info: 'blue', warning: 'amber', emergency: 'red', promo: 'violet' };
@@ -62,6 +62,7 @@ export function renderAnnouncements(host) {
     const carrierSel = el('select', { class: 'cc-input', hidden: true }, [el('option', { value: '' }, 'Select carrier…')].concat((_carrierOrgs || []).map(c => el('option', { value: c.id }, c.name))));
     audSel.addEventListener('change', () => { carrierSel.hidden = audSel.value !== 'carrier'; });
     const expIn = el('input', { class: 'cc-input', type: 'date' });
+    const pushChk = el('input', { type: 'checkbox', checked: true, style: 'width:18px;height:18px' });
     const form = el('div', null, [
       input('title', 'Title', 'e.g. Winter storm — I-80 delays'),
       el('label', { class: 'cc-field' }, [el('span', null, 'Message'), bodyIn]),
@@ -69,8 +70,9 @@ export function renderAnnouncements(host) {
       el('label', { class: 'cc-field' }, [el('span', null, 'Audience'), audSel]),
       carrierSel,
       el('label', { class: 'cc-field' }, [el('span', null, 'Expires (optional)'), expIn]),
+      el('label', { style: 'display:flex;align-items:center;gap:9px;margin-top:6px;font-size:.9rem;cursor:pointer' }, [pushChk, el('span', null, 'Also send as a push notification to their device')]),
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: send }, 'Send broadcast')]),
-      el('p', { class: 'cc-sub', style: 'margin-top:8px' }, 'Carriers see this in the Pocket app (top banner) and portal. Emergencies appear first, in red.'),
+      el('p', { class: 'cc-sub', style: 'margin-top:8px' }, 'Carriers see this in the Carrier portal (top banner). With push on, it also pops up on their device. Emergencies appear first, in red.'),
     ]);
     openDrawer('New broadcast', form, { subtitle: 'Announce to carriers' });
 
@@ -82,6 +84,14 @@ export function renderAnnouncements(host) {
         await createAnnouncement({ title, body: bodyIn.value.trim() || null, kind: kindSel.value, audience: audSel.value,
           targetOrg: audSel.value === 'carrier' ? carrierSel.value : null, expiresAt: expIn.value ? new Date(expIn.value).toISOString() : null });
       } catch (e) { alert(humanizeError(e)); return; }
+      if (pushChk.checked) {
+        try {
+          const r = await sendPush({ title, body: bodyIn.value.trim() || '', url: '/app/carrier/',
+            audience: audSel.value === 'all_carriers' ? 'all_carriers' : null,
+            org: audSel.value === 'carrier' ? carrierSel.value : null });
+          toast('Broadcast sent — push delivered to ' + ((r && r.sent) || 0) + ' device(s).', 'success');
+        } catch (e) { toast('Announcement saved, but push failed: ' + humanizeError(e), 'error'); }
+      } else { toast('Broadcast sent.', 'success'); }
       document.getElementById('cc-drawer-root')?.remove(); load();
     }
   }

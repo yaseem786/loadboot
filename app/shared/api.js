@@ -186,7 +186,7 @@ export const VAPID_PUBLIC_KEY = 'BMCVidsbziyvOFCZflK-uYgKxDR8DQizN6Z1ds2i1qGp2Eq
 export const sendPush = async (o = {}) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
-  const { data, error } = await sb.functions.invoke('push-send', { body: { title: o.title, body: o.body, url: o.url ?? '/', audience: o.audience ?? null, user_ids: o.userIds ?? null } });
+  const { data, error } = await sb.functions.invoke('push-send', { body: { title: o.title, body: o.body, url: o.url ?? '/', audience: o.audience ?? null, user_ids: o.userIds ?? null, org: o.org ?? null } });
   if (error) throw new Error((error && error.message) || 'Push failed');
   if (data && data.error) throw new Error(data.error);
   return data;
