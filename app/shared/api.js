@@ -107,6 +107,18 @@ export const setCompliance = (o = {}) => rpc('cc_set_compliance', { p_carrier: o
 export const decideOnboarding = (carrierId, decision, note) => rpc('cc_decide_onboarding', { p_carrier: carrierId, p_decision: decision, p_note: note ?? null });
 export const scanExpiring = (days) => rpc('cc_scan_expiring', { p_days: days ?? 30 });
 
+// ---- Wave 3 Loads / Dispatch / Trips (flag: dispatch_enabled) ----
+export const dispatchOverview = () => rpc('cc_dispatch_overview');
+export const listTrips = (o = {}) => rpc('cc_list_trips', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const getTrip = (tripId) => rpc('cc_get_trip', { p_trip: tripId });
+export const createTrip = (o = {}) => rpc('cc_create_trip', {
+  p_load: o.load, p_carrier: o.carrier ?? null, p_driver_name: o.driverName ?? null,
+  p_driver_phone: o.driverPhone ?? null, p_truck: o.truck ?? null,
+  p_scheduled_pickup: o.scheduledPickup ?? null, p_scheduled_delivery: o.scheduledDelivery ?? null,
+});
+export const advanceTrip = (tripId, status, note, location) => rpc('cc_advance_trip', { p_trip: tripId, p_status: status, p_note: note ?? null, p_location: location ?? null });
+export const addTripNote = (tripId, note, location) => rpc('cc_add_trip_note', { p_trip: tripId, p_note: note, p_location: location ?? null });
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in
