@@ -28,6 +28,7 @@ import { renderTrips } from './views/trips.js';
 import { renderComms } from './views/comms.js';
 import { renderFinance } from './views/finance.js';
 import { renderFinanceAnalytics } from './views/financeAnalytics.js';
+import { renderSystemModules } from './views/systemModules.js';
 import { renderAnalytics } from './views/analytics.js';
 import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
@@ -182,6 +183,7 @@ async function boot() {
     '/comms': () => { setActive('/comms'); if (commsEnabled && can('comm.view')) renderComms(content); else denied(); },
     '/finance': () => { setActive('/finance'); if (financeEnabled && can('finance.view')) renderFinance(content); else denied(); },
     '/finance-analytics': () => { setActive('/finance-analytics'); if (financeEnabled && can('finance.view')) renderFinanceAnalytics(content); else denied(); },
+    '/modules': () => { setActive('/modules'); if (can('settings.manage')) renderSystemModules(content); else denied(); },
     '/analytics': () => { setActive('/analytics'); if (analyticsEnabled && can('analytics.view')) renderAnalytics(content); else denied(); },
     '/web-analytics': () => { setActive('/web-analytics'); if (webAnalyticsEnabled && can('analytics.view')) renderAnalyticsWeb(content); else denied(); },
     '/forms': () => { setActive('/forms'); if (formsEnabled && can('forms.view')) renderForms(content); else denied(); },

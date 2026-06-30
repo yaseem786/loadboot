@@ -65,6 +65,7 @@ const NAV = [
     { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },
     { path: '/automations', label: 'Automations', icon: 'refresh', perm: null, flag: 'automationsAdmin' },
     { path: '/audit', label: 'Audit log', icon: 'shield', perm: 'audit.view' },
+    { path: '/modules', label: 'Module registry', icon: 'grid', perm: 'settings.manage' },
     { path: '/integrations', label: 'Integrations', icon: 'refresh', perm: 'integrations.view', flag: 'integrations' },
     { path: '/flags', label: 'Feature flags', icon: 'flag', perm: 'flags.manage' },
     { path: '/settings', label: 'Settings', icon: 'cog', perm: 'settings.manage' },

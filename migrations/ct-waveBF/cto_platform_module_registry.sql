@@ -1,0 +1,5 @@
+-- cto_platform_module_registry.sql — Phase 0 executed improvement.
+-- app_private.platform_modules registry (module-factory foundation) + staff-gated
+-- read RPCs cc_list_modules() / cc_module_summary(), seeded from the capability
+-- registry. Deny-by-default RLS. Applied to staging + production via MCP.
+-- See docs/phase-0/ for the architecture this enables.
