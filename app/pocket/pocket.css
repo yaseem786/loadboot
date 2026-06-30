@@ -39,3 +39,11 @@ textarea.pk-in { resize:vertical; font-family:inherit; }
 .pk-trip { padding:10px 0; border-bottom:1px solid rgba(148,163,184,.18); }
 .pk-trip:last-child { border-bottom:0; }
 .pk-trip-actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+
+/* announcement banners (carrier pocket) */
+.pk-ann { border-radius:12px; padding:12px 14px; margin-bottom:12px; border-left:5px solid #2563eb; background:#eff6ff; }
+.pk-ann.warning { border-color:#d97706; background:#fffbeb; }
+.pk-ann.emergency { border-color:#dc2626; background:#fef2f2; }
+.pk-ann.promo { border-color:#7c3aed; background:#f5f3ff; }
+.pk-ann-t { font-weight:800; font-size:15px; }
+.pk-ann-b { font-size:13px; margin-top:3px; color:#334155; }

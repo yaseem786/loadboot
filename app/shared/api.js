@@ -269,6 +269,45 @@ export const actionCenter = () => rpc('cc_action_center');
 // ---- Wave J: Live operations map ----
 export const opsMap = () => rpc('cc_ops_map');
 
+// ---- Wave L: Announcements & Broadcast (flag: announcements_enabled) ----
+export const createAnnouncement = (o = {}) => rpc('cc_create_announcement', { p_title: o.title, p_body: o.body ?? null, p_kind: o.kind ?? 'info', p_audience: o.audience ?? 'all_carriers', p_target_org: o.targetOrg ?? null, p_expires_at: o.expiresAt ?? null });
+export const listAnnouncements = (limit = 100) => rpc('cc_list_announcements', { p_limit: limit });
+export const setAnnouncementActive = (id, active) => rpc('cc_set_announcement_active', { p_id: id, p_active: active });
+export const pocketAnnouncements = () => rpc('cc_pocket_announcements');
+
+// ---- Wave L: Campaign manager (flag: campaigns_enabled) ----
+export const createCampaign = (o = {}) => rpc('cc_create_campaign', { p_name: o.name, p_source: o.source ?? null, p_medium: o.medium ?? null, p_campaign: o.campaign, p_landing: o.landing ?? '/' });
+export const listCampaigns = (limit = 100) => rpc('cc_list_campaigns', { p_limit: limit });
+export const setCampaignActive = (id, active) => rpc('cc_set_campaign_active', { p_id: id, p_active: active });
+
+// ---- Live integration: AI assist (Gemini) + transactional email (Resend) ----
+export const aiAssist = async (task, ctx = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('ai-assist', { body: { task, ...ctx } });
+  if (error) throw new Error((error && error.message) || 'AI request failed');
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
+export const sendEmail = async (o = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('send-email', { body: { to: o.to, subject: o.subject, text: o.text, html: o.html ?? null } });
+  if (error) throw new Error((error && error.message) || 'Email failed');
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
+
+// ---- Live integration: FMCSA carrier verification (edge function fmcsa-verify) ----
+export const fmcsaVerify = async (o = {}) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('fmcsa-verify', { body: { carrier_org: o.carrierOrg ?? null, dot: o.dot ?? null, mc: o.mc ?? null } });
+  if (error) { const e = new Error((error && error.message) || 'FMCSA verification failed'); e.fn = 'fmcsa-verify'; throw e; }
+  if (data && data.error) throw new Error(data.error);
+  return data;
+};
+
 // ---- Wave G: staff scoped access (carrier-org selector for admin_assign_role) ----
 export const listCarrierOrgs = () => rpc('cc_list_carrier_orgs');
 

@@ -48,6 +48,7 @@ const NAV = [
   { group: 'Communications', items: [
     { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },
     { path: '/notifications', label: 'Notifications', icon: 'bell', perm: null, flag: 'notificationsCenter' },
+    { path: '/announcements', label: 'Announcements', icon: 'bell', perm: 'announce.view', flag: 'announcements' },
     { path: '/chat', label: 'Team chat', icon: 'bell', perm: null, flag: 'teamChat' },
   ]},
   { group: 'Finance', items: [
@@ -55,6 +56,7 @@ const NAV = [
   ]},
   { group: 'Marketing', items: [
     { path: '/content', label: 'Content & posts', icon: 'doc', perm: 'content.view', flag: 'content' },
+    { path: '/campaigns', label: 'Campaigns', icon: 'trend', perm: 'campaigns.view', flag: 'campaigns' },
   ]},
   { group: 'Administration', items: [
     { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },

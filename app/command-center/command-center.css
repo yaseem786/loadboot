@@ -447,3 +447,21 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 .cc-map-wrap { height:calc(100vh - 260px); min-height:440px; border-radius:14px; overflow:hidden; border:1px solid var(--lb-border,#eef2f7); }
 .cc-map-wrap .leaflet-container { height:100%; width:100%; background:#eef3f8; font:inherit; }
 .leaflet-popup-content a { color:var(--lb-accent,#2563eb); font-weight:600; text-decoration:none; }
+
+/* ===== Wave J map: legend + side list ===== */
+.cc-map-legend { display:flex; gap:16px; margin-bottom:10px; flex-wrap:wrap; }
+.cc-legend-item { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--lb-muted,#475569); }
+.cc-map-dot { width:11px; height:11px; border-radius:50%; display:inline-block; border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.08); flex:0 0 auto; }
+.cc-map-layout { display:flex; gap:14px; align-items:stretch; }
+.cc-map-layout .cc-map-wrap { flex:1 1 auto; min-height:440px; height:calc(100vh - 300px); }
+.cc-map-side { flex:0 0 300px; max-height:calc(100vh - 300px); overflow-y:auto; border:1px solid var(--lb-border,#eef2f7); border-radius:14px; background:var(--lb-card,#fff); padding:8px; }
+.cc-map-side-head { font-weight:700; font-size:13px; padding:8px 8px 10px; color:var(--lb-muted,#475569); }
+.cc-map-row { display:flex; gap:10px; align-items:flex-start; padding:10px 8px; border-radius:10px; cursor:pointer; transition:background .12s ease; }
+.cc-map-row:hover { background:var(--cc-hover,rgba(59,130,246,.07)); }
+.cc-map-row .cc-map-dot { margin-top:4px; }
+.cc-map-row-main { min-width:0; }
+@media (max-width:900px){ .cc-map-layout { flex-direction:column; } .cc-map-side { flex:auto; max-height:340px; } .cc-map-layout .cc-map-wrap { height:380px; } }
+
+/* ===== Wave L: announcements + campaigns ===== */
+.cc-pill-violet { background:#ede9fe; color:#6d28d9; }
+.cc-pill-violet .cc-pill-dot { background:#7c3aed; }
