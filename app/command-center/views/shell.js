@@ -16,6 +16,7 @@ const NAV = [
   { group: 'Overview', items: [
     { path: '/', label: 'Dashboard', icon: 'grid', perm: null },
     { path: '/radar', label: 'Ops Radar', icon: 'bell', perm: null },
+    { path: '/management', label: 'Management', icon: 'grid', perm: null },
     { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
   ]},
   { group: 'Operations', items: [
@@ -23,6 +24,7 @@ const NAV = [
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/trips', label: 'Dispatch & trips', icon: 'truck', perm: 'dispatch.view', flag: 'dispatch' },
+    { path: '/fleet', label: 'Fleet & drivers', icon: 'users', perm: 'fleet.view', flag: 'fleet' },
     { path: '/documents', label: 'Documents', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
     { path: '/compliance', label: 'Onboarding & compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
     { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },

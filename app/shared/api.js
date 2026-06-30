@@ -176,6 +176,40 @@ export const opsRadar = () => rpc('cc_ops_radar');
 export const matchCarriers = (loadId) => rpc('cc_match_carriers_for_load', { p_load: loadId });
 export const globalSearch = (q, limit) => rpc('cc_global_search', { p_q: q, p_limit: limit ?? 20 });
 
+// ---- Enterprise Completion: Fleet & execution (flag: fleet_enabled) ----
+export const fleetOverview = () => rpc('cc_fleet_overview');
+export const listDrivers = (o = {}) => rpc('cc_list_drivers', { p_carrier: o.carrier ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const upsertDriver = (o = {}) => rpc('cc_upsert_driver', { p_id: o.id ?? null, p_carrier: o.carrier, p_name: o.name, p_phone: o.phone ?? null, p_license_no: o.licenseNo ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
+export const upsertTruck = (o = {}) => rpc('cc_upsert_truck', { p_id: o.id ?? null, p_carrier: o.carrier, p_unit: o.unit, p_plate: o.plate ?? null, p_vin: o.vin ?? null, p_equipment: o.equipment ?? null });
+export const assignTripResources = (o = {}) => rpc('cc_assign_trip_resources', { p_trip: o.trip, p_driver: o.driver ?? null, p_truck: o.truck ?? null, p_trailer: o.trailer ?? null });
+export const addAccessorial = (trip, kind, amount, note) => rpc('cc_add_accessorial', { p_trip: trip, p_kind: kind, p_amount: amount, p_note: note ?? null });
+export const logException = (trip, kind, description) => rpc('cc_log_exception', { p_trip: trip, p_kind: kind, p_description: description });
+
+// ---- EC: Compliance external data ----
+export const upsertCarrierSafety = (o = {}) => rpc('cc_upsert_carrier_safety', { p_carrier: o.carrier, p_dot: o.dot ?? null, p_mc: o.mc ?? null, p_authority: o.authority ?? null, p_rating: o.rating ?? null, p_power_units: o.powerUnits ?? null, p_oos: o.oos ?? null });
+export const safetyScorecard = (carrier) => rpc('cc_safety_scorecard', { p_carrier: carrier });
+
+// ---- EC: Finance depth ----
+export const addAdjustment = (o = {}) => rpc('cc_add_adjustment', { p_invoice: o.invoice ?? null, p_settlement: o.settlement ?? null, p_kind: o.kind, p_amount: o.amount, p_note: o.note ?? null });
+export const openDispute = (invoice, reason) => rpc('cc_open_dispute', { p_invoice: invoice, p_reason: reason });
+export const resolveDispute = (dispute, decision, resolution) => rpc('cc_resolve_dispute', { p_dispute: dispute, p_decision: decision, p_resolution: resolution ?? null });
+export const exportFinance = (kind) => rpc('cc_export_finance', { p_kind: kind ?? 'invoices' });
+export const carrierStatement = (carrier) => rpc('cc_carrier_statement', { p_carrier: carrier });
+
+// ---- EC: Tracking ----
+export const pocketSetConsent = (trip, consent) => rpc('cc_pocket_set_consent', { p_trip: trip, p_consent: consent });
+export const pocketPostLocation = (trip, lat, lng, label) => rpc('cc_pocket_post_location', { p_trip: trip, p_lat: lat, p_lng: lng, p_label: label ?? null });
+export const tripLocations = (trip, limit) => rpc('cc_trip_locations', { p_trip: trip, p_limit: limit ?? 50 });
+
+// ---- EC: Intelligence + Documents ----
+export const laneHistory = (limit) => rpc('cc_lane_history', { p_limit: limit ?? 30 });
+export const managementDashboard = () => rpc('cc_management_dashboard');
+export const systemHealth = () => rpc('cc_system_health');
+export const invoiceDocument = (invoice) => rpc('cc_invoice_document', { p_invoice: invoice });
+export const rateconDocument = (trip) => rpc('cc_ratecon_document', { p_trip: trip });
+export const listDocumentFiles = (ownerType, ownerId) => rpc('cc_list_document_files', { p_owner_type: ownerType, p_owner_id: ownerId });
+export const recordDocumentFile = (o = {}) => rpc('cc_record_document_file', { p_owner_type: o.ownerType, p_owner_id: o.ownerId, p_kind: o.kind ?? null, p_path: o.path, p_file_name: o.fileName, p_content_type: o.contentType ?? null, p_size: o.size ?? null });
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in
