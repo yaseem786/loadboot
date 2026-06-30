@@ -172,6 +172,8 @@ export const pocketCompliance = () => rpc('cc_pocket_compliance');
 export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
 export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', { p_subject: subject, p_body: body ?? null });
 export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
+// Available loads for carriers to browse (public opportunities feed).
+export const publicLoadOpportunities = (limit) => rpc('get_public_load_opportunities', { p_limit: limit ?? 18 });
 // Phase 6 — carrier self-service
 export const pocketReportIssue = (trip, kind, note) => rpc('cc_pocket_report_issue', { p_trip: trip, p_kind: kind, p_note: note ?? null });
 export const pocketDisputeInvoice = (invoice, reason) => rpc('cc_pocket_dispute_invoice', { p_invoice: invoice, p_reason: reason });
