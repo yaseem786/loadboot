@@ -30,6 +30,7 @@ import { renderFinance } from './views/finance.js';
 import { renderAnalytics } from './views/analytics.js';
 import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
+import { renderRadar } from './views/radar.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -124,6 +125,7 @@ async function boot() {
 
   const router = createRouter({
     '/': () => { setActive('/'); renderOverview(content, ctx, shell); },
+    '/radar': () => { setActive('/radar'); renderRadar(content); },
     '/dispatch': () => { setActive('/dispatch'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderDispatch(content))(); },
     '/carriers': () => { setActive('/carriers'); guard(['carriers.view', 'carriers.edit', 'carriers.approve'], () => renderCarriers(content))(); },
     '/loads': () => { setActive('/loads'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderLoads(content))(); },

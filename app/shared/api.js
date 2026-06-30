@@ -171,6 +171,11 @@ export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: li
 export const pocketCompliance = () => rpc('cc_pocket_compliance');
 export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
 
+// ---- Wave 10 Advanced Ops & Intelligence ----
+export const opsRadar = () => rpc('cc_ops_radar');
+export const matchCarriers = (loadId) => rpc('cc_match_carriers_for_load', { p_load: loadId });
+export const globalSearch = (q, limit) => rpc('cc_global_search', { p_q: q, p_limit: limit ?? 20 });
+
 // NOTE — deferred V1+ modules (NOT built yet, intentionally absent from the V1 RPC
 // surface): web analytics, content/blog, page builder, fleet locations, smart matching,
 // rate intelligence, settlements, messages, Search Console. They return one-by-one in

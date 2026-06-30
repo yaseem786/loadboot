@@ -366,3 +366,13 @@
 .cc-doclist{display:flex;flex-direction:column;gap:8px}
 .cc-doc-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eef2f7;border-radius:10px;background:#fcfdff}
 .cc-assign{margin-top:8px}
+
+/* Wave 10 — global search (topbar) */
+.cc-search-wrap{position:relative;flex:1;max-width:440px;margin:0 18px}
+.cc-search{width:100%}
+.cc-search-panel{position:absolute;top:46px;left:0;right:0;background:#fff;border:1px solid var(--lb-border,#e9eef5);border-radius:14px;box-shadow:0 20px 50px -16px rgba(2,8,23,.28);padding:6px;z-index:60;max-height:380px;overflow:auto}
+.cc-search-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:inherit}
+.cc-search-row:hover{background:#f3f6fb}
+.cc-search-row b{flex:1;font-weight:600;font-size:14px}
+.cc-search-empty{padding:14px;color:var(--lb-muted,#64748b);font-size:13px}
+@media (max-width:900px){.cc-search-wrap{display:none}}

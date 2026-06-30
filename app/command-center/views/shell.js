@@ -5,6 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { can } from '../../shared/permissions.js';
 import { icon } from '../../shared/ui/icons.js';
+import { globalSearch } from '../../shared/api.js';
 import { avatar, brandLogo, BRAND_TAGLINE } from '../../shared/ui/components.js';
 import ENV from '../../shared/env.js';
 import { signOut } from '../../shared/session.js';
@@ -14,6 +15,7 @@ import { signOut } from '../../shared/session.js';
 const NAV = [
   { group: 'Overview', items: [
     { path: '/', label: 'Dashboard', icon: 'grid', perm: null },
+    { path: '/radar', label: 'Ops Radar', icon: 'bell', perm: null },
     { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
   ]},
   { group: 'Operations', items: [
@@ -52,6 +54,33 @@ function permVisible(item) {
   if (!item.perm) return true;
   if (item.perm.indexOf('any:') === 0) return item.perm.slice(4).split(',').some(p => can(p.trim()));
   return can(item.perm);
+}
+
+const SEARCH_HASH = { carrier: '/carriers', load: '/trips', lead: '/crm', invoice: '/finance' };
+function globalSearchBox() {
+  const input = el('input', { class: 'cc-input cc-search', placeholder: 'Search carriers, loads, leads, invoices…' });
+  const panel = el('div', { class: 'cc-search-panel', hidden: true });
+  const wrap = el('div', { class: 'cc-search-wrap' }, [input, panel]);
+  let t = null;
+  const close = () => { panel.hidden = true; };
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    const q = input.value.trim();
+    if (q.length < 2) { close(); return; }
+    t = setTimeout(async () => {
+      let rows = [];
+      try { rows = await globalSearch(q, 12); } catch (_) { rows = []; }
+      if (!rows || !rows.length) { mount(panel, el('div', { class: 'cc-search-empty' }, 'No matches')); panel.hidden = false; return; }
+      mount(panel, rows.map(r => el('a', { class: 'cc-search-row', href: '#' + (SEARCH_HASH[r.kind] || '/'), onClick: close }, [
+        el('span', { class: 'cc-pill cc-pill-gray' }, r.sublabel),
+        el('b', null, r.label),
+        el('span', { class: 'cc-sub' }, r.status || ''),
+      ])));
+      panel.hidden = false;
+    }, 220);
+  });
+  document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+  return wrap;
 }
 
 export function renderShell(root, user, flags) {
@@ -103,6 +132,7 @@ export function renderShell(root, user, flags) {
           el('h1', { id: 'cc-title' }, 'Dashboard'),
           el('div', { class: 'cc-crumb', id: 'cc-crumb' }, 'LoadBoot · Command Center'),
         ]),
+        globalSearchBox(),
         el('div', { class: 'cc-top-right' }, [
           el('button', { class: 'cc-iconbtn', title: 'Notifications' }, [icon('bell', 18), el('span', { class: 'dotk' })]),
           el('div', { class: 'cc-user' }, [
