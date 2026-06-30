@@ -20,8 +20,9 @@ Deno.serve(async (req: Request) => {
     const message = String(body.body || "").slice(0, 400);
     const clickUrl = String(body.url || "/");
     const audience = body.audience ?? null; const userIds = Array.isArray(body.user_ids) ? body.user_ids : null;
-    if (!audience && !userIds) return json({ error: "provide audience or user_ids" }, 400);
-    const tr = await fetch(`${URL_}/rest/v1/rpc/cc_push_targets`, { method: "POST", headers: { apikey: SR, Authorization: `Bearer ${SR}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_audience: audience, p_user_ids: userIds }) });
+    const org = body.org ?? null;
+    if (!audience && !userIds && !org) return json({ error: "provide audience, user_ids or org" }, 400);
+    const tr = await fetch(`${URL_}/rest/v1/rpc/cc_push_targets`, { method: "POST", headers: { apikey: SR, Authorization: `Bearer ${SR}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_audience: audience, p_user_ids: userIds, p_org: org }) });
     if (!tr.ok) return json({ error: "could not resolve targets" }, 502);
     const subs: { endpoint: string; p256dh: string; auth: string }[] = await tr.json();
     webpush.setVapidDetails(subj, pub, priv);

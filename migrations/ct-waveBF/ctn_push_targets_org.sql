@@ -1,0 +1,4 @@
+-- ctn_push_targets_org.sql — cc_push_targets gains an optional p_org (carrier org id)
+-- so a Command Center broadcast can push to ONE carrier org's users. Dropped the old
+-- 2-arg signature; new signature cc_push_targets(text, uuid[], uuid), service_role only.
+-- Applied to staging + production via MCP. push-send edge function now forwards body.org.
