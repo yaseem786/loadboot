@@ -8,8 +8,10 @@ import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange 
 import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
-  pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities,
+  pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod,
+  carrierUploadDocument, carrierListDocuments,
 } from '../shared/api.js';
+import { uploadDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -292,9 +294,22 @@ async function appView(user) {
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
       } }, '⚠ Report issue') : null;
+      const podW = h('div');
+      const canPod = active || t.status === 'delivered' || t.status === 'completed';
+      const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+        if (podW.firstChild) { podW.innerHTML = ''; return; }
+        const fi = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic' });
+        const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          const f = fi.files && fi.files[0]; if (!f) { alert('Choose a POD file.'); return; }
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Uploading…';
+          try { const m = await uploadDocument(f, 'pod'); await pocketUploadPod({ trip: t.id, path: m.path, fileName: m.fileName, contentType: m.contentType, size: m.size }); podW.innerHTML = ''; podW.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ POD uploaded')); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Upload failed.'); }
+        } }, 'Send');
+        podW.appendChild(h('div', { class: 'cp-inlineform' }, [fi, send]));
+      } }, '📄 Upload POD') : null;
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
-        (confirm || share || issue) ? h('div', { class: 'cp-trip-actions' }, [confirm, share, issue].filter(Boolean)) : null, fw,
+        (confirm || share || issue || pod) ? h('div', { class: 'cp-trip-actions' }, [confirm, share, issue, pod].filter(Boolean)) : null, fw, podW,
       ].filter(Boolean));
     })]));
   }
@@ -338,15 +353,46 @@ async function appView(user) {
   }
 
   /* ----- Documents & compliance ----- */
+  const DOC_TYPES = [['insurance', 'Insurance / COI'], ['authority', 'Operating authority'], ['w9', 'W-9'], ['noa', 'Notice of assignment'], ['agreement', 'Signed agreement'], ['rate_con', 'Rate confirmation'], ['bol', 'Bill of lading'], ['pod', 'Proof of delivery'], ['other', 'Other']];
   async function loadDocuments() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let c; try { c = await pocketCompliance(); } catch (e) { c = { requirements: [] }; }
     const reqs = (c && c.requirements) || [];
+    const listWrap = h('div');
+    // upload form
+    const typeSel = h('select', { class: 'cp-in' }, DOC_TYPES.map(([v, l]) => h('option', { value: v }, l)));
+    const fileIn = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
+    const msg = h('div', { class: 'cp-err' });
+    const up = h('button', { class: 'cp-btn', onClick: async () => {
+      const f = fileIn.files && fileIn.files[0];
+      msg.textContent = ''; msg.className = 'cp-err';
+      if (!f) { msg.textContent = 'Choose a file first.'; return; }
+      up.disabled = true; up.textContent = 'Uploading…';
+      try {
+        const meta = await uploadDocument(f, typeSel.value);
+        await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path });
+        fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded — your dispatcher will review it.';
+        await loadList();
+      } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Upload failed.'; }
+      up.disabled = false; up.textContent = 'Upload document';
+    } }, 'Upload document');
     mount(content, h('div', null, [
       h('div', { class: 'cp-card' }, [cardHead('Onboarding & compliance', c && c.mandatory_ok ? 'All required documents are in ✓' : 'Some documents still needed'),
         reqs.length ? h('div', null, reqs.map(r => h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, r.mandatory ? 'Required' : 'Optional')]), pill(r.status)]))) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
-      h('div', { class: 'cp-card' }, [cardHead('Upload a document'), h('p', { class: 'cp-muted', style: 'text-align:left' }, 'To submit or update a compliance document, open a support request and your dispatcher will share a secure upload link.'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('support') }, 'Request upload link')]),
+      h('div', { class: 'cp-grid' }, [
+        h('div', { class: 'cp-card' }, [cardHead('Upload a document'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fileIn, msg, up]),
+        h('div', { class: 'cp-card' }, [cardHead('My documents'), listWrap]),
+      ]),
     ]));
+    async function loadList() {
+      mount(listWrap, h('div', { class: 'cp-muted' }, 'Loading…'));
+      let docs; try { docs = await carrierListDocuments(); } catch (e) { mount(listWrap, h('div', { class: 'cp-muted' }, 'Could not load.')); return; }
+      const label = (t) => (DOC_TYPES.find(d => d[0] === t) || [t, t])[1];
+      mount(listWrap, (docs && docs.length) ? h('div', null, docs.map(d => h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, label(d.type)), h('div', { class: 'cp-row-s' }, d.file_name)]), pill(d.status || 'pending'),
+      ]))) : h('div', { class: 'cp-muted' }, 'No documents uploaded yet.'));
+    }
+    loadList();
   }
 
   /* ----- Support ----- */

@@ -178,6 +178,22 @@ export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', 
 export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
 // Available loads for carriers to browse (public opportunities feed).
 export const publicLoadOpportunities = (limit) => rpc('get_public_load_opportunities', { p_limit: limit ?? 18 });
+// Carrier document self-service (legacy `documents` table; RLS-scoped to the carrier,
+// trigger sets carrier_id=auth.uid() + status='pending' for staff review).
+export const carrierUploadDocument = async ({ type, fileName, filePath }) => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath });
+  if (error) throw new Error(error.message || 'Could not save the document.');
+  return true;
+};
+export const carrierListDocuments = async () => {
+  const { getClient } = await import('./supabaseClient.js');
+  const sb = await getClient();
+  const { data, error } = await sb.from('documents').select('id,type,file_name,file_path,status,created_at').order('created_at', { ascending: false }).limit(100);
+  if (error) throw new Error(error.message || 'Could not load documents.');
+  return data || [];
+};
 // Phase 6 — carrier self-service
 export const pocketReportIssue = (trip, kind, note) => rpc('cc_pocket_report_issue', { p_trip: trip, p_kind: kind, p_note: note ?? null });
 export const pocketDisputeInvoice = (invoice, reason) => rpc('cc_pocket_dispute_invoice', { p_invoice: invoice, p_reason: reason });
