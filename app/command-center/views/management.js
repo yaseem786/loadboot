@@ -21,11 +21,12 @@ export function renderManagement(host) {
     catch (e) { showError(body, humanizeError(e), load); return; }
     const n = (k) => Number((m && m[k]) || 0);
 
+    const attention = n('open_exceptions') + n('settlements_pending') + n('open_disputes');
     const kpis = el('div', { class: 'cc-kpi-grid' }, [
-      statCard({ icon: 'doc', label: 'Revenue collected', value: money(n('revenue_collected')), sub: money(n('revenue_outstanding')) + ' outstanding', accent: 'green' }),
-      statCard({ icon: 'truck', label: 'Active trips', value: String(n('active_trips')), sub: n('delivered_30d') + ' delivered/30d', accent: 'blue' }),
-      statCard({ icon: 'users', label: 'Carriers compliant', value: n('carriers_compliant') + '/' + n('carriers_active'), sub: 'onboarded & valid', accent: 'violet' }),
-      statCard({ icon: 'flag', label: 'Needs attention', value: String(n('open_exceptions') + n('settlements_pending') + n('open_disputes')), sub: 'exceptions/payouts/disputes', accent: (n('open_exceptions') + n('settlements_pending') + n('open_disputes')) ? 'amber' : 'green' }),
+      statCard({ icon: 'doc', label: 'Revenue collected', value: money(n('revenue_collected')), sub: money(n('revenue_outstanding')) + ' outstanding', accent: 'green', to: '#/finance' }),
+      statCard({ icon: 'truck', label: 'Active trips', value: String(n('active_trips')), sub: n('delivered_30d') + ' delivered/30d', accent: 'blue', to: '#/trips' }),
+      statCard({ icon: 'users', label: 'Carriers compliant', value: n('carriers_compliant') + '/' + n('carriers_active'), sub: 'onboarded & valid', accent: 'violet', to: '#/compliance' }),
+      statCard({ icon: 'flag', label: 'Needs attention', value: String(attention), sub: 'exceptions/payouts/disputes', accent: attention ? 'amber' : 'green', to: '#/radar' }),
     ]);
 
     const healthCard = health ? card([

@@ -54,11 +54,21 @@ export function statusPill(status) {
 }
 
 // ---- KPI stat card ----
+// Pass o.to (a '#/path' hash) or o.onClick to make the whole card a drill-down target.
 export function statCard(o) {
-  return el('div', { class: 'cc-kpi' + (o.accent ? ' cc-kpi-' + o.accent : '') }, [
+  const clickable = !!(o.to || o.onClick);
+  const attrs = { class: 'cc-kpi' + (o.accent ? ' cc-kpi-' + o.accent : '') + (clickable ? ' cc-kpi-click' : '') };
+  if (clickable) {
+    attrs.role = 'button'; attrs.tabindex = '0';
+    const go = (e) => { if (e) e.preventDefault(); if (o.onClick) o.onClick(); else if (o.to) location.hash = o.to; };
+    attrs.onClick = go;
+    attrs.onKeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') go(e); };
+  }
+  return el('div', attrs, [
     el('div', { class: 'cc-kpi-top' }, [
       el('span', { class: 'cc-kpi-ico' }, icon(o.icon || 'grid', 20)),
       o.trend != null ? el('span', { class: 'cc-kpi-trend' }, [icon('arrowUp', 13), String(o.trend)]) : '',
+      clickable ? el('span', { class: 'cc-kpi-go' }, '›') : '',
     ]),
     el('div', { class: 'cc-kpi-val' }, o.value),
     el('div', { class: 'cc-kpi-label' }, o.label),

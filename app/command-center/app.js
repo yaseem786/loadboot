@@ -43,6 +43,8 @@ import { renderReports } from './views/reports.js';
 import { renderNotifications } from './views/notifications.js';
 import { renderAutomationsAdmin } from './views/automationsAdmin.js';
 import { renderChat } from './views/chat.js';
+import { renderActionCenter } from './views/actionCenter.js';
+import { renderOpsMap } from './views/opsMap.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -139,9 +141,12 @@ async function boot() {
   try { automationsAdminEnabled = await isFlagEnabled('automations_admin_enabled'); } catch (_) { automationsAdminEnabled = false; }
   try { notificationsCenterEnabled = await isFlagEnabled('notifications_center_enabled'); } catch (_) { notificationsCenterEnabled = false; }
   try { teamChatEnabled = await isFlagEnabled('team_chat_enabled'); } catch (_) { teamChatEnabled = false; }
+  let actionCenterEnabled = false, opsMapEnabled = false;
+  try { actionCenterEnabled = await isFlagEnabled('action_center_enabled'); } catch (_) { actionCenterEnabled = false; }
+  try { opsMapEnabled = await isFlagEnabled('ops_map_enabled'); } catch (_) { opsMapEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -151,7 +156,7 @@ async function boot() {
   const guard = (perms, render) => () => (perms.some(p => can(p)) ? render() : denied());
 
   const router = createRouter({
-    '/': () => { setActive('/'); renderOverview(content, ctx, shell); },
+    '/': () => { setActive('/'); if (actionCenterEnabled) renderActionCenter(content, ctx, user); else renderOverview(content, ctx, shell); },
     '/radar': () => { setActive('/radar'); renderRadar(content); },
     '/management': () => { setActive('/management'); renderManagement(content); },
     '/fleet': () => { setActive('/fleet'); if (fleetEnabled && can('fleet.view')) renderFleet(content); else denied(); },
@@ -175,6 +180,7 @@ async function boot() {
     '/reports': () => { setActive('/reports'); if (reportsEnabled && can('reports.view')) renderReports(content); else denied(); },
     '/notifications': () => { setActive('/notifications'); if (notificationsCenterEnabled) renderNotifications(content); else denied(); },
     '/chat': () => { setActive('/chat'); if (teamChatEnabled) renderChat(content); else denied(); },
+    '/map': () => { setActive('/map'); if (opsMapEnabled) renderOpsMap(content); else denied(); },
     '/automations': () => { setActive('/automations'); if (automationsAdminEnabled) renderAutomationsAdmin(content); else denied(); },
     '/content': () => { setActive('/content'); if (contentEnabled && can('content.view')) renderContent(content); else denied(); },
     '/integrations': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); },

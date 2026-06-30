@@ -423,3 +423,27 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 .cc-msg-body { font-size:14px; white-space:pre-wrap; word-break:break-word; }
 .cc-chat-bar { display:flex; gap:8px; padding:12px; border-top:1px solid var(--lb-border,#eef2f7); background:var(--lb-card-2,#fafbfc); }
 .cc-chat-bar .cc-input { flex:1; }
+
+/* ===== clickable KPI cards (drill-down) ===== */
+.cc-kpi-click { cursor:pointer; transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; position:relative; }
+.cc-kpi-click:hover { transform:translateY(-2px); box-shadow:0 10px 24px rgba(2,6,23,.10); }
+.cc-kpi-click:focus-visible { outline:2px solid var(--lb-accent,#2563eb); outline-offset:2px; }
+.cc-kpi-go { margin-left:auto; font-size:20px; line-height:1; color:var(--lb-muted,#94a3b8); font-weight:700; }
+.cc-kpi-click:hover .cc-kpi-go { color:var(--lb-accent,#2563eb); }
+
+/* ===== Wave I: Action Center ===== */
+.cc-actionlist { display:flex; flex-direction:column; }
+.cc-action-row { display:flex; align-items:center; gap:12px; padding:11px 6px; border-bottom:1px solid var(--lb-border,#eef2f7); text-decoration:none; color:inherit; transition:background .12s ease; }
+.cc-action-row:last-child { border-bottom:0; }
+.cc-action-row:hover { background:var(--cc-hover,rgba(59,130,246,.06)); }
+.cc-action-main { flex:1; min-width:0; }
+.cc-action-main b { display:block; font-size:14px; }
+.cc-tag { display:inline-block; font-size:11px; font-weight:700; padding:1px 7px; border-radius:6px; background:#eef2f7; color:#475569; }
+.cc-tag-blue{background:#dbeafe;color:#1d4ed8}.cc-tag-amber{background:#fef3c7;color:#b45309}.cc-tag-violet{background:#ede9fe;color:#6d28d9}.cc-tag-gray{background:#eef2f7;color:#475569}
+.cc-overdue { color:#dc2626; font-weight:700; }
+.cc-empty-good { padding:18px; text-align:center; color:var(--lb-muted,#64748b); font-size:14px; }
+
+/* ===== Wave J: live operations map ===== */
+.cc-map-wrap { height:calc(100vh - 260px); min-height:440px; border-radius:14px; overflow:hidden; border:1px solid var(--lb-border,#eef2f7); }
+.cc-map-wrap .leaflet-container { height:100%; width:100%; background:#eef3f8; font:inherit; }
+.leaflet-popup-content a { color:var(--lb-accent,#2563eb); font-weight:600; text-decoration:none; }

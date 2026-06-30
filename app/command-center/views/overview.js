@@ -17,10 +17,10 @@ export async function renderOverview(host, ctx, shell) {
   if (shell && shell.setBadge) shell.setBadge('/documents', n('documents_pending'));
 
   const kpis = el('div', { class: 'cc-kpi-grid' }, [
-    statCard({ icon: 'truck', label: 'Carriers', value: String(n('carriers_total')), sub: n('carriers_pending') + ' awaiting review', accent: 'blue' }),
-    statCard({ icon: 'list', label: 'Loads available', value: String(n('loads_available')), sub: n('loads_booked') + ' booked · ' + n('loads_in_transit') + ' in transit', accent: 'green' }),
-    statCard({ icon: 'doc', label: 'Documents pending', value: String(n('documents_pending')), sub: 'awaiting compliance review', accent: 'amber' }),
-    statCard({ icon: 'users', label: 'Active staff', value: String(n('staff_active')), sub: 'operators with access', accent: 'violet' }),
+    statCard({ icon: 'truck', label: 'Carriers', value: String(n('carriers_total')), sub: n('carriers_pending') + ' awaiting review', accent: 'blue', to: '#/carriers' }),
+    statCard({ icon: 'list', label: 'Loads available', value: String(n('loads_available')), sub: n('loads_booked') + ' booked · ' + n('loads_in_transit') + ' in transit', accent: 'green', to: '#/loads' }),
+    statCard({ icon: 'doc', label: 'Documents pending', value: String(n('documents_pending')), sub: 'awaiting compliance review', accent: 'amber', to: '#/documents' }),
+    statCard({ icon: 'users', label: 'Active staff', value: String(n('staff_active')), sub: 'operators with access', accent: 'violet', to: '#/staff' }),
   ]);
 
   const carrierBreak = card([
