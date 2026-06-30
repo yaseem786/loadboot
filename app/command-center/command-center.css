@@ -474,3 +474,23 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 .cc-ai-answer { white-space:pre-wrap; font-size:14px; line-height:1.6; color:#0f172a; margin:6px 0 12px; }
 .cc-ai-meta { border-top:1px solid var(--lb-border,#eef2f7); padding-top:10px; font-size:12px; color:var(--lb-muted,#64748b); display:flex; flex-direction:column; gap:3px; }
 .cc-ai-decide { color:#b45309; font-weight:700; margin-top:2px; }
+
+/* ===== Finance Analytics ===== */
+.fa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 16px; }
+.fa-col2 { grid-column: span 2; }
+.fa-cardhead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+.fa-cardhead h3 { font-size: 1rem; margin: 0; }
+.fa-cardhead span { font-size: .8rem; color: var(--lb-muted, #64748b); }
+.fa-chart svg { display: block; }
+.fa-empty { color: var(--lb-muted, #64748b); font-size: .9rem; padding: 22px; text-align: center; }
+.fa-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: .82rem; color: #475569; }
+.fa-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; }
+.fa-donut-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.fa-donut svg { display: block; }
+.fa-ranks { display: flex; flex-direction: column; gap: 11px; }
+.fa-rank { display: grid; grid-template-columns: 120px 1fr auto; align-items: center; gap: 10px; }
+.fa-rank-l { font-size: .84rem; font-weight: 600; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fa-rank-bar { background: #eef2f8; border-radius: 6px; height: 12px; overflow: hidden; }
+.fa-rank-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.fa-rank-v { font-size: .82rem; font-weight: 700; color: #0b1220; min-width: 60px; text-align: right; }
+@media (max-width: 900px) { .fa-grid { grid-template-columns: 1fr; } .fa-col2 { grid-column: span 1; } .fa-rank { grid-template-columns: 90px 1fr auto; } }
