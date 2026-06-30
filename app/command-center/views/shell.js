@@ -27,6 +27,12 @@ const NAV = [
   { group: 'Sales', items: [
     { path: '/crm', label: 'CRM & leads', icon: 'trend', perm: 'crm.view', flag: 'crm' },
   ]},
+  { group: 'Communications', items: [
+    { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },
+  ]},
+  { group: 'Finance', items: [
+    { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },
+  ]},
   { group: 'Administration', items: [
     { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },
     { path: '/audit', label: 'Audit log', icon: 'shield', perm: 'audit.view' },
