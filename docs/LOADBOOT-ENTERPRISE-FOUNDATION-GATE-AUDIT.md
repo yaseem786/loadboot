@@ -9,7 +9,7 @@
 `LOADBOOT ENTERPRISE FOUNDATION GATE: FAIL`
 
 **Gate summary: PASS 10 / PARTIAL 0 / BLOCKED 2 / FAIL 0 of 12.**
-**Live counts:** 228 cc_* RPCs / 77 private tables / 50 modules / 30 flags / 8 edge functions / anon surface 5.
+**Live counts:** 240 cc_* RPCs / 77 private tables / 51 modules / 30 flags / 8 edge functions / anon surface 5.
 
 ## Named gates (review items)
 
@@ -27,7 +27,7 @@
 | # | Condition | Status | Evidence | Note |
 |---|---|---|---|---|
 | 1 | All generated artifacts agree (source-of-truth consistency) | **PASS** | counts | Generated deterministically; consistency + evidence-ref validation asserted at build. |
-| 2 | Capability registry current | **PASS** | counts | Regenerated from live counts (228 RPCs / 77 tables / 50 modules). |
+| 2 | Capability registry current | **PASS** | counts | Regenerated from live counts (240 RPCs / 77 tables / 51 modules). |
 | 3 | Anonymous Pocket RPC exposure resolved | **PASS** | pocket_loads_acl | cc_pocket_available_loads: anon 401, carrier-eligibility enforced (cuh). Anon SECURITY DEFINER surface = 5, all public-by-design. |
 | 4 | Security migrations source-controlled | **PASS** | security_migrations | migrations/ct-waveBI-security-gate-repair/{cuf,cug,cuh,cui,cuj,cuk,cul,cum,cun,cuo,cup}.sql written to repo + pushed via desktop bridge; Supabase ledger versions recorded. |
 | 5 | Real POD frontend upload + review workflow proven | **BLOCKED** | - | FRONTEND NOW BUILT + BACKEND MATRIX PROVEN. Built: Pocket app POD panel (file/camera picker, type+size validation, preview, remove/replace, upload state, success, network-failure retry, existing-version + review-status + rejection-reason + resubmit); Carrier Portal POD panel (desktop drag-and-drop + same validation/states); Command Center 'POD Review Queue' (carrier/route/delivery context, signed private preview, approve, reject-with-required-reason). Backend hardened + proven on staging: cc_pocket_upload_pod re-validates carrier org, trip ownership, trip state, MIME, size and the {uid}/pod/{trip}/{file} object path server-side; cc_pod_review_queue / cc_pod_signed_ref / cc_review_pod are reviewer-gated; approval emits invoice.prep_requested exactly once. tests/security/pod_backend_matrix.sql = 21/21 PASS. STILL OPEN (required, not polish): the real browser upload+review captured against a deployed site with a logged-in carrier/driver/staff session (screenshots + Playwright result under evidence/gate/pod/). The assistant cannot type passwords or reach the site via headless egress; owner runs tests/security/pod_workflow.spec.js per the runbook. Owner-executed proof required. |

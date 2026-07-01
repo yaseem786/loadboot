@@ -45,10 +45,10 @@
     }
   ],
   "counts": {
-    "cc_rpcs": 228,
-    "public_callable_rpcs": 233,
+    "cc_rpcs": 240,
+    "public_callable_rpcs": 245,
     "private_tables": 77,
-    "modules": 50,
+    "modules": 51,
     "feature_flags": 30,
     "edge_functions": 8,
     "anon_callable_security_definer": 5,
@@ -72,7 +72,7 @@
       "name": "Capability registry current",
       "status": "PASS",
       "evidence_ref": "counts",
-      "note": "Regenerated from live counts (228 RPCs / 77 tables / 50 modules)."
+      "note": "Regenerated from live counts (240 RPCs / 77 tables / 51 modules)."
     },
     {
       "id": 3,

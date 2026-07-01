@@ -11,7 +11,7 @@ Named gates: SETTLEMENT MAKER CHECKER GATE: PASS | SOURCE-CONTROL REPAIR GATE: P
 
 ## Live counts
 
-228 cc_* RPCs / 77 private tables / 50 modules / 30 flags / 8 edge functions / anon surface 5. Domain events: 21 total / 14 types /
+240 cc_* RPCs / 77 private tables / 51 modules / 30 flags / 8 edge functions / anon surface 5. Domain events: 21 total / 14 types /
 **0 unprocessed**. Audit rows: 26. Plugins: 5/6.
 
 ## Golden-workflow evidence (live IDs)

@@ -227,7 +227,7 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .social{display:flex;gap:10px;margin-top:16px}
 .social a{width:40px;height:40px;border-radius:11px;background:#1e293b;display:flex;align-items:center;justify-content:center;margin:0;transition:.2s}
 .social a:hover{background:var(--blue)}
-.links5{display:grid;grid-template-columns:repeat(5,1fr);gap:30px;margin-bottom:40px}
+.links5{display:grid;grid-template-columns:repeat(6,1fr);gap:26px;margin-bottom:40px}
 .foot-bottom{border-top:1px solid #1e293b;padding-top:24px;font-size:.88rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .mcta{display:none;position:fixed;bottom:0;left:0;right:0;z-index:70;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:12px 16px;gap:10px}
 .mcta a{flex:1;justify-content:center}
@@ -311,8 +311,9 @@ def deglyph(s):
         s = s.replace(k, _svg(v))
     return s
 
-NAV = [('index.html','Home'),('services.html','Services'),('pricing.html','Pricing'),
-       ('load-score.html','Load Score'),('blog.html','Blog'),('about.html','About'),('contact.html','Contact')]
+NAV = [('index.html','Home'),('services.html','Services'),('how-it-works.html','How It Works'),
+       ('pricing.html','Pricing'),('load-score.html','Load Score'),('blog.html','Blog'),
+       ('about.html','About'),('contact.html','Contact')]
 
 def header(active):
     links = ''.join('<a href="%s" class="%s">%s</a>' % (h, 'active' if h==active else '', t) for h,t in NAV)
@@ -335,18 +336,19 @@ def footer():
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
 <a href="#" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 9H3v9h3V9zM4.5 3a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM18 9c-1.6 0-2.5.8-3 1.5V9H12v9h3v-5c0-1 .7-1.7 1.6-1.7s1.4.7 1.4 1.7v5h3v-5.4C21 10 19.7 9 18 9z"/></svg></a></div></div>
 <div><div class="foot-h">Get carrier tips &amp; better loads</div><p style="font-size:.92rem">Rate trends, compliance reminders, and dispatch tips.</p>
-<form class="news" onsubmit="event.preventDefault();this.innerHTML='<span style=\\'color:#86efac;font-weight:600\\'>Subscribed &mdash; thanks!</span>'"><input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Subscribe</button></form></div>
+<form class="news" onsubmit="event.preventDefault();var f=this,em=f.querySelector('input').value;var done=function(){f.innerHTML='<span style=\\'color:#86efac;font-weight:600\\'>Subscribed &mdash; thanks!</span>';};if(window.lbSubmitLead){window.lbSubmitLead('newsletter',{email:em}).then(done).catch(done);}else{done();}"><input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Subscribe</button></form></div>
 </div>
 <div class="links5">
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a></div>
 <div><div class="foot-h">Carriers</div><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Compliance</div><a href="services.html">Authority &amp; DOT Setup</a><a href="services.html">BOC-3 / UCR</a><a href="services.html">Form 2290</a><a href="services.html">IFTA</a></div>
-<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="pricing.html">Pricing</a><a href="load-score.html">Load Score Tool</a><a href="tools.html">Free Tools</a><a href="blog.html">Blog</a><a href="contact.html">Contact</a><a href="/app/carrier/">Carrier Login</a><a href="/app/partner/">Partner Login</a><a href="/app/developer/">Developers &amp; API</a></div>
+<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div>
 </div>
 <div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
-<span><a href="privacy.html" style="display:inline">Privacy Policy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="contact.html" style="display:inline">Contact</a></span></div>
+<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a></span></div>
 </div></footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html" class="btn btn-primary">Get Started</a></div>
 <a class="wa-btn" href="contact.html" rel="noopener" aria-label="Contact us"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.2-1.2l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1112 20zm4.4-5.6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 00-.7.3A2.9 2.9 0 006 9.9c0 1.7 1.3 3.4 1.4 3.6.2.2 2.5 3.9 6.1 5.2 2.2.8 2.5.6 3 .6s1.4-.6 1.6-1.1.2-1 .2-1.1-.2-.2-.5-.3z"/></svg></a>'''
@@ -370,10 +372,23 @@ _BEACON = ("<script>(function(){try{"
   "function send(p){try{fetch(EP,{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:p}),keepalive:true}).catch(function(){});}catch(e){}}"
   "send({anon_id:aid,type:'pageview',page:location.pathname,referrer:ref,referrer_host:rh,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),device:dev,browser:br,os:os,language:navigator.language,timezone:(Intl.DateTimeFormat().resolvedOptions().timeZone||''),ua:ua,internal:internal});"
   "window.lbTrack=function(t,x){var b=Object.assign({anon_id:aid,type:t,page:location.pathname},x||{});send(b);};"
+  "window.lbSubmitLead=function(fk,d){var b=Object.assign({form_key:fk,anon_id:aid,page:location.pathname,referrer:ref,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign')},d||{});return fetch(EP.replace('track_web_event','submit_web_form'),{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:b})});};"
   "}catch(e){}})();</script>") % (APP_REF, APP_ANON)
 HEADX = HEADX + _BEACON
 
+def _breadcrumb(fname, title):
+    if fname == 'index.html':
+        return ''
+    name = title.split(' | ')[0].split(' — ')[0].split(' &mdash; ')[0].strip()
+    name = name.replace('"', "'")
+    return ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList",'
+            '"itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},'
+            '{"@type":"ListItem","position":2,"name":"%s","item":"https://loadboot.com/%s"}]}</script>' % (name, fname))
+
 def page(fname, title, desc, active, body, schema=''):
+    schema = schema or ''
+    if 'BreadcrumbList' not in schema:  # don't double up when a caller supplies its own breadcrumb
+        schema = schema + _breadcrumb(fname, title)
     doc = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
 <meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta name="theme-color" content="#0F172A">
@@ -1776,6 +1791,238 @@ tools_body += LSP + tools_intro + tools_section + tools_seo + tools_faq_html + f
 tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
 page('tools.html','Free Truck Driver Calculators (No Signup) | Loadboot','Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home and detention calculators for owner-operators. No login.','tools.html', tools_body, tools_schema)
 
+# ======================================================================
+# SPRINT 1 — PUBLIC MARKETING WEBSITE COMPLETION (added pages)
+# Real, SEO-complete pages built on the same header/footer/design system.
+# ======================================================================
+def _sec(eyebrow, h2, inner, soft=False):
+    return '<section%s><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">%s</div><h2>%s</h2></div>%s</div></section>' % (
+        ' class="bg-soft"' if soft else '', eyebrow, h2, inner)
+
+def _cards(items, cols='g3'):
+    cs = ''.join('<div class="card reveal"><div class="icon">%s</div><h3>%s</h3><p>%s</p></div>' % (ic, t, d) for ic, t, d in items)
+    return '<div class="grid %s reveal">%s</div>' % (cols, cs)
+
+_FORM_N = [0]
+def lead_form(form_key, heading, intro, fields, submit_label, success_msg):
+    # fields: list of (name, label, type, required) ; type in text/email/tel/textarea/select:opt1|opt2
+    _FORM_N[0] += 1
+    fid = 'lf%d' % _FORM_N[0]
+    rows = ''
+    for nm, lb, ty, req in fields:
+        r = ' required' if req else ''
+        if ty == 'textarea':
+            ctl = '<textarea name="%s"%s placeholder="%s"></textarea>' % (nm, r, lb)
+        elif ty.startswith('select:'):
+            opts = ''.join('<option>%s</option>' % o for o in ty.split(':', 1)[1].split('|'))
+            ctl = '<select name="%s"%s><option value="">Select&hellip;</option>%s</select>' % (nm, r, opts)
+        else:
+            ctl = '<input type="%s" name="%s"%s placeholder="%s">' % (ty, nm, r, lb)
+        rows += '<div class="field full"><label>%s</label>%s</div>' % (lb, ctl)
+    js = ("(function(){var f=document.getElementById('%s');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();"
+          "var b=document.getElementById('%s_b');b.disabled=true;b.textContent='Sending…';"
+          "var d={};new FormData(f).forEach(function(v,k){d[k]=v;});if(d._hp){return;}"
+          "if(window.lbSubmitLead){window.lbSubmitLead('%s',d).then(function(r){if(r.ok){f.innerHTML='<div style=\\'text-align:center;padding:34px\\'><div style=\\'font-size:2.4rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:10px 0\\'>%s</h3></div>';if(window.lbTrack)window.lbTrack('conversion',{form:'%s'});}else{b.disabled=false;b.textContent='%s';alert('Something went wrong — please email hello@loadboot.com.');}}).catch(function(){b.disabled=false;b.textContent='%s';alert('Network error — please try again or email hello@loadboot.com.');});}"
+          "else{b.disabled=false;b.textContent='%s';}});})();" ) % (fid, fid, form_key, success_msg, form_key, submit_label, submit_label, submit_label)
+    return ('<section class="bg-soft"><div class="wrap" style="max-width:720px">'
+            '<form class="quote-wrap reveal" id="%s"><h3 style="margin-bottom:6px">%s</h3>'
+            '<p style="color:var(--muted);margin-bottom:18px">%s</p>'
+            '<p hidden><label>Skip<input name="_hp"></label></p>'
+            '<div class="form-grid">%s</div>'
+            '<button class="btn btn-primary" id="%s_b" style="width:100%%;justify-content:center;margin-top:22px">%s</button>'
+            '<p style="text-align:center;margin-top:12px;font-size:.9rem">We reply within one business day.</p>'
+            '</form></div></section><script>%s</script>') % (fid, heading, intro, rows, fid, submit_label, js)
+
+# ---- How It Works ----
+hiw = svc_hero('How Loadboot Works', 'From first call to steady miles &mdash; here is exactly how we get your truck loaded, keep it moving, and pay you faster. You keep your authority and approve every load.')
+hiw += _sec('The process', 'Four steps to a loaded truck', _cards([
+    ('1', 'Tell us about your truck', 'Share your equipment, home base, preferred lanes and target rate. Setup takes about two minutes &mdash; no contract, no commitment.'),
+    ('2', 'We find &amp; negotiate loads', 'Your dispatcher works the boards and broker relationships to find higher-paying freight on your lanes, then negotiates the rate before you ever see it.'),
+    ('3', 'You approve &amp; roll', 'Every load comes to you first. You approve it, we handle the rate confirmation and paperwork, and you drive. We are on call while you are on the road.'),
+    ('4', 'Get paid, then repeat', 'We prepare your invoice and documents, help with factoring, and line up your next load so you are never sitting empty.'),
+], 'g4'))
+hiw += _sec('What you keep', 'You stay in control', _cards([
+    ('&#9989;', 'Your own authority', 'You keep your MC/DOT and your relationships. We work for you, not the other way around.'),
+    ('&#9989;', 'Approval on every load', 'Nothing books without your yes. No surprise freight, no forced dispatch.'),
+    ('&#9989;', 'No contracts', 'Flat 5% only when we book you. If we are not earning it, you can walk.'),
+]), )
+hiw += final_cta()
+page('how-it-works.html', 'How Truck Dispatch Works with Loadboot | Step by Step',
+     'See exactly how Loadboot dispatch works: tell us about your truck, we find and negotiate loads, you approve every one, and we help you get paid faster. Flat 5%, no contracts.',
+     'how-it-works.html', hiw)
+
+# ---- FAQ ----
+_faq_items = [
+ ('How much does Loadboot dispatch cost?', 'A flat 5% of the linehaul on loads we book for you &mdash; no sign-up fee, no monthly minimum, and no long-term contract. You only pay when we actually put money on your truck.'),
+ ('Do I keep my own authority?', 'Yes. You keep your MC/DOT authority, your insurance and your broker relationships. Loadboot works on your behalf; we never take over your authority.'),
+ ('Is there a contract or cancellation fee?', 'No contract and no cancellation fee. You can pause or stop any time. We keep your business by earning it, not by locking you in.'),
+ ('What equipment types do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power only and box truck / expedited. If you run mixed equipment, we handle that too.'),
+ ('How fast can I get started?', 'Most carriers are set up the same day. Create your profile, send us your authority and insurance, and a dispatcher gets to work on your lanes.'),
+ ('Do you help new-authority carriers?', 'Yes &mdash; new-authority carriers are a big part of who we serve. We help you get your first loads, build broker credibility, and avoid the common early mistakes.'),
+ ('Who talks to the brokers?', 'Your dispatcher does. We negotiate the rate, handle the rate confirmation and paperwork, and keep the broker relationship professional so you can focus on driving.'),
+ ('How do I get paid?', 'You invoice the broker (or your factoring company does). We prepare the invoice and supporting documents &mdash; rate con, BOL and POD &mdash; so nothing slows your payment down.'),
+ ('Do you help with factoring, IFTA and compliance?', 'Yes. We can connect you with factoring, help keep your filings and permits current, and support you on IFTA, 2290, UCR and BOC-3.'),
+ ('What hours is dispatch available?', 'A dispatcher is reachable during business hours and on call for active loads. If your truck is moving, we are reachable.'),
+]
+_faq_html, _faq_sch = faq_block(_faq_items)
+faq_body = svc_hero('Frequently Asked Questions', 'Straight answers about pricing, authority, equipment, getting started and how dispatch actually works. Do not see your question? Contact us any time.')
+faq_body += _faq_html + final_cta()
+page('faq.html', 'Truck Dispatch FAQ &mdash; Pricing, Authority &amp; Getting Started | Loadboot',
+     'Answers to the most common questions about Loadboot truck dispatch: cost, authority, contracts, equipment types, getting started, factoring and compliance.',
+     'faq.html', faq_body, _faq_sch)
+
+# ---- Box Truck Dispatch (service page) ----
+bt = svc_hero('Box Truck &amp; Expedited Dispatch', 'Dispatch built for box trucks, sprinter vans and expedited freight &mdash; we keep your smaller equipment loaded with the right runs at the right rate.')
+bt += _sec('Box truck dispatch', 'Loads that fit your equipment', _cards([
+    ('&#128230;', 'Right-sized freight', 'We match box trucks and cargo/sprinter vans with LTL, final-mile, expedited and time-critical loads that pay &mdash; not deadhead.'),
+    ('&#9889;', 'Expedited &amp; hot loads', 'Time-critical freight is our sweet spot for smaller equipment. We move fast so you can too.'),
+    ('&#128176;', 'Flat 5%, no contract', 'Same honest pricing as our truckload dispatch: you only pay when we book you.'),
+]))
+bt += final_cta()
+page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | Loadboot',
+     'Box truck, cargo van and expedited freight dispatch. Loadboot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no contracts.',
+     'services.html', bt)
+
+# ---- Careers ----
+car = svc_hero('Careers at Loadboot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')
+car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>Loadboot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p><h2>Open roles</h2><p>We are a growing team and hire as we scale. If you have dispatch, brokerage, carrier sales, compliance or trucking-tech experience, apply below and tell us what you are great at. Real people read every message.</p></div></section>'
+car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and what you would want to own here.',
+    [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', False),
+     ('company', 'Current / most recent role', 'text', False),
+     ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
+    'Send application', 'Thanks — we&rsquo;ll be in touch.')
+page('careers.html', 'Careers at Loadboot | Join an Honest Dispatch Company',
+     'Join Loadboot. We hire dispatchers, carrier-success reps and builders who care about doing right by carriers. See how to apply.',
+     'careers.html', car)
+
+# ---- Partner Program ----
+pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.')
+pp += _sec('Partner with Loadboot', 'A network you can rely on', _cards([
+    ('&#129309;', 'Vetted carriers', 'Work with carriers whose authority, insurance and compliance are actively tracked &mdash; fewer surprises, cleaner loads.'),
+    ('&#128203;', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and delivered on time, so billing and claims stay simple.'),
+    ('&#128222;', 'One point of contact', 'A professional dispatch team that answers the phone and communicates proactively on every load.'),
+]))
+pp += lead_form('partner_inquiry', 'Become a partner', 'Tell us about your freight and lanes and we will connect you with the right carriers.',
+    [('name', 'Your name', 'text', True), ('company', 'Company', 'text', True), ('email', 'Email', 'email', True),
+     ('phone', 'Phone', 'tel', False),
+     ('partner_type', 'You are a', 'select:Broker|Shipper|Facility|Other', True),
+     ('message', 'Lanes, freight type, and volume', 'textarea', False)],
+    'Request partnership', 'Thanks — our partner team will reach out.')
+pp += '<section><div class="wrap center" style="text-align:center"><a href="/app/partner/" class="btn btn-secondary">Existing partner? Log in &rarr;</a></div></section>'
+page('partners.html', 'Partner Program for Brokers, Shippers &amp; Facilities | Loadboot',
+     'Partner with Loadboot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.',
+     'partners.html', pp)
+
+# ---- Referral Program ----
+ref = svc_hero('Refer a Carrier, Get Rewarded', 'Know an owner-operator or fleet who deserves a better dispatcher? Send them our way &mdash; when they get rolling with Loadboot, we say thank you.')
+ref += _sec('How referrals work', 'Simple and fair', _cards([
+    ('1', 'Send them over', 'Share your referral or introduce them directly. There is no limit on how many carriers you can refer.'),
+    ('2', 'They get set up', 'Your referral creates their carrier profile and starts booking loads with Loadboot &mdash; flat 5%, no contract.'),
+    ('3', 'You get thanked', 'Once your referral is active and rolling, we reward you. Contact us for current referral terms.'),
+], 'g3'))
+ref += lead_form('referral', 'Refer a carrier', 'Tell us who to reach out to (with their permission) and how to thank you when they get rolling.',
+    [('name', 'Your name', 'text', True), ('email', 'Your email', 'email', True), ('phone', 'Your phone', 'tel', False),
+     ('referral_name', 'Who are you referring?', 'text', True),
+     ('referral_contact', 'Their phone or email', 'text', True),
+     ('message', 'Anything we should know?', 'textarea', False)],
+    'Send referral', 'Thanks — we&rsquo;ll reach out and keep you posted.')
+page('referral.html', 'Carrier Referral Program | Loadboot',
+     'Refer an owner-operator or fleet to Loadboot and get rewarded when they start rolling. Simple, fair, no limit on referrals.',
+     'referral.html', ref)
+
+# ---- Resources ----
+resr = svc_hero('Carrier Resources', 'Free tools, guides and answers to help you run a stronger trucking business &mdash; whether you dispatch with us or not.')
+resr += _sec('Tools &amp; guides', 'Everything in one place', _cards([
+    ('&#128200;', 'Load Score tool', 'Paste any load and get a take / negotiate / pass score with a counter-offer based on your cost per mile. <a href="load-score.html">Open the tool &rarr;</a>'),
+    ('&#129518;', 'Free calculators', 'Profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home and detention &mdash; no signup. <a href="tools.html">Open calculators &rarr;</a>'),
+    ('&#128214;', 'Dispatch guides', 'Practical articles on pricing, finding loads with new authority, and dispatcher vs broker. <a href="blog.html">Read the blog &rarr;</a>'),
+    ('&#10067;', 'FAQ', 'Straight answers on pricing, authority, equipment and getting started. <a href="faq.html">Read the FAQ &rarr;</a>'),
+    ('&#128736;', 'How it works', 'The four-step Loadboot process, start to finish. <a href="how-it-works.html">See how it works &rarr;</a>'),
+    ('&#128184;', 'Pricing', 'Flat 5%, no contracts &mdash; exactly what you pay and when. <a href="pricing.html">See pricing &rarr;</a>'),
+], 'g3'))
+resr += final_cta()
+page('resources.html', 'Free Trucking &amp; Dispatch Resources for Carriers | Loadboot',
+     'Free carrier resources from Loadboot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing &mdash; all in one place.',
+     'resources.html', resr)
+
+# ---- Case Studies (clearly-labelled illustrative scenarios) ----
+cs = svc_hero('Example Dispatch Scenarios', 'Illustrative examples of how Loadboot dispatch works in practice. These are worked examples for education &mdash; not testimonials or guarantees of specific results.')
+cs += _sec('Worked examples', 'How the math tends to work', _cards([
+    ('&#128666;', 'New-authority owner-operator', 'A carrier fresh off getting their authority struggles to get broker callbacks. A dispatcher works established relationships to land steady lanes, and coaches them through their first rate cons and PODs. <em>Illustrative example.</em>'),
+    ('&#10052;', 'Reefer running empty backhauls', 'A reefer operator deadheading home half the week. The dispatcher targets round-trip lanes to cut empty miles and lift effective rate-per-mile. <em>Illustrative example.</em>'),
+    ('&#128230;', 'Box truck chasing hot loads', 'An expedited box truck wasting hours self-searching. Dispatch surfaces time-critical runs so the truck stays loaded on the routes that pay. <em>Illustrative example.</em>'),
+]))
+cs += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><p style="color:var(--muted)">These scenarios are illustrative and for education only. Loadboot does not publish fabricated testimonials or promise specific earnings.</p><p><a href="contact.html" class="btn btn-primary">Talk to a dispatcher &rarr;</a></p></div></section>'
+page('case-studies.html', 'Example Truck Dispatch Scenarios | Loadboot',
+     'Illustrative, educational examples of how Loadboot dispatch works for owner-operators, reefer and box-truck carriers. Worked examples, not guarantees.',
+     'case-studies.html', cs)
+
+# ---- Security / Trust ----
+sec = svc_hero('Security &amp; Trust', 'How we protect your account, your documents and your data. Security is built into Loadboot, not bolted on.')
+sec += _sec('How we protect you', 'Security by design', _cards([
+    ('&#128274;', 'Least-privilege access', 'Every action is permission-checked on the server. Your data is scoped to your account &mdash; carriers can only ever see their own loads, trips and documents.'),
+    ('&#128193;', 'Private document storage', 'Documents live in a private store and are only ever shared through short-lived, signed links &mdash; never a public URL.'),
+    ('&#128221;', 'Full audit trail', 'Sensitive actions are recorded with a tamper-evident audit log and an event history for accountability.'),
+    ('&#127959;', 'Maker / checker on money', 'Payouts require separate people to create and approve &mdash; no single person can release funds alone.'),
+    ('&#128737;', 'Isolated environments', 'Staging and production are kept strictly separate; the public build never references internal systems.'),
+    ('&#128257;', 'Recoverable changes', 'Database changes are tracked and reversible, with documented rollback procedures.'),
+]))
+sec += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><h2>Report a security concern</h2><p>Found something? Email <a href="mailto:security@loadboot.com">security@loadboot.com</a> and we will respond promptly.</p></div></section>'
+page('security.html', 'Security &amp; Trust at Loadboot | How We Protect Your Data',
+     'How Loadboot protects your account and documents: least-privilege access, private signed document storage, full audit trails, maker/checker on payouts and isolated environments.',
+     'security.html', sec)
+
+# ---- System Status ----
+st = svc_hero('System Status', 'Live status for the Loadboot website, carrier portal, driver app and API. We publish issues here honestly.')
+st += '<section><div class="wrap" style="max-width:820px"><div class="card reveal" style="text-align:left"><h3 style="margin-bottom:14px">Current status</h3><div id="lbStatusList"><div class="pk-row" style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>Marketing website</span><b style="color:#16a34a">Operational</b></div><div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>Carrier Portal &amp; Pocket App</span><b style="color:#16a34a">Operational</b></div><div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>Command Center</span><b style="color:#16a34a">Operational</b></div><div style="display:flex;justify-content:space-between;padding:12px 0"><span>API &amp; integrations</span><b style="color:#16a34a">Operational</b></div></div><p style="color:var(--muted);margin-top:16px;font-size:.9rem">This page reflects our current operational posture. For incident history or to report an outage, email <a href="mailto:status@loadboot.com">status@loadboot.com</a>.</p></div></div></section>'
+page('status.html', 'Loadboot System Status',
+     'Live operational status for the Loadboot website, carrier portal, driver app and API.',
+     'status.html', st)
+
+# ---- Cookie Policy ----
+ck = svc_hero('Cookie Policy', 'How Loadboot uses cookies and similar technologies, and the choices you have.')
+ck += '<section><div class="wrap prose reveal"><h2>What cookies we use</h2><p>We use a small number of cookies and local-storage items to keep the site working and to understand, in aggregate, how it is used. These fall into two groups: <b>essential</b> items that make the site and your account function, and <b>analytics</b> items that help us improve pages and measure conversions.</p><h2>Analytics</h2><p>We use first-party analytics and Google Analytics to understand traffic and page performance. You can flag your browser as internal/excluded, and you can block analytics cookies in your browser settings without breaking the site.</p><h2>Your choices</h2><p>You can clear or block cookies in your browser at any time. Essential items are required for signed-in features (like your carrier account) to work. For questions, email <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a>.</p><p style="color:var(--muted);font-size:.9rem">See also our <a href="privacy.html">Privacy Policy</a>.</p></div></section>'
+page('cookies.html', 'Cookie Policy | Loadboot',
+     'How Loadboot uses essential and analytics cookies, and the choices you have to manage them.',
+     'cookies.html', ck)
+
+# ---- Accessibility ----
+acc = svc_hero('Accessibility', 'We want every carrier to be able to use Loadboot. Here is our commitment and how to reach us if something is not working for you.')
+acc += '<section><div class="wrap prose reveal"><h2>Our commitment</h2><p>We aim to meet widely-recognized accessibility guidelines (WCAG 2.1 AA) across our website and apps: readable contrast, keyboard navigation, descriptive labels, responsive layouts and support for screen readers. Accessibility is an ongoing effort and we fix issues as we find them.</p><h2>Need help or found a barrier?</h2><p>If any part of Loadboot is hard to use with assistive technology, please tell us &mdash; we take it seriously and will work with you directly. Email <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> with the page and what you ran into.</p></div></section>'
+page('accessibility.html', 'Accessibility Statement | Loadboot',
+     'Loadboot is committed to an accessible website and apps (WCAG 2.1 AA). Learn about our commitment and how to report a barrier.',
+     'accessibility.html', acc)
+
+# ---- Carrier Application (dedicated apply page) ----
+capp = svc_hero('Apply to Loadboot', 'Get your truck loaded with a dispatcher in your corner. Apply in two minutes &mdash; flat 5%, no contracts, cancel anytime.')
+capp += lead_form('carrier_application', 'Carrier application', 'Tell us about your operation and a dispatcher gets you set up. A real person follows up fast.',
+    [('company', 'Company / business name', 'text', True), ('name', 'Your name', 'text', True),
+     ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', True),
+     ('mc', 'MC number', 'text', False), ('dot', 'DOT number', 'text', False),
+     ('authority', 'Authority status', 'select:Active / established authority|New authority|No authority yet', True),
+     ('equipment', 'Equipment', 'select:Dry Van|Reefer|Flatbed|Step Deck|Hotshot|Power Only|Box Truck / Expedited', True),
+     ('trucks', 'Number of trucks', 'select:1|2-5|6-20|20+', False),
+     ('lanes', 'Preferred lanes / home base', 'text', False),
+     ('message', 'Anything else we should know?', 'textarea', False)],
+    'Submit application', 'Got it — a dispatcher will reach out shortly.')
+page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Dispatch | Loadboot',
+     'Apply for Loadboot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no contracts.',
+     'contact.html', capp)
+
+# ---- Login portal chooser ----
+lg = svc_hero('Log in to Loadboot', 'Choose your portal. Not sure which one you need? Carriers and drivers use the Carrier options below.')
+lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
+    ('&#128667;', 'Carrier Portal', 'Manage loads, trips, documents, finance and your team. <a href="/app/carrier/">Open Carrier Portal &rarr;</a>'),
+    ('&#128241;', 'Driver Pocket App', 'On-the-road app for trips, check-ins and POD uploads. <a href="/app/pocket/">Open Pocket App &rarr;</a>'),
+    ('&#129309;', 'Partner Portal', 'Brokers, shippers and facilities. <a href="/app/partner/">Open Partner Portal &rarr;</a>'),
+    ('&#128104;&#8205;&#128187;', 'Developers &amp; API', 'API keys, docs and integrations. <a href="/app/developer/">Open Developer Portal &rarr;</a>'),
+    ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
+    ('&#10067;', 'Need an account?', 'New to Loadboot? Apply in about two minutes. <a href="carrier-application.html">Apply now &rarr;</a>'),
+], 'g3'))
+page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Developer Portals',
+     'Choose your Loadboot portal: Carrier Portal, Driver Pocket App, Partner Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
+     'login.html', lg)
+
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
 # PROD_REF/STAGING_REF/context targets are defined once near the top of this file.
@@ -2004,6 +2251,9 @@ if os.path.isdir(APP_SRC) and _APP_FATAL:
 # (1) Required output pages/files must exist in the publish dir.
 REQUIRED_OUTPUT = ['index.html','about.html','services.html','pricing.html','contact.html',
  'tools.html','load-score.html','blog.html','privacy.html','terms.html','dashboard.html',
+ 'how-it-works.html','faq.html','box-truck-dispatch.html','careers.html','partners.html',
+ 'referral.html','resources.html','case-studies.html','security.html','status.html',
+ 'cookies.html','accessibility.html','login.html','carrier-application.html',
  '404.html','sitemap.xml','robots.txt','_headers','_redirects','styles.css','app.js',
  'sw.js','manifest.webmanifest']
 for r in REQUIRED_OUTPUT:

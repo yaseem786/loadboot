@@ -9,6 +9,8 @@ import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods,
+  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember,
+  pocketFleetAlerts, pocketStatement,
   carrierUploadDocument, carrierListDocuments,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
@@ -36,6 +38,20 @@ const h = (tag, attrs, kids) => {
   return e;
 };
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
+// Lightweight modal used by self-service forms (fleet, etc.). Closes on backdrop click or ✕.
+function openModal(title, children) {
+  const close = () => { ov.remove(); document.removeEventListener('keydown', onEsc); };
+  const onEsc = (e) => { if (e.key === 'Escape') close(); };
+  const card = h('div', { class: 'cp-modal-card', onClick: (e) => e.stopPropagation() }, [
+    h('div', { class: 'cp-modal-head' }, [h('h3', null, title), h('button', { class: 'cp-modal-x', 'aria-label': 'Close', onClick: close }, '×')]),
+    h('div', { class: 'cp-modal-body' }, Array.isArray(children) ? children : [children]),
+  ]);
+  const ov = h('div', { class: 'cp-modal', onClick: close }, card);
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', onEsc);
+  const first = card.querySelector('input,select,textarea'); if (first) first.focus();
+  return close;
+}
 const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
 const TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray', active: 'green' };
 const pill = (s) => h('span', { class: 'cp-pill ' + (TONE[s] || 'gray') }, (s || '').replace(/_/g, ' '));
@@ -133,7 +149,8 @@ function notCarrier() {
 /* ---------- main app ---------- */
 const NAV = [
   ['dashboard', 'Dashboard', 'dash'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
-  ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'], ['support', 'Support', 'support'], ['account', 'Account', 'user'],
+  ['fleet', 'Fleet', 'trips'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
+  ['support', 'Support', 'support'], ['account', 'Account', 'user'],
 ];
 
 async function appView(user) {
@@ -194,6 +211,7 @@ async function appView(user) {
   function render() {
     if (tab === 'loads') loadLoads();
     else if (tab === 'trips') loadTrips();
+    else if (tab === 'fleet') loadFleet();
     else if (tab === 'finance') loadFinance();
     else if (tab === 'documents') loadDocuments();
     else if (tab === 'support') loadSupport();
@@ -308,7 +326,7 @@ async function appView(user) {
       const fw = h('div');
       const issue = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (fw.firstChild) { fw.innerHTML = ''; return; }
-        const kind = h('select', { class: 'cp-in' }, ['detention', 'layover', 'lumper', 'breakdown', 'weather', 'missed_appointment', 'other'].map(k => h('option', { value: k }, k.replace('_', ' '))));
+        const kind = h('select', { class: 'cp-in' }, ['detention', 'layover', 'lumper', 'tonu', 'breakdown', 'accident', 'weather', 'missed_appointment', 'other'].map(k => h('option', { value: k }, k === 'tonu' ? 'TONU' : k.replace('_', ' '))));
         const note = h('input', { class: 'cp-in', placeholder: 'Details (optional)' });
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
@@ -319,11 +337,36 @@ async function appView(user) {
         if (podW.firstChild) { podW.innerHTML = ''; return; }
         showCarrierPod(t, podW);
       } }, '📄 Proof of delivery') : null;
+      const assign = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => assignTrip(t) }, '👤 Assign driver/truck') : null;
+      const advBtn = (label, next) => h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+        try { await pocketAdvanceTrip(t.id, next); loadTrips(); }
+        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = label; alert((e && e.message) || 'Could not update.'); }
+      } }, label);
+      const start = (t.status === 'dispatched') ? advBtn('▶ Start trip', 'in_transit') : null;
+      const deliver = (t.status === 'dispatched' || t.status === 'in_transit') ? advBtn('✓ Mark delivered', 'delivered') : null;
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
-        (confirm || share || issue || pod) ? h('div', { class: 'cp-trip-actions' }, [confirm, share, issue, pod].filter(Boolean)) : null, fw, podW,
+        (confirm || start || deliver || share || issue || pod || assign) ? h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, issue, pod, assign].filter(Boolean)) : null, fw, podW,
       ].filter(Boolean));
     })]));
+
+    async function assignTrip(t) {
+      let drivers = [], trucks = [];
+      try { [drivers, trucks] = await Promise.all([pocketDrivers(), pocketTrucks()]); } catch (_) {}
+      if (!drivers.length && !trucks.length) {
+        openModal('Assign driver / truck', [h('p', { class: 'cp-row-s' }, 'Add a driver or truck in the Fleet tab first, then come back to assign one to this trip.'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('fleet') }, 'Go to Fleet')]);
+        return;
+      }
+      const dSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'No change / unassigned')].concat(drivers.map(d => h('option', { value: d.id }, d.name))));
+      const tSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'No change / unassigned')].concat(trucks.map(tr => h('option', { value: tr.id }, 'Unit ' + tr.unit_no + (tr.equipment ? ' · ' + tr.equipment : '')))));
+      const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+        try { await pocketAssignTrip({ trip: t.id, driver: dSel.value || null, truck: tSel.value || null }); loadTrips(); }
+        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not assign.'); }
+      } }, 'Save');
+      openModal('Assign driver / truck', [h('label', { class: 'cp-row-s' }, 'Driver'), dSel, h('label', { class: 'cp-row-s' }, 'Truck'), tSel, save]);
+    }
   }
   function shareLoc(ev, tripId) {
     const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Locating…';
@@ -425,6 +468,90 @@ async function appView(user) {
     }
   }
 
+  /* ----- Fleet: carrier self-service drivers & trucks (own org only, server-scoped) ----- */
+  async function loadFleet() {
+    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    let drivers, trucks;
+    try { [drivers, trucks] = await Promise.all([pocketDrivers(), pocketTrucks()]); }
+    catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, (e && e.message) || 'Failed to load.'))); return; }
+    drivers = drivers || []; trucks = trucks || [];
+
+    const driverList = h('div');
+    const truckList = h('div');
+    const renderDrivers = () => mount(driverList, drivers.length ? h('div', null, drivers.map(d => h('div', { class: 'cp-trip' }, [
+      h('div', { class: 'cp-trip-head' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, d.name), h('div', { class: 'cp-row-s' }, [d.phone, d.license_no ? 'Lic ' + d.license_no + (d.license_state ? ' (' + d.license_state + ')' : '') : null].filter(Boolean).join(' · ') || '—')]),
+        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => driverForm(d) }, 'Edit'),
+      ]),
+      d.license_exp ? h('div', { class: 'cp-row-s' }, 'License expires ' + d.license_exp + (d.medical_exp ? ' · Medical ' + d.medical_exp : '')) : null,
+    ].filter(Boolean)))) : h('div', { class: 'cp-muted' }, 'No drivers yet. Add your first driver.'));
+    const renderTrucks = () => mount(truckList, trucks.length ? h('div', null, trucks.map(t => h('div', { class: 'cp-trip' }, [
+      h('div', { class: 'cp-trip-head' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, 'Unit ' + t.unit_no), h('div', { class: 'cp-row-s' }, [t.equipment, t.plate ? 'Plate ' + t.plate : null].filter(Boolean).join(' · ') || '—')]),
+        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => truckForm(t) }, 'Edit'),
+      ]),
+    ]))) : h('div', { class: 'cp-muted' }, 'No trucks yet. Add your first truck.'));
+
+    function driverForm(d) {
+      const name = h('input', { class: 'cp-in', placeholder: 'Driver name', value: (d && d.name) || '' });
+      const phone = h('input', { class: 'cp-in', placeholder: 'Phone', value: (d && d.phone) || '' });
+      const email = h('input', { class: 'cp-in', placeholder: 'Email', value: (d && d.email) || '' });
+      const lic = h('input', { class: 'cp-in', placeholder: 'License #', value: (d && d.license_no) || '' });
+      const st = h('input', { class: 'cp-in', placeholder: 'State', maxlength: '2', value: (d && d.license_state) || '' });
+      const lexp = h('input', { class: 'cp-in', type: 'date', value: (d && d.license_exp) || '' });
+      const mexp = h('input', { class: 'cp-in', type: 'date', value: (d && d.medical_exp) || '' });
+      const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        if (!name.value.trim()) { alert('Driver name is required.'); return; }
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+        try {
+          await pocketUpsertDriver({ id: d && d.id, name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(), licenseNo: lic.value.trim(), licenseState: st.value.trim().toUpperCase(), licenseExp: lexp.value || null, medicalExp: mexp.value || null });
+          drivers = await pocketDrivers(); renderDrivers();
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
+      } }, 'Save');
+      openModal((d ? 'Edit driver' : 'Add driver'), [name, phone, email, h('div', { class: 'cp-formrow2' }, [lic, st]), h('label', { class: 'cp-row-s' }, 'License expiry'), lexp, h('label', { class: 'cp-row-s' }, 'Medical expiry'), mexp, save]);
+    }
+    function truckForm(t) {
+      const unit = h('input', { class: 'cp-in', placeholder: 'Unit number', value: (t && t.unit_no) || '' });
+      const plate = h('input', { class: 'cp-in', placeholder: 'Plate', value: (t && t.plate) || '' });
+      const vin = h('input', { class: 'cp-in', placeholder: 'VIN', value: (t && t.vin) || '' });
+      const eq = h('select', { class: 'cp-in' }, ['', 'Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck'].map(o => h('option', { value: o, selected: t && t.equipment === o ? 'selected' : null }, o || 'Equipment…')));
+      const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        if (!unit.value.trim()) { alert('Unit number is required.'); return; }
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+        try { await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin.value.trim(), equipment: eq.value || null }); trucks = await pocketTrucks(); renderTrucks(); }
+        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
+      } }, 'Save');
+      openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, eq, save]);
+    }
+
+    const alertHost = h('div');
+    (async () => {
+      let alerts = []; try { alerts = await pocketFleetAlerts(); } catch (_) { alerts = []; }
+      if (!alerts || !alerts.length) return;
+      mount(alertHost, h('div', { class: 'cp-card', style: 'border-left:4px solid #f59e0b' }, [
+        cardHead('Compliance alerts', alerts.length + ' item' + (alerts.length === 1 ? '' : 's')),
+        ...alerts.map(a => h('div', { class: 'cp-row' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, a.name + ' · ' + a.kind), h('div', { class: 'cp-row-s' }, (a.days_left < 0 ? 'Expired ' + Math.abs(a.days_left) + ' days ago' : 'Expires in ' + a.days_left + ' days') + ' (' + a.expires_on + ')')]),
+          h('span', { class: 'cp-pill ' + (a.days_left < 0 ? 'red' : 'amber') }, a.days_left < 0 ? 'expired' : 'soon'),
+        ])),
+      ]));
+    })();
+    mount(content, h('div', null, [
+      alertHost,
+      h('div', { class: 'cp-card' }, [
+        cardHead('Drivers', drivers.length + ' total'),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', onClick: () => driverForm(null) }, '+ Add driver'),
+        driverList,
+      ]),
+      h('div', { class: 'cp-card' }, [
+        cardHead('Trucks & equipment', trucks.length + ' total'),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', onClick: () => truckForm(null) }, '+ Add truck'),
+        truckList,
+      ]),
+    ]));
+    renderDrivers(); renderTrucks();
+  }
+
   /* ----- Finance ----- */
   async function loadFinance() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
@@ -439,8 +566,45 @@ async function appView(user) {
       { label: 'Due', value: rows.filter(i => i.status === 'sent').length, color: '#f59e0b' },
       { label: 'Draft', value: rows.filter(i => i.status === 'draft').length, color: '#94a3b8' },
     ];
+    const stmtCard = h('div', { class: 'cp-card' }, [cardHead('Account statement'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let s; try { s = await pocketStatement(); } catch (e) { mount(stmtCard, [cardHead('Account statement'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      s = s || {};
+      const settlements = Array.isArray(s.settlements) ? s.settlements : [];
+      const line = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v)]);
+      const download = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => {
+        const rowsTxt = [
+          'LoadBoot — Account Statement',
+          'Carrier: ' + (s.carrier || '—'),
+          'Generated: ' + new Date().toLocaleString(),
+          '',
+          'Invoices total,' + (s.invoices_total || 0),
+          'Fees outstanding,' + (s.fees_outstanding || 0),
+          'Fees paid,' + (s.fees_paid || 0),
+          'Adjustments,' + (s.adjustments || 0),
+          'Open disputes,' + (s.open_disputes || 0),
+          '',
+          'Settlement,Net,Status',
+          ...settlements.map(x => [x.no, x.net, x.status].join(',')),
+        ].join('\n');
+        const blob = new Blob([rowsTxt], { type: 'text/csv' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'loadboot-statement-' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+      } }, '⬇ Download (CSV)');
+      mount(stmtCard, [
+        cardHead('Account statement'),
+        line('Invoices', String(s.invoices_total || 0)),
+        line('Fees outstanding', money(s.fees_outstanding || 0)),
+        line('Fees paid', money(s.fees_paid || 0)),
+        line('Open disputes', String(s.open_disputes || 0)),
+        line('Settlements', String(settlements.length)),
+        h('div', { style: 'margin-top:12px' }, download),
+      ]);
+    })();
     mount(content, h('div', null, [
       h('div', { class: 'cp-kpis' }, [statTile('Fees due', money(due), 'finance', 'amber'), statTile('Fees paid', money(paid), 'dash', 'green'), statTile('Gross hauled', money(gross), 'trips', 'blue'), statTile('Invoices', String(rows.length), 'docs', 'violet')]),
+      stmtCard,
       h('div', { class: 'cp-grid' }, [
         h('div', { class: 'cp-card cp-col2' }, [cardHead('Dispatch fees over time'), series.length ? miniBars(series, { height: 84 }) : h('div', { class: 'cp-muted' }, 'No data yet.')]),
         h('div', { class: 'cp-card' }, [cardHead('Invoice status'), h('div', { class: 'cp-donut-wrap' }, [donut(statusParts), h('div', { class: 'cp-donut-leg' }, statusParts.map(p => h('div', null, [h('i', { style: 'background:' + p.color }), p.label + ' · ' + p.value])))])]),
@@ -534,8 +698,39 @@ async function appView(user) {
       const unsubRow = (() => { const t = h('button', { class: 'cp-chip2' + (state.unsubscribed_all ? ' on' : ''), onClick: async () => { state.unsubscribed_all = !state.unsubscribed_all; t.classList.toggle('on'); t.textContent = state.unsubscribed_all ? 'Unsubscribed' : 'Subscribed'; await save(); } }, state.unsubscribed_all ? 'Unsubscribed' : 'Subscribed'); return h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Unsubscribe from all marketing'), h('div', { class: 'cp-row-s' }, 'Operational, compliance & finance messages still reach you')]), t]); })();
       mount(prefsCard, [cardHead('Communication preferences'), ...PREFS.map(([k, l, s]) => toggleRow(k, l, s)), unsubRow]);
     })();
+    // Team card — visible to all members; management controls only render for the owner.
+    const teamCard = h('div', { class: 'cp-card' }, [cardHead('Team'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let members; try { members = await pocketTeam(); } catch (e) { mount(teamCard, [cardHead('Team'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load team.')]); return; }
+      members = members || [];
+      const amOwner = members.some(m => m.is_me && m.is_owner);
+      const rows = members.map(m => {
+        const roleLabel = h('span', { class: 'cp-pill ' + (m.status === 'suspended' ? 'red' : 'gray') }, (m.is_owner ? 'Owner' : (m.member_role || 'member')) + (m.status === 'suspended' ? ' · suspended' : ''));
+        const manage = (amOwner && !m.is_owner && !m.is_me) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => manageMember(m) }, 'Manage') : null;
+        return h('div', { class: 'cp-row' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, m.name || m.email || (String(m.user_id).slice(0, 8) + '…')), h('div', { class: 'cp-row-s' }, [m.email, m.phone].filter(Boolean).join(' · ') || '—')]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, [roleLabel, manage].filter(Boolean)),
+        ]);
+      });
+      const note = amOwner
+        ? h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'You are the account owner. To add a brand-new teammate, contact us — email invites are coming soon.')
+        : h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Only the account owner can change team roles.');
+      mount(teamCard, [cardHead('Team', members.length + ' member' + (members.length === 1 ? '' : 's')), ...rows, note]);
+
+      function manageMember(m) {
+        const role = h('select', { class: 'cp-in' }, ['manager', 'driver'].map(r => h('option', { value: r, selected: m.member_role === r ? 'selected' : null }, r)));
+        const active = h('select', { class: 'cp-in' }, [['active', 'Active'], ['suspended', 'Suspended']].map(([v, l]) => h('option', { value: v, selected: m.status === v ? 'selected' : null }, l)));
+        const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+          try { await pocketSetMember({ user: m.user_id, role: role.value, status: active.value }); loadAccount(); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
+        } }, 'Save');
+        openModal('Manage ' + (m.name || m.email || 'member'), [h('label', { class: 'cp-row-s' }, 'Role'), role, h('label', { class: 'cp-row-s' }, 'Access'), active, save]);
+      }
+    })();
     mount(content, h('div', { class: 'cp-grid' }, [
       h('div', { class: 'cp-card' }, [cardHead('Profile'), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
+      teamCard,
       h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async () => { await signOut(); boot(); } }, 'Sign out')]),
       prefsCard,
     ]));

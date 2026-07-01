@@ -5,9 +5,9 @@
   "gate_verdict": "LOADBOOT ENTERPRISE FOUNDATION GATE: FAIL",
   "gate_summary": "PASS 10 / PARTIAL 0 / BLOCKED 2 / FAIL 0 of 12",
   "totals": {
-    "cc_rpcs": 228,
+    "cc_rpcs": 240,
     "private_tables": 77,
-    "modules": 50,
+    "modules": 51,
     "feature_flags": 30,
     "edge_functions": 8,
     "anon_callable_security_definer": 5,
@@ -66,7 +66,7 @@
       "name": "Capability registry current",
       "status": "PASS",
       "evidence_ref": "counts",
-      "note": "Regenerated from live counts (228 RPCs / 77 tables / 50 modules)."
+      "note": "Regenerated from live counts (240 RPCs / 77 tables / 51 modules)."
     },
     {
       "id": 3,

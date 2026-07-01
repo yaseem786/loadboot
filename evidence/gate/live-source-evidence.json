@@ -14,9 +14,9 @@
       "sha256": "24b0d1e7753e2e59",
       "status": "captured",
       "result": {
-        "cc_rpcs": 228,
+        "cc_rpcs": 240,
         "private_tables": 77,
-        "modules": 50,
+        "modules": 51,
         "feature_flags": 30,
         "anon_secdef": 5,
         "events_total": 21,
