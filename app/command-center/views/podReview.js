@@ -29,8 +29,19 @@ export function renderPodReview(host) {
     try {
       const rows = await podReviewQueue({ status });
       if (!rows || !rows.length) { mount(listHost, card(el('div', { class: 'cc-sub' }, 'No ' + status + ' PODs.'))); return; }
-      mount(listHost, el('div', null, rows.map(row)));
+      const exportBtn = el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-bottom:12px', onClick: () => exportCsv(rows) }, '⬇ Export CSV');
+      mount(listHost, el('div', null, [exportBtn, el('div', null, rows.map(row))]));
     } catch (e) { mount(listHost, card(el('div', { class: 'cc-sub' }, humanizeError(e)))); }
+  }
+
+  function exportCsv(rows) {
+    const esc = (s) => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+    const header = ['file_name', 'carrier', 'origin', 'destination', 'trip_id', 'status', 'uploaded_at', 'reviewed_at', 'review_note'];
+    const lines = [header.join(',')].concat(rows.map(r => [r.file_name, r.carrier_name, r.origin, r.destination, r.trip_id, r.status, r.created_at, r.reviewed_at, r.review_note].map(esc).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'loadboot-pod-' + status + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
   }
 
   function row(r) {

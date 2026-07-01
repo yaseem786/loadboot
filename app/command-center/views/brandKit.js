@@ -43,6 +43,7 @@ export function renderBrandKit(host) {
           el('a', { style: 'display:inline-block;background:' + (v.accent_color || '#F97316') + ';color:#fff;padding:9px 16px;border-radius:9px;text-decoration:none;font-weight:700' }, 'Primary action'),
           el('div', { style: 'margin-top:16px;font-size:.78rem;color:#64748b' }, v.email_footer || ''),
           el('div', { style: 'font-size:.72rem;color:#94a3b8' }, v.legal_footer || ''),
+          el('div', { style: 'margin-top:8px;font-size:.72rem;color:#94a3b8' }, [v.facebook_url, v.instagram_url, v.linkedin_url, v.x_url].filter(Boolean).length ? 'Social: ' + [v.facebook_url && 'Facebook', v.instagram_url && 'Instagram', v.linkedin_url && 'LinkedIn', v.x_url && 'X'].filter(Boolean).join(' · ') : ''),
         ]),
       ]));
     }
@@ -52,6 +53,8 @@ export function renderBrandKit(host) {
       field('ink_color', 'Text color', 'color'), field('font_heading', 'Heading font'),
       field('font_body', 'Body font'), field('website_url', 'Website URL'),
       field('support_email', 'Support email', 'email'), field('logo_url', 'Logo URL'),
+      field('facebook_url', 'Facebook URL'), field('instagram_url', 'Instagram URL'),
+      field('linkedin_url', 'LinkedIn URL'), field('x_url', 'X / Twitter URL'),
     ]);
     const footers = el('div', null, [field('email_footer', 'Email footer'), field('legal_footer', 'Legal footer')]);
     const saveBtn = el('button', { class: 'lb-btn lb-btn-primary', disabled: !manage, onClick: async () => {

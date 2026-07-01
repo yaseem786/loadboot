@@ -148,7 +148,7 @@ export const audienceEstimate = (type) => rpc('cc_audience_estimate', { p_type: 
 export const listAudiences = () => rpc('cc_list_audiences');
 export const saveAudience = (o = {}) => rpc('cc_save_audience', { p_name: o.name, p_type: o.type, p_filters: o.filters ?? {} });
 export const deleteAudience = (id) => rpc('cc_delete_audience', { p_id: id });
-export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['all_staff', 'All staff']];
+export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['newsletter', 'Newsletter subscribers'], ['form_submitters', 'Website form leads'], ['all_staff', 'All staff']];
 // Template Studio (Phase 3A — marketing + transactional templates, variable allowlist)
 export const studioListTemplates = () => rpc('cc_studio_list_templates');
 export const studioSaveTemplate = (t = {}) => rpc('cc_studio_save_template', { p_key: t.key, p_name: t.name, p_category: t.category, p_channels: t.channels, p_subject: t.subject, p_preview: t.preview, p_body_html: t.bodyHtml, p_body_text: t.bodyText, p_status: t.status });
@@ -261,6 +261,10 @@ export const pocketStatement = () => rpc('cc_pocket_statement');
 export const pocketFleetAlerts = () => rpc('cc_pocket_fleet_alerts');
 // carrier/driver advance own trip forward (in_transit / delivered) — migration cux_carrier_advance_trip
 export const pocketAdvanceTrip = (trip, status) => rpc('cc_pocket_advance_trip', { p_trip: trip, p_status: status });
+// carrier trip event history/timeline — migration cuz_carrier_trip_timeline
+export const pocketTripTimeline = (trip) => rpc('cc_pocket_trip_timeline', { p_trip: trip });
+// carrier's own reported exceptions with resolution status — migration cva_carrier_my_exceptions
+export const pocketMyExceptions = (limit) => rpc('cc_pocket_my_exceptions', { p_limit: limit ?? 50 });
 // Phase 5 — web push (any authenticated user)
 export const savePushSubscription = (o = {}) => rpc('cc_save_push_subscription', { p_endpoint: o.endpoint, p_p256dh: o.p256dh, p_auth: o.auth, p_label: o.label ?? null, p_ua: o.ua ?? null });
 export const revokePushSubscription = (endpoint) => rpc('cc_revoke_push_subscription', { p_endpoint: endpoint });
