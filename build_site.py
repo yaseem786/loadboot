@@ -705,7 +705,7 @@ HERO='''<section class="hero"><div class="aurora"><span class="a1"></span><span 
 <div class="hv-float hv-f1"><span class="ic">&#128222;</span> Broker handled for you</div>
 <div class="hv-float hv-f2"><span class="ic">&#10003;</span> You approve every load</div></div></div></section>''' % (ARW,CHK,CHK,CHK)
 SCROLLBAND = '<section class="scroll-road-sec"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Coast to coast</div><h2>We keep your truck moving, every mile</h2><p class="lead center" style="color:#cbd5e1;margin:0 auto">Scroll and ride along &mdash; from pickup to delivery, we handle the whole route.</p></div></div><div class="scroll-road"><div class="sr-line"></div><div class="sr-truck" id="scrollTruck"><svg viewBox="0 0 130 58" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="78" height="33" rx="3" fill="#e2e8f0"/><rect x="3" y="9" width="78" height="33" rx="3" fill="none" stroke="#94a3b8" stroke-width="1.5"/><g stroke="#cbd5e1" stroke-width="1.5"><line x1="18" y1="11" x2="18" y2="40"/><line x1="33" y1="11" x2="33" y2="40"/><line x1="48" y1="11" x2="48" y2="40"/><line x1="63" y1="11" x2="63" y2="40"/></g><path d="M81 15h13c2 0 3.6 1 4.6 2.7l8.4 12.8c.7 1 1 2.3 1 3.5v8H81z" fill="#2563EB"/><path d="M85 19h9v9h-9z" fill="#bfdbfe"/><path d="M96 20l6 8h-6z" fill="#93c5fd"/><rect x="113" y="36" width="4" height="7" rx="1" fill="#1e293b"/><rect x="3" y="42" width="114" height="3" fill="#1e293b"/><g><circle cx="24" cy="46" r="8" fill="#0f172a"/><circle cx="24" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="42" cy="46" r="8" fill="#0f172a"/><circle cx="42" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="100" cy="46" r="8" fill="#0f172a"/><circle cx="100" cy="46" r="3.4" fill="#64748b"/></g></svg></div></div></section>'
-BLOGHOME = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">From the blog</div><h2>Guides to help you run a more profitable truck</h2></div><div class="grid g3">' + linkcard('how-much-does-a-truck-dispatcher-cost.html','&#128196;','How Much Does a Truck Dispatcher Cost?','Percentage vs flat fee, what 5% really gets you, and how a dispatcher pays for itself.') + linkcard('truck-dispatcher-vs-freight-broker.html','&#128196;','Dispatcher vs Broker vs Factoring','Who each represents, what they can legally do, how the money flows, and which you need.') + linkcard('how-to-get-loads-with-new-authority.html','&#128196;','Getting Loads With New Authority','How to set up with brokers and land your first loads fast.') + '</div></div></section>'
+BLOGHOME = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">From the blog</div><h2>Guides to help you run a more profitable truck</h2></div><div class="grid g3">' + linkcard('how-much-does-a-truck-dispatcher-cost.html','&#128196;','How Much Does a Truck Dispatcher Cost?','Percentage vs flat fee, what 5% really gets you, and how a dispatcher pays for itself.') + linkcard('truck-dispatcher-vs-freight-broker.html','&#128196;','Dispatcher vs Broker vs Factoring','Who each represents, what they can legally do, how the money flows, and which you need.') + linkcard('how-to-get-loads-with-new-authority.html','&#128196;','Getting Loads With New Authority','How to set up with brokers and land your first loads fast.') + linkcard('owner-operator-dispatch-service-guide.html','&#128196;','Owner-Operator Dispatch Service Guide','What a dispatch service does for one truck, what it costs, and how to choose one.') + '</div></div></section>'
 PHOTOS = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Built for life on the road</div><h2>Dispatch support built around your operation</h2><p class="lead">Dispatch workflows and profit tools designed for owner-operators and small fleets operating across the contiguous United States.</p></div><div class="photo-grid reveal"><div class="photo"><img src="truck-fleet.webp" width="1280" height="720" alt="Semi-trucks parked at a freight yard" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Fleets &amp; owner-operators, coast to coast</span></div><div class="photo"><img src="truck-boxtruck.webp" width="1280" height="720" alt="Box truck ready for dispatch" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Dry van, reefer, flatbed, box &amp; more</span></div></div></div></section>'
 _tp = [
  ('profit','&#128200;','Load Profit Calculator','See your net profit and rate-per-mile on any load before you accept it.'),
@@ -1155,8 +1155,13 @@ BLOGPOSTS = [
    'Always check a broker\'s credit and reputation before hauling. A load that never pays is worse than no load at all.',
    'H:The shortcut',
    'All of this &mdash; broker setup, finding good loads, negotiating rates, and avoiding bad brokers &mdash; is exactly what a dispatcher does. If you would rather drive than spend your first months learning the back office the hard way, a dispatch service like Loadboot gets you set up and loaded from day one.']),
+ ('owner-operator-dispatch-service-guide.html',
+  'Owner-Operator Dispatch Service: The Complete Guide (2026)',
+  'What an owner-operator dispatch service does, what it costs, how it works day to day, and how to choose one &mdash; a complete guide for single-truck operators.',
+  'What a dispatch service does for a one-truck operation, what it costs, whether new authority needs one, and how to choose a good one.',
+  ['For a single-truck owner-operator, a dispatch service is your back office &mdash; it finds, negotiates and books your freight so you can focus on driving, while you keep your authority and approve every load.']),
 ]
-PREMIUM_ARTICLES={'how-much-does-a-truck-dispatcher-cost.html','truck-dispatcher-vs-freight-broker.html'}
+PREMIUM_ARTICLES={'how-much-does-a-truck-dispatcher-cost.html','truck-dispatcher-vs-freight-broker.html','owner-operator-dispatch-service-guide.html'}
 for fn,t,d,ex,bl in BLOGPOSTS:
     if fn in PREMIUM_ARTICLES:
         continue
@@ -1500,11 +1505,175 @@ rich_article('truck-dispatcher-vs-freight-broker.html',
  9,'dispatcher-vs-broker-hero.jpg','Freight broker and truck dispatcher negotiating a load rate for a carrier',
  A2_TOC,A2_BODY,A2_FAQ,feat_svg=A2_FEAT)
 
+# ===== ARTICLE #4 : Owner-Operator Dispatch Service — Complete Guide =====
+A4_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
+ '<defs><linearGradient id="fa4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/>'
+ '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#2563EB"/></linearGradient></defs>'
+ '<rect width="1200" height="360" fill="url(#fa4)"/>'
+ '<circle cx="960" cy="80" r="230" fill="#ffffff" opacity=".05"/>'
+ '<circle cx="1090" cy="300" r="150" fill="#F97316" opacity=".10"/>'
+ '<text x="70" y="150" font-family="Manrope,Arial" font-weight="800" font-size="96" fill="#ffffff" opacity=".10">OWNER-OP</text>'
+ '<g transform="translate(770,196)"><rect x="0" y="0" width="150" height="64" rx="6" fill="#e2e8f0" opacity=".85"/>'
+ '<path d="M150 14h26c4 0 7 2 9 5l16 25c1 2 2 4 2 7v13h-53z" fill="#2563EB"/>'
+ '<rect x="158" y="20" width="18" height="18" fill="#bfdbfe"/><rect x="8" y="64" width="220" height="5" fill="#0f172a"/>'
+ '<circle cx="46" cy="70" r="15" fill="#0f172a"/><circle cx="46" cy="70" r="6" fill="#64748b"/>'
+ '<circle cx="196" cy="70" r="15" fill="#0f172a"/><circle cx="196" cy="70" r="6" fill="#64748b"/></g>'
+ '</svg>')
+A4_SVG=('<figure class="art-fig"><svg viewBox="0 0 600 250" width="100%" role="img" '
+ 'aria-label="A typical solo week nets about 4600 dollars booking your own loads versus about 5400 dollars with a dispatch service after the 5 percent fee">'
+ '<text x="0" y="22" font-family="Manrope,Arial" font-weight="800" font-size="19" fill="#0F172A">A typical solo week: DIY vs dispatched</text>'
+ '<text x="0" y="70" font-family="Inter,Arial" font-size="13" fill="#64748B">Booking your own loads (extra deadhead + one cheap load)</text>'
+ '<rect x="0" y="80" width="560" height="30" rx="6" fill="#eef2f7"/>'
+ '<rect x="0" y="80" width="392" height="30" rx="6" fill="#94a3b8"/>'
+ '<text x="403" y="100" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">~$4,600 net</text>'
+ '<text x="0" y="150" font-family="Inter,Arial" font-size="13" fill="#64748B">With a dispatch service (better rates, less deadhead, after 5%)</text>'
+ '<rect x="0" y="160" width="560" height="30" rx="6" fill="#eff6ff"/>'
+ '<rect x="0" y="160" width="460" height="30" rx="6" fill="#2563EB"/>'
+ '<text x="471" y="180" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">~$5,400 net</text>'
+ '<text x="0" y="228" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#F97316">'
+ '~$800 more in your pocket &#8212; plus a week of broker calls you never had to make.</text></svg>'
+ '<figcaption>Illustrative: a dispatcher books higher-paying lanes and cuts your empty miles, so even after the 5% fee '
+ 'a well-run solo week nets more than doing everything yourself. Your numbers vary by lane, season and equipment.</figcaption></figure>')
+A4_BODY=(
+'<h2 id="what-is">What is an owner-operator dispatch service?</h2>'
+'<p>An <b>owner-operator dispatch service</b> is a company that finds, negotiates, and books freight <em>on your behalf</em> '
+'so you can stay focused on driving and delivering. For a one-truck operation, a good dispatcher is effectively your entire '
+'back office &mdash; searching load boards and broker networks, haggling rates, vetting brokers, and handling the paperwork '
+'&mdash; without you giving up your authority or your control over which loads you run.</p>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>A dispatcher works <b>for you, the carrier</b>. That is the '
+'whole point &mdash; and the legal line. A dispatcher is not a broker and never sells your truck to a shipper directly. You keep '
+'your MC number, you approve every load, and you can walk away anytime.</div></div>'
+'<div class="statrow"><div class="statcard"><div class="n">1 truck</div><div class="l">Exactly who this is built for</div></div>'
+'<div class="statcard"><div class="n">5%</div><div class="l">Industry-standard dispatch fee</div></div>'
+'<div class="statcard"><div class="n">$0</div><div class="l">What you pay on a week we don&rsquo;t book you</div></div></div>'
+
+'<h2 id="what-it-does">What a dispatch service actually does for you</h2>'
+'<p>The job is much bigger than &ldquo;forwarding loads.&rdquo; A real owner-operator dispatch service runs the entire load lifecycle '
+'so your only job is to drive safely and deliver on time. For your fee you should expect:</p>'
+'<ul>'
+'<li><b>Load sourcing</b> on the lanes, equipment and home-time you actually want &mdash; not just whatever is cheapest to fill your week</li>'
+'<li><b>Rate negotiation</b> on every load, pushing for the top of what the lane will pay instead of accepting the first number</li>'
+'<li><b>Broker setup &amp; credit checks</b> so you never haul for a broker who won&rsquo;t pay</li>'
+'<li><b>Rate confirmations &amp; setup packets</b> handled and organized for you</li>'
+'<li><b>Deadhead &amp; trip planning</b> that lines up your next load before you&rsquo;re empty</li>'
+'<li><b>Detention, TONU &amp; layover support</b> when an appointment runs long or a load falls through</li>'
+'<li><b>A single point of contact</b> instead of ten broker phone numbers and a full voicemail box</li>'
+'</ul>'
+'<p>Notice what is <em>not</em> on that list: your dispatcher does not choose your loads for you, does not touch your money, and '
+'does not lock you into anything. You stay the decision-maker.</p>'
+'<p>There&rsquo;s also a less obvious benefit that owner-operators feel within a week or two: the mental load lifts. Instead of scanning '
+'boards at a truck stop, chasing down a broker&rsquo;s setup packet, and second-guessing whether a rate is fair, you get one point of '
+'contact who already knows your lanes and your floor. That&rsquo;s hours of screen time and phone tag every week that go straight back '
+'into driving &mdash; or into actually resting during your reset. For a one-person business, protecting your focus and your hours-of-service '
+'is not a soft perk; it&rsquo;s the difference between a sustainable operation and burning out by month six.</p>'
++svc_banner('Flat 5%. No contracts. Built for owner-operators.',
+  'See exactly what our dispatch service covers and what you pay &mdash; no setup fees, no forced factoring, cancel anytime.',
+  'See our pricing &rarr;','pricing.html')+
+
+'<h2 id="how-it-works">How it works, day to day</h2>'
+'<p>Here&rsquo;s the loop a good owner-operator dispatch service runs for every single load you haul &mdash; usually while you&rsquo;re '
+'still rolling on the current one:</p>'
+'<div class="art-steps">'
+'<div class="art-step"><div class="sn">1</div><b>Set your plan</b><span>You tell us your lanes, equipment, home base, rate floor and when you want to be home. That becomes your standing playbook.</span></div>'
+'<div class="art-step"><div class="sn">2</div><b>Find &amp; vet</b><span>We search boards and our broker network for loads that fit, then credit-check the broker before anything is committed.</span></div>'
+'<div class="art-step"><div class="sn">3</div><b>Negotiate &amp; confirm</b><span>We push the rate up and send you the number. You approve it &mdash; then we lock the load and handle the rate confirmation.</span></div>'
+'<div class="art-step"><div class="sn">4</div><b>Plan ahead</b><span>While you drive, we line up your next load to kill deadhead, and we jump on detention or issues if the day goes sideways.</span></div>'
+'</div>'
+'<p>That fourth step is where most of the fee pays for itself. An empty truck earns nothing, and a solo driver who is also their own '
+'dispatcher almost always ends up sitting longer between loads than one whose next pickup is already booked.</p>'
+'<div class="pull">A dispatcher&rsquo;s real product isn&rsquo;t a load &mdash; it&rsquo;s a truck that&rsquo;s never sitting empty and never hauling for a broker who won&rsquo;t pay.</div>'
+
+'<h2 id="cost">What does it cost an owner-operator?</h2>'
+'<p>Most dispatch services charge <b>3%&ndash;10% of your gross, with 5% being standard</b>, or a <b>flat $150&ndash;$250 per week</b>. '
+'For a solo owner-operator whose weekly revenue moves up and down, the percentage model is usually the fairer deal &mdash; on a slow '
+'week you pay little or nothing, and your dispatcher only earns when you do. We break the full comparison down in our guide to '
+'<a href="how-much-does-a-truck-dispatcher-cost.html">how much a truck dispatcher costs</a>.</p>'
+'<div class="callout cl-tip"><span class="ic">&#10003;</span><div>The number that matters isn&rsquo;t the percentage &mdash; it&rsquo;s '
+'whether your dispatcher books better rates and cuts more empty miles than they cost. On a $3,000 load the 5% fee is $150; a single '
+'well-negotiated rate usually covers that several times over.</div></div>'
++A4_SVG+
+'<p>Want to sanity-check any individual offer before you commit? Run it through our '
+'<a href="load-score.html">free Load Score tool</a> &mdash; it gives you a take / negotiate / pass verdict and a suggested counter-offer '
+'in seconds, no signup needed.</p>'
++svc_banner('Should you take this load?',
+  'Score any rate for real profit in seconds with our free Load Score tool &mdash; take, negotiate, or pass, instantly. No login.',
+  'Try the Load Score &rarr;','load-score.html')+
+
+'<h2 id="new-authority">Do you need one as a new owner-operator?</h2>'
+'<p>If you&rsquo;ve just activated your own authority, the honest answer is: a dispatch service is one of the fastest ways to get loaded '
+'without spending your first three months learning the back office the hard way. New carriers face a specific set of hurdles &mdash; '
+'brokers who won&rsquo;t work with authority under 90 days old, thin credit history, and no relationships &mdash; and an experienced '
+'dispatcher already has the broker connections and the setup process down.</p>'
+'<p>It also helps to understand the legal landscape you&rsquo;re operating in. A dispatcher works for the carrier and does not need broker '
+'authority; brokers, who represent shippers, must register and hold a bond. The FMCSA&rsquo;s '
+'<a href="https://www.fmcsa.dot.gov/registration/who-needs-register" target="_blank" rel="noopener nofollow">guidance on who needs to register</a> '
+'spells out exactly where that line sits &mdash; worth reading before you sign with anyone who blurs it.</p>'
+'<div class="callout cl-warn"><span class="ic">&#9888;</span><div>Always confirm a broker&rsquo;s authority and safety record before you haul. '
+'You can look up any carrier or broker for free on the FMCSA&rsquo;s '
+'<a href="https://safer.fmcsa.dot.gov/CompanySnapshot.aspx" target="_blank" rel="noopener nofollow">SAFER Company Snapshot</a>. '
+'A good dispatch service does this vetting for you on every load.</div></div>'
+
+'<h2 id="diy-vs">Dispatch service vs doing it yourself</h2>'
+'<p>Plenty of owner-operators dispatch themselves, and some do it well. The real question is what your time is worth and whether you can '
+'consistently out-negotiate a full-time professional. Here&rsquo;s the honest trade-off:</p>'
+'<table class="cmp"><thead><tr><th>&nbsp;</th><th>Dispatch yourself</th><th>Owner-operator dispatch service</th></tr></thead><tbody>'
+'<tr><td>Cost</td><td>$0 in fees</td><td>~5% of gross on booked loads</td></tr>'
+'<tr><td>Your driving hours</td><td>Cut into by load hunting &amp; broker calls</td><td>Spent driving &mdash; the loads come to you</td></tr>'
+'<tr><td>Rate negotiation</td><td>As good as your own experience</td><td>Full-time negotiator working your lanes daily</td></tr>'
+'<tr><td>Deadhead</td><td>Whatever you can plan solo</td><td>Next load lined up before you&rsquo;re empty</td></tr>'
+'<tr><td>Broker risk</td><td>You vet every broker yourself</td><td>Credit-checked before you commit</td></tr>'
+'<tr><td>Best for</td><td>Veterans with deep broker relationships and time to work the phones</td><td>Solo drivers who&rsquo;d rather drive than run a back office</td></tr>'
+'</tbody></table>'
+'<p>There&rsquo;s no universal right answer &mdash; but for most single-truck operators, the hours saved and the higher, better-vetted rates '
+'more than cover a 5% fee. If you&rsquo;re still deciding who does what in your business, our breakdown of '
+'<a href="truck-dispatcher-vs-freight-broker.html">dispatcher vs broker vs factoring</a> clears up who represents whom.</p>'
+
+'<h2 id="how-to-choose">How to choose a dispatch service</h2>'
+'<p>Not all dispatch services are equal. Before you hand over your operation, look for these green flags &mdash; and run from the red ones.</p>'
+'<ul>'
+'<li><b>A flat, transparent fee</b> (a clear percentage) with <b>no contract</b> and no setup or upfront charges</li>'
+'<li><b>Full rate transparency</b> &mdash; you see and approve every rate before anything books</li>'
+'<li><b>No forced factoring</b> &mdash; you choose your own factoring company, or none at all</li>'
+'<li><b>Broker vetting</b> built into their process, not an afterthought</li>'
+'<li><b>They run your lanes and equipment</b> &mdash; ask specifically about your freight type</li>'
+'<li><b>You can cancel anytime</b> &mdash; a good service earns your business load by load</li>'
+'</ul>'
+'<div class="callout cl-warn"><span class="ic">&#9888;</span><div>Red flags: long contracts or cancellation penalties, upfront/setup fees, '
+'forced factoring, no rate transparency, or a dispatcher dealing directly with shippers as if brokering. Any one of these should give you pause.</div></div>'
++svc_banner('Every equipment type, one flat rate',
+  'Reefer, flatbed, dry van, hotshot, power-only or new authority &mdash; see the full range of lanes our dispatch team runs for owner-operators.',
+  'Explore all dispatch services &rarr;','services.html')+
+
+'<h2 id="bottom-line">The bottom line</h2>'
+'<p>An owner-operator dispatch service exists to do one thing: keep your truck loaded at the best possible rate so you can focus on driving. '
+'The right one is transparent, contract-free, vets your brokers, and makes you more than it costs &mdash; in higher rates, fewer empty miles, '
+'and the hours you get back. If a service can&rsquo;t promise all of that, keep looking. That&rsquo;s exactly the standard '
+'<a href="pricing.html">Loadboot</a> holds itself to: flat 5%, no contracts, you approve every load.</p>')
+
+A4_TOC=[('what-is','What it is'),('what-it-does','What it does for you'),('how-it-works','How it works day to day'),
+        ('cost','What it costs'),('new-authority','New owner-operators'),('diy-vs','Dispatch vs DIY'),
+        ('how-to-choose','How to choose one'),('bottom-line','The bottom line')]
+A4_FAQ=[
+ ('What is an owner-operator dispatch service?','It&rsquo;s a company that finds, negotiates and books freight on your behalf so you can focus on driving. A dispatcher represents you, the carrier &mdash; searching loads, negotiating rates, vetting brokers and handling paperwork &mdash; while you keep your authority and approve every load.'),
+ ('How much does dispatch cost for one truck?','Most services charge 3%&ndash;10% of gross, with 5% the standard, or a flat $150&ndash;$250 per week. For a solo owner-operator with variable weeks, the percentage model is usually fairer because you only pay when a load is actually booked. Loadboot is a flat 5% with no contract.'),
+ ('Do I keep control of which loads I run?','Yes. A dispatch service does the legwork, but you approve every load and rate before anything books. You keep your own authority and stay the decision-maker.'),
+ ('Do new-authority owner-operators need a dispatcher?','It&rsquo;s optional, but it&rsquo;s one of the fastest ways to get loaded when your authority is new. An experienced dispatcher already has broker relationships and the setup process handled, which helps get around the common &ldquo;90 days in business&rdquo; hurdle new carriers face.'),
+ ('Is a dispatcher the same as a freight broker?','No. A broker represents the shipper and must hold broker authority and a bond. A dispatcher represents you, the carrier, and generally does not need broker authority. A dispatcher should never deal directly with shippers as if brokering.'),
+ ('Can I cancel a dispatch service anytime?','With a fair service, yes. Loadboot has no contracts &mdash; we earn your business load by load, and you can stop anytime with no penalty.')]
+rich_article('owner-operator-dispatch-service-guide.html',
+ 'Owner-Operator Dispatch Service: The Complete Guide (2026)',
+ 'What an owner-operator dispatch service does, what it costs, how it works day to day, and how to choose one &mdash; a complete guide for single-truck operators.',
+ 'Owner-Operator Guide','Owner-Operator Dispatch Service: The Complete Guide',
+ 'Everything a single-truck operator needs to know about using a dispatch service &mdash; what it does, what it costs, whether new authority needs one, and how to choose a good one.',
+ 9,'owner-operator-dispatch-hero.jpg','Owner-operator standing beside his semi-truck reviewing a dispatched load',
+ A4_TOC,A4_BODY,A4_FAQ,feat_svg=A4_FEAT)
+
 # Blog index
 THUMBS={
  'how-much-does-a-truck-dispatcher-cost.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="ta" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#ta)"/><text x="18" y="150" font-family="Manrope,Arial" font-weight="800" font-size="140" fill="#2563EB" opacity=".42">5%</text><rect x="256" y="120" width="26" height="55" rx="4" fill="#2563EB"/><rect x="292" y="92" width="26" height="83" rx="4" fill="#3b82f6"/><rect x="328" y="64" width="26" height="111" rx="4" fill="#F97316"/></svg>',
  'truck-dispatcher-vs-freight-broker.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tb)"/><text x="172" y="115" font-family="Manrope,Arial" font-weight="800" font-size="34" fill="#fff">VS</text><path d="M70 72 H150" stroke="#2563EB" stroke-width="9" stroke-linecap="round"/><path d="M150 60 L172 72 L150 84 Z" fill="#2563EB"/><path d="M330 128 H250" stroke="#F97316" stroke-width="9" stroke-linecap="round"/><path d="M250 116 L228 128 L250 140 Z" fill="#F97316"/></svg>',
- 'how-to-get-loads-with-new-authority.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#tc)"/><path d="M36 150 C 130 105 220 175 372 100" fill="none" stroke="#F97316" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round"/><circle cx="36" cy="150" r="10" fill="#2563EB"/><g transform="translate(330,70)" fill="#fff"><rect x="0" y="0" width="6" height="46"/><path d="M6 2 H42 L31 14 L42 26 H6 Z"/></g></svg>'}
+ 'how-to-get-loads-with-new-authority.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#tc)"/><path d="M36 150 C 130 105 220 175 372 100" fill="none" stroke="#F97316" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round"/><circle cx="36" cy="150" r="10" fill="#2563EB"/><g transform="translate(330,70)" fill="#fff"><rect x="0" y="0" width="6" height="46"/><path d="M6 2 H42 L31 14 L42 26 H6 Z"/></g></svg>',
+ 'owner-operator-dispatch-service-guide.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="td" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#td)"/><text x="24" y="168" font-family="Manrope,Arial" font-weight="800" font-size="150" fill="#2563EB" opacity=".38">1</text><g transform="translate(150,84)" fill="#e2e8f0"><rect x="0" y="0" width="118" height="46" rx="4"/><path d="M118 10h22c3 0 5 1.6 6.8 4l12.4 19c1 1.5 1.6 3.3 1.6 5.2V46H118z" fill="#2563EB"/><rect x="124" y="15" width="15" height="15" fill="#bfdbfe"/></g><g fill="#0f172a"><circle cx="188" cy="132" r="13"/><circle cx="286" cy="132" r="13"/></g><g fill="#F97316"><circle cx="188" cy="132" r="5"/><circle cx="286" cy="132" r="5"/></g></svg>'}
 def blog_card(fn,title,excerpt,read):
     thumb=THUMBS.get(fn,'<svg viewBox="0 0 400 200"><rect width="400" height="200" fill="#0b1220"/></svg>')
     slug=fn[:-5] if fn.endswith('.html') else fn
@@ -1516,7 +1685,7 @@ def blog_card(fn,title,excerpt,read):
     return ('<a class="blogcard" href="'+fn+'"><div class="bc-thumb">'+thumb+img+ov+'</div><div class="bc-body">'
             '<div class="bc-meta">Guide &middot; '+str(read)+' min read</div><h3>'+title+'</h3><p>'+excerpt
             +'</p><span class="bc-link">Read guide &rarr;</span></div></a>')
-READTIME={'how-much-does-a-truck-dispatcher-cost.html':8,'truck-dispatcher-vs-freight-broker.html':9,'how-to-get-loads-with-new-authority.html':6}
+READTIME={'how-much-does-a-truck-dispatcher-cost.html':8,'truck-dispatcher-vs-freight-broker.html':9,'how-to-get-loads-with-new-authority.html':6,'owner-operator-dispatch-service-guide.html':9}
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
 blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
 blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from Loadboot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards
