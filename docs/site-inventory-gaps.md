@@ -3,7 +3,7 @@
 > Machine-generated from the built `site/` output by `scripts/site_inventory.py`.
 > Every number below is counted from the actual HTML — nothing is estimated.
 
-**Pages:** 39 · **Total words:** 27,742
+**Pages:** 40 · **Total words:** 29,014
 
 ## Pages missing meta description (1)
 
@@ -21,11 +21,10 @@
 
 - None ✔
 
-## Thin pages (<300 words) (3)
+## Thin pages (<300 words) (2)
 
 - `dashboard.html` — 29 words
-- `status.html` — 279 words
-- `sitemap.html` — 289 words
+- `status.html` — 288 words
 
 ## Pages without any CTA (1)
 
@@ -47,42 +46,43 @@
 
 | Page | Words | Sections | CTAs | Internal links | Inbound | Dup risk |
 |---|---|---|---|---|---|---|
-| `owner-operator-dispatch-service-guide.html` | 2197 | 11 | 9 | 36 | 2 | low |
-| `truck-dispatcher-vs-freight-broker.html` | 1901 | 11 | 9 | 34 | 3 | low |
-| `index.html` | 1837 | 45 | 12 | 39 | 37 | medium |
-| `how-much-does-a-truck-dispatcher-cost.html` | 1636 | 11 | 9 | 34 | 3 | low |
-| `tools.html` | 1234 | 17 | 12 | 35 | 5 | low |
-| `load-score.html` | 1218 | 11 | 11 | 35 | 37 | low |
-| `carriers.html` | 1113 | 44 | 10 | 35 | 37 | low |
-| `brokers.html` | 886 | 35 | 10 | 34 | 37 | low |
-| `services.html` | 878 | 41 | 10 | 34 | 37 | medium |
-| `reefer-dispatch.html` | 859 | 13 | 10 | 34 | 37 | low |
-| `new-authority-dispatch.html` | 848 | 13 | 10 | 34 | 37 | low |
-| `owner-operator-dispatch.html` | 794 | 13 | 10 | 34 | 37 | low |
-| `flatbed-dispatch.html` | 786 | 13 | 10 | 34 | 37 | medium |
-| `dry-van-dispatch.html` | 772 | 13 | 10 | 34 | 37 | medium |
-| `hotshot-dispatch.html` | 733 | 13 | 10 | 34 | 37 | medium |
-| `power-only-dispatch.html` | 724 | 13 | 10 | 34 | 37 | medium |
-| `privacy.html` | 642 | 10 | 10 | 34 | 37 | medium |
-| `about.html` | 625 | 11 | 10 | 34 | 37 | medium |
-| `faq.html` | 599 | 3 | 10 | 34 | 37 | medium |
-| `how-to-get-loads-with-new-authority.html` | 577 | 8 | 10 | 34 | 2 | medium |
-| `pricing.html` | 561 | 6 | 10 | 34 | 37 | medium |
-| `how-it-works.html` | 470 | 11 | 10 | 34 | 37 | medium |
-| `terms.html` | 447 | 8 | 10 | 34 | 37 | medium |
-| `blog.html` | 443 | 7 | 10 | 38 | 37 | medium |
-| `contact.html` | 406 | 5 | 9 | 34 | 37 | medium |
-| `resources.html` | 394 | 9 | 10 | 35 | 37 | medium |
-| `security.html` | 388 | 9 | 9 | 34 | 37 | medium |
-| `careers.html` | 377 | 4 | 9 | 34 | 37 | medium |
-| `case-studies.html` | 368 | 5 | 10 | 34 | 37 | medium |
-| `referral.html` | 368 | 6 | 9 | 34 | 37 | medium |
-| `cookies.html` | 359 | 4 | 9 | 34 | 37 | medium |
-| `partners.html` | 357 | 6 | 10 | 34 | 37 | medium |
-| `box-truck-dispatch.html` | 349 | 6 | 10 | 34 | 1 | medium |
-| `login.html` | 336 | 8 | 10 | 37 | 37 | medium |
-| `carrier-application.html` | 333 | 2 | 10 | 34 | 2 | medium |
-| `accessibility.html` | 330 | 3 | 9 | 34 | 37 | medium |
-| `sitemap.html` | 289 | 6 | 11 | 37 | 37 | high |
-| `status.html` | 279 | 2 | 9 | 34 | 37 | high |
+| `owner-operator-dispatch-service-guide.html` | 2206 | 11 | 9 | 37 | 2 | low |
+| `truck-dispatcher-vs-freight-broker.html` | 1910 | 11 | 9 | 35 | 3 | low |
+| `index.html` | 1846 | 45 | 12 | 40 | 38 | medium |
+| `how-much-does-a-truck-dispatcher-cost.html` | 1645 | 11 | 9 | 35 | 3 | low |
+| `tools.html` | 1243 | 17 | 12 | 36 | 5 | low |
+| `load-score.html` | 1227 | 11 | 11 | 36 | 38 | low |
+| `carriers.html` | 1122 | 44 | 10 | 36 | 38 | low |
+| `shipper-solutions.html` | 928 | 26 | 10 | 35 | 38 | low |
+| `brokers.html` | 895 | 35 | 10 | 35 | 38 | low |
+| `services.html` | 887 | 41 | 10 | 35 | 38 | medium |
+| `reefer-dispatch.html` | 868 | 13 | 10 | 35 | 38 | low |
+| `new-authority-dispatch.html` | 857 | 13 | 10 | 35 | 38 | low |
+| `owner-operator-dispatch.html` | 803 | 13 | 10 | 35 | 38 | medium |
+| `flatbed-dispatch.html` | 795 | 13 | 10 | 35 | 38 | medium |
+| `dry-van-dispatch.html` | 781 | 13 | 10 | 35 | 38 | medium |
+| `hotshot-dispatch.html` | 742 | 13 | 10 | 35 | 38 | medium |
+| `power-only-dispatch.html` | 733 | 13 | 10 | 35 | 38 | medium |
+| `privacy.html` | 651 | 10 | 10 | 35 | 38 | medium |
+| `about.html` | 634 | 11 | 10 | 35 | 38 | medium |
+| `faq.html` | 608 | 3 | 10 | 35 | 38 | medium |
+| `how-to-get-loads-with-new-authority.html` | 586 | 8 | 10 | 35 | 2 | medium |
+| `pricing.html` | 570 | 6 | 10 | 35 | 38 | medium |
+| `how-it-works.html` | 479 | 11 | 10 | 35 | 38 | medium |
+| `terms.html` | 456 | 8 | 10 | 35 | 38 | medium |
+| `blog.html` | 452 | 7 | 10 | 39 | 38 | medium |
+| `contact.html` | 415 | 5 | 9 | 35 | 38 | medium |
+| `resources.html` | 403 | 9 | 10 | 36 | 38 | medium |
+| `security.html` | 397 | 9 | 9 | 35 | 38 | medium |
+| `careers.html` | 386 | 4 | 9 | 35 | 38 | medium |
+| `case-studies.html` | 377 | 5 | 10 | 35 | 38 | medium |
+| `referral.html` | 377 | 6 | 9 | 35 | 38 | medium |
+| `cookies.html` | 368 | 4 | 9 | 35 | 38 | medium |
+| `partners.html` | 366 | 6 | 10 | 35 | 38 | medium |
+| `box-truck-dispatch.html` | 358 | 6 | 10 | 35 | 1 | medium |
+| `login.html` | 345 | 8 | 10 | 38 | 38 | medium |
+| `carrier-application.html` | 342 | 2 | 10 | 35 | 2 | medium |
+| `accessibility.html` | 339 | 3 | 9 | 35 | 38 | medium |
+| `sitemap.html` | 300 | 6 | 11 | 38 | 38 | high |
+| `status.html` | 288 | 2 | 9 | 35 | 38 | high |
 | `dashboard.html` | 29 | 0 | 0 | 2 | 0 | low |
