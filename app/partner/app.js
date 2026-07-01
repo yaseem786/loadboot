@@ -11,7 +11,7 @@ import {
   partnerPostLoad, partnerMyLoads,
   partnerRequestShipment, partnerMyShipments,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
-  partnerMyInvoices,
+  partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -148,6 +148,35 @@ function choosePartnerType(user) {
   root.setAttribute('aria-busy', 'false');
 }
 
+/* notifications bell + dropdown inbox */
+function notifBell() {
+  const badge = h('span', { class: 'cp-bell-badge', hidden: true });
+  const panel = h('div', { class: 'cp-notif-panel', hidden: true });
+  const bell = h('button', { class: 'cp-iconbtn', title: 'Notifications', onClick: () => { panel.hidden = !panel.hidden; if (!panel.hidden) load(); } }, [icon('bell', 20), badge]);
+  const wrap = h('div', { class: 'cp-bell-wrap' }, [bell, panel]);
+  async function refresh() {
+    try { const ns = await partnerNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { badge.textContent = String(u > 9 ? '9+' : u); badge.hidden = false; } else badge.hidden = true; }
+    catch (_) {}
+  }
+  async function load() {
+    mount(panel, h('div', { class: 'cp-notif-loading' }, 'Loading…'));
+    let ns; try { ns = await partnerNotifications(50); } catch (e) { mount(panel, h('div', { class: 'cp-notif-loading' }, 'Could not load.')); return; }
+    ns = ns || [];
+    if (!ns.length) { mount(panel, h('div', { class: 'cp-notif-empty' }, 'No notifications yet.')); return; }
+    mount(panel, [h('div', { class: 'cp-notif-head' }, 'Notifications')].concat(ns.map(n => h('div', {
+      class: 'cp-notif' + (n.read_at ? '' : ' unread'),
+      onClick: async () => { if (!n.read_at) { try { await partnerMarkNotificationRead(n.id); } catch (_) {} } refresh(); load(); },
+    }, [
+      h('div', { class: 'cp-notif-t' }, n.title),
+      n.body ? h('div', { class: 'cp-notif-b' }, n.body) : null,
+      h('div', { class: 'cp-notif-time' }, fmtDT(n.created_at)),
+    ]))));
+  }
+  document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) panel.hidden = true; });
+  refresh();
+  return wrap;
+}
+
 /* ---------- helpers for the dashboard shell ---------- */
 function shell(user, kind, company, kpis, content) {
   const label = KIND_LABEL[kind] || 'Partner';
@@ -160,6 +189,7 @@ function shell(user, kind, company, kpis, content) {
         ])]),
         h('div', { class: 'cp-top-right' }, [
           h('span', { class: 'cp-chip ok' }, label),
+          notifBell(),
           h('div', { class: 'cp-avatar', title: (user && user.email) || '' }, ((company || label)[0] || 'P').toUpperCase()),
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { await signOut(); boot(); } }, 'Sign out'),
         ]),
@@ -316,6 +346,23 @@ async function facilityDash(user, ov) {
     h('div', { class: 'cp-formgrid' }, [field('Direction', dir), field('Start', start), field('End', end), field('Dock', dock), field('Carrier', carrier), field('Reference', ref)]),
     field('Notes', notes), err, btn,
   ]);
+  const weekHost = h('div', { class: 'cp-weekstrip' });
+  function renderWeek(rows) {
+    const days = [];
+    const base = new Date(); base.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 7; i++) { const d = new Date(base); d.setDate(base.getDate() + i); days.push(d); }
+    const key = (d) => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    const counts = {};
+    (rows || []).forEach(a => { if (!a.window_start) return; const d = new Date(a.window_start); d.setHours(0, 0, 0, 0); counts[key(d)] = (counts[key(d)] || 0) + 1; });
+    mount(weekHost, days.map((d, i) => {
+      const n = counts[key(d)] || 0;
+      return h('div', { class: 'cp-weekday' + (i === 0 ? ' today' : '') + (n ? ' has' : '') }, [
+        h('div', { class: 'cp-weekday-d' }, d.toLocaleDateString(undefined, { weekday: 'short' })),
+        h('div', { class: 'cp-weekday-n' }, String(d.getDate())),
+        h('div', { class: 'cp-weekday-c' }, n ? (n + (n === 1 ? ' appt' : ' appts')) : '—'),
+      ]);
+    }));
+  }
   async function setStatus(id, status, tr) {
     try { await partnerSetAppointmentStatus(id, status); loadList(); }
     catch (e) { if (tr) { const c = h('div', { class: 'cp-err' }, (e && e.message) || 'Failed'); tr.appendChild(c); } }
@@ -323,6 +370,7 @@ async function facilityDash(user, ov) {
   async function loadList() {
     try {
       const rows = await partnerAppointments(100);
+      renderWeek(rows);
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No appointments yet. Schedule one above.')); return; }
       mount(listHost, h('table', { class: 'cp-table' }, [
         h('thead', null, h('tr', null, ['When', 'Dir', 'Dock', 'Carrier', 'Status', ''].map(t => h('th', null, t)))),
@@ -339,7 +387,8 @@ async function facilityDash(user, ov) {
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'facility', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Appointments')]), listHost])]), invoicesCard()])));
+  const weekCard = h('div', { class: 'cp-card', style: 'margin-bottom:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('clock', 18), h('h3', null, 'This week')]), weekHost]);
+  mount(root, shell(user, 'facility', ov.company, kpis, h('div', null, [weekCard, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Appointments')]), listHost])]), invoicesCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }

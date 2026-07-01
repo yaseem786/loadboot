@@ -442,6 +442,8 @@ export const listPartnerInvoicesAll = (o = {}) => rpc('cc_list_partner_invoices_
 export const setPartnerInvoiceStatus = (id, status) => rpc('cc_set_partner_invoice_status', { p_id: id, p_status: status });
 export const partnerMyInvoices = (limit) => rpc('cc_partner_my_invoices', { p_limit: limit ?? 100 });
 export const listPartnerOrgs = () => rpc('cc_list_partner_orgs');
+export const partnerNotifications = (limit) => rpc('cc_partner_notifications', { p_limit: limit ?? 50 });
+export const partnerMarkNotificationRead = (id) => rpc('cc_partner_mark_notification_read', { p_id: id });
 
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
