@@ -461,6 +461,12 @@ export const verificationQueue = (limit) => rpc('cc_verification_queue', { p_lim
 // marketing brand kit (cub)
 export const getBrandKit = () => rpc('cc_get_brand_kit');
 export const setBrandKit = (data) => rpc('cc_set_brand_kit', { p_data: data });
+// plugin framework (cuc)
+export const listPlugins = () => rpc('cc_list_plugins');
+export const listInstalledPlugins = () => rpc('cc_list_installed_plugins');
+export const installPlugin = (id, config) => rpc('cc_install_plugin', { p_plugin: id, p_config: config ?? {} });
+export const setPluginEnabled = (id, enabled) => rpc('cc_set_plugin_enabled', { p_id: id, p_enabled: enabled });
+export const uninstallPlugin = (id) => rpc('cc_uninstall_plugin', { p_id: id });
 
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
