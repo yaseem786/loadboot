@@ -487,3 +487,89 @@ campaigns in flight. Surfaced as a "Pipeline backlog" strip on Delivery Health s
 webhook backlog is visible at a glance.
 - Proof: **PIPELINE HEALTH MATRIX: PASS (3 checks)** (shape, carrier + anon denial). Migration
   `cvr_pipeline_health` (staging + production). Anon SECURITY DEFINER surface unchanged (5).
+
+## Increment 43 — Load-source normalization + Load Intake workspace (GLOBAL DISPATCH MARKETPLACE)
+
+Extended the existing `public.loads` (additively) with a normalized SOURCE model + verification provenance, and
+added a Command Center Load Intake workspace. Nothing rebuilt — builds on the existing loads/organizations/trips
+model.
+- `loads` columns (additive, constrained): source_type (11 sources), source_provider, source_reference,
+  verification_state (unverified/partial/verified), confidence (low/medium/high), source_updated_at, created_by,
+  broker_org, shipper_org, version, field_meta. Indexes on source_type and (status, created_at).
+- `cc_create_load_sourced(jsonb)` — staff (loads.create); REQUIRES source_type (no silently-"verified" data);
+  emits `load.created`, audited. `cc_load_intake_list(...)` — staff filterable list with source + verification.
+  `cc_load_set_verification(load, state, confidence)` — staff, audited, bumps version.
+- Frontend: Command Center **Load Intake** view (`/load-intake`) — source/verification KPIs, filters, a
+  source-attributed New-load composer, and a Verify action. Nav gated by `load_marketplace` flag
+  (staging ON for preview, production OFF for controlled activation). api wrappers + LOAD_SOURCE_TYPES.
+- Proof: `tests/security/load_intake_matrix.sql` → **LOAD INTAKE MATRIX: PASS (9 checks)** (source_type required,
+  valid create, invalid source rejected, list, verification set, carrier + anon denied). Migration
+  `cvs_load_source_intake` (staging + production). Anon SECURITY DEFINER surface unchanged (5).
+
+## Increment 44 — Partner (broker) Load Wizard + mandatory-document checklist
+
+NOTE: partner scope is BROKER only (US shippers require a broker license to move freight directly; shipper
+partner flows intentionally not built).
+- `cc_partner_submit_load(jsonb)` — broker self-scoped (my_partner_org('broker')); eligibility (org active),
+  validation, **24h duplicate detection** (blocked unless confirm_duplicate=true), richer fields
+  (windows/stops/appointment/tracking/accessorials/reference); emits partner.load_submitted.
+- `app_private.load_document_checklist` model + seeder; every submission auto-generates a broker document
+  checklist (rate con, pickup/delivery #, appointment, billing). `cc_load_checklist` (staff OR owning broker)
+  + `cc_load_checklist_set` (staff).
+- Frontend: Partner Portal broker dashboard **multi-step Load Wizard** (Lane → Schedule → Equipment → Requirements
+  → Review) with duplicate-confirm handling; api wrappers partnerSubmitLoad / loadChecklist / loadChecklistSet.
+- Proof: `tests/security/partner_wizard_matrix.sql` → **PARTNER WIZARD MATRIX: PASS (9 checks)** (submit + checklist
+  generated, duplicate blocked then confirmed, staff checklist update, cross-tenant carrier denied, anon denied).
+  Migration `cvt_partner_wizard_checklist` (staging + production). Anon SECURITY DEFINER surface unchanged (5).
+
+## Increments 45 + 46 — Explainable Matching Engine (eligibility + ranking) + Match Center
+
+Extended the existing matcher into a two-stage EXPLAINABLE engine. An ineligible carrier is never silently
+offered a load, and no unexplained AI scores are shown.
+- **Stage A — `cc_match_eligibility(load)`**: hard filters per carrier (active/suspended, compliance/authority/
+  insurance via carrier_mandatory_ok, truck capacity vs active trips, equipment compatibility from fleet_trucks,
+  driver availability with license/medical currency). Returns eligible + structured `hard_fails[]` + `missing_data[]`.
+- **Stage B — `cc_match_rank(load)`**: ranks ONLY eligible carriers with a score whose value equals the SUM of an
+  explained per-factor breakdown (compliance/capacity/availability/performance/equipment/drivers). Deadhead + ETA
+  are honestly marked unavailable (no invented GPS). loaded_rpm from rate/miles.
+- Frontend: Command Center **Match Center** drawer — ranked eligible carrier cards with "Why this score" factor
+  breakdown + loaded RPM + equipment fit, and a collapsible "Ineligible carriers (with reasons)" section. Opened
+  via a **Match** action on every Load Intake row. api wrappers matchEligibility / matchRank.
+- Proof: `tests/security/match_engine_matrix.sql` → **MATCH ENGINE MATRIX: PASS (8 checks)** (eligibility
+  consistency, every ineligible has a reason, score = factor sum, only-eligible ranked, RPM correct, carrier +
+  anon denied). Migrations `cvu_match_eligibility` + `cvv_match_rank` (staging + production).
+  Anon SECURITY DEFINER surface unchanged (5).
+
+## Parallel (marketing) — Brand asset audit + professional email header/footer (Inc 61 core)
+
+- `docs/BRAND-ASSET-AUDIT.md` — audited all brand/image assets: one consistent inline-SVG brand mark, authentic
+  PNG icons/favicons, illustrative equipment photos. **No fake logos, no fabricated customer logos, no external
+  hotlinks, no image placeholders, no broken/duplicated assets.** Third-party platform logos already removed.
+- `delivery-worker` now wraps every marketing email in a **professional reusable branded shell** — table-based
+  (broad-client-safe), authentic hosted logo (icon-512.png), and a compliant footer (company identity, Support,
+  Privacy, Terms, one-click Unsubscribe). Configurable via SITE_URL / BRAND_LOGO_URL env. No fabricated assets.
+
+## Parallel (marketing) — Dedicated Carrier + Broker landing pages (no shipper)
+
+- New **carriers.html** (~14 sections): value prop, who we serve, equipment, load sourcing, rate negotiation,
+  dispatch & appointments, documents & compliance, exceptions (detention/lumper/TONU), invoicing & settlement,
+  carrier software, getting started, FAQ + CTA. Original content, no fake testimonials/logos/stats.
+- New **brokers.html** (~12 sections, BROKER only per owner instruction — US broker license required): value prop,
+  onboarding & verification, guided load posting, explainable matching, operational visibility, appointments &
+  documents, exception resolution, integrations & security, partner form + FAQ. No shipper page.
+- Linked from footer (For Carriers / For Brokers) + HTML sitemap "Get started" group; auto-included in sitemap.xml.
+- Verified: preview build OK; **production build isolation OK (0 staging refs)**; beacon/lead forms wired.
+
+## Increment 47 — Offer waves, expiry & carrier response
+
+Connects Matching → booking. New `app_private.load_offers` + RPCs:
+- `cc_offer_send(load, carriers[], rate, expiry_minutes)` — staff (dispatch.manage) send an offer wave;
+  **eligibility re-checked at send** so ineligible carriers are skipped (never offered), score snapshotted,
+  emits offer.created. `cc_load_offers(load)` staff list. `cc_offers_expire()` expires overdue offers.
+- `cc_carrier_offers()` (carrier self-scoped) + `cc_offer_respond(offer, view|accept|decline|counter, ...)` —
+  concurrency-safe (FOR UPDATE), self-scoped, blocks respond-after-terminal and expired offers.
+- Frontend: Match Center gains per-carrier **Send offer / Re-offer** + **Offer wave → top 3** + live offer-status
+  pills; api wrappers offerSend/loadOffers/carrierOffers/offerRespond/offersExpire.
+- Proof: `tests/security/offers_matrix.sql` → **OFFERS MATRIX: PASS (11 checks)** (eligibility-gated send,
+  view/counter/accept, respond-after-accept blocked, cross-carrier denied, staff list, expiry, anon denied).
+  Migration `cvw_offers` (staging + production). Anon SECURITY DEFINER surface unchanged (5).

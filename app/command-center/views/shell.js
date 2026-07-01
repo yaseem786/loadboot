@@ -35,6 +35,7 @@ const NAV = [
     { path: '/verification', label: 'Verification Center', icon: 'shield', perm: 'compliance.view' },
     { path: '/pod-review', label: 'POD Review', icon: 'document', perm: 'dispatch.manage' },
     { path: '/exceptions', label: 'Exceptions', icon: 'document', perm: 'dispatch.manage' },
+    { path: '/load-intake', label: 'Load Intake', icon: 'trend', perm: 'dispatch.view', flag: 'load_marketplace' },
     { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },
   ]},
   { group: 'Sales & CRM', items: [

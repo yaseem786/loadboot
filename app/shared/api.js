@@ -67,6 +67,21 @@ export const createLoad = (o = {}) => rpc('cc_create_load', {
   p_pickup_date: o.pickupDate ?? null,
 });
 
+// ---- Load Intake (Inc 43) — normalized source model ----
+export const LOAD_SOURCE_TYPES = [['partner_portal','Partner portal'],['staff_entered','Staff entered'],['licensed_integration','Licensed integration'],['official_api','Official API'],['uploaded_document','Uploaded document'],['imported','Imported (CSV)'],['unverified_external','Unverified external'],['quote_converted','Quote converted'],['recurring_lane','Recurring lane'],['duplicated','Duplicated'],['api_client','API client']];
+export const createLoadSourced = (o = {}) => rpc('cc_create_load_sourced', { p: o });
+export const loadIntakeList = (o = {}) => rpc('cc_load_intake_list', { p_source: o.source ?? null, p_verification: o.verification ?? null, p_status: o.status ?? null, p_limit: o.limit ?? 200 });
+export const loadSetVerification = (id, verification, confidence) => rpc('cc_load_set_verification', { p_load: id, p_verification: verification, p_confidence: confidence ?? null });
+// Matching engine (Inc 45/46) — Stage A eligibility + Stage B explainable ranking.
+export const matchEligibility = (loadId) => rpc('cc_match_eligibility', { p_load: loadId });
+export const matchRank = (loadId) => rpc('cc_match_rank', { p_load: loadId });
+// Offers (Inc 47) — waves, expiry, carrier response.
+export const offerSend = (loadId, carriers, rate, expiryMinutes) => rpc('cc_offer_send', { p_load: loadId, p_carriers: carriers, p_rate: rate ?? null, p_expiry_minutes: expiryMinutes ?? 60 });
+export const loadOffers = (loadId) => rpc('cc_load_offers', { p_load: loadId });
+export const carrierOffers = (limit) => rpc('cc_carrier_offers', { p_limit: limit ?? 50 });
+export const offerRespond = (offerId, action, o = {}) => rpc('cc_offer_respond', { p_offer: offerId, p_action: action, p_reason: o.reason ?? null, p_counter: o.counter ?? null, p_message: o.message ?? null });
+export const offersExpire = () => rpc('cc_offers_expire');
+
 // ---- privileged actions ----
 export const reviewDocument = (documentId, decision, note) =>
   rpc('admin_review_document', { p_document: documentId, p_decision: decision, p_note: note ?? null });
@@ -492,6 +507,10 @@ export const partnerOverview = () => rpc('cc_partner_overview');
 // broker
 export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null, p_idempotency_key: o.idempotencyKey ?? null });
 export const partnerMyLoads = (limit) => rpc('cc_partner_my_loads', { p_limit: limit ?? 50 });
+// Load Wizard (Inc 44) — richer broker submission with duplicate detection + document checklist.
+export const partnerSubmitLoad = (o = {}) => rpc('cc_partner_submit_load', { p: o });
+export const loadChecklist = (subjectType, subjectId) => rpc('cc_load_checklist', { p_subject_type: subjectType, p_subject_id: subjectId });
+export const loadChecklistSet = (id, status) => rpc('cc_load_checklist_set', { p_id: id, p_status: status });
 // shipper
 export const partnerRequestShipment = (o = {}) => rpc('cc_partner_request_shipment', { p_origin: o.origin, p_destination: o.destination, p_ready: o.ready ?? null, p_equipment: o.equipment ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_pieces: o.pieces ?? null, p_accessorials: o.accessorials ?? null, p_notes: o.notes ?? null });
 export const partnerMyShipments = (limit) => rpc('cc_partner_my_shipments', { p_limit: limit ?? 50 });
