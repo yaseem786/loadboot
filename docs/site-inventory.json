@@ -1,8 +1,8 @@
 {
  "summary": {
   "generated_note": "Counted from built site/ HTML by scripts/site_inventory.py. No estimates.",
-  "page_count": 39,
-  "total_words": 27742,
+  "page_count": 40,
+  "total_words": 29014,
   "pages_missing_meta_description": [
    "dashboard.html"
   ],
@@ -14,7 +14,6 @@
   ],
   "thin_pages_under_300_words": [
    "dashboard.html",
-   "sitemap.html",
    "status.html"
   ],
   "pages_without_cta": [
@@ -100,10 +99,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 625,
+   "word_count": 634,
    "cta_count": 10,
    "ctas": [
     {
@@ -193,12 +192,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -206,11 +206,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.297,
+    "max_similarity": 0.305,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "accessibility.html",
     "blog.html",
@@ -244,6 +244,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -276,10 +277,10 @@
     {
      "heading": "Need help or found a barrier?",
      "level": "h2",
-     "words": 219
+     "words": 228
     }
    ],
-   "word_count": 330,
+   "word_count": 339,
    "cta_count": 9,
    "ctas": [
     {
@@ -365,12 +366,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -378,11 +380,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.476,
+    "max_similarity": 0.488,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "blog.html",
@@ -416,6 +418,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -468,10 +471,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 443,
+   "word_count": 452,
    "cta_count": 10,
    "ctas": [
     {
@@ -564,13 +567,14 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
+   "internal_link_count": 39,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -578,11 +582,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.404,
+    "max_similarity": 0.413,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -616,6 +620,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -663,10 +668,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 349,
+   "word_count": 358,
    "cta_count": 10,
    "ctas": [
     {
@@ -756,12 +761,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -769,7 +775,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.459,
+    "max_similarity": 0.471,
     "most_similar_page": "status.html",
     "level": "medium"
    },
@@ -963,10 +969,10 @@
     {
      "heading": "Frequently asked questions",
      "level": "h2",
-     "words": 298
+     "words": 307
     }
    ],
-   "word_count": 886,
+   "word_count": 895,
    "cta_count": 10,
    "ctas": [
     {
@@ -1104,12 +1110,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -1118,11 +1125,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.218,
+    "max_similarity": 0.225,
     "most_similar_page": "partners.html",
     "level": "low"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1156,6 +1163,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -1193,10 +1201,10 @@
     {
      "heading": "Apply to Loadboot",
      "level": "h3",
-     "words": 226
+     "words": 235
     }
    ],
-   "word_count": 377,
+   "word_count": 386,
    "cta_count": 9,
    "ctas": [
     {
@@ -1324,12 +1332,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -1337,11 +1346,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.429,
+    "max_similarity": 0.441,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1375,6 +1384,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -1402,10 +1412,10 @@
     {
      "heading": "Carrier application",
      "level": "h3",
-     "words": 267
+     "words": 276
     }
    ],
-   "word_count": 333,
+   "word_count": 342,
    "cta_count": 10,
    "ctas": [
     {
@@ -1573,12 +1583,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -1586,8 +1597,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.482,
-    "most_similar_page": "contact.html",
+    "max_similarity": 0.493,
+    "most_similar_page": "status.html",
     "level": "medium"
    },
    "inbound_link_count": 2,
@@ -1826,10 +1837,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 1113,
+   "word_count": 1122,
    "cta_count": 10,
    "ctas": [
     {
@@ -1919,13 +1930,14 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 35,
+   "internal_link_count": 36,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -1934,11 +1946,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.183,
+    "max_similarity": 0.189,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1972,6 +1984,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -2014,10 +2027,10 @@
     {
      "heading": "Box truck chasing hot loads",
      "level": "h3",
-     "words": 229
+     "words": 238
     }
    ],
-   "word_count": 368,
+   "word_count": 377,
    "cta_count": 10,
    "ctas": [
     {
@@ -2107,12 +2120,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -2120,11 +2134,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.434,
+    "max_similarity": 0.445,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2158,6 +2172,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -2200,10 +2215,10 @@
     {
      "heading": "Your details",
      "level": "h3",
-     "words": 235
+     "words": 244
     }
    ],
-   "word_count": 406,
+   "word_count": 415,
    "cta_count": 9,
    "ctas": [
     {
@@ -2403,12 +2418,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -2416,11 +2432,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.482,
+    "max_similarity": 0.492,
     "most_similar_page": "carrier-application.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2454,6 +2470,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -2491,10 +2508,10 @@
     {
      "heading": "Your choices",
      "level": "h2",
-     "words": 219
+     "words": 228
     }
    ],
-   "word_count": 359,
+   "word_count": 368,
    "cta_count": 9,
    "ctas": [
     {
@@ -2580,12 +2597,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -2593,11 +2611,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.443,
+    "max_similarity": 0.455,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2631,6 +2649,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -2746,10 +2765,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 772,
+   "word_count": 781,
    "cta_count": 10,
    "ctas": [
     {
@@ -2839,12 +2858,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -2854,11 +2874,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.265,
+    "max_similarity": 0.271,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2892,6 +2912,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -2924,10 +2945,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 599,
+   "word_count": 608,
    "cta_count": 10,
    "ctas": [
     {
@@ -3017,12 +3038,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -3031,11 +3053,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.313,
+    "max_similarity": 0.322,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3069,6 +3091,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -3151,10 +3174,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 786,
+   "word_count": 795,
    "cta_count": 10,
    "ctas": [
     {
@@ -3244,12 +3267,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -3259,11 +3283,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.259,
+    "max_similarity": 0.264,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3297,6 +3321,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -3379,10 +3404,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 733,
+   "word_count": 742,
    "cta_count": 10,
    "ctas": [
     {
@@ -3472,12 +3497,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -3487,11 +3513,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.279,
+    "max_similarity": 0.285,
     "most_similar_page": "power-only-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3525,6 +3551,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -3597,10 +3624,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 470,
+   "word_count": 479,
    "cta_count": 10,
    "ctas": [
     {
@@ -3690,12 +3717,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -3703,11 +3731,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.382,
+    "max_similarity": 0.391,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3741,6 +3769,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -3813,10 +3842,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 1636,
+   "word_count": 1645,
    "cta_count": 9,
    "ctas": [
     {
@@ -3902,6 +3931,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
@@ -3909,7 +3939,7 @@
    "links_external": [
     "https://www.fmcsa.dot.gov/registration/who-needs-register"
    ],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -3919,7 +3949,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.125,
+    "max_similarity": 0.129,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "low"
    },
@@ -3980,10 +4010,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 577,
+   "word_count": 586,
    "cta_count": 10,
    "ctas": [
     {
@@ -4073,12 +4103,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -4087,7 +4118,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.328,
+    "max_similarity": 0.336,
     "most_similar_page": "blog.html",
     "level": "medium"
    },
@@ -4332,10 +4363,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 1837,
+   "word_count": 1846,
    "cta_count": 12,
    "ctas": [
     {
@@ -4436,6 +4467,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -4443,7 +4475,7 @@
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 39,
+   "internal_link_count": 40,
    "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
@@ -4451,11 +4483,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.278,
+    "max_similarity": 0.281,
     "most_similar_page": "services.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4489,6 +4521,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -4561,10 +4594,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 1218,
+   "word_count": 1227,
    "cta_count": 11,
    "ctas": [
     {
@@ -4658,13 +4691,14 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 35,
+   "internal_link_count": 36,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -4675,11 +4709,11 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.169,
+    "max_similarity": 0.175,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4713,6 +4747,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -4770,10 +4805,10 @@
     {
      "heading": "Need an account?",
      "level": "h3",
-     "words": 194
+     "words": 203
     }
    ],
-   "word_count": 336,
+   "word_count": 345,
    "cta_count": 10,
    "ctas": [
     {
@@ -4866,12 +4901,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
+   "internal_link_count": 38,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -4879,11 +4915,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.485,
+    "max_similarity": 0.496,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4917,6 +4953,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -4999,10 +5036,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 848,
+   "word_count": 857,
    "cta_count": 10,
    "ctas": [
     {
@@ -5092,12 +5129,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -5107,11 +5145,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.24,
+    "max_similarity": 0.246,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -5145,6 +5183,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -5217,10 +5256,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 2197,
+   "word_count": 2206,
    "cta_count": 9,
    "ctas": [
     {
@@ -5307,6 +5346,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -5316,7 +5356,7 @@
     "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",
     "https://www.fmcsa.dot.gov/registration/who-needs-register"
    ],
-   "internal_link_count": 36,
+   "internal_link_count": 37,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -5326,7 +5366,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.094,
+    "max_similarity": 0.098,
     "most_similar_page": "blog.html",
     "level": "low"
    },
@@ -5411,10 +5451,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 794,
+   "word_count": 803,
    "cta_count": 10,
    "ctas": [
     {
@@ -5504,12 +5544,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -5519,11 +5560,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.248,
+    "max_similarity": 0.253,
     "most_similar_page": "hotshot-dispatch.html",
-    "level": "low"
+    "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -5557,6 +5598,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -5604,10 +5646,10 @@
     {
      "heading": "Become a partner",
      "level": "h3",
-     "words": 231
+     "words": 240
     }
    ],
-   "word_count": 357,
+   "word_count": 366,
    "cta_count": 10,
    "ctas": [
     {
@@ -5745,12 +5787,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -5758,11 +5801,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.452,
+    "max_similarity": 0.463,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -5796,6 +5839,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -5878,10 +5922,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 724,
+   "word_count": 733,
    "cta_count": 10,
    "ctas": [
     {
@@ -5971,12 +6015,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -5986,11 +6031,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.279,
+    "max_similarity": 0.285,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6024,6 +6069,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -6071,10 +6117,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 561,
+   "word_count": 570,
    "cta_count": 10,
    "ctas": [
     {
@@ -6164,12 +6210,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -6178,11 +6225,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.327,
+    "max_similarity": 0.336,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6216,6 +6263,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -6283,10 +6331,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 642,
+   "word_count": 651,
    "cta_count": 10,
    "ctas": [
     {
@@ -6376,12 +6424,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -6389,11 +6438,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.294,
+    "max_similarity": 0.302,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6427,6 +6476,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -6509,10 +6559,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 859,
+   "word_count": 868,
    "cta_count": 10,
    "ctas": [
     {
@@ -6602,12 +6652,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 1,
    "images_missing_alt": [],
    "schema_types": [
@@ -6617,11 +6668,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.237,
+    "max_similarity": 0.242,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6655,6 +6706,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -6702,10 +6754,10 @@
     {
      "heading": "Refer a carrier",
      "level": "h3",
-     "words": 229
+     "words": 238
     }
    ],
-   "word_count": 368,
+   "word_count": 377,
    "cta_count": 9,
    "ctas": [
     {
@@ -6839,12 +6891,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -6852,11 +6905,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.439,
+    "max_similarity": 0.45,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6890,6 +6943,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -6952,10 +7006,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 394,
+   "word_count": 403,
    "cta_count": 10,
    "ctas": [
     {
@@ -7045,13 +7099,14 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 35,
+   "internal_link_count": 36,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -7059,11 +7114,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.45,
+    "max_similarity": 0.46,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7097,6 +7152,7 @@
     "referral.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -7159,10 +7215,10 @@
     {
      "heading": "Report a security concern",
      "level": "h2",
-     "words": 192
+     "words": 201
     }
    ],
-   "word_count": 388,
+   "word_count": 397,
    "cta_count": 9,
    "ctas": [
     {
@@ -7248,12 +7304,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -7261,11 +7318,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.423,
+    "max_similarity": 0.434,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7299,6 +7356,7 @@
     "referral.html",
     "resources.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -7521,10 +7579,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 878,
+   "word_count": 887,
    "cta_count": 10,
    "ctas": [
     {
@@ -7614,12 +7672,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -7628,11 +7687,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.278,
+    "max_similarity": 0.281,
     "most_similar_page": "index.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7666,6 +7725,361 @@
     "referral.html",
     "resources.html",
     "security.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "shipper-solutions.html": {
+   "url": "https://loadboot.com/shipper-solutions.html",
+   "file": "shipper-solutions.html",
+   "title": "Shipper Solutions \u2014 Consultation & Freight Inquiry | Loadboot",
+   "title_length": 61,
+   "meta_description": "Talk to LoadBoot about your lanes and freight. Consultation-first shipper solutions with honest scope: dispatch expertise, vetted carriers, licensed broker partners where required.",
+   "meta_description_length": 180,
+   "canonical": "https://loadboot.com/shipper-solutions.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 26,
+   "sections": [
+    {
+     "heading": "Shipper Solutions \u2014 Talk to a Logistics Team That Answers",
+     "level": "h1",
+     "words": 37
+    },
+    {
+     "heading": "Where we help shippers",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Recurring lanes",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Coverage gaps",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Process cleanup",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "What LoadBoot is \u2014 and is not",
+     "level": "h2",
+     "words": 66
+    },
+    {
+     "heading": "See your shipment, not a mystery",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Tracking with consent",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Appointment awareness",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Exception updates",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Facilities and appointments, handled properly",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Facility instructions",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Real dwell times",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Clean paperwork",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "The carrier network concept",
+     "level": "h2",
+     "words": 47
+    },
+    {
+     "heading": "Billing without surprises",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Documented accessorials",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Clear invoices",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "Disputes with process",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Claims and support",
+     "level": "h2",
+     "words": 37
+    },
+    {
+     "heading": "Reporting and integrations",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Shipment reports",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "API & webhooks",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Security first",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Discuss your shipping needs",
+     "level": "h3",
+     "words": 65
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 311
+    }
+   ],
+   "word_count": 928,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Request Consultation",
+     "href": "#button"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "",
+       "name": "_hp",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "company",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "lanes",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "freight",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "volume",
+       "required": false
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "notes",
+       "required": false
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 35,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.204,
+    "most_similar_page": "status.html",
+    "level": "low"
+   },
+   "inbound_link_count": 38,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
     "sitemap.html",
     "status.html",
     "terms.html",
@@ -7693,7 +8107,7 @@
     {
      "heading": "Get started",
      "level": "h3",
-     "words": 18
+     "words": 20
     },
     {
      "heading": "Services",
@@ -7713,10 +8127,10 @@
     {
      "heading": "Legal & trust",
      "level": "h3",
-     "words": 191
+     "words": 200
     }
    ],
-   "word_count": 289,
+   "word_count": 300,
    "cta_count": 11,
    "ctas": [
     {
@@ -7812,13 +8226,14 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
+   "internal_link_count": 38,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -7826,11 +8241,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.538,
+    "max_similarity": 0.546,
     "most_similar_page": "status.html",
     "level": "high"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7865,6 +8280,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "status.html",
     "terms.html",
     "tools.html",
@@ -7891,10 +8307,10 @@
     {
      "heading": "Current status",
      "level": "h3",
-     "words": 224
+     "words": 233
     }
    ],
-   "word_count": 279,
+   "word_count": 288,
    "cta_count": 9,
    "ctas": [
     {
@@ -7980,12 +8396,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -7993,11 +8410,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.538,
+    "max_similarity": 0.546,
     "most_similar_page": "sitemap.html",
     "level": "high"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8032,6 +8449,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "terms.html",
     "tools.html",
@@ -8088,10 +8506,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 447,
+   "word_count": 456,
    "cta_count": 10,
    "ctas": [
     {
@@ -8181,12 +8599,13 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -8194,11 +8613,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.4,
+    "max_similarity": 0.41,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 37,
+   "inbound_link_count": 38,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8233,6 +8652,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "tools.html",
@@ -8334,10 +8754,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 1234,
+   "word_count": 1243,
    "cta_count": 12,
    "ctas": [
     {
@@ -8435,13 +8855,14 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html",
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 35,
+   "internal_link_count": 36,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -8451,7 +8872,7 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.165,
+    "max_similarity": 0.171,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "low"
    },
@@ -8529,10 +8950,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 206
+     "words": 215
     }
    ],
-   "word_count": 1901,
+   "word_count": 1910,
    "cta_count": 9,
    "ctas": [
     {
@@ -8618,6 +9039,7 @@
     "resources.html",
     "security.html",
     "services.html",
+    "shipper-solutions.html",
     "sitemap.html",
     "status.html",
     "terms.html"
@@ -8626,7 +9048,7 @@
     "https://safer.fmcsa.dot.gov/",
     "https://www.fmcsa.dot.gov/registration/get-mc-number-authority-operate"
    ],
-   "internal_link_count": 34,
+   "internal_link_count": 35,
    "image_count": 0,
    "images_missing_alt": [],
    "schema_types": [
@@ -8636,7 +9058,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.108,
+    "max_similarity": 0.112,
     "most_similar_page": "box-truck-dispatch.html",
     "level": "low"
    },

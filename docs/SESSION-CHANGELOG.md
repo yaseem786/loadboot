@@ -679,3 +679,9 @@ box, no invented data):
 - Proof: FINANCE LIFECYCLE MATRIX: PASS (12 checks) — incl. bucket-sum equality asserted and SEEDED mismatches detected then cleaned up.
 - UI: Command Center → Finance gains 4 new tabs: Receivables (aging table + items), Payables (KPIs + list, read-only by design), Invoice prep (one-click Create invoice per delivered trip, POD pill), Reconcile (mismatch table or "books consistent ✓").
 - Gates: node --check OK, IMPORT-REFERENCE CHECK: PASS (duplicate import caught and fixed).
+
+## INC 58 — SHIPPER SOLUTIONS PAGE + CORE PAGE DEPTH
+- New `shipper-solutions.html` (directive §37 — INQUIRY/CONSULTATION ONLY): 15 planned sections built (hero, scenarios, honest "what LoadBoot is — and is not" disclosure, visibility, facilities/appointments, carrier network concept, billing, claims/support, reporting/integrations/security, consultation inquiry form → shipper_inquiry lead key, FAQ + FAQPage schema, CTA). HONESTY GUARD verified in built HTML: explicit "not a licensed freight broker" disclosure; zero transactional booking claims; broker-partner boundary stated.
+- Internal linking: footer gains a "Partners" cluster (Brokers / Shipper Solutions / Partner Portal / Referral); sitemap "Get started" cluster updated. Inventory re-run: 40 pages, shipper page = 26 headings / 928 words / form / schema / 38 inbound links / dup-risk low; 0 new orphans.
+- Depth audit vs directive §34–36: Home already 45 headings / 1,837 words; carriers.html 44/1,113; brokers.html 35/886 — all meet the 12–15+ rich-section bar; no filler added (directive forbids pages/sections that only inflate counts).
+- Netlify builds from source (netlify.toml: python3 build_site.py → publish /site), so only build_site.py needs committing.

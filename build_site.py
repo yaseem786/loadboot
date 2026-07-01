@@ -342,6 +342,7 @@ def footer():
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
+<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a></div>
 <div><div class="foot-h">Compliance</div><a href="services.html">Authority &amp; DOT Setup</a><a href="services.html">BOC-3 / UCR</a><a href="services.html">Form 2290</a><a href="services.html">IFTA</a></div>
 <div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
 <div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div>
@@ -2046,6 +2047,57 @@ page('brokers.html', 'For Freight Brokers &mdash; A Reliable Carrier Network | L
      'Brokers post loads to a vetted Loadboot carrier network with explainable matching, live visibility, clean documentation and API/webhook integration. Broker partners only.',
      'partners.html', bp, _bfaq_sch)
 
+# ---- Shipper Solutions page (Inc 58, directive #37) — INQUIRY/CONSULTATION ONLY.
+# HONESTY GUARD: LoadBoot is a dispatch service company. Freight from shippers requires a licensed
+# freight broker in the US; this page never claims broker authority and offers inquiry/consultation only.
+_sfaq_html, _sfaq_sch = faq_block([
+    ('Can I book a truck directly on this page?', 'Not yet &mdash; shipper freight moves through licensed broker partners. Start with a consultation and we will map the compliant path for your lanes.'),
+    ('Is LoadBoot a freight broker?', 'No. LoadBoot is a dispatch and logistics technology company. Where broker authority is required, freight is handled with licensed broker partners &mdash; we are transparent about that boundary.'),
+    ('What information should I prepare?', 'Lanes (origin/destination), freight type, weight, equipment needs, monthly volume and any appointment or facility requirements. The more detail, the faster the consultation.'),
+    ('How do facilities and appointments work?', 'We coordinate pickup and delivery appointments, capture facility instructions, and track arrive/depart times so detention is documented from real timestamps.'),
+])
+sp = svc_hero('Shipper Solutions &mdash; Talk to a Logistics Team That Answers',
+    'Tell us about your lanes and freight. We will walk you through a compliant, transparent path to reliable capacity &mdash; consultation first, no obligations.')
+sp += _sec('Scenarios', 'Where we help shippers', _cards([
+    ('&#128230;', 'Recurring lanes', 'Weekly or monthly moves on the same lanes that deserve consistent equipment, consistent drivers and predictable pricing conversations.'),
+    ('&#9889;', 'Coverage gaps', 'When your usual capacity falls through and you need a professionally coordinated plan instead of a scramble.'),
+    ('&#128203;', 'Process cleanup', 'Late PODs, surprise accessorials and untracked detention &mdash; we bring documentation discipline to every shipment conversation.'),
+]))
+sp += _sec('Straight answer', 'What LoadBoot is &mdash; and is not', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p><strong>LoadBoot is a truck dispatch and logistics technology company, not a licensed freight broker.</strong> In the USA, moving freight on behalf of shippers requires broker authority. Where that authority is required, your freight is handled together with licensed broker partners &mdash; and we tell you exactly who is doing what on your shipment. No blurred lines, no implied authority.</p></div>', soft=True)
+sp += _sec('Visibility', 'See your shipment, not a mystery', _cards([
+    ('&#128205;', 'Tracking with consent', 'Trips are tracked via driver app GPS, ELD/telematics or structured check-ins &mdash; source and freshness are always labeled, never invented.'),
+    ('&#9200;', 'Appointment awareness', 'Pickup and delivery windows, countdowns and late-risk flags &mdash; surprises surface early, while there is still time to act.'),
+    ('&#128276;', 'Exception updates', 'Breakdowns, weather, facility delays &mdash; logged as structured exceptions with owners and resolution notes, visible to you.'),
+]))
+sp += _sec('Facilities', 'Facilities and appointments, handled properly', _cards([
+    ('&#127970;', 'Facility instructions', 'Dock hours, check-in rules, parking and loading notes are captured once and travel with every shipment.'),
+    ('&#128337;', 'Real dwell times', 'Arrive and depart timestamps are recorded at each stop &mdash; detention conversations start from measured minutes, not guesses.'),
+    ('&#128221;', 'Clean paperwork', 'BOL and POD collection with review status &mdash; missing documents are chased automatically, not discovered at invoice time.'),
+]))
+sp += _sec('Network', 'The carrier network concept', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p>Behind every shipment is a vetted carrier network: authority, insurance and compliance are actively tracked, and only carriers who pass hard eligibility checks are matched to freight. Matching is explainable &mdash; equipment fit, real location, availability and history &mdash; not a black box.</p></div>', soft=True)
+sp += _sec('Money', 'Billing without surprises', _cards([
+    ('&#129534;', 'Documented accessorials', 'Detention, lumper and layover items reference recorded evidence and agreed terms &mdash; reviewed by a person before they ever reach an invoice.'),
+    ('&#128200;', 'Clear invoices', 'Line-item invoices tied to the shipment record, with payment status you can see.'),
+    ('&#9878;', 'Disputes with process', 'A structured dispute lane with owners, SLAs and an audit trail &mdash; not an email thread that goes quiet.'),
+]))
+sp += _sec('Support', 'Claims and support', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p>Damaged, short or rejected freight becomes a structured claim with evidence, photos and timestamps attached. Support requests get owners and SLAs. You always know who is handling your issue and what happens next.</p></div>')
+sp += _sec('Reporting', 'Reporting and integrations', _cards([
+    ('&#128202;', 'Shipment reports', 'On-time performance, exception history and lane summaries &mdash; counted from real records.'),
+    ('&#128279;', 'API &amp; webhooks', 'Shipment, document and delivery events can flow into your systems via approved API endpoints.'),
+    ('&#128274;', 'Security first', 'Tenant-isolated data, role-based access and audited actions &mdash; your data is never another company&rsquo;s dashboard.'),
+]))
+sp += lead_form('shipper_inquiry', 'Discuss your shipping needs',
+    'Tell us about your lanes and volumes &mdash; a logistics specialist will reply with a straight, compliant plan (usually within one business day).',
+    [('company','Company name','text',True),('name','Your name','text',True),('email','Work email','email',True),
+     ('phone','Phone','tel',False),('lanes','Main lanes (e.g. Dallas, TX to Atlanta, GA)','text',True),
+     ('freight','Freight type / equipment needed','text',False),('volume','Approx. loads per month','text',False),
+     ('notes','Anything else we should know?','textarea',False)],
+    'Request Consultation', 'Thanks &mdash; our team will reach out to schedule your consultation.')
+sp += _sfaq_html
+page('shipper-solutions.html', 'Shipper Solutions &mdash; Consultation &amp; Freight Inquiry | Loadboot',
+     'Talk to LoadBoot about your lanes and freight. Consultation-first shipper solutions with honest scope: dispatch expertise, vetted carriers, licensed broker partners where required.',
+     'partners.html', sp, _sfaq_sch)
+
 # ---- Referral Program ----
 ref = svc_hero('Refer a Carrier, Get Rewarded', 'Know an owner-operator or fleet who deserves a better dispatcher? Send them our way &mdash; when they get rolling with Loadboot, we say thank you.')
 ref += _sec('How referrals work', 'Simple and fair', _cards([
@@ -2175,7 +2227,7 @@ page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Develope
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
-  ('Get started', [('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
+  ('Get started', [('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status')]),
