@@ -52,3 +52,14 @@ textarea.pk-in { resize:vertical; font-family:inherit; }
 .pk-issueform { display:flex; flex-direction:column; gap:8px; margin-top:8px; padding:10px; background:#f8fafc; border-radius:10px; }
 .pk-issueform select.pk-in, .pk-issueform input.pk-in { margin:0; }
 .pk-pill.green { background:#dcfce7; color:#166534; } .pk-pill.gray { background:#eef2f7; color:#475569; }
+
+/* POD upload panel */
+.pk-pod { margin-top:8px; padding:10px; background:#f8fafc; border-radius:10px; }
+.pk-pod h3 { margin:0 0 6px; font-size:14px; }
+.pk-podup { margin-top:4px; }
+.pk-podprev { margin:8px 0; }
+.pk-podprev img { border:1px solid #e2e8f0; }
+.pk-podpdf { padding:14px; background:#fff; border:1px dashed #cbd5e1; border-radius:8px; text-align:center; color:#475569; }
+.pk-podbar { margin-top:8px; height:6px; background:#e2e8f0; border-radius:999px; overflow:hidden; }
+.pk-podbar span { display:block; height:100%; width:40%; background:#f97316; border-radius:999px; animation:pk-indeterminate 1.1s ease-in-out infinite; }
+@keyframes pk-indeterminate { 0%{margin-left:-40%} 50%{margin-left:60%} 100%{margin-left:100%} }

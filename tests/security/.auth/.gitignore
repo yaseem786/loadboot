@@ -1,0 +1,3 @@
+# storage-state files contain live session tokens — never commit them
+*.json
+!.gitkeep

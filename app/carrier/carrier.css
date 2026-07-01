@@ -186,3 +186,14 @@ textarea.cp-in { resize: vertical; }
 .cp-notif { cursor: pointer; }
 .cp-notif.unread { background: #f5f9ff; margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; }
 .cp-notif:hover { background: #eef4ff; }
+
+/* Proof-of-delivery upload panel */
+.cp-pod { margin-top: 10px; padding: 12px; background: #f8fafc; border-radius: 11px; }
+.cp-podup { margin-top: 6px; }
+.cp-podzone { border: 2px dashed #cbd5e1; border-radius: 11px; padding: 18px; text-align: center; cursor: pointer; background: #fff; transition: border-color .15s, background .15s; }
+.cp-podzone:hover { border-color: #94a3b8; }
+.cp-podzone.drag { border-color: var(--lb-orange, #f97316); background: #fff7ed; }
+.cp-podzone-t { font-weight: 700; color: #334155; margin-bottom: 4px; }
+.cp-podprev { margin: 10px 0; }
+.cp-podprev img { border: 1px solid #e2e8f0; }
+.cp-podpdf { padding: 14px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; color: #475569; }

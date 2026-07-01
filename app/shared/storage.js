@@ -24,6 +24,28 @@ export async function uploadDocument(file, kind) {
   return { path, fileName: file.name, contentType: file.type || null, size: file.size || null };
 }
 
+// Proof-of-delivery upload. Enforces the private-bucket path contract that the server re-validates:
+//   {auth.uid()}/pod/{tripId}/{immutable-name}
+// The first folder must equal auth.uid() (storage doc_upload RLS); the server also re-checks the trip.
+// Client-side validation mirrors the server (PDF/JPEG/PNG/WEBP, <=10 MB) so the user gets fast feedback.
+const POD_ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+const POD_EXTMAP = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+export async function uploadPodDocument(file, tripId) {
+  if (!file) throw new Error('No file selected.');
+  if (!tripId) throw new Error('Missing trip.');
+  if (!POD_ALLOWED.includes(file.type)) throw new Error('Unsupported file type. Allowed: PDF, JPG, PNG, WEBP.');
+  if (file.size <= 0) throw new Error('That file is empty.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB.');
+  const sb = await getClient();
+  const user = await getUser();
+  if (!user) throw new Error('Please sign in again.');
+  const ext = POD_EXTMAP[file.type] || 'bin';
+  const path = `${user.id}/pod/${tripId}/${Date.now()}-${rand()}.${ext}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw new Error(error.message || 'Upload failed.');
+  return { path, fileName: file.name, contentType: file.type, size: file.size };
+}
+
 // Short-lived signed URL so a carrier can re-download their own document.
 export async function signedDocumentUrl(path, expiresSeconds = 300) {
   const sb = await getClient();
@@ -32,4 +54,4 @@ export async function signedDocumentUrl(path, expiresSeconds = 300) {
   return data && data.signedUrl;
 }
 
-export default { uploadDocument, signedDocumentUrl };
+export default { uploadDocument, uploadPodDocument, signedDocumentUrl };

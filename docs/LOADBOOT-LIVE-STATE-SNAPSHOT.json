@@ -4,15 +4,6 @@
   "environment": "production",
   "gate_verdict": "LOADBOOT ENTERPRISE FOUNDATION GATE: FAIL",
   "gate_summary": "PASS 10 / PARTIAL 0 / BLOCKED 2 / FAIL 0 of 12",
-  "totals": {
-    "cc_rpcs": 228,
-    "private_tables": 77,
-    "modules": 50,
-    "feature_flags": 30,
-    "edge_functions": 8,
-    "anon_callable_security_definer": 5,
-    "domain_event_types": 14
-  },
   "named_gates": [
     {
       "name": "SETTLEMENT MAKER CHECKER GATE",
@@ -53,6 +44,21 @@
       "evidence_ref": "counts"
     }
   ],
+  "counts": {
+    "cc_rpcs": 228,
+    "public_callable_rpcs": 233,
+    "private_tables": 77,
+    "modules": 50,
+    "feature_flags": 30,
+    "edge_functions": 8,
+    "anon_callable_security_definer": 5,
+    "domain_events_total": 21,
+    "domain_event_types": 14,
+    "domain_events_unprocessed": 0,
+    "audit_rows": 26,
+    "plugins_available": 6,
+    "plugins_installed": 5
+  },
   "gate_conditions": [
     {
       "id": 1,
@@ -175,5 +181,44 @@
       "evidence": "request-a-quote -> Westlane Logistics lead; form.submitted event"
     }
   ],
-  "note": "Regenerated from live counts + validated against evidence provenance."
+  "security": {
+    "advisors_error_level": 0,
+    "anon_secdef_before": 31,
+    "anon_secdef_after": 5,
+    "anon_public_by_design": [
+      "cc_get_public_form",
+      "get_active_public_announcements",
+      "get_public_load_opportunities",
+      "submit_web_form",
+      "track_web_event"
+    ],
+    "migrations": [
+      "cuf (20260701042300)",
+      "cug (20260701043219)",
+      "cuh (20260701043931)",
+      "cui (20260701045324)",
+      "cuj (20260701050526)",
+      "cuk",
+      "cul_pod_review_workflow",
+      "cum_pocket_pod_status",
+      "cun_pod_upload_hardening",
+      "cuo_pod_queue_enrich",
+      "cup_register_pod_module"
+    ],
+    "live_probes": {
+      "cc_finance_analytics": "staff 200 / anon 401",
+      "cc_pocket_available_loads": "staff 200 / anon 401",
+      "cc_decide_settlement": "authenticated-only (re-revoked in cuk)",
+      "fmcsa-verify": "HTTP 200 real FMCSA data (valid WebKey)",
+      "send-sms": "credentials valid (Twilio auth OK)"
+    }
+  },
+  "owner_blocked": [
+    "RESOLVED: FMCSA_WEBKEY valid (live 200, real data); Twilio credentials valid; 11 staging personas created + wired; settlement maker/checker 11/11; anon surface 31->5; source-controlled migrations.",
+    "OPEN (condition 5) POD UI+REVIEW: frontend is BUILT (Pocket + Carrier Portal upload UI + Command Center review queue) and the backend matrix is 21/21 PASS on staging. Remaining owner step: git push -> Netlify staging preview -> log in as carrier/driver/staff -> run tests/security/pod_workflow.spec.js to capture the real upload+review (screenshots + Playwright result under evidence/gate/pod/). Assistant cannot type passwords or reach the site via headless egress.",
+    "OPEN (condition 7) AUTH PERSONA TESTS: strengthened persona_matrix.spec.js (server-side denial proof) + auth-setup.spec.js + runbook are BUILT and skip cleanly without storage states. Remaining owner step: generate per-persona storage-states (PERSONA_* env) then run with PERSONAS_READY=1 for ZERO skips (44 combos) + JSON/HTML report. RBAC separation already proven via SQL.",
+    "PITR (FREE plan) \u2014 manual backup runbook provided; out of Foundation Gate scope per owner."
+  ],
+  "evidence_file": "evidence/gate/live-source-evidence.json",
+  "evidence_captured_at": "2026-07-01T05:07:35Z"
 }

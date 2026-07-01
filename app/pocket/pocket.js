@@ -8,9 +8,17 @@ import { getSession, getUser, signInWithPassword, signOut } from '../shared/sess
 import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
-  pocketReportIssue, pocketDisputeInvoice,
+  pocketReportIssue, pocketDisputeInvoice, pocketUploadPod, pocketTripPods,
 } from '../shared/api.js';
+import { uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
+
+const POD_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+// Only MIME types the private Storage bucket + backend actually accept. Do NOT advertise HEIC/HEIF —
+// it is not validated end-to-end, so we do not claim it.
+const POD_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+const POD_ACCEPT = '.pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp';
+const fmtBytes = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 
 const root = document.getElementById('pk-app');
 const h = (tag, attrs, kids) => { const e = document.createElement(tag); if (attrs) for (const k in attrs) { if (k === 'class') e.className = attrs[k]; else if (k === 'onclick') e.onclick = attrs[k]; else if (k === 'html') e.innerHTML = attrs[k]; else e.setAttribute(k, attrs[k]); } (Array.isArray(kids) ? kids : kids != null ? [kids] : []).forEach(c => e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c)); return e; };
@@ -148,13 +156,21 @@ async function appView() {
         } }, 'Send');
         formWrap.appendChild(h('div', { class: 'pk-issueform' }, [kind, note, send]));
       } }, '⚠ Report issue') : null;
+      // ---- POD: proof-of-delivery upload/review, only once the trip is delivered or invoiced ----
+      const canPod = t.status === 'delivered' || t.status === 'invoiced';
+      const podWrap = h('div');
+      const podBtn = canPod ? h('button', { class: 'pk-btn pk-mini', onclick: () => {
+        if (podWrap.firstChild) { podWrap.innerHTML = ''; return; }
+        showPodPanel(t, podWrap);
+      } }, '📄 Proof of delivery') : null;
       return h('div', { class: 'pk-trip' }, [
         h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
           h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0))]),
           pill(t.status),
         ]),
-        (confirm || share || issueBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, share, issueBtn].filter(Boolean)) : null,
+        (confirm || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, share, issueBtn, podBtn].filter(Boolean)) : null,
         formWrap,
+        podWrap,
       ].filter(Boolean));
     })]));
   }
@@ -238,6 +254,119 @@ async function appView() {
   root.setAttribute('aria-busy', 'false');
   render();
 }
+
+// ---------- CP-POD: Proof-of-delivery upload + review status (private Storage bucket) ----------
+// Renders inside a trip card. Shows existing POD versions with review status / rejection reason,
+// and — unless an approved POD is already on file — a validated uploader with preview, remove/replace,
+// upload state, success, validation error, network-failure retry and duplicate handling.
+function showPodPanel(t, wrap) {
+  const box = h('div', { class: 'pk-pod' });
+  mount(wrap, box);
+  renderExisting();
+
+  async function renderExisting() {
+    mount(box, h('div', { class: 'pk-muted' }, 'Loading proof of delivery…'));
+    let pods;
+    try { pods = await pocketTripPods(t.id); }
+    catch (e) { mount(box, h('div', { class: 'err' }, (e && e.message) || 'Could not load proof of delivery.')); return; }
+    pods = pods || [];
+    const items = pods.map((p, i) => h('div', { class: 'pk-row' }, [
+      h('div', null, [
+        h('div', { class: 't' }, (p.file_name || 'POD') + (i === 0 && pods.length > 1 ? ' · latest' : '')),
+        h('div', { class: 's' }, 'Uploaded ' + fmtDate(p.created_at)),
+        (p.status === 'rejected' && p.review_note) ? h('div', { class: 's', style: 'color:#dc2626' }, '✕ Rejected: ' + p.review_note) : null,
+        (p.status === 'approved') ? h('div', { class: 's', style: 'color:#16a34a' }, '✓ Approved by dispatch') : null,
+      ].filter(Boolean)),
+      pill(p.status || 'pending'),
+    ]));
+    const hasPending = pods.some(p => (p.status || 'pending') === 'pending');
+    const hasApproved = pods.some(p => p.status === 'approved');
+    const latestRejected = pods[0] && pods[0].status === 'rejected';
+    mount(box, h('div', null, [
+      h('h3', null, 'Proof of delivery'),
+      items.length ? h('div', null, items) : h('div', { class: 'pk-muted' }, 'No POD uploaded yet for this trip.'),
+      hasApproved
+        ? h('div', { class: 's', style: 'color:#16a34a;padding-top:6px' }, 'An approved POD is on file — nothing more to do.')
+        : uploader({ hasPending, resubmit: latestRejected }),
+    ].filter(Boolean)));
+  }
+
+  function uploader(state) {
+    let file = null, url = null;
+    const wrapEl = h('div', { class: 'pk-podup' });
+    const errEl = h('div', { class: 'err' });
+    const preview = h('div', { class: 'pk-podprev' });
+    const status = h('div', { class: 's' });
+
+    const fileInput = h('input', { type: 'file', accept: POD_ACCEPT, style: 'display:none' });
+    const camInput = h('input', { type: 'file', accept: 'image/*', capture: 'environment', style: 'display:none' });
+    fileInput.onchange = () => pick(fileInput.files && fileInput.files[0]);
+    camInput.onchange = () => pick(camInput.files && camInput.files[0]);
+
+    const chooseBtn = h('button', { class: 'pk-btn sec pk-mini', onclick: () => fileInput.click() }, 'Choose file');
+    const camBtn = h('button', { class: 'pk-btn sec pk-mini', onclick: () => camInput.click() }, '📷 Take photo');
+    const uploadBtn = h('button', { class: 'pk-btn pk-mini', onclick: doUpload }, state.resubmit ? 'Re-upload POD' : 'Upload POD');
+    uploadBtn.disabled = true;
+
+    function clearPreview() { if (url) { URL.revokeObjectURL(url); url = null; } preview.innerHTML = ''; }
+
+    function pick(f) {
+      errEl.textContent = ''; status.textContent = ''; clearPreview(); file = null; uploadBtn.disabled = true;
+      if (!f) return;
+      if (!POD_TYPES.includes(f.type)) { errEl.textContent = 'Unsupported file type. Allowed: PDF, JPG, PNG, WEBP.'; return; }
+      if (f.size > POD_MAX_BYTES) { errEl.textContent = 'File is too large (' + fmtBytes(f.size) + '). Maximum is 10 MB.'; return; }
+      if (f.size <= 0) { errEl.textContent = 'That file is empty.'; return; }
+      file = f;
+      const meta = h('div', { class: 's' }, f.name + ' · ' + fmtBytes(f.size));
+      const remove = h('button', { class: 'pk-btn sec pk-mini', onclick: () => { file = null; uploadBtn.disabled = true; clearPreview(); } }, 'Remove');
+      if (f.type.startsWith('image/')) {
+        url = URL.createObjectURL(f);
+        mount(preview, h('div', null, [h('img', { src: url, alt: 'POD preview', style: 'max-width:100%;max-height:220px;border-radius:8px;display:block' }), meta, remove]));
+      } else {
+        mount(preview, h('div', null, [h('div', { class: 'pk-podpdf' }, '📄 PDF ready to upload'), meta, remove]));
+      }
+      uploadBtn.disabled = false;
+    }
+
+    async function doUpload() {
+      if (!file) return;
+      errEl.textContent = '';
+      uploadBtn.disabled = true; chooseBtn.disabled = true; camBtn.disabled = true;
+      const bar = h('div', { class: 'pk-podbar' }, h('span'));
+      status.textContent = 'Uploading…'; preview.appendChild(bar);
+      try {
+        // 1) put the raw bytes into the PRIVATE 'documents' bucket at {uid}/pod/{trip}/{name} (no public URL)
+        const meta = await uploadPodDocument(file, t.id);
+        // 2) finalize through the server-validated RPC (re-checks carrier, trip, state, MIME, size, path)
+        await pocketUploadPod({ trip: t.id, path: meta.path, fileName: meta.fileName, contentType: meta.contentType, size: meta.size });
+        clearPreview();
+        mount(box, h('div', { class: 'pk-card', style: 'margin:0' }, [
+          h('div', { class: 't', style: 'color:#16a34a' }, '✓ POD uploaded'),
+          h('div', { class: 's' }, 'Dispatch will review it. You’ll see the status here.'),
+          h('button', { class: 'pk-btn sec pk-mini', onclick: renderExisting }, 'Done'),
+        ]));
+      } catch (e) {
+        // network / storage / validation failure — keep the selection so the driver can retry
+        const msg = (e && (e.message || e.error)) || 'Upload failed.';
+        errEl.textContent = /fetch|network|timeout/i.test(String(msg)) ? 'Network problem — check your connection and retry.' : String(msg);
+        status.textContent = '';
+        uploadBtn.disabled = false; chooseBtn.disabled = false; camBtn.disabled = false;
+        uploadBtn.textContent = 'Retry upload';
+      }
+    }
+
+    mount(wrapEl, [
+      h('div', { class: 'pk-muted', style: 'padding:6px 0' }, 'Accepted: PDF, JPG, PNG, WEBP · Max 10 MB'),
+      state.hasPending ? h('div', { class: 's', style: 'color:#b45309' }, 'A POD is already awaiting review — uploading again adds a new version.') : null,
+      h('div', { class: 'pk-trip-actions' }, [chooseBtn, camBtn, fileInput, camInput]),
+      preview, errEl, status,
+      h('div', { class: 'pk-trip-actions' }, [uploadBtn]),
+    ].filter(Boolean));
+    return wrapEl;
+  }
+}
+
+function fmtDate(v) { try { return new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { return String(v || ''); } }
 
 async function boot() {
   root.setAttribute('aria-busy', 'true');

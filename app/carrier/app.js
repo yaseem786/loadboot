@@ -8,14 +8,14 @@ import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange 
 import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
-  pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod,
+  pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods,
   carrierUploadDocument, carrierListDocuments,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad,
   pocketNotifications, pocketMarkNotificationRead,
 } from '../shared/api.js';
-import { uploadDocument } from '../shared/storage.js';
+import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -314,18 +314,11 @@ async function appView(user) {
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
       } }, '⚠ Report issue') : null;
       const podW = h('div');
-      const canPod = active || t.status === 'delivered' || t.status === 'completed';
+      const canPod = t.status === 'delivered' || t.status === 'invoiced';
       const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (podW.firstChild) { podW.innerHTML = ''; return; }
-        const fi = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic' });
-        const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
-          const f = fi.files && fi.files[0]; if (!f) { alert('Choose a POD file.'); return; }
-          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Uploading…';
-          try { const m = await uploadDocument(f, 'pod'); await pocketUploadPod({ trip: t.id, path: m.path, fileName: m.fileName, contentType: m.contentType, size: m.size }); podW.innerHTML = ''; podW.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ POD uploaded')); }
-          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Upload failed.'); }
-        } }, 'Send');
-        podW.appendChild(h('div', { class: 'cp-inlineform' }, [fi, send]));
-      } }, '📄 Upload POD') : null;
+        showCarrierPod(t, podW);
+      } }, '📄 Proof of delivery') : null;
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
         (confirm || share || issue || pod) ? h('div', { class: 'cp-trip-actions' }, [confirm, share, issue, pod].filter(Boolean)) : null, fw, podW,
@@ -336,6 +329,100 @@ async function appView(user) {
     const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Locating…';
     if (!navigator.geolocation) { btn.textContent = 'GPS not available'; return; }
     navigator.geolocation.getCurrentPosition(async (pos) => { try { await pocketSetConsent(tripId, true); await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); btn.textContent = '📍 Shared ✓'; } catch (x) { btn.textContent = 'Could not share'; btn.disabled = false; } }, () => { btn.textContent = 'Permission denied'; btn.disabled = false; }, { enableHighAccuracy: true, timeout: 10000 });
+  }
+
+  /* ----- Proof of delivery (desktop: drag-and-drop; mobile: file/camera picker) ----- */
+  const POD_OK = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+  const podBytes = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  async function showCarrierPod(t, host) {
+    const box = h('div', { class: 'cp-pod' });
+    mount(host, box);
+    await renderPod();
+
+    async function renderPod() {
+      mount(box, h('div', { class: 'cp-muted' }, 'Loading proof of delivery…'));
+      let pods; try { pods = await pocketTripPods(t.id); }
+      catch (e) { mount(box, h('div', { class: 'cp-row-s', style: 'color:var(--lb-red)' }, (e && e.message) || 'Could not load proof of delivery.')); return; }
+      pods = pods || [];
+      const rows = pods.map((p, i) => h('div', { class: 'cp-row' }, [
+        h('div', null, [
+          h('div', { class: 'cp-row-t' }, (p.file_name || 'POD') + (i === 0 && pods.length > 1 ? ' · latest' : '')),
+          h('div', { class: 'cp-row-s' }, 'Uploaded ' + new Date(p.created_at).toLocaleDateString()),
+          (p.status === 'rejected' && p.review_note) ? h('div', { class: 'cp-row-s', style: 'color:var(--lb-red)' }, '✕ Rejected: ' + p.review_note) : null,
+          (p.status === 'approved') ? h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Approved by dispatch') : null,
+        ].filter(Boolean)),
+        pill(p.status || 'pending'),
+      ]));
+      const hasPending = pods.some(p => (p.status || 'pending') === 'pending');
+      const hasApproved = pods.some(p => p.status === 'approved');
+      const resubmit = pods[0] && pods[0].status === 'rejected';
+      mount(box, h('div', null, [
+        h('div', { class: 'cp-row-t', style: 'margin-bottom:6px' }, 'Proof of delivery'),
+        rows.length ? h('div', null, rows) : h('div', { class: 'cp-muted' }, 'No POD uploaded yet for this trip.'),
+        hasApproved
+          ? h('div', { class: 'cp-row-s', style: 'color:var(--lb-green);padding-top:6px' }, 'An approved POD is on file — nothing more to do.')
+          : podUploader({ hasPending, resubmit }),
+      ].filter(Boolean)));
+    }
+
+    function podUploader(state) {
+      let file = null, url = null;
+      const wrap = h('div', { class: 'cp-podup' });
+      const err = h('div', { class: 'cp-row-s', style: 'color:var(--lb-red)' });
+      const prog = h('div', { class: 'cp-row-s' });
+      const prev = h('div', { class: 'cp-podprev' });
+      const input = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp', style: 'display:none' });
+      input.onchange = () => pick(input.files && input.files[0]);
+      const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: doUpload }, state.resubmit ? 'Re-upload POD' : 'Upload POD'); up.disabled = true;
+
+      function clearPrev() { if (url) { URL.revokeObjectURL(url); url = null; } prev.innerHTML = ''; }
+      function pick(f) {
+        err.textContent = ''; prog.textContent = ''; clearPrev(); file = null; up.disabled = true;
+        if (!f) return;
+        if (!POD_OK.includes(f.type)) { err.textContent = 'Unsupported file type. Allowed: PDF, JPG, PNG, WEBP.'; return; }
+        if (f.size <= 0) { err.textContent = 'That file is empty.'; return; }
+        if (f.size > 10 * 1024 * 1024) { err.textContent = 'File is too large (' + podBytes(f.size) + '). Maximum is 10 MB.'; return; }
+        file = f;
+        const meta = h('div', { class: 'cp-row-s' }, f.name + ' · ' + podBytes(f.size));
+        const rm = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { file = null; up.disabled = true; clearPrev(); } }, 'Remove');
+        if (f.type.startsWith('image/')) { url = URL.createObjectURL(f); mount(prev, h('div', null, [h('img', { src: url, alt: 'POD preview', style: 'max-width:100%;max-height:240px;border-radius:8px;display:block' }), meta, rm])); }
+        else mount(prev, h('div', null, [h('div', { class: 'cp-podpdf' }, '📄 PDF ready to upload'), meta, rm]));
+        up.disabled = false;
+      }
+      const zone = h('div', { class: 'cp-podzone', onClick: () => input.click() }, [
+        h('div', { class: 'cp-podzone-t' }, '⬆ Drag & drop, or click to choose'),
+        h('div', { class: 'cp-row-s' }, 'Accepted: PDF, JPG, PNG, WEBP · Max 10 MB'),
+      ]);
+      zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('drag'); };
+      zone.ondragleave = () => zone.classList.remove('drag');
+      zone.ondrop = (e) => { e.preventDefault(); zone.classList.remove('drag'); pick(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); };
+
+      async function doUpload() {
+        if (!file) return;
+        err.textContent = ''; up.disabled = true; prog.textContent = 'Uploading…';
+        try {
+          const m = await uploadPodDocument(file, t.id);
+          await pocketUploadPod({ trip: t.id, path: m.path, fileName: m.fileName, contentType: m.contentType, size: m.size });
+          clearPrev();
+          mount(box, h('div', null, [
+            h('div', { class: 'cp-row-t', style: 'color:var(--lb-green)' }, '✓ POD uploaded'),
+            h('div', { class: 'cp-row-s' }, 'Dispatch will review it. The status will appear here.'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: renderPod }, 'Done'),
+          ]));
+        } catch (e) {
+          const msg = (e && (e.message || e.error)) || 'Upload failed.';
+          err.textContent = /fetch|network|timeout/i.test(String(msg)) ? 'Network problem — check your connection and retry.' : String(msg);
+          prog.textContent = ''; up.disabled = false; up.textContent = 'Retry upload';
+        }
+      }
+
+      mount(wrap, [
+        state.hasPending ? h('div', { class: 'cp-row-s', style: 'color:#b45309' }, 'A POD is already awaiting review — uploading again adds a new version.') : null,
+        zone, input, prev, err, prog,
+        h('div', { class: 'cp-trip-actions' }, [up]),
+      ].filter(Boolean));
+      return wrap;
+    }
   }
 
   /* ----- Finance ----- */
