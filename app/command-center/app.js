@@ -51,6 +51,7 @@ import { renderPartners } from './views/partners.js';
 import { renderPartnerIntake } from './views/partnerIntake.js';
 import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
+import { renderExceptions } from './views/exceptions.js';
 import { renderBrandKit } from './views/brandKit.js';
 import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
@@ -216,6 +217,7 @@ async function boot() {
     '/partner-intake': () => { setActive('/partner-intake'); if (partnersEnabled && can('partners.view')) renderPartnerIntake(content); else denied(); },
     '/verification': () => { setActive('/verification'); if (can('compliance.view')) renderVerificationCenter(content); else denied(); },
     '/pod-review': () => { setActive('/pod-review'); if (can('dispatch.manage') || can('finance.manage') || can('compliance.manage')) renderPodReview(content); else denied(); },
+    '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.manage')) renderExceptions(content); else denied(); },
     '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
     '/plugins': () => { setActive('/plugins'); renderPluginMarketplace(content); },
     '/form-builder': () => { setActive('/form-builder'); renderFormBuilder(content); },

@@ -8,7 +8,7 @@
     "note": "Single source. Generator cross-checks every PASS against the evidence file; fails if a PASS lacks a valid evidence_ref or if counts disagree."
   },
   "counts": {
-    "cc_rpcs": 228, "public_callable_rpcs": 233, "private_tables": 77, "modules": 50,
+    "cc_rpcs": 240, "public_callable_rpcs": 245, "private_tables": 77, "modules": 51,
     "feature_flags": 30, "edge_functions": 8, "anon_callable_security_definer": 5,
     "domain_events_total": 21, "domain_event_types": 14, "domain_events_unprocessed": 0,
     "audit_rows": 26, "plugins_available": 6, "plugins_installed": 5
@@ -26,7 +26,7 @@
   ],
   "gate_conditions": [
     {"id": 1,  "name": "All generated artifacts agree (source-of-truth consistency)", "status": "PASS", "evidence_ref": "counts", "note": "Generated deterministically; consistency + evidence-ref validation asserted at build."},
-    {"id": 2,  "name": "Capability registry current", "status": "PASS", "evidence_ref": "counts", "note": "Regenerated from live counts (228 RPCs / 77 tables / 50 modules)."},
+    {"id": 2,  "name": "Capability registry current", "status": "PASS", "evidence_ref": "counts", "note": "Regenerated from live counts (240 RPCs / 77 tables / 51 modules)."},
     {"id": 3,  "name": "Anonymous Pocket RPC exposure resolved", "status": "PASS", "evidence_ref": "pocket_loads_acl", "note": "cc_pocket_available_loads: anon 401, carrier-eligibility enforced (cuh). Anon SECURITY DEFINER surface = 5, all public-by-design."},
     {"id": 4,  "name": "Security migrations source-controlled", "status": "PASS", "evidence_ref": "security_migrations", "note": "migrations/ct-waveBI-security-gate-repair/{cuf,cug,cuh,cui,cuj,cuk,cul,cum,cun,cuo,cup}.sql written to repo + pushed via desktop bridge; Supabase ledger versions recorded."},
     {"id": 5,  "name": "Real POD frontend upload + review workflow proven", "status": "BLOCKED", "note": "FRONTEND NOW BUILT + BACKEND MATRIX PROVEN. Built: Pocket app POD panel (file/camera picker, type+size validation, preview, remove/replace, upload state, success, network-failure retry, existing-version + review-status + rejection-reason + resubmit); Carrier Portal POD panel (desktop drag-and-drop + same validation/states); Command Center 'POD Review Queue' (carrier/route/delivery context, signed private preview, approve, reject-with-required-reason). Backend hardened + proven on staging: cc_pocket_upload_pod re-validates carrier org, trip ownership, trip state, MIME, size and the {uid}/pod/{trip}/{file} object path server-side; cc_pod_review_queue / cc_pod_signed_ref / cc_review_pod are reviewer-gated; approval emits invoice.prep_requested exactly once. tests/security/pod_backend_matrix.sql = 21/21 PASS. STILL OPEN (required, not polish): the real browser upload+review captured against a deployed site with a logged-in carrier/driver/staff session (screenshots + Playwright result under evidence/gate/pod/). The assistant cannot type passwords or reach the site via headless egress; owner runs tests/security/pod_workflow.spec.js per the runbook. Owner-executed proof required."},

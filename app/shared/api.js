@@ -245,6 +245,22 @@ export const pocketDisputeInvoice = (invoice, reason) => rpc('cc_pocket_dispute_
 export const pocketUploadPod = (o = {}) => rpc('cc_pocket_upload_pod', { p_trip: o.trip, p_path: o.path, p_file_name: o.fileName ?? 'POD', p_content_type: o.contentType ?? null, p_size: o.size ?? null });
 // carrier-facing: list this carrier's own PODs for a trip (status, review note, versions) — migration cum_pocket_pod_status
 export const pocketTripPods = (trip) => rpc('cc_pocket_trip_pods', { p_trip: trip });
+// carrier-facing fleet self-service (own drivers + trucks) — migration cuq_carrier_self_fleet
+export const pocketDrivers = () => rpc('cc_pocket_drivers');
+export const pocketUpsertDriver = (o = {}) => rpc('cc_pocket_upsert_driver', { p_id: o.id ?? null, p_name: o.name, p_phone: o.phone ?? null, p_email: o.email ?? null, p_license_no: o.licenseNo ?? null, p_license_state: o.licenseState ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
+export const pocketTrucks = () => rpc('cc_pocket_trucks');
+export const pocketUpsertTruck = (o = {}) => rpc('cc_pocket_upsert_truck', { p_id: o.id ?? null, p_unit_no: o.unitNo, p_plate: o.plate ?? null, p_vin: o.vin ?? null, p_equipment: o.equipment ?? null });
+// carrier team (existing members) — migration cus_carrier_team
+export const pocketTeam = () => rpc('cc_pocket_team');
+export const pocketSetMember = (o = {}) => rpc('cc_pocket_set_member', { p_user: o.user, p_role: o.role ?? null, p_status: o.status ?? null });
+// carrier assigns own driver/truck to own trip — migration cut_carrier_assign_trip
+export const pocketAssignTrip = (o = {}) => rpc('cc_pocket_assign_trip', { p_trip: o.trip, p_driver: o.driver ?? null, p_truck: o.truck ?? null });
+// carrier self-service account statement — migration cuv_carrier_self_statement
+export const pocketStatement = () => rpc('cc_pocket_statement');
+// carrier fleet compliance alerts (expiring license/medical) — migration cuw_carrier_fleet_alerts
+export const pocketFleetAlerts = () => rpc('cc_pocket_fleet_alerts');
+// carrier/driver advance own trip forward (in_transit / delivered) — migration cux_carrier_advance_trip
+export const pocketAdvanceTrip = (trip, status) => rpc('cc_pocket_advance_trip', { p_trip: trip, p_status: status });
 // Phase 5 — web push (any authenticated user)
 export const savePushSubscription = (o = {}) => rpc('cc_save_push_subscription', { p_endpoint: o.endpoint, p_p256dh: o.p256dh, p_auth: o.auth, p_label: o.label ?? null, p_ua: o.ua ?? null });
 export const revokePushSubscription = (endpoint) => rpc('cc_revoke_push_subscription', { p_endpoint: endpoint });
@@ -271,6 +287,9 @@ export const upsertTruck = (o = {}) => rpc('cc_upsert_truck', { p_id: o.id ?? nu
 export const assignTripResources = (o = {}) => rpc('cc_assign_trip_resources', { p_trip: o.trip, p_driver: o.driver ?? null, p_truck: o.truck ?? null, p_trailer: o.trailer ?? null });
 export const addAccessorial = (trip, kind, amount, note) => rpc('cc_add_accessorial', { p_trip: trip, p_kind: kind, p_amount: amount, p_note: note ?? null });
 export const logException = (trip, kind, description) => rpc('cc_log_exception', { p_trip: trip, p_kind: kind, p_description: description });
+// staff exception queue (carrier-reported trip exceptions) — migration cuu_staff_exception_queue
+export const listExceptions = (o = {}) => rpc('cc_list_exceptions', { p_status: o.status ?? 'open', p_limit: o.limit ?? 100 });
+export const resolveException = (o = {}) => rpc('cc_resolve_exception', { p_id: o.id, p_note: o.note ?? null });
 
 // ---- EC: Compliance external data ----
 export const upsertCarrierSafety = (o = {}) => rpc('cc_upsert_carrier_safety', { p_carrier: o.carrier, p_dot: o.dot ?? null, p_mc: o.mc ?? null, p_authority: o.authority ?? null, p_rating: o.rating ?? null, p_power_units: o.powerUnits ?? null, p_oos: o.oos ?? null });

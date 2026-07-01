@@ -8,7 +8,7 @@ import { getSession, getUser, signInWithPassword, signOut } from '../shared/sess
 import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
-  pocketReportIssue, pocketDisputeInvoice, pocketUploadPod, pocketTripPods,
+  pocketReportIssue, pocketDisputeInvoice, pocketUploadPod, pocketTripPods, pocketAdvanceTrip,
 } from '../shared/api.js';
 import { uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
@@ -147,7 +147,7 @@ async function appView() {
       const formWrap = h('div');
       const issueBtn = isActive ? h('button', { class: 'pk-btn sec pk-mini', onclick: () => {
         if (formWrap.firstChild) { formWrap.innerHTML = ''; return; }
-        const kind = h('select', { class: 'pk-in' }, ['detention', 'layover', 'lumper', 'breakdown', 'weather', 'missed_appointment', 'other'].map(k => h('option', { value: k }, k.replace('_', ' '))));
+        const kind = h('select', { class: 'pk-in' }, ['detention', 'layover', 'lumper', 'tonu', 'breakdown', 'accident', 'weather', 'missed_appointment', 'other'].map(k => h('option', { value: k }, k === 'tonu' ? 'TONU' : k.replace('_', ' '))));
         const note = h('input', { class: 'pk-in', placeholder: 'Details (optional)' });
         const send = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
           ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
@@ -163,12 +163,19 @@ async function appView() {
         if (podWrap.firstChild) { podWrap.innerHTML = ''; return; }
         showPodPanel(t, podWrap);
       } }, '📄 Proof of delivery') : null;
+      const adv = (label, next) => h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…';
+        try { await pocketAdvanceTrip(t.id, next); loadTrips(); }
+        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = label; alert((e && e.message) || 'Could not update.'); }
+      } }, label);
+      const startBtn = (t.status === 'dispatched') ? adv('▶ Start', 'in_transit') : null;
+      const deliverBtn = (t.status === 'dispatched' || t.status === 'in_transit') ? adv('✓ Delivered', 'delivered') : null;
       return h('div', { class: 'pk-trip' }, [
         h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
           h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0))]),
           pill(t.status),
         ]),
-        (confirm || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, share, issueBtn, podBtn].filter(Boolean)) : null,
+        (confirm || startBtn || deliverBtn || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, startBtn, deliverBtn, share, issueBtn, podBtn].filter(Boolean)) : null,
         formWrap,
         podWrap,
       ].filter(Boolean));
