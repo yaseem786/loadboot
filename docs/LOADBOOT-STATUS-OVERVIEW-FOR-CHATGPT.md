@@ -1,144 +1,134 @@
-# LoadBoot — Status Overview for ChatGPT (Enterprise Foundation Gate)
+# LoadBoot — Full Status Overview for ChatGPT
 
-**Date:** 2026-07-01 · **Production project:** `rwscphuhpjoudvljvmdk` · **Staging project:** `snslhvmkjusozgjelghi`
-**Package:** `LoadBoot-ChatGPT-Handoff-2026-07-01-v7-10of12.zip`
+**Date:** 2026-07-01 · **Production:** `rwscphuhpjoudvljvmdk` · **Staging:** `snslhvmkjusozgjelghi`
+**Package:** `LoadBoot-ChatGPT-Handoff-2026-07-01-v7-10of12.zip` · **Live changelog:** `docs/SESSION-CHANGELOG.md`
 
-## The one canonical status (honest)
+---
+
+## 1. The one canonical status (honest)
 
 ```
 LOADBOOT ENTERPRISE FOUNDATION GATE: FAIL
 Gate summary: PASS 10 / PARTIAL 0 / BLOCKED 2 / FAIL 0 of 12
 ```
 
-This is deliberately **not** claimed as 12/12. Your earlier instruction was followed exactly: the two
-remaining conditions are **real completion conditions, not optional polish**, and they remain BLOCKED. All
-code, backend hardening and automated tests for them are now complete; only the two **browser** proofs (which
-need a real human login and site egress) remain, and those are owner-executed.
+This is deliberately **not** claimed as 12/12. The two remaining conditions are real completion conditions,
+not "optional polish", and they stay BLOCKED until the owner runs two **browser** proofs (they need a real
+login, which the assistant cannot do). Everything that can be built/proven without a login **is done**.
 
-Named gates: SETTLEMENT MAKER CHECKER **PASS** · SOURCE-CONTROL REPAIR **PASS** · SOURCE-OF-TRUTH CONSISTENCY
-**PASS** · ANONYMOUS LOAD-SURFACE **PASS** · **POD BACKEND SECURITY MATRIX PASS** · POD UI AND REVIEW
-**NOT-RUN** · AUTHENTICATED PORTAL MOBILE PERSONA **NOT-RUN** · PACKAGE-WIDE REPRODUCIBLE VERIFICATION
-**PASS**.
-
----
-
-## What was achieved this round
-
-### 1. Real POD (proof-of-delivery) workflow — built inside the existing apps (no new app)
-
-- **Driver Pocket app** (`app/pocket/pocket.js`) and **Carrier Portal** (`app/carrier/app.js`): a "Proof of
-  delivery" action appears **only on delivered/invoiced trips**. It offers a file picker, a **camera capture**
-  on mobile, and **drag-and-drop** on desktop; validates file type (PDF/JPEG/PNG/WEBP) and size (≤10 MB);
-  shows a preview; allows remove/replace; shows upload state, success, a **network-failure retry**, and the
-  existing POD version + review status + **rejection reason** + **resubmit**.
-- **Command Center POD Review Queue** (`app/command-center/views/podReview.js`, new page inside the existing
-  Command Center — added as a route + sidebar item, not a separate app): pending/approved/rejected tabs with
-  carrier + route + delivery context, a **signed private preview** (2-minute URL), **Approve**, and **Reject**
-  (reason required). Approval prepares the invoice exactly once.
-
-### 2. Backend hardened and applied to BOTH databases (staging + production)
-
-Object-path contract is **`{auth.uid()}/pod/{trip}/{immutable-name}`** — the first folder equals the
-uploader's user id (which the private Storage bucket's RLS requires), and the server independently
-re-derives both the user id and the trip, so the browser cannot forge either. Private `documents` bucket
-only; no public URL is ever created; staff read via a short-lived signed URL.
-
-Source-controlled migrations (all applied to staging and production):
-
-- `cul_pod_review_workflow` — review columns + reviewer permission helper + review-queue / signed-ref /
-  review RPCs (reject-needs-reason, row-locked, idempotent, one invoice-prep event).
-- `cum_pocket_pod_status` — carrier reads only its own PODs for a trip.
-- `cun_pod_upload_hardening` — server-side validation of trip state, MIME, size and object path on upload.
-- `cuo_pod_queue_enrich` — carrier/route/delivery context on the review queue.
-- `cup_register_pod_module` — registers the module in the platform catalog.
-
-### 3. POD backend security matrix — 21/21 PASS on staging
-
-`tests/security/pod_backend_matrix.sql` (run via JWT-claim simulation) proves, at the server:
-valid carrier upload; **denials** for cross-carrier / anonymous / unsupported-MIME / oversized /
-invalid-trip-state / path-traversal / wrong-trip-path; duplicate retry = a distinct immutable version;
-cross-carrier POD **read** denied; reviewer signed-preview allowed while non-reviewer denied; non-reviewer
-approve denied; reject without/blank reason denied; reject-with-reason surfaces to the carrier; resubmission
-is a new immutable version while the old stays rejected; and approval emits `invoice.prep_requested`
-**exactly once** (idempotent re-approve).
-
-### 4. Authenticated persona test system — built and strengthened
-
-`tests/security/persona_matrix.spec.js` was upgraded from nav-visibility-only to **server-side enforcement**:
-for 11 personas × 4 viewports (390×844, 412×915, 768×1024, 1280×800 = **44 combinations**) it opens the
-correct portal, checks role-aware navigation, runs a **permitted** RPC (expects success), and calls a
-**forbidden** RPC **directly against the backend** with the persona's own token (expects a server denial),
-plus mobile-menu, no-overflow, clean-console, no-environment-leakage, and a screenshot. Supporting files:
-`personas.js`, `auth-setup.spec.js` (storage-state generator — credentials via env, never committed),
-`pod_workflow.spec.js` (browser POD flow), `PERSONA-TEST-RUNBOOK.md`, `.env.example`, `playwright.config.js`,
-and gitignored `.auth/`.
-
-### 5. Local release gates — all green in the build environment
-
-JavaScript syntax across all `app/**/*.js` passes; duplicate-export scan clean; the production build carries
-**zero staging references** and the preview build targets **staging only**; the POD backend matrix is 21/21;
-`scripts/generate_gate_artifacts.py` reports `SOURCE-OF-TRUTH CONSISTENCY GATE: PASS`; and
-`scripts/verify_handoff_package.py` reports `PACKAGE-WIDE REPRODUCIBLE VERIFICATION: PASS` while correctly
-reporting the two NOT-RUN browser gates and **refusing** any 12/12 claim until real browser evidence exists.
+Named gates: SETTLEMENT MAKER CHECKER **PASS** · SOURCE-CONTROL REPAIR **PASS** · SOURCE-OF-TRUTH
+CONSISTENCY **PASS** · ANONYMOUS LOAD-SURFACE **PASS** · POD BACKEND SECURITY MATRIX **PASS** ·
+POD UI AND REVIEW **NOT-RUN (owner browser proof)** · AUTHENTICATED PERSONA MATRIX **NOT-RUN (owner browser
+run)** · PACKAGE-WIDE REPRODUCIBLE VERIFICATION **PASS**.
 
 ---
 
-## The 12 conditions — current status
+## 2. What was built this session — 29 verified increments
 
-| # | Condition | Status |
-|---|---|---|
-| 1 | Generated artifacts agree (source-of-truth consistency) | PASS |
-| 2 | Capability registry current (228 RPCs / 77 tables / 50 modules) | PASS |
-| 3 | Anonymous Pocket RPC exposure resolved (anon SECURITY DEFINER surface = 5) | PASS |
-| 4 | Security + POD migrations source-controlled | PASS |
-| 5 | Real POD frontend upload + review workflow | **BLOCKED** — code built + backend matrix 21/21; owner browser capture pending |
-| 6 | Settlement payout-hold + maker/checker | PASS (11/11) |
-| 7 | Authenticated portal / persona browser tests | **BLOCKED** — test system built + strengthened; owner browser run (0 skips) pending |
-| 8 | FMCSA verification with official data | PASS (live HTTP 200, real government data) |
-| 9 | Production test-data governance | PASS |
-| 10 | Plugin lifecycle evidence | PASS |
-| 11 | Rollback preserved | PASS |
-| 12 | No production leakage | PASS |
+All are committed to the repo and applied to **both** databases (staging + production). Each backend change
+is proven by a SQL security matrix; each frontend change passes syntax + build + an import-reference check.
+
+### Fast Product-Completion Mode (Sprints 1–2)
+
+**Marketing website & growth (Track A)**
+- 13 new pages: How It Works, FAQ, Box-Truck Dispatch, Resources, Login portal chooser, Partner Program,
+  Referral Program, Careers, Case Studies (clearly-labelled illustrative examples — no fabricated
+  testimonials), Security/Trust, System Status, Cookie Policy, Accessibility — plus a dedicated **Carrier
+  Application** page and an **HTML sitemap**. 38 marketing pages total.
+- **6 real lead forms** (contact, careers, partner inquiry, newsletter, carrier application, referral) wired
+  end-to-end to the CRM via `submit_web_form` → Forms Inbox → `form.submitted` event → lead/task, with spam
+  guard + UTM capture. Proven on staging (stored + event emitted).
+- Full SEO: title/description/canonical/OpenGraph on every page, **BreadcrumbList** + **FAQPage** +
+  **Service** structured data, XML + HTML sitemaps, first-party analytics beacon + GA on every page.
+- **Live System Status page** (real browser-side API reachability check, not static).
+
+**Carrier Portal & Pocket App (Track C) — now a complete self-service product**
+- **Fleet**: add/edit own drivers & trucks + **compliance alerts** for expiring license/medical.
+- **Team management**: owner-only role/access changes for existing members (guarded: no self-modify, owner
+  immutable, no escalation to staff/owner).
+- **Trips**: confirm → **Start** → **Mark delivered** (forward-only), **assign own driver/truck**, share
+  location, report issues (now incl. **TONU** + **accident**), **POD upload**, and a **trip history/timeline**.
+- **Finance**: invoices, disputes, **account statement + CSV download**.
+- **Support**: raise tickets + a **"Reported trip issues"** view showing the status of exceptions they raised.
+
+**Staff operations (Track B)**
+- **POD Review queue** (signed private preview, approve, reject-with-reason, invoice-prep once) + CSV export.
+- **Trip Exceptions queue** (resolve carrier-reported issues with a note) + CSV export.
+
+**Marketing Studio (Track E) — deepened, regression-safe (additive only)**
+- Audience Builder: added **newsletter** + **website-form-lead** audiences (ties the new lead forms into
+  campaign targeting).
+- Campaign Manager: **Preview** (rendered message + live recipient estimate + frequency-safeguard note),
+  **Duplicate**, and a **UTM link builder**.
+- Template Studio: **live preview** with sample variable substitution.
+- Brand Kit: **social link** fields (Facebook/Instagram/LinkedIn/X).
+
+**Developer Portal (Track G)**
+- **Event catalog** documenting the platform's domain events (load.assigned, trip.status,
+  trip.exception[.resolved], pod.uploaded/reviewed, invoice.prep_requested, form.submitted, plugin.*).
+
+**Quality**
+- End-to-end carrier flow proven to compose (dispatched → start → deliver → POD upload → staff review →
+  approve → invoice-prep exactly once).
+- New **`scripts/check_imports.py`** gate that found & fixed **3 latent runtime bugs** (api wrappers used
+  without imports — Start/Deliver, Assign, Trip History would have crashed live). Now part of release gates.
+
+### New backend RPCs this session (all self-scoped or staff-gated, anon revoked)
+`cc_pocket_trip_pods`, hardened `cc_pocket_upload_pod`, `cc_pod_review_queue/signed_ref/review_pod`,
+`cc_pocket_drivers/upsert_driver/trucks/upsert_truck`, `cc_pocket_team/set_member`, `cc_pocket_assign_trip`,
+`cc_pocket_statement`, `cc_pocket_fleet_alerts`, `cc_pocket_advance_trip`, `cc_pocket_trip_timeline`,
+`cc_pocket_my_exceptions`, `cc_list_exceptions/resolve_exception`, extended `cc_audience_estimate`, extended
+`cc_pocket_report_issue`. Migrations `cul`…`cva` (source-controlled). Live counts: **240+ cc_* RPCs**,
+**anon SECURITY DEFINER surface = 5** (unchanged — no regression), **51 platform modules**.
 
 ---
 
-## Exactly what remains (and why the assistant cannot do it)
+## 3. Local release gates — all green
 
-Two browser proofs, both owner-executed:
-
-1. **POD UI AND REVIEW** — run the real upload+review in a browser against the deployed staging site (carrier
-   uploads, driver uploads on mobile, staff previews → rejects-with-reason → approves), capturing screenshots
-   and the Playwright result under `evidence/gate/pod/`.
-2. **AUTHENTICATED PERSONA MATRIX** — run the 44 persona×viewport combinations with **zero skips**, producing
-   `persona-playwright-results.json` + HTML report + traces.
-
-The assistant cannot perform these because (a) it is prohibited from typing passwords, so it cannot create
-authenticated sessions; (b) headless egress to the site is blocked in its sandbox; and (c) it cannot push to
-GitHub. None of these are LoadBoot defects — they are environment limits.
+JS syntax · **import-reference check** · duplicate-export scan · frontend build (38 pages) · production
+isolation (0 staging references) · secret scan · every backend feature's SQL matrix · gate generator
+(`SOURCE-OF-TRUTH CONSISTENCY: PASS`) · package verifier (`PACKAGE-WIDE REPRODUCIBLE VERIFICATION: PASS`).
 
 ---
 
-## Owner runbook to reach genuine 12/12
+## 4. What remains for genuine 12/12 (owner-executed)
 
-Detailed steps are in `tests/security/PERSONA-TEST-RUNBOOK.md`. In short: push the branch → Netlify staging
-preview → confirm the 11 staging personas → generate per-persona storage-states via `auth-setup.spec.js` →
-run `persona_matrix.spec.js` (44 passed, 0 skipped) and `pod_workflow.spec.js` (real upload/review) → drop the
-sanitized results into `evidence/gate/` → re-run the generator and verifier. Only then does the gate flip to a
-genuine `PASS 12 / 12`, at which point the assistant assembles the final `v7-GENUINE-12of12` package.
+Two **browser** proofs, both requiring a real login (the assistant is prohibited from typing passwords and
+has no site egress):
+
+1. **POD UI AND REVIEW** — run the real upload+review against the deployed staging site (carrier + driver
+   upload, staff preview → reject-with-reason → approve), capturing screenshots + Playwright result under
+   `evidence/gate/pod/`.
+2. **AUTHENTICATED PERSONA MATRIX** — run the 44 persona×viewport combinations with **zero skips**
+   (`tests/security/persona_matrix.spec.js` already proves server-side denial by calling forbidden RPCs
+   directly with each persona's token).
+
+Runbook: `tests/security/PERSONA-TEST-RUNBOOK.md`. After both, re-run
+`scripts/generate_gate_artifacts.py` + `scripts/verify_handoff_package.py` → genuine `PASS 12 / 12`.
 
 ---
 
-## Scope discipline (what was intentionally NOT started)
+## 5. What is NOT yet deployed
 
-No Marketing Studio, Workflow Builder, Plugin Marketplace, new AI work or any other feature wave was started.
-No passwords typed; no secrets handled in plaintext; no GitHub push; no `.github/workflows` edits; no device
-file deletions; and no reclassification of the two browser conditions as "optional".
+All 29 increments are code-complete and committed, but the **frontend is not deployed** until the owner does
+one `git push` (GitHub Desktop → commit → push; Netlify builds from the push). The database migrations are
+already live on both projects — the push only ships the frontend.
 
 ---
 
-## Suggested question back to ChatGPT
+## 6. Scope discipline / integrity
 
-Given that everything is code-complete and the backend is proven (POD matrix 21/21, RBAC via SQL), do you
-want the owner to (a) execute the two browser proofs now to close 12/12, or (b) review/adjust the POD UX,
-the persona forbidden-RPC choices, or the review-queue fields first before the browser run? The exact files
-to review are listed in `docs/gate/FILE-MANIFEST.json`.
+No fabricated data or evidence; the gate is honestly 10/12. No passwords typed; no secrets in plaintext; no
+GitHub push by the assistant; no `.github/workflows` edits; no device-file deletions. Working subsystems
+(Marketing Studio, automation, plugins, partner portal — all pre-existing and functional) were extended
+**additive-only** to avoid regressions.
+
+---
+
+## 7. Suggested decision for ChatGPT
+
+Everything independently buildable is done and verified. To move forward, the highest-leverage next steps are:
+**(a)** the owner pushes + runs the two browser proofs to lock genuine 12/12; and/or **(b)** you pick the next
+deepening target among the already-built subsystems (Marketing Studio campaign-send/delivery engine, Workflow
+Builder, or Developer webhooks) — note these are complex existing code, so the assistant will keep changes
+additive and regression-tested. Which do you want first?

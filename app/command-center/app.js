@@ -205,7 +205,7 @@ async function boot() {
     '/templates': () => { setActive('/templates'); if (can('content.view')) renderTemplates(content); else denied(); },
     '/audiences': () => { setActive('/audiences'); if (can('content.view')) renderAudiences(content); else denied(); },
     '/campaign-manager': () => { setActive('/campaign-manager'); if (can('content.view')) renderCampaignManager(content); else denied(); },
-    '/delivery': () => { setActive('/delivery'); renderDeliveryHealth(content); },
+    '/delivery': () => { setActive('/delivery'); if (can('content.view') || can('content.manage') || can('settings.manage')) renderDeliveryHealth(content); else denied(); },
     '/marketing-analytics': () => { setActive('/marketing-analytics'); if (can('content.view')) renderMarketingAnalytics(content); else denied(); },
     '/matching': () => { setActive('/matching'); if (can('carriers.view')) renderSmartMatch(content); else denied(); },
     '/analytics': () => { setActive('/analytics'); if (analyticsEnabled && can('analytics.view')) renderAnalytics(content); else denied(); },

@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
-import { cmpList, cmpSave, cmpSetStatus, cmpMarkSent, listAudiences, studioListTemplates, audienceEstimate, sendPush } from '../../shared/api.js';
+import { cmpList, cmpSave, cmpSetStatus, cmpMarkSent, listAudiences, studioListTemplates, audienceEstimate, sendPush, campaignAudiencePreview, campaignEnqueue } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -56,7 +56,55 @@ export function renderCampaignManager(host) {
     wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); composer(c); } }, 'Edit'));
     wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); duplicate(c); } }, 'Duplicate'));
     if (c.status !== 'sent' && (c.channels || []).includes('push')) wrap.append(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (e) => { e.stopPropagation(); sendPushCampaign(c); } }, 'Send push'));
+    if ((c.channels || []).includes('email')) wrap.append(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (e) => { e.stopPropagation(); sendEmailCampaign(c); } }, 'Send email'));
     return wrap;
+  }
+
+  // Email send: preview → CONFIRM the exact recipient count → enqueue into the delivery engine.
+  // The server refuses the enqueue unless the confirmed count still matches, so no broad send can
+  // fire on a stale number. Enqueue only queues the messages; a provider worker transmits them.
+  async function sendEmailCampaign(c) {
+    if (!c.audience_type) { toast('Attach an audience with email addresses first.', 'error'); return; }
+    const status = el('div', { class: 'cc-sub' }, 'Loading recipient preview…');
+    const detail = el('div', { style: 'margin-top:10px' });
+    const confirmBtn = el('button', { class: 'lb-btn lb-btn-primary', disabled: 'disabled', onClick: doEnqueue }, 'Confirm & queue send');
+    const body = el('div', null, [
+      el('div', { style: 'font-weight:700' }, c.name),
+      c.subject ? el('div', { class: 'cc-sub' }, 'Subject: ' + c.subject) : null,
+      detail, status,
+      el('div', { class: 'cc-drawer-actions', style: 'margin-top:14px;display:flex;gap:8px' }, [confirmBtn]),
+      el('p', { class: 'cc-sub', style: 'margin-top:8px' }, 'Only opted-in, non-suppressed unique email addresses are queued. Re-preview if the count changes. Nothing is transmitted until a provider worker claims the queue.'),
+    ].filter(Boolean));
+    openDrawer('Send email campaign', body, { subtitle: 'Consent-checked · confirm-before-send' });
+    let finalCount = null;
+    try {
+      const p = await campaignAudiencePreview(c.id);
+      finalCount = p.final_recipients;
+      mount(detail, el('div', { class: 'lb-card', style: 'background:#f8fafc' }, [
+        row('Audience total', p.audience_total),
+        row('After consent', p.after_consent, p.excluded_no_consent ? ('−' + p.excluded_no_consent + ' no consent') : ''),
+        row('Suppressed (bounced/opt-out)', p.suppressed),
+        row('Final recipients', p.final_recipients, '', true),
+        (p.sample && p.sample.length) ? el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Sample: ' + p.sample.join(', ')) : null,
+      ].filter(Boolean)));
+      if (finalCount > 0) { confirmBtn.removeAttribute('disabled'); confirmBtn.textContent = 'Confirm & queue ' + finalCount + ' email' + (finalCount === 1 ? '' : 's'); mount(status, ''); }
+      else mount(status, el('div', { class: 'cc-sub', style: 'color:#b45309' }, 'No eligible recipients — nothing to send.'));
+    } catch (e) { mount(status, el('div', { class: 'cc-sub', style: 'color:#dc2626' }, humanizeError(e))); }
+    function row(label, val, extra, strong) {
+      return el('div', { style: 'display:flex;justify-content:space-between;padding:3px 0' }, [
+        el('span', { class: 'cc-sub' }, label),
+        el('span', { style: strong ? 'font-weight:800' : 'font-weight:600' }, String(val) + (extra ? '  (' + extra + ')' : '')),
+      ]);
+    }
+    async function doEnqueue() {
+      if (finalCount == null || finalCount <= 0) return;
+      confirmBtn.setAttribute('disabled', 'disabled'); confirmBtn.textContent = 'Queuing…';
+      try {
+        const r = await campaignEnqueue(c.id, finalCount);
+        toast('Queued ' + r.newly_queued + ' of ' + r.final_recipients + ' — status: ' + r.status, 'success');
+        document.getElementById('cc-drawer-root')?.remove(); load();
+      } catch (e) { confirmBtn.removeAttribute('disabled'); confirmBtn.textContent = 'Confirm & queue send'; toast(humanizeError(e), 'error'); }
+    }
   }
 
   // Open the composer pre-filled from an existing campaign as a NEW draft (no id, name + " (copy)").
