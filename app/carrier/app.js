@@ -10,7 +10,7 @@ import {
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods,
   pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember,
-  pocketFleetAlerts, pocketStatement,
+  pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
   carrierUploadDocument, carrierListDocuments,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
@@ -345,9 +345,20 @@ async function appView(user) {
       } }, label);
       const start = (t.status === 'dispatched') ? advBtn('▶ Start trip', 'in_transit') : null;
       const deliver = (t.status === 'dispatched' || t.status === 'in_transit') ? advBtn('✓ Mark delivered', 'delivered') : null;
+      const history = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+        const host = h('div', { class: 'cp-muted' }, 'Loading…');
+        openModal('Trip history', [host]);
+        try {
+          const ev = await pocketTripTimeline(t.id);
+          mount(host, (ev && ev.length) ? h('div', null, ev.map(e => h('div', { class: 'cp-row' }, [
+            h('div', null, [h('div', { class: 'cp-row-t', style: 'text-transform:capitalize' }, e.to_status ? (e.from_status || '?') + ' → ' + e.to_status : (e.kind || 'event')), e.note ? h('div', { class: 'cp-row-s' }, e.note) : null].filter(Boolean)),
+            h('span', { class: 'cp-row-s' }, new Date(e.created_at).toLocaleString()),
+          ]))) : h('div', { class: 'cp-muted' }, 'No history yet.'));
+        } catch (e) { mount(host, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load history.')); }
+      } }, '🕑 History');
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
-        (confirm || start || deliver || share || issue || pod || assign) ? h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, issue, pod, assign].filter(Boolean)) : null, fw, podW,
+        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, issue, pod, assign, history].filter(Boolean)), fw, podW,
       ].filter(Boolean));
     })]));
 
@@ -672,9 +683,25 @@ async function appView(user) {
     const msg = h('div', { class: 'cp-err' });
     const list = h('div');
     const send = h('button', { class: 'cp-btn', onClick: async () => { msg.textContent = ''; if (!subj.value.trim()) { msg.textContent = 'Subject is required.'; return; } send.disabled = true; send.textContent = 'Sending…'; try { await pocketRaiseIssue(subj.value.trim(), body.value.trim()); subj.value = ''; body.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Sent — we’ll get back to you.'; await loadIssues(); } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Could not send.'; } send.disabled = false; send.textContent = 'Send to dispatch'; } }, 'Send to dispatch');
-    mount(content, h('div', { class: 'cp-grid' }, [h('div', { class: 'cp-card' }, [cardHead('Raise an issue'), subj, body, msg, send]), h('div', { class: 'cp-card' }, [cardHead('Your tickets'), list])]));
+    const exList = h('div');
+    mount(content, h('div', { class: 'cp-grid' }, [
+      h('div', { class: 'cp-card' }, [cardHead('Raise an issue'), subj, body, msg, send]),
+      h('div', { class: 'cp-card' }, [cardHead('Your tickets'), list]),
+      h('div', { class: 'cp-card' }, [cardHead('Reported trip issues'), exList]),
+    ]));
     async function loadIssues() { mount(list, h('div', { class: 'cp-muted' }, 'Loading…')); let rows; try { rows = await pocketMyIssues(40); } catch (_) { mount(list, h('div', { class: 'cp-muted' }, 'Failed to load.')); return; } mount(list, (rows && rows.length) ? h('div', null, rows.map(t => h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, t.subject), h('div', { class: 'cp-row-s' }, t.ref)]), pill(t.status)]))) : h('div', { class: 'cp-muted' }, 'No tickets yet.')); }
-    loadIssues();
+    async function loadExceptions() {
+      mount(exList, h('div', { class: 'cp-muted' }, 'Loading…'));
+      let rows; try { rows = await pocketMyExceptions(50); } catch (_) { mount(exList, h('div', { class: 'cp-muted' }, 'Failed to load.')); return; }
+      mount(exList, (rows && rows.length) ? h('div', null, rows.map(e => h('div', { class: 'cp-row' }, [
+        h('div', null, [
+          h('div', { class: 'cp-row-t', style: 'text-transform:capitalize' }, (e.kind === 'tonu' ? 'TONU' : (e.kind || 'issue').replace('_', ' ')) + ((e.origin || e.destination) ? ' · ' + (e.origin || '—') + ' → ' + (e.destination || '—') : '')),
+          h('div', { class: 'cp-row-s' }, new Date(e.created_at).toLocaleDateString() + (e.description ? ' · ' + e.description : '')),
+        ]),
+        pill(e.status),
+      ]))) : h('div', { class: 'cp-muted' }, 'No trip issues reported. Report detention, TONU, breakdown and more from a trip.'));
+    }
+    loadIssues(); loadExceptions();
   }
 
   /* ----- Account ----- */

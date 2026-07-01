@@ -128,6 +128,25 @@ function appView(user) {
           h('li', null, [h('code', null, '?resource=loads&limit=25'), document.createTextNode(' — public load opportunities (read scope)')]),
         ]),
       ]),
+      h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
+        h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Event catalog')]),
+        h('p', { class: 'dev-p' }, 'The platform emits these domain events. Webhook subscriptions (coming soon) will deliver them to your endpoint; each is already recorded on the internal event stream today.'),
+        h('table', { class: 'cp-table' }, [
+          h('thead', null, h('tr', null, ['Event', 'When it fires'].map(t => h('th', null, t)))),
+          h('tbody', null, [
+            ['load.assigned', 'A load is assigned to a carrier'],
+            ['trip.status', 'A trip moves forward (in_transit / delivered)'],
+            ['trip.exception', 'A carrier/driver reports a trip exception (detention, TONU, accident, …)'],
+            ['trip.exception.resolved', 'Staff resolve a trip exception'],
+            ['pod.uploaded', 'A proof-of-delivery document is uploaded'],
+            ['pod.reviewed', 'Staff approve or reject a POD'],
+            ['invoice.prep_requested', 'An approved POD triggers invoice preparation'],
+            ['form.submitted', 'A website form is submitted (lead)'],
+            ['plugin.installed', 'A plugin is installed'],
+            ['plugin.uninstalled', 'A plugin is uninstalled'],
+          ].map(([ev, desc]) => h('tr', null, [h('td', null, h('code', null, ev)), h('td', null, desc)]))),
+        ]),
+      ]),
     ]),
   ])));
   root.setAttribute('aria-busy', 'false');

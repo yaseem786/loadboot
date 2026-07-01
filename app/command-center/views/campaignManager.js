@@ -54,8 +54,16 @@ export function renderCampaignManager(host) {
   function rowActions(c) {
     const wrap = el('div', { style: 'display:flex;gap:6px;justify-content:flex-end' });
     wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); composer(c); } }, 'Edit'));
+    wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); duplicate(c); } }, 'Duplicate'));
     if (c.status !== 'sent' && (c.channels || []).includes('push')) wrap.append(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (e) => { e.stopPropagation(); sendPushCampaign(c); } }, 'Send push'));
     return wrap;
+  }
+
+  // Open the composer pre-filled from an existing campaign as a NEW draft (no id, name + " (copy)").
+  function duplicate(c) {
+    composer({ id: null, name: (c.name || 'Campaign') + ' (copy)', objective: c.objective, audience_id: c.audience_id,
+      audience_name: c.audience_name, audience_type: c.audience_type, template_key: c.template_key,
+      channels: (c.channels || ['push']).slice(), subject: c.subject, body: c.body, scheduled_at: null, status: 'draft' });
   }
 
   async function sendPushCampaign(c) {
@@ -81,6 +89,31 @@ export function renderCampaignManager(host) {
     const bodyT = el('textarea', { class: 'cc-input', rows: '4', placeholder: 'Message body' }, f.body); bodyT.oninput = () => { f.body = bodyT.value; };
     const sched = el('input', { class: 'cc-input', type: 'datetime-local', value: f.scheduledAt }); sched.oninput = () => { f.scheduledAt = sched.value; };
     const statSel = el('select', { class: 'cc-input' }, [['draft', 'Draft'], ['scheduled', 'Scheduled'], ['paused', 'Paused']].map(([v, l]) => el('option', { value: v, selected: f.status === v ? 'selected' : null }, l))); statSel.onchange = () => { f.status = statSel.value; };
+    const previewBox = el('div');
+    // UTM builder (client-only): compose a tagged link for this campaign.
+    function utmBuilder() {
+      const base = el('input', { class: 'cc-input', placeholder: 'https://loadboot.com/pricing.html' });
+      const src = el('input', { class: 'cc-input', placeholder: 'utm_source (e.g. email)', value: (f.channels[0] || 'email') });
+      const med = el('input', { class: 'cc-input', placeholder: 'utm_medium (e.g. campaign)', value: 'campaign' });
+      const camp = el('input', { class: 'cc-input', placeholder: 'utm_campaign', value: (f.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') });
+      const out = el('input', { class: 'cc-input', readonly: 'readonly', style: 'background:#f8fafc' });
+      const build = () => {
+        if (!base.value.trim()) { out.value = ''; return; }
+        try {
+          const u = new URL(base.value.trim());
+          if (src.value.trim()) u.searchParams.set('utm_source', src.value.trim());
+          if (med.value.trim()) u.searchParams.set('utm_medium', med.value.trim());
+          if (camp.value.trim()) u.searchParams.set('utm_campaign', camp.value.trim());
+          out.value = u.toString();
+        } catch (_) { out.value = 'Enter a valid URL (including https://)'; }
+      };
+      [base, src, med, camp].forEach(i => i.oninput = build); build();
+      const copy = el('button', { class: 'lb-btn lb-btn-sm', onClick: () => { if (out.value) { try { navigator.clipboard.writeText(out.value); toast('Tagged link copied', 'success'); } catch (_) {} } } }, 'Copy link');
+      return el('details', { style: 'margin-top:6px' }, [
+        el('summary', { style: 'cursor:pointer;font-weight:600' }, 'UTM link builder'),
+        el('div', { style: 'display:flex;flex-direction:column;gap:8px;margin-top:8px' }, [base, src, med, camp, out, copy]),
+      ]);
+    }
     const form = el('div', null, [
       inp('Campaign name', 'name', 'June carrier newsletter'), inp('Objective', 'objective', 'Re-engage idle carriers'),
       el('label', { class: 'cc-field' }, [el('span', null, 'Audience'), audSel]),
@@ -90,9 +123,25 @@ export function renderCampaignManager(host) {
       el('label', { class: 'cc-field' }, [el('span', null, 'Body'), bodyT]),
       el('label', { class: 'cc-field' }, [el('span', null, 'Schedule (optional)'), sched]),
       el('label', { class: 'cc-field' }, [el('span', null, 'Status'), statSel]),
-      el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: save }, 'Save campaign')]),
+      utmBuilder(),
+      previewBox,
+      el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px;display:flex;gap:8px' }, [
+        el('button', { class: 'lb-btn', onClick: preview }, 'Preview'),
+        el('button', { class: 'lb-btn lb-btn-primary', onClick: save }, 'Save campaign'),
+      ]),
       el('p', { class: 'cc-sub', style: 'margin-top:8px' }, 'Push sends immediately from the list (with a recipient-count confirmation). Email/SMS delivery arrives with the delivery engine.'),
     ]);
+    async function preview() {
+      const aud = audiences.find(a => a.id === f.audienceId);
+      let est = '—'; if (aud && aud.type) { try { est = (await audienceEstimate(aud.type)).count; } catch (_) {} }
+      mount(previewBox, el('div', { class: 'lb-card', style: 'margin-top:6px;background:#f8fafc' }, [
+        el('div', { class: 'cc-sub' }, 'Preview'),
+        el('div', { style: 'font-weight:700;margin:6px 0' }, f.subject || '(no subject)'),
+        el('div', { style: 'white-space:pre-wrap' }, f.body || '(no body)'),
+        el('div', { class: 'cc-sub', style: 'margin-top:8px' }, 'Channels: ' + (f.channels.join(', ') || 'none') + ' · Audience: ' + (aud ? aud.name : 'none') + ' · ~' + est + ' recipients'),
+        f.channels.length > 1 ? el('div', { class: 'cc-sub', style: 'color:#b45309' }, 'Frequency safeguard: recipients in more than one channel receive at most one message per channel; a broad send always confirms the count first.') : null,
+      ].filter(Boolean)));
+    }
     openDrawer(c ? 'Edit campaign' : 'New campaign', form, { subtitle: 'Audience + template + channels' });
     async function save() {
       if (!f.name.trim()) { alert('Campaign name is required.'); return; }

@@ -129,6 +129,91 @@ platform modules = 51.
   `submit_web_form` (form_key=referral). Proven end-to-end on staging.
 - Files: `build_site.py`.
 
+## Increment 16 — Marketing Studio: newsletter + form-lead audiences
+- Added 'Newsletter subscribers' and 'Website form leads' as audience types in the Studio Audience Builder,
+  tying the new website lead forms into campaign targeting. Backend `cc_audience_estimate` extended additively
+  (staff-gated, distinct valid emails, spam excluded); existing audience branches unchanged. Proven on staging
+  (new + existing types work; non-staff denied). Applied to both DBs.
+- Files: `app/shared/api.js`, `migrations/.../cuy_audience_form_leads.sql`.
+
+## Increment 17 — Live System Status page
+- The Status page was static "Operational". It now runs a real browser-side reachability check against the API
+  (per-context Supabase REST) and updates each component (website / portal / command center / API) to
+  Operational or Degraded, with an overall banner and last-checked time. Honest, environment-aware (uses the
+  build context's public anon key), non-blocking. Render smoke clean.
+- Files: `build_site.py`.
+
+## Increment 18 — Carrier trip history/timeline
+- A "History" button on each Carrier Portal trip opens the trip's event timeline (dispatched → confirmed →
+  started → location shares → issues → delivered → POD). Backend `cc_pocket_trip_timeline` self-scoped; proven
+  (own read works; cross-carrier + anon denied). Both DBs.
+- Files: `app/carrier/app.js`, `app/shared/api.js`, `migrations/.../cuz_carrier_trip_timeline.sql`.
+
+## Increment 19 — Marketing Studio: Campaign Preview + Duplicate (regression-safe)
+- Campaign Manager gains a **Preview** (rendered subject/body + channels + live recipient estimate + a
+  frequency-safeguard note) and **Duplicate** (open an existing campaign as a new draft). Both are frontend-only
+  and additive — the existing compose/save/send-push logic is untouched (no regression risk). Syntax + build clean.
+- Files: `app/command-center/views/campaignManager.js`.
+
+## Increment 20 — Marketing Studio: Template live preview (regression-safe)
+- Template Studio gains a **Preview** that renders the template's subject + HTML body with sample variable
+  values substituted, so authors see the real output before publishing. Frontend-only and additive — the
+  save path + server-side variable allowlist are untouched. Syntax + build clean.
+- Files: `app/command-center/views/templates.js`.
+
+## Increment 21 — Marketing Studio: UTM link builder (regression-safe)
+- Campaign composer gains a collapsible **UTM link builder**: enter a destination URL, get a
+  utm_source/medium/campaign-tagged link (pre-filled from the campaign) with copy-to-clipboard. Frontend-only
+  and additive. Syntax + build clean.
+- Files: `app/command-center/views/campaignManager.js`.
+
+## Increment 22 — HTML sitemap page (SEO + UX)
+- New user-facing `sitemap.html` grouping every page (get-started / services / resources / company / legal),
+  linked from the footer. Complements the XML sitemap; strengthens internal linking. 38 pages; no broken links.
+- Files: `build_site.py`.
+
+## Increment 23 — Service structured data on service pages (SEO)
+- Each dispatch service page now emits `Service` JSON-LD (serviceType + provider + areaServed) alongside its
+  existing FAQ + breadcrumb schema. All JSON-LD validated as parseable.
+- Files: `build_site.py`.
+
+## Increment 24 — Marketing Studio: Brand Kit social links (regression-safe)
+- Brand Kit gains Facebook / Instagram / LinkedIn / X URL fields (directive 8.1), shown in the live preview.
+  Pure additive — `cc_set_brand_kit` already merges arbitrary keys (jsonb `data || p_data`), so no backend
+  change was needed. Syntax + build clean.
+- Files: `app/command-center/views/brandKit.js`.
+
+## Increment 25 — Exceptions queue CSV export (regression-safe)
+- The Command Center Exceptions queue gains an **Export CSV** button (kind, carrier, route, trip, status,
+  timestamps, description, resolution). Client-only from the already-loaded rows — additive, no backend change.
+- Files: `app/command-center/views/exceptions.js`.
+
+## Increment 26 — POD Review queue CSV export (regression-safe)
+- The POD Review queue gains an **Export CSV** button (file, carrier, route, trip, status, timestamps, review
+  note), matching the Exceptions export. Client-only, additive.
+- Files: `app/command-center/views/podReview.js`.
+
+## Increment 27 — Developer Portal: Event Catalog (Track G)
+- The Developer Portal gains an **Event catalog** documenting the domain events the platform emits
+  (load.assigned, trip.status, trip.exception[.resolved], pod.uploaded/reviewed, invoice.prep_requested,
+  form.submitted, plugin.installed/uninstalled). Static, accurate documentation; additive; no backend change.
+- Files: `app/developer/app.js`.
+
+## Increment 28 — Carrier "Reported trip issues" + fix
+- Carrier Support tab gains a "Reported trip issues" card: the carrier sees the exceptions they reported
+  (detention/TONU/accident/…) with resolution status. Backend `cc_pocket_my_exceptions` self-scoped; proven
+  (own visible; cross-carrier no leak; anon denied). Both DBs.
+- Fix: `pocketTripTimeline` was missing its import in `app/carrier/app.js` (latent bug from Increment 18's
+  History button — valid syntax so `node --check` didn't catch it); now imported.
+- Files: `app/carrier/app.js`, `app/shared/api.js`, `migrations/.../cva_carrier_my_exceptions.sql`.
+
+## Increment 29 — QA: import-reference checker (found + fixed 2 more latent bugs)
+- Added `scripts/check_imports.py` — catches api wrappers that are *used but not imported* (runtime
+  ReferenceErrors that `node --check` can't see). Running it found `pocketAdvanceTrip` and `pocketAssignTrip`
+  used in the Carrier Portal without imports (Start/Deliver + Assign would have failed at runtime) — both
+  fixed. Scanner now reports PASS across all app JS. This check is now part of the local release gates.
+- Files: `scripts/check_imports.py`, `app/carrier/app.js`.
+
 ## Verification (whole batch)
 - All `app/**/*.js` pass `node --check`; duplicate-export scan clean.
 - Preview build OK (36 marketing pages); production build isolation OK (0 staging refs).

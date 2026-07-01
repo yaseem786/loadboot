@@ -30,8 +30,19 @@ export function renderExceptions(host) {
     try {
       const rows = await listExceptions({ status });
       if (!rows || !rows.length) { mount(listHost, card(el('div', { class: 'cc-sub' }, 'No ' + status + ' exceptions.'))); return; }
-      mount(listHost, el('div', null, rows.map(row)));
+      const exportBtn = el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-bottom:12px', onClick: () => exportCsv(rows) }, '⬇ Export CSV');
+      mount(listHost, el('div', null, [exportBtn, el('div', null, rows.map(row))]));
     } catch (e) { mount(listHost, card(el('div', { class: 'cc-sub' }, humanizeError(e)))); }
+  }
+
+  function exportCsv(rows) {
+    const esc = (s) => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+    const header = ['kind', 'carrier', 'origin', 'destination', 'trip_id', 'status', 'reported_at', 'resolved_at', 'description', 'resolution_note'];
+    const lines = [header.join(',')].concat(rows.map(r => [r.kind, r.carrier_name, r.origin, r.destination, r.trip_id, r.status, r.created_at, r.resolved_at, r.description, r.resolution_note].map(esc).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'loadboot-exceptions-' + status + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
   }
 
   function row(r) {

@@ -348,7 +348,7 @@ def footer():
 </div>
 <div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
-<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a></span></div>
+<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div></footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html" class="btn btn-primary">Get Started</a></div>
 <a class="wa-btn" href="contact.html" rel="noopener" aria-label="Contact us"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.2-1.2l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1112 20zm4.4-5.6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 00-.7.3A2.9 2.9 0 006 9.9c0 1.7 1.3 3.4 1.4 3.6.2.2 2.5 3.9 6.1 5.2 2.2.8 2.5.6 3 .6s1.4-.6 1.6-1.1.2-1 .2-1.1-.2-.2-.5-.3z"/></svg></a>'''
@@ -900,7 +900,11 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs):
     fhtml,fsch = faq_block(faqs)
     body += fhtml + final_cta()
     bc = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},{"@type":"ListItem","position":2,"name":"Services","item":"https://loadboot.com/services.html"},{"@type":"ListItem","position":3,"name":"%s Dispatch","item":"https://loadboot.com/%s"}]}</script>' % (name, fname)
-    page(fname,title,desc,'services.html',body,fsch+bc)
+    ssch = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service",'
+            '"serviceType":"%s truck dispatching","name":"%s",'
+            '"provider":{"@type":"Organization","name":"Loadboot","url":"https://loadboot.com/"},'
+            '"areaServed":{"@type":"Country","name":"United States"},"url":"https://loadboot.com/%s"}</script>') % (name, h1.replace('"', "'"), fname)
+    page(fname,title,desc,'services.html',body,fsch+bc+ssch)
 
 svc_page('reefer-dispatch.html','Reefer','Reefer Dispatch Services for Owner-Operators | Loadboot',
  'Reefer truck dispatch for owner-operators &amp; fleets. We book high-paying temperature-controlled loads, negotiate rates, and handle the paperwork. Flat 5%.',
@@ -1974,7 +1978,24 @@ page('security.html', 'Security &amp; Trust at Loadboot | How We Protect Your Da
 
 # ---- System Status ----
 st = svc_hero('System Status', 'Live status for the Loadboot website, carrier portal, driver app and API. We publish issues here honestly.')
-st += '<section><div class="wrap" style="max-width:820px"><div class="card reveal" style="text-align:left"><h3 style="margin-bottom:14px">Current status</h3><div id="lbStatusList"><div class="pk-row" style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>Marketing website</span><b style="color:#16a34a">Operational</b></div><div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>Carrier Portal &amp; Pocket App</span><b style="color:#16a34a">Operational</b></div><div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><span>Command Center</span><b style="color:#16a34a">Operational</b></div><div style="display:flex;justify-content:space-between;padding:12px 0"><span>API &amp; integrations</span><b style="color:#16a34a">Operational</b></div></div><p style="color:var(--muted);margin-top:16px;font-size:.9rem">This page reflects our current operational posture. For incident history or to report an outage, email <a href="mailto:status@loadboot.com">status@loadboot.com</a>.</p></div></div></section>'
+_status_row = lambda name, sid, last: '<div style="display:flex;justify-content:space-between;padding:12px 0;%s"><span>%s</span><b id="%s" style="color:#64748b">Checking&hellip;</b></div>' % ('' if last else 'border-bottom:1px solid var(--border)', name, sid)
+st += ('<section><div class="wrap" style="max-width:820px"><div class="card reveal" style="text-align:left">'
+       '<h3 style="margin-bottom:6px">Current status</h3><p id="lbStatusOverall" style="color:#64748b;margin-bottom:14px;font-size:.92rem">Running a live check&hellip;</p>'
+       '<div id="lbStatusList">'
+       + _status_row('Marketing website', 'stWeb', False)
+       + _status_row('Carrier Portal &amp; Pocket App', 'stApp', False)
+       + _status_row('Command Center', 'stCC', False)
+       + _status_row('API &amp; integrations', 'stApi', True)
+       + '</div><p id="lbStatusChecked" style="color:var(--muted);margin-top:16px;font-size:.85rem"></p>'
+       '<p style="color:var(--muted);margin-top:6px;font-size:.9rem">This page runs a live reachability check from your browser. For incident history or to report an outage, email <a href="mailto:status@loadboot.com">status@loadboot.com</a>.</p></div></div></section>'
+       '<script>(function(){var UP="Operational",DOWN="Degraded";function set(id,ok){var e=document.getElementById(id);if(e){e.textContent=ok?UP:DOWN;e.style.color=ok?"#16a34a":"#dc2626";}}'
+       'set("stWeb",true);' # if this page loaded, the website is up
+       'var api="https://' + APP_REF + '.supabase.co/rest/v1/",apikey="' + (APP_ANON or '') + '";'
+       'function done(ok){set("stApi",ok);set("stApp",ok);set("stCC",ok);var o=document.getElementById("lbStatusOverall");if(o){o.textContent=ok?"All systems operational.":"Some systems are degraded \\u2014 we are on it.";o.style.color=ok?"#16a34a":"#dc2626";}var c=document.getElementById("lbStatusChecked");if(c){c.textContent="Last checked: "+new Date().toLocaleString();}}'
+       'if(!apikey){done(true);return;}'
+       'var t=setTimeout(function(){done(false);},7000);'
+       'fetch(api,{method:"GET",headers:{"apikey":apikey}}).then(function(r){clearTimeout(t);done(r.status>0&&r.status<500);}).catch(function(){clearTimeout(t);done(false);});'
+       '})();</script>')
 page('status.html', 'Loadboot System Status',
      'Live operational status for the Loadboot website, carrier portal, driver app and API.',
      'status.html', st)
@@ -2022,6 +2043,22 @@ lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
 page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Developer Portals',
      'Choose your Loadboot portal: Carrier Portal, Driver Pocket App, Partner Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
      'login.html', lg)
+
+# ---- HTML sitemap (user-facing; complements the XML sitemap) ----
+_SITEMAP_GROUPS = [
+  ('Get started', [('contact.html', 'Get a Quote / Contact'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
+  ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
+  ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('faq.html', 'FAQ')]),
+  ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status')]),
+  ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
+]
+_sm_body = svc_hero('Sitemap', 'Every page on Loadboot, in one place.')
+_sm_cols = ''
+for _g, _links in _SITEMAP_GROUPS:
+    _items = ''.join('<li><a href="%s">%s</a></li>' % (u, t) for u, t in _links)
+    _sm_cols += '<div class="card reveal"><h3>%s</h3><ul style="line-height:2.1;margin-top:8px">%s</ul></div>' % (_g, _items)
+_sm_body += '<section><div class="wrap"><div class="grid g3 reveal">%s</div></div></section>' % _sm_cols
+page('sitemap.html', 'Sitemap | Loadboot', 'Every page on the Loadboot website — services, resources, company and legal — in one place.', '', _sm_body)
 
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'

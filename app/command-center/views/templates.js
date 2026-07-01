@@ -64,6 +64,16 @@ export function renderTemplates(host) {
     const statSel = el('select', { class: 'cc-input', disabled: !manage }, [['draft', 'Draft'], ['published', 'Published'], ['archived', 'Archived']].map(([v, l]) => el('option', { value: v, selected: f.status === v ? 'selected' : null }, l)));
     statSel.onchange = () => { f.status = statSel.value; };
     const vars = el('div', { class: 'cc-sub', style: 'margin-top:6px;line-height:1.7' }, ['Allowed variables: ', ...TEMPLATE_VARIABLES.map(v => el('code', { style: 'background:#eef2f8;padding:1px 6px;border-radius:6px;margin:0 3px;cursor:pointer', onClick: () => { bodyH.value += '{{' + v + '}}'; f.bodyHtml = bodyH.value; } }, '{{' + v + '}}'))]);
+    const previewBox = el('div');
+    const SAMPLE = { carrier_name: 'Acme Trucking LLC', driver_name: 'Sam Driver', company: 'Acme Trucking LLC', load_reference: 'L-10234', origin: 'Dallas, TX', destination: 'Atlanta, GA', rate: '$2,450', invoice_no: 'INV-2026-00042', amount: '$2,450', date: 'Jul 1, 2026', trip_id: 'T-88123', appointment: 'Jul 3, 8:00 AM', dispatcher: 'Jordan (LoadBoot)' };
+    const fill = (s) => String(s || '').replace(/{{\s*(\w+)\s*}}/g, (m, v) => SAMPLE[v] != null ? SAMPLE[v] : '[' + v + ']');
+    function preview() {
+      mount(previewBox, el('div', { class: 'lb-card', style: 'margin-top:8px;background:#f8fafc' }, [
+        el('div', { class: 'cc-sub' }, 'Preview (with sample values)'),
+        el('div', { style: 'font-weight:700;margin:6px 0' }, fill(f.subject) || '(no subject)'),
+        el('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;max-width:600px', html: fill(f.bodyHtml) || fill(f.bodyText) || '(empty body)' }),
+      ]));
+    }
     const form = el('div', null, [
       inp('Key (unique id)', 'key', 'invoice_ready'), inp('Name', 'name', 'Invoice ready'),
       el('label', { class: 'cc-field' }, [el('span', null, 'Category'), catSel]),
@@ -74,8 +84,13 @@ export function renderTemplates(host) {
       vars,
       el('label', { class: 'cc-field' }, [el('span', null, 'Plain-text fallback'), bodyT]),
       el('label', { class: 'cc-field' }, [el('span', null, 'Status'), statSel]),
-      manage ? el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: save }, 'Save template')]) : el('p', { class: 'cc-sub' }, 'You have read-only access to templates.'),
-    ]);
+      previewBox,
+      el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px;display:flex;gap:8px' }, [
+        el('button', { class: 'lb-btn', onClick: preview }, 'Preview'),
+        manage ? el('button', { class: 'lb-btn lb-btn-primary', onClick: save }, 'Save template') : null,
+      ].filter(Boolean)),
+      manage ? null : el('p', { class: 'cc-sub' }, 'You have read-only access to templates.'),
+    ].filter(Boolean));
     openDrawer(t ? 'Edit template' : 'New template', form, { subtitle: 'Unknown {{variables}} are rejected on save' });
 
     async function save() {
