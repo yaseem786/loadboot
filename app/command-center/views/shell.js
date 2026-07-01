@@ -66,6 +66,7 @@ const NAV = [
     { path: '/brand-kit', label: 'Brand Kit', icon: 'doc', perm: 'content.view' },
     { path: '/form-builder', label: 'Form Builder', icon: 'doc', perm: 'content.view' },
     { path: '/templates', label: 'Template Studio', icon: 'doc', perm: 'content.view' },
+    { path: '/email-builder', label: 'Email Builder', icon: 'doc', perm: 'content.view' },
     { path: '/audiences', label: 'Audiences', icon: 'users', perm: 'content.view' },
     { path: '/campaign-manager', label: 'Campaign Manager', icon: 'trend', perm: 'content.view' },
     { path: '/marketing-analytics', label: 'Marketing analytics', icon: 'trend', perm: 'content.view' },
