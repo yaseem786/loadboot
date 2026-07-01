@@ -419,7 +419,7 @@ export const listChat = (after = 0, limit = 100) => rpc('cc_list_chat', { p_afte
 export const partnerRegister = (kind, company) => rpc('cc_partner_register', { p_kind: kind, p_company: company });
 export const partnerOverview = () => rpc('cc_partner_overview');
 // broker
-export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null });
+export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null, p_idempotency_key: o.idempotencyKey ?? null });
 export const partnerMyLoads = (limit) => rpc('cc_partner_my_loads', { p_limit: limit ?? 50 });
 // shipper
 export const partnerRequestShipment = (o = {}) => rpc('cc_partner_request_shipment', { p_origin: o.origin, p_destination: o.destination, p_ready: o.ready ?? null, p_equipment: o.equipment ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_pieces: o.pieces ?? null, p_accessorials: o.accessorials ?? null, p_notes: o.notes ?? null });

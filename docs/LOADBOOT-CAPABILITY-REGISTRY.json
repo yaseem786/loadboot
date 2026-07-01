@@ -1,0 +1,241 @@
+{
+  "generated_at": "2026-07-01",
+  "source": "live production database (rwscphuhpjoudvljvmdk) + route/nav crawl",
+  "gate": "LOADBOOT ENTERPRISE FOUNDATION GATE",
+  "status_legend": [
+    "LIVE",
+    "STAGING",
+    "FLAGGED",
+    "BACKEND_ONLY",
+    "PROVIDER_BLOCKED",
+    "BILLING_BLOCKED",
+    "PLANNED"
+  ],
+  "counts": {
+    "cc_rpcs": 222,
+    "private_tables": 77,
+    "modules": 48,
+    "feature_flags": 30,
+    "edge_functions": 8,
+    "portals": 6
+  },
+  "portals": [
+    {
+      "id": "marketing",
+      "name": "Public Marketing Website",
+      "status": "LIVE"
+    },
+    {
+      "id": "command_center",
+      "name": "Command Center",
+      "status": "LIVE",
+      "routes": 50,
+      "nav_items": 49,
+      "views": 55
+    },
+    {
+      "id": "carrier",
+      "name": "Carrier Portal & Pocket App",
+      "status": "LIVE"
+    },
+    {
+      "id": "partner",
+      "name": "Partner Portal (broker/shipper/facility)",
+      "status": "LIVE"
+    },
+    {
+      "id": "developer",
+      "name": "Developer & API Portal",
+      "status": "LIVE"
+    },
+    {
+      "id": "plugins",
+      "name": "Plugin Marketplace",
+      "status": "LIVE"
+    }
+  ],
+  "edge_functions": [
+    "fmcsa-verify",
+    "ai-assist",
+    "send-email",
+    "send-sms",
+    "push-send",
+    "ga4-insights",
+    "gsc-insights",
+    "dev-api"
+  ],
+  "event_catalog": [
+    "announcement.created",
+    "apikey.create",
+    "carrier.approved",
+    "carrier.created",
+    "carrier.verified",
+    "document.rejected",
+    "document.uploaded",
+    "form.submitted",
+    "integration.failed",
+    "invoice.created",
+    "lead.created",
+    "lead.stage_changed",
+    "load.assigned",
+    "load.created",
+    "offer.sent",
+    "partner.appointment_created",
+    "partner.invoice_issued",
+    "partner.load_posted",
+    "partner.load_submitted",
+    "partner.registered",
+    "partner.shipment_requested",
+    "plugin.installed",
+    "plugin.uninstalled",
+    "security.event",
+    "settlement.ready",
+    "ticket.created",
+    "ticket.sla_breached",
+    "trip.exception",
+    "trip.status_changed"
+  ],
+  "modules": [
+    {
+      "id": "action_center",
+      "area": "Action Center",
+      "name": "Action Center",
+      "route": "/actions",
+      "status": "FLAGGED",
+      "permissions": []
+    },
+    {
+      "id": "overview",
+      "area": "Executive Overview",
+      "name": "Executive Overview",
+      "route": "/",
+      "status": "LIVE"
+    },
+    {
+      "id": "carriers",
+      "area": "Carriers",
+      "name": "Carriers",
+      "route": "/carriers",
+      "status": "LIVE"
+    },
+    {
+      "id": "verification_center",
+      "area": "Documents and Compliance",
+      "name": "Verification Center",
+      "route": "/verification",
+      "status": "LIVE"
+    },
+    {
+      "id": "partner_portal",
+      "area": "Partners",
+      "name": "Partner Portal",
+      "route": "/app/partner/",
+      "status": "LIVE"
+    },
+    {
+      "id": "partner_intake",
+      "area": "Partners",
+      "name": "Partner Intake",
+      "route": "/partner-intake",
+      "status": "LIVE"
+    },
+    {
+      "id": "partner_invoicing",
+      "area": "Partners",
+      "name": "Partner Invoicing",
+      "route": "/partner-intake",
+      "status": "LIVE"
+    },
+    {
+      "id": "developer_api",
+      "area": "Developers",
+      "name": "Developer API",
+      "route": "/app/developer/",
+      "status": "LIVE"
+    },
+    {
+      "id": "plugin_marketplace",
+      "area": "Developer and Plugins",
+      "name": "Plugin Marketplace",
+      "route": "/plugins",
+      "status": "LIVE"
+    },
+    {
+      "id": "brand_kit",
+      "area": "Marketing",
+      "name": "Brand Kit",
+      "route": "/brand-kit",
+      "status": "LIVE"
+    },
+    {
+      "id": "form_builder",
+      "area": "Marketing",
+      "name": "Form Builder",
+      "route": "/form-builder",
+      "status": "LIVE"
+    },
+    {
+      "id": "templates",
+      "area": "Marketing",
+      "name": "Template Studio",
+      "route": "/templates",
+      "status": "LIVE"
+    },
+    {
+      "id": "audiences",
+      "area": "Marketing",
+      "name": "Audiences",
+      "route": "/audiences",
+      "status": "LIVE"
+    },
+    {
+      "id": "campaign_manager",
+      "area": "Marketing",
+      "name": "Campaign Manager",
+      "route": "/campaign-manager",
+      "status": "LIVE"
+    },
+    {
+      "id": "smart_match",
+      "area": "Loads & Offers",
+      "name": "Smart Matching",
+      "route": "/matching",
+      "status": "LIVE"
+    },
+    {
+      "id": "webhooks",
+      "area": "Integrations",
+      "name": "Webhooks",
+      "route": "/webhooks",
+      "status": "LIVE"
+    },
+    {
+      "id": "system_health",
+      "area": "System Health",
+      "name": "System Health",
+      "route": "/health",
+      "status": "LIVE"
+    },
+    {
+      "id": "staff_roles",
+      "area": "Staff & Organization",
+      "name": "Staff & Roles",
+      "route": "/staff",
+      "status": "LIVE"
+    }
+  ],
+  "gate_conditions": {
+    "capability_registry_updated": "PASS",
+    "portal_depth_audit_completed": "PASS (structural: all nav->route->view mappings intact, 0 dead links; runtime/persona portion BLOCKED on auth logins)",
+    "verification_workflow_staging_proven": "PASS (discrepancy engine proven; live FMCSA BLOCKED - WebKey 403)",
+    "plugin_install_uninstall_staging_proven": "PASS",
+    "marketing_studio_staging_preview": "PARTIAL (Brand Kit, Template Studio, Audiences, Campaigns, Form Builder live; visual email builder remaining)",
+    "idempotency_correlation_id_standard": "PARTIAL",
+    "six_evidence_packs": "BLOCKED (needs authenticated logins; owner chose to skip test accounts)",
+    "browser_mobile_tests_archived": "BLOCKED (same auth constraint)",
+    "critical_dead_links_fixed": "PASS (audit found none)",
+    "no_production_leakage": "PASS (isolation gate green every build)",
+    "rollback_preserved": "PASS (source-controlled migrations, expansion-safe)"
+  },
+  "overall_gate": "FAIL - 6 of 11 conditions PASS; blockers are the two authenticated-evidence conditions + owner-credential items"
+}
