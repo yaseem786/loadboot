@@ -78,6 +78,7 @@ const NAV = [
     { path: '/health', label: 'System health', icon: 'refresh', perm: null },
     { path: '/integrations', label: 'Integrations', icon: 'refresh', perm: 'integrations.view', flag: 'integrations' },
     { path: '/webhooks', label: 'Webhooks', icon: 'refresh', perm: 'integrations.view' },
+    { path: '/plugins', label: 'Plugin Marketplace', icon: 'grid', perm: null },
     { path: '/flags', label: 'Feature flags', icon: 'flag', perm: 'flags.manage' },
     { path: '/settings', label: 'Settings', icon: 'cog', perm: 'settings.manage' },
   ]},
