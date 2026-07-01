@@ -1,0 +1,17 @@
+-- finance_lifecycle_matrix.sql — Increment 56 (receivables/payables/prep/reconcile) matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-01 → RESULT: FINANCE LIFECYCLE MATRIX: PASS (12 checks)
+-- Checks:
+--  F1a partner-invoice aging buckets sum EXACTLY to outstanding
+--  F1b carrier-fee aging buckets sum EXACTLY to outstanding
+--  F1c total_outstanding == partner + carrier outstanding
+--  F2  payables shape + explicit "maker/checker" note (this view can never pay)
+--  F3a invoice-prep queue NEVER contains a trip that already has a live invoice
+--  F3b every queue row carries a pod_status (or explicit 'no POD uploaded')
+--  F4a reconcile mismatch_count == mismatches array length
+--  F4b invoices + settlements summaries present
+--  F5a SEEDED paid-settlement-with-unpaid-invoice IS detected (unpaid_invoice_on_paid_settlement)
+--  F5b SEEDED settlement-total mismatch IS detected (settlement_total_mismatch) — fixtures deleted after
+--  F6  carrier AND broker denied on all four functions
+--  F7  anon has NO execute on any of the four
+-- NOTE: the maker/checker core itself (creator-cannot-approve, stale-version rejection, row locks,
+-- monetary limits) already exists in cc_decide_settlement and was proven in the earlier finance matrix.

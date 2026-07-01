@@ -28,7 +28,6 @@ const NAV = [
     { path: '/matching', label: 'Smart matching', icon: 'trend', perm: 'carriers.view' },
     { path: '/trips', label: 'Dispatch & trips', icon: 'truck', perm: 'dispatch.view', flag: 'dispatch' },
     { path: '/map', label: 'Live map', icon: 'truck', perm: null, flag: 'opsMap' },
-    { path: '/copilot', label: 'AI Copilot', icon: 'trend', perm: null, flag: 'aiCopilot' },
     { path: '/fleet', label: 'Fleet & drivers', icon: 'users', perm: 'fleet.view', flag: 'fleet' },
     { path: '/documents', label: 'Documents', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
     { path: '/compliance', label: 'Onboarding & compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },

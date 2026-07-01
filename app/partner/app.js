@@ -14,6 +14,7 @@ import {
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
   partnerGetProfile, partnerUpdateProfile,
   getPaymentInstructions, partnerSubmitInvoicePayment,
+  loadChecklist, partnerChecklistSubmit, partnerUpdateRequests, partnerRespondUpdate,
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -330,14 +331,45 @@ async function brokerDash(user, ov) {
           if (l.carrier) track = h('span', null, [pill('booked'), h('span', { style: 'margin-left:6px;font-size:.82rem' }, l.carrier)]);
           else if (l.board_status) track = pill(l.board_status === 'available' ? 'posted' : l.board_status);
           else track = h('span', { class: 'cp-sub' }, '—');
+          const docsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => brokerDocs(l) }, 'Docs');
           return h('tr', null, [
             h('td', null, h('b', null, (l.origin || '—') + ' → ' + (l.destination || '—'))),
             h('td', null, l.equipment || '—'), h('td', null, l.rate ? money(l.rate) : '—'),
-            h('td', null, pill(l.status)), h('td', null, track),
+            h('td', null, pill(l.status)), h('td', null, h('div', { style: 'display:flex;gap:6px;align-items:center' }, [track, docsBtn])),
           ]);
         })),
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
+  }
+
+  // Inc 54 — broker document checklist: see what dispatch needs, submit each item, see rejection reasons.
+  function brokerDocs(l) {
+    const bodyEl = h('div', null, h('div', { class: 'cp-sub' }, 'Loading checklist…'));
+    openModal('Documents — ' + (l.origin || '?') + ' → ' + (l.destination || '?'), [bodyEl]);
+    (async () => {
+      let items; try { items = await loadChecklist('partner_load', l.id); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load checklist.')); return; }
+      items = (items || []).filter(it => it.required_from === 'broker');
+      if (!items.length) { mount(bodyEl, h('div', { class: 'cp-sub' }, 'No documents required from you for this load.')); return; }
+      mount(bodyEl, h('div', null, items.map(it => {
+        const wrap = h('div', { style: 'padding:8px 0;border-bottom:1px solid #e2e8f0' });
+        const statusColor = it.status === 'verified' ? 'var(--lb-green, #16a34a)' : it.status === 'rejected' ? '#dc2626' : '#d97706';
+        wrap.appendChild(h('div', { style: 'display:flex;justify-content:space-between' }, [
+          h('b', null, it.label || it.doc_key), h('span', { style: 'color:' + statusColor + ';font-weight:700' }, it.status)]));
+        if (it.review_reason) wrap.appendChild(h('div', { class: 'cp-sub', style: 'color:#dc2626' }, 'Fix needed: ' + it.review_reason));
+        if (it.submitted_ref) wrap.appendChild(h('div', { class: 'cp-sub' }, 'You sent: ' + it.submitted_ref));
+        if (it.status === 'required' || it.status === 'rejected') {
+          const ref = h('input', { class: 'cp-in', placeholder: 'Document link / reference / note' });
+          const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+            if (!ref.value.trim()) { alert('Enter a document reference or note.'); return; }
+            ev.currentTarget.disabled = true;
+            try { await partnerChecklistSubmit(it.id, ref.value.trim()); ev.currentTarget.textContent = 'Sent ✓'; brokerDocs(l); }
+            catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not submit.'); }
+          } }, 'Submit');
+          wrap.appendChild(h('div', { class: 'cp-inlineform', style: 'margin-top:6px' }, [ref, send]));
+        }
+        return wrap;
+      })));
+    })();
   }
   mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');

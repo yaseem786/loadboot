@@ -96,6 +96,24 @@ export const getDispatchPrefs = () => rpc('cc_get_dispatch_prefs');
 export const carrierBestLoads = (carrierId, limit) => rpc('cc_carrier_best_loads', { p_carrier: carrierId ?? null, p_limit: limit ?? 10 });
 export const dispatchPlan = (maxLoads) => rpc('cc_dispatch_plan', { p_max_loads: maxLoads ?? 20 });
 // Detention / dwell automation (Inc 52-53): real arrive/depart stamps; scan auto-drafts detention for review.
+// Inc 56 — finance lifecycle: receivables/payables aging, invoice-prep pipeline, reconciliation.
+export const financeReceivables = () => rpc('cc_finance_receivables');
+export const financePayables = () => rpc('cc_finance_payables');
+export const invoicePrepQueue = (limit) => rpc('cc_invoice_prep_queue', { p_limit: limit ?? 50 });
+export const financeReconcile = (from, to) => rpc('cc_finance_reconcile', { p_from: from ?? null, p_to: to ?? null });
+// Inc 55 — carrier P&L + expenses (honest labels; est_profit is an ESTIMATE).
+export const carrierPnl = (from, to, carrierId) => rpc('cc_carrier_pnl', { p_from: from ?? null, p_to: to ?? null, p_carrier: carrierId ?? null });
+export const carrierAddExpense = (o) => rpc('cc_carrier_add_expense', { p: o });
+export const carrierExpenses = (from, to, limit) => rpc('cc_carrier_expenses', { p_from: from ?? null, p_to: to ?? null, p_limit: limit ?? 200 });
+export const carrierDeleteExpense = (id) => rpc('cc_carrier_delete_expense', { p_id: id });
+// Inc 54 — broker documents + update-request workflows.
+export const partnerChecklistSubmit = (itemId, ref, note) => rpc('cc_partner_checklist_submit', { p_item: itemId, p_ref: ref, p_note: note ?? null });
+export const loadChecklistReview = (itemId, verdict, reason) => rpc('cc_load_checklist_review', { p_item: itemId, p_verdict: verdict, p_reason: reason ?? null });
+export const requestUpdate = (subjectType, subjectId, partnerOrg, request, due) => rpc('cc_request_update', { p_subject_type: subjectType, p_subject_id: subjectId, p_partner: partnerOrg, p_request: request, p_due: due ?? null });
+export const updateRequests = (status, limit) => rpc('cc_update_requests', { p_status: status ?? 'open', p_limit: limit ?? 100 });
+export const partnerUpdateRequests = (status) => rpc('cc_partner_update_requests', { p_status: status ?? null });
+export const partnerRespondUpdate = (id, response) => rpc('cc_partner_respond_update', { p_id: id, p_response: response });
+export const resolveUpdateRequest = (id, action) => rpc('cc_resolve_update_request', { p_id: id, p_action: action ?? 'resolve' });
 export const tripArrive = (tripId, stop, freeMinutes) => rpc('cc_trip_arrive', { p_trip: tripId, p_stop: stop, p_free_minutes: freeMinutes ?? 120 });
 export const tripDepart = (tripId, stop) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop });
 export const detentionScan = (ratePerHour) => rpc('cc_detention_scan', { p_rate_per_hour: ratePerHour ?? 50 });

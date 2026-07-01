@@ -1,0 +1,14 @@
+-- carrier_pnl_matrix.sql — Increment 55 (carrier P&L + expenses) matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-01 → RESULT: CARRIER PNL MATRIX: PASS (10 checks)
+-- Checks:
+--  P1  carrier adds own expense (cc_carrier_add_expense)
+--  P2  invalid expense category rejected (table CHECK)
+--  P3a own P&L includes the expense
+--  P3b internal math consistent: revenue.total − expenses.total == metrics.est_profit
+--  P3c basis labels present on revenue AND expenses (honest-numbers rule)
+--  P4a another carrier's P&L does NOT contain the expense (tenant isolation)
+--  P4b self-scope: carrier always gets own org regardless of p_carrier
+--  P5  cross-tenant expense delete blocked
+--  P6a staff (dispatch.view) can read any carrier's P&L; broker denied
+--  P7  carrier deletes own MANUAL expense
+--  P8  anon has NO execute on all 4 new functions
