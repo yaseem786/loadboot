@@ -342,7 +342,7 @@ def footer():
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a></div>
 <div><div class="foot-h">Carriers</div><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Compliance</div><a href="services.html">Authority &amp; DOT Setup</a><a href="services.html">BOC-3 / UCR</a><a href="services.html">Form 2290</a><a href="services.html">IFTA</a></div>
-<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="pricing.html">Pricing</a><a href="load-score.html">Load Score Tool</a><a href="tools.html">Free Tools</a><a href="blog.html">Blog</a><a href="contact.html">Contact</a><a href="/app/carrier/">Carrier Login</a></div>
+<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="pricing.html">Pricing</a><a href="load-score.html">Load Score Tool</a><a href="tools.html">Free Tools</a><a href="blog.html">Blog</a><a href="contact.html">Contact</a><a href="/app/carrier/">Carrier Login</a><a href="/app/partner/">Partner Login</a><a href="/app/developer/">Developers &amp; API</a></div>
 </div>
 <div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
@@ -384,7 +384,8 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 %s
 %s
-<script src="app.js?v=6"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer())
+<script>%s</script>
+<script src="app.js?v=6"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), ANNOUNCE_JS)
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -653,6 +654,12 @@ LIVEBOARD_JS_PROD = (r"(function(){var SB='" + _BOARD_SB + r"',KEY='" + _BOARD_K
 # Preview variant: NO network call at all — explicit disabled state.
 LIVEBOARD_JS_PREVIEW = (r"(function(){var em=document.getElementById('liveEmpty');if(em){em.textContent='Live load board is disabled in this preview environment.';em.style.display='';}})();")
 LIVEBOARD_JS = LIVEBOARD_JS_PROD if IS_PRODUCTION_CTX else LIVEBOARD_JS_PREVIEW
+
+# Public announcement bar — fetches active audience='public' announcements (get_active_public_announcements,
+# anon-granted) and renders a dismissible top bar. Emergencies show first in red. Dismissal is per-announcement
+# (sessionStorage) so a visitor is not nagged after closing it. Production only (needs the live anon key).
+ANNOUNCE_JS_PROD = (r"(function(){var SB='" + _BOARD_SB + r"',KEY='" + _BOARD_KEY + r"';var TONE={emergency:['#7f1d1d','#fecaca'],warning:['#78350f','#fde68a'],promo:['#4c1d95','#ddd6fe'],info:['#0c4a6e','#bae6fd']};function esc(s){return (s==null?'':String(s)).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}fetch(SB+'/rest/v1/rpc/get_active_public_announcements',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d||!d.length)return;var a=null;for(var i=0;i<d.length;i++){var seen=false;try{seen=sessionStorage.getItem('lb_ann_'+d[i].id);}catch(e){}if(!seen){a=d[i];break;}}if(!a)return;var t=TONE[a.kind]||TONE.info;var bar=document.createElement('div');bar.className='lb-annbar';bar.setAttribute('role','status');bar.style.cssText='background:'+t[0]+';color:'+t[1]+';font:600 14px/1.4 Inter,system-ui,sans-serif;padding:10px 44px 10px 18px;text-align:center;position:relative;z-index:60';bar.innerHTML='<b style=\"color:#fff\">'+esc(a.title)+'</b>'+(a.body?' <span style=\"opacity:.92\">'+esc(a.body)+'</span>':'');var x=document.createElement('button');x.setAttribute('aria-label','Dismiss');x.textContent='×';x.style.cssText='position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:0;color:'+t[1]+';font-size:22px;line-height:1;cursor:pointer;padding:0 6px';x.onclick=function(){try{sessionStorage.setItem('lb_ann_'+a.id,'1');}catch(e){}bar.parentNode&&bar.parentNode.removeChild(bar);};bar.appendChild(x);document.body.insertBefore(bar,document.body.firstChild);}).catch(function(){});})();")
+ANNOUNCE_JS = ANNOUNCE_JS_PROD if IS_PRODUCTION_CTX else ""
 
 COMPARE = '''<section id="compare" class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The Difference</div><h2>Why carriers choose us over going it alone</h2></div>
 <div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">Loadboot</th></tr></thead><tbody>

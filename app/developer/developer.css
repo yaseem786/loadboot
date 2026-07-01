@@ -1,0 +1,19 @@
+/* developer.css — LoadBoot Developer Portal (builds on carrier.css primitives). */
+.cp-shell-1col { display: block; min-height: 100vh; }
+.dev-main { max-width: 860px; margin: 0 auto; }
+.cp-content { padding: 18px 16px 60px; }
+.cp-card { background: #fff; border: 1px solid var(--lb-border, #e2e8f0); border-radius: 16px; padding: 16px; }
+.cp-cardhead h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--lb-ink, #0f172a); }
+.cp-tablewrap { overflow-x: auto; }
+.cp-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.cp-table th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--lb-muted, #64748b); padding: 8px 10px; border-bottom: 1px solid var(--lb-border, #e2e8f0); }
+.cp-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.dev-createrow { display: flex; gap: 10px; align-items: center; }
+.dev-createrow .cp-in { margin: 0; flex: 1; }
+.dev-reveal { margin-top: 12px; padding: 12px 14px; border: 1px solid #fed7aa; background: #fff7ed; border-radius: 12px; }
+.dev-reveal-h { font-weight: 700; color: #9a3412; font-size: .84rem; margin-bottom: 8px; }
+.dev-key { display: block; word-break: break-all; background: #0f172a; color: #e2e8f0; padding: 10px 12px; border-radius: 8px; font-size: .82rem; margin-bottom: 8px; }
+.dev-p { font-size: .86rem; color: var(--lb-muted, #475569); margin: 14px 0 6px; }
+.dev-pre { background: #0f172a; color: #e2e8f0; padding: 12px 14px; border-radius: 10px; font-size: .8rem; overflow-x: auto; white-space: pre; }
+.dev-ul { margin: 6px 0 0; padding-left: 18px; font-size: .86rem; color: var(--lb-ink, #0f172a); line-height: 1.9; }
+.dev-ul code, .dev-p code, .cp-table code { background: #f1f5f9; padding: 1px 6px; border-radius: 6px; font-size: .82rem; }
