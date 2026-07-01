@@ -15,6 +15,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
+  carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
@@ -651,8 +652,40 @@ async function appView(user) {
         h('div', { style: 'margin-top:12px' }, download),
       ]);
     })();
+    // Inc 55 — Profit & Loss (honest labels: confirmed revenue vs manually-entered expenses; ESTIMATE marked).
+    const pnlCard = h('div', { class: 'cp-card' }, [cardHead('Profit & Loss (this month)'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let p; try { p = await carrierPnl(); } catch (e) { mount(pnlCard, [cardHead('Profit & Loss (this month)'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      const m = p.metrics || {}, rev = p.revenue || {}, ex = p.expenses || {};
+      const row2 = (lbl, val, sub) => h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, lbl), sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)), h('b', null, val)]);
+      const cats = Object.entries(ex.by_category || {});
+      const expForm = (() => {
+        const cat = h('select', { class: 'cp-in' }, ['fuel','tolls','driver_pay','maintenance','repairs','insurance','truck_payment','trailer','permits','factoring_fee','dispatch_fee','misc'].map(c => h('option', { value: c }, c.replace('_',' '))));
+        const amt = h('input', { class: 'cp-in', type: 'number', placeholder: 'Amount $' });
+        const add = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          if (!amt.value || Number(amt.value) <= 0) { alert('Enter a valid amount.'); return; }
+          ev.currentTarget.disabled = true;
+          try { await carrierAddExpense({ category: cat.value, amount: amt.value }); loadFinance(); }
+          catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not add.'); }
+        } }, 'Add expense');
+        return h('div', { class: 'cp-inlineform', style: 'margin-top:8px' }, [cat, amt, add]);
+      })();
+      mount(pnlCard, [cardHead('Profit & Loss (this month)'),
+        row2('Revenue', money(rev.total), rev.basis),
+        row2('Expenses', money(ex.total), ex.basis),
+        row2('Est. profit', money(m.est_profit), m.note),
+        h('div', { class: 'cp-row-s', style: 'margin-top:6px' },
+          [(m.delivered_trips || 0) + ' delivered', m.loaded_rpm != null ? '$' + m.loaded_rpm + '/mi loaded' : null,
+           m.profit_per_mile != null ? '$' + m.profit_per_mile + '/mi profit' : null,
+           m.on_time_pct != null ? m.on_time_pct + '% on-time (' + (m.on_time_basis || '') + ')' : null].filter(Boolean).join(' · ')),
+        cats.length ? h('div', { style: 'margin-top:8px' }, cats.map(([c, v]) => h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, c.replace('_',' ')), h('span', null, money(v))]))) : h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'No expenses entered this month — add them below for a real profit picture.'),
+        expForm,
+        (p.by_lane && p.by_lane.length) ? h('div', { style: 'margin-top:10px' }, [h('b', { class: 'cp-row-s' }, 'Top lanes'), ...p.by_lane.map(x => h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, x.lane + ' (' + x.trips + ')'), h('span', null, money(x.revenue))]))]) : null,
+      ].filter(Boolean));
+    })();
     mount(content, h('div', null, [
       h('div', { class: 'cp-kpis' }, [statTile('Fees due', money(due), 'finance', 'amber'), statTile('Fees paid', money(paid), 'dash', 'green'), statTile('Gross hauled', money(gross), 'trips', 'blue'), statTile('Invoices', String(rows.length), 'docs', 'violet')]),
+      pnlCard,
       stmtCard,
       h('div', { class: 'cp-grid' }, [
         h('div', { class: 'cp-card cp-col2' }, [cardHead('Dispatch fees over time'), series.length ? miniBars(series, { height: 84 }) : h('div', { class: 'cp-muted' }, 'No data yet.')]),

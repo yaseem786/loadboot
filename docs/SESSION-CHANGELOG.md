@@ -649,3 +649,33 @@ box, no invented data):
 - Proof: DETENTION/EXCEPTION MATRIX: PASS (12 checks) on staging (tests/security/detention_exceptions_matrix.sql); test rows cleaned up.
 - UI: Command Center → new "Exception Center" nav (flag load_marketplace): KPIs (detention count, draft $ pending review), kind pills, on-site pill, resolve drawer with required audit note + "resolving bills nothing" notice, "Run detention scan" button (dispatch.manage). Carrier portal → "⏱ Arrive / depart" chips on active trips (At/Left pickup/delivery) — recorded timestamps protect the carrier's detention pay; detention alert shown on departure.
 - Gates: node --check OK (app.js, shell.js, exceptionCenter.js, api.js, carrier app), IMPORT-REFERENCE CHECK: PASS.
+
+## INC 54 — BROKER DOCUMENTS, APPROVALS + UPDATE-REQUEST WORKFLOWS
+- `cwc_broker_docs.sql` (BOTH DBs, md5 parity on all 8 fns; anon surface still 5):
+  - load_document_checklist +7 additive columns (submitted_ref/note/at/by, review_reason, reviewed_by/at); cc_load_checklist extended to expose them (staff or owning broker only).
+  - `cc_partner_checklist_submit` — broker submits ITS OWN broker-side items (self-scoped; carrier items blocked); resubmit after rejection allowed; verified items locked.
+  - `cc_load_checklist_review` — staff verify/reject; rejection REQUIRES a reason the broker sees; reviewer+time recorded.
+  - `app_private.update_requests` + `cc_request_update` / `cc_update_requests` (staff) / `cc_partner_update_requests` / `cc_partner_respond_update` (broker self-scoped, single response) / `cc_resolve_update_request` (staff resolve/cancel). Events + audit on every step.
+- Proof: BROKER DOCS MATRIX: PASS (14 checks) — tests/security/broker_docs_matrix.sql. Fixtures cleaned.
+- UI: Command Center → Partner Intake broker tab: open update-requests card (+Resolve), per-load "Docs" drawer (verify / reject-with-reason, submitted refs visible), "Ask update" drawer. Partner portal → "Docs" button per load: broker sees required items, rejection reasons ("Fix needed: …"), submits reference+note inline.
+- ALSO (owner instruction): old Gemini-based **AI Copilot deleted** — nav entry, route, import and view file removed; ai_copilot_enabled flag OFF in BOTH DBs. Replaced by the deterministic AI Load Pilot (no external API key needed).
+- Gates: node --check OK (app.js, shell.js, partnerIntake.js, partner/app.js, api.js), IMPORT-REFERENCE CHECK: PASS.
+
+## INC 55 — CARRIER P&L + PERFORMANCE DASHBOARDS
+- `cwd_carrier_pnl.sql` (BOTH DBs, md5 parity; anon surface still 5):
+  - `app_private.carrier_expenses` (12 categories, amount>0 CHECK, manual|system source).
+  - `cc_carrier_add_expense` / `cc_carrier_expenses` / `cc_carrier_delete_expense` — carrier self-scoped; delete limited to own MANUAL rows.
+  - `cc_carrier_pnl(from,to,carrier)` — revenue (confirmed booked trip rates + billable accessorials; drafts EXCLUDED and shown separately), expenses by category (labeled "manually entered — not audited accounting"), est_profit (labeled ESTIMATE), loaded RPM, profit/mile, profit/load, on-time % ONLY from real recorded timestamps (basis string states coverage), cancelled count, top-5 lanes, top-5 trucks, 6-month trend. Carrier self; staff any carrier.
+- Proof: CARRIER PNL MATRIX: PASS (10 checks) — tests/security/carrier_pnl_matrix.sql (tenant isolation, math consistency, label presence, cross-tenant delete blocked, broker denied, anon zero).
+- UI: Carrier portal → Finance tab gains "Profit & Loss (this month)" card: revenue/expenses/est-profit rows each with basis text, per-category breakdown, inline add-expense form (12 categories), top lanes, on-time with coverage note.
+- Gates: node --check OK, IMPORT-REFERENCE CHECK: PASS.
+
+## INC 56 — FINANCE LIFECYCLE: RECEIVABLES / PAYABLES / PREP / RECONCILE
+- `cwe_finance_lifecycle.sql` (BOTH DBs, md5 parity on all 4 fns; anon surface still 5). Maker/checker core (cc_decide_settlement) untouched — this adds the ops layer around it:
+  - `cc_finance_receivables` — partner invoices + carrier fee invoices aged current/1-30/31-60/61-90/90+ by due date; per-item list sorted by overdue days.
+  - `cc_finance_payables` — pending + approved-not-paid settlements with age; explicit note that payment only happens via maker/checker.
+  - `cc_invoice_prep_queue` — delivered trips with NO live invoice, oldest first, with each trip's latest POD review status ("delivered → POD → invoice" pipeline).
+  - `cc_finance_reconcile` — deterministic cross-check; lists EVERY mismatch individually (paid invoice on unpaid settlement / unpaid invoice on paid settlement / settlement gross != sum of linked invoices).
+- Proof: FINANCE LIFECYCLE MATRIX: PASS (12 checks) — incl. bucket-sum equality asserted and SEEDED mismatches detected then cleaned up.
+- UI: Command Center → Finance gains 4 new tabs: Receivables (aging table + items), Payables (KPIs + list, read-only by design), Invoice prep (one-click Create invoice per delivered trip, POD pill), Reconcile (mismatch table or "books consistent ✓").
+- Gates: node --check OK, IMPORT-REFERENCE CHECK: PASS (duplicate import caught and fixed).

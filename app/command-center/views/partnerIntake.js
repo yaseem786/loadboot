@@ -12,6 +12,7 @@ import {
   listPartnerShipments, decidePartnerShipment, listPartnerAppointmentsAll,
   listPartnerInvoicesAll, createPartnerInvoice, setPartnerInvoiceStatus, listPartnerOrgs,
   getPaymentInstructions, setPaymentInstructions,
+  loadChecklist, loadChecklistReview, requestUpdate, updateRequests, resolveUpdateRequest,
 } from '../../shared/api.js';
 import { openDrawer } from '../../shared/ui/components.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -133,16 +134,35 @@ export function renderPartnerIntake(host) {
     showLoading(body, 'Loading broker loads…');
     let rows; try { rows = await listPartnerLoads({ limit: 200 }); } catch (e) { showError(body, humanizeError(e), loadBroker); return; }
     rows = rows || [];
-    if (!rows.length) { mount(body, card(el('div', { class: 'cc-sub', style: 'padding:8px' }, 'No broker submissions yet.'))); return; }
-    mount(body, card(el('table', { class: 'cc-table' }, [
+    // Inc 54 — open update requests to/from brokers (staff view)
+    let reqs = []; try { reqs = (await updateRequests(null, 50)) || []; } catch (_) { reqs = []; }
+    reqs = reqs.filter(r => r.status === 'open' || r.status === 'responded');
+    const reqCard = reqs.length ? el('div', { class: 'lb-card', style: 'margin-bottom:10px' }, [
+      el('b', null, 'Update requests (' + reqs.length + ' open)'),
+      el('div', null, reqs.map(r => el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #e2e8f0' }, [
+        el('div', null, [
+          el('div', null, [el('b', null, r.partner_name || 'partner'), el('span', { class: 'cc-sub' }, ' — ' + r.request)]),
+          r.response ? el('div', { class: 'cc-sub', style: 'color:#16a34a' }, '↳ ' + r.response) : el('div', { class: 'cc-sub' }, 'awaiting partner response'),
+        ]),
+        manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
+          ev.currentTarget.disabled = true;
+          try { await resolveUpdateRequest(r.id, 'resolve'); toast('Resolved', 'success'); loadBroker(); }
+          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+        } }, 'Resolve') : null,
+      ].filter(Boolean)))),
+    ]) : null;
+    if (!rows.length) { mount(body, el('div', null, [reqCard, card(el('div', { class: 'cc-sub', style: 'padding:8px' }, 'No broker submissions yet.'))].filter(Boolean))); return; }
+    mount(body, el('div', null, [reqCard, card(el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Broker', 'Lane', 'Equip', 'Rate', 'Pickup', 'Status', ''].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(l => {
         const act = el('td', null);
+        act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => docsDrawer(l) }, 'Docs'));
+        if (manage) act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: () => askUpdateDrawer(l) }, 'Ask update'));
         if (manage && l.status === 'submitted') {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
+          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
           act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
         } else if (manage && l.status === 'accepted') {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
+          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, l.broker || '—')),
@@ -151,7 +171,49 @@ export function renderPartnerIntake(host) {
           el('td', null, l.pickup_date ? fmtDateTime(l.pickup_date) : '—'), el('td', null, pill(l.status)), act,
         ]);
       })),
-    ])));
+    ]))].filter(Boolean)));
+  }
+
+  // Inc 54 — checklist review drawer: broker submissions with verify / reject-with-reason.
+  async function docsDrawer(l) {
+    const bodyEl = el('div', null, el('div', { class: 'cc-sub' }, 'Loading checklist…'));
+    openDrawer('Documents — ' + (l.broker || ''), bodyEl, { subtitle: (l.origin || '?') + ' → ' + (l.destination || '?') });
+    let items; try { items = await loadChecklist('partner_load', l.id); } catch (e) { mount(bodyEl, el('div', { class: 'cc-sub', style: 'color:#dc2626' }, humanizeError(e))); return; }
+    const TONE2 = { required: 'amber', received: 'blue', verified: 'green', rejected: 'red', expired: 'red', waived: 'gray' };
+    mount(bodyEl, el('div', null, (items || []).map(it => el('div', { class: 'lb-card', style: 'margin-bottom:8px' }, [
+      el('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, [
+        el('div', null, [el('b', null, it.label || it.doc_key), el('div', { class: 'cc-sub' }, 'from ' + it.required_from)]),
+        el('span', { class: 'cc-pill cc-pill-' + (TONE2[it.status] || 'gray') }, it.status),
+      ]),
+      it.submitted_ref ? el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'Submitted: ' + it.submitted_ref + (it.submitted_note ? ' — ' + it.submitted_note : '')) : null,
+      it.review_reason ? el('div', { class: 'cc-sub', style: 'color:#dc2626' }, 'Rejected: ' + it.review_reason) : null,
+      (manage && it.status === 'received') ? el('div', { style: 'margin-top:8px;display:flex;gap:6px;justify-content:flex-end' }, [
+        el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => {
+          ev.currentTarget.disabled = true;
+          try { await loadChecklistReview(it.id, 'verified'); toast('Verified', 'success'); docsDrawer(l); }
+          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+        } }, 'Verify'),
+        el('button', { class: 'lb-btn lb-btn-sm', onClick: () => {
+          const reason = prompt('Rejection reason (the broker will see this):');
+          if (!reason || !reason.trim()) return;
+          loadChecklistReview(it.id, 'rejected', reason.trim()).then(() => { toast('Rejected with reason', 'success'); docsDrawer(l); }).catch(e => toast(humanizeError(e), 'error'));
+        } }, 'Reject'),
+      ]) : null,
+    ].filter(Boolean)))));
+  }
+
+  // Inc 54 — ask the broker for corrected/updated information.
+  function askUpdateDrawer(l) {
+    const ta = el('textarea', { class: 'cc-input', rows: '3', placeholder: 'e.g. Please confirm the pickup number and facility hours' });
+    const form = el('div', null, [
+      el('label', { class: 'cc-field' }, [el('span', null, 'What do you need from ' + (l.broker || 'the broker') + '?'), ta]),
+      el('div', { class: 'cc-drawer-actions', style: 'margin-top:10px' }, el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
+        if (!ta.value.trim()) { alert('Request text is required.'); return; }
+        try { await requestUpdate('partner_load', l.id, l.broker_org, ta.value.trim()); toast('Update requested — the broker sees it in their portal', 'success'); document.getElementById('cc-drawer-root')?.remove(); loadBroker(); }
+        catch (e) { alert(humanizeError(e)); }
+      } }, 'Send request')),
+    ]);
+    openDrawer('Request update — ' + (l.broker || ''), form, { subtitle: (l.origin || '?') + ' → ' + (l.destination || '?') });
   }
 
   async function loadShipper() {

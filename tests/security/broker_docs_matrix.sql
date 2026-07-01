@@ -1,0 +1,17 @@
+-- broker_docs_matrix.sql — Increment 54 (broker documents + update-request workflows) matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-01 → RESULT: BROKER DOCS MATRIX: PASS (14 checks)
+-- Checks:
+--  B1  broker submits own broker-side checklist item (cc_partner_checklist_submit → received)
+--  B2a staff rejection WITHOUT reason rejected (reason mandatory)
+--  B2b rejection stores status='rejected' + review_reason visible to broker
+--  B3a broker resubmits after rejection (received again)
+--  B3b staff verifies (cc_load_checklist_review → verified)
+--  B4a broker cannot resubmit a verified item
+--  B4b a CARRIER user cannot submit a broker checklist item
+--  U1a staff creates update request (cc_request_update) — appears in cc_update_requests with partner name
+--  U2a broker sees own request via cc_partner_update_requests
+--  U2b broker responds once; double-respond blocked
+--  U3  carrier user denied on both partner + staff update-request reads
+--  U4  staff resolves; double-resolve blocked
+--  A1  anon has NO execute on all 7 new functions
+-- Fixture: broker persona submits a load (Inc44 wizard RPC, seeds 5 broker docs); all fixture rows deleted at end.
