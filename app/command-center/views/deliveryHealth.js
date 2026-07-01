@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, fmtDateTime } from '../../shared/ui/components.js';
-import { deliveryHealth, deliveryList, suppressionsList, suppress } from '../../shared/api.js';
+import { deliveryHealth, deliveryList, suppressionsList, suppress, deliveryReleaseDue, commTriggers, setCommTrigger, studioListTemplates, pipelineHealth } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -20,18 +20,65 @@ export function renderDeliveryHealth(host) {
   const kpis = el('div', { class: 'cc-kpi-grid' });
   const body = el('div', { class: 'cc-table-wrap' });
   const suppBox = el('div', { class: 'cc-table-wrap', style: 'margin-top:18px' });
+  const autoBox = el('div', { style: 'margin-top:8px' });
+  const pipeStrip = el('div', { style: 'margin:8px 0' });
   const filterBar = el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin:10px 0' },
     FILTERS.map(([v, l]) => el('button', { class: 'cc-chip-btn' + (v === statusFilter ? ' on' : ''), onClick: () => { statusFilter = v; renderFilters(); loadTable(); } }, l)));
   function renderFilters() { [...filterBar.children].forEach((b, i) => b.classList.toggle('on', FILTERS[i][0] === statusFilter)); }
 
+  const headActions = manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: releaseDue }, 'Release due scheduled') : null;
   mount(host, el('div', null, [
-    sectionHead('Delivery Health', 'Every campaign & transactional message flows through one delivery ledger. Bounces and complaints auto-suppress; failed sends retry up to 5× then move to dead letter.'),
-    kpis, filterBar, body,
+    sectionHead('Delivery Health', 'Every campaign & transactional message flows through one delivery ledger. Bounces and complaints auto-suppress; failed sends retry up to 5× then move to dead letter.', headActions),
+    kpis, pipeStrip, filterBar, body,
     sectionHead('Suppression list', 'Hard opt-outs, bounces and complaints. Suppressed addresses are excluded from every future send.',
       manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: addSuppression }, '+ Suppress address') : null),
     suppBox,
+    sectionHead('Automations', 'Fire an acknowledgement automatically when a domain event happens (e.g. a website form is submitted). Off until you activate it.'),
+    autoBox,
   ]));
-  loadHealth(); loadTable(); loadSupp();
+  loadHealth(); loadTable(); loadSupp(); loadAutomations(); loadPipeline();
+
+  async function loadPipeline() {
+    let p; try { p = await pipelineHealth(); } catch (_) { return; }
+    if (!p) return;
+    const wq = Number((p.webhook_deliveries || {}).queued || 0);
+    const wf = Number((p.webhook_deliveries || {}).failed || 0);
+    const ep = Number((p.domain_events || {}).pending || 0);
+    const inflight = Number(p.campaigns_in_flight || 0);
+    const chip = (label, val, warn) => el('span', { class: 'cc-pill cc-pill-' + (warn && val > 0 ? 'amber' : 'gray'), style: 'margin-right:8px' }, label + ': ' + val);
+    mount(pipeStrip, el('div', { class: 'cc-sub', style: 'display:flex;flex-wrap:wrap;align-items:center' }, [
+      el('span', { style: 'margin-right:8px;font-weight:600' }, 'Pipeline backlog —'),
+      chip('events pending', ep, true), chip('webhooks queued', wq, false), chip('webhooks failed', wf, true),
+      chip('campaigns in flight', inflight, false),
+    ]));
+  }
+
+  async function loadAutomations() {
+    if (!manage) { mount(autoBox, el('div', { class: 'cc-sub' }, 'Read-only.')); return; }
+    showLoading(autoBox, 'Loading automations…');
+    let trigs, tpls;
+    try { [trigs, tpls] = await Promise.all([commTriggers(), studioListTemplates().catch(() => [])]); }
+    catch (e) { showError(autoBox, humanizeError(e), loadAutomations); return; }
+    const existing = (trigs || []).find(t => t.event_type === 'form.submitted' && t.channel === 'email') || { template_key: '', subject: '', active: false };
+    const tplSel = el('select', { class: 'cc-input', style: 'max-width:260px' },
+      [el('option', { value: '' }, 'Select a template…')].concat((tpls || []).map(t => el('option', { value: t.key, selected: existing.template_key === t.key ? 'selected' : null }, t.name || t.key))));
+    const subj = el('input', { class: 'cc-input', placeholder: 'Subject override (optional)', value: existing.subject || '' });
+    const activeChip = el('button', { class: 'cc-chip-btn' + (existing.active ? ' on' : '') }, existing.active ? 'Active' : 'Inactive');
+    let active = !!existing.active;
+    activeChip.onclick = () => { active = !active; activeChip.classList.toggle('on'); activeChip.textContent = active ? 'Active' : 'Inactive'; };
+    const save = el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async () => {
+      if (active && !tplSel.value) { toast('Pick a template to activate', 'error'); return; }
+      try { await setCommTrigger({ event: 'form.submitted', channel: 'email', templateKey: tplSel.value || null, subject: subj.value || null, active }); toast('Automation saved', 'success'); loadAutomations(); }
+      catch (e) { toast(humanizeError(e), 'error'); }
+    } }, 'Save automation');
+    mount(autoBox, el('div', { class: 'lb-card' }, [
+      el('div', { style: 'font-weight:700' }, 'Website form → acknowledgement email'),
+      el('div', { class: 'cc-sub', style: 'margin:4px 0 10px' }, 'When any website form is submitted, auto-send this template to the submitter (consent + suppression still apply).'),
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [tplSel, activeChip]),
+      subj,
+      el('div', { style: 'margin-top:10px' }, save),
+    ]));
+  }
 
   async function loadHealth() {
     let h; try { h = await deliveryHealth(); } catch (e) { mount(kpis, el('div', { class: 'lb-state' }, humanizeError(e))); return; }
@@ -80,6 +127,11 @@ export function renderDeliveryHealth(host) {
         el('td', null, el('span', { class: 'cc-sub' }, fmtDateTime(s.created_at))),
       ]))),
     ]));
+  }
+
+  async function releaseDue() {
+    try { const n = await deliveryReleaseDue(null); toast(n ? ('Released ' + n + ' scheduled → queued') : 'No due scheduled messages', 'success'); loadHealth(); loadTable(); }
+    catch (e) { toast(humanizeError(e), 'error'); }
   }
 
   async function addSuppression() {

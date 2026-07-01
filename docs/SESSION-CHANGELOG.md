@@ -297,3 +297,193 @@ events, health, plus carrier + anon denial). All DELIVTEST fixtures cleaned up.
 - Marketing build OK; secret scan clean on all new files.
 - Anon SECURITY DEFINER surface unchanged at **5** on both databases.
 - Gate stays honest **PASS 10 / BLOCKED 2 of 12** (owner browser proofs still pending).
+
+## Increment 31 — Delivery-engine depth: campaign analytics + transactional enqueue
+
+Additive depth on the unified engine (no anon-surface change; still 5 on both DBs).
+- `cc_campaign_analytics(campaign)` — counts (total/sent/delivered/opened/clicked/bounced/failed/dead_letter/
+  pending) + rates (delivery/open/click/bounce) straight off the ledger. Staff-gated.
+- `cc_enqueue_transactional(channel,email,template,subject,idem,meta,scheduled_at)` — puts a SINGLE message
+  onto the same ledger (the hook automations/events use). Idempotent per key (event replay never double-sends),
+  suppression-enforced, validates channel + email. Staff-gated.
+- Frontend: Campaign Manager row **Stats** drawer (delivery outcomes + rates); api wrappers `campaignAnalytics`,
+  `enqueueTransactional`.
+- Proof: appended to `tests/security/delivery_engine_matrix.sql` → **ANALYTICS/TXN MATRIX: PASS (12 checks)**
+  (analytics counts, transactional queue, idempotent duplicate, suppression block, invalid email/channel raise,
+  carrier + anon denial). Fixtures cleaned up.
+- Migration: `cve_delivery_analytics_transactional` (applied to staging + production).
+
+## Increment 32 — Scheduled-send release transition (closes a real correctness gap)
+
+Enqueue writes future sends as `scheduled`, but `cc_delivery_claim` only picks `queued`, so scheduled
+campaigns would never actually send. Added `cc_delivery_release_due(channel)` — promotes due
+(`scheduled_at <= now`) scheduled rows to `queued`; idempotent, safe on any cron/worker cadence, staff-gated.
+- Frontend: **Release due scheduled** button on Delivery Health; api wrapper `deliveryReleaseDue`.
+- Proof: `tests/security/delivery_engine_matrix.sql` → **RELEASE-DUE MATRIX: PASS (5 checks)** (promotes only
+  the due row, leaves future scheduled, idempotent second call = 0, carrier + anon denied).
+- Migration: `cvf_delivery_release_due` (applied to staging + production). Anon surface unchanged (5).
+
+## Verification — comm preferences already complete (no change)
+
+While extending consent, verified that self-service communication preferences already exist and work:
+`cc_pocket_get_preferences()` / `cc_pocket_save_preferences(jsonb)` — self-scoped via auth.uid(), anon
+revoked, audited (consent.update), and wired to the Carrier Portal → Account “Communication preferences” card
+(marketing/announcements/load-offers/weekly/SMS toggles + global unsubscribe). These feed the same
+`comm_preferences` row `resolve_audience_emails` reads for carrier consent. A redundant duplicate briefly added
+this session was removed; anon SECURITY DEFINER surface remains 5 on both databases.
+
+## Increment 33 — Provider adapter: service-role delivery worker + signed webhook (owner-deploy-gated)
+
+Completes the engine's provider layer as source. The old `notification-dispatcher` referenced RPCs that were
+never created (its own comments flag it as the "documented P0.4 gap") — so the unified ledger is now the single
+real send path.
+
+Backend (migration `cvg_delivery_worker`, applied to staging + production):
+- `cc_delivery_worker_claim(limit,channel)`, `cc_delivery_worker_mark(...)`, `cc_delivery_worker_resolve(ref,email)`
+  — the queue drain/settle/correlate RPCs. Deliberately kept OFF the anon+authenticated surface: execute revoked
+  from public/anon/authenticated, granted ONLY to `service_role`. Anon SECURITY DEFINER surface unchanged (5).
+
+Edge functions (SOURCE ONLY — not deployed; deploy + provider secrets are owner actions):
+- `supabase/functions/delivery-worker/index.ts` — releases due scheduled → claims → sends via Resend → marks.
+  Safe **no-op until RESEND_API_KEY is set** (returns "email delivery disabled"); nothing sends silently.
+- `supabase/functions/delivery-webhook/index.ts` — verifies the Resend/Svix **signature** (rejects unsigned),
+  maps provider events → ledger statuses via `cc_delivery_worker_mark` (bounce/complaint auto-suppress),
+  idempotent per dedupe_key. **Rejects all requests until RESEND_WEBHOOK_SECRET is set.**
+
+Proof: `tests/security/delivery_engine_matrix.sql` → **WORKER MATRIX: PASS (6 checks)** (claim picks queued,
+resolve by ref + by email, mark sent, and worker RPCs proven NOT executable by anon/authenticated).
+
+OWNER ACTIONS to go live (assistant cannot: needs secrets + deploy): set RESEND_API_KEY / RESEND_FROM /
+RESEND_WEBHOOK_SECRET in Edge Function secrets, deploy delivery-worker (schedule every minute via pg_cron+pg_net)
+and delivery-webhook (verify_jwt=false), and point a Resend webhook at it. No real email is sent in dev until then.
+
+## Increment 34 — Templates carry real content into sends (render + snapshot)
+
+Closed the last functional gap: campaigns snapshotted only a subject, so a real send would have no body.
+- `cc_render_template(key, vars)` — server-truth {{variable}} substitution over comm_templates; reports
+  unresolved placeholders. Staff-gated, anon revoked.
+- `cc_campaign_enqueue` now resolves the campaign's template (or its own subject/body) and snapshots
+  subject + body_html + body_text into each delivery's meta. All prior guards unchanged — re-ran the delivery
+  engine matrix: no regression. (A production-only status typo was caught and fixed; prod & staging function
+  bodies now hash-identical.)
+- `delivery-worker` transmits the snapshotted HTML + text (falls back to subject).
+- Template Studio: **Server render** button shows the exact saved render + any unresolved variables;
+  api wrapper `renderTemplate`.
+- Proof: `tests/security/delivery_engine_matrix.sql` → **RENDER/SNAPSHOT MATRIX: PASS (3 checks)** +
+  **DELIVERY ENGINE REGRESSION: PASS**. Migration `cvh_template_render_snapshot` (staging + production).
+  Anon surface unchanged (5).
+
+## Increment 35 — Governance + measurement + demonstration (completes the ChatGPT delivery chain)
+
+The directive's architecture chain was Audience→Template→Campaign→Channel→**Approval**→Schedule→Queue→
+Provider→Events→Analytics→**Attribution**→Audit. The two missing links plus the working demonstration:
+
+**Approval (maker-checker)** — migration `cvi_campaign_approval`:
+- `campaigns.approved_by/approved_at`; `cc_campaign_approve(id, approve)` — the approver CANNOT be the
+  campaign's creator (separation of duties, mirroring settlements). `cc_campaign_enqueue` now REFUSES to send
+  an unapproved campaign. `cc_cmp_list` extended with approval state. Campaign Manager shows an approval pill +
+  Approve/Revoke action, and the send drawer blocks until approved.
+- Proof: **APPROVAL MATRIX: PASS (8 checks)** (unapproved send denied, creator self-approve denied, approve→
+  send works, revoke re-blocks, carrier + anon denied).
+
+**Attribution** — migration `cvj_campaign_attribution`:
+- `cc_campaign_attribution(id)` — ties web conversions (form submissions/leads carrying the campaign's
+  utm_campaign) back to the campaign, with per-form breakdown + conversion rate. Surfaced in the Stats drawer.
+- Proof: **ATTRIBUTION MATRIX: PASS (3 checks)**.
+
+**Working staging demonstration** (directive item 10) — `docs/DELIVERY-ENGINE-STAGING-DEMO.md`:
+- Ran the entire lifecycle on staging via real RPCs (approve→preview→suppress→enqueue→worker-claim→
+  delivered/bounced→analytics→attribution), self-cleaning. Reproducible via the `pg_temp.demo()` script.
+
+Both DBs hash-identical on all changed functions (a prod-only enqueue typo from increment 34 was caught and
+corrected here too). Anon SECURITY DEFINER surface unchanged at 5. Foundation Gate stays honest 10/12.
+
+## Increment 36 — SMS lane through the unified engine (completes multi-channel)
+
+`cc_enqueue_transactional` validated every recipient as an email, so SMS could never be enqueued. Now it
+branches on channel: email → email regex + recipient_email + resend; sms → E.164-ish phone + recipient_phone +
+twilio, with suppression enforced on the correct (channel,address). Same ledger, same idempotency, same
+service-role worker RPCs (channel-parameterised) — only the transport differs.
+- New `supabase/functions/delivery-worker-sms/index.ts` — drains the SMS lane via Twilio; **safe no-op until
+  TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM are set** (SMS costs money, so it stays off until the owner enables it).
+- Proof: **SMS TXN MATRIX: PASS (4 checks)** (sms stores phone + twilio, bad phone rejected, email path intact,
+  sms suppression enforced) + **TXN EMAIL REGRESSION: PASS**. Migration `cvk_transactional_sms`
+  (staging + production). Anon SECURITY DEFINER surface unchanged (5).
+
+## Increment 37 — One-click unsubscribe (CAN-SPAM / RFC 8058) — WITHOUT widening the public surface
+
+Legally-required list-unsubscribe for real email sending, built so the anon SECURITY DEFINER surface STAYS at 5:
+the unsubscribe link carries a delivery's correlation_id (unguessable 122-bit uuid) as an opaque token, resolved
+through a **service-role** RPC called by an edge function — not a public/anon DB grant.
+- `cc_delivery_worker_unsubscribe(token)` — service-role only; suppresses the recipient on the right channel
+  and marks the delivery 'unsubscribed'; idempotent; unknown token is a safe no-op. Audited (comm.unsubscribe).
+- `supabase/functions/unsubscribe/index.ts` — public GET confirmation page + RFC 8058 one-click POST; resolves
+  the token via the service-role RPC (verify_jwt=false, no extra secret).
+- `delivery-worker` now adds `List-Unsubscribe` + `List-Unsubscribe-Post` headers and a footer unsubscribe link
+  (per-recipient correlation_id) to every marketing email.
+- Proof: **UNSUBSCRIBE MATRIX: PASS (4 checks)** (token→suppress+mark, unknown token safe, and the RPC proven
+  NOT executable by anon/authenticated). Migration `cvl_unsubscribe` (staging + production).
+  **Anon SECURITY DEFINER surface unchanged at 5** — verified after adding the feature.
+
+## Increment 38 — Campaign A/B testing (the last net-new feature)
+
+Content variants with a deterministic, weighted audience split on the unified engine.
+- New `app_private.campaign_variants` (label, subject, body_html/text, weight) + RPCs `cc_campaign_variants`,
+  `cc_campaign_set_variant` (editing clears approval → re-approval required), `cc_campaign_delete_variant`,
+  `cc_campaign_variant_analytics` (per-variant counts + suggested winner). All staff-gated, anon revoked.
+- `cc_campaign_enqueue` is now variant-aware: recipients split by a STABLE per-address hash weighted by variant
+  weight (same person always lands in the same variant), each delivery snapshots ITS variant's content + label.
+  A campaign with NO variants enqueues byte-identically to before — regression-safe.
+- Campaign Manager: **A/B** drawer (add/edit/remove variants, weights) + variant breakdown & winner in Stats.
+- Proof: **A/B MATRIX: PASS (8 checks)** (2 variants split 20 recipients into non-empty A/B, per-variant content
+  snapshot, winner detection, carrier + anon denial) + **NO-VARIANT REGRESSION: PASS**. Migrations
+  `cvm_campaign_ab` + `cvn_enqueue_ab` (staging + production, enqueue hash-identical). Anon surface unchanged (5).
+
+## Increment 39 — Event-triggered transactional automations (the "trigger" link)
+
+Autoresponders on the unified engine: an admin maps a domain event → template; when the event fires, an
+acknowledgement is enqueued on the same ledger (consent + suppression enforced, idempotent per event+trigger).
+- New `app_private.comm_triggers` registry + internal `app_private.fire_comm_trigger` (never granted; called
+  by a DB trigger running as owner). An AFTER INSERT trigger on `form_submissions` fires 'form.submitted'.
+  **No-op until an admin activates a trigger** — zero behaviour change to existing form submissions by default.
+- Staff RPCs `cc_comm_triggers` / `cc_set_comm_trigger` (gated, anon revoked). Delivery Health gains an
+  **Automations** card: "website form → acknowledgement email", pick a template + activate.
+- Proof: **TRIGGER MATRIX: PASS (7 checks)** (no-op until active, fires with rendered {{first_name}},
+  suppression respected, carrier + anon denied). Migration `cvo_comm_triggers` (staging + production).
+  Anon SECURITY DEFINER surface unchanged (5); the new form-submission DB trigger is a safe no-op until configured.
+
+## Increment 40 — Developer/API: domain-event → webhook fan-out + event catalog
+
+`emit_event` wrote durable domain_events but nothing ever delivered them to webhook subscribers — subscribers got
+nothing. Closed that gap and exposed the events to integrators.
+- `app_private.fanout_domain_events` (internal) — pending domain_events → `webhook_deliveries` for every ACTIVE
+  endpoint subscribed to that event_type, then marks the event processed. Idempotent (each event once).
+  `cc_fanout_domain_events` (service-role, for a cron/worker) + `cc_webhooks_flush` (staff manual flush).
+- `cc_event_catalog()` — curated list of subscribable domain events (dispatch/documents/finance/growth/marketing,
+  incl. campaign.enqueued, comm.suppress, comm.unsubscribe, comm.trigger.set). Surfaced in the Webhooks admin,
+  plus a "Flush pending events" button.
+- Proof: **FANOUT MATRIX: PASS (8 checks)** (delivers only to subscribed+active endpoints, idempotent, marks
+  processed, catalog visible, staff flush works, anon denied, fanout RPC off anon+authenticated surface).
+  Migration `cvp_webhook_fanout` (staging + production). Anon SECURITY DEFINER surface unchanged (5).
+
+## Increment 41 — Webhook delivery sender (transport for the fan-out)
+
+Completes the outbound-webhook path: the fan-out (cvp) queues deliveries; this transmits them.
+- `cc_webhook_claim(limit)` (service-role) — atomically claims queued deliveries with their endpoint URL, sets
+  a new 'sending' in-flight status (added to the status CHECK additively). `cc_webhook_mark(id, ok, note)`
+  (service-role) — delivered, or failed → retry up to 5 attempts then terminal 'failed'. Off anon+auth surface.
+- `supabase/functions/webhook-sender/index.ts` — claims, POSTs the event JSON, marks the result; optional
+  HMAC `X-LoadBoot-Signature` when WEBHOOK_SIGNING_SECRET is set (no signing secret stored in the DB).
+  Owner action: deploy (verify_jwt=false) + schedule; safe no-op if no active endpoints.
+- Proof: **WEBHOOK SENDER MATRIX: PASS (4 checks)** (claim sets in-flight, mark delivered, retry→terminal after
+  5 attempts, RPCs off anon+authenticated). Migration `cvq_webhook_sender` (staging + production).
+  Anon SECURITY DEFINER surface unchanged (5).
+
+## Increment 42 — Pipeline reliability health (capstone)
+
+`cc_pipeline_health()` — one staff-gated read aggregating backlog across every async queue: message-delivery
+status histogram, webhook-delivery status histogram, domain-event pending/processed, suppression count, and
+campaigns in flight. Surfaced as a "Pipeline backlog" strip on Delivery Health so a stuck fan-out or unsent
+webhook backlog is visible at a glance.
+- Proof: **PIPELINE HEALTH MATRIX: PASS (3 checks)** (shape, carrier + anon denial). Migration
+  `cvr_pipeline_health` (staging + production). Anon SECURITY DEFINER surface unchanged (5).

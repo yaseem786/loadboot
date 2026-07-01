@@ -5,7 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
-import { studioListTemplates, studioSaveTemplate, studioSetTemplateStatus, TEMPLATE_VARIABLES } from '../../shared/api.js';
+import { studioListTemplates, studioSaveTemplate, studioSetTemplateStatus, TEMPLATE_VARIABLES, renderTemplate } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -87,11 +87,24 @@ export function renderTemplates(host) {
       previewBox,
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px;display:flex;gap:8px' }, [
         el('button', { class: 'lb-btn', onClick: preview }, 'Preview'),
+        t ? el('button', { class: 'lb-btn', onClick: serverRender }, 'Server render') : null,
         manage ? el('button', { class: 'lb-btn lb-btn-primary', onClick: save }, 'Save template') : null,
       ].filter(Boolean)),
       manage ? null : el('p', { class: 'cc-sub' }, 'You have read-only access to templates.'),
     ].filter(Boolean));
     openDrawer(t ? 'Edit template' : 'New template', form, { subtitle: 'Unknown {{variables}} are rejected on save' });
+
+    // Server-truth render of the SAVED template (proves exactly what a send will contain).
+    async function serverRender() {
+      let r; try { r = await renderTemplate(f.key, SAMPLE); } catch (e) { toast(humanizeError(e), 'error'); return; }
+      const unresolved = (r.unresolved || []);
+      mount(previewBox, el('div', { class: 'lb-card', style: 'margin-top:8px;background:#f1f5f9' }, [
+        el('div', { class: 'cc-sub' }, 'Server render (saved version, sample values)'),
+        el('div', { style: 'font-weight:700;margin:6px 0' }, r.subject || '(no subject)'),
+        el('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;max-width:600px', html: r.html || r.text || '(empty body)' }),
+        unresolved.length ? el('div', { class: 'cc-sub', style: 'margin-top:8px;color:#b45309' }, 'Unresolved variables: ' + unresolved.join(', ')) : el('div', { class: 'cc-sub', style: 'margin-top:8px;color:#15803d' }, 'All variables resolved.'),
+      ]));
+    }
 
     async function save() {
       if (!f.key.trim() || !f.name.trim()) { alert('Key and name are required.'); return; }
