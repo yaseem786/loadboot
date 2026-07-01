@@ -462,6 +462,9 @@ export const verificationQueue = (limit) => rpc('cc_verification_queue', { p_lim
 export const getBrandKit = () => rpc('cc_get_brand_kit');
 export const setBrandKit = (data) => rpc('cc_set_brand_kit', { p_data: data });
 // plugin framework (cuc)
+// form builder (cud)
+export const saveCustomForm = (o = {}) => rpc('cc_save_custom_form', { p_key: o.key, p_title: o.title, p_description: o.description ?? null, p_fields: o.fields ?? [], p_thank_you: o.thankYou ?? null, p_redirect: o.redirect ?? null, p_status: o.status ?? 'draft' });
+export const listCustomForms = () => rpc('cc_list_custom_forms');
 export const listPlugins = () => rpc('cc_list_plugins');
 export const listInstalledPlugins = () => rpc('cc_list_installed_plugins');
 export const installPlugin = (id, config) => rpc('cc_install_plugin', { p_plugin: id, p_config: config ?? {} });
