@@ -11,6 +11,7 @@ import {
   partnerPostLoad, partnerMyLoads,
   partnerRequestShipment, partnerMyShipments,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
+  partnerMyInvoices,
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -41,6 +42,7 @@ const ic = (name) => ({
   ship: 'M3 7h13v10H3zM16 10h3l2 3v4h-5', dock: 'M3 21V9l9-6 9 6v12M9 21v-6h6v6', bell: 'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9',
   user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
   plus: 'M12 5v14M5 12h14', clock: 'M12 7v5l3 3M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 const LOGO_SVG = '<svg width="26" height="26" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg>';
@@ -172,6 +174,25 @@ const kpiCard = (label, value, sub, accent) => h('div', { class: 'cp-kpi ' + (ac
 const field = (label, input) => h('label', { class: 'cp-field2' }, [h('span', null, label), input]);
 const inp = (ph, type) => h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '' });
 
+/* invoices — shown on every partner dashboard (read-only; staff issue + mark paid) */
+function invoicesCard() {
+  const host = h('div', { class: 'cp-tablewrap' }, h('div', { class: 'lb-state lb-loading' }, 'Loading…'));
+  (async () => {
+    try {
+      const rows = await partnerMyInvoices(100);
+      if (!rows || !rows.length) { mount(host, h('div', { class: 'lb-state' }, 'No invoices yet.')); return; }
+      mount(host, h('table', { class: 'cp-table' }, [
+        h('thead', null, h('tr', null, ['Invoice', 'Amount', 'Description', 'Due', 'Status'].map(t => h('th', null, t)))),
+        h('tbody', null, rows.map(i => h('tr', null, [
+          h('td', null, h('b', null, i.number)), h('td', null, money(i.amount)),
+          h('td', null, i.description || '—'), h('td', null, fmtDate(i.due_date)), h('td', null, pill(i.status)),
+        ]))),
+      ]));
+    } catch (e) { mount(host, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load invoices.')); }
+  })();
+  return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Invoices')]), host]);
+}
+
 /* ---------- BROKER dashboard ---------- */
 async function brokerDash(user, ov) {
   const kpis = h('div', { class: 'cp-kpis' }, [
@@ -215,7 +236,7 @@ async function brokerDash(user, ov) {
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])])));
+  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), invoicesCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
@@ -262,7 +283,7 @@ async function shipperDash(user, ov) {
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])])));
+  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), invoicesCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
@@ -318,7 +339,7 @@ async function facilityDash(user, ov) {
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'facility', ov.company, kpis, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Appointments')]), listHost])])));
+  mount(root, shell(user, 'facility', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Appointments')]), listHost])]), invoicesCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
