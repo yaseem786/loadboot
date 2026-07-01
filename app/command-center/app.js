@@ -175,9 +175,12 @@ async function boot() {
   let googleDataEnabled = false, aiCopilotEnabled = false;
   try { googleDataEnabled = await isFlagEnabled('google_data_enabled'); } catch (_) { googleDataEnabled = false; }
   try { aiCopilotEnabled = await isFlagEnabled('ai_copilot_enabled'); } catch (_) { aiCopilotEnabled = false; }
+  // Global Dispatch Marketplace (Load Intake / AI Pilot / Control Tower / Exception Center)
+  let loadMarketplaceEnabled = false;
+  try { loadMarketplaceEnabled = await isFlagEnabled('load_marketplace'); } catch (_) { loadMarketplaceEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled, announcements: announcementsEnabled, campaigns: campaignsEnabled, googleData: googleDataEnabled, aiCopilot: aiCopilotEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled, announcements: announcementsEnabled, campaigns: campaignsEnabled, googleData: googleDataEnabled, aiCopilot: aiCopilotEnabled, load_marketplace: loadMarketplaceEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
