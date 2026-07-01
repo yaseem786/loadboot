@@ -11,13 +11,14 @@ import {
   partnerIntakeOverview, listPartnerLoads, decidePartnerLoad,
   listPartnerShipments, decidePartnerShipment, listPartnerAppointmentsAll,
   listPartnerInvoicesAll, createPartnerInvoice, setPartnerInvoiceStatus, listPartnerOrgs,
+  getPaymentInstructions, setPaymentInstructions,
 } from '../../shared/api.js';
 import { openDrawer } from '../../shared/ui/components.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 const money = (v) => (v == null ? '—' : '$' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 }));
-const TONE = { submitted: 'amber', accepted: 'blue', declined: 'red', posted: 'green', requested: 'amber', quoted: 'blue', booked: 'green', scheduled: 'blue', checked_in: 'amber', completed: 'green', no_show: 'red', cancelled: 'gray', inbound: 'blue', outbound: 'violet' };
+const TONE = { submitted: 'amber', accepted: 'blue', declined: 'red', posted: 'green', covered: 'green', requested: 'amber', quoted: 'blue', booked: 'green', scheduled: 'blue', checked_in: 'amber', completed: 'green', no_show: 'red', cancelled: 'gray', inbound: 'blue', outbound: 'violet', sent: 'amber', payment_submitted: 'blue', paid: 'green', void: 'gray', draft: 'gray' };
 const pill = (s) => el('span', { class: 'cc-pill cc-pill-' + (TONE[s] || 'gray') }, [el('i', { class: 'cc-pill-dot' }), (s || '').replace(/_/g, ' ')]);
 
 export function renderPartnerIntake(host) {
@@ -62,8 +63,11 @@ export function renderPartnerIntake(host) {
     showLoading(body, 'Loading invoices…');
     let rows; try { rows = await listPartnerInvoicesAll({ limit: 200 }); } catch (e) { showError(body, humanizeError(e), loadInvoices); return; }
     rows = rows || [];
-    const head = el('div', { class: 'cc-head-actions', style: 'margin-bottom:12px' },
-      manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: () => invoiceComposer(loadInvoices) }, '+ New invoice') : null);
+    const head = el('div', { class: 'cc-head-actions', style: 'margin-bottom:12px; display:flex; gap:8px' },
+      manage ? [
+        el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: () => invoiceComposer(loadInvoices) }, '+ New invoice'),
+        el('button', { class: 'lb-btn lb-btn-sm', onClick: () => paymentInstructionsDrawer() }, 'Payment instructions'),
+      ] : null);
     const table = rows.length ? el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Invoice', 'Partner', 'Type', 'Amount', 'Due', 'Status', ''].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(i => {
@@ -85,6 +89,21 @@ export function renderPartnerIntake(host) {
     const btn = ev.currentTarget; btn.disabled = true; const t = btn.textContent; btn.textContent = '…';
     try { await setPartnerInvoiceStatus(id, status); toast('Invoice ' + status + '.', 'success'); loadInvoices(); }
     catch (e) { btn.disabled = false; btn.textContent = t; toast(humanizeError(e), 'error'); }
+  }
+
+  async function paymentInstructionsDrawer() {
+    let cur = ''; try { cur = await getPaymentInstructions(); } catch (_) {}
+    const ta = el('textarea', { class: 'cc-input', rows: '5', placeholder: 'e.g. Bank transfer — HBL, Acct 1234-5678, Title LoadBoot. Or JazzCash/Easypaisa: 0300-1234567. Send the invoice number as reference.' });
+    ta.value = cur || '';
+    const form = el('div', null, [
+      el('p', { class: 'cc-sub' }, 'Shown to partners on their invoices. Bank / JazzCash / Easypaisa details — no payment gateway needed.'),
+      el('label', { class: 'cc-field' }, [el('span', null, 'Payment instructions'), ta]),
+      el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
+        try { await setPaymentInstructions(ta.value.trim() || null); } catch (e) { alert(humanizeError(e)); return; }
+        document.getElementById('cc-drawer-root')?.remove(); toast('Payment instructions saved.', 'success');
+      } }, 'Save')]),
+    ]);
+    openDrawer('Payment instructions', form, { subtitle: 'How partners pay their invoices' });
   }
 
   async function invoiceComposer(reload) {

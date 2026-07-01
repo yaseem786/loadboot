@@ -13,6 +13,7 @@ import {
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
   partnerGetProfile, partnerUpdateProfile,
+  getPaymentInstructions, partnerSubmitInvoicePayment,
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -208,20 +209,36 @@ const inp = (ph, type) => h('input', { class: 'cp-in', type: type || 'text', pla
 /* invoices — shown on every partner dashboard (read-only; staff issue + mark paid) */
 function invoicesCard() {
   const host = h('div', { class: 'cp-tablewrap' }, h('div', { class: 'lb-state lb-loading' }, 'Loading…'));
-  (async () => {
+  const payInfo = h('div');
+  async function load() {
+    let instructions = '';
+    try { instructions = await getPaymentInstructions(); } catch (_) {}
+    mount(payInfo, instructions ? h('div', { class: 'cp-payinfo' }, [h('div', { class: 'cp-payinfo-h' }, 'How to pay'), h('div', { class: 'cp-payinfo-b' }, instructions)]) : null);
     try {
       const rows = await partnerMyInvoices(100);
       if (!rows || !rows.length) { mount(host, h('div', { class: 'lb-state' }, 'No invoices yet.')); return; }
       mount(host, h('table', { class: 'cp-table' }, [
-        h('thead', null, h('tr', null, ['Invoice', 'Amount', 'Description', 'Due', 'Status'].map(t => h('th', null, t)))),
-        h('tbody', null, rows.map(i => h('tr', null, [
-          h('td', null, h('b', null, i.number)), h('td', null, money(i.amount)),
-          h('td', null, i.description || '—'), h('td', null, fmtDate(i.due_date)), h('td', null, pill(i.status)),
-        ]))),
+        h('thead', null, h('tr', null, ['Invoice', 'Amount', 'Description', 'Due', 'Status', ''].map(t => h('th', null, t)))),
+        h('tbody', null, rows.map(i => {
+          const act = h('td', null);
+          if (i.status === 'sent' || i.status === 'draft') {
+            const b = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => {
+              if (!confirm('Mark invoice ' + i.number + ' as paid? Our team will confirm receipt.')) return;
+              b.disabled = true; b.textContent = '…';
+              try { await partnerSubmitInvoicePayment(i.id); load(); } catch (e) { b.disabled = false; b.textContent = 'I’ve paid'; alert((e && e.message) || 'Failed'); }
+            } }, 'I’ve paid');
+            act.appendChild(b);
+          } else if (i.status === 'payment_submitted') { act.appendChild(h('span', { class: 'cp-sub' }, 'awaiting confirmation')); }
+          return h('tr', null, [
+            h('td', null, h('b', null, i.number)), h('td', null, money(i.amount)),
+            h('td', null, i.description || '—'), h('td', null, fmtDate(i.due_date)), h('td', null, pill(i.status)), act,
+          ]);
+        })),
       ]));
     } catch (e) { mount(host, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load invoices.')); }
-  })();
-  return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Invoices')]), host]);
+  }
+  load();
+  return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Invoices')]), payInfo, host]);
 }
 
 /* account & company settings */
