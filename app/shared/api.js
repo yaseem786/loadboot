@@ -289,7 +289,6 @@ export const tripLocations = (trip, limit) => rpc('cc_trip_locations', { p_trip:
 // ---- EC: Intelligence + Documents ----
 export const laneHistory = (limit) => rpc('cc_lane_history', { p_limit: limit ?? 30 });
 export const managementDashboard = () => rpc('cc_management_dashboard');
-export const systemHealth = () => rpc('cc_system_health');
 export const invoiceDocument = (invoice) => rpc('cc_invoice_document', { p_invoice: invoice });
 export const rateconDocument = (trip) => rpc('cc_ratecon_document', { p_trip: trip });
 export const listDocumentFiles = (ownerType, ownerId) => rpc('cc_list_document_files', { p_owner_type: ownerType, p_owner_id: ownerId });
