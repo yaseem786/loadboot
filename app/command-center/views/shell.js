@@ -64,6 +64,7 @@ const NAV = [
   { group: 'Marketing', items: [
     { path: '/content', label: 'Content & posts', icon: 'doc', perm: 'content.view', flag: 'content' },
     { path: '/brand-kit', label: 'Brand Kit', icon: 'doc', perm: 'content.view' },
+    { path: '/form-builder', label: 'Form Builder', icon: 'doc', perm: 'content.view' },
     { path: '/templates', label: 'Template Studio', icon: 'doc', perm: 'content.view' },
     { path: '/audiences', label: 'Audiences', icon: 'users', perm: 'content.view' },
     { path: '/campaign-manager', label: 'Campaign Manager', icon: 'trend', perm: 'content.view' },

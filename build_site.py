@@ -1937,6 +1937,50 @@ if not IS_PRODUCTION_CTX:
     for x in sorted(set(_leaks)):
         _errors.append('PREVIEW PRODUCTION-ISOLATION: production ref present in '+x)
 
+# ---- Public hosted custom forms (/forms/?f=key) — renders a published form via the
+#      anon cc_get_public_form RPC and submits through the existing submit_web_form path,
+#      so submissions land in the Forms Inbox → CRM. Production only (needs the live key).
+_FORMS_JS = (r"""(function(){var SB='__SB__',KEY='__KEY__';var host=document.getElementById('lbf');
+var f=new URLSearchParams(location.search).get('f');if(!f){host.textContent='No form specified.';return;}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function post(fn,body){return fetch(SB+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});}
+function field(fl){var id='fld_'+fl.key,req=fl.required?' required':'',lbl='<label for="'+id+'">'+esc(fl.label||fl.key)+(fl.required?' *':'')+'</label>',inp;
+if(fl.type==='textarea')inp='<textarea id="'+id+'" rows="4"'+req+'></textarea>';
+else if(fl.type==='select')inp='<select id="'+id+'"'+req+'><option value="">Select…</option>'+(fl.options||[]).map(function(o){return '<option>'+esc(o)+'</option>';}).join('')+'</select>';
+else if(fl.type==='checkbox')inp='<input type="checkbox" id="'+id+'">';
+else inp='<input type="'+(fl.type||'text')+'" id="'+id+'"'+req+'>';
+return '<div class="lbf-f">'+lbl+inp+'</div>';}
+post('cc_get_public_form',{p_key:f}).then(function(r){return r.ok?r.json():null;}).then(function(def){
+if(!def){host.innerHTML='<div class="lbf-msg">This form is not available.</div>';return;}
+var h='<h1 style="font-family:Manrope,sans-serif;margin:0 0 6px;font-size:1.5rem">'+esc(def.title)+'</h1>';
+if(def.description)h+='<p style="color:#64748b;margin:0 0 18px">'+esc(def.description)+'</p>';
+h+='<form id="lbform">'+(def.fields||[]).map(field).join('')+'<button class="lbf-btn" type="submit">Submit</button></form>';
+host.innerHTML=h;
+document.getElementById('lbform').addEventListener('submit',function(e){e.preventDefault();
+var raw={};(def.fields||[]).forEach(function(fl){var el=document.getElementById('fld_'+fl.key);raw[fl.key]=el?(fl.type==='checkbox'?(el.checked?'yes':'no'):el.value):'';});
+var u=new URLSearchParams(location.search);
+var payload={form_key:def.form_key,name:raw.name||raw.full_name||null,email:raw.email||null,phone:raw.phone||null,company:raw.company||null,message:raw.message||raw.notes||null,raw:raw,source_page:'/forms/?f='+def.form_key,referrer:document.referrer||null,utm_source:u.get('utm_source'),utm_medium:u.get('utm_medium'),utm_campaign:u.get('utm_campaign')};
+post('submit_web_form',{p:payload}).then(function(r){if(r.ok){host.innerHTML='<div class="lbf-msg"><h2>✓ Thank you</h2><p>'+esc(def.thank_you||'We received your submission and will be in touch.')+'</p></div>';if(def.redirect_url)setTimeout(function(){location.href=def.redirect_url;},1600);}else{alert('Submission failed. Please try again.');}}).catch(function(){alert('Submission failed.');});
+});
+}).catch(function(){host.innerHTML='<div class="lbf-msg">This form is temporarily unavailable.</div>';});})();""").replace('__SB__', _BOARD_SB).replace('__KEY__', _BOARD_KEY)
+
+_forms_body = ('<div class="lbf-wrap"><div class="lbf-card" id="lbf">Loading…</div>'
+    '<p style="text-align:center;color:#94a3b8;font-size:.8rem;margin-top:16px">Powered by LoadBoot</p></div>'
+    + ('<script>' + _FORMS_JS + '</script>' if IS_PRODUCTION_CTX else '<script>document.getElementById("lbf").textContent="Hosted forms are disabled in this preview environment.";</script>'))
+_forms_html = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+    '<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">'
+    '<title>LoadBoot — Form</title><link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">'
+    '<style>body{margin:0;background:#f1f5f9;font-family:Inter,system-ui,sans-serif}.lbf-wrap{max-width:560px;margin:0 auto;padding:40px 16px}'
+    '.lbf-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:26px;box-shadow:0 10px 30px -12px rgba(15,23,42,.12)}'
+    '.lbf-f{margin-bottom:14px}.lbf-f label{display:block;font-weight:600;font-size:.88rem;margin-bottom:5px;color:#0f172a}'
+    '.lbf-f input,.lbf-f textarea,.lbf-f select{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:9px;font-size:1rem;font-family:inherit;box-sizing:border-box}'
+    '.lbf-f input[type=checkbox]{width:auto}.lbf-btn{background:#2563EB;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:1rem;cursor:pointer;width:100%;margin-top:6px}'
+    '.lbf-msg{padding:24px;text-align:center;color:#334155}</style></head><body>' + _forms_body + '</body></html>')
+os.makedirs(os.path.join(OUT, 'forms'), exist_ok=True)
+with open(os.path.join(OUT, 'forms', 'index.html'), 'w', encoding='utf-8') as _ff:
+    _ff.write(_forms_html)
+
 if _errors:
     print('BUILD FAILED — %d problem(s):' % len(_errors))
     for e in _errors: print('  - '+e)
