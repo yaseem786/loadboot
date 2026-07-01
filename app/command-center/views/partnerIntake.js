@@ -10,7 +10,9 @@ import { sectionHead, statCard, card, statusPill, fmtDateTime } from '../../shar
 import {
   partnerIntakeOverview, listPartnerLoads, decidePartnerLoad,
   listPartnerShipments, decidePartnerShipment, listPartnerAppointmentsAll,
+  listPartnerInvoicesAll, createPartnerInvoice, setPartnerInvoiceStatus, listPartnerOrgs,
 } from '../../shared/api.js';
+import { openDrawer } from '../../shared/ui/components.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -31,7 +33,7 @@ export function renderPartnerIntake(host) {
   const tabsHost = host.querySelector('#pi-tabs');
   const body = host.querySelector('#pi-body');
 
-  const tabs = [['broker', 'Broker loads'], ['shipper', 'Shipper freight'], ['facility', 'Facility docks']];
+  const tabs = [['broker', 'Broker loads'], ['shipper', 'Shipper freight'], ['facility', 'Facility docks'], ['invoices', 'Invoices']];
   function renderTabs() {
     mount(tabsHost, tabs.map(([id, label]) => el('button', {
       class: 'cc-seg-btn' + (tab === id ? ' active' : ''), onClick: () => { tab = id; renderTabs(); route(); },
@@ -52,7 +54,60 @@ export function renderPartnerIntake(host) {
   function route() {
     if (tab === 'broker') return loadBroker();
     if (tab === 'shipper') return loadShipper();
-    return loadFacility();
+    if (tab === 'facility') return loadFacility();
+    return loadInvoices();
+  }
+
+  async function loadInvoices() {
+    showLoading(body, 'Loading invoices…');
+    let rows; try { rows = await listPartnerInvoicesAll({ limit: 200 }); } catch (e) { showError(body, humanizeError(e), loadInvoices); return; }
+    rows = rows || [];
+    const head = el('div', { class: 'cc-head-actions', style: 'margin-bottom:12px' },
+      manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: () => invoiceComposer(loadInvoices) }, '+ New invoice') : null);
+    const table = rows.length ? el('table', { class: 'cc-table' }, [
+      el('thead', null, el('tr', null, ['Invoice', 'Partner', 'Type', 'Amount', 'Due', 'Status', ''].map(h => el('th', null, h)))),
+      el('tbody', null, rows.map(i => {
+        const act = el('td', null);
+        if (manage && i.status !== 'paid' && i.status !== 'void') {
+          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => setInv(i.id, 'paid', ev) }, 'Mark paid'));
+          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => setInv(i.id, 'void', ev) }, 'Void'));
+        }
+        return el('tr', null, [
+          el('td', null, el('b', null, i.number)), el('td', null, i.partner || '—'), el('td', null, i.kind || '—'),
+          el('td', null, money(i.amount)), el('td', null, i.due_date ? fmtDateTime(i.due_date) : '—'), el('td', null, pill(i.status)), act,
+        ]);
+      })),
+    ]) : el('div', { class: 'cc-sub', style: 'padding:8px' }, 'No invoices yet. Issue one with “New invoice”.');
+    mount(body, card(el('div', null, [head, table])));
+  }
+
+  async function setInv(id, status, ev) {
+    const btn = ev.currentTarget; btn.disabled = true; const t = btn.textContent; btn.textContent = '…';
+    try { await setPartnerInvoiceStatus(id, status); toast('Invoice ' + status + '.', 'success'); loadInvoices(); }
+    catch (e) { btn.disabled = false; btn.textContent = t; toast(humanizeError(e), 'error'); }
+  }
+
+  async function invoiceComposer(reload) {
+    let orgs = []; try { orgs = await listPartnerOrgs(); } catch (_) { orgs = []; }
+    const orgSel = el('select', { class: 'cc-input' }, [el('option', { value: '' }, 'Select partner…')].concat((orgs || []).map(o => el('option', { value: o.id }, o.name + ' (' + o.kind + ')'))));
+    const amount = el('input', { class: 'cc-input', type: 'number', min: '0', step: '0.01', placeholder: '0.00' });
+    const desc = el('input', { class: 'cc-input', placeholder: 'e.g. Line haul, Reno → Boise' });
+    const due = el('input', { class: 'cc-input', type: 'date' });
+    const form = el('div', null, [
+      el('label', { class: 'cc-field' }, [el('span', null, 'Partner'), orgSel]),
+      el('label', { class: 'cc-field' }, [el('span', null, 'Amount (USD)'), amount]),
+      el('label', { class: 'cc-field' }, [el('span', null, 'Description'), desc]),
+      el('label', { class: 'cc-field' }, [el('span', null, 'Due date (optional)'), due]),
+      el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: send }, 'Issue invoice')]),
+    ]);
+    openDrawer('New invoice', form, { subtitle: 'Bill a broker, shipper or facility' });
+    async function send() {
+      if (!orgSel.value) { alert('Pick a partner.'); return; }
+      if (!amount.value || Number(amount.value) < 0) { alert('Enter an amount.'); return; }
+      try { await createPartnerInvoice({ org: orgSel.value, amount: Number(amount.value), description: desc.value.trim() || null, due: due.value || null }); }
+      catch (e) { alert(humanizeError(e)); return; }
+      document.getElementById('cc-drawer-root')?.remove(); toast('Invoice issued.', 'success'); reload();
+    }
   }
 
   async function loadBroker() {

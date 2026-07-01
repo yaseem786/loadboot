@@ -436,6 +436,12 @@ export const decidePartnerLoad = (id, action) => rpc('cc_decide_partner_load', {
 export const listPartnerShipments = (o = {}) => rpc('cc_list_partner_shipments', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
 export const decidePartnerShipment = (id, action) => rpc('cc_decide_partner_shipment', { p_id: id, p_action: action });
 export const listPartnerAppointmentsAll = (limit) => rpc('cc_list_partner_appointments_all', { p_limit: limit ?? 200 });
+// partner invoicing (cte)
+export const createPartnerInvoice = (o = {}) => rpc('cc_create_partner_invoice', { p_partner_org: o.org, p_amount: o.amount, p_description: o.description ?? null, p_due: o.due ?? null });
+export const listPartnerInvoicesAll = (o = {}) => rpc('cc_list_partner_invoices_all', { p_status: o.status ?? null, p_limit: o.limit ?? 200 });
+export const setPartnerInvoiceStatus = (id, status) => rpc('cc_set_partner_invoice_status', { p_id: id, p_status: status });
+export const partnerMyInvoices = (limit) => rpc('cc_partner_my_invoices', { p_limit: limit ?? 100 });
+export const listPartnerOrgs = () => rpc('cc_list_partner_orgs');
 
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
