@@ -1,0 +1,5 @@
+# Local secrets and generated auth artifacts for the persona matrix — NEVER commit these.
+.env
+.env.*
+.auth/*.json
+_sample-*.pdf

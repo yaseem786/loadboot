@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "generated_at": "2026-07-01T05:07:35Z",
+    "project": "rwscphuhpjoudvljvmdk",
+    "environment": "production",
+    "staging_ref": "snslhvmkjusozgjelghi",
+    "evidence_file": "evidence/gate/live-source-evidence.json",
+    "note": "Single source. Generator cross-checks every PASS against the evidence file; fails if a PASS lacks a valid evidence_ref or if counts disagree."
+  },
+  "counts": {
+    "cc_rpcs": 228, "public_callable_rpcs": 233, "private_tables": 77, "modules": 50,
+    "feature_flags": 30, "edge_functions": 8, "anon_callable_security_definer": 5,
+    "domain_events_total": 21, "domain_event_types": 14, "domain_events_unprocessed": 0,
+    "audit_rows": 26, "plugins_available": 6, "plugins_installed": 5
+  },
+  "gate_name": "LOADBOOT ENTERPRISE FOUNDATION GATE",
+  "named_gates": [
+    {"name": "SETTLEMENT MAKER CHECKER GATE", "status": "PASS", "evidence_ref": "maker_checker_matrix"},
+    {"name": "SOURCE-CONTROL REPAIR GATE", "status": "PASS", "evidence_ref": "security_migrations"},
+    {"name": "SOURCE-OF-TRUTH CONSISTENCY GATE", "status": "PASS", "evidence_ref": "counts"},
+    {"name": "ANONYMOUS LOAD-SURFACE GATE", "status": "PASS", "evidence_ref": "pocket_loads_acl"},
+    {"name": "POD BACKEND SECURITY MATRIX GATE", "status": "PASS", "evidence_ref": "pod_backend_matrix"},
+    {"name": "POD UI AND REVIEW GATE", "status": "NOT-RUN"},
+    {"name": "AUTHENTICATED PORTAL MOBILE PERSONA GATE", "status": "NOT-RUN"},
+    {"name": "PACKAGE-WIDE REPRODUCIBLE VERIFICATION", "status": "PASS", "evidence_ref": "counts"}
+  ],
+  "gate_conditions": [
+    {"id": 1,  "name": "All generated artifacts agree (source-of-truth consistency)", "status": "PASS", "evidence_ref": "counts", "note": "Generated deterministically; consistency + evidence-ref validation asserted at build."},
+    {"id": 2,  "name": "Capability registry current", "status": "PASS", "evidence_ref": "counts", "note": "Regenerated from live counts (228 RPCs / 77 tables / 50 modules)."},
+    {"id": 3,  "name": "Anonymous Pocket RPC exposure resolved", "status": "PASS", "evidence_ref": "pocket_loads_acl", "note": "cc_pocket_available_loads: anon 401, carrier-eligibility enforced (cuh). Anon SECURITY DEFINER surface = 5, all public-by-design."},
+    {"id": 4,  "name": "Security migrations source-controlled", "status": "PASS", "evidence_ref": "security_migrations", "note": "migrations/ct-waveBI-security-gate-repair/{cuf,cug,cuh,cui,cuj,cuk,cul,cum,cun,cuo,cup}.sql written to repo + pushed via desktop bridge; Supabase ledger versions recorded."},
+    {"id": 5,  "name": "Real POD frontend upload + review workflow proven", "status": "BLOCKED", "note": "FRONTEND NOW BUILT + BACKEND MATRIX PROVEN. Built: Pocket app POD panel (file/camera picker, type+size validation, preview, remove/replace, upload state, success, network-failure retry, existing-version + review-status + rejection-reason + resubmit); Carrier Portal POD panel (desktop drag-and-drop + same validation/states); Command Center 'POD Review Queue' (carrier/route/delivery context, signed private preview, approve, reject-with-required-reason). Backend hardened + proven on staging: cc_pocket_upload_pod re-validates carrier org, trip ownership, trip state, MIME, size and the {uid}/pod/{trip}/{file} object path server-side; cc_pod_review_queue / cc_pod_signed_ref / cc_review_pod are reviewer-gated; approval emits invoice.prep_requested exactly once. tests/security/pod_backend_matrix.sql = 21/21 PASS. STILL OPEN (required, not polish): the real browser upload+review captured against a deployed site with a logged-in carrier/driver/staff session (screenshots + Playwright result under evidence/gate/pod/). The assistant cannot type passwords or reach the site via headless egress; owner runs tests/security/pod_workflow.spec.js per the runbook. Owner-executed proof required."},
+    {"id": 6,  "name": "Settlement / payout-hold + maker-checker proven", "status": "PASS", "evidence_ref": "maker_checker_matrix", "note": "11/11 staging matrix PASS: self-approve DENIED, carrier/dispatcher DENIED, different checker approves, duplicate idempotent, stale-version DENIED, amount-change invalidates approval, payout HELD, one event, no money moved. (Carrier-portal settlement view is a minor UI follow-up.)"},
+    {"id": 7,  "name": "Authenticated portal mobile / persona browser tests executed", "status": "BLOCKED", "note": "TEST SYSTEM NOW BUILT + STRENGTHENED. persona_matrix.spec.js was upgraded from nav-visibility-only to real SERVER-SIDE enforcement: for each of 11 personas x 4 viewports (44 combos) it opens the correct portal, checks role-aware nav, runs a permitted RPC (success), and calls a FORBIDDEN RPC DIRECTLY against PostgREST with the persona's own token and asserts the backend denies it, plus mobile-menu / no-overflow / clean-console / no env-leak / screenshot. Added: tests/security/{personas.js, auth-setup.spec.js, pod_workflow.spec.js, .env.example, PERSONA-TEST-RUNBOOK.md}, playwright.config.js, .auth/.gitkeep + gitignores. Suite SKIPS cleanly without PERSONAS_READY + storage states (so local gates show expected skips). RBAC SEPARATION already PROVEN via SQL/JWT-simulation (11 personas). STILL OPEN (required, not polish): the owner-run authenticated matrix with ZERO skips (44 combos), JSON+HTML report + traces. Requires owner-generated per-persona storage-states (login) + egress. Owner-executed proof required."},
+    {"id": 8,  "name": "FMCSA verification succeeds with official data", "status": "PASS", "evidence_ref": "fmcsa_verify", "note": "Owner set a valid FMCSA QCMobile WebKey. Live test fmcsa-verify(dot=130113) -> HTTP 200 with real official FMCSA data (GUFFEY-SCHLENSKER DRILLING CORP, authority active, safety fields parsed). Was 403; now live end-to-end with government data. No fabricated data."},
+    {"id": 9,  "name": "Production test-data governance documented", "status": "PASS", "evidence_ref": "testdata_inventory", "note": "Full inventory + remediation plan; no records altered. Finding: all prod records except LoadBoot org are synthetic."},
+    {"id": 10, "name": "Plugin lifecycle evidence complete", "status": "PASS", "evidence_ref": "plugin_lifecycle", "note": "Manifest+permissions+domains+secrets; install event 15 / uninstall event 16; kill-switch off/on on ga4-insights; 5 pre-existing unchanged."},
+    {"id": 11, "name": "Rollback preserved", "status": "PASS", "evidence_ref": "security_migrations", "note": "All DB changes tracked migrations with ledger versions + documented rollback/forward-fix."},
+    {"id": 12, "name": "No production leakage", "status": "PASS", "evidence_ref": "anon_surface", "note": "build_site.py isolation gate; anon surface minimized to 5 public-by-design functions."}
+  ],
+  "golden_workflows": [
+    {"id": 1, "name": "Carrier onboarding", "status": "PASS", "evidence": "3 carrier orgs + 4 profiles"},
+    {"id": 2, "name": "Verification (FMCSA)", "status": "PASS", "evidence": "fmcsa-verify HTTP 200, real FMCSA data (GUFFEY-SCHLENSKER, DOT 130113); valid WebKey"},
+    {"id": 3, "name": "Load offer & assignment", "status": "PASS", "evidence": "load 92cd29be; load.assigned event"},
+    {"id": 4, "name": "Trip / POD", "status": "PARTIAL", "evidence": "trip lifecycle + POD frontend BUILT (Pocket + Carrier Portal upload UI + Command Center review queue) + POD backend security matrix 21/21 PASS on staging (upload/MIME/size/path/state validation, cross-carrier & non-reviewer denials, reject-with-reason, resubmit-new-version, approve->invoice-prep-once). Owner-run browser capture of the deployed flow still pending."},
+    {"id": 5, "name": "Invoice / settlement / payout approval", "status": "PASS", "evidence": "INV-2026-00001 -> STL-2026-0001 -> approved -> paid; maker/checker enforced (11/11)"},
+    {"id": 6, "name": "Marketing form -> CRM lead", "status": "PASS", "evidence": "request-a-quote -> Westlane Logistics lead; form.submitted event"}
+  ],
+  "security": {
+    "advisors_error_level": 0, "anon_secdef_before": 31, "anon_secdef_after": 5,
+    "anon_public_by_design": ["cc_get_public_form", "get_active_public_announcements", "get_public_load_opportunities", "submit_web_form", "track_web_event"],
+    "migrations": ["cuf (20260701042300)", "cug (20260701043219)", "cuh (20260701043931)", "cui (20260701045324)", "cuj (20260701050526)", "cuk", "cul_pod_review_workflow", "cum_pocket_pod_status", "cun_pod_upload_hardening", "cuo_pod_queue_enrich", "cup_register_pod_module"],
+    "live_probes": {"cc_finance_analytics": "staff 200 / anon 401", "cc_pocket_available_loads": "staff 200 / anon 401", "cc_decide_settlement": "authenticated-only (re-revoked in cuk)", "fmcsa-verify": "HTTP 200 real FMCSA data (valid WebKey)", "send-sms": "credentials valid (Twilio auth OK)"}
+  },
+  "owner_blocked": [
+    "RESOLVED: FMCSA_WEBKEY valid (live 200, real data); Twilio credentials valid; 11 staging personas created + wired; settlement maker/checker 11/11; anon surface 31->5; source-controlled migrations.",
+    "OPEN (condition 5) POD UI+REVIEW: frontend is BUILT (Pocket + Carrier Portal upload UI + Command Center review queue) and the backend matrix is 21/21 PASS on staging. Remaining owner step: git push -> Netlify staging preview -> log in as carrier/driver/staff -> run tests/security/pod_workflow.spec.js to capture the real upload+review (screenshots + Playwright result under evidence/gate/pod/). Assistant cannot type passwords or reach the site via headless egress.",
+    "OPEN (condition 7) AUTH PERSONA TESTS: strengthened persona_matrix.spec.js (server-side denial proof) + auth-setup.spec.js + runbook are BUILT and skip cleanly without storage states. Remaining owner step: generate per-persona storage-states (PERSONA_* env) then run with PERSONAS_READY=1 for ZERO skips (44 combos) + JSON/HTML report. RBAC separation already proven via SQL.",
+    "PITR (FREE plan) — manual backup runbook provided; out of Foundation Gate scope per owner."
+  ]
+}

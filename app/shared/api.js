@@ -243,6 +243,8 @@ export const carrierListDocuments = async () => {
 export const pocketReportIssue = (trip, kind, note) => rpc('cc_pocket_report_issue', { p_trip: trip, p_kind: kind, p_note: note ?? null });
 export const pocketDisputeInvoice = (invoice, reason) => rpc('cc_pocket_dispute_invoice', { p_invoice: invoice, p_reason: reason });
 export const pocketUploadPod = (o = {}) => rpc('cc_pocket_upload_pod', { p_trip: o.trip, p_path: o.path, p_file_name: o.fileName ?? 'POD', p_content_type: o.contentType ?? null, p_size: o.size ?? null });
+// carrier-facing: list this carrier's own PODs for a trip (status, review note, versions) — migration cum_pocket_pod_status
+export const pocketTripPods = (trip) => rpc('cc_pocket_trip_pods', { p_trip: trip });
 // Phase 5 — web push (any authenticated user)
 export const savePushSubscription = (o = {}) => rpc('cc_save_push_subscription', { p_endpoint: o.endpoint, p_p256dh: o.p256dh, p_auth: o.auth, p_label: o.label ?? null, p_ua: o.ua ?? null });
 export const revokePushSubscription = (endpoint) => rpc('cc_revoke_push_subscription', { p_endpoint: endpoint });
@@ -293,6 +295,11 @@ export const invoiceDocument = (invoice) => rpc('cc_invoice_document', { p_invoi
 export const rateconDocument = (trip) => rpc('cc_ratecon_document', { p_trip: trip });
 export const listDocumentFiles = (ownerType, ownerId) => rpc('cc_list_document_files', { p_owner_type: ownerType, p_owner_id: ownerId });
 export const recordDocumentFile = (o = {}) => rpc('cc_record_document_file', { p_owner_type: o.ownerType, p_owner_id: o.ownerId, p_kind: o.kind ?? null, p_path: o.path, p_file_name: o.fileName, p_content_type: o.contentType ?? null, p_size: o.size ?? null });
+
+// ---- POD review workflow (migration cul_pod_review_workflow) ----
+export const podReviewQueue = (o = {}) => rpc('cc_pod_review_queue', { p_status: o.status ?? 'pending', p_limit: o.limit ?? 100 });
+export const podSignedRef = (docId) => rpc('cc_pod_signed_ref', { p_doc: docId });
+export const reviewPod = (o = {}) => rpc('cc_review_pod', { p_doc: o.doc, p_decision: o.decision, p_reason: o.reason ?? null });
 
 // ---- Control Tower Wave A: first-party Web Analytics (flag: web_analytics_enabled) ----
 export const webLive = (minutes = 5) => rpc('cc_web_live', { p_minutes: minutes });

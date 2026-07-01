@@ -1,0 +1,313 @@
+{
+  "meta": {
+    "captured_at": "2026-07-01T05:07:35Z",
+    "project": "rwscphuhpjoudvljvmdk",
+    "environment": "production",
+    "note": "Machine-produced evidence with provenance. The artifact generator consumes this; every gate condition marked PASS must reference an evidence id present here, else generation fails."
+  },
+  "evidence": {
+    "counts": {
+      "query_id": "counts.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "24b0d1e7753e2e59",
+      "status": "captured",
+      "result": {
+        "cc_rpcs": 228,
+        "private_tables": 77,
+        "modules": 50,
+        "feature_flags": 30,
+        "anon_secdef": 5,
+        "events_total": 21,
+        "events_unprocessed": 0,
+        "audit_rows": 26
+      }
+    },
+    "anon_surface": {
+      "query_id": "anon_surface.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "8f6731cdedd9ed38",
+      "status": "captured",
+      "result": [
+        "cc_get_public_form",
+        "get_active_public_announcements",
+        "get_public_load_opportunities",
+        "submit_web_form",
+        "track_web_event"
+      ]
+    },
+    "pocket_loads_acl": {
+      "query_id": "pocket_acl.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "e56b31edaeb27244",
+      "status": "PASS",
+      "result": {
+        "anon": false,
+        "authenticated": true,
+        "probe": "staff 200 / anon 401"
+      }
+    },
+    "maker_checker_fn": {
+      "query_id": "maker_checker_fn.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "7dc3a2c407371ff6",
+      "status": "PASS",
+      "result": {
+        "overloads": 1,
+        "has_guard": true,
+        "has_version_param": true
+      }
+    },
+    "maker_checker_matrix": {
+      "query_id": "maker_checker_matrix.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "16ac81ed70165f30",
+      "status": "PASS",
+      "result": {
+        "environment": "staging snslhvmkjusozgjelghi",
+        "total": 11,
+        "passed": 11,
+        "cases": [
+          "create",
+          "self-approve DENIED",
+          "checker approves",
+          "carrier DENIED",
+          "dispatcher DENIED",
+          "duplicate idempotent",
+          "stale-version DENIED",
+          "amount-change invalidates",
+          "payout HELD",
+          "one event",
+          "no money moved"
+        ]
+      }
+    },
+    "security_migrations": {
+      "query_id": "migrations.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "9aa39f5d760d540e",
+      "status": "captured",
+      "result": [
+        {
+          "name": "cuf_revoke_anon_execute_internal_rpcs",
+          "version": "20260701042300"
+        },
+        {
+          "name": "cug_pin_search_path_helper_fns",
+          "version": "20260701043219"
+        },
+        {
+          "name": "cuh_lockdown_pocket_available_loads",
+          "version": "20260701043931"
+        },
+        {
+          "name": "cui_maker_checker_settlement_approval",
+          "version": "20260701045324"
+        },
+        {
+          "name": "cuj_settlement_maker_checker_hardening",
+          "version": "20260701050526"
+        },
+        {
+          "name": "cuk_rerevoke_decide_settlement_anon",
+          "version": "applied 2026-07-01"
+        }
+      ]
+    },
+    "plugin_lifecycle": {
+      "query_id": "plugin.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "5f451db65a34c7ea",
+      "status": "PASS",
+      "result": {
+        "install_event_id": 15,
+        "uninstall_event_id": 16,
+        "installation": "92bbaa8c-87b0-419b-8444-152d87cd4376",
+        "kill_switch": "ga4-insights off->on",
+        "preexisting_unchanged": 5,
+        "manifest_secrets": [
+          "VAPID_PRIVATE_KEY"
+        ]
+      }
+    },
+    "outbox_health": {
+      "query_id": "outbox.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "5b2ab8281f51ba01",
+      "status": "PASS",
+      "result": {
+        "events_total": 21,
+        "unprocessed": 0
+      }
+    },
+    "mobile_screenshots": {
+      "query_id": "mobile.v1",
+      "environment": "container/local",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "c5b301f0597dca9f",
+      "status": "PASS",
+      "result": {
+        "method": "Playwright chromium device-emulation (file:// local build)",
+        "viewports": [
+          "390x844",
+          "412x915",
+          "768x1024",
+          "1280x800"
+        ],
+        "pages": [
+          "home",
+          "pricing",
+          "services"
+        ],
+        "count": 12,
+        "files": [
+          "home__android-412x915.png",
+          "home__desktop-1280x800.png",
+          "home__mobile-390x844.png",
+          "home__tablet-768x1024.png",
+          "pricing__android-412x915.png",
+          "pricing__desktop-1280x800.png",
+          "pricing__mobile-390x844.png",
+          "pricing__tablet-768x1024.png",
+          "services__android-412x915.png",
+          "services__desktop-1280x800.png",
+          "services__mobile-390x844.png",
+          "services__tablet-768x1024.png"
+        ],
+        "responsive_proof": "390px: nav collapsed to hamburger, CTAs stacked; 1280px: full nav bar visible; page height reflows per viewport",
+        "note": "Public pages captured at real device viewports. Per-persona AUTHENTICATED device screenshots are an optional human capture (assistant cannot type passwords); the 11-persona RBAC capability is proven separately (see persona_rbac_matrix)."
+      }
+    },
+    "testdata_inventory": {
+      "query_id": "testdata.v1",
+      "environment": "container/local",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T05:07:35Z",
+      "sha256": "cfca42648aa0b312",
+      "status": "PASS",
+      "result": {
+        "doc": "docs/LOADBOOT-PRODUCTION-TESTDATA-GOVERNANCE.md",
+        "finding": "all production records except LoadBoot internal org are synthetic/test; no real customers",
+        "action": "inventory+plan only; nothing altered"
+      }
+    },
+    "fmcsa_verify": {
+      "query_id": "fmcsa.v2",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T11:30:00Z",
+      "sha256": "59facf9942d88a99",
+      "status": "PASS",
+      "result": {
+        "function": "fmcsa-verify",
+        "http": 200,
+        "dot_tested": "130113",
+        "official_carrier": "GUFFEY-SCHLENSKER DRILLING CORP",
+        "authority": "active",
+        "source": "FMCSA QCMobile API",
+        "note": "Real official FMCSA data returned end-to-end with the owner's new valid WebKey. Was 403 (invalid key); now 200."
+      }
+    },
+    "twilio_sms": {
+      "query_id": "twilio.v1",
+      "environment": "production",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T11:30:00Z",
+      "sha256": "7de40592696ffb8e",
+      "status": "PASS",
+      "result": {
+        "function": "send-sms",
+        "credentials": "valid",
+        "probe": "invalid-number test returned Twilio code 21211 (number rejected AFTER auth succeeded) \u2014 proves SID/token/from valid, no real SMS sent"
+      }
+    },
+    "persona_rbac_matrix": {
+      "query_id": "persona.v1",
+      "environment": "staging",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T11:30:00Z",
+      "sha256": "897f78b2537d0add",
+      "status": "PASS",
+      "result": {
+        "environment": "staging snslhvmkjusozgjelghi",
+        "personas": 11,
+        "result": "RBAC separation proven via JWT-claim simulation on real Auth users",
+        "checks": {
+          "owner": "full mgmt",
+          "dispatcher": "dispatch only, no finance.approve",
+          "finance": "finance only, no dispatch",
+          "marketing/compliance": "scoped",
+          "carrier-owner/driver": "non-staff carrier scope",
+          "broker/shipper/facility": "non-staff partners"
+        }
+      }
+    },
+    "pod_backend_matrix": {
+      "query_id": "pod_backend_matrix.v1",
+      "environment": "staging",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T12:45:00Z",
+      "sha256": "b7e1a0c4d9f26a31",
+      "status": "PASS",
+      "result": {
+        "environment": "staging snslhvmkjusozgjelghi",
+        "test_file": "tests/security/pod_backend_matrix.sql",
+        "checks": 21,
+        "passed": 21,
+        "covers": [
+          "carrier-owner valid upload PASS",
+          "cross-carrier upload DENIED",
+          "anonymous upload DENIED",
+          "unsupported MIME DENIED",
+          "oversized (>10MB) DENIED",
+          "invalid trip-state DENIED",
+          "malformed/traversal path DENIED",
+          "wrong-trip path DENIED",
+          "duplicate retry = distinct immutable version",
+          "cross-carrier POD read DENIED",
+          "reviewer signed-preview PASS / non-reviewer DENIED",
+          "non-reviewer approve DENIED",
+          "reject without/blank reason DENIED",
+          "reject with reason PASS + carrier sees reason",
+          "resubmission = new immutable version, old stays rejected",
+          "authorized reviewer approve PASS",
+          "invoice.prep_requested fires exactly once (idempotent re-approve)"
+        ],
+        "path_contract": "{auth.uid()}/pod/{trip}/{immutable} — first folder = uid (Storage doc_upload RLS); server re-derives uid + trip; MIME/size re-validated server-side (cun_pod_upload_hardening)"
+      }
+    },
+    "pod_workflow": {
+      "query_id": "pod.v2",
+      "environment": "staging",
+      "project": "rwscphuhpjoudvljvmdk",
+      "captured_at": "2026-07-01T11:30:00Z",
+      "sha256": "5f0a44dcaf83e105",
+      "status": "PASS",
+      "result": {
+        "environment": "staging + production-readback",
+        "carrier_upload": "PASS (doc created, linked to trip+carrier)",
+        "cross_carrier_upload": "DENIED (trip not found for your account)",
+        "non_carrier_upload": "DENIED (not a carrier account)",
+        "staff_review": "PASS (staff lists POD file)",
+        "event": "pod.uploaded emitted",
+        "command_center_access": "POD retrievable via staff RPC in production Command Center (no Supabase needed)"
+      }
+    }
+  }
+}
