@@ -444,6 +444,12 @@ export const partnerMyInvoices = (limit) => rpc('cc_partner_my_invoices', { p_li
 export const listPartnerOrgs = () => rpc('cc_list_partner_orgs');
 export const partnerNotifications = (limit) => rpc('cc_partner_notifications', { p_limit: limit ?? 50 });
 export const partnerMarkNotificationRead = (id) => rpc('cc_partner_mark_notification_read', { p_id: id });
+export const partnerGetProfile = () => rpc('cc_partner_get_profile');
+export const partnerUpdateProfile = (o = {}) => rpc('cc_partner_update_profile', { p_company: o.company, p_contact_name: o.contactName ?? null, p_phone: o.phone ?? null, p_email: o.email ?? null, p_address: o.address ?? null });
+// developer API keys (ctj)
+export const createApiKey = (name, scopes) => rpc('cc_create_api_key', { p_name: name, p_scopes: scopes ?? ['read'] });
+export const listApiKeys = () => rpc('cc_list_api_keys');
+export const revokeApiKey = (id) => rpc('cc_revoke_api_key', { p_id: id });
 
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.

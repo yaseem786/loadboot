@@ -12,6 +12,7 @@ import {
   partnerRequestShipment, partnerMyShipments,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
+  partnerGetProfile, partnerUpdateProfile,
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -223,6 +224,28 @@ function invoicesCard() {
   return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, 'Invoices')]), host]);
 }
 
+/* account & company settings */
+function accountCard() {
+  const company = inp('Company name'), contact = inp('Contact name'), phone = inp('Phone', 'tel'), email = inp('Billing email', 'email'), address = inp('Address');
+  const msg = h('div', { class: 'cp-err' });
+  const saveBtn = h('button', { class: 'cp-btn', onClick: async () => {
+    msg.textContent = ''; msg.className = 'cp-err';
+    if (!company.value.trim()) { msg.textContent = 'Company name is required.'; return; }
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+    try { await partnerUpdateProfile({ company: company.value.trim(), contactName: contact.value.trim() || null, phone: phone.value.trim() || null, email: email.value.trim() || null, address: address.value.trim() || null }); msg.className = 'cp-err ok'; msg.textContent = '✓ Saved.'; }
+    catch (e) { msg.textContent = (e && e.message) || 'Could not save.'; }
+    saveBtn.disabled = false; saveBtn.textContent = 'Save changes';
+  } }, 'Save changes');
+  (async () => {
+    try { const p = await partnerGetProfile(); company.value = p.company || ''; contact.value = p.contact_name || ''; phone.value = p.phone || ''; email.value = p.email || ''; address.value = p.address || ''; } catch (_) {}
+  })();
+  return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
+    h('div', { class: 'cp-cardhead' }, [icon('user', 18), h('h3', null, 'Account & company')]),
+    h('div', { class: 'cp-formgrid' }, [field('Company', company), field('Contact name', contact), field('Phone', phone), field('Billing email', email)]),
+    field('Address', address), msg, saveBtn,
+  ]);
+}
+
 /* ---------- BROKER dashboard ---------- */
 async function brokerDash(user, ov) {
   const kpis = h('div', { class: 'cp-kpis' }, [
@@ -257,16 +280,22 @@ async function brokerDash(user, ov) {
       const rows = await partnerMyLoads(50);
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No loads yet. Post your first load above.')); return; }
       mount(listHost, h('table', { class: 'cp-table' }, [
-        h('thead', null, h('tr', null, ['Lane', 'Equipment', 'Rate', 'Pickup', 'Status'].map(t => h('th', null, t)))),
-        h('tbody', null, rows.map(l => h('tr', null, [
-          h('td', null, h('b', null, (l.origin || '—') + ' → ' + (l.destination || '—'))),
-          h('td', null, l.equipment || '—'), h('td', null, l.rate ? money(l.rate) : '—'),
-          h('td', null, fmtDate(l.pickup_date)), h('td', null, pill(l.status)),
-        ]))),
+        h('thead', null, h('tr', null, ['Lane', 'Equipment', 'Rate', 'Status', 'Tracking'].map(t => h('th', null, t)))),
+        h('tbody', null, rows.map(l => {
+          let track;
+          if (l.carrier) track = h('span', null, [pill('booked'), h('span', { style: 'margin-left:6px;font-size:.82rem' }, l.carrier)]);
+          else if (l.board_status) track = pill(l.board_status === 'available' ? 'posted' : l.board_status);
+          else track = h('span', { class: 'cp-sub' }, '—');
+          return h('tr', null, [
+            h('td', null, h('b', null, (l.origin || '—') + ' → ' + (l.destination || '—'))),
+            h('td', null, l.equipment || '—'), h('td', null, l.rate ? money(l.rate) : '—'),
+            h('td', null, pill(l.status)), h('td', null, track),
+          ]);
+        })),
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), invoicesCard()])));
+  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
@@ -313,7 +342,7 @@ async function shipperDash(user, ov) {
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), invoicesCard()])));
+  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
@@ -388,7 +417,7 @@ async function facilityDash(user, ov) {
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
   const weekCard = h('div', { class: 'cp-card', style: 'margin-bottom:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('clock', 18), h('h3', null, 'This week')]), weekHost]);
-  mount(root, shell(user, 'facility', ov.company, kpis, h('div', null, [weekCard, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Appointments')]), listHost])]), invoicesCard()])));
+  mount(root, shell(user, 'facility', ov.company, kpis, h('div', null, [weekCard, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Appointments')]), listHost])]), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
