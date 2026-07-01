@@ -38,6 +38,7 @@ const NAV = [
     { path: '/crm', label: 'CRM & leads', icon: 'trend', perm: 'crm.view', flag: 'crm' },
     { path: '/forms', label: 'Forms inbox', icon: 'bell', perm: 'forms.view', flag: 'forms' },
     { path: '/partners', label: 'Brokers & shippers', icon: 'users', perm: 'partners.view', flag: 'partners' },
+    { path: '/partner-intake', label: 'Partner intake', icon: 'doc', perm: 'partners.view', flag: 'partners' },
   ]},
   { group: 'Support', items: [
     { path: '/support', label: 'Tickets', icon: 'bell', perm: 'support.view', flag: 'support' },

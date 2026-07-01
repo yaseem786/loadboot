@@ -429,6 +429,14 @@ export const partnerCreateAppointment = (o = {}) => rpc('cc_partner_create_appoi
 export const partnerAppointments = (limit) => rpc('cc_partner_appointments', { p_limit: limit ?? 100 });
 export const partnerSetAppointmentStatus = (id, status) => rpc('cc_partner_set_appointment_status', { p_id: id, p_status: status });
 
+// ---- ct-waveBG: Partner Intake (staff side, Command Center) — RBAC: partners.view/manage ----
+export const partnerIntakeOverview = () => rpc('cc_partner_intake_overview');
+export const listPartnerLoads = (o = {}) => rpc('cc_list_partner_loads', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
+export const decidePartnerLoad = (id, action) => rpc('cc_decide_partner_load', { p_id: id, p_action: action });
+export const listPartnerShipments = (o = {}) => rpc('cc_list_partner_shipments', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
+export const decidePartnerShipment = (id, action) => rpc('cc_decide_partner_shipment', { p_id: id, p_action: action });
+export const listPartnerAppointmentsAll = (limit) => rpc('cc_list_partner_appointments_all', { p_limit: limit ?? 200 });
+
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
 // They return one-by-one in later phases behind feature flags.
