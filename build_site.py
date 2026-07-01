@@ -341,10 +341,10 @@ def footer():
 <div class="links5">
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a></div>
-<div><div class="foot-h">Carriers</div><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
+<div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Compliance</div><a href="services.html">Authority &amp; DOT Setup</a><a href="services.html">BOC-3 / UCR</a><a href="services.html">Form 2290</a><a href="services.html">IFTA</a></div>
 <div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
-<div><div class="foot-h">Programs &amp; Login</div><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div>
 </div>
 <div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
@@ -1917,6 +1917,135 @@ page('partners.html', 'Partner Program for Brokers, Shippers &amp; Facilities | 
      'Partner with Loadboot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.',
      'partners.html', pp)
 
+# ---- Dedicated Carrier page (premium, ~14 sections) ----
+def _prose(h2, *paras):
+    return '<section><div class="wrap prose reveal"><h2>%s</h2>%s</div></section>' % (h2, ''.join('<p>%s</p>' % p for p in paras))
+cp = svc_hero('Truck Dispatch Built Around Your Truck',
+    'Loadboot is a dispatcher in your corner &mdash; we find the loads, negotiate the rate, handle the paperwork and keep you moving, so you can focus on driving. Flat 5%, no contracts, you keep your authority.')
+cp += _sec('Why carriers choose Loadboot', 'A dispatcher that actually has your back', _cards([
+    ('&#128666;', 'We keep your truck loaded', 'Dedicated dispatchers work your lanes and preferences so you spend less time hunting boards and more time earning.'),
+    ('&#128176;', 'Better rates, negotiated for you', 'We know the lanes and we counter &mdash; you get a rate that reflects what the freight is really worth.'),
+    ('&#129309;', 'You keep your authority', 'Your MC/DOT, your insurance, your broker relationships. We work on your behalf; we never take over your authority.'),
+]))
+cp += _sec('Who we serve', 'Built for every kind of carrier', _cards([
+    ('&#128100;', 'Owner-operators', 'One-truck operations get a full dispatch team without hiring one &mdash; more loaded miles, less deadhead.'),
+    ('&#128203;', 'New-authority carriers', 'We help you land your first loads, build broker credibility, and avoid the costly early mistakes.'),
+    ('&#128667;', 'Small &amp; growing fleets', 'Assign drivers and trucks, track every trip, and run your whole operation from one carrier portal.'),
+]))
+cp += _sec('Equipment', 'Every trailer type, dispatched', _cards([
+    ('&#128230;', 'Dry van &amp; reefer', 'The bread-and-butter freight, matched to your lanes and appointment windows.'),
+    ('&#127981;', 'Flatbed &amp; step deck', 'Open-deck freight with the securement and permit awareness it demands.'),
+    ('&#9889;', 'Hotshot, power-only &amp; box truck', 'Smaller and specialized equipment kept busy with the right expedited and drop-and-hook runs.'),
+]))
+cp += _sec('Load sourcing', 'How we find your freight', _cards([
+    ('&#128269;', 'Real relationships, licensed sources', 'We source from broker and shipper relationships and licensed load channels &mdash; no scraping where it is not allowed.'),
+    ('&#127760;', 'Matched to your preferences', 'Home time, preferred lanes, minimum rate-per-mile and equipment all factor into what we bring you.'),
+    ('&#128200;', 'Reduced deadhead', 'We plan backhauls and next-load opportunities so more of your miles are paid miles.'),
+]))
+cp += _prose('Rate negotiation that puts money on your truck',
+    'The most profitable carriers rarely take the first number. Neither do we. Your dispatcher knows the lane, knows what the freight should pay, and counters on your behalf &mdash; then handles the rate confirmation so the agreed number is the number you get. Want to sharpen your own targets first? Run the math with our free <a href="tools.html">cost-per-mile and profit calculators</a>.')
+cp += _sec('Dispatch &amp; appointments', 'The busywork, handled', _cards([
+    ('&#128197;', 'Pickup &amp; delivery appointments', 'We set and confirm appointments and keep the facility details straight so you are not stuck on hold.'),
+    ('&#128241;', 'Real-time trip support', 'When something changes on the road, a dispatcher is reachable to re-work the plan.'),
+    ('&#128221;', 'Rate cons &amp; paperwork', 'We handle the tender, rate confirmation and load documents so nothing slows you down.'),
+]))
+cp += _sec('Documents &amp; compliance', 'Kept current, kept clean', _cards([
+    ('&#128196;', 'Document management', 'BOL, POD, scale tickets and lumper receipts organized against every load.'),
+    ('&#128737;', 'Compliance support', 'We help keep authority, insurance and filings (IFTA, 2290, UCR, BOC-3) on your radar before they lapse.'),
+    ('&#9989;', 'Broker credibility', 'Clean, on-time paperwork builds the reputation that gets you better loads.'),
+]))
+cp += _sec('When things go sideways', 'Detention, layover, lumper &amp; TONU support', _cards([
+    ('&#9203;', 'Detention &amp; layover', 'Arrival and departure captured, evidence collected, and the accessorial pursued under your load terms.'),
+    ('&#128176;', 'Lumper &amp; TONU', 'Lumper receipts and truck-ordered-not-used situations documented and billed properly.'),
+    ('&#128295;', 'Breakdowns &amp; exceptions', 'When a trip hits trouble, we help re-plan and keep the broker informed.'),
+]))
+cp += _sec('Invoicing &amp; settlement', 'Get paid without the chase', _cards([
+    ('&#129534;', 'Invoice-ready packets', 'Rate con, BOL and POD assembled so your invoice (or your factoring company) goes out clean.'),
+    ('&#128179;', 'Factoring friendly', 'Works with your factoring so the paperwork never holds up your cash.'),
+    ('&#128202;', 'Settlement visibility', 'See what you earned, what was deducted, and what is still owed &mdash; all in your portal.'),
+]))
+cp += _sec('Your carrier software', 'One dashboard for the whole operation', _cards([
+    ('&#128202;', 'Fleet &amp; drivers', 'Add drivers and trucks, watch license and medical expirations, and assign equipment to trips.'),
+    ('&#128666;', 'Trips &amp; tracking', 'Confirm, start and deliver loads, share location, and see a full trip timeline.'),
+    ('&#128241;', 'Pocket app for drivers', 'Drivers upload PODs, update status and share location from their phone &mdash; no extra hardware.'),
+]))
+cp += _sec('Getting started', 'On your lanes the same day', _cards([
+    ('&#128221;', '1. Create your profile', 'Tell us your equipment, lanes and preferences &mdash; about two minutes.'),
+    ('&#128228;', '2. Send authority &amp; insurance', 'We verify the basics so brokers say yes faster.'),
+    ('&#128666;', '3. Start getting loads', 'A dispatcher goes to work on your lanes right away. No contract, cancel anytime.'),
+]))
+_cfaq_html, _cfaq_sch = faq_block([
+    ('What does Loadboot cost carriers?', 'A flat 5% of the linehaul on loads we book &mdash; no sign-up fee, no monthly minimum, no contract. You only pay when we put money on your truck.'),
+    ('Do I keep my own authority and insurance?', 'Yes. You keep your MC/DOT, your insurance and your broker relationships. We work on your behalf and never take over your authority.'),
+    ('Do you work with new-authority carriers?', 'Absolutely &mdash; new-authority carriers are a core part of who we serve. We help you land early loads and build credibility.'),
+    ('What equipment do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power-only and box truck / expedited.'),
+    ('How fast can I start?', 'Most carriers are set up the same day once we have your authority and insurance.'),
+])
+cp += _cfaq_html + final_cta()
+page('carriers.html', 'Truck Dispatch for Carriers &amp; Owner-Operators | Loadboot',
+     'Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, and supports detention, invoicing and compliance. Flat 5%, no contracts, keep your authority.',
+     'services.html', cp, _cfaq_sch)
+
+# ---- Dedicated Broker page (~15 sections; brokers only) ----
+bp = svc_hero('A Reliable Carrier Network for Brokers',
+    'Post a load and reach vetted carriers whose authority, insurance and compliance are actively tracked &mdash; with clean, on-time documentation and one professional point of contact on every load.')
+bp += _sec('Why brokers work with Loadboot', 'Fewer surprises, cleaner loads', _cards([
+    ('&#129309;', 'Vetted carriers', 'Carrier authority, insurance and compliance are actively monitored &mdash; you cover freight with less risk.'),
+    ('&#128203;', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and returned on time, so billing and claims stay simple.'),
+    ('&#128222;', 'One point of contact', 'A dispatch team that answers the phone and communicates proactively from tender to POD.'),
+]))
+bp += _sec('Getting set up', 'Onboarding &amp; verification', _cards([
+    ('&#128221;', 'Apply as a broker partner', 'Share your company, authority and contacts. Activation is human-reviewed &mdash; no bots approving accounts.'),
+    ('&#128737;', 'Authority &amp; verification', 'We verify broker authority and key details against public and licensed sources before you go live.'),
+    ('&#9989;', 'Approved &amp; active', 'Once approved, you can post loads and reach the carrier network right away.'),
+]))
+bp += _sec('Posting a load', 'A guided load wizard', _cards([
+    ('&#128230;', 'Structured, step by step', 'Lane, schedule, equipment, requirements and documents &mdash; captured cleanly, with duplicate detection.'),
+    ('&#128203;', 'Document requirements up front', 'Set what you will provide (rate con, pickup/delivery numbers, appointment) so nothing stalls the load.'),
+    ('&#128260;', 'Recurring lanes &amp; reposts', 'Repeat lanes and re-post prior loads with controlled changes instead of retyping everything.'),
+]))
+bp += _sec('Matching', 'The right carrier, explained', _cards([
+    ('&#127919;', 'Eligibility first', 'Only carriers who pass hard checks &mdash; authority, insurance, equipment, availability &mdash; are ever offered your load.'),
+    ('&#128200;', 'Explainable ranking', 'Carriers are ranked on capacity, performance, equipment fit and more, with the reasoning shown &mdash; never a black-box score.'),
+    ('&#128101;', 'Preferred carriers', 'Route to your contracted or preferred carriers first, then broaden the search.'),
+]))
+bp += _sec('Operational visibility', 'Know where your freight is', _cards([
+    ('&#128205;', 'Permitted live status', 'See load and trip status, pickup and delivery progress and the latest permitted ETA &mdash; automatically.'),
+    ('&#128666;', 'Driver &amp; trip tracking', 'Location and check-ins where the carrier and driver have enabled tracking, clearly labeled.'),
+    ('&#128276;', 'Exceptions surfaced', 'Detention, delays and appointment issues are raised early, not discovered at delivery.'),
+]))
+bp += _sec('Appointments &amp; documents', 'Kept straight', _cards([
+    ('&#128197;', 'Appointment management', 'Pickup and delivery appointments tracked against facility requirements.'),
+    ('&#128196;', 'Required documents', 'A live checklist of what is required, received, missing or rejected &mdash; for every load.'),
+    ('&#128203;', 'POD &amp; billing', 'Proof of delivery captured and organized so billing and claims are painless.'),
+]))
+bp += _sec('When issues happen', 'Structured exception resolution', _cards([
+    ('&#9203;', 'Detention &amp; accessorials', 'Arrival/departure evidence and accessorial requests handled under the load terms, with an audit trail.'),
+    ('&#128260;', 'Reschedules &amp; re-covers', 'Appointment changes and re-covers coordinated quickly to protect the delivery.'),
+    ('&#128221;', 'One clear record', 'Every exception has a reporter, timeline, owner and resolution &mdash; no he-said-she-said.'),
+]))
+bp += _sec('Integrations &amp; security', 'Fits how you already work', _cards([
+    ('&#128268;', 'API &amp; webhooks', 'Subscribe to load, trip, document and delivery events; integrate with your TMS on approved endpoints.'),
+    ('&#128274;', 'Permissioned data', 'You see what you are entitled to and nothing more &mdash; carrier financials and internal notes stay private.'),
+    ('&#128737;', 'Audit &amp; consent', 'Actions are audited and communications respect consent and suppression rules.'),
+]))
+bp += lead_form('partner_inquiry', 'Become a broker partner', 'Tell us about your freight and lanes and we will get you set up with the carrier network.',
+    [('name', 'Your name', 'text', True), ('company', 'Brokerage', 'text', True), ('email', 'Email', 'email', True),
+     ('phone', 'Phone', 'tel', False), ('mc', 'MC number', 'text', False),
+     ('message', 'Lanes, freight type and typical volume', 'textarea', False)],
+    'Request partnership', 'Thanks — our partner team will reach out.')
+_bfaq_html, _bfaq_sch = faq_block([
+    ('Who can post loads on Loadboot?', 'Approved broker partners. Because moving freight from shippers requires a broker license in the US, load posting is for licensed brokers &mdash; carrier and driver accounts are separate.'),
+    ('How are carriers vetted?', 'We actively track carrier authority, insurance and compliance, and only carriers who pass hard eligibility checks are offered your loads.'),
+    ('Can I integrate with my TMS?', 'Yes &mdash; subscribe to load, trip, document and delivery events via webhooks and our API on approved endpoints.'),
+    ('What visibility do I get?', 'Permitted live load and trip status, pickup and delivery progress, ETAs, document status and open exceptions &mdash; without exposing private carrier data.'),
+])
+bp += _bfaq_html
+bp += '<section><div class="wrap center" style="text-align:center"><a href="/app/partner/" class="btn btn-secondary">Existing broker partner? Log in &rarr;</a></div></section>'
+page('brokers.html', 'For Freight Brokers &mdash; A Reliable Carrier Network | Loadboot',
+     'Brokers post loads to a vetted Loadboot carrier network with explainable matching, live visibility, clean documentation and API/webhook integration. Broker partners only.',
+     'partners.html', bp, _bfaq_sch)
+
 # ---- Referral Program ----
 ref = svc_hero('Refer a Carrier, Get Rewarded', 'Know an owner-operator or fleet who deserves a better dispatcher? Send them our way &mdash; when they get rolling with Loadboot, we say thank you.')
 ref += _sec('How referrals work', 'Simple and fair', _cards([
@@ -2046,7 +2175,7 @@ page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Develope
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
-  ('Get started', [('contact.html', 'Get a Quote / Contact'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
+  ('Get started', [('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status')]),

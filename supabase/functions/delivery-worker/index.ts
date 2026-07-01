@@ -43,13 +43,34 @@ Deno.serve(async (_req) => {
 
   // Base URL of the deployed `unsubscribe` edge function (RFC 8058 one-click). Defaults to this project.
   const UNSUB_BASE = Deno.env.get("UNSUBSCRIBE_URL") || `${SUPABASE_URL}/functions/v1/unsubscribe`;
+  const SITE = Deno.env.get("SITE_URL") || "https://loadboot.com";
+  const LOGO = Deno.env.get("BRAND_LOGO_URL") || `${SITE}/icon-512.png`; // authentic brand icon (see BRAND-ASSET-AUDIT.md)
+  // Professional, reusable branded email shell — authentic hosted logo + compliant footer. Table-based for
+  // broad client support; light/dark safe neutral palette. No placeholder or fabricated assets.
+  const shell = (bodyHtml: string, unsubUrl: string) =>
+    `<div style="background:#f1f5f9;padding:24px 0;font-family:Arial,Helvetica,sans-serif">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+        <tr><td style="background:#0b1220;padding:18px 24px" align="left">
+          <img src="${LOGO}" width="28" height="28" alt="LoadBoot" style="vertical-align:middle;border-radius:6px">
+          <span style="color:#fff;font-size:18px;font-weight:800;vertical-align:middle;margin-left:8px">LoadBoot</span>
+        </td></tr>
+        <tr><td style="padding:24px;color:#0f172a;font-size:15px;line-height:1.6">${bodyHtml}</td></tr>
+        <tr><td style="padding:18px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;line-height:1.6">
+          <b style="color:#0f172a">LoadBoot</b> &middot; Truck dispatch &amp; logistics technology<br>
+          <a href="${SITE}/contact.html" style="color:#2563eb">Support</a> &middot;
+          <a href="${SITE}/privacy.html" style="color:#2563eb">Privacy</a> &middot;
+          <a href="${SITE}/terms.html" style="color:#2563eb">Terms</a> &middot;
+          <a href="${unsubUrl}" style="color:#2563eb">Unsubscribe</a><br>
+          <span style="color:#94a3b8">You're receiving this because you or your company works with LoadBoot.</span>
+        </td></tr>
+      </table></td></tr></table></div>`;
   let sent = 0, failed = 0;
   for (const d of claimed ?? []) {
     const subject = (d.meta && d.meta.subject) ? String(d.meta.subject) : "LoadBoot";
     const unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`;
-    const footer = `<hr style="border:0;border-top:1px solid #eee;margin:18px 0"><div style="color:#64748b;font-size:12px">You're receiving this from LoadBoot. <a href="${unsubUrl}">Unsubscribe</a>.</div>`;
-    const html = (d.meta && d.meta.body_html) ? String(d.meta.body_html) + footer : null;
-    const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + `\n\nUnsubscribe: ${unsubUrl}`;
+    const html = (d.meta && d.meta.body_html) ? shell(String(d.meta.body_html), unsubUrl) : null;
+    const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}`;
     try {
       const payload: Record<string, unknown> = { from: RESEND_FROM, to: d.recipient_email, subject, text,
         headers: { "X-Entity-Ref-ID": d.idempotency_key, "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } };

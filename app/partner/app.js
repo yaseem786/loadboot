@@ -8,7 +8,7 @@ import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
 import {
   partnerRegister, partnerOverview,
-  partnerPostLoad, partnerMyLoads,
+  partnerPostLoad, partnerMyLoads, partnerSubmitLoad,
   partnerRequestShipment, partnerMyShipments,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
@@ -270,30 +270,54 @@ async function brokerDash(user, ov) {
     kpiCard('Open', ov.loads_open, 'awaiting dispatch', 'amber'),
     kpiCard('Posted', ov.loads_posted, 'on the board', 'green'),
   ]);
-  const origin = inp('Origin city, ST'), dest = inp('Destination city, ST'), equip = inp('Equipment (e.g. Dry Van)');
-  const rate = inp('Rate ($)', 'number'), miles = inp('Miles', 'number'), pickup = inp('', 'date'), weight = inp('Weight (lb)', 'number');
-  const commodity = inp('Commodity'), notes = inp('Notes (optional)');
   const err = h('div', { class: 'cp-err' });
   const listHost = h('div', { class: 'cp-tablewrap' }, h('div', { class: 'lb-state lb-loading' }, 'Loading…'));
-  const newIdem = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('k' + Date.now() + Math.random().toString(36).slice(2));
-  let idemKey = newIdem();   // one key per submission attempt; safe to retry, regenerated after success
-  const postBtn = h('button', { class: 'cp-btn', onClick: async () => {
-    err.textContent = ''; err.className = 'cp-err';
-    if (!origin.value.trim() || !dest.value.trim()) { err.textContent = 'Origin and destination are required.'; return; }
-    postBtn.disabled = true; postBtn.textContent = 'Posting…';
-    try {
-      await partnerPostLoad({ origin: origin.value.trim(), destination: dest.value.trim(), equipment: equip.value.trim() || null, rate: rate.value || null, miles: miles.value || null, pickup: pickup.value || null, weight: weight.value || null, commodity: commodity.value.trim() || null, notes: notes.value.trim() || null, idempotencyKey: idemKey });
-      idemKey = newIdem();
-      [origin, dest, equip, rate, miles, pickup, weight, commodity, notes].forEach(i => i.value = '');
-      err.className = 'cp-err ok'; err.textContent = '✓ Load submitted — our dispatch team will review and post it.';
-      loadList();
-    } catch (e) { err.textContent = (e && e.message) || 'Could not post the load.'; }
-    postBtn.disabled = false; postBtn.textContent = 'Post load';
-  } }, 'Post load');
+  // ----- Load Wizard (Inc 44): multi-step broker submission with duplicate detection + doc checklist -----
+  const w = { appointment_required: false, tracking_required: false };
+  const stepHost = h('div');
+  const STEPS = ['Lane', 'Schedule', 'Equipment & commodity', 'Requirements', 'Review'];
+  let step = 0, confirmDup = false;
+  const wi = (label, key, type) => { const i = inp(label, type || 'text'); i.value = w[key] || ''; i.oninput = () => { w[key] = i.value; }; return field(label, i); };
+  const toggle = (label, key) => { const b = h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; b.className = 'cp-btn ghost' + (w[key] ? ' on' : ''); b.textContent = label + ': ' + (w[key] ? 'Yes' : 'No'); } }, label + ': ' + (w[key] ? 'Yes' : 'No')); return b; };
+  function renderStep() {
+    let body;
+    if (step === 0) body = h('div', { class: 'cp-formgrid' }, [wi('Origin city, ST', 'origin'), wi('Destination city, ST', 'destination'), wi('Miles', 'miles', 'number'), wi('Reference (optional)', 'reference')]);
+    else if (step === 1) body = h('div', { class: 'cp-formgrid' }, [wi('Pickup date', 'pickup_date', 'date'), wi('Pickup window', 'pickup_window'), wi('Delivery date', 'delivery_date', 'date'), wi('Delivery window', 'delivery_window')]);
+    else if (step === 2) body = h('div', { class: 'cp-formgrid' }, [wi('Equipment (e.g. Dry Van)', 'equipment'), wi('Commodity', 'commodity'), wi('Weight (lb)', 'weight', 'number'), wi('Rate ($)', 'rate', 'number')]);
+    else if (step === 3) body = h('div', null, [h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [toggle('Appointment required', 'appointment_required'), toggle('Tracking required', 'tracking_required')]), wi('Notes / special instructions', 'notes')]);
+    else body = h('div', { class: 'cp-card', style: 'background:#f8fafc' }, [
+      h('div', { class: 'cp-sub' }, 'Review'),
+      h('div', { style: 'font-weight:700;margin:6px 0' }, (w.origin || '?') + ' → ' + (w.destination || '?')),
+      h('div', { class: 'cp-sub' }, [w.equipment, w.rate ? ('$' + w.rate) : null, w.miles ? (w.miles + ' mi') : null, w.pickup_date].filter(Boolean).join(' · ')),
+      h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'On submit, a required-document checklist (rate con, pickup/delivery #, appointment, billing) is created for our dispatch team.'),
+    ]);
+    const back = h('button', { class: 'cp-btn ghost', onClick: () => { if (step > 0) { step--; renderStep(); } } }, 'Back');
+    const nextLbl = step < STEPS.length - 1 ? 'Next' : (confirmDup ? 'Submit anyway' : 'Submit load');
+    const next = h('button', { class: 'cp-btn', onClick: async () => {
+      err.textContent = ''; err.className = 'cp-err';
+      if (step === 0 && (!w.origin || !w.destination)) { err.textContent = 'Origin and destination are required.'; return; }
+      if (step < STEPS.length - 1) { step++; renderStep(); return; }
+      next.disabled = true; next.textContent = 'Submitting…';
+      try {
+        await partnerSubmitLoad(Object.assign({}, w, confirmDup ? { confirm_duplicate: 'true' } : {}));
+        err.className = 'cp-err ok'; err.textContent = '✓ Load submitted — our dispatch team will review it and generate the document checklist.';
+        for (const k in w) delete w[k]; w.appointment_required = false; w.tracking_required = false; step = 0; confirmDup = false; renderStep(); loadList();
+      } catch (e) {
+        const msg = (e && e.message) || 'Could not submit the load.';
+        if (/duplicate/i.test(msg)) { confirmDup = true; err.textContent = 'Possible duplicate in the last 24h. Press “Submit anyway” to proceed.'; renderStep(); }
+        else { next.disabled = false; next.textContent = nextLbl; err.textContent = msg; }
+      }
+    } }, nextLbl);
+    mount(stepHost, h('div', null, [
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Step ' + (step + 1) + ' of ' + STEPS.length + ' — ' + STEPS[step]),
+      body, err,
+      h('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [step > 0 ? back : null, next].filter(Boolean)),
+    ]));
+  }
+  renderStep();
   const form = h('div', { class: 'cp-card' }, [
     h('div', { class: 'cp-cardhead' }, [icon('plus', 18), h('h3', null, 'Post a load')]),
-    h('div', { class: 'cp-formgrid' }, [field('Origin', origin), field('Destination', dest), field('Equipment', equip), field('Rate', rate), field('Miles', miles), field('Pickup date', pickup), field('Weight', weight), field('Commodity', commodity)]),
-    field('Notes', notes), err, postBtn,
+    stepHost,
   ]);
   async function loadList() {
     try {
