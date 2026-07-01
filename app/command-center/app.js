@@ -53,6 +53,7 @@ import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderBrandKit } from './views/brandKit.js';
 import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
+import { renderEmailBuilder } from './views/emailBuilder.js';
 import { renderSupport } from './views/support.js';
 import { renderReports } from './views/reports.js';
 import { renderNotifications } from './views/notifications.js';
@@ -216,6 +217,7 @@ async function boot() {
     '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
     '/plugins': () => { setActive('/plugins'); renderPluginMarketplace(content); },
     '/form-builder': () => { setActive('/form-builder'); renderFormBuilder(content); },
+    '/email-builder': () => { setActive('/email-builder'); renderEmailBuilder(content); },
     '/support': () => { setActive('/support'); if (supportEnabled && can('support.view')) renderSupport(content); else denied(); },
     '/reports': () => { setActive('/reports'); if (reportsEnabled && can('reports.view')) renderReports(content); else denied(); },
     '/notifications': () => { setActive('/notifications'); if (notificationsCenterEnabled) renderNotifications(content); else denied(); },
