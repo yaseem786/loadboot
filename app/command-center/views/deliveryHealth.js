@@ -1,66 +1,92 @@
-// deliveryHealth.js — Delivery Health (Phase 3D). Operational view over message
-// delivery across channels and states (queued / sent / failed / dead / read), with
-// re-queue for failed/dead-lettered messages so a delivery failure never silently
-// loses the underlying business event. Uses cc_list_notifications / cc_mark_notification.
+// deliveryHealth.js — Command Center view over the UNIFIED delivery engine (cvb/cvc/cvd).
+// One delivery ledger for every channel: shows the live status histogram, a filterable recent-deliveries
+// table (attempts column exposes retry progress), dead-letter isolation, and the suppression list with
+// manual add. Bounces/complaints auto-suppress server-side; failed sends retry up to 5× then dead-letter.
+// Staff-gated by cc_delivery_* RPCs (content.manage OR settings.manage).
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, statusPill, segmented, fmtDateTime } from '../../shared/ui/components.js';
-import { listNotifications, markNotification } from '../../shared/api.js';
+import { sectionHead, statCard, fmtDateTime } from '../../shared/ui/components.js';
+import { deliveryHealth, deliveryList, suppressionsList, suppress } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
-const FILTERS = [{ value: '', label: 'All' }, { value: 'queued', label: 'Queued' }, { value: 'sent', label: 'Sent' }, { value: 'failed', label: 'Failed' }, { value: 'dead', label: 'Dead-letter' }, { value: 'read', label: 'Read' }];
+const ST_TONE = { queued: 'blue', scheduled: 'blue', claimed: 'amber', sent: 'green', delivered: 'green',
+  opened: 'green', clicked: 'green', bounced: 'red', complained: 'red', unsubscribed: 'gray', failed: 'amber', dead_letter: 'red' };
+const FILTERS = [['', 'All'], ['queued', 'Queued'], ['delivered', 'Delivered'], ['failed', 'Retrying'], ['dead_letter', 'Dead letter'], ['bounced', 'Bounced']];
 
 export function renderDeliveryHealth(host) {
-  const manage = can('comm.view') || can('settings.manage') || true; // any staff can view; RPC gates
-  let status = '';
+  const manage = can('content.manage') || can('settings.manage');
+  let statusFilter = '';
   const kpis = el('div', { class: 'cc-kpi-grid' });
-  const tools = el('div', { style: 'margin:14px 0 6px' });
   const body = el('div', { class: 'cc-table-wrap' });
-  mount(host, el('div', null, [
-    sectionHead('Delivery Health', 'Message delivery across channels and states. Re-queue failed or dead-lettered messages — the underlying event is never lost.'),
-    kpis, tools, body,
-  ]));
-  loadKpis();
-  loadList();
+  const suppBox = el('div', { class: 'cc-table-wrap', style: 'margin-top:18px' });
+  const filterBar = el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin:10px 0' },
+    FILTERS.map(([v, l]) => el('button', { class: 'cc-chip-btn' + (v === statusFilter ? ' on' : ''), onClick: () => { statusFilter = v; renderFilters(); loadTable(); } }, l)));
+  function renderFilters() { [...filterBar.children].forEach((b, i) => b.classList.toggle('on', FILTERS[i][0] === statusFilter)); }
 
-  async function loadKpis() {
-    let rows; try { rows = await listNotifications({ limit: 500 }); } catch (e) { return; }
-    rows = rows || [];
-    const c = rows.reduce((a, r) => { a[r.status] = (a[r.status] || 0) + 1; return a; }, {});
-    const failed = (c.failed || 0) + (c.dead || 0);
+  mount(host, el('div', null, [
+    sectionHead('Delivery Health', 'Every campaign & transactional message flows through one delivery ledger. Bounces and complaints auto-suppress; failed sends retry up to 5× then move to dead letter.'),
+    kpis, filterBar, body,
+    sectionHead('Suppression list', 'Hard opt-outs, bounces and complaints. Suppressed addresses are excluded from every future send.',
+      manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: addSuppression }, '+ Suppress address') : null),
+    suppBox,
+  ]));
+  loadHealth(); loadTable(); loadSupp();
+
+  async function loadHealth() {
+    let h; try { h = await deliveryHealth(); } catch (e) { mount(kpis, el('div', { class: 'lb-state' }, humanizeError(e))); return; }
+    h = h || {};
+    const g = (k) => Number(h[k] || 0);
+    const delivered = g('delivered') + g('sent') + g('opened') + g('clicked');
+    const pending = g('queued') + g('scheduled') + g('claimed');
     mount(kpis, [
-      statCard({ icon: 'bell', label: 'Total messages', value: String(rows.length), sub: 'recent', accent: 'blue' }),
-      statCard({ icon: 'refresh', label: 'Queued', value: String(c.queued || 0), sub: 'awaiting delivery', accent: (c.queued || 0) > 0 ? 'amber' : 'green' }),
-      statCard({ icon: 'check', label: 'Sent', value: String((c.sent || 0) + (c.read || 0)), sub: (c.read || 0) + ' read', accent: 'green' }),
-      statCard({ icon: 'shield', label: 'Failed / dead', value: String(failed), sub: 'need re-queue', accent: failed > 0 ? 'red' : 'green' }),
+      statCard({ icon: 'bell', label: 'Pending', value: String(pending), sub: 'queued / claimed', accent: 'blue' }),
+      statCard({ icon: 'check', label: 'Delivered', value: String(delivered), sub: 'sent & confirmed', accent: 'green' }),
+      statCard({ icon: 'trend', label: 'Bounced / complained', value: String(g('bounced') + g('complained')), sub: 'auto-suppressed', accent: 'amber' }),
+      statCard({ icon: 'document', label: 'Dead letter', value: String(g('dead_letter')), sub: 'exhausted retries', accent: 'red' }),
     ]);
-    mount(tools, segmented(FILTERS, status, (v) => { status = v; loadList(); }));
   }
 
-  async function loadList() {
+  async function loadTable() {
     showLoading(body, 'Loading deliveries…');
-    let rows; try { rows = await listNotifications({ status: status || null, limit: 300 }); } catch (e) { showError(body, humanizeError(e), loadList); return; }
+    let rows; try { rows = await deliveryList({ status: statusFilter || null, limit: 200 }); } catch (e) { showError(body, humanizeError(e), loadTable); return; }
     rows = rows || [];
-    if (!rows.length) { mount(body, el('div', { class: 'lb-state' }, 'No messages for this filter.')); return; }
+    if (!rows.length) { mount(body, el('div', { class: 'lb-state' }, 'No deliveries' + (statusFilter ? ' with status “' + statusFilter + '”.' : ' yet.'))); return; }
     mount(body, el('table', { class: 'cc-table' }, [
-      el('thead', null, el('tr', null, ['When', 'Type', 'Channel', 'Recipient', 'Status', ''].map(h => el('th', null, h)))),
-      el('tbody', null, rows.map(t => {
-        const retryable = t.status === 'failed' || t.status === 'dead';
-        return el('tr', { class: 'cc-row' }, [
-          el('td', null, el('span', { class: 'cc-sub' }, fmtDateTime(t.created_at))),
-          el('td', null, t.template_key || (t.payload && t.payload.type) || '—'),
-          el('td', null, t.channel || 'in_app'),
-          el('td', null, t.recipient_role || t.recipient_user || '—'),
-          el('td', null, statusPill(t.status)),
-          el('td', null, retryable ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-            ev.stopPropagation(); ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Re-queuing…';
-            try { await markNotification(t.id, 'queued'); toast('Re-queued for delivery', 'success'); loadList(); loadKpis(); }
-            catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Re-queue'; toast(humanizeError(e), 'error'); }
-          } }, 'Re-queue') : ''),
-        ]);
-      })),
+      el('thead', null, el('tr', null, ['Recipient', 'Channel', 'Status', 'Attempts', 'Scheduled', 'Sent', 'Failure'].map(h => el('th', null, h)))),
+      el('tbody', null, rows.map(d => el('tr', { class: 'cc-row' }, [
+        el('td', null, el('b', null, d.recipient_email || '—')),
+        el('td', null, (d.channel || '') + (d.provider ? ' · ' + d.provider : '')),
+        el('td', null, el('span', { class: 'cc-pill cc-pill-' + (ST_TONE[d.status] || 'gray') }, d.status)),
+        el('td', null, String(d.attempts || 0)),
+        el('td', null, el('span', { class: 'cc-sub' }, d.scheduled_at ? fmtDateTime(d.scheduled_at) : '—')),
+        el('td', null, el('span', { class: 'cc-sub' }, d.sent_at ? fmtDateTime(d.sent_at) : '—')),
+        el('td', null, el('span', { class: 'cc-sub', style: d.failure_reason ? 'color:#b45309' : '' }, d.failure_reason || '')),
+      ]))),
     ]));
+  }
+
+  async function loadSupp() {
+    showLoading(suppBox, 'Loading suppressions…');
+    let rows; try { rows = await suppressionsList({ limit: 300 }); } catch (e) { showError(suppBox, humanizeError(e), loadSupp); return; }
+    rows = rows || [];
+    if (!rows.length) { mount(suppBox, el('div', { class: 'lb-state' }, 'No suppressed addresses.')); return; }
+    mount(suppBox, el('table', { class: 'cc-table' }, [
+      el('thead', null, el('tr', null, ['Address', 'Channel', 'Reason', 'Since'].map(h => el('th', null, h)))),
+      el('tbody', null, rows.map(s => el('tr', { class: 'cc-row' }, [
+        el('td', null, el('b', null, s.address)),
+        el('td', null, s.channel),
+        el('td', null, el('span', { class: 'cc-pill cc-pill-' + (s.reason === 'manual' ? 'gray' : 'red') }, s.reason || '—')),
+        el('td', null, el('span', { class: 'cc-sub' }, fmtDateTime(s.created_at))),
+      ]))),
+    ]));
+  }
+
+  async function addSuppression() {
+    const addr = prompt('Email address to suppress (excluded from all future sends):');
+    if (!addr || !addr.trim()) return;
+    try { await suppress('email', addr.trim(), 'manual'); toast('Address suppressed', 'success'); loadSupp(); loadHealth(); }
+    catch (e) { toast(humanizeError(e), 'error'); }
   }
 }
 

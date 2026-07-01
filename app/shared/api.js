@@ -143,6 +143,21 @@ export const cmpList = () => rpc('cc_cmp_list');
 export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id ?? null, p_name: o.name, p_objective: o.objective ?? null, p_audience: o.audienceId ?? null, p_template: o.templateKey ?? null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt ?? null, p_status: o.status ?? 'draft' });
 export const cmpSetStatus = (id, status) => rpc('cc_cmp_set_status', { p_id: id, p_status: status });
 export const cmpMarkSent = (id, count) => rpc('cc_cmp_mark_sent', { p_id: id, p_count: count });
+// ---- Unified Delivery Engine (cvb/cvc/cvd) — preview → confirm → enqueue → claim → mark ----
+// Dry-run: returns { campaign, channel, audience_total, after_consent, suppressed, final_recipients, sample, excluded_no_consent }.
+export const campaignAudiencePreview = (campaignId) => rpc('cc_campaign_audience_preview', { p_campaign: campaignId });
+// Confirm-count guarded enqueue. confirmCount MUST equal the preview's final_recipients or the server refuses.
+export const campaignEnqueue = (campaignId, confirmCount) => rpc('cc_campaign_enqueue', { p_campaign: campaignId, p_confirm_count: confirmCount });
+// Worker claim of due queued rows (atomic).
+export const deliveryClaim = (o = {}) => rpc('cc_delivery_claim', { p_limit: o.limit ?? 50, p_channel: o.channel ?? 'email' });
+// Record a provider outcome (sent|delivered|bounced|complained|failed|...); bounce/complaint auto-suppresses.
+export const deliveryMark = (id, status, o = {}) => rpc('cc_delivery_mark', { p_id: id, p_status: status, p_reason: o.reason ?? null, p_provider: o.provider ?? null, p_dedupe: o.dedupe ?? null });
+// Manual suppression (email|sms).
+export const suppress = (channel, address, reason) => rpc('cc_suppress', { p_channel: channel, p_address: address, p_reason: reason ?? 'manual' });
+// Dashboards.
+export const deliveryHealth = () => rpc('cc_delivery_health');
+export const deliveryList = (o = {}) => rpc('cc_delivery_list', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
+export const suppressionsList = (o = {}) => rpc('cc_suppressions_list', { p_channel: o.channel ?? null, p_limit: o.limit ?? 200 });
 // Audience / Segment Builder (Phase 3B)
 export const audienceEstimate = (type) => rpc('cc_audience_estimate', { p_type: type });
 export const listAudiences = () => rpc('cc_list_audiences');

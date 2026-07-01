@@ -244,3 +244,56 @@ Migrations: cuq, cur, cus, cut, cuu, cuv (all already applied to both databases)
 ```
 
 _All DB migrations are already applied to staging + production. Committing + pushing only deploys the frontend._
+
+---
+
+## Increment 30 — Unified Marketing Delivery Engine (ONE shared architecture, all channels)
+
+Built the real campaign-send / delivery engine as a single shared model — **not** separate per-channel
+tables. Every campaign and transactional message flows through one ledger.
+
+**Backend (migrations `cvb_delivery_engine_core`, `cvc_delivery_engine_queue`, `cvd_delivery_views`; applied
+to staging + production):**
+- `app_private.message_deliveries` — unified delivery ledger for all channels (email/sms/…), with
+  idempotency_key (UNIQUE), status lifecycle (scheduled→queued→claimed→sent→delivered→opened/clicked, plus
+  bounced/complained/unsubscribed/failed/dead_letter), attempts, scheduled/claimed/sent/delivered timestamps,
+  provider, correlation_id, and related_* business links.
+- `app_private.suppressions` — global hard opt-out / bounce / complaint list (unique per channel+address).
+- `app_private.provider_events` — idempotent provider-webhook sink (dedupe_key unique).
+- `app_private.resolve_audience_emails(type)` — single recipient-truth resolver with **consent encoded**
+  (newsletter = explicit opt-in; carriers honour comm_preferences; drivers/generic forms not marketing-opted).
+- Public RPCs (all `can_manage_comms`-gated, anon revoked): `cc_campaign_audience_preview` (dry-run counts +
+  sample), `cc_campaign_enqueue` (**confirm-count guarded**, consent + suppression + dedup, idempotent),
+  `cc_delivery_claim` (atomic FOR UPDATE SKIP LOCKED), `cc_delivery_mark` (retry→dead_letter after 5,
+  bounce/complaint auto-suppress, logs provider_events), `cc_suppress`, `cc_delivery_health`,
+  `cc_delivery_list`, `cc_suppressions_list`.
+
+**Campaign safety:** a broad email send cannot fire from one call — the operator must preview, then confirm
+the exact recipient count; the server refuses `cc_campaign_enqueue` unless the confirmed count still matches
+the freshly recomputed final list. Enqueue only queues; nothing is transmitted until a provider worker claims
+the queue (no live provider wired in dev — no real sends).
+
+**Frontend:**
+- Campaign Manager: **Send email** flow — opens a preview drawer (audience total → after-consent → suppressed
+  → final recipients + sample), and only enqueues on explicit confirm of the exact count.
+- Command Center **Delivery Health** view (`/delivery`) rebuilt on the unified ledger: status histogram KPIs,
+  filterable deliveries table (attempts column shows retry progress), dead-letter isolation, and the
+  suppression list with manual add.
+- `app/shared/api.js`: `campaignAudiencePreview`, `campaignEnqueue`, `deliveryClaim`, `deliveryMark`,
+  `suppress`, `deliveryHealth`, `deliveryList`, `suppressionsList`.
+
+**Proof:** `tests/security/delivery_engine_matrix.sql` — 23-check end-to-end matrix returns
+**DELIVERY ENGINE MATRIX: PASS** (preview counts, suppression, wrong-confirm-count DENIED, exactly-N queued,
+idempotent 0-new, atomic claim of N, delivered + bounced marking, bounce auto-suppress, idempotent provider
+events, health, plus carrier + anon denial). All DELIVTEST fixtures cleaned up.
+
+- Files: `migrations/.../cvb_delivery_engine_core.sql`, `.../cvc_delivery_engine_queue.sql`,
+  `.../cvd_delivery_views.sql`, `app/shared/api.js`, `app/command-center/views/campaignManager.js`,
+  `app/command-center/views/deliveryHealth.js`, `app/command-center/app.js`,
+  `tests/security/delivery_engine_matrix.sql`.
+
+## Verification (delivery engine)
+- All changed `app/**/*.js` pass `node --check`; import-reference check PASS; no duplicate exports.
+- Marketing build OK; secret scan clean on all new files.
+- Anon SECURITY DEFINER surface unchanged at **5** on both databases.
+- Gate stays honest **PASS 10 / BLOCKED 2 of 12** (owner browser proofs still pending).
