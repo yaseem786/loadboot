@@ -1,0 +1,4 @@
+-- ctv_carrier_book_load.sql — Phase 2B Load Offer & Acceptance.
+-- cc_pocket_available_loads (full detail + id) + cc_pocket_book_load: atomic, race-safe
+-- claim of an available load (only one carrier wins), active-carrier check, auto-creates
+-- the trip and emits load.assigned + trip.created. Staging + production.

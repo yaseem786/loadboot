@@ -31,6 +31,12 @@ import { renderFinanceAnalytics } from './views/financeAnalytics.js';
 import { renderSystemModules } from './views/systemModules.js';
 import { renderSystemHealth } from './views/systemHealth.js';
 import { renderWebhooks } from './views/webhooks.js';
+import { renderTemplates } from './views/templates.js';
+import { renderAudiences } from './views/audiences.js';
+import { renderCampaignManager } from './views/campaignManager.js';
+import { renderDeliveryHealth } from './views/deliveryHealth.js';
+import { renderMarketingAnalytics } from './views/marketingAnalytics.js';
+import { renderSmartMatch } from './views/smartMatch.js';
 import { renderAnalytics } from './views/analytics.js';
 import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
@@ -188,6 +194,12 @@ async function boot() {
     '/modules': () => { setActive('/modules'); if (can('settings.manage')) renderSystemModules(content); else denied(); },
     '/health': () => { setActive('/health'); renderSystemHealth(content); },
     '/webhooks': () => { setActive('/webhooks'); if (can('integrations.view')) renderWebhooks(content); else denied(); },
+    '/templates': () => { setActive('/templates'); if (can('content.view')) renderTemplates(content); else denied(); },
+    '/audiences': () => { setActive('/audiences'); if (can('content.view')) renderAudiences(content); else denied(); },
+    '/campaign-manager': () => { setActive('/campaign-manager'); if (can('content.view')) renderCampaignManager(content); else denied(); },
+    '/delivery': () => { setActive('/delivery'); renderDeliveryHealth(content); },
+    '/marketing-analytics': () => { setActive('/marketing-analytics'); if (can('content.view')) renderMarketingAnalytics(content); else denied(); },
+    '/matching': () => { setActive('/matching'); if (can('carriers.view')) renderSmartMatch(content); else denied(); },
     '/analytics': () => { setActive('/analytics'); if (analyticsEnabled && can('analytics.view')) renderAnalytics(content); else denied(); },
     '/web-analytics': () => { setActive('/web-analytics'); if (webAnalyticsEnabled && can('analytics.view')) renderAnalyticsWeb(content); else denied(); },
     '/forms': () => { setActive('/forms'); if (formsEnabled && can('forms.view')) renderForms(content); else denied(); },

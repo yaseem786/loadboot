@@ -1,0 +1,4 @@
+-- ctu_comm_preferences.sql — Phase 3H Consent & preference center.
+-- app_private.comm_preferences + cc_pocket_get/save_preferences (carrier) +
+-- cc_consent_summary (staff opt-in counts). Operational/compliance messages always
+-- allowed; only marketing-class is opt-out. Staging + production.

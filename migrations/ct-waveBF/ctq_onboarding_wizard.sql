@@ -1,0 +1,5 @@
+-- ctq_onboarding_wizard.sql — Phase 2A. Carrier-facing onboarding wizard helpers:
+-- cc_pocket_get_profile() (save/resume), cc_pocket_submit_onboarding() (puts the
+-- carrier into the staff onboarding review queue, emits carrier.onboarding_submitted
+-- + audit). Profile fields saved via existing update_my_carrier_profile.
+-- Applied to staging + production via MCP.

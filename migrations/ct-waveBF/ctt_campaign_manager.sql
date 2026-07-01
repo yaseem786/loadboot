@@ -1,0 +1,4 @@
+-- ctt_campaign_manager.sql — Phase 3C Campaign Manager. Extends app_private.campaigns
+-- (objective/audience_id/template_key/channels/status/subject/body/schedule/sent) +
+-- cc_cmp_list (enriched) / cc_cmp_save / cc_cmp_set_status / cc_cmp_mark_sent.
+-- Push channel sends via push-send; email/SMS via the Phase 3D delivery engine.

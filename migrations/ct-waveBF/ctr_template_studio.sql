@@ -1,0 +1,4 @@
+-- ctr_template_studio.sql — Phase 3A Template Studio foundation. Extends
+-- app_private.comm_templates (category/channels/preview/body_text/variables/status)
+-- + cc_studio_list_templates / cc_studio_save_template (strict variable allowlist,
+-- unknown {{vars}} rejected) / cc_studio_set_template_status. Staging + production.

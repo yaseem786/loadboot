@@ -1,0 +1,3 @@
+-- cts_audience_builder.sql — Phase 3B Audience/Segment Builder. app_private.audiences
+-- (saved segments) + cc_audience_estimate(type) live count/sample + cc_list/save/
+-- delete_audience. Staff-gated. Staging + production.
