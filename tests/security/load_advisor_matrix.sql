@@ -1,0 +1,6 @@
+-- load_advisor_matrix.sql — AI Load Pilot (cvz). Proven in-session: LOAD ADVISOR MATRIX: PASS (7 checks).
+-- Coverage: A1 strong load -> 'take', score == sum(itemized factors), push ranking includes Ironhide with a
+-- REAL computed deadhead (~17 mi from last-trip GPS to load pickup coords), push recommendation present.
+-- A2 weak load (low rate + unverified_external + past pickup) -> 'skip' with flags.
+-- A3 p_overrides honored (target_rpm) and negotiate always carries a suggested counter rate.
+-- A4/A5/A6 carrier + anon denied on advisor and prefs. Prefs set via cc_set_dispatch_prefs (carrier self-scoped).

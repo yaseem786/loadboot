@@ -8,6 +8,7 @@ import { loadIntakeList, createLoadSourced, loadSetVerification, LOAD_SOURCE_TYP
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 import { openMatch } from './matchCenter.js';
+import { openLoadPilot, openFleetPlan } from './loadPilot.js';
 
 const VER_TONE = { unverified: 'red', partial: 'amber', verified: 'green' };
 const CONF_TONE = { low: 'red', medium: 'amber', high: 'green' };
@@ -24,7 +25,10 @@ export function renderLoadIntake(host) {
   verSel.onchange = () => { filterVer = verSel.value; load(); };
   mount(host, el('div', null, [
     sectionHead('Load Intake', 'Every load is attributed to a normalized source and carries a verification + confidence state. Nothing enters matching as "verified" unless a person marks it so.',
-      manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: () => composer() }, '+ New load') : null),
+      el('div', { style: 'display:flex;gap:8px' }, [
+        el('button', { class: 'lb-btn lb-btn-sm', onClick: () => openFleetPlan(() => load()) }, 'AI Fleet Plan'),
+        manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: () => composer() }, '+ New load') : null,
+      ].filter(Boolean))),
     kpis,
     el('div', { style: 'display:flex;gap:8px;margin:10px 0' }, [srcSel, verSel]),
     body,
@@ -52,6 +56,7 @@ export function renderLoadIntake(host) {
         el('td', null, el('span', { class: 'cc-pill cc-pill-' + (CONF_TONE[r.confidence] || 'gray') }, r.confidence)),
         el('td', null, el('span', { class: 'cc-sub' }, r.source_updated_at ? fmtDateTime(r.source_updated_at) : '—')),
         el('td', null, el('div', { style: 'display:flex;gap:6px;justify-content:flex-end' }, [
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (e) => { e.stopPropagation(); openLoadPilot(r); } }, 'AI Pilot'),
           el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); openMatch(r); } }, 'Match'),
           manage && r.verification_state !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); verify(r); } }, 'Verify') : null,
         ].filter(Boolean))),

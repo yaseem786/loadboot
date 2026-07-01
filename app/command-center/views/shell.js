@@ -36,6 +36,8 @@ const NAV = [
     { path: '/pod-review', label: 'POD Review', icon: 'document', perm: 'dispatch.manage' },
     { path: '/exceptions', label: 'Exceptions', icon: 'document', perm: 'dispatch.manage' },
     { path: '/load-intake', label: 'Load Intake', icon: 'trend', perm: 'dispatch.view', flag: 'load_marketplace' },
+    { path: '/control-tower', label: 'Trip Control Tower', icon: 'refresh', perm: 'dispatch.view', flag: 'load_marketplace' },
+    { path: '/exceptions', label: 'Exception Center', icon: 'alert', perm: 'dispatch.view', flag: 'load_marketplace' },
     { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },
   ]},
   { group: 'Sales & CRM', items: [

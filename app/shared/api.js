@@ -81,6 +81,25 @@ export const loadOffers = (loadId) => rpc('cc_load_offers', { p_load: loadId });
 export const carrierOffers = (limit) => rpc('cc_carrier_offers', { p_limit: limit ?? 50 });
 export const offerRespond = (offerId, action, o = {}) => rpc('cc_offer_respond', { p_offer: offerId, p_action: action, p_reason: o.reason ?? null, p_counter: o.counter ?? null, p_message: o.message ?? null });
 export const offersExpire = () => rpc('cc_offers_expire');
+// Transactional booking (Inc 48/49) — accept books atomically; booking status = trip + checklist in one read.
+export const bookingStatus = (loadId) => rpc('cc_booking_status', { p_load: loadId });
+// Tracking + Control Tower (Inc 50/51) — consent-first, source-labeled locations.
+export const tripSetTracking = (tripId, method) => rpc('cc_trip_set_tracking', { p_trip: tripId, p_method: method });
+export const tripCheckin = (tripId, o = {}) => rpc('cc_trip_checkin', { p_trip: tripId, p_lat: o.lat ?? null, p_lng: o.lng ?? null, p_note: o.note ?? null, p_source: o.source ?? 'manual_checkin' });
+export const controlTower = (limit) => rpc('cc_control_tower', { p_limit: limit ?? 100 });
+export const partnerLoadStatus = (partnerLoadId) => rpc('cc_partner_load_status', { p_partner_load: partnerLoadId });
+// AI Load Pilot — explainable take/negotiate/skip + carrier push ranking (deadhead + preferences aware).
+export const loadAdvisor = (loadId, overrides) => rpc('cc_load_advisor', { p_load: loadId, p_overrides: overrides ?? {} });
+export const setDispatchPrefs = (o) => rpc('cc_set_dispatch_prefs', { p: o ?? {} });
+export const getDispatchPrefs = () => rpc('cc_get_dispatch_prefs');
+// AI Load Pilot — fleet level: reverse advisor (best open loads for one carrier) + one-click greedy dispatch plan.
+export const carrierBestLoads = (carrierId, limit) => rpc('cc_carrier_best_loads', { p_carrier: carrierId ?? null, p_limit: limit ?? 10 });
+export const dispatchPlan = (maxLoads) => rpc('cc_dispatch_plan', { p_max_loads: maxLoads ?? 20 });
+// Detention / dwell automation (Inc 52-53): real arrive/depart stamps; scan auto-drafts detention for review.
+export const tripArrive = (tripId, stop, freeMinutes) => rpc('cc_trip_arrive', { p_trip: tripId, p_stop: stop, p_free_minutes: freeMinutes ?? 120 });
+export const tripDepart = (tripId, stop) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop });
+export const detentionScan = (ratePerHour) => rpc('cc_detention_scan', { p_rate_per_hour: ratePerHour ?? 50 });
+export const exceptionCenter = (status, limit) => rpc('cc_exception_center', { p_status: status ?? 'open', p_limit: limit ?? 100 });
 
 // ---- privileged actions ----
 export const reviewDocument = (documentId, decision, note) =>

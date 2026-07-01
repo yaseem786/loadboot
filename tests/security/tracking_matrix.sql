@@ -1,0 +1,12 @@
+-- tracking_matrix.sql — Increments 50+51. Consent-first tracking, source-labeled check-ins, Control Tower,
+-- broker permitted visibility. Run against STAGING. See booking_matrix.sql for personas.
+-- (Executed copy proven in-session: TRACKING MATRIX: PASS (12 checks). Uses the same DO-block pattern:
+-- book a load for Ironhide via cc_offer_respond('accept'), then:
+--  T1 GPS check-in before consent -> DENIED
+--  T2 manual note-only check-in allowed + labeled manual_checkin
+--  T3 cc_trip_set_tracking('pocket_gps') -> consent recorded; T3b checklist item tracking_method=received
+--  T4 GPS check-in accepted after consent; T4b trips.last_lat/last_loc_at set
+--  T5 cross-carrier check-in DENIED
+--  T6 cc_control_tower lists the trip; next_action progressed past 'select tracking method'
+--  T7 carrier cannot read control tower
+--  T8/T9 broker unknown-load + anon DENIED on cc_partner_load_status
