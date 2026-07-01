@@ -10,6 +10,10 @@ import {
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod,
   carrierUploadDocument, carrierListDocuments,
+  pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
+  pocketGetPreferences, pocketSavePreferences,
+  pocketAvailableLoads, pocketBookLoad,
+  pocketNotifications, pocketMarkNotificationRead,
 } from '../shared/api.js';
 import { uploadDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
@@ -147,7 +151,9 @@ async function appView(user) {
   }));
 
   const titleEl = h('h1', { class: 'cp-top-title' }, 'Dashboard');
-  const bell = h('button', { class: 'cp-iconbtn', title: 'Notifications', onClick: () => go('support') }, icon('bell', 20));
+  const bellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
+  const bell = h('button', { class: 'cp-iconbtn cp-bell', title: 'Notifications', onClick: () => go('notifications') }, [icon('bell', 20), bellBadge]);
+  async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, [brandMark(), h('div', null, [
@@ -180,7 +186,7 @@ async function appView(user) {
     tab = id; if (location.hash !== '#' + id) location.hash = id;
     Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => a.classList.toggle('active', k === tab)));
     const item = NAV.find(n => n[0] === tab);
-    titleEl.textContent = item ? item[1] : 'Dashboard';
+    titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding' }[tab] || 'Dashboard');
     render();
   }
   window.addEventListener('hashchange', () => { const t = (location.hash || '').replace('#', ''); if (t && t !== tab && NAV.some(n => n[0] === t)) go(t); });
@@ -192,6 +198,8 @@ async function appView(user) {
     else if (tab === 'documents') loadDocuments();
     else if (tab === 'support') loadSupport();
     else if (tab === 'account') loadAccount();
+    else if (tab === 'onboarding') loadOnboarding();
+    else if (tab === 'notifications') loadNotifications();
     else loadDashboard();
   }
 
@@ -244,6 +252,8 @@ async function appView(user) {
       h('div', { class: 'cp-legend' }, [h('span', null, ['Due ', h('b', null, money(due))]), h('span', null, ['Paid ', h('b', null, money(paid))])]),
     ]);
     const actions = [];
+    const obs = (ov.onboarding_stage || '').toLowerCase();
+    if (obs && obs !== 'approved' && obs !== 'active' && obs !== 'complete') actions.push(['Complete your onboarding — guided setup', () => go('onboarding')]);
     if (comp && !comp.mandatory_ok) actions.push(['Complete your compliance documents', () => go('documents')]);
     if ((ov.invoices_due || 0) > 0) actions.push([money(ov.invoices_due) + ' in dispatch fees due', () => go('finance')]);
     actions.push(['Browse available loads to book', () => go('loads')]);
@@ -254,26 +264,35 @@ async function appView(user) {
     openPrompts();
   }
 
-  /* ----- Available loads ----- */
+  /* ----- Available loads (Phase 2B — real, race-safe booking) ----- */
   async function loadLoads() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading available loads…'));
-    let rows; try { rows = await publicLoadOpportunities(24); } catch (e) { rows = []; }
+    let rows; try { rows = await pocketAvailableLoads(30); } catch (e) { rows = []; }
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))); return; }
     mount(content, h('div', { class: 'cp-loadgrid' }, rows.map(l => {
       const rpm = l.rpm ? '$' + Number(l.rpm).toFixed(2) + '/mi' : '';
-      const reqWrap = h('div');
-      const req = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
-        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Requesting…';
-        try { await pocketRaiseIssue('Load request — ' + (l.origin || '') + ' → ' + (l.destination || ''), 'Carrier requested to book load ref #' + (l.ref || '') + ' (' + money(l.rate) + ').'); ev.currentTarget.textContent = 'Requested ✓'; }
-        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request load'; alert((e && e.message) || 'Could not request.'); }
-      } }, 'Request load');
-      reqWrap.appendChild(req);
+      const bookWrap = h('div');
+      const book = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        if (!confirm('Book this load?\n\n' + (l.origin || '') + ' → ' + (l.destination || '') + '\n' + money(l.rate) + (rpm ? ' · ' + rpm : '') + '\n\nIt will move to My trips.')) return;
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Booking…';
+        try {
+          await pocketBookLoad(l.id);
+          mount(bookWrap, [h('div', { class: 'cp-row-s', style: 'color:var(--lb-green);margin-bottom:6px' }, '✓ Booked — added to your trips'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('trips') }, 'Go to My trips')]);
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Book this load'; alert((e && e.message) || 'Could not book this load.'); }
+      } }, 'Book this load');
+      bookWrap.appendChild(book);
+      const meta = [];
+      if (l.commodity) meta.push('Commodity: ' + l.commodity);
+      if (l.weight) meta.push('Weight: ' + l.weight);
+      if (l.deadhead) meta.push(l.deadhead + ' mi deadhead');
+      if (l.broker) meta.push('Broker: ' + l.broker);
       return h('article', { class: 'cp-load' }, [
         h('div', { class: 'cp-load-top' }, [h('div', { class: 'cp-load-lane' }, [h('b', null, l.origin || '—'), h('span', { class: 'cp-arrow' }, '→'), h('b', null, l.destination || '—')]), h('div', { class: 'cp-load-rate' }, [money(l.rate), rpm ? h('span', null, rpm) : null])]),
-        h('div', { class: 'cp-load-tags' }, [h('span', { class: 'cp-tag' }, l.equipment || 'Van'), l.miles ? h('span', { class: 'cp-tag' }, Number(l.miles).toLocaleString() + ' mi') : null, l.pickup_date ? h('span', { class: 'cp-tag' }, 'PU ' + l.pickup_date) : null].filter(Boolean)),
-        h('div', { class: 'cp-load-meta' }, 'Ref #' + (l.ref || '—')),
-        reqWrap,
-      ]);
+        h('div', { class: 'cp-load-tags' }, [h('span', { class: 'cp-tag' }, l.equipment || 'Van'), l.miles ? h('span', { class: 'cp-tag' }, Number(l.miles).toLocaleString() + ' mi') : null, l.pickup_date ? h('span', { class: 'cp-tag' }, 'PU ' + l.pickup_date) : null, l.delivery_date ? h('span', { class: 'cp-tag' }, 'DEL ' + l.delivery_date) : null].filter(Boolean)),
+        meta.length ? h('div', { class: 'cp-load-meta' }, meta.join(' · ')) : null,
+        l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
+        bookWrap,
+      ].filter(Boolean));
     })));
   }
 
@@ -416,10 +435,71 @@ async function appView(user) {
       isPushEnabled().then(on => { status.textContent = on ? 'on' : 'off'; status.className = 'cp-pill ' + (on ? 'green' : 'gray'); if (on) { btn.textContent = 'On ✓'; btn.disabled = true; } });
       pushRow.replaceChild(h('div', { style: 'display:flex;gap:8px;align-items:center' }, [status, btn]), pushRow.lastChild);
     }
+    // Communication preferences (Phase 3H) — operational/compliance messages are always
+    // sent; only marketing-class messages are opt-out.
+    const prefsCard = h('div', { class: 'cp-card' }, [cardHead('Communication preferences'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let p = {}; try { p = await pocketGetPreferences(); } catch (_) { p = {}; }
+      const PREFS = [['marketing_email', 'Marketing emails', 'Offers, news and tips'], ['product_announcements', 'Product announcements', 'New features and updates'], ['load_offers', 'Load offers', 'Alerts when matching loads appear'], ['weekly_summaries', 'Weekly summary', 'A digest of your week'], ['sms', 'SMS messages', 'Text alerts (carrier rates may apply)']];
+      const state = Object.assign({ marketing_email: true, product_announcements: true, load_offers: true, weekly_summaries: true, sms: false, unsubscribed_all: false }, p || {});
+      const save = async () => { try { await pocketSavePreferences(state); } catch (e) { alert((e && e.message) || 'Could not save.'); } };
+      const toggleRow = (key, label, sub) => { const t = h('button', { class: 'cp-chip2' + (state[key] ? ' on' : ''), onClick: async () => { state[key] = !state[key]; t.classList.toggle('on'); t.textContent = state[key] ? 'On' : 'Off'; await save(); } }, state[key] ? 'On' : 'Off'); return h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, label), h('div', { class: 'cp-row-s' }, sub)]), t]); };
+      const unsubRow = (() => { const t = h('button', { class: 'cp-chip2' + (state.unsubscribed_all ? ' on' : ''), onClick: async () => { state.unsubscribed_all = !state.unsubscribed_all; t.classList.toggle('on'); t.textContent = state.unsubscribed_all ? 'Unsubscribed' : 'Subscribed'; await save(); } }, state.unsubscribed_all ? 'Unsubscribed' : 'Subscribed'); return h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Unsubscribe from all marketing'), h('div', { class: 'cp-row-s' }, 'Operational, compliance & finance messages still reach you')]), t]); })();
+      mount(prefsCard, [cardHead('Communication preferences'), ...PREFS.map(([k, l, s]) => toggleRow(k, l, s)), unsubRow]);
+    })();
     mount(content, h('div', { class: 'cp-grid' }, [
       h('div', { class: 'cp-card' }, [cardHead('Profile'), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
-      h('div', { class: 'cp-card' }, [cardHead('Preferences'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async () => { await signOut(); boot(); } }, 'Sign out')]),
+      h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async () => { await signOut(); boot(); } }, 'Sign out')]),
+      prefsCard,
     ]));
+  }
+
+  /* ----- Onboarding wizard (Phase 2A) ----- */
+  async function loadOnboarding() {
+    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Conestoga', 'Tanker', 'Car Hauler'];
+    const STEPS = ['Company & authority', 'Operation & equipment', 'Factoring & payment', 'Documents', 'Review & submit'];
+    let prof = {}; try { prof = await pocketGetProfile(); } catch (_) { prof = {}; }
+    const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', hazmat: false, weekend_ok: false, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '' }, prof || {});
+    if (!Array.isArray(f.equipment_types)) f.equipment_types = [];
+    let st = 0;
+    const host = h('div', { class: 'cp-card cp-wiz' });
+    const field = (label, key, ph, type) => { const i = h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '', value: f[key] == null ? '' : f[key] }); i.oninput = () => { f[key] = i.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), i]); };
+    const selectField = (label, key, opts) => { const s = h('select', { class: 'cp-in' }, opts.map(([v, l]) => h('option', { value: v, selected: f[key] === v ? 'selected' : null }, l))); s.onchange = () => { f[key] = s.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), s]); };
+    const toggle = (label, key) => { const b = h('button', { class: 'cp-chip2' + (f[key] ? ' on' : ''), onClick: () => { f[key] = !f[key]; b.classList.toggle('on'); } }, label); return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), b]); };
+    function save() {
+      return pocketSaveProfile({ company: f.company, contactName: f.contact_name, phone: f.phone, mc: f.mc, dot: f.dot, homeBase: f.home_base, radiusMiles: f.radius_miles ? Number(f.radius_miles) : null, equipmentTypes: (f.equipment_types && f.equipment_types.length) ? f.equipment_types : null, truckCount: f.truck_count ? String(f.truck_count) : null, hazmat: !!f.hazmat, weekendOk: !!f.weekend_ok, factoringStatus: f.factoring_status, factoringCompany: f.factoring_company, contactMethod: f.contact_method, whatsapp: f.whatsapp });
+    }
+    function docStep() {
+      const types = [['w9', 'W-9'], ['authority', 'Operating authority'], ['noa', 'Insurance / COI'], ['agreement', 'Signed agreement'], ['other', 'Other']];
+      const typeSel = h('select', { class: 'cp-in' }, types.map(([v, l]) => h('option', { value: v }, l)));
+      const fileIn = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
+      const msg = h('div', { class: 'cp-err' });
+      const list = h('div'); const refresh = async () => { try { const ds = await carrierListDocuments(); mount(list, (ds && ds.length) ? h('div', null, ds.map(d => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, d.file_name), pill(d.status || 'pending')]))) : h('div', { class: 'cp-muted' }, 'No documents yet.')); } catch (_) {} };
+      const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { const file = fileIn.files && fileIn.files[0]; msg.textContent = ''; msg.className = 'cp-err'; if (!file) { msg.textContent = 'Choose a file.'; return; } up.disabled = true; up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; await refresh(); } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Upload failed.'; } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
+      refresh();
+      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Upload your W-9, authority letter, insurance/COI and signed agreement. PDF or photo, up to 25 MB each.'), h('div', { class: 'cp-inlineform' }, [typeSel, fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
+    }
+    function reviewStep() {
+      const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);
+      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Check your details, then submit. Our team reviews and approves your account.'), row('Company', f.company), row('Contact', f.contact_name + (f.phone ? ' · ' + f.phone : '')), row('MC / DOT', (f.mc || '—') + ' / ' + (f.dot || '—')), row('Home base', f.home_base), row('Equipment', (f.equipment_types || []).join(', ')), row('Trucks', f.truck_count), row('Factoring', f.factoring_status + (f.factoring_company ? ' · ' + f.factoring_company : ''))]);
+    }
+    function doneCard() { return [h('div', { class: 'cp-wiz-done' }, [h('div', { style: 'font-size:2.4rem' }, '✓'), h('h3', null, 'Submitted for review'), h('p', { class: 'cp-row-s' }, 'Thanks! Our team is reviewing your onboarding. You’ll get a notification when it’s approved.'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('dashboard') }, 'Back to dashboard')])]; }
+    function draw() {
+      const pct = Math.round((st / (STEPS.length - 1)) * 100);
+      let body;
+      if (st === 0) body = h('div', { class: 'cp-wiz-grid' }, [field('Company / carrier name', 'company', 'Acme Trucking LLC'), field('Your name', 'contact_name'), field('Phone', 'phone'), field('MC number', 'mc', '123456'), field('DOT number', 'dot', '1234567')]);
+      else if (st === 1) { const eq = h('div', { class: 'cp-eqgrid' }, EQUIP.map(e => { const on = (f.equipment_types || []).includes(e); const b = h('button', { class: 'cp-chip2' + (on ? ' on' : ''), onClick: () => { const s = new Set(f.equipment_types || []); if (s.has(e)) s.delete(e); else s.add(e); f.equipment_types = [...s]; b.classList.toggle('on'); } }, e); return b; })); body = h('div', { class: 'cp-wiz-grid' }, [field('Home base (city, ST)', 'home_base', 'Dallas, TX'), field('Search radius (miles)', 'radius_miles', '300', 'number'), field('Number of trucks', 'truck_count', '1'), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Equipment types'), eq]), toggle('Haul hazmat', 'hazmat'), toggle('Available weekends', 'weekend_ok')]); }
+      else if (st === 2) body = h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring'], ['interested', 'Interested']]), field('Factoring company', 'factoring_company'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp')]);
+      else if (st === 3) body = docStep();
+      else body = reviewStep();
+      const back = st > 0 ? h('button', { class: 'cp-btn ghost cp-btn-sm', onClick: () => { st--; draw(); } }, '← Back') : h('span');
+      const next = st < STEPS.length - 1
+        ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…'; try { await save(); st++; draw(); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue'; alert((e && e.message) || 'Could not save.'); } } }, 'Save & continue')
+        : h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting…'; try { await save(); await pocketSubmitOnboarding(); mount(host, doneCard()); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit for review'; alert((e && e.message) || 'Could not submit.'); } } }, 'Submit for review');
+      mount(host, [h('div', { class: 'cp-wiz-head' }, [h('h3', null, 'Step ' + (st + 1) + ' of ' + STEPS.length + ' — ' + STEPS[st]), h('span', { class: 'cp-row-s' }, pct + '%')]), h('div', { class: 'cp-wiz-bar' }, h('div', { class: 'cp-wiz-fill', style: 'width:' + pct + '%' })), h('div', { class: 'cp-wiz-body' }, body), h('div', { class: 'cp-wiz-actions' }, [back, next])]);
+    }
+    mount(content, host); draw();
   }
 
   function statTile(label, value, iconName, accent, onClick) {
@@ -430,7 +510,25 @@ async function appView(user) {
   }
   function cardHead(title, sub, onClick) { return h('div', { class: 'cp-cardhead' }, [h('div', null, [h('h3', null, title), sub ? h('span', { class: 'cp-cardhead-sub' }, sub) : null].filter(Boolean)), onClick ? h('button', { class: 'cp-link', onClick }, 'View all →') : null].filter(Boolean)); }
 
+  /* ----- Notifications inbox (Phase 5) ----- */
+  async function loadNotifications() {
+    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    let rows; try { rows = await pocketNotifications(60); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Could not load notifications.'))); return; }
+    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No notifications yet. Alerts about your loads, payments and onboarding will appear here.'))); refreshUnread(); return; }
+    const card = h('div', { class: 'cp-card' }, [cardHead('Notifications', rows.filter(n => !n.read_at).length + ' unread'), ...rows.map(n => {
+      const p = n.payload || {};
+      const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'), onClick: async () => { if (!n.read_at) { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); row.classList.remove('unread'); refreshUnread(); } catch (_) {} } if (p.url) location.hash = (p.url.split('#')[1] || ''); } }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, p.title || n.template_key || 'Notification'), p.body ? h('div', { class: 'cp-row-s' }, p.body) : null].filter(Boolean)),
+        n.read_at ? null : h('span', { class: 'cp-pill blue' }, 'new'),
+      ].filter(Boolean));
+      return row;
+    })]);
+    mount(content, card);
+    refreshUnread();
+  }
+
   go(tab);
+  refreshUnread();
 }
 
 /* ---------- auth watch (only reload on real sign-out) ---------- */

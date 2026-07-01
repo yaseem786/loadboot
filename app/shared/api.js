@@ -138,6 +138,22 @@ export const listModules = () => rpc('cc_list_modules');
 export const moduleSummary = () => rpc('cc_module_summary');
 // Observability / system health (Phase 1)
 export const systemHealth = () => rpc('cc_system_health');
+// Campaign Manager (Phase 3C)
+export const cmpList = () => rpc('cc_cmp_list');
+export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id ?? null, p_name: o.name, p_objective: o.objective ?? null, p_audience: o.audienceId ?? null, p_template: o.templateKey ?? null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt ?? null, p_status: o.status ?? 'draft' });
+export const cmpSetStatus = (id, status) => rpc('cc_cmp_set_status', { p_id: id, p_status: status });
+export const cmpMarkSent = (id, count) => rpc('cc_cmp_mark_sent', { p_id: id, p_count: count });
+// Audience / Segment Builder (Phase 3B)
+export const audienceEstimate = (type) => rpc('cc_audience_estimate', { p_type: type });
+export const listAudiences = () => rpc('cc_list_audiences');
+export const saveAudience = (o = {}) => rpc('cc_save_audience', { p_name: o.name, p_type: o.type, p_filters: o.filters ?? {} });
+export const deleteAudience = (id) => rpc('cc_delete_audience', { p_id: id });
+export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['all_staff', 'All staff']];
+// Template Studio (Phase 3A — marketing + transactional templates, variable allowlist)
+export const studioListTemplates = () => rpc('cc_studio_list_templates');
+export const studioSaveTemplate = (t = {}) => rpc('cc_studio_save_template', { p_key: t.key, p_name: t.name, p_category: t.category, p_channels: t.channels, p_subject: t.subject, p_preview: t.preview, p_body_html: t.bodyHtml, p_body_text: t.bodyText, p_status: t.status });
+export const studioSetTemplateStatus = (key, status) => rpc('cc_studio_set_template_status', { p_key: key, p_status: status });
+export const TEMPLATE_VARIABLES = ['first_name', 'company_name', 'carrier_name', 'load_reference', 'pickup_city', 'delivery_city', 'appointment_time', 'document_type', 'document_expiry', 'invoice_number', 'settlement_number', 'support_reference', 'action_url'];
 // Outbound webhooks admin (Phase 1 — delivery visibility + dead-letter retry)
 export const listWebhookEndpoints = () => rpc('cc_list_webhook_endpoints');
 export const listWebhookDeliveries = (o = {}) => rpc('cc_list_webhook_deliveries', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
@@ -184,6 +200,29 @@ export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', 
 export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
 // Available loads for carriers to browse (public opportunities feed).
 export const publicLoadOpportunities = (limit) => rpc('get_public_load_opportunities', { p_limit: limit ?? 18 });
+// Phase 2B — carrier self-book a load (full detail + race-safe claim → trip).
+export const pocketAvailableLoads = (limit) => rpc('cc_pocket_available_loads', { p_limit: limit ?? 24 });
+export const pocketBookLoad = (loadId) => rpc('cc_pocket_book_load', { p_load: loadId });
+// Carrier notification inbox (Phase 5)
+export const pocketNotifications = (limit) => rpc('cc_pocket_notifications', { p_limit: limit ?? 50 });
+export const pocketMarkNotificationRead = (id) => rpc('cc_pocket_mark_notification_read', { p_id: id });
+// Communication preferences / consent (Phase 3H)
+export const pocketGetPreferences = () => rpc('cc_pocket_get_preferences');
+export const pocketSavePreferences = (p) => rpc('cc_pocket_save_preferences', { p });
+export const consentSummary = () => rpc('cc_consent_summary');
+// Carrier onboarding wizard (Phase 2A) — save/resume profile + submit for review.
+export const pocketGetProfile = () => rpc('cc_pocket_get_profile');
+export const pocketSubmitOnboarding = () => rpc('cc_pocket_submit_onboarding');
+export const pocketSaveProfile = (p = {}) => rpc('update_my_carrier_profile', {
+  p_company: p.company ?? null, p_contact_name: p.contactName ?? null, p_phone: p.phone ?? null,
+  p_mc: p.mc ?? null, p_dot: p.dot ?? null, p_truck_count: p.truckCount ?? null,
+  p_home_base: p.homeBase ?? null, p_radius_miles: p.radiusMiles ?? null,
+  p_equipment_types: p.equipmentTypes ?? null, p_min_rpm: p.minRpm ?? null,
+  p_max_deadhead: p.maxDeadhead ?? null, p_avoid_states: p.avoidStates ?? null,
+  p_weekend_ok: p.weekendOk ?? null, p_hazmat: p.hazmat ?? null,
+  p_contact_method: p.contactMethod ?? null, p_whatsapp: p.whatsapp ?? null,
+  p_factoring_status: p.factoringStatus ?? null, p_factoring_company: p.factoringCompany ?? null,
+});
 // Carrier document self-service (legacy `documents` table; RLS-scoped to the carrier,
 // trigger sets carrier_id=auth.uid() + status='pending' for staff review).
 export const carrierUploadDocument = async ({ type, fileName, filePath }) => {

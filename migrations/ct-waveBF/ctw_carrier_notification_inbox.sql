@@ -1,0 +1,4 @@
+-- ctw_carrier_notification_inbox.sql — Phase 5 carrier notification inbox.
+-- notifications.read_at column + cc_pocket_notifications / cc_pocket_mark_notification_read;
+-- cc_pocket_book_load now drops a "Load booked" notification into the carrier inbox.
+-- Staging + production.

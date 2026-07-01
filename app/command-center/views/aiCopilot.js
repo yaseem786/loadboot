@@ -77,7 +77,7 @@ export function renderAiCopilot(host) {
     let res;
     try { res = await aiAssist('draft', { prompt }); }
     catch (e) {
-      mount(out, card([el('div', { class: 'lb-state lb-error' }, humanizeError(e) + ' — AI ke liye GEMINI_API_KEY is project ke secrets mein hona zaroori hai.')]));
+      mount(out, card([el('div', { class: 'lb-state lb-error' }, humanizeError(e) + ' — AI assistance requires GEMINI_API_KEY in this project’s secrets.')]));
       analyzeBtn.disabled = false; analyzeBtn.textContent = '✨ Analyze lane with AI'; return;
     }
     const text = (res && res.text) || 'No response.';

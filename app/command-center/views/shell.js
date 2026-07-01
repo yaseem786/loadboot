@@ -25,6 +25,7 @@ const NAV = [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
+    { path: '/matching', label: 'Smart matching', icon: 'trend', perm: 'carriers.view' },
     { path: '/trips', label: 'Dispatch & trips', icon: 'truck', perm: 'dispatch.view', flag: 'dispatch' },
     { path: '/map', label: 'Live map', icon: 'truck', perm: null, flag: 'opsMap' },
     { path: '/copilot', label: 'AI Copilot', icon: 'trend', perm: null, flag: 'aiCopilot' },
@@ -50,6 +51,7 @@ const NAV = [
   { group: 'Communications', items: [
     { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },
     { path: '/notifications', label: 'Notifications', icon: 'bell', perm: null, flag: 'notificationsCenter' },
+    { path: '/delivery', label: 'Delivery health', icon: 'refresh', perm: null },
     { path: '/announcements', label: 'Announcements', icon: 'bell', perm: 'announce.view', flag: 'announcements' },
     { path: '/chat', label: 'Team chat', icon: 'bell', perm: null, flag: 'teamChat' },
   ]},
@@ -59,6 +61,10 @@ const NAV = [
   ]},
   { group: 'Marketing', items: [
     { path: '/content', label: 'Content & posts', icon: 'doc', perm: 'content.view', flag: 'content' },
+    { path: '/templates', label: 'Template Studio', icon: 'doc', perm: 'content.view' },
+    { path: '/audiences', label: 'Audiences', icon: 'users', perm: 'content.view' },
+    { path: '/campaign-manager', label: 'Campaign Manager', icon: 'trend', perm: 'content.view' },
+    { path: '/marketing-analytics', label: 'Marketing analytics', icon: 'trend', perm: 'content.view' },
     { path: '/campaigns', label: 'Campaigns', icon: 'trend', perm: 'campaigns.view', flag: 'campaigns' },
   ]},
   { group: 'Administration', items: [
@@ -140,6 +146,9 @@ export function renderShell(root, user, flags) {
   const envPill = el('span', { class: 'pill ' + (ENV.isProduction ? 'prod' : 'prev') },
     ENV.isProduction ? 'Production' : 'Preview');
 
+  const collapseBtn = el('button', { class: 'cc-iconbtn cc-collapse-btn', title: 'Collapse / expand menu',
+    html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>' });
+
   const shell = el('div', { class: 'cc-shell' }, [
     el('aside', { class: 'cc-side' }, [
       el('div', { class: 'cc-brand' }, [
@@ -154,6 +163,7 @@ export function renderShell(root, user, flags) {
     ]),
     el('main', { class: 'cc-main' }, [
       el('header', { class: 'cc-top' }, [
+        collapseBtn,
         el('div', null, [
           el('h1', { id: 'cc-title' }, 'Dashboard'),
           el('div', { class: 'cc-crumb', id: 'cc-crumb' }, 'LoadBoot · Command Center'),
@@ -176,6 +186,20 @@ export function renderShell(root, user, flags) {
     ]),
   ]);
   mount(root, shell);
+
+  // Sidebar collapse (desktop) — icons-only; choice persisted. On mobile it toggles
+  // the slide-in drawer instead.
+  try { if (localStorage.getItem('cc-collapsed') === '1') shell.classList.add('cc-collapsed'); } catch (_) {}
+  collapseBtn.onclick = () => {
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      shell.classList.toggle('cc-side-open');
+    } else {
+      shell.classList.toggle('cc-collapsed');
+      try { localStorage.setItem('cc-collapsed', shell.classList.contains('cc-collapsed') ? '1' : '0'); } catch (_) {}
+    }
+  };
+  // close the mobile drawer when a nav link is tapped
+  FLAT.forEach(n => { const a = linkEls[n.path]; if (a) a.addEventListener('click', () => shell.classList.remove('cc-side-open')); });
 
   function setActive(path) {
     FLAT.forEach(n => { const a = linkEls[n.path]; if (a) a.classList.toggle('active', n.path === path); });
