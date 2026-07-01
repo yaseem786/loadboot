@@ -275,12 +275,15 @@ async function brokerDash(user, ov) {
   const commodity = inp('Commodity'), notes = inp('Notes (optional)');
   const err = h('div', { class: 'cp-err' });
   const listHost = h('div', { class: 'cp-tablewrap' }, h('div', { class: 'lb-state lb-loading' }, 'Loading…'));
+  const newIdem = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('k' + Date.now() + Math.random().toString(36).slice(2));
+  let idemKey = newIdem();   // one key per submission attempt; safe to retry, regenerated after success
   const postBtn = h('button', { class: 'cp-btn', onClick: async () => {
     err.textContent = ''; err.className = 'cp-err';
     if (!origin.value.trim() || !dest.value.trim()) { err.textContent = 'Origin and destination are required.'; return; }
     postBtn.disabled = true; postBtn.textContent = 'Posting…';
     try {
-      await partnerPostLoad({ origin: origin.value.trim(), destination: dest.value.trim(), equipment: equip.value.trim() || null, rate: rate.value || null, miles: miles.value || null, pickup: pickup.value || null, weight: weight.value || null, commodity: commodity.value.trim() || null, notes: notes.value.trim() || null });
+      await partnerPostLoad({ origin: origin.value.trim(), destination: dest.value.trim(), equipment: equip.value.trim() || null, rate: rate.value || null, miles: miles.value || null, pickup: pickup.value || null, weight: weight.value || null, commodity: commodity.value.trim() || null, notes: notes.value.trim() || null, idempotencyKey: idemKey });
+      idemKey = newIdem();
       [origin, dest, equip, rate, miles, pickup, weight, commodity, notes].forEach(i => i.value = '');
       err.className = 'cp-err ok'; err.textContent = '✓ Load submitted — our dispatch team will review and post it.';
       loadList();
