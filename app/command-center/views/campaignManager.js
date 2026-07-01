@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
-import { cmpList, cmpSave, cmpSetStatus, cmpMarkSent, listAudiences, studioListTemplates, audienceEstimate, sendPush, campaignAudiencePreview, campaignEnqueue } from '../../shared/api.js';
+import { cmpList, cmpSave, cmpSetStatus, cmpMarkSent, listAudiences, studioListTemplates, audienceEstimate, sendPush, campaignAudiencePreview, campaignEnqueue, campaignAnalytics, campaignApprove, campaignAttribution, campaignVariants, campaignSetVariant, campaignDeleteVariant, campaignVariantAnalytics } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -44,7 +44,11 @@ export function renderCampaignManager(host) {
         el('td', null, [el('b', null, c.name), c.objective ? el('div', { class: 'cc-sub' }, c.objective) : '']),
         el('td', null, c.audience_name || '—'),
         el('td', null, (c.channels || []).join(', ')),
-        el('td', null, el('span', { class: 'cc-pill cc-pill-' + (ST_TONE[c.status] || 'gray') }, c.status)),
+        el('td', null, [
+          el('span', { class: 'cc-pill cc-pill-' + (ST_TONE[c.status] || 'gray') }, c.status),
+          c.approved_by ? el('span', { class: 'cc-pill cc-pill-green', style: 'margin-left:6px', title: 'Approved ' + (c.approved_at ? fmtDateTime(c.approved_at) : '') }, '✓ approved')
+                        : el('span', { class: 'cc-pill cc-pill-amber', style: 'margin-left:6px' }, 'needs approval'),
+        ]),
         el('td', null, el('span', { class: 'cc-sub' }, c.sent_at ? 'sent ' + fmtDateTime(c.sent_at) + ' · ' + (c.sent_count || 0) : (c.scheduled_at ? 'for ' + fmtDateTime(c.scheduled_at) : '—'))),
         el('td', null, manage ? rowActions(c) : ''),
       ]))),
@@ -57,7 +61,116 @@ export function renderCampaignManager(host) {
     wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); duplicate(c); } }, 'Duplicate'));
     if (c.status !== 'sent' && (c.channels || []).includes('push')) wrap.append(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (e) => { e.stopPropagation(); sendPushCampaign(c); } }, 'Send push'));
     if ((c.channels || []).includes('email')) wrap.append(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (e) => { e.stopPropagation(); sendEmailCampaign(c); } }, 'Send email'));
+    if (!c.approved_by) wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); approve(c, true); } }, 'Approve'));
+    else wrap.append(el('button', { class: 'lb-btn lb-btn-sm ghost', onClick: (e) => { e.stopPropagation(); approve(c, false); } }, 'Revoke approval'));
+    wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); manageVariants(c); } }, 'A/B'));
+    wrap.append(el('button', { class: 'lb-btn lb-btn-sm', onClick: (e) => { e.stopPropagation(); showStats(c); } }, 'Stats'));
     return wrap;
+  }
+
+  // A/B variants manager. Adding/editing variants clears approval server-side (re-approval required).
+  async function manageVariants(c) {
+    const list = el('div', { class: 'cc-sub' }, 'Loading…');
+    const form = () => {
+      const label = el('input', { class: 'cc-input', placeholder: 'Label (e.g. A)' });
+      const subject = el('input', { class: 'cc-input', placeholder: 'Variant subject (blank = campaign default)' });
+      const bodyH = el('textarea', { class: 'cc-input', rows: '3', placeholder: 'Variant HTML body (blank = default)' });
+      const weight = el('input', { class: 'cc-input', type: 'number', value: '1', min: '1', max: '100', style: 'max-width:90px' });
+      const add = el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async () => {
+        if (!label.value.trim()) { toast('Label required', 'error'); return; }
+        try { await campaignSetVariant(c.id, { label: label.value.trim(), subject: subject.value || null, bodyHtml: bodyH.value || null, weight: Number(weight.value) || 1 }); toast('Variant saved (approval reset)', 'success'); refresh(); }
+        catch (e) { toast(humanizeError(e), 'error'); }
+      } }, 'Save variant');
+      return el('div', { class: 'lb-card', style: 'margin-top:10px' }, [
+        el('div', { class: 'cc-sub' }, 'Add / update a variant'),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:6px' }, [label, weight]),
+        subject, bodyH, add,
+      ]);
+    };
+    async function refresh() {
+      let rows; try { rows = await campaignVariants(c.id); } catch (e) { mount(list, el('div', { class: 'cc-sub', style: 'color:#dc2626' }, humanizeError(e))); return; }
+      rows = rows || [];
+      mount(list, rows.length ? el('table', { class: 'cc-table' }, [
+        el('thead', null, el('tr', null, ['Label', 'Weight', 'Subject', ''].map(h => el('th', null, h)))),
+        el('tbody', null, rows.map(v => el('tr', null, [
+          el('td', null, el('b', null, v.label)), el('td', null, String(v.weight)),
+          el('td', null, el('span', { class: 'cc-sub' }, v.subject || '(default)')),
+          el('td', null, el('button', { class: 'lb-btn lb-btn-sm ghost', onClick: async () => { try { await campaignDeleteVariant(v.id); toast('Variant removed', 'success'); refresh(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Remove')),
+        ]))),
+      ]) : el('div', { class: 'lb-state' }, 'No variants — this campaign sends a single version. Add two to A/B test.'));
+    }
+    openDrawer('A/B variants', el('div', null, [
+      el('div', { style: 'font-weight:700' }, c.name),
+      el('p', { class: 'cc-sub' }, 'Recipients are split deterministically by a stable hash, weighted. Each variant may override the subject/body; blank fields fall back to the campaign default.'),
+      list, form(),
+    ]), { subtitle: 'Content variants + weighted split' });
+    refresh();
+  }
+
+  // Maker-checker approval. The server refuses if the approver created the campaign (separation of duties).
+  async function approve(c, on) {
+    try { await campaignApprove(c.id, on); toast(on ? 'Campaign approved for send' : 'Approval revoked', 'success'); load(); }
+    catch (e) { toast(humanizeError(e), 'error'); }
+  }
+
+  // Delivery analytics for a campaign, read straight off the unified ledger.
+  async function showStats(c) {
+    const box = el('div', { class: 'cc-sub' }, 'Loading analytics…');
+    openDrawer('Campaign analytics', el('div', null, [el('div', { style: 'font-weight:700;margin-bottom:8px' }, c.name), box]), { subtitle: 'Delivery outcomes' });
+    let a; try { a = await campaignAnalytics(c.id); } catch (e) { mount(box, el('div', { class: 'cc-sub', style: 'color:#dc2626' }, humanizeError(e))); return; }
+    if (!a || !a.total) { mount(box, el('div', { class: 'lb-state' }, 'No deliveries for this campaign yet — queue an email send first.')); return; }
+    const stat = (label, val, sub) => el('div', { class: 'lb-card', style: 'flex:1;min-width:120px' }, [
+      el('div', { class: 'cc-sub' }, label), el('div', { style: 'font-size:22px;font-weight:800' }, String(val)), sub ? el('div', { class: 'cc-sub' }, sub) : null,
+    ].filter(Boolean));
+    mount(box, el('div', null, [
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+        stat('Recipients', a.total, a.pending + ' pending'),
+        stat('Delivered', a.delivered, a.delivery_rate + '% of sent'),
+        stat('Opened', a.opened, a.open_rate + '% open'),
+        stat('Clicked', a.clicked, a.click_rate + '% CTR'),
+      ]),
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [
+        stat('Bounced / complained', a.bounced, a.bounce_rate + '% bounce'),
+        stat('Failed', a.failed, 'retrying'),
+        stat('Dead letter', a.dead_letter, 'gave up'),
+        stat('Sent', a.sent, 'reached provider'),
+      ]),
+    ]));
+    // Attribution — web conversions tied to this campaign's UTM tag.
+    const attrBox = el('div', { style: 'margin-top:12px' }, el('div', { class: 'cc-sub' }, 'Loading attribution…'));
+    box.append(attrBox);
+    try {
+      const at = await campaignAttribution(c.id);
+      const forms = Object.entries(at.by_form || {}).map(([k, v]) => k + ' (' + v + ')').join(', ') || 'none';
+      mount(attrBox, el('div', { class: 'lb-card', style: 'background:#f8fafc' }, [
+        el('div', { class: 'cc-sub' }, 'Attribution (UTM: ' + (at.utm_campaign || '—') + ')'),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:6px' }, [
+          stat('Web submissions', at.attributed_submissions, at.conversion_rate + '% of delivered'),
+          stat('Leads created', at.attributed_leads, 'from this campaign'),
+        ]),
+        el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'By form: ' + forms),
+      ]));
+    } catch (e) { mount(attrBox, el('div', { class: 'cc-sub', style: 'color:#dc2626' }, humanizeError(e))); }
+    // A/B variant breakdown (only shown when the campaign has variants).
+    try {
+      const va = await campaignVariantAnalytics(c.id);
+      const rows = (va.variants || []).filter(v => v.variant && v.variant !== '(none)');
+      if (rows.length) {
+        const vbox = el('div', { style: 'margin-top:12px' });
+        box.append(vbox);
+        mount(vbox, el('div', { class: 'lb-card', style: 'background:#f8fafc' }, [
+          el('div', { class: 'cc-sub' }, 'A/B variants' + (va.winner ? ' · winner: ' + va.winner : '')),
+          el('table', { class: 'cc-table', style: 'margin-top:6px' }, [
+            el('thead', null, el('tr', null, ['Variant', 'Recipients', 'Delivered', 'Opened', 'Bounced'].map(h => el('th', null, h)))),
+            el('tbody', null, rows.map(v => el('tr', null, [
+              el('td', null, el('b', null, v.variant + (v.variant === va.winner ? ' ★' : ''))),
+              el('td', null, String(v.recipients)), el('td', null, String(v.delivered)),
+              el('td', null, String(v.opened)), el('td', null, String(v.bounced)),
+            ]))),
+          ]),
+        ]));
+      }
+    } catch (_) { /* no variants or not permitted — skip */ }
   }
 
   // Email send: preview → CONFIRM the exact recipient count → enqueue into the delivery engine.
@@ -77,6 +190,11 @@ export function renderCampaignManager(host) {
     ].filter(Boolean));
     openDrawer('Send email campaign', body, { subtitle: 'Consent-checked · confirm-before-send' });
     let finalCount = null;
+    if (!c.approved_by) {
+      mount(status, el('div', { class: 'cc-sub', style: 'color:#b45309' }, 'This campaign must be approved before it can be sent. Use “Approve” on the campaign row (a different person than the creator).'));
+      mount(detail, '');
+      return;
+    }
     try {
       const p = await campaignAudiencePreview(c.id);
       finalCount = p.final_recipients;

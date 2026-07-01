@@ -148,6 +148,13 @@ export const cmpMarkSent = (id, count) => rpc('cc_cmp_mark_sent', { p_id: id, p_
 export const campaignAudiencePreview = (campaignId) => rpc('cc_campaign_audience_preview', { p_campaign: campaignId });
 // Confirm-count guarded enqueue. confirmCount MUST equal the preview's final_recipients or the server refuses.
 export const campaignEnqueue = (campaignId, confirmCount) => rpc('cc_campaign_enqueue', { p_campaign: campaignId, p_confirm_count: confirmCount });
+// Maker-checker approval — approve (or revoke). The approver cannot be the campaign's creator.
+export const campaignApprove = (campaignId, approve = true) => rpc('cc_campaign_approve', { p_campaign: campaignId, p_approve: approve });
+// A/B testing — content variants with a deterministic weighted audience split.
+export const campaignVariants = (campaignId) => rpc('cc_campaign_variants', { p_campaign: campaignId });
+export const campaignSetVariant = (campaignId, o = {}) => rpc('cc_campaign_set_variant', { p_campaign: campaignId, p_label: o.label, p_subject: o.subject ?? null, p_body_html: o.bodyHtml ?? null, p_body_text: o.bodyText ?? null, p_weight: o.weight ?? 1 });
+export const campaignDeleteVariant = (id) => rpc('cc_campaign_delete_variant', { p_id: id });
+export const campaignVariantAnalytics = (campaignId) => rpc('cc_campaign_variant_analytics', { p_campaign: campaignId });
 // Worker claim of due queued rows (atomic).
 export const deliveryClaim = (o = {}) => rpc('cc_delivery_claim', { p_limit: o.limit ?? 50, p_channel: o.channel ?? 'email' });
 // Record a provider outcome (sent|delivered|bounced|complained|failed|...); bounce/complaint auto-suppresses.
@@ -156,6 +163,19 @@ export const deliveryMark = (id, status, o = {}) => rpc('cc_delivery_mark', { p_
 export const suppress = (channel, address, reason) => rpc('cc_suppress', { p_channel: channel, p_address: address, p_reason: reason ?? 'manual' });
 // Dashboards.
 export const deliveryHealth = () => rpc('cc_delivery_health');
+// Reliability: backlog across message deliveries, webhook deliveries and the domain-event log.
+export const pipelineHealth = () => rpc('cc_pipeline_health');
+// Event-triggered automations (autoresponders): list + upsert.
+export const commTriggers = () => rpc('cc_comm_triggers');
+export const setCommTrigger = (o = {}) => rpc('cc_set_comm_trigger', { p_event: o.event, p_channel: o.channel ?? 'email', p_template_key: o.templateKey ?? null, p_subject: o.subject ?? null, p_active: o.active ?? false });
+// Per-campaign delivery analytics (counts + rates).
+export const campaignAnalytics = (campaignId) => rpc('cc_campaign_analytics', { p_campaign: campaignId });
+// Attribution: web conversions (form submissions/leads) tied to this campaign via its utm_campaign tag.
+export const campaignAttribution = (campaignId) => rpc('cc_campaign_attribution', { p_campaign: campaignId });
+// Enqueue a single transactional message through the unified ledger (idempotent, suppression-checked).
+export const enqueueTransactional = (o = {}) => rpc('cc_enqueue_transactional', { p_channel: o.channel ?? 'email', p_email: o.email, p_template_key: o.templateKey ?? null, p_subject: o.subject ?? null, p_idem: o.idem ?? null, p_meta: o.meta ?? {}, p_scheduled_at: o.scheduledAt ?? null });
+// Promote due scheduled deliveries to queued (worker/operator tick).
+export const deliveryReleaseDue = (channel) => rpc('cc_delivery_release_due', { p_channel: channel ?? null });
 export const deliveryList = (o = {}) => rpc('cc_delivery_list', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
 export const suppressionsList = (o = {}) => rpc('cc_suppressions_list', { p_channel: o.channel ?? null, p_limit: o.limit ?? 200 });
 // Audience / Segment Builder (Phase 3B)
@@ -168,11 +188,17 @@ export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carrie
 export const studioListTemplates = () => rpc('cc_studio_list_templates');
 export const studioSaveTemplate = (t = {}) => rpc('cc_studio_save_template', { p_key: t.key, p_name: t.name, p_category: t.category, p_channels: t.channels, p_subject: t.subject, p_preview: t.preview, p_body_html: t.bodyHtml, p_body_text: t.bodyText, p_status: t.status });
 export const studioSetTemplateStatus = (key, status) => rpc('cc_studio_set_template_status', { p_key: key, p_status: status });
+// Server-truth template render with {{variable}} substitution → { subject, html, text, unresolved }.
+export const renderTemplate = (key, vars = {}) => rpc('cc_render_template', { p_key: key, p_vars: vars });
 export const TEMPLATE_VARIABLES = ['first_name', 'company_name', 'carrier_name', 'load_reference', 'pickup_city', 'delivery_city', 'appointment_time', 'document_type', 'document_expiry', 'invoice_number', 'settlement_number', 'support_reference', 'action_url'];
 // Outbound webhooks admin (Phase 1 — delivery visibility + dead-letter retry)
 export const listWebhookEndpoints = () => rpc('cc_list_webhook_endpoints');
 export const listWebhookDeliveries = (o = {}) => rpc('cc_list_webhook_deliveries', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
 export const retryWebhookDelivery = (id) => rpc('cc_retry_webhook_delivery', { p_id: id });
+// Push pending domain events into the webhook delivery queue now.
+export const webhooksFlush = () => rpc('cc_webhooks_flush');
+// Catalog of subscribable domain events (for endpoint editors + the developer portal).
+export const eventCatalog = () => rpc('cc_event_catalog');
 export const listInvoices = (o = {}) => rpc('cc_list_invoices', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
 export const getInvoice = (id) => rpc('cc_get_invoice', { p_invoice: id });
 export const createInvoice = (tripId, dueDays) => rpc('cc_create_invoice', { p_trip: tripId, p_due_days: dueDays ?? 15 });

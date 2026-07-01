@@ -1,7 +1,10 @@
 # LoadBoot — Full Status Overview for ChatGPT
 
-**Date:** 2026-07-01 · **Production:** `rwscphuhpjoudvljvmdk` · **Staging:** `snslhvmkjusozgjelghi`
-**Package:** `LoadBoot-ChatGPT-Handoff-2026-07-01-v7-10of12.zip` · **Live changelog:** `docs/SESSION-CHANGELOG.md`
+**Production:** `rwscphuhpjoudvljvmdk` · **Staging:** `snslhvmkjusozgjelghi` · **Live changelog:** `docs/SESSION-CHANGELOG.md`
+
+Both databases are kept in **exact parity** (every changed function hash-identical across staging + production).
+The **anon SECURITY DEFINER surface is 5** on both — verified after every single increment, including the ones
+that would have made widening it easy (unsubscribe, SMS, A/B, webhooks).
 
 ---
 
@@ -12,123 +15,79 @@ LOADBOOT ENTERPRISE FOUNDATION GATE: FAIL
 Gate summary: PASS 10 / PARTIAL 0 / BLOCKED 2 / FAIL 0 of 12
 ```
 
-This is deliberately **not** claimed as 12/12. The two remaining conditions are real completion conditions,
-not "optional polish", and they stay BLOCKED until the owner runs two **browser** proofs (they need a real
-login, which the assistant cannot do). Everything that can be built/proven without a login **is done**.
-
-Named gates: SETTLEMENT MAKER CHECKER **PASS** · SOURCE-CONTROL REPAIR **PASS** · SOURCE-OF-TRUTH
-CONSISTENCY **PASS** · ANONYMOUS LOAD-SURFACE **PASS** · POD BACKEND SECURITY MATRIX **PASS** ·
-POD UI AND REVIEW **NOT-RUN (owner browser proof)** · AUTHENTICATED PERSONA MATRIX **NOT-RUN (owner browser
-run)** · PACKAGE-WIDE REPRODUCIBLE VERIFICATION **PASS**.
+Deliberately **not** claimed as 12/12. The two remaining conditions are real completion conditions (not "polish")
+and stay BLOCKED until the owner runs two **browser** proofs that need a real login the assistant can't perform:
+POD UI-and-review, and the authenticated persona matrix. Everything buildable without a login is done.
 
 ---
 
-## 2. What was built this session — 29 verified increments
+## 2. Marketing Delivery Engine — built and proven this session (increments 30–42)
 
-All are committed to the repo and applied to **both** databases (staging + production). Each backend change
-is proven by a SQL security matrix; each frontend change passes syntax + build + an import-reference check.
+A complete, compliant, multi-channel marketing platform on ONE unified delivery ledger (not per-channel silos).
+Every increment: applied to both DBs, proven by a SQL security matrix, frontend passing syntax + import + build
+checks, synced to the repo. **15 security matrices pass.**
 
-### Fast Product-Completion Mode (Sprints 1–2)
+**The full chain the directive specified — every link built:**
+Audience → Template → Campaign/**Trigger** → Channel → **Approval** → Schedule → Queue → Provider → Events →
+Analytics → **Attribution** → Audit.
 
-**Marketing website & growth (Track A)**
-- 13 new pages: How It Works, FAQ, Box-Truck Dispatch, Resources, Login portal chooser, Partner Program,
-  Referral Program, Careers, Case Studies (clearly-labelled illustrative examples — no fabricated
-  testimonials), Security/Trust, System Status, Cookie Policy, Accessibility — plus a dedicated **Carrier
-  Application** page and an **HTML sitemap**. 38 marketing pages total.
-- **6 real lead forms** (contact, careers, partner inquiry, newsletter, carrier application, referral) wired
-  end-to-end to the CRM via `submit_web_form` → Forms Inbox → `form.submitted` event → lead/task, with spam
-  guard + UTM capture. Proven on staging (stored + event emitted).
-- Full SEO: title/description/canonical/OpenGraph on every page, **BreadcrumbList** + **FAQPage** +
-  **Service** structured data, XML + HTML sitemaps, first-party analytics beacon + GA on every page.
-- **Live System Status page** (real browser-side API reachability check, not static).
+Capabilities:
+- **Channels** — email (Resend) and SMS (Twilio) on one `message_deliveries` ledger; per-channel service-role workers.
+- **Content** — templates with `{{variable}}` rendering (server-truth), and **A/B variants** with a deterministic
+  weighted audience split, per-variant snapshot, per-variant analytics + winner selection.
+- **Governance** — maker-checker **approval** (an approver can't approve their own campaign) + a confirm-count
+  safety gate; no broad send can fire from a single call on a stale count.
+- **Lifecycle** — consent → suppression → durable queue → scheduled-release → atomic claim → send →
+  provider webhooks → retry-to-dead-letter → bounce/complaint auto-suppression.
+- **Compliance** — RFC 8058 **one-click unsubscribe** with `List-Unsubscribe` headers, built through a
+  service-role edge path so the security surface never widened.
+- **Automation** — event-triggered autoresponders (a website form submission auto-sends an acknowledgement);
+  no-op until an admin activates a trigger.
+- **Measurement** — per-campaign + per-variant analytics, delivery-status histograms, UTM conversion attribution,
+  full audit trail.
 
-**Carrier Portal & Pocket App (Track C) — now a complete self-service product**
-- **Fleet**: add/edit own drivers & trucks + **compliance alerts** for expiring license/medical.
-- **Team management**: owner-only role/access changes for existing members (guarded: no self-modify, owner
-  immutable, no escalation to staff/owner).
-- **Trips**: confirm → **Start** → **Mark delivered** (forward-only), **assign own driver/truck**, share
-  location, report issues (now incl. **TONU** + **accident**), **POD upload**, and a **trip history/timeline**.
-- **Finance**: invoices, disputes, **account statement + CSV download**.
-- **Support**: raise tickets + a **"Reported trip issues"** view showing the status of exceptions they raised.
-
-**Staff operations (Track B)**
-- **POD Review queue** (signed private preview, approve, reject-with-reason, invoice-prep once) + CSV export.
-- **Trip Exceptions queue** (resolve carrier-reported issues with a note) + CSV export.
-
-**Marketing Studio (Track E) — deepened, regression-safe (additive only)**
-- Audience Builder: added **newsletter** + **website-form-lead** audiences (ties the new lead forms into
-  campaign targeting).
-- Campaign Manager: **Preview** (rendered message + live recipient estimate + frequency-safeguard note),
-  **Duplicate**, and a **UTM link builder**.
-- Template Studio: **live preview** with sample variable substitution.
-- Brand Kit: **social link** fields (Facebook/Instagram/LinkedIn/X).
-
-**Developer Portal (Track G)**
-- **Event catalog** documenting the platform's domain events (load.assigned, trip.status,
-  trip.exception[.resolved], pod.uploaded/reviewed, invoice.prep_requested, form.submitted, plugin.*).
-
-**Quality**
-- End-to-end carrier flow proven to compose (dispatched → start → deliver → POD upload → staff review →
-  approve → invoice-prep exactly once).
-- New **`scripts/check_imports.py`** gate that found & fixed **3 latent runtime bugs** (api wrappers used
-  without imports — Start/Deliver, Assign, Trip History would have crashed live). Now part of release gates.
-
-### New backend RPCs this session (all self-scoped or staff-gated, anon revoked)
-`cc_pocket_trip_pods`, hardened `cc_pocket_upload_pod`, `cc_pod_review_queue/signed_ref/review_pod`,
-`cc_pocket_drivers/upsert_driver/trucks/upsert_truck`, `cc_pocket_team/set_member`, `cc_pocket_assign_trip`,
-`cc_pocket_statement`, `cc_pocket_fleet_alerts`, `cc_pocket_advance_trip`, `cc_pocket_trip_timeline`,
-`cc_pocket_my_exceptions`, `cc_list_exceptions/resolve_exception`, extended `cc_audience_estimate`, extended
-`cc_pocket_report_issue`. Migrations `cul`…`cva` (source-controlled). Live counts: **240+ cc_* RPCs**,
-**anon SECURITY DEFINER surface = 5** (unchanged — no regression), **51 platform modules**.
+**A working staging demonstration** (directive item 10) ran the entire lifecycle end to end and is captured in
+`docs/DELIVERY-ENGINE-STAGING-DEMO.md`.
 
 ---
 
-## 3. Local release gates — all green
+## 3. Developer / API — outbound webhooks (increments 40–41)
 
-JS syntax · **import-reference check** · duplicate-export scan · frontend build (38 pages) · production
-isolation (0 staging references) · secret scan · every backend feature's SQL matrix · gate generator
-(`SOURCE-OF-TRUTH CONSISTENCY: PASS`) · package verifier (`PACKAGE-WIDE REPRODUCIBLE VERIFICATION: PASS`).
+`emit_event` wrote durable `domain_events` but nothing delivered them to subscribers. Now:
+- **Fan-out** — pending domain events → `webhook_deliveries` for every active endpoint subscribed to that event
+  type, marked processed (idempotent). Service-role `cc_fanout_domain_events` + staff `cc_webhooks_flush`.
+- **Event catalog** — `cc_event_catalog()` lists subscribable events (dispatch/documents/finance/growth/marketing),
+  surfaced in the Webhooks admin.
+- **Sender** — service-role `cc_webhook_claim`/`cc_webhook_mark` + `supabase/functions/webhook-sender` that POSTs
+  the event JSON with an optional HMAC `X-LoadBoot-Signature` (owner-set env secret; no signing secret in the DB).
 
----
+## 4. Reliability (increment 42)
 
-## 4. What remains for genuine 12/12 (owner-executed)
-
-Two **browser** proofs, both requiring a real login (the assistant is prohibited from typing passwords and
-has no site egress):
-
-1. **POD UI AND REVIEW** — run the real upload+review against the deployed staging site (carrier + driver
-   upload, staff preview → reject-with-reason → approve), capturing screenshots + Playwright result under
-   `evidence/gate/pod/`.
-2. **AUTHENTICATED PERSONA MATRIX** — run the 44 persona×viewport combinations with **zero skips**
-   (`tests/security/persona_matrix.spec.js` already proves server-side denial by calling forbidden RPCs
-   directly with each persona's token).
-
-Runbook: `tests/security/PERSONA-TEST-RUNBOOK.md`. After both, re-run
-`scripts/generate_gate_artifacts.py` + `scripts/verify_handoff_package.py` → genuine `PASS 12 / 12`.
+`cc_pipeline_health()` — one staff read of backlog across every async queue (message deliveries, webhook
+deliveries, domain-event log, suppressions, campaigns in flight); surfaced as a Delivery-Health backlog strip.
 
 ---
 
-## 5. What is NOT yet deployed
+## 5. Edge functions (source in repo; deploy is owner-gated)
 
-All 29 increments are code-complete and committed, but the **frontend is not deployed** until the owner does
-one `git push` (GitHub Desktop → commit → push; Netlify builds from the push). The database migrations are
-already live on both projects — the push only ships the frontend.
-
----
-
-## 6. Scope discipline / integrity
-
-No fabricated data or evidence; the gate is honestly 10/12. No passwords typed; no secrets in plaintext; no
-GitHub push by the assistant; no `.github/workflows` edits; no device-file deletions. Working subsystems
-(Marketing Studio, automation, plugins, partner portal — all pre-existing and functional) were extended
-**additive-only** to avoid regressions.
+Safe no-ops until the owner sets secrets and deploys them (assistant can't handle secrets or deploy):
+`delivery-worker` (Resend email), `delivery-worker-sms` (Twilio), `delivery-webhook` (signed provider events),
+`unsubscribe` (one-click), `webhook-sender` (outbound). Until deployed + keyed, the engine queues, tracks, and
+measures correctly but transmits nothing — by design.
 
 ---
 
-## 7. Suggested decision for ChatGPT
+## 6. What remains for genuine 12/12 + go-live (owner-executed)
 
-Everything independently buildable is done and verified. To move forward, the highest-leverage next steps are:
-**(a)** the owner pushes + runs the two browser proofs to lock genuine 12/12; and/or **(b)** you pick the next
-deepening target among the already-built subsystems (Marketing Studio campaign-send/delivery engine, Workflow
-Builder, or Developer webhooks) — note these are complex existing code, so the assistant will keep changes
-additive and regression-tested. Which do you want first?
+1. **Push** `preview/command-center-v1` from GitHub Desktop → ships the frontend (Netlify builds from the push;
+   DB migrations are already live on both projects).
+2. **Set secrets + deploy the five edge functions** → enables real email/SMS/webhook transmission.
+3. **Run the two browser proofs** (POD UI + persona matrix) → genuine `PASS 12 / 12`.
+
+---
+
+## 7. Integrity
+
+No fabricated data or evidence; gate honestly 10/12. No passwords/secrets handled in plaintext; no GitHub push by
+the assistant; no `.github/workflows` edits; no device-file deletions. Every backend change is additive and proven
+by a SQL matrix; existing working subsystems were extended additive-only; the anon surface held at 5 throughout.

@@ -5,7 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, segmented, fmtDateTime } from '../../shared/ui/components.js';
-import { listWebhookEndpoints, listWebhookDeliveries, retryWebhookDelivery } from '../../shared/api.js';
+import { listWebhookEndpoints, listWebhookDeliveries, retryWebhookDelivery, webhooksFlush, eventCatalog } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const D_TONE = { pending: 'amber', sent: 'green', delivered: 'green', failed: 'red', dead: 'red', retrying: 'amber' };
@@ -16,12 +16,34 @@ export function renderWebhooks(host) {
   const kpis = el('div', { class: 'cc-kpi-grid' });
   const epHost = el('div', { class: 'cc-table-wrap' });
   const dlHost = el('div', { class: 'cc-table-wrap', style: 'margin-top:18px' });
+  const catHost = el('div', { class: 'cc-table-wrap', style: 'margin-top:18px' });
+  const flushBtn = el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => {
+    try { const n = await webhooksFlush(); toast(n ? ('Queued ' + n + ' webhook deliveries') : 'No pending events', 'success'); loadEndpoints(); loadDeliveries(); }
+    catch (e) { toast(humanizeError(e), 'error'); }
+  } }, 'Flush pending events');
   mount(host, el('div', null, [
-    sectionHead('Webhooks', 'Outbound event delivery — endpoints, delivery log and dead-letter retry. A failed delivery never loses the underlying event.'),
+    sectionHead('Webhooks', 'Outbound event delivery — endpoints, delivery log and dead-letter retry. A failed delivery never loses the underlying event.', flushBtn),
     kpis, epHost, el('div', { style: 'margin:16px 0 6px' }, segmented(FILTERS, status, (v) => { status = v; loadDeliveries(); })), dlHost,
+    sectionHead('Event catalog', 'Domain events you can subscribe an endpoint to. Set an endpoint’s event types to any of these.'),
+    catHost,
   ]));
   loadEndpoints();
   loadDeliveries();
+  loadCatalog();
+
+  async function loadCatalog() {
+    showLoading(catHost, 'Loading events…');
+    let rows; try { rows = await eventCatalog(); } catch (e) { showError(catHost, humanizeError(e), loadCatalog); return; }
+    rows = rows || [];
+    mount(catHost, el('table', { class: 'cc-table' }, [
+      el('thead', null, el('tr', null, ['Event', 'Category', 'Description'].map(h => el('th', null, h)))),
+      el('tbody', null, rows.map(e => el('tr', null, [
+        el('td', null, el('code', { style: 'background:#eef2f8;padding:1px 6px;border-radius:6px' }, e.event_type)),
+        el('td', null, el('span', { class: 'cc-pill cc-pill-gray' }, e.category)),
+        el('td', null, el('span', { class: 'cc-sub' }, e.description)),
+      ]))),
+    ]));
+  }
 
   async function loadEndpoints() {
     showLoading(epHost, 'Loading endpoints…');
