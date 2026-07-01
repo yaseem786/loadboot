@@ -450,6 +450,10 @@ export const partnerUpdateProfile = (o = {}) => rpc('cc_partner_update_profile',
 export const createApiKey = (name, scopes) => rpc('cc_create_api_key', { p_name: name, p_scopes: scopes ?? ['read'] });
 export const listApiKeys = () => rpc('cc_list_api_keys');
 export const revokeApiKey = (id) => rpc('cc_revoke_api_key', { p_id: id });
+// manual payments (ctn) — no gateway required
+export const getPaymentInstructions = () => rpc('cc_get_payment_instructions');
+export const setPaymentInstructions = (text) => rpc('cc_set_payment_instructions', { p_text: text });
+export const partnerSubmitInvoicePayment = (id) => rpc('cc_partner_submit_invoice_payment', { p_id: id });
 
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.

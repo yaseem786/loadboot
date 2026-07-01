@@ -74,6 +74,12 @@
 .cp-weekday.has .cp-weekday-c { color: #2563eb; font-weight: 600; }
 @media (max-width: 640px) { .cp-weekstrip { grid-template-columns: repeat(4, 1fr); } }
 
+/* payment instructions block */
+.cp-payinfo { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
+.cp-payinfo-h { font-weight: 700; font-size: .82rem; color: #166534; margin-bottom: 3px; }
+.cp-payinfo-b { font-size: .86rem; color: #14532d; white-space: pre-wrap; }
+.cp-sub { color: var(--lb-muted, #64748b); font-size: .82rem; }
+
 @media (max-width: 820px) {
   .cp-kpis { grid-template-columns: 1fr; }
   .cp-grid2 { grid-template-columns: 1fr; }
