@@ -413,6 +413,22 @@ export const listCarrierOrgs = () => rpc('cc_list_carrier_orgs');
 export const postChat = (body, name) => rpc('cc_post_chat', { p_body: body, p_name: name ?? null });
 export const listChat = (after = 0, limit = 100) => rpc('cc_list_chat', { p_after: after, p_limit: limit });
 
+// ---- ct-waveBG: Partner Portal (broker / shipper / facility self-service) ----
+// Self-scoping like the carrier pocket API: the server resolves the partner org from
+// the session (my_partner_org), so a partner only ever sees/writes its own records.
+export const partnerRegister = (kind, company) => rpc('cc_partner_register', { p_kind: kind, p_company: company });
+export const partnerOverview = () => rpc('cc_partner_overview');
+// broker
+export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null });
+export const partnerMyLoads = (limit) => rpc('cc_partner_my_loads', { p_limit: limit ?? 50 });
+// shipper
+export const partnerRequestShipment = (o = {}) => rpc('cc_partner_request_shipment', { p_origin: o.origin, p_destination: o.destination, p_ready: o.ready ?? null, p_equipment: o.equipment ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_pieces: o.pieces ?? null, p_accessorials: o.accessorials ?? null, p_notes: o.notes ?? null });
+export const partnerMyShipments = (limit) => rpc('cc_partner_my_shipments', { p_limit: limit ?? 50 });
+// facility
+export const partnerCreateAppointment = (o = {}) => rpc('cc_partner_create_appointment', { p_direction: o.direction ?? 'inbound', p_window_start: o.windowStart, p_window_end: o.windowEnd ?? null, p_dock: o.dock ?? null, p_carrier_name: o.carrierName ?? null, p_reference: o.reference ?? null, p_notes: o.notes ?? null });
+export const partnerAppointments = (limit) => rpc('cc_partner_appointments', { p_limit: limit ?? 100 });
+export const partnerSetAppointmentStatus = (id, status) => rpc('cc_partner_set_appointment_status', { p_id: id, p_status: status });
+
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
 // They return one-by-one in later phases behind feature flags.
