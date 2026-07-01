@@ -49,6 +49,8 @@ import { renderSeo } from './views/seo.js';
 import { renderCarrier360 } from './views/carrier360.js';
 import { renderPartners } from './views/partners.js';
 import { renderPartnerIntake } from './views/partnerIntake.js';
+import { renderVerificationCenter } from './views/verificationCenter.js';
+import { renderBrandKit } from './views/brandKit.js';
 import { renderSupport } from './views/support.js';
 import { renderReports } from './views/reports.js';
 import { renderNotifications } from './views/notifications.js';
@@ -208,6 +210,8 @@ async function boot() {
     '/carrier': ({ query }) => { setActive('/carriers'); if (entity360Enabled && can('carriers.view')) renderCarrier360(content, query.get('id')); else denied(); },
     '/partners': () => { setActive('/partners'); if (partnersEnabled && can('partners.view')) renderPartners(content); else denied(); },
     '/partner-intake': () => { setActive('/partner-intake'); if (partnersEnabled && can('partners.view')) renderPartnerIntake(content); else denied(); },
+    '/verification': () => { setActive('/verification'); if (can('compliance.view')) renderVerificationCenter(content); else denied(); },
+    '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
     '/support': () => { setActive('/support'); if (supportEnabled && can('support.view')) renderSupport(content); else denied(); },
     '/reports': () => { setActive('/reports'); if (reportsEnabled && can('reports.view')) renderReports(content); else denied(); },
     '/notifications': () => { setActive('/notifications'); if (notificationsCenterEnabled) renderNotifications(content); else denied(); },

@@ -454,6 +454,13 @@ export const revokeApiKey = (id) => rpc('cc_revoke_api_key', { p_id: id });
 export const getPaymentInstructions = () => rpc('cc_get_payment_instructions');
 export const setPaymentInstructions = (text) => rpc('cc_set_payment_instructions', { p_text: text });
 export const partnerSubmitInvoicePayment = (id) => rpc('cc_partner_submit_invoice_payment', { p_id: id });
+// carrier verification center (cua) — real FMCSA-backed
+export const recordCarrierVerification = (carrier, result) => rpc('cc_record_carrier_verification', { p_carrier: carrier, p_result: result });
+export const listCarrierVerifications = (o = {}) => rpc('cc_list_carrier_verifications', { p_carrier: o.carrier ?? null, p_limit: o.limit ?? 100 });
+export const verificationQueue = (limit) => rpc('cc_verification_queue', { p_limit: limit ?? 100 });
+// marketing brand kit (cub)
+export const getBrandKit = () => rpc('cc_get_brand_kit');
+export const setBrandKit = (data) => rpc('cc_set_brand_kit', { p_data: data });
 
 // NOTE — deferred modules (NOT built yet, intentionally absent from the RPC surface):
 // content/blog page builder, fleet live locations, smart matching UI, live ELD sync.
