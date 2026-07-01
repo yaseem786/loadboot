@@ -573,3 +573,79 @@ Connects Matching → booking. New `app_private.load_offers` + RPCs:
 - Proof: `tests/security/offers_matrix.sql` → **OFFERS MATRIX: PASS (11 checks)** (eligibility-gated send,
   view/counter/accept, respond-after-accept blocked, cross-carrier denied, staff list, expiry, anon denied).
   Migration `cvw_offers` (staging + production). Anon SECURITY DEFINER surface unchanged (5).
+
+## Increments 48–51 — Transactional booking + Trip Control Tower + consent-first tracking
+
+**48+49 (migration `cvx_transactional_booking`)** — accepting an offer is now ONE atomic transaction:
+lock load → status + load-version (stale-acceptance) guards → eligibility re-check at acceptance (new internal
+`app_private.match_eligibility`; public RPC is a staff-gated wrapper) → one winning acceptance → all other open
+offers expired → load `booked` → trip created exactly once → 8-item broker+carrier booking checklist incl.
+rate confirmation, driver/truck/trailer, tracking method → events (offer.accepted, load.assigned, trip.created,
+booking.document_requested) + audit. `cc_booking_status(load)` (staff or booked carrier) returns trip +
+checklist + completeness. Proof: **BOOKING MATRIX: PASS (13)** — incl. stale-version rejection, losing offer
+expired, double-booking blocked, cross-carrier + anon denied. tests/security/booking_matrix.sql.
+
+**50+51 (migration `cvy_trip_tracking`)** — consent-first tracking on the unified trips model:
+- legacy `trip_locations` extended additively (accuracy_m, note, created_by; lat/lng nullable for note-only
+  manual check-ins; source CHECK incl. legacy 'carrier').
+- `cc_trip_set_tracking(trip, pocket_gps|eld|telematics|manual_checkin)` — carrier self-scoped explicit consent
+  (timestamped), auto-marks the booking-checklist tracking item. `cc_trip_checkin(trip, lat, lng, note, source)`
+  — GPS REQUIRES prior consent; manual check-ins always allowed and clearly labeled; updates last location;
+  emits trip.location_updated. No invented GPS anywhere.
+- `cc_control_tower(limit)` (staff) — active trips with location source + freshness minutes, consent, checklist
+  gaps, open exceptions, and a computed NEXT ACTION (select tracking → complete checklist → stale-tracking
+  check-in → dispatch/confirm/monitor). `cc_partner_load_status(partner_load)` — broker sees ONLY permitted info
+  (statuses, schedule, tracking_state active/temporarily-unavailable, freshness minutes, own doc checklist);
+  no coordinates, no driver personal data, no carrier internals. Stale GPS never auto-cancels a load.
+- Frontend: Command Center **Trip Control Tower** (`/control-tower`, flag load_marketplace) with 60s auto-refresh
+  KPIs + per-trip Booking drawer; api wrappers tripSetTracking/tripCheckin/controlTower/partnerLoadStatus/bookingStatus.
+- Proof: **TRACKING MATRIX: PASS (12)**. Both migrations applied to staging + production (booking fns
+  hash-identical). Anon SECURITY DEFINER surface unchanged (5).
+
+## AI LOAD PILOT — explainable take/negotiate/skip + location/preference-aware carrier push (cvz)
+
+Owner ask: "max input → max output — batao ye load lena chahiye ya nahi, aur kis carrier ko push karna chahiye,
+carrier ki location aur preferences dekh kar." Delivered as a DETERMINISTIC, fully-explained advisor (no black
+box, no invented data):
+- `cc_load_advisor(load, overrides)` — 8 itemized factors (rate/mi vs target, est. margin vs cost baseline,
+  data trust, source reliability, broker identity, lane history from delivered trips, timing, completeness);
+  score == sum of shown points; hard FLAGS (past pickup, expired posting, unverified external); recommendation
+  TAKE / NEGOTIATE (with suggested counter = miles × target RPM) / SKIP; assumptions echoed + overridable
+  (cost_per_mile, target_rpm, max_deadhead) and everything estimate-labeled.
+- Carrier PUSH ranking: match score + REAL deadhead (haversine from the carrier's last trip GPS to load pickup
+  coords — 'unknown' when no coords, never invented) + all-in RPM incl. deadhead + preference fit from the new
+  `carrier_dispatch_prefs` (min RPM / preferred equipment / lanes / home base; carrier self-service via
+  `cc_set_dispatch_prefs` / `cc_get_dispatch_prefs`). Top pick returned as "push to <carrier>".
+- Frontend: **AI Pilot** button on every Load Intake row → drawer with recommendation banner, per-factor
+  breakdown, flags, lane history, ranked push cards (deadhead/all-in RPM/pref fit) and one-click **Push offer**
+  (runs through the eligibility-rechecked cc_offer_send).
+- Proof: **LOAD ADVISOR MATRIX: PASS (7 checks)**. Migration `cvz_load_advisor` (staging + production).
+  Anon SECURITY DEFINER surface unchanged (5).
+
+## INC 57 — WEBSITE MACHINE-READABLE INVENTORY
+- `scripts/site_inventory.py` (stdlib-only, deterministic): crawls built `site/` → `docs/site-inventory.json` — per page: URL, title/meta/canonical/robots, H1 count, per-section heading+word breakdown, word count, CTAs, forms+fields, internal/external links, inbound links (orphan detection), images + alt coverage, schema.org JSON-LD types, shingle-based duplication risk vs every other page.
+- `docs/site-inventory-gaps.md` honest gap report. Result on current build (39 pages, all counted — no estimates): only `dashboard.html` (app redirect shell) flags missing meta/CTA/schema/H1; 3 thin pages (dashboard, sitemap, status — utility pages); 1 high-dup pair (sitemap↔status, both thin utility pages); 0 missing canonicals, 0 images missing alt on content pages.
+- Run after `build_site.py`; every figure counted from actual HTML.
+
+## INC 61 — OFFICIAL EMAIL SENDER IDENTITY
+- `delivery-worker/index.ts`: category → identity map. marketing/campaigns → "LoadBoot" <hello@loadboot.com>; dispatch (load/trip/offer/booking/tracking/pod/detention/carrier/driver templates) → "LoadBoot Dispatch" <dispatch@loadboot.com>; billing (invoice/payment/settlement/payout/receipt/factoring) → "LoadBoot Billing" <billing@loadboot.com>. Reply-To always matches the identity. `meta.category` (marketing|dispatch|billing) explicitly overrides per message.
+- HONESTY GATE: identities activate ONLY when RESEND_FROM is on loadboot.com (owner has verified the domain with the provider); otherwise every send falls back to RESEND_FROM — never sends from an unverified address. Per-identity overrides via SENDER_MARKETING/SENDER_DISPATCH/SENDER_BILLING secrets.
+- Proof: SENDER IDENTITY MAP: PASS (10 checks) + DOMAIN GATE: PASS (4 checks) (node runtime test of the exact mapping logic). Structural balance check OK. No DB change; anon surface untouched (5). Still a safe no-op until owner sets RESEND_API_KEY + deploys.
+
+## AI LOAD PILOT — ADVANCED (fleet level)
+- `cwa_pilot_fleet.sql` (BOTH DBs, md5 hash parity verified; anon surface still 5):
+  - `cc_carrier_best_loads(p_carrier, p_limit)` — REVERSE advisor: for one carrier, every open load ranked by rate vs the carrier's own stated min RPM, real deadhead from last trip GPS (labeled ESTIMATE + basis), preference fit (equipment/lanes), data trust, timing, broker+completeness — score == sum of itemized factors. Carrier accounts are hard self-scoped (asking about another carrier still returns your own org); staff (dispatch.view) may query any carrier. Ineligible loads skipped with reasons.
+  - `cc_dispatch_plan(p_max_loads)` — one-click FLEET PLAN (staff dispatch.manage): greedy explained assignment across open loads × eligible carriers; each load once; carrier capacity (available trucks) respected; fleet-size-unknown carriers capped at 1 planned load with an explicit note; honest accounting (considered == assigned + unassigned). PROPOSAL only — nothing books automatically.
+- Proof: PILOT FLEET MATRIX: PASS (10 checks) on staging (tests/security/pilot_fleet_matrix.sql). Live sanity: 1 open load → planned to Ironhide, push score 95, explanation lines incl. honest "deadhead unknown" (that load has no pickup coords).
+- UI: Command Center — "AI Fleet Plan" button on Load Intake opens the plan drawer (per-pairing explanation + one-click Push offer); Load Pilot drawer gains WHAT-IF controls (cost/mi, target RPM, max deadhead → Re-analyze, same deterministic RPC with overrides). Carrier portal — "⭐ Best for you (AI Pilot)" card on Loads tab (top 3, scored /100, deadhead labeled est.) + "Dispatch preferences (AI Pilot)" card in Account (min RPM, equipment, lanes, max deadhead, home base → cc_set_dispatch_prefs).
+- Gates: node --check OK (loadIntake, loadPilot, api, carrier app), IMPORT-REFERENCE CHECK: PASS.
+
+## INC 52–53 — DETENTION AUTOMATION + EXCEPTION CENTER
+- `cwb_detention_exceptions.sql` (BOTH DBs, md5 parity on all 4 fns; anon surface still 5):
+  - `app_private.trip_dwell_events` — real arrive/depart stamps per stop (unique trip+stop), free_minutes window.
+  - `cc_trip_arrive` / `cc_trip_depart` — carrier self-scoped (own trip) or staff; departure returns measured dwell + detention minutes (pure arithmetic on recorded stamps — nothing invented).
+  - `cc_detention_scan` — auto-logs ONE 'detention' exception per overdue stop (deduped via detention_exception link) + DRAFT accessorial with LABELED $/hr assumption, billable=false — a dispatcher must review; the scan never bills.
+  - `cc_exception_center` — enriched read (dispatch.view): lane, carrier, age, on-site context, billable vs draft accessorial totals.
+- Proof: DETENTION/EXCEPTION MATRIX: PASS (12 checks) on staging (tests/security/detention_exceptions_matrix.sql); test rows cleaned up.
+- UI: Command Center → new "Exception Center" nav (flag load_marketplace): KPIs (detention count, draft $ pending review), kind pills, on-site pill, resolve drawer with required audit note + "resolving bills nothing" notice, "Run detention scan" button (dispatch.manage). Carrier portal → "⏱ Arrive / depart" chips on active trips (At/Left pickup/delivery) — recorded timestamps protect the carrier's detention pay; detention alert shown on departure.
+- Gates: node --check OK (app.js, shell.js, exceptionCenter.js, api.js, carrier app), IMPORT-REFERENCE CHECK: PASS.

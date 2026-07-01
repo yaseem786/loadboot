@@ -53,6 +53,8 @@ import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
 import { renderExceptions } from './views/exceptions.js';
 import { renderLoadIntake } from './views/loadIntake.js';
+import { renderControlTower } from './views/controlTower.js';
+import { renderExceptionCenter } from './views/exceptionCenter.js';
 import { renderBrandKit } from './views/brandKit.js';
 import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
@@ -220,6 +222,8 @@ async function boot() {
     '/pod-review': () => { setActive('/pod-review'); if (can('dispatch.manage') || can('finance.manage') || can('compliance.manage')) renderPodReview(content); else denied(); },
     '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.manage')) renderExceptions(content); else denied(); },
     '/load-intake': () => { setActive('/load-intake'); if (can('dispatch.view') || can('loads.create')) renderLoadIntake(content); else denied(); },
+    '/control-tower': () => { setActive('/control-tower'); if (can('dispatch.view')) renderControlTower(content); else denied(); },
+    '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.view')) renderExceptionCenter(content); else denied(); },
     '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
     '/plugins': () => { setActive('/plugins'); renderPluginMarketplace(content); },
     '/form-builder': () => { setActive('/form-builder'); renderFormBuilder(content); },

@@ -1,0 +1,8651 @@
+{
+ "summary": {
+  "generated_note": "Counted from built site/ HTML by scripts/site_inventory.py. No estimates.",
+  "page_count": 39,
+  "total_words": 27742,
+  "pages_missing_meta_description": [
+   "dashboard.html"
+  ],
+  "pages_missing_canonical": [],
+  "pages_missing_title": [],
+  "pages_multiple_h1": [],
+  "pages_no_h1": [
+   "dashboard.html"
+  ],
+  "thin_pages_under_300_words": [
+   "dashboard.html",
+   "sitemap.html",
+   "status.html"
+  ],
+  "pages_without_cta": [
+   "dashboard.html"
+  ],
+  "orphan_pages": [
+   "dashboard.html"
+  ],
+  "pages_with_images_missing_alt": {},
+  "high_duplication_pairs": [
+   [
+    "sitemap.html",
+    "status.html"
+   ]
+  ],
+  "pages_without_schema": [
+   "dashboard.html"
+  ]
+ },
+ "pages": {
+  "about.html": {
+   "url": "https://loadboot.com/about.html",
+   "file": "about.html",
+   "title": "About Loadboot | Honest Truck Dispatch for Carriers",
+   "title_length": 51,
+   "meta_description": "Loadboot is a US truck dispatch service built on honesty and real attention. We help owner-operators and new-authority carriers earn more with no contracts.",
+   "meta_description_length": 156,
+   "canonical": "https://loadboot.com/about.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "About Loadboot",
+     "level": "h1",
+     "words": 86
+    },
+    {
+     "heading": "What we stand for",
+     "level": "h2",
+     "words": 54
+    },
+    {
+     "heading": "How we work",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Who we help",
+     "level": "h2",
+     "words": 78
+    },
+    {
+     "heading": "Built for carriers who want to earn more and stress less",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Higher-paying loads",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Less deadhead",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Back office handled",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Straight talk",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "A dispatcher who actually has your back",
+     "level": "h2",
+     "words": 59
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 625,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.297,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "accessibility.html": {
+   "url": "https://loadboot.com/accessibility.html",
+   "file": "accessibility.html",
+   "title": "Accessibility Statement | Loadboot",
+   "title_length": 34,
+   "meta_description": "Loadboot is committed to an accessible website and apps (WCAG 2.1 AA). Learn about our commitment and how to report a barrier.",
+   "meta_description_length": 126,
+   "canonical": "https://loadboot.com/accessibility.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 3,
+   "sections": [
+    {
+     "heading": "Accessibility",
+     "level": "h1",
+     "words": 36
+    },
+    {
+     "heading": "Our commitment",
+     "level": "h2",
+     "words": 47
+    },
+    {
+     "heading": "Need help or found a barrier?",
+     "level": "h2",
+     "words": 219
+    }
+   ],
+   "word_count": 330,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.476,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "blog.html": {
+   "url": "https://loadboot.com/blog.html",
+   "file": "blog.html",
+   "title": "Loadboot Blog: Dispatch Tips & Guides | Carriers",
+   "title_length": 48,
+   "meta_description": "Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.",
+   "meta_description_length": 135,
+   "canonical": "https://loadboot.com/blog.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 7,
+   "sections": [
+    {
+     "heading": "The Loadboot Blog",
+     "level": "h1",
+     "words": 31
+    },
+    {
+     "heading": "Latest from Loadboot",
+     "level": "h2",
+     "words": 17
+    },
+    {
+     "heading": "How Much Does a Truck Dispatcher Cost in 2026?",
+     "level": "h3",
+     "words": 42
+    },
+    {
+     "heading": "Truck Dispatcher vs Freight Broker vs Factoring",
+     "level": "h3",
+     "words": 43
+    },
+    {
+     "heading": "How to Get Loads With a New Authority: A Carrier's Guide",
+     "level": "h3",
+     "words": 37
+    },
+    {
+     "heading": "Owner-Operator Dispatch Service: The Complete Guide (2026)",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 443,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 38,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.404,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "box-truck-dispatch.html": {
+   "url": "https://loadboot.com/box-truck-dispatch.html",
+   "file": "box-truck-dispatch.html",
+   "title": "Box Truck & Expedited Dispatch Service | Loadboot",
+   "title_length": 49,
+   "meta_description": "Box truck, cargo van and expedited freight dispatch. Loadboot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no contracts.",
+   "meta_description_length": 156,
+   "canonical": "https://loadboot.com/box-truck-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 6,
+   "sections": [
+    {
+     "heading": "Box Truck & Expedited Dispatch",
+     "level": "h1",
+     "words": 41
+    },
+    {
+     "heading": "Loads that fit your equipment",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Right-sized freight",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Expedited & hot loads",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Flat 5%, no contract",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 349,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.459,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 1,
+   "inbound_links": [
+    "sitemap.html"
+   ]
+  },
+  "brokers.html": {
+   "url": "https://loadboot.com/brokers.html",
+   "file": "brokers.html",
+   "title": "For Freight Brokers \u2014 A Reliable Carrier Network | Loadboot",
+   "title_length": 59,
+   "meta_description": "Brokers post loads to a vetted Loadboot carrier network with explainable matching, live visibility, clean documentation and API/webhook integration. Broker partners only.",
+   "meta_description_length": 170,
+   "canonical": "https://loadboot.com/brokers.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 35,
+   "sections": [
+    {
+     "heading": "A Reliable Carrier Network for Brokers",
+     "level": "h1",
+     "words": 46
+    },
+    {
+     "heading": "Fewer surprises, cleaner loads",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Vetted carriers",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Clean documentation",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "One point of contact",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Onboarding & verification",
+     "level": "h2",
+     "words": 5
+    },
+    {
+     "heading": "Apply as a broker partner",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Authority & verification",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Approved & active",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "A guided load wizard",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Structured, step by step",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "Document requirements up front",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Recurring lanes & reposts",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "The right carrier, explained",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Eligibility first",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Explainable ranking",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Preferred carriers",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Know where your freight is",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Permitted live status",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Driver & trip tracking",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "Exceptions surfaced",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Kept straight",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Appointment management",
+     "level": "h3",
+     "words": 10
+    },
+    {
+     "heading": "Required documents",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "POD & billing",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Structured exception resolution",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Detention & accessorials",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Reschedules & re-covers",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "One clear record",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Fits how you already work",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "API & webhooks",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Permissioned data",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Audit & consent",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Become a broker partner",
+     "level": "h3",
+     "words": 44
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 298
+    }
+   ],
+   "word_count": 886,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Request partnership",
+     "href": "#button"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "",
+       "name": "_hp",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "company",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "mc",
+       "required": false
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "message",
+       "required": false
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.218,
+    "most_similar_page": "partners.html",
+    "level": "low"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "careers.html": {
+   "url": "https://loadboot.com/careers.html",
+   "file": "careers.html",
+   "title": "Careers at Loadboot | Join an Honest Dispatch Company",
+   "title_length": 53,
+   "meta_description": "Join Loadboot. We hire dispatchers, carrier-success reps and builders who care about doing right by carriers. See how to apply.",
+   "meta_description_length": 127,
+   "canonical": "https://loadboot.com/careers.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 4,
+   "sections": [
+    {
+     "heading": "Careers at Loadboot",
+     "level": "h1",
+     "words": 35
+    },
+    {
+     "heading": "Why work here",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Open roles",
+     "level": "h2",
+     "words": 39
+    },
+    {
+     "heading": "Apply to Loadboot",
+     "level": "h3",
+     "words": 226
+    }
+   ],
+   "word_count": 377,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "",
+       "name": "_hp",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "company",
+       "required": false
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "message",
+       "required": true
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.429,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "carrier-application.html": {
+   "url": "https://loadboot.com/carrier-application.html",
+   "file": "carrier-application.html",
+   "title": "Carrier Application \u2014 Apply for Truck Dispatch | Loadboot",
+   "title_length": 57,
+   "meta_description": "Apply for Loadboot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no contracts.",
+   "meta_description_length": 132,
+   "canonical": "https://loadboot.com/carrier-application.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 2,
+   "sections": [
+    {
+     "heading": "Apply to Loadboot",
+     "level": "h1",
+     "words": 31
+    },
+    {
+     "heading": "Carrier application",
+     "level": "h3",
+     "words": 267
+    }
+   ],
+   "word_count": 333,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Submit application",
+     "href": "#button"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "",
+       "name": "_hp",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "company",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "mc",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "dot",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "authority",
+       "required": true
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "equipment",
+       "required": true
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "trucks",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "lanes",
+       "required": false
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "message",
+       "required": false
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.482,
+    "most_similar_page": "contact.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 2,
+   "inbound_links": [
+    "login.html",
+    "sitemap.html"
+   ]
+  },
+  "carriers.html": {
+   "url": "https://loadboot.com/carriers.html",
+   "file": "carriers.html",
+   "title": "Truck Dispatch for Carriers & Owner-Operators | Loadboot",
+   "title_length": 56,
+   "meta_description": "Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, and supports detention, invoicing and compliance. Flat 5%, no contracts, keep your authority.",
+   "meta_description_length": 175,
+   "canonical": "https://loadboot.com/carriers.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 44,
+   "sections": [
+    {
+     "heading": "Truck Dispatch Built Around Your Truck",
+     "level": "h1",
+     "words": 55
+    },
+    {
+     "heading": "A dispatcher that actually has your back",
+     "level": "h2",
+     "words": 5
+    },
+    {
+     "heading": "We keep your truck loaded",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Better rates, negotiated for you",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "You keep your authority",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "Built for every kind of carrier",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Owner-operators",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "New-authority carriers",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Small & growing fleets",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Every trailer type, dispatched",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Dry van & reefer",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "Flatbed & step deck",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "Hotshot, power-only & box truck",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "How we find your freight",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Real relationships, licensed sources",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Matched to your preferences",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Reduced deadhead",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Rate negotiation that puts money on your truck",
+     "level": "h2",
+     "words": 67
+    },
+    {
+     "heading": "The busywork, handled",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Pickup & delivery appointments",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Real-time trip support",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Rate cons & paperwork",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Kept current, kept clean",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Document management",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Compliance support",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Broker credibility",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Detention, layover, lumper & TONU support",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Detention & layover",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Lumper & TONU",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Breakdowns & exceptions",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Get paid without the chase",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Invoice-ready packets",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Factoring friendly",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Settlement visibility",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "One dashboard for the whole operation",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Fleet & drivers",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Trips & tracking",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Pocket app for drivers",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "On your lanes the same day",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "1. Create your profile",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "2. Send authority & insurance",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "3. Start getting loads",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 135
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 1113,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 35,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.183,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "case-studies.html": {
+   "url": "https://loadboot.com/case-studies.html",
+   "file": "case-studies.html",
+   "title": "Example Truck Dispatch Scenarios | Loadboot",
+   "title_length": 43,
+   "meta_description": "Illustrative, educational examples of how Loadboot dispatch works for owner-operators, reefer and box-truck carriers. Worked examples, not guarantees.",
+   "meta_description_length": 150,
+   "canonical": "https://loadboot.com/case-studies.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 5,
+   "sections": [
+    {
+     "heading": "Example Dispatch Scenarios",
+     "level": "h1",
+     "words": 39
+    },
+    {
+     "heading": "How the math tends to work",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "New-authority owner-operator",
+     "level": "h3",
+     "words": 38
+    },
+    {
+     "heading": "Reefer running empty backhauls",
+     "level": "h3",
+     "words": 28
+    },
+    {
+     "heading": "Box truck chasing hot loads",
+     "level": "h3",
+     "words": 229
+    }
+   ],
+   "word_count": 368,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Talk to a dispatcher \u2192",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.434,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "contact.html": {
+   "url": "https://loadboot.com/contact.html",
+   "file": "contact.html",
+   "title": "Get Started, Get a Quote or Contact Us | Loadboot",
+   "title_length": 49,
+   "meta_description": "Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.",
+   "meta_description_length": 142,
+   "canonical": "https://loadboot.com/contact.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 5,
+   "sections": [
+    {
+     "heading": "Get Started with Loadboot",
+     "level": "h1",
+     "words": 37
+    },
+    {
+     "heading": "How can we help?",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Your business",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Equipment & lanes",
+     "level": "h3",
+     "words": 52
+    },
+    {
+     "heading": "Your details",
+     "level": "h3",
+     "words": 235
+    }
+   ],
+   "word_count": 406,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "post",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "hidden",
+       "name": "form-name",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "",
+       "name": "bot-field",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "radio",
+       "name": "intent",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "radio",
+       "name": "intent",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "radio",
+       "name": "intent",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "company",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "mc",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "dot",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "authority",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "equipment",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "trucks",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "lanes",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "insurance",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "factoring",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "message",
+       "required": false
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.482,
+    "most_similar_page": "carrier-application.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "cookies.html": {
+   "url": "https://loadboot.com/cookies.html",
+   "file": "cookies.html",
+   "title": "Cookie Policy | Loadboot",
+   "title_length": 24,
+   "meta_description": "How Loadboot uses essential and analytics cookies, and the choices you have to manage them.",
+   "meta_description_length": 91,
+   "canonical": "https://loadboot.com/cookies.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 4,
+   "sections": [
+    {
+     "heading": "Cookie Policy",
+     "level": "h1",
+     "words": 24
+    },
+    {
+     "heading": "What cookies we use",
+     "level": "h2",
+     "words": 51
+    },
+    {
+     "heading": "Analytics",
+     "level": "h2",
+     "words": 36
+    },
+    {
+     "heading": "Your choices",
+     "level": "h2",
+     "words": 219
+    }
+   ],
+   "word_count": 359,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.443,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "dashboard.html": {
+   "url": "https://loadboot.com/dashboard.html",
+   "file": "dashboard.html",
+   "title": "LoadBoot \u2014 Sign in",
+   "title_length": 18,
+   "meta_description": "",
+   "meta_description_length": 0,
+   "canonical": "/app/carrier/",
+   "robots": "noindex,nofollow",
+   "h1_count": 0,
+   "section_count": 0,
+   "sections": [],
+   "word_count": 29,
+   "cta_count": 0,
+   "ctas": [],
+   "forms": [],
+   "links_internal": [
+    "app/carrier/",
+    "app/command-center/"
+   ],
+   "links_external": [],
+   "internal_link_count": 2,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [],
+   "duplication_risk": {
+    "max_similarity": 0.0,
+    "most_similar_page": null,
+    "level": "low"
+   },
+   "inbound_link_count": 0,
+   "inbound_links": []
+  },
+  "dry-van-dispatch.html": {
+   "url": "https://loadboot.com/dry-van-dispatch.html",
+   "file": "dry-van-dispatch.html",
+   "title": "Dry Van Dispatch Services for Owner-Operators | Loadboot",
+   "title_length": 56,
+   "meta_description": "Dry van truck dispatch for owner-operators and fleets. Consistent, well-paying van freight, rate negotiation, and back-office support. Flat 5%, no contracts.",
+   "meta_description_length": 157,
+   "canonical": "https://loadboot.com/dry-van-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 13,
+   "sections": [
+    {
+     "heading": "Dry Van Dispatch Services Across the USA",
+     "level": "h1",
+     "words": 45
+    },
+    {
+     "heading": "Higher-paying dry van freight, handled end to end",
+     "level": "h2",
+     "words": 71
+    },
+    {
+     "heading": "Everything in our dry van dispatch service",
+     "level": "h2",
+     "words": 46
+    },
+    {
+     "heading": "Why dry van carriers choose us",
+     "level": "h2",
+     "words": 44
+    },
+    {
+     "heading": "The dry van freight that keeps you moving",
+     "level": "h2",
+     "words": 93
+    },
+    {
+     "heading": "How we keep your van utilization high",
+     "level": "h2",
+     "words": 66
+    },
+    {
+     "heading": "How we keep your dry van truck loaded",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We set you up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We book & negotiate",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "You drive, we handle the rest",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 69
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 772,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "Service"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.265,
+    "most_similar_page": "hotshot-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "faq.html": {
+   "url": "https://loadboot.com/faq.html",
+   "file": "faq.html",
+   "title": "Truck Dispatch FAQ \u2014 Pricing, Authority & Getting Started | Loadboot",
+   "title_length": 68,
+   "meta_description": "Answers to the most common questions about Loadboot truck dispatch: cost, authority, contracts, equipment types, getting started, factoring and compliance.",
+   "meta_description_length": 155,
+   "canonical": "https://loadboot.com/faq.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 3,
+   "sections": [
+    {
+     "heading": "Frequently Asked Questions",
+     "level": "h1",
+     "words": 34
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 322
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 599,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.313,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "flatbed-dispatch.html": {
+   "url": "https://loadboot.com/flatbed-dispatch.html",
+   "file": "flatbed-dispatch.html",
+   "title": "Flatbed Dispatch Services for Owner-Operators | Loadboot",
+   "title_length": 56,
+   "meta_description": "Flatbed and step-deck truck dispatch. We book high-paying steel, lumber, and machinery loads, negotiate rates, and handle brokers. Flat 5%, no contracts.",
+   "meta_description_length": 153,
+   "canonical": "https://loadboot.com/flatbed-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 13,
+   "sections": [
+    {
+     "heading": "Flatbed Dispatch Services Across the USA",
+     "level": "h1",
+     "words": 49
+    },
+    {
+     "heading": "Higher-paying flatbed freight, handled end to end",
+     "level": "h2",
+     "words": 71
+    },
+    {
+     "heading": "Everything in our flatbed dispatch service",
+     "level": "h2",
+     "words": 43
+    },
+    {
+     "heading": "Why flatbed carriers choose us",
+     "level": "h2",
+     "words": 55
+    },
+    {
+     "heading": "Flatbed and step-deck freight we book",
+     "level": "h2",
+     "words": 86
+    },
+    {
+     "heading": "Permits, securement, and oversize handling",
+     "level": "h2",
+     "words": 72
+    },
+    {
+     "heading": "How we keep your flatbed truck loaded",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We set you up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We book & negotiate",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "You drive, we handle the rest",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 75
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 786,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "Service"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.259,
+    "most_similar_page": "hotshot-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "hotshot-dispatch.html": {
+   "url": "https://loadboot.com/hotshot-dispatch.html",
+   "file": "hotshot-dispatch.html",
+   "title": "Hotshot Dispatch Services | Loadboot",
+   "title_length": 36,
+   "meta_description": "Hotshot truck dispatch for owner-operators running class 3-5 trucks and goosenecks. Expedited loads, rate negotiation, broker handling. Flat 5%, no contracts.",
+   "meta_description_length": 158,
+   "canonical": "https://loadboot.com/hotshot-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 13,
+   "sections": [
+    {
+     "heading": "Hotshot Dispatch Services Across the USA",
+     "level": "h1",
+     "words": 41
+    },
+    {
+     "heading": "Higher-paying hotshot freight, handled end to end",
+     "level": "h2",
+     "words": 68
+    },
+    {
+     "heading": "Everything in our hotshot dispatch service",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Why hotshot carriers choose us",
+     "level": "h2",
+     "words": 44
+    },
+    {
+     "heading": "Hotshot loads we find for you",
+     "level": "h2",
+     "words": 76
+    },
+    {
+     "heading": "Keeping hotshot profitable",
+     "level": "h2",
+     "words": 65
+    },
+    {
+     "heading": "How we keep your hotshot truck loaded",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We set you up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We book & negotiate",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "You drive, we handle the rest",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 64
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 733,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "Service"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.279,
+    "most_similar_page": "power-only-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "how-it-works.html": {
+   "url": "https://loadboot.com/how-it-works.html",
+   "file": "how-it-works.html",
+   "title": "How Truck Dispatch Works with Loadboot | Step by Step",
+   "title_length": 53,
+   "meta_description": "See exactly how Loadboot dispatch works: tell us about your truck, we find and negotiate loads, you approve every one, and we help you get paid faster. Flat 5%, no contracts.",
+   "meta_description_length": 174,
+   "canonical": "https://loadboot.com/how-it-works.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "How Loadboot Works",
+     "level": "h1",
+     "words": 47
+    },
+    {
+     "heading": "Four steps to a loaded truck",
+     "level": "h2",
+     "words": 6
+    },
+    {
+     "heading": "Tell us about your truck",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "We find & negotiate loads",
+     "level": "h3",
+     "words": 29
+    },
+    {
+     "heading": "You approve & roll",
+     "level": "h3",
+     "words": 34
+    },
+    {
+     "heading": "Get paid, then repeat",
+     "level": "h3",
+     "words": 28
+    },
+    {
+     "heading": "You stay in control",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Your own authority",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Approval on every load",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "No contracts",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 470,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.382,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "how-much-does-a-truck-dispatcher-cost.html": {
+   "url": "https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",
+   "file": "how-much-does-a-truck-dispatcher-cost.html",
+   "title": "How Much Does a Truck Dispatcher Cost in 2026?",
+   "title_length": 46,
+   "meta_description": "Truck dispatcher pricing explained: percentage vs flat fee, what 5% really gets you, red flags, and how the right dispatcher pays for itself.",
+   "meta_description_length": 141,
+   "canonical": "https://loadboot.com/how-much-does-a-truck-dispatcher-cost.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "How Much Does a Truck Dispatcher Cost in 2026?",
+     "level": "h1",
+     "words": 80
+    },
+    {
+     "heading": "Quick answer: what does a truck dispatcher cost?",
+     "level": "h2",
+     "words": 126
+    },
+    {
+     "heading": "The two pricing models, explained",
+     "level": "h2",
+     "words": 149
+    },
+    {
+     "heading": "What your fee should actually cover",
+     "level": "h2",
+     "words": 135
+    },
+    {
+     "heading": "Does 5% actually pay for itself?",
+     "level": "h2",
+     "words": 234
+    },
+    {
+     "heading": "Flat fee vs percentage: which is right for you?",
+     "level": "h2",
+     "words": 62
+    },
+    {
+     "heading": "Red flags: when you\u2019re overpaying",
+     "level": "h2",
+     "words": 103
+    },
+    {
+     "heading": "How dispatch actually works, step by step",
+     "level": "h2",
+     "words": 205
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 84
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 198
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 1636,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "free Load Score tool",
+     "href": "load-score.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [
+    "https://www.fmcsa.dot.gov/registration/who-needs-register"
+   ],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.125,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 3,
+   "inbound_links": [
+    "blog.html",
+    "index.html",
+    "owner-operator-dispatch-service-guide.html"
+   ]
+  },
+  "how-to-get-loads-with-new-authority.html": {
+   "url": "https://loadboot.com/how-to-get-loads-with-new-authority.html",
+   "file": "how-to-get-loads-with-new-authority.html",
+   "title": "How to Get Loads With a New Authority: A Carrier's Guide",
+   "title_length": 56,
+   "meta_description": "Just got your MC number? Here is how to get set up with brokers, find your first loads, and avoid the mistakes that sink new carriers.",
+   "meta_description_length": 134,
+   "canonical": "https://loadboot.com/how-to-get-loads-with-new-authority.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 8,
+   "sections": [
+    {
+     "heading": "How to Get Loads With a New Authority: A Carrier's Guide",
+     "level": "h1",
+     "words": 64
+    },
+    {
+     "heading": "1. Get your paperwork ready",
+     "level": "h2",
+     "words": 46
+    },
+    {
+     "heading": "2. Set up with brokers and load boards",
+     "level": "h2",
+     "words": 43
+    },
+    {
+     "heading": "3. Do not chase the cheapest freight",
+     "level": "h2",
+     "words": 44
+    },
+    {
+     "heading": "4. Get factoring in place",
+     "level": "h2",
+     "words": 47
+    },
+    {
+     "heading": "5. Watch out for non-paying brokers",
+     "level": "h2",
+     "words": 23
+    },
+    {
+     "heading": "The shortcut",
+     "level": "h2",
+     "words": 59
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 577,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.328,
+    "most_similar_page": "blog.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 2,
+   "inbound_links": [
+    "blog.html",
+    "index.html"
+   ]
+  },
+  "index.html": {
+   "url": "https://loadboot.com/",
+   "file": "index.html",
+   "title": "Truck Dispatch Services for Owner-Operators | Loadboot",
+   "title_length": 54,
+   "meta_description": "Reliable US truck dispatch for owner-operators, fleets, and new-authority carriers. Higher-paying loads, less deadhead, flat 5%, no contracts. Get a free quote.",
+   "meta_description_length": 160,
+   "canonical": "https://loadboot.com/",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 45,
+   "sections": [
+    {
+     "heading": "Professional Truck Dispatch Across the USA",
+     "level": "h1",
+     "words": 113
+    },
+    {
+     "heading": "We keep your truck moving, every mile",
+     "level": "h2",
+     "words": 26
+    },
+    {
+     "heading": "From booking to delivery \u2014 we guide every mile",
+     "level": "h2",
+     "words": 52
+    },
+    {
+     "heading": "Built for carriers who want to earn more and stress less",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Higher-paying loads",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Less deadhead",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Back office handled",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Straight talk",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Dispatch support built around your operation",
+     "level": "h2",
+     "words": 39
+    },
+    {
+     "heading": "Specialized dispatch for your equipment",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Reefer Dispatch",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Flatbed Dispatch",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Dry Van Dispatch",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Hotshot Dispatch",
+     "level": "h3",
+     "words": 10
+    },
+    {
+     "heading": "Power Only",
+     "level": "h3",
+     "words": 10
+    },
+    {
+     "heading": "New Authority",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "Freight sources our dispatch workflow may use",
+     "level": "h2",
+     "words": 41
+    },
+    {
+     "heading": "Available Load Opportunities",
+     "level": "h2",
+     "words": 52
+    },
+    {
+     "heading": "How LoadBoot evaluates a load",
+     "level": "h2",
+     "words": 218
+    },
+    {
+     "heading": "Built for every kind of carrier on the road",
+     "level": "h2",
+     "words": 86
+    },
+    {
+     "heading": "Why carriers choose us over going it alone",
+     "level": "h2",
+     "words": 64
+    },
+    {
+     "heading": "Getting started takes one conversation",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free Consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We Set You Up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We Book & Negotiate",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "You Drive, We Handle the Rest",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "Should you take this load? Find out in 3 seconds.",
+     "level": "h2",
+     "words": 32
+    },
+    {
+     "heading": "Load details",
+     "level": "h3",
+     "words": 132
+    },
+    {
+     "heading": "Smart Advisor",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "Comparing your loads \u2014 pick the winner",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Free trucking calculators that pay for themselves",
+     "level": "h2",
+     "words": 32
+    },
+    {
+     "heading": "Load Profit Calculator",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Cost-Per-Mile Calculator",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Fuel Cost Calculator",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Break-Even Rate",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Owner-Op Take-Home",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "Detention Pay",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "A dispatcher who actually has your back",
+     "level": "h2",
+     "words": 65
+    },
+    {
+     "heading": "Guides to help you run a more profitable truck",
+     "level": "h2",
+     "words": 7
+    },
+    {
+     "heading": "How Much Does a Truck Dispatcher Cost?",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Dispatcher vs Broker vs Factoring",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Getting Loads With New Authority",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Owner-Operator Dispatch Service Guide",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 150
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 1837,
+   "cta_count": 12,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Sign in to view & book \u2192",
+     "href": "/app/carrier/"
+    },
+    {
+     "text": "Open all free tools",
+     "href": "tools.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 39,
+   "image_count": 2,
+   "images_missing_alt": [],
+   "schema_types": [
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.278,
+    "most_similar_page": "services.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "load-score.html": {
+   "url": "https://loadboot.com/load-score.html",
+   "file": "load-score.html",
+   "title": "Should You Take This Load? Free Load Score Tool for Truckers",
+   "title_length": 60,
+   "meta_description": "Free tool that scores any freight load and tells you to take, negotiate, or pass \u2014 with a counter-offer based on your cost per mile.",
+   "meta_description_length": 132,
+   "canonical": "https://loadboot.com/load-score.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "Should You Take This Load?",
+     "level": "h1",
+     "words": 43
+    },
+    {
+     "heading": "Load details",
+     "level": "h3",
+     "words": 132
+    },
+    {
+     "heading": "Smart Advisor",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "Comparing your loads \u2014 pick the winner",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "How to know if a load is worth taking",
+     "level": "h2",
+     "words": 85
+    },
+    {
+     "heading": "Why rate per mile alone will trick you",
+     "level": "h3",
+     "words": 120
+    },
+    {
+     "heading": "What the Loadboot Load Score measures",
+     "level": "h3",
+     "words": 102
+    },
+    {
+     "heading": "Counter the offer \u2014 do not just accept or walk",
+     "level": "h3",
+     "words": 92
+    },
+    {
+     "heading": "Let a dispatcher take this off your plate",
+     "level": "h3",
+     "words": 73
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 272
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 1218,
+   "cta_count": 11,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get started in two minutes",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 35,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "HowTo",
+    "ProfessionalService",
+    "WebApplication"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.169,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "login.html": {
+   "url": "https://loadboot.com/login.html",
+   "file": "login.html",
+   "title": "Log in to Loadboot | Carrier, Partner, Driver & Developer Portals",
+   "title_length": 65,
+   "meta_description": "Choose your Loadboot portal: Carrier Portal, Driver Pocket App, Partner Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.",
+   "meta_description_length": 159,
+   "canonical": "https://loadboot.com/login.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 8,
+   "sections": [
+    {
+     "heading": "Log in to Loadboot",
+     "level": "h1",
+     "words": 34
+    },
+    {
+     "heading": "Where do you want to go?",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Carrier Portal",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "Driver Pocket App",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Partner Portal",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Developers & API",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Command Center (Staff)",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Need an account?",
+     "level": "h3",
+     "words": 194
+    }
+   ],
+   "word_count": 336,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Apply now \u2192",
+     "href": "carrier-application.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/command-center/",
+    "app/developer/",
+    "app/partner/",
+    "app/pocket/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 37,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.485,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "new-authority-dispatch.html": {
+   "url": "https://loadboot.com/new-authority-dispatch.html",
+   "file": "new-authority-dispatch.html",
+   "title": "Dispatch for New Authority Carriers | Loadboot",
+   "title_length": 46,
+   "meta_description": "Dispatch for new-authority carriers. We help you get set up with brokers, book your first loads, and start earning. Flat 5%, no contracts, real guidance.",
+   "meta_description_length": 153,
+   "canonical": "https://loadboot.com/new-authority-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 13,
+   "sections": [
+    {
+     "heading": "Dispatch for New Authority Carriers",
+     "level": "h1",
+     "words": 53
+    },
+    {
+     "heading": "Higher-paying new authority freight, handled end to end",
+     "level": "h2",
+     "words": 77
+    },
+    {
+     "heading": "Everything in our new authority dispatch service",
+     "level": "h2",
+     "words": 55
+    },
+    {
+     "heading": "Why new authority carriers choose us",
+     "level": "h2",
+     "words": 56
+    },
+    {
+     "heading": "Your first 90 days on your own authority",
+     "level": "h2",
+     "words": 111
+    },
+    {
+     "heading": "Mistakes new carriers make (that we help you avoid)",
+     "level": "h2",
+     "words": 78
+    },
+    {
+     "heading": "How we keep your new authority truck loaded",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We set you up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We book & negotiate",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "You drive, we handle the rest",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 83
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 848,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "Service"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.24,
+    "most_similar_page": "hotshot-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "owner-operator-dispatch-service-guide.html": {
+   "url": "https://loadboot.com/owner-operator-dispatch-service-guide.html",
+   "file": "owner-operator-dispatch-service-guide.html",
+   "title": "Owner-Operator Dispatch Service: The Complete Guide (2026)",
+   "title_length": 58,
+   "meta_description": "What an owner-operator dispatch service does, what it costs, how it works day to day, and how to choose one \u2014 a complete guide for single-truck operators.",
+   "meta_description_length": 154,
+   "canonical": "https://loadboot.com/owner-operator-dispatch-service-guide.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "Owner-Operator Dispatch Service: The Complete Guide",
+     "level": "h1",
+     "words": 82
+    },
+    {
+     "heading": "What is an owner-operator dispatch service?",
+     "level": "h2",
+     "words": 148
+    },
+    {
+     "heading": "What a dispatch service actually does for you",
+     "level": "h2",
+     "words": 321
+    },
+    {
+     "heading": "How it works, day to day",
+     "level": "h2",
+     "words": 202
+    },
+    {
+     "heading": "What does it cost an owner-operator?",
+     "level": "h2",
+     "words": 276
+    },
+    {
+     "heading": "Do you need one as a new owner-operator?",
+     "level": "h2",
+     "words": 182
+    },
+    {
+     "heading": "Dispatch service vs doing it yourself",
+     "level": "h2",
+     "words": 181
+    },
+    {
+     "heading": "How to choose a dispatch service",
+     "level": "h2",
+     "words": 172
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 107
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 274
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 2197,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "free Load Score tool",
+     "href": "load-score.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ],
+   "links_external": [
+    "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",
+    "https://www.fmcsa.dot.gov/registration/who-needs-register"
+   ],
+   "internal_link_count": 36,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.094,
+    "most_similar_page": "blog.html",
+    "level": "low"
+   },
+   "inbound_link_count": 2,
+   "inbound_links": [
+    "blog.html",
+    "index.html"
+   ]
+  },
+  "owner-operator-dispatch.html": {
+   "url": "https://loadboot.com/owner-operator-dispatch.html",
+   "file": "owner-operator-dispatch.html",
+   "title": "Truck Dispatch for Owner-Operators | Loadboot",
+   "title_length": 45,
+   "meta_description": "Dedicated truck dispatch for owner-operators. Keep your authority, book higher-paying loads, and offload the back office. Flat 5%, no contracts, cancel anytime.",
+   "meta_description_length": 160,
+   "canonical": "https://loadboot.com/owner-operator-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 13,
+   "sections": [
+    {
+     "heading": "Truck Dispatch for Owner-Operators",
+     "level": "h1",
+     "words": 47
+    },
+    {
+     "heading": "Higher-paying owner-operator freight, handled end to end",
+     "level": "h2",
+     "words": 73
+    },
+    {
+     "heading": "Everything in our owner-operator dispatch service",
+     "level": "h2",
+     "words": 52
+    },
+    {
+     "heading": "Why owner-operator carriers choose us",
+     "level": "h2",
+     "words": 52
+    },
+    {
+     "heading": "Stay independent while we handle the load",
+     "level": "h2",
+     "words": 98
+    },
+    {
+     "heading": "Where owner-operators lose money, and how we fix it",
+     "level": "h2",
+     "words": 73
+    },
+    {
+     "heading": "How we keep your owner-operator truck loaded",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We set you up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We book & negotiate",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "You drive, we handle the rest",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 67
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 794,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "Service"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.248,
+    "most_similar_page": "hotshot-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "partners.html": {
+   "url": "https://loadboot.com/partners.html",
+   "file": "partners.html",
+   "title": "Partner Program for Brokers, Shippers & Facilities | Loadboot",
+   "title_length": 61,
+   "meta_description": "Partner with Loadboot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.",
+   "meta_description_length": 138,
+   "canonical": "https://loadboot.com/partners.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 6,
+   "sections": [
+    {
+     "heading": "Loadboot Partner Program",
+     "level": "h1",
+     "words": 33
+    },
+    {
+     "heading": "A network you can rely on",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Vetted carriers",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Clean documentation",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "One point of contact",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Become a partner",
+     "level": "h3",
+     "words": 231
+    }
+   ],
+   "word_count": 357,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Request partnership",
+     "href": "#button"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "",
+       "name": "_hp",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "company",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "partner_type",
+       "required": true
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "message",
+       "required": false
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.452,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "power-only-dispatch.html": {
+   "url": "https://loadboot.com/power-only-dispatch.html",
+   "file": "power-only-dispatch.html",
+   "title": "Power Only Dispatch Services | Loadboot",
+   "title_length": 39,
+   "meta_description": "Power only truck dispatch. We book drop-and-hook power only freight for your tractor, negotiate rates, and handle brokers. Flat 5%, no contracts.",
+   "meta_description_length": 145,
+   "canonical": "https://loadboot.com/power-only-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 13,
+   "sections": [
+    {
+     "heading": "Power Only Dispatch Services Across the USA",
+     "level": "h1",
+     "words": 44
+    },
+    {
+     "heading": "Higher-paying power only freight, handled end to end",
+     "level": "h2",
+     "words": 60
+    },
+    {
+     "heading": "Everything in our power only dispatch service",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Why power only carriers choose us",
+     "level": "h2",
+     "words": 38
+    },
+    {
+     "heading": "How power only dispatch works",
+     "level": "h2",
+     "words": 69
+    },
+    {
+     "heading": "Keeping your tractor earning",
+     "level": "h2",
+     "words": 61
+    },
+    {
+     "heading": "How we keep your power only truck loaded",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We set you up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We book & negotiate",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "You drive, we handle the rest",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 74
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 724,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "Service"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.279,
+    "most_similar_page": "hotshot-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "pricing.html": {
+   "url": "https://loadboot.com/pricing.html",
+   "file": "pricing.html",
+   "title": "Dispatch Pricing \u2014 Flat 5%, No Contracts | Loadboot",
+   "title_length": 51,
+   "meta_description": "Loadboot truck dispatch pricing: a flat 5% of gross, no setup fees, no monthly fees, no long-term contract. You only pay when we book your load.",
+   "meta_description_length": 144,
+   "canonical": "https://loadboot.com/pricing.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 6,
+   "sections": [
+    {
+     "heading": "Simple, Honest Dispatch Pricing",
+     "level": "h1",
+     "words": 46
+    },
+    {
+     "heading": "A flat 5% of gross \u2014 that's it",
+     "level": "h2",
+     "words": 54
+    },
+    {
+     "heading": "Everything is included in your 5%",
+     "level": "h2",
+     "words": 44
+    },
+    {
+     "heading": "Why carriers choose us over going it alone",
+     "level": "h2",
+     "words": 61
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 114
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 561,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.327,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "privacy.html": {
+   "url": "https://loadboot.com/privacy.html",
+   "file": "privacy.html",
+   "title": "Privacy Policy | Loadboot",
+   "title_length": 25,
+   "meta_description": "How Loadboot collects, uses, and protects the information you share through our website.",
+   "meta_description_length": 88,
+   "canonical": "https://loadboot.com/privacy.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 10,
+   "sections": [
+    {
+     "heading": "Privacy Policy",
+     "level": "h1",
+     "words": 37
+    },
+    {
+     "heading": "Information we collect",
+     "level": "h2",
+     "words": 85
+    },
+    {
+     "heading": "How we use it",
+     "level": "h2",
+     "words": 45
+    },
+    {
+     "heading": "Precise location \u2014 consent based",
+     "level": "h2",
+     "words": 76
+    },
+    {
+     "heading": "Sharing",
+     "level": "h2",
+     "words": 34
+    },
+    {
+     "heading": "Data security",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Retention",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Your rights",
+     "level": "h2",
+     "words": 30
+    },
+    {
+     "heading": "Contact",
+     "level": "h2",
+     "words": 16
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 642,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.294,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "reefer-dispatch.html": {
+   "url": "https://loadboot.com/reefer-dispatch.html",
+   "file": "reefer-dispatch.html",
+   "title": "Reefer Dispatch Services for Owner-Operators | Loadboot",
+   "title_length": 55,
+   "meta_description": "Reefer truck dispatch for owner-operators & fleets. We book high-paying temperature-controlled loads, negotiate rates, and handle the paperwork. Flat 5%.",
+   "meta_description_length": 153,
+   "canonical": "https://loadboot.com/reefer-dispatch.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 13,
+   "sections": [
+    {
+     "heading": "Reefer Dispatch Services Across the USA",
+     "level": "h1",
+     "words": 42
+    },
+    {
+     "heading": "Higher-paying reefer freight, handled end to end",
+     "level": "h2",
+     "words": 76
+    },
+    {
+     "heading": "Everything in our reefer dispatch service",
+     "level": "h2",
+     "words": 51
+    },
+    {
+     "heading": "Why reefer carriers choose us",
+     "level": "h2",
+     "words": 55
+    },
+    {
+     "heading": "Reefer freight we dispatch across the USA",
+     "level": "h2",
+     "words": 108
+    },
+    {
+     "heading": "What drives your reefer rate (and how we push it higher)",
+     "level": "h2",
+     "words": 113
+    },
+    {
+     "heading": "How we keep your reefer truck loaded",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We set you up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We book & negotiate",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "You drive, we handle the rest",
+     "level": "h3",
+     "words": 33
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 79
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 859,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 1,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "Service"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.237,
+    "most_similar_page": "hotshot-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "referral.html": {
+   "url": "https://loadboot.com/referral.html",
+   "file": "referral.html",
+   "title": "Carrier Referral Program | Loadboot",
+   "title_length": 35,
+   "meta_description": "Refer an owner-operator or fleet to Loadboot and get rewarded when they start rolling. Simple, fair, no limit on referrals.",
+   "meta_description_length": 123,
+   "canonical": "https://loadboot.com/referral.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 6,
+   "sections": [
+    {
+     "heading": "Refer a Carrier, Get Rewarded",
+     "level": "h1",
+     "words": 39
+    },
+    {
+     "heading": "Simple and fair",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Send them over",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "They get set up",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "You get thanked",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Refer a carrier",
+     "level": "h3",
+     "words": 229
+    }
+   ],
+   "word_count": 368,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "",
+       "name": "_hp",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "referral_name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "referral_contact",
+       "required": true
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "message",
+       "required": false
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.439,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "resources.html": {
+   "url": "https://loadboot.com/resources.html",
+   "file": "resources.html",
+   "title": "Free Trucking & Dispatch Resources for Carriers | Loadboot",
+   "title_length": 58,
+   "meta_description": "Free carrier resources from Loadboot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing \u2014 all in one place.",
+   "meta_description_length": 133,
+   "canonical": "https://loadboot.com/resources.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 9,
+   "sections": [
+    {
+     "heading": "Carrier Resources",
+     "level": "h1",
+     "words": 36
+    },
+    {
+     "heading": "Everything in one place",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Load Score tool",
+     "level": "h3",
+     "words": 28
+    },
+    {
+     "heading": "Free calculators",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Dispatch guides",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "FAQ",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "How it works",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Pricing",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 394,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 35,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.45,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "security.html": {
+   "url": "https://loadboot.com/security.html",
+   "file": "security.html",
+   "title": "Security & Trust at Loadboot | How We Protect Your Data",
+   "title_length": 55,
+   "meta_description": "How Loadboot protects your account and documents: least-privilege access, private signed document storage, full audit trails, maker/checker on payouts and isolated environments.",
+   "meta_description_length": 177,
+   "canonical": "https://loadboot.com/security.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 9,
+   "sections": [
+    {
+     "heading": "Security & Trust",
+     "level": "h1",
+     "words": 33
+    },
+    {
+     "heading": "Security by design",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Least-privilege access",
+     "level": "h3",
+     "words": 30
+    },
+    {
+     "heading": "Private document storage",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Full audit trail",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Maker / checker on money",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Isolated environments",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Recoverable changes",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Report a security concern",
+     "level": "h2",
+     "words": 192
+    }
+   ],
+   "word_count": 388,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.423,
+    "most_similar_page": "status.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "services.html": {
+   "url": "https://loadboot.com/services.html",
+   "file": "services.html",
+   "title": "Truck Dispatch Services (Full List) | Loadboot",
+   "title_length": 46,
+   "meta_description": "Full-service truck dispatch: load booking, rate negotiation, authority setup, IFTA, factoring, compliance, and freight-specific dispatch. Flat 5%, no contracts.",
+   "meta_description_length": 160,
+   "canonical": "https://loadboot.com/services.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 41,
+   "sections": [
+    {
+     "heading": "Truck Dispatch Services",
+     "level": "h1",
+     "words": 40
+    },
+    {
+     "heading": "Specialized dispatch for your equipment",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Reefer Dispatch",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Flatbed Dispatch",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Dry Van Dispatch",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Hotshot Dispatch",
+     "level": "h3",
+     "words": 10
+    },
+    {
+     "heading": "Power Only",
+     "level": "h3",
+     "words": 10
+    },
+    {
+     "heading": "New Authority",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Everything you need to keep your truck moving",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Load Booking",
+     "level": "h3",
+     "words": 11
+    },
+    {
+     "heading": "Rate Negotiation",
+     "level": "h3",
+     "words": 11
+    },
+    {
+     "heading": "Broker Communication",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Route & Lane Planning",
+     "level": "h3",
+     "words": 8
+    },
+    {
+     "heading": "Document Management",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "24/7 Dispatch Support",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Everything around the load \u2014 handled for you",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Broker Packet Onboarding",
+     "level": "h3",
+     "words": 8
+    },
+    {
+     "heading": "Factoring Setup",
+     "level": "h3",
+     "words": 8
+    },
+    {
+     "heading": "Insurance Assistance",
+     "level": "h3",
+     "words": 9
+    },
+    {
+     "heading": "IFTA & Fuel Tax",
+     "level": "h3",
+     "words": 9
+    },
+    {
+     "heading": "Detention & TONU Claims",
+     "level": "h3",
+     "words": 8
+    },
+    {
+     "heading": "Broker Credit Checks",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "Weekly Settlement Reports",
+     "level": "h3",
+     "words": 9
+    },
+    {
+     "heading": "Cargo Claim Assistance",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "We handle the paperwork most carriers dread",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Authority & DOT Setup",
+     "level": "h3",
+     "words": 8
+    },
+    {
+     "heading": "BOC-3 Filing",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "UCR Registration",
+     "level": "h3",
+     "words": 8
+    },
+    {
+     "heading": "IRP & Plates",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "Form 2290 (HVUT)",
+     "level": "h3",
+     "words": 10
+    },
+    {
+     "heading": "Drug & Alcohol Consortium",
+     "level": "h3",
+     "words": 5
+    },
+    {
+     "heading": "ELD Setup",
+     "level": "h3",
+     "words": 11
+    },
+    {
+     "heading": "DOT Compliance & Audits",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Why carriers choose us over going it alone",
+     "level": "h2",
+     "words": 64
+    },
+    {
+     "heading": "Getting started takes one conversation",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Free Consultation",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "We Set You Up",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "We Book & Negotiate",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "You Drive, We Handle the Rest",
+     "level": "h3",
+     "words": 14
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 150
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 878,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.278,
+    "most_similar_page": "index.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "sitemap.html": {
+   "url": "https://loadboot.com/sitemap.html",
+   "file": "sitemap.html",
+   "title": "Sitemap | Loadboot",
+   "title_length": 18,
+   "meta_description": "Every page on the Loadboot website \u2014 services, resources, company and legal \u2014 in one place.",
+   "meta_description_length": 91,
+   "canonical": "https://loadboot.com/sitemap.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 6,
+   "sections": [
+    {
+     "heading": "Sitemap",
+     "level": "h1",
+     "words": 17
+    },
+    {
+     "heading": "Get started",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Services",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "Resources",
+     "level": "h3",
+     "words": 9
+    },
+    {
+     "heading": "Company",
+     "level": "h3",
+     "words": 12
+    },
+    {
+     "heading": "Legal & trust",
+     "level": "h3",
+     "words": 191
+    }
+   ],
+   "word_count": 289,
+   "cta_count": 11,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get a Quote / Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Free Calculators",
+     "href": "tools.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 37,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.538,
+    "most_similar_page": "status.html",
+    "level": "high"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "status.html": {
+   "url": "https://loadboot.com/status.html",
+   "file": "status.html",
+   "title": "Loadboot System Status",
+   "title_length": 22,
+   "meta_description": "Live operational status for the Loadboot website, carrier portal, driver app and API.",
+   "meta_description_length": 85,
+   "canonical": "https://loadboot.com/status.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 2,
+   "sections": [
+    {
+     "heading": "System Status",
+     "level": "h1",
+     "words": 27
+    },
+    {
+     "heading": "Current status",
+     "level": "h3",
+     "words": 224
+    }
+   ],
+   "word_count": 279,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.538,
+    "most_similar_page": "sitemap.html",
+    "level": "high"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "terms.html": {
+   "url": "https://loadboot.com/terms.html",
+   "file": "terms.html",
+   "title": "Terms of Service | Loadboot",
+   "title_length": 27,
+   "meta_description": "The terms governing your use of the Loadboot website and truck dispatch services.",
+   "meta_description_length": 81,
+   "canonical": "https://loadboot.com/terms.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 8,
+   "sections": [
+    {
+     "heading": "Terms of Service",
+     "level": "h1",
+     "words": 38
+    },
+    {
+     "heading": "Our services",
+     "level": "h2",
+     "words": 29
+    },
+    {
+     "heading": "Dispatch agreement",
+     "level": "h2",
+     "words": 40
+    },
+    {
+     "heading": "Your responsibilities",
+     "level": "h2",
+     "words": 26
+    },
+    {
+     "heading": "No guarantee",
+     "level": "h2",
+     "words": 25
+    },
+    {
+     "heading": "Limitation of liability",
+     "level": "h2",
+     "words": 26
+    },
+    {
+     "heading": "Changes",
+     "level": "h2",
+     "words": 26
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 447,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.4,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "medium"
+   },
+   "inbound_link_count": 37,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "tools.html": {
+   "url": "https://loadboot.com/tools.html",
+   "file": "tools.html",
+   "title": "Free Truck Driver Calculators (No Signup) | Loadboot",
+   "title_length": 52,
+   "meta_description": "Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home and detention calculators for owner-operators. No login.",
+   "meta_description_length": 132,
+   "canonical": "https://loadboot.com/tools.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 17,
+   "sections": [
+    {
+     "heading": "Free Tools for Truckers & Owner-Operators",
+     "level": "h1",
+     "words": 85
+    },
+    {
+     "heading": "Free dispatch & profit calculators for truckers",
+     "level": "h2",
+     "words": 35
+    },
+    {
+     "heading": "Truck Load Profit Calculator",
+     "level": "h2",
+     "words": 45
+    },
+    {
+     "heading": "Rate Per Mile Calculator",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Cost Per Mile Calculator",
+     "level": "h2",
+     "words": 59
+    },
+    {
+     "heading": "Truck Fuel Cost Calculator",
+     "level": "h2",
+     "words": 29
+    },
+    {
+     "heading": "Break-Even Rate Calculator",
+     "level": "h2",
+     "words": 48
+    },
+    {
+     "heading": "Owner-Operator Take-Home Pay Calculator",
+     "level": "h2",
+     "words": 51
+    },
+    {
+     "heading": "Truck Detention Pay Calculator",
+     "level": "h2",
+     "words": 43
+    },
+    {
+     "heading": "Deadhead Miles Calculator",
+     "level": "h2",
+     "words": 42
+    },
+    {
+     "heading": "Know your numbers before you take the load",
+     "level": "h2",
+     "words": 64
+    },
+    {
+     "heading": "Load profit & rate per mile",
+     "level": "h3",
+     "words": 54
+    },
+    {
+     "heading": "Cost per mile & break-even rate",
+     "level": "h3",
+     "words": 54
+    },
+    {
+     "heading": "Fuel, take-home, detention & deadhead",
+     "level": "h3",
+     "words": 72
+    },
+    {
+     "heading": "Want a dispatcher to handle the numbers for you?",
+     "level": "h3",
+     "words": 61
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 207
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 1234,
+   "cta_count": 12,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Our #1 free toolShould You Take This Load?Stop guessing. Get an instant take / negotiate / pass score on any load \u2014 with a suggested counter-offer built on your real costs.Open Load Score \u2192",
+     "href": "load-score.html"
+    },
+    {
+     "text": "Get started with Loadboot",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 35,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService",
+    "WebApplication"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.165,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 5,
+   "inbound_links": [
+    "carriers.html",
+    "index.html",
+    "load-score.html",
+    "resources.html",
+    "sitemap.html"
+   ]
+  },
+  "truck-dispatcher-vs-freight-broker.html": {
+   "url": "https://loadboot.com/truck-dispatcher-vs-freight-broker.html",
+   "file": "truck-dispatcher-vs-freight-broker.html",
+   "title": "Truck Dispatcher vs Freight Broker vs Factoring (2026)",
+   "title_length": 54,
+   "meta_description": "Dispatcher, broker or factoring? Who each represents, what they can legally do, how the money flows, and which ones a carrier actually needs.",
+   "meta_description_length": 141,
+   "canonical": "https://loadboot.com/truck-dispatcher-vs-freight-broker.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "Truck Dispatcher vs Freight Broker vs Factoring",
+     "level": "h1",
+     "words": 75
+    },
+    {
+     "heading": "Quick answer",
+     "level": "h2",
+     "words": 130
+    },
+    {
+     "heading": "Who each one represents",
+     "level": "h2",
+     "words": 209
+    },
+    {
+     "heading": "What each can legally do",
+     "level": "h2",
+     "words": 206
+    },
+    {
+     "heading": "How the money actually flows",
+     "level": "h2",
+     "words": 281
+    },
+    {
+     "heading": "Dispatcher vs broker vs factoring: side by side",
+     "level": "h2",
+     "words": 124
+    },
+    {
+     "heading": "Where factoring fits \u2014 and when to skip it",
+     "level": "h2",
+     "words": 176
+    },
+    {
+     "heading": "Which do you actually need?",
+     "level": "h2",
+     "words": 81
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 93
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 271
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 206
+    }
+   ],
+   "word_count": 1901,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "free Load Score tool",
+     "href": "load-score.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "blog.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [
+    "https://safer.fmcsa.dot.gov/",
+    "https://www.fmcsa.dot.gov/registration/get-mc-number-authority-operate"
+   ],
+   "internal_link_count": 34,
+   "image_count": 0,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.108,
+    "most_similar_page": "box-truck-dispatch.html",
+    "level": "low"
+   },
+   "inbound_link_count": 3,
+   "inbound_links": [
+    "blog.html",
+    "index.html",
+    "owner-operator-dispatch-service-guide.html"
+   ]
+  }
+ }
+}

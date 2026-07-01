@@ -1,0 +1,17 @@
+-- detention_exceptions_matrix.sql — Increments 52–53 (detention automation + Exception Center) matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-01 → RESULT: DETENTION/EXCEPTION MATRIX: PASS (12 checks)
+-- Checks:
+--  D1  carrier records arrival at pickup on OWN trip (cc_trip_arrive)
+--  D2  duplicate arrival for the same stop rejected (unique trip+stop)
+--  D3  another carrier CANNOT arrive/depart on a trip it does not own (self-scope)
+--  D4  departure measures dwell from recorded stamps; detention 0 within free time
+--  D5a stop still on site past free window → cc_detention_scan logs ONE 'detention' exception
+--  D5b exception linked back to the dwell row (dedupe column)
+--  D5c DRAFT accessorial created: billable=false, note contains 'DRAFT'+'ASSUMPTION' ($/hr labeled)
+--  D5d re-scan detects 0 (dedupe holds — no duplicate exceptions/drafts)
+--  D6a cc_exception_center (staff) shows the detention row incl. on_site context
+--  D6b carrier denied on cc_detention_scan AND cc_exception_center
+--  D7  staff resolves via existing cc_resolve_exception → status 'resolved'
+--  D8  anon has NO execute on cc_trip_arrive / cc_trip_depart / cc_detention_scan / cc_exception_center
+-- Test rows are cleaned up at the end. JWT simulation via set_config('request.jwt.claims', ...);
+-- fixture backdating (arrival -90 min) done under postgres role, RPC calls under authenticated.

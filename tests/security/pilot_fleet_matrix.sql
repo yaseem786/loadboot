@@ -1,0 +1,17 @@
+-- pilot_fleet_matrix.sql — AI Load Pilot ADVANCED (fleet level) security/behavior matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-01 → RESULT: PILOT FLEET MATRIX: PASS (10 checks)
+-- Checks:
+--  P1  staff cc_dispatch_plan assigns >=1 load
+--  P2a plan NEVER contains the ineligible Persona Carrier Co (compliance incomplete)
+--  P2b every plan entry carries explanation[] (>=2 lines) + push_score
+--  P3  no load appears twice in the plan
+--  P4  loads_considered == assigned + unassigned (honest accounting)
+--  B1  staff cc_carrier_best_loads(Ironhide): loads ranked; score == SUM of itemized factor points;
+--      last_location_basis references real GPS (never invented)
+--  B2  results sorted by score desc
+--  B3  carrier SELF-SCOPE: Ironhide user requesting Golden's ranking still receives IRONHIDE only
+--  B4  broker denied on cc_carrier_best_loads
+--  B5  carrier denied on cc_dispatch_plan (staff dispatch.manage only)
+--  B6  anon has NO execute on either function (anon SECURITY DEFINER surface stays 5)
+-- The executed block simulates JWTs via set_config('request.jwt.claims', ...) exactly as in
+-- tests/security/load_advisor_matrix.sql; see that file for the harness pattern.

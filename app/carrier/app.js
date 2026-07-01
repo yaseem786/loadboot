@@ -14,7 +14,7 @@ import {
   carrierUploadDocument, carrierListDocuments,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
-  pocketAvailableLoads, pocketBookLoad,
+  pocketAvailableLoads, pocketBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
   pocketNotifications, pocketMarkNotificationRead,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
@@ -286,8 +286,28 @@ async function appView(user) {
   async function loadLoads() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading available loads…'));
     let rows; try { rows = await pocketAvailableLoads(30); } catch (e) { rows = []; }
-    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))); return; }
-    mount(content, h('div', { class: 'cp-loadgrid' }, rows.map(l => {
+    // AI Pilot — "best for you": same open loads, ranked for THIS carrier by rate vs your stated
+    // target, deadhead from your real last GPS, and your saved preferences. Every score is itemized.
+    let best = null; try { best = await carrierBestLoads(null, 3); } catch (e) { best = null; }
+    const bestCard = (best && best.loads && best.loads.length) ? h('section', { class: 'cp-card', style: 'margin-bottom:12px' }, [
+      h('div', { class: 'cp-row-s', style: 'display:flex;justify-content:space-between;align-items:center' }, [
+        h('b', null, '⭐ Best for you (AI Pilot)'),
+        h('span', { class: 'cp-muted', style: 'font-size:12px' }, best.last_location_basis || ''),
+      ]),
+      h('div', null, best.loads.map((b, i) => h('div', { style: 'padding:8px 0;border-top:1px solid var(--lb-border, #e2e8f0)' }, [
+        h('div', { style: 'display:flex;justify-content:space-between' }, [
+          h('b', null, (i === 0 ? '1. ' : (i + 1) + '. ') + b.lane),
+          h('b', null, b.score + '/100'),
+        ]),
+        h('div', { class: 'cp-muted', style: 'font-size:12px' },
+          [(b.rate != null ? '$' + Number(b.rate).toLocaleString() : null), (b.loaded_rpm != null ? '$' + b.loaded_rpm + '/mi' : null),
+           (b.deadhead_miles != null ? '~' + b.deadhead_miles + ' mi deadhead (est.)' : 'deadhead unknown'),
+           (b.factors && b.factors[0] ? b.factors[0].detail : null)].filter(Boolean).join(' · ')),
+      ]))),
+      h('div', { class: 'cp-muted', style: 'font-size:11px;margin-top:6px' }, 'Ranked by your stated minimum rate, real last GPS location and saved preferences — set them under Account. Estimates are labeled; nothing is invented.'),
+    ]) : null;
+    if (!rows || !rows.length) { mount(content, h('div', null, [bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); return; }
+    mount(content, h('div', null, [bestCard, h('div', { class: 'cp-loadgrid' }, rows.map(l => {
       const rpm = l.rpm ? '$' + Number(l.rpm).toFixed(2) + '/mi' : '';
       const bookWrap = h('div');
       const book = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
@@ -311,7 +331,7 @@ async function appView(user) {
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
         bookWrap,
       ].filter(Boolean));
-    })));
+    }))].filter(Boolean)));
   }
 
   /* ----- My trips ----- */
@@ -345,6 +365,24 @@ async function appView(user) {
       } }, label);
       const start = (t.status === 'dispatched') ? advBtn('▶ Start trip', 'in_transit') : null;
       const deliver = (t.status === 'dispatched' || t.status === 'in_transit') ? advBtn('✓ Mark delivered', 'delivered') : null;
+      // Detention protection: record REAL arrive/depart times at each stop. If a facility holds you past
+      // the free window, dispatch sees it automatically and a detention draft is created for review.
+      const dwellW = h('div');
+      const dwell = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+        if (dwellW.firstChild) { dwellW.innerHTML = ''; return; }
+        const mk = (label, fn) => h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          ev.currentTarget.disabled = true;
+          try { const r = await fn(); ev.currentTarget.textContent = '✓'; if (r && r.detention_minutes > 0) alert('Detention recorded: ' + r.detention_minutes + ' min past free time. Dispatch has been notified.'); }
+          catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not record.'); }
+        } }, label);
+        dwellW.appendChild(h('div', { class: 'cp-inlineform' }, [
+          mk('At pickup', () => tripArrive(t.id, 'pickup')),
+          mk('Left pickup', () => tripDepart(t.id, 'pickup')),
+          mk('At delivery', () => tripArrive(t.id, 'delivery')),
+          mk('Left delivery', () => tripDepart(t.id, 'delivery')),
+        ]));
+        dwellW.appendChild(h('div', { class: 'cp-row-s' }, 'Times are recorded when you tap — this is what protects your detention pay.'));
+      } }, '⏱ Arrive / depart') : null;
       const history = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         const host = h('div', { class: 'cp-muted' }, 'Loading…');
         openModal('Trip history', [host]);
@@ -358,7 +396,7 @@ async function appView(user) {
       } }, '🕑 History');
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
-        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, issue, pod, assign, history].filter(Boolean)), fw, podW,
+        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, dwell, issue, pod, assign, history].filter(Boolean)), fw, podW, dwellW,
       ].filter(Boolean));
     })]));
 
@@ -725,6 +763,31 @@ async function appView(user) {
       const unsubRow = (() => { const t = h('button', { class: 'cp-chip2' + (state.unsubscribed_all ? ' on' : ''), onClick: async () => { state.unsubscribed_all = !state.unsubscribed_all; t.classList.toggle('on'); t.textContent = state.unsubscribed_all ? 'Unsubscribed' : 'Subscribed'; await save(); } }, state.unsubscribed_all ? 'Unsubscribed' : 'Subscribed'); return h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Unsubscribe from all marketing'), h('div', { class: 'cp-row-s' }, 'Operational, compliance & finance messages still reach you')]), t]); })();
       mount(prefsCard, [cardHead('Communication preferences'), ...PREFS.map(([k, l, s]) => toggleRow(k, l, s)), unsubRow]);
     })();
+    // Dispatch preferences (AI Pilot) — what the carrier wants: min RPM, equipment, lanes, max deadhead.
+    // These feed the AI Load Pilot's "Best for you" ranking and staff push recommendations.
+    const dispCard = h('div', { class: 'cp-card' }, [cardHead('Dispatch preferences (AI Pilot)'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let dp = {}; try { dp = await getDispatchPrefs(); } catch (_) { dp = {}; }
+      const fld = (label, val, ph) => { const i = h('input', { class: 'cp-input', placeholder: ph || '' }); i.value = val == null ? '' : String(val); return { row: h('label', { class: 'cp-field' }, [h('span', null, label), i]), i }; };
+      const f1 = fld('Minimum rate ($/mi)', dp.min_rpm, 'e.g. 2.25');
+      const f2 = fld('Preferred equipment (comma separated)', (dp.preferred_equipment || []).join(', '), 'Dry Van, Reefer');
+      const f3 = fld('Preferred lanes / regions (comma separated)', (dp.preferred_lanes || []).join(', '), 'TX, Atlanta, Midwest');
+      const f4 = fld('Max deadhead (miles)', dp.max_deadhead_miles, 'e.g. 250');
+      const f5 = fld('Home base', dp.home_base, 'Dallas, TX');
+      const saveBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+        try {
+          await setDispatchPrefs({ min_rpm: f1.i.value || null,
+            preferred_equipment: f2.i.value.split(',').map(x => x.trim()).filter(Boolean),
+            preferred_lanes: f3.i.value.split(',').map(x => x.trim()).filter(Boolean),
+            max_deadhead_miles: f4.i.value || null, home_base: f5.i.value || null });
+          ev.currentTarget.textContent = 'Saved ✓'; setTimeout(() => { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save preferences'; }, 1500);
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save preferences'; alert((e && e.message) || 'Could not save.'); }
+      } }, 'Save preferences');
+      mount(dispCard, [cardHead('Dispatch preferences (AI Pilot)'),
+        h('div', { class: 'cp-muted', style: 'margin-bottom:8px' }, 'Tell us what loads you want — the AI Pilot ranks "Best for you" loads and dispatcher pushes using these.'),
+        f1.row, f2.row, f3.row, f4.row, f5.row, h('div', { style: 'margin-top:8px' }, saveBtn)]);
+    })();
     // Team card — visible to all members; management controls only render for the owner.
     const teamCard = h('div', { class: 'cp-card' }, [cardHead('Team'), h('div', { class: 'cp-muted' }, 'Loading…')]);
     (async () => {
@@ -759,6 +822,7 @@ async function appView(user) {
       h('div', { class: 'cp-card' }, [cardHead('Profile'), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
       teamCard,
       h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async () => { await signOut(); boot(); } }, 'Sign out')]),
+      dispCard,
       prefsCard,
     ]));
   }

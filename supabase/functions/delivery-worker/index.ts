@@ -8,7 +8,18 @@
 // REQUIRED OWNER ACTION to enable real delivery (assistant cannot do these — they need secrets + a deploy):
 //   1. In Supabase → Project → Edge Functions → Secrets, set:
 //        RESEND_API_KEY = <your Resend API key>
-//        RESEND_FROM    = "LoadBoot <ops@yourdomain.com>"   (a verified sender)
+//        RESEND_FROM    = "LoadBoot <hello@loadboot.com>"   (a verified sender on your verified domain)
+//
+// OFFICIAL SENDER IDENTITY (Increment 61): once RESEND_FROM is on the loadboot.com domain (meaning the owner
+// has verified the domain with the provider), the worker automatically signs each message with the identity
+// that matches its category — no per-message configuration needed:
+//        marketing / campaigns          → "LoadBoot"          <hello@loadboot.com>
+//        dispatch / loads / trips / PODs→ "LoadBoot Dispatch"  <dispatch@loadboot.com>
+//        billing / invoices / payments  → "LoadBoot Billing"   <billing@loadboot.com>
+// Reply-To always matches the category identity, so replies land in the right mailbox. Until the domain is
+// verified (RESEND_FROM not on loadboot.com), EVERY message honestly falls back to RESEND_FROM — the worker
+// never claims an unverified identity. Each identity is individually overridable via secrets:
+//        SENDER_MARKETING, SENDER_DISPATCH, SENDER_BILLING   (format: "Name <addr@domain>")
 //   2. Deploy this function (verify_jwt = false — it authenticates by the service-role key, not a user JWT).
 //   3. Schedule it every minute via pg_cron + pg_net to keep the queue draining.
 //
@@ -65,6 +76,29 @@ Deno.serve(async (_req) => {
           <span style="color:#94a3b8">You're receiving this because you or your company works with LoadBoot.</span>
         </td></tr>
       </table></td></tr></table></div>`;
+  // ---- Official sender identity (Inc 61). Identities activate ONLY when the configured RESEND_FROM is on
+  // the official domain (i.e. the owner verified loadboot.com with the provider); otherwise everything falls
+  // back to RESEND_FROM so we never send from an unverified address.
+  const domainVerified = /@loadboot\.com>?\s*$/i.test(RESEND_FROM);
+  const IDENTITIES: Record<string, { from: string; replyTo: string }> = {
+    marketing: { from: Deno.env.get("SENDER_MARKETING") || "LoadBoot <hello@loadboot.com>", replyTo: "hello@loadboot.com" },
+    dispatch: { from: Deno.env.get("SENDER_DISPATCH") || "LoadBoot Dispatch <dispatch@loadboot.com>", replyTo: "dispatch@loadboot.com" },
+    billing: { from: Deno.env.get("SENDER_BILLING") || "LoadBoot Billing <billing@loadboot.com>", replyTo: "billing@loadboot.com" },
+  };
+  const DISPATCH_RE = /(load|trip|offer|dispatch|booking|tracking|pod|detention|checkin|carrier|driver)/i;
+  const BILLING_RE = /(billing|invoice|payment|settlement|payout|statement|receipt|factoring)/i;
+  const categoryOf = (d: { source?: string; template_key?: string | null; meta?: Record<string, unknown> | null }): string => {
+    const explicit = d.meta && typeof d.meta.category === "string" ? String(d.meta.category).toLowerCase() : "";
+    if (explicit in IDENTITIES) return explicit; // explicit meta.category wins
+    const key = String(d.template_key ?? "");
+    if (BILLING_RE.test(key)) return "billing";
+    if (DISPATCH_RE.test(key)) return "dispatch";
+    if (d.source === "campaign") return "marketing";
+    return "marketing"; // default transactional identity = hello@ (general company mailbox)
+  };
+  const senderFor = (d: Parameters<typeof categoryOf>[0]): { from: string; replyTo: string | null } =>
+    domainVerified ? IDENTITIES[categoryOf(d)] : { from: RESEND_FROM, replyTo: null };
+
   let sent = 0, failed = 0;
   for (const d of claimed ?? []) {
     const subject = (d.meta && d.meta.subject) ? String(d.meta.subject) : "LoadBoot";
@@ -72,8 +106,10 @@ Deno.serve(async (_req) => {
     const html = (d.meta && d.meta.body_html) ? shell(String(d.meta.body_html), unsubUrl) : null;
     const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}`;
     try {
-      const payload: Record<string, unknown> = { from: RESEND_FROM, to: d.recipient_email, subject, text,
+      const ident = senderFor(d);
+      const payload: Record<string, unknown> = { from: ident.from, to: d.recipient_email, subject, text,
         headers: { "X-Entity-Ref-ID": d.idempotency_key, "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } };
+      if (ident.replyTo) payload.reply_to = ident.replyTo;
       if (html) payload.html = html;
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
