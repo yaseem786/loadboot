@@ -164,7 +164,7 @@ export function brandLogo(opts = {}) {
   const dark = !!opts.dark;
   // Real LoadBoot lockup image (no box). Dark surfaces get the white-"load" variant.
   const lockup = el('img', { class: 'cc-lockup', src: dark ? '/logo-full-dark.png' : '/logo-full.png',
-    alt: 'LoadBoot', style: 'height:26px;width:auto;display:block' });
+    alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' });
   const txt = el('div', { class: 'cc-brandtxt' }, [lockup,
     opts.sub ? el('small', { class: 'cc-brandsub' + (dark ? ' on-dark' : '') }, opts.sub) : '']);
   return el('div', { class: 'cc-brandrow' }, [txt]);

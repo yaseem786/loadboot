@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, toolbar, searchBox, segmented, statusPill, openDrawer, fmtDate, money, card } from '../../shared/ui/components.js';
-import { getLoadsList, getLoadDetail, createLoad, assignLoad, setLoadStatus, getCarriersDirectory } from '../../shared/api.js';
+import { getLoadsList, getLoadDetail, createLoad, createLoadSourced, assignLoad, setLoadStatus, getCarriersDirectory } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -57,31 +57,56 @@ export function renderLoads(host) {
   }
 
   function openCreate() {
-    const f = {};
+    const f = { fcfs: false, appt: false };
     const inp = (key, ph, type) => { const i = el('input', { class: 'cc-input', placeholder: ph, type: type || 'text' }); i.addEventListener('input', () => f[key] = i.value); return i; };
+    const chk = (key, label) => { const c = el('input', { type: 'checkbox' }); c.addEventListener('change', () => f[key] = c.checked); return el('label', { style: 'display:flex;align-items:center;gap:8px;font-weight:600' }, [c, label]); };
     const origin = inp('origin', 'Origin (e.g. Dallas, TX)');
     const dest = inp('destination', 'Destination (e.g. Memphis, TN)');
     const equip = inp('equipment', 'Equipment (e.g. Dry Van)');
     const rate = inp('rate', 'Rate (USD)', 'number');
     const miles = inp('miles', 'Miles', 'number');
+    const weight = inp('weight', 'Weight (e.g. 42,000 lbs)');
     const commodity = inp('commodity', 'Commodity');
+    const pickupDate = inp('pickup_date', 'Pickup date', 'date');
+    const deliveryDate = inp('delivery_date', 'Delivery date', 'date');
+    const pickupWindow = inp('pickup_window', 'Pickup window (e.g. 08:00-15:00)');
+    const deliveryWindow = inp('delivery_window', 'Delivery window');
+    const det = inp('det', 'Detention $/hr', 'number');
+    const detFree = inp('detFree', 'Free hours before detention', 'number');
+    const layover = inp('layover', 'Layover $/day', 'number');
+    const tonu = inp('tonu', 'TONU $', 'number');
+    const lumper = inp('lumper', 'Lumper policy (e.g. Reimbursed with receipt)');
+    const broker = inp('broker', 'Broker / customer name');
+    const reference = inp('reference', 'Load / reference #');
+    const requirements = inp('requirements', 'Special instructions (optional)');
+    const defaults = el('button', { class: 'lb-btn lb-btn-sm', onClick: () => { det.value = '60'; f.det = '60'; detFree.value = '2'; f.detFree = '2'; layover.value = '250'; f.layover = '250'; tonu.value = '250'; f.tonu = '250'; lumper.value = 'Reimbursed with receipt'; f.lumper = 'Reimbursed with receipt'; } }, 'Use industry-typical defaults ($60/hr after 2h - $250 layover - $250 TONU - lumper reimbursed)');
     const err = el('div', { class: 'err' });
     const submit = el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
       err.textContent = '';
       if (!f.origin || !f.destination) { err.textContent = 'Origin and destination are required.'; return; }
-      const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Posting…';
+      if (!f.det || !f.detFree || !f.layover || !f.tonu || !f.lumper) { err.textContent = 'Rate card is required - detention, free hours, layover, TONU and lumper policy (a carrier must know these before booking).'; return; }
+      if (!f.fcfs && !f.appt && !f.pickup_window) { err.textContent = 'Choose FCFS, or set an appointment, or a pickup window.'; return; }
+      const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Posting...';
       try {
-        await createLoad({ origin: f.origin, destination: f.destination, equipment: f.equipment || null,
-          rate: f.rate ? Number(f.rate) : null, miles: f.miles ? Number(f.miles) : null, commodity: f.commodity || null });
-        toast('Load posted', 'success'); drawer.close(); load();
+        await createLoadSourced({ source_type: 'staff_entered', origin: f.origin, destination: f.destination, equipment: f.equipment || null,
+          rate: f.rate || null, miles: f.miles || null, commodity: f.commodity || null, weight: f.weight || null,
+          pickup_date: f.pickup_date || null, delivery_date: f.delivery_date || null, broker: f.broker || null,
+          source_reference: f.reference || null, requirements: f.requirements || null,
+          field_meta: { pickup_window: f.pickup_window || null, delivery_window: f.delivery_window || null, appointment_required: !!f.appt,
+            accessorials: { detention_per_hr: f.det, detention_free_hours: f.detFree, layover_per_day: f.layover, tonu: f.tonu, lumper_policy: f.lumper, fcfs: !!f.fcfs } } });
+        toast('Load posted - decision-complete', 'success'); drawer.close(); load();
       } catch (e) { err.textContent = humanizeError(e); btn.disabled = false; btn.textContent = 'Post load'; }
     } }, 'Post load');
     const drawer = openDrawer('Post a load', el('div', { class: 'cc-form' }, [
       el('label', null, 'Lane'), origin, dest,
-      el('label', null, 'Details'), equip,
-      el('div', { class: 'cc-form-2' }, [rate, miles]), commodity,
+      el('label', null, 'Freight'), equip, el('div', { class: 'cc-form-2' }, [rate, miles]), el('div', { class: 'cc-form-2' }, [weight, commodity]),
+      el('label', null, 'Schedule'), el('div', { class: 'cc-form-2' }, [pickupDate, deliveryDate]), el('div', { class: 'cc-form-2' }, [pickupWindow, deliveryWindow]),
+      el('div', { style: 'display:flex;gap:20px;margin:6px 0' }, [chk('fcfs', 'First-come / FCFS'), chk('appt', 'Appointment required')]),
+      el('label', null, 'Rate card - a carrier must see this to decide'), defaults,
+      el('div', { class: 'cc-form-2' }, [det, detFree]), el('div', { class: 'cc-form-2' }, [layover, tonu]), lumper,
+      el('label', null, 'Broker & notes'), el('div', { class: 'cc-form-2' }, [broker, reference]), requirements,
       err, submit,
-    ]), { subtitle: 'New available load' });
+    ]), { subtitle: 'New available load - decision-complete' });
   }
 
   async function openLoad(id) {

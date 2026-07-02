@@ -62,4 +62,39 @@ export function printDocument(doc) {
   if (w) { w.document.write(html); w.document.close(); }
 }
 
+// Open a branded printable window (Save as PDF via browser) from titled sections.
+// sections: [{ h?:'Heading', rows?:[[k,v],...], note?:'text' }]
+function openPrintable(title, sub, sections) {
+  const body = (sections || []).map(s => {
+    if (s.note != null) return `<div class="terms">${s.note}</div>`;
+    const rows = (s.rows || []).map(([k, v]) => row(k, v)).join('');
+    return `${s.h ? '<h1>' + s.h + '</h1>' : ''}<table>${rows}</table>`;
+  }).join('');
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(shell(title, sub, body)); w.document.close(); }
+}
+export { openPrintable };
+
+// Beautiful, downloadable Dispatch Sheet (from cc_dispatch_sheet payload).
+export function printDispatchSheet(d) {
+  d = d || {};
+  const pk = d.pickup || {}, dl = d.delivery || {}, dr = d.driver || {}, det = d.detention || {};
+  openPrintable('Dispatch Sheet', 'DISPATCH SHEET', [
+    { rows: [
+      ['Load', d.load_number], ['Issued by', d.issued_by || 'LoadBoot Dispatch'],
+      ['Agreed rate', '<span class="total">' + money(d.agreed_rate) + '</span>'],
+      ['Loaded miles', d.loaded_miles], ['RPM', d.loaded_rpm ? '$' + d.loaded_rpm : '—'], ['Deadhead', d.deadhead_note],
+    ] },
+    { h: 'Pickup', rows: [['Address', pk.address], ['Date', pk.date], ['Window', pk.window],
+      ['Appointment', pk.appointment_required ? 'Required' : 'FCFS / window'], ['Reference', pk.reference]] },
+    { h: 'Delivery', rows: [['Address', dl.address], ['Date', dl.date], ['Window', dl.window]] },
+    { h: 'Freight', rows: [['Commodity', d.commodity], ['Weight', d.weight], ['Equipment', d.equipment]] },
+    { h: 'Truck & driver', rows: [['Driver', dr.name], ['Phone', dr.phone], ['Truck #', d.truck_no], ['Trailer #', d.trailer_no]] },
+    { h: 'Accessorial rates', rows: [
+      ['Detention', (det.rate_per_hr ? '$' + det.rate_per_hr + '/hr' : '—') + (det.free_hours ? ' after ' + det.free_hours + 'h free' : '')],
+      ['Layover', d.layover ? '$' + d.layover + '/day' : '—'], ['TONU', d.tonu ? '$' + d.tonu : '—'], ['Lumper', d.lumper_process]] },
+    { note: (d.tracking_instructions || '') + '<br>' + (d.pod_instructions || '') + (d.special_instructions ? '<br><br><b>Special:</b> ' + d.special_instructions : '') },
+  ]);
+}
+
 export default printDocument;

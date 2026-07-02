@@ -26,6 +26,7 @@ import {
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
+import { printDispatchSheet, openPrintable } from '../shared/ui/printDoc.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 
@@ -146,9 +147,7 @@ function authScreen() {
   };
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
-      ])]),
+      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
     ]),
@@ -274,9 +273,7 @@ async function appView(user) {
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, [brandMark(true), h('div', null, [
-        h('div', { class: 'cp-brand' }, [document.createTextNode('load'), h('b', null, 'boot')]),
-      ])]),
+      h('div', { class: 'cp-brandrow' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:32px;width:auto;display:block' })]),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
@@ -300,7 +297,7 @@ async function appView(user) {
               h('button', { class: 'cp-menu-item', onClick: () => { menu.hidden = true; go('documents'); } }, [icon('docs', 16), h('span', null, 'Documents')]),
               h('button', { class: 'cp-menu-item cp-menu-out', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.lastChild.textContent = 'Signing out…'; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
             ]);
-            const btn = h('button', { class: 'cp-avatar', 'aria-haspopup': 'menu', 'aria-label': 'Account menu', title: (user && user.email) || '', onClick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; }, html: '<img src="/icon-512.png" width="38" height="38" alt="Account menu" style="border-radius:50%;display:block">' });
+            const btn = h('button', { class: 'cp-avatar', 'aria-haspopup': 'menu', 'aria-label': 'Account menu', title: (user && user.email) || '', onClick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; }, html: '<span style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0883F7,#1d4ed8);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px">' + (((user && user.email) || '?').trim().charAt(0).toUpperCase()) + '</span>' });
             document.addEventListener('click', () => { menu.hidden = true; });
             return h('div', { class: 'cp-menuwrap' }, [btn, menu]);
           })(),
@@ -314,7 +311,7 @@ async function appView(user) {
   root.setAttribute('aria-busy', 'false');
 
   function go(id) {
-    tab = id; if (location.hash !== '#' + id) location.hash = id;
+    tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);  // replace, not push — keeps Back working / no hash pile-up
     Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => a.classList.toggle('active', k === tab)));
     const item = NAV.find(n => n[0] === tab);
     titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding' }[tab] || 'Dashboard');
@@ -337,7 +334,7 @@ async function appView(user) {
 
   /* ----- on-open prompts: notifications + location ----- */
   function openPrompts() {
-    const items = [];
+    promptHost.innerHTML = '';   // clear first — otherwise prompts stack on every dashboard visit
     if (pushSupported()) {
       isPushEnabled().then(on => {
         if (on) return;
@@ -614,9 +611,34 @@ async function appView(user) {
       };
       const jsonCard = (obj, skip) => h('div', null, Object.entries(obj || {}).filter(([k2]) => !(skip || []).includes(k2)).map(([k2, v2]) =>
         h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t', style: 'text-transform:capitalize;min-width:140px' }, k2.replace(/_/g, ' ')), h('div', { class: 'cp-row-s', style: 'text-align:right' }, jr(v2))])));
+      // D5 — properly formatted dispatch sheet (grouped) instead of a raw key/value dump.
+      const dsRow = (label, val) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t', style: 'min-width:132px' }, label), h('div', { class: 'cp-row-s', style: 'text-align:right' }, (val === null || val === undefined || val === '') ? '—' : String(val))]);
+      const dsSection = (title, rows) => h('div', { style: 'margin-top:14px' }, [h('div', { style: 'text-transform:uppercase;font-size:.7rem;letter-spacing:.09em;color:#64748b;font-weight:700;margin-bottom:4px' }, title)].concat(rows.filter(Boolean)));
+      const dispatchSheetCard = (d) => {
+        d = d || {}; const pk = d.pickup || {}, dl = d.delivery || {}, dr = d.driver || {}, det = d.detention || {};
+        return h('div', null, [
+          h('div', { style: 'background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;border-radius:14px;padding:16px 18px' }, [
+            h('div', { style: 'font-size:.7rem;letter-spacing:.11em;text-transform:uppercase;opacity:.7' }, (d.issued_by || 'LoadBoot Dispatch') + ' · dispatch sheet'),
+            h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:5px' }, [
+              h('div', { style: 'font-size:1.7rem;font-weight:800' }, money(d.agreed_rate || 0)),
+              h('div', { style: 'text-align:right;font-size:.85rem;opacity:.9' }, [h('div', null, (d.loaded_miles ? String(d.loaded_miles) + ' mi loaded' : '— mi')), d.loaded_rpm ? h('div', null, '$' + d.loaded_rpm + '/mi') : '']),
+            ]),
+            h('div', { style: 'font-size:.75rem;opacity:.7;margin-top:4px' }, 'Deadhead: ' + (d.deadhead_note || '—') + '  ·  Load ' + (d.load_number ? String(d.load_number).slice(0, 8) : '—')),
+          ]),
+          dsSection('Pickup', [dsRow('Address', pk.address), dsRow('Date', pk.date), dsRow('Window', pk.window), dsRow('Appointment', pk.appointment_required ? 'Required' : 'FCFS / window'), dsRow('Reference', pk.reference)]),
+          dsSection('Delivery', [dsRow('Address', dl.address), dsRow('Date', dl.date), dsRow('Window', dl.window)]),
+          dsSection('Freight', [dsRow('Commodity', d.commodity), dsRow('Weight', d.weight), dsRow('Equipment', d.equipment)]),
+          dsSection('Truck & driver', [dsRow('Driver', dr.name), dsRow('Phone', dr.phone), dsRow('Truck #', d.truck_no), dsRow('Trailer #', d.trailer_no)]),
+          dsSection('Accessorial rates', [dsRow('Detention', (det.rate_per_hr ? '$' + det.rate_per_hr + '/hr' : '—') + (det.free_hours ? ' after ' + det.free_hours + 'h free' : '')), dsRow('How', det.how), dsRow('Layover', d.layover ? '$' + d.layover + '/day' : '—'), dsRow('TONU', d.tonu ? '$' + d.tonu : '—'), dsRow('Lumper', d.lumper_process)]),
+          dsSection('Documents to collect', (d.documents_to_collect || []).map(x => h('div', { class: 'cp-row-s', style: 'padding:2px 0' }, '• ' + x))),
+          dsSection('Tracking & POD', [h('div', { class: 'cp-row-s' }, d.tracking_instructions || ''), h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, d.pod_instructions || '')]),
+          d.special_instructions ? dsSection('Special instructions', [h('div', { class: 'cp-row-s' }, d.special_instructions)]) : null,
+          h('div', { style: 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap' }, [d.rate_confirmation_attached ? h('span', { class: 'cp-pill green' }, 'RC attached') : h('span', { class: 'cp-pill gray' }, 'No RC'), d.rc_acknowledged ? h('span', { class: 'cp-pill green' }, 'RC acknowledged') : '']),
+        ].filter(Boolean));
+      };
       const sheetBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         const host = h('div', { class: 'cp-muted' }, 'Loading…'); openModal('Dispatch sheet', [host]);
-        try { const d0 = await dispatchSheet(t.id); mount(host, jsonCard(d0, ['basis'])); } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); }
+        try { const d0 = await dispatchSheet(t.id); mount(host, h('div', null, [h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:10px;background:#0883F7', onClick: () => printDispatchSheet(d0) }, '⬇ Download PDF'), dispatchSheetCard(d0)])); } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); }
       } }, '📋 Dispatch sheet');
       const rcBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         const host = h('div', { class: 'cp-muted' }, 'Loading…'); openModal('Rate confirmation (immutable)', [host]);
@@ -626,7 +648,7 @@ async function appView(user) {
             ev.currentTarget.disabled = true;
             try { await acknowledgeRC(t.id); ev.currentTarget.textContent = 'Acknowledged ✓'; } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); }
           } }, 'Acknowledge RC');
-          mount(host, h('div', null, [jsonCard(d0.rc, []), h('div', { style: 'margin-top:10px' }, ackB), h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, d0.note || '')]));
+          mount(host, h('div', null, [h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:10px;background:#0883F7', onClick: () => openPrintable('Rate Confirmation', 'RATE CONFIRMATION', [{ rows: Object.entries(d0.rc || {}).map(([k, v]) => [k.replace(/_/g, ' '), jr(v)]) }, { note: d0.note || '' }]) }, '⬇ Download PDF'), jsonCard(d0.rc, []), h('div', { style: 'margin-top:10px' }, ackB), h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, d0.note || '')]));
         } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); }
       } }, '🧾 Rate con');
       const packBtn = (t.status === 'delivered' || t.status === 'invoiced') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
@@ -634,6 +656,7 @@ async function appView(user) {
         try {
           const d0 = await deliveryDocPack(t.id);
           mount(host, h('div', null, [
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:10px;background:#0883F7', onClick: () => openPrintable('Delivery Documents', 'DELIVERY PACK', [{ h: 'Required', rows: Object.entries(d0.required || {}).map(([k, v]) => [k.replace(/_/g, ' '), jr(v)]) }, { h: 'Conditional', rows: Object.entries(d0.conditional || {}).map(([k, v]) => [k.replace(/_/g, ' '), jr(v)]) }, { note: d0.retention_note || '' }]) }, '⬇ Download PDF'),
             h('div', { class: 'cp-row' }, [h('b', null, 'Invoice packet'), h('span', { class: 'cp-pill ' + ((d0.packet_ready) ? 'green' : 'amber') }, d0.packet_ready ? 'READY' : 'INCOMPLETE')]),
             h('h4', { style: 'margin:10px 0 4px' }, 'Required'), jsonCard(d0.required, []),
             h('h4', { style: 'margin:10px 0 4px' }, 'Conditional'), jsonCard(d0.conditional, []),

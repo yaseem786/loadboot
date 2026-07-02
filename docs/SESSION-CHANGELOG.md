@@ -1756,3 +1756,100 @@ Owner: CC splash logo broken ("nazar hi nahi araha") + "different colours differ
     change after confirming those headers are light, not dark).
 - brandMark(dark) helper added to carrier/partner/developer; picks icon-512 (navy) or logo-icon-dark (white).
 - Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL / 3 warn.
+
+## D5 DISPATCH SHEET — formatted card (was raw jsonCard)
+cc_dispatch_sheet backend already shipped (STABLE SECURITY DEFINER, self-scoped; assembles live from
+trip+load+tender+immutable RC). Replaced the generic key/value renderer with a proper grouped dispatch
+sheet in the carrier portal: navy money hero (agreed rate / loaded mi / RPM / deadhead) + Pickup, Delivery,
+Freight, Truck & driver, Accessorial rates (detention/how/layover/TONU/lumper), Documents-to-collect,
+Tracking & POD, Special instructions, and RC-attached/acknowledged pills. Frontend-only; no DB change.
+D6 prebook gate, D8 delivery pack, RC screens already wired (generic renderer). Gates: BUILD/ESM/AUDIT all pass.
+
+## CC DEEPENING (start) — Scorecard rebuilt + Analytics GA-style area trend
+- Carrier Scorecard drawer rebuilt: animated SVG radial gauge (score/100, grade colour), metric chips
+  (delivered/on-time/offers/exceptions/cancelled), animated per-factor bars vs weight, and a plain-language
+  PURPOSE + "how to improve" for every factor. All from real cc_carrier_scorecard data. (File rewritten via
+  sandbox python after a file-tool truncation on a long template literal — lesson reconfirmed.)
+- Analytics Control Center: replaced the tiny bar sparkline with a real GA-style gradient AREA+line trend
+  (from cc_web_overview.daily), with start/peak/end labels. The view already renders real first-party data
+  (live active users, live pages, live visitor feed w/ device+source+pages+converted, sessions/pageviews/
+  conversions/forms, source breakdown, top pages, referrers, AI referrals) — no fabricated data.
+- Confirmed real data shapes (cc_web_live / cc_web_overview) support a full GA-style realtime rebuild.
+  GAP: city/country geo is not captured first-party (only a language proxy) — that needs the real GA
+  property wired into the Google Analytics tab, or IP-geo capture added (DB change). Flagged, not faked.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## LOGO — SETTLED / LOCKED (stop changing it)
+Every brand surface now renders the SAME full lockup image, correct light/dark variant per background:
+- Site header = logo-full.png (light); footer/splash = logo-full-dark.png (dark).
+- Carrier auth = light / sidebar = dark. Partner + Developer auth+header = light. CC login = light / sidebar = dark.
+- Pocket login + top bar = dark lockup (FIXED — was the last holdout using the bare icon + orange "boot").
+- Avatars intentionally keep icon-512 (the mark in a circle) — that is not the brand lockup.
+- Dead code note: LOGO_SVG + brandMark() remain defined in carrier/partner/developer but are NO LONGER CALLED
+  (harmless; left in place to avoid unnecessary edits). CANON: use the full lockup image; do not reintroduce
+  icon+separate-text brand rows.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## DASHBOARD FLOOD FIX + AVATAR + LOGO SIZE/QUALITY
+- BUG FIX: carrier dashboard was stacking the "Turn on notifications" + "Share your location" prompt cards
+  on every visit (openPrompts appended to a persistent promptHost without clearing). Now clears first —
+  max one of each. (File-tool truncated app.js mid-fix; recovered the tail from git HEAD via python — the
+  large-file Edit hazard again; big JS edits must go through python.)
+- AVATAR: account-menu avatar no longer shows the LoadBoot logo as the user's picture — defaults to the
+  user's initial in a blue gradient circle. Full "upload your own profile picture" = task #31.
+- LOGO SIZE + QUALITY: regenerated logo-full.png / logo-full-dark.png at hi-res (2759px, ~250KB) from the
+  6250px original; bumped display sizes everywhere (header 34->40, portal auth 30->34, sidebars 28->32,
+  brandLogo 30->34, pocket 28->32/24->28, CC splash logo 70->84, site splash 60->68); CC splash base64
+  refreshed at 440px for crisp big display. Logo weight stays reasonable (cached, non-blocking).
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## LOGIN BACK-BUTTON TRAP — FIXED
+Root cause: the carrier app navigated tabs by setting location.hash (go(), line ~313), which PUSHES a
+history entry per tab. After sign-out (location.reload → login), every browser Back press just walked
+back through the old #dashboard/#loads/#trips entries — all of which now render the login page — so Back
+looked dead. FIX: go() now uses history.replaceState (replace, not push) for tab changes, so internal
+navigation no longer piles up history and Back leaves the portal normally. (requireSession's location.
+replace was dead code; the real culprit was the hash router.) Gates: BUILD/ESM/AUDIT all pass.
+
+## DOWNLOADABLE PDFs (start) — Dispatch Sheet
+Added printDoc.js helpers: openPrintable(title,sub,sections) (generic branded print-to-PDF window) +
+printDispatchSheet(d) (beautiful grouped dispatch sheet: money summary, pickup, delivery, freight,
+truck & driver, accessorial rates, tracking/POD/special notes). Wired a "⬇ Download PDF" button into the
+carrier trip Dispatch-sheet modal. Same openPrintable pattern now available for Rate con, Delivery docs,
+POD and History (next). Gates: BUILD OK, ESM ALL PASS (93), IMPORT PASS, GRAND AUDIT 0 FAIL.
+
+## DOWNLOADABLE PDFs — Dispatch Sheet + Rate Con + Delivery Docs (done)
+Wired "⬇ Download PDF" into all three carrier trip-document modals via openPrintable/printDispatchSheet
+(branded LoadBoot print-to-PDF window). POD is already a downloadable uploaded file; History is a log.
+GA-geo note: the "Active users by Country" world map the owner wants needs the REAL GA property (GA Data
+API) — first-party analytics has no country (language proxy only). Tracked in #28; needs GA API access.
+Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## ANALYTICS SUB-TABS (#25 done) + GA API setup path
+- CC sidebar: "Analytics Control Center" is now a collapsible parent with Analytics + Google Analytics as
+  indented sub-tabs (chevron rotates; auto-expands when a child route is active). shell.js NAV gained
+  children[] support; FLAT flattens children so routing/active-state/badges keep working.
+- GA API (owner setup required to unlock the real country/geo map): create a Google Cloud service account,
+  enable the Google Analytics Data API, add the service-account email as a Viewer on GA4 property
+  a288607433p543469099, download the JSON key. Then a Supabase edge function calls runReport (country,
+  pages, sessions) and the CC Google Analytics tab renders it. Cannot fabricate geo — needs the credential.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## GA4 CONNECTED (owner set secrets) + clickable drill-down
+- GA4 integration went LIVE: owner set GOOGLE_SA_KEY + GA4_PROPERTY_ID (543469099) secrets on prod; the
+  existing ga4-insights function + Google Analytics tab now show real data (top pages, devices, countries,
+  source/medium, campaigns, events, realtime active users). (Redundant ga-analytics fn deployed earlier is
+  inert — can be deleted.)
+- googleData.js gaTable: every row is now clickable → detail drawer (all column values + share-of-total %
+  + rank). Applies to all GA4 and GSC tables. Export (CSV/Excel/PDF) buttons stopPropagation so they don't
+  trigger the row drawer. Real GA data only.
+- AI-referrals section is real first-party (empty until AI-referral traffic). GSC still needs its own connect.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## POST-A-LOAD FORM — full decision-complete fields (#37 done)
+CC Loads "Post a load" drawer rebuilt: Lane, Freight (equipment/rate/miles/weight/commodity), Schedule
+(pickup+delivery dates & windows, FCFS/appointment toggles), Rate card (detention $/hr + free hours,
+layover, TONU, lumper policy, with "industry-typical defaults" button), Broker & reference, special
+instructions. Posts via cc_create_load_sourced (source_type=staff_entered) which ENFORCES the rate card +
+FCFS/appointment/window server-side — a load cannot post without what a carrier needs to decide.
+Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.

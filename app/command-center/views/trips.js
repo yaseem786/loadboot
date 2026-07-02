@@ -29,10 +29,10 @@ export function renderTrips(host) {
     let o; try { o = await dispatchOverview(); } catch (e) { mount(kpiHost, ''); return; }
     const n = (k) => Number((o && o[k]) || 0);
     mount(kpiHost, el('div', { class: 'cc-kpi-grid' }, [
-      statCard({ icon: 'truck', label: 'Active trips', value: String(n('active_trips')), sub: n('in_transit') + ' in transit', accent: 'blue' }),
-      statCard({ icon: 'grid', label: 'Awaiting dispatch', value: String(n('awaiting_dispatch')), sub: 'booked, no trip', accent: 'amber' }),
-      statCard({ icon: 'check', label: 'Delivered', value: String(n('delivered')), sub: 'completed', accent: 'green' }),
-      statCard({ icon: 'doc', label: 'Needs invoice', value: String(n('needs_invoice')), sub: 'POD + billing', accent: n('needs_invoice') > 0 ? 'violet' : 'green' }),
+      statCard({ icon: 'truck', label: 'Active trips', value: String(n('active_trips')), sub: n('in_transit') + ' in transit', accent: 'blue', onClick: () => { state.status = 'in_transit'; loadList(); } }),
+      statCard({ icon: 'grid', label: 'Awaiting dispatch', value: String(n('awaiting_dispatch')), sub: 'booked, no trip', accent: 'amber', onClick: () => { state.status = 'planned'; loadList(); } }),
+      statCard({ icon: 'check', label: 'Delivered', value: String(n('delivered')), sub: 'completed', accent: 'green', onClick: () => { state.status = 'delivered'; loadList(); } }),
+      statCard({ icon: 'doc', label: 'Needs invoice', value: String(n('needs_invoice')), sub: 'POD + billing', accent: n('needs_invoice') > 0 ? 'violet' : 'green', onClick: () => { state.status = 'delivered'; loadList(); } }),
     ]));
   }
 

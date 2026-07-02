@@ -12,3 +12,8 @@ loadboot-phase2a-v*.zip
 
 # Local-only secret (copy into Supabase, then delete). Never commit.
 VAPID_PRIVATE_KEY.local.txt
+
+# GA service-account private key — NEVER commit
+ga-service-account.json
+*service-account*.json
+*.ga-key.json

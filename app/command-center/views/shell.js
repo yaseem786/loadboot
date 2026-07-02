@@ -18,9 +18,10 @@ const NAV = [
     { path: '/radar', label: 'Ops Radar', icon: 'bell', perm: null },
     { path: '/management', label: 'Management', icon: 'grid', perm: null },
     { path: '/bi', label: 'Business Intelligence', icon: 'trend', perm: 'any:analytics.view,reports.view' },
-    { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
-    { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics' },
-    { path: '/google', label: 'Google Analytics', icon: 'trend', perm: 'analytics.view', flag: 'googleData' },
+    { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics', children: [
+      { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
+      { path: '/google', label: 'Google Analytics', icon: 'trend', perm: 'analytics.view', flag: 'googleData' },
+    ] },
   ]},
   { group: 'Operations', items: [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
@@ -97,7 +98,7 @@ const NAV = [
   ]},
 ];
 
-const FLAT = NAV.flatMap(g => g.items);
+const FLAT = NAV.flatMap(g => g.items.flatMap(it => it.children ? [it, ...it.children] : [it]));
 
 function permVisible(item) {
   if (!item.perm) return true;
@@ -137,6 +138,7 @@ export function renderShell(root, user, flags) {
   const content = el('div', { class: 'cc-content', id: 'cc-content' });
   const linkEls = {};
   const badgeEls = {};
+  const childParent = {};
 
   function visible(item) {
     if (item.flag && !flags[item.flag]) return false;
@@ -144,16 +146,31 @@ export function renderShell(root, user, flags) {
   }
 
   const groups = NAV.map(g => {
-    const items = g.items.map(item => {
+    const makeLink = (item, isSub) => {
       const badge = el('span', { class: 'cc-badge-count', hidden: true });
       badgeEls[item.path] = item.badge ? badge : null;
-      const a = el('a', { href: '#' + item.path, dataset: { path: item.path }, hidden: !visible(item) },
+      const a = el('a', { href: '#' + item.path, dataset: { path: item.path }, hidden: !visible(item), class: isSub ? 'cc-nav-sub-link' : '' },
         [icon(item.icon, 18), el('span', null, item.label), item.badge ? badge : '']);
       linkEls[item.path] = a;
       return a;
+    };
+    const items = [];
+    g.items.forEach(item => {
+      if (item.children) {
+        const parent = makeLink(item, false);
+        const chev = el('span', { class: 'cc-nav-chev', html: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' });
+        parent.appendChild(chev);
+        const sub = el('nav', { class: 'cc-nav-sub' }, item.children.map(c => makeLink(c, true)));
+        const wrap = el('div', { class: 'cc-nav-parent' }, [parent, sub]);
+        chev.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); wrap.classList.toggle('open'); });
+        parent.addEventListener('click', () => wrap.classList.add('open'));
+        item.children.forEach(c => { childParent[c.path] = wrap; });
+        items.push(wrap);
+      } else {
+        items.push(makeLink(item, false));
+      }
     });
-    // hide a whole group if every item is hidden
-    const anyVisible = g.items.some(visible);
+    const anyVisible = g.items.some(it => visible(it) || (it.children && it.children.some(visible)));
     return el('div', { hidden: !anyVisible }, [
       el('div', { class: 'cc-nav-group' }, g.group),
       el('nav', { class: 'cc-nav' }, items),
@@ -220,6 +237,7 @@ export function renderShell(root, user, flags) {
 
   function setActive(path) {
     FLAT.forEach(n => { const a = linkEls[n.path]; if (a) a.classList.toggle('active', n.path === path); });
+    const _pw = childParent[path]; if (_pw) _pw.classList.add('open');
     const item = FLAT.find(n => n.path === path);
     const title = document.getElementById('cc-title');
     const crumb = document.getElementById('cc-crumb');
