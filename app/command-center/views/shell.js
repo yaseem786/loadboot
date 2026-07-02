@@ -27,6 +27,7 @@ const NAV = [
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/matching', label: 'Smart matching', icon: 'trend', perm: 'carriers.view' },
+    { path: '/carrier-scorecards', label: 'Carrier Scorecards', icon: 'trend', perm: 'any:carriers.view,dispatch.view' },
     { path: '/trips', label: 'Dispatch & trips', icon: 'truck', perm: 'dispatch.view', flag: 'dispatch' },
     { path: '/map', label: 'Live map', icon: 'truck', perm: null, flag: 'opsMap' },
     { path: '/fleet', label: 'Fleet & drivers', icon: 'users', perm: 'fleet.view', flag: 'fleet' },
@@ -46,6 +47,7 @@ const NAV = [
     { path: '/forms', label: 'Forms inbox', icon: 'bell', perm: 'forms.view', flag: 'forms' },
     { path: '/partners', label: 'Brokers & shippers', icon: 'users', perm: 'partners.view', flag: 'partners' },
     { path: '/partner-intake', label: 'Partner intake', icon: 'doc', perm: 'partners.view', flag: 'partners' },
+    { path: '/broker-sla', label: 'Broker SLA', icon: 'trend', perm: 'partners.view', flag: 'partners' },
   ]},
   { group: 'Support', items: [
     { path: '/support', label: 'Tickets', icon: 'bell', perm: 'support.view', flag: 'support' },

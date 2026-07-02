@@ -112,6 +112,12 @@ export const reportSave = (def) => rpc('cc_report_save', { p: def });
 export const reportDelete = (id) => rpc('cc_report_delete', { p_id: id });
 export const reportRun = (id) => rpc('cc_report_run', { p_id: id });
 export const reportSnapshots = (id, limit = 20) => rpc('cc_report_snapshots', { p_id: id, p_limit: limit });
+// Inc 67 — carrier performance scorecard (deterministic, explainable). Carrier self / staff any carrier.
+export const carrierScorecard = (carrier, days = 90) => rpc('cc_carrier_scorecard', { p_carrier: carrier ?? null, p_days: days });
+export const carrierScorecardRanking = (days = 90, limit = 25) => rpc('cc_carrier_scorecard_ranking', { p_days: days, p_limit: limit });
+// Inc 68 — broker SLA & on-time analytics. Broker self / staff any broker.
+export const brokerSla = (partner, days = 90) => rpc('cc_broker_sla', { p_partner: partner ?? null, p_days: days });
+export const brokerSlaRanking = (days = 90, limit = 25) => rpc('cc_broker_sla_ranking', { p_days: days, p_limit: limit });
 // Inc 63 — workflow builder: validated step-graphs, versioned publish, simulation (no side effects) + guarded live runs.
 export const workflowSave = (o) => rpc('cc_workflow_save', { p: o });
 export const workflowSetStatus = (id, action) => rpc('cc_workflow_set_status', { p_id: id, p_action: action });

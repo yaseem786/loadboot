@@ -839,3 +839,70 @@ box, no invented data):
   reportsList/reportSave/reportDelete/reportRun/reportSnapshots. Static-verified (build sandbox down).
 - PENDING: wiring cc_report_run into an actual scheduled cron/worker for automated digests remains owner-deploy-gated
   (same posture as the delivery worker) — the snapshot engine it needs is now in place.
+
+## INC 67 — CARRIER PERFORMANCE SCORECARD (deterministic + explainable)
+- ROADMAP NOTE: the planned "notifications backbone unification" was deliberately deferred — the existing
+  notification system is fragmented across several tables/UIs and rewriting it safely needs the (currently down)
+  build/test environment. Swapped in this zero-write-risk, read-only, fully-provable increment instead.
+- `cwl_carrier_scorecard` (BOTH DBs, md5-identical — a 135-char cosmetic drift between the two applies was caught
+  by the parity check and canonicalized via `cwl_carrier_scorecard_parity`; anon surface still 5):
+  - `cc_carrier_scorecard(carrier,days)` — a 0–100 score whose value EQUALS the sum of five shown factor points
+    (on-time delivery 35, offer acceptance 20, few exceptions 20, delivered volume 15, low cancellations 10),
+    each with a plain-language basis; grade A/B/C/D; raw metrics block. Every value counted from real
+    trips/offers/exceptions — nothing invented; coverage stated when a factor has no data. Carrier self-scoped;
+    staff (carriers.view/dispatch.view) may query any carrier.
+  - `cc_carrier_scorecard_ranking(days,limit)` — staff-only ranked list of active carriers with delivered trips.
+  - EXECUTE revoked from public/anon, granted to authenticated only.
+- Proof: **CARRIER SCORECARD MATRIX: PASS (9 checks)** live on staging — shape, **score == sum of factor points**
+  (explainability), staff ranking is array, carrier self (own org, null + explicit), carrier CANNOT query another
+  carrier, carrier CANNOT use the staff ranking, non-staff-non-carrier denied, anon has no EXECUTE. Applied to
+  production; parity re-confirmed md5-identical after canonicalization; **anon SECURITY DEFINER surface = 5 both DBs.**
+- Frontend: Command Center **Carrier Scorecards** view (`/carrier-scorecards`, Operations nav, perm
+  any:carriers.view,dispatch.view): ranked grade/score table + a "Why this score" drawer with the per-factor
+  breakdown and raw metrics. api wrappers carrierScorecard/carrierScorecardRanking. Static-verified (sandbox down).
+
+## INC 68 — BROKER SLA & ON-TIME ANALYTICS
+- `cwm_broker_sla` (BOTH DBs, md5-identical; anon surface still 5): broker self-scoped (my_partner_org('broker'));
+  staff (partners.view) may query any broker. Computed only from real partner_loads -> posted board load -> trip
+  linkage — no estimates.
+  - `cc_broker_sla(partner,days)` — submitted / posted / covered / delivered / on-time counts, **fill rate**
+    (covered÷submitted), **on-time %** (only from delivered trips with a scheduled_delivery), average hours to
+    cover, and open exceptions on the broker's trips; each with a basis string.
+  - `cc_broker_sla_ranking(days,limit)` — staff-only, ranked by fill rate.
+  - EXECUTE revoked from public/anon, granted to authenticated only.
+- Proof: **BROKER SLA MATRIX: PASS (9 checks)** live on staging — shape, **count consistency
+  (delivered ≤ covered ≤ submitted, on-time ≤ delivered-with-schedule)**, staff ranking is array, broker self
+  (own, null + explicit), broker CANNOT query another broker, broker CANNOT use the staff ranking,
+  non-staff-non-broker denied, anon has no EXECUTE. Applied to production; **staging & prod md5-identical;
+  anon SECURITY DEFINER surface = 5 both DBs — confirmed live.**
+- Frontend: Command Center **Broker SLA** view (`/broker-sla`, Sales & CRM nav, flag partners + partners.view):
+  KPI strip (active brokers, aggregate fill rate, on-time, delivered) + per-broker table (fill/on-time pills,
+  submitted/covered/delivered, avg cover hours, open exceptions). api wrappers brokerSla/brokerSlaRanking. Static-verified.
+
+## INC 69 — CAPSTONE: MODULE-CATALOG RESYNC + INVARIANT RE-VERIFICATION
+- `cwn_capstone_module_registry` (BOTH DBs, idempotent by route): registered this session's four new staff
+  features in `app_private.platform_modules` so the module registry stays honest — Business Intelligence (/bi),
+  Carrier Scorecards (/carrier-scorecards), Broker SLA (/broker-sla), Referral Program (/referrals) — each with
+  area, permissions, flag, events and data classification. Re-runnable (WHERE NOT EXISTS by route); no functions
+  added, so the anon surface is untouched.
+- COUNTS RESYNC + INVARIANT CHECK (live, both DBs):
+  - public `cc_*` RPCs = **336 on staging AND production** (count parity).
+  - anon SECURITY DEFINER surface = **5 on BOTH DBs** — the locked invariant held across all of Inc 64–69.
+  - the 9 net-new RPCs (cc_bi_*, cc_report_*, cc_carrier_scorecard*, cc_broker_sla*) are **0 anon-executable** on
+    both DBs — every new function is off the anon surface by construction.
+  - 4 new modules present in both DBs. (Module TOTALS differ — staging 46 / prod 55 — a PRE-EXISTING catalog
+    drift in the documentation-only platform_modules table, unrelated to this session; flagged for owner cleanup.)
+- Result: **CAPSTONE VERIFICATION: PASS.** Referral flag remains staging ON / production OFF.
+
+## SESSION SUMMARY (WEB-2 part 2 + Inc 64–69)
+- Delivered: WEB-2 part 2 (referral page + CC overview + partner card), Inc 64 BI, Inc 65 PWA hardening,
+  Inc 66 saved reports/snapshots, Inc 67 carrier scorecard, Inc 68 broker SLA, Inc 69 capstone resync.
+- Backend increments (64, 66, 67, 68) each proven by a live SQL security matrix on staging, applied to
+  production, and confirmed md5-identical with anon surface = 5 on both DBs. Total new backend proof:
+  BI 9 + Saved Reports 13 + Carrier Scorecard 9 + Broker SLA 9 = **40 matrix checks PASS**, all self-cleaning.
+- DEFERRED (need a testable environment / owner action): notifications-backbone unification (existing system is
+  fragmented — deferred to avoid untested regression); scheduled digest cron for cc_report_run (owner-deploy-gated).
+- CAVEAT: the isolated build sandbox was unavailable all session (host disk space), so `node --check`,
+  `python build_site.py` and the import-reference scanner could NOT run — ALL frontend verification was static
+  (export resolution, brace/quote review) plus live DB checks. Re-run the local frontend gates before pushing;
+  DB migrations are already applied + proven on both databases.

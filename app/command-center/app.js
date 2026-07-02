@@ -58,6 +58,8 @@ import { renderExceptionCenter } from './views/exceptionCenter.js';
 import { renderWorkflowBuilder } from './views/workflowBuilder.js';
 import { renderReferrals } from './views/referrals.js';
 import { renderBI } from './views/bi.js';
+import { renderCarrierScorecards } from './views/carrierScorecards.js';
+import { renderBrokerSla } from './views/brokerSla.js';
 import { renderBrandKit } from './views/brandKit.js';
 import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
@@ -236,6 +238,8 @@ async function boot() {
     '/workflows': () => { setActive('/workflows'); if (can('settings.manage') || can('content.manage')) renderWorkflowBuilder(content); else denied(); },
     '/referrals': () => { setActive('/referrals'); if (referralProgramEnabled && can('finance.view')) renderReferrals(content); else denied(); },
     '/bi': () => { setActive('/bi'); if (can('analytics.view') || can('reports.view')) renderBI(content); else denied(); },
+    '/carrier-scorecards': () => { setActive('/carrier-scorecards'); if (can('carriers.view') || can('dispatch.view')) renderCarrierScorecards(content); else denied(); },
+    '/broker-sla': () => { setActive('/broker-sla'); if (partnersEnabled && can('partners.view')) renderBrokerSla(content); else denied(); },
     '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
     '/plugins': () => { setActive('/plugins'); renderPluginMarketplace(content); },
     '/form-builder': () => { setActive('/form-builder'); renderFormBuilder(content); },
