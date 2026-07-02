@@ -22,7 +22,7 @@ const h = (tag, attrs, kids) => {
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
 const fmtDT = (d) => { if (!d) return 'never'; try { return new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return '—'; } };
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
-const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
+const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (dark ? '/logo-icon-dark.png' : '/icon-512.png') + '" width="34" height="34" alt="LoadBoot" style="display:block">' });
 
 function authScreen() {
   let signup = false;
@@ -104,7 +104,7 @@ function appView(user) {
   const curl = 'curl -H "Authorization: Bearer lb_..." \\\n  "' + API_BASE + '?resource=loads&limit=25"';
   mount(root, h('div', { class: 'cp-shell cp-shell-1col' }, h('main', { class: 'cp-main dev-main' }, [
     h('header', { class: 'cp-top' }, [
-      h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [brandMark(), h('div', null, [
+      h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [brandMark(false), h('div', null, [
         h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Developers')]),
         h('div', { class: 'cp-carrier-name', style: 'font-size:.82rem' }, (user && user.email) || ''),
       ])]),

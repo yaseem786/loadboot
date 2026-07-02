@@ -1715,3 +1715,44 @@ Core Dispatch grid, inserted an HONEST navy m_statband (20+ services / 5% flat /
 converted the 8-item "Back-Office · Money · Claims" grid to m_zigzag (named SVG icons, teal accent).
 Now the page reads cards → stat band → zigzag → cards — no two adjacent sections alike.
 Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 52 pages 0 FAIL / 3 warn. B2–B4 = complete.
+
+## LOGO FIX — un-boxed the mark, original lockup used as-is (owner: "icon box mn q rakha, tabah kar diya")
+The site header/footer/splash were wrapping the transparent arrow (icon-512) inside a navy gradient
+box (.logo .mark) — navy arrow on a navy box = crushed/ugly. Replaced with the owner's ORIGINAL full
+lockup image, no box, full quality:
+- Published logo-full.png (light lockup) + logo-full-dark.png (navy ink recolored to white for dark bg).
+- Header → /logo-full.png (h34). Footer + splash → /logo-full-dark.png. No .mark box anywhere on site.
+- Gates: BUILD OK, ESM ALL PASS, GRAND AUDIT 0 FAIL. Portals still to check for the same box pattern.
+
+## REAL LOGO EVERYWHERE + ADVANCED SPLASH ANIMATION (owner: portals/CC purana logo + advance animation chahiye)
+Root cause of "old logo in Command Center": the CC opening splash used a HAND-DRAWN SVG approximation
+(white rects + old orange #F97316) — not the real mark. Fixed across all loading/opening surfaces with
+the owner's REAL logo + an advanced animation (arrow flies in w/ overshoot → wordmark clip-path wipe →
+diagonal shine sweep → progress bar):
+- Published separate real parts to root: logo-icon(.png/-dark), logo-text(.png/-dark) (dark = navy ink→white).
+- Command Center splash (index.html + command-center.css): real logo-icon-dark + logo-text-dark, new
+  keyframes (ccArrow/ccWipe/ccShine); splash hold bumped 1100→1750ms so the animation is seen.
+- Site splash (build_site.py SPLASH_CSS + boot JS): same advanced animation with real parts; hold→1750ms,
+  removal→2350ms.
+- Shared brandLogo() (CC sidebar + used across portals): now renders the REAL full lockup image
+  (logo-full-dark on dark / logo-full on light), no box, replacing the icon-in-box + text construction.
+- GOTCHA HIT: file-tool Edit truncated components.js (export default block cut) — restored from git HEAD
+  and re-applied via python. Lesson reconfirmed: big JS edits via python only. Preview:
+  docs/brand-kit/splash-animation-preview.html.
+- Gates: BUILD OK, ESM ALL PASS (93), IMPORT PASS, GRAND AUDIT 0 FAIL / 3 warn.
+
+## LOGO CONSISTENCY PASS — self-contained splash + correct light/dark variant on every surface
+Owner: CC splash logo broken ("nazar hi nahi araha") + "different colours different places = unprofessional".
+- ROOT CAUSE of broken splash: CC/site splashes loaded EXTERNAL /logo-*-dark.png which 404'd in the
+  un-deployed/preview env (old splash was inline SVG so never had this). FIX: embedded the real arrow +
+  wordmark as base64 data URIs directly in both splashes — self-contained, cannot 404.
+- CONSISTENCY (the professional standard, now applied uniformly): the mark, orange dash and blue "boot"
+  are IDENTICAL on every surface; only "load" (and the arrow) flip navy↔white purely for legibility on
+  the background. Audited & corrected every placement:
+  · Marketing header (light) = navy lockup · footer/splash (dark) = white-"load" lockup.
+  · CC login (light)=light lockup · CC sidebar (dark)=dark lockup (brandLogo now uses real lockup img).
+  · Carrier sidebar (DARK) → white arrow variant (logo-icon-dark). Carrier auth card (light) → navy arrow.
+  · Partner + Developer brand row sits in a LIGHT cp-top header → navy arrow (reverted a wrong white-arrow
+    change after confirming those headers are light, not dark).
+- brandMark(dark) helper added to carrier/partner/developer; picks icon-512 (navy) or logo-icon-dark (white).
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL / 3 warn.

@@ -87,7 +87,7 @@ const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width=
 const WHATSAPP_NUMBER = '';
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'Keep Your Wheels Earning';
-const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
+const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (dark ? '/logo-icon-dark.png' : '/icon-512.png') + '" width="34" height="34" alt="LoadBoot" style="display:block">' });
 
 // horizontal/line-ish bar chart from [{label,value}]
 function miniBars(data, opts = {}) {
@@ -274,7 +274,7 @@ async function appView(user) {
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, [brandMark(), h('div', null, [
+      h('div', { class: 'cp-brandrow' }, [brandMark(true), h('div', null, [
         h('div', { class: 'cp-brand' }, [document.createTextNode('load'), h('b', null, 'boot')]),
       ])]),
       sideNav(false),
