@@ -10,6 +10,7 @@ import { openDrawer } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
 import { webLive, webOverview, webPages, webReferrers, webAiReferrals, integrationStatus } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
+import { renderGoogleData } from './googleData.js';
 
 const SRC_TONE = { ai: 'violet', organic: 'green', social: 'blue', paid: 'amber', referral: 'blue', direct: 'gray', internal: 'gray' };
 
@@ -175,8 +176,11 @@ export function renderAnalyticsWeb(host) {
       kpis,
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [trendCard, sourcesCard]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [pagesCard, refsCard]),
-      el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [aiCard, shellsCard]),
+      el('div', { style: 'margin-top:16px' }, aiCard),
+      el('div', { id: 'aw-ga', style: 'margin-top:24px;border-top:1px solid var(--lb-border);padding-top:20px' }),
     ]));
+    const gaHost = body.querySelector('#aw-ga');
+    if (gaHost) renderGoogleData(gaHost);
   }
 }
 

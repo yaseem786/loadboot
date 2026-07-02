@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
-import { carrier360, fmcsaVerify } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -104,11 +104,66 @@ export function renderCarrier360(host, orgId) {
       ]))) : el('div', { class: 'cc-sub' }, 'No audit activity yet.'),
     ]);
 
+    function computeHealth(dd) {
+      const warns = []; const ts = dd.trips_summary || {}; const docs = dd.documents || []; const onb = dd.onboarding || {};
+      if (!dd.compliance_ok) warns.push({ tone: 'urgent', text: 'Compliance gap \u2014 mandatory requirements incomplete. Send an onboarding/compliance reminder before assigning loads.' });
+      const expired = docs.filter(x => (x.status || '').toLowerCase() === 'expired');
+      if (expired.length) warns.push({ tone: 'urgent', text: expired.length + ' expired document(s): ' + expired.map(x => x.type).join(', ') + ' \u2014 request renewal now.' });
+      const pending = docs.filter(x => ['pending', 'submitted', 'in_review'].indexOf((x.status || '').toLowerCase()) >= 0);
+      if (pending.length) warns.push({ tone: 'warning', text: pending.length + ' document(s) awaiting verification.' });
+      const stage = (onb.stage || '').toLowerCase();
+      if (stage === '' || stage.indexOf('not started') >= 0) warns.push({ tone: 'warning', text: 'Onboarding not started \u2014 begin the compliance review to fully activate this carrier.' });
+      if (Number(ts.delivered || 0) === 0) warns.push({ tone: 'info', text: 'No delivered trips yet \u2014 low engagement. Consider a best-match load offer or a check-in.' });
+      const grade = dd.safety && (dd.safety.grade || dd.safety.rating);
+      if (grade && ['D', 'F', 'conditional', 'unsatisfactory'].indexOf(String(grade).toLowerCase()) >= 0) warns.push({ tone: 'urgent', text: 'Safety concern (grade ' + grade + ') \u2014 review the FMCSA safety record before dispatching.' });
+      let score = 100; warns.forEach(w => { score -= w.tone === 'urgent' ? 25 : w.tone === 'warning' ? 12 : 5; }); score = Math.max(0, score);
+      const label = score >= 85 ? 'Healthy' : score >= 60 ? 'Watch' : score >= 35 ? 'At risk' : 'Critical';
+      const tone = score >= 85 ? 'green' : score >= 60 ? 'amber' : 'red';
+      return { score, label, tone, warns };
+    }
+    const H = computeHealth(d);
+    const HCOL = { green: '#16a34a', amber: '#f59e0b', red: '#dc2626' }[H.tone];
+    const TCOL = { urgent: '#dc2626', warning: '#f59e0b', info: '#0883F7' };
+    const healthCard = card([
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Account health'), el('span', { class: 'cc-pill cc-pill-' + H.tone }, [el('i', { class: 'cc-pill-dot' }), H.label])]),
+      el('div', { style: 'display:flex;align-items:center;gap:14px;margin:8px 0 4px' }, [
+        el('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:conic-gradient(' + HCOL + ' ' + (H.score * 3.6).toFixed(1) + 'deg,#e8edf3 0);display:flex;align-items:center;justify-content:center' },
+          el('div', { style: 'width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800' }, String(H.score))),
+        el('div', { class: 'cc-sub', style: 'font-size:.85rem' }, H.warns.length ? (H.warns.length + ' item(s) need attention') : 'No warnings \u2014 this carrier is in good standing.'),
+      ]),
+      el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin:10px 0 4px' }, 'Suggested warnings & actions'),
+      H.warns.length ? el('div', null, H.warns.map(w => el('div', { style: 'display:flex;gap:9px;padding:8px 0;border-bottom:1px solid #eef2f7' }, [
+        el('span', { style: 'width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:' + TCOL[w.tone] }),
+        el('div', { style: 'font-size:.86rem;color:#334155' }, w.text),
+      ]))) : el('div', { class: 'cc-sub' }, 'Nothing to warn about right now \u2014 keep it up.'),
+    ]);
+    const scCard = card([el('h4', { class: 'cc-card-title' }, 'Performance scorecard'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Loading\u2026')]);
+    (async () => {
+      let sc; try { sc = await carrierScorecard(orgId, 90); } catch (_) { mount(scCard, [el('h4', { class: 'cc-card-title' }, 'Performance scorecard'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'No delivered trips to score yet.')]); return; }
+      const grade = sc.grade || '-';
+      const gcol = { A: '#16a34a', B: '#0883F7', C: '#f59e0b', D: '#dc2626' }[grade] || '#64748b';
+      const score = Math.max(0, Math.min(100, Number(sc.score || 0)));
+      const gauge = el('div', { style: 'width:70px;height:70px;border-radius:50%;flex:none;background:conic-gradient(' + gcol + ' ' + (score * 3.6).toFixed(1) + 'deg,#e8edf3 0);display:flex;align-items:center;justify-content:center' },
+        el('div', { style: 'width:52px;height:52px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem' }, String(Math.round(score))));
+      const m = sc.metrics || {};
+      mount(scCard, [
+        el('h4', { class: 'cc-card-title' }, 'Performance scorecard'),
+        el('div', { style: 'display:flex;align-items:center;gap:14px;margin-top:8px' }, [gauge,
+          el('div', null, [
+            el('div', { style: 'font-weight:800;font-size:1.05rem;color:' + gcol }, 'Grade ' + grade + ' \u00b7 ' + Math.round(score) + '/100'),
+            el('div', { class: 'cc-sub', style: 'font-size:.82rem' }, (m.delivered || 0) + ' delivered \u00b7 on-time ' + (m.on_time || 0) + '/' + (m.with_schedule || 0) + ' \u00b7 over ' + (sc.window_days || 90) + ' days'),
+          ]),
+        ]),
+        el('a', { class: 'cc-360-link', href: '#/carrier-scorecards', style: 'margin-top:10px;display:inline-block' }, 'Full scorecard \u2192'),
+      ]);
+    })();
     mount(body, el('div', null, [
       head, kpis,
+      el('div', { style: 'margin-top:16px' }, healthCard),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [profileCard, safetyCard]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [docsCard, driversCard]),
-      el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [tripsCard, timelineCard]),
+      el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [tripsCard, scCard]),
+      el('div', { style: 'margin-top:16px' }, timelineCard),
     ]));
   }
 }

@@ -1853,3 +1853,69 @@ layover, TONU, lumper policy, with "industry-typical defaults" button), Broker &
 instructions. Posts via cc_create_load_sourced (source_type=staff_entered) which ENFORCES the rate card +
 FCFS/appointment/window server-side — a load cannot post without what a carrier needs to decide.
 Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## CC DEEPENING BATCH — interactivity across tabs
+- Post-a-load form (#37): full decision-complete fields via cc_create_load_sourced (enforces rate card + windows).
+- Dispatch & Trips (#39): KPI cards now clickable → filter the trip list (active/awaiting/delivered/needs-invoice).
+- Verification Center (#43): review-queue rows now clickable → detail drawer with field-level DISCREPANCIES
+  (official FMCSA QCMobile vs carrier-submitted), a Re-verify-against-FMCSA action, and a carrier-360 link.
+  Uses real cc_verification_queue (carrier_org/discrepancies/authority). Advisory only; never auto-activates.
+- GA4 tab (#34): every row clickable → detail drawer (metrics + share-of-total + rank).
+- Gates throughout: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+Remaining deepening captured as tasks #27, #35, #36, #38, #40, #41, #42 (per-tab).
+
+## MARKETING SITE — contact account-tabs + About motif
+- Contact "Create account": added beautiful account-type persona tabs (Carrier on this form / Broker → partner
+  portal / Shipper → shipper-solutions / Referral → referral.html) with icons + hover, so any persona starts
+  the right flow. New CSS .acct-personas/.ap-tabs. (#44 partial.)
+- About page: converted the flat "What we stand for / How we work / Who we help" prose into a zigzag motif
+  (Honesty / One partner / Built for where you are) — engaging, SEO-preserving. Note: About already carries
+  the purpose-labelled emails (hello@/dispatch@/billing@ — "three front doors"), partly covering #45.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## PREMIUM SPLASH + CARRIER-360 HEALTH + DISPATCH DETAIL
+- CC opening splash rebuilt premium: hi-res logo (520px base64), blur-to-sharp reveal, radial glow bloom,
+  light sweep, shimmer progress bar; richer radial background; hold 2200ms. No box (logo verified clean).
+- Carrier 360 (#35/#47): added Performance Scorecard card (gauge+grade) AND Account Health card — score
+  from compliance/expired+pending docs/onboarding/trip engagement/safety, with tone-coded SUGGESTED
+  WARNINGS & ACTIONS (what to warn the carrier about). Real carrier360 data; no new RPC.
+- Dispatch board (#48): cards now clickable → full load-detail drawer (lane, equipment, RPM, pickup/
+  delivery + windows, appointment/FCFS, full accessorial rate card, carrier, broker, notes) via getLoadDetail.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## ANALYTICS CONSOLIDATION + CC BACK-BUTTON FIX
+- Analytics Control Center now shows GA4 + Search Console data INLINE (renderGoogleData merged in) — one
+  hub with first-party + Google data + main graph + tables. Removed the redundant Google Analytics sub-tab
+  (kept "Business Analytics"). No split brain.
+- CC back-button trap fixed at the source: shared router.js now intercepts in-app hash links and uses
+  history.replaceState (not push) for tab navigation, so Back always leaves the app cleanly instead of
+  cycling old tab hashes. Fixes it for the whole Command Center (and any portal on this router).
+- CC sidebar brand block refined (spacing, divider, letter-spacing) for a professional lockup.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## MOBILE PWA UPDATES + DARK "BOOT" POP
+- sw-register.js rewritten: installed PWA (mobile home-screen app) now shows an instant "A new version is
+  available → Update" prompt (SKIP_WAITING → controllerchange → reload), and checks for updates on app
+  focus/visibility. So after a deploy, mobile updates immediately instead of only on cold reopen.
+  (NOTE: the reason mobile showed no updates at all is the whole batch is undeployed — deploy fixes that;
+  the SW is already network-first with clients.claim.)
+- Dark lockup: "boot" brightened (#0883F7 -> ~#4EA6F9, same hue) for pop on dark backgrounds; light header
+  keeps #0883F7. Splash base64 refreshed. logo-full-dark.png + docs/brand-kit updated.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## CARRIER FINANCE PDF + HEADER FIXES + LOGO TRIM
+- Finance: added "Download (PDF)" for the account statement (branded openPrintable) beside CSV.
+- Header: "Action needed" chip is now a clickable button → routes to Documents (forces the fix);
+  "Compliant" → Account. Bell badge CSS added so the unread COUNT shows as a real number (was unstyled).
+  Mobile account menu (profile/settings/sign-out) confirmed present (cp-top-right not hidden on mobile).
+- Logo trimmed a notch everywhere (header 40->36, footer 34->32, portals auth 34->31/side 32->29,
+  brandLogo 34->31, pocket 32->29/28->26, CC splash 96->78, site splash 68->60) — balanced, not oversized.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+
+## CARRIER DASHBOARD — attention-grab on account status
+- Account status strip now fully tappable (whole card → Account); Review button pulses (amber) when action
+  is needed to grab attention. Setup gaps already use global tone tokens (urgent/warning/action) + per-step
+  routing from real cc_carrier_dashboard data.
+- Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
+Task list: 56 items (30+ done). Remaining are owner-gated (deploy/secrets/legal/proofs) or backend programs
+(automation, mobile app, account-health tab, contacts, payouts, fleet warnings, live map, D-series).

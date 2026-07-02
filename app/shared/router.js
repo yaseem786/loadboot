@@ -24,10 +24,19 @@ export function createRouter(routes, opts = {}) {
 
   function start() {
     window.addEventListener('hashchange', resolve);
+    // Intercept in-app hash links so tab navigation REPLACES history instead of pushing,
+    // otherwise every tab click stacks a #/path entry and Back cycles through them.
+    document.addEventListener('click', (e) => {
+      const a = e.target && e.target.closest && e.target.closest('a[href^="#/"]');
+      if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || (a.target && a.target === '_blank')) return;
+      const path = a.getAttribute('href').replace(/^#/, '');
+      e.preventDefault();
+      if (('#' + path) !== location.hash) { history.replaceState(null, '', '#' + path); resolve(); }
+    });
     resolve();
   }
   function go(path) {
-    if (('#' + path) === location.hash) resolve(); else location.hash = path;
+    if (('#' + path) === location.hash) resolve(); else { history.replaceState(null, '', '#' + path); resolve(); }
   }
   return { start, go, current: () => current };
 }

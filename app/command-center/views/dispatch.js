@@ -3,8 +3,8 @@
 // server rejects, the UI reverts. Responsive: columns on desktop, stacked list on mobile.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statusPill, money } from '../../shared/ui/components.js';
-import { getLoadsList, setLoadStatus } from '../../shared/api.js';
+import { sectionHead, statusPill, money, openDrawer } from '../../shared/ui/components.js';
+import { getLoadsList, getLoadDetail, setLoadStatus } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -40,12 +40,34 @@ export function renderDispatch(host) {
     }
     const load2 = load;
 
+    async function openLoadDrawer(l) {
+      const hostD = el('div', { class: 'cc-sub' }, 'Loading\u2026');
+      const dr = openDrawer((l.origin || '?') + ' \u2192 ' + (l.destination || '?'), hostD, { subtitle: 'Load detail' });
+      let d; try { d = await getLoadDetail(l.id); } catch (e) { mount(dr.body, el('div', { class: 'cc-sub' }, humanizeError(e))); return; }
+      d = d || l;
+      const kv = (k, v) => el('div', { class: 'cc-kv' }, [el('span', { class: 'cc-kv-k' }, k), el('span', { class: 'cc-kv-v' }, v == null || v === '' ? '\u2014' : String(v))]);
+      const fm = d.field_meta || {}; const acc = fm.accessorials || {};
+      const rpm = (d.rate && d.miles) ? '$' + (Number(d.rate) / Number(d.miles)).toFixed(2) + '/mi' : '\u2014';
+      mount(dr.body, el('div', null, [
+        el('div', { style: 'display:flex;align-items:center;gap:12px;margin-bottom:12px' }, [statusPill(d.status), el('b', { style: 'font-size:1.35rem' }, d.rate != null ? money(d.rate) : '\u2014'), el('span', { class: 'cc-sub' }, rpm)]),
+        kv('Lane', (d.origin || '?') + ' \u2192 ' + (d.destination || '?')),
+        kv('Equipment', d.equipment), kv('Commodity', d.commodity), kv('Weight', d.weight), kv('Miles', d.miles),
+        el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin:12px 0 4px' }, 'Schedule'),
+        kv('Pickup', d.pickup_date), kv('Pickup window', fm.pickup_window), kv('Delivery', d.delivery_date), kv('Delivery window', fm.delivery_window),
+        kv('Appointment', fm.appointment_required ? 'Required' : (acc.fcfs ? 'FCFS' : '\u2014')),
+        el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin:12px 0 4px' }, 'Accessorial rate card'),
+        kv('Detention', acc.detention_per_hr ? '$' + acc.detention_per_hr + '/hr after ' + (acc.detention_free_hours || '?') + 'h free' : '\u2014'),
+        kv('Layover', acc.layover_per_day ? '$' + acc.layover_per_day + '/day' : '\u2014'), kv('TONU', acc.tonu ? '$' + acc.tonu : '\u2014'), kv('Lumper', acc.lumper_policy),
+        el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin:12px 0 4px' }, 'Assignment & notes'),
+        kv('Carrier', d.assigned_company || 'Unassigned'), kv('Broker', d.broker), kv('Reference', d.source_reference), kv('Special instructions', d.requirements || d.notes),
+      ]));
+    }
     function cardNode(l) {
       const controls = mayMove ? el('div', { class: 'cc-card-ctl' }, [
         PREV[l.status] ? el('button', { class: 'cc-mini', title: 'Back', onClick: (e) => { e.stopPropagation(); move(l, 'prev'); } }, '‹') : '',
         NEXT[l.status] ? el('button', { class: 'cc-mini', title: 'Advance', onClick: (e) => { e.stopPropagation(); move(l, 'next'); } }, '›') : '',
       ]) : '';
-      return el('div', { class: 'cc-dcard' }, [
+      return el('div', { class: 'cc-dcard cc-row-click', onClick: () => openLoadDrawer(l) }, [
         el('div', { class: 'cc-dcard-lane' }, (l.origin || '?') + ' → ' + (l.destination || '?')),
         el('div', { class: 'cc-dcard-meta' }, [
           el('span', null, l.equipment || '—'),

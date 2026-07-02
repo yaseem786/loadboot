@@ -90,7 +90,7 @@ function dismissSplash() {
   if (_splashGone) return; _splashGone = true;
   const s = document.getElementById('cc-splash');
   if (!s) return;
-  const wait = Math.max(0, 1750 - (Date.now() - _splashStart));
+  const wait = Math.max(0, 2200 - (Date.now() - _splashStart));
   setTimeout(() => { s.classList.add('done'); setTimeout(() => s.remove(), 600); }, wait);
 }
 setTimeout(dismissSplash, 7000);

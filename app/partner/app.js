@@ -95,7 +95,7 @@ function authScreen() {
   };
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
+      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [
         h('a', { href: '/app/carrier/' }, 'Are you a carrier? →'),
@@ -131,7 +131,7 @@ function choosePartnerType(user) {
   } }, 'Continue');
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card', style: 'max-width:520px' }, [
-      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
+      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
       h('h1', null, 'Welcome to LoadBoot'),
       h('p', { class: 'cp-auth-sub' }, 'What kind of partner are you? You can set up more later.'),
       h('div', { class: 'cp-typegrid' }, [
@@ -181,7 +181,7 @@ function shell(user, kind, company, kpis, content) {
   return h('div', { class: 'cp-shell cp-shell-1col' }, [
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
-        h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:32px;width:auto;display:block' }), h('div', null, [
+        h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('div', null, [
           h('span', { class: 'cp-brand-sub' }, label),
           h('div', { class: 'cp-carrier-name', style: 'font-size:.82rem' }, company || 'Partner'),
         ])]),
