@@ -1,8 +1,8 @@
 {
  "summary": {
   "generated_note": "Counted from built site/ HTML by scripts/site_inventory.py. No estimates.",
-  "page_count": 40,
-  "total_words": 30159,
+  "page_count": 44,
+  "total_words": 37545,
   "pages_missing_meta_description": [
    "dashboard.html"
   ],
@@ -13,8 +13,7 @@
    "dashboard.html"
   ],
   "thin_pages_under_300_words": [
-   "dashboard.html",
-   "status.html"
+   "dashboard.html"
   ],
   "pages_without_cta": [
    "dashboard.html"
@@ -23,12 +22,7 @@
    "dashboard.html"
   ],
   "pages_with_images_missing_alt": {},
-  "high_duplication_pairs": [
-   [
-    "sitemap.html",
-    "status.html"
-   ]
-  ],
+  "high_duplication_pairs": [],
   "pages_without_schema": [
    "dashboard.html"
   ]
@@ -44,7 +38,7 @@
    "canonical": "https://loadboot.com/about.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 11,
+   "section_count": 19,
    "sections": [
     {
      "heading": "About Loadboot",
@@ -64,7 +58,47 @@
     {
      "heading": "Who we help",
      "level": "h2",
-     "words": 78
+     "words": 58
+    },
+    {
+     "heading": "The rules we run the company by",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Explainable, always",
+     "level": "h3",
+     "words": 31
+    },
+    {
+     "heading": "Your data is yours",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Humans control money",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "One company, three front doors",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "General & support",
+     "level": "h3",
+     "words": 11
+    },
+    {
+     "heading": "Dispatch & loads",
+     "level": "h3",
+     "words": 11
+    },
+    {
+     "heading": "Billing & settlements",
+     "level": "h3",
+     "words": 37
     },
     {
      "heading": "Built for carriers who want to earn more and stress less",
@@ -99,10 +133,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 225
+     "words": 290
     }
    ],
-   "word_count": 644,
+   "word_count": 829,
    "cta_count": 10,
    "ctas": [
     {
@@ -166,7 +200,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -177,8 +213,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -199,22 +237,24 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 1,
+   "internal_link_count": 40,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.281,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.077,
+    "most_similar_page": "index.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -226,10 +266,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -278,10 +320,10 @@
     {
      "heading": "Need help or found a barrier?",
      "level": "h2",
-     "words": 230
+     "words": 295
     }
    ],
-   "word_count": 341,
+   "word_count": 406,
    "cta_count": 9,
    "ctas": [
     {
@@ -341,7 +383,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -352,8 +396,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -374,22 +420,24 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.49,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.074,
+    "most_similar_page": "sitemap.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -401,10 +449,340 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "authority-dot-setup.html": {
+   "url": "https://loadboot.com/authority-dot-setup.html",
+   "file": "authority-dot-setup.html",
+   "title": "Trucking Authority & DOT Setup Guide (USDOT, MC, Insurance) | Loadboot",
+   "title_length": 70,
+   "meta_description": "Step-by-step USDOT and MC authority setup for new carriers: filing order, insurance, BOC-3, UCR, IRP, costs to plan for, the waiting period, and the New Entrant audit.",
+   "meta_description_length": 167,
+   "canonical": "https://loadboot.com/authority-dot-setup.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 30,
+   "sections": [
+    {
+     "heading": "Trucking Authority & DOT Setup \u2014 The Complete Roadmap",
+     "level": "h1",
+     "words": 48
+    },
+    {
+     "heading": "USDOT number vs MC authority \u2014 two different things",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "USDOT number",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "MC (operating) authority",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Intrastate is different",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "The setup sequence that avoids re-work",
+     "level": "h2",
+     "words": 5
+    },
+    {
+     "heading": "Form your business entity",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "File USDOT + MC together",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "Insurance filed by your insurer",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Designate a BOC-3 process agent",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "UCR registration",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "State-level items",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "What setup realistically costs",
+     "level": "h2",
+     "words": 95
+    },
+    {
+     "heading": "What to do while your authority cooks",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Build your document pack",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "Line up factoring or cash buffer",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Get the truck DOT-ready",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Your first 30 days as a legal carrier",
+     "level": "h2",
+     "words": 80
+    },
+    {
+     "heading": "Set up once, tracked forever",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Compliance dates tracked",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "One document home",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "New-authority freight",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 230
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 29
+    },
+    {
+     "heading": "Related services & guides",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "New Authority Dispatch",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "BOC-3 / UCR Guide",
+     "level": "h3",
+     "words": 5
+    },
+    {
+     "heading": "Form 2290 (HVUT)",
+     "level": "h3",
+     "words": 4
+    },
+    {
+     "heading": "IFTA Guide",
+     "level": "h3",
+     "words": 5
+    },
+    {
+     "heading": "Apply as Carrier",
+     "level": "h3",
+     "words": 261
+    }
+   ],
+   "word_count": 1163,
+   "cta_count": 11,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Apply as CarrierExplore \u2192",
+     "href": "carrier-application.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 41,
+   "image_count": 2,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.068,
+    "most_similar_page": "form-2290-hvut.html",
+    "level": "low"
+   },
+   "inbound_link_count": 42,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -473,10 +851,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 454,
+   "word_count": 519,
    "cta_count": 10,
    "ctas": [
     {
@@ -540,7 +918,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -551,10 +931,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -577,22 +959,24 @@
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 40,
-   "image_count": 0,
+   "internal_link_count": 44,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.391,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.119,
+    "most_similar_page": "how-to-get-loads-with-new-authority.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -604,10 +988,315 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "boc3-ucr.html": {
+   "url": "https://loadboot.com/boc3-ucr.html",
+   "file": "boc3-ucr.html",
+   "title": "BOC-3 Process Agents & UCR Registration Explained | Loadboot",
+   "title_length": 60,
+   "meta_description": "What BOC-3 process agents and UCR registration are, who must file, bracket fees, renewal windows, enforcement realities, and how to put both on autopilot.",
+   "meta_description_length": 154,
+   "canonical": "https://loadboot.com/boc3-ucr.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 26,
+   "sections": [
+    {
+     "heading": "BOC-3 and UCR, Demystified",
+     "level": "h1",
+     "words": 49
+    },
+    {
+     "heading": "Your legal mailbox in all 50 states",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "What it is",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "Why FMCSA requires it",
+     "level": "h3",
+     "words": 28
+    },
+    {
+     "heading": "The blanket agent shortcut",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "Three facts that save you pain",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Filed before activation",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Keep the agent current",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Address changes matter",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "The annual fee almost everyone forgets once",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "What it is",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Bracket pricing",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "Renewal window",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "Where carriers actually get caught",
+     "level": "h2",
+     "words": 80
+    },
+    {
+     "heading": "Never miss either one again",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Renewal reminders",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Proof on file",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Trusted referrals",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 182
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 29
+    },
+    {
+     "heading": "Related services & guides",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Authority & DOT Setup",
+     "level": "h3",
+     "words": 4
+    },
+    {
+     "heading": "IFTA Guide",
+     "level": "h3",
+     "words": 5
+    },
+    {
+     "heading": "Form 2290 (HVUT)",
+     "level": "h3",
+     "words": 5
+    },
+    {
+     "heading": "New Authority Dispatch",
+     "level": "h3",
+     "words": 4
+    },
+    {
+     "heading": "For Carriers",
+     "level": "h3",
+     "words": 261
+    }
+   ],
+   "word_count": 963,
+   "cta_count": 10,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 40,
+   "image_count": 2,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.079,
+    "most_similar_page": "form-2290-hvut.html",
+    "level": "low"
+   },
+   "inbound_link_count": 42,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "authority-dot-setup.html",
+    "blog.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -781,10 +1470,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 836,
+   "word_count": 901,
    "cta_count": 12,
    "ctas": [
     {
@@ -856,7 +1545,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -868,8 +1559,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -891,8 +1584,8 @@
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 1,
+   "internal_link_count": 42,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -900,15 +1593,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.227,
+    "max_similarity": 0.048,
     "most_similar_page": "resources.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "brokers.html",
     "careers.html",
     "carrier-application.html",
@@ -919,10 +1614,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -1161,10 +1858,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 937,
+   "word_count": 1002,
    "cta_count": 10,
    "ctas": [
     {
@@ -1276,7 +1973,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -1287,8 +1986,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -1309,8 +2010,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 2,
+   "internal_link_count": 40,
+   "image_count": 4,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -1318,15 +2019,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.216,
+    "max_similarity": 0.044,
     "most_similar_page": "partners.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "careers.html",
     "carrier-application.html",
@@ -1337,10 +2040,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -1374,7 +2079,7 @@
    "canonical": "https://loadboot.com/careers.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 4,
+   "section_count": 12,
    "sections": [
     {
      "heading": "Careers at Loadboot",
@@ -1389,15 +2094,55 @@
     {
      "heading": "Open roles",
      "level": "h2",
-     "words": 39
+     "words": 45
+    },
+    {
+     "heading": "What the work is actually like",
+     "level": "h2",
+     "words": 5
+    },
+    {
+     "heading": "Real stakes, real people",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Modern tooling",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Remote-friendly",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Where you could fit",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Dispatch & operations",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Carrier & partner success",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Product & engineering",
+     "level": "h3",
+     "words": 15
     },
     {
      "heading": "Apply to Loadboot",
      "level": "h3",
-     "words": 237
+     "words": 302
     }
    ],
-   "word_count": 388,
+   "word_count": 580,
    "cta_count": 9,
    "ctas": [
     {
@@ -1499,7 +2244,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -1510,8 +2257,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -1532,23 +2281,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.443,
+    "max_similarity": 0.041,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "carrier-application.html",
@@ -1559,10 +2310,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -1636,10 +2389,10 @@
     {
      "heading": "New Authority",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 377,
+   "word_count": 442,
    "cta_count": 10,
    "ctas": [
     {
@@ -1781,7 +2534,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -1792,8 +2547,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -1814,20 +2571,21 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 1,
+   "internal_link_count": 40,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.468,
+    "max_similarity": 0.131,
     "most_similar_page": "contact.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 17,
+   "inbound_link_count": 19,
    "inbound_links": [
+    "authority-dot-setup.html",
     "box-truck-dispatch.html",
     "carriers.html",
     "case-studies.html",
@@ -1835,6 +2593,7 @@
     "flatbed-dispatch.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "index.html",
     "login.html",
     "new-authority-dispatch.html",
     "owner-operator-dispatch.html",
@@ -2107,10 +2866,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 1163,
+   "word_count": 1228,
    "cta_count": 12,
    "ctas": [
     {
@@ -2182,7 +2941,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2194,8 +2955,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -2217,8 +2980,8 @@
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 2,
+   "internal_link_count": 42,
+   "image_count": 4,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -2226,15 +2989,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.172,
-    "most_similar_page": "resources.html",
+    "max_similarity": 0.047,
+    "most_similar_page": "faq.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2245,10 +3010,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -2337,10 +3104,10 @@
     {
      "heading": "Pricing",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 411,
+   "word_count": 476,
    "cta_count": 12,
    "ctas": [
     {
@@ -2412,7 +3179,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2424,8 +3193,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -2447,23 +3218,25 @@
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 1,
+   "internal_link_count": 42,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.423,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.057,
+    "most_similar_page": "sitemap.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2474,10 +3247,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -2511,7 +3286,7 @@
    "canonical": "https://loadboot.com/contact.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 5,
+   "section_count": 13,
    "sections": [
     {
      "heading": "Get Started with Loadboot",
@@ -2536,10 +3311,50 @@
     {
      "heading": "Your details",
      "level": "h3",
-     "words": 246
+     "words": 61
+    },
+    {
+     "heading": "Skip the form if you prefer email",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "hello@loadboot.com",
+     "level": "h3",
+     "words": 9
+    },
+    {
+     "heading": "dispatch@loadboot.com",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "billing@loadboot.com",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "After you reach out",
+     "level": "h2",
+     "words": 5
+    },
+    {
+     "heading": "A person reads it",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Fast first response",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Tracked to done",
+     "level": "h3",
+     "words": 273
     }
    ],
-   "word_count": 417,
+   "word_count": 583,
    "cta_count": 9,
    "ctas": [
     {
@@ -2713,7 +3528,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2724,8 +3541,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -2746,23 +3565,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.468,
+    "max_similarity": 0.131,
     "most_similar_page": "carrier-application.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2773,10 +3594,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -2830,10 +3653,10 @@
     {
      "heading": "Your choices",
      "level": "h2",
-     "words": 230
+     "words": 295
     }
    ],
-   "word_count": 370,
+   "word_count": 435,
    "cta_count": 9,
    "ctas": [
     {
@@ -2893,7 +3716,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2904,8 +3729,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -2926,23 +3753,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.457,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.065,
+    "most_similar_page": "sitemap.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -2953,10 +3782,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3118,10 +3949,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 810,
+   "word_count": 875,
    "cta_count": 11,
    "ctas": [
     {
@@ -3189,7 +4020,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3201,8 +4034,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3223,8 +4058,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
-   "image_count": 1,
+   "internal_link_count": 41,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -3233,15 +4068,17 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.271,
+    "max_similarity": 0.14,
     "most_similar_page": "power-only-dispatch.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3252,10 +4089,12 @@
     "cookies.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3304,10 +4143,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 610,
+   "word_count": 675,
    "cta_count": 10,
    "ctas": [
     {
@@ -3371,7 +4210,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3382,8 +4223,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3404,8 +4247,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -3413,15 +4256,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.298,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.07,
+    "most_similar_page": "terms.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3432,10 +4277,12 @@
     "cookies.html",
     "dry-van-dispatch.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3564,10 +4411,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 824,
+   "word_count": 889,
    "cta_count": 11,
    "ctas": [
     {
@@ -3635,7 +4482,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3647,8 +4496,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3669,8 +4520,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
-   "image_count": 1,
+   "internal_link_count": 41,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -3679,15 +4530,17 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.265,
+    "max_similarity": 0.139,
     "most_similar_page": "dry-van-dispatch.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3698,10 +4551,325 @@
     "cookies.html",
     "dry-van-dispatch.html",
     "faq.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
+   ]
+  },
+  "form-2290-hvut.html": {
+   "url": "https://loadboot.com/form-2290-hvut.html",
+   "file": "form-2290-hvut.html",
+   "title": "Form 2290 (HVUT) Guide for Owner-Operators \u2014 Deadlines & Schedule 1 | Loadboot",
+   "title_length": 78,
+   "meta_description": "Heavy Vehicle Use Tax explained: who files Form 2290, July\u2013June deadlines, prorated first-use rules, Schedule 1 proof for the DMV, e-filing tips and common mistakes.",
+   "meta_description_length": 165,
+   "canonical": "https://loadboot.com/form-2290-hvut.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 27,
+   "sections": [
+    {
+     "heading": "Form 2290 (Heavy Vehicle Use Tax) Without the Headache",
+     "level": "h1",
+     "words": 39
+    },
+    {
+     "heading": "What Form 2290 actually is",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "A federal highway tax",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "A July\u2013June tax year",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "The Schedule 1",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "The dates that matter",
+     "level": "h2",
+     "words": 6
+    },
+    {
+     "heading": "Trucks in service in July",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Mid-year first use",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "Sold, destroyed or stolen",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "Five tips from carriers who learned the hard way",
+     "level": "h2",
+     "words": 7
+    },
+    {
+     "heading": "E-file if you have 25+ vehicles",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "EIN, not SSN",
+     "level": "h3",
+     "words": 32
+    },
+    {
+     "heading": "Match the VIN exactly",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Weight category honesty",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Keep 3 years of records",
+     "level": "h3",
+     "words": 27
+    },
+    {
+     "heading": "The Schedule 1 that is always findable",
+     "level": "h2",
+     "words": 5
+    },
+    {
+     "heading": "Stored with your docs",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "August never surprises you",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Referral to e-file providers",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 211
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 29
+    },
+    {
+     "heading": "Related services & guides",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "IFTA Guide",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "Authority & DOT Setup",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "BOC-3 / UCR Guide",
+     "level": "h3",
+     "words": 4
+    },
+    {
+     "heading": "For Carriers",
+     "level": "h3",
+     "words": 5
+    },
+    {
+     "heading": "Free Trucking Tools",
+     "level": "h3",
+     "words": 261
+    }
+   ],
+   "word_count": 960,
+   "cta_count": 11,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Free Trucking ToolsExplore \u2192",
+     "href": "tools.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 41,
+   "image_count": 2,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.091,
+    "most_similar_page": "ifta-fuel-tax.html",
+    "level": "low"
+   },
+   "inbound_link_count": 42,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3830,10 +4998,10 @@
     {
      "heading": "New Authority",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 771,
+   "word_count": 836,
    "cta_count": 11,
    "ctas": [
     {
@@ -3901,7 +5069,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3913,8 +5083,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -3935,8 +5107,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
-   "image_count": 1,
+   "internal_link_count": 41,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -3945,15 +5117,17 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.275,
+    "max_similarity": 0.14,
     "most_similar_page": "power-only-dispatch.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -3965,9 +5139,11 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -4001,7 +5177,7 @@
    "canonical": "https://loadboot.com/how-it-works.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 17,
+   "section_count": 31,
    "sections": [
     {
      "heading": "How Loadboot Works",
@@ -4051,7 +5227,77 @@
     {
      "heading": "No contracts",
      "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "The carrier journey, end to end",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "1. Profile & documents",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "2. Matched offers",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "3. Dispatch & drive",
+     "level": "h3",
      "words": 22
+    },
+    {
+     "heading": "4. POD to payday",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "The broker partner journey",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "1. Verify once",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "2. Post in minutes",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "3. Matched & booked",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "4. Watch it deliver",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "What LoadBoot runs between you both",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Matching engine",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Exception desk",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Money rail",
+     "level": "h3",
+     "words": 20
     },
     {
      "heading": "Ready to keep your truck loaded?",
@@ -4086,10 +5332,10 @@
     {
      "heading": "Dispatcher vs Broker",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 517,
+   "word_count": 810,
    "cta_count": 11,
    "ctas": [
     {
@@ -4157,7 +5403,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -4169,8 +5417,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -4192,23 +5442,25 @@
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 1,
+   "internal_link_count": 42,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.351,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.058,
+    "most_similar_page": "resources.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -4220,9 +5472,11 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -4311,10 +5565,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 1647,
+   "word_count": 1712,
    "cta_count": 9,
    "ctas": [
     {
@@ -4374,7 +5628,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -4385,8 +5641,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -4409,8 +5667,8 @@
    "links_external": [
     "https://www.fmcsa.dot.gov/registration/who-needs-register"
    ],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "Article",
@@ -4419,8 +5677,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.125,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.03,
+    "most_similar_page": "owner-operator-dispatch-service-guide.html",
     "level": "low"
    },
    "inbound_link_count": 4,
@@ -4481,10 +5739,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 588,
+   "word_count": 653,
    "cta_count": 10,
    "ctas": [
     {
@@ -4548,7 +5806,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -4559,8 +5819,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -4581,8 +5843,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "Article",
@@ -4590,9 +5852,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.338,
+    "max_similarity": 0.119,
     "most_similar_page": "blog.html",
-    "level": "medium"
+    "level": "low"
    },
    "inbound_link_count": 4,
    "inbound_links": [
@@ -4600,6 +5862,334 @@
     "index.html",
     "new-authority-dispatch.html",
     "resources.html"
+   ]
+  },
+  "ifta-fuel-tax.html": {
+   "url": "https://loadboot.com/ifta-fuel-tax.html",
+   "file": "ifta-fuel-tax.html",
+   "title": "IFTA Fuel Tax Guide \u2014 Quarterly Returns, Records & Audits | Loadboot",
+   "title_length": 68,
+   "meta_description": "How IFTA works: qualified vehicles, one base-state license, quarterly return math (fleet MPG method), the records auditors demand, deadlines, and habits that keep filings clean.",
+   "meta_description_length": 177,
+   "canonical": "https://loadboot.com/ifta-fuel-tax.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 30,
+   "sections": [
+    {
+     "heading": "IFTA Explained \u2014 Fuel Tax Without the Quarterly Panic",
+     "level": "h1",
+     "words": 44
+    },
+    {
+     "heading": "Why IFTA exists",
+     "level": "h2",
+     "words": 74
+    },
+    {
+     "heading": "Coverage in 20 seconds",
+     "level": "h2",
+     "words": 2
+    },
+    {
+     "heading": "Qualified vehicles",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "One license, two decals",
+     "level": "h3",
+     "words": 24
+    },
+    {
+     "heading": "Four returns a year",
+     "level": "h3",
+     "words": 25
+    },
+    {
+     "heading": "How your bill is computed",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Fleet MPG",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Fuel used per state",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "Settle the difference",
+     "level": "h3",
+     "words": 34
+    },
+    {
+     "heading": "What an IFTA audit looks for",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Distance by jurisdiction",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Every fuel receipt",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "The 4-year window",
+     "level": "h3",
+     "words": 28
+    },
+    {
+     "heading": "Make the quarterly filing a 20-minute job",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Fuel card discipline",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Monthly mini-close",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "Deadline autopilot",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "Your miles are already organized",
+     "level": "h2",
+     "words": 6
+    },
+    {
+     "heading": "Trip records that audit well",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "License & decals on file",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "Referral to filing services",
+     "level": "h3",
+     "words": 17
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 195
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 29
+    },
+    {
+     "heading": "Related services & guides",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Form 2290 (HVUT)",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "Authority & DOT Setup",
+     "level": "h3",
+     "words": 6
+    },
+    {
+     "heading": "BOC-3 / UCR Guide",
+     "level": "h3",
+     "words": 4
+    },
+    {
+     "heading": "For Carriers",
+     "level": "h3",
+     "words": 5
+    },
+    {
+     "heading": "Free Trucking Tools",
+     "level": "h3",
+     "words": 261
+    }
+   ],
+   "word_count": 1002,
+   "cta_count": 11,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Free Trucking ToolsExplore \u2192",
+     "href": "tools.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 41,
+   "image_count": 2,
+   "images_missing_alt": [],
+   "schema_types": [
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.091,
+    "most_similar_page": "form-2290-hvut.html",
+    "level": "low"
+   },
+   "inbound_link_count": 42,
+   "inbound_links": [
+    "about.html",
+    "accessibility.html",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carrier-application.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-get-loads-with-new-authority.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch-service-guide.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html",
+    "truck-dispatcher-vs-freight-broker.html"
    ]
   },
   "index.html": {
@@ -4612,7 +6202,7 @@
    "canonical": "https://loadboot.com/",
    "robots": "",
    "h1_count": 1,
-   "section_count": 45,
+   "section_count": 61,
    "sections": [
     {
      "heading": "Professional Truck Dispatch Across the USA",
@@ -4702,12 +6292,72 @@
     {
      "heading": "Available Load Opportunities",
      "level": "h2",
-     "words": 52
+     "words": 57
     },
     {
-     "heading": "How LoadBoot evaluates a load",
+     "heading": "How we work with broker partners \u2014 start to delivered",
      "level": "h2",
-     "words": 218
+     "words": 5
+    },
+    {
+     "heading": "Join & get verified",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Post your load",
+     "level": "h3",
+     "words": 22
+    },
+    {
+     "heading": "We match & book a vetted carrier",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Watch it move",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "Delivered, documented, done",
+     "level": "h3",
+     "words": 32
+    },
+    {
+     "heading": "Your week with LoadBoot \u2014 from sign-up to getting paid",
+     "level": "h2",
+     "words": 3
+    },
+    {
+     "heading": "Quick profile",
+     "level": "h3",
+     "words": 16
+    },
+    {
+     "heading": "Loads come to you",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "We handle the paperwork",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Protected on the road",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Paid with a clean file",
+     "level": "h3",
+     "words": 34
+    },
+    {
+     "heading": "Finding freight used to be the hard part",
+     "level": "h2",
+     "words": 77
     },
     {
      "heading": "Built for every kind of carrier on the road",
@@ -4797,15 +6447,35 @@
     {
      "heading": "Detention Pay",
      "level": "h3",
-     "words": 26
+     "words": 29
+    },
+    {
+     "heading": "Know a carrier or broker? Get paid for the introduction",
+     "level": "h2",
+     "words": 4
+    },
+    {
+     "heading": "Refer once, earn ongoing",
+     "level": "h3",
+     "words": 28
+    },
+    {
+     "heading": "Track everything",
+     "level": "h3",
+     "words": 19
+    },
+    {
+     "heading": "No cost to anyone",
+     "level": "h3",
+     "words": 30
     },
     {
      "heading": "A dispatcher who actually has your back",
      "level": "h2",
-     "words": 65
+     "words": 66
     },
     {
-     "heading": "Guides to help you run a more profitable truck",
+     "heading": "Guides that make you money before you spend a dollar",
      "level": "h2",
      "words": 7
     },
@@ -4837,11 +6507,11 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 1848,
-   "cta_count": 12,
+   "word_count": 2100,
+   "cta_count": 13,
    "ctas": [
     {
      "text": "Contact",
@@ -4866,6 +6536,10 @@
     {
      "text": "Sign in to view & book \u2192",
      "href": "/app/carrier/"
+    },
+    {
+     "text": "Apply as a Carrier",
+     "href": "carrier-application.html"
     },
     {
      "text": "Open all free tools",
@@ -4912,10 +6586,13 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
+    "carrier-application.html",
     "carriers.html",
     "case-studies.html",
     "contact.html",
@@ -4923,10 +6600,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -4950,23 +6629,25 @@
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 41,
-   "image_count": 2,
+   "internal_link_count": 46,
+   "image_count": 4,
    "images_missing_alt": [],
    "schema_types": [
     "FAQPage",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.273,
+    "max_similarity": 0.19,
     "most_similar_page": "services.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -4978,10 +6659,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "load-score.html",
     "login.html",
     "new-authority-dispatch.html",
@@ -5069,10 +6752,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 1229,
+   "word_count": 1294,
    "cta_count": 11,
    "ctas": [
     {
@@ -5140,7 +6823,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -5151,8 +6836,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -5174,8 +6861,8 @@
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
-   "image_count": 0,
+   "internal_link_count": 41,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -5185,15 +6872,17 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.165,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.067,
+    "most_similar_page": "index.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -5205,10 +6894,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "login.html",
     "new-authority-dispatch.html",
@@ -5281,10 +6972,10 @@
     {
      "heading": "Need an account?",
      "level": "h3",
-     "words": 205
+     "words": 270
     }
    ],
-   "word_count": 347,
+   "word_count": 412,
    "cta_count": 10,
    "ctas": [
     {
@@ -5350,7 +7041,9 @@
     "app/developer/",
     "app/partner/",
     "app/pocket/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -5362,8 +7055,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -5384,23 +7079,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 39,
-   "image_count": 0,
+   "internal_link_count": 43,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.499,
+    "max_similarity": 0.074,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -5412,10 +7109,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "new-authority-dispatch.html",
@@ -5543,10 +7242,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 887,
+   "word_count": 952,
    "cta_count": 11,
    "ctas": [
     {
@@ -5614,7 +7313,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -5626,9 +7327,11 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -5649,8 +7352,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 1,
+   "internal_link_count": 42,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -5659,15 +7362,17 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.24,
+    "max_similarity": 0.114,
     "most_similar_page": "power-only-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -5679,10 +7384,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -5770,10 +7477,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 2208,
+   "word_count": 2273,
    "cta_count": 9,
    "ctas": [
     {
@@ -5833,7 +7540,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -5844,9 +7553,11 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -5871,8 +7582,8 @@
     "https://safer.fmcsa.dot.gov/CompanySnapshot.aspx",
     "https://www.fmcsa.dot.gov/registration/who-needs-register"
    ],
-   "internal_link_count": 38,
-   "image_count": 1,
+   "internal_link_count": 42,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "Article",
@@ -5881,8 +7592,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.098,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.03,
+    "most_similar_page": "how-much-does-a-truck-dispatcher-cost.html",
     "level": "low"
    },
    "inbound_link_count": 3,
@@ -5997,10 +7708,10 @@
     {
      "heading": "Load Score Tool",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 832,
+   "word_count": 897,
    "cta_count": 11,
    "ctas": [
     {
@@ -6068,7 +7779,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6080,8 +7793,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6103,8 +7818,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 1,
+   "internal_link_count": 42,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -6113,15 +7828,17 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.245,
+    "max_similarity": 0.115,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6133,10 +7850,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6229,10 +7948,10 @@
     {
      "heading": "Referral Program",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 394,
+   "word_count": 459,
    "cta_count": 10,
    "ctas": [
     {
@@ -6344,7 +8063,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6355,8 +8076,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6377,23 +8100,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.446,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.062,
+    "most_similar_page": "sitemap.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6405,10 +8130,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6536,10 +8263,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 762,
+   "word_count": 827,
    "cta_count": 11,
    "ctas": [
     {
@@ -6607,7 +8334,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6619,8 +8348,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6641,8 +8372,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
-   "image_count": 1,
+   "internal_link_count": 41,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -6651,15 +8382,17 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.275,
+    "max_similarity": 0.14,
     "most_similar_page": "hotshot-dispatch.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6671,10 +8404,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6767,10 +8502,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 610,
+   "word_count": 675,
    "cta_count": 11,
    "ctas": [
     {
@@ -6838,7 +8573,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6850,9 +8587,11 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6873,8 +8612,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 1,
+   "internal_link_count": 42,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -6882,15 +8621,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.297,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.101,
+    "most_similar_page": "services.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -6902,10 +8643,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6988,10 +8731,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 653,
+   "word_count": 718,
    "cta_count": 10,
    "ctas": [
     {
@@ -7055,7 +8798,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7066,8 +8811,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7088,23 +8835,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.279,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.07,
+    "most_similar_page": "terms.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7116,10 +8865,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7247,10 +8998,10 @@
     {
      "heading": "Load Score Tool",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 898,
+   "word_count": 963,
    "cta_count": 11,
    "ctas": [
     {
@@ -7318,7 +9069,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7330,8 +9083,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7352,8 +9107,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
-   "image_count": 1,
+   "internal_link_count": 41,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -7362,15 +9117,17 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.235,
-    "most_similar_page": "power-only-dispatch.html",
+    "max_similarity": 0.113,
+    "most_similar_page": "owner-operator-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7382,10 +9139,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7478,10 +9237,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 403,
+   "word_count": 468,
    "cta_count": 10,
    "ctas": [
     {
@@ -7593,7 +9352,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7605,8 +9366,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7627,23 +9390,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 37,
-   "image_count": 0,
+   "internal_link_count": 41,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.435,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.06,
+    "most_similar_page": "sitemap.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7655,10 +9420,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7766,10 +9533,10 @@
     {
      "heading": "Dispatcher vs Broker",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 432,
+   "word_count": 497,
    "cta_count": 11,
    "ctas": [
     {
@@ -7837,7 +9604,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7848,9 +9617,11 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7873,23 +9644,25 @@
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 39,
-   "image_count": 0,
+   "internal_link_count": 43,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.417,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.088,
+    "most_similar_page": "terms.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -7901,10 +9674,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -7982,10 +9757,10 @@
     {
      "heading": "Report a security concern",
      "level": "h2",
-     "words": 203
+     "words": 268
     }
    ],
-   "word_count": 399,
+   "word_count": 464,
    "cta_count": 9,
    "ctas": [
     {
@@ -8045,7 +9820,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -8056,8 +9833,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -8078,23 +9857,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.436,
+    "max_similarity": 0.059,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -8106,10 +9887,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -8377,10 +10160,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 928,
+   "word_count": 993,
    "cta_count": 12,
    "ctas": [
     {
@@ -8452,7 +10235,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -8464,8 +10249,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -8487,8 +10274,8 @@
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 2,
+   "internal_link_count": 42,
+   "image_count": 4,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -8496,15 +10283,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.273,
+    "max_similarity": 0.19,
     "most_similar_page": "index.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -8516,10 +10305,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -8712,10 +10503,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 963,
+   "word_count": 1028,
    "cta_count": 10,
    "ctas": [
     {
@@ -8839,7 +10630,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -8850,8 +10643,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -8872,8 +10667,8 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 2,
+   "internal_link_count": 40,
+   "image_count": 4,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -8881,15 +10676,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.2,
-    "most_similar_page": "status.html",
+    "max_similarity": 0.022,
+    "most_similar_page": "referral.html",
     "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -8901,10 +10698,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -8967,10 +10766,10 @@
     {
      "heading": "Legal & trust",
      "level": "h3",
-     "words": 202
+     "words": 267
     }
    ],
-   "word_count": 302,
+   "word_count": 367,
    "cta_count": 11,
    "ctas": [
     {
@@ -9038,7 +10837,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9050,8 +10851,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9073,23 +10876,25 @@
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 0,
+   "internal_link_count": 42,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.549,
+    "max_similarity": 0.09,
     "most_similar_page": "status.html",
-    "level": "high"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9101,10 +10906,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9147,10 +10954,10 @@
     {
      "heading": "Current status",
      "level": "h3",
-     "words": 235
+     "words": 300
     }
    ],
-   "word_count": 290,
+   "word_count": 355,
    "cta_count": 9,
    "ctas": [
     {
@@ -9210,7 +11017,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9221,8 +11030,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9243,23 +11054,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.549,
+    "max_similarity": 0.09,
     "most_similar_page": "sitemap.html",
-    "level": "high"
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9271,10 +11084,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9347,10 +11162,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 458,
+   "word_count": 523,
    "cta_count": 10,
    "ctas": [
     {
@@ -9414,7 +11229,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9425,8 +11242,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9447,23 +11266,25 @@
     "terms.html"
    ],
    "links_external": [],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.383,
-    "most_similar_page": "status.html",
-    "level": "medium"
+    "max_similarity": 0.092,
+    "most_similar_page": "blog.html",
+    "level": "low"
    },
-   "inbound_link_count": 38,
+   "inbound_link_count": 42,
    "inbound_links": [
     "about.html",
     "accessibility.html",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9475,10 +11296,12 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9626,10 +11449,10 @@
     {
      "heading": "Apply as Carrier",
      "level": "h3",
-     "words": 196
+     "words": 261
     }
    ],
-   "word_count": 1270,
+   "word_count": 1335,
    "cta_count": 13,
    "ctas": [
     {
@@ -9705,7 +11528,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9717,8 +11542,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9740,8 +11567,8 @@
     "tools.html"
    ],
    "links_external": [],
-   "internal_link_count": 38,
-   "image_count": 0,
+   "internal_link_count": 42,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
@@ -9750,15 +11577,17 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.162,
+    "max_similarity": 0.036,
     "most_similar_page": "resources.html",
     "level": "low"
    },
-   "inbound_link_count": 8,
+   "inbound_link_count": 10,
    "inbound_links": [
     "box-truck-dispatch.html",
     "carriers.html",
     "case-studies.html",
+    "form-2290-hvut.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "resources.html",
@@ -9831,10 +11660,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 217
+     "words": 282
     }
    ],
-   "word_count": 1912,
+   "word_count": 1977,
    "cta_count": 9,
    "ctas": [
     {
@@ -9894,7 +11723,9 @@
     "app/carrier/",
     "app/developer/",
     "app/partner/",
+    "authority-dot-setup.html",
     "blog.html",
+    "boc3-ucr.html",
     "box-truck-dispatch.html",
     "brokers.html",
     "careers.html",
@@ -9905,8 +11736,10 @@
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
+    "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -9930,8 +11763,8 @@
     "https://safer.fmcsa.dot.gov/",
     "https://www.fmcsa.dot.gov/registration/get-mc-number-authority-operate"
    ],
-   "internal_link_count": 36,
-   "image_count": 0,
+   "internal_link_count": 40,
+   "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
     "Article",
@@ -9940,7 +11773,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.109,
+    "max_similarity": 0.022,
     "most_similar_page": "blog.html",
     "level": "low"
    },

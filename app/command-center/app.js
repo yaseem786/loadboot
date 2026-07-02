@@ -56,6 +56,8 @@ import { renderLoadIntake } from './views/loadIntake.js';
 import { renderControlTower } from './views/controlTower.js';
 import { renderExceptionCenter } from './views/exceptionCenter.js';
 import { renderWorkflowBuilder } from './views/workflowBuilder.js';
+import { renderReferrals } from './views/referrals.js';
+import { renderBI } from './views/bi.js';
 import { renderBrandKit } from './views/brandKit.js';
 import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
@@ -179,9 +181,12 @@ async function boot() {
   // Global Dispatch Marketplace (Load Intake / AI Pilot / Control Tower / Exception Center)
   let loadMarketplaceEnabled = false;
   try { loadMarketplaceEnabled = await isFlagEnabled('load_marketplace'); } catch (_) { loadMarketplaceEnabled = false; }
+  // WEB-2 multi-level referral engine (default OFF in production until owner + legal sign-off).
+  let referralProgramEnabled = false;
+  try { referralProgramEnabled = await isFlagEnabled('referral_program'); } catch (_) { referralProgramEnabled = false; }
 
   const user = await getUser();
-  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled, announcements: announcementsEnabled, campaigns: campaignsEnabled, googleData: googleDataEnabled, load_marketplace: loadMarketplaceEnabled });
+  const shell = renderShell(root, user, { automation: automationEnabled, crm: crmEnabled, compliance: complianceEnabled, dispatch: dispatchEnabled, comms: commsEnabled, finance: financeEnabled, analytics: analyticsEnabled, content: contentEnabled, integrations: integrationsEnabled, fleet: fleetEnabled, webAnalytics: webAnalyticsEnabled, forms: formsEnabled, seo: seoEnabled, partners: partnersEnabled, support: supportEnabled, reports: reportsEnabled, automationsAdmin: automationsAdminEnabled, notificationsCenter: notificationsCenterEnabled, teamChat: teamChatEnabled, opsMap: opsMapEnabled, announcements: announcementsEnabled, campaigns: campaignsEnabled, googleData: googleDataEnabled, load_marketplace: loadMarketplaceEnabled, referral_program: referralProgramEnabled });
   const { content, setActive } = shell;
   mountOfflineBanner();
   root.setAttribute('aria-busy', 'false');
@@ -229,6 +234,8 @@ async function boot() {
     '/control-tower': () => { setActive('/control-tower'); if (can('dispatch.view')) renderControlTower(content); else denied(); },
     '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.view')) renderExceptionCenter(content); else denied(); },
     '/workflows': () => { setActive('/workflows'); if (can('settings.manage') || can('content.manage')) renderWorkflowBuilder(content); else denied(); },
+    '/referrals': () => { setActive('/referrals'); if (referralProgramEnabled && can('finance.view')) renderReferrals(content); else denied(); },
+    '/bi': () => { setActive('/bi'); if (can('analytics.view') || can('reports.view')) renderBI(content); else denied(); },
     '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
     '/plugins': () => { setActive('/plugins'); renderPluginMarketplace(content); },
     '/form-builder': () => { setActive('/form-builder'); renderFormBuilder(content); },

@@ -1,0 +1,7 @@
+-- cwh_public_board.sql — WEB-1: richer PUBLIC load board (home page live section).
+-- get_public_load_opportunities extended additively: + commodity, weight, posted_by
+-- ('Broker partner' | 'LoadBoot dispatch' — generic labels only; NO company names, NO contacts,
+-- NO internal margin — only fields already deemed public-safe, still gated by is_public=true).
+-- Staging got the missing prod columns (is_public default false, published_at, expires_at) additively.
+-- Function is one of the 5 intentional anon SECURITY DEFINER fns — re-granted after recreate;
+-- anon surface verified = 5 on BOTH DBs after apply, md5 parity confirmed.

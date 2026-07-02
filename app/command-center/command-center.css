@@ -50,9 +50,8 @@
 .cc-brand{padding:8px 8px 6px}
 /* real LoadBoot logo (mark + wordmark) */
 .cc-brandrow{display:flex;align-items:center;gap:10px}
-.cc-mark{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#1e3a8a,#0b1220);
-  display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 16px -8px rgba(30,58,138,.9)}
-.cc-side .cc-mark{background:linear-gradient(135deg,#3b82f6,#1e3a8a);box-shadow:0 6px 16px -6px rgba(59,130,246,.8)}
+.cc-mark{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cc-side .cc-mark{background:none;box-shadow:0 6px 16px -6px rgba(59,130,246,.55)}
 .cc-brandtxt{line-height:1.1}
 .cc-word{font-family:var(--lb-head);font-weight:800;font-size:1.2rem;letter-spacing:-.02em;color:var(--lb-navy)}
 .cc-word b{color:var(--lb-blue);font-weight:800}

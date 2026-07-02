@@ -17,6 +17,7 @@ const NAV = [
     { path: '/', label: 'Dashboard', icon: 'grid', perm: null },
     { path: '/radar', label: 'Ops Radar', icon: 'bell', perm: null },
     { path: '/management', label: 'Management', icon: 'grid', perm: null },
+    { path: '/bi', label: 'Business Intelligence', icon: 'trend', perm: 'any:analytics.view,reports.view' },
     { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
     { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics' },
     { path: '/google', label: 'Google Analytics', icon: 'trend', perm: 'analytics.view', flag: 'googleData' },
@@ -65,6 +66,7 @@ const NAV = [
   { group: 'Finance', items: [
     { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },
     { path: '/finance-analytics', label: 'Finance analytics', icon: 'trend', perm: 'finance.view', flag: 'finance' },
+    { path: '/referrals', label: 'Referral Program', icon: 'users', perm: 'finance.view', flag: 'referral_program' },
   ]},
   { group: 'Marketing', items: [
     { path: '/content', label: 'Content & posts', icon: 'doc', perm: 'content.view', flag: 'content' },

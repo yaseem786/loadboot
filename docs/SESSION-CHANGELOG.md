@@ -705,3 +705,137 @@ box, no invented data):
 - Proof: WORKFLOW BUILDER MATRIX: PASS (11 checks) — forbidden node rejected, branch logic, no-side-effect simulation, live dedupe, denials, anon zero.
 - UI: Command Center → "Workflow Builder" nav (settings.manage): list w/ status+versions+runs, step-list editor (condition true/false branching, delay, task note, notification, email-template steps; trigger+end auto), Simulate drawer (sample-event JSON → step trace), publish/pause, run history. KNOWN LIMITATION stated: v1 = step-list editor, not drag/drop canvas (graph model canvas-ready).
 - Gates: node --check OK, IMPORT-REFERENCE CHECK: PASS.
+
+## WEB-1 — HOME PAGE OVERHAUL (owner directive)
+- LIVE PUBLIC BOARD upgraded: get_public_load_opportunities extended additively (+commodity, +weight, +posted_by generic label 'Broker partner'/'LoadBoot dispatch' — NO company names/contacts/margin; is_public=true gate unchanged). Applied BOTH DBs, md5 parity, anon surface exactly 5 (fn re-granted after recreate). Staging got prod's missing is_public/published_at/expires_at columns additively. Migration: cwh_public_board.sql.
+- Board cards now show commodity/weight/source pills + LOGIN-AWARE button: signed-in visitors (sb-*-auth-token present) see "Book this load →" (deep link to carrier loads), others "Login & Book →".
+- EXAMPLE-LOADS section REMOVED from home (owner order).
+- NEW home sections: "How we work with broker partners" (5 child-simple steps → brokers.html + Partner Portal CTAs), "Your week with LoadBoot" carrier flow (5 steps → carriers.html + application), "The bridge" (LoadBoot between brokers & carriers), referral teaser (3 cards → referral.html).
+- Blog section polished ("Free knowledge base" positioning). Home: 45→61 headings, 1,848→2,035 words, 13 CTAs. Build PASS, 8/8 content checks PASS, inventory re-run.
+- NOTE: per owner, NOT requesting a push — batch with the next milestone to save Netlify credits.
+
+## WEB-4 — "RESEARCH LOADBOOT WITH AI" FOOTER
+- Shared footer block on EVERY page (one component, zero duplication): heading + neutral description + 5 provider buttons (ChatGPT/Claude/Gemini/Perplexity/Grok — text/lettermark treatment, NO fake logos, no hotlinked assets, external-link indicator, rel=noopener noreferrer, tooltip, sr-only labels) + accessible <details> prompt disclosure with Copy button + aria-live copy announcement + third-party privacy disclosure.
+- Prompts: NEUTRAL default research prompt (verbatim from spec) + page-aware template driven by a TOPICS configuration map (12 pages mapped: carriers/brokers/shipper/pricing/how-it-works/equipment/services/resources); prompt_version=v1; nothing asks the AI to praise or recommend LoadBoot.
+- Behavior: every click copies the prompt to clipboard FIRST (universal fallback), then opens the provider in a new tab; Gemini honestly marked fallback-only (no verified prefill URL — could not verify provider URL patterns from this environment; all providers work via clipboard regardless); failures tracked, never silent.
+- Analytics (existing first-party lbTrack): ai_research_link_clicked / provider_opened / prompt_viewed / prompt_copied / fallback_used with provider, topic, prompt_version, prompt_type, placement — full prompt text NEVER placed in events.
+- Switch: AI_RESEARCH_FOOTER_ENABLED build constant in build_site.py (owner-flippable; owner reviews every push, which is the deploy gate).
+- Gates (tests/ai_research_footer_checks.py against BUILT output): FRONTEND PASS · PROMPT CONFIGURATION PASS · PROVIDER FALLBACK PASS · ANALYTICS PASS · SECURITY PASS (encodeURIComponent, noopener, no secrets/private data, neutral framing asserted).
+- KNOWN LIMITATIONS (honest): Command Center prompt-versioning/managed-config screen deferred — a public config read would require a 6th anon SECURITY DEFINER function, violating the locked 5-surface invariant; current versioning is build-time (v1) with owner-controlled deploys. Provider URL patterns unverifiable from this environment; clipboard fallback guarantees function. /resources/research-loadboot-with-ai page deferred until enough real content exists (anti-doorway rule).
+
+## WEB-3 (part 1) — FOUR REAL COMPLIANCE PAGES + WIRING
+- New full pages (unique content, educational, honest disclaimers, FAQPage schema, related-cluster cross-links):
+  * authority-dot-setup.html — 30 headings / 1,163 words (USDOT vs MC, 6-step filing order, cost honesty without printing changeable govt fees, waiting-period playbook, New Entrant audit, LoadBoot fit, 4 FAQs)
+  * boc3-ucr.html — 26 / 963 (process agents, blanket-agent shortcut, 3 practical BOC-3 facts, UCR brackets + renewal window, enforcement reality, autopilot habits)
+  * form-2290-hvut.html — 27 / 960 (July–June tax year, Schedule 1, deadlines incl. prorated first-use, 5 field-tested filing tips, record retention)
+  * ifta-fuel-tax.html — 30 / 1,002 (why IFTA exists, qualified vehicles, quarterly math via fleet-MPG method, audit records, clean-IFTA habits)
+- Footer Compliance cluster now points at the REAL pages (previously all four redirected to services.html — owner's exact complaint fixed). RELATED map: 4 entries added, pages cross-link each other + new-authority + carriers + tools. Inbound links: 42 each — fully interconnected, dup-risk LOW.
+- Inventory tool improvement: duplication shingles now EXCLUDE shared footer chrome (the AI-research footer text was inflating similarity on short utility pages — 10 false-positive pairs → 0; metric now measures page content only).
+- All pages carry the standing honesty disclaimer (education, not legal/tax advice; fees change — verify on FMCSA.gov/IRS.gov).
+- Pending in WEB-3 (part 2): about/contact trust upgrade, how-it-works triple workflow, careers/case-studies enrichment.
+
+## OWNER FIXES — REAL LOGO EVERYWHERE + GOOGLE ANALYTICS PAGE
+- REAL LOGO: every hand-drawn SVG approximation of the brand mark replaced with the ORIGINAL asset (/icon-512.png — navy rounded square, white L, orange arrow; zero design changes) across: marketing header, footer, splash screen, Command Center sidebar (cc-mark synthetic gradient removed so the true icon shows unmodified), carrier portal, partner portal, developer portal. 7 replacements + CSS fix; 0 hand-drawn marks remain in built output.
+- GOOGLE ANALYTICS PAGE: ga4-insights + gsc-insights edge functions freshly deployed to production (both ACTIVE, verify_jwt on, staff re-check inside). Page now shows the honest "not connected" card with exact setup steps instead of a generic error. REMAINING OWNER ACTION for real data: create a Google Cloud service account, enable Analytics Data API + Search Console API, grant it Viewer on the GA4 property + Search Console site, then set secrets GOOGLE_SA_KEY (full JSON), GA4_PROPERTY_ID (numeric), optional GSC_SITE_URL in Supabase → Edge Functions → Secrets.
+
+## WEB-3 (part 2) — ABOUT / HOW-IT-WORKS / CAREERS / CONTACT ENRICHMENT
+- how-it-works.html 17→31 headings: NEW carrier journey (4 steps, unique icons), broker partner journey (4 steps), "Behind the scenes" (matching engine / exception desk / money rail with maker-checker note).
+- about.html 11→19: "Rules we run the company by" (explainable-always, tenant-isolated data, humans-control-money) + "Three front doors" official email cards (hello@/dispatch@/billing@).
+- careers.html 4→12: life-at-LoadBoot + teams-we-hire-for sections. contact.html 5→13: direct email lines per operation + "what happens next" expectations.
+- All four dup-risk LOW; only remaining thin/orphan page site-wide is dashboard.html (app shell — by design). Build PASS, inventory re-run.
+- WEB-3 COMPLETE (parts 1+2).
+
+## WEB-2 — MULTI-LEVEL REFERRAL ENGINE (backend + carrier portal)
+- `cwi_referral_engine.sql` (BOTH DBs, md5 parity; anon surface 5): referrers (stable code per user; carrier/partner/affiliate kinds — affiliates = influencers/agencies without client org), referral_edges (each org referred exactly ONCE, no self-referral), referral_levels (L1 1% … L5 0.10% of gross, from OUR 5% fee — LoadBoot keeps ≥3%, client never pays extra), referral_commissions (15-DAY HOLD → payable → human-marked paid).
+- RPCs: cc_my_referral (join/get code+stats+link), cc_claim_referral (one-time, guarded), cc_my_referral_earnings (self-scope), cc_referral_accrue (finance.manage; walks chain ≤5 levels per fee-bearing invoice; idempotent; promotes hold-expired rows), cc_referral_overview (staff), cc_referral_mark_paid (finance.approve; ONLY payable rows — hold enforced; records decision, money moves outside).
+- Proof: REFERRAL ENGINE MATRIX: PASS (15 checks) — chain math asserted to the cent, hold enforced, dedupe, isolation, denials, anon zero.
+- UI: carrier portal Account → "Referral program" card (flag-gated): code, copy-link, referral count, accrued/payable/paid, one-time "link referrer" claim, honest fine print. api wrappers ×6.
+- Flag referral_program: staging ON, production OFF — OWNER+LEGAL activation required (multi-level commission structures may need legal review; stated to owner).
+- PENDING (WEB-2 part 2): referral.html page enrichment for agencies/influencers + home-section deep link (teaser already live), CC Referrals overview screen, partner-portal card, accrual scheduling.
+
+## WEB-2 (part 2) — REFERRAL PAGE + CC OVERVIEW + PARTNER CARD (frontend; engine unchanged)
+- referral.html rebuilt from a carrier-only teaser into a full **Referral & Partner Program** page for three
+  audiences (carriers, dispatch shops/agencies, creators/influencers): "who it is for" grid, four-step "how it
+  works", an honest "multi-level, minus the games" section (paid from OUR 5% fee, carrier never pays extra, up
+  to five thinning levels, LoadBoot keeps the majority), TWO lead forms (refer-a-carrier + apply-as-partner with
+  a partner_type select), and a 6-item FAQ + FAQPage schema. HONESTY: no binding public commission percentages
+  published (multi-level = legal review pending, prod flag OFF); page states terms are confirmed in writing
+  before anything is owed. Both forms reuse the already-proven `referral` submit_web_form key (no new/unproven
+  form key introduced). Home teaser deep link already live (WEB-1) — unchanged.
+- Command Center **Referrals** view (`/referrals`, nav under Finance, flag `referral_program` + `finance.view`):
+  KPIs (referrers, referred orgs, accrued-on-hold, payable, paid) off `cc_referral_overview`, top-referrer
+  leaderboard (code/type/referrals/earned), **Run accrual** (`cc_referral_accrue`, finance.manage) and per-row
+  **Mark payable paid** (`cc_referral_mark_paid`, finance.approve) with a confirm drawer stating it records the
+  decision only — money moves through the normal rail. Registered: import + flag load + shell option + route +
+  nav entry. RPC return shapes read live from staging to match the UI.
+- Partner Portal (broker) **Referral program** card mirroring the carrier card: code, copy-link, referral count,
+  accrued/payable/paid, one-time "link referrer" claim (`cc_my_referral` returns kind=partner for brokers),
+  honest fine print. Flag-gated; shows "coming soon" when off. Imports added: isFlagEnabled/myReferral/claimReferral.
+- NO backend/DB change this increment (engine cwi already applied + matrix PASS 15). **Anon SECURITY DEFINER
+  surface = 5 on BOTH DBs; referral_program staging ON / production OFF — confirmed live via SQL.**
+- CAVEAT (this session): the isolated build sandbox was unavailable (host disk space), so `node --check`,
+  `python build_site.py` and the import-reference scanner could NOT be executed here — verification was static
+  (export resolution, brace/quote review) plus live DB invariant checks. Re-run the local gates before pushing.
+- PENDING (WEB-2 residual): accrual scheduling (cron/worker for cc_referral_accrue) still owner-deploy-gated.
+
+## INC 64 — BUSINESS INTELLIGENCE (executive summary + trends)
+- `cwj_business_intelligence` (BOTH DBs, md5 parity on both fns; anon surface still 5): two staff-gated,
+  read-only RPCs over REAL tables only (nothing estimated):
+  - `cc_bi_executive_summary(from,to)` — one jsonb across loads (total/on-board/created/booked), trips
+    (active/delivered/on-time with an explicit basis string — on-time counted only from trips that have both a
+    scheduled_delivery and delivered_at), revenue (fee collected keyed on paid_at / outstanding = all
+    non-terminal invoices, labeled), carriers (active + onboarding pending), offers (sent/accepted/acceptance
+    rate), delivery (message_deliveries sent/delivered/failed), exceptions (opened/open-now), referrals
+    (referrers/payable/paid). Window defaults to last 30 days; from>to rejected.
+  - `cc_bi_timeseries(metric,days)` — daily series (day-clamped 1..365) for loads_created / trips_delivered /
+    fee_collected / offers_sent, gap-filled via generate_series so empty days show 0.
+  - Gate: `analytics.view` OR `reports.view`; EXECUTE revoked from public/anon, granted to authenticated only.
+- Proof: **BI MATRIX: PASS (9 checks)** run live on staging (staff summary shape incl. 30-day window, custom
+  7-day window, timeseries 30 rows, metric+day-clamp, from>to rejected, non-staff summary+timeseries denied,
+  anon denied, anon has no EXECUTE via ACL). Applied to production after PASS; **staging & prod function bodies
+  md5-identical; anon SECURITY DEFINER surface = 5 on BOTH DBs — confirmed live.**
+- Frontend: Command Center **Business Intelligence** view (`/bi`, Overview nav group, perm any:analytics.view,
+  reports.view — no new flag; read-only + staff-gated): 6 KPI cards, four breakdown panels (Revenue/Delivery/
+  Growth/Trips each showing the server basis note), a daily-trend bar chart with metric + range (7/30/90)
+  selectors, and **Export CSV** (flattens the summary). api wrappers `biExecutiveSummary` / `biTimeseries`.
+- Frontend verification static only (build sandbox still down): all new imports resolve to real exports; RPC
+  shapes confirmed against live staging output. Re-run node --check + build before pushing.
+
+## INC 65 — PWA HARDENING (app portals installable + per-app offline shells)
+- Audited the app-portal PWA: carrier was already installable (manifest + head metas), but **Command Center had
+  no PWA head at all** and **Partner had head metas but no manifest** — so neither was installable, and the
+  build-generated app service worker only served offline shells for carrier + command-center (partner/pocket/
+  developer navigations fell through with no offline shell).
+- Fixes (frontend only, no backend/DB change): new `app/partner/partner.webmanifest` + `app/command-center/
+  command-center.webmanifest`; wired `<link rel="manifest">` into partner/index.html and a full PWA head
+  (theme-color, manifest, apple-touch, apple/mobile web-app-capable, app title) into command-center/index.html.
+  All three main portals now register the SW (verified) and are installable.
+- Service worker (`build_site.py` generator): replaced the hardcoded carrier/command-center `shellFor` with a
+  **generic per-app resolver** — any `/app/<portal>/…` navigation is served that portal's OWN precached
+  `index.html` (and only if it is in the precache), so every portal (carrier, partner, command-center, pocket,
+  developer) gets an isolated offline shell with zero cross-app HTML bleed. Data-caching rules unchanged: still
+  network-only for everything off the static allowlist; NEVER caches API/auth/document/money/location/profile.
+- Safety: no new caching behavior, no untested cache of dynamic data; the change is additive shell-routing that
+  can only serve already-precached static index shells. Static-verified (build sandbox down): regex + format-arg
+  count checked by hand; SW registration confirmed present in all three portal app.js files. Re-run the build to
+  regenerate /app/sw.js before pushing.
+
+## INC 66 — SAVED REPORTS & SNAPSHOTS (basis for scheduled digests)
+- `cwk_saved_reports` (BOTH DBs, md5-identical on all 5 fns; anon surface still 5): staff-only, **self-scoped**
+  saved BI views + point-in-time snapshots, reusing the Inc 64 BI RPCs as the single source of truth.
+  - Tables `app_private.report_defs` (name, metric, days, created_by=auth.uid()) + `report_snapshots`
+    (payload jsonb, generated_by/at, ON DELETE CASCADE).
+  - `cc_report_save` (insert/update own; validates name + metric allowlist + day clamp 1..365),
+    `cc_reports` (own list + snapshot count + last_run), `cc_report_delete` (own only),
+    `cc_report_run` (captures a snapshot = summary(window)+series for the report's metric; stores + returns),
+    `cc_report_snapshots` (own report's snapshot history). Internal `can_report()` = reports.view OR
+    analytics.view. All EXECUTE revoked from public/anon, granted to authenticated only.
+- Proof: **SAVED REPORTS MATRIX: PASS (13 checks)** live on staging — save/update/list/run/snapshots/invalid
+  metric+empty name rejected, and full cross-user isolation (a second staff user cannot see / delete / run
+  another's report), non-staff denied, anon denied, anon has no EXECUTE (ACL). Test rows self-cleaned. Applied to
+  production; **staging & prod bodies md5-identical; anon SECURITY DEFINER surface = 5 on BOTH DBs — confirmed.**
+- Frontend: **Saved reports** panel inside the Business Intelligence view — name + save-current-view, a table
+  (metric/window/snapshot count/last run) with per-row **Run** (capture snapshot) and **Delete**. api wrappers
+  reportsList/reportSave/reportDelete/reportRun/reportSnapshots. Static-verified (build sandbox down).
+- PENDING: wiring cc_report_run into an actual scheduled cron/worker for automated digests remains owner-deploy-gated
+  (same posture as the delivery worker) — the snapshot engine it needs is now in place.

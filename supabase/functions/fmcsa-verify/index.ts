@@ -8,7 +8,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 const FMCSA_BASE = "https://mobile.fmcsa.dot.gov/qc/services/carriers";
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lb-app",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 

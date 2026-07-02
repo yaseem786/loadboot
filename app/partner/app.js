@@ -15,6 +15,7 @@ import {
   partnerGetProfile, partnerUpdateProfile,
   getPaymentInstructions, partnerSubmitInvoicePayment,
   loadChecklist, partnerChecklistSubmit, partnerUpdateRequests, partnerRespondUpdate,
+  isFlagEnabled, myReferral, claimReferral,
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -48,7 +49,7 @@ const ic = (name) => ({
   finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
-const LOGO_SVG = '<svg width="26" height="26" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg>';
+const LOGO_SVG = '<img src="/icon-512.png" width="26" height="26" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'Keep Your Wheels Earning';
 const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
 
@@ -264,6 +265,52 @@ function accountCard() {
   ]);
 }
 
+/* WEB-2 — referral program card (flag-gated: referral_program). Brokers earn a share of LoadBoot's own
+   dispatch fee on carriers/brokers they refer — the referred party never pays extra. Payouts are human-reviewed. */
+function referralCard() {
+  const money2 = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const row = (label, valNode) => h('div', { style: 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eef2f7' },
+    [h('span', { class: 'cp-sub' }, label), valNode]);
+  const card = h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
+    h('div', { class: 'cp-cardhead' }, [icon('user', 18), h('h3', null, 'Referral program')]),
+    h('div', { class: 'cp-sub' }, 'Checking…'),
+  ]);
+  (async () => {
+    let on = false; try { on = await isFlagEnabled('referral_program'); } catch (_) { on = false; }
+    if (!on) {
+      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('user', 18), h('h3', null, 'Referral program')]),
+        h('div', { class: 'cp-sub' }, 'The referral program is not active yet — it is coming soon.')]);
+      return;
+    }
+    let r; try { r = await myReferral(); } catch (e) {
+      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('user', 18), h('h3', null, 'Referral program')]),
+        h('div', { class: 'cp-sub' }, (e && e.message) || 'Could not load.')]);
+      return;
+    }
+    const copyBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+      try { await navigator.clipboard.writeText(r.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
+    } }, 'Copy my link');
+    const claimIn = h('input', { class: 'cp-in', placeholder: 'Were you referred? Enter their code once' });
+    const claimBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => {
+      if (!claimIn.value.trim()) return; ev.currentTarget.disabled = true;
+      try { await claimReferral(claimIn.value.trim()); ev.currentTarget.textContent = 'Linked ✓'; }
+      catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not link.'); }
+    } }, 'Link referrer');
+    mount(card, [
+      h('div', { class: 'cp-cardhead' }, [icon('user', 18), h('h3', null, 'Referral program')]),
+      row('Your code', h('b', null, r.code)),
+      row('Referrals', h('span', null, String(r.referrals || 0))),
+      row('Accrued (15-day hold)', h('span', null, money2(r.accrued))),
+      row('Payable', h('b', { style: 'color:var(--lb-green,#16a34a)' }, money2(r.payable))),
+      row('Paid out', h('span', null, money2(r.paid))),
+      h('div', { style: 'margin-top:10px' }, copyBtn),
+      h('div', { class: 'cp-inlineform', style: 'margin-top:8px' }, [claimIn, claimBtn]),
+      h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'You earn a share of LoadBoot\'s own dispatch fee on every booked trip of carriers or brokers you refer — they never pay extra. Commissions unlock 15 days after accrual; every payout is reviewed by a person.'),
+    ]);
+  })();
+  return card;
+}
+
 /* ---------- BROKER dashboard ---------- */
 async function brokerDash(user, ov) {
   const kpis = h('div', { class: 'cp-kpis' }, [
@@ -371,7 +418,7 @@ async function brokerDash(user, ov) {
       })));
     })();
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), invoicesCard(), accountCard()])));
+  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), invoicesCard(), referralCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
