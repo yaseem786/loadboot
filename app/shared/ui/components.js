@@ -157,10 +157,7 @@ export function openDrawer(title, bodyNode, opts = {}) {
 export function card(children, cls) { return el('div', { class: 'lb-card ' + (cls || '') }, children); }
 
 // ---- real LoadBoot brand logo (mark + wordmark), matches loadboot.com ----
-const BRAND_MARK_SVG = '<svg width="22" height="22" viewBox="0 0 56 56" fill="none" aria-hidden="true">' +
-  '<rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/>' +
-  '<rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/>' +
-  '<path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg>';
+const BRAND_MARK_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:9px;display:block">';
 export const BRAND_TAGLINE = 'Higher-paying loads, less deadhead — flat 5%, no contracts.';
 
 export function brandLogo(opts = {}) {

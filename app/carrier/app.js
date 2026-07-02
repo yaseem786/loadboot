@@ -15,6 +15,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
 } from '../shared/api.js';
@@ -65,7 +66,7 @@ const ic = (name) => ({
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 // Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.
-const LOGO_SVG = '<svg width="26" height="26" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg>';
+const LOGO_SVG = '<img src="/icon-512.png" width="26" height="26" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'Keep Your Wheels Earning';
 const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
 
@@ -821,6 +822,33 @@ async function appView(user) {
         h('div', { class: 'cp-muted', style: 'margin-bottom:8px' }, 'Tell us what loads you want — the AI Pilot ranks "Best for you" loads and dispatcher pushes using these.'),
         f1.row, f2.row, f3.row, f4.row, f5.row, h('div', { style: 'margin-top:8px' }, saveBtn)]);
     })();
+    // WEB-2 — Referral program card (flag-gated: referral_program). Earn from OUR fee; client pays nothing extra.
+    const refCard = h('div', { class: 'cp-card' }, [cardHead('Referral program'), h('div', { class: 'cp-muted' }, 'Checking…')]);
+    (async () => {
+      let on = false; try { on = await isFlagEnabled('referral_program'); } catch (_) { on = false; }
+      if (!on) { mount(refCard, [cardHead('Referral program'), h('div', { class: 'cp-muted' }, 'The referral program is not active yet — it is coming soon.')]); return; }
+      let r; try { r = await myReferral(); } catch (e) { mount(refCard, [cardHead('Referral program'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      const money2 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      const copyBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        try { await navigator.clipboard.writeText(r.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
+      } }, 'Copy my link');
+      const claimIn = h('input', { class: 'cp-in', placeholder: 'Were you referred? Enter their code once' });
+      const claimBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => {
+        if (!claimIn.value.trim()) return; ev.currentTarget.disabled = true;
+        try { await claimReferral(claimIn.value.trim()); ev.currentTarget.textContent = 'Linked ✓'; }
+        catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not link.'); }
+      } }, 'Link referrer');
+      mount(refCard, [cardHead('Referral program'),
+        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Your code'), h('b', null, r.code)]),
+        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Referrals'), h('span', null, String(r.referrals || 0))]),
+        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Accrued (15-day hold)'), h('span', null, money2(r.accrued))]),
+        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Payable'), h('b', { style: 'color:var(--lb-green)' }, money2(r.payable))]),
+        h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Paid out'), h('span', null, money2(r.paid))]),
+        h('div', { style: 'margin-top:8px' }, copyBtn),
+        h('div', { class: 'cp-inlineform', style: 'margin-top:8px' }, [claimIn, claimBtn]),
+        h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'You earn a share of LoadBoot\'s own dispatch fee on every booked trip of carriers/brokers you refer — they never pay extra. Commissions unlock 15 days after accrual; payouts are reviewed by a person.'),
+      ]);
+    })();
     // Team card — visible to all members; management controls only render for the owner.
     const teamCard = h('div', { class: 'cp-card' }, [cardHead('Team'), h('div', { class: 'cp-muted' }, 'Loading…')]);
     (async () => {
@@ -856,6 +884,7 @@ async function appView(user) {
       teamCard,
       h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async () => { await signOut(); boot(); } }, 'Sign out')]),
       dispCard,
+      refCard,
       prefsCard,
     ]));
   }

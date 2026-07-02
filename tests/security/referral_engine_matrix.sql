@@ -1,0 +1,11 @@
+-- referral_engine_matrix.sql — WEB-2 (multi-level referral engine) matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-02 → RESULT: REFERRAL ENGINE MATRIX: PASS (15 checks)
+-- Checks: R1 join issues stable code (carrier kind, hold_days=15); R1b idempotent same code;
+-- R2 broker joins as 'partner'; R3 SELF-REFERRAL BLOCKED; R4 claim once + duplicate claim blocked;
+-- R5 2-level chain built (Golden→Ironhide→Broker); R6 accrual on $100 fee → L1 $20.00 (1% of gross = fee/5)
+-- + L2 $10.00 (0.5%), re-accrual idempotent (unique invoice+referrer); R7 15-DAY HOLD: mark_paid before
+-- payable_at pays 0 rows; after hold passes → exactly 1 paid; R8 referrer self-scope (own earnings only,
+-- no cross-referrer leak); R9 carrier denied on accrue/overview/mark_paid + anon ZERO on all 6 fns.
+-- Levels: L1 1.00% L2 0.50% L3 0.25% L4 0.15% L5 0.10% of gross (≤2% total from OUR 5% fee → LoadBoot keeps ≥3%).
+-- Payout marking = finance.approve human only; engine never moves money. Fixtures fully cleaned up.
+-- Flag referral_program: staging ON, production OFF (verified false) — owner+legal activate.

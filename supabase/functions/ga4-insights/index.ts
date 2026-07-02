@@ -5,7 +5,7 @@
 // Deployed to staging + production via Supabase MCP. verify_jwt = true.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lb-app", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 function b64url(buf: ArrayBuffer | Uint8Array): string { const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf); let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
 function b64urlStr(str: string): string { return b64url(new TextEncoder().encode(str)); }

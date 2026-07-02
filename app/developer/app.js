@@ -21,7 +21,7 @@ const h = (tag, attrs, kids) => {
 };
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
 const fmtDT = (d) => { if (!d) return 'never'; try { return new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return '—'; } };
-const LOGO_SVG = '<svg width="26" height="26" viewBox="0 0 56 56" fill="none" aria-hidden="true"><rect x="17" y="13" width="7.5" height="30" rx="3.2" fill="#fff"/><rect x="17" y="35.5" width="15" height="7.5" rx="3.2" fill="#fff"/><path d="M32 30 L45 39 L32 48 Z" fill="#F97316"/></svg>';
+const LOGO_SVG = '<img src="/icon-512.png" width="26" height="26" alt="LoadBoot" style="border-radius:22%;display:block">';
 const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
 
 function authScreen() {

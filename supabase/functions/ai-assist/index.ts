@@ -9,7 +9,7 @@ const MODEL = "gemini-1.5-flash";
 const GEMINI = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lb-app",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 function json(o: unknown, s = 200): Response { return new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json", ...cors } }); }

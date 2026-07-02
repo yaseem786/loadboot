@@ -96,6 +96,28 @@ export const getDispatchPrefs = () => rpc('cc_get_dispatch_prefs');
 export const carrierBestLoads = (carrierId, limit) => rpc('cc_carrier_best_loads', { p_carrier: carrierId ?? null, p_limit: limit ?? 10 });
 export const dispatchPlan = (maxLoads) => rpc('cc_dispatch_plan', { p_max_loads: maxLoads ?? 20 });
 // Detention / dwell automation (Inc 52-53): real arrive/depart stamps; scan auto-drafts detention for review.
+// WEB-2 — multi-level referral engine (flag: referral_program; production OFF until owner+legal approve).
+export const myReferral = () => rpc('cc_my_referral');
+export const claimReferral = (code) => rpc('cc_claim_referral', { p_code: code });
+export const myReferralEarnings = (limit) => rpc('cc_my_referral_earnings', { p_limit: limit ?? 100 });
+export const referralAccrue = () => rpc('cc_referral_accrue');
+export const referralOverview = () => rpc('cc_referral_overview');
+export const referralMarkPaid = (code) => rpc('cc_referral_mark_paid', { p_referrer_code: code });
+// Inc 64 — Business Intelligence: staff-gated executive summary + trend series over real tables.
+export const biExecutiveSummary = (from, to) => rpc('cc_bi_executive_summary', { p_from: from ?? null, p_to: to ?? null });
+export const biTimeseries = (metric, days = 30) => rpc('cc_bi_timeseries', { p_metric: metric, p_days: days });
+// Inc 66 — saved reports & snapshots (staff-only, self-scoped).
+export const reportsList = () => rpc('cc_reports');
+export const reportSave = (def) => rpc('cc_report_save', { p: def });
+export const reportDelete = (id) => rpc('cc_report_delete', { p_id: id });
+export const reportRun = (id) => rpc('cc_report_run', { p_id: id });
+export const reportSnapshots = (id, limit = 20) => rpc('cc_report_snapshots', { p_id: id, p_limit: limit });
+// Inc 67 — carrier performance scorecard (deterministic, explainable). Carrier self / staff any carrier.
+export const carrierScorecard = (carrier, days = 90) => rpc('cc_carrier_scorecard', { p_carrier: carrier ?? null, p_days: days });
+export const carrierScorecardRanking = (days = 90, limit = 25) => rpc('cc_carrier_scorecard_ranking', { p_days: days, p_limit: limit });
+// Inc 68 — broker SLA & on-time analytics. Broker self / staff any broker.
+export const brokerSla = (partner, days = 90) => rpc('cc_broker_sla', { p_partner: partner ?? null, p_days: days });
+export const brokerSlaRanking = (days = 90, limit = 25) => rpc('cc_broker_sla_ranking', { p_days: days, p_limit: limit });
 // Inc 63 — workflow builder: validated step-graphs, versioned publish, simulation (no side effects) + guarded live runs.
 export const workflowSave = (o) => rpc('cc_workflow_save', { p: o });
 export const workflowSetStatus = (id, action) => rpc('cc_workflow_set_status', { p_id: id, p_action: action });

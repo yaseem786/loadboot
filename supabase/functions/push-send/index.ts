@@ -4,7 +4,7 @@ import webpush from "npm:web-push@3.6.7";
 // push-send — staff-only Web Push sender (VAPID). Resolves target subscriptions server-side
 // via the service-gated cc_push_targets RPC (subscription keys never reach the client) and
 // sends an encrypted notification to each device. Deployed to staging + production. verify_jwt=true.
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lb-app", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 async function isStaff(auth: string, url: string, anon: string): Promise<boolean> { try { const r = await fetch(`${url}/rest/v1/rpc/get_my_staff_context`, { method: "POST", headers: { Authorization: auth, apikey: anon, "Content-Type": "application/json" }, body: "{}" }); if (!r.ok) return false; const d = await r.json(); return !!(d && d.is_staff); } catch { return false; } }
 Deno.serve(async (req: Request) => {
