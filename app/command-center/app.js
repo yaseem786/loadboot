@@ -55,6 +55,7 @@ import { renderExceptions } from './views/exceptions.js';
 import { renderLoadIntake } from './views/loadIntake.js';
 import { renderControlTower } from './views/controlTower.js';
 import { renderExceptionCenter } from './views/exceptionCenter.js';
+import { renderWorkflowBuilder } from './views/workflowBuilder.js';
 import { renderBrandKit } from './views/brandKit.js';
 import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
@@ -227,6 +228,7 @@ async function boot() {
     '/load-intake': () => { setActive('/load-intake'); if (can('dispatch.view') || can('loads.create')) renderLoadIntake(content); else denied(); },
     '/control-tower': () => { setActive('/control-tower'); if (can('dispatch.view')) renderControlTower(content); else denied(); },
     '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.view')) renderExceptionCenter(content); else denied(); },
+    '/workflows': () => { setActive('/workflows'); if (can('settings.manage') || can('content.manage')) renderWorkflowBuilder(content); else denied(); },
     '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
     '/plugins': () => { setActive('/plugins'); renderPluginMarketplace(content); },
     '/form-builder': () => { setActive('/form-builder'); renderFormBuilder(content); },

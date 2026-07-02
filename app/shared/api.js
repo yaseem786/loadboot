@@ -96,6 +96,12 @@ export const getDispatchPrefs = () => rpc('cc_get_dispatch_prefs');
 export const carrierBestLoads = (carrierId, limit) => rpc('cc_carrier_best_loads', { p_carrier: carrierId ?? null, p_limit: limit ?? 10 });
 export const dispatchPlan = (maxLoads) => rpc('cc_dispatch_plan', { p_max_loads: maxLoads ?? 20 });
 // Detention / dwell automation (Inc 52-53): real arrive/depart stamps; scan auto-drafts detention for review.
+// Inc 63 — workflow builder: validated step-graphs, versioned publish, simulation (no side effects) + guarded live runs.
+export const workflowSave = (o) => rpc('cc_workflow_save', { p: o });
+export const workflowSetStatus = (id, action) => rpc('cc_workflow_set_status', { p_id: id, p_action: action });
+export const workflowsList = (status) => rpc('cc_workflows', { p_status: status ?? null });
+export const workflowRun = (id, event, mode) => rpc('cc_workflow_run', { p_id: id, p_event: event ?? {}, p_mode: mode ?? 'simulation' });
+export const workflowRuns = (id, limit) => rpc('cc_workflow_runs', { p_id: id, p_limit: limit ?? 30 });
 // Inc 56 — finance lifecycle: receivables/payables aging, invoice-prep pipeline, reconciliation.
 export const financeReceivables = () => rpc('cc_finance_receivables');
 export const financePayables = () => rpc('cc_finance_payables');

@@ -31,3 +31,8 @@ Email clients render inline SVG unreliably, so branded emails use the **authenti
 (`https://loadboot.com/icon-512.png`) + the "LoadBoot" wordmark in a table-based header — not a new or fake
 asset. The branded header/footer shell is implemented in the delivery worker (see Increment 61 note in the
 changelog). No placeholder or fabricated imagery is introduced.
+
+## Inc 60 update (2026-07-02)
+- Photo bands added to 10 commercial pages (carriers, brokers, shipper-solutions, box-truck, services, how-it-works, carrier-application, pricing, case-studies, about) using ONLY existing owned assets (truck-fleet/owner-operator/dry-van/reefer/hotshot/truck-boxtruck .webp). No stock fakes, no fake clients.
+- Every image site-wide: webp, explicit width/height (no CLS), loading=lazy, decoding=async, meaningful alt. Inventory-verified: 0 images missing alt across all 40 pages.
+- Canva connector attempted for new original hero illustrations → token revoked (OWNER ACTION: reconnect Canva in the connectors panel, then ask me to generate broker/shipper hero illustrations — prompts are ready).

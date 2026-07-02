@@ -1,0 +1,14 @@
+-- template_library_matrix.sql — Increment 62 (operational template library) matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-02 → RESULT: TEMPLATE LIBRARY MATRIX: PASS (6 checks)
+-- Checks:
+--  T1a all 43 templates seeded (39 tx.* + 4 mk.*), published + active, variables[] extracted
+--  T1b zero malformed rows (missing status/active/variables)
+--  T2a no [[BTN]] placeholder leaked into stored bodies
+--  T2b every template body carries the {{action_url}} CTA button
+--  T2c body_text contains no HTML tags (clean plain-text fallback)
+--  T3  cc_render_template renders tx.offer_new with a full variable set (staff context)
+-- Also: unique index comm_templates_key_uidx added; seed is ON CONFLICT DO NOTHING (idempotent —
+-- re-running adds 0 rows and never overwrites owner-edited templates). Variable usage restricted to the
+-- server-enforced allowlist (verified programmatically before apply: 13/13 vars in allowlist, 0 outside).
+-- Sender mapping (#29): key prefixes steer the delivery worker's category map (tested in Inc 61: PASS 10+4).
+-- Production: same seed applied → 43 rows, anon SECURITY DEFINER surface still 5.
