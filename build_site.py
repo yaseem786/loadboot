@@ -340,7 +340,7 @@ def footer():
 </div>
 <div class="links5">
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
-<div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a></div>
+<div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a></div>
 <div><div class="foot-h">Compliance</div><a href="services.html">Authority &amp; DOT Setup</a><a href="services.html">BOC-3 / UCR</a><a href="services.html">Form 2290</a><a href="services.html">IFTA</a></div>
@@ -386,10 +386,63 @@ def _breadcrumb(fname, title):
             '"itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},'
             '{"@type":"ListItem","position":2,"name":"%s","item":"https://loadboot.com/%s"}]}</script>' % (name, fname))
 
+
+# ---- Internal-link engine (Inc 59, directive #39): related-page cards per topic cluster. ----
+# Deterministic map — every commercial page links onward to its cluster (service, audience, pricing,
+# a guide and an application/inquiry form). Appended before the footer by page(); no orphan pages.
+RELATED = {
+ 'dry-van-dispatch.html':   [('reefer-dispatch.html','Reefer Dispatch'),('power-only-dispatch.html','Power Only'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works')],
+ 'reefer-dispatch.html':    [('dry-van-dispatch.html','Dry Van Dispatch'),('flatbed-dispatch.html','Flatbed Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('load-score.html','Load Score Tool')],
+ 'flatbed-dispatch.html':   [('hotshot-dispatch.html','Hotshot Dispatch'),('reefer-dispatch.html','Reefer Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works')],
+ 'hotshot-dispatch.html':   [('flatbed-dispatch.html','Flatbed Dispatch'),('box-truck-dispatch.html','Box Truck Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('new-authority-dispatch.html','New Authority')],
+ 'power-only-dispatch.html':[('dry-van-dispatch.html','Dry Van Dispatch'),('owner-operator-dispatch.html','Owner-Operators'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works')],
+ 'box-truck-dispatch.html': [('hotshot-dispatch.html','Hotshot Dispatch'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools')],
+ 'new-authority-dispatch.html':[('how-to-get-loads-with-new-authority.html','Getting Loads with New Authority'),('owner-operator-dispatch.html','Owner-Operators'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('carriers.html','For Carriers')],
+ 'owner-operator-dispatch.html':[('owner-operator-dispatch-service-guide.html','Owner-Operator Guide'),('new-authority-dispatch.html','New Authority'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('load-score.html','Load Score Tool')],
+ 'carriers.html':           [('carrier-application.html','Apply as Carrier'),('services.html','All Services'),('pricing.html','Pricing'),('tools.html','Free Trucking Tools'),('faq.html','FAQ')],
+ 'brokers.html':            [('partners.html','Partner Portal'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('how-it-works.html','How It Works')],
+ 'shipper-solutions.html':  [('brokers.html','For Brokers'),('partners.html','Partner Portal'),('security.html','Security & Trust'),('contact.html','Contact'),('faq.html','FAQ')],
+ 'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools')],
+ 'pricing.html':            [('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('carriers.html','For Carriers')],
+ 'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
+ 'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('referral.html','Referral Program')],
+ 'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
+ 'tools.html':              [('load-score.html','Load Score'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
+ 'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
+ 'case-studies.html':       [('carriers.html','For Carriers'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('pricing.html','Pricing')],
+ 'resources.html':          [('blog.html','Blog'),('tools.html','Free Trucking Tools'),('faq.html','FAQ'),('how-to-get-loads-with-new-authority.html','New Authority Guide'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
+}
+
+# ---- Inc 60: authentic photo bands. ONLY existing owned assets — no stock fakes, no fake clients.
+PAGE_PHOTOS = {
+ 'carriers.html':           [('truck-fleet.webp','Semi-trucks staged at a freight yard','Owner-operators & fleets, coast to coast'),('owner-operator.webp','Owner-operator truck on the highway','Your truck, your authority — our dispatch')],
+ 'brokers.html':            [('truck-fleet.webp','Carrier fleet ready for dispatch','A vetted, compliance-tracked carrier network'),('dry-van.webp','Dry van trailer on the road','Coverage across dry van, reefer, flatbed & more')],
+ 'shipper-solutions.html':  [('dry-van.webp','Dry van trailer moving freight','Your freight, professionally coordinated'),('reefer.webp','Refrigerated trailer on the interstate','Temperature-controlled and time-critical lanes')],
+ 'box-truck-dispatch.html': [('truck-boxtruck.webp','Box truck ready for an expedited run','LTL, final-mile and expedited runs')],
+ 'services.html':           [('truck-fleet.webp','Trucks staged for dispatch','Full-service dispatch across equipment types'),('truck-boxtruck.webp','Box truck at a loading dock','From 26-ft boxes to full truckload')],
+ 'how-it-works.html':       [('owner-operator.webp','Owner-operator on a booked lane','Sign up to first booked load — usually within days')],
+ 'carrier-application.html':[('owner-operator.webp','Owner-operator truck at sunrise','Five minutes to apply — no contract lock-in')],
+ 'pricing.html':            [('truck-fleet.webp','Fleet trucks lined up','Flat 5% — you only pay when we book you')],
+ 'case-studies.html':       [('hotshot.webp','Hotshot truck with a loaded gooseneck','Worked examples across equipment types')],
+ 'about.html':              [('truck-fleet.webp','American trucking fleet on the move','Built for the people who keep America moving')],
+}
+def photo_band(fname):
+    imgs = PAGE_PHOTOS.get(fname)
+    if not imgs: return ''
+    cells = ''.join('<div class="photo"><img src="%s" width="1280" height="720" alt="%s" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">%s</span></div>' % (src, alt, tag) for src, alt, tag in imgs)
+    return '<section><div class="wrap"><div class="photo-grid reveal">%s</div></div></section>' % cells
+
+def related_block(fname):
+    links = RELATED.get(fname)
+    if not links: return ''
+    cards = ''.join('<a class="card reveal" href="%s" style="text-decoration:none;display:block"><h3 style="margin:0 0 6px">%s</h3><p style="margin:0;color:var(--ink-soft,#64748b)">Explore &rarr;</p></a>' % (h,t) for h,t in links)
+    return '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Keep exploring</div><h2>Related services &amp; guides</h2></div><div class="grid g3 reveal">%s</div></div></section>' % cards
+
 def page(fname, title, desc, active, body, schema=''):
     schema = schema or ''
     if 'BreadcrumbList' not in schema:  # don't double up when a caller supplies its own breadcrumb
         schema = schema + _breadcrumb(fname, title)
+    body = body + photo_band(fname) + related_block(fname)
     doc = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
 <meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta name="theme-color" content="#0F172A">
@@ -1877,16 +1930,41 @@ page('faq.html', 'Truck Dispatch FAQ &mdash; Pricing, Authority &amp; Getting St
      'faq.html', faq_body, _faq_sch)
 
 # ---- Box Truck Dispatch (service page) ----
+_btfaq_html, _btfaq_sch = faq_block([
+    ('Do box trucks need their own MC authority?', 'If your box truck is over 10,001 lbs GVWR and hauls interstate freight for hire, yes &mdash; you generally need operating authority and insurance just like a semi. We can point you to the right compliance steps before you start.'),
+    ('What loads suit a 26-ft box truck best?', 'LTL and partial freight, final-mile retail and furniture, expedited hot shots and trade-show or event freight. We match by weight, dock height and liftgate capability so you are not offered freight you cannot load.'),
+    ('Is expedited freight really worth it?', 'When it fits your schedule &mdash; often yes. Time-critical loads pay a premium for reliability. The trade-off is strict windows, so we only push expedited runs your schedule can actually make.'),
+    ('Do you dispatch cargo vans and sprinters?', 'Yes, where the freight genuinely fits the vehicle. We are honest about it: van freight is a thinner market than box trucks, and we will tell you what your lanes realistically pay.'),
+])
 bt = svc_hero('Box Truck &amp; Expedited Dispatch', 'Dispatch built for box trucks, sprinter vans and expedited freight &mdash; we keep your smaller equipment loaded with the right runs at the right rate.')
 bt += _sec('Box truck dispatch', 'Loads that fit your equipment', _cards([
     ('&#128230;', 'Right-sized freight', 'We match box trucks and cargo/sprinter vans with LTL, final-mile, expedited and time-critical loads that pay &mdash; not deadhead.'),
     ('&#9889;', 'Expedited &amp; hot loads', 'Time-critical freight is our sweet spot for smaller equipment. We move fast so you can too.'),
     ('&#128176;', 'Flat 5%, no contract', 'Same honest pricing as our truckload dispatch: you only pay when we book you.'),
 ]))
+bt += _sec('Freight we book', 'Box truck &amp; expedited freight we dispatch', _cards([
+    ('&#128666;', 'LTL &amp; partials', 'Less-than-truckload and partial freight sized for 16&ndash;26 ft boxes &mdash; steady, repeatable work between bigger runs.'),
+    ('&#127968;', 'Final-mile &amp; retail', 'Residential and store deliveries, furniture and appliances &mdash; liftgate and inside-delivery requirements captured before you accept.'),
+    ('&#9200;', 'Expedited &amp; time-critical', 'Hot freight that pays a premium for a hard delivery window your schedule can genuinely make.'),
+    ('&#127914;', 'Events &amp; trade shows', 'Show freight with strict move-in/move-out windows &mdash; we coordinate the appointments so you just drive.'),
+    ('&#128188;', 'Dedicated &amp; recurring routes', 'Repeat lanes for the same customer &mdash; predictable weeks once your service record earns them.'),
+    ('&#128736;', 'Equipment-matched only', 'Dock height, liftgate, pallet jack, weight &mdash; we check the requirements so you are never sent to freight you cannot load.'),
+], 'g3'))
+bt += _sec('Rates', 'What drives box truck rates (and how we protect yours)', _cards([
+    ('&#128200;', 'Urgency premium', 'Expedited windows pay more &mdash; we chase the time-critical freight that values a reliable smaller truck.'),
+    ('&#128205;', 'Lane &amp; region balance', 'Final-mile-heavy metros pay differently than lane freight; we plan runs so you are not stuck deadheading home.'),
+    ('&#9878;', 'Accessorials documented', 'Liftgate work, inside delivery, wait time &mdash; recorded with real timestamps and billed, not absorbed.'),
+]), soft=True)
+bt += _sec('How it works', 'From sign-up to your first expedited run', _cards([
+    ('1', 'Profile &amp; equipment', 'Truck size, dock height, liftgate, GVWR and your service area &mdash; five minutes to set up.'),
+    ('2', 'We find &amp; negotiate', 'Your dispatcher sources LTL, final-mile and expedited freight that fits, negotiates the rate and checks the broker.'),
+    ('3', 'You drive, we handle the rest', 'Paperwork, status updates, POD collection and invoice prep &mdash; you focus on the road.'),
+]))
+bt += _btfaq_html
 bt += final_cta()
 page('box-truck-dispatch.html', 'Box Truck &amp; Expedited Dispatch Service | Loadboot',
      'Box truck, cargo van and expedited freight dispatch. Loadboot keeps your smaller equipment loaded with LTL, final-mile and hot loads. Flat 5%, no contracts.',
-     'services.html', bt)
+     'services.html', bt, _btfaq_sch)
 
 # ---- Careers ----
 car = svc_hero('Careers at Loadboot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')

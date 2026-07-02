@@ -1,0 +1,16 @@
+-- workflow_builder_matrix.sql — Increment 63 (Workflow Builder) matrix.
+-- Executed on staging (snslhvmkjusozgjelghi) 2026-07-02 → RESULT: WORKFLOW BUILDER MATRIX: PASS (11 checks)
+-- Checks:
+--  W1  valid graph (trigger → condition → email/notification branches → ends) saves + validates
+--  W2a forbidden node type ('release_money') REJECTED by server validation
+--  W2b invalid graph cannot be published
+--  W3  simulation walks TRUE branch with ZERO side effects (email step reports 'would queue')
+--  W4  FALSE branch taken when condition fails
+--  W5a live run blocked on draft; publish required
+--  W5b live run queues email through the consent-enforcing delivery ledger
+--  W5c identical live event deduped (idempotency_key)
+--  W6a carrier cannot save or run workflows
+--  W6b anon has NO execute on all 5 workflow functions
+-- Guardrails: node-type allowlist (trigger/condition/delay/task_note/notification/email_template/end) —
+-- no node can approve accounts, release money, override compliance or change permissions. 100-step cycle guard.
+-- Fixtures (test workflows + queued test delivery) deleted at end. Production: applied, md5 parity, anon=5.

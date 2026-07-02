@@ -37,6 +37,7 @@ const NAV = [
     { path: '/load-intake', label: 'Load Intake', icon: 'trend', perm: 'dispatch.view', flag: 'load_marketplace' },
     { path: '/control-tower', label: 'Trip Control Tower', icon: 'refresh', perm: 'dispatch.view', flag: 'load_marketplace' },
     { path: '/exceptions', label: 'Exception Center', icon: 'alert', perm: 'dispatch.view', flag: 'load_marketplace' },
+    { path: '/workflows', label: 'Workflow Builder', icon: 'settings', perm: 'settings.manage', flag: 'load_marketplace' },
     { path: '/automation', label: 'Automation', icon: 'refresh', perm: null, flag: 'automation' },
   ]},
   { group: 'Sales & CRM', items: [
