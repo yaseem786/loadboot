@@ -18,6 +18,10 @@ import {
   isFlagEnabled, myReferral, claimReferral, myReferralEarnings,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
+  carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
+  tripEmergencyRequest, tripMyEmergencies,
+  fleetServiceAdd, fleetServiceList, fleetServiceDelete,
+  payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
@@ -40,6 +44,16 @@ const h = (tag, attrs, kids) => {
   return e;
 };
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
+// GLOBAL notification / status tone tokens — defined ONCE, reused everywhere (dashboard gaps, notification feed,
+// Command Center pushes). Command Center controls a notification's severity via payload.tone.
+const TONE = {
+  urgent:  { c: '#dc2626', bg: '#fef2f2', label: 'Urgent' },
+  warning: { c: '#d97706', bg: '#fffbeb', label: 'Attention' },
+  action:  { c: '#2563eb', bg: '#eff6ff', label: 'Action' },
+  success: { c: '#16a34a', bg: '#f0fdf4', label: 'Done' },
+  info:    { c: '#475569', bg: '#f8fafc', label: 'Info' },
+};
+const toneOf = (t) => TONE[t] || TONE.info;
 // Lightweight modal used by self-service forms (fleet, etc.). Closes on backdrop click or ✕.
 function openModal(title, children) {
   const close = () => { ov.remove(); document.removeEventListener('keydown', onEsc); };
@@ -253,34 +267,73 @@ async function appView(user) {
   /* ----- Dashboard ----- */
   async function loadDashboard() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
-    let comp, anns, invs;
-    try { [comp, anns, invs] = await Promise.all([pocketCompliance().catch(() => ({ requirements: [], mandatory_ok: ov.compliance_ok })), pocketAnnouncements().catch(() => []), pocketInvoices(50).catch(() => [])]); } catch (_) {}
-    const annCards = (anns || []).map(a => h('div', { class: 'cp-ann ' + (a.kind || 'info') }, [h('div', { class: 'cp-ann-t' }, a.title), a.body ? h('div', { class: 'cp-ann-b' }, a.body) : null].filter(Boolean)));
-    const kpis = h('div', { class: 'cp-kpis' }, [
-      statTile('Active trips', String(ov.trips_active || 0), 'trips', 'blue', () => go('trips')),
-      statTile('Delivered', String(ov.trips_delivered || 0), 'dash', 'green', () => go('trips')),
-      statTile('Fees due', money(ov.invoices_due), 'finance', 'amber', () => go('finance')),
-      statTile('Onboarding', (ov.onboarding_stage || '—').replace(/_/g, ' '), 'docs', 'violet', () => go('documents')),
+    let dash = null, comp, anns, invs;
+    try {
+      [dash, comp, anns, invs] = await Promise.all([
+        carrierDashboard().catch(() => null),
+        pocketCompliance().catch(() => ({ requirements: [], mandatory_ok: ov.compliance_ok })),
+        pocketAnnouncements().catch(() => []),
+        pocketInvoices(50).catch(() => []),
+      ]);
+    } catch (_) {}
+    const d = dash || {}; const k = d.kpis || {}; const acct = d.account || {};
+
+    // 1) "Complete your setup" — gaps coloured by the GLOBAL tone tokens, each linking to the exact step.
+    const gaps = Array.isArray(d.setup_gaps) ? d.setup_gaps : [];
+    const setupCard = gaps.length ? h('div', { class: 'cp-card' }, [
+      cardHead('Complete your setup', acct.onboarding_complete ? 'Almost there' : 'Action needed'),
+      h('div', null, gaps.map(g => { const t = toneOf(g.tone); return h('button', {
+        class: 'cp-rowbtn', style: 'border-left:4px solid ' + t.c + ';background:' + t.bg,
+        onClick: () => go((g.route || '/account').replace('/', '')) }, [
+        h('span', null, [h('span', { style: 'color:' + t.c + ';font-weight:700;margin-right:8px' }, t.label), g.label]),
+        h('span', { class: 'cp-go', style: 'color:' + t.c }, '›')]); })),
+    ]) : null;
+
+    // 2) Notifications from Command Center — global tone colours, unread markers, mark-read.
+    const nd = d.notifications || {}; const notes = Array.isArray(nd.recent) ? nd.recent : []; const unread = nd.unread || 0;
+    const notifCard = h('div', { class: 'cp-card' }, [
+      cardHead('Notifications', unread ? unread + ' unread' : 'All caught up', () => go('notifications')),
+      notes.length ? h('div', null, notes.map(n => { const p = n.payload || {}; const t = toneOf(p.tone); const isUnread = !n.read_at;
+        const row = h('div', { class: 'cp-row', style: 'border-left:4px solid ' + t.c + ';padding-left:10px;background:' + (isUnread ? t.bg : 'transparent') }, [
+          h('div', null, [
+            h('div', { class: 'cp-row-t' }, [isUnread ? h('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + t.c + ';margin-right:6px' }) : null, p.title || n.template_key || 'Notification'].filter(Boolean)),
+            p.body ? h('div', { class: 'cp-row-s' }, p.body) : null].filter(Boolean)),
+          isUnread ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { try { await markMyNotification(n.id); ev.currentTarget.textContent = '✓'; row.style.background = 'transparent'; } catch (_) {} } }, 'Mark read') : null].filter(Boolean));
+        return row; }))
+        : h('div', { class: 'cp-muted' }, 'No notifications yet.'),
     ]);
-    // finance mini-chart from recent invoices (fee per invoice)
-    const feeSeries = (invs || []).slice(0, 12).reverse().map((i, k) => ({ label: String(k), value: Number(i.fee) || 0 }));
+
+    // 3) KPI strip from the aggregate (falls back to overview).
+    const kpis = h('div', { class: 'cp-kpis' }, [
+      statTile('Active trips', String(k.active_trips ?? ov.trips_active ?? 0), 'trips', 'blue', () => go('trips')),
+      statTile('Open offers', String(k.open_offers ?? 0), 'docs', 'violet', () => go('loads')),
+      statTile('Delivered (wk)', String(k.delivered_this_week ?? 0), 'dash', 'green', () => go('trips')),
+      statTile('Revenue (wk)', money(k.revenue_this_week ?? 0), 'finance', 'amber', () => go('finance')),
+    ]);
+
+    // 4) Active trips.
+    const trips = Array.isArray(d.active_trips) ? d.active_trips : [];
+    const tripsCard = h('div', { class: 'cp-card cp-col2' }, [
+      cardHead('Active trips', trips.length ? trips.length + ' moving' : 'None active', () => go('trips')),
+      trips.length ? h('div', null, trips.slice(0, 6).map(t => h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')),
+          h('div', { class: 'cp-row-s' }, [t.status, t.miles ? t.miles + ' mi' : null, t.rate ? money(t.rate) : null].filter(Boolean).join(' · '))]),
+        pill(t.status)])))
+        : h('div', { class: 'cp-muted' }, 'No active trips. Browse available loads to book.'),
+    ]);
+
+    // finance mini-chart from recent invoices (kept).
+    const feeSeries = (invs || []).slice(0, 12).reverse().map((i, kk) => ({ label: String(kk), value: Number(i.fee) || 0 }));
     const due = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const paid = (invs || []).filter(i => i.status === 'paid').reduce((a, i) => a + (Number(i.fee) || 0), 0);
-    const financeCard = h('div', { class: 'cp-card cp-col2' }, [
+    const financeCard = h('div', { class: 'cp-card' }, [
       cardHead('Dispatch fees', 'Recent invoices', () => go('finance')),
       feeSeries.length ? miniBars(feeSeries, { height: 70 }) : h('div', { class: 'cp-muted' }, 'No invoices yet.'),
       h('div', { class: 'cp-legend' }, [h('span', null, ['Due ', h('b', null, money(due))]), h('span', null, ['Paid ', h('b', null, money(paid))])]),
     ]);
-    const actions = [];
-    const obs = (ov.onboarding_stage || '').toLowerCase();
-    if (obs && obs !== 'approved' && obs !== 'active' && obs !== 'complete') actions.push(['Complete your onboarding — guided setup', () => go('onboarding')]);
-    if (comp && !comp.mandatory_ok) actions.push(['Complete your compliance documents', () => go('documents')]);
-    if ((ov.invoices_due || 0) > 0) actions.push([money(ov.invoices_due) + ' in dispatch fees due', () => go('finance')]);
-    actions.push(['Browse available loads to book', () => go('loads')]);
-    const attention = h('div', { class: 'cp-card' }, [cardHead('Needs your attention'), h('div', null, actions.map(([t, fn]) => h('button', { class: 'cp-rowbtn', onClick: fn }, [h('span', null, t), h('span', { class: 'cp-go' }, '›')])))]);
-    const compCard = h('div', { class: 'cp-card' }, [cardHead('Compliance', comp && comp.mandatory_ok ? 'All good ✓' : 'Action needed'),
-      ...((comp && comp.requirements || []).slice(0, 6).map(r => h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, r.mandatory ? 'required' : 'optional')]), pill(r.status)])))]);
-    mount(content, h('div', null, [promptHost, ...annCards, kpis, h('div', { class: 'cp-grid' }, [financeCard, attention, compCard])]));
+    const annCards = (anns || []).map(a => h('div', { class: 'cp-ann ' + (a.kind || 'info') }, [h('div', { class: 'cp-ann-t' }, a.title), a.body ? h('div', { class: 'cp-ann-b' }, a.body) : null].filter(Boolean)));
+
+    mount(content, h('div', null, [promptHost, ...annCards, setupCard, kpis, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     openPrompts();
   }
 
@@ -321,6 +374,7 @@ async function appView(user) {
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Book this load'; alert((e && e.message) || 'Could not book this load.'); }
       } }, 'Book this load');
       bookWrap.appendChild(book);
+      const detailsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(l.id) }, 'Detailed overview');
       const meta = [];
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
       if (l.weight) meta.push('Weight: ' + l.weight);
@@ -331,9 +385,44 @@ async function appView(user) {
         h('div', { class: 'cp-load-tags' }, [h('span', { class: 'cp-tag' }, l.equipment || 'Van'), l.miles ? h('span', { class: 'cp-tag' }, Number(l.miles).toLocaleString() + ' mi') : null, l.pickup_date ? h('span', { class: 'cp-tag' }, 'PU ' + l.pickup_date) : null, l.delivery_date ? h('span', { class: 'cp-tag' }, 'DEL ' + l.delivery_date) : null].filter(Boolean)),
         meta.length ? h('div', { class: 'cp-load-meta' }, meta.join(' · ')) : null,
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
-        bookWrap,
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px' }, [bookWrap, detailsBtn]),
       ].filter(Boolean));
     }))].filter(Boolean)));
+  }
+
+  /* Decision-complete load overview (A2): everything a carrier needs BEFORE booking — accessorial rate card,
+     windows / FCFS, stops, instructions, and the mandatory-tracking notice. Broker identity is never shown. */
+  async function showLoadDetail(loadId) {
+    const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading load details…'));
+    openModal('Load overview', [bodyEl]);
+    let d; try { d = await carrierLoadDetail(loadId); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load details.')); return; }
+    const t = d.terms || {}; const acc = t.accessorials || {};
+    const line = (k, v) => v == null || v === '' ? null : h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, String(v))]);
+    const rpm = d.rpm != null ? '$' + Number(d.rpm).toFixed(2) + '/mi' : null;
+    const accEntries = Object.entries(acc);
+    mount(bodyEl, h('div', null, [
+      h('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px' }, [
+        h('b', { style: 'font-size:1.05rem' }, (d.origin || '—') + ' → ' + (d.destination || '—')),
+        h('b', { style: 'color:var(--lb-green,#16a34a)' }, [money(d.rate), rpm ? h('span', { class: 'cp-muted', style: 'font-weight:400;margin-left:6px' }, rpm) : null].filter(Boolean)),
+      ]),
+      h('div', { class: 'cp-load-tags', style: 'margin-bottom:8px' }, [
+        h('span', { class: 'cp-tag' }, d.equipment || 'Van'),
+        d.miles ? h('span', { class: 'cp-tag' }, Number(d.miles).toLocaleString() + ' mi') : null,
+        d.deadhead ? h('span', { class: 'cp-tag' }, d.deadhead + ' mi deadhead') : null,
+        h('span', { class: 'cp-tag' }, d.posted_by || 'LoadBoot dispatch'),
+      ].filter(Boolean)),
+      line('Commodity', d.commodity), line('Weight', d.weight),
+      line('Scheduling', t.scheduling),
+      line('Pickup', [d.pickup_date, t.pickup_window].filter(Boolean).join(' · ')),
+      line('Delivery', [d.delivery_date, t.delivery_window].filter(Boolean).join(' · ')),
+      line('Reference', t.reference),
+      t.instructions ? h('div', { style: 'margin:8px 0' }, [h('div', { class: 'cp-row-t' }, 'Instructions'), h('div', { class: 'cp-row-s' }, t.instructions)]) : null,
+      accEntries.length ? h('div', { style: 'margin-top:8px' }, [
+        h('div', { class: 'cp-row-t' }, 'Accessorial rate card'),
+        ...accEntries.map(([k, v]) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-s' }, k.replace(/_/g, ' ')), h('span', null, typeof v === 'object' ? JSON.stringify(v) : String(v))])),
+      ]) : h('div', { class: 'cp-muted', style: 'margin-top:8px;font-size:12px' }, 'No accessorial rates specified for this load.'),
+      h('div', { class: 'cp-payinfo', style: 'margin-top:10px' }, [h('div', { class: 'cp-payinfo-h' }, '📍 Tracking'), h('div', { class: 'cp-payinfo-b' }, t.tracking_note || 'Location tracking is on from booking until delivery.')]),
+    ].filter(Boolean)));
   }
 
   /* ----- My trips ----- */
@@ -353,6 +442,7 @@ async function appView(user) {
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
       } }, '⚠ Report issue') : null;
+      const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'border-color:#dc2626;color:#dc2626', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
       const podW = h('div');
       const canPod = t.status === 'delivered' || t.status === 'invoiced';
       const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
@@ -398,9 +488,40 @@ async function appView(user) {
       } }, '🕑 History');
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
-        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, dwell, issue, pod, assign, history].filter(Boolean)), fw, podW, dwellW,
+        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, dwell, issue, emergency, pod, assign, history].filter(Boolean)), fw, podW, dwellW,
       ].filter(Boolean));
     })]));
+
+    // Emergency / delivery-reschedule request — REQUIRES a defined category, a detailed reason and proof.
+    // Goes to Command Center for review (urgent, red). Emergencies are for genuine, evidenced situations only.
+    function openEmergency(t) {
+      const CATS = [['breakdown', 'Truck breakdown'], ['accident', 'Accident'], ['weather', 'Severe weather'], ['medical', 'Medical emergency'], ['road_closure', 'Road closure'], ['hours_of_service', 'Out of hours (HOS)'], ['mechanical', 'Mechanical failure'], ['theft', 'Theft'], ['other', 'Other (explain)']];
+      const cat = h('select', { class: 'cp-in' }, CATS.map(([v, l]) => h('option', { value: v }, l)));
+      const reason = h('textarea', { class: 'cp-in', rows: '3', placeholder: 'Exactly what happened, where, and what you need (min 10 characters).' });
+      const proof = h('input', { class: 'cp-in', placeholder: 'Proof link — photo, tow receipt, police report, etc. (required)' });
+      const resched = h('input', { class: 'cp-in', type: 'datetime-local' });
+      const msg = h('div', { class: 'cp-err' });
+      let closeModal;
+      const send = h('button', { class: 'cp-btn', onClick: async () => {
+        msg.textContent = ''; msg.className = 'cp-err';
+        if (reason.value.trim().length < 10) { msg.textContent = 'Please give a detailed reason (min 10 characters).'; return; }
+        if (!proof.value.trim()) { msg.textContent = 'Proof is required to raise an emergency.'; return; }
+        send.disabled = true; send.textContent = 'Submitting…';
+        try {
+          await tripEmergencyRequest({ trip: t.id, category: cat.value, reason: reason.value.trim(), proof_ref: proof.value.trim(), reschedule_to: resched.value || null });
+          if (closeModal) closeModal();
+          alert('Emergency submitted to dispatch. You will be notified once it is reviewed.');
+        } catch (e) { send.disabled = false; send.textContent = 'Submit emergency'; msg.textContent = (e && e.message) || 'Could not submit.'; }
+      } }, 'Submit emergency');
+      closeModal = openModal('🚨 Report an emergency', [
+        h('p', { class: 'cp-row-s' }, 'Only for genuine, evidenced emergencies. Every request needs a category, a detailed reason and proof, and is reviewed by dispatch.'),
+        h('label', { class: 'cp-row-t' }, 'Category'), cat,
+        h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, 'What happened'), reason,
+        h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, 'Proof (required)'), proof,
+        h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, 'Requested new delivery time (optional)'), resched,
+        msg, h('div', { style: 'margin-top:10px' }, send),
+      ]);
+    }
 
     async function assignTrip(t) {
       let drivers = [], trucks = [];
@@ -587,6 +708,38 @@ async function appView(user) {
         ])),
       ]));
     })();
+    // Service & maintenance log — run equipment upkeep here (no other software needed).
+    const serviceHost = h('div');
+    const SVC_KINDS = [['oil_change', 'Oil change'], ['tires', 'Tires'], ['brakes', 'Brakes'], ['inspection', 'Inspection'], ['dot_inspection', 'DOT inspection'], ['pm_service', 'PM service'], ['repair', 'Repair'], ['registration', 'Registration'], ['permit', 'Permit'], ['other', 'Other']];
+    async function loadService() {
+      let recs; try { recs = await fleetServiceList(null, 100); } catch (_) { recs = []; }
+      recs = recs || [];
+      mount(serviceHost, recs.length ? h('div', null, recs.map(r => h('div', { class: 'cp-trip' }, [
+        h('div', { class: 'cp-trip-head' }, [
+          h('div', null, [h('div', { class: 'cp-row-t', style: 'text-transform:capitalize' }, (r.kind || '').replace(/_/g, ' ') + (r.truck_unit ? ' · Unit ' + r.truck_unit : '')),
+            h('div', { class: 'cp-row-s' }, [r.service_date, r.cost != null ? money(r.cost) : null, r.vendor].filter(Boolean).join(' · '))]),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { if (!confirm('Delete this service record?')) return; try { await fleetServiceDelete(r.id); loadService(); } catch (e) { alert((e && e.message) || 'Could not delete.'); } } }, 'Delete'),
+        ]),
+        r.next_due_date ? h('div', { class: 'cp-row-s', style: r.due_soon ? 'color:#d97706' : '' }, (r.due_soon ? '⏰ ' : '') + 'Next due ' + r.next_due_date) : null,
+      ].filter(Boolean)))) : h('div', { class: 'cp-muted' }, 'No service records yet. Log your first service.'));
+    }
+    function serviceForm() {
+      const truck = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'No specific truck')].concat(trucks.map(t => h('option', { value: t.id }, 'Unit ' + t.unit_no))));
+      const kind = h('select', { class: 'cp-in' }, SVC_KINDS.map(([v, l]) => h('option', { value: v }, l)));
+      const date = h('input', { class: 'cp-in', type: 'date' });
+      const odo = h('input', { class: 'cp-in', type: 'number', placeholder: 'Odometer (optional)' });
+      const cost = h('input', { class: 'cp-in', type: 'number', placeholder: 'Cost (optional)' });
+      const vendor = h('input', { class: 'cp-in', placeholder: 'Vendor / shop (optional)' });
+      const notes = h('input', { class: 'cp-in', placeholder: 'Notes (optional)' });
+      const nextDue = h('input', { class: 'cp-in', type: 'date' });
+      let closeM;
+      const save = h('button', { class: 'cp-btn', onClick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+        try { await fleetServiceAdd({ truck_id: truck.value || null, kind: kind.value, service_date: date.value || null, odometer: odo.value || null, cost: cost.value || null, vendor: vendor.value.trim() || null, notes: notes.value.trim() || null, next_due_date: nextDue.value || null }); if (closeM) closeM(); loadService(); }
+        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
+      } }, 'Save');
+      closeM = openModal('Log service', [h('label', { class: 'cp-row-s' }, 'Truck'), truck, h('label', { class: 'cp-row-s' }, 'Type'), kind, h('label', { class: 'cp-row-s' }, 'Service date'), date, odo, cost, vendor, notes, h('label', { class: 'cp-row-s' }, 'Next due date'), nextDue, save]);
+    }
     mount(content, h('div', null, [
       alertHost,
       h('div', { class: 'cp-card' }, [
@@ -599,8 +752,13 @@ async function appView(user) {
         h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', onClick: () => truckForm(null) }, '+ Add truck'),
         truckList,
       ]),
+      h('div', { class: 'cp-card' }, [
+        cardHead('Service & maintenance', 'Log & track upkeep'),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', onClick: () => serviceForm() }, '+ Log service'),
+        serviceHost,
+      ]),
     ]));
-    renderDrivers(); renderTrucks();
+    renderDrivers(); renderTrucks(); loadService();
   }
 
   /* ----- Finance ----- */
@@ -684,9 +842,41 @@ async function appView(user) {
         (p.by_lane && p.by_lane.length) ? h('div', { style: 'margin-top:10px' }, [h('b', { class: 'cp-row-s' }, 'Top lanes'), ...p.by_lane.map(x => h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, x.lane + ' (' + x.trips + ')'), h('span', null, money(x.revenue))]))]) : null,
       ].filter(Boolean));
     })();
+    // A5 — Payroll / employee salary management (manually entered; self-scoped).
+    const payrollCard = h('div', { class: 'cp-card' }, [cardHead('Payroll'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    async function renderPayroll() {
+      let pr; try { pr = await payrollList(); } catch (e) { mount(payrollCard, [cardHead('Payroll'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      pr = pr || {}; const entries = Array.isArray(pr.entries) ? pr.entries : [];
+      const name = h('input', { class: 'cp-in', placeholder: 'Employee name' });
+      const role = h('input', { class: 'cp-in', placeholder: 'Role (optional)' });
+      const type = h('select', { class: 'cp-in' }, [['salary', 'Salary'], ['hourly', 'Hourly'], ['per_mile', 'Per mile'], ['percentage', 'Percentage'], ['bonus', 'Bonus'], ['reimbursement', 'Reimbursement']].map(([v, l]) => h('option', { value: v }, l)));
+      const amt = h('input', { class: 'cp-in', type: 'number', placeholder: 'Amount $' });
+      const pend = h('input', { class: 'cp-in', type: 'date' });
+      const add = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        if (!name.value.trim() || !amt.value) { alert('Enter an employee name and amount.'); return; }
+        ev.currentTarget.disabled = true;
+        try { await payrollAdd({ employee_name: name.value.trim(), role: role.value.trim() || null, pay_type: type.value, amount: amt.value, period_end: pend.value || null }); renderPayroll(); }
+        catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not add.'); }
+      } }, 'Add');
+      mount(payrollCard, [
+        cardHead('Payroll', money(pr.unpaid) + ' unpaid'),
+        h('div', { class: 'cp-row-s' }, 'Total ' + money(pr.total) + ' · paid ' + money(pr.paid) + ' · unpaid ' + money(pr.unpaid) + ' — ' + (pr.basis || '')),
+        entries.length ? h('div', null, entries.map(e => h('div', { class: 'cp-row' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, e.employee_name + (e.role ? ' · ' + e.role : '')), h('div', { class: 'cp-row-s', style: 'text-transform:capitalize' }, [(e.pay_type || '').replace(/_/g, ' '), e.period_end].filter(Boolean).join(' · '))]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
+            h('b', { style: e.paid ? 'color:var(--lb-green,#16a34a)' : '' }, money(e.amount)),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { await payrollMarkPaid(e.id, !e.paid); renderPayroll(); } catch (x) {} } }, e.paid ? 'Paid ✓' : 'Mark paid'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { if (!confirm('Delete this payroll entry?')) return; try { await payrollDelete(e.id); renderPayroll(); } catch (x) {} } }, '✕'),
+          ]),
+        ]))) : h('div', { class: 'cp-muted' }, 'No payroll entries yet. Add your team’s pay below.'),
+        h('div', { class: 'cp-inlineform', style: 'margin-top:8px;flex-wrap:wrap' }, [name, role, type, amt, pend, add]),
+      ]);
+    }
+    renderPayroll();
     mount(content, h('div', null, [
       h('div', { class: 'cp-kpis' }, [statTile('Fees due', money(due), 'finance', 'amber'), statTile('Fees paid', money(paid), 'dash', 'green'), statTile('Gross hauled', money(gross), 'trips', 'blue'), statTile('Invoices', String(rows.length), 'docs', 'violet')]),
       pnlCard,
+      payrollCard,
       stmtCard,
       h('div', { class: 'cp-grid' }, [
         h('div', { class: 'cp-card cp-col2' }, [cardHead('Dispatch fees over time'), series.length ? miniBars(series, { height: 84 }) : h('div', { class: 'cp-muted' }, 'No data yet.')]),
