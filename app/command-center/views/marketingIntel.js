@@ -20,6 +20,12 @@ export function renderMarketingIntel(host) {
   sel.onchange = () => { days = Number(sel.value); load(); };
   mount(host, el('div', null, [
     sectionHead('Marketing Intelligence', 'First-party numbers to base ad spend on: pages that pull, UTM sources/campaigns that CONVERT, leads per audience and the reachable base per segment. Keyword-level Google data arrives via the GSC card once the Google service account is connected.', sel),
+    el('div', { class: 'lb-card', style: 'margin:10px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
+      el('b', null, 'Push to an audience:'),
+      el('a', { class: 'lb-btn lb-btn-sm lb-btn-primary', href: '#/campaign-manager' }, '📧 Email campaign (consent-enforced)'),
+      el('a', { class: 'lb-btn lb-btn-sm', href: '#/delivery' }, '⚙️ Delivery health & automations'),
+      el('span', { class: 'cc-sub' }, 'In-app portal push: Notify broadcast by role (carriers / brokers / drivers / referral partners) — audience bases below are your reachable universe.'),
+    ]),
     kpis, body,
   ]));
   load();

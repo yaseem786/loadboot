@@ -1385,3 +1385,265 @@ box, no invented data):
   cc_carrier_view_poster — the carrier's decision set is now complete INCLUDING who they are working with.
 - Gates: ESM ALL PASS (92 files), import-reference PASS. C6 residual (GSC keyword panel = owner Google SA;
   one-click audience push buttons) remains the only open UI item.
+
+## C6 CLOSED (codeable scope) — AUDIENCE PUSH SHORTCUTS ON MARKETING INTELLIGENCE
+- Marketing Intelligence gains a "Push to an audience" bar: one-click into Campaign Manager
+  (consent-enforced email) + Delivery Health/automations, with the in-app role-broadcast path named —
+  the intel→action loop is closed in one screen. GSC keyword panel remains the ONLY open C6 item and is
+  owner-blocked (Google service account) — the gsc-insights function is already deployed and waiting.
+
+## TRUE ORIGINAL BRAND LOCKUP (owner screenshots — final form)
+- Owner clarified the ORIGINAL lockup: icon + FULL "Loadboot" wordmark with "boot" in BRAND ORANGE
+  (#F97316, not blue) and the tagline "Keep Your Wheels Earning" ATTACHED beneath the wordmark.
+- Applied EVERYWHERE: marketing header (wordmark + attached mini-tagline) + footer + splash screen,
+  carrier/partner/developer portals (shared cp-brand b + cp-tagline → orange; 'oad' reverted to full
+  'Load'), pocket app, Command Center (cc-word b + brand tag → orange). Build OK, ESM ALL PASS.
+- NOTE: repo has NO full original logo FILE (only icon-512). For pixel-perfect parity the owner should
+  drop the original logo asset (e.g. logo-full-dark.png / logo-full-light.png) into the repo root —
+  then swap the reconstructions for the real image in one pass.
+
+## BRAND LOCKED (owner decision, in-session question): HEADER LOCKUP EVERYWHERE
+- Owner locked the FINAL lockup = the website header's: icon "L" completes the word + "oadboot" with
+  "boot" in BLUE; no attached tagline. Applied uniformly: marketing header/footer/splash (reverted the
+  orange/full-Load experiment), carrier/partner/developer portals (cp-brand b → #60a5fa), pocket,
+  Command Center. This entry supersedes the two earlier lockup notes — HEADER STYLE IS CANON now;
+  do not change the brand lockup again without an explicit owner decision.
+
+## SIDEBAR SCROLLING ON — ALL PORTALS (owner ask)
+- .cp-side (shared by carrier/partner/developer) was sticky 100vh with NO overflow — long navs cut off the
+  account footer. Now overflow-y:auto + overscroll-contain + thin styled scrollbar. Command Center sidebar
+  already scrolled (verified); Pocket uses mobile tabs (n/a).
+
+## C2 UI COMPLETE — SHIPPER "MY SHIPMENTS" IS PIPELINE-AWARE
+- Shipper portal list now reads cc_shipper_my_shipments: Status + QUOTE (amount + broker's note, green) +
+  "Handled by" ('Licensed broker partner' / 'LoadBoot coordination' — identity hidden), with graceful
+  fallback to the legacy list RPC. The full C2 loop is now visible end-to-end: shipper requests →
+  CC assigns → broker quotes → shipper sees the quote → CC pipeline tracks it all.
+
+## CXG — CARRIER PREFERENCES ARE LIVE LAW FOR AUTO-MATCHING (owner directive closed end-to-end)
+- The owner's full requirement now holds across the chain: prefs REQUIRED at onboarding (wizard step 4),
+  EDITABLE any time (Account card), and — new in `cxg_prefs_live_matching` (BOTH DBs, md5-identical
+  a5eb4a9d…, anon 5) — the AUTOMATED matcher RE-READS app_private.carrier_dispatch_prefs on EVERY run:
+  a carrier whose stated min $/mi is above what the load pays, or whose preferred-equipment list excludes
+  the load's equipment, is HARD-SKIPPED by cc_auto_dispatch_run (per-load pref_blocked count in the run
+  details + audit line states live-prefs enforcement).
+- Proof: **PREFS LIVE-MATCHING MATRIX: PASS (2 checks)** — with min_rpm $5 the $2.57/mi load is NEVER
+  auto-offered to that carrier; the carrier lowers the pref to $2 and THE VERY NEXT RUN offers it.
+  Self-cleaning (prefs restored). Manual staff sends (cc_offer_send) intentionally stay pref-free —
+  a human dispatcher may override with judgment; the AUTOMATION never does.
+
+## CXH — C7 SHIPPED: AMAZON-STYLE ACCOUNT HEALTH ENGINE (auto, live, CC-tracked)
+- **Migration `cxh_account_health`** — BOTH DBs, combined md5 IDENTICAL ×4 fns, anon surface 5:
+  deterministic 0-100 health per carrier org, **score == 100 − itemized deductions** (asserted in matrix),
+  computed LIVE on every call from REAL rows: staff violations ledger (warning −5 / violation −15 /
+  critical −40, capped 60), on-time shortfall (capped 15), cancellations (−5 each, capped 15), open
+  exceptions (−3 each, capped 12), mandatory compliance lapse (−20). Tiers healthy ≥90 / at_risk 70-89 /
+  critical <70 — trucking/legal-flavoured kinds (policy/safety/document/service/conduct/legal).
+- `cc_issue_violation` (staff; written reason REQUIRED; carrier instantly notified in-app urgent/warning
+  tone; audited) + `cc_resolve_violation` (restores score live). `cc_account_health` (carrier self / staff
+  any). `cc_account_health_board` (staff: EVERY carrier account, worst-first — the Command-Center live
+  tracking the owner asked for).
+- Proof: **ACCOUNT HEALTH MATRIX: PASS (6 checks)** — score arithmetic asserted, carrier cannot issue,
+  bad severity rejected, critical −40 live then resolve restores, staff board contains org, carrier denied
+  board + other-org health. Self-cleaning.
+- **Frontend:** carrier Account hero gains a LIVE health ring (tone-coloured score circle + tier pill +
+  every deduction with its basis + honest engine note). ALSO this batch: dashboard reordered (NUMBER CARDS
+  FIRST → account-status strip → setup gaps → prompts/announcements), Account "Setup item" label bug fixed
+  (real gap labels + routes from the RPC), Account hero number tiles (verification/compliance/trips/fees).
+  api wrappers ×4. CC board UI = next wiring (task residual).
+
+## CXI — HEALTH FOR EVERY ACCOUNT HOLDER (role-specific industry duties)
+- `cc_account_health` generalized (BOTH DBs, md5-identical, anon 5): CARRIER (on-time/cancels/exceptions/
+  compliance), BROKER (rejected broker docs −4×≤16, update-requests unanswered >48h −5×≤15, assigned shipper
+  requests unquoted >48h −5×≤15), SHIPPER (open requests missing facility/dock info −3×≤12) — violations
+  ledger universal; every role-signal individually guarded; board now covers carrier+broker+shipper with
+  kind, worst-first. Proof: **ALL-ROLES HEALTH MATRIX: PASS (4)** (broker arithmetic, cross-org denied,
+  carrier regression, shipper via staff + board kinds).
+
+## CXJ — CARRIER SERVICES LIST → LIVE MATCHING INPUT (owner ask)
+- carrier_dispatch_prefs +services[]; cc_set_my_services/cc_my_services (self, audited). Auto-dispatch now
+  ALSO service-aware: a load whose requirements name a special service (hazmat/team/liftgate/tarp/twic/
+  white-glove/drop-and-hook/expedited) is never auto-pushed to a carrier whose maintained list lacks it.
+  Proof: **CARRIER SERVICES MATRIX: PASS (4)** — hazmat load blocked, carrier adds Hazmat, VERY NEXT run
+  offers (live). Parity drift on the runner caught + fixed via cxj_carrier_services_parity (md5 identical).
+- Fleet tab: **"Services you offer"** chip card (10 industry services, tap = instant save, 'Saved ✓ (live)').
+
+## CXK — SHIPPER-ORIGIN LOAD FLOW (owner directive: asal load shipper ke paas hai)
+- BOTH DBs, ×3 fns md5-identical, anon 5. Flow now: shipper posts → **OPEN POOL visible to every active
+  licensed broker** (decision-complete: facility/dock/appointment/terms/weight/commodity) → broker
+  **Claims** (first-come, concurrency-safe; CC assign path intact) → quotes → **Tenders to dispatch**: the
+  shipment becomes a full partner_load through the PROVEN submit path — the cwx ready-gate FORCES the
+  complete industry rate card, so Command Center and the matching engine always receive enough to push the
+  best carriers (cxg live prefs + cxj services enforced downstream). Statuses + linkage recorded; audited.
+- Proof: **SHIPPER LOAD FLOW MATRIX: PASS (5)** — pool visible w/ detail, claim + double-claim blocked,
+  incomplete tender REFUSED by ready-gate, complete tender creates+links partner_load (status tendered),
+  carrier denied. Self-cleaning incl. downstream agreement/checklist rows.
+- Broker portal UI: open-pool rows ("OPEN POOL" pill + **Claim this freight**) and **🚀 Tender to dispatch**
+  (rate from quote box + LoadBoot standard rate card auto-attached, server still enforces completeness).
+
+## CXL + FINAL WIRING — SHIPPER SOURCE FIELDS + CC ACCOUNT-HEALTH SCREEN
+- **cxl_shipment_request_industry_fields** (BOTH DBs, single 12-arg fn, md5-identical, anon 5):
+  cc_partner_request_shipment now CAPTURES facility_notes / dock_hours / appointment_required at the
+  SOURCE (old 9-arg dropped); shipper portal form gains the required fields + appointment toggle; api
+  wrapper passes them. Feeds the broker open pool (cxk), broker decisions and shipper health (cxi).
+- **Command Center `/account-health`** (nav: Account Health; carriers.view/dispatch.view): every account
+  holder scored live worst-first — tier ring + kind, per-account itemized deductions, and (dispatch/
+  carriers.manage) inline ISSUE warning/violation/critical with mandatory written reason (account notified
+  instantly) — the Amazon-style governance loop is now fully operable from one screen. Files:
+  views/accountHealth.js, app.js, shell.js.
+- Gates: ESM ALL PASS (93 files), import-reference PASS.
+
+## D-SERIES KICKOFF — INDUSTRY COMPLIANCE SOP CAPTURED + D1 SHIPPED
+- **docs/INDUSTRY-COMPLIANCE-SOP.md**: the owner's full US-trucking 3-level document specification
+  (§1–§15, LEGAL/REQUIRED/CONDITIONAL/OPTIONAL) preserved as CANON + gap-audit vs shipped work; tasks
+  D1–D8 created (tender completeness, onboarding packets, master agreements, rate confirmation, dispatch
+  sheet, pre-booking gate, STOP/REJECT engine, delivery doc pack).
+- **D1 SHIPPED — `cxm_load_tender_completeness` (+_parity)** — BOTH DBs, md5-identical, anon 5:
+  partner_shipments +10 tender columns (ref_po, pickup/delivery contacts, cargo_value, temperature,
+  hazmat+info, seal_required, dims, special_instructions). New canonical `cc_shipper_post_load(jsonb)`
+  REFUSES an incomplete tender with the missing fields NAMED (SOP §4 REQUIRED set incl. cargo value for
+  the insurance decision) and enforces the [LEGAL] hazmat-papers rule; broker inbox exposes the complete
+  decision set — AUTO-FLOW: the moment a shipper posts, every matching broker has everything, no phone call.
+- Proof: **LOAD TENDER MATRIX: PASS (5 checks)** (named-missing rejection, hazmat-LEGAL rejection, complete
+  accepted, broker pool auto-carries value/contacts/seal, carrier denied). Old positional fn kept for
+  back-compat. Frontend: shipper form v2 (all REQUIRED fields + hazmat/seal toggles) posts via the
+  canonical tender; broker pool rows show ref/value/temp/hazmat/contacts lines.
+
+## CXN — D2 SHIPPED: ONBOARDING PACKET ENGINE (every role, SOP tags, CC verification)
+- **Migration `cxn_onboarding_packets`** — BOTH DBs, ×4 fns md5-IDENTICAL, 30 templates seeded both,
+  anon surface 5. ONE engine for every account kind with the SOP's status tags:
+  BROKER packet (8: MC authority [LEGAL], $75k BMC-84/85 bond [LEGAL], W-9, COI [COND], agreement, bank
+  instructions, claims procedure, references [OPT]) · CARRIER packet (13: operating authority + auto
+  liability [LEGAL], agreement, W-9, COI-from-agent, SAFER check, equipment, emergency contact, payment
+  items [COND: cargo/reefer/NOA/ACH/hazmat]) · SHIPPER packet (9: credit app, agreement, payment terms,
+  billing, cargo profile, claims contact, facility rules, insurance requirements, special commodity [COND]).
+- Lifecycle: pending → submitted (ref REQUIRED) → verified / rejected / waived — reject & waive DEMAND a
+  written reason; all audited. `cc_my_onboarding_packet` (self, tags + completeness), `cc_onboarding_board`
+  (staff: every org's mandatory-done %, awaiting-review count, worst-first). "Packet complete" = every
+  LEGAL+REQUIRED item verified/waived. New internal `app_private.my_any_org()` helper.
+- Proof: **ONBOARDING PACKET MATRIX: PASS (5 checks)** (tagged broker packet, ref-required submit,
+  noteless-reject refused + verify, completion math flips on full mandatory coverage incl. a waive,
+  staff board + outsider denied). Self-cleaning. api wrappers ×4; portal/CC packet UIs = D2 residual
+  with the D-series screens batch.
+
+## CXO — D3 SHIPPED: MASTER AGREEMENTS ENGINE (versioned, legal-gated, accepted once)
+- **Migration `cxo_master_agreements`** — BOTH DBs, ×3 fns md5-IDENTICAL, 3 v1 clause-skeletons seeded,
+  anon 5. Versioned masters per relationship (broker_shipper 30 clauses / broker_carrier 16 /
+  dispatcher_carrier 30 — exact SOP clause lists) stored as body_md marked **LEGAL REVIEW REQUIRED**.
+  `cc_publish_agreement` (settings.manage) REFUSES publication without explicit legal-counsel
+  confirmation; `cc_current_agreement` shows the newest PUBLISHED version + own-org acceptance state;
+  `cc_accept_agreement` records acceptance ONCE per org+version (idempotent, audited) — per-load tenders
+  and rate confirmations ride under the master, exactly as the SOP prescribes.
+- Proof: **MASTER AGREEMENTS MATRIX: PASS (4 checks)** (unpublished invisible + unacceptable, broker
+  cannot publish, staff publish blocked without legal-ok then succeeds with it, acceptance recorded
+  exactly once). Self-cleaning (skeletons kept, publication reverted). api wrappers ×3.
+- NEXT (D-series): D4 Rate Confirmation → D5 Dispatch Sheet → D6 pre-booking gate → D7 STOP/REJECT →
+  D8 delivery doc pack; plus the D-screens UI batch (packet cards in all portals + CC onboarding board).
+
+## CXP — D4 SHIPPED: AUTO RATE CONFIRMATIONS (immutable, acknowledged, 18-item)
+- **Migration `cxp_rate_confirmations`** — BOTH DBs, trigger + ×2 fns md5-IDENTICAL, anon 5.
+  AFTER-INSERT trigger on trips: the MOMENT a booking creates a trip, an IMMUTABLE 18-item RC snapshot
+  auto-assembles from the load + tender terms + agreed rate card (total payment, lane, dates+windows,
+  appointment, commodity/weight/equipment, detention policy {rate+free hours}, layover, TONU, lumper,
+  tracking requirement+note, POD 48h deadline, invoice instructions -> billing@, special instructions).
+  NO update path exists — SOP: a dispatcher must never modify an RC. Carrier reads own RC
+  (cc_my_rate_confirmation; staff oversight allowed) and ACKNOWLEDGES once (recorded, audited,
+  double-ack blocked). Platform identity note: RC issued by LoadBoot Dispatch; broker legal identity
+  stays CC-side per the platform model.
+- Proof: **RATE CONFIRMATION MATRIX: PASS (4 checks)** (auto-generation with correct rate-card content,
+  ack-once, outsider denied, staff read). Self-cleaning. api wrappers ×2. Trip-view RC button = D-screens batch.
+- OWNER DIRECTIVE RECORDED: future WEBSITE DESIGN work must use the Claude Design builder (Design plugin).
+
+## CXQ — D5 SHIPPED: 30-ITEM DISPATCH SHEET (auto-assembled, zero phone calls)
+- **Migration `cxq_dispatch_sheet`** — BOTH DBs, md5-IDENTICAL, anon 5. `cc_dispatch_sheet(trip)`
+  (carrier self / staff): the SOP §11 sheet assembled LIVE from existing rows — issued-by + dispatch +
+  emergency contacts, load/trip numbers, agreed rate, loaded miles + loaded RPM (computed), deadhead note,
+  full pickup/delivery blocks (address/date/window/appointment/reference), commodity/weight/equipment,
+  driver name+phone, truck/trailer numbers, tracking instructions, detention {rate, free hours, HOW:
+  arrive/depart stamps}, layover, TONU, lumper process (+keep-the-receipt), documents-to-collect checklist
+  (BOL/POD/lumper/scale), POD 48h instructions, special instructions, RC-attached + RC-acknowledged flags.
+- Proof: **DISPATCH SHEET MATRIX: PASS (3 checks)** (RPM math + content, outsider denied, staff read).
+  Self-cleaning. api wrapper. Portal/Pocket "Dispatch sheet" button = D-screens batch.
+- D-SERIES SCORE: D1✔ D2✔ D3✔ D4✔ D5✔ — remaining D6 (pre-booking gate), D7 (STOP/REJECT), D8 (delivery
+  doc pack), D-screens UI batch.
+
+## CXR — D6+D7 SHIPPED: PRE-BOOK GATE + STOP/REJECT ENGINE (consolidated go/no-go)
+- **Migration `cxr_prebook_gate`** — BOTH DBs, md5-IDENTICAL, anon 5. `cc_prebook_check(load, carrier?)`
+  (carrier self / staff any) — ONE itemized GO/NO-GO evaluating every SOP §12/§15 condition the platform
+  holds data for: load live on board · rate card complete · carrier authority+insurance current ·
+  carrier onboarding packet completeness (ADVISORY until owner enables hard enforcement) · account health
+  not critical · hazmat capability vs load requirements · weight-vs-equipment sanity (48k van/reefer) ·
+  no open emergencies. Plus the SOP's honest notes baked into the payload: HOS legal duty stays with
+  driver+carrier (acceptance = recorded written approval), and the list of hard STOPs already enforced
+  upstream (ready-gates at post, eligibility recheck at offer AND acceptance, live prefs+services).
+- Proof: **PREBOOK GATE MATRIX: PASS (3 checks)** (hazmat-gap load returns NO-GO with the failing check
+  named, itemized ≥6-check shape + notes, cross-carrier denied + staff allowed). Self-cleaning.
+  api wrapper `prebookCheck`. Pre-book panel in carrier load detail + CC = D-screens batch.
+- D-SERIES: D1✔ D2✔ D3✔ D4✔ D5✔ D6✔ D7✔ — sirf D8 (delivery doc pack) + D-screens UI batch baqi.
+
+## CXS — D8 SHIPPED: DELIVERY/PAYMENT DOC PACK — **D-SERIES BACKEND 100% COMPLETE**
+- **Migration `cxs_delivery_doc_pack` (+fix,+fix2)** — BOTH DBs, md5-IDENTICAL, anon 5.
+  `cc_delivery_doc_pack(trip)` (carrier self / staff): SOP §13/§14 post-delivery pack assembled LIVE —
+  [REQUIRED] signed POD files + approval state (48h rule stated), immutable RC presence + acknowledgement,
+  carrier invoice + status; [CONDITIONAL] measured detention in/out stamps per stop, accessorial receipts;
+  [OPTIONAL/BP] photos note; `packet_ready` = approved POD + RC present; the 3-YEAR broker
+  records-retention rule stated in every payload.
+- Proof: **DELIVERY DOC PACK MATRIX: PASS (3 checks)** (POD-less pack NOT ready + dwell shown + retention
+  note, approved POD flips packet_ready, outsider denied). Self-cleaning. api wrapper `deliveryDocPack`.
+- **D-SERIES FINAL SCORE: D1–D8 ALL SHIPPED** (cxm–cxs, 7 migrations + fixes): tender completeness,
+  onboarding packets (30 templates), master agreements (legal-gated), auto rate confirmations (immutable),
+  dispatch sheets, pre-book gate + STOP/REJECT, delivery doc packs — the owner's ENTIRE industry SOP is
+  now database law, matrix-proven on BOTH databases, anon surface 5 throughout. Remaining: the D-SCREENS
+  UI batch (render these payloads in the portals + CC) — pure frontend, wrappers all ready.
+
+## D-SCREENS UI BATCH — THE SOP IS NOW VISIBLE IN EVERY PORTAL
+- **Carrier My Trips:** every trip row gains 📋 Dispatch sheet (30-item modal), 🧾 Rate con (immutable RC
+  modal + one-time Acknowledge button) and — on delivered/invoiced trips — 📦 Delivery docs (packet-ready
+  pill, REQUIRED/CONDITIONAL sections, 3-year retention note). Generic jsonb→rows renderer keeps every
+  future payload renderable in one line.
+- **Carrier Account:** "Industry onboarding packet" card — every item tagged [LEGAL]/[REQUIRED]/[COND]/
+  [OPT] with tone-coloured left borders, live status pills, Submit/Resubmit modal (ref required).
+- **Partner portal (broker):** packet card (same tags, prompt-submit) + **Master agreement card** —
+  renders the current published version (or the honest pending-legal-review note), scrollable clause text,
+  one-time "Accept agreement (recorded once)" button.
+- **Command Center → Account Health:** new "Onboarding packets" section — every incomplete /
+  awaiting-review account across all three kinds with mandatory-done counts (top-25, worst-first).
+- Gates: ESM ALL PASS (93 files), import-reference PASS, build OK. Wrappers: dispatchSheet,
+  myRateConfirmation/acknowledgeRC, deliveryDocPack, prebookCheck, packet + agreement + board — ALL live.
+
+## POCKET SHEET + CONTENT #7 — "HOW TO READ A RATE CONFIRMATION"
+- **Pocket app:** active trips gain an inline 📋 Sheet expander — the driver's essentials from the D5
+  dispatch sheet (rate, RPM, pickup/delivery + windows, detention terms + how, lumper, POD rule, emergency
+  contact) rendered phone-first without leaving the trip card.
+- **Content-queue #7 SHIPPED:** `how-to-read-a-rate-confirmation.html` — premium rich_article (~1,300+
+  words with deck/FAQ): what an RC legally is, the 10 lines to check, fine-print traps (detention clocks,
+  offsets, driver-assist, lumper windows), tracking/late penalties pricing, fraud tells (name/MC/domain/
+  bank mismatches), refuse-to-sign list, after-signing habits — each section honestly tied to the platform
+  truth that LoadBoot RCs are auto-generated and IMMUTABLE (cxp). Custom anatomy SVG + thumb, FAQ schema,
+  2 svc_banners, blog card, queue #7 → DONE. Build OK, inventory clean.
+
+## CONTENT #8 — "TRUCK DISPATCHER IN CALIFORNIA" (local money-page)
+- Premium rich_article: ports engine (LA/LB → Inland Empire reload economics), Central Valley produce
+  calendar, I-5/99 corridors + round-trip pricing rule, an HONEST CARB + AB5 compliance section (education
+  only, points to official sources/counsel — no legal advice), seasons, dispatcher value tied to platform
+  truths (measured detention stamps, immutable RCs, doc packs). Custom CA-map SVGs, 4-FAQ schema, 2
+  svc_banners, blog card, PREMIUM skip. Queue #8 → DONE (9 & 10 remain). Build OK.
+
+## CONTENT #9 + #10 — QUEUE 10/10 COMPLETE
+- **#9 "How to Avoid Cheap Freight"** — floor-price system, reload-pair math, funded no, negotiation
+  specifics, weekly discipline; honestly tied to the platform (the matching engine never auto-offers below
+  the carrier's own stated min rate — cxg live law). Custom floor-chart SVGs, FAQ schema, 2 banners.
+- **#10 "Truck Dispatcher in Georgia & Florida"** — Atlanta reload machine, Savannah port shuttle,
+  Florida inbound/outbound imbalance priced as PAIRS, seasons (produce north, hurricane surges, December
+  retail), dispatcher value on platform truths. Custom SE-map SVGs, FAQ schema, 2 banners.
+- content-queue.md: **10 of 10 DONE.** Build OK; inventory: only dashboard.html shell orphan (by design),
+  3 thin-utility dup pairs (pre-existing). ESM ALL PASS (93 files).
+
+## HOTFIX — LOGO LOCK ENFORCEMENT ON PORTAL AUTH CARDS (owner screenshot)
+Owner spotted the OLD lockup on the carrier login card: "boot" in ORANGE + attached tagline
+"Keep Your Wheels Earning". **HEADER STYLE IS CANON:** icon-L + "oadboot", boot BLUE, NO attached tagline.
+- app/carrier/carrier.css: `.cp-brand b` → #60a5fa (light-blue on dark sidebar), `.cp-brand-dark b` →
+  var(--lb-blue) #2563eb (auth cards / light bg). Orange "boot" removed everywhere in portals.
+- Tagline rows REMOVED from: carrier auth card + carrier sidebar, both partner auth cards,
+  developer auth card. (TAGLINE consts remain unused — safe.)
+- ESM gate: ALL PASS (93 files). NOTE: shows on live site only after the big commit+push.

@@ -109,10 +109,36 @@ export const myPayoutRequests = () => rpc('cc_my_payout_requests');
 export const referralPayoutQueue = (status) => rpc('cc_referral_payout_queue', { p_status: status || 'open' });
 // cxa — canonical industry rate standards (versioned, staff-editable; agreements auto-recorded at post)
 // cxd — bank payment profiles (default rail; staff-verified; masked reads; transfers recorded-only)
+// cxj — carrier services list (LIVE input to the auto-matching engine)
+export const setMyServices = (arr) => rpc('cc_set_my_services', { p_services: arr });
+export const myServices = () => rpc('cc_my_services');
+// cxh — Amazon-style account health (live, itemized; violations ledger staff-issued)
+export const accountHealth = (org) => rpc('cc_account_health', { p_org: org ?? null });
+export const accountHealthBoard = (limit = 100) => rpc('cc_account_health_board', { p_limit: limit });
+export const issueViolation = (org, kind, severity, note) => rpc('cc_issue_violation', { p_org: org, p_kind: kind, p_severity: severity, p_note: note });
+export const resolveViolation = (id, note) => rpc('cc_resolve_violation', { p_id: id, p_note: note ?? null });
 // cxf — shipper<->broker bridge pipeline (request -> assign -> quote; CC controls + sees all)
 export const assignShipment = (id, broker) => rpc('cc_assign_shipment', { p_id: id, p_broker: broker });
 export const brokerShipmentInbox = () => rpc('cc_broker_shipment_inbox');
 export const brokerQuoteShipment = (id, amount, note) => rpc('cc_broker_quote_shipment', { p_id: id, p_amount: amount, p_note: note ?? null });
+export const deliveryDocPack = (trip) => rpc('cc_delivery_doc_pack', { p_trip: trip });
+export const prebookCheck = (load, carrier) => rpc('cc_prebook_check', { p_load: load, p_carrier: carrier ?? null });
+export const dispatchSheet = (trip) => rpc('cc_dispatch_sheet', { p_trip: trip });
+// cxp — D4 rate confirmations (auto on booking; immutable; carrier acknowledges once)
+export const myRateConfirmation = (trip) => rpc('cc_my_rate_confirmation', { p_trip: trip });
+export const acknowledgeRC = (trip) => rpc('cc_acknowledge_rate_confirmation', { p_trip: trip });
+// cxo — D3 master agreements (versioned; publish needs legal confirmation; accept once)
+export const currentAgreement = (kind) => rpc('cc_current_agreement', { p_kind: kind });
+export const acceptAgreement = (kind) => rpc('cc_accept_agreement', { p_kind: kind });
+export const publishAgreement = (kind, version, legalOk) => rpc('cc_publish_agreement', { p_kind: kind, p_version: version, p_legal_ok: legalOk });
+// cxn — D2 onboarding packets (per-role LEGAL/REQUIRED templates; CC verification)
+export const myOnboardingPacket = () => rpc('cc_my_onboarding_packet');
+export const onboardingSubmitItem = (key, ref, note) => rpc('cc_onboarding_submit_item', { p_key: key, p_ref: ref, p_note: note ?? null });
+export const onboardingReviewItem = (org, key, action, note) => rpc('cc_onboarding_review_item', { p_org: org, p_key: key, p_action: action, p_note: note ?? null });
+export const onboardingBoard = (kind) => rpc('cc_onboarding_board', { p_kind: kind ?? null });
+export const shipperPostLoad = (p) => rpc('cc_shipper_post_load', { p });
+export const brokerClaimShipment = (id) => rpc('cc_broker_claim_shipment', { p_id: id });
+export const brokerTenderShipment = (id, rate, acc) => rpc('cc_broker_tender_shipment', { p_id: id, p_rate: rate, p_accessorials: acc });
 export const shipperMyShipments = () => rpc('cc_shipper_my_shipments');
 export const shipmentPipeline = () => rpc('cc_shipment_pipeline');
 // cxe — bridge trust signals (identity-safe, entitlement-gated)
@@ -624,7 +650,7 @@ export const partnerSubmitLoad = (o = {}) => rpc('cc_partner_submit_load', { p: 
 export const loadChecklist = (subjectType, subjectId) => rpc('cc_load_checklist', { p_subject_type: subjectType, p_subject_id: subjectId });
 export const loadChecklistSet = (id, status) => rpc('cc_load_checklist_set', { p_id: id, p_status: status });
 // shipper
-export const partnerRequestShipment = (o = {}) => rpc('cc_partner_request_shipment', { p_origin: o.origin, p_destination: o.destination, p_ready: o.ready ?? null, p_equipment: o.equipment ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_pieces: o.pieces ?? null, p_accessorials: o.accessorials ?? null, p_notes: o.notes ?? null });
+export const partnerRequestShipment = (o = {}) => rpc('cc_partner_request_shipment', { p_origin: o.origin, p_destination: o.destination, p_ready: o.ready ?? null, p_equipment: o.equipment ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_pieces: o.pieces ?? null, p_accessorials: o.accessorials ?? null, p_notes: o.notes ?? null, p_facility_notes: o.facility_notes ?? null, p_dock_hours: o.dock_hours ?? null, p_appointment_required: o.appointment_required ?? false });
 export const partnerMyShipments = (limit) => rpc('cc_partner_my_shipments', { p_limit: limit ?? 50 });
 // facility
 export const partnerCreateAppointment = (o = {}) => rpc('cc_partner_create_appointment', { p_direction: o.direction ?? 'inbound', p_window_start: o.windowStart, p_window_end: o.windowEnd ?? null, p_dock: o.dock ?? null, p_carrier_name: o.carrierName ?? null, p_reference: o.reference ?? null, p_notes: o.notes ?? null });

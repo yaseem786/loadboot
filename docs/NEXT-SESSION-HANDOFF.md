@@ -104,6 +104,14 @@ Freight / Amazon Relay), operating at ~300M-account scale.
 Owner must set WHATSAPP_NUMBER in app/carrier/app.js (E.164 digits); the Support-tab chat row stays hidden
 until then. Optionally point the marketing wa-btn at the same number.
 
+### OWNER TOOLING DIRECTIVE (2026-07-02): website DESIGN work → use the Claude DESIGN BUILDER (the
+"Design" plugin visible in Cowork) instead of hand-writing layout code, whenever design tasks come up.
+
+### D-SERIES (INDUSTRY COMPLIANCE SOP — docs/INDUSTRY-COMPLIANCE-SOP.md is CANON)
+D1 tender completeness ✔ · D2 onboarding packets ✔ · D3 master agreements ✔ · D4 rate confirmations ✔
+REMAINING: D5 dispatch sheet, D6 pre-booking gate, D7 STOP/REJECT engine, D8 delivery doc pack,
+plus the D-SCREENS UI batch (packet/agreement/RC cards in all portals + CC onboarding board).
+
 ## 7. TEST FIXTURES (staging `snslhvmkjusozgjelghi`)
 - Staff (analytics.view + more): `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1`
 - Staff (carriers.view/dispatch.manage/comm.send): `11111111-1111-1111-1111-111111111111`, `44444444-4444-4444-4444-444444444444`
