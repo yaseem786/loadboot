@@ -19,8 +19,7 @@ const NAV = [
     { path: '/management', label: 'Management', icon: 'grid', perm: null },
     { path: '/bi', label: 'Business Intelligence', icon: 'trend', perm: 'any:analytics.view,reports.view' },
     { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics', children: [
-      { path: '/analytics', label: 'Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
-      { path: '/google', label: 'Google Analytics', icon: 'trend', perm: 'analytics.view', flag: 'googleData' },
+      { path: '/analytics', label: 'Business Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
     ] },
   ]},
   { group: 'Operations', items: [

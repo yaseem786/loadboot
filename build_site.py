@@ -209,6 +209,16 @@ header.scrolled{border-bottom-color:var(--border);box-shadow:0 4px 24px -16px rg
 .intent-row input:checked+label{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .intent-row input:checked+label .d{background:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.18)}
 .intent-row input:focus-visible+label{box-shadow:0 0 0 3px var(--blue-soft)}
+.acct-personas{margin:22px 0 6px}
+.ap-lead{font-weight:800;font-family:'Manrope',sans-serif;font-size:1.06rem;margin-bottom:10px}
+.ap-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ap-tab{display:flex;align-items:center;gap:10px;padding:14px 16px;border:1.5px solid var(--border);border-radius:14px;font-weight:700;color:var(--navy);background:#fff;transition:.2s}
+.ap-tab .ap-i{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--blue-soft);color:var(--blue);flex-shrink:0}
+.ap-tab small{display:block;font-weight:500;color:var(--muted);font-size:.8rem;margin-top:1px}
+.ap-tab:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:0 14px 30px -16px rgba(8,131,247,.55)}
+.ap-tab.active{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.ap-note{color:var(--muted);font-size:.9rem;margin-top:12px}
+@media(max-width:600px){.ap-tabs{grid-template-columns:1fr}}
 .cinfo{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
 .cinfo .ci{display:flex;gap:13px;align-items:flex-start;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px}
 .cinfo .ci .icon{width:42px;height:42px;border-radius:11px;margin:0;flex-shrink:0}.cinfo .ci .icon svg{width:20px;height:20px}
@@ -320,7 +330,7 @@ def header(active):
     links = ''.join('<a href="%s" class="%s">%s</a>' % (h, 'active' if h==active else '', t) for h,t in NAV)
     mob = '<a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
     return '''<header id="hdr"><div class="wrap nav">
-<a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="40" style="display:block;height:40px;width:auto"></a>
+<a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="contact.html" class="btn btn-primary hd-btn">Get Started %s</a>
 <button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
@@ -335,7 +345,7 @@ AI_RESEARCH_JS = '<script>(function(){var host=document.getElementById(\'aiBtns\
 def footer():
     return '''<footer><div class="wrap">
 <div class="foot-top">
-<div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="34" style="display:block;height:34px;width:auto"></div>
+<div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
 <div style="color:#60a5fa;font-weight:700;font-size:.92rem;margin-top:10px;letter-spacing:.01em">Keep your wheels earning.</div>
 <p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p>
 <div style="margin-top:14px;font-size:.9rem;line-height:1.85"><a href="mailto:hello@loadboot.com">hello@loadboot.com</a><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a><a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div>
@@ -527,7 +537,7 @@ LOADBOARD_CSS = '''
 SPLASH_CSS = '''
 #lbSplash{position:fixed;inset:0;z-index:99999;background:radial-gradient(1000px 520px at 50% 34%,#13213f 0%,#0b1220 62%,#070d1a 100%);display:flex;align-items:center;justify-content:center;animation:lbsOut .55s ease 1.9s forwards}
 .lbs-wrap{position:relative;display:inline-block;overflow:hidden}
-.lbs-logo-img{height:68px;width:auto;display:block;filter:drop-shadow(0 16px 40px rgba(8,131,247,.4));opacity:0;transform:translateY(10px) scale(.94);animation:lbsLogo .9s cubic-bezier(.2,.8,.2,1) .1s both}
+.lbs-logo-img{height:60px;width:auto;display:block;filter:drop-shadow(0 16px 40px rgba(8,131,247,.4));opacity:0;transform:translateY(10px) scale(.94);animation:lbsLogo .9s cubic-bezier(.2,.8,.2,1) .1s both}
 .lbs-wrap::after{content:"";position:absolute;top:-20%;bottom:-20%;left:-60%;width:36%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-16deg);animation:lbsShine 1.25s 1s ease-out both}
 @keyframes lbsLogo{0%{opacity:0;transform:translateY(10px) scale(.94)}100%{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes lbsShine{0%{left:-60%}100%{left:130%}}
@@ -1149,14 +1159,12 @@ page('services.html','Truck Dispatch Services (Full List) | Loadboot',
 # ---------- ABOUT ----------
 about_body = svc_hero('About Loadboot','We started Loadboot to give carriers what most dispatchers don\'t: honesty, real attention, and a partner who actually picks up the phone.')
 about_body += '''<section><div class="wrap prose reveal"><div class="eyebrow">Our Story</div>
-<p>Loadboot was built on a simple belief &mdash; that the people who keep America moving deserve a dispatcher who treats their truck like a business, not a number. Too many carriers get locked into contracts, handed cheap freight, and left on hold when they need answers. We do the opposite.</p>
-<h2>What we stand for</h2>
-<p>Every decision we make comes back to the carrier. We negotiate hard on your rates, we tell you the truth even when it\'s not what you want to hear, and we never lock you into a contract. If we\'re not adding value, you can walk &mdash; and that keeps us honest.</p>
-<h2>How we work</h2>
-<p>You keep your own authority and approve every load. We handle the rest: finding freight, negotiating rates, talking to brokers, managing paperwork, and helping with the back-office pieces &mdash; factoring, IFTA, compliance, and claims. One partner, the whole business.</p>
-<h2>Who we help</h2>
-<p>We work with owner-operators, small and growing fleets, independent carriers, and especially new-authority carriers who need a guide through their first months. Wherever you are in your journey, we meet you there.</p>
-<p style="font-weight:600;color:var(--navy)">We\'re a growing dispatch service &mdash; and we\'d be glad to have you grow with us.</p></div></section>'''
+<p>Loadboot was built on a simple belief &mdash; that the people who keep America moving deserve a dispatcher who treats their truck like a business, not a number. Too many carriers get locked into contracts, handed cheap freight, and left on hold when they need answers. We do the opposite.</p></div></section>'''
+about_body += m_zigzag('What we stand for', 'A dispatcher that treats your truck like a business', [
+ ('scale', 'Honesty over everything', 'We negotiate hard on your rates, tell you the truth even when it&rsquo;s not what you want to hear, and never lock you into a contract. If we&rsquo;re not adding value, you can walk &mdash; and that keeps us honest.'),
+ ('route', 'One partner, the whole business', 'You keep your own authority and approve every load. We handle the rest &mdash; finding freight, negotiating rates, talking to brokers, managing paperwork, and the back office: factoring, IFTA, compliance and claims.'),
+ ('users', 'Built for where you are', 'Owner-operators, small and growing fleets, independent carriers, and especially new-authority carriers who need a guide through their first months. Wherever you are in your journey, we meet you there.'),
+], accent='#0d9488')
 _ABOUT_EXTRA = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How we operate</div><h2>The rules we run the company by</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#129517;</div><h3>Explainable, always</h3><p>Every match score, every detention minute, every settlement line can be traced to real records. If we cannot explain a number, we do not show it.</p></div><div class="card reveal"><div class="icon">&#128274;</div><h3>Your data is yours</h3><p>Tenant-isolated accounts, role-based access, audited actions. Drivers never see company finances; brokers never see carrier internals.</p></div><div class="card reveal"><div class="icon">&#9878;</div><h3>Humans control money</h3><p>Software prepares invoices and settlements; a person approves every payout. Maker and checker are never the same account.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Contact us</div><h2>One company, three front doors</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>General &amp; support</h3><p><a href="mailto:hello@loadboot.com">hello@loadboot.com</a> &mdash; onboarding, questions, compliance and anything else.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>Dispatch &amp; loads</h3><p><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a> &mdash; active loads, trips, appointments and PODs.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>Billing &amp; settlements</h3><p><a href="mailto:billing@loadboot.com">billing@loadboot.com</a> &mdash; invoices, settlements and payment questions.</p></div></div></div></section>'
 about_body += _ABOUT_EXTRA
 about_body += STATS + WHYUS + PROMISE + final_cta()
@@ -1177,6 +1185,16 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 <input type="radio" id="iAsk" name="intent" value="General question / message" onchange="qfIntent()"><label for="iAsk"><span class="d"></span> Ask a question</label>
 </div>
 <div id="acctFields">
+<div class="acct-personas">
+<div class="ap-lead">What kind of account are you creating?</div>
+<div class="ap-tabs">
+<span class="ap-tab active"><span class="ap-i">&#128666;</span><span>Carrier / Owner-operator<small>You&rsquo;re on this one &mdash; fill it below</small></span></span>
+<a class="ap-tab" href="/app/partner/"><span class="ap-i">&#127970;</span><span>Broker (licensed)<small>Post loads &amp; manage carriers</small></span></a>
+<a class="ap-tab" href="/shipper-solutions.html"><span class="ap-i">&#128230;</span><span>Shipper<small>Move freight via a licensed broker</small></span></a>
+<a class="ap-tab" href="/referral.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
+</div>
+<div class="ap-note">You&rsquo;re creating a <b>Carrier</b> account below. Broker, shipper and referral each have their own quick flow &mdash; pick one above.</div>
+</div>
 <h3 style="margin:26px 0 16px">Your business</h3>
 <div class="form-grid">
 <div class="field full"><label for="f_company">Company / business name</label><input type="text" id="f_company" name="company" placeholder="Your trucking company"></div>

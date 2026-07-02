@@ -1,13 +1,41 @@
-// sw-register.js — register the app service worker (scope /app/).
-// The SW precaches ONLY the static shell allowlist and is network-only for
-// everything else. It NEVER caches API, document, message, money, location,
-// profile, or admin data (all of which are cross-origin Supabase calls anyway).
+// sw-register.js — register the app service worker (scope /app/) and surface an
+// instant "update available" prompt so installed PWAs (mobile home-screen app)
+// pick up new deploys immediately instead of only on a cold reopen.
+// The SW is network-first for the app shell and NEVER caches API/document/money/
+// location/profile data (those are cross-origin Supabase calls).
 export function registerAppSW() {
   if (!('serviceWorker' in navigator)) return;
-  // env-config carries environment identity and must always come from the network,
-  // so it is intentionally excluded from the SW precache (see build-generated sw.js).
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' }).catch(() => {});
+    navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' }).then((reg) => {
+      function promptReload(worker) {
+        if (!worker || document.getElementById('lb-sw-update')) return;
+        const bar = document.createElement('div');
+        bar.id = 'lb-sw-update';
+        bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:99999;background:#0883F7;color:#fff;padding:12px 16px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;font:600 14px system-ui,sans-serif;box-shadow:0 12px 30px -8px rgba(8,131,247,.6)';
+        const msg = document.createElement('span');
+        msg.textContent = 'A new version of LoadBoot is available.';
+        const btn = document.createElement('button');
+        btn.textContent = 'Update';
+        btn.style.cssText = 'background:#fff;color:#0883F7;border:none;border-radius:9px;padding:8px 16px;font-weight:800;cursor:pointer;flex:none';
+        btn.onclick = () => { btn.textContent = 'Updating...'; worker.postMessage({ type: 'SKIP_WAITING' }); };
+        bar.appendChild(msg); bar.appendChild(btn);
+        document.body.appendChild(bar);
+      }
+      if (reg.waiting && navigator.serviceWorker.controller) promptReload(reg.waiting);
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) promptReload(nw);
+        });
+      });
+      // check for updates when the app regains focus (mobile: reopened from home screen)
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded) return; reloaded = true; location.reload();
+      });
+    }).catch(() => {});
   });
 }
 export default registerAppSW;

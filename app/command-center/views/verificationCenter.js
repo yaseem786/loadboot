@@ -6,7 +6,7 @@
 // RBAC: compliance.view to read, compliance.manage to verify (enforced server-side).
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, card, fmtDateTime } from '../../shared/ui/components.js';
+import { sectionHead, statCard, card, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
 import { listCarrierOrgs, fmcsaVerify, recordCarrierVerification, listCarrierVerifications, verificationQueue } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -86,6 +86,39 @@ export function renderVerificationCenter(host) {
     ]);
   }
 
+  function kvv(k, v) { return el('div', { class: 'cc-kv' }, [el('span', { class: 'cc-kv-k' }, k), el('span', { class: 'cc-kv-v' }, v == null || v === '' ? '\u2014' : String(v))]); }
+  function renderDiscrepancies(disc) {
+    let items = [];
+    if (Array.isArray(disc)) items = disc.map(d => (d && typeof d === 'object') ? d : { field: String(d) });
+    else if (disc && typeof disc === 'object') items = Object.entries(disc).map(([k, v]) => (v && typeof v === 'object') ? Object.assign({ field: k }, v) : { field: k, official: v });
+    if (!items.length) return el('div', { class: 'cc-sub' }, 'No field-level discrepancies recorded.');
+    return el('table', { class: 'cc-table cc-table-tight' }, [
+      el('thead', null, el('tr', null, ['Field', 'Official (FMCSA)', 'Submitted'].map(h => el('th', null, h)))),
+      el('tbody', null, items.map(d => el('tr', null, [
+        el('td', null, el('b', null, String(d.field || '\u2014'))),
+        el('td', null, String(d.official != null ? d.official : (d.expected != null ? d.expected : '\u2014'))),
+        el('td', null, String(d.submitted != null ? d.submitted : (d.actual != null ? d.actual : '\u2014'))),
+      ]))),
+    ]);
+  }
+  function openVer(r) {
+    const reBtn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
+      ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Re-verifying\u2026';
+      try { await fmcsaVerify({ carrierOrg: r.carrier_org }); const d = document.getElementById('cc-drawer-root'); if (d) d.remove(); loadQueue(); loadRecent(); }
+      catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Re-verify against FMCSA'; alert(humanizeError(e)); }
+    } }, 'Re-verify against FMCSA');
+    const body = el('div', null, [
+      kvv('Carrier', r.carrier), kvv('Status', r.status), kvv('Match score', (r.match_score != null ? r.match_score + '%' : '\u2014')),
+      kvv('Authority', r.authority), kvv('Reason', r.reason), kvv('Last verified', r.last_verified ? fmtDateTime(r.last_verified) : 'never'),
+      el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin:14px 0 6px' }, 'Discrepancies \u2014 official FMCSA vs submitted'),
+      renderDiscrepancies(r.discrepancies),
+      el('div', { style: 'display:flex;gap:8px;margin-top:16px;flex-wrap:wrap' }, [reBtn,
+        el('a', { class: 'lb-btn lb-btn-secondary', href: '#/carrier?id=' + r.carrier_org, onClick: () => { const d = document.getElementById('cc-drawer-root'); if (d) d.remove(); } }, 'Open carrier 360 \u2192')]),
+      el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'Verification is advisory \u2014 it never auto-activates a carrier. A person approves activation.'),
+    ]);
+    openDrawer('Verification \u2014 ' + (r.carrier || 'carrier'), body, { subtitle: 'FMCSA QCMobile check' });
+  }
+
   async function loadQueue() {
     showLoading(queueHost, 'Loading review queue…');
     let rows; try { rows = await verificationQueue(100); } catch (e) { showError(queueHost, humanizeError(e), loadQueue); return; }
@@ -94,7 +127,7 @@ export function renderVerificationCenter(host) {
       el('div', { class: 'cc-sub', style: 'font-weight:700;margin-bottom:8px' }, 'Review queue (' + rows.length + ')'),
       rows.length ? el('table', { class: 'cc-table' }, [
         el('thead', null, el('tr', null, ['Carrier', 'Status', 'Score', 'Reason', 'Last verified'].map(h => el('th', null, h)))),
-        el('tbody', null, rows.map(r => el('tr', null, [
+        el('tbody', null, rows.map(r => el('tr', { class: 'cc-row-click', onClick: () => openVer(r) }, [
           el('td', null, el('b', null, r.carrier)), el('td', null, pill(r.status)), el('td', null, scorePill(r.match_score)),
           el('td', null, el('span', { class: 'cc-sub' }, r.reason)), el('td', null, r.last_verified ? fmtDateTime(r.last_verified) : '—'),
         ]))),

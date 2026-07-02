@@ -147,7 +147,7 @@ function authScreen() {
   };
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
+      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
     ]),
@@ -273,7 +273,7 @@ async function appView(user) {
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:32px;width:auto;display:block' })]),
+      h('div', { class: 'cp-brandrow' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' })]),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
@@ -284,7 +284,7 @@ async function appView(user) {
       h('header', { class: 'cp-top' }, [
         titleEl,
         h('div', { class: 'cp-top-right' }, [
-          h('span', { class: 'cp-chip ' + (ov.compliance_ok ? 'ok' : 'warn') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
+          h('button', { class: 'cp-chip cp-chip-btn ' + (ov.compliance_ok ? 'ok' : 'warn'), title: ov.compliance_ok ? 'Account compliant' : 'Action needed \u2014 finish your setup', onClick: () => go(ov.compliance_ok ? 'account' : 'documents') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
           bell,
           (() => {
             // Account menu — modern avatar dropdown: identity + Settings + Sign out.
@@ -428,12 +428,12 @@ async function appView(user) {
     ]);
     const annCards = (anns || []).map(a => h('div', { class: 'cp-ann ' + (a.kind || 'info') }, [h('div', { class: 'cp-ann-t' }, a.title), a.body ? h('div', { class: 'cp-ann-b' }, a.body) : null].filter(Boolean)));
 
-    const acctStrip = h('div', { class: 'cp-card', style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+    const acctStrip = h('div', { class: 'cp-card cp-row-click', style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer', onClick: () => go('account') }, [
       h('div', null, [h('div', { class: 'cp-row-t' }, 'Account status'), h('div', { class: 'cp-row-s' }, 'Verification & onboarding - tap to review')]),
       h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
         pill(acct.onboarding_stage || ov.onboarding_stage || 'pending'),
         h('span', { class: 'cp-pill ' + (ov.compliance_ok ? 'green' : 'amber') }, ov.compliance_ok ? 'Compliant' : 'Docs needed'),
-        h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('account') }, 'Review'),
+        h('button', { class: 'cp-btn cp-btn-sm' + (ov.compliance_ok ? '' : ' cp-attn-pulse'), onClick: (e) => { e.stopPropagation(); go('account'); } }, 'Review'),
       ]),
     ]);
     mount(content, h('div', null, [kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
@@ -1012,6 +1012,10 @@ async function appView(user) {
         a.download = 'loadboot-statement-' + new Date().toISOString().slice(0, 10) + '.csv';
         document.body.appendChild(a); a.click(); a.remove();
       } }, '⬇ Download (CSV)');
+      const downloadPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openPrintable('Account Statement', 'STATEMENT', [
+        { rows: [['Carrier', s.carrier || '—'], ['Generated', new Date().toLocaleString()], ['Invoices', String(s.invoices_total || 0)], ['Fees outstanding', money(s.fees_outstanding || 0)], ['Fees paid', money(s.fees_paid || 0)], ['Adjustments', money(s.adjustments || 0)], ['Open disputes', String(s.open_disputes || 0)]] },
+        { h: 'Settlements', rows: settlements.map(x => [String(x.no || '—'), money(x.net || 0) + ' · ' + (x.status || '—')]) },
+      ]) }, '⬇ Download (PDF)');
       mount(stmtCard, [
         cardHead('Account statement'),
         line('Invoices', String(s.invoices_total || 0)),
@@ -1019,7 +1023,7 @@ async function appView(user) {
         line('Fees paid', money(s.fees_paid || 0)),
         line('Open disputes', String(s.open_disputes || 0)),
         line('Settlements', String(settlements.length)),
-        h('div', { style: 'margin-top:12px' }, download),
+        h('div', { style: 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap' }, [download, downloadPdf]),
       ]);
     })();
     // Inc 55 — Profit & Loss (honest labels: confirmed revenue vs manually-entered expenses; ESTIMATE marked).
