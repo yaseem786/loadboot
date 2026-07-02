@@ -14,7 +14,7 @@ const esc = (s) => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': 
 
 export function renderEmailBuilder(host) {
   const manage = can('content.manage') || can('settings.manage');
-  let brand = { primary_color: '#2563EB', accent_color: '#F97316', ink_color: '#0F172A', font_body: 'Inter', company_name: 'LoadBoot', email_footer: '', legal_footer: '' };
+  let brand = { primary_color: '#0883F7', accent_color: '#FC5305', ink_color: '#10223B', font_body: 'Inter', company_name: 'LoadBoot', email_footer: '', legal_footer: '' };
   let blocks = [
     { type: 'heading', text: 'Hello {{first_name}},' },
     { type: 'text', text: 'Here’s an update from LoadBoot.' },

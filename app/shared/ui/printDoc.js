@@ -6,8 +6,8 @@ const row = (k, v) => `<tr><td class="k">${k}</td><td class="v">${v == null || v
 function shell(title, sub, bodyHtml) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
   <style>
-    *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;margin:0;padding:40px;max-width:760px}
-    .brand{font-size:22px;font-weight:800}.brand b{color:#f97316}
+    *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#10223B;margin:0;padding:40px;max-width:760px}
+    .brand{font-size:22px;font-weight:800}.brand b{color:#FC5305}
     .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0b1220;padding-bottom:16px;margin-bottom:8px}
     h1{font-size:18px;margin:18px 0 2px}.sub{color:#64748b;font-size:13px;margin-bottom:16px}
     table{width:100%;border-collapse:collapse;margin:8px 0 18px}
@@ -15,7 +15,7 @@ function shell(title, sub, bodyHtml) {
     .total{font-size:20px;font-weight:800}.terms{color:#475569;font-size:12px;border-top:1px solid #eef2f7;padding-top:12px;margin-top:8px}
     .pill{display:inline-block;background:#eef2f7;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
     @media print{body{padding:0}.noprint{display:none}}
-    .bar{margin:20px 0}.btn{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}
+    .bar{margin:20px 0}.btn{background:#0883F7;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}
   </style></head><body>
     <div class="bar noprint"><button class="btn" onclick="window.print()">Print / Save as PDF</button></div>
     <div class="head"><div class="brand">Load<b>boot</b></div><div style="text-align:right"><div class="pill">${sub}</div></div></div>

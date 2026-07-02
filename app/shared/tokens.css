@@ -1,7 +1,7 @@
 /* tokens.css — shared design tokens + base components for both apps.
    Kept framework-free; mirrors the marketing site's palette for brand continuity. */
 :root{
-  --lb-navy:#0F172A; --lb-blue:#2563EB; --lb-orange:#F97316;
+  --lb-navy:#10223B; --lb-blue:#0883F7; --lb-orange:#FC5305;
   --lb-bg:#F8FAFC; --lb-surface:#ffffff; --lb-muted:#64748B; --lb-border:#E2E8F0;
   --lb-blue-soft:#EFF6FF; --lb-green:#16a34a; --lb-red:#dc2626; --lb-amber:#d97706;
   --lb-r:14px; --lb-r-sm:10px; --lb-shadow:0 24px 50px -28px rgba(15,23,42,.35);

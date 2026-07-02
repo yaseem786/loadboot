@@ -37,11 +37,11 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span><h2>Truck Load Profit Calculator</h2></div>
  <p class="tk-sub">Know exactly what a load nets you before you accept it.</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Load pays ($)</label><input type="number" id="p_rate" value="2640" oninput="tkProfit()"></div>
-  <div class="tk-in"><label>Total miles</label><input type="number" id="p_mi" value="781" oninput="tkProfit()"></div>
-  <div class="tk-in"><label>Fuel price ($/gal)</label><input type="number" id="p_fuel" value="3.85" step="0.01" oninput="tkProfit()"></div>
-  <div class="tk-in"><label>Truck MPG</label><input type="number" id="p_mpg" value="6.5" step="0.1" oninput="tkProfit()"></div>
-  <div class="tk-in full"><label>Other costs &mdash; tolls, food, maintenance ($)</label><input type="number" id="p_other" value="150" oninput="tkProfit()"></div>
+  <div class="tk-in"><label for="p_rate">Load pays ($)</label><input type="number" id="p_rate" value="2640" oninput="tkProfit()"></div>
+  <div class="tk-in"><label for="p_mi">Total miles</label><input type="number" id="p_mi" value="781" oninput="tkProfit()"></div>
+  <div class="tk-in"><label for="p_fuel">Fuel price ($/gal)</label><input type="number" id="p_fuel" value="3.85" step="0.01" oninput="tkProfit()"></div>
+  <div class="tk-in"><label for="p_mpg">Truck MPG</label><input type="number" id="p_mpg" value="6.5" step="0.1" oninput="tkProfit()"></div>
+  <div class="tk-in full"><label for="p_other">Other costs &mdash; tolls, food, maintenance ($)</label><input type="number" id="p_other" value="150" oninput="tkProfit()"></div>
  </div>
  <div class="tk-out"><div><div class="big pos" id="p_net">$0</div><div class="lbl">Net profit on this load</div></div>
   <div class="side"><b id="p_rpm">$0.00</b>rate / mile<br><b id="p_fuelc">$0</b>fuel cost</div></div>
@@ -51,8 +51,8 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><h2>Rate Per Mile Calculator</h2></div>
  <p class="tk-sub">The number every dispatcher quotes. Is the rate any good?</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Load pays ($)</label><input type="number" id="r_rate" value="2190" oninput="tkRpm()"></div>
-  <div class="tk-in"><label>Loaded miles</label><input type="number" id="r_mi" value="665" oninput="tkRpm()"></div>
+  <div class="tk-in"><label for="r_rate">Load pays ($)</label><input type="number" id="r_rate" value="2190" oninput="tkRpm()"></div>
+  <div class="tk-in"><label for="r_mi">Loaded miles</label><input type="number" id="r_mi" value="665" oninput="tkRpm()"></div>
  </div>
  <div class="tk-out"><div><div class="big" id="r_rpm">$0.00</div><div class="lbl">Per loaded mile</div></div>
   <div class="side"><b id="r_verdict">&mdash;</b>vs ~$2.00 break-even</div></div>
@@ -63,9 +63,9 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><path d="M2 7h12v9H2z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="6.5" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/></svg></span><h2>Cost Per Mile Calculator</h2></div>
  <p class="tk-sub">Your true cost to turn a wheel &mdash; the foundation of every rate.</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Fixed costs / month ($)</label><input type="number" id="c_fixed" value="4200" oninput="tkCpm()"></div>
-  <div class="tk-in"><label>Miles / month</label><input type="number" id="c_miles" value="10000" oninput="tkCpm()"></div>
-  <div class="tk-in full"><label>Variable cost / mile &mdash; fuel, tires, maint. ($)</label><input type="number" id="c_var" value="0.72" step="0.01" oninput="tkCpm()"></div>
+  <div class="tk-in"><label for="c_fixed">Fixed costs / month ($)</label><input type="number" id="c_fixed" value="4200" oninput="tkCpm()"></div>
+  <div class="tk-in"><label for="c_miles">Miles / month</label><input type="number" id="c_miles" value="10000" oninput="tkCpm()"></div>
+  <div class="tk-in full"><label for="c_var">Variable cost / mile &mdash; fuel, tires, maint. ($)</label><input type="number" id="c_var" value="0.72" step="0.01" oninput="tkCpm()"></div>
  </div>
  <div class="tk-out"><div><div class="big" id="c_cpm">$0.00</div><div class="lbl">Total cost per mile</div></div>
   <div class="side"><b id="c_fixedpm">$0.00</b>fixed / mi<br><b id="c_break">$0.00</b>break-even rate</div></div>
@@ -76,9 +76,9 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><path d="M3 22h12V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/><path d="M15 9h2.5a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8l-3-3"/><line x1="6" y1="7" x2="12" y2="7"/></svg></span><h2>Truck Fuel Cost Calculator</h2></div>
  <p class="tk-sub">Fuel cost for any lane in seconds.</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Trip miles</label><input type="number" id="f_mi" value="781" oninput="tkFuel()"></div>
-  <div class="tk-in"><label>Truck MPG</label><input type="number" id="f_mpg" value="6.5" step="0.1" oninput="tkFuel()"></div>
-  <div class="tk-in full"><label>Diesel price ($/gal)</label><input type="number" id="f_price" value="3.85" step="0.01" oninput="tkFuel()"></div>
+  <div class="tk-in"><label for="f_mi">Trip miles</label><input type="number" id="f_mi" value="781" oninput="tkFuel()"></div>
+  <div class="tk-in"><label for="f_mpg">Truck MPG</label><input type="number" id="f_mpg" value="6.5" step="0.1" oninput="tkFuel()"></div>
+  <div class="tk-in full"><label for="f_price">Diesel price ($/gal)</label><input type="number" id="f_price" value="3.85" step="0.01" oninput="tkFuel()"></div>
  </div>
  <div class="tk-out"><div><div class="big" id="f_cost">$0</div><div class="lbl">Total fuel for this trip</div></div>
   <div class="side"><b id="f_gal">0</b>gallons<br><b id="f_permi">$0.00</b>fuel / mile</div></div>
@@ -88,8 +88,8 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><path d="M5 7l14 10M19 7L5 17"/></svg></span><h2>Break-Even Rate Calculator</h2></div>
  <p class="tk-sub">The lowest rate you can accept and still hit your margin.</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Your cost / mile ($)</label><input type="number" id="b_cpm" value="1.55" step="0.01" oninput="tkBreak()"></div>
-  <div class="tk-in"><label>Target profit margin (%)</label><input type="number" id="b_margin" value="25" oninput="tkBreak()"></div>
+  <div class="tk-in"><label for="b_cpm">Your cost / mile ($)</label><input type="number" id="b_cpm" value="1.55" step="0.01" oninput="tkBreak()"></div>
+  <div class="tk-in"><label for="b_margin">Target profit margin (%)</label><input type="number" id="b_margin" value="25" oninput="tkBreak()"></div>
  </div>
  <div class="tk-out"><div><div class="big" id="b_rate">$0.00</div><div class="lbl">Minimum rate / mile to accept</div></div>
   <div class="side"><b id="b_profit">$0.00</b>profit / mile</div></div>
@@ -100,10 +100,10 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span><h2>Owner-Operator Take-Home Pay Calculator</h2></div>
  <p class="tk-sub">What actually lands in your pocket after every cost.</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Gross / week ($)</label><input type="number" id="t_gross" value="6000" oninput="tkHome()"></div>
-  <div class="tk-in"><label>Dispatch fee (%)</label><input type="number" id="t_fee" value="5" step="0.5" oninput="tkHome()"></div>
-  <div class="tk-in"><label>Fuel / week ($)</label><input type="number" id="t_fuel" value="1600" oninput="tkHome()"></div>
-  <div class="tk-in"><label>Other expenses ($)</label><input type="number" id="t_other" value="900" oninput="tkHome()"></div>
+  <div class="tk-in"><label for="t_gross">Gross / week ($)</label><input type="number" id="t_gross" value="6000" oninput="tkHome()"></div>
+  <div class="tk-in"><label for="t_fee">Dispatch fee (%)</label><input type="number" id="t_fee" value="5" step="0.5" oninput="tkHome()"></div>
+  <div class="tk-in"><label for="t_fuel">Fuel / week ($)</label><input type="number" id="t_fuel" value="1600" oninput="tkHome()"></div>
+  <div class="tk-in"><label for="t_other">Other expenses ($)</label><input type="number" id="t_other" value="900" oninput="tkHome()"></div>
  </div>
  <div class="tk-out"><div><div class="big pos" id="t_take">$0</div><div class="lbl">Your weekly take-home</div></div>
   <div class="side"><b id="t_feeamt">$0</b>dispatch fee<br><b id="t_year">$0</b>/yr (est.)</div></div>
@@ -114,9 +114,9 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></span><h2>Truck Detention Pay Calculator</h2></div>
  <p class="tk-sub">Stuck at the dock? Here&rsquo;s what they owe you.</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Hours waited</label><input type="number" id="d_wait" value="5" step="0.5" oninput="tkDet()"></div>
-  <div class="tk-in"><label>Free hours allowed</label><input type="number" id="d_free" value="2" step="0.5" oninput="tkDet()"></div>
-  <div class="tk-in full"><label>Detention rate ($/hr)</label><input type="number" id="d_rate" value="50" oninput="tkDet()"></div>
+  <div class="tk-in"><label for="d_wait">Hours waited</label><input type="number" id="d_wait" value="5" step="0.5" oninput="tkDet()"></div>
+  <div class="tk-in"><label for="d_free">Free hours allowed</label><input type="number" id="d_free" value="2" step="0.5" oninput="tkDet()"></div>
+  <div class="tk-in full"><label for="d_rate">Detention rate ($/hr)</label><input type="number" id="d_rate" value="50" oninput="tkDet()"></div>
  </div>
  <div class="tk-out"><div><div class="big pos" id="d_owed">$0</div><div class="lbl">Detention you should bill</div></div>
   <div class="side"><b id="d_hrs">0</b>billable hours</div></div>
@@ -127,9 +127,9 @@ TOOLS_HTML = r'''<div class="tk-wrap"><div class="tk-grid">
  <div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><path d="M2 7h12v9H2z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="6.5" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/></svg></span><h2>Deadhead Miles Calculator</h2></div>
  <p class="tk-sub">Empty miles quietly eat your rate. See the real number.</p>
  <div class="tk-row">
-  <div class="tk-in"><label>Load pays ($)</label><input type="number" id="h_rate" value="2640" oninput="tkDead()"></div>
-  <div class="tk-in"><label>Loaded miles</label><input type="number" id="h_loaded" value="781" oninput="tkDead()"></div>
-  <div class="tk-in full"><label>Deadhead (empty) miles to pickup</label><input type="number" id="h_dead" value="120" oninput="tkDead()"></div>
+  <div class="tk-in"><label for="h_rate">Load pays ($)</label><input type="number" id="h_rate" value="2640" oninput="tkDead()"></div>
+  <div class="tk-in"><label for="h_loaded">Loaded miles</label><input type="number" id="h_loaded" value="781" oninput="tkDead()"></div>
+  <div class="tk-in full"><label for="h_dead">Deadhead (empty) miles to pickup</label><input type="number" id="h_dead" value="120" oninput="tkDead()"></div>
  </div>
  <div class="tk-out"><div><div class="big" id="h_eff">$0.00</div><div class="lbl">True rate / mile (all miles)</div></div>
   <div class="side"><b id="h_paid">$0.00</b>paid-mile rate<br><b id="h_loss">$0.00</b>lost to deadhead</div></div>

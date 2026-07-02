@@ -38,7 +38,7 @@ export function renderMarketingIntel(host) {
       rows.length ? el('div', null, rows.map(r => el('div', { style: 'margin:7px 0' }, [
         el('div', { style: 'display:flex;justify-content:space-between;font-size:.88rem' }, [el('span', null, kf(r)), el('b', null, String(vf(r)))]),
         el('div', { style: 'height:7px;border-radius:99px;background:var(--lb-border,#e2e8f0)' },
-          el('div', { style: 'height:7px;border-radius:99px;width:' + Math.round(vf(r) / max * 100) + '%;background:linear-gradient(90deg,#2563eb,#7c3aed)' })),
+          el('div', { style: 'height:7px;border-radius:99px;width:' + Math.round(vf(r) / max * 100) + '%;background:linear-gradient(90deg,#0883F7,#7c3aed)' })),
       ]))) : el('div', { class: 'cc-sub' }, 'No data in this window yet.'),
     ].filter(Boolean));
   }
@@ -62,7 +62,7 @@ export function renderMarketingIntel(host) {
     const trend = el('div', { class: 'lb-card', style: 'margin:10px 0' }, [
       el('h3', { style: 'margin:0 0 8px' }, 'Leads per day'),
       el('div', { style: 'display:flex;align-items:flex-end;gap:2px;height:90px' },
-        daily.map(r => el('div', { title: r.day + ': ' + r.leads + ' lead(s)', style: 'flex:1;min-width:3px;border-radius:3px 3px 0 0;background:' + (Number(r.leads) ? '#2563eb' : 'var(--lb-border,#e2e8f0)') + ';height:' + Math.max(4, Math.round(Number(r.leads || 0) / maxD * 100)) + '%' }))),
+        daily.map(r => el('div', { title: r.day + ': ' + r.leads + ' lead(s)', style: 'flex:1;min-width:3px;border-radius:3px 3px 0 0;background:' + (Number(r.leads) ? '#0883F7' : 'var(--lb-border,#e2e8f0)') + ';height:' + Math.max(4, Math.round(Number(r.leads || 0) / maxD * 100)) + '%' }))),
     ]);
     mount(body, el('div', null, [
       trend,

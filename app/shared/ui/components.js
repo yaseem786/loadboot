@@ -162,11 +162,12 @@ export const BRAND_TAGLINE = 'Higher-paying loads, less deadhead — flat 5%, no
 
 export function brandLogo(opts = {}) {
   const dark = !!opts.dark;
-  const mark = el('span', { class: 'cc-mark', html: BRAND_MARK_SVG });
-  const word = el('span', { class: 'cc-word' + (dark ? ' on-dark' : '') }, ['oad', el('b', null, 'boot')]);
-  const txt = el('div', { class: 'cc-brandtxt' }, [word,
+  // Real LoadBoot lockup image (no box). Dark surfaces get the white-"load" variant.
+  const lockup = el('img', { class: 'cc-lockup', src: dark ? '/logo-full-dark.png' : '/logo-full.png',
+    alt: 'LoadBoot', style: 'height:26px;width:auto;display:block' });
+  const txt = el('div', { class: 'cc-brandtxt' }, [lockup,
     opts.sub ? el('small', { class: 'cc-brandsub' + (dark ? ' on-dark' : '') }, opts.sub) : '']);
-  return el('div', { class: 'cc-brandrow' }, [mark, txt]);
+  return el('div', { class: 'cc-brandrow' }, [txt]);
 }
 
 export default {

@@ -27,7 +27,7 @@ const h = (tag, attrs, kids) => { const e = document.createElement(tag); if (att
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
 const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
 // GLOBAL notification tone tokens (same palette as the carrier portal / Command Center pushes).
-const NTONE = { urgent: '#dc2626', warning: '#d97706', action: '#2563eb', success: '#16a34a', info: '#475569' };
+const NTONE = { urgent: '#dc2626', warning: '#d97706', action: '#0883F7', success: '#16a34a', info: '#475569' };
 const NBG   = { urgent: '#fef2f2', warning: '#fffbeb', action: '#eff6ff', success: '#f0fdf4', info: '#f8fafc' };
 const TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray' };
 const pill = (s) => h('span', { class: 'pk-pill ' + (TONE[s] || 'gray') }, (s || '').replace(/_/g, ' '));
@@ -48,7 +48,7 @@ function loginView() {
     catch (e) { err.textContent = (e && e.message) || 'Sign-in failed.'; btn.disabled = false; btn.textContent = 'Sign in'; }
   } }, 'Sign in');
   mount(root, h('div', { class: 'pk-login' }, [
-    h('div', { class: 'pk-brand', style: 'font-size:20px;font-weight:800;display:flex;align-items:center;gap:2px' }, [h('span', { html: '<img src="/icon-512.png" width="28" height="28" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('oad'), h('b', { style: 'color:#f97316' }, 'boot')]),
+    h('div', { class: 'pk-brand', style: 'font-size:20px;font-weight:800;display:flex;align-items:center;gap:2px' }, [h('span', { html: '<img src="/icon-512.png" width="28" height="28" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('load'), h('b', null, 'boot')]),
     h('h2', null, 'Carrier Pocket'),
     h('div', { class: 'pk-muted', style: 'text-align:left;padding:0 0 6px' }, 'Sign in to manage your loads, trips, invoices, compliance and support.'),
     email, pass, err, btn,
@@ -71,7 +71,7 @@ async function appView() {
 
   let tab = 'home';
   const top = h('div', { class: 'pk-top' }, [
-    h('div', { class: 'pk-brand', style: 'display:flex;align-items:center;gap:2px' }, [h('span', { html: '<img src="/icon-512.png" width="24" height="24" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('oad'), h('b', null, 'boot'), document.createTextNode(' Pocket')]),
+    h('div', { class: 'pk-brand', style: 'display:flex;align-items:center;gap:2px' }, [h('span', { html: '<img src="/icon-512.png" width="24" height="24" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('load'), h('b', null, 'boot'), document.createTextNode(' Pocket')]),
     h('div', { class: 'pk-sub' }, ov.carrier || 'Carrier'),
     h('h1', null, 'Welcome back'),
     h('span', { class: 'pk-chip ' + (ov.compliance_ok ? 'ok' : 'warn') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
@@ -96,7 +96,7 @@ async function appView() {
     let anns = []; try { anns = await pocketAnnouncements(); } catch (_) { anns = []; }
     // A9 — today's trip, front and center (driver companion: what am I doing RIGHT NOW?)
     let heroTrip = null; try { const ts = await pocketTrips(10); heroTrip = (ts || []).find(t => t.status === 'in_transit') || (ts || []).find(t => t.status === 'dispatched') || null; } catch (_) {}
-    const heroCard = heroTrip ? h('div', { class: 'pk-card', style: 'border-left:4px solid #2563eb' }, [
+    const heroCard = heroTrip ? h('div', { class: 'pk-card', style: 'border-left:4px solid #0883F7' }, [
       h('h3', null, heroTrip.status === 'in_transit' ? '🚛 On the road now' : '📋 Today’s trip — confirm & start'),
       h('div', { class: 'pk-row', style: 'border:0' }, [
         h('div', null, [h('div', { class: 't' }, (heroTrip.origin || '—') + ' → ' + (heroTrip.destination || '—')), h('div', { class: 's' }, money(heroTrip.rate || 0))]),

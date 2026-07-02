@@ -51,7 +51,7 @@ const ic = (name) => ({
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'Keep Your Wheels Earning';
-const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
+const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (dark ? '/logo-icon-dark.png' : '/icon-512.png') + '" width="34" height="34" alt="LoadBoot" style="display:block">' });
 
 const KIND_LABEL = { broker: 'Broker', shipper: 'Shipper', facility: 'Facility' };
 
@@ -96,7 +96,7 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
+        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
       ])]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [
@@ -134,7 +134,7 @@ function choosePartnerType(user) {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card', style: 'max-width:520px' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
+        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
       ])]),
       h('h1', null, 'Welcome to LoadBoot'),
       h('p', { class: 'cp-auth-sub' }, 'What kind of partner are you? You can set up more later.'),
@@ -185,8 +185,8 @@ function shell(user, kind, company, kpis, content) {
   return h('div', { class: 'cp-shell cp-shell-1col' }, [
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
-        h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [brandMark(), h('div', null, [
-          h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, label)]),
+        h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [brandMark(false), h('div', null, [
+          h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, label)]),
           h('div', { class: 'cp-carrier-name', style: 'font-size:.82rem' }, company || 'Partner'),
         ])]),
         h('div', { class: 'cp-top-right' }, [
