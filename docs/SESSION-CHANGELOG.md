@@ -1647,3 +1647,71 @@ Owner spotted the OLD lockup on the carrier login card: "boot" in ORANGE + attac
 - Tagline rows REMOVED from: carrier auth card + carrier sidebar, both partner auth cards,
   developer auth card. (TAGLINE consts remain unused — safe.)
 - ESM gate: ALL PASS (93 files). NOTE: shows on live site only after the big commit+push.
+
+## cxt_emergency_bridge — EMERGENCY LOOP CLOSED (owner ask: auto emergency system + broker awareness)
+BOTH DBs (+_fix,+_fix2 staging; single final text prod), matrix 8/8 PASS, md5 parity, anon surface 5.
+- **Reality-check snapshot [SERVER-CAPTURED]:** at filing, the server snapshots last GPS (lat/lng/at),
+  location pings in last 4h, trip status, scheduled delivery + hours-to-delivery, tracking consent —
+  stored on the request; the driver cannot fake or omit it. Proof doc + detailed reason stay REQUIRED.
+- **Approve now APPLIES the reschedule:** trips.scheduled_delivery is updated (old→new audited),
+  applied_reschedule flag set. Deny leaves the schedule untouched (proven).
+- **Everyone learns automatically:** staff urgent alert (existing) + BROKER notified at filing
+  ("Emergency reported on your load — dispatch reviewing") + CARRIER and BROKER notified of the decision
+  (with the new delivery time). Human gate stays ONLY at the dispatch review.
+- Bugs fixed on staging before prod: broker lookup via public.loads.broker_org (trips.load_id → loads,
+  not partner_loads), log_audit 4th arg is uuid, matrix fixtures needed rate-card field_meta + one active
+  trip per load (our own cwx gate + unique index correctly blocked sloppy fixtures — good signs).
+
+## analyticsWeb.js — RESILIENT LOADING (owner screenshot: "Retry" on Analytics Control Center)
+Cause: the lower half loads 4 endpoints via Promise.all — ONE failure blanked the whole section with a
+generic "Something went wrong". Now each endpoint degrades independently; whatever arrived renders, and
+an inline amber strip NAMES the failed endpoints; full error screen only if ALL four fail. Root-cause of
+the prod failure needs the browser console after next deploy — the strip will now name it on screen.
+
+## GRAND SWEEP — GS1+GS2: WEBSITE A-TO-Z AUDIT ROUND (owner: "koi cheez na rahe")
+NEW GATE: scripts/grand_audit.py — machine-audits ALL 52 built pages: SEO (title/desc lengths
+entity-aware, canonical, og:*, twitter:*, exactly-1 H1, JSON-LD), A11Y (lang, img alt, bare links,
+buttons, labelled form controls incl. wrapped labels), MOBILE (viewport), LINKS (dead internal hrefs),
+CONTENT (conversion CTA present). Started at **63 FAIL / 76 warn → now 0 FAIL / 3 warn** (utility shells).
+Fixes (all in generators, so permanent):
+- page() head: og:type/og:url/og:image/og:site_name + full twitter card set on EVERY page (~48 pages fixed).
+- Label association: tools_module (25), load_score_module (13+aria), build_site tuple-form generator now
+  emits unique id + <label for> per control (12 fixed), authority/partner_type selects fixed.
+- 7 long titles + 10 long meta descriptions trimmed to SEO ranges, keywords preserved.
+
+## BRAND v2 ROLLOUT (owner order: "pori website pe yehi kit replace karo")
+Owner-selected mark: blue "lb" monogram + orange upward arrow; wordmark: full "loadboot" single-colour.
+- ICONS regenerated via PIL from the new mark: icon-512/192, icon-maskable (12% safe-zone),
+  apple-touch-icon, favicon-32/48, favicon.ico — every surface that embeds icon-512.png
+  (site header/footer/splash, all 5 portals' brandMark, PWA manifests) picks it up automatically.
+- WORDMARK: site header/footer/splash spans -> "loadboot"; portals' 'oad' text nodes -> 'load';
+  b{boot} colour -> inherit in carrier.css + command-center.css (single-colour per brand kit);
+  pocket orange boot removed. NEW CANON: docs/brand-kit/BRAND-KIT.md (v2). Old blue-boot lockup retired.
+- TAGLINE unchanged: "Keep Your Wheels Earning", standalone-only rule stays.
+- Kit SVGs rebuilt with clean circle/rect geometry after owner spotted broken b-bowl render.
+- Gates: BUILD OK, ESM ALL PASS, grand_audit 0 FAIL. Goes live on next commit+push.
+
+## BRAND v3 — OWNER'S FINAL LOGO ADOPTED + EXACT-COLOR ROLLOUT (2026-07-02 session 3)
+Owner delivered the locked logo (Canva DAHOQsSkUjs) as 3 PNGs: full lockup, icon-only, text-only
+(arrived as *.png.png; renamed). Navy delta-arrow + orange dash mark, "load"(navy)+"boot"(blue) wordmark.
+- **Background removed** from all 3 source PNGs (white knocked out, anti-alias feathered); white-bg
+  originals kept as *-orig.png in docs/brand-kit/.
+- **Exact brand colors sampled from real pixels:** Navy #10223B (arrow + "load"), Blue #0883F7 ("boot"),
+  Orange #FC5305 (dash). Recorded in docs/brand-kit/BRAND-KIT.md with placement map.
+- **ALL icons regenerated** from the clean icon-only mark: icon-512/192 (transparent), icon-maskable
+  (navy safe-zone), apple-touch-icon (navy), favicon-32/48, favicon.ico. Root == site/ (md5 MATCH).
+- **Site tokens aligned to exact logo values** (owner: "suggest and implement"): global recolor of the
+  3 legacy brand hexes across ALL source — 249 instances: #0F172A→#10223B, #2563EB→#0883F7,
+  #F97316→#FC5305 in build_site.py (141), styles.css (18), 6 portal CSS, shared/tokens.css, and app JS.
+  :root tokens updated. blue-light #60a5fa (dark-bg "boot") left as legit tint.
+- **Gates:** BUILD OK, ESM ALL PASS (93 files), IMPORT-REFERENCE PASS, GRAND AUDIT 52 pages 0 FAIL / 3 warn
+  (pre-existing utility shells). New kit: loadboot-brand-kit-v3.zip (11 real transparent assets).
+- NOTE: old loadboot-brand-kit-v2.zip is stale (approximation SVGs) but sandbox can't delete it
+  (Operation not permitted) — owner can remove it. Goes live on next commit+push (owner-run).
+
+## B2–B4 CLOSE-OUT — services.html motif pass (2026-07-02 session 3)
+services.html had 3 back-to-back card grids (the repetition the owner flagged). Broke it up: kept the
+Core Dispatch grid, inserted an HONEST navy m_statband (20+ services / 5% flat / 24/7 / 1 partner),
+converted the 8-item "Back-Office · Money · Claims" grid to m_zigzag (named SVG icons, teal accent).
+Now the page reads cards → stat band → zigzag → cards — no two adjacent sections alike.
+Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 52 pages 0 FAIL / 3 warn. B2–B4 = complete.

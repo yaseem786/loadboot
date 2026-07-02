@@ -47,13 +47,13 @@ export function printTable(title, subtitle, columns, rows) {
     '<tr>' + columns.map(c => '<td>' + escHtml(cell(c, r)) + '</td>').join('') + '</tr>'
   ).join('');
   const html = '<!doctype html><html><head><meta charset="utf-8"><title>' + escHtml(title) + '</title><style>' +
-    '*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;margin:0;padding:34px}' +
-    '.brand{font-size:20px;font-weight:800}.brand b{color:#f97316}' +
+    '*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#10223B;margin:0;padding:34px}' +
+    '.brand{font-size:20px;font-weight:800}.brand b{color:#FC5305}' +
     '.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0b1220;padding-bottom:12px}' +
     'h1{font-size:17px;margin:16px 0 2px}.sub{color:#64748b;font-size:12px;margin-bottom:14px}' +
     'table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#0b1220;color:#fff;text-align:left;padding:7px 8px;font-size:12px}' +
     'td{padding:6px 8px;border-bottom:1px solid #eef2f7;font-size:12px}tr:nth-child(even) td{background:#f8fafc}' +
-    '.bar{margin-bottom:16px}.btn{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 15px;font-weight:700;cursor:pointer}' +
+    '.bar{margin-bottom:16px}.btn{background:#0883F7;color:#fff;border:none;border-radius:8px;padding:9px 15px;font-weight:700;cursor:pointer}' +
     '@media print{body{padding:0}.noprint{display:none}}</style></head><body>' +
     '<div class="bar noprint"><button class="btn" onclick="window.print()">Print / Save as PDF</button></div>' +
     '<div class="head"><div class="brand">Load<b>boot</b></div><div class="sub" style="text-align:right">' + escHtml(subtitle || '') + '</div></div>' +

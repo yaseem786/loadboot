@@ -73,7 +73,7 @@ def m_timeline(eyebrow, h2, items, accent='#7c3aed', soft=False, lead=''):
     return ('<section%s><div class="wrap">' % (' class="bg-soft"' if soft else '') + _mhead(eyebrow, h2, lead, accent=accent) +
             '<div class="reveal" style="max-width:680px;margin:30px auto 0">%s</div></div></section>' % rows)
 
-def m_split(eyebrow, h2, paras, visual, flip=False, soft=False, accent='#2563eb', bullets=None):
+def m_split(eyebrow, h2, paras, visual, flip=False, soft=False, accent='#0883F7', bullets=None):
     """Two-column split: prose one side, a visual panel the other. paras=list[str], visual=HTML."""
     txt = ''.join('<p style="margin:0 0 14px;color:#475569;font-size:1.02rem">%s</p>' % p for p in paras)
     bl = ''

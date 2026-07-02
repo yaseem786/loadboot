@@ -50,7 +50,7 @@ const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [
 const TONE = {
   urgent:  { c: '#dc2626', bg: '#fef2f2', label: 'Urgent' },
   warning: { c: '#d97706', bg: '#fffbeb', label: 'Attention' },
-  action:  { c: '#2563eb', bg: '#eff6ff', label: 'Action' },
+  action:  { c: '#0883F7', bg: '#eff6ff', label: 'Action' },
   success: { c: '#16a34a', bg: '#f0fdf4', label: 'Done' },
   info:    { c: '#475569', bg: '#f8fafc', label: 'Info' },
 };
@@ -95,7 +95,7 @@ function miniBars(data, opts = {}) {
   const W = 100, H = 40, n = d.length || 1, gap = 1.6, bw = (W - gap * (n - 1)) / n;
   let bars = '';
   d.forEach((p, i) => { const hh = (Number(p.value) || 0) / max * (H - 4); bars += '<rect x="' + (i * (bw + gap)).toFixed(2) + '" y="' + (H - hh).toFixed(2) + '" width="' + bw.toFixed(2) + '" height="' + Math.max(hh, 0.8).toFixed(2) + '" rx="1" fill="url(#cpg)"/>'; });
-  return h('div', { class: 'cp-chart', html: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" height="' + (opts.height || 64) + '"><defs><linearGradient id="cpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#93c5fd"/></linearGradient></defs>' + bars + '</svg>' });
+  return h('div', { class: 'cp-chart', html: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" height="' + (opts.height || 64) + '"><defs><linearGradient id="cpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0883F7"/><stop offset="1" stop-color="#93c5fd"/></linearGradient></defs>' + bars + '</svg>' });
 }
 function donut(parts) {
   // parts: [{label,value,color}]
@@ -147,7 +147,7 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
+        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
       ])]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
@@ -275,7 +275,7 @@ async function appView(user) {
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand' }, [document.createTextNode('oad'), h('b', null, 'boot')]),
+        h('div', { class: 'cp-brand' }, [document.createTextNode('load'), h('b', null, 'boot')]),
       ])]),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
@@ -1408,7 +1408,7 @@ async function appView(user) {
     const packetCard = h('div', { class: 'cp-card' }, [cardHead('Industry onboarding packet'), h('div', { class: 'cp-muted' }, 'Loading…')]);
     async function loadPacket() {
       let pk; try { pk = await myOnboardingPacket(); } catch (_) { packetCard.remove(); return; }
-      const TAGC = { legal: '#dc2626', required: '#d97706', conditional: '#2563eb', optional: '#64748b' };
+      const TAGC = { legal: '#dc2626', required: '#d97706', conditional: '#0883F7', optional: '#64748b' };
       mount(packetCard, [cardHead('Industry onboarding packet', pk.complete ? 'Packet complete ✓' : 'Mandatory items outstanding'),
         h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, (pk.items || []).map(it => {
           const c0 = TAGC[it.tag] || '#64748b';

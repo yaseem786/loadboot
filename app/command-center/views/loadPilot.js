@@ -32,7 +32,7 @@ export async function openLoadPilot(load, overrides) {
     el('b', { style: 'white-space:nowrap' }, f.points + '/' + f.max),
   ]));
 
-  const pushCards = (a.push_ranking || []).map((c, i) => el('div', { class: 'lb-card', style: 'margin-bottom:8px' + (i === 0 ? ';border:2px solid #2563eb' : '') }, [
+  const pushCards = (a.push_ranking || []).map((c, i) => el('div', { class: 'lb-card', style: 'margin-bottom:8px' + (i === 0 ? ';border:2px solid #0883F7' : '') }, [
     el('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, [
       el('div', null, [el('b', null, (i === 0 ? '★ ' : '') + c.carrier), el('div', { class: 'cc-sub' }, c.pref_notes || '')]),
       el('div', { style: 'text-align:right' }, [el('div', { style: 'font-weight:800;font-size:18px' }, String(c.push_score)), el('div', { class: 'cc-sub' }, 'push score')]),

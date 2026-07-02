@@ -8,7 +8,7 @@ import { sectionHead, statCard, money } from '../../shared/ui/components.js';
 import { financeAnalytics } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 
-const C = { gross: '#93c5fd', fee: '#2563eb', paid: '#16a34a', amber: '#f59e0b', red: '#dc2626', gray: '#94a3b8', violet: '#7c3aed' };
+const C = { gross: '#93c5fd', fee: '#0883F7', paid: '#16a34a', amber: '#f59e0b', red: '#dc2626', gray: '#94a3b8', violet: '#7c3aed' };
 
 // grouped bar chart: months × [gross, fee] with a "collected" overlay marker.
 function monthlyChart(months) {

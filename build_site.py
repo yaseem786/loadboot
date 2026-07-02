@@ -42,10 +42,10 @@ else:
     APP_ENV, APP_REF, APP_ANON = 'preview', STAGING_REF, STAGING_ANON
 
 # ---------------- shared CSS ----------------
-CSS = r''':root{--navy:#0F172A;--blue:#2563EB;--orange:#F97316;--white:#fff;--bg:#F8FAFC;--muted:#64748B;--border:#E2E8F0;--blue-soft:#EFF6FF;--maxw:1200px;--r:16px}
+CSS = r''':root{--navy:#10223B;--blue:#0883F7;--orange:#FC5305;--white:#fff;--bg:#F8FAFC;--muted:#64748B;--border:#E2E8F0;--blue-soft:#EFF6FF;--maxw:1200px;--r:16px}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #2563EB;outline-offset:2px;border-radius:4px}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #0883F7;outline-offset:2px;border-radius:4px}
 body{font-family:'Inter',system-ui,sans-serif;color:var(--navy);line-height:1.6;background:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 h1,h2,h3,h4,.logo{font-family:'Manrope',sans-serif;line-height:1.12;letter-spacing:-.025em}
 h1{font-size:clamp(2.4rem,5.4vw,4rem);font-weight:800;letter-spacing:-.035em}
@@ -79,7 +79,7 @@ header.scrolled{border-bottom-color:var(--border);box-shadow:0 4px 24px -16px rg
 .menu-btn{display:none;background:none;border:none;cursor:pointer}
 .nav-actions{display:flex;gap:12px;align-items:center}.hd-login{padding:11px 16px}.hd-login svg{vertical-align:-3px}
 .nav-mob{display:none}
-.hero{padding:108px 0 112px;position:relative;background:radial-gradient(130% 120% at 76% -10%,#243150 0%,#0f172a 56%);overflow:hidden;color:#fff;border-bottom:1px solid #1e293b}
+.hero{padding:108px 0 112px;position:relative;background:radial-gradient(130% 120% at 76% -10%,#243150 0%,#10223B 56%);overflow:hidden;color:#fff;border-bottom:1px solid #1e293b}
 .hero h1{color:#fff}
 .hero .lead{color:#cbd5e1}
 .hero .badge{background:rgba(255,255,255,.08);color:#e2e8f0;border-color:rgba(255,255,255,.16)}
@@ -131,7 +131,7 @@ header.scrolled{border-bottom-color:var(--border);box-shadow:0 4px 24px -16px rg
 .sec-head{max-width:680px;margin-bottom:50px}.sec-head.center{margin-left:auto;margin-right:auto}
 .bg-soft{background:var(--bg)}
 .photo-grid{display:grid;grid-template-columns:1.45fr 1fr;gap:20px}
-.photo{border-radius:18px;overflow:hidden;min-height:340px;background:linear-gradient(135deg,#1e293b,#0f172a);box-shadow:0 34px 64px -36px rgba(15,23,42,.55);position:relative}
+.photo{border-radius:18px;overflow:hidden;min-height:340px;background:linear-gradient(135deg,#1e293b,#10223B);box-shadow:0 34px 64px -36px rgba(15,23,42,.55);position:relative}
 .photo img{width:100%;height:100%;object-fit:cover;display:block;min-height:340px}
 .photo .ph-tag{position:absolute;left:18px;bottom:16px;z-index:2;background:rgba(15,23,42,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:#fff;font-family:'Manrope';font-weight:700;font-size:.92rem;padding:8px 14px;border-radius:10px}
 .svc-photo{margin:0;border-radius:22px;overflow:hidden;position:relative;box-shadow:0 40px 84px -50px rgba(15,23,42,.55)}
@@ -234,7 +234,7 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .mcta a{flex:1;justify-content:center}
 .wa-btn{position:fixed;bottom:20px;right:20px;z-index:80;width:58px;height:58px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 30px -8px rgba(37,211,102,.6);transition:.2s}
 .wa-btn:hover{transform:scale(1.08)}
-.scroll-road-sec{position:relative;color:#fff;padding:88px 0 70px;overflow:hidden;background:linear-gradient(135deg,#0f172a,#1e293b)}
+.scroll-road-sec{position:relative;color:#fff;padding:88px 0 70px;overflow:hidden;background:linear-gradient(135deg,#10223B,#1e293b)}
 .scroll-road-sec h2{color:#fff}.scroll-road-sec .eyebrow{color:#93c5fd}
 .scroll-road{position:relative;z-index:2;height:150px;margin-top:30px}
 .sr-line{position:absolute;top:50%;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,#fbbf24 0 30px,transparent 30px 64px);transform:translateY(-50%)}
@@ -320,10 +320,10 @@ def header(active):
     links = ''.join('<a href="%s" class="%s">%s</a>' % (h, 'active' if h==active else '', t) for h,t in NAV)
     mob = '<a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
     return '''<header id="hdr"><div class="wrap nav">
-<a class="logo" href="index.html"><span class="mark"><img src="/icon-512.png" width="30" height="30" alt="LoadBoot" style="border-radius:8px;display:block"></span><span>oad<b style="color:var(--blue)">boot</b></span></a>
+<a class="logo" href="index.html"><span class="mark"><img src="/icon-512.png" width="30" height="30" alt="LoadBoot" style="display:block"></span><span>load<b style="color:var(--blue)">boot</b></span></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="contact.html" class="btn btn-primary hd-btn">Get Started %s</a>
-<button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+<button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
 </div></header>''' % (links, mob, ARW)
 
 
@@ -335,7 +335,7 @@ AI_RESEARCH_JS = '<script>(function(){var host=document.getElementById(\'aiBtns\
 def footer():
     return '''<footer><div class="wrap">
 <div class="foot-top">
-<div><div class="logo"><span class="mark"><img src="/icon-512.png" width="30" height="30" alt="LoadBoot" style="border-radius:8px;display:block"></span><span>oad<b style="color:#60a5fa">boot</b></span></div>
+<div><div class="logo"><span class="mark"><img src="/icon-512.png" width="30" height="30" alt="LoadBoot" style="display:block"></span><span>load<b style="color:#60a5fa">boot</b></span></div>
 <div style="color:#60a5fa;font-weight:700;font-size:.92rem;margin-top:10px;letter-spacing:.01em">Keep your wheels earning.</div>
 <p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p>
 <div style="margin-top:14px;font-size:.9rem;line-height:1.85"><a href="mailto:hello@loadboot.com">hello@loadboot.com</a><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a><a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div>
@@ -456,16 +456,16 @@ def page(fname, title, desc, active, body, schema=''):
     body = body + photo_band(fname) + related_block(fname)
     doc = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
-<meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta name="theme-color" content="#0F172A">
+<meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/icon-512.png"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/icon-512.png"><meta name="theme-color" content="#10223B">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">%s</head><body><script>(function(){try{if(sessionStorage.getItem('lb_seen'))return;}catch(e){}var o=document.createElement('div');o.id='lbSplash';o.innerHTML='<div class="lbs-logo"><span class="lbs-mark" style="background:none;box-shadow:none"><img src="/icon-512.png" width="62" height="62" alt="LoadBoot" style="border-radius:16px;display:block"></span><span class="lbs-word">oad<b>boot</b></span></div>';document.body.insertBefore(o,document.body.firstChild);try{sessionStorage.setItem('lb_seen','1');}catch(e){}setTimeout(function(){if(o&&o.parentNode)o.parentNode.removeChild(o);},1950);})();</script>
+<link rel="stylesheet" href="styles.css?v=6">%s</head><body><script>(function(){try{if(sessionStorage.getItem('lb_seen'))return;}catch(e){}var o=document.createElement('div');o.id='lbSplash';o.innerHTML='<div class="lbs-logo"><span class="lbs-mark" style="background:none;box-shadow:none"><img src="/icon-512.png" width="62" height="62" alt="LoadBoot" style="border-radius:16px;display:block"></span><span class="lbs-word">load<b>boot</b></span></div>';document.body.insertBefore(o,document.body.firstChild);try{sessionStorage.setItem('lb_seen','1');}catch(e){}setTimeout(function(){if(o&&o.parentNode)o.parentNode.removeChild(o);},1950);})();</script>
 %s
 %s
 %s
 <script>%s</script>
-<script src="app.js?v=6"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), ANNOUNCE_JS)
+<script src="app.js?v=6"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), ANNOUNCE_JS)
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -484,10 +484,10 @@ def faq_block(items):
 # ---- write shared assets ----
 PWA_JS = r'''
 if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;r=true;location.reload();});});}
-function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;max-width:92%';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#f97316;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){this.textContent='Updating…';if(w)w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
-(function(){var dp=null;addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;if(document.getElementById('pwaBtn'))return;var b=document.createElement('button');b.id='pwaBtn';b.innerHTML='&#11015; Install app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#2563EB;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer';b.onclick=function(){dp.prompt();dp.userChoice.finally(function(){dp=null;b.remove();});};document.body.appendChild(b);});})();
+function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;max-width:92%';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){this.textContent='Updating…';if(w)w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
+(function(){var dp=null;addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;if(document.getElementById('pwaBtn'))return;var b=document.createElement('button');b.id='pwaBtn';b.innerHTML='&#11015; Install app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer';b.onclick=function(){dp.prompt();dp.userChoice.finally(function(){dp=null;b.remove();});};document.body.appendChild(b);});})();
 '''
-MANIFEST = '{"name":"Loadboot","short_name":"Loadboot","description":"Professional truck dispatch — book loads, track payments, upload documents, and manage your carrier account.","start_url":"/","scope":"/","display":"standalone","background_color":"#ffffff","theme_color":"#0F172A","icons":[{"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"/icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}'
+MANIFEST = '{"name":"Loadboot","short_name":"Loadboot","description":"Professional truck dispatch — book loads, track payments, upload documents, and manage your carrier account.","start_url":"/","scope":"/","display":"standalone","background_color":"#ffffff","theme_color":"#10223B","icons":[{"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"/icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}'
 SW = r'''const CACHE='lb-v5';
 const CORE=['/','/index.html','/styles.css','/app.js','/dashboard.html','/load-score.html','/tools.html','/services.html','/pricing.html','/contact.html','/manifest.webmanifest','/icon-192.png','/icon-512.png','/apple-touch-icon.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(CORE).catch(function(){});}));});
@@ -542,12 +542,12 @@ SPLASH_CSS = '''
 '''
 ART_CSS = '''
 .crumbs{font-size:.85rem;color:var(--muted);padding:16px 0}.crumbs a{color:var(--blue)}
-.art-hero{position:static;z-index:auto;background:linear-gradient(180deg,#0b1220,#0f172a);color:#fff;padding:48px 0 64px}
+.art-hero{position:static;z-index:auto;background:linear-gradient(180deg,#0b1220,#10223B);color:#fff;padding:48px 0 64px}
 .art-hero .art-eyebrow{color:#fb923c;font-weight:700;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px}
 .art-hero h1{font-size:2.5rem;line-height:1.12;max-width:880px;margin:0 0 16px;color:#fff}
 .art-sub{color:#cbd5e1;font-size:1.16rem;max-width:760px;line-height:1.6}
 .art-meta{color:#94a3b8;font-size:.9rem;margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
-.art-feat{margin:-44px 0 0;border-radius:18px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(15,23,42,.55);position:relative;z-index:2;background:linear-gradient(120deg,#0f172a,#1e3a8a 55%,#2563EB);min-height:300px}
+.art-feat{margin:-44px 0 0;border-radius:18px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(15,23,42,.55);position:relative;z-index:2;background:linear-gradient(120deg,#10223B,#1e3a8a 55%,#0883F7);min-height:300px}
 .art-feat .feat-art,.art-feat img{position:absolute;inset:0;width:100%;height:100%;display:block}
 .art-feat img{object-fit:cover}
 @media(max-width:880px){.art-feat{min-height:200px}}
@@ -581,7 +581,7 @@ ART_CSS = '''
 .svc-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(135deg,#0b1220,#1e3a8a);color:#fff;border-radius:16px;padding:22px 24px;margin:32px 0;flex-wrap:wrap}
 .svc-banner .sb-t{font-family:'Manrope',sans-serif;font-weight:800;font-size:1.16rem;margin-bottom:4px;color:#fff}
 .svc-banner .sb-s{color:#cbd5e1;font-size:.95rem;max-width:460px;line-height:1.5}
-.svc-banner a.sb-btn{background:#F97316;color:#fff;font-weight:700;font-family:'Manrope',sans-serif;padding:12px 22px;border-radius:11px;white-space:nowrap;font-size:.95rem;flex-shrink:0}
+.svc-banner a.sb-btn{background:#FC5305;color:#fff;font-weight:700;font-family:'Manrope',sans-serif;padding:12px 22px;border-radius:11px;white-space:nowrap;font-size:.95rem;flex-shrink:0}
 .svc-banner a.sb-btn:hover{background:#ea6a0c}
 .bloggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;margin-top:36px}
 .blogcard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s}
@@ -591,8 +591,8 @@ ART_CSS = '''
 .bc-thumb img{z-index:2}
 .bc-ov{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(155deg,rgba(11,18,32,.22),transparent 38%,transparent 66%,rgba(11,18,32,.5))}
 .bc-brand{position:absolute;top:12px;left:12px;z-index:4;display:inline-flex;align-items:center;gap:7px;font-family:'Manrope',sans-serif;font-weight:800;font-size:.74rem;letter-spacing:.01em;color:#fff;background:rgba(11,18,32,.4);backdrop-filter:blur(5px);padding:5px 11px 5px 5px;border-radius:9px}
-.bc-l{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:6px;background:linear-gradient(135deg,#2563EB,#1e3a8a);color:#fff;font-size:.72rem;position:relative}
-.bc-l::after{content:'';position:absolute;right:3px;bottom:4px;width:0;height:0;border-left:5px solid #F97316;border-top:3px solid transparent;border-bottom:3px solid transparent}
+.bc-l{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:6px;background:linear-gradient(135deg,#0883F7,#1e3a8a);color:#fff;font-size:.72rem;position:relative}
+.bc-l::after{content:'';position:absolute;right:3px;bottom:4px;width:0;height:0;border-left:5px solid #FC5305;border-top:3px solid transparent;border-bottom:3px solid transparent}
 .blogcard:hover .bc-thumb img,.blogcard:hover .bc-thumb svg{transform:scale(1.05)}
 .bc-thumb img,.bc-thumb svg{transition:transform .4s ease}
 .bc-body{padding:20px 22px 22px;display:flex;flex-direction:column;flex:1}
@@ -631,10 +631,10 @@ ROUTE = '''<section><div class="wrap route-grid">
 <rect width="400" height="220" rx="12" fill="#F8FAFC"/>
 <g stroke="#E2E8F0" stroke-width="1"><path d="M0 55H400M0 110H400M0 165H400M100 0V220M200 0V220M300 0V220"/></g>
 <path d="M40 175 C 150 175 120 70 250 72 S 340 55 360 48" fill="none" stroke="#CBD5E1" stroke-width="5" stroke-linecap="round"/>
-<path d="M40 175 C 150 175 120 70 250 72 S 340 55 360 48" fill="none" stroke="#2563EB" stroke-width="5" stroke-linecap="round" class="dasharw"/>
-<circle cx="40" cy="175" r="14" fill="#2563EB" opacity=".18"/><circle cx="40" cy="175" r="7" fill="#2563EB"/>
-<circle cx="360" cy="48" r="14" fill="#F97316" opacity=".18"/><circle cx="360" cy="48" r="7" fill="#F97316"/>
-<g><circle r="13" fill="#2563EB" opacity="0.16"/><circle r="6.5" fill="#2563EB"/><circle r="2.5" fill="#fff"/><animateMotion dur="6s" repeatCount="indefinite" rotate="auto"><mpath href="#rtpath"/></animateMotion></g>
+<path d="M40 175 C 150 175 120 70 250 72 S 340 55 360 48" fill="none" stroke="#0883F7" stroke-width="5" stroke-linecap="round" class="dasharw"/>
+<circle cx="40" cy="175" r="14" fill="#0883F7" opacity=".18"/><circle cx="40" cy="175" r="7" fill="#0883F7"/>
+<circle cx="360" cy="48" r="14" fill="#FC5305" opacity=".18"/><circle cx="360" cy="48" r="7" fill="#FC5305"/>
+<g><circle r="13" fill="#0883F7" opacity="0.16"/><circle r="6.5" fill="#0883F7"/><circle r="2.5" fill="#fff"/><animateMotion dur="6s" repeatCount="indefinite" rotate="auto"><mpath href="#rtpath"/></animateMotion></g>
 <text x="34" y="200" font-size="11" fill="#64748B" font-family="Inter">Origin</text>
 <text x="318" y="38" font-size="11" fill="#64748B" font-family="Inter">Delivery</text></svg></div></div></section>'''
 # fix mpath: use inline path reference via id
@@ -784,7 +784,7 @@ HERO='''<section class="hero"><div class="aurora"><span class="a1"></span><span 
 <div class="hv-row"><span>Negotiated rate</span><span class="hv-rate">$2,640 &middot; $3.38/mi</span></div></div>
 <div class="hv-float hv-f1"><span class="ic">&#128222;</span> Broker handled for you</div>
 <div class="hv-float hv-f2"><span class="ic">&#10003;</span> You approve every load</div></div></div></section>''' % (ARW,CHK,CHK,CHK)
-SCROLLBAND = '<section class="scroll-road-sec"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Coast to coast</div><h2>We keep your truck moving, every mile</h2><p class="lead center" style="color:#cbd5e1;margin:0 auto">Scroll and ride along &mdash; from pickup to delivery, we handle the whole route.</p></div></div><div class="scroll-road"><div class="sr-line"></div><div class="sr-truck" id="scrollTruck"><svg viewBox="0 0 130 58" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="78" height="33" rx="3" fill="#e2e8f0"/><rect x="3" y="9" width="78" height="33" rx="3" fill="none" stroke="#94a3b8" stroke-width="1.5"/><g stroke="#cbd5e1" stroke-width="1.5"><line x1="18" y1="11" x2="18" y2="40"/><line x1="33" y1="11" x2="33" y2="40"/><line x1="48" y1="11" x2="48" y2="40"/><line x1="63" y1="11" x2="63" y2="40"/></g><path d="M81 15h13c2 0 3.6 1 4.6 2.7l8.4 12.8c.7 1 1 2.3 1 3.5v8H81z" fill="#2563EB"/><path d="M85 19h9v9h-9z" fill="#bfdbfe"/><path d="M96 20l6 8h-6z" fill="#93c5fd"/><rect x="113" y="36" width="4" height="7" rx="1" fill="#1e293b"/><rect x="3" y="42" width="114" height="3" fill="#1e293b"/><g><circle cx="24" cy="46" r="8" fill="#0f172a"/><circle cx="24" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="42" cy="46" r="8" fill="#0f172a"/><circle cx="42" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="100" cy="46" r="8" fill="#0f172a"/><circle cx="100" cy="46" r="3.4" fill="#64748b"/></g></svg></div></div></section>'
+SCROLLBAND = '<section class="scroll-road-sec"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Coast to coast</div><h2>We keep your truck moving, every mile</h2><p class="lead center" style="color:#cbd5e1;margin:0 auto">Scroll and ride along &mdash; from pickup to delivery, we handle the whole route.</p></div></div><div class="scroll-road"><div class="sr-line"></div><div class="sr-truck" id="scrollTruck"><svg viewBox="0 0 130 58" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="78" height="33" rx="3" fill="#e2e8f0"/><rect x="3" y="9" width="78" height="33" rx="3" fill="none" stroke="#94a3b8" stroke-width="1.5"/><g stroke="#cbd5e1" stroke-width="1.5"><line x1="18" y1="11" x2="18" y2="40"/><line x1="33" y1="11" x2="33" y2="40"/><line x1="48" y1="11" x2="48" y2="40"/><line x1="63" y1="11" x2="63" y2="40"/></g><path d="M81 15h13c2 0 3.6 1 4.6 2.7l8.4 12.8c.7 1 1 2.3 1 3.5v8H81z" fill="#0883F7"/><path d="M85 19h9v9h-9z" fill="#bfdbfe"/><path d="M96 20l6 8h-6z" fill="#93c5fd"/><rect x="113" y="36" width="4" height="7" rx="1" fill="#1e293b"/><rect x="3" y="42" width="114" height="3" fill="#1e293b"/><g><circle cx="24" cy="46" r="8" fill="#10223B"/><circle cx="24" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="42" cy="46" r="8" fill="#10223B"/><circle cx="42" cy="46" r="3.4" fill="#64748b"/></g><g><circle cx="100" cy="46" r="8" fill="#10223B"/><circle cx="100" cy="46" r="3.4" fill="#64748b"/></g></svg></div></div></section>'
 BLOGHOME = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Free knowledge base</div><h2>Guides that make you money before you spend a dollar</h2></div><div class="grid g3">' + linkcard('how-much-does-a-truck-dispatcher-cost.html','&#128196;','How Much Does a Truck Dispatcher Cost?','Percentage vs flat fee, what 5% really gets you, and how a dispatcher pays for itself.') + linkcard('truck-dispatcher-vs-freight-broker.html','&#128196;','Dispatcher vs Broker vs Factoring','Who each represents, what they can legally do, how the money flows, and which you need.') + linkcard('how-to-get-loads-with-new-authority.html','&#128196;','Getting Loads With New Authority','How to set up with brokers and land your first loads fast.') + linkcard('owner-operator-dispatch-service-guide.html','&#128196;','Owner-Operator Dispatch Service Guide','What a dispatch service does for one truck, what it costs, and how to choose one.') + '</div></div></section>'
 PHOTOS = '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Built for life on the road</div><h2>Dispatch support built around your operation</h2><p class="lead">Dispatch workflows and profit tools designed for owner-operators and small fleets operating across the contiguous United States.</p></div><div class="photo-grid reveal"><div class="photo"><img src="truck-fleet.webp" width="1280" height="720" alt="Semi-trucks parked at a freight yard" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Fleets &amp; owner-operators, coast to coast</span></div><div class="photo"><img src="truck-boxtruck.webp" width="1280" height="720" alt="Box truck ready for dispatch" loading="lazy" decoding="async" onerror="this.style.display=&quot;none&quot;"><span class="ph-tag">Dry van, reefer, flatbed, box &amp; more</span></div></div></div></section>'
 _tp = [
@@ -847,7 +847,7 @@ PARTNER_FLOW = ('<section style="background:#0b1220"><div class="wrap"><div clas
  '<p class="lead center" style="color:#94a3b8;max-width:640px;margin:12px auto 0">Verified once, then every load is a two-minute post &mdash; no board, no twenty phone calls.</p></div>'
  '<div class="reveal" style="max-width:760px;margin:30px auto 0;display:flex;flex-direction:column;gap:12px">'
  + ''.join('<div style="display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:18px 20px">'
-   '<div style="flex:none;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">%d</div>'
+   '<div style="flex:none;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0883F7,#3b82f6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">%d</div>'
    '<div><h3 style="margin:0 0 4px;color:#fff;font-size:1.05rem">%s</h3><p style="margin:0;color:#94a3b8;font-size:.95rem">%s</p></div></div>' % (i+1, t, d)
    for i,(t,d) in enumerate([
      ('Join &amp; get verified','Authority and documents verified once &mdash; then posting takes minutes, not calls.'),
@@ -862,8 +862,8 @@ BRIDGE = ('<section class="bg-soft"><div class="wrap"><div class="sec-head cente
  '<h2>One system between brokers and carriers</h2></div>'
  '<div class="reveal" style="display:flex;flex-wrap:wrap;align-items:stretch;justify-content:center;gap:14px;max-width:920px;margin:28px auto 0">'
  '<div style="flex:1 1 220px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;text-align:center"><div style="font-size:1.8rem">&#127970;</div><h3 style="margin:8px 0 4px">Broker partners</h3><p style="margin:0;color:#64748b;font-size:.92rem">Post a load once with full terms &mdash; no chasing carriers.</p></div>'
- '<div style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#2563eb">&rarr;</div>'
- '<div style="flex:1 1 240px;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border-radius:16px;padding:24px;text-align:center;box-shadow:0 18px 44px -18px rgba(37,99,235,.7)"><div style="font-size:1.8rem">&#9889;</div><h3 style="margin:8px 0 4px;color:#fff">LoadBoot</h3><p style="margin:0;color:#cbd5e1;font-size:.92rem">Explainable matching, tracking, documents and the money trail &mdash; one connected system.</p></div>'
+ '<div style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#0883F7">&rarr;</div>'
+ '<div style="flex:1 1 240px;background:linear-gradient(135deg,#10223B,#1e3a5f);color:#fff;border-radius:16px;padding:24px;text-align:center;box-shadow:0 18px 44px -18px rgba(37,99,235,.7)"><div style="font-size:1.8rem">&#9889;</div><h3 style="margin:8px 0 4px;color:#fff">LoadBoot</h3><p style="margin:0;color:#cbd5e1;font-size:.92rem">Explainable matching, tracking, documents and the money trail &mdash; one connected system.</p></div>'
  '<div style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#0d9488">&rarr;</div>'
  '<div style="flex:1 1 220px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;text-align:center"><div style="font-size:1.8rem">&#128667;</div><h3 style="margin:8px 0 4px">Carriers</h3><p style="margin:0;color:#64748b;font-size:.92rem">See matched offers with rate, miles and RPM already worked out.</p></div>'
  '</div><p class="reveal" style="text-align:center;color:var(--muted);margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">Every match explainable, every document tracked, every step audited.</p></div></section>')
@@ -1124,17 +1124,17 @@ serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div cla
 <div class="card reveal d1"><div class="icon">&#128196;</div><h3>Document Management</h3><p>Rate cons, BOLs, and PODs &mdash; organized and on time.</p></div>
 <div class="card reveal d2"><div class="icon">&#128336;</div><h3>24/7 Dispatch Support</h3><p>A dedicated dispatcher who has your back on the road.</p></div>
 </div></div></section>'''
-serv_body += '''<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Back-Office &middot; Money &middot; Claims</div><h2>Everything around the load &mdash; handled for you</h2></div>
-<div class="grid g4">
-<div class="card reveal"><div class="icon">&#128230;</div><h3>Broker Packet Onboarding</h3><p>Get set up with brokers fast.</p></div>
-<div class="card reveal d1"><div class="icon">&#128181;</div><h3>Factoring Setup</h3><p>Get paid in hours, not weeks.</p></div>
-<div class="card reveal d2"><div class="icon">&#128737;</div><h3>Insurance Assistance</h3><p>Connect with trusted insurance partners.</p></div>
-<div class="card reveal d3"><div class="icon">&#9981;</div><h3>IFTA &amp; Fuel Tax</h3><p>Fuel-tax paperwork off your plate.</p></div>
-<div class="card reveal"><div class="icon">&#9878;</div><h3>Detention &amp; TONU Claims</h3><p>Recover the money you're owed.</p></div>
-<div class="card reveal d1"><div class="icon">&#9989;</div><h3>Broker Credit Checks</h3><p>Avoid non-paying brokers.</p></div>
-<div class="card reveal d2"><div class="icon">&#128202;</div><h3>Weekly Settlement Reports</h3><p>Know what you earned, by load.</p></div>
-<div class="card reveal d3"><div class="icon">&#128236;</div><h3>Cargo Claim Assistance</h3><p>Help when a load goes wrong.</p></div>
-</div></div></section>'''
+serv_body += m_statband([('20+','services under one roof'),('5%','flat fee, no contract'),('24/7','dispatch desk'),('1','partner for the whole business')])
+serv_body += m_zigzag('Back-Office &middot; Money &middot; Claims', 'Everything around the load &mdash; handled for you', [
+ ('clipboard','Broker Packet Onboarding','Get set up with brokers fast &mdash; packets, references, and setup forms completed for you.'),
+ ('wallet','Factoring Setup','Get paid in hours, not weeks, through vetted factoring partners.'),
+ ('shieldcheck','Insurance Assistance','Connect with trusted insurance partners for the coverage brokers require.'),
+ ('receipt','IFTA &amp; Fuel Tax','Fuel-tax paperwork tracked and filed &mdash; off your plate every quarter.'),
+ ('scale','Detention &amp; TONU Claims','We document the time and file the claim to recover the money you are owed.'),
+ ('badge','Broker Credit Checks','Every broker is credit-checked before you haul, so you avoid non-payers.'),
+ ('sparkline','Weekly Settlement Reports','Know exactly what you earned, load by load, every week.'),
+ ('doccheck','Cargo Claim Assistance','Structured help and documentation when a load goes wrong.'),
+], accent='#0d9488')
 serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Authority &middot; Compliance &middot; Filings</div><h2>We handle the paperwork most carriers dread</h2></div>
 <div class="grid g4">
 <div class="card reveal"><div class="icon">&#128640;</div><h3>Authority &amp; DOT Setup</h3><p>MC number and DOT registration guidance.</p></div>
@@ -1185,25 +1185,25 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 <div id="acctFields">
 <h3 style="margin:26px 0 16px">Your business</h3>
 <div class="form-grid">
-<div class="field full"><label>Company / business name</label><input type="text" name="company" placeholder="Your trucking company"></div>
-<div class="field"><label>MC number</label><input type="text" name="mc" placeholder="MC-123456"></div>
-<div class="field"><label>DOT number</label><input type="text" name="dot" placeholder="DOT-1234567"></div>
-<div class="field full"><label>Authority status</label><select name="authority"><option value="">Select&hellip;</option><option>Active / established authority</option><option>New authority</option><option>No authority yet</option></select></div>
+<div class="field full"><label for="f_company">Company / business name</label><input type="text" id="f_company" name="company" placeholder="Your trucking company"></div>
+<div class="field"><label for="f_mc">MC number</label><input type="text" id="f_mc" name="mc" placeholder="MC-123456"></div>
+<div class="field"><label for="f_dot">DOT number</label><input type="text" id="f_dot" name="dot" placeholder="DOT-1234567"></div>
+<div class="field full"><label for="f_authority">Authority status</label><select id="f_authority" name="authority"><option value="">Select&hellip;</option><option>Active / established authority</option><option>New authority</option><option>No authority yet</option></select></div>
 </div>
 <h3 style="margin:26px 0 16px">Equipment &amp; lanes</h3>
 <div class="form-grid">
-<div class="field"><label>Equipment type</label><select name="equipment"><option value="">Select&hellip;</option><option>Dry Van</option><option>Reefer</option><option>Flatbed</option><option>Step Deck</option><option>Hotshot</option><option>Power Only</option><option>Box Truck / Expedited</option></select></div>
-<div class="field"><label>Number of trucks</label><select name="trucks"><option value="">Select&hellip;</option><option>1</option><option>2-5</option><option>6-20</option><option>20+</option></select></div>
-<div class="field full"><label>Preferred lanes / home base</label><input type="text" name="lanes" placeholder="e.g. Dallas, TX &mdash; Southeast lanes"></div>
-<div class="field"><label>Insurance in place?</label><select name="insurance"><option value="">Select&hellip;</option><option>Yes</option><option>Not yet &mdash; need help</option></select></div>
-<div class="field"><label>Factoring?</label><select name="factoring"><option value="">Select&hellip;</option><option>Yes, already factoring</option><option>No &mdash; need help</option><option>Not sure</option></select></div>
+<div class="field"><label for="f_equipment">Equipment type</label><select id="f_equipment" name="equipment"><option value="">Select&hellip;</option><option>Dry Van</option><option>Reefer</option><option>Flatbed</option><option>Step Deck</option><option>Hotshot</option><option>Power Only</option><option>Box Truck / Expedited</option></select></div>
+<div class="field"><label for="f_trucks">Number of trucks</label><select id="f_trucks" name="trucks"><option value="">Select&hellip;</option><option>1</option><option>2-5</option><option>6-20</option><option>20+</option></select></div>
+<div class="field full"><label for="f_lanes">Preferred lanes / home base</label><input type="text" id="f_lanes" name="lanes" placeholder="e.g. Dallas, TX &mdash; Southeast lanes"></div>
+<div class="field"><label for="f_insurance">Insurance in place?</label><select id="f_insurance" name="insurance"><option value="">Select&hellip;</option><option>Yes</option><option>Not yet &mdash; need help</option></select></div>
+<div class="field"><label for="f_factoring">Factoring?</label><select id="f_factoring" name="factoring"><option value="">Select&hellip;</option><option>Yes, already factoring</option><option>No &mdash; need help</option><option>Not sure</option></select></div>
 </div>
 </div>
 <h3 style="margin:26px 0 16px">Your details</h3>
 <div class="form-grid">
-<div class="field"><label>Your name</label><input type="text" name="name" required placeholder="Full name"></div>
-<div class="field"><label>Phone</label><input type="tel" name="phone" placeholder="(555) 555-5555"></div>
-<div class="field full"><label>Email</label><input type="email" name="email" required placeholder="you@email.com"></div>
+<div class="field"><label for="f_name">Your name</label><input type="text" id="f_name" name="name" required placeholder="Full name"></div>
+<div class="field"><label for="f_phone">Phone</label><input type="tel" id="f_phone" name="phone" placeholder="(555) 555-5555"></div>
+<div class="field full"><label for="f_email">Email</label><input type="email" id="f_email" name="email" required placeholder="you@email.com"></div>
 <div class="field full"><label id="msgLabel">Anything else? <span style="color:var(--muted);font-weight:500">(optional)</span></label><textarea name="message" placeholder="Tell us about a specific load, lane, or question &mdash; or anything you'd like us to know."></textarea></div>
 </div>
 <button class="btn btn-primary" id="submitBtn" style="width:100%;justify-content:center;margin-top:24px">Create My Carrier Account &rarr;</button>
@@ -1386,16 +1386,16 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
 
 A1_SVG=('<figure class="art-fig"><svg viewBox="0 0 600 248" width="100%" role="img" '
  'aria-label="On a 3000 dollar load you keep 2850 dollars after a 5 percent fee, versus 2600 dollars booking cheap freight yourself">'
- '<text x="0" y="22" font-family="Manrope,Arial" font-weight="800" font-size="19" fill="#0F172A">The 5% math on a $3,000 load</text>'
+ '<text x="0" y="22" font-family="Manrope,Arial" font-weight="800" font-size="19" fill="#10223B">The 5% math on a $3,000 load</text>'
  '<text x="0" y="70" font-family="Inter,Arial" font-size="13" fill="#64748B">Booking cheap freight yourself</text>'
  '<rect x="0" y="80" width="560" height="30" rx="6" fill="#eef2f7"/>'
  '<rect x="0" y="80" width="407" height="30" rx="6" fill="#94a3b8"/>'
- '<text x="418" y="100" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">$2,600</text>'
+ '<text x="418" y="100" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">$2,600</text>'
  '<text x="0" y="148" font-family="Inter,Arial" font-size="13" fill="#64748B">With Loadboot (after the 5% fee)</text>'
  '<rect x="0" y="158" width="560" height="30" rx="6" fill="#eff6ff"/>'
- '<rect x="0" y="158" width="446" height="30" rx="6" fill="#2563EB"/>'
- '<text x="457" y="178" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">$2,850</text>'
- '<text x="0" y="226" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#F97316">'
+ '<rect x="0" y="158" width="446" height="30" rx="6" fill="#0883F7"/>'
+ '<text x="457" y="178" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">$2,850</text>'
+ '<text x="0" y="226" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#FC5305">'
  '+$250 in your pocket &#8212; and hours of broker calls off your plate.</text></svg>'
  '<figcaption>Example: a dispatcher books and negotiates a $3,000 load; after the $150 (5%) fee you keep $2,850 &mdash; '
  'more than the $2,600 cheap load you would have grabbed yourself.</figcaption></figure>')
@@ -1499,15 +1499,15 @@ A1_FAQ=[
  ('Do I still control which loads I take?','Yes. A dispatcher works for you &mdash; they find and negotiate loads, but you approve every load and rate before anything is booked.'),
  ('Can I cancel anytime?','With Loadboot, yes. There are no contracts &mdash; we earn your business load by load, and you can stop anytime.')]
 A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
- '<defs><linearGradient id="fa1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/>'
- '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#2563EB"/></linearGradient></defs>'
+ '<defs><linearGradient id="fa1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10223B"/>'
+ '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
  '<rect width="1200" height="360" fill="url(#fa1)"/>'
  '<circle cx="980" cy="80" r="220" fill="#ffffff" opacity=".05"/>'
- '<circle cx="1080" cy="300" r="160" fill="#F97316" opacity=".10"/>'
+ '<circle cx="1080" cy="300" r="160" fill="#FC5305" opacity=".10"/>'
  '<text x="70" y="150" font-family="Manrope,Arial" font-weight="800" font-size="120" fill="#ffffff" opacity=".10">5%</text>'
  '<rect x="760" y="210" width="34" height="80" rx="6" fill="#3b82f6" opacity=".7"/>'
  '<rect x="812" y="170" width="34" height="120" rx="6" fill="#60a5fa" opacity=".7"/>'
- '<rect x="864" y="120" width="34" height="170" rx="6" fill="#F97316" opacity=".85"/>'
+ '<rect x="864" y="120" width="34" height="170" rx="6" fill="#FC5305" opacity=".85"/>'
  '</svg>')
 rich_article('how-much-does-a-truck-dispatcher-cost.html',
  'How Much Does a Truck Dispatcher Cost in 2026?',
@@ -1519,37 +1519,37 @@ rich_article('how-much-does-a-truck-dispatcher-cost.html',
 
 # ===== ARTICLE #2 : Dispatcher vs Broker vs Factoring =====
 A2_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
- '<defs><linearGradient id="fa2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/>'
- '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#2563EB"/></linearGradient></defs>'
+ '<defs><linearGradient id="fa2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10223B"/>'
+ '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
  '<rect width="1200" height="360" fill="url(#fa2)"/>'
  '<circle cx="980" cy="70" r="230" fill="#ffffff" opacity=".05"/>'
- '<circle cx="1090" cy="300" r="150" fill="#F97316" opacity=".10"/>'
+ '<circle cx="1090" cy="300" r="150" fill="#FC5305" opacity=".10"/>'
  '<rect x="690" y="150" width="150" height="64" rx="12" fill="#ffffff" opacity=".10"/>'
  '<rect x="870" y="150" width="150" height="64" rx="12" fill="#ffffff" opacity=".10"/>'
- '<rect x="1050" y="150" width="110" height="64" rx="12" fill="#F97316" opacity=".22"/>'
+ '<rect x="1050" y="150" width="110" height="64" rx="12" fill="#FC5305" opacity=".22"/>'
  '<text x="70" y="150" font-family="Manrope,Arial" font-weight="800" font-size="118" fill="#ffffff" opacity=".10">VS</text>'
  '</svg>')
 
 # Diagram: who represents whom
 A2_REP=('<figure class="art-fig"><svg viewBox="0 0 640 330" width="100%" role="img" '
  'aria-label="A freight broker represents the shipper; a truck dispatcher represents you, the carrier. They negotiate the load between them.">'
- '<text x="0" y="20" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#0F172A">Who works for whom</text>'
- '<text x="20" y="58" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#F97316" text-transform="uppercase">THE LOAD&rsquo;S SIDE</text>'
- '<text x="400" y="58" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#2563EB">YOUR SIDE</text>'
+ '<text x="0" y="20" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#10223B">Who works for whom</text>'
+ '<text x="20" y="58" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#FC5305" text-transform="uppercase">THE LOAD&rsquo;S SIDE</text>'
+ '<text x="400" y="58" font-family="Inter,Arial" font-size="12" font-weight="700" fill="#0883F7">YOUR SIDE</text>'
  '<rect x="20" y="70" width="210" height="62" rx="12" fill="#fff7ed" stroke="#fdba74"/>'
- '<text x="125" y="100" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">Shipper</text>'
+ '<text x="125" y="100" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">Shipper</text>'
  '<text x="125" y="120" text-anchor="middle" font-family="Inter,Arial" font-size="11.5" fill="#9a3412">Owns the freight</text>'
  '<rect x="20" y="200" width="210" height="62" rx="12" fill="#fff7ed" stroke="#fb923c"/>'
- '<text x="125" y="230" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">Freight Broker</text>'
+ '<text x="125" y="230" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">Freight Broker</text>'
  '<text x="125" y="250" text-anchor="middle" font-family="Inter,Arial" font-size="11.5" fill="#9a3412">Represents the shipper</text>'
  '<rect x="400" y="70" width="210" height="62" rx="12" fill="#eff6ff" stroke="#93c5fd"/>'
- '<text x="505" y="100" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">Carrier &mdash; You</text>'
+ '<text x="505" y="100" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">Carrier &mdash; You</text>'
  '<text x="505" y="120" text-anchor="middle" font-family="Inter,Arial" font-size="11.5" fill="#1e40af">Owns the truck &amp; authority</text>'
  '<rect x="400" y="200" width="210" height="62" rx="12" fill="#eff6ff" stroke="#60a5fa"/>'
- '<text x="505" y="230" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">Truck Dispatcher</text>'
+ '<text x="505" y="230" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">Truck Dispatcher</text>'
  '<text x="505" y="250" text-anchor="middle" font-family="Inter,Arial" font-size="11.5" fill="#1e40af">Represents you</text>'
  '<path d="M125 132 V200" stroke="#fb923c" stroke-width="3"/><path d="M125 200 l-5 -10 h10 Z" fill="#fb923c"/>'
- '<path d="M505 132 V200" stroke="#2563EB" stroke-width="3"/><path d="M505 200 l-5 -10 h10 Z" fill="#2563EB"/>'
+ '<path d="M505 132 V200" stroke="#0883F7" stroke-width="3"/><path d="M505 200 l-5 -10 h10 Z" fill="#0883F7"/>'
  '<path d="M230 231 H400" stroke="#64748B" stroke-width="2.5" stroke-dasharray="6 6"/>'
  '<path d="M400 231 l-12 -6 v12 Z" fill="#64748B"/><path d="M230 231 l12 -6 v12 Z" fill="#64748B"/>'
  '<text x="315" y="222" text-anchor="middle" font-family="Inter,Arial" font-size="11" font-weight="700" fill="#475569">negotiate the rate</text>'
@@ -1559,29 +1559,29 @@ A2_REP=('<figure class="art-fig"><svg viewBox="0 0 640 330" width="100%" role="i
 # Diagram: money flow
 A2_FLOW=('<figure class="art-fig"><svg viewBox="0 0 600 250" width="100%" role="img" '
  'aria-label="On a load the shipper pays the broker 3300 dollars; the broker keeps about 300 and pays the carrier 3000; the dispatcher takes 5 percent which is 150; optional factoring takes about 60; the carrier keeps roughly 2790.">'
- '<text x="0" y="20" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#0F172A">How the money flows on a $3,000 load</text>'
+ '<text x="0" y="20" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#10223B">How the money flows on a $3,000 load</text>'
  '<rect x="0" y="44" width="150" height="58" rx="11" fill="#f1f5f9" stroke="#cbd5e1"/>'
- '<text x="75" y="69" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#0F172A">Shipper</text>'
+ '<text x="75" y="69" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#10223B">Shipper</text>'
  '<text x="75" y="88" text-anchor="middle" font-family="Inter,Arial" font-size="11" fill="#64748B">pays $3,300</text>'
  '<rect x="225" y="44" width="150" height="58" rx="11" fill="#fff7ed" stroke="#fdba74"/>'
- '<text x="300" y="69" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#0F172A">Broker</text>'
+ '<text x="300" y="69" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#10223B">Broker</text>'
  '<text x="300" y="88" text-anchor="middle" font-family="Inter,Arial" font-size="11" fill="#9a3412">keeps ~$300</text>'
  '<rect x="450" y="44" width="150" height="58" rx="11" fill="#eff6ff" stroke="#93c5fd"/>'
- '<text x="525" y="69" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#0F172A">You (Carrier)</text>'
+ '<text x="525" y="69" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#10223B">You (Carrier)</text>'
  '<text x="525" y="88" text-anchor="middle" font-family="Inter,Arial" font-size="11" fill="#1e40af">gets $3,000</text>'
  '<path d="M150 73 H225" stroke="#94a3b8" stroke-width="2.5"/><path d="M225 73 l-11 -6 v12 Z" fill="#94a3b8"/>'
  '<path d="M375 73 H450" stroke="#94a3b8" stroke-width="2.5"/><path d="M450 73 l-11 -6 v12 Z" fill="#94a3b8"/>'
  '<path d="M525 102 V140" stroke="#cbd5e1" stroke-width="2.5"/>'
  '<rect x="300" y="140" width="135" height="46" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>'
  '<text x="367" y="160" text-anchor="middle" font-family="Inter,Arial" font-size="11" fill="#1e40af">Dispatcher 5%</text>'
- '<text x="367" y="177" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#0F172A">&minus; $150</text>'
+ '<text x="367" y="177" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#10223B">&minus; $150</text>'
  '<rect x="450" y="140" width="135" height="46" rx="10" fill="#fff7ed" stroke="#fed7aa"/>'
  '<text x="517" y="160" text-anchor="middle" font-family="Inter,Arial" font-size="11" fill="#9a3412">Factoring ~2%</text>'
- '<text x="517" y="177" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#0F172A">&minus; $60 (optional)</text>'
+ '<text x="517" y="177" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#10223B">&minus; $60 (optional)</text>'
  '<path d="M435 163 H300" stroke="#cbd5e1" stroke-width="0"/>'
- '<rect x="360" y="206" width="240" height="40" rx="10" fill="#0F172A"/>'
+ '<rect x="360" y="206" width="240" height="40" rx="10" fill="#10223B"/>'
  '<text x="378" y="231" font-family="Inter,Arial" font-size="12" fill="#cbd5e1">You keep about</text>'
- '<text x="582" y="231" text-anchor="end" font-family="Manrope,Arial" font-weight="800" font-size="16" fill="#F97316">$2,790</text>'
+ '<text x="582" y="231" text-anchor="end" font-family="Manrope,Arial" font-weight="800" font-size="16" fill="#FC5305">$2,790</text>'
  '</svg><figcaption>The broker&rsquo;s margin comes out <b>before</b> you ever see the rate. Your dispatcher&rsquo;s 5% and optional '
  'factoring come out of <b>your</b> side &mdash; and a good dispatcher usually negotiates a higher starting rate than you would alone, '
  'covering their fee and then some.</figcaption></figure>')
@@ -1694,30 +1694,30 @@ rich_article('truck-dispatcher-vs-freight-broker.html',
 
 # ===== ARTICLE #4 : Owner-Operator Dispatch Service — Complete Guide =====
 A4_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
- '<defs><linearGradient id="fa4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/>'
- '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#2563EB"/></linearGradient></defs>'
+ '<defs><linearGradient id="fa4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10223B"/>'
+ '<stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
  '<rect width="1200" height="360" fill="url(#fa4)"/>'
  '<circle cx="960" cy="80" r="230" fill="#ffffff" opacity=".05"/>'
- '<circle cx="1090" cy="300" r="150" fill="#F97316" opacity=".10"/>'
+ '<circle cx="1090" cy="300" r="150" fill="#FC5305" opacity=".10"/>'
  '<text x="70" y="150" font-family="Manrope,Arial" font-weight="800" font-size="96" fill="#ffffff" opacity=".10">OWNER-OP</text>'
  '<g transform="translate(770,196)"><rect x="0" y="0" width="150" height="64" rx="6" fill="#e2e8f0" opacity=".85"/>'
- '<path d="M150 14h26c4 0 7 2 9 5l16 25c1 2 2 4 2 7v13h-53z" fill="#2563EB"/>'
- '<rect x="158" y="20" width="18" height="18" fill="#bfdbfe"/><rect x="8" y="64" width="220" height="5" fill="#0f172a"/>'
- '<circle cx="46" cy="70" r="15" fill="#0f172a"/><circle cx="46" cy="70" r="6" fill="#64748b"/>'
- '<circle cx="196" cy="70" r="15" fill="#0f172a"/><circle cx="196" cy="70" r="6" fill="#64748b"/></g>'
+ '<path d="M150 14h26c4 0 7 2 9 5l16 25c1 2 2 4 2 7v13h-53z" fill="#0883F7"/>'
+ '<rect x="158" y="20" width="18" height="18" fill="#bfdbfe"/><rect x="8" y="64" width="220" height="5" fill="#10223B"/>'
+ '<circle cx="46" cy="70" r="15" fill="#10223B"/><circle cx="46" cy="70" r="6" fill="#64748b"/>'
+ '<circle cx="196" cy="70" r="15" fill="#10223B"/><circle cx="196" cy="70" r="6" fill="#64748b"/></g>'
  '</svg>')
 A4_SVG=('<figure class="art-fig"><svg viewBox="0 0 600 250" width="100%" role="img" '
  'aria-label="A typical solo week nets about 4600 dollars booking your own loads versus about 5400 dollars with a dispatch service after the 5 percent fee">'
- '<text x="0" y="22" font-family="Manrope,Arial" font-weight="800" font-size="19" fill="#0F172A">A typical solo week: DIY vs dispatched</text>'
+ '<text x="0" y="22" font-family="Manrope,Arial" font-weight="800" font-size="19" fill="#10223B">A typical solo week: DIY vs dispatched</text>'
  '<text x="0" y="70" font-family="Inter,Arial" font-size="13" fill="#64748B">Booking your own loads (extra deadhead + one cheap load)</text>'
  '<rect x="0" y="80" width="560" height="30" rx="6" fill="#eef2f7"/>'
  '<rect x="0" y="80" width="392" height="30" rx="6" fill="#94a3b8"/>'
- '<text x="403" y="100" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">~$4,600 net</text>'
+ '<text x="403" y="100" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">~$4,600 net</text>'
  '<text x="0" y="150" font-family="Inter,Arial" font-size="13" fill="#64748B">With a dispatch service (better rates, less deadhead, after 5%)</text>'
  '<rect x="0" y="160" width="560" height="30" rx="6" fill="#eff6ff"/>'
- '<rect x="0" y="160" width="460" height="30" rx="6" fill="#2563EB"/>'
- '<text x="471" y="180" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#0F172A">~$5,400 net</text>'
- '<text x="0" y="228" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#F97316">'
+ '<rect x="0" y="160" width="460" height="30" rx="6" fill="#0883F7"/>'
+ '<text x="471" y="180" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#10223B">~$5,400 net</text>'
+ '<text x="0" y="228" font-family="Inter,Arial" font-size="13" font-weight="700" fill="#FC5305">'
  '~$800 more in your pocket &#8212; plus a week of broker calls you never had to make.</text></svg>'
  '<figcaption>Illustrative: a dispatcher books higher-paying lanes and cuts your empty miles, so even after the 5% fee '
  'a well-run solo week nets more than doing everything yourself. Your numbers vary by lane, season and equipment.</figcaption></figure>')
@@ -1860,7 +1860,7 @@ rich_article('owner-operator-dispatch-service-guide.html',
 TX_TOC=[('why-texas','Why Texas is different'),('triangle','The Texas Triangle'),('lanes','The lanes that pay'),
         ('equipment','Equipment demand'),('seasons','Seasons & rate swings'),('border','Laredo & border freight'),
         ('week','A sample Texas week'),('dispatcher','What a dispatcher changes'),('bottom-line','The bottom line')]
-TX_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Texas Triangle freight diagram: Dallas-Fort Worth, Houston and San Antonio connected by I-45, I-10 and I-35"><defs><linearGradient id="txg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#txg)"/><g font-family="Manrope,Arial" font-weight="700" font-size="17" fill="#fff"><circle cx="430" cy="70" r="12" fill="#F97316"/><text x="452" y="76">Dallas&ndash;Fort Worth</text><circle cx="610" cy="235" r="12" fill="#F97316"/><text x="632" y="241">Houston (port)</text><circle cx="300" cy="240" r="12" fill="#F97316"/><text x="120" y="246">San Antonio</text><circle cx="180" cy="300" r="9" fill="#2563EB"/><text x="200" y="306" font-size="14">Laredo (border)</text></g><g stroke="#3b82f6" stroke-width="4" fill="none"><path d="M430 82 L610 223"/><path d="M610 235 L312 240"/><path d="M300 228 L430 82"/><path d="M288 248 L192 294" stroke-dasharray="4 8"/></g><g font-family="Inter,Arial" font-size="13" fill="#93c5fd"><text x="540" y="146">I-45 &middot; ~240 mi</text><text x="430" y="262">I-10 &middot; ~200 mi</text><text x="316" y="150">I-35 &middot; ~275 mi</text></g><text x="430" y="188" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#fbbf24">Reload inside a day &mdash; every leg</text></svg>'
+TX_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Texas Triangle freight diagram: Dallas-Fort Worth, Houston and San Antonio connected by I-45, I-10 and I-35"><defs><linearGradient id="txg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#txg)"/><g font-family="Manrope,Arial" font-weight="700" font-size="17" fill="#fff"><circle cx="430" cy="70" r="12" fill="#FC5305"/><text x="452" y="76">Dallas&ndash;Fort Worth</text><circle cx="610" cy="235" r="12" fill="#FC5305"/><text x="632" y="241">Houston (port)</text><circle cx="300" cy="240" r="12" fill="#FC5305"/><text x="120" y="246">San Antonio</text><circle cx="180" cy="300" r="9" fill="#0883F7"/><text x="200" y="306" font-size="14">Laredo (border)</text></g><g stroke="#3b82f6" stroke-width="4" fill="none"><path d="M430 82 L610 223"/><path d="M610 235 L312 240"/><path d="M300 228 L430 82"/><path d="M288 248 L192 294" stroke-dasharray="4 8"/></g><g font-family="Inter,Arial" font-size="13" fill="#93c5fd"><text x="540" y="146">I-45 &middot; ~240 mi</text><text x="430" y="262">I-10 &middot; ~200 mi</text><text x="316" y="150">I-35 &middot; ~275 mi</text></g><text x="430" y="188" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#fbbf24">Reload inside a day &mdash; every leg</text></svg>'
 TX_BODY=('<h2 id="why-texas">Why Texas is a different trucking market</h2>'
  '<p>Texas moves more truck freight than any other state &mdash; more origins, more destinations, and more freight dollars than anywhere else in the country. It has the busiest land border crossing in the western hemisphere at Laredo, one of the largest petrochemical ports in the world in Houston, a produce pipeline out of the Rio Grande Valley, and two of the ten biggest metro economies in America inside one state line.</p>'
  '<p>That density cuts both ways. There is always a load in Texas &mdash; which is exactly why there is always a <em>cheap</em> load in Texas. Big freight markets attract every carrier hunting a reload, so posted rates on the common lanes get hammered. The operators who do well here are not the ones who find freight (everyone finds freight); they are the ones who consistently avoid the bottom third of it. That is a pricing discipline problem, and it is the single biggest thing a dispatcher changes.</p>'
@@ -1892,8 +1892,8 @@ TX_FAQ=[
  ('How does LoadBoot charge Texas carriers?','The same flat 5% of the linehaul as everywhere else &mdash; no sign-up fee, no monthly minimum, no contract. You approve every load, keep your own authority, and only pay when we actually book you.'),
 ]
 rich_article('truck-dispatcher-in-texas.html',
- 'Truck Dispatcher in Texas &mdash; Lanes, Rates &amp; Staying Loaded (2026) | Loadboot',
- 'Truck dispatch in Texas: Triangle lanes (DFW-Houston-San Antonio), Laredo border freight, energy and produce seasons, equipment demand, and how a dispatcher keeps a Texas truck loaded at honest rates.',
+ 'Truck Dispatcher in Texas &mdash; Lanes, Rates &amp; Loads (2026) | Loadboot',
+ 'Truck dispatch in Texas: Triangle lanes, Laredo border freight, energy and produce seasons, and how a dispatcher keeps a Texas truck loaded.',
  'Texas Carrier Guide','Truck Dispatcher in Texas: Lanes, Rates &amp; How to Stay Loaded',
  'The biggest trucking market in America is also the easiest place to haul cheap. The Triangle, the border, the oil patch, the produce season &mdash; and how dispatch discipline turns Texas volume into Texas profit.',
  8,'truck-fleet.webp','Semi trucks staged at a Texas freight yard',
@@ -1904,7 +1904,7 @@ rich_article('truck-dispatcher-in-texas.html',
 NA_TOC=[('the-wall','The new-authority wall'),('what-blocks','What actually blocks you'),('first-90','The first 90 days'),
         ('what-fixes','What a dispatcher fixes'),('what-not','What a dispatcher canNOT fix'),('when-skip','When you can skip one'),
         ('math','The math of waiting'),('bottom-line','The bottom line')]
-NA_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Timeline of a new authority: filing, protest window, activation, the 90-day credibility gap, established"><defs><linearGradient id="nag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#nag)"/><path d="M80 190 H820" stroke="#334155" stroke-width="6" stroke-linecap="round"/><g font-family="Manrope,Arial" font-weight="700" font-size="15" fill="#fff"><circle cx="120" cy="190" r="11" fill="#2563EB"/><text x="86" y="232">File MC</text><circle cx="300" cy="190" r="11" fill="#2563EB"/><text x="240" y="232">Protest window</text><circle cx="470" cy="190" r="11" fill="#F97316"/><text x="424" y="232">Authority active</text><circle cx="680" cy="190" r="11" fill="#F97316"/><text x="600" y="232">~90 days: brokers open up</text></g><rect x="470" y="120" width="210" height="40" rx="10" fill="#F9731622" stroke="#F97316"/><text x="492" y="146" font-family="Inter,Arial" font-size="15" fill="#fdba74">The credibility gap</text><text x="80" y="80" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fff">The 90 days that decide a new authority</text></svg>'
+NA_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Timeline of a new authority: filing, protest window, activation, the 90-day credibility gap, established"><defs><linearGradient id="nag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#nag)"/><path d="M80 190 H820" stroke="#334155" stroke-width="6" stroke-linecap="round"/><g font-family="Manrope,Arial" font-weight="700" font-size="15" fill="#fff"><circle cx="120" cy="190" r="11" fill="#0883F7"/><text x="86" y="232">File MC</text><circle cx="300" cy="190" r="11" fill="#0883F7"/><text x="240" y="232">Protest window</text><circle cx="470" cy="190" r="11" fill="#FC5305"/><text x="424" y="232">Authority active</text><circle cx="680" cy="190" r="11" fill="#FC5305"/><text x="600" y="232">~90 days: brokers open up</text></g><rect x="470" y="120" width="210" height="40" rx="10" fill="#FC530522" stroke="#FC5305"/><text x="492" y="146" font-family="Inter,Arial" font-size="15" fill="#fdba74">The credibility gap</text><text x="80" y="80" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fff">The 90 days that decide a new authority</text></svg>'
 NA_BODY=('<h2 id="the-wall">The new-authority wall is real</h2>'
  '<p>You did everything right: entity, EIN, insurance, MC filed, decals on the truck. Then you start calling on loads and hear the same sentence all week: &ldquo;we require six months of active authority.&rdquo; It is not personal and it is not a myth &mdash; a large share of brokerages enforce an authority-age rule because fraud rings and fly-by-night operators cluster in fresh MCs. The result is a paradox every new carrier feels: you need loads to build a record, and you need a record to get loads.</p>'
  '<p>The honest question is not &ldquo;is it hard?&rdquo; &mdash; it is &ldquo;what actually gets a fresh MC through the wall, and is a dispatcher part of that answer?&rdquo;</p>'
@@ -1931,7 +1931,7 @@ NA_FAQ=[
  ('What does LoadBoot charge a new authority?','The same flat 5% of the linehaul as every carrier — no setup fee, no monthly minimum, no contract. You approve every load and can leave any time.'),
 ]
 rich_article('do-new-authority-carriers-need-a-dispatcher.html',
- 'Do New-Authority Carriers Need a Dispatcher? (Honest Answer, 2026) | Loadboot',
+ 'Do New-Authority Carriers Need a Dispatcher? (2026) | Loadboot',
  'Fresh MC and no broker callbacks? What actually blocks new authorities, what a dispatcher fixes (and cannot fix), when to skip one, and the math of the first 90 days.',
  'New-Authority Guide','Do New-Authority Carriers Need a Dispatcher?',
  'The first 90 days under a fresh MC decide whether the truck earns or the authority lapses. Here is what actually blocks new carriers, what a dispatcher changes &mdash; and the honest cases where you should skip one.',
@@ -1944,7 +1944,7 @@ RC_TOC=[('what-it-is','What a rate con actually is'),('ten-lines','The 10 lines 
         ('fine-print','Where the fine print eats your money'),('penalties','Tracking & late penalties'),
         ('mismatch','Name & number mismatches'),('refuse','When to refuse to sign'),
         ('after','After you sign'),('bottom-line','The bottom line')]
-RC_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Anatomy of a rate confirmation: parties, load, money, terms, deadlines"><defs><linearGradient id="rcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#rcg)"/><rect x="60" y="46" width="300" height="228" rx="12" fill="#fff" opacity=".96"/><rect x="84" y="72" width="180" height="12" rx="5" fill="#0f172a"/><rect x="84" y="98" width="240" height="8" rx="4" fill="#94a3b8"/><rect x="84" y="116" width="220" height="8" rx="4" fill="#94a3b8"/><rect x="84" y="134" width="236" height="8" rx="4" fill="#94a3b8"/><rect x="84" y="160" width="110" height="16" rx="5" fill="#F97316"/><rect x="84" y="192" width="228" height="8" rx="4" fill="#cbd5e1"/><rect x="84" y="210" width="200" height="8" rx="4" fill="#cbd5e1"/><rect x="84" y="240" width="120" height="10" rx="4" fill="#2563EB"/><g font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fff"><text x="430" y="80">1. Both legal names + MC numbers</text><text x="430" y="112">2. The number: total, all-in, in writing</text><text x="430" y="144">3. Detention / layover / TONU terms</text><text x="430" y="176">4. Tracking &amp; late-delivery penalties</text><text x="430" y="208">5. POD deadline + invoice instructions</text><text x="430" y="248" fill="#fdba74">Sign only when all five are clean.</text></g></svg>'
+RC_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Anatomy of a rate confirmation: parties, load, money, terms, deadlines"><defs><linearGradient id="rcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#rcg)"/><rect x="60" y="46" width="300" height="228" rx="12" fill="#fff" opacity=".96"/><rect x="84" y="72" width="180" height="12" rx="5" fill="#10223B"/><rect x="84" y="98" width="240" height="8" rx="4" fill="#94a3b8"/><rect x="84" y="116" width="220" height="8" rx="4" fill="#94a3b8"/><rect x="84" y="134" width="236" height="8" rx="4" fill="#94a3b8"/><rect x="84" y="160" width="110" height="16" rx="5" fill="#FC5305"/><rect x="84" y="192" width="228" height="8" rx="4" fill="#cbd5e1"/><rect x="84" y="210" width="200" height="8" rx="4" fill="#cbd5e1"/><rect x="84" y="240" width="120" height="10" rx="4" fill="#0883F7"/><g font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fff"><text x="430" y="80">1. Both legal names + MC numbers</text><text x="430" y="112">2. The number: total, all-in, in writing</text><text x="430" y="144">3. Detention / layover / TONU terms</text><text x="430" y="176">4. Tracking &amp; late-delivery penalties</text><text x="430" y="208">5. POD deadline + invoice instructions</text><text x="430" y="248" fill="#fdba74">Sign only when all five are clean.</text></g></svg>'
 RC_BODY=('<h2 id="what-it-is">What a rate confirmation actually is</h2>'
  '<p>A rate confirmation is not paperwork &mdash; it is the contract for that load. There is no single federal &ldquo;rate con form&rdquo;; the signed document is simply the strongest written evidence of what the broker owes you and what you owe the broker. When a payment dispute lands, nobody asks what was said on the phone. They ask what the rate con says. That is why the five minutes you spend reading it are the best-paid five minutes of the load.</p>'
  '<h2 id="ten-lines">The 10 lines to check, every single time</h2>'
@@ -1970,8 +1970,8 @@ RC_FAQ=[
  ('Who should sign the rate con — me or my dispatcher?','Your dispatcher may sign only if your dispatch agreement gives them that written authority (a limited power of attorney). Either way the terms bind the CARRIER — so the reading rules in this guide apply to whoever holds the pen.'),
 ]
 rich_article('how-to-read-a-rate-confirmation.html',
- 'How to Read a Rate Confirmation Before You Sign (Carrier Guide) | Loadboot',
- 'Rate confirmation explained for carriers: the 10 lines to verify, fine-print traps (detention, offsets, tracking penalties), fraud tells, when to refuse to sign, and what to do after.',
+ 'How to Read a Rate Confirmation Before You Sign | Loadboot',
+ 'Rate confirmation explained for carriers: the 10 lines to verify, fine-print traps, fraud tells, when to refuse to sign, and what to do after.',
  'Carrier Paperwork Guide','How to Read a Rate Confirmation (Before You Sign It)',
  'The rate con is the contract that decides whether you get paid. The ten lines to check every time, the traps under the money line, the fraud tells &mdash; and when the right answer is to walk.',
  7,'dispatcher-cost-hero.jpg','Owner-operator reviewing a rate confirmation document before signing',
@@ -1982,7 +1982,7 @@ rich_article('how-to-read-a-rate-confirmation.html',
 CA_TOC=[('why-ca','Why California is different'),('ports','The ports engine'),('produce','Central Valley produce'),
         ('corridors','The corridors that pay'),('compliance','CARB, AB5 & CA compliance'),('seasons','Seasons & rate swings'),
         ('dispatcher','What a dispatcher changes'),('bottom-line','The bottom line')]
-CA_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="California freight map: LA/Long Beach ports, Central Valley produce belt, I-5 and Highway 99 corridors to Bay Area and Sacramento"><defs><linearGradient id="cag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#cag)"/><g font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fff"><circle cx="250" cy="255" r="12" fill="#F97316"/><text x="272" y="261">LA / Long Beach ports</text><circle cx="330" cy="150" r="11" fill="#F97316"/><text x="352" y="156">Central Valley (produce)</text><circle cx="240" cy="70" r="11" fill="#F97316"/><text x="262" y="76">Bay Area / Oakland</text><circle cx="430" cy="60" r="9" fill="#2563EB"/><text x="450" y="66" font-size="14">Sacramento</text></g><g stroke="#3b82f6" stroke-width="4" fill="none"><path d="M250 243 C 300 210 320 180 330 162"/><path d="M330 138 C 300 110 260 88 248 80"/><path d="M338 140 C 390 110 420 80 430 70"/></g><g font-family="Inter,Arial" font-size="13" fill="#93c5fd"><text x="180" y="205">I-5 / 710</text><text x="250" y="115">I-5</text><text x="385" y="105">Hwy 99</text></g><text x="540" y="180" font-family="Manrope,Arial" font-weight="800" font-size="20" fill="#fbbf24">Imports in, produce out —</text><text x="540" y="208" font-family="Manrope,Arial" font-weight="800" font-size="20" fill="#fbbf24">price the imbalance, win the week</text></svg>'
+CA_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="California freight map: LA/Long Beach ports, Central Valley produce belt, I-5 and Highway 99 corridors to Bay Area and Sacramento"><defs><linearGradient id="cag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#cag)"/><g font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fff"><circle cx="250" cy="255" r="12" fill="#FC5305"/><text x="272" y="261">LA / Long Beach ports</text><circle cx="330" cy="150" r="11" fill="#FC5305"/><text x="352" y="156">Central Valley (produce)</text><circle cx="240" cy="70" r="11" fill="#FC5305"/><text x="262" y="76">Bay Area / Oakland</text><circle cx="430" cy="60" r="9" fill="#0883F7"/><text x="450" y="66" font-size="14">Sacramento</text></g><g stroke="#3b82f6" stroke-width="4" fill="none"><path d="M250 243 C 300 210 320 180 330 162"/><path d="M330 138 C 300 110 260 88 248 80"/><path d="M338 140 C 390 110 420 80 430 70"/></g><g font-family="Inter,Arial" font-size="13" fill="#93c5fd"><text x="180" y="205">I-5 / 710</text><text x="250" y="115">I-5</text><text x="385" y="105">Hwy 99</text></g><text x="540" y="180" font-family="Manrope,Arial" font-weight="800" font-size="20" fill="#fbbf24">Imports in, produce out —</text><text x="540" y="208" font-family="Manrope,Arial" font-weight="800" font-size="20" fill="#fbbf24">price the imbalance, win the week</text></svg>'
 CA_BODY=('<h2 id="why-ca">Why California is a different game</h2>'
  '<p>California is the largest freight economy in the country: the twin ports of Los Angeles and Long Beach move a huge share of America&rsquo;s imports, the Central Valley grows a stunning portion of its produce, and forty million consumers pull retail freight into every metro. It is also the most regulated place in America to run a truck. That combination &mdash; enormous volume plus real compliance rules &mdash; is exactly why disciplined operators do well here and casual ones bleed.</p>'
  '<p>The structural fact to price on every California load: the state IMPORTS more truck freight than it exports on many consumer lanes, while EXPORTING seasonal produce in huge waves. Inbound and outbound rates can live in different worlds. Carriers who treat &ldquo;a California load&rdquo; as one market get burned by the imbalance; carriers who price the direction win.</p>'
@@ -2009,8 +2009,8 @@ CA_FAQ=[
  ('How does LoadBoot charge California carriers?','The same flat 5% of the linehaul as every carrier — no setup fee, no monthly minimum, no contract. Every load shows its full rate card before you accept, and detention is measured from your own arrive/depart stamps.'),
 ]
 rich_article('truck-dispatcher-in-california.html',
- 'Truck Dispatcher in California — Ports, Produce &amp; Compliance (2026) | Loadboot',
- 'Truck dispatch in California: LA/Long Beach port freight, Inland Empire reloads, Central Valley produce seasons, I-5/99 corridors, CARB and AB5 realities, and honest dispatch economics.',
+ 'Truck Dispatcher in California — Ports &amp; Produce (2026) | Loadboot',
+ 'Truck dispatch in California: LA/Long Beach ports, Inland Empire reloads, Central Valley produce, I-5/99 corridors, CARB and AB5 realities.',
  'California Carrier Guide','Truck Dispatcher in California: Ports, Produce &amp; Staying Compliant',
  'The biggest freight economy in America is also its most regulated. The ports engine, the produce calendar, the I-5 spine &mdash; and the CARB/AB5 layer every CA operator must respect.',
  8,'truck-fleet.webp','Trucks staged near a California distribution hub',
@@ -2021,7 +2021,7 @@ rich_article('truck-dispatcher-in-california.html',
 CF_TOC=[('system','Cheap freight is a system'),('floor','Your floor price'),('traps','The lanes that trap you'),
         ('reload','Reload math beats rate math'),('say-no','How to say no'),('negotiate','Negotiating up'),
         ('discipline','The weekly discipline'),('bottom-line','The bottom line')]
-CF_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Chart: loads above your floor compound into profit; loads below it compound into losses"><defs><linearGradient id="cfg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#cfg)"/><path d="M100 170 H800" stroke="#F97316" stroke-width="4" stroke-dasharray="10 8"/><text x="104" y="158" font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fdba74">YOUR FLOOR (real cost/mi + margin)</text><path d="M140 240 L260 210 L380 235 L500 190 L620 130 L740 90" stroke="#16a34a" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M140 250 L260 262 L380 258 L500 275 L620 282 L740 295" stroke="#dc2626" stroke-width="6" fill="none" stroke-linecap="round"/><text x="620" y="70" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#86efac">accept above the floor</text><text x="560" y="312" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#fca5a5">"just this once" below it</text></svg>'
+CF_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Chart: loads above your floor compound into profit; loads below it compound into losses"><defs><linearGradient id="cfg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#cfg)"/><path d="M100 170 H800" stroke="#FC5305" stroke-width="4" stroke-dasharray="10 8"/><text x="104" y="158" font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fdba74">YOUR FLOOR (real cost/mi + margin)</text><path d="M140 240 L260 210 L380 235 L500 190 L620 130 L740 90" stroke="#16a34a" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M140 250 L260 262 L380 258 L500 275 L620 282 L740 295" stroke="#dc2626" stroke-width="6" fill="none" stroke-linecap="round"/><text x="620" y="70" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#86efac">accept above the floor</text><text x="560" y="312" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#fca5a5">"just this once" below it</text></svg>'
 CF_BODY=('<h2 id="system">Cheap freight is a system, not bad luck</h2>'
  '<p>Cheap freight exists because it works &mdash; on somebody. Every day, loads priced below any honest cost-per-mile get moved by carriers who never calculated one, are desperate at 4pm on a Friday, or believe the reload story a poster tells them. The market is engineered to find the operator without a number. The fix is not outrage; it is a system: a floor, a reload plan, and a practiced no.</p>'
  '<h2 id="floor">Your floor price is the whole game</h2>'
@@ -2047,8 +2047,8 @@ CF_FAQ=[
  ('Does LoadBoot ever push cheap freight?','The matching engine will not auto-offer you a load below the minimum rate YOU set in your dispatch preferences — your floor is enforced by the system on every automated run, and every load shows its full rate card before you accept.'),
 ]
 rich_article('how-to-avoid-cheap-freight.html',
- 'How to Avoid Cheap Freight — Floor Price, Reload Math &amp; Saying No | Loadboot',
- 'The system for refusing cheap freight without sitting empty: compute your floor, price reload pairs not single legs, fund your no, negotiate with specifics, and keep a weekly discipline.',
+ 'How to Avoid Cheap Freight — Floor Price &amp; Reload Math | Loadboot',
+ 'Refuse cheap freight without sitting empty: compute your floor price, price reload pairs not single legs, fund your no, and negotiate with specifics.',
  'Rate Discipline Guide','How to Avoid Cheap Freight (Without Sitting Empty)',
  'Every market has a bottom third &mdash; and it is engineered to find the carrier without a number. The floor, the pairs, the practiced no: a system for hauling only freight that pays.',
  7,'owner-operator.webp','Owner-operator reviewing rates on a laptop beside his truck',
@@ -2058,7 +2058,7 @@ rich_article('how-to-avoid-cheap-freight.html',
 GA_TOC=[('why-se','Why the Southeast works'),('atlanta','Atlanta: the reload machine'),('savannah','Savannah port freight'),
         ('florida','The Florida problem (and profit)'),('lanes','Lanes & seasons'),('dispatcher','What a dispatcher changes'),
         ('bottom-line','The bottom line')]
-GA_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Southeast freight map: Atlanta hub, Savannah port, Florida inbound-outbound imbalance"><defs><linearGradient id="gag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#gag)"/><g font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fff"><circle cx="360" cy="90" r="13" fill="#F97316"/><text x="382" y="96">Atlanta (I-75/I-85/I-20)</text><circle cx="560" cy="130" r="11" fill="#F97316"/><text x="582" y="136">Savannah (port)</text><circle cx="470" cy="250" r="11" fill="#2563EB"/><text x="492" y="256">Orlando / Tampa / Miami</text></g><g stroke="#3b82f6" stroke-width="4" fill="none"><path d="M372 100 C 450 105 510 118 548 127"/><path d="M368 103 C 400 160 440 215 462 240"/><path d="M556 142 C 530 180 500 220 480 240"/></g><text x="90" y="80" font-family="Manrope,Arial" font-weight="800" font-size="22" fill="#fff">The Southeast triangle</text><text x="90" y="300" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#fbbf24">Florida pays going IN — price the way OUT before you accept</text></svg>'
+GA_FEAT='<svg viewBox="0 0 900 320" role="img" aria-label="Southeast freight map: Atlanta hub, Savannah port, Florida inbound-outbound imbalance"><defs><linearGradient id="gag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="900" height="320" rx="18" fill="url(#gag)"/><g font-family="Manrope,Arial" font-weight="700" font-size="16" fill="#fff"><circle cx="360" cy="90" r="13" fill="#FC5305"/><text x="382" y="96">Atlanta (I-75/I-85/I-20)</text><circle cx="560" cy="130" r="11" fill="#FC5305"/><text x="582" y="136">Savannah (port)</text><circle cx="470" cy="250" r="11" fill="#0883F7"/><text x="492" y="256">Orlando / Tampa / Miami</text></g><g stroke="#3b82f6" stroke-width="4" fill="none"><path d="M372 100 C 450 105 510 118 548 127"/><path d="M368 103 C 400 160 440 215 462 240"/><path d="M556 142 C 530 180 500 220 480 240"/></g><text x="90" y="80" font-family="Manrope,Arial" font-weight="800" font-size="22" fill="#fff">The Southeast triangle</text><text x="90" y="300" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#fbbf24">Florida pays going IN — price the way OUT before you accept</text></svg>'
 GA_BODY=('<h2 id="why-se">Why the Southeast works for a truck</h2>'
  '<p>Georgia and Florida together form one of the most active regional freight systems in the country: Atlanta is the distribution capital of the Southeast, Savannah is one of the fastest-growing container ports in America, and Florida is a forty-million-person consumption engine that manufactures comparatively little. Understand those three facts and the whole region prices itself.</p>'
  '<h2 id="atlanta">Atlanta: the reload machine</h2>'
@@ -2082,8 +2082,8 @@ GA_FAQ=[
  ('How does LoadBoot charge Southeast carriers?','The same flat 5% of the linehaul as everywhere — no setup fee, no monthly minimum, no contract. Every load shows the full rate card (detention, layover, TONU, lumper) before you accept.'),
 ]
 rich_article('truck-dispatcher-in-georgia.html',
- 'Truck Dispatcher in Georgia &amp; Florida — The Southeast Playbook (2026) | Loadboot',
- 'Truck dispatch in Georgia and Florida: Atlanta reload economics, Savannah port freight, the Florida inbound/outbound imbalance priced as pairs, lanes, seasons and honest dispatch value.',
+ 'Truck Dispatcher in Georgia &amp; Florida (2026 Playbook) | Loadboot',
+ 'Truck dispatch in Georgia and Florida: Atlanta reloads, Savannah port freight, the Florida imbalance priced as pairs, lanes and seasons.',
  'Southeast Carrier Guide','Truck Dispatcher in Georgia &amp; Florida: The Southeast Playbook',
  'Atlanta is the reload machine, Savannah keeps climbing, and Florida pays great going in &mdash; then tests you on the way out. The Southeast, honestly priced.',
  7,'truck-fleet.webp','Trucks staged at a Southeast distribution yard',
@@ -2091,16 +2091,16 @@ rich_article('truck-dispatcher-in-georgia.html',
 
 # Blog index
 THUMBS={
- 'how-to-avoid-cheap-freight.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tcf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#tcf)"/><path d="M50 150 L180 150" stroke="#dc2626" stroke-width="8" stroke-linecap="round"/><path d="M180 150 L350 60" stroke="#16a34a" stroke-width="8" stroke-linecap="round"/><circle cx="180" cy="150" r="10" fill="#F97316"/><text x="52" y="135" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#fca5a5">cheap</text><text x="252" y="52" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#86efac">your floor</text><text x="52" y="60" font-family="Manrope,Arial" font-weight="800" font-size="26" fill="#fff">Know your number</text></svg>',
- 'truck-dispatcher-in-georgia.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tga" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tga)"/><circle cx="150" cy="80" r="12" fill="#F97316"/><circle cx="230" cy="150" r="12" fill="#F97316"/><path d="M150 92 C 175 120 205 135 222 144" stroke="#3b82f6" stroke-width="4" fill="none"/><text x="60" y="60" font-family="Manrope,Arial" font-weight="800" font-size="26" fill="#fff">Georgia &amp; Florida</text><text x="172" y="76" font-family="Inter,Arial" font-size="14" fill="#93c5fd">Atlanta</text><text x="252" y="156" font-family="Inter,Arial" font-size="14" fill="#93c5fd">Savannah</text></svg>',
- 'truck-dispatcher-in-california.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tca" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tca)"/><path d="M150 25 l30 4 -6 40 22 34 -6 30 -30 36 -26 -10 -8 -34 14 -30 -6 -40 z" fill="none" stroke="#F97316" stroke-width="5" stroke-linejoin="round"/><circle cx="152" cy="132" r="7" fill="#2563EB"/><circle cx="168" cy="60" r="7" fill="#2563EB"/><path d="M152 132 C 190 110 200 84 168 60" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="3 7"/><text x="220" y="108" font-family="Manrope,Arial" font-weight="800" font-size="30" fill="#fff">California</text><text x="220" y="136" font-family="Inter,Arial" font-size="14" fill="#93c5fd">ports · produce · I-5</text></svg>',
- 'how-to-read-a-rate-confirmation.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="trc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#trc)"/><rect x="60" y="30" width="170" height="140" rx="10" fill="#fff" opacity=".95"/><rect x="78" y="52" width="120" height="9" rx="4" fill="#0f172a"/><rect x="78" y="72" width="134" height="6" rx="3" fill="#94a3b8"/><rect x="78" y="88" width="110" height="6" rx="3" fill="#94a3b8"/><rect x="78" y="104" width="126" height="6" rx="3" fill="#94a3b8"/><rect x="78" y="128" width="70" height="12" rx="4" fill="#F97316"/><circle cx="300" cy="100" r="44" fill="none" stroke="#2563EB" stroke-width="7"/><path d="M280 100 l14 14 l26 -30" fill="none" stroke="#F97316" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
- 'do-new-authority-carriers-need-a-dispatcher.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tna" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tna)"/><circle cx="110" cy="100" r="54" fill="none" stroke="#F97316" stroke-width="6" stroke-dasharray="10 8"/><text x="88" y="112" font-family="Manrope,Arial" font-weight="800" font-size="34" fill="#fff">MC</text><path d="M190 100 H320" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/><path d="M320 84 L352 100 L320 116 Z" fill="#2563EB"/><text x="196" y="86" font-family="Inter,Arial" font-size="14" fill="#93c5fd">first 90 days</text></svg>',
- 'truck-dispatcher-in-texas.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="ttx" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#ttx)"/><path d="M150 40 h44 v34 h38 l-6 30 -26 26 -8 34 -34 -8 -22 14 -22 -30 -20 -6 14 -34 -12 -26 34 -4 6 -30 z" fill="none" stroke="#F97316" stroke-width="5" stroke-linejoin="round" transform="translate(60,10)"/><circle cx="238" cy="86" r="7" fill="#2563EB"/><circle cx="286" cy="132" r="7" fill="#2563EB"/><circle cx="212" cy="142" r="7" fill="#2563EB"/><path d="M238 86 L286 132 L212 142 Z" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="3 7"/><text x="18" y="178" font-family="Manrope,Arial" font-weight="800" font-size="30" fill="#fff">Texas</text></svg>',
- 'how-much-does-a-truck-dispatcher-cost.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="ta" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#ta)"/><text x="18" y="150" font-family="Manrope,Arial" font-weight="800" font-size="140" fill="#2563EB" opacity=".42">5%</text><rect x="256" y="120" width="26" height="55" rx="4" fill="#2563EB"/><rect x="292" y="92" width="26" height="83" rx="4" fill="#3b82f6"/><rect x="328" y="64" width="26" height="111" rx="4" fill="#F97316"/></svg>',
- 'truck-dispatcher-vs-freight-broker.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tb)"/><text x="172" y="115" font-family="Manrope,Arial" font-weight="800" font-size="34" fill="#fff">VS</text><path d="M70 72 H150" stroke="#2563EB" stroke-width="9" stroke-linecap="round"/><path d="M150 60 L172 72 L150 84 Z" fill="#2563EB"/><path d="M330 128 H250" stroke="#F97316" stroke-width="9" stroke-linecap="round"/><path d="M250 116 L228 128 L250 140 Z" fill="#F97316"/></svg>',
- 'how-to-get-loads-with-new-authority.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#tc)"/><path d="M36 150 C 130 105 220 175 372 100" fill="none" stroke="#F97316" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round"/><circle cx="36" cy="150" r="10" fill="#2563EB"/><g transform="translate(330,70)" fill="#fff"><rect x="0" y="0" width="6" height="46"/><path d="M6 2 H42 L31 14 L42 26 H6 Z"/></g></svg>',
- 'owner-operator-dispatch-service-guide.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="td" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#td)"/><text x="24" y="168" font-family="Manrope,Arial" font-weight="800" font-size="150" fill="#2563EB" opacity=".38">1</text><g transform="translate(150,84)" fill="#e2e8f0"><rect x="0" y="0" width="118" height="46" rx="4"/><path d="M118 10h22c3 0 5 1.6 6.8 4l12.4 19c1 1.5 1.6 3.3 1.6 5.2V46H118z" fill="#2563EB"/><rect x="124" y="15" width="15" height="15" fill="#bfdbfe"/></g><g fill="#0f172a"><circle cx="188" cy="132" r="13"/><circle cx="286" cy="132" r="13"/></g><g fill="#F97316"><circle cx="188" cy="132" r="5"/><circle cx="286" cy="132" r="5"/></g></svg>'}
+ 'how-to-avoid-cheap-freight.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tcf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#tcf)"/><path d="M50 150 L180 150" stroke="#dc2626" stroke-width="8" stroke-linecap="round"/><path d="M180 150 L350 60" stroke="#16a34a" stroke-width="8" stroke-linecap="round"/><circle cx="180" cy="150" r="10" fill="#FC5305"/><text x="52" y="135" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#fca5a5">cheap</text><text x="252" y="52" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#86efac">your floor</text><text x="52" y="60" font-family="Manrope,Arial" font-weight="800" font-size="26" fill="#fff">Know your number</text></svg>',
+ 'truck-dispatcher-in-georgia.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tga" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tga)"/><circle cx="150" cy="80" r="12" fill="#FC5305"/><circle cx="230" cy="150" r="12" fill="#FC5305"/><path d="M150 92 C 175 120 205 135 222 144" stroke="#3b82f6" stroke-width="4" fill="none"/><text x="60" y="60" font-family="Manrope,Arial" font-weight="800" font-size="26" fill="#fff">Georgia &amp; Florida</text><text x="172" y="76" font-family="Inter,Arial" font-size="14" fill="#93c5fd">Atlanta</text><text x="252" y="156" font-family="Inter,Arial" font-size="14" fill="#93c5fd">Savannah</text></svg>',
+ 'truck-dispatcher-in-california.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tca" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tca)"/><path d="M150 25 l30 4 -6 40 22 34 -6 30 -30 36 -26 -10 -8 -34 14 -30 -6 -40 z" fill="none" stroke="#FC5305" stroke-width="5" stroke-linejoin="round"/><circle cx="152" cy="132" r="7" fill="#0883F7"/><circle cx="168" cy="60" r="7" fill="#0883F7"/><path d="M152 132 C 190 110 200 84 168 60" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="3 7"/><text x="220" y="108" font-family="Manrope,Arial" font-weight="800" font-size="30" fill="#fff">California</text><text x="220" y="136" font-family="Inter,Arial" font-size="14" fill="#93c5fd">ports · produce · I-5</text></svg>',
+ 'how-to-read-a-rate-confirmation.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="trc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#trc)"/><rect x="60" y="30" width="170" height="140" rx="10" fill="#fff" opacity=".95"/><rect x="78" y="52" width="120" height="9" rx="4" fill="#10223B"/><rect x="78" y="72" width="134" height="6" rx="3" fill="#94a3b8"/><rect x="78" y="88" width="110" height="6" rx="3" fill="#94a3b8"/><rect x="78" y="104" width="126" height="6" rx="3" fill="#94a3b8"/><rect x="78" y="128" width="70" height="12" rx="4" fill="#FC5305"/><circle cx="300" cy="100" r="44" fill="none" stroke="#0883F7" stroke-width="7"/><path d="M280 100 l14 14 l26 -30" fill="none" stroke="#FC5305" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ 'do-new-authority-carriers-need-a-dispatcher.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tna" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tna)"/><circle cx="110" cy="100" r="54" fill="none" stroke="#FC5305" stroke-width="6" stroke-dasharray="10 8"/><text x="88" y="112" font-family="Manrope,Arial" font-weight="800" font-size="34" fill="#fff">MC</text><path d="M190 100 H320" stroke="#0883F7" stroke-width="8" stroke-linecap="round"/><path d="M320 84 L352 100 L320 116 Z" fill="#0883F7"/><text x="196" y="86" font-family="Inter,Arial" font-size="14" fill="#93c5fd">first 90 days</text></svg>',
+ 'truck-dispatcher-in-texas.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="ttx" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#ttx)"/><path d="M150 40 h44 v34 h38 l-6 30 -26 26 -8 34 -34 -8 -22 14 -22 -30 -20 -6 14 -34 -12 -26 34 -4 6 -30 z" fill="none" stroke="#FC5305" stroke-width="5" stroke-linejoin="round" transform="translate(60,10)"/><circle cx="238" cy="86" r="7" fill="#0883F7"/><circle cx="286" cy="132" r="7" fill="#0883F7"/><circle cx="212" cy="142" r="7" fill="#0883F7"/><path d="M238 86 L286 132 L212 142 Z" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="3 7"/><text x="18" y="178" font-family="Manrope,Arial" font-weight="800" font-size="30" fill="#fff">Texas</text></svg>',
+ 'how-much-does-a-truck-dispatcher-cost.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="ta" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#ta)"/><text x="18" y="150" font-family="Manrope,Arial" font-weight="800" font-size="140" fill="#0883F7" opacity=".42">5%</text><rect x="256" y="120" width="26" height="55" rx="4" fill="#0883F7"/><rect x="292" y="92" width="26" height="83" rx="4" fill="#3b82f6"/><rect x="328" y="64" width="26" height="111" rx="4" fill="#FC5305"/></svg>',
+ 'truck-dispatcher-vs-freight-broker.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#tb)"/><text x="172" y="115" font-family="Manrope,Arial" font-weight="800" font-size="34" fill="#fff">VS</text><path d="M70 72 H150" stroke="#0883F7" stroke-width="9" stroke-linecap="round"/><path d="M150 60 L172 72 L150 84 Z" fill="#0883F7"/><path d="M330 128 H250" stroke="#FC5305" stroke-width="9" stroke-linecap="round"/><path d="M250 116 L228 128 L250 140 Z" fill="#FC5305"/></svg>',
+ 'how-to-get-loads-with-new-authority.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#tc)"/><path d="M36 150 C 130 105 220 175 372 100" fill="none" stroke="#FC5305" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round"/><circle cx="36" cy="150" r="10" fill="#0883F7"/><g transform="translate(330,70)" fill="#fff"><rect x="0" y="0" width="6" height="46"/><path d="M6 2 H42 L31 14 L42 26 H6 Z"/></g></svg>',
+ 'owner-operator-dispatch-service-guide.html':'<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="td" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect width="400" height="200" fill="url(#td)"/><text x="24" y="168" font-family="Manrope,Arial" font-weight="800" font-size="150" fill="#0883F7" opacity=".38">1</text><g transform="translate(150,84)" fill="#e2e8f0"><rect x="0" y="0" width="118" height="46" rx="4"/><path d="M118 10h22c3 0 5 1.6 6.8 4l12.4 19c1 1.5 1.6 3.3 1.6 5.2V46H118z" fill="#0883F7"/><rect x="124" y="15" width="15" height="15" fill="#bfdbfe"/></g><g fill="#10223B"><circle cx="188" cy="132" r="13"/><circle cx="286" cy="132" r="13"/></g><g fill="#FC5305"><circle cx="188" cy="132" r="5"/><circle cx="286" cy="132" r="5"/></g></svg>'}
 def blog_card(fn,title,excerpt,read):
     thumb=THUMBS.get(fn,'<svg viewBox="0 0 400 200"><rect width="400" height="200" fill="#0b1220"/></svg>')
     slug=fn[:-5] if fn.endswith('.html') else fn
@@ -2175,7 +2175,7 @@ ls_app = '<script type="application/ld+json">{"@context":"https://schema.org","@
 page('load-score.html','Should You Take This Load? Free Load Score Tool for Truckers','Free tool that scores any freight load and tells you to take, negotiate, or pass — with a counter-offer based on your cost per mile.','load-score.html', ls_body, ls_app + ls_howto + ls_faq_schema)
 
 # ---------- FREE TOOLS ----------
-LSP = '<section><div class="wrap"><a href="load-score.html" class="reveal" style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:space-between;background:linear-gradient(135deg,#0F172A,#1e3a8a);color:#fff;border-radius:22px;padding:30px 34px;text-decoration:none;box-shadow:0 30px 60px -34px rgba(15,23,42,.6)"><div style="max-width:640px"><div style="font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;font-weight:700;margin-bottom:8px">Our #1 free tool</div><div style="font-family:\'Manrope\';font-weight:800;font-size:1.7rem;line-height:1.15;margin-bottom:8px">Should You Take This Load?</div><p style="color:#cbd5e1;margin:0;font-size:.97rem">Stop guessing. Get an instant take / negotiate / pass score on any load &mdash; with a suggested counter-offer built on your real costs.</p></div><span class="btn btn-primary" style="white-space:nowrap">Open Load Score &rarr;</span></a></div></section>'
+LSP = '<section><div class="wrap"><a href="load-score.html" class="reveal" style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:space-between;background:linear-gradient(135deg,#10223B,#1e3a8a);color:#fff;border-radius:22px;padding:30px 34px;text-decoration:none;box-shadow:0 30px 60px -34px rgba(15,23,42,.6)"><div style="max-width:640px"><div style="font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;font-weight:700;margin-bottom:8px">Our #1 free tool</div><div style="font-family:\'Manrope\';font-weight:800;font-size:1.7rem;line-height:1.15;margin-bottom:8px">Should You Take This Load?</div><p style="color:#cbd5e1;margin:0;font-size:.97rem">Stop guessing. Get an instant take / negotiate / pass score on any load &mdash; with a suggested counter-offer built on your real costs.</p></div><span class="btn btn-primary" style="white-space:nowrap">Open Load Score &rarr;</span></a></div></section>'
 tools_faqs = [
  ('Are these truck dispatcher tools really free?','Yes. Every calculator on this page is 100% free, with no login and no signup. Use them as often as you like, right here on the page.'),
  ('How do I calculate profit on a load?','Enter what the load pays, the total miles, your fuel price and MPG, plus any tolls or expenses. The Load Profit Calculator instantly shows your net profit and your rate per mile.'),
@@ -2223,14 +2223,15 @@ def lead_form(form_key, heading, intro, fields, submit_label, success_msg):
     rows = ''
     for nm, lb, ty, req in fields:
         r = ' required' if req else ''
+        cid = '%s_%s' % (fid, nm)  # unique per form instance — a11y label association
         if ty == 'textarea':
-            ctl = '<textarea name="%s"%s placeholder="%s"></textarea>' % (nm, r, lb)
+            ctl = '<textarea id="%s" name="%s"%s placeholder="%s"></textarea>' % (cid, nm, r, lb)
         elif ty.startswith('select:'):
             opts = ''.join('<option>%s</option>' % o for o in ty.split(':', 1)[1].split('|'))
-            ctl = '<select name="%s"%s><option value="">Select&hellip;</option>%s</select>' % (nm, r, opts)
+            ctl = '<select id="%s" name="%s"%s><option value="">Select&hellip;</option>%s</select>' % (cid, nm, r, opts)
         else:
-            ctl = '<input type="%s" name="%s"%s placeholder="%s">' % (ty, nm, r, lb)
-        rows += '<div class="field full"><label>%s</label>%s</div>' % (lb, ctl)
+            ctl = '<input id="%s" type="%s" name="%s"%s placeholder="%s">' % (cid, ty, nm, r, lb)
+        rows += '<div class="field full"><label for="%s">%s</label>%s</div>' % (cid, lb, ctl)
     js = ("(function(){var f=document.getElementById('%s');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();"
           "var b=document.getElementById('%s_b');b.disabled=true;b.textContent='Sending…';"
           "var d={};new FormData(f).forEach(function(v,k){d[k]=v;});if(d._hp){return;}"
@@ -2252,7 +2253,7 @@ hiw += m_rail('The process', 'Four steps to a loaded truck', '', [
  ('radar', 'We find &amp; negotiate loads', 'Your dispatcher works the boards and broker relationships to find higher-paying freight on your lanes, then negotiates the rate before you ever see it.'),
  ('doccheck', 'You approve &amp; roll', 'Every load comes to you first. You approve it, we handle the rate confirmation and paperwork, and you drive. We are on call while you are on the road.'),
  ('wallet', 'Get paid, then repeat', 'We prepare your invoice and documents, help with factoring, and line up your next load so you are never sitting empty.'),
-], accent='#2563eb')
+], accent='#0883F7')
 hiw += _sec('What you keep', 'You stay in control', _cards([
     ('&#9989;', 'Your own authority', 'You keep your MC/DOT and your relationships. We work for you, not the other way around.'),
     ('&#9989;', 'Approval on every load', 'Nothing books without your yes. No surprise freight, no forced dispatch.'),
@@ -2277,7 +2278,7 @@ hiw += m_zigzag('Behind the scenes', 'What LoadBoot runs between you both', [
 ], accent='#ea580c', soft=True)
 hiw += final_cta()
 page('how-it-works.html', 'How Truck Dispatch Works with Loadboot | Step by Step',
-     'See exactly how Loadboot dispatch works: tell us about your truck, we find and negotiate loads, you approve every one, and we help you get paid faster. Flat 5%, no contracts.',
+     'How Loadboot dispatch works: tell us about your truck, we find and negotiate loads, you approve every one, get paid faster. Flat 5%, no contracts.',
      'how-it-works.html', hiw)
 
 # ---- FAQ ----
@@ -2396,7 +2397,7 @@ bup += m_rail('BOC-3 in practice', 'Three facts that save you pain', '', [
  ('timer', 'Filed before activation', 'Your authority cannot activate without an accepted BOC-3 on file. Do it during the protest window, not after.'),
  ('link', 'Keep the agent current', 'If your agent service lapses or you switch companies, an outdated BOC-3 can invalidate your authority without you noticing.'),
  ('pin', 'Address changes matter', 'Move your business? Update FMCSA AND your process agent &mdash; served papers you never receive still count as served.'),
-], accent='#2563eb')
+], accent='#0883F7')
 bup += m_zigzag('UCR', 'The annual fee almost everyone forgets once', [
  ('calcheck', 'What it is', 'Unified Carrier Registration &mdash; an annual, per-company fee that funds state enforcement programs, based on your power-unit bracket.'),
  ('wallet', 'Bracket pricing', 'Fees step up by fleet size (1&ndash;2 trucks, 3&ndash;5, 6&ndash;20, and up). Amounts are set annually &mdash; check the current year&rsquo;s table before paying.'),
@@ -2444,7 +2445,7 @@ hvp += _sec('Where LoadBoot fits','The Schedule 1 that is always findable', _car
  ('&#129309;','Referral to e-file providers','We can point you to established IRS-authorized e-file providers — filing takes minutes.'),
 ]))
 hvp += _hvfaq_html + _COMPL_DISC + final_cta()
-page('form-2290-hvut.html','Form 2290 (HVUT) Guide for Owner-Operators — Deadlines &amp; Schedule 1 | Loadboot',
+page('form-2290-hvut.html','Form 2290 (HVUT) Guide — Deadlines &amp; Schedule 1 | Loadboot',
  'Heavy Vehicle Use Tax explained: who files Form 2290, July–June deadlines, prorated first-use rules, Schedule 1 proof for the DMV, e-filing tips and common mistakes.',
  'services.html', hvp, _hvfaq_sch)
 
@@ -2484,7 +2485,7 @@ ifp += _sec('Where LoadBoot fits','Your miles are already organized', _cards([
 ]))
 ifp += _iffaq_html + _COMPL_DISC + final_cta()
 page('ifta-fuel-tax.html','IFTA Fuel Tax Guide — Quarterly Returns, Records &amp; Audits | Loadboot',
- 'How IFTA works: qualified vehicles, one base-state license, quarterly return math (fleet MPG method), the records auditors demand, deadlines, and habits that keep filings clean.',
+ 'How IFTA works: qualified vehicles, base-state license, quarterly return math, the records auditors demand, deadlines, and clean-filing habits.',
  'services.html', ifp, _iffaq_sch)
 
 # ---- Careers ----
@@ -2570,7 +2571,7 @@ cp += _sec('Invoicing &amp; settlement', 'Get paid without the chase', _cards([
     ('&#128179;', 'Factoring friendly', 'Works with your factoring so the paperwork never holds up your cash.'),
     ('&#128202;', 'Settlement visibility', 'See what you earned, what was deducted, and what is still owed &mdash; all in your portal.'),
 ]))
-_cp_dash = ('<div style="background:linear-gradient(150deg,#0f172a,#1e293b);border-radius:20px;padding:26px;color:#fff;max-width:420px;margin:0 auto;box-shadow:0 30px 60px -28px rgba(15,23,42,.6)">'
+_cp_dash = ('<div style="background:linear-gradient(150deg,#10223B,#1e293b);border-radius:20px;padding:26px;color:#fff;max-width:420px;margin:0 auto;box-shadow:0 30px 60px -28px rgba(15,23,42,.6)">'
  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:Manrope;font-weight:800">Carrier Portal</span><span style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.18);color:#86efac;font-size:.78rem;padding:4px 10px;border-radius:999px"><span class="pdot"></span> live</span></div>'
  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
  '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:12px"><div style="color:#94a3b8;font-size:.72rem;text-transform:uppercase">Active trips</div><div style="font-family:Manrope;font-weight:800;font-size:1.3rem">3</div></div>'
@@ -2579,7 +2580,7 @@ _cp_dash = ('<div style="background:linear-gradient(150deg,#0f172a,#1e293b);bord
  '<div style="color:#64748b;font-size:.72rem;margin-top:12px">Illustrative preview of the carrier dashboard.</div></div>')
 cp += m_split('Your carrier software', 'One dashboard for the whole operation',
  ['Everything your operation touches &mdash; fleet, trips, documents, money &mdash; lives in one portal, with a driver pocket app to match. No spreadsheets, no second subscription.'],
- _cp_dash, flip=True, soft=True, accent='#2563eb',
+ _cp_dash, flip=True, soft=True, accent='#0883F7',
  bullets=['Fleet &amp; drivers: licenses, medicals and expirations tracked','Trips &amp; tracking: confirm, start, deliver, share location','Pocket app: PODs, status and check-ins from the driver&rsquo;s phone'])
 cp += m_rail('Getting started', 'On your lanes the same day', '', [
  ('clipboard', 'Create your profile', 'Tell us your equipment, lanes and preferences &mdash; about two minutes.'),
@@ -2595,7 +2596,7 @@ _cfaq_html, _cfaq_sch = faq_block([
 ])
 cp += _cfaq_html + final_cta()
 page('carriers.html', 'Truck Dispatch for Carriers &amp; Owner-Operators | Loadboot',
-     'Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, and supports detention, invoicing and compliance. Flat 5%, no contracts, keep your authority.',
+     'Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, detention and invoicing. Flat 5%, no contracts, keep your authority.',
      'services.html', cp, _cfaq_sch)
 
 # ---- Dedicated Broker page (~15 sections; brokers only) ----
@@ -2610,7 +2611,7 @@ bp += m_rail('Getting set up', 'Onboarding &amp; verification', '', [
  ('clipboard', 'Apply as a broker partner', 'Share your company, authority and contacts. Activation is human-reviewed &mdash; no bots approving accounts.'),
  ('shieldcheck', 'Authority &amp; verification', 'We verify broker authority and key details against public and licensed sources before you go live.'),
  ('badge', 'Approved &amp; active', 'Once approved, you can post loads and reach the carrier network right away.'),
-], accent='#2563eb')
+], accent='#0883F7')
 bp += m_timeline('Posting a load', 'A guided load wizard', [
  ('layers', 'Structured, step by step', 'Lane, schedule, equipment, requirements and documents &mdash; captured cleanly, with duplicate detection.'),
  ('doccheck', 'Document requirements up front', 'Set what you will provide (rate con, pickup/delivery numbers, appointment) so nothing stalls the load.'),
@@ -2619,9 +2620,9 @@ bp += m_timeline('Posting a load', 'A guided load wizard', [
 _bp_match = ('<div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:26px;max-width:420px;margin:0 auto;box-shadow:0 30px 60px -30px rgba(15,23,42,.35)">'
  '<div style="font-family:Manrope;font-weight:800;margin-bottom:4px">Why this carrier?</div>'
  '<div style="color:#94a3b8;font-size:.78rem;margin-bottom:14px">Illustrative &mdash; every offer shows its reasoning</div>'
- + ''.join('<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:4px"><span style="color:#475569">%s</span><b>%s</b></div><div style="height:6px;border-radius:99px;background:#f1f5f9"><div style="height:6px;border-radius:99px;width:%s;background:linear-gradient(90deg,#2563eb,#7c3aed)"></div></div></div>' % r for r in [
+ + ''.join('<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:4px"><span style="color:#475569">%s</span><b>%s</b></div><div style="height:6px;border-radius:99px;background:#f1f5f9"><div style="height:6px;border-radius:99px;width:%s;background:linear-gradient(90deg,#0883F7,#7c3aed)"></div></div></div>' % r for r in [
    ('Equipment fit','25/25','100%'),('Availability','22/25','88%'),('Compliance','20/20','100%'),('Performance history','24/30','80%')]) +
- '<div style="display:flex;justify-content:space-between;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px"><span style="font-weight:700">Match score</span><b style="color:#2563eb;font-family:Manrope;font-size:1.1rem">91 / 100</b></div></div>')
+ '<div style="display:flex;justify-content:space-between;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px"><span style="font-weight:700">Match score</span><b style="color:#0883F7;font-family:Manrope;font-size:1.1rem">91 / 100</b></div></div>')
 bp += m_split('Matching', 'The right carrier, explained',
  ['Only carriers who pass hard eligibility checks &mdash; authority, insurance, equipment, availability &mdash; are ever offered your load. Then ranking is explainable: you see exactly why a carrier scored what they scored. Never a black box.'],
  _bp_match, accent='#7c3aed',
@@ -2711,7 +2712,7 @@ sp += lead_form('shipper_inquiry', 'Discuss your shipping needs',
     'Request Consultation', 'Thanks &mdash; our team will reach out to schedule your consultation.')
 sp += _sfaq_html
 page('shipper-solutions.html', 'Shipper Solutions &mdash; Consultation &amp; Freight Inquiry | Loadboot',
-     'Talk to LoadBoot about your lanes and freight. Consultation-first shipper solutions with honest scope: dispatch expertise, vetted carriers, licensed broker partners where required.',
+     'Talk to LoadBoot about your lanes and freight. Consultation-first shipper solutions: dispatch expertise, vetted carriers, licensed broker partners.',
      'partners.html', sp, _sfaq_sch)
 
 # ---- Referral Program ----
@@ -2788,7 +2789,7 @@ page('referral.html', 'Referral &amp; Partner Program &mdash; Carriers, Agencies
 
 # ---- Resources ----
 resr = svc_hero('Carrier Resources', 'Free tools, guides and answers to help you run a stronger trucking business &mdash; whether you dispatch with us or not.')
-_ls_visual = ('<div style="background:linear-gradient(150deg,#0f172a,#1e293b);border-radius:20px;padding:28px;color:#fff;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -28px rgba(15,23,42,.6)">'
+_ls_visual = ('<div style="background:linear-gradient(150deg,#10223B,#1e293b);border-radius:20px;padding:28px;color:#fff;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -28px rgba(15,23,42,.6)">'
  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="font-family:Manrope;font-weight:800">Load Score</span><span style="background:rgba(34,197,94,.18);color:#86efac;font-size:.78rem;padding:4px 10px;border-radius:999px">free &middot; no login</span></div>'
  '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.09);font-size:.9rem"><span style="color:#94a3b8">Offer</span><b>$2,100 &middot; 690 mi</b></div>'
  '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.09);font-size:.9rem"><span style="color:#94a3b8">Your cost/mi</span><b>$1.82</b></div>'
@@ -2797,7 +2798,7 @@ _ls_visual = ('<div style="background:linear-gradient(150deg,#0f172a,#1e293b);bo
 resr += m_split('The daily decision tool', 'Should you take that load? Know in 3 seconds.',
  ['Paste any offer into the Load Score and get a clear <b>take / negotiate / pass</b> verdict built on your real cost per mile &mdash; plus the counter-offer to ask for.',
   'Owner-operators use it before every booking. It is free, needs no login, and works on your phone at the truck stop.'],
- _ls_visual, accent='#2563eb', bullets=['Verdict + smart counter-offer on any load','Deadhead, tolls and reload-market factored in','Compare loads side by side'])
+ _ls_visual, accent='#0883F7', bullets=['Verdict + smart counter-offer on any load','Deadhead, tolls and reload-market factored in','Compare loads side by side'])
 resr += '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow" style="color:#0d9488">Free calculators</div><h2>The numbers behind every good decision</h2></div><div class="grid g3 reveal">' + ''.join(
  '<a class="linkcard reveal" href="%s"><div style="color:#0d9488;margin-bottom:12px">%s</div><h3>%s</h3><p style="font-size:.94rem">%s</p><span class="arw">Open %s</span></a>' % (h, mi(icn, 30), t, d, ARW) for h, icn, t, d in [
   ('tools.html#profit','sparkline','Load Profit Calculator','Net profit and true rate-per-mile on any load before you accept it.'),
@@ -2813,7 +2814,7 @@ resr += m_timeline('Start here', 'A reading path that pays for itself', [
  ('route', 'Loads with new authority', 'How to set up with brokers and land your first loads fast &mdash; fresh MC and all. <a href="how-to-get-loads-with-new-authority.html">Read the guide &rarr;</a>'),
  ('shieldcheck', 'Compliance, sorted', 'Authority &amp; DOT setup, BOC-3/UCR, Form 2290 and IFTA &mdash; four plain-language guides. <a href="authority-dot-setup.html">Start with authority &rarr;</a>'),
 ], accent='#7c3aed', lead='Four guides, in the order a new carrier actually needs them.')
-resr += m_gradcta('Want the numbers run for you?', 'A dispatcher prices every load against your costs before you ever see it &mdash; flat 5%, no contract.', 'Talk to a dispatcher &rarr;', 'contact.html', grad='linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#1e3a8a 100%)', btncolor='#f97316', btntext='#fff')
+resr += m_gradcta('Want the numbers run for you?', 'A dispatcher prices every load against your costs before you ever see it &mdash; flat 5%, no contract.', 'Talk to a dispatcher &rarr;', 'contact.html', grad='linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#1e3a8a 100%)', btncolor='#FC5305', btntext='#fff')
 page('resources.html', 'Free Trucking &amp; Dispatch Resources for Carriers | Loadboot',
      'Free carrier resources from Loadboot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing &mdash; all in one place.',
      'resources.html', resr)
@@ -2842,7 +2843,7 @@ sec += _sec('How we protect you', 'Security by design', _cards([
 ]))
 sec += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><h2>Report a security concern</h2><p>Found something? Email <a href="mailto:security@loadboot.com">security@loadboot.com</a> and we will respond promptly.</p></div></section>'
 page('security.html', 'Security &amp; Trust at Loadboot | How We Protect Your Data',
-     'How Loadboot protects your account and documents: least-privilege access, private signed document storage, full audit trails, maker/checker on payouts and isolated environments.',
+     'How Loadboot protects your account and documents: least-privilege access, private document storage, full audit trails and maker/checker payouts.',
      'security.html', sec)
 
 # ---- System Status ----
@@ -3000,9 +3001,9 @@ NOTFOUND = (
 '<link rel="stylesheet" href="/styles.css?v=6">'
 '<link rel="icon" href="/favicon.ico?v=2">'
 '<style>.nf{min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}'
-'.nf .in{max-width:520px}.nf .c{font-family:\'Manrope\',sans-serif;font-weight:800;font-size:3.2rem;color:#2563EB;line-height:1}'
-'.nf h1{font-family:\'Manrope\',sans-serif;color:#0F172A;font-size:1.5rem;margin:14px 0 8px}'
-'.nf p{color:#64748B;margin:0 0 22px}.nf a.btn{display:inline-block;background:#F97316;color:#fff;text-decoration:none;'
+'.nf .in{max-width:520px}.nf .c{font-family:\'Manrope\',sans-serif;font-weight:800;font-size:3.2rem;color:#0883F7;line-height:1}'
+'.nf h1{font-family:\'Manrope\',sans-serif;color:#10223B;font-size:1.5rem;margin:14px 0 8px}'
+'.nf p{color:#64748B;margin:0 0 22px}.nf a.btn{display:inline-block;background:#FC5305;color:#fff;text-decoration:none;'
 'font-weight:700;font-family:\'Manrope\',sans-serif;padding:13px 24px;border-radius:12px}</style></head>'
 '<body><div class="nf"><div class="in"><div class="c">404</div>'
 '<h1>That page took a wrong turn</h1>'
@@ -3299,9 +3300,9 @@ _forms_html = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
     '<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">'
     '<style>body{margin:0;background:#f1f5f9;font-family:Inter,system-ui,sans-serif}.lbf-wrap{max-width:560px;margin:0 auto;padding:40px 16px}'
     '.lbf-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:26px;box-shadow:0 10px 30px -12px rgba(15,23,42,.12)}'
-    '.lbf-f{margin-bottom:14px}.lbf-f label{display:block;font-weight:600;font-size:.88rem;margin-bottom:5px;color:#0f172a}'
+    '.lbf-f{margin-bottom:14px}.lbf-f label{display:block;font-weight:600;font-size:.88rem;margin-bottom:5px;color:#10223B}'
     '.lbf-f input,.lbf-f textarea,.lbf-f select{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:9px;font-size:1rem;font-family:inherit;box-sizing:border-box}'
-    '.lbf-f input[type=checkbox]{width:auto}.lbf-btn{background:#2563EB;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:1rem;cursor:pointer;width:100%;margin-top:6px}'
+    '.lbf-f input[type=checkbox]{width:auto}.lbf-btn{background:#0883F7;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:1rem;cursor:pointer;width:100%;margin-top:6px}'
     '.lbf-msg{padding:24px;text-align:center;color:#334155}</style></head><body>' + _forms_body + '</body></html>')
 os.makedirs(os.path.join(OUT, 'forms'), exist_ok=True)
 with open(os.path.join(OUT, 'forms', 'index.html'), 'w', encoding='utf-8') as _ff:

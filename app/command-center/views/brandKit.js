@@ -34,13 +34,13 @@ export function renderBrandKit(host) {
     function sync() {
       const v = vals();
       mount(preview, el('div', { style: 'border:1px solid var(--cc-border,#e2e8f0);border-radius:14px;overflow:hidden' }, [
-        el('div', { style: 'background:' + (v.primary_color || '#2563EB') + ';padding:18px 20px;color:#fff;font-family:' + (v.font_heading || 'Manrope') + ',sans-serif' }, [
+        el('div', { style: 'background:' + (v.primary_color || '#0883F7') + ';padding:18px 20px;color:#fff;font-family:' + (v.font_heading || 'Manrope') + ',sans-serif' }, [
           el('div', { style: 'font-size:1.3rem;font-weight:800' }, v.company_name || 'LoadBoot'),
           el('div', { style: 'opacity:.9;font-size:.9rem' }, v.tagline || ''),
         ]),
-        el('div', { style: 'padding:16px 20px;font-family:' + (v.font_body || 'Inter') + ',sans-serif;color:' + (v.ink_color || '#0F172A') }, [
+        el('div', { style: 'padding:16px 20px;font-family:' + (v.font_body || 'Inter') + ',sans-serif;color:' + (v.ink_color || '#10223B') }, [
           el('p', { style: 'margin:0 0 12px' }, 'This is how your brand looks in emails and portal banners.'),
-          el('a', { style: 'display:inline-block;background:' + (v.accent_color || '#F97316') + ';color:#fff;padding:9px 16px;border-radius:9px;text-decoration:none;font-weight:700' }, 'Primary action'),
+          el('a', { style: 'display:inline-block;background:' + (v.accent_color || '#FC5305') + ';color:#fff;padding:9px 16px;border-radius:9px;text-decoration:none;font-weight:700' }, 'Primary action'),
           el('div', { style: 'margin-top:16px;font-size:.78rem;color:#64748b' }, v.email_footer || ''),
           el('div', { style: 'font-size:.72rem;color:#94a3b8' }, v.legal_footer || ''),
           el('div', { style: 'margin-top:8px;font-size:.72rem;color:#94a3b8' }, [v.facebook_url, v.instagram_url, v.linkedin_url, v.x_url].filter(Boolean).length ? 'Social: ' + [v.facebook_url && 'Facebook', v.instagram_url && 'Instagram', v.linkedin_url && 'LinkedIn', v.x_url && 'X'].filter(Boolean).join(' · ') : ''),

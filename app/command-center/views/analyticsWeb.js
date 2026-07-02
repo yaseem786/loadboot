@@ -72,11 +72,22 @@ export function renderAnalyticsWeb(host) {
 
   async function load() {
     mount(body, el('div', { class: 'lb-state lb-loading' }, 'Loading analytics…'));
-    let ov, pages, refs, ai, integ;
-    try { [ov, pages, refs, ai, integ] = await Promise.all([webOverview(days), webPages(days, 25), webReferrers(days, 25), webAiReferrals(Math.max(days, 30)), integrationStatus().catch(() => [])]); }
-    catch (e) { showError(body, humanizeError(e), load); return; }
+    // RESILIENT LOADING: one failing endpoint must never blank the whole screen.
+    // Each call degrades to null; whatever arrived is rendered, failures are named inline.
+    const failed = [];
+    const soft = (p, name) => p.catch((e) => { failed.push(name + ': ' + humanizeError(e)); return null; });
+    const [ov, pages, refs, ai, integ] = await Promise.all([
+      soft(webOverview(days), 'Overview'),
+      soft(webPages(days, 25), 'Pages'),
+      soft(webReferrers(days, 25), 'Referrers'),
+      soft(webAiReferrals(Math.max(days, 30)), 'AI referrals'),
+      integrationStatus().catch(() => []),
+    ]);
+    if (!ov && !pages && !refs && !ai) { showError(body, failed.join(' · ') || 'Analytics unavailable.', load); return; }
 
     const n = (k) => Number((ov && ov[k]) || 0);
+    const failStrip = failed.length ? el('div', { class: 'cc-sub', style: 'margin-bottom:8px;color:#b45309' },
+      '\u26a0 Some analytics endpoints failed and were skipped: ' + failed.join(' \u00b7 ')) : null;
     const kpis = el('div', { class: 'cc-kpi-grid' }, [
       statCard({ icon: 'users', label: 'Sessions', value: String(n('sessions')), sub: 'last ' + days + ' days', accent: 'blue' }),
       statCard({ icon: 'grid', label: 'Pageviews', value: String(n('pageviews')), sub: 'across all pages', accent: 'violet' }),
@@ -160,7 +171,7 @@ export function renderAnalyticsWeb(host) {
       el('p', { class: 'cc-sub', style: 'margin-top:8px' }, 'First-party analytics above are live now. GA4 and Search Console are optional add-ons — connect them in Integrations to layer in Google’s data. No numbers are shown until a source is connected.'),
     ]);
 
-    mount(body, el('div', null, [
+    mount(body, el('div', null, [failStrip, 
       kpis,
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [trendCard, sourcesCard]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [pagesCard, refsCard]),

@@ -10,7 +10,7 @@ import { humanizeError } from '../../shared/errors.js';
 
 const LEAFLET_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
 const LEAFLET_JS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-const STATUS_COLOR = { in_transit: '#2563eb', dispatched: '#7c3aed', planned: '#64748b' };
+const STATUS_COLOR = { in_transit: '#0883F7', dispatched: '#7c3aed', planned: '#64748b' };
 
 function loadLeaflet() {
   if (window.L) return Promise.resolve(window.L);
@@ -35,7 +35,7 @@ export function renderOpsMap(host) {
     sectionHead('Live operations map', 'Every consented, in-motion trip in real time. Click a truck — on the map or in the list — to see the driver and details.'),
     el('div', { id: 'om-kpis' }),
     el('div', { class: 'cc-map-legend', id: 'om-legend' }, [
-      legendDot('#2563eb', 'In transit'), legendDot('#7c3aed', 'Dispatched'), legendDot('#64748b', 'Planned'),
+      legendDot('#0883F7', 'In transit'), legendDot('#7c3aed', 'Dispatched'), legendDot('#64748b', 'Planned'),
     ]),
     el('div', { class: 'cc-map-layout' }, [
       el('div', { class: 'cc-map-wrap', id: 'om-map' }, el('div', { class: 'lb-state lb-loading' }, 'Loading map…')),

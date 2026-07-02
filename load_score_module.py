@@ -50,7 +50,7 @@ LS_CSS = r'''
 .ls-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:2px}
 .ls-btn{flex:1;min-width:140px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:11px;padding:12px 14px;font-weight:700;font-family:'Manrope';font-size:.9rem;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;transition:.2s}
 .ls-btn:hover{background:rgba(255,255,255,.16)}
-.ls-btn.primary{background:#2563EB;border-color:#2563EB}.ls-btn.primary:hover{background:#1d4ed8}
+.ls-btn.primary{background:#0883F7;border-color:#0883F7}.ls-btn.primary:hover{background:#1d4ed8}
 .ls-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ls-compare{max-width:1080px;margin:26px auto 0;display:none}
 .ls-compare.show{display:block}
@@ -69,9 +69,9 @@ LS_CSS = r'''
 .ls-cmp-card .cr{font-size:.84rem;color:var(--muted)}.ls-cmp-card .cr b{color:var(--navy)}
 .ls-cmp-x{position:absolute;top:11px;right:13px;cursor:pointer;color:#94a3b8;font-size:1.15rem;line-height:1;background:none;border:none}
 .ls-advisor{max-width:1080px;margin:22px auto 0;background:#fff;border:1px solid var(--border);border-radius:20px;padding:26px 28px;box-shadow:0 30px 70px -50px rgba(15,23,42,.4);position:relative;overflow:hidden}
-.ls-advisor::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,#2563EB,#7c3aed,#f97316)}
+.ls-advisor::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,#0883F7,#7c3aed,#FC5305)}
 .ls-adv-head{display:flex;align-items:center;gap:13px;margin-bottom:16px}
-.ls-adv-ic{width:44px;height:44px;border-radius:12px;background:linear-gradient(150deg,#2563EB,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 18px -8px rgba(124,58,237,.6)}
+.ls-adv-ic{width:44px;height:44px;border-radius:12px;background:linear-gradient(150deg,#0883F7,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 18px -8px rgba(124,58,237,.6)}
 .ls-adv-ic svg{width:23px;height:23px}
 .ls-adv-head h3{margin:0;font-family:'Manrope';font-size:1.12rem}
 .ls-adv-head p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
@@ -95,35 +95,35 @@ LS_HTML = r'''<div class="ls-tool" id="loadscore">
   <div class="ls-inputs">
    <h3>Load details</h3>
    <p class="ls-cap">Punch in the offer. We score it against your real costs &mdash; instantly.</p>
-   <div class="ls-f"><label>Nickname this load <span style="color:var(--muted);font-weight:500">(optional)</span></label><input type="text" id="ls_label" placeholder="e.g. Dallas &rarr; Atlanta" oninput="lsRun()"></div>
-   <div class="ls-f"><label>What does the load pay? ($)</label><input type="number" id="ls_rate" value="2640" oninput="lsRun()"></div>
+   <div class="ls-f"><label for="ls_label">Nickname this load <span style="color:var(--muted);font-weight:500">(optional)</span></label><input type="text" id="ls_label" placeholder="e.g. Dallas &rarr; Atlanta" oninput="lsRun()"></div>
+   <div class="ls-f"><label for="ls_rate">What does the load pay? ($)</label><input type="number" id="ls_rate" value="2640" oninput="lsRun()"></div>
    <div class="ls-row">
-    <div class="ls-f"><label>Loaded miles</label><input type="number" id="ls_loaded" value="781" oninput="lsRun()"></div>
-    <div class="ls-f"><label>Deadhead miles <span class="q" title="Empty miles you drive to reach the pickup. They cost fuel and time but earn nothing.">?</span></label><input type="number" id="ls_dead" value="120" oninput="lsRun()"></div>
+    <div class="ls-f"><label for="ls_loaded">Loaded miles</label><input type="number" id="ls_loaded" value="781" oninput="lsRun()"></div>
+    <div class="ls-f"><label for="ls_dead">Deadhead miles <span class="q" title="Empty miles you drive to reach the pickup. They cost fuel and time but earn nothing.">?</span></label><input type="number" id="ls_dead" value="120" oninput="lsRun()"></div>
    </div>
    <div class="ls-row">
-    <div class="ls-f"><label>Your cost / mile ($) <span class="q" title="All-in: truck payment, insurance, fuel, maintenance, food. Most owner-ops run $1.40-$1.80.">?</span></label><input type="number" id="ls_cpm" value="1.55" step="0.01" oninput="lsRun()"></div>
-    <div class="ls-f"><label>Days to run it</label><input type="number" id="ls_days" value="2" step="0.5" oninput="lsRun()"></div>
+    <div class="ls-f"><label for="ls_cpm">Your cost / mile ($) <span class="q" title="All-in: truck payment, insurance, fuel, maintenance, food. Most owner-ops run $1.40-$1.80.">?</span></label><input type="number" id="ls_cpm" value="1.55" step="0.01" oninput="lsRun()"></div>
+    <div class="ls-f"><label for="ls_days">Days to run it</label><input type="number" id="ls_days" value="2" step="0.5" oninput="lsRun()"></div>
    </div>
    <button type="button" class="ls-est-toggle" onclick="lsToggleEst()"><span id="ls_est_caret">+</span> Not sure of your cost per mile? Estimate it</button>
    <div class="ls-est" id="ls_est">
     <div class="ls-row">
-     <div class="ls-f"><label>Fixed costs / month ($) <span class="q" title="Truck payment, insurance, permits, ELD, parking.">?</span></label><input type="number" id="ls_e_fixed" value="4200" oninput="lsEstimate()"></div>
-     <div class="ls-f"><label>Miles / month</label><input type="number" id="ls_e_miles" value="10000" oninput="lsEstimate()"></div>
+     <div class="ls-f"><label for="ls_e_fixed">Fixed costs / month ($) <span class="q" title="Truck payment, insurance, permits, ELD, parking.">?</span></label><input type="number" id="ls_e_fixed" value="4200" oninput="lsEstimate()"></div>
+     <div class="ls-f"><label for="ls_e_miles">Miles / month</label><input type="number" id="ls_e_miles" value="10000" oninput="lsEstimate()"></div>
     </div>
     <div class="ls-row">
-     <div class="ls-f"><label>Diesel ($/gal)</label><input type="number" id="ls_e_fuel" value="3.85" step="0.01" oninput="lsEstimate()"></div>
-     <div class="ls-f"><label>Truck MPG</label><input type="number" id="ls_e_mpg" value="6.5" step="0.1" oninput="lsEstimate()"></div>
+     <div class="ls-f"><label for="ls_e_fuel">Diesel ($/gal)</label><input type="number" id="ls_e_fuel" value="3.85" step="0.01" oninput="lsEstimate()"></div>
+     <div class="ls-f"><label for="ls_e_mpg">Truck MPG</label><input type="number" id="ls_e_mpg" value="6.5" step="0.1" oninput="lsEstimate()"></div>
     </div>
     <div class="ls-est-out" id="ls_e_out">Estimated cost per mile: <b>$0.00</b></div>
    </div>
    <div class="ls-row">
-    <div class="ls-f"><label>Extra pay &mdash; detention, FSC ($) <span class="q" title="Detention, fuel surcharge, layover or other accessorial pay you expect to collect.">?</span></label><input type="number" id="ls_xpay" value="0" oninput="lsRun()"></div>
-    <div class="ls-f"><label>Extra costs &mdash; tolls, lumper ($)</label><input type="number" id="ls_xcost" value="0" oninput="lsRun()"></div>
+    <div class="ls-f"><label for="ls_xpay">Extra pay &mdash; detention, FSC ($) <span class="q" title="Detention, fuel surcharge, layover or other accessorial pay you expect to collect.">?</span></label><input type="number" id="ls_xpay" value="0" oninput="lsRun()"></div>
+    <div class="ls-f"><label for="ls_xcost">Extra costs &mdash; tolls, lumper ($)</label><input type="number" id="ls_xcost" value="0" oninput="lsRun()"></div>
    </div>
    <div class="ls-f"><label>Where does it drop you? <span class="q" title="A weak market means you may sit or run cheap/empty to your next load.">?</span></label>
-    <select id="ls_market" oninput="lsRun()"><option value="strong">Strong freight area (easy reload)</option><option value="avg" selected>Average area</option><option value="weak">Weak / dead market</option></select></div>
-   <div class="ls-f"><label>Target profit margin (%)</label><input type="number" id="ls_margin" value="25" oninput="lsRun()"></div>
+    <select id="ls_market" aria-label="Freight market strength at delivery" oninput="lsRun()"><option value="strong">Strong freight area (easy reload)</option><option value="avg" selected>Average area</option><option value="weak">Weak / dead market</option></select></div>
+   <div class="ls-f"><label for="ls_margin">Target profit margin (%)</label><input type="number" id="ls_margin" value="25" oninput="lsRun()"></div>
   </div>
   <div class="ls-result">
    <div class="ls-score-wrap">
