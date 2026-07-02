@@ -1039,3 +1039,23 @@ box, no invented data):
 - BACKEND for the carrier-portal vision is now essentially complete and proven on both DBs. Remaining work is
   FRONTEND-only (Command Center emergency-review screen, A6–A8 depth polish, site-wide design overhaul) which needs
   the build sandbox to `node --check`/build-verify, or a product decision (A7 live-chat transport).
+
+## HOTFIX — LIVE CARRIER PORTAL LOGIN BROKEN (truncated app.js in 9b1bd56)
+- SYMPTOM (owner report): loadboot.com → Log in → /app/carrier/ redirects fine but hangs on the
+  "Loading…" splash forever. Reproduced live in a real browser.
+- ROOT CAUSE (two syntax errors committed in 9b1bd56 — that session could not run gates, sandbox was down,
+  and `node --check` parses CommonJS so it can NOT catch either error in an ES module):
+  1. `const TONE` declared TWICE in app/carrier/app.js (line 49 new global notification tokens + line 72
+     pre-existing status-pill map) → "Identifier 'TONE' has already been declared".
+  2. The file was TRUNCATED mid-expression: boot() ended at `appView(user` — no `);`, no closing `}`,
+     no `boot();` call.
+  Either alone makes the whole ES module fail to evaluate → splash never replaced. Verified live via
+  dynamic import: "Identifier 'TONE' has already been declared".
+- FIX: line-72 map renamed STATUS_TONE (pill() updated; global TONE tokens stay canonical per guardrail);
+  boot() completed + `boot();` restored (ending matches known-good c27c497 tail).
+- NEW PERMANENT GATE: `scripts/check_esm_syntax.sh` — `node --input-type=module --check` on every app/**/*.js
+  (catches duplicate declarations, truncation, import errors that `node --check` misses).
+  Result: ESM SYNTAX CHECK: ALL PASS (91 files). Import-reference check PASS. Build OK; site copy verified.
+- DEPLOY NOTE: production Netlify publishes from branch `preview/command-center-v1` (confirmed live —
+  home shows 9b1bd56 content; origin/main is 1 commit behind and does NOT gate production).
+- No DB change; anon SECURITY DEFINER surface untouched (5).
