@@ -1172,7 +1172,3 @@ async function boot() {
 }
 
 boot();
-;
-}
-
-boot();
