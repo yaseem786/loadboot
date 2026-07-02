@@ -57,7 +57,6 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [h('div', { class: 'cp-auth-card' }, [
     h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
       h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Developers')]),
-      h('div', { class: 'cp-tagline' }, 'Build on the freight network'),
     ])]),
     title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, err, btn, toggle,
   ])]));

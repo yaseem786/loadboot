@@ -21,10 +21,10 @@ body { background: var(--lb-bg, #f4f6fb); margin: 0; font-family: var(--lb-font,
 
 /* brand */
 .cp-brand { font-weight: 800; font-size: 1.15rem; letter-spacing: -.3px; color: #fff; display: flex; align-items: baseline; gap: 2px; }
-.cp-brand b { color: var(--lb-orange, #f97316); }
+.cp-brand b { color: #60a5fa; } /* LOCKED lockup: boot is BLUE (light variant on dark bg) */
 .cp-brand .cp-brand-sub { margin-left: 8px; font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #93a4c4; }
 .cp-brand-dark { color: #0b1220; }
-.cp-brand-dark b { color: var(--lb-orange, #f97316); }
+.cp-brand-dark b { color: var(--lb-blue, #2563eb); } /* LOCKED lockup: boot is BLUE */
 .cp-brand-dark .cp-brand-sub { color: var(--lb-blue, #2563eb); }
 
 /* shell layout */
@@ -225,3 +225,13 @@ textarea.cp-in { resize: vertical; }
 .cp-field > span { font-size: .85rem; font-weight: 600; color: #334155; }
 .cp-input { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font: inherit; width: 100%; background: #fff; }
 .cp-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+
+/* FINAL locked lockup (owner): icon-L + "oadboot", boot BLUE — same as the website header */
+.cp-brand b { color: #60a5fa; }
+
+/* Sidebar scrolling ON (owner ask) — long nav + account footer never get cut off.
+   Shared by carrier, partner and developer portals (they all load carrier.css). */
+.cp-side { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.35) transparent; }
+.cp-side::-webkit-scrollbar { width: 6px; }
+.cp-side::-webkit-scrollbar-thumb { background: rgba(148,163,184,.35); border-radius: 99px; }
+.cp-side::-webkit-scrollbar-track { background: transparent; }

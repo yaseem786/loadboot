@@ -1,8 +1,8 @@
 {
  "summary": {
   "generated_note": "Counted from built site/ HTML by scripts/site_inventory.py. No estimates.",
-  "page_count": 45,
-  "total_words": 38239,
+  "page_count": 50,
+  "total_words": 45128,
   "pages_missing_meta_description": [
    "dashboard.html"
   ],
@@ -263,7 +263,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "accessibility.html",
     "authority-dot-setup.html",
@@ -277,6 +277,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -284,7 +285,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -306,6 +309,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -447,7 +452,7 @@
     "most_similar_page": "status.html",
     "level": "high"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "authority-dot-setup.html",
@@ -461,6 +466,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -468,7 +474,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -490,6 +498,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -776,7 +786,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -790,6 +800,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -797,7 +808,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -819,6 +832,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -833,7 +848,7 @@
    "canonical": "https://loadboot.com/blog.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 8,
+   "section_count": 13,
    "sections": [
     {
      "heading": "The Loadboot Blog",
@@ -843,7 +858,32 @@
     {
      "heading": "Latest from Loadboot",
      "level": "h2",
-     "words": 19
+     "words": 21
+    },
+    {
+     "heading": "How to Avoid Cheap Freight (Without Sitting Empty)",
+     "level": "h3",
+     "words": 60
+    },
+    {
+     "heading": "Truck Dispatcher in Georgia & Florida: The Southeast Playbook",
+     "level": "h3",
+     "words": 53
+    },
+    {
+     "heading": "Truck Dispatcher in California: Ports, Produce & Staying Compliant",
+     "level": "h3",
+     "words": 49
+    },
+    {
+     "heading": "How to Read a Rate Confirmation (Before You Sign It)",
+     "level": "h3",
+     "words": 54
+    },
+    {
+     "heading": "Do New-Authority Carriers Need a Dispatcher?",
+     "level": "h3",
+     "words": 54
     },
     {
      "heading": "Truck Dispatcher in Texas: Lanes, Rates & How to Stay Loaded",
@@ -876,7 +916,7 @@
      "words": 226
     }
    ],
-   "word_count": 519,
+   "word_count": 791,
    "cta_count": 10,
    "ctas": [
     {
@@ -950,6 +990,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -957,7 +998,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -978,11 +1021,13 @@
     "sitemap.html",
     "status.html",
     "terms.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 45,
+   "internal_link_count": 50,
    "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
@@ -990,11 +1035,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.366,
+    "max_similarity": 0.255,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1008,6 +1053,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -1015,7 +1061,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -1037,6 +1085,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -1298,7 +1348,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1312,6 +1362,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -1319,7 +1370,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -1341,6 +1394,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -1622,7 +1677,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1636,6 +1691,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -1643,7 +1699,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -1665,6 +1723,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -2039,7 +2099,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2053,6 +2113,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -2060,7 +2121,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -2082,6 +2145,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -2310,7 +2375,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2324,6 +2389,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -2331,7 +2397,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -2353,6 +2421,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -2996,7 +3066,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3010,6 +3080,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -3017,7 +3088,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -3039,6 +3112,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -3234,7 +3309,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3248,6 +3323,7 @@
     "carriers.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -3255,7 +3331,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -3277,6 +3355,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -3582,7 +3662,7 @@
     "most_similar_page": "carrier-application.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3596,6 +3676,7 @@
     "carriers.html",
     "case-studies.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -3603,7 +3684,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -3625,6 +3708,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -3771,7 +3856,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3785,6 +3870,7 @@
     "carriers.html",
     "case-studies.html",
     "contact.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -3792,7 +3878,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -3814,6 +3902,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -3850,6 +3940,191 @@
    },
    "inbound_link_count": 0,
    "inbound_links": []
+  },
+  "do-new-authority-carriers-need-a-dispatcher.html": {
+   "url": "https://loadboot.com/do-new-authority-carriers-need-a-dispatcher.html",
+   "file": "do-new-authority-carriers-need-a-dispatcher.html",
+   "title": "Do New-Authority Carriers Need a Dispatcher? (Honest Answer, 2026) | Loadboot",
+   "title_length": 77,
+   "meta_description": "Fresh MC and no broker callbacks? What actually blocks new authorities, what a dispatcher fixes (and cannot fix), when to skip one, and the math of the first 90 days.",
+   "meta_description_length": 166,
+   "canonical": "https://loadboot.com/do-new-authority-carriers-need-a-dispatcher.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "Do New-Authority Carriers Need a Dispatcher?",
+     "level": "h1",
+     "words": 112
+    },
+    {
+     "heading": "The new-authority wall is real",
+     "level": "h2",
+     "words": 121
+    },
+    {
+     "heading": "What actually blocks a fresh MC",
+     "level": "h2",
+     "words": 147
+    },
+    {
+     "heading": "The first 90 days decide everything",
+     "level": "h2",
+     "words": 79
+    },
+    {
+     "heading": "What a dispatcher actually fixes",
+     "level": "h2",
+     "words": 138
+    },
+    {
+     "heading": "What a dispatcher canNOT fix",
+     "level": "h2",
+     "words": 108
+    },
+    {
+     "heading": "When you genuinely do not need one",
+     "level": "h2",
+     "words": 85
+    },
+    {
+     "heading": "The math of waiting vs starting right",
+     "level": "h2",
+     "words": 74
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 99
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 167
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 226
+    }
+   ],
+   "word_count": 1406,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Open the free calculator",
+     "href": "tools.html#cpm"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 41,
+   "image_count": 3,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.148,
+    "most_similar_page": "terms.html",
+    "level": "low"
+   },
+   "inbound_link_count": 1,
+   "inbound_links": [
+    "blog.html"
+   ]
   },
   "dry-van-dispatch.html": {
    "url": "https://loadboot.com/dry-van-dispatch.html",
@@ -4079,7 +4354,7 @@
     "most_similar_page": "power-only-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4094,13 +4369,16 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "faq.html",
     "flatbed-dispatch.html",
     "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -4122,6 +4400,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -4268,7 +4548,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4283,13 +4563,16 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "flatbed-dispatch.html",
     "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -4311,6 +4594,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -4543,7 +4828,7 @@
     "most_similar_page": "dry-van-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4558,13 +4843,16 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -4586,6 +4874,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -4857,7 +5147,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4872,13 +5162,16 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -4900,6 +5193,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -5132,7 +5427,7 @@
     "most_similar_page": "power-only-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -5147,13 +5442,16 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
     "form-2290-hvut.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -5175,6 +5473,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -5466,7 +5766,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -5481,13 +5781,16 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
     "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -5509,6 +5812,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -5703,6 +6008,187 @@
     "resources.html"
    ]
   },
+  "how-to-avoid-cheap-freight.html": {
+   "url": "https://loadboot.com/how-to-avoid-cheap-freight.html",
+   "file": "how-to-avoid-cheap-freight.html",
+   "title": "How to Avoid Cheap Freight \u2014 Floor Price, Reload Math & Saying No | Loadboot",
+   "title_length": 76,
+   "meta_description": "The system for refusing cheap freight without sitting empty: compute your floor, price reload pairs not single legs, fund your no, negotiate with specifics, and keep a weekly discipline.",
+   "meta_description_length": 186,
+   "canonical": "https://loadboot.com/how-to-avoid-cheap-freight.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "How to Avoid Cheap Freight (Without Sitting Empty)",
+     "level": "h1",
+     "words": 101
+    },
+    {
+     "heading": "Cheap freight is a system, not bad luck",
+     "level": "h2",
+     "words": 77
+    },
+    {
+     "heading": "Your floor price is the whole game",
+     "level": "h2",
+     "words": 97
+    },
+    {
+     "heading": "The lanes that trap you",
+     "level": "h2",
+     "words": 77
+    },
+    {
+     "heading": "Reload math beats rate math",
+     "level": "h2",
+     "words": 78
+    },
+    {
+     "heading": "How to say no without going broke",
+     "level": "h2",
+     "words": 124
+    },
+    {
+     "heading": "Negotiating up: what actually moves brokers",
+     "level": "h2",
+     "words": 85
+    },
+    {
+     "heading": "The weekly discipline",
+     "level": "h2",
+     "words": 68
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 90
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 197
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 226
+    }
+   ],
+   "word_count": 1279,
+   "cta_count": 8,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 41,
+   "image_count": 3,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.161,
+    "most_similar_page": "terms.html",
+    "level": "low"
+   },
+   "inbound_link_count": 1,
+   "inbound_links": [
+    "blog.html"
+   ]
+  },
   "how-to-get-loads-with-new-authority.html": {
    "url": "https://loadboot.com/how-to-get-loads-with-new-authority.html",
    "file": "how-to-get-loads-with-new-authority.html",
@@ -5866,8 +6352,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.324,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.318,
+    "most_similar_page": "status.html",
     "level": "medium"
    },
    "inbound_link_count": 4,
@@ -5876,6 +6362,186 @@
     "index.html",
     "new-authority-dispatch.html",
     "resources.html"
+   ]
+  },
+  "how-to-read-a-rate-confirmation.html": {
+   "url": "https://loadboot.com/how-to-read-a-rate-confirmation.html",
+   "file": "how-to-read-a-rate-confirmation.html",
+   "title": "How to Read a Rate Confirmation Before You Sign (Carrier Guide) | Loadboot",
+   "title_length": 74,
+   "meta_description": "Rate confirmation explained for carriers: the 10 lines to verify, fine-print traps (detention, offsets, tracking penalties), fraud tells, when to refuse to sign, and what to do after.",
+   "meta_description_length": 183,
+   "canonical": "https://loadboot.com/how-to-read-a-rate-confirmation.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "How to Read a Rate Confirmation (Before You Sign It)",
+     "level": "h1",
+     "words": 136
+    },
+    {
+     "heading": "What a rate confirmation actually is",
+     "level": "h2",
+     "words": 89
+    },
+    {
+     "heading": "The 10 lines to check, every single time",
+     "level": "h2",
+     "words": 170
+    },
+    {
+     "heading": "Where the fine print eats your money",
+     "level": "h2",
+     "words": 72
+    },
+    {
+     "heading": "Tracking and late penalties",
+     "level": "h2",
+     "words": 87
+    },
+    {
+     "heading": "Name and number mismatches \u2014 the fraud tell",
+     "level": "h2",
+     "words": 105
+    },
+    {
+     "heading": "When to refuse to sign",
+     "level": "h2",
+     "words": 74
+    },
+    {
+     "heading": "After you sign",
+     "level": "h2",
+     "words": 71
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 94
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 200
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 226
+    }
+   ],
+   "word_count": 1385,
+   "cta_count": 8,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 40,
+   "image_count": 3,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.152,
+    "most_similar_page": "terms.html",
+    "level": "low"
+   },
+   "inbound_link_count": 1,
+   "inbound_links": [
+    "blog.html"
    ]
   },
   "ifta-fuel-tax.html": {
@@ -6160,7 +6826,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6175,6 +6841,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -6182,7 +6849,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "index.html",
     "load-score.html",
     "login.html",
@@ -6203,6 +6872,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -6656,7 +7327,7 @@
     "most_similar_page": "services.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6671,6 +7342,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -6678,7 +7350,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "load-score.html",
     "login.html",
@@ -6699,6 +7373,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -6892,7 +7568,7 @@
     "most_similar_page": "terms.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6907,6 +7583,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -6914,7 +7591,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "login.html",
@@ -6935,6 +7614,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -7108,7 +7789,7 @@
     "most_similar_page": "status.html",
     "level": "high"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7123,6 +7804,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -7130,7 +7812,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -7151,6 +7835,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -7384,7 +8070,7 @@
     "most_similar_page": "power-only-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7399,6 +8085,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -7406,7 +8093,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -7427,6 +8116,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -7611,8 +8302,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.1,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.097,
+    "most_similar_page": "terms.html",
     "level": "low"
    },
    "inbound_link_count": 3,
@@ -7851,7 +8542,7 @@
     "most_similar_page": "hotshot-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7866,6 +8557,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -7873,7 +8565,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -7894,6 +8588,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -8157,7 +8853,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8172,6 +8868,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -8179,7 +8876,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -8200,6 +8899,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -8432,7 +9133,7 @@
     "most_similar_page": "hotshot-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8447,6 +9148,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -8454,7 +9156,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -8475,6 +9179,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -8672,7 +9378,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8687,6 +9393,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -8694,7 +9401,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -8715,6 +9424,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -8895,7 +9606,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8910,6 +9621,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -8917,7 +9629,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -8938,6 +9652,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -9170,7 +9886,7 @@
     "most_similar_page": "power-only-dispatch.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -9185,6 +9901,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -9192,7 +9909,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -9213,6 +9932,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -9571,7 +10292,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -9586,6 +10307,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -9593,7 +10315,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -9614,6 +10338,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -9861,7 +10587,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -9876,6 +10602,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -9883,7 +10610,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -9904,6 +10633,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -10075,7 +10806,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -10090,6 +10821,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -10097,7 +10829,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -10118,6 +10852,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -10494,7 +11230,7 @@
     "most_similar_page": "index.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -10509,6 +11245,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -10516,7 +11253,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -10537,6 +11276,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -10888,7 +11629,7 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -10903,6 +11644,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -10910,7 +11652,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -10931,6 +11675,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -11097,7 +11843,7 @@
     "most_similar_page": "status.html",
     "level": "high"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -11112,6 +11858,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -11119,7 +11866,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -11140,6 +11889,8 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -11276,7 +12027,7 @@
     "most_similar_page": "sitemap.html",
     "level": "high"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -11291,6 +12042,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -11298,7 +12050,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -11319,6 +12073,8 @@
     "sitemap.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -11489,7 +12245,7 @@
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 43,
+   "inbound_link_count": 48,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -11504,6 +12260,7 @@
     "case-studies.html",
     "contact.html",
     "cookies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "dry-van-dispatch.html",
     "faq.html",
     "flatbed-dispatch.html",
@@ -11511,7 +12268,9 @@
     "hotshot-dispatch.html",
     "how-it-works.html",
     "how-much-does-a-truck-dispatcher-cost.html",
+    "how-to-avoid-cheap-freight.html",
     "how-to-get-loads-with-new-authority.html",
+    "how-to-read-a-rate-confirmation.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -11532,6 +12291,8 @@
     "sitemap.html",
     "status.html",
     "tools.html",
+    "truck-dispatcher-in-california.html",
+    "truck-dispatcher-in-georgia.html",
     "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
@@ -11793,12 +12554,14 @@
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 11,
+   "inbound_link_count": 13,
    "inbound_links": [
     "box-truck-dispatch.html",
     "carriers.html",
     "case-studies.html",
+    "do-new-authority-carriers-need-a-dispatcher.html",
     "form-2290-hvut.html",
+    "how-to-avoid-cheap-freight.html",
     "ifta-fuel-tax.html",
     "index.html",
     "load-score.html",
@@ -11806,6 +12569,361 @@
     "services.html",
     "sitemap.html",
     "truck-dispatcher-in-texas.html"
+   ]
+  },
+  "truck-dispatcher-in-california.html": {
+   "url": "https://loadboot.com/truck-dispatcher-in-california.html",
+   "file": "truck-dispatcher-in-california.html",
+   "title": "Truck Dispatcher in California \u2014 Ports, Produce & Compliance (2026) | Loadboot",
+   "title_length": 78,
+   "meta_description": "Truck dispatch in California: LA/Long Beach port freight, Inland Empire reloads, Central Valley produce seasons, I-5/99 corridors, CARB and AB5 realities, and honest dispatch economics.",
+   "meta_description_length": 185,
+   "canonical": "https://loadboot.com/truck-dispatcher-in-california.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 11,
+   "sections": [
+    {
+     "heading": "Truck Dispatcher in California: Ports, Produce & Staying Compliant",
+     "level": "h1",
+     "words": 111
+    },
+    {
+     "heading": "Why California is a different game",
+     "level": "h2",
+     "words": 167
+    },
+    {
+     "heading": "The ports engine",
+     "level": "h2",
+     "words": 83
+    },
+    {
+     "heading": "Central Valley produce",
+     "level": "h2",
+     "words": 89
+    },
+    {
+     "heading": "The corridors that pay",
+     "level": "h2",
+     "words": 80
+    },
+    {
+     "heading": "CARB, AB5 and the California compliance layer",
+     "level": "h2",
+     "words": 148
+    },
+    {
+     "heading": "Seasons and rate swings",
+     "level": "h2",
+     "words": 82
+    },
+    {
+     "heading": "What a dispatcher actually changes in California",
+     "level": "h2",
+     "words": 75
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 93
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 187
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 226
+    }
+   ],
+   "word_count": 1399,
+   "cta_count": 8,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 40,
+   "image_count": 3,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.148,
+    "most_similar_page": "terms.html",
+    "level": "low"
+   },
+   "inbound_link_count": 1,
+   "inbound_links": [
+    "blog.html"
+   ]
+  },
+  "truck-dispatcher-in-georgia.html": {
+   "url": "https://loadboot.com/truck-dispatcher-in-georgia.html",
+   "file": "truck-dispatcher-in-georgia.html",
+   "title": "Truck Dispatcher in Georgia & Florida \u2014 The Southeast Playbook (2026) | Loadboot",
+   "title_length": 80,
+   "meta_description": "Truck dispatch in Georgia and Florida: Atlanta reload economics, Savannah port freight, the Florida inbound/outbound imbalance priced as pairs, lanes, seasons and honest dispatch value.",
+   "meta_description_length": 185,
+   "canonical": "https://loadboot.com/truck-dispatcher-in-georgia.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 10,
+   "sections": [
+    {
+     "heading": "Truck Dispatcher in Georgia & Florida: The Southeast Playbook",
+     "level": "h1",
+     "words": 98
+    },
+    {
+     "heading": "Why the Southeast works for a truck",
+     "level": "h2",
+     "words": 59
+    },
+    {
+     "heading": "Atlanta: the reload machine",
+     "level": "h2",
+     "words": 114
+    },
+    {
+     "heading": "Savannah port freight",
+     "level": "h2",
+     "words": 77
+    },
+    {
+     "heading": "The Florida problem \u2014 and the profit inside it",
+     "level": "h2",
+     "words": 98
+    },
+    {
+     "heading": "Lanes and seasons",
+     "level": "h2",
+     "words": 107
+    },
+    {
+     "heading": "What a dispatcher actually changes here",
+     "level": "h2",
+     "words": 61
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 80
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 169
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 226
+    }
+   ],
+   "word_count": 1148,
+   "cta_count": 8,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 40,
+   "image_count": 3,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.175,
+    "most_similar_page": "terms.html",
+    "level": "low"
+   },
+   "inbound_link_count": 1,
+   "inbound_links": [
+    "blog.html"
    ]
   },
   "truck-dispatcher-in-texas.html": {

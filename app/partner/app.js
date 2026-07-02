@@ -8,8 +8,8 @@ import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
 import {
   partnerRegister, partnerOverview,
-  partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment,
-  partnerRequestShipment, partnerMyShipments,
+  partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
+  partnerRequestShipment, partnerMyShipments, shipperPostLoad,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
   partnerGetProfile, partnerUpdateProfile,
@@ -97,7 +97,6 @@ function authScreen() {
     h('div', { class: 'cp-auth-card' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
         h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
-        h('div', { class: 'cp-tagline' }, TAGLINE),
       ])]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [
@@ -136,7 +135,6 @@ function choosePartnerType(user) {
     h('div', { class: 'cp-auth-card', style: 'max-width:520px' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
         h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
-        h('div', { class: 'cp-tagline' }, TAGLINE),
       ])]),
       h('h1', null, 'Welcome to LoadBoot'),
       h('p', { class: 'cp-auth-sub' }, 'What kind of partner are you? You can set up more later.'),
@@ -445,7 +443,7 @@ async function brokerDash(user, ov) {
   // C2 — shipper requests assigned to THIS broker by Command Center: full facility detail + inline quote.
   function shipmentInboxCard() {
     const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Shipper requests (assigned to you)')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
-    (async () => {
+    async function loadInbox() {
       let rows; try { rows = await brokerShipmentInbox(); } catch (e) { mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Shipper requests')]), h('div', { class: 'cp-sub' }, (e && e.message) || 'Could not load.')]); return; }
       rows = rows || [];
       const items = rows.length ? rows.map(r => {
@@ -463,17 +461,72 @@ async function brokerDash(user, ov) {
               h('b', null, (r.origin || '—') + ' → ' + (r.destination || '—')),
               h('div', { class: 'cp-sub' }, [r.equipment, r.weight ? r.weight + ' lb' : null, r.commodity, r.ready_date ? 'ready ' + r.ready_date : null].filter(Boolean).join(' · ')),
               h('div', { class: 'cp-sub' }, 'Facility: ' + (r.facility_notes || '—') + ' · Dock: ' + (r.dock_hours || '—') + (r.appointment_required ? ' · appointment required' : '') + (r.terms ? ' · terms: ' + r.terms : '')),
+              h('div', { class: 'cp-sub' }, 'Ref: ' + (r.ref_po || '—') + ' · Cargo value: ' + (r.cargo_value ? '$' + Number(r.cargo_value).toLocaleString() : '—') + (r.temperature ? ' · temp: ' + r.temperature : '') + (r.hazmat ? ' · ⚠ HAZMAT: ' + (r.hazmat_info || '') : '') + (r.seal_required ? ' · seal req.' : '')),
+              h('div', { class: 'cp-sub' }, 'PU: ' + (r.pickup_contact || '—') + ' · DEL: ' + (r.delivery_contact || '—')),
               r.quote_amount ? h('div', { class: 'cp-sub', style: 'color:#16a34a' }, 'Your quote: $' + r.quote_amount) : null,
             ].filter(Boolean)),
-            h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [pill(r.status), amt, note, send]),
+            h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [
+              r.open_pool ? h('span', { class: 'cp-pill blue' }, 'OPEN POOL') : pill(r.status),
+              r.open_pool ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+                ev.currentTarget.disabled = true;
+                try { await brokerClaimShipment(r.id); ev.currentTarget.textContent = 'Claimed ✓'; loadInbox && loadInbox(); }
+                catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Already claimed.'); }
+              } }, 'Claim this freight') : null,
+              !r.open_pool && r.status !== 'tendered' ? amt : null,
+              !r.open_pool && r.status !== 'tendered' ? note : null,
+              !r.open_pool && r.status !== 'tendered' ? send : null,
+              !r.open_pool && r.status !== 'tendered' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async (ev) => {
+                const rate = Number(amt.value || r.quote_amount || 0);
+                if (!rate || rate <= 0) { alert('Enter the rate first (quote box).'); return; }
+                if (!confirm('Tender to LoadBoot dispatch at $' + rate + '? Industry-standard accessorial rates will be attached (server enforces the full card).')) return;
+                ev.currentTarget.disabled = true;
+                try {
+                  let m = {}; try { (await rateStandards() || []).forEach(x => { m[x.key] = x.value; }); } catch (_) {}
+                  await brokerTenderShipment(r.id, rate, { detention_per_hr: m.detention_per_hr || '60', detention_free_hours: m.detention_free_hours || '2', layover_per_day: m.layover_per_day || '250', tonu: m.tonu || '250', lumper_policy: m.lumper_policy || 'Reimbursed with receipt', fcfs: r.appointment_required ? 'false' : 'true' });
+                  ev.currentTarget.textContent = 'Tendered ✓'; loadInbox && loadInbox(); loadList();
+                } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not tender.'); }
+              } }, '🚀 Tender to dispatch') : null,
+            ].filter(Boolean)),
           ]),
         ]);
       }) : [h('div', { class: 'cp-sub' }, 'No shipper requests assigned to you right now. Command Center routes shipper freight to licensed broker partners here.')];
-      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Shipper requests (' + rows.length + ')')]), ...items]);
-    })();
+      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Shipper freight (' + rows.length + ') — open pool + yours')]), ...items]);
+    }
+    loadInbox();
     return card;
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), shipmentInboxCard(), invoicesCard(), referralCard(), accountCard()])));
+  function packetAgreementCards() {
+    const wrap = h('div', null);
+    const pc = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Industry onboarding packet')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+    (async () => {
+      let pk; try { pk = await myOnboardingPacket(); } catch (_) { pc.remove(); return; }
+      mount(pc, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Industry onboarding packet' + (pk.complete ? ' — complete ✓' : ''))]),
+        ...(pk.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap' }, [
+          h('div', null, [h('b', { style: 'font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, '[' + it.tag.toUpperCase() + ']' + (it.note ? ' · ' + it.note : ''))]),
+          h('div', { style: 'display:flex;gap:6px;align-items:center' }, [pill(it.status),
+            (it.status === 'pending' || it.status === 'rejected') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+              const ref = prompt('Document reference / note for: ' + it.label);
+              if (!ref) return;
+              try { await onboardingSubmitItem(it.key, ref, null); pc.querySelector('h3').textContent = 'Industry onboarding packet — submitted, refresh to update'; }
+              catch (e) { alert((e && e.message) || 'Failed'); }
+            } }, it.status === 'rejected' ? 'Resubmit' : 'Submit') : null].filter(Boolean)),
+        ]))]);
+    })();
+    const ac = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Master agreement')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+    (async () => {
+      let ag; try { ag = await currentAgreement('broker_carrier'); } catch (_) { ac.remove(); return; }
+      if (!ag.available) { mount(ac, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Master agreement')]), h('div', { class: 'cp-sub' }, ag.note || 'Pending legal review.')]); return; }
+      mount(ac, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, ag.title + ' (v' + ag.version + ')')]),
+        h('pre', { style: 'white-space:pre-wrap;font-size:.82rem;max-height:220px;overflow:auto;background:#f8fafc;padding:10px;border-radius:10px' }, ag.body_md || ''),
+        ag.accepted ? h('span', { class: 'cp-pill green' }, 'Accepted ✓') : h('button', { class: 'cp-btn', style: 'margin-top:8px', onClick: async (ev) => {
+          ev.currentTarget.disabled = true;
+          try { await acceptAgreement('broker_carrier'); ev.currentTarget.textContent = 'Accepted ✓'; } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); }
+        } }, 'Accept agreement (recorded once)')]);
+    })();
+    wrap.appendChild(pc); wrap.appendChild(ac);
+    return wrap;
+  }
+  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), shipmentInboxCard(), packetAgreementCards(), invoicesCard(), referralCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
@@ -487,6 +540,12 @@ async function shipperDash(user, ov) {
   ]);
   const origin = inp('Origin city, ST'), dest = inp('Destination city, ST'), ready = inp('', 'date'), equip = inp('Equipment');
   const weight = inp('Weight (lb)', 'number'), commodity = inp('Commodity'), pieces = inp('Pieces', 'number'), acc = inp('Accessorials (e.g. liftgate)'), notes = inp('Notes (optional)');
+  const facility = inp('Facility notes (dock #, entry, contact) *'), dock = inp('Dock hours (e.g. 06:00-14:00) *');
+  const refpo = inp('Load / PO reference *'), puc = inp('Pickup contact (name + phone) *'), dlc = inp('Delivery contact (name + phone) *');
+  const cval = inp('Cargo value ($) *', 'number'), temp = inp('Temperature (if reefer)'), hazinfo = inp('Hazmat info (class, UN/NA, shipping name)');
+  let hazOn = false; const hazBtn = h('button', { class: 'cp-btn ghost', onClick: () => { hazOn = !hazOn; hazBtn.textContent = 'Hazmat: ' + (hazOn ? 'Yes' : 'No'); } }, 'Hazmat: No');
+  let sealOn = false; const sealBtn = h('button', { class: 'cp-btn ghost', onClick: () => { sealOn = !sealOn; sealBtn.textContent = 'Seal required: ' + (sealOn ? 'Yes' : 'No'); } }, 'Seal required: No');
+  let apptReq = false; const apptBtn = h('button', { class: 'cp-btn ghost', onClick: () => { apptReq = !apptReq; apptBtn.textContent = 'Appointment required: ' + (apptReq ? 'Yes' : 'No'); } }, 'Appointment required: No');
   const err = h('div', { class: 'cp-err' });
   const listHost = h('div', { class: 'cp-tablewrap' }, h('div', { class: 'lb-state lb-loading' }, 'Loading…'));
   const btn = h('button', { class: 'cp-btn', onClick: async () => {
@@ -494,7 +553,7 @@ async function shipperDash(user, ov) {
     if (!origin.value.trim() || !dest.value.trim()) { err.textContent = 'Origin and destination are required.'; return; }
     btn.disabled = true; btn.textContent = 'Requesting…';
     try {
-      await partnerRequestShipment({ origin: origin.value.trim(), destination: dest.value.trim(), ready: ready.value || null, equipment: equip.value.trim() || null, weight: weight.value || null, commodity: commodity.value.trim() || null, pieces: pieces.value || null, accessorials: acc.value.trim() || null, notes: notes.value.trim() || null });
+      await shipperPostLoad({ origin: origin.value.trim(), destination: dest.value.trim(), ready_date: ready.value || '', equipment: equip.value.trim(), weight: weight.value, commodity: commodity.value.trim(), pieces: pieces.value, accessorials: acc.value.trim() || null, notes: notes.value.trim() || null, facility_notes: facility.value.trim(), dock_hours: dock.value.trim(), appointment_required: apptReq, ref_po: refpo.value.trim(), pickup_contact: puc.value.trim(), delivery_contact: dlc.value.trim(), cargo_value: cval.value, temperature: temp.value.trim(), hazmat: hazOn, hazmat_info: hazinfo.value.trim(), seal_required: sealOn });
       [origin, dest, ready, equip, weight, commodity, pieces, acc, notes].forEach(i => i.value = '');
       err.className = 'cp-err ok'; err.textContent = '✓ Shipment requested — we’ll quote and assign a truck.';
       loadList();
@@ -504,18 +563,21 @@ async function shipperDash(user, ov) {
   const form = h('div', { class: 'cp-card' }, [
     h('div', { class: 'cp-cardhead' }, [icon('plus', 18), h('h3', null, 'Request a shipment')]),
     h('div', { class: 'cp-formgrid' }, [field('Origin', origin), field('Destination', dest), field('Ready date', ready), field('Equipment', equip), field('Weight', weight), field('Commodity', commodity), field('Pieces', pieces), field('Accessorials', acc)]),
-    field('Notes', notes), err, btn,
+    field('Facility notes *', facility), field('Dock hours *', dock), field('Load / PO ref *', refpo), field('Pickup contact *', puc), field('Delivery contact *', dlc), field('Cargo value ($) *', cval), field('Temperature', temp), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Appointment'), apptBtn]), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Hazmat'), hazBtn]), field('Hazmat info (LEGAL if hazmat)', hazinfo), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Seal'), sealBtn]), field('Notes', notes), err, btn,
   ]);
   async function loadList() {
     try {
-      const rows = await partnerMyShipments(50);
+      // C2 — pipeline-aware list: status, QUOTE and who is handling it (broker identity hidden).
+      let rows; try { rows = await shipperMyShipments(); } catch (_) { rows = await partnerMyShipments(50); }
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No shipments yet. Request your first above.')); return; }
       mount(listHost, h('table', { class: 'cp-table' }, [
-        h('thead', null, h('tr', null, ['Lane', 'Ready', 'Equipment', 'Commodity', 'Status'].map(t => h('th', null, t)))),
+        h('thead', null, h('tr', null, ['Lane', 'Ready', 'Equipment', 'Status', 'Quote', 'Handled by'].map(t => h('th', null, t)))),
         h('tbody', null, rows.map(s => h('tr', null, [
           h('td', null, h('b', null, (s.origin || '—') + ' → ' + (s.destination || '—'))),
           h('td', null, fmtDate(s.ready_date)), h('td', null, s.equipment || '—'),
-          h('td', null, s.commodity || '—'), h('td', null, pill(s.status)),
+          h('td', null, pill(s.status)),
+          h('td', null, s.quote_amount ? h('b', { style: 'color:#16a34a' }, '$' + Number(s.quote_amount).toLocaleString() + (s.quote_note ? ' · ' + s.quote_note : '')) : h('span', { class: 'cp-sub' }, '—')),
+          h('td', null, h('span', { class: 'cp-sub' }, s.handled_by || '—')),
         ]))),
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }

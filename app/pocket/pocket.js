@@ -10,6 +10,7 @@ import {
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, pocketUploadPod, pocketTripPods, pocketAdvanceTrip,
   tripArrive, tripDepart, tripEmergencyRequest, myNotifications, markMyNotification,
+  dispatchSheet,
 } from '../shared/api.js';
 import { uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
@@ -207,6 +208,21 @@ async function appView() {
       } }, label);
       const stamps = isActive ? [stamp('At pickup', tripArrive, 'pickup'), stamp('Left pickup', tripDepart, 'pickup'), stamp('At delivery', tripArrive, 'delivery'), stamp('Left delivery', tripDepart, 'delivery')] : [];
       // Emergency / reschedule — defined category + detailed reason + PROOF required (A3 flow).
+      const shWrap = h('div');
+      const shBtn = h('button', { class: 'pk-btn sec pk-mini', onclick: async () => {
+        if (shWrap.firstChild) { shWrap.innerHTML = ''; return; }
+        shWrap.appendChild(h('div', { class: 's' }, 'Loading sheet…'));
+        try {
+          const d = await dispatchSheet(t.id);
+          shWrap.innerHTML = '';
+          const row = (k, v) => h('div', { class: 'pk-row', style: 'padding:5px 0' }, [h('div', { class: 's' }, k), h('div', { class: 't', style: 'font-size:13px;text-align:right' }, String(v ?? '—'))]);
+          [['Rate', '$' + (d.agreed_rate || 0)], ['RPM', d.loaded_rpm], ['Pickup', (d.pickup && (d.pickup.address + ' · ' + (d.pickup.window || d.pickup.date || ''))) || '—'],
+           ['Delivery', (d.delivery && (d.delivery.address + ' · ' + (d.delivery.window || d.delivery.date || ''))) || '—'],
+           ['Detention', (d.detention && ('$' + d.detention.rate_per_hr + '/hr after ' + d.detention.free_hours + 'h')) || '—'],
+           ['Lumper', d.lumper_process], ['POD', d.pod_instructions], ['Emergency', d.emergency_contact]]
+            .forEach(([k, v]) => shWrap.appendChild(row(k, v)));
+        } catch (e) { shWrap.innerHTML = ''; shWrap.appendChild(h('div', { class: 's' }, (e && e.message) || 'Could not load.')); }
+      } }, '📋 Sheet');
       const emWrap = h('div');
       const emBtn = isActive ? h('button', { class: 'pk-btn sec pk-mini', style: 'color:#dc2626;border-color:#fecaca', onclick: () => {
         if (emWrap.firstChild) { emWrap.innerHTML = ''; return; }
@@ -226,7 +242,7 @@ async function appView() {
           h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0))]),
           pill(t.status),
         ]),
-        (confirm || startBtn || deliverBtn || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, startBtn, deliverBtn, share, issueBtn, podBtn, ...stamps, emBtn].filter(Boolean)) : null,
+        (confirm || startBtn || deliverBtn || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, startBtn, deliverBtn, share, shBtn, issueBtn, podBtn, ...stamps, emBtn].filter(Boolean)) : null,
         formWrap,
         podWrap,
       ].filter(Boolean));
