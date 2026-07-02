@@ -1211,3 +1211,177 @@ box, no invented data):
 - NOTE (tooling): a GitHub-Desktop stash + file-sync race reverted the sandbox tree to HEAD mid-session;
   recovered via `git stash show -p | git apply` (no index lock needed) + idempotent re-apply script.
   All post-commit work verified present again before gates.
+
+## AI FOOTER ROW + TRUE LOGO LOCKUP (owner screenshots; batch 3)
+- **Footer AI**: moved OUT of the link columns into its own horizontal ROW below them (chips + names inline);
+  "(opens external site)" text REMOVED (the sr-only class was undefined in site CSS, so it rendered visibly
+  and wrapped); links5 back to 6 equal columns (owner: "spacing barabar"). Copy-live region now inline
+  visually-hidden (real a11y, no visible text). ALL AI GATES PASS; 0 "opens external" strings in output.
+- **TRUE LOGO LOCKUP** (owner: login/portals pe "wrong logo"): the approved treatment is icon-"L" + wordmark
+  "oadboot" reading as ONE word (marketing header). Portals were rendering icon + FULL "Loadboot" → looked
+  like "L·Loadboot". Fixed in ALL brand rows: carrier (auth + sidebar), partner ×3, developer ×2, pocket ×2,
+  Command Center brandLogo — wordmark now "oad**boot**"; icon↔word gaps tightened to 2–3px (carrier css is
+  shared by partner/developer; cc-brandrow 10→3px).
+- CAPSTONE INVARIANTS (live, both DBs): cc_* RPCs **358 = 358** (count parity), anon SECURITY DEFINER
+  surface **5 = 5**, payout fns 4/4 present, ready-gate trigger 1/1, referral_program staging ON / prod OFF.
+
+## A9 — POCKET APP DEPTH PASS (driver companion; roadmap Part A closed)
+- **Today's trip, front and center**: Home hero card shows the driver's current in_transit (or next
+  dispatched) trip with lane, rate, status and a one-tap jump to the full trip actions.
+- **Unified notifications on Home**: per-user cc_my_notifications feed (Inc 70 backbone) with the GLOBAL
+  tone colours (urgent red / warning amber / action blue / success green / info slate), unread highlight,
+  tap-to-mark-read — Command Center pushes now reach the driver's phone view, not just the web portal.
+- **Detention protection from the cab**: At/Left pickup + At/Left delivery stamp buttons on active trips
+  (cc_trip_arrive/depart — measured minutes; alert shows recorded detention beyond free time).
+- **🚨 Emergency from the phone**: proof-backed emergency/reschedule (defined category + detailed reason +
+  mandatory proof + optional new delivery time) — same proven cws flow as the carrier portal (payload keys
+  matched to the verified carrier implementation).
+- Gates: ESM ALL PASS (91), import-reference PASS, build OK. Frontend only (anon surface untouched, 5).
+- ROADMAP: Part A (A1–A9) is now fully shipped. Remaining are OWNER ACTIONS (WhatsApp number, pg_cron
+  digests/accrual, provider keys, referral prod flag + legal, GA service account, browser-evidence proofs).
+
+## CONTENT QUEUE #5 — "TRUCK DISPATCHER IN TEXAS" (premium local money-page)
+- New rich_article `truck-dispatcher-in-texas.html` per the auto-writer rules: ~1,500 words original expert
+  content (Texas Triangle reload geometry w/ custom SVG diagram, paying lanes incl. Permian exit-load warning,
+  equipment demand, seasons, Laredo border freight, a sequenced sample week, dispatcher value, honest TxDMV
+  intrastate note), 2 svc_banners, 4-item FAQ + FAQPage schema, custom THUMB, READTIME 8, blog index card,
+  PREMIUM_ARTICLES skip, internal links (tools/authority/new-authority). content-queue.md #5 → DONE.
+- Inventory re-run: no new orphans (only dashboard.html app shell); dup pairs down to 3 (all thin status.html
+  utility overlaps). Build OK; all gates PASS. Frontend only.
+
+## CWZ — AUTO-DISPATCH ENGINE (100%-automation core loop; owner directive)
+- **Migration `cwz_auto_dispatch` (+_fix)** — BOTH DBs, md5-identical (88fd5ef8…), anon surface 5:
+  `cc_auto_dispatch_run(actor, limit, top, expiry_min)` — SERVICE-ROLE ONLY cron runner. Every READY-TO-GO
+  board load with NO open/accepted offer automatically gets an offer wave to the TOP-matched eligible
+  carriers (cc_match_rank order) via the PROVEN cc_offer_send path (eligibility re-checked at send,
+  audited, evented, expiry). Broker/CC posts → carriers' phones, zero dispatcher clicks.
+- GUARDRAILS: feature flag `auto_dispatch` **staging ON / production OFF** (owner enables); runner must be
+  handed a REAL active staff uuid holding dispatch.manage (audit names a person, never a ghost); idempotent
+  (open-offer loads never re-offered); expired offers swept each run; carriers still accept by hand —
+  booking stays transactional + human on the accepting side; no money automation.
+- Proof: **AUTO-DISPATCH MATRIX: PASS (5 checks)** live on staging (invalid actor rejected, flag-off no-op,
+  flag-on sends offers on a seeded ready load, second run idempotent, anon+authenticated have NO EXECUTE).
+  Self-cleaning. OWNER ACTION to activate: enable the flag + schedule
+  `select cc_auto_dispatch_run('<staff-uuid>');` via pg_cron (e.g. every 5 min).
+- MARKETING/LEADS NOTE (owner ask): all four target audiences already have dedicated conversion pages with
+  lead forms + FAQ schema + the new motif design (carriers.html, brokers.html, shipper-solutions.html,
+  referral.html w/ ?ref tracking) + Texas money-page; content-queue #6–#10 remain for further lead content.
+
+## PART C KICKOFF — INDUSTRY RATE DEFAULTS (v1) + FULL-BRIDGE/PAYMENTS ROADMAP (owner directive)
+- Broker wizard + CC composer gain **"Use industry-typical defaults"** one-click ($60/hr detention after 2h
+  free · $250/day layover · $250 TONU · lumper reimbursed with receipt — editable, labeled typical) and an
+  explicit **posting = agreement** note; carriers see the agreed card verbatim pre-book (cwr/cwy paths).
+- **docs/CARRIER-PORTAL-AND-DESIGN-ROADMAP.md → PART C** captures the owner's full directive as the next
+  session's executable map: C1v2 server-side rate-standards + recorded agreements, C2 shipper↔broker bridge
+  (industry needs both ways + CC pipeline/SLA), C3 carrier↔broker deepening (scorecards/pay-signal),
+  C4 referral 100% automation (auto-accrue on paid invoice + auto-claim from ?ref), C5 bank-account payment
+  system (verified profiles, masked, recorded-only transfers, maker/checker unchanged).
+- Gates: ESM ALL PASS, build OK. NOTHING owner said is dropped — sab roadmap + task list mein hai.
+
+## CXA — C1v2 SHIPPED: CANONICAL INDUSTRY RATE STANDARDS + RECORDED AGREEMENTS
+- **Migration `cxa_rate_standards` (+_fix)** — BOTH DBs, md5-identical ×3 fns, 7 standards seeded, anon 5:
+  `app_private.rate_standards` (detention $60/hr, 2h free, layover $250/day, TONU $250, lumper
+  reimbursed-with-receipt, driver assist $75, stop-off $50/stop — VERSIONED, staff-editable via
+  `cc_set_rate_standard` w/ audit; `cc_rate_standards` readable by every authenticated user so brokers,
+  carriers and staff all see ONE truth).
+- **Automatic recorded agreement:** AFTER-INSERT triggers on partner_loads + board loads write
+  `app_private.load_rate_agreements` — WHO agreed, WHEN, the exact rate snapshot AND the standards version
+  in force. Every posted load now carries a permanent agreement record.
+- **Frontend server-truth:** wizard/composer "Use industry defaults" buttons now pull live
+  cc_rate_standards (fallback constants). api wrappers rateStandards/setRateStandard.
+- Proof: **RATE STANDARDS MATRIX: PASS (5 checks)** (all-auth read, carrier edit denied, staff edit bumps
+  version, CC-post agreement auto-recorded w/ snapshot+actor, broker-post agreement auto-recorded).
+  Self-cleaning. Gates: ESM ALL PASS, imports PASS.
+
+## CXB — C6 v1: MARKETING INTELLIGENCE BACKEND (ad-campaign-ready first-party data)
+- **Migration `cxb_marketing_intel` (+_fix)** — BOTH DBs, md5-identical (617c2a41…), anon surface 5:
+  `cc_marketing_intel(days)` (staff: analytics.view/comm.manage/comm.send) — ONE read for the ad desk:
+  top pages (beacon pageviews), UTM sources/mediums + campaigns by LEADS (paid-channel truth for
+  Google/Meta/TikTok spend decisions), referrer domains, leads-by-audience (carrier/broker/shipper/
+  referral_partner/newsletter/careers via form_key, spam-filtered), gap-filled daily lead series, and
+  live audience bases (carrier/broker/shipper orgs, drivers, referral partners, newsletter opt-ins) =
+  reachable marketing universe per audience. Honest basis string; keyword-level Google data rides the
+  already-built gsc-insights function once the owner connects the Google service account.
+- Proof: **MARKETING INTEL MATRIX: PASS (3 checks)** (shape, real audience base, carrier denied) +
+  anon no EXECUTE. api wrapper `marketingIntel`. C6 task tracks the CC view/graphs + audience-push UI.
+
+## C6 v2 — MARKETING INTELLIGENCE VIEW (Command Center)
+- New `/marketing-intel` view (nav: Marketing Intelligence; perm analytics.view / comm.manage / comm.send):
+  KPI strip (window leads + per-audience base w/ new-lead counts + newsletter reach), leads-per-day mini
+  chart, and measured-conversion bars — leads by audience, UTM sources (per-channel ad truth), UTM
+  campaigns, top pages (paid landing candidates), referrer domains — all off cc_marketing_intel (cxb).
+  Footer note routes audience PUSH to the existing rails: Campaign Manager (consent-enforced email) +
+  Notify broadcast (in-app by role). Files: views/marketingIntel.js, app.js, shell.js, api.js.
+- Gates: ESM ALL PASS (92 files), import-reference PASS. C6 residual (GSC keyword panel + keyword
+  suggestions + one-click push buttons) stays tracked in task #22.
+
+## CXC — C4 SHIPPED: REFERRAL PROGRAM 100% AUTOMATION
+- **C4a auto-claim (frontend):** the marketing site already stores ?ref=CODE in localStorage; the carrier
+  portal now claims it SILENTLY on first entry (server still enforces one-referrer-per-org + no self-claim)
+  then clears the key — an influencer's link converts to a tracked referral with zero manual steps.
+- **C4b auto-accrue — migration `cxc_referral_auto_accrue`** (BOTH DBs, md5-identical ×3 fns, trigger on
+  both, anon 5): the proven accrual logic moved to internal `app_private.referral_accrue_core` (never
+  granted); `cc_referral_accrue` is now a finance.manage-gated wrapper; an AFTER INSERT/UPDATE-of-status
+  trigger on fin_invoices fires the core the MOMENT a fee-bearing invoice is sent/paid — commissions accrue
+  and hold-expired rows promote to payable with no cron and no click. Trigger swallows its own errors so
+  invoicing can never break on accrual.
+- FULL AUTOMATED CHAIN NOW: influencer link → auto-claim → carrier hauls → invoice paid → auto-accrue →
+  15-day hold auto-promote → payout REQUEST by referrer (bank details) → the ONLY human gate: staff
+  approve/paid (money moves on the normal rail).
+- Proof: **AUTO-ACCRUE MATRIX: PASS (4 checks)** (trigger accrues on paid fee-invoice, idempotent re-fire,
+  carrier denied on wrapper) + anon surface 5. Self-cleaning (incl. chain-wide commission cleanup).
+
+## CXD — C5 SHIPPED: BANK-ACCOUNT PAYMENT SYSTEM (default rail; frontend + backend)
+- **Migration `cxd_payment_profiles`** — BOTH DBs, combined md5 IDENTICAL, anon surface 5:
+  `app_private.org_payment_profiles` (one bank profile per carrier/broker org) + 4 RPCs:
+  `cc_set_my_payment_profile` (self-scoped upsert; required fields; ANY edit auto-resets verification),
+  `cc_my_payment_profile` (masked last-4 even for the owner), `cc_payment_profiles_queue`
+  (finance.view; full details for verification), `cc_verify_payment_profile` (finance.approve; verifier
+  recorded; revoke supported). NO money moves from any of this — transfers stay recorded-only under
+  maker/checker; ACH/provider integration is a future owner decision.
+- Proof: **PAYMENT PROFILES MATRIX: PASS (7 checks)** (self set unverified, masked self-read, partial
+  rejected, carrier denied queue, staff full-detail queue + verify, edit resets verification, outsider
+  denied) + anon no EXECUTE. Self-cleaning.
+- **Frontend:** carrier Account gains **"Payment method (bank)"** card — tone-coded status
+  (warning=not set / action=awaiting verification / success=verified), masked display, add/update modal
+  with the verification-reset notice. api wrappers ×4 (staff queue UI for Finance tab tracked in C5 task
+  residual with broker-portal card).
+
+## CXE — C3 SHIPPED: CARRIER↔BROKER BRIDGE TRUST SIGNALS
+- **Migration `cxe_bridge_signals`** — BOTH DBs, combined md5 IDENTICAL, anon surface 5:
+  - `cc_broker_view_carrier(carrier)` — a broker sees a carrier's REAL performance summary (delivered
+    trips, on-time % with basis, open exceptions) but ONLY for a carrier holding an offer/booking on that
+    broker's OWN loads — no directory browsing, entitlement enforced in SQL.
+  - `cc_carrier_view_poster(load)` — a carrier sees the POSTING PARTY's track record for an available
+    board load (loads submitted/posted/delivered, on-time %) with identity still hidden ('Broker partner');
+    LoadBoot-direct posts answer honestly with a no-external-party basis.
+- Proof: **BRIDGE SIGNALS MATRIX: PASS (4 checks)** (relationship-less broker denied, carrier poster-view
+  works incl. LoadBoot-direct answer, carrier denied broker view, outsider denied) + anon no EXECUTE.
+- api wrappers brokerViewCarrier/carrierViewPoster. UI surfacing (poster card in the carrier
+  "Detailed overview" modal + carrier summary chip on broker offer rows) tracked as C3 residual with C2.
+
+## CXF — C2 SHIPPED: SHIPPER↔BROKER BRIDGE (request→assign→quote pipeline)
+- **Migration `cxf_shipper_broker_bridge`** — BOTH DBs, combined md5 IDENTICAL ×5 fns, anon surface 5.
+  Built ADDITIVELY on the existing app_private.partner_shipments (+10 columns: assigned_broker, facility_notes,
+  dock_hours, appointment_required, terms, quote fields, tendered_partner_load). COMPLIANCE BOUNDARY intact:
+  shipper stays inquiry/coordination scope, a LICENSED broker handles the transaction, CC controls assignment.
+  - `cc_assign_shipment(id, broker)` — staff (dispatch/partners.manage); refuses non-broker orgs.
+  - `cc_broker_shipment_inbox()` — broker self: assigned requests WITH the industry detail a broker needs
+    (facility notes, dock hours, appointment flag, terms, weight/commodity/pieces).
+  - `cc_broker_quote_shipment(id, amount, note)` — broker self on own assignment; positive amount enforced.
+  - `cc_shipper_my_shipments()` — shipper self: status + quote; broker identity HIDDEN ('Licensed broker partner').
+  - `cc_shipment_pipeline()` — CC SLA view: every request with status + age_hours.
+- Proof: **SHIPPER-BROKER BRIDGE MATRIX: PASS (6 checks)** (non-broker assignment refused, assign works,
+  broker inbox carries facility detail, zero-quote refused + quote recorded, carrier denied inbox, staff
+  pipeline shows quoted+age). Self-cleaning. api wrappers ×5. Portal UI panels = C2 residual (with C3 UI + C6).
+
+## C2/C3 UI WIRED — BRIDGE SCREENS IN THE PORTALS
+- **Broker portal:** new "Shipper requests (assigned to you)" card — CC-assigned shipper freight with the
+  full industry detail (equipment/weight/commodity/ready date, facility notes, dock hours, appointment flag,
+  terms) + INLINE QUOTE (amount + note → cc_broker_quote_shipment; positive-amount client check; re-quote
+  supported; status pills). Empty state explains the CC-routes-to-licensed-brokers model.
+- **Carrier portal:** the "Detailed overview" modal now appends the POSTING PARTY's real track record
+  (loads delivered, on-time %, submitted — identity hidden; LoadBoot-direct posts answer honestly) via
+  cc_carrier_view_poster — the carrier's decision set is now complete INCLUDING who they are working with.
+- Gates: ESM ALL PASS (92 files), import-reference PASS. C6 residual (GSC keyword panel = owner Google SA;
+  one-click audience push buttons) remains the only open UI item.

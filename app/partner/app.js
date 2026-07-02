@@ -8,7 +8,7 @@ import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
 import {
   partnerRegister, partnerOverview,
-  partnerPostLoad, partnerMyLoads, partnerSubmitLoad,
+  partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment,
   partnerRequestShipment, partnerMyShipments,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
@@ -96,7 +96,7 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('Load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
+        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
         h('div', { class: 'cp-tagline' }, TAGLINE),
       ])]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
@@ -135,7 +135,7 @@ function choosePartnerType(user) {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card', style: 'max-width:520px' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('Load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
+        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Partner')]),
         h('div', { class: 'cp-tagline' }, TAGLINE),
       ])]),
       h('h1', null, 'Welcome to LoadBoot'),
@@ -188,7 +188,7 @@ function shell(user, kind, company, kpis, content) {
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
         h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [brandMark(), h('div', null, [
-          h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('Load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, label)]),
+          h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, label)]),
           h('div', { class: 'cp-carrier-name', style: 'font-size:.82rem' }, company || 'Partner'),
         ])]),
         h('div', { class: 'cp-top-right' }, [
@@ -333,7 +333,8 @@ async function brokerDash(user, ov) {
     else if (step === 1) body = h('div', { class: 'cp-formgrid' }, [wi('Pickup date', 'pickup_date', 'date'), wi('Pickup window', 'pickup_window'), wi('Delivery date', 'delivery_date', 'date'), wi('Delivery window', 'delivery_window')]);
     else if (step === 2) body = h('div', { class: 'cp-formgrid' }, [wi('Equipment (e.g. Dry Van)', 'equipment'), wi('Commodity', 'commodity'), wi('Weight (lb)', 'weight', 'number'), wi('Rate ($)', 'rate', 'number')]);
     else if (step === 3) body = h('div', null, [
-      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'A carrier must be able to book without a single phone call — every rate below is REQUIRED before this load can post.'),
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'A carrier must be able to book without a single phone call — every rate below is REQUIRED before this load can post. By posting you agree these rates apply to this load.'),
+      (() => { const b = h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'margin-bottom:8px', onClick: async () => { let m = {}; try { (await rateStandards() || []).forEach(r => { m[r.key] = r.value; }); } catch (_) {} w.acc_detention_per_hr = m.detention_per_hr || '60'; w.acc_detention_free_hours = m.detention_free_hours || '2'; w.acc_layover_per_day = m.layover_per_day || '250'; w.acc_tonu = m.tonu || '250'; w.acc_lumper_policy = m.lumper_policy || 'Reimbursed with receipt'; renderStep(); } }, 'Use industry-typical defaults ($60/hr after 2h · $250 layover · $250 TONU · lumper reimbursed)'); return b; })(),
       h('div', { class: 'cp-formgrid' }, [
         wi('Detention rate ($/hr) *', 'acc_detention_per_hr', 'number'),
         wi('Free time before detention (hours) *', 'acc_detention_free_hours', 'number'),
@@ -441,7 +442,38 @@ async function brokerDash(user, ov) {
       })));
     })();
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), invoicesCard(), referralCard(), accountCard()])));
+  // C2 — shipper requests assigned to THIS broker by Command Center: full facility detail + inline quote.
+  function shipmentInboxCard() {
+    const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Shipper requests (assigned to you)')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+    (async () => {
+      let rows; try { rows = await brokerShipmentInbox(); } catch (e) { mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Shipper requests')]), h('div', { class: 'cp-sub' }, (e && e.message) || 'Could not load.')]); return; }
+      rows = rows || [];
+      const items = rows.length ? rows.map(r => {
+        const amt = h('input', { class: 'cp-in', type: 'number', placeholder: 'Quote $', style: 'max-width:110px' });
+        const note = h('input', { class: 'cp-in', placeholder: 'Quote note (all-in? FCFS?)', style: 'max-width:220px' });
+        const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          if (!amt.value || Number(amt.value) <= 0) { alert('Enter a positive quote amount.'); return; }
+          ev.currentTarget.disabled = true;
+          try { await brokerQuoteShipment(r.id, Number(amt.value), note.value.trim() || null); ev.currentTarget.textContent = 'Quoted ✓'; }
+          catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not quote.'); }
+        } }, r.status === 'quoted' ? 'Re-quote' : 'Send quote');
+        return h('div', { style: 'padding:10px 0;border-bottom:1px solid #e2e8f0' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [
+            h('div', null, [
+              h('b', null, (r.origin || '—') + ' → ' + (r.destination || '—')),
+              h('div', { class: 'cp-sub' }, [r.equipment, r.weight ? r.weight + ' lb' : null, r.commodity, r.ready_date ? 'ready ' + r.ready_date : null].filter(Boolean).join(' · ')),
+              h('div', { class: 'cp-sub' }, 'Facility: ' + (r.facility_notes || '—') + ' · Dock: ' + (r.dock_hours || '—') + (r.appointment_required ? ' · appointment required' : '') + (r.terms ? ' · terms: ' + r.terms : '')),
+              r.quote_amount ? h('div', { class: 'cp-sub', style: 'color:#16a34a' }, 'Your quote: $' + r.quote_amount) : null,
+            ].filter(Boolean)),
+            h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [pill(r.status), amt, note, send]),
+          ]),
+        ]);
+      }) : [h('div', { class: 'cp-sub' }, 'No shipper requests assigned to you right now. Command Center routes shipper freight to licensed broker partners here.')];
+      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Shipper requests (' + rows.length + ')')]), ...items]);
+    })();
+    return card;
+  }
+  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), shipmentInboxCard(), invoicesCard(), referralCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }

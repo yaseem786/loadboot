@@ -49,7 +49,7 @@
 .cc-side::-webkit-scrollbar-track{background:transparent}
 .cc-brand{padding:8px 8px 6px}
 /* real LoadBoot logo (mark + wordmark) */
-.cc-brandrow{display:flex;align-items:center;gap:10px}
+.cc-brandrow{display:flex;align-items:center;gap:3px}
 .cc-mark{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .cc-side .cc-mark{background:none;box-shadow:0 6px 16px -6px rgba(59,130,246,.55)}
 .cc-brandtxt{line-height:1.1}

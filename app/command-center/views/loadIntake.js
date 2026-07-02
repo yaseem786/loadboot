@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
-import { loadIntakeList, createLoadSourced, loadSetVerification, LOAD_SOURCE_TYPES } from '../../shared/api.js';
+import { loadIntakeList, createLoadSourced, loadSetVerification, LOAD_SOURCE_TYPES, rateStandards } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 import { openMatch } from './matchCenter.js';
@@ -86,7 +86,8 @@ export function renderLoadIntake(host) {
       el('label', { class: 'cc-field' }, [el('span', null, 'Confidence'), confSel2]),
       el('p', { class: 'cc-sub' }, 'Attribute the real source. Do not mark unverified information as verified.'),
       el('div', { style: 'border-top:1px solid var(--lb-border,#e2e8f0);margin:10px 0;padding-top:10px;font-weight:700' }, 'Rate card — required before the load can post'),
-      el('p', { class: 'cc-sub' }, 'A carrier must know every rate before booking. The server refuses loads without a complete card.'),
+      el('p', { class: 'cc-sub' }, 'A carrier must know every rate before booking. The server refuses loads without a complete card. Posting = agreement that these rates apply.'),
+      (() => { const b = el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-bottom:8px', onClick: async () => { let m = {}; try { (await rateStandards() || []).forEach(r => { m[r.key] = r.value; }); } catch (_) {} f.acc_detention_per_hr = m.detention_per_hr || '60'; f.acc_detention_free_hours = m.detention_free_hours || '2'; f.acc_layover_per_day = m.layover_per_day || '250'; f.acc_tonu = m.tonu || '250'; f.acc_lumper_policy = m.lumper_policy || 'Reimbursed with receipt'; alert('LoadBoot standard rates set — adjust any field before posting.'); } }, 'Use industry-typical defaults'); return b; })(),
       inp('Detention rate ($/hr) *', 'acc_detention_per_hr', '55'),
       inp('Free time before detention (hours) *', 'acc_detention_free_hours', '2'),
       inp('Layover rate ($/day) *', 'acc_layover_per_day', '225'),

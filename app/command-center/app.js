@@ -36,6 +36,7 @@ import { renderAudiences } from './views/audiences.js';
 import { renderCampaignManager } from './views/campaignManager.js';
 import { renderDeliveryHealth } from './views/deliveryHealth.js';
 import { renderMarketingAnalytics } from './views/marketingAnalytics.js';
+import { renderMarketingIntel } from './views/marketingIntel.js';
 import { renderSmartMatch } from './views/smartMatch.js';
 import { renderAnalytics } from './views/analytics.js';
 import { renderContent } from './views/content.js';
@@ -221,6 +222,7 @@ async function boot() {
     '/campaign-manager': () => { setActive('/campaign-manager'); if (can('content.view')) renderCampaignManager(content); else denied(); },
     '/delivery': () => { setActive('/delivery'); if (can('content.view') || can('content.manage') || can('settings.manage')) renderDeliveryHealth(content); else denied(); },
     '/marketing-analytics': () => { setActive('/marketing-analytics'); if (can('content.view')) renderMarketingAnalytics(content); else denied(); },
+    '/marketing-intel': () => { setActive('/marketing-intel'); if (can('analytics.view') || can('comm.manage') || can('comm.send')) renderMarketingIntel(content); else denied(); },
     '/matching': () => { setActive('/matching'); if (can('carriers.view')) renderSmartMatch(content); else denied(); },
     '/analytics': () => { setActive('/analytics'); if (analyticsEnabled && can('analytics.view')) renderAnalytics(content); else denied(); },
     '/web-analytics': () => { setActive('/web-analytics'); if (webAnalyticsEnabled && can('analytics.view')) renderAnalyticsWeb(content); else denied(); },

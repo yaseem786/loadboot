@@ -22,7 +22,7 @@ Cadence: 3–4 per week (e.g. Mon / Wed / Fri). Never publish more than one per 
 | 2 | DONE | truck-dispatcher-vs-freight-broker.html | Truck Dispatcher vs Freight Broker vs Factoring | dispatcher vs broker |
 | 3 | DONE | how-to-find-a-good-truck-dispatcher.html | How to Find a Good Truck Dispatcher (Checklist) | how to find a truck dispatcher |
 | 4 | DONE | owner-operator-dispatch-service-guide.html | Owner-Operator Dispatch Service: Complete Guide | owner operator dispatch service |
-| 5 | TODO | truck-dispatcher-in-texas.html | Truck Dispatcher in Texas (local money-page) | truck dispatcher texas |
+| 5 | DONE | truck-dispatcher-in-texas.html | Truck Dispatcher in Texas (local money-page) | truck dispatcher texas |
 | 6 | TODO | do-new-authority-carriers-need-a-dispatcher.html | Do New-Authority Carriers Need a Dispatcher? | new authority dispatcher |
 | 7 | TODO | how-to-read-a-rate-confirmation.html | How to Read a Rate Confirmation | rate confirmation explained |
 | 8 | TODO | truck-dispatcher-in-california.html | Truck Dispatcher in California (local money-page) | truck dispatcher california |
