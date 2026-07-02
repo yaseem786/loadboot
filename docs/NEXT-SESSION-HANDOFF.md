@@ -100,6 +100,10 @@ Freight / Amazon Relay), operating at ~300M-account scale.
 - **Owner actions (not codeable):** schedule `select cc_digest_run_due();` (pg_cron) to activate digests;
   legal sign-off + flip `referral_program` prod flag; live provider keys for email/SMS workers.
 
+### A7 CHAT: DECIDED — WhatsApp deep-link (owner choice, this session)
+Owner must set WHATSAPP_NUMBER in app/carrier/app.js (E.164 digits); the Support-tab chat row stays hidden
+until then. Optionally point the marketing wa-btn at the same number.
+
 ## 7. TEST FIXTURES (staging `snslhvmkjusozgjelghi`)
 - Staff (analytics.view + more): `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1`
 - Staff (carriers.view/dispatch.manage/comm.send): `11111111-1111-1111-1111-111111111111`, `44444444-4444-4444-4444-444444444444`

@@ -49,7 +49,7 @@ const ic = (name) => ({
   finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
-const LOGO_SVG = '<img src="/icon-512.png" width="26" height="26" alt="LoadBoot" style="border-radius:22%;display:block">';
+const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'Keep Your Wheels Earning';
 const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
 

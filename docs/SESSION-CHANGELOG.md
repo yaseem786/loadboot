@@ -1152,3 +1152,62 @@ box, no invented data):
   carrier sets min RPM / equipment / lanes ("best-match needs these") deep-linking to Account; prefs remain
   editable any time and feed cc_carrier_best_loads + CC AI matching (existing engine).
 - Gates: ESM SYNTAX ALL PASS (91 files), import-reference PASS, build OK, AI-footer gates PASS.
+
+## CWY — CC-POSTED LOADS DECISION-COMPLETE + A3 STAFF EMERGENCY SCREEN (loop closed)
+- **Migration `cwy_cc_load_rates`** (BOTH DBs, md5-identical 41a39da3…/de7b8fe7…; anon surface 5 both):
+  - `cc_create_load_sourced` now enforces the SAME ready-to-go gate as broker submissions — a staff post
+    cannot reach the carrier board without field_meta.accessorials (detention_per_hr / detention_free_hours /
+    layover_per_day / tonu, numeric) + lumper_policy + a scheduling model (FCFS / appointment / pickup window).
+    Fixes the "No accessorial rates specified for this load" case the owner screenshotted.
+  - `cc_load_detail` falls back to loads.field_meta for accessorials / windows / appointment / stops, so
+    CC-captured terms render to carriers exactly like broker terms (broker identity still never exposed).
+  - Proof: **CC LOAD RATES MATRIX: PASS (3 checks)** on staging (rate-less staff post rejected, complete post
+    accepted, carrier detail shows the CC rate card + window via fallback). Self-cleaning.
+- **Load Intake composer** (Command Center): "Rate card — required" block (detention/free-hours/layover/TONU,
+  lumper select, scheduling select + window) with client-side named-field validation; payload maps to field_meta.
+- **A3 STAFF LOOP CLOSED — Exception Center gains "🚨 Emergency requests"**: open carrier emergency/reschedule
+  requests (category, detailed reason, proof ref, requested new delivery time, carrier + lane context via
+  cc_emergency_queue) with per-row **Approve / Deny + decision note** (cc_emergency_review, dispatch.manage-gated;
+  field names verified against the live RPC). The carrier-side request flow (cws) now has its staff counterpart.
+- Gates: ESM SYNTAX ALL PASS (91), import-reference PASS. No anon-surface change (5 both DBs).
+
+## FOOTER AI → COLUMN + ONBOARDING REQUIRES DISPATCH PREFS (owner instructions; single-commit batch)
+- **Footer AI section relocated + compacted** (owner: "column mein ho jaise baqi sections, lambi text nahi"):
+  now the 7th links5 column — "Ask AI for info" heading + vertical provider rows (glyph chip + name + ↗),
+  no visible prompt/disclosure copy. ALL mechanics preserved (copy-prompt-first, page-aware prompts, new-tab
+  noopener, analytics, fallback) via hidden prompt machinery + sr-only live region. links5 grid → 7 columns.
+  ai_research_footer_checks.py markers updated to structural ids (owner decision documented in the test).
+- **Onboarding wizard: "Dispatch preferences" is now a REQUIRED step** (step 4 of 6) — minimum $/mi, preferred
+  equipment (prefills from the equipment step) and lanes are validated before the carrier can continue;
+  max deadhead + home base optional; saved via cc_set_dispatch_prefs (editable later in Account, same engine
+  that feeds cc_carrier_best_loads + CC AI matching). Review step shows the prefs line.
+- Fixed the Loads-tab prefs nudge to read the REAL pref field names (preferred_equipment/preferred_lanes).
+- Gates: build OK, ALL AI GATES PASS, ESM ALL PASS (91), import-reference PASS. No DB change (anon 5).
+
+## DOCUMENTS: TAP-TO-UPLOAD ON EVERY REQUIREMENT (owner instruction)
+- Every non-valid requirement row in "What LoadBoot needs from you" is now a button (role=button,
+  keyboard-focusable): tapping it opens an upload modal with the DOCUMENT TYPE PRE-SELECTED (name→type map:
+  insurance/COI→insurance, MC-DOT/MCS-150→authority, W-9→w9, NOA→noa, agreement→agreement, else other),
+  file picker + private-storage note; a successful upload refreshes the whole Documents view. Row shows
+  "tap to upload" hint + an Upload affordance. Valid items stay non-clickable.
+- Gates: ESM ALL PASS (91), import-reference PASS. Frontend only.
+
+## A7 CHAT DECIDED + WIRED — WHATSAPP DEEP-LINK (owner choice via in-session question)
+- Owner chose WhatsApp deep-link as the carrier↔dispatch live-chat transport. Support tab's dispatch-desk
+  card gains a green "Live chat on WhatsApp" row → wa.me deep link with a prefilled greeting.
+- HONESTY GUARD: `WHATSAPP_NUMBER` constant (app/carrier/app.js, top) ships EMPTY — the chat row is HIDDEN
+  until the owner sets the real business number in E.164 digits. No invented contact is ever shown.
+- OWNER ACTION: set WHATSAPP_NUMBER (e.g. '15551234567') in app/carrier/app.js; optionally point the
+  marketing site's floating wa-btn (currently contact.html) at the same number.
+
+## ORIGINAL-LOGO AUDIT — APP PORTALS (owner order: no wrong mark anywhere)
+- carrier .cp-logo: the synthetic navy-gradient BOX behind the official icon removed (it made the real
+  mark look fake on the login card + sidebar); official icon now renders bare at 34px in carrier, partner
+  and developer portals (was 26px inside the box).
+- carrier topbar avatar: synthetic blue letter-circle ("C") replaced with the official icon-512 mark
+  (round, 38px) — still opens the account menu (name/email/settings/sign out).
+- Pocket app: brand rows had NO mark (text only) — official icon added next to the wordmark on both the
+  auth and app headers. Command Center/marketing already used the true icon (verified).
+- NOTE (tooling): a GitHub-Desktop stash + file-sync race reverted the sandbox tree to HEAD mid-session;
+  recovered via `git stash show -p | git apply` (no index lock needed) + idempotent re-apply script.
+  All post-commit work verified present again before gates.

@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
-import { exceptionCenter, resolveException, detentionScan } from '../../shared/api.js';
+import { exceptionCenter, resolveException, detentionScan, emergencyQueue, emergencyReview } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -23,13 +23,45 @@ export function renderExceptionCenter(host) {
     catch (e) { toast(humanizeError(e), 'error'); }
     ev.currentTarget.disabled = false;
   } }, 'Run detention scan') : null;
+  const emCard = el('div', { class: 'lb-card', style: 'margin:10px 0' });
   mount(host, el('div', null, [
     sectionHead('Exception Center', 'Detention is measured from recorded arrive/depart timestamps and auto-drafted for review — nothing is billed automatically. Every open exception needs an owner and a resolution note.', scanBtn),
     kpis,
+    emCard,
     el('div', { style: 'display:flex;gap:8px;margin:10px 0' }, [stSel]),
     body,
   ]));
   load();
+  loadEmergencies();
+
+  // A3 staff loop — carrier emergency / reschedule requests (category + detailed reason + PROOF required
+  // at submission; approve/deny here with a note).
+  async function loadEmergencies() {
+    mount(emCard, el('div', null, [el('h3', { style: 'margin:0 0 8px' }, '🚨 Emergency requests'), el('div', { class: 'cc-sub' }, 'Loading…')]));
+    let rows; try { rows = await emergencyQueue('open', 100); } catch (e) { mount(emCard, el('div', null, [el('h3', { style: 'margin:0 0 8px' }, '🚨 Emergency requests'), el('div', { class: 'cc-sub' }, humanizeError(e))])); return; }
+    rows = Array.isArray(rows) ? rows : [];
+    const head = el('h3', { style: 'margin:0 0 8px' }, '🚨 Emergency requests (' + rows.length + ' open)');
+    if (!rows.length) { mount(emCard, el('div', null, [head, el('div', { class: 'cc-sub' }, 'No open emergency requests. Carriers raise these from an active trip with a defined category, a detailed reason and mandatory proof.')])); return; }
+    const items = rows.map((r) => {
+      const note = el('input', { class: 'cc-input', placeholder: 'Decision note (visible to the carrier)', style: 'max-width:260px' });
+      const act = (label, approve, primary) => el('button', { class: 'lb-btn lb-btn-sm' + (primary ? ' lb-btn-primary' : ''), style: 'margin-left:6px', onClick: async (ev) => {
+        ev.currentTarget.disabled = true;
+        try { await emergencyReview(r.id, approve, note.value.trim() || null); toast('Request ' + (approve ? 'approved' : 'denied'), 'success'); loadEmergencies(); }
+        catch (e) { toast(humanizeError(e), 'error'); ev.currentTarget.disabled = false; }
+      } }, label);
+      return el('div', { style: 'padding:10px 0;border-bottom:1px solid var(--lb-border,#e2e8f0)' }, [
+        el('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [
+          el('div', null, [
+            el('div', { style: 'font-weight:700' }, (r.category || 'emergency').replace(/_/g, ' ').toUpperCase() + ' — ' + (r.carrier || 'carrier') + ' · ' + (r.origin || '—') + ' → ' + (r.destination || '—')),
+            el('div', { class: 'cc-sub' }, 'Reason: ' + (r.reason || '—')),
+            el('div', { class: 'cc-sub' }, 'Proof: ' + (r.proof_ref || '—') + (r.requested_reschedule_to ? ' · requested new delivery: ' + new Date(r.requested_reschedule_to).toLocaleString() : '') + ' · raised ' + (r.created_at ? new Date(r.created_at).toLocaleString() : '—')),
+          ]),
+          manage ? el('div', { style: 'display:flex;align-items:center;gap:4px;flex-wrap:wrap' }, [note, act('Approve', true, true), act('Deny', false, false)]) : el('span', { class: 'cc-sub' }, 'dispatch.manage required'),
+        ]),
+      ]);
+    });
+    mount(emCard, el('div', null, [head].concat(items)));
+  }
 
   async function load() {
     showLoading(body, 'Loading exceptions…');
