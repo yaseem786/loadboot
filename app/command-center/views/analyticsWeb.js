@@ -98,7 +98,7 @@ export function renderAnalyticsWeb(host) {
     const daily = (ov && ov.daily) || [];
     const trendCard = card([
       el('h4', { class: 'cc-card-title' }, 'Sessions · last ' + days + ' days'),
-      barChart(daily.map(d => ({ c: Number(d.sessions) || 0 })), { height: 64 }),
+      areaChart(daily, { height: 168 }),
     ]);
 
     const sources = Object.entries((ov && ov.by_source) || {}).sort((a, b) => b[1] - a[1]);
@@ -231,6 +231,36 @@ function sourceDrawer(cls, refs, host) {
 
 function kv(k, v) {
   return el('div', { class: 'cc-kv' }, [el('span', { class: 'cc-kv-k' }, k), el('span', { class: 'cc-kv-v' }, v)]);
+}
+
+// GA-style smooth area+line trend from [{day,sessions}] — real data, gradient fill.
+function areaChart(daily, opts) {
+  opts = opts || {};
+  const rows = daily || [];
+  const data = rows.map(d => Number(d.sessions) || 0);
+  const W = 640, H = 160, pad = 10;
+  const max = Math.max(1, ...data);
+  const n = data.length;
+  const step = n > 1 ? (W - pad * 2) / (n - 1) : 0;
+  const pts = data.map((v, i) => [pad + i * step, H - pad - (v / max) * (H - pad * 2)]);
+  const line = pts.map((pt, i) => (i ? 'L' : 'M') + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1)).join(' ');
+  const lastX = (pad + (n - 1) * step).toFixed(1);
+  const area = n > 1 ? (line + ' L' + lastX + ' ' + (H - pad) + ' L' + pad + ' ' + (H - pad) + ' Z') : '';
+  const peak = Math.max(...data, 0);
+  const svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + (opts.height || 168) + '" preserveAspectRatio="none">'
+    + '<defs><linearGradient id="awArea" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="#0883F7" stop-opacity="0.30"/><stop offset="1" stop-color="#0883F7" stop-opacity="0"/></linearGradient></defs>'
+    + (area ? '<path d="' + area + '" fill="url(#awArea)"/>' : '')
+    + '<path d="' + line + '" fill="none" stroke="#0883F7" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+    + '</svg>';
+  return el('div', null, [
+    el('div', { class: 'cc-chart', html: svg }),
+    el('div', { class: 'cc-sub', style: 'display:flex;justify-content:space-between;margin-top:4px;font-size:.74rem' }, [
+      el('span', null, (rows[0] && rows[0].day) ? String(rows[0].day) : ''),
+      el('span', null, 'peak ' + peak + ' / day'),
+      el('span', null, (rows[n - 1] && rows[n - 1].day) ? String(rows[n - 1].day) : ''),
+    ]),
+  ]);
 }
 
 export default renderAnalyticsWeb;

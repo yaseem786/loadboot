@@ -5,7 +5,7 @@
 // is not connected it says so. CSV/Excel/PDF export per table.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
-import { sectionHead, statCard, card, barChart, segmented, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
+import { sectionHead, statCard, card, barChart, segmented, fmtDate, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
 import { ga4Insights, gscInsights } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
@@ -114,18 +114,29 @@ export function renderGoogleData(host) {
     ]));
   }
 
+  function kvRow(k, v) { return el('div', { class: 'cc-kv' }, [el('span', { class: 'cc-kv-k' }, k), el('span', { class: 'cc-kv-v' }, v)]); }
   function gaTable(title, rows, cols, base) {
     rows = rows || [];
+    const mkey = (cols[1] && cols[1].key) || null;
+    const total = mkey ? rows.reduce((a, r) => a + (Number(r[mkey]) || 0), 0) : 0;
     const exp = el('div', { class: 'cc-seg' }, [
-      el('button', { class: 'cc-seg-btn', onClick: () => downloadCSV('loadboot-' + base, cols, rows) }, 'CSV'),
-      el('button', { class: 'cc-seg-btn', onClick: () => downloadExcel('loadboot-' + base, cols, rows, title) }, 'Excel'),
-      el('button', { class: 'cc-seg-btn', onClick: () => printTable(title, 'LoadBoot · Google data', cols, rows) }, 'PDF'),
+      el('button', { class: 'cc-seg-btn', onClick: (e) => { e.stopPropagation(); downloadCSV('loadboot-' + base, cols, rows); } }, 'CSV'),
+      el('button', { class: 'cc-seg-btn', onClick: (e) => { e.stopPropagation(); downloadExcel('loadboot-' + base, cols, rows, title); } }, 'Excel'),
+      el('button', { class: 'cc-seg-btn', onClick: (e) => { e.stopPropagation(); printTable(title, 'LoadBoot · Google data', cols, rows); } }, 'PDF'),
     ]);
+    const openRow = (r, rank) => {
+      const body = el('div', null, cols.map(c => kvRow(c.label, c.fmt ? c.fmt(r[c.key]) : String(r[c.key] ?? '—'))).concat([
+        (mkey && total) ? kvRow(cols[1].label + ' share', ((Number(r[mkey]) || 0) / total * 100).toFixed(1) + '% of ' + total + ' total') : '',
+        kvRow('Rank', '#' + rank + ' of ' + rows.length),
+        el('p', { class: 'cc-sub', style: 'margin-top:12px' }, 'Real Google Analytics 4 data for the selected window. Export the full list with CSV / Excel / PDF on the table.'),
+      ].filter(Boolean)));
+      openDrawer(title + ' — ' + String(r.key ?? ''), body, { subtitle: 'Detail' });
+    };
     return card([
       el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, title), exp]),
       rows.length ? el('table', { class: 'cc-table cc-table-tight' }, [
         el('thead', null, el('tr', null, cols.map(c => el('th', null, c.label)))),
-        el('tbody', null, rows.map(r => el('tr', null, cols.map(c => el('td', null, c.fmt ? c.fmt(r[c.key]) : String(r[c.key] ?? '—')))))),
+        el('tbody', null, rows.map((r, i) => el('tr', { class: 'cc-row-click', onClick: () => openRow(r, i + 1) }, cols.map(c => el('td', null, c.fmt ? c.fmt(r[c.key]) : String(r[c.key] ?? '—')))))),
       ]) : el('div', { class: 'cc-sub' }, 'No rows for this window.'),
     ]);
   }
