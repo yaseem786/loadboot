@@ -80,7 +80,11 @@ const ic = (name) => ({
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 // Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.
-const LOGO_SVG = '<img src="/icon-512.png" width="26" height="26" alt="LoadBoot" style="border-radius:22%;display:block">';
+// A7 live chat (owner decision 2026-07-02): WhatsApp deep-link. Set the business number
+// in E.164 digits (e.g. '15551234567') — the chat button stays HIDDEN until it is set,
+// so no fake/unreachable contact is ever shown.
+const WHATSAPP_NUMBER = '';
+const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'Keep Your Wheels Earning';
 const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
 
@@ -289,7 +293,7 @@ async function appView(user) {
               h('button', { class: 'cp-menu-item', onClick: () => { menu.hidden = true; go('documents'); } }, [icon('docs', 16), h('span', null, 'Documents')]),
               h('button', { class: 'cp-menu-item cp-menu-out', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.lastChild.textContent = 'Signing out…'; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
             ]);
-            const btn = h('button', { class: 'cp-avatar', 'aria-haspopup': 'menu', 'aria-label': 'Account menu', title: (user && user.email) || '', onClick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; } }, ((ov.carrier || 'C')[0] || 'C').toUpperCase());
+            const btn = h('button', { class: 'cp-avatar', 'aria-haspopup': 'menu', 'aria-label': 'Account menu', title: (user && user.email) || '', onClick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; }, html: '<img src="/icon-512.png" width="38" height="38" alt="Account menu" style="border-radius:50%;display:block">' });
             document.addEventListener('click', () => { menu.hidden = true; });
             return h('div', { class: 'cp-menuwrap' }, [btn, menu]);
           })(),
@@ -430,7 +434,7 @@ async function appView(user) {
     (async () => {
       try {
         const dp = await getDispatchPrefs();
-        if (dp && (dp.min_rpm || (dp.equipment && dp.equipment.length) || (dp.lanes && dp.lanes.length))) return;
+        if (dp && (dp.min_rpm || (dp.preferred_equipment && dp.preferred_equipment.length) || (dp.preferred_lanes && dp.preferred_lanes.length))) return;
         const tone = toneOf('action');
         const bn = h('div', { class: 'cp-card', style: 'border-left:4px solid ' + tone.c + ';background:' + tone.bg + ';display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
           h('div', null, [h('div', { class: 'cp-row-t' }, 'Set your dispatch preferences'), h('div', { class: 'cp-row-s' }, 'Minimum rate, equipment and lanes are required for best-match loads — the AI Pilot and your dispatcher match with these.')]),
@@ -1032,11 +1036,48 @@ async function appView(user) {
       return { t: 'warning', why: st || 'recommended' };
     };
     const needAttention = reqs.filter(r => reqTone(r).t === 'urgent').length;
+    // Clicking a requirement opens the upload dialog with the right document type pre-selected.
+    const reqDocType = (name) => {
+      const n = (name || '').toLowerCase();
+      if (n.includes('insurance') || n.includes('liability') || n.includes('coi')) return 'insurance';
+      if (n.includes('authority') || n.includes('mc/dot') || n.includes('mcs-150')) return 'authority';
+      if (n.includes('w-9') || n.includes('w9')) return 'w9';
+      if (n.includes('assignment') || n.includes('noa')) return 'noa';
+      if (n.includes('agreement')) return 'agreement';
+      return 'other';
+    };
+    const uploadFor = (r) => {
+      const t = reqDocType(r.name);
+      const typeSel2 = h('select', { class: 'cp-in' }, DOC_TYPES.map(([v, l]) => h('option', { value: v, selected: v === t ? 'selected' : null }, l)));
+      const fileIn2 = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
+      const msg2 = h('div', { class: 'cp-err' });
+      const upBtn = h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev) => {
+        const file = fileIn2.files && fileIn2.files[0];
+        msg2.textContent = ''; msg2.className = 'cp-err';
+        if (!file) { msg2.textContent = 'Choose a file first.'; return; }
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Uploading…';
+        try {
+          const meta = await uploadDocument(file, typeSel2.value);
+          await carrierUploadDocument({ type: typeSel2.value, fileName: meta.fileName, filePath: meta.path });
+          close2(); loadDocuments();
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Upload'; msg2.className = 'cp-err'; msg2.textContent = (e && e.message) || 'Upload failed.'; }
+      } }, 'Upload');
+      const close2 = openModal('Upload — ' + r.name, [
+        h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it. Your dispatcher reviews it after upload.'),
+        typeSel2, fileIn2, msg2, upBtn,
+      ]);
+    };
     const reqRow = (r) => {
       const k = reqTone(r); const tone = toneOf(k.t);
-      return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + tone.c + ';padding-left:10px;background:' + (k.t === 'urgent' ? tone.bg : 'transparent') + ';border-radius:8px' }, [
-        h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required · ' : 'Optional · ') + k.why)]),
-        h('span', { class: 'cp-pill', style: 'background:' + tone.bg + ';color:' + tone.c + ';border:1px solid ' + tone.c + '33' }, tone.label),
+      const actionable = k.t !== 'success';
+      return h('div', { class: 'cp-row', role: actionable ? 'button' : null, tabindex: actionable ? '0' : null,
+        style: 'border-left:4px solid ' + tone.c + ';padding-left:10px;background:' + (k.t === 'urgent' ? tone.bg : 'transparent') + ';border-radius:8px' + (actionable ? ';cursor:pointer' : ''),
+        onClick: actionable ? () => uploadFor(r) : null }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required · ' : 'Optional · ') + k.why + (actionable ? ' — tap to upload' : ''))]),
+        h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
+          h('span', { class: 'cp-pill', style: 'background:' + tone.bg + ';color:' + tone.c + ';border:1px solid ' + tone.c + '33' }, tone.label),
+          actionable ? h('span', { class: 'cp-btn cp-btn-sm', style: 'pointer-events:none' }, 'Upload') : null,
+        ].filter(Boolean)),
       ]);
     };
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
@@ -1081,12 +1122,16 @@ async function appView(user) {
         h('div', null, [h('div', { class: 'cp-row-t' }, 'Billing questions'), h('div', { class: 'cp-row-s' }, 'billing@loadboot.com — invoices, settlements, disputes')]),
         h('a', { class: 'cp-btn cp-btn-sm ghost', href: 'mailto:billing@loadboot.com' }, 'Email'),
       ]),
+      (WHATSAPP_NUMBER ? h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, 'Live chat on WhatsApp'), h('div', { class: 'cp-row-s' }, 'Chat with your dispatch desk — fastest for on-the-road questions')]),
+        h('a', { class: 'cp-btn cp-btn-sm', style: 'background:#25D366', href: 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent('Hi LoadBoot dispatch — carrier support needed'), target: '_blank', rel: 'noopener noreferrer' }, 'Open WhatsApp'),
+      ]) : null),
       h('div', { class: 'cp-row' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, 'On the road right now?'), h('div', { class: 'cp-row-s' }, 'Breakdown, accident or reschedule — use the 🚨 Emergency button on your active trip so it reaches dispatch with priority.')]),
         h('button', { class: 'cp-btn cp-btn-sm', style: 'background:' + toneOf('urgent').c, onClick: () => go('trips') }, 'My trips'),
       ]),
-      h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Replies within business hours; dispatch is on call for active loads. Live in-portal chat is on the roadmap.'),
-    ]);
+      h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Replies within business hours; dispatch is on call for active loads.'),
+    ].filter(Boolean));
     mount(content, h('div', null, [deskCard, h('div', { class: 'cp-grid' }, [
       h('div', { class: 'cp-card' }, [cardHead('Raise an issue'), subj, body, msg, send]),
       h('div', { class: 'cp-card' }, [cardHead('Your tickets'), list]),
@@ -1243,11 +1288,40 @@ async function appView(user) {
   async function loadOnboarding() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Conestoga', 'Tanker', 'Car Hauler'];
-    const STEPS = ['Company & authority', 'Operation & equipment', 'Factoring & payment', 'Documents', 'Review & submit'];
+    const STEPS = ['Company & authority', 'Operation & equipment', 'Factoring & payment', 'Dispatch preferences', 'Documents', 'Review & submit'];
     let prof = {}; try { prof = await pocketGetProfile(); } catch (_) { prof = {}; }
     const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', hazmat: false, weekend_ok: false, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '' }, prof || {});
     if (!Array.isArray(f.equipment_types)) f.equipment_types = [];
     let st = 0;
+    // Dispatch preferences are REQUIRED at onboarding (drive best-match loads + CC AI matching);
+    // the carrier can change them any time later in Account.
+    const dpf = { min_rpm: '', preferred_equipment: '', preferred_lanes: '', max_deadhead_miles: '', home_base: '' };
+    (async () => { try { const dp = await getDispatchPrefs(); if (dp) { dpf.min_rpm = dp.min_rpm || ''; dpf.preferred_equipment = (dp.preferred_equipment || []).join(', '); dpf.preferred_lanes = (dp.preferred_lanes || []).join(', '); dpf.max_deadhead_miles = dp.max_deadhead_miles || ''; dpf.home_base = dp.home_base || ''; } } catch (_) {} })();
+    function prefsStep() {
+      const fldp = (label, key, ph, type) => { const i = h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '', value: dpf[key] == null ? '' : dpf[key] }); i.oninput = () => { dpf[key] = i.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), i]); };
+      return h('div', null, [
+        h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Required — these drive your best-match loads: the AI Pilot and your dispatcher only push loads that fit your minimum rate, equipment and lanes. You can change them any time in Account.'),
+        h('div', { class: 'cp-wiz-grid' }, [
+          fldp('Minimum rate ($/mi) *', 'min_rpm', 'e.g. 2.25', 'number'),
+          fldp('Preferred equipment (comma separated) *', 'preferred_equipment', 'Dry Van, Reefer'),
+          fldp('Preferred lanes / regions (comma separated) *', 'preferred_lanes', 'TX, Atlanta, Midwest'),
+          fldp('Max deadhead (miles)', 'max_deadhead_miles', 'e.g. 250', 'number'),
+          fldp('Home base', 'home_base', 'Dallas, TX'),
+        ]),
+      ]);
+    }
+    async function savePrefsStep() {
+      const missing = [];
+      if (!dpf.min_rpm || isNaN(Number(dpf.min_rpm)) || Number(dpf.min_rpm) <= 0) missing.push('minimum rate ($/mi)');
+      const eq = String(dpf.preferred_equipment || '').split(',').map(x => x.trim()).filter(Boolean);
+      const ln = String(dpf.preferred_lanes || '').split(',').map(x => x.trim()).filter(Boolean);
+      if (!eq.length && f.equipment_types && f.equipment_types.length) eq.push(...f.equipment_types);
+      if (!eq.length) missing.push('preferred equipment');
+      if (!ln.length) missing.push('preferred lanes / regions');
+      if (missing.length) throw new Error('Required: ' + missing.join(', ') + '.');
+      await setDispatchPrefs({ min_rpm: dpf.min_rpm, preferred_equipment: eq, preferred_lanes: ln,
+        max_deadhead_miles: dpf.max_deadhead_miles || null, home_base: (dpf.home_base || f.home_base || '').trim() || null });
+    }
     const host = h('div', { class: 'cp-card cp-wiz' });
     const field = (label, key, ph, type) => { const i = h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '', value: f[key] == null ? '' : f[key] }); i.oninput = () => { f[key] = i.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), i]); };
     const selectField = (label, key, opts) => { const s = h('select', { class: 'cp-in' }, opts.map(([v, l]) => h('option', { value: v, selected: f[key] === v ? 'selected' : null }, l))); s.onchange = () => { f[key] = s.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), s]); };
@@ -1267,7 +1341,7 @@ async function appView(user) {
     }
     function reviewStep() {
       const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);
-      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Check your details, then submit. Our team reviews and approves your account.'), row('Company', f.company), row('Contact', f.contact_name + (f.phone ? ' · ' + f.phone : '')), row('MC / DOT', (f.mc || '—') + ' / ' + (f.dot || '—')), row('Home base', f.home_base), row('Equipment', (f.equipment_types || []).join(', ')), row('Trucks', f.truck_count), row('Factoring', f.factoring_status + (f.factoring_company ? ' · ' + f.factoring_company : ''))]);
+      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Check your details, then submit. Our team reviews and approves your account.'), row('Company', f.company), row('Contact', f.contact_name + (f.phone ? ' · ' + f.phone : '')), row('MC / DOT', (f.mc || '—') + ' / ' + (f.dot || '—')), row('Home base', f.home_base), row('Equipment', (f.equipment_types || []).join(', ')), row('Trucks', f.truck_count), row('Factoring', f.factoring_status + (f.factoring_company ? ' · ' + f.factoring_company : '')), row('Dispatch prefs', (dpf.min_rpm ? '$' + dpf.min_rpm + '/mi min' : '—') + (dpf.preferred_lanes ? ' · ' + dpf.preferred_lanes : ''))]);
     }
     function doneCard() { return [h('div', { class: 'cp-wiz-done' }, [h('div', { style: 'font-size:2.4rem' }, '✓'), h('h3', null, 'Submitted for review'), h('p', { class: 'cp-row-s' }, 'Thanks! Our team is reviewing your onboarding. You’ll get a notification when it’s approved.'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('dashboard') }, 'Back to dashboard')])]; }
     function draw() {
@@ -1276,11 +1350,12 @@ async function appView(user) {
       if (st === 0) body = h('div', { class: 'cp-wiz-grid' }, [field('Company / carrier name', 'company', 'Acme Trucking LLC'), field('Your name', 'contact_name'), field('Phone', 'phone'), field('MC number', 'mc', '123456'), field('DOT number', 'dot', '1234567')]);
       else if (st === 1) { const eq = h('div', { class: 'cp-eqgrid' }, EQUIP.map(e => { const on = (f.equipment_types || []).includes(e); const b = h('button', { class: 'cp-chip2' + (on ? ' on' : ''), onClick: () => { const s = new Set(f.equipment_types || []); if (s.has(e)) s.delete(e); else s.add(e); f.equipment_types = [...s]; b.classList.toggle('on'); } }, e); return b; })); body = h('div', { class: 'cp-wiz-grid' }, [field('Home base (city, ST)', 'home_base', 'Dallas, TX'), field('Search radius (miles)', 'radius_miles', '300', 'number'), field('Number of trucks', 'truck_count', '1'), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Equipment types'), eq]), toggle('Haul hazmat', 'hazmat'), toggle('Available weekends', 'weekend_ok')]); }
       else if (st === 2) body = h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring'], ['interested', 'Interested']]), field('Factoring company', 'factoring_company'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp')]);
-      else if (st === 3) body = docStep();
+      else if (st === 3) body = prefsStep();
+      else if (st === 4) body = docStep();
       else body = reviewStep();
       const back = st > 0 ? h('button', { class: 'cp-btn ghost cp-btn-sm', onClick: () => { st--; draw(); } }, '← Back') : h('span');
       const next = st < STEPS.length - 1
-        ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…'; try { await save(); st++; draw(); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue'; alert((e && e.message) || 'Could not save.'); } } }, 'Save & continue')
+        ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…'; try { if (st === 3) await savePrefsStep(); await save(); st++; draw(); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue'; alert((e && e.message) || 'Could not save.'); } } }, 'Save & continue')
         : h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting…'; try { await save(); await pocketSubmitOnboarding(); mount(host, doneCard()); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit for review'; alert((e && e.message) || 'Could not submit.'); } } }, 'Submit for review');
       mount(host, [h('div', { class: 'cp-wiz-head' }, [h('h3', null, 'Step ' + (st + 1) + ' of ' + STEPS.length + ' — ' + STEPS[st]), h('span', { class: 'cp-row-s' }, pct + '%')]), h('div', { class: 'cp-wiz-bar' }, h('div', { class: 'cp-wiz-fill', style: 'width:' + pct + '%' })), h('div', { class: 'cp-wiz-body' }, body), h('div', { class: 'cp-wiz-actions' }, [back, next])]);
     }

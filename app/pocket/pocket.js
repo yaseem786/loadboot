@@ -43,7 +43,7 @@ function loginView() {
     catch (e) { err.textContent = (e && e.message) || 'Sign-in failed.'; btn.disabled = false; btn.textContent = 'Sign in'; }
   } }, 'Sign in');
   mount(root, h('div', { class: 'pk-login' }, [
-    h('div', { class: 'pk-brand', style: 'font-size:20px;font-weight:800' }, [document.createTextNode('Load'), h('b', { style: 'color:#f97316' }, 'boot')]),
+    h('div', { class: 'pk-brand', style: 'font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px' }, [h('span', { html: '<img src="/icon-512.png" width="28" height="28" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('Load'), h('b', { style: 'color:#f97316' }, 'boot')]),
     h('h2', null, 'Carrier Pocket'),
     h('div', { class: 'pk-muted', style: 'text-align:left;padding:0 0 6px' }, 'Sign in to manage your loads, trips, invoices, compliance and support.'),
     email, pass, err, btn,
@@ -66,7 +66,7 @@ async function appView() {
 
   let tab = 'home';
   const top = h('div', { class: 'pk-top' }, [
-    h('div', { class: 'pk-brand' }, [document.createTextNode('Load'), h('b', null, 'boot'), document.createTextNode(' Pocket')]),
+    h('div', { class: 'pk-brand', style: 'display:flex;align-items:center;gap:7px' }, [h('span', { html: '<img src="/icon-512.png" width="24" height="24" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('Load'), h('b', null, 'boot'), document.createTextNode(' Pocket')]),
     h('div', { class: 'pk-sub' }, ov.carrier || 'Carrier'),
     h('h1', null, 'Welcome back'),
     h('span', { class: 'pk-chip ' + (ov.compliance_ok ? 'ok' : 'warn') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),

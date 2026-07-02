@@ -85,12 +85,33 @@ export function renderLoadIntake(host) {
       el('label', { class: 'cc-field' }, [el('span', null, 'Verification'), verSel2]),
       el('label', { class: 'cc-field' }, [el('span', null, 'Confidence'), confSel2]),
       el('p', { class: 'cc-sub' }, 'Attribute the real source. Do not mark unverified information as verified.'),
+      el('div', { style: 'border-top:1px solid var(--lb-border,#e2e8f0);margin:10px 0;padding-top:10px;font-weight:700' }, 'Rate card — required before the load can post'),
+      el('p', { class: 'cc-sub' }, 'A carrier must know every rate before booking. The server refuses loads without a complete card.'),
+      inp('Detention rate ($/hr) *', 'acc_detention_per_hr', '55'),
+      inp('Free time before detention (hours) *', 'acc_detention_free_hours', '2'),
+      inp('Layover rate ($/day) *', 'acc_layover_per_day', '225'),
+      inp('TONU rate ($) *', 'acc_tonu', '175'),
+      (() => { const sel = el('select', { class: 'cc-input' }, ['', 'Broker pays lumper directly', 'Reimbursed with receipt', 'Included in rate', 'Not covered'].map(o => el('option', { value: o }, o || 'Select…'))); sel.onchange = () => { f.acc_lumper_policy = sel.value; }; return el('label', { class: 'cc-field' }, [el('span', null, 'Lumper policy *'), sel]); })(),
+      (() => { const sel = el('select', { class: 'cc-input' }, [['fcfs', 'First come, first served (FCFS)'], ['appointment', 'By appointment'], ['window', 'Pickup window']].map(([v, l]) => el('option', { value: v }, l))); f.scheduling = 'fcfs'; sel.onchange = () => { f.scheduling = sel.value; }; return el('label', { class: 'cc-field' }, [el('span', null, 'Scheduling *'), sel]); })(),
+      inp('Pickup window (if applicable)', 'pickup_window', '08:00-14:00'),
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:10px' }, el('button', { class: 'lb-btn lb-btn-primary', onClick: save }, 'Create load')),
     ]);
     openDrawer('New load', form, { subtitle: 'Source-attributed intake' });
     async function save() {
       if (!f.origin || !f.destination) { alert('Origin and destination are required.'); return; }
-      try { await createLoadSourced(f); toast('Load created', 'success'); document.getElementById('cc-drawer-root')?.remove(); load(); }
+      const missing = [];
+      [['acc_detention_per_hr', 'detention rate'], ['acc_detention_free_hours', 'free hours'], ['acc_layover_per_day', 'layover rate'], ['acc_tonu', 'TONU rate']].forEach(([k, l]) => { if (!f[k] || isNaN(Number(f[k])) || Number(f[k]) < 0) missing.push(l); });
+      if (!f.acc_lumper_policy) missing.push('lumper policy');
+      if (f.scheduling === 'window' && !(f.pickup_window || '').trim()) missing.push('pickup window');
+      if (missing.length) { alert('Required before posting: ' + missing.join(', ') + '.'); return; }
+      const payload = Object.assign({}, f);
+      payload.field_meta = {
+        appointment_required: f.scheduling === 'appointment',
+        pickup_window: (f.pickup_window || '').trim() || null,
+        accessorials: { detention_per_hr: String(f.acc_detention_per_hr), detention_free_hours: String(f.acc_detention_free_hours), layover_per_day: String(f.acc_layover_per_day), tonu: String(f.acc_tonu), lumper_policy: f.acc_lumper_policy, fcfs: f.scheduling === 'fcfs' ? 'true' : 'false' },
+      };
+      ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu', 'acc_lumper_policy', 'scheduling'].forEach(k => delete payload[k]);
+      try { await createLoadSourced(payload); toast('Load created', 'success'); document.getElementById('cc-drawer-root')?.remove(); load(); }
       catch (e) { alert(humanizeError(e)); }
     }
   }

@@ -7,7 +7,7 @@ idx=open('site/index.html',encoding='utf-8').read()
 for page in ['index.html','carriers.html','brokers.html','shipper-solutions.html','pricing.html','how-it-works.html','reefer-dispatch.html','resources.html']:
     if 'id="aiResearch"' not in open('site/'+page,encoding='utf-8').read():
         fails.append('frontend: block missing on '+page)
-for m in ['aria-live="polite"','role="group"','View the research prompt','Copy prompt','third-party AI service']:
+for m in ['aria-live="polite"','role="group"','id="aiPromptText"','Copy prompt','id="aiBtns"']:
     if m not in idx: fails.append('frontend: missing '+m)
 # CONFIG GATE — providers + page-aware topic map + versioned prompt
 for m in ["'chatgpt'","'claude'","'gemini'","'perplexity'","'grok'","PV='v1'","TOPICS=","page_specific"]:

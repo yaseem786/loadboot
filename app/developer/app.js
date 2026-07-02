@@ -21,7 +21,7 @@ const h = (tag, attrs, kids) => {
 };
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
 const fmtDT = (d) => { if (!d) return 'never'; try { return new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return '—'; } };
-const LOGO_SVG = '<img src="/icon-512.png" width="26" height="26" alt="LoadBoot" style="border-radius:22%;display:block">';
+const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
 const brandMark = () => h('span', { class: 'cp-logo', html: LOGO_SVG });
 
 function authScreen() {
