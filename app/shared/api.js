@@ -103,6 +103,11 @@ export const myReferralEarnings = (limit) => rpc('cc_my_referral_earnings', { p_
 export const referralAccrue = () => rpc('cc_referral_accrue');
 export const referralOverview = () => rpc('cc_referral_overview');
 export const referralMarkPaid = (code) => rpc('cc_referral_mark_paid', { p_referrer_code: code });
+// cww — referral payout requests (self-service payout with bank details; staff decide; decision recorded only)
+export const referralRequestPayout = (details) => rpc('cc_referral_request_payout', { p_details: details });
+export const myPayoutRequests = () => rpc('cc_my_payout_requests');
+export const referralPayoutQueue = (status) => rpc('cc_referral_payout_queue', { p_status: status || 'open' });
+export const referralPayoutDecide = (id, action, note) => rpc('cc_referral_payout_decide', { p_id: id, p_action: action, p_note: note ?? null });
 // Inc 64 — Business Intelligence: staff-gated executive summary + trend series over real tables.
 export const biExecutiveSummary = (from, to) => rpc('cc_bi_executive_summary', { p_from: from ?? null, p_to: to ?? null });
 export const biTimeseries = (metric, days = 30) => rpc('cc_bi_timeseries', { p_metric: metric, p_days: days });

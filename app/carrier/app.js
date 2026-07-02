@@ -15,7 +15,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
@@ -153,13 +153,86 @@ function authScreen() {
   root.setAttribute('aria-busy', 'false');
 }
 
+/* ---------- referral panel helpers (shared: carrier Account card + affiliate partner view) ---------- */
+function buildReferralStats(r) {
+  const money2 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const copyBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+    try { await navigator.clipboard.writeText(r.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
+  } }, 'Copy my link');
+  return h('div', null, [
+    h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Your code'), h('b', null, r.code)]),
+    h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Unique link'), h('span', { class: 'cp-row-s', style: 'word-break:break-all' }, r.link)]),
+    h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Referrals'), h('span', null, String(r.referrals || 0))]),
+    h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Accrued (15-day hold)'), h('span', null, money2(r.accrued))]),
+    h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Payable'), h('b', { style: 'color:var(--lb-green)' }, money2(r.payable))]),
+    h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Paid out'), h('span', null, money2(r.paid))]),
+    h('div', { style: 'margin-top:8px' }, copyBtn),
+  ]);
+}
+function referralPayoutUI(wrap, r) {
+  const hist = h('div');
+  const reqBtn = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => {
+    const bank = h('input', { class: 'cp-in', placeholder: 'Bank name' });
+    const title = h('input', { class: 'cp-in', placeholder: 'Account title (must match your name / company)' });
+    const acct = h('input', { class: 'cp-in', placeholder: 'Account number / IBAN' });
+    const err = h('div', { class: 'cp-err' });
+    const close = openModal('Request payout', [
+      h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Your full payable balance is requested at once. A person reviews every payout; money is sent through our normal payment rail to this account — nothing moves automatically.'),
+      bank, title, acct, err,
+      h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev) => {
+        err.textContent = ''; ev.currentTarget.disabled = true;
+        try {
+          await referralRequestPayout({ bank_name: bank.value.trim(), account_title: title.value.trim(), account_number: acct.value.trim() });
+          close(); loadHist();
+        } catch (e) { ev.currentTarget.disabled = false; err.textContent = (e && e.message) || 'Could not request.'; }
+      } }, 'Request payout'),
+    ]);
+  } }, 'Request payout');
+  mount(wrap, [
+    (Number(r.payable) > 0 ? reqBtn : h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Payout requests unlock once you have a payable balance (commissions clear a 15-day hold first).')),
+    h('div', { class: 'cp-row-t', style: 'margin-top:12px' }, 'Payout requests'),
+    hist,
+  ]);
+  async function loadHist() {
+    mount(hist, h('div', { class: 'cp-muted' }, 'Loading…'));
+    let rows; try { rows = await myPayoutRequests(); } catch (_) { mount(hist, h('div', { class: 'cp-muted' }, 'Could not load.')); return; }
+    mount(hist, (rows && rows.length) ? h('div', null, rows.map(p => h('div', { class: 'cp-row' }, [
+      h('div', null, [
+        h('div', { class: 'cp-row-t' }, '$' + Number(p.amount).toLocaleString(undefined, { maximumFractionDigits: 2 })),
+        h('div', { class: 'cp-row-s' }, (p.bank_name || '') + ' ···' + (p.account_last4 || '') + ' · ' + new Date(p.requested_at).toLocaleDateString() + (p.note ? ' · ' + p.note : '')),
+      ]),
+      pill(p.status),
+    ]))) : h('div', { class: 'cp-muted' }, 'No payout requests yet.'));
+  }
+  loadHist();
+}
+
 function notCarrier() {
-  mount(root, h('div', { class: 'cp-auth' }, [h('div', { class: 'cp-auth-card' }, [
+  const card = h('div', { class: 'cp-auth-card' }, [
     h('h1', null, 'No carrier account'),
     h('p', { class: 'cp-auth-sub' }, 'This sign-in isn’t linked to a carrier. Contact your dispatcher if you think this is an error.'),
-    h('button', { class: 'cp-btn cp-btn-lg', onClick: async () => { await signOut(); boot(); } }, 'Sign out'),
-  ])]));
+    h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing out…'; await signOut(); location.reload(); } }, 'Sign out'),
+  ]);
+  const shell = h('div', { class: 'cp-auth' }, [card]);
+  mount(root, shell);
   root.setAttribute('aria-busy', 'false');
+  // Referral partners (agencies / creators / influencers) have no carrier org but DO have a referral
+  // account — give them their full tracking + payout dashboard right here instead of a dead end.
+  (async () => {
+    let on = false; try { on = await isFlagEnabled('referral_program'); } catch (_) { on = false; }
+    if (!on) return;
+    let r; try { r = await myReferral(); } catch (_) { return; }
+    if (!r || !r.code) return;
+    card.querySelector('h1').textContent = 'Referral partner';
+    card.querySelector('.cp-auth-sub').textContent = 'This account is a referral partner account — your referrals, earnings and payouts are tracked below.';
+    const panel = h('div', { class: 'cp-auth-card', style: 'margin-top:14px;text-align:left' }, [
+      h('h2', { style: 'margin:0 0 4px' }, 'Your referral program'),
+      h('p', { class: 'cp-auth-sub', style: 'margin-bottom:10px' }, 'Share your unique link — every carrier or broker who joins through it is credited to you, and you earn from LoadBoot’s own fee on every load they haul.'),
+    ]);
+    panel.appendChild(buildReferralStats(r));
+    const pw = h('div'); panel.appendChild(pw); referralPayoutUI(pw, r);
+    shell.appendChild(panel);
+  })();
 }
 
 /* ---------- main app ---------- */
@@ -196,7 +269,7 @@ async function appView(user) {
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
-        h('button', { class: 'cp-side-out', onClick: async () => { await signOut(); boot(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
+        h('button', { class: 'cp-side-out', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.lastChild.textContent = 'Signing out…'; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
       ]),
     ]),
     h('main', { class: 'cp-main' }, [
@@ -205,7 +278,21 @@ async function appView(user) {
         h('div', { class: 'cp-top-right' }, [
           h('span', { class: 'cp-chip ' + (ov.compliance_ok ? 'ok' : 'warn') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
           bell,
-          h('div', { class: 'cp-avatar', title: (user && user.email) || '' }, ((ov.carrier || 'C')[0] || 'C').toUpperCase()),
+          (() => {
+            // Account menu — modern avatar dropdown: identity + Settings + Sign out.
+            const menu = h('div', { class: 'cp-menu', hidden: true }, [
+              h('div', { class: 'cp-menu-id' }, [
+                h('div', { class: 'cp-menu-name' }, ov.carrier || 'Carrier account'),
+                h('div', { class: 'cp-menu-mail' }, (user && user.email) || ''),
+              ]),
+              h('button', { class: 'cp-menu-item', onClick: () => { menu.hidden = true; go('account'); } }, [icon('user', 16), h('span', null, 'Account & settings')]),
+              h('button', { class: 'cp-menu-item', onClick: () => { menu.hidden = true; go('documents'); } }, [icon('docs', 16), h('span', null, 'Documents')]),
+              h('button', { class: 'cp-menu-item cp-menu-out', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.lastChild.textContent = 'Signing out…'; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
+            ]);
+            const btn = h('button', { class: 'cp-avatar', 'aria-haspopup': 'menu', 'aria-label': 'Account menu', title: (user && user.email) || '', onClick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; } }, ((ov.carrier || 'C')[0] || 'C').toUpperCase());
+            document.addEventListener('click', () => { menu.hidden = true; });
+            return h('div', { class: 'cp-menuwrap' }, [btn, menu]);
+          })(),
         ]),
       ]),
       content,
@@ -339,6 +426,19 @@ async function appView(user) {
 
   /* ----- Available loads (Phase 2B — real, race-safe booking) ----- */
   async function loadLoads() {
+    // Dispatch preferences drive matching — nudge (action tone) until they are set.
+    (async () => {
+      try {
+        const dp = await getDispatchPrefs();
+        if (dp && (dp.min_rpm || (dp.equipment && dp.equipment.length) || (dp.lanes && dp.lanes.length))) return;
+        const tone = toneOf('action');
+        const bn = h('div', { class: 'cp-card', style: 'border-left:4px solid ' + tone.c + ';background:' + tone.bg + ';display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, 'Set your dispatch preferences'), h('div', { class: 'cp-row-s' }, 'Minimum rate, equipment and lanes are required for best-match loads — the AI Pilot and your dispatcher match with these.')]),
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('account') }, 'Set now'),
+        ]);
+        if (content.firstChild) content.insertBefore(bn, content.firstChild); else content.appendChild(bn);
+      } catch (_) {}
+    })();
     mount(content, h('div', { class: 'cp-muted' }, 'Loading available loads…'));
     let rows; try { rows = await pocketAvailableLoads(30); } catch (e) { rows = []; }
     // AI Pilot — "best for you": same open loads, ranked for THIS carrier by rate vs your stated
@@ -919,9 +1019,32 @@ async function appView(user) {
       } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Upload failed.'; }
       up.disabled = false; up.textContent = 'Upload document';
     } }, 'Upload document');
+    // A6 — urgency-highlighted needs: every requirement carries a tone from the GLOBAL colour tokens
+    // (urgent = red: required + missing/expired/rejected; action = blue: required + under review;
+    // warning = amber: expiring within 30 days or optional gap; success = green: valid).
+    const reqTone = (r) => {
+      const st = (r.status || '').toLowerCase();
+      const days = r.expiry_date ? Math.floor((new Date(r.expiry_date) - Date.now()) / 86400000) : null;
+      if (st === 'valid' && days !== null && days <= 30) return { t: 'warning', why: days < 0 ? 'expired ' + (-days) + 'd ago' : 'expires in ' + days + 'd' };
+      if (st === 'valid') return { t: 'success', why: r.expiry_date ? 'valid until ' + r.expiry_date : 'on file' };
+      if (r.mandatory && (st === 'missing' || st === 'expired' || st === 'rejected')) return { t: 'urgent', why: st === 'missing' ? 'required — not on file' : 'required — ' + st };
+      if (r.mandatory) return { t: 'action', why: 'under review' };
+      return { t: 'warning', why: st || 'recommended' };
+    };
+    const needAttention = reqs.filter(r => reqTone(r).t === 'urgent').length;
+    const reqRow = (r) => {
+      const k = reqTone(r); const tone = toneOf(k.t);
+      return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + tone.c + ';padding-left:10px;background:' + (k.t === 'urgent' ? tone.bg : 'transparent') + ';border-radius:8px' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required · ' : 'Optional · ') + k.why)]),
+        h('span', { class: 'cp-pill', style: 'background:' + tone.bg + ';color:' + tone.c + ';border:1px solid ' + tone.c + '33' }, tone.label),
+      ]);
+    };
+    const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
     mount(content, h('div', null, [
-      h('div', { class: 'cp-card' }, [cardHead('Onboarding & compliance', c && c.mandatory_ok ? 'All required documents are in ✓' : 'Some documents still needed'),
-        reqs.length ? h('div', null, reqs.map(r => h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, r.mandatory ? 'Required' : 'Optional')]), pill(r.status)]))) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
+      h('div', { class: 'cp-card' }, [cardHead('What LoadBoot needs from you',
+          c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
+            : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
+        sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
       h('div', { class: 'cp-grid' }, [
         h('div', { class: 'cp-card' }, [cardHead('Upload a document'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fileIn, msg, up]),
         h('div', { class: 'cp-card' }, [cardHead('My documents'), listWrap]),
@@ -932,7 +1055,9 @@ async function appView(user) {
       let docs; try { docs = await carrierListDocuments(); } catch (e) { mount(listWrap, h('div', { class: 'cp-muted' }, 'Could not load.')); return; }
       const label = (t) => (DOC_TYPES.find(d => d[0] === t) || [t, t])[1];
       mount(listWrap, (docs && docs.length) ? h('div', null, docs.map(d => h('div', { class: 'cp-row' }, [
-        h('div', null, [h('div', { class: 'cp-row-t' }, label(d.type)), h('div', { class: 'cp-row-s' }, d.file_name)]), pill(d.status || 'pending'),
+        h('div', null, [h('div', { class: 'cp-row-t' }, label(d.type)), h('div', { class: 'cp-row-s' },
+          d.file_name + (d.created_at ? ' · submitted ' + new Date(d.created_at).toLocaleDateString() : '') + ((d.status || 'pending') === 'pending' ? ' · awaiting review' : ''))]),
+        pill(d.status || 'pending'),
       ]))) : h('div', { class: 'cp-muted' }, 'No documents uploaded yet.'));
     }
     loadList();
@@ -946,11 +1071,27 @@ async function appView(user) {
     const list = h('div');
     const send = h('button', { class: 'cp-btn', onClick: async () => { msg.textContent = ''; if (!subj.value.trim()) { msg.textContent = 'Subject is required.'; return; } send.disabled = true; send.textContent = 'Sending…'; try { await pocketRaiseIssue(subj.value.trim(), body.value.trim()); subj.value = ''; body.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Sent — we’ll get back to you.'; await loadIssues(); } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Could not send.'; } send.disabled = false; send.textContent = 'Send to dispatch'; } }, 'Send to dispatch');
     const exList = h('div');
-    mount(content, h('div', { class: 'cp-grid' }, [
+    // A7 — the carrier's direct line to Command Center, always visible on top.
+    const deskCard = h('div', { class: 'cp-card' }, [cardHead('Your dispatch desk', 'Message us any time — a person answers'),
+      h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, 'Email dispatch'), h('div', { class: 'cp-row-s' }, 'dispatch@loadboot.com — loads, trips, appointments, documents')]),
+        h('a', { class: 'cp-btn cp-btn-sm', href: 'mailto:dispatch@loadboot.com' }, 'Email'),
+      ]),
+      h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, 'Billing questions'), h('div', { class: 'cp-row-s' }, 'billing@loadboot.com — invoices, settlements, disputes')]),
+        h('a', { class: 'cp-btn cp-btn-sm ghost', href: 'mailto:billing@loadboot.com' }, 'Email'),
+      ]),
+      h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, 'On the road right now?'), h('div', { class: 'cp-row-s' }, 'Breakdown, accident or reschedule — use the 🚨 Emergency button on your active trip so it reaches dispatch with priority.')]),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'background:' + toneOf('urgent').c, onClick: () => go('trips') }, 'My trips'),
+      ]),
+      h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Replies within business hours; dispatch is on call for active loads. Live in-portal chat is on the roadmap.'),
+    ]);
+    mount(content, h('div', null, [deskCard, h('div', { class: 'cp-grid' }, [
       h('div', { class: 'cp-card' }, [cardHead('Raise an issue'), subj, body, msg, send]),
       h('div', { class: 'cp-card' }, [cardHead('Your tickets'), list]),
       h('div', { class: 'cp-card' }, [cardHead('Reported trip issues'), exList]),
-    ]));
+    ])]));
     async function loadIssues() { mount(list, h('div', { class: 'cp-muted' }, 'Loading…')); let rows; try { rows = await pocketMyIssues(40); } catch (_) { mount(list, h('div', { class: 'cp-muted' }, 'Failed to load.')); return; } mount(list, (rows && rows.length) ? h('div', null, rows.map(t => h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, t.subject), h('div', { class: 'cp-row-s' }, t.ref)]), pill(t.status)]))) : h('div', { class: 'cp-muted' }, 'No tickets yet.')); }
     async function loadExceptions() {
       mount(exList, h('div', { class: 'cp-muted' }, 'Loading…'));
@@ -1023,6 +1164,7 @@ async function appView(user) {
         try { await navigator.clipboard.writeText(r.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
       } }, 'Copy my link');
       const claimIn = h('input', { class: 'cp-in', placeholder: 'Were you referred? Enter their code once' });
+      const payoutWrap = h('div');
       const claimBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => {
         if (!claimIn.value.trim()) return; ev.currentTarget.disabled = true;
         try { await claimReferral(claimIn.value.trim()); ev.currentTarget.textContent = 'Linked ✓'; }
@@ -1036,8 +1178,10 @@ async function appView(user) {
         h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Paid out'), h('span', null, money2(r.paid))]),
         h('div', { style: 'margin-top:8px' }, copyBtn),
         h('div', { class: 'cp-inlineform', style: 'margin-top:8px' }, [claimIn, claimBtn]),
+        payoutWrap,
         h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'You earn a share of LoadBoot\'s own dispatch fee on every booked trip of carriers/brokers you refer — they never pay extra. Commissions unlock 15 days after accrual; payouts are reviewed by a person.'),
       ]);
+      referralPayoutUI(payoutWrap, r);
     })();
     // Team card — visible to all members; management controls only render for the owner.
     const teamCard = h('div', { class: 'cp-card' }, [cardHead('Team'), h('div', { class: 'cp-muted' }, 'Loading…')]);
@@ -1069,10 +1213,26 @@ async function appView(user) {
         openModal('Manage ' + (m.name || m.email || 'member'), [h('label', { class: 'cp-row-s' }, 'Role'), role, h('label', { class: 'cp-row-s' }, 'Access'), active, save]);
       }
     })();
+    const setupCard = h('div', { class: 'cp-card' }, [cardHead('Complete your setup'), h('div', { class: 'cp-muted' }, 'Checking…')]);
+    (async () => {
+      let d; try { d = await carrierDashboard(); } catch (_) { d = null; }
+      const gaps = (d && d.setup_gaps) || [];
+      if (!gaps.length) { mount(setupCard, [cardHead('Complete your setup', 'Everything is in place ✓'), h('div', { class: 'cp-muted' }, 'No open setup items — you are fully set up.')]); return; }
+      mount(setupCard, [cardHead('Complete your setup', gaps.length + ' item' + (gaps.length > 1 ? 's' : '') + ' remaining'),
+        h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, gaps.map(g => {
+          const tone = toneOf(g.tone);
+          const dest = (g.action || '').replace(/^\//, '') || 'account';
+          return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + tone.c + ';padding-left:10px;border-radius:8px' }, [
+            h('div', null, [h('div', { class: 'cp-row-t' }, g.title || g.name || 'Setup item'), h('div', { class: 'cp-row-s' }, g.detail || g.description || '')]),
+            h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go(NAV.some(n => n[0] === dest) ? dest : 'account') }, 'Fix'),
+          ]);
+        }))]);
+    })();
     mount(content, h('div', { class: 'cp-grid' }, [
       h('div', { class: 'cp-card' }, [cardHead('Profile'), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
+      setupCard,
       teamCard,
-      h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async () => { await signOut(); boot(); } }, 'Sign out')]),
+      h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing out…'; await signOut(); location.reload(); } }, 'Sign out')]),
       dispCard,
       refCard,
       prefsCard,

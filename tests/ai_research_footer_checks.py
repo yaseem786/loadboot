@@ -5,7 +5,7 @@ fails=[]
 idx=open('site/index.html',encoding='utf-8').read()
 # FRONTEND GATE
 for page in ['index.html','carriers.html','brokers.html','shipper-solutions.html','pricing.html','how-it-works.html','reefer-dispatch.html','resources.html']:
-    if 'Research LoadBoot with AI' not in open('site/'+page,encoding='utf-8').read():
+    if 'id="aiResearch"' not in open('site/'+page,encoding='utf-8').read():
         fails.append('frontend: block missing on '+page)
 for m in ['aria-live="polite"','role="group"','View the research prompt','Copy prompt','third-party AI service']:
     if m not in idx: fails.append('frontend: missing '+m)

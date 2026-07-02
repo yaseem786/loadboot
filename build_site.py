@@ -2,6 +2,7 @@
 import os, shutil, re, sys, json
 from tools_module import TOOLS_CSS, TOOLS_HTML, TOOLS_JS
 from load_score_module import LS_CSS, LS_HTML, LS_JS
+from motifs_module import mi, m_rail, m_timeline, m_split, m_dark, m_zigzag, m_statband, m_gradcta
 # SOURCE vs PUBLISH separation (Netlify: command="python3 build_site.py", publish="site").
 #   SRC  = repo root. Holds SOURCE only (this script, modules, dashboard.html, images,
 #          netlify.toml, runtime.txt, migrations/, docs/, README, content-queue). NOT published.
@@ -14,7 +15,7 @@ OUT = os.environ.get('LOADBOOT_OUT') or os.path.join(SRC, 'site')
 shutil.rmtree(OUT, ignore_errors=True)   # clean
 os.makedirs(OUT, exist_ok=True)          # recreate
 # Files in SRC root that must NEVER be copied into the publish dir (source-only):
-_NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','netlify.toml',
+_NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','motifs_module.py','netlify.toml',
                'runtime.txt','README.md','content-queue.md','.gitignore'}
 _ASSET_EXTS = ('.webp','.png','.jpg','.jpeg','.avif','.ico','.svg','.gif')
 def asset_exists(name):
@@ -328,8 +329,8 @@ def header(active):
 
 # WEB-4: 'Research LoadBoot with AI' footer. Owner-flippable build switch (True = rendered).
 AI_RESEARCH_FOOTER_ENABLED = True
-AI_RESEARCH_BLOCK = '\n<div class="foot-ai" id="aiResearch" style="border-top:1px solid rgba(148,163,184,.18);margin-top:26px;padding-top:22px">\n<div class="foot-h">Research LoadBoot with AI</div>\n<p style="max-width:640px;font-size:.92rem">Compare LoadBoot&rsquo;s truck dispatch services, carrier operating software, broker marketplace, real-time tracking, automation and finance tools using your preferred AI assistant.</p>\n<div id="aiBtns" role="group" aria-label="Open an AI assistant with a research prompt" style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 6px"></div>\n<details style="margin-top:8px"><summary style="cursor:pointer;color:#93c5fd;font-size:.9rem">View the research prompt</summary>\n<div style="background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.25);border-radius:10px;padding:12px;margin-top:8px">\n<pre id="aiPromptText" style="white-space:pre-wrap;font-size:.82rem;color:#cbd5e1;font-family:inherit;margin:0"></pre>\n<button type="button" id="aiCopyBtn" class="btn btn-secondary" style="margin-top:10px;font-size:.85rem;padding:8px 14px">Copy prompt</button>\n<span id="aiCopyLive" role="status" aria-live="polite" style="margin-left:10px;font-size:.85rem;color:#4ade80"></span>\n</div></details>\n<p style="font-size:.78rem;color:#94a3b8;margin-top:8px">You are opening a third-party AI service. Its privacy terms and account settings will apply. The prompt is neutral &mdash; it asks the assistant to compare options honestly using official pages.</p>\n</div>'
-AI_RESEARCH_JS = '<script>(function(){var host=document.getElementById(\'aiBtns\');if(!host)return;\nvar TOPICS={\'/carriers.html\':\'truck dispatch services and carrier operating software for owner-operators and fleets\',\'/brokers.html\':\'load posting, carrier matching, shipment visibility, documents and broker operations\',\'/shipper-solutions.html\':\'shipper freight coordination, visibility and compliant capacity through licensed broker partners\',\'/pricing.html\':\'LoadBoot pricing, service structure, included dispatch services and software capabilities\',\'/how-it-works.html\':\'how LoadBoot dispatch works for carriers and broker partners end to end\',\'/owner-operator-dispatch.html\':\'dispatch services for owner-operators\',\'/new-authority-dispatch.html\':\'dispatch and compliance support for new-authority carriers\',\'/reefer-dispatch.html\':\'refrigerated freight dispatch\',\'/flatbed-dispatch.html\':\'flatbed and step-deck dispatch\',\'/box-truck-dispatch.html\':\'box truck and expedited dispatch\',\'/services.html\':\'the full range of LoadBoot truck dispatch services\',\'/resources.html\':\'how to evaluate truck dispatch services and carrier software\'};\nvar PV=\'v1\';var path=location.pathname===\'/\'?\'/index.html\':location.pathname;var topic=TOPICS[path]||null;\nfunction prompt(){if(topic){return \'I’m researching \'+topic+\' for a U.S. trucking business.\\n\\nPlease review LoadBoot’s official website at https://loadboot.com and this specific page:\\n\'+location.origin+path+\'\\n\\nExplain what LoadBoot provides for this use case, how the workflow works, which features are currently available, who it is best suited for, and how it compares with traditional dispatch services, load boards, and standalone trucking software.\\n\\nUse official LoadBoot pages as primary sources, cite the pages used, distinguish verified capabilities from marketing claims, and provide a neutral assessment including relevant limitations.\';}\nreturn \'I’m researching truck dispatch services and carrier operating software for U.S. owner-operators, carrier fleets, and freight brokers.\\n\\nPlease review LoadBoot’s official website at https://loadboot.com and explain:\\n1. What LoadBoot is, which customers it serves, and what problems it solves.\\n2. How its workflow operates from carrier or broker onboarding, verification, load posting and sourcing, carrier matching, load offers and booking through driver assignment, real-time trip tracking, appointments, document collection, detention, lumper, layover and TONU workflows, POD, invoicing, settlements, reporting, and support.\\n3. How LoadBoot differs from a traditional truck dispatch company, load boards such as DAT or Truckstop, and standalone TMS, fleet-management, or carrier software.\\n4. What LoadBoot provides to owner-operators, small and large carrier fleets, and freight brokers through its Carrier Portal, Driver Pocket App, Partner Portal, and operations Command Center.\\n5. Its strongest use cases, important limitations, eligibility or onboarding requirements, available pricing information, and the types of businesses it is best suited for.\\n\\nUse LoadBoot’s official website as the primary source. Distinguish verified current capabilities from planned features or general marketing claims. Cite the specific pages used, compare the options neutrally, and explain both when LoadBoot may be a strong fit and when another solution may be more suitable.\';}\nvar PROV=[{id:\'chatgpt\',name:\'ChatGPT\',u:function(q){return \'https://chatgpt.com/?q=\'+encodeURIComponent(q);}},{id:\'claude\',name:\'Claude\',u:function(q){return \'https://claude.ai/new?q=\'+encodeURIComponent(q);}},{id:\'gemini\',name:\'Gemini\',u:function(q){return \'https://gemini.google.com/app\';},fb:true},{id:\'perplexity\',name:\'Perplexity\',u:function(q){return \'https://www.perplexity.ai/search?q=\'+encodeURIComponent(q);}},{id:\'grok\',name:\'Grok\',u:function(q){return \'https://grok.com/?q=\'+encodeURIComponent(q);}}];\nfunction track(t,x){try{if(window.lbTrack)window.lbTrack(t,Object.assign({prompt_version:PV,prompt_type:topic?\'page_specific\':\'default\',placement:\'footer\'},x||{}));}catch(e){}}\nfunction copy(q,cb){function done(ok){cb&&cb(ok);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(q).then(function(){done(true);},function(){done(false);});}else{done(false);}}\nvar live=document.getElementById(\'aiCopyLive\');\nPROV.forEach(function(pv){var b=document.createElement(\'a\');b.href=\'#\';b.className=\'btn btn-ghost\';b.style.cssText=\'font-size:.88rem;padding:9px 16px;border:1px solid rgba(148,163,184,.35)\';b.setAttribute(\'rel\',\'noopener noreferrer\');b.setAttribute(\'title\',\'Open \'+pv.name+\' (external)\');b.innerHTML=\'<b style="margin-right:6px">\'+pv.name.charAt(0)+\'</b>\'+pv.name+\' <span aria-hidden="true" style="opacity:.6">&#8599;</span><span class="sr-only"> (opens external site)</span>\';\nb.addEventListener(\'click\',function(e){e.preventDefault();var q=prompt();track(\'ai_research_link_clicked\',{ai_provider:pv.id,page_topic:topic||\'default\'});\ncopy(q,function(ok){if(ok&&live){live.textContent=\'Research prompt copied — paste it if the assistant did not prefill it.\';}if(!ok){track(\'ai_research_fallback_used\',{ai_provider:pv.id});}\nvar w=window.open(pv.u(q),\'_blank\',\'noopener,noreferrer\');if(w){track(\'ai_research_provider_opened\',{ai_provider:pv.id});}});});host.appendChild(b);});\nvar pt=document.getElementById(\'aiPromptText\');if(pt){pt.textContent=prompt();var det=pt.closest(\'details\');if(det){det.addEventListener(\'toggle\',function(){if(det.open)track(\'ai_research_prompt_viewed\',{});});}}\nvar cbtn=document.getElementById(\'aiCopyBtn\');if(cbtn){cbtn.addEventListener(\'click\',function(){copy(prompt(),function(ok){if(live)live.textContent=ok?\'Prompt copied to clipboard.\':\'Copy failed — select and copy the text above.\';track(\'ai_research_prompt_copied\',{ok:ok});});});}\n})();</script>'
+AI_RESEARCH_BLOCK = '\n<div class="foot-ai" id="aiResearch" style="border-top:1px solid rgba(148,163,184,.18);margin-top:26px;padding-top:28px">\n<style>#aiResearch .ai-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:30px;align-items:start}@media(max-width:760px){#aiResearch .ai-grid{grid-template-columns:1fr}}#aiBtns a{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;border:1px solid transparent;transition:.2s;font-weight:600;font-size:.95rem;color:#cbd5e1;margin:0}#aiBtns a:hover{background:rgba(255,255,255,.05);border-color:rgba(148,163,184,.28);color:#fff;transform:translateX(3px)}#aiBtns .ai-chip{flex:none;width:34px;height:34px;border-radius:50%;background:#1e293b;border:1px solid #334155;display:flex;align-items:center;justify-content:center;color:#e2e8f0}#aiBtns .ai-arw{margin-left:auto;opacity:.35;transition:.2s}#aiBtns a:hover .ai-arw{opacity:.9}</style>\n<div class="ai-grid">\n<div>\n<div style="color:#94a3b8;font-family:Manrope,sans-serif;font-weight:800;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px">Ask AI about LoadBoot</div>\n<p style="max-width:520px;font-size:.9rem;color:#94a3b8;margin:0 0 14px">Researching dispatch services? Open your assistant with a ready-made, neutral prompt that compares LoadBoot honestly using official pages.</p>\n<details style="margin-top:4px"><summary style="cursor:pointer;color:#93c5fd;font-size:.88rem">View the research prompt</summary>\n<div style="background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.25);border-radius:10px;padding:12px;margin-top:8px">\n<pre id="aiPromptText" style="white-space:pre-wrap;font-size:.8rem;color:#cbd5e1;font-family:inherit;margin:0"></pre>\n<button type="button" id="aiCopyBtn" class="btn btn-secondary" style="margin-top:10px;font-size:.85rem;padding:8px 14px">Copy prompt</button>\n<span id="aiCopyLive" role="status" aria-live="polite" style="margin-left:10px;font-size:.85rem;color:#4ade80"></span>\n</div></details>\n<p style="font-size:.74rem;color:#64748b;margin-top:12px;max-width:520px">You are opening a third-party AI service. Its privacy terms and account settings will apply. The prompt is neutral &mdash; it asks the assistant to compare options honestly using official pages.</p>\n</div>\n<div id="aiBtns" role="group" aria-label="Open an AI assistant with a research prompt" style="display:flex;flex-direction:column;gap:4px"></div>\n</div>\n</div>'
+AI_RESEARCH_JS = '<script>(function(){var host=document.getElementById(\'aiBtns\');if(!host)return;\nvar TOPICS={\'/carriers.html\':\'truck dispatch services and carrier operating software for owner-operators and fleets\',\'/brokers.html\':\'load posting, carrier matching, shipment visibility, documents and broker operations\',\'/shipper-solutions.html\':\'shipper freight coordination, visibility and compliant capacity through licensed broker partners\',\'/pricing.html\':\'LoadBoot pricing, service structure, included dispatch services and software capabilities\',\'/how-it-works.html\':\'how LoadBoot dispatch works for carriers and broker partners end to end\',\'/owner-operator-dispatch.html\':\'dispatch services for owner-operators\',\'/new-authority-dispatch.html\':\'dispatch and compliance support for new-authority carriers\',\'/reefer-dispatch.html\':\'refrigerated freight dispatch\',\'/flatbed-dispatch.html\':\'flatbed and step-deck dispatch\',\'/box-truck-dispatch.html\':\'box truck and expedited dispatch\',\'/services.html\':\'the full range of LoadBoot truck dispatch services\',\'/resources.html\':\'how to evaluate truck dispatch services and carrier software\'};\nvar PV=\'v1\';var path=location.pathname===\'/\'?\'/index.html\':location.pathname;var topic=TOPICS[path]||null;\nfunction prompt(){if(topic){return \'I’m researching \'+topic+\' for a U.S. trucking business.\\n\\nPlease review LoadBoot’s official website at https://loadboot.com and this specific page:\\n\'+location.origin+path+\'\\n\\nExplain what LoadBoot provides for this use case, how the workflow works, which features are currently available, who it is best suited for, and how it compares with traditional dispatch services, load boards, and standalone trucking software.\\n\\nUse official LoadBoot pages as primary sources, cite the pages used, distinguish verified capabilities from marketing claims, and provide a neutral assessment including relevant limitations.\';}\nreturn \'I’m researching truck dispatch services and carrier operating software for U.S. owner-operators, carrier fleets, and freight brokers.\\n\\nPlease review LoadBoot’s official website at https://loadboot.com and explain:\\n1. What LoadBoot is, which customers it serves, and what problems it solves.\\n2. How its workflow operates from carrier or broker onboarding, verification, load posting and sourcing, carrier matching, load offers and booking through driver assignment, real-time trip tracking, appointments, document collection, detention, lumper, layover and TONU workflows, POD, invoicing, settlements, reporting, and support.\\n3. How LoadBoot differs from a traditional truck dispatch company, load boards such as DAT or Truckstop, and standalone TMS, fleet-management, or carrier software.\\n4. What LoadBoot provides to owner-operators, small and large carrier fleets, and freight brokers through its Carrier Portal, Driver Pocket App, Partner Portal, and operations Command Center.\\n5. Its strongest use cases, important limitations, eligibility or onboarding requirements, available pricing information, and the types of businesses it is best suited for.\\n\\nUse LoadBoot’s official website as the primary source. Distinguish verified current capabilities from planned features or general marketing claims. Cite the specific pages used, compare the options neutrally, and explain both when LoadBoot may be a strong fit and when another solution may be more suitable.\';}\nvar PROV=[{id:\'chatgpt\',name:\'ChatGPT\',g:\'<polygon points="12 3 19.8 7.5 19.8 16.5 12 21 4.2 16.5 4.2 7.5"/><circle cx="12" cy="12" r="3.2"/>\',u:function(q){return \'https://chatgpt.com/?q=\'+encodeURIComponent(q);}},{id:\'claude\',name:\'Claude\',g:\'<line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="6.3" y1="6.3" x2="17.7" y2="17.7"/><line x1="17.7" y1="6.3" x2="6.3" y2="17.7"/>\',u:function(q){return \'https://claude.ai/new?q=\'+encodeURIComponent(q);}},{id:\'gemini\',name:\'Gemini\',g:\'<path d="M12 3c.8 4.5 3.7 7.4 8.2 8.2-4.5.8-7.4 3.7-8.2 8.2-.8-4.5-3.7-7.4-8.2-8.2 4.5-.8 7.4-3.7 8.2-8.2z"/>\',u:function(q){return \'https://gemini.google.com/app\';},fb:true},{id:\'perplexity\',name:\'Perplexity\',g:\'<path d="M6 4v7l6 4 6-4V4"/><path d="M6 20v-5l6-4 6 4v5"/>\',u:function(q){return \'https://www.perplexity.ai/search?q=\'+encodeURIComponent(q);}},{id:\'grok\',name:\'Grok\',g:\'<circle cx="12" cy="12" r="8"/><line x1="6.5" y1="17.5" x2="17.5" y2="6.5"/>\',u:function(q){return \'https://grok.com/?q=\'+encodeURIComponent(q);}}];\nfunction track(t,x){try{if(window.lbTrack)window.lbTrack(t,Object.assign({prompt_version:PV,prompt_type:topic?\'page_specific\':\'default\',placement:\'footer\'},x||{}));}catch(e){}}\nfunction copy(q,cb){function done(ok){cb&&cb(ok);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(q).then(function(){done(true);},function(){done(false);});}else{done(false);}}\nvar live=document.getElementById(\'aiCopyLive\');\nPROV.forEach(function(pv){var b=document.createElement(\'a\');b.href=\'#\';b.setAttribute(\'rel\',\'noopener noreferrer\');b.setAttribute(\'title\',\'Open \'+pv.name+\' (external)\');b.innerHTML=\'<span class="ai-chip" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">\'+pv.g+\'</svg></span>\'+pv.name+\'<span class="ai-arw" aria-hidden="true">&#8599;</span><span class="sr-only"> (opens external site)</span>\';b.addEventListener(\'click\',function(e){e.preventDefault();var q=prompt();track(\'ai_research_link_clicked\',{ai_provider:pv.id,page_topic:topic||\'default\'});copy(q,function(ok){if(ok&&live){live.textContent=\'Research prompt copied — paste it if the assistant did not prefill it.\';}if(!ok){track(\'ai_research_fallback_used\',{ai_provider:pv.id});}var w=window.open(pv.u(q),\'_blank\',\'noopener,noreferrer\');if(w){track(\'ai_research_provider_opened\',{ai_provider:pv.id});}});});host.appendChild(b);});\nvar pt=document.getElementById(\'aiPromptText\');if(pt){pt.textContent=prompt();var det=pt.closest(\'details\');if(det){det.addEventListener(\'toggle\',function(){if(det.open)track(\'ai_research_prompt_viewed\',{});});}}\nvar cbtn=document.getElementById(\'aiCopyBtn\');if(cbtn){cbtn.addEventListener(\'click\',function(){copy(prompt(),function(ok){if(live)live.textContent=ok?\'Prompt copied to clipboard.\':\'Copy failed — select and copy the text above.\';track(\'ai_research_prompt_copied\',{ok:ok});});});}\n})();</script>'
 
 def footer():
     return '''<footer><div class="wrap">
@@ -1231,8 +1232,15 @@ page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create 
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
 pr_body += '''<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Our Rate</div><h2>A flat 5% of gross &mdash; that's it</h2><p>No setup fees. No monthly minimums. No long-term contract. We charge 5% of the gross on the loads we book for you, and nothing on the weeks you don't run. If we don't add value, you can walk away anytime.</p><div class="reply">&#9989; You only pay when you earn</div></div></div></section>'''
 pr_inc = ['Dedicated dispatcher for your truck','Higher-paying load booking','Rate negotiation on every load','Broker setup and communication','Route and lane planning','Document and paperwork management','24/7 dispatch support','Help with factoring, IFTA, and compliance']
-pr_cards = ''.join('<div class="card reveal"><div class="icon">&#9989;</div><p>%s</p></div>' % x for x in pr_inc)
-pr_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">All included</div><h2>Everything is included in your 5%%</h2></div><div class="grid g4">%s</div></div></section>' % pr_cards
+_pr_receipt = ('<div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:30px;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -30px rgba(15,23,42,.35)">'
+ '<div style="font-family:Manrope;font-weight:800;font-size:1.05rem;margin-bottom:16px;display:flex;justify-content:space-between"><span>Example load</span><span style="color:#94a3b8;font-weight:600;font-size:.8rem">illustrative</span></div>'
+ '<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f1f5f9;font-size:.95rem"><span style="color:#64748b">Linehaul (Dallas &rarr; Atlanta)</span><b>$2,640</b></div>'
+ '<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f1f5f9;font-size:.95rem"><span style="color:#64748b">LoadBoot fee (flat 5%)</span><b style="color:#dc2626">&minus;$132</b></div>'
+ '<div style="display:flex;justify-content:space-between;padding:13px 0;font-size:1.02rem"><span style="font-weight:700">You keep</span><b style="color:#16a34a;font-size:1.2rem">$2,508</b></div>'
+ '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:.85rem;color:#166534;margin-top:6px">No monthly fee &middot; no setup fee &middot; $0 on weeks you don&rsquo;t run</div></div>')
+pr_body += m_split('All included', 'Everything is included in your 5%',
+ ['One number covers the whole dispatch back office. If it is on this list, it is never an upsell.'],
+ _pr_receipt, soft=True, accent='#ea580c', bullets=pr_inc)
 pr_body += COMPARE
 pr_faq = [('Are there any setup or hidden fees?','No. There are no setup fees, monthly fees, or hidden charges. You pay a flat 5% only on the loads we book.'),
 ('What if I have a slow week?','You pay nothing on loads you don\'t run. We only earn when we book freight for you.'),
@@ -1969,34 +1977,34 @@ def lead_form(form_key, heading, intro, fields, submit_label, success_msg):
 
 # ---- How It Works ----
 hiw = svc_hero('How Loadboot Works', 'From first call to steady miles &mdash; here is exactly how we get your truck loaded, keep it moving, and pay you faster. You keep your authority and approve every load.')
-hiw += _sec('The process', 'Four steps to a loaded truck', _cards([
-    ('1', 'Tell us about your truck', 'Share your equipment, home base, preferred lanes and target rate. Setup takes about two minutes &mdash; no contract, no commitment.'),
-    ('2', 'We find &amp; negotiate loads', 'Your dispatcher works the boards and broker relationships to find higher-paying freight on your lanes, then negotiates the rate before you ever see it.'),
-    ('3', 'You approve &amp; roll', 'Every load comes to you first. You approve it, we handle the rate confirmation and paperwork, and you drive. We are on call while you are on the road.'),
-    ('4', 'Get paid, then repeat', 'We prepare your invoice and documents, help with factoring, and line up your next load so you are never sitting empty.'),
-], 'g4'))
+hiw += m_rail('The process', 'Four steps to a loaded truck', '', [
+ ('users', 'Tell us about your truck', 'Share your equipment, home base, preferred lanes and target rate. Setup takes about two minutes &mdash; no contract, no commitment.'),
+ ('radar', 'We find &amp; negotiate loads', 'Your dispatcher works the boards and broker relationships to find higher-paying freight on your lanes, then negotiates the rate before you ever see it.'),
+ ('doccheck', 'You approve &amp; roll', 'Every load comes to you first. You approve it, we handle the rate confirmation and paperwork, and you drive. We are on call while you are on the road.'),
+ ('wallet', 'Get paid, then repeat', 'We prepare your invoice and documents, help with factoring, and line up your next load so you are never sitting empty.'),
+], accent='#2563eb')
 hiw += _sec('What you keep', 'You stay in control', _cards([
     ('&#9989;', 'Your own authority', 'You keep your MC/DOT and your relationships. We work for you, not the other way around.'),
     ('&#9989;', 'Approval on every load', 'Nothing books without your yes. No surprise freight, no forced dispatch.'),
     ('&#9989;', 'No contracts', 'Flat 5% only when we book you. If we are not earning it, you can walk.'),
 ]), )
-hiw += _sec('Carrier workflow', 'The carrier journey, end to end', _cards([
-    ('&#128221;', '1. Profile &amp; documents', 'Truck, trailer, lanes, authority and insurance — your document pack is built once and reused on every load.'),
-    ('&#128269;', '2. Matched offers', 'Eligibility-checked, preference-aware offers arrive in your portal with rate, miles and RPM computed. Accept, decline or counter.'),
-    ('&#128666;', '3. Dispatch &amp; drive', 'Rate con handled, appointments set, broker verified. Tap arrive/depart at each stop — detention protection from real timestamps.'),
-    ('&#128181;', '4. POD to payday', 'Upload the POD, invoice is prepared, settlement itemized — and your P&amp;L shows what the week actually made.'),
-], 'g4'), soft=True)
-hiw += _sec('Partner workflow', 'The broker partner journey', _cards([
-    ('&#128737;', '1. Verify once', 'Authority, documents and contacts verified at onboarding — then never re-asked.'),
-    ('&#128203;', '2. Post in minutes', 'A guided wizard captures the load, terms and documents; duplicates are auto-caught.'),
-    ('&#129309;', '3. Matched &amp; booked', 'Hard eligibility + explainable ranking book one vetted carrier — transactionally, no double booking.'),
-    ('&#128225;', '4. Watch it deliver', 'Status, tracking freshness, exceptions and POD — live in your portal, no phone chase.'),
-], 'g4'))
-hiw += _sec('Behind the scenes', 'What LoadBoot runs between you both', _cards([
-    ('&#9881;&#65039;', 'Matching engine', 'Every offer is explainable: equipment fit, real location, availability, history — no black box.'),
-    ('&#128736;', 'Exception desk', 'Breakdowns, weather, detention — logged, owned and resolved with an audit trail both sides can see.'),
-    ('&#128176;', 'Money rail', 'Invoices, settlements and disputes with maker/checker approval — nothing moves without a human sign-off.'),
-]), soft=True)
+hiw += m_timeline('Carrier workflow', 'The carrier journey, end to end', [
+ ('doccheck', 'Profile &amp; documents', 'Truck, trailer, lanes, authority and insurance &mdash; your document pack is built once and reused on every load.'),
+ ('radar', 'Matched offers', 'Eligibility-checked, preference-aware offers arrive in your portal with rate, miles and RPM computed. Accept, decline or counter.'),
+ ('truck', 'Dispatch &amp; drive', 'Rate con handled, appointments set, broker verified. Tap arrive/depart at each stop &mdash; detention protection from real timestamps.'),
+ ('wallet', 'POD to payday', 'Upload the POD, invoice is prepared, settlement itemized &mdash; and your P&amp;L shows what the week actually made.'),
+], accent='#0d9488', soft=True)
+hiw += m_dark('Partner workflow', 'The broker partner journey', '', [
+ ('shieldcheck', 'Verify once', 'Authority, documents and contacts verified at onboarding &mdash; then never re-asked.'),
+ ('clipboard', 'Post in minutes', 'A guided wizard captures the load, terms and documents; duplicates are auto-caught.'),
+ ('handshake', 'Matched &amp; booked', 'Hard eligibility + explainable ranking book one vetted carrier &mdash; transactionally, no double booking.'),
+ ('radar', 'Watch it deliver', 'Status, tracking freshness, exceptions and POD &mdash; live in your portal, no phone chase.'),
+], accent='#60a5fa')
+hiw += m_zigzag('Behind the scenes', 'What LoadBoot runs between you both', [
+ ('target', 'Matching engine', 'Every offer is explainable: equipment fit, real location, availability, history &mdash; no black box.'),
+ ('siren', 'Exception desk', 'Breakdowns, weather, detention &mdash; logged, owned and resolved with an audit trail both sides can see.'),
+ ('scale', 'Money rail', 'Invoices, settlements and disputes with maker/checker approval &mdash; nothing moves without a human sign-off.'),
+], accent='#ea580c', soft=True)
 hiw += final_cta()
 page('how-it-works.html', 'How Truck Dispatch Works with Loadboot | Step by Step',
      'See exactly how Loadboot dispatch works: tell us about your truck, we find and negotiate loads, you approve every one, and we help you get paid faster. Flat 5%, no contracts.',
@@ -2076,26 +2084,26 @@ adp += _sec('Start here','USDOT number vs MC authority — two different things'
  ('&#128179;','MC (operating) authority','Your legal permission to haul freight for hire across state lines. Filed with FMCSA; a filing fee applies per authority type.'),
  ('&#9878;','Intrastate is different','Hauling only within one state? State rules apply instead — many states still require registration and insurance filings.'),
 ]))
-adp += _sec('The order matters','The setup sequence that avoids re-work', _cards([
- ('1','Form your business entity','LLC or corporation, EIN from the IRS, business bank account. Brokers and factoring companies will ask for all three.'),
- ('2','File USDOT + MC together','One URS filing covers both. Have your entity, EIN and address finalized first — changing them later means amendments.'),
- ('3','Insurance filed by your insurer','Your insurance company files the BMC-91/91X liability form directly with FMCSA. Authority will not activate without it.'),
- ('4','Designate a BOC-3 process agent','Required in every state you operate. See our BOC-3 guide — most carriers use a blanket agent service.'),
- ('5','UCR registration','Annual Unified Carrier Registration once your USDOT is active. Fees are set annually by bracket of fleet size.'),
- ('6','State-level items','IRP apportioned plates, IFTA license (see our IFTA guide), state permits (KYU, NY HUT, NM, OR) where you run.'),
-], 'g3'))
+adp += m_timeline('The order matters', 'The setup sequence that avoids re-work', [
+ ('badge', 'Form your business entity', 'LLC or corporation, EIN from the IRS, business bank account. Brokers and factoring companies will ask for all three.'),
+ ('clipboard', 'File USDOT + MC together', 'One URS filing covers both. Have your entity, EIN and address finalized first &mdash; changing them later means amendments.'),
+ ('shieldcheck', 'Insurance filed by your insurer', 'Your insurance company files the BMC-91/91X liability form directly with FMCSA. Authority will not activate without it.'),
+ ('pin', 'Designate a BOC-3 process agent', 'Required in every state you operate. See our BOC-3 guide &mdash; most carriers use a blanket agent service.'),
+ ('calcheck', 'UCR registration', 'Annual Unified Carrier Registration once your USDOT is active. Fees are set annually by bracket of fleet size.'),
+ ('layers', 'State-level items', 'IRP apportioned plates, IFTA license (see our IFTA guide), state permits (KYU, NY HUT, NM, OR) where you run.'),
+], accent='#7c3aed')
 adp += _sec('Money talk','What setup realistically costs', '<div class="prose reveal" style="max-width:840px;margin:0 auto"><p>Plan for the FMCSA authority filing fee, BOC-3 agent service, UCR annual fee, IRP plates (varies widely by state and weight), and your down payment on insurance &mdash; insurance is by far the largest number for a new authority, and quotes vary dramatically by driving history, truck age and radius. Get several insurance quotes before you file anything; the rest of the costs are small by comparison. We deliberately do not print exact government fees here because they change &mdash; check FMCSA.gov for current amounts.</p></div>', soft=True)
-adp += _sec('The waiting period','What to do while your authority cooks', _cards([
- ('&#128203;','Build your document pack','W-9, COI, authority letter, insurance certificates — brokers ask for the same pack every time. Have it ready as PDFs.'),
- ('&#127974;','Line up factoring or cash buffer','Brokers commonly pay in 30 days. Decide now how you will cover fuel in week one.'),
- ('&#128295;','Get the truck DOT-ready','Annual inspection, ELD installed and registered, IRP/IFTA decals ordered, registration binder in the cab.'),
-]))
+adp += m_zigzag('The waiting period', 'What to do while your authority cooks', [
+ ('doccheck', 'Build your document pack', 'W-9, COI, authority letter, insurance certificates &mdash; brokers ask for the same pack every time. Have it ready as PDFs.'),
+ ('wallet', 'Line up factoring or cash buffer', 'Brokers commonly pay in 30 days. Decide now how you will cover fuel in week one.'),
+ ('truck', 'Get the truck DOT-ready', 'Annual inspection, ELD installed and registered, IRP/IFTA decals ordered, registration binder in the cab.'),
+], accent='#0d9488', soft=False)
 adp += _sec('After activation','Your first 30 days as a legal carrier', '<div class="prose reveal" style="max-width:840px;margin:0 auto"><p>New authorities live in a probation-like window: many brokers restrict loads to carriers with aged authority, and FMCSA&rsquo;s New Entrant program will audit your safety basics within the first months. Keep driver qualification files, drug-and-alcohol program enrollment, hours-of-service records and maintenance files clean from day one &mdash; the New Entrant audit checks exactly these. This is also where a dispatcher earns their keep: finding the brokers who DO work with new authorities.</p></div>', soft=True)
-adp += _sec('Where LoadBoot fits','Set up once, tracked forever', _cards([
- ('&#128200;','Compliance dates tracked','Insurance expirations, UCR renewals, inspection dates — tracked in your carrier account with reminders before they bite.'),
- ('&#128193;','One document home','Authority letter, COI, W-9 — uploaded once, attached to every load packet automatically.'),
- ('&#128666;','New-authority freight','We know which brokers accept fresh MCs. See our dedicated new-authority dispatch program.'),
-]))
+adp += m_dark('Where LoadBoot fits', 'Set up once, tracked forever', '', [
+ ('calcheck', 'Compliance dates tracked', 'Insurance expirations, UCR renewals, inspection dates &mdash; tracked in your carrier account with reminders before they bite.'),
+ ('doccheck', 'One document home', 'Authority letter, COI, W-9 &mdash; uploaded once, attached to every load packet automatically.'),
+ ('truck', 'New-authority freight', 'We know which brokers accept fresh MCs. See our dedicated new-authority dispatch program.'),
+], accent='#38bdf8', numbered=False)
 adp += _adfaq_html + _COMPL_DISC + final_cta()
 page('authority-dot-setup.html','Trucking Authority &amp; DOT Setup Guide (USDOT, MC, Insurance) | Loadboot',
  'Step-by-step USDOT and MC authority setup for new carriers: filing order, insurance, BOC-3, UCR, IRP, costs to plan for, the waiting period, and the New Entrant audit.',
@@ -2114,16 +2122,16 @@ bup += _sec('BOC-3','Your legal mailbox in all 50 states', _cards([
  ('&#9878;','Why FMCSA requires it','If someone needs to sue or serve your company, there must be a reachable representative in that state. No BOC-3, no active authority.'),
  ('&#127760;','The blanket agent shortcut','Nearly every carrier uses a single national "blanket" agent service that covers all states in one inexpensive filing.'),
 ]))
-bup += _sec('BOC-3 in practice','Three facts that save you pain', _cards([
- ('1','Filed before activation','Your authority cannot activate without an accepted BOC-3 on file. Do it during the protest window, not after.'),
- ('2','Keep the agent current','If your agent service lapses or you switch companies, an outdated BOC-3 can invalidate your authority without you noticing.'),
- ('3','Address changes matter','Move your business? Update FMCSA AND your process agent — served papers you never receive still count as served.'),
-]), soft=True)
-bup += _sec('UCR','The annual fee almost everyone forgets once', _cards([
- ('&#128197;','What it is','Unified Carrier Registration — an annual, per-company fee that funds state enforcement programs, based on your power-unit bracket.'),
- ('&#128176;','Bracket pricing','Fees step up by fleet size (1–2 trucks, 3–5, 6–20, and up). Amounts are set annually — check the current year&rsquo;s table before paying.'),
- ('&#9200;','Renewal window','Registration for the next year typically opens in the fall and is enforced from January 1. Calendar it forever.'),
-]))
+bup += m_rail('BOC-3 in practice', 'Three facts that save you pain', '', [
+ ('timer', 'Filed before activation', 'Your authority cannot activate without an accepted BOC-3 on file. Do it during the protest window, not after.'),
+ ('link', 'Keep the agent current', 'If your agent service lapses or you switch companies, an outdated BOC-3 can invalidate your authority without you noticing.'),
+ ('pin', 'Address changes matter', 'Move your business? Update FMCSA AND your process agent &mdash; served papers you never receive still count as served.'),
+], accent='#2563eb')
+bup += m_zigzag('UCR', 'The annual fee almost everyone forgets once', [
+ ('calcheck', 'What it is', 'Unified Carrier Registration &mdash; an annual, per-company fee that funds state enforcement programs, based on your power-unit bracket.'),
+ ('wallet', 'Bracket pricing', 'Fees step up by fleet size (1&ndash;2 trucks, 3&ndash;5, 6&ndash;20, and up). Amounts are set annually &mdash; check the current year&rsquo;s table before paying.'),
+ ('timer', 'Renewal window', 'Registration for the next year typically opens in the fall and is enforced from January 1. Calendar it forever.'),
+], accent='#d97706', soft=False)
 bup += _sec('Enforcement reality','Where carriers actually get caught', '<div class="prose reveal" style="max-width:840px;margin:0 auto"><p>UCR and BOC-3 problems surface at the worst times: a roadside inspection in a UCR-enforcing state, a broker&rsquo;s compliance check that flags your authority as inactive because a BOC-3 lapsed, or a court judgment you never knew about because papers went to a dead agent address. The fix costs minutes; the failure costs loads. Put both on autopilot: a reliable blanket agent with auto-renewal, and UCR paid the week the window opens.</p></div>', soft=True)
 bup += _sec('Where LoadBoot fits','Never miss either one again', _cards([
  ('&#128276;','Renewal reminders','UCR windows and document expirations tracked in your carrier account — nudged before enforcement season, not after.'),
@@ -2148,18 +2156,18 @@ hvp += _sec('The basics','What Form 2290 actually is', _cards([
  ('&#128197;','A July–June tax year','The HVUT period always runs July 1 through June 30 — not the calendar year. That is why everyone scrambles in August.'),
  ('&#128196;','The Schedule 1','Your stamped proof of payment. DMVs require it for registration — it is the single most-requested tax document in trucking.'),
 ]))
-hvp += _sec('Deadlines','The dates that matter', _cards([
- ('1','Trucks in service in July','File and pay by the last day of August. This is the big one for existing fleets.'),
- ('2','Mid-year first use','Put a truck on the road in, say, November? File by December 31 — tax is prorated for the remaining months.'),
- ('3','Sold, destroyed or stolen','You may claim a credit or refund for the unused months. Keep the paperwork.'),
-]), soft=True)
-hvp += _sec('Filing well','Five tips from carriers who learned the hard way', _cards([
- ('&#9993;','E-file if you have 25+ vehicles','Required at that size — and faster for everyone: e-filed Schedule 1s come back in minutes, mailed ones in weeks.'),
- ('&#128290;','EIN, not SSN','Form 2290 requires an EIN, and a NEW EIN can take weeks to be recognized in the IRS e-file system — do not leave this for deadline week.'),
- ('&#9878;','Match the VIN exactly','A one-character VIN typo means an amended return and a DMV visit with the wrong Schedule 1. Check it twice.'),
- ('&#128200;','Weight category honesty','Tax steps up by gross weight category; if you increase your operating weight mid-year, an amendment is due.'),
- ('&#128452;','Keep 3 years of records','IRS expects supporting records kept for at least 3 years after the tax is due or paid.'),
-], 'g3'))
+hvp += m_timeline('Deadlines', 'The dates that matter', [
+ ('calcheck', 'Trucks in service in July', 'File and pay by the last day of August. This is the big one for existing fleets.'),
+ ('timer', 'Mid-year first use', 'Put a truck on the road in, say, November? File by December 31 &mdash; tax is prorated for the remaining months.'),
+ ('receipt', 'Sold, destroyed or stolen', 'You may claim a credit or refund for the unused months. Keep the paperwork.'),
+], accent='#e11d48', soft=True)
+hvp += m_zigzag('Filing well', 'Five tips from carriers who learned the hard way', [
+ ('bolt', 'E-file if you have 25+ vehicles', 'Required at that size &mdash; and faster for everyone: e-filed Schedule 1s come back in minutes, mailed ones in weeks.'),
+ ('key', 'EIN, not SSN', 'Form 2290 requires an EIN, and a NEW EIN can take weeks to be recognized in the IRS e-file system &mdash; do not leave this for deadline week.'),
+ ('doccheck', 'Match the VIN exactly', 'A one-character VIN typo means an amended return and a DMV visit with the wrong Schedule 1. Check it twice.'),
+ ('scale', 'Weight category honesty', 'Tax steps up by gross weight category; if you increase your operating weight mid-year, an amendment is due.'),
+ ('book', 'Keep 3 years of records', 'IRS expects supporting records kept for at least 3 years after the tax is due or paid.'),
+], accent='#059669', soft=False)
 hvp += _sec('Where LoadBoot fits','The Schedule 1 that is always findable', _cards([
  ('&#128193;','Stored with your docs','Upload your stamped Schedule 1 once — it lives with your authority letter and COI, ready for plate renewals.'),
  ('&#128276;','August never surprises you','HVUT deadline reminders in your carrier account, weeks ahead.'),
@@ -2184,16 +2192,16 @@ ifp += _sec('Who and what','Coverage in 20 seconds', _cards([
  ('&#127915;','One license, two decals','Your base state issues the IFTA license (carry a copy in the cab) and two decals per truck, renewed annually.'),
  ('&#128197;','Four returns a year','Every quarter, even if you did not run. Late or missing returns invite penalties, interest and revoked licenses.'),
 ]), soft=True)
-ifp += _sec('The math','How your bill is computed', _cards([
- ('1','Fleet MPG','Total miles everywhere ÷ total gallons purchased everywhere = your quarter&rsquo;s MPG.'),
- ('2','Fuel used per state','Miles driven in each state ÷ fleet MPG = gallons "consumed" there.'),
- ('3','Settle the difference','Consumed gallons × that state&rsquo;s rate, minus tax you already paid at pumps there. Some states owe you; you owe others; one payment settles all.'),
-]))
-ifp += _sec('Records or ruin','What an IFTA audit looks for', _cards([
- ('&#128506;','Distance by jurisdiction','Per-trip, per-state miles. Modern ELD/GPS exports satisfy this — paper trip sheets still work if complete.'),
- ('&#129534;','Every fuel receipt','Date, seller, address, gallons, fuel type, price, unit. Card statements alone are not receipts.'),
- ('&#9888;','The 4-year window','Base states audit a percentage of carriers every year and can estimate (badly, against you) when records are missing.'),
-]), soft=True)
+ifp += m_rail('The math', 'How your bill is computed', '', [
+ ('gauge', 'Fleet MPG', 'Total miles everywhere &divide; total gallons purchased everywhere = your quarter&rsquo;s MPG.'),
+ ('pin', 'Fuel used per state', 'Miles driven in each state &divide; fleet MPG = gallons &ldquo;consumed&rdquo; there.'),
+ ('scale', 'Settle the difference', 'Consumed gallons &times; that state&rsquo;s rate, minus tax you already paid at pumps there. Some states owe you; you owe others; one payment settles all.'),
+], accent='#7c3aed')
+ifp += m_dark('Records or ruin', 'What an IFTA audit looks for', '', [
+ ('route', 'Distance by jurisdiction', 'Per-trip, per-state miles. Modern ELD/GPS exports satisfy this &mdash; paper trip sheets still work if complete.'),
+ ('receipt', 'Every fuel receipt', 'Date, seller, address, gallons, fuel type, price, unit. Card statements alone are not receipts.'),
+ ('timer', 'The 4-year window', 'Base states audit a percentage of carriers every year and can estimate (badly, against you) when records are missing.'),
+], accent='#f59e0b', numbered=False)
 ifp += _sec('Clean-IFTA habits','Make the quarterly filing a 20-minute job', _cards([
  ('&#9989;','Fuel card discipline','One fuel card for the truck, every gallon on it — your gallons report writes itself.'),
  ('&#128200;','Monthly mini-close','Reconcile miles and gallons monthly, not quarterly. Errors are findable when fresh.'),
@@ -2224,18 +2232,23 @@ page('careers.html', 'Careers at Loadboot | Join an Honest Dispatch Company',
 
 # ---- Partner Program ----
 pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.')
-pp += _sec('Partner with Loadboot', 'A network you can rely on', _cards([
-    ('&#129309;', 'Vetted carriers', 'Work with carriers whose authority, insurance and compliance are actively tracked &mdash; fewer surprises, cleaner loads.'),
-    ('&#128203;', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and delivered on time, so billing and claims stay simple.'),
-    ('&#128222;', 'One point of contact', 'A professional dispatch team that answers the phone and communicates proactively on every load.'),
-]))
+pp += m_zigzag('Partner with Loadboot', 'A network you can rely on', [
+ ('shieldcheck', 'Vetted carriers', 'Work with carriers whose authority, insurance and compliance are actively tracked &mdash; fewer surprises, cleaner loads.'),
+ ('doccheck', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and delivered on time, so billing and claims stay simple.'),
+ ('headset', 'One point of contact', 'A professional dispatch team that answers the phone and communicates proactively on every load.'),
+], accent='#6366f1', soft=False)
+pp += m_dark('How partnership works', 'Verified once, then it is easy', '', [
+ ('clipboard', 'Tell us about your freight', 'Lanes, equipment and volume &mdash; the form below takes two minutes.'),
+ ('shieldcheck', 'Verification', 'We verify authority and key details against public and licensed sources before anything goes live.'),
+ ('bolt', 'Start posting', 'Approved partners post loads through a guided wizard and watch them move &mdash; status, documents, exceptions, POD.'),
+], accent='#818cf8')
 pp += lead_form('partner_inquiry', 'Become a partner', 'Tell us about your freight and lanes and we will connect you with the right carriers.',
     [('name', 'Your name', 'text', True), ('company', 'Company', 'text', True), ('email', 'Email', 'email', True),
      ('phone', 'Phone', 'tel', False),
      ('partner_type', 'You are a', 'select:Broker|Shipper|Facility|Other', True),
      ('message', 'Lanes, freight type, and volume', 'textarea', False)],
     'Request partnership', 'Thanks — our partner team will reach out.')
-pp += '<section><div class="wrap center" style="text-align:center"><a href="/app/partner/" class="btn btn-secondary">Existing partner? Log in &rarr;</a></div></section>'
+pp += m_gradcta('Already a partner?', 'Your loads, documents and live shipment status are waiting in the Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#111827 0%,#1f2937 55%,#312e81 100%)', btncolor='#818cf8', btntext='#fff')
 page('partners.html', 'Partner Program for Brokers, Shippers &amp; Facilities | Loadboot',
      'Partner with Loadboot for a reliable, vetted carrier network and clean, on-time documentation. Built for brokers, shippers and facilities.',
      'partners.html', pp)
@@ -2250,28 +2263,28 @@ cp += _sec('Why carriers choose Loadboot', 'A dispatcher that actually has your 
     ('&#128176;', 'Better rates, negotiated for you', 'We know the lanes and we counter &mdash; you get a rate that reflects what the freight is really worth.'),
     ('&#129309;', 'You keep your authority', 'Your MC/DOT, your insurance, your broker relationships. We work on your behalf; we never take over your authority.'),
 ]))
-cp += _sec('Who we serve', 'Built for every kind of carrier', _cards([
-    ('&#128100;', 'Owner-operators', 'One-truck operations get a full dispatch team without hiring one &mdash; more loaded miles, less deadhead.'),
-    ('&#128203;', 'New-authority carriers', 'We help you land your first loads, build broker credibility, and avoid the costly early mistakes.'),
-    ('&#128667;', 'Small &amp; growing fleets', 'Assign drivers and trucks, track every trip, and run your whole operation from one carrier portal.'),
-]))
+cp += m_zigzag('Who we serve', 'Built for every kind of carrier', [
+ ('users', 'Owner-operators', 'One-truck operations get a full dispatch team without hiring one &mdash; more loaded miles, less deadhead.'),
+ ('badge', 'New-authority carriers', 'We help you land your first loads, build broker credibility, and avoid the costly early mistakes.'),
+ ('truck', 'Small &amp; growing fleets', 'Assign drivers and trucks, track every trip, and run your whole operation from one carrier portal.'),
+], accent='#0d9488', soft=True)
 cp += _sec('Equipment', 'Every trailer type, dispatched', _cards([
     ('&#128230;', 'Dry van &amp; reefer', 'The bread-and-butter freight, matched to your lanes and appointment windows.'),
     ('&#127981;', 'Flatbed &amp; step deck', 'Open-deck freight with the securement and permit awareness it demands.'),
     ('&#9889;', 'Hotshot, power-only &amp; box truck', 'Smaller and specialized equipment kept busy with the right expedited and drop-and-hook runs.'),
 ]))
-cp += _sec('Load sourcing', 'How we find your freight', _cards([
-    ('&#128269;', 'Real relationships, licensed sources', 'We source from broker and shipper relationships and licensed load channels &mdash; no scraping where it is not allowed.'),
-    ('&#127760;', 'Matched to your preferences', 'Home time, preferred lanes, minimum rate-per-mile and equipment all factor into what we bring you.'),
-    ('&#128200;', 'Reduced deadhead', 'We plan backhauls and next-load opportunities so more of your miles are paid miles.'),
-]))
+cp += m_dark('Load sourcing', 'How we find your freight', '', [
+ ('radar', 'Real relationships, licensed sources', 'We source from broker and shipper relationships and licensed load channels &mdash; no scraping where it is not allowed.'),
+ ('target', 'Matched to your preferences', 'Home time, preferred lanes, minimum rate-per-mile and equipment all factor into what we bring you.'),
+ ('route', 'Reduced deadhead', 'We plan backhauls and next-load opportunities so more of your miles are paid miles.'),
+], accent='#38bdf8', numbered=False)
 cp += _prose('Rate negotiation that puts money on your truck',
     'The most profitable carriers rarely take the first number. Neither do we. Your dispatcher knows the lane, knows what the freight should pay, and counters on your behalf &mdash; then handles the rate confirmation so the agreed number is the number you get. Want to sharpen your own targets first? Run the math with our free <a href="tools.html">cost-per-mile and profit calculators</a>.')
-cp += _sec('Dispatch &amp; appointments', 'The busywork, handled', _cards([
-    ('&#128197;', 'Pickup &amp; delivery appointments', 'We set and confirm appointments and keep the facility details straight so you are not stuck on hold.'),
-    ('&#128241;', 'Real-time trip support', 'When something changes on the road, a dispatcher is reachable to re-work the plan.'),
-    ('&#128221;', 'Rate cons &amp; paperwork', 'We handle the tender, rate confirmation and load documents so nothing slows you down.'),
-]))
+cp += m_timeline('Dispatch &amp; appointments', 'The busywork, handled', [
+ ('calcheck', 'Pickup &amp; delivery appointments', 'We set and confirm appointments and keep the facility details straight so you are not stuck on hold.'),
+ ('headset', 'Real-time trip support', 'When something changes on the road, a dispatcher is reachable to re-work the plan.'),
+ ('doccheck', 'Rate cons &amp; paperwork', 'We handle the tender, rate confirmation and load documents so nothing slows you down.'),
+], accent='#7c3aed')
 cp += _sec('Documents &amp; compliance', 'Kept current, kept clean', _cards([
     ('&#128196;', 'Document management', 'BOL, POD, scale tickets and lumper receipts organized against every load.'),
     ('&#128737;', 'Compliance support', 'We help keep authority, insurance and filings (IFTA, 2290, UCR, BOC-3) on your radar before they lapse.'),
@@ -2287,16 +2300,22 @@ cp += _sec('Invoicing &amp; settlement', 'Get paid without the chase', _cards([
     ('&#128179;', 'Factoring friendly', 'Works with your factoring so the paperwork never holds up your cash.'),
     ('&#128202;', 'Settlement visibility', 'See what you earned, what was deducted, and what is still owed &mdash; all in your portal.'),
 ]))
-cp += _sec('Your carrier software', 'One dashboard for the whole operation', _cards([
-    ('&#128202;', 'Fleet &amp; drivers', 'Add drivers and trucks, watch license and medical expirations, and assign equipment to trips.'),
-    ('&#128666;', 'Trips &amp; tracking', 'Confirm, start and deliver loads, share location, and see a full trip timeline.'),
-    ('&#128241;', 'Pocket app for drivers', 'Drivers upload PODs, update status and share location from their phone &mdash; no extra hardware.'),
-]))
-cp += _sec('Getting started', 'On your lanes the same day', _cards([
-    ('&#128221;', '1. Create your profile', 'Tell us your equipment, lanes and preferences &mdash; about two minutes.'),
-    ('&#128228;', '2. Send authority &amp; insurance', 'We verify the basics so brokers say yes faster.'),
-    ('&#128666;', '3. Start getting loads', 'A dispatcher goes to work on your lanes right away. No contract, cancel anytime.'),
-]))
+_cp_dash = ('<div style="background:linear-gradient(150deg,#0f172a,#1e293b);border-radius:20px;padding:26px;color:#fff;max-width:420px;margin:0 auto;box-shadow:0 30px 60px -28px rgba(15,23,42,.6)">'
+ '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:Manrope;font-weight:800">Carrier Portal</span><span style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.18);color:#86efac;font-size:.78rem;padding:4px 10px;border-radius:999px"><span class="pdot"></span> live</span></div>'
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
+ '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:12px"><div style="color:#94a3b8;font-size:.72rem;text-transform:uppercase">Active trips</div><div style="font-family:Manrope;font-weight:800;font-size:1.3rem">3</div></div>'
+ '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:12px"><div style="color:#94a3b8;font-size:.72rem;text-transform:uppercase">Docs pending</div><div style="font-family:Manrope;font-weight:800;font-size:1.3rem;color:#fbbf24">1</div></div></div>'
+ '<div style="background:rgba(255,255,255,.06);border-radius:12px;padding:12px;font-size:.88rem;display:flex;justify-content:space-between"><span style="color:#94a3b8">DAL &rarr; ATL &middot; dry van</span><span style="color:#86efac;font-weight:700">in transit</span></div>'
+ '<div style="color:#64748b;font-size:.72rem;margin-top:12px">Illustrative preview of the carrier dashboard.</div></div>')
+cp += m_split('Your carrier software', 'One dashboard for the whole operation',
+ ['Everything your operation touches &mdash; fleet, trips, documents, money &mdash; lives in one portal, with a driver pocket app to match. No spreadsheets, no second subscription.'],
+ _cp_dash, flip=True, soft=True, accent='#2563eb',
+ bullets=['Fleet &amp; drivers: licenses, medicals and expirations tracked','Trips &amp; tracking: confirm, start, deliver, share location','Pocket app: PODs, status and check-ins from the driver&rsquo;s phone'])
+cp += m_rail('Getting started', 'On your lanes the same day', '', [
+ ('clipboard', 'Create your profile', 'Tell us your equipment, lanes and preferences &mdash; about two minutes.'),
+ ('shieldcheck', 'Send authority &amp; insurance', 'We verify the basics so brokers say yes faster.'),
+ ('bolt', 'Start getting loads', 'A dispatcher goes to work on your lanes right away. No contract, cancel anytime.'),
+], accent='#ea580c')
 _cfaq_html, _cfaq_sch = faq_block([
     ('What does Loadboot cost carriers?', 'A flat 5% of the linehaul on loads we book &mdash; no sign-up fee, no monthly minimum, no contract. You only pay when we put money on your truck.'),
     ('Do I keep my own authority and insurance?', 'Yes. You keep your MC/DOT, your insurance and your broker relationships. We work on your behalf and never take over your authority.'),
@@ -2317,36 +2336,41 @@ bp += _sec('Why brokers work with Loadboot', 'Fewer surprises, cleaner loads', _
     ('&#128203;', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and returned on time, so billing and claims stay simple.'),
     ('&#128222;', 'One point of contact', 'A dispatch team that answers the phone and communicates proactively from tender to POD.'),
 ]))
-bp += _sec('Getting set up', 'Onboarding &amp; verification', _cards([
-    ('&#128221;', 'Apply as a broker partner', 'Share your company, authority and contacts. Activation is human-reviewed &mdash; no bots approving accounts.'),
-    ('&#128737;', 'Authority &amp; verification', 'We verify broker authority and key details against public and licensed sources before you go live.'),
-    ('&#9989;', 'Approved &amp; active', 'Once approved, you can post loads and reach the carrier network right away.'),
-]))
-bp += _sec('Posting a load', 'A guided load wizard', _cards([
-    ('&#128230;', 'Structured, step by step', 'Lane, schedule, equipment, requirements and documents &mdash; captured cleanly, with duplicate detection.'),
-    ('&#128203;', 'Document requirements up front', 'Set what you will provide (rate con, pickup/delivery numbers, appointment) so nothing stalls the load.'),
-    ('&#128260;', 'Recurring lanes &amp; reposts', 'Repeat lanes and re-post prior loads with controlled changes instead of retyping everything.'),
-]))
-bp += _sec('Matching', 'The right carrier, explained', _cards([
-    ('&#127919;', 'Eligibility first', 'Only carriers who pass hard checks &mdash; authority, insurance, equipment, availability &mdash; are ever offered your load.'),
-    ('&#128200;', 'Explainable ranking', 'Carriers are ranked on capacity, performance, equipment fit and more, with the reasoning shown &mdash; never a black-box score.'),
-    ('&#128101;', 'Preferred carriers', 'Route to your contracted or preferred carriers first, then broaden the search.'),
-]))
-bp += _sec('Operational visibility', 'Know where your freight is', _cards([
-    ('&#128205;', 'Permitted live status', 'See load and trip status, pickup and delivery progress and the latest permitted ETA &mdash; automatically.'),
-    ('&#128666;', 'Driver &amp; trip tracking', 'Location and check-ins where the carrier and driver have enabled tracking, clearly labeled.'),
-    ('&#128276;', 'Exceptions surfaced', 'Detention, delays and appointment issues are raised early, not discovered at delivery.'),
-]))
+bp += m_rail('Getting set up', 'Onboarding &amp; verification', '', [
+ ('clipboard', 'Apply as a broker partner', 'Share your company, authority and contacts. Activation is human-reviewed &mdash; no bots approving accounts.'),
+ ('shieldcheck', 'Authority &amp; verification', 'We verify broker authority and key details against public and licensed sources before you go live.'),
+ ('badge', 'Approved &amp; active', 'Once approved, you can post loads and reach the carrier network right away.'),
+], accent='#2563eb')
+bp += m_timeline('Posting a load', 'A guided load wizard', [
+ ('layers', 'Structured, step by step', 'Lane, schedule, equipment, requirements and documents &mdash; captured cleanly, with duplicate detection.'),
+ ('doccheck', 'Document requirements up front', 'Set what you will provide (rate con, pickup/delivery numbers, appointment) so nothing stalls the load.'),
+ ('link', 'Recurring lanes &amp; reposts', 'Repeat lanes and re-post prior loads with controlled changes instead of retyping everything.'),
+], accent='#6366f1', soft=True)
+_bp_match = ('<div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:26px;max-width:420px;margin:0 auto;box-shadow:0 30px 60px -30px rgba(15,23,42,.35)">'
+ '<div style="font-family:Manrope;font-weight:800;margin-bottom:4px">Why this carrier?</div>'
+ '<div style="color:#94a3b8;font-size:.78rem;margin-bottom:14px">Illustrative &mdash; every offer shows its reasoning</div>'
+ + ''.join('<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:4px"><span style="color:#475569">%s</span><b>%s</b></div><div style="height:6px;border-radius:99px;background:#f1f5f9"><div style="height:6px;border-radius:99px;width:%s;background:linear-gradient(90deg,#2563eb,#7c3aed)"></div></div></div>' % r for r in [
+   ('Equipment fit','25/25','100%'),('Availability','22/25','88%'),('Compliance','20/20','100%'),('Performance history','24/30','80%')]) +
+ '<div style="display:flex;justify-content:space-between;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:4px"><span style="font-weight:700">Match score</span><b style="color:#2563eb;font-family:Manrope;font-size:1.1rem">91 / 100</b></div></div>')
+bp += m_split('Matching', 'The right carrier, explained',
+ ['Only carriers who pass hard eligibility checks &mdash; authority, insurance, equipment, availability &mdash; are ever offered your load. Then ranking is explainable: you see exactly why a carrier scored what they scored. Never a black box.'],
+ _bp_match, accent='#7c3aed',
+ bullets=['Hard eligibility before any offer goes out','Score equals the sum of its shown factors','Route to your preferred carriers first'])
+bp += m_dark('Operational visibility', 'Know where your freight is', '', [
+ ('pin', 'Permitted live status', 'See load and trip status, pickup and delivery progress and the latest permitted ETA &mdash; automatically.'),
+ ('radar', 'Driver &amp; trip tracking', 'Location and check-ins where the carrier and driver have enabled tracking, clearly labeled.'),
+ ('siren', 'Exceptions surfaced', 'Detention, delays and appointment issues are raised early, not discovered at delivery.'),
+], accent='#38bdf8', numbered=False)
 bp += _sec('Appointments &amp; documents', 'Kept straight', _cards([
     ('&#128197;', 'Appointment management', 'Pickup and delivery appointments tracked against facility requirements.'),
     ('&#128196;', 'Required documents', 'A live checklist of what is required, received, missing or rejected &mdash; for every load.'),
     ('&#128203;', 'POD &amp; billing', 'Proof of delivery captured and organized so billing and claims are painless.'),
 ]))
-bp += _sec('When issues happen', 'Structured exception resolution', _cards([
-    ('&#9203;', 'Detention &amp; accessorials', 'Arrival/departure evidence and accessorial requests handled under the load terms, with an audit trail.'),
-    ('&#128260;', 'Reschedules &amp; re-covers', 'Appointment changes and re-covers coordinated quickly to protect the delivery.'),
-    ('&#128221;', 'One clear record', 'Every exception has a reporter, timeline, owner and resolution &mdash; no he-said-she-said.'),
-]))
+bp += m_zigzag('When issues happen', 'Structured exception resolution', [
+ ('timer', 'Detention &amp; accessorials', 'Arrival/departure evidence and accessorial requests handled under the load terms, with an audit trail.'),
+ ('route', 'Reschedules &amp; re-covers', 'Appointment changes and re-covers coordinated quickly to protect the delivery.'),
+ ('doccheck', 'One clear record', 'Every exception has a reporter, timeline, owner and resolution &mdash; no he-said-she-said.'),
+], accent='#d97706', soft=True)
 bp += _sec('Integrations &amp; security', 'Fits how you already work', _cards([
     ('&#128268;', 'API &amp; webhooks', 'Subscribe to load, trip, document and delivery events; integrate with your TMS on approved endpoints.'),
     ('&#128274;', 'Permissioned data', 'You see what you are entitled to and nothing more &mdash; carrier financials and internal notes stay private.'),
@@ -2364,7 +2388,7 @@ _bfaq_html, _bfaq_sch = faq_block([
     ('What visibility do I get?', 'Permitted live load and trip status, pickup and delivery progress, ETAs, document status and open exceptions &mdash; without exposing private carrier data.'),
 ])
 bp += _bfaq_html
-bp += '<section><div class="wrap center" style="text-align:center"><a href="/app/partner/" class="btn btn-secondary">Existing broker partner? Log in &rarr;</a></div></section>'
+bp += m_gradcta('Already a broker partner?', 'Post loads, review documents and watch shipments move &mdash; live in your Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#0b1220 0%,#1e3a5f 60%,#312e81 100%)', btncolor='#60a5fa', btntext='#0b1220')
 page('brokers.html', 'For Freight Brokers &mdash; A Reliable Carrier Network | Loadboot',
      'Brokers post loads to a vetted Loadboot carrier network with explainable matching, live visibility, clean documentation and API/webhook integration. Broker partners only.',
      'partners.html', bp, _bfaq_sch)
@@ -2421,23 +2445,49 @@ page('shipper-solutions.html', 'Shipper Solutions &mdash; Consultation &amp; Fre
      'partners.html', sp, _sfaq_sch)
 
 # ---- Referral Program ----
-ref = svc_hero('Refer, Partner, Earn', 'Three ways to earn with Loadboot: refer a carrier you know, or partner with us as an agency or creator. When the carriers you send us get rolling, we share a slice of our own fee &mdash; never an extra charge to anyone.')
+# Unique-link attribution: ?ref=CODE is captured (and remembered) so every lead form on these
+# pages carries referral_code into the CRM — an influencer's link is credited even if the
+# carrier applies later from another page visit.
+REF_CAPTURE_JS = '<script>(function(){try{var m=location.search.match(/[?&]ref=([A-Za-z0-9]+)/);var v=m?m[1].toUpperCase():null;if(v){try{localStorage.setItem(\'lb_ref\',v);}catch(e){}}if(!v){try{v=localStorage.getItem(\'lb_ref\');}catch(e){}}if(!v)return;document.querySelectorAll(\'form\').forEach(function(f){var i=document.createElement(\'input\');i.type=\'hidden\';i.name=\'referral_code\';i.value=v;f.appendChild(i);});}catch(e){}})();</script>'
+
+REF_HERO = ('<section style="padding:104px 0 96px;background:linear-gradient(135deg,#0b1220 0%,#12304f 55%,#0e3b33 100%);color:#fff;position:relative;overflow:hidden">'
+ '<div class="aurora"><span class="a1" style="background:#34d399;opacity:.22"></span><span class="a2" style="background:#38bdf8;opacity:.2"></span></div>'
+ '<div class="wrap" style="position:relative;z-index:1;text-align:center">'
+ '<span class="badge reveal" style="background:rgba(52,211,153,.14);color:#a7f3d0;border-color:rgba(52,211,153,.3)"><span class="dot" style="background:#34d399"></span> Referral &amp; Partner Program</span>'
+ '<h1 class="reveal d1" style="color:#fff;max-width:840px;margin:0 auto">Turn your network into <span style="background:linear-gradient(120deg,#34d399,#7dd3fc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">monthly income</span></h1>'
+ '<p class="lead center reveal d2" style="color:#cbd5e1;max-width:700px;margin:22px auto 0">Refer a carrier or broker <b style="color:#fff">once</b>. Earn a slice of our dispatch fee on <b style="color:#fff">every load they haul</b> &mdash; month after month, for as long as they keep rolling. It costs them nothing extra, and you nothing at all.</p>'
+ '<div class="reveal d2" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:38px">'
+ + ''.join('<div style="flex:1 1 210px;max-width:270px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:24px;text-align:center">'
+   '<div style="color:#94a3b8;font-size:.88rem;letter-spacing:.02em;text-transform:uppercase">%s</div>'
+   '<div style="font-size:2.2rem;font-weight:800;color:#34d399;margin:6px 0 4px;font-family:Manrope">%s</div>'
+   '<div style="color:#cbd5e1;font-size:.92rem">%s</div></div>' % t for t in [
+     ('Refer 5 active carriers','~ $1,000/mo*','recurring, while they haul'),
+     ('Refer 20 active carriers','~ $4,000/mo*','your network, working for you'),
+     ('They refer others too','5 levels deep*','earn down your whole chain')]) +
+ '</div>'
+ '<div class="reveal d3" style="margin-top:34px"><a href="#join" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800;font-size:1.05rem;padding:17px 36px">Join the early list &rarr;</a></div>'
+ '<p class="reveal d3" style="color:#94a3b8;font-size:.82rem;margin:18px auto 0;max-width:720px">*Illustrative only, based on a referred carrier hauling roughly $20k/month. Commissions are paid entirely from LoadBoot&rsquo;s own 5% dispatch fee &mdash; your referrals never pay more, and you invest nothing. Exact tiers are confirmed in writing at signup.</p>'
+ '</div></section>')
+ref = REF_HERO
 ref += _sec('Who it is for', 'Pick the path that fits you', _cards([
     ('&#128667;', 'Carriers &amp; drivers', 'Already rolling with Loadboot? Introduce another owner-operator or fleet. There is no limit on how many you can refer, and no cost to you or to them.'),
     ('&#127970;', 'Dispatch shops &amp; agencies', 'Run a book of carriers you cannot fully cover? Refer the overflow to Loadboot and earn on the freight they haul &mdash; while they keep their own authority.'),
     ('&#127908;', 'Creators &amp; influencers', 'Trucking audience on YouTube, TikTok or a newsletter? Become an affiliate partner &mdash; no client roster required, just a genuine recommendation.'),
 ], 'g3'))
-ref += _sec('How it works', 'Four honest steps', _cards([
-    ('1', 'Join the program', 'Apply below. Once approved you get a personal referral code and share link from inside your Loadboot portal &mdash; carrier, partner or affiliate.'),
-    ('2', 'Share it', 'Send your link, or introduce a carrier directly. Each carrier is credited to the first partner who referred them &mdash; recorded once, no double-claims.'),
-    ('3', 'They get rolling', 'Your referral runs their own freight with Loadboot at a flat 5% &mdash; no contract. You earn only when they actually haul and we actually get paid.'),
-    ('4', 'You get paid', 'Your reward is calculated from Loadboot&rsquo;s fee on that freight, held briefly to clear cancellations, then released for payout. A human approves every payment.'),
-], 'g4'))
-ref += _sec('Multi-level, minus the games', 'A share of our fee &mdash; not a pyramid', '<div class="grid g3 reveal">'
-    '<div class="card reveal"><div class="icon">&#129309;</div><h3>Paid from our cut</h3><p>Rewards come out of the 5% dispatch fee Loadboot already earns. The carrier never pays more, and the load rate is never marked up to fund a referral.</p></div>'
-    '<div class="card reveal"><div class="icon">&#128202;</div><h3>Up to five levels</h3><p>If a partner you brought in later refers someone themselves, you can earn a smaller share down the chain &mdash; up to five levels deep, with each level thinner than the last. Loadboot always keeps the majority of its own fee.</p></div>'
-    '<div class="card reveal"><div class="icon">&#9878;&#65039;</div><h3>Terms being finalized</h3><p>Exact percentages and payout rules are being finalized with legal before the program opens publicly. Apply now to join the early list &mdash; we will confirm your terms in writing before anything is owed or paid.</p></div>'
-    '</div>', soft=True)
+ref += m_rail('How it works', 'Four honest steps',
+ 'From your first share to your first payout &mdash; each step recorded, nothing owed until it is confirmed in writing.', [
+ ('badge', 'Join the program', 'Apply below. Once approved you get a personal referral code and share link from inside your Loadboot portal &mdash; carrier, partner or affiliate.'),
+ ('megaphone', 'Share it', 'Send your link, or introduce a carrier directly. Each carrier is credited to the first partner who referred them &mdash; recorded once, no double-claims.'),
+ ('truck', 'They get rolling', 'Your referral runs their own freight with Loadboot at a flat 5% &mdash; no contract. You earn only when they actually haul and we actually get paid.'),
+ ('wallet', 'You get paid', 'Your reward is calculated from Loadboot&rsquo;s fee on that freight, held briefly to clear cancellations, then released for payout. A human approves every payment.'),
+], accent='#059669')
+ref += m_dark('Multi-level, minus the games', 'A share of our fee &mdash; not a pyramid',
+ 'Nothing to buy, nothing marked up, and Loadboot always keeps the majority of its own fee.', [
+ ('handshake', 'Paid from our cut', 'Rewards come out of the 5% dispatch fee Loadboot already earns. The carrier never pays more, and the load rate is never marked up to fund a referral.'),
+ ('layers', 'Up to five levels', 'If a partner you brought in later refers someone themselves, you can earn a smaller share down the chain &mdash; up to five levels deep, with each level thinner than the last.'),
+ ('scale', 'Terms being finalized', 'Exact percentages and payout rules are being finalized with legal before the program opens publicly. Apply now to join the early list &mdash; we confirm your terms in writing before anything is owed or paid.'),
+], accent='#34d399', numbered=False)
+ref += '<div id="join"></div>'
 ref += lead_form('referral', 'Refer a carrier', 'Know an owner-operator or fleet who deserves a better dispatcher? Tell us who to reach out to (with their permission) and how to thank you when they get rolling.',
     [('name', 'Your name', 'text', True), ('email', 'Your email', 'email', True), ('phone', 'Your phone', 'tel', False),
      ('referral_name', 'Who are you referring?', 'text', True),
@@ -2460,6 +2510,7 @@ _rfaq_html, _rfaq_sch = faq_block([
     ('Is the program live right now?', 'The engine is built and tested, but public terms are being finalized with legal before it opens. Applying now puts you on the early list; we confirm your exact terms in writing before anything is owed.'),
 ])
 ref += _rfaq_html
+ref += REF_CAPTURE_JS
 ref += final_cta()
 page('referral.html', 'Referral &amp; Partner Program &mdash; Carriers, Agencies &amp; Creators | Loadboot',
      'Refer carriers or partner with Loadboot as an agency or creator. Rewards are paid from our own dispatch fee &mdash; never an extra cost to the carrier. Join the early list.',
@@ -2467,15 +2518,32 @@ page('referral.html', 'Referral &amp; Partner Program &mdash; Carriers, Agencies
 
 # ---- Resources ----
 resr = svc_hero('Carrier Resources', 'Free tools, guides and answers to help you run a stronger trucking business &mdash; whether you dispatch with us or not.')
-resr += _sec('Tools &amp; guides', 'Everything in one place', _cards([
-    ('&#128200;', 'Load Score tool', 'Paste any load and get a take / negotiate / pass score with a counter-offer based on your cost per mile. <a href="load-score.html">Open the tool &rarr;</a>'),
-    ('&#129518;', 'Free calculators', 'Profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home and detention &mdash; no signup. <a href="tools.html">Open calculators &rarr;</a>'),
-    ('&#128214;', 'Dispatch guides', 'Practical articles on pricing, finding loads with new authority, and dispatcher vs broker. <a href="blog.html">Read the blog &rarr;</a>'),
-    ('&#10067;', 'FAQ', 'Straight answers on pricing, authority, equipment and getting started. <a href="faq.html">Read the FAQ &rarr;</a>'),
-    ('&#128736;', 'How it works', 'The four-step Loadboot process, start to finish. <a href="how-it-works.html">See how it works &rarr;</a>'),
-    ('&#128184;', 'Pricing', 'Flat 5%, no contracts &mdash; exactly what you pay and when. <a href="pricing.html">See pricing &rarr;</a>'),
-], 'g3'))
-resr += final_cta()
+_ls_visual = ('<div style="background:linear-gradient(150deg,#0f172a,#1e293b);border-radius:20px;padding:28px;color:#fff;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -28px rgba(15,23,42,.6)">'
+ '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="font-family:Manrope;font-weight:800">Load Score</span><span style="background:rgba(34,197,94,.18);color:#86efac;font-size:.78rem;padding:4px 10px;border-radius:999px">free &middot; no login</span></div>'
+ '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.09);font-size:.9rem"><span style="color:#94a3b8">Offer</span><b>$2,100 &middot; 690 mi</b></div>'
+ '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.09);font-size:.9rem"><span style="color:#94a3b8">Your cost/mi</span><b>$1.82</b></div>'
+ '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px"><span style="color:#94a3b8;font-size:.9rem">Verdict</span><span style="background:#f59e0b;color:#1c1005;font-weight:800;font-family:Manrope;padding:7px 16px;border-radius:10px">NEGOTIATE &middot; ask $2,450</span></div>'
+ '<div style="color:#64748b;font-size:.72rem;margin-top:12px">Illustrative example &mdash; run your own numbers.</div></div>')
+resr += m_split('The daily decision tool', 'Should you take that load? Know in 3 seconds.',
+ ['Paste any offer into the Load Score and get a clear <b>take / negotiate / pass</b> verdict built on your real cost per mile &mdash; plus the counter-offer to ask for.',
+  'Owner-operators use it before every booking. It is free, needs no login, and works on your phone at the truck stop.'],
+ _ls_visual, accent='#2563eb', bullets=['Verdict + smart counter-offer on any load','Deadhead, tolls and reload-market factored in','Compare loads side by side'])
+resr += '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow" style="color:#0d9488">Free calculators</div><h2>The numbers behind every good decision</h2></div><div class="grid g3 reveal">' + ''.join(
+ '<a class="linkcard reveal" href="%s"><div style="color:#0d9488;margin-bottom:12px">%s</div><h3>%s</h3><p style="font-size:.94rem">%s</p><span class="arw">Open %s</span></a>' % (h, mi(icn, 30), t, d, ARW) for h, icn, t, d in [
+  ('tools.html#profit','sparkline','Load Profit Calculator','Net profit and true rate-per-mile on any load before you accept it.'),
+  ('tools.html#cpm','gauge','Cost-Per-Mile Calculator','Turn monthly costs into the one number every decision depends on.'),
+  ('tools.html#fuel','route','Fuel Cost Calculator','Price diesel for any lane in seconds &mdash; gallons and dollars per mile.'),
+  ('tools.html#breakeven','scale','Break-Even Rate','The lowest rate you can accept and still hit your target margin.'),
+  ('tools.html#takehome','wallet','Owner-Op Take-Home','What actually lands in your pocket after fuel, fees and expenses.'),
+  ('tools.html#detention','timer','Detention Pay','Stuck at the dock? See exactly what the shipper owes you.'),
+ ]) + '</div></div></section>'
+resr += m_timeline('Start here', 'A reading path that pays for itself', [
+ ('book', 'What a dispatcher really costs', 'Percentage vs flat fee, what 5% buys, and when a dispatcher pays for itself. <a href="how-much-does-a-truck-dispatcher-cost.html">Read the guide &rarr;</a>'),
+ ('question', 'Dispatcher vs broker vs factoring', 'Who represents whom, what each can legally do, and how the money flows. <a href="truck-dispatcher-vs-freight-broker.html">Read the guide &rarr;</a>'),
+ ('route', 'Loads with new authority', 'How to set up with brokers and land your first loads fast &mdash; fresh MC and all. <a href="how-to-get-loads-with-new-authority.html">Read the guide &rarr;</a>'),
+ ('shieldcheck', 'Compliance, sorted', 'Authority &amp; DOT setup, BOC-3/UCR, Form 2290 and IFTA &mdash; four plain-language guides. <a href="authority-dot-setup.html">Start with authority &rarr;</a>'),
+], accent='#7c3aed', lead='Four guides, in the order a new carrier actually needs them.')
+resr += m_gradcta('Want the numbers run for you?', 'A dispatcher prices every load against your costs before you ever see it &mdash; flat 5%, no contract.', 'Talk to a dispatcher &rarr;', 'contact.html', grad='linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#1e3a8a 100%)', btncolor='#f97316', btntext='#fff')
 page('resources.html', 'Free Trucking &amp; Dispatch Resources for Carriers | Loadboot',
      'Free carrier resources from Loadboot: the Load Score tool, trucking calculators, dispatch guides, FAQ and pricing &mdash; all in one place.',
      'resources.html', resr)
@@ -2557,6 +2625,7 @@ capp += lead_form('carrier_application', 'Carrier application', 'Tell us about y
      ('lanes', 'Preferred lanes / home base', 'text', False),
      ('message', 'Anything else we should know?', 'textarea', False)],
     'Submit application', 'Got it — a dispatcher will reach out shortly.')
+capp += REF_CAPTURE_JS
 page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Dispatch | Loadboot',
      'Apply for Loadboot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no contracts.',
      'contact.html', capp)

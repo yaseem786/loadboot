@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, openDrawer } from '../../shared/ui/components.js';
-import { referralOverview, referralAccrue, referralMarkPaid } from '../../shared/api.js';
+import { referralOverview, referralAccrue, referralMarkPaid, referralPayoutQueue, referralPayoutDecide } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -17,6 +17,7 @@ export function renderReferrals(host) {
   const canAccrue = can('finance.manage');
   const canPay = can('finance.approve');
   const kpis = el('div', { class: 'cc-kpi-grid' });
+  const payoutCard = el('div', { class: 'lb-card', style: 'margin:10px 0' });
   const body = el('div', { class: 'cc-table-wrap' });
 
   const accrueBtn = canAccrue ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
@@ -38,9 +39,39 @@ export function renderReferrals(host) {
     kpis,
     el('div', { class: 'lb-card', style: 'background:#fffbeb;margin:10px 0;font-size:.85rem' },
       el('div', { class: 'cc-sub' }, 'This program is feature-flagged (referral_program) and OFF in production until owner + legal sign-off. Percentages and payout terms are confirmed in writing before anything is owed.')),
+    payoutCard,
     body,
   ]));
   load();
+  loadPayouts();
+
+  async function loadPayouts() {
+    mount(payoutCard, el('div', null, [el('h3', { style: 'margin:0 0 8px' }, 'Payout requests'), el('div', { class: 'cc-sub' }, 'Loading…')]));
+    let rows; try { rows = await referralPayoutQueue('open'); } catch (e) { mount(payoutCard, el('div', null, [el('h3', { style: 'margin:0 0 8px' }, 'Payout requests'), el('div', { class: 'cc-sub' }, humanizeError(e))])); return; }
+    rows = Array.isArray(rows) ? rows : [];
+    const head = el('h3', { style: 'margin:0 0 8px' }, 'Payout requests (' + rows.length + ' open)');
+    if (!rows.length) { mount(payoutCard, el('div', null, [head, el('div', { class: 'cc-sub' }, 'No open payout requests. Referrers request payouts from their portal with their bank details; approve then mark paid here — the decision is recorded only, money moves through the normal rail.')])); return; }
+    const items = rows.map((p) => {
+      const d = p.payout_details || {};
+      const act = (label, action, cls) => el('button', { class: 'lb-btn lb-btn-sm ' + (cls || ''), style: 'margin-left:6px', onClick: async (ev) => {
+        if (action === 'paid' && !confirm('Record this payout as PAID? This marks the referrer\'s payable commissions paid. Money must be transferred through the normal payment rail — nothing is sent from here.')) return;
+        ev.currentTarget.disabled = true;
+        try { await referralPayoutDecide(p.id, action, null); toast('Payout ' + action + ' recorded', 'success'); loadPayouts(); load(); }
+        catch (e) { toast(humanizeError(e), 'error'); ev.currentTarget.disabled = false; }
+      } }, label);
+      const actions = !canPay ? el('span', { class: 'cc-sub' }, 'finance.approve required')
+        : p.status === 'requested' ? el('span', null, [act('Approve', 'approve'), act('Reject', 'reject', 'lb-btn-ghost')])
+        : el('span', null, [act('Mark paid', 'paid'), act('Reject', 'reject', 'lb-btn-ghost')]);
+      return el('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--lb-border,#e2e8f0);flex-wrap:wrap' }, [
+        el('div', null, [
+          el('div', { style: 'font-weight:700' }, money(p.amount) + ' — ' + (p.referrer_name || p.referrer_code) + ' (' + (KIND_LABEL[p.referrer_kind] || p.referrer_kind) + ' · ' + p.referrer_code + ')'),
+          el('div', { class: 'cc-sub' }, (d.bank_name || '') + ' · ' + (d.account_title || '') + ' · ' + (d.account_number || '') + ' · requested ' + new Date(p.requested_at).toLocaleString() + ' · status: ' + p.status + ' · payable now: ' + money(p.payable_now)),
+        ]),
+        actions,
+      ]);
+    });
+    mount(payoutCard, el('div', null, [head].concat(items)));
+  }
 
   async function load() {
     showLoading(body, 'Loading referral overview…');
