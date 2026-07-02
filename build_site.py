@@ -825,10 +825,67 @@ LOADBOARD = '<section id="loads" class="bg-soft"><div class="wrap"><div class="s
 # static, clearly-labelled illustrative examples and makes no production database query.
 
 # ---- WEB-1: partner + carrier workflow sections, bridge, referral teaser (home; prebuilt HTML) ----
-PARTNER_FLOW = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">For freight brokers</div><h2>How we work with broker partners &mdash; start to delivered</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>Join &amp; get verified</h3><p>Apply as a broker partner. We verify authority and documents once &mdash; then posting takes minutes, not phone calls.</p></div><div class="card reveal"><div class="icon">2</div><h3>Post your load</h3><p>A guided wizard captures lane, dates, equipment, terms and documents. Duplicates are caught automatically.</p></div><div class="card reveal"><div class="icon">3</div><h3>We match &amp; book a vetted carrier</h3><p>Hard eligibility checks + explainable ranking find the right truck. One valid acceptance wins &mdash; no double booking, ever.</p></div><div class="card reveal"><div class="icon">4</div><h3>Watch it move</h3><p>Live status, appointment countdowns, exception alerts and documents &mdash; in your portal, without calling anyone.</p></div><div class="card reveal"><div class="icon">5</div><h3>Delivered, documented, done</h3><p>POD collected and reviewed, invoicing clean, every step on the record.</p></div></div><div class="plb-cta reveal" style="margin-top:18px"><a href="brokers.html" class="btn btn-primary">See the full broker program &rarr;</a><a href="partners.html" class="btn btn-secondary">Open Partner Portal</a></div></div></section>'
-CARRIER_FLOW = '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">For carriers</div><h2>Your week with LoadBoot &mdash; from sign-up to getting paid</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>Quick profile</h3><p>Truck, trailer, lanes and documents &mdash; five minutes, no contract lock-in.</p></div><div class="card reveal"><div class="icon">2</div><h3>Loads come to you</h3><p>Matched offers by equipment, real location and your stated preferences &mdash; accept, decline or counter in one tap.</p></div><div class="card reveal"><div class="icon">3</div><h3>We handle the paperwork</h3><p>Rate confirmation, broker checks, appointments and status updates &mdash; you drive, we type.</p></div><div class="card reveal"><div class="icon">4</div><h3>Protected on the road</h3><p>Tap arrive/depart at each stop &mdash; detention is measured from real timestamps, not arguments.</p></div><div class="card reveal"><div class="icon">5</div><h3>Paid with a clean file</h3><p>POD in, invoice prepared, settlement itemized &mdash; and your P&amp;L dashboard shows what you actually made.</p></div></div><div class="plb-cta reveal" style="margin-top:18px"><a href="carriers.html" class="btn btn-primary">Explore carrier services &rarr;</a><a href="carrier-application.html" class="btn btn-secondary">Apply as a Carrier</a></div></div></section>'
-BRIDGE = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">The bridge</div><h2>Finding freight used to be the hard part</h2></div><div class="prose reveal" style="max-width:840px;margin:0 auto;text-align:center"><p style="font-size:1.06rem">LoadBoot sits between verified broker partners and vetted carriers as one connected system. Brokers post once; eligible carriers see matched offers with the rate, miles and RPM already worked out. No board-refreshing marathons, no twenty phone calls per load &mdash; the match, the paperwork, the tracking and the money trail all live in one place.</p><p style="color:var(--muted)">Every match is explainable, every document tracked, every step audited.</p></div></div></section>'
-REFTEASER = '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Referral program</div><h2>Know a carrier or broker? Get paid for the introduction</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#129309;</div><h3>Refer once, earn ongoing</h3><p>Send a carrier or broker to LoadBoot &mdash; earn a share of our dispatch fee on their booked trips for as long as they stay active.</p></div><div class="card reveal"><div class="icon">&#128200;</div><h3>Track everything</h3><p>Your referrals, their booked trips and your commission &mdash; tracked automatically in your dashboard.</p></div><div class="card reveal"><div class="icon">&#128184;</div><h3>No cost to anyone</h3><p>Paid from our own fee &mdash; your referral pays nothing extra, you invest nothing.</p></div></div><div class="plb-cta reveal" style="margin-top:14px"><a href="referral.html" class="btn btn-primary">See how the referral program works &rarr;</a></div></div></section>'
+# CARRIER_FLOW — numbered "process rail": circled steps on an accent line, outcome-first headlines (distinct motif).
+CARRIER_FLOW = ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow" style="color:#0d9488">For carriers</div>'
+ '<h2>Your week with LoadBoot</h2><p class="lead center" style="max-width:640px;margin:12px auto 0">Sign up in five minutes. Keep your authority. Let a dispatcher fill your calendar while you drive.</p></div>'
+ '<div class="reveal" style="display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:34px">'
+ + ''.join('<div style="flex:1 1 200px;max-width:240px;position:relative;background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:26px 20px 22px;box-shadow:0 10px 30px -18px rgba(13,148,136,.5)">'
+   '<div style="position:absolute;top:-18px;left:22px;width:38px;height:38px;border-radius:50%%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.05rem;box-shadow:0 8px 18px -6px rgba(13,148,136,.7)">%d</div>'
+   '<div style="font-size:1.5rem;margin:6px 0 8px">%s</div><h3 style="margin:0 0 6px;font-size:1.05rem">%s</h3><p style="margin:0;color:#64748b;font-size:.94rem">%s</p></div>' % (i+1, ic, t, d)
+   for i,(ic,t,d) in enumerate([
+     ('&#128100;','Quick profile','Truck, trailer, lanes and documents &mdash; five minutes, no contract lock-in.'),
+     ('&#128235;','Loads come to you','Matched offers by equipment, real location and your preferences &mdash; accept, decline or counter in one tap.'),
+     ('&#128221;','We do the paperwork','Rate confirmation, broker checks, appointments and status &mdash; you drive, we type.'),
+     ('&#128737;','Protected on the road','Tap arrive/depart at each stop &mdash; detention measured from real timestamps, not arguments.'),
+     ('&#128176;','Paid, clean file','POD in, invoice prepared, settlement itemized &mdash; your P&amp;L shows what you actually made.')])) +
+ '</div><div class="plb-cta reveal" style="margin-top:30px;text-align:center"><a href="carriers.html" class="btn btn-primary">Explore carrier services &rarr;</a> <a href="carrier-application.html" class="btn btn-secondary">Apply as a Carrier</a></div></div></section>')
+
+# PARTNER_FLOW — dark premium panel, numbered rows with check accents (distinct from the light carrier rail).
+PARTNER_FLOW = ('<section style="background:#0b1220"><div class="wrap"><div class="sec-head center reveal" style="color:#fff">'
+ '<div class="eyebrow" style="color:#60a5fa">For freight brokers</div><h2 style="color:#fff">Post once. We move it, track it, document it.</h2>'
+ '<p class="lead center" style="color:#94a3b8;max-width:640px;margin:12px auto 0">Verified once, then every load is a two-minute post &mdash; no board, no twenty phone calls.</p></div>'
+ '<div class="reveal" style="max-width:760px;margin:30px auto 0;display:flex;flex-direction:column;gap:12px">'
+ + ''.join('<div style="display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:18px 20px">'
+   '<div style="flex:none;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">%d</div>'
+   '<div><h3 style="margin:0 0 4px;color:#fff;font-size:1.05rem">%s</h3><p style="margin:0;color:#94a3b8;font-size:.95rem">%s</p></div></div>' % (i+1, t, d)
+   for i,(t,d) in enumerate([
+     ('Join &amp; get verified','Authority and documents verified once &mdash; then posting takes minutes, not calls.'),
+     ('Post your load','A guided wizard captures lane, dates, equipment, terms and documents. Duplicates auto-caught.'),
+     ('We match &amp; book a vetted carrier','Hard eligibility + explainable ranking find the right truck. One valid acceptance wins &mdash; no double booking.'),
+     ('Watch it move','Live status, appointment countdowns, exception alerts and documents &mdash; without calling anyone.'),
+     ('Delivered, documented, done','POD collected and reviewed, invoicing clean, every step on the record.')])) +
+ '</div><div class="plb-cta reveal" style="margin-top:26px;text-align:center"><a href="brokers.html" class="btn btn-primary">See the broker program &rarr;</a> <a href="partners.html" class="btn btn-secondary" style="border-color:#334155;color:#e2e8f0">Open Partner Portal</a></div></div></section>')
+
+# BRIDGE — literal three-column bridge diagram: Brokers -> LoadBoot -> Carriers (a visual, not a text block).
+BRIDGE = ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">The bridge</div>'
+ '<h2>One system between brokers and carriers</h2></div>'
+ '<div class="reveal" style="display:flex;flex-wrap:wrap;align-items:stretch;justify-content:center;gap:14px;max-width:920px;margin:28px auto 0">'
+ '<div style="flex:1 1 220px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;text-align:center"><div style="font-size:1.8rem">&#127970;</div><h3 style="margin:8px 0 4px">Broker partners</h3><p style="margin:0;color:#64748b;font-size:.92rem">Post a load once with full terms &mdash; no chasing carriers.</p></div>'
+ '<div style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#2563eb">&rarr;</div>'
+ '<div style="flex:1 1 240px;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border-radius:16px;padding:24px;text-align:center;box-shadow:0 18px 44px -18px rgba(37,99,235,.7)"><div style="font-size:1.8rem">&#9889;</div><h3 style="margin:8px 0 4px;color:#fff">LoadBoot</h3><p style="margin:0;color:#cbd5e1;font-size:.92rem">Explainable matching, tracking, documents and the money trail &mdash; one connected system.</p></div>'
+ '<div style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#0d9488">&rarr;</div>'
+ '<div style="flex:1 1 220px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;text-align:center"><div style="font-size:1.8rem">&#128667;</div><h3 style="margin:8px 0 4px">Carriers</h3><p style="margin:0;color:#64748b;font-size:.92rem">See matched offers with rate, miles and RPM already worked out.</p></div>'
+ '</div><p class="reveal" style="text-align:center;color:var(--muted);margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">Every match explainable, every document tracked, every step audited.</p></div></section>')
+
+# REFTEASER — desire-driven earnings panel (bold gradient). Illustrative figures, clearly labelled + honest.
+REFTEASER = ('<section style="background:linear-gradient(135deg,#0b1220 0%,#12304f 55%,#0e3b33 100%);color:#fff;position:relative;overflow:hidden">'
+ '<div class="wrap" style="position:relative;z-index:1;padding:60px 0"><div class="sec-head center reveal" style="color:#fff">'
+ '<div class="eyebrow" style="color:#7dd3fc">Referral program &mdash; earn on autopilot</div>'
+ '<h2 style="color:#fff;font-size:2.1rem">Turn your network into monthly income</h2>'
+ '<p class="lead center" style="color:#cbd5e1;max-width:700px;margin:14px auto 0">Refer a carrier or broker <b style="color:#fff">once</b>. Earn a slice of our dispatch fee on <b style="color:#fff">every load they haul</b> &mdash; month after month, for as long as they keep rolling. It costs them nothing extra, and you nothing at all.</p></div>'
+ '<div class="reveal" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:32px">'
+ + ''.join('<div style="flex:1 1 220px;max-width:280px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:26px;text-align:center">'
+   '<div style="color:#94a3b8;font-size:.9rem;letter-spacing:.02em;text-transform:uppercase">%s</div>'
+   '<div style="font-size:2.3rem;font-weight:800;color:#34d399;margin:6px 0 4px">%s</div>'
+   '<div style="color:#cbd5e1;font-size:.92rem">%s</div></div>' % (label, amount, sub)
+   for label,amount,sub in [
+     ('Refer 5 active carriers','~ $1,000/mo*','recurring, while they haul'),
+     ('Refer 20 active carriers','~ $4,000/mo*','your network, working for you'),
+     ('They refer others too','5 levels deep*','earn down your whole chain')]) +
+ '</div>'
+ '<div class="reveal" style="text-align:center;margin-top:30px"><a href="referral.html" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800">Get my referral link &rarr;</a></div>'
+ '<p class="reveal" style="text-align:center;color:#94a3b8;font-size:.82rem;margin:16px auto 0;max-width:720px">*Illustrative only, based on a referred carrier hauling roughly $20k/month. Commissions are paid entirely from LoadBoot&rsquo;s own 5% dispatch fee &mdash; your referrals never pay more, and you invest nothing. Exact tiers are confirmed in writing at signup.</p>'
+ '</div></section>')
 
 home_body = HERO+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
 home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'

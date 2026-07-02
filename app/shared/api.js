@@ -118,6 +118,30 @@ export const carrierScorecardRanking = (days = 90, limit = 25) => rpc('cc_carrie
 // Inc 68 — broker SLA & on-time analytics. Broker self / staff any broker.
 export const brokerSla = (partner, days = 90) => rpc('cc_broker_sla', { p_partner: partner ?? null, p_days: days });
 export const brokerSlaRanking = (days = 90, limit = 25) => rpc('cc_broker_sla_ranking', { p_days: days, p_limit: limit });
+// Inc 70 — notification backbone: unified per-user in-app feed + staff broadcast.
+export const myNotifications = (limit = 50) => rpc('cc_my_notifications', { p_limit: limit });
+export const markMyNotification = (id) => rpc('cc_mark_my_notification', { p_id: id });
+export const notifyBroadcast = (payload) => rpc('cc_notify_broadcast', { p: payload });
+// Inc 71 — saved-report digest cadence (owner sets; service-role cron runs cc_digest_run_due).
+export const reportSetSchedule = (id, schedule) => rpc('cc_report_set_schedule', { p_id: id, p_schedule: schedule });
+// Carrier Portal A1 — dashboard aggregate (account status + setup gaps + notifications + KPIs + active trips).
+export const carrierDashboard = () => rpc('cc_carrier_dashboard');
+// Carrier Portal A2 — decision-complete load detail (accessorials/windows/terms; broker identity hidden).
+export const carrierLoadDetail = (loadId) => rpc('cc_load_detail', { p_load: loadId });
+// Carrier Portal A3 — emergency / delivery-reschedule request (proof + reason + defined category); staff review.
+export const tripEmergencyRequest = (payload) => rpc('cc_trip_emergency_request', { p: payload });
+export const tripMyEmergencies = (limit = 50) => rpc('cc_trip_my_emergencies', { p_limit: limit });
+export const emergencyReview = (id, approve, note) => rpc('cc_emergency_review', { p_id: id, p_approve: approve, p_note: note ?? null });
+export const emergencyQueue = (status = 'open', limit = 100) => rpc('cc_emergency_queue', { p_status: status, p_limit: limit });
+// Carrier Portal A4 (Fleet) — equipment service / maintenance log (self-scoped).
+export const fleetServiceAdd = (payload) => rpc('cc_fleet_service_add', { p: payload });
+export const fleetServiceList = (truckId = null, limit = 100) => rpc('cc_fleet_service_list', { p_truck: truckId, p_limit: limit });
+export const fleetServiceDelete = (id) => rpc('cc_fleet_service_delete', { p_id: id });
+// Carrier Portal A5 (Finance) — employee payroll / salary management (self-scoped).
+export const payrollAdd = (payload) => rpc('cc_payroll_add', { p: payload });
+export const payrollList = (from = null, to = null) => rpc('cc_payroll_list', { p_from: from, p_to: to });
+export const payrollMarkPaid = (id, paid = true) => rpc('cc_payroll_mark_paid', { p_id: id, p_paid: paid });
+export const payrollDelete = (id) => rpc('cc_payroll_delete', { p_id: id });
 // Inc 63 — workflow builder: validated step-graphs, versioned publish, simulation (no side effects) + guarded live runs.
 export const workflowSave = (o) => rpc('cc_workflow_save', { p: o });
 export const workflowSetStatus = (id, action) => rpc('cc_workflow_set_status', { p_id: id, p_action: action });

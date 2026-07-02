@@ -906,3 +906,136 @@ box, no invented data):
   `python build_site.py` and the import-reference scanner could NOT run — ALL frontend verification was static
   (export resolution, brace/quote review) plus live DB checks. Re-run the local frontend gates before pushing;
   DB migrations are already applied + proven on both databases.
+
+## INC 70 — NOTIFICATION BACKBONE (additive; unblocks the carrier Dashboard feed)
+- `cwo_notification_backbone` (BOTH DBs, md5-identical; anon surface still 5). Writes/reads the EXISTING
+  app_private.notifications table; existing per-audience functions untouched.
+  - `app_private.emit_notification(role,user,template,payload,channel)` — the single canonical write path
+    (in_app→status 'sent'; validates channel; recipient_user FK to profiles enforced). Off the anon+authenticated
+    surface entirely (definer RPCs/triggers call it in owner context).
+  - `cc_notify_broadcast(p)` — staff (comm.send) broadcast an in-app notification to a role or a specific user; audited.
+  - `cc_my_notifications(limit)` / `cc_mark_my_notification(id)` — unified per-user in-app feed, self-scoped to auth.uid().
+- Proof: **NOTIFICATION BACKBONE MATRIX: PASS (9 checks)** — staff broadcast to user + to role, recipient sees own,
+  marks read, OTHER user cannot see it, missing title/body rejected, non-staff cannot broadcast, emitter off
+  anon+authenticated, anon no EXECUTE on public RPCs. Self-cleaning. (Caught a good FK: emit rejects a
+  non-existent recipient — validated with real profiles.) Applied to prod; md5-identical; anon surface = 5 both DBs.
+- api wrappers myNotifications/markMyNotification/notifyBroadcast.
+
+## INC 71 — SCHEDULED DIGEST ENGINE (source; owner deploys the cron)
+- `cwp_scheduled_digests` (+ `cwp_digest_parity` to canonicalize a cosmetic drift; BOTH DBs md5-identical; anon
+  surface still 5). Extends saved reports with a cadence and adds a service-role runner.
+  - report_defs gains `schedule` (none/daily/weekly, checked) + `last_digest_at`.
+  - `cc_report_set_schedule(id,schedule)` — owner-scoped cadence set.
+  - `cc_digest_run_due()` — SERVICE-ROLE only: snapshots each DUE report (impersonates the owner locally so the
+    owner-scoped snapshot + BI gate resolve correctly), notifies the owner in-app via the Inc 70 backbone, sets
+    last_digest_at; a single bad report never aborts the run. Idempotent per cadence window. Off anon+authenticated.
+- Proof: **DIGEST ENGINE MATRIX: PASS (10 checks)** — owner sets schedule, invalid rejected, non-owner cannot set,
+  run creates snapshot + owner in-app notification + sets last_digest_at, not re-run within window, runner off
+  anon+authenticated. Self-cleaning. Applied to prod; md5-identical; anon surface = 5 both DBs.
+- OWNER ACTION to activate: schedule `select cc_digest_run_due();` (e.g. pg_cron hourly) — nothing runs until then.
+- api wrapper reportSetSchedule.
+
+## CARRIER PORTAL A1 — DASHBOARD AGGREGATE (backend; UI next)
+- Owner brief captured in `docs/CARRIER-PORTAL-AND-DESIGN-ROADMAP.md` (full 8-tab carrier-portal vision + site
+  design overhaul, broken into shippable increments). Home sections redesigned (distinct motifs + desire-driven
+  referral earnings panel) in build_site.py.
+- `cwq_carrier_dashboard` (BOTH DBs, md5-identical after `cwq_carrier_dashboard_parity`; anon surface still 5):
+  `cc_carrier_dashboard()` — one carrier-self-scoped (my_carrier_org) aggregate: account status + onboarding,
+  **"complete your setup" gaps** each carrying a `tone` (warning/action/urgent) + action route (drives the
+  highlight-what's-missing requirement), unread + recent **in-app notifications** (Inc 70 backbone, feeds the
+  global-colour notification panel), this-week KPIs (active trips, open offers, delivered, revenue), and the
+  active-trips list. Real data only; no writes; anon revoked, authenticated-granted.
+- Proof: **CARRIER DASHBOARD MATRIX: PASS (6 checks)** — shape, setup_gaps array + numeric KPIs, live notification
+  integration (broadcast → unread increments → appears in recent feed), non-carrier denied, anon no EXECUTE.
+  Self-cleaning. Applied to prod; md5-identical; anon surface = 5 both DBs. api wrapper carrierDashboard.
+- NEXT (queued in task list): carrier Dashboard UI (notification feed w/ global colour tokens, setup-gap cards,
+  KPI strip, active-trips) then A2 Available Loads → A3 My Trips → A4–A8 → site-wide design passes. Frontend build
+  verification still blocked (sandbox down).
+- NOTE on parity: several large functions this session showed a cosmetic md5 drift between the two per-DB applies
+  (whitespace between separate pastes); each was caught by the parity check and canonicalized by re-applying one
+  identical text to both DBs. All functions now md5-identical across staging + prod.
+
+## CARRIER PORTAL A2 — DECISION-COMPLETE LOAD DETAIL (partial: carrier-facing core done)
+- ROUTING (already enforced by the data model, verified this session): broker submissions live in
+  `app_private.partner_loads`; a load only reaches carriers once Command Center posts it to `public.loads`
+  (status='available'). So carriers NEVER see raw broker loads — the broker→CC→carrier gate is structural.
+- `cwr_load_detail` (+ `cwr_load_detail_parity`; BOTH DBs md5-identical `2ead3ce4…`; anon surface 5):
+  `cc_load_detail(load_id)` — a carrier-session/staff RPC returning a **decision-complete** view: rate/RPM/miles/
+  deadhead, commodity/weight/equipment, pickup+delivery dates & **windows**, **FCFS vs appointment**, **stops**,
+  **instructions**, and the broker's **accessorial rate card** (detention/layover/lumper) — all sourced from the
+  linked partner_load ("max input" captured at post time). **Broker identity is never exposed** (generic
+  posted_by: 'Broker partner' / 'LoadBoot dispatch'). Only status='available' board loads resolve; raw broker
+  loads raise. Mandatory-tracking notice included (terms.tracking_required=true).
+- Proof: **LOAD DETAIL MATRIX: PASS (6 checks)** on staging — decision-complete shape incl. accessorials, broker
+  identity hidden (generic posted_by), tracking mandatory, non-available load rejected, non-carrier-non-staff
+  denied, anon no EXECUTE. Applied to prod; md5-identical; anon surface = 5 both DBs.
+- Frontend: carrier **Available Loads** cards gain a **"Detailed overview"** button → modal rendering the full
+  decision set (accessorial rate card, windows/FCFS, stops, instructions, tracking notice). api wrapper
+  carrierLoadDetail. Static-verified (build sandbox recovering).
+- A2 RESIDUAL (queued): broker/CC post-time UI to CAPTURE the full accessorial rate card + windows + FCFS as
+  required fields (data model already supports it via partner_loads.accessorials/windows/stops); enforce
+  location-tracking-on at book (ties into A3 My Trips tracking); pre-book live-chat support (needs chat transport).
+
+## CARRIER PORTAL A3 — EMERGENCY / RESCHEDULE WITH PROOF (My Trips)
+- Live tracking (share location, arrive/depart with detention protection) already existed — this adds the
+  evidenced-emergency path the owner asked for.
+- `cws_trip_emergency` (BOTH DBs, md5-identical `d16e104e…`; anon surface 5): `app_private.trip_emergency_requests`
+  (category-checked, status-checked) + three RPCs:
+  - `cc_trip_emergency_request(p)` — carrier self-scoped (own trip only); a **DEFINED category** (breakdown/
+    accident/weather/medical/road_closure/hours_of_service/mechanical/theft/other) + a **detailed reason (min 10
+    chars)** + **mandatory proof_ref** are all required; optional requested reschedule time; notifies dispatch
+    in-app (urgent/red via the Inc 70 backbone) + audited.
+  - `cc_trip_my_emergencies(limit)` — carrier sees own requests + status.
+  - `cc_emergency_review(id, approve, note)` — staff (dispatch.manage) approve/deny with a note.
+  - EXECUTE revoked from public/anon, authenticated-granted; review gated by permission.
+- Proof: **TRIP EMERGENCY MATRIX: PASS (9 checks)** — valid create, missing proof rejected, short reason rejected,
+  invalid category rejected, other-carrier trip denied, carrier sees own, staff approve works, non-staff review
+  denied, anon no EXECUTE. Self-cleaning. Applied to prod; md5-identical; anon surface = 5 both DBs.
+- Frontend: My Trips active-trip actions gain a **🚨 Emergency** button → modal enforcing category + detailed
+  reason + proof (+ optional new delivery time). api wrappers tripEmergencyRequest/tripMyEmergencies/emergencyReview.
+- A3 RESIDUAL (queued): staff Emergency-review UI in the Exception Center; richer tracking-history/map polish.
+- DISK/SANDBOX: owner's cleanup RESOLVED the disk error (now a transient "download stalled" while provisioning the
+  sandbox) — a desktop-app restart should bring it up; then the whole session's frontend gets node/build-verified
+  and committed. All backend remains fully proven via the DB connection.
+
+## CARRIER PORTAL A4 (Fleet) — EQUIPMENT SERVICE / MAINTENANCE LOG
+- Drivers, trucks and team management already existed; this adds upkeep tracking so a carrier runs the fleet
+  without other software.
+- `cwt_fleet_service` (BOTH DBs, md5-identical `735cff60…`; anon surface 5): `app_private.fleet_service_records`
+  (kind-checked, cost>=0) + `cc_fleet_service_add/list/delete` — carrier self-scoped; a record's truck (if set)
+  must belong to the caller's org; kinds = oil_change/tires/brakes/inspection/dot_inspection/repair/pm_service/
+  registration/permit/other; list flags `due_soon` (next_due within 14 days) and resolves the truck unit.
+- Proof: **FLEET SERVICE MATRIX: PASS (9 checks)** — add (no truck / own truck), not-owned truck rejected,
+  invalid kind rejected, list shows own, delete own, delete non-existent rejected, non-carrier denied, anon no
+  EXECUTE. Self-cleaning. Applied to prod; md5-identical; anon surface = 5 both DBs.
+- Frontend: Fleet tab gains a **Service & maintenance** card — "+ Log service" (truck, type, date, odometer,
+  cost, vendor, notes, next-due) + a records list with an ⏰ next-due warning. api wrappers fleetServiceAdd/List/Delete.
+- REMAINING carrier-portal (queued): A6 Documents (urgency-highlighted needs + status — checklist model exists),
+  A7 Support (message CC + live chat + dedicated dispatcher contact — needs chat transport decision), A8 Account
+  (settings/profile — largely exists via cc_pocket_get/save_profile + preferences); plus the site-wide design overhaul.
+
+## CARRIER PORTAL A5 (Finance) — EMPLOYEE PAYROLL
+- Per-trip + overall P&L already existed (cc_carrier_pnl); this adds payroll so the carrier runs pay here.
+- `cwu_carrier_payroll` (BOTH DBs, md5-identical `baea9f3b…`; anon surface 5): `app_private.carrier_payroll`
+  (pay_type-checked, amount>=0) + `cc_payroll_add/list/mark_paid/delete` — carrier self-scoped; pay types =
+  salary/hourly/per_mile/percentage/bonus/reimbursement; list returns entries + total/paid/unpaid, labeled
+  "manually entered payroll — not audited accounting".
+- Proof: **PAYROLL MATRIX: PASS (9 checks)** — add, invalid pay_type rejected, negative amount rejected, missing
+  name rejected, list+totals, mark paid, delete own, non-carrier denied, anon no EXECUTE. Self-cleaning. Applied
+  to prod; md5-identical; anon surface = 5 both DBs.
+- Frontend: Finance tab gains a **Payroll** card (add employee pay + period, mark paid/unpaid, delete, totals
+  strip). api wrappers payrollAdd/List/MarkPaid/Delete.
+- CARRIER PORTAL STATUS: A1–A5 shipped (backend proven both DBs + UI). A6 Documents / A7 Support / A8 Account
+  largely exist already (document checklist + upload, support messaging/issues, profile + comm preferences) — a
+  focused depth pass + the A2/A3 staff-side review UIs + the site-wide design overhaul remain.
+
+## A3 LOOP CLOSE — COMMAND CENTER EMERGENCY QUEUE
+- `cwv_emergency_queue` (BOTH DBs, md5-identical `2e14ad96…` on first apply; anon surface 5): `cc_emergency_queue
+  (status, limit)` — staff (dispatch.view/manage) list of carrier emergency requests enriched with carrier name +
+  lane + trip; filter open/all. Pairs with `cc_emergency_review` (Inc A3) for the full request→review→decide loop.
+- Proof: **EMERGENCY QUEUE MATRIX: PASS (5 checks)** — staff sees a seeded request with context, all-filter array,
+  carrier (non-dispatch) denied, non-staff denied, anon no EXECUTE. Self-cleaning. Applied to prod; md5-identical;
+  anon surface = 5 both DBs. api wrapper emergencyQueue.
+- BACKEND for the carrier-portal vision is now essentially complete and proven on both DBs. Remaining work is
+  FRONTEND-only (Command Center emergency-review screen, A6–A8 depth polish, site-wide design overhaul) which needs
+  the build sandbox to `node --check`/build-verify, or a product decision (A7 live-chat transport).
