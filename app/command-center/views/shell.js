@@ -79,6 +79,7 @@ const NAV = [
     { path: '/audiences', label: 'Audiences', icon: 'users', perm: 'content.view' },
     { path: '/campaign-manager', label: 'Campaign Manager', icon: 'trend', perm: 'content.view' },
     { path: '/marketing-analytics', label: 'Marketing analytics', icon: 'trend', perm: 'content.view' },
+    { path: '/marketing-intel', label: 'Marketing Intelligence', icon: 'trend', perm: 'analytics.view' },
     { path: '/campaigns', label: 'Campaigns', icon: 'trend', perm: 'campaigns.view', flag: 'campaigns' },
   ]},
   { group: 'Administration', items: [

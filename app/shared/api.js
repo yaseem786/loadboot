@@ -107,6 +107,24 @@ export const referralMarkPaid = (code) => rpc('cc_referral_mark_paid', { p_refer
 export const referralRequestPayout = (details) => rpc('cc_referral_request_payout', { p_details: details });
 export const myPayoutRequests = () => rpc('cc_my_payout_requests');
 export const referralPayoutQueue = (status) => rpc('cc_referral_payout_queue', { p_status: status || 'open' });
+// cxa — canonical industry rate standards (versioned, staff-editable; agreements auto-recorded at post)
+// cxd — bank payment profiles (default rail; staff-verified; masked reads; transfers recorded-only)
+// cxf — shipper<->broker bridge pipeline (request -> assign -> quote; CC controls + sees all)
+export const assignShipment = (id, broker) => rpc('cc_assign_shipment', { p_id: id, p_broker: broker });
+export const brokerShipmentInbox = () => rpc('cc_broker_shipment_inbox');
+export const brokerQuoteShipment = (id, amount, note) => rpc('cc_broker_quote_shipment', { p_id: id, p_amount: amount, p_note: note ?? null });
+export const shipperMyShipments = () => rpc('cc_shipper_my_shipments');
+export const shipmentPipeline = () => rpc('cc_shipment_pipeline');
+// cxe — bridge trust signals (identity-safe, entitlement-gated)
+export const brokerViewCarrier = (carrier) => rpc('cc_broker_view_carrier', { p_carrier: carrier });
+export const carrierViewPoster = (load) => rpc('cc_carrier_view_poster', { p_load: load });
+export const setMyPaymentProfile = (p) => rpc('cc_set_my_payment_profile', { p });
+export const myPaymentProfile = () => rpc('cc_my_payment_profile');
+export const paymentProfilesQueue = (status) => rpc('cc_payment_profiles_queue', { p_status: status || 'unverified' });
+export const verifyPaymentProfile = (org, ok) => rpc('cc_verify_payment_profile', { p_org: org, p_ok: ok });
+export const marketingIntel = (days = 30) => rpc('cc_marketing_intel', { p_days: days });
+export const rateStandards = () => rpc('cc_rate_standards');
+export const setRateStandard = (k, v) => rpc('cc_set_rate_standard', { p_key: k, p_value: v });
 export const referralPayoutDecide = (id, action, note) => rpc('cc_referral_payout_decide', { p_id: id, p_action: action, p_note: note ?? null });
 // Inc 64 — Business Intelligence: staff-gated executive summary + trend series over real tables.
 export const biExecutiveSummary = (from, to) => rpc('cc_bi_executive_summary', { p_from: from ?? null, p_to: to ?? null });

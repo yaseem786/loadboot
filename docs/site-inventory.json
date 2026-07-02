@@ -1,8 +1,8 @@
 {
  "summary": {
   "generated_note": "Counted from built site/ HTML by scripts/site_inventory.py. No estimates.",
-  "page_count": 44,
-  "total_words": 38597,
+  "page_count": 45,
+  "total_words": 38239,
   "pages_missing_meta_description": [
    "dashboard.html"
   ],
@@ -13,7 +13,8 @@
    "dashboard.html"
   ],
   "thin_pages_under_300_words": [
-   "dashboard.html"
+   "dashboard.html",
+   "status.html"
   ],
   "pages_without_cta": [
    "dashboard.html"
@@ -28,19 +29,7 @@
     "status.html"
    ],
    [
-    "carrier-application.html",
-    "status.html"
-   ],
-   [
-    "cookies.html",
-    "status.html"
-   ],
-   [
     "login.html",
-    "status.html"
-   ],
-   [
-    "security.html",
     "status.html"
    ],
    [
@@ -158,10 +147,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 287
+     "words": 234
     }
    ],
-   "word_count": 826,
+   "word_count": 773,
    "cta_count": 10,
    "ctas": [
     {
@@ -270,11 +259,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.293,
+    "max_similarity": 0.249,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "accessibility.html",
     "authority-dot-setup.html",
@@ -317,6 +306,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -345,10 +335,10 @@
     {
      "heading": "Need help or found a barrier?",
      "level": "h2",
-     "words": 292
+     "words": 239
     }
    ],
-   "word_count": 403,
+   "word_count": 350,
    "cta_count": 9,
    "ctas": [
     {
@@ -453,11 +443,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.558,
+    "max_similarity": 0.501,
     "most_similar_page": "status.html",
     "level": "high"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "authority-dot-setup.html",
@@ -500,6 +490,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -663,10 +654,10 @@
     {
      "heading": "Apply as Carrier",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 1151,
+   "word_count": 1098,
    "cta_count": 11,
    "ctas": [
     {
@@ -781,11 +772,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.217,
+    "max_similarity": 0.181,
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -828,6 +819,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -841,7 +833,7 @@
    "canonical": "https://loadboot.com/blog.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 7,
+   "section_count": 8,
    "sections": [
     {
      "heading": "The Loadboot Blog",
@@ -851,7 +843,12 @@
     {
      "heading": "Latest from Loadboot",
      "level": "h2",
-     "words": 17
+     "words": 19
+    },
+    {
+     "heading": "Truck Dispatcher in Texas: Lanes, Rates & How to Stay Loaded",
+     "level": "h3",
+     "words": 54
     },
     {
      "heading": "How Much Does a Truck Dispatcher Cost in 2026?",
@@ -876,10 +873,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 516,
+   "word_count": 519,
    "cta_count": 10,
    "ctas": [
     {
@@ -981,10 +978,11 @@
     "sitemap.html",
     "status.html",
     "terms.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 44,
+   "internal_link_count": 45,
    "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
@@ -992,11 +990,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.458,
+    "max_similarity": 0.366,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1039,6 +1037,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -1182,10 +1181,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 958,
+   "word_count": 905,
    "cta_count": 10,
    "ctas": [
     {
@@ -1295,11 +1294,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.257,
+    "max_similarity": 0.216,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1342,6 +1341,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -1495,10 +1495,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 898,
+   "word_count": 845,
    "cta_count": 12,
    "ctas": [
     {
@@ -1618,11 +1618,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.277,
+    "max_similarity": 0.234,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -1665,6 +1665,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -1873,10 +1874,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 1039,
+   "word_count": 986,
    "cta_count": 10,
    "ctas": [
     {
@@ -2034,11 +2035,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.245,
+    "max_similarity": 0.205,
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2081,6 +2082,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -2154,10 +2156,10 @@
     {
      "heading": "Apply to Loadboot",
      "level": "h3",
-     "words": 299
+     "words": 246
     }
    ],
-   "word_count": 577,
+   "word_count": 524,
    "cta_count": 9,
    "ctas": [
     {
@@ -2304,11 +2306,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.415,
+    "max_similarity": 0.361,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -2351,6 +2353,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -2404,10 +2407,10 @@
     {
      "heading": "New Authority",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 439,
+   "word_count": 386,
    "cta_count": 10,
    "ctas": [
     {
@@ -2594,9 +2597,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.532,
+    "max_similarity": 0.475,
     "most_similar_page": "status.html",
-    "level": "high"
+    "level": "medium"
    },
    "inbound_link_count": 19,
    "inbound_links": [
@@ -2866,10 +2869,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 1242,
+   "word_count": 1189,
    "cta_count": 12,
    "ctas": [
     {
@@ -2989,11 +2992,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.204,
+    "max_similarity": 0.17,
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3036,6 +3039,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -3104,10 +3108,10 @@
     {
      "heading": "Pricing",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 473,
+   "word_count": 420,
    "cta_count": 12,
    "ctas": [
     {
@@ -3226,11 +3230,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.491,
+    "max_similarity": 0.434,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3273,6 +3277,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -3351,10 +3356,10 @@
     {
      "heading": "Tracked to done",
      "level": "h3",
-     "words": 270
+     "words": 217
     }
    ],
-   "word_count": 580,
+   "word_count": 527,
    "cta_count": 9,
    "ctas": [
     {
@@ -3573,11 +3578,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.445,
+    "max_similarity": 0.397,
     "most_similar_page": "carrier-application.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3620,6 +3625,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -3653,10 +3659,10 @@
     {
      "heading": "Your choices",
      "level": "h2",
-     "words": 292
+     "words": 239
     }
    ],
-   "word_count": 432,
+   "word_count": 379,
    "cta_count": 9,
    "ctas": [
     {
@@ -3761,11 +3767,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.525,
+    "max_similarity": 0.468,
     "most_similar_page": "status.html",
-    "level": "high"
+    "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -3808,6 +3814,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -3949,10 +3956,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 872,
+   "word_count": 819,
    "cta_count": 11,
    "ctas": [
     {
@@ -4068,11 +4075,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.306,
+    "max_similarity": 0.276,
     "most_similar_page": "power-only-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4115,6 +4122,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -4143,10 +4151,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 672,
+   "word_count": 619,
    "cta_count": 10,
    "ctas": [
     {
@@ -4256,11 +4264,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.358,
+    "max_similarity": 0.308,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4303,6 +4311,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -4411,10 +4420,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 886,
+   "word_count": 833,
    "cta_count": 11,
    "ctas": [
     {
@@ -4530,11 +4539,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.299,
+    "max_similarity": 0.27,
     "most_similar_page": "dry-van-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4577,6 +4586,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -4725,10 +4735,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 951,
+   "word_count": 898,
    "cta_count": 11,
    "ctas": [
     {
@@ -4843,11 +4853,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.259,
+    "max_similarity": 0.218,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -4890,6 +4900,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -4998,10 +5009,10 @@
     {
      "heading": "New Authority",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 833,
+   "word_count": 780,
    "cta_count": 11,
    "ctas": [
     {
@@ -5117,11 +5128,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.311,
+    "max_similarity": 0.28,
     "most_similar_page": "power-only-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -5164,6 +5175,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -5332,10 +5344,10 @@
     {
      "heading": "Dispatcher vs Broker",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 800,
+   "word_count": 747,
    "cta_count": 11,
    "ctas": [
     {
@@ -5450,11 +5462,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.31,
+    "max_similarity": 0.263,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -5497,6 +5509,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -5565,10 +5578,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 1709,
+   "word_count": 1656,
    "cta_count": 9,
    "ctas": [
     {
@@ -5677,8 +5690,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.154,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.127,
+    "most_similar_page": "terms.html",
     "level": "low"
    },
    "inbound_link_count": 5,
@@ -5740,10 +5753,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 650,
+   "word_count": 597,
    "cta_count": 10,
    "ctas": [
     {
@@ -5853,7 +5866,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.389,
+    "max_similarity": 0.324,
     "most_similar_page": "blog.html",
     "level": "medium"
    },
@@ -6025,10 +6038,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 997,
+   "word_count": 944,
    "cta_count": 11,
    "ctas": [
     {
@@ -6143,11 +6156,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.251,
+    "max_similarity": 0.211,
     "most_similar_page": "status.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6190,6 +6203,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -6508,10 +6522,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 2132,
+   "word_count": 2079,
    "cta_count": 13,
    "ctas": [
     {
@@ -6638,11 +6652,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.271,
+    "max_similarity": 0.254,
     "most_similar_page": "services.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6685,6 +6699,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -6753,10 +6768,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 1291,
+   "word_count": 1238,
    "cta_count": 11,
    "ctas": [
     {
@@ -6873,11 +6888,11 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.201,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.169,
+    "most_similar_page": "terms.html",
     "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -6920,6 +6935,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -6973,10 +6989,10 @@
     {
      "heading": "Need an account?",
      "level": "h3",
-     "words": 267
+     "words": 214
     }
    ],
-   "word_count": 409,
+   "word_count": 356,
    "cta_count": 10,
    "ctas": [
     {
@@ -7088,11 +7104,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.566,
+    "max_similarity": 0.51,
     "most_similar_page": "status.html",
     "level": "high"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7135,6 +7151,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -7243,10 +7260,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 949,
+   "word_count": 896,
    "cta_count": 11,
    "ctas": [
     {
@@ -7363,11 +7380,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.274,
+    "max_similarity": 0.245,
     "most_similar_page": "power-only-dispatch.html",
-    "level": "medium"
+    "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7410,6 +7427,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -7478,10 +7496,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 2270,
+   "word_count": 2217,
    "cta_count": 9,
    "ctas": [
     {
@@ -7593,7 +7611,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.121,
+    "max_similarity": 0.1,
     "most_similar_page": "blog.html",
     "level": "low"
    },
@@ -7709,10 +7727,10 @@
     {
      "heading": "Load Score Tool",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 894,
+   "word_count": 841,
    "cta_count": 11,
    "ctas": [
     {
@@ -7829,11 +7847,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.28,
+    "max_similarity": 0.25,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -7876,6 +7894,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -7974,10 +7993,10 @@
     {
      "heading": "Referral Program",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 534,
+   "word_count": 481,
    "cta_count": 10,
    "ctas": [
     {
@@ -8134,11 +8153,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.448,
+    "max_similarity": 0.392,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8181,6 +8200,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -8289,10 +8309,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 824,
+   "word_count": 771,
    "cta_count": 11,
    "ctas": [
     {
@@ -8408,11 +8428,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.311,
+    "max_similarity": 0.28,
     "most_similar_page": "hotshot-dispatch.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8455,6 +8475,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -8528,10 +8549,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 721,
+   "word_count": 668,
    "cta_count": 11,
    "ctas": [
     {
@@ -8647,11 +8668,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.335,
+    "max_similarity": 0.286,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8694,6 +8715,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -8757,10 +8779,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 715,
+   "word_count": 662,
    "cta_count": 10,
    "ctas": [
     {
@@ -8869,11 +8891,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.337,
+    "max_similarity": 0.288,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -8916,6 +8938,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -9024,10 +9047,10 @@
     {
      "heading": "Load Score Tool",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 960,
+   "word_count": 907,
    "cta_count": 11,
    "ctas": [
     {
@@ -9143,11 +9166,11 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.27,
-    "most_similar_page": "hotshot-dispatch.html",
-    "level": "medium"
+    "max_similarity": 0.241,
+    "most_similar_page": "power-only-dispatch.html",
+    "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -9190,6 +9213,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -9323,10 +9347,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 1256,
+   "word_count": 1203,
    "cta_count": 11,
    "ctas": [
     {
@@ -9543,11 +9567,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.202,
+    "max_similarity": 0.167,
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -9590,6 +9614,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -9708,10 +9733,10 @@
     {
      "heading": "Dispatcher vs Broker",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 691,
+   "word_count": 638,
    "cta_count": 12,
    "ctas": [
     {
@@ -9832,11 +9857,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.353,
+    "max_similarity": 0.303,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -9879,6 +9904,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -9937,10 +9963,10 @@
     {
      "heading": "Report a security concern",
      "level": "h2",
-     "words": 265
+     "words": 212
     }
    ],
-   "word_count": 461,
+   "word_count": 408,
    "cta_count": 9,
    "ctas": [
     {
@@ -10045,11 +10071,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.504,
+    "max_similarity": 0.447,
     "most_similar_page": "status.html",
-    "level": "high"
+    "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -10092,6 +10118,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -10340,10 +10367,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 990,
+   "word_count": 937,
    "cta_count": 12,
    "ctas": [
     {
@@ -10463,11 +10490,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.271,
+    "max_similarity": 0.254,
     "most_similar_page": "index.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -10510,6 +10537,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -10683,10 +10711,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 1025,
+   "word_count": 972,
    "cta_count": 10,
    "ctas": [
     {
@@ -10856,11 +10884,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.247,
+    "max_similarity": 0.207,
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -10903,6 +10931,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -10946,10 +10975,10 @@
     {
      "heading": "Legal & trust",
      "level": "h3",
-     "words": 264
+     "words": 211
     }
    ],
-   "word_count": 364,
+   "word_count": 311,
    "cta_count": 11,
    "ctas": [
     {
@@ -11064,11 +11093,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.615,
+    "max_similarity": 0.56,
     "most_similar_page": "status.html",
     "level": "high"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -11111,6 +11140,7 @@
     "status.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -11134,10 +11164,10 @@
     {
      "heading": "Current status",
      "level": "h3",
-     "words": 297
+     "words": 244
     }
    ],
-   "word_count": 352,
+   "word_count": 299,
    "cta_count": 9,
    "ctas": [
     {
@@ -11242,11 +11272,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.615,
+    "max_similarity": 0.56,
     "most_similar_page": "sitemap.html",
     "level": "high"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -11289,6 +11319,7 @@
     "sitemap.html",
     "terms.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -11342,10 +11373,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 520,
+   "word_count": 467,
    "cta_count": 10,
    "ctas": [
     {
@@ -11454,11 +11485,11 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.448,
+    "max_similarity": 0.393,
     "most_similar_page": "status.html",
     "level": "medium"
    },
-   "inbound_link_count": 42,
+   "inbound_link_count": 43,
    "inbound_links": [
     "about.html",
     "accessibility.html",
@@ -11501,6 +11532,7 @@
     "sitemap.html",
     "status.html",
     "tools.html",
+    "truck-dispatcher-in-texas.html",
     "truck-dispatcher-vs-freight-broker.html"
    ]
   },
@@ -11629,10 +11661,10 @@
     {
      "heading": "Apply as Carrier",
      "level": "h3",
-     "words": 258
+     "words": 205
     }
    ],
-   "word_count": 1332,
+   "word_count": 1279,
    "cta_count": 13,
    "ctas": [
     {
@@ -11757,11 +11789,11 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.19,
+    "max_similarity": 0.158,
     "most_similar_page": "status.html",
     "level": "low"
    },
-   "inbound_link_count": 10,
+   "inbound_link_count": 11,
    "inbound_links": [
     "box-truck-dispatch.html",
     "carriers.html",
@@ -11772,7 +11804,198 @@
     "load-score.html",
     "resources.html",
     "services.html",
-    "sitemap.html"
+    "sitemap.html",
+    "truck-dispatcher-in-texas.html"
+   ]
+  },
+  "truck-dispatcher-in-texas.html": {
+   "url": "https://loadboot.com/truck-dispatcher-in-texas.html",
+   "file": "truck-dispatcher-in-texas.html",
+   "title": "Truck Dispatcher in Texas \u2014 Lanes, Rates & Staying Loaded (2026) | Loadboot",
+   "title_length": 75,
+   "meta_description": "Truck dispatch in Texas: Triangle lanes (DFW-Houston-San Antonio), Laredo border freight, energy and produce seasons, equipment demand, and how a dispatcher keeps a Texas truck loaded at honest rates.",
+   "meta_description_length": 200,
+   "canonical": "https://loadboot.com/truck-dispatcher-in-texas.html",
+   "robots": "",
+   "h1_count": 1,
+   "section_count": 12,
+   "sections": [
+    {
+     "heading": "Truck Dispatcher in Texas: Lanes, Rates & How to Stay Loaded",
+     "level": "h1",
+     "words": 116
+    },
+    {
+     "heading": "Why Texas is a different trucking market",
+     "level": "h2",
+     "words": 190
+    },
+    {
+     "heading": "The Texas Triangle: your reload machine",
+     "level": "h2",
+     "words": 136
+    },
+    {
+     "heading": "The lanes that actually pay",
+     "level": "h2",
+     "words": 111
+    },
+    {
+     "heading": "Equipment demand in Texas",
+     "level": "h2",
+     "words": 130
+    },
+    {
+     "heading": "Seasons and rate swings",
+     "level": "h2",
+     "words": 92
+    },
+    {
+     "heading": "Laredo and border freight",
+     "level": "h2",
+     "words": 95
+    },
+    {
+     "heading": "A sample Texas week (one van, planned right)",
+     "level": "h2",
+     "words": 271
+    },
+    {
+     "heading": "What a dispatcher actually changes in Texas",
+     "level": "h2",
+     "words": 124
+    },
+    {
+     "heading": "The bottom line",
+     "level": "h2",
+     "words": 99
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 212
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 226
+    }
+   ],
+   "word_count": 1865,
+   "cta_count": 9,
+   "ctas": [
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "free calculator",
+     "href": "tools.html#cpm"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    },
+    {
+     "text": "Subscribe",
+     "href": "#button"
+    },
+    {
+     "text": "Contact",
+     "href": "contact.html"
+    },
+    {
+     "text": "Get a Quote",
+     "href": "contact.html#quote"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
+    }
+   ],
+   "forms": [
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "",
+       "required": true
+      }
+     ]
+    }
+   ],
+   "links_internal": [
+    "about.html",
+    "accessibility.html",
+    "app/carrier/",
+    "app/developer/",
+    "app/partner/",
+    "authority-dot-setup.html",
+    "blog.html",
+    "boc3-ucr.html",
+    "box-truck-dispatch.html",
+    "brokers.html",
+    "careers.html",
+    "carriers.html",
+    "case-studies.html",
+    "contact.html",
+    "cookies.html",
+    "dry-van-dispatch.html",
+    "faq.html",
+    "flatbed-dispatch.html",
+    "form-2290-hvut.html",
+    "hotshot-dispatch.html",
+    "how-it-works.html",
+    "ifta-fuel-tax.html",
+    "index.html",
+    "load-score.html",
+    "login.html",
+    "new-authority-dispatch.html",
+    "owner-operator-dispatch.html",
+    "partners.html",
+    "power-only-dispatch.html",
+    "pricing.html",
+    "privacy.html",
+    "reefer-dispatch.html",
+    "referral.html",
+    "resources.html",
+    "security.html",
+    "services.html",
+    "shipper-solutions.html",
+    "sitemap.html",
+    "status.html",
+    "terms.html",
+    "tools.html"
+   ],
+   "links_external": [],
+   "internal_link_count": 41,
+   "image_count": 3,
+   "images_missing_alt": [],
+   "schema_types": [
+    "Article",
+    "BreadcrumbList",
+    "FAQPage",
+    "ProfessionalService"
+   ],
+   "duplication_risk": {
+    "max_similarity": 0.115,
+    "most_similar_page": "terms.html",
+    "level": "low"
+   },
+   "inbound_link_count": 1,
+   "inbound_links": [
+    "blog.html"
    ]
   },
   "truck-dispatcher-vs-freight-broker.html": {
@@ -11840,10 +12063,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 279
+     "words": 226
     }
    ],
-   "word_count": 1974,
+   "word_count": 1921,
    "cta_count": 9,
    "ctas": [
     {
@@ -11953,8 +12176,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.135,
-    "most_similar_page": "blog.html",
+    "max_similarity": 0.111,
+    "most_similar_page": "terms.html",
     "level": "low"
    },
    "inbound_link_count": 5,

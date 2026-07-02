@@ -107,3 +107,34 @@ attractive, and use conversion psychology; even icons/logos should differ."_
   full frontend verification.
 - **Live chat / dedicated-dispatcher** needs a chat transport decision (existing team-chat vs a provider).
 - **Referral commission tiers** remain legal-pending (prod flag OFF) — public figures stay illustrative until sign-off.
+
+
+---
+
+## PART C — FULL-BRIDGE + PAYMENTS PHASE (owner directive 2026-07-02, next session's map)
+Owner brief: LoadBoot = shipper↔broker↔carrier bridge with a Command Center in the middle; 100% automation
+except the few human gates; default payment rail = BANK ACCOUNT (receive + send).
+
+- **C1. Industry-standard rate library** — canonical defaults (detention $60/hr after 2h free, layover
+  $250/day, TONU $250, lumper reimbursed-with-receipt, driver-assist/stop-off/reconsignment fees) stored
+  server-side (app_private.rate_standards, staff-editable via CC), surfaced as one-click defaults in broker
+  wizard + CC composer (v1 SHIPPED as frontend constants), and shown VERBATIM to carriers pre-book. Broker
+  explicitly AGREES at post (v1: posting = agreement note SHIPPED; v2: recorded agreement row + version).
+- **C2. Shipper↔Broker bridge** — what a broker needs FROM a shipper in its portal: shipment request with
+  facility details/hours, commodity + weight verified, ready windows, dock/appointment info, payment terms;
+  what a shipper needs FROM the broker: status/visibility (cc_partner_load_status pattern), documents (BOL/POD),
+  claims lane. Shipper stays INQUIRY/CONSULTATION scope until a licensed-broker partner handles the transaction
+  (compliance boundary unchanged). CC sees both sides: request→quote→tender pipeline + SLA.
+- **C3. Carrier↔Broker bridge deepening** — broker gets: carrier scorecard summary at offer/acceptance,
+  tracking freshness, doc checklist state, exception feed; carrier gets: broker SLA/pay-history signal
+  (from real invoices), full rate card (SHIPPED), facility notes. CC gets: both scorecards + auto-dispatch
+  monitor (cwz SHIPPED) + exception/emergency centers (SHIPPED).
+- **C4. Referral 100% automation** — auto-accrual on invoice payment (DB trigger calling cc_referral_accrue
+  logic per fee-bearing invoice instead of manual/cron), auto-claim from ?ref cookie at carrier signup,
+  payout requests (SHIPPED) + scheduled payable-promotion; human gate stays ONLY at payout approve/paid.
+- **C5. Payment system (bank-account default)** — design: org_payment_profiles (bank details, verified_by
+  staff, masked reads), invoices carry pay-to details, settlements reference the profile, payout_requests
+  already capture bank details; ALL transfers recorded-only (maker/checker) — LoadBoot never moves money
+  automatically; reconciliation views already exist (cc_finance_reconcile). Provider integration (ACH API)
+  is a future owner decision.
+Sequencing: C1(v2)→C4→C3→C2→C5. Every increment: both DBs + matrix + parity + anon surface 5.

@@ -9,6 +9,7 @@ import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, pocketUploadPod, pocketTripPods, pocketAdvanceTrip,
+  tripArrive, tripDepart, tripEmergencyRequest, myNotifications, markMyNotification,
 } from '../shared/api.js';
 import { uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
@@ -24,6 +25,9 @@ const root = document.getElementById('pk-app');
 const h = (tag, attrs, kids) => { const e = document.createElement(tag); if (attrs) for (const k in attrs) { if (k === 'class') e.className = attrs[k]; else if (k === 'onclick') e.onclick = attrs[k]; else if (k === 'html') e.innerHTML = attrs[k]; else e.setAttribute(k, attrs[k]); } (Array.isArray(kids) ? kids : kids != null ? [kids] : []).forEach(c => e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c)); return e; };
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
 const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+// GLOBAL notification tone tokens (same palette as the carrier portal / Command Center pushes).
+const NTONE = { urgent: '#dc2626', warning: '#d97706', action: '#2563eb', success: '#16a34a', info: '#475569' };
+const NBG   = { urgent: '#fef2f2', warning: '#fffbeb', action: '#eff6ff', success: '#f0fdf4', info: '#f8fafc' };
 const TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray' };
 const pill = (s) => h('span', { class: 'pk-pill ' + (TONE[s] || 'gray') }, (s || '').replace(/_/g, ' '));
 
@@ -43,7 +47,7 @@ function loginView() {
     catch (e) { err.textContent = (e && e.message) || 'Sign-in failed.'; btn.disabled = false; btn.textContent = 'Sign in'; }
   } }, 'Sign in');
   mount(root, h('div', { class: 'pk-login' }, [
-    h('div', { class: 'pk-brand', style: 'font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px' }, [h('span', { html: '<img src="/icon-512.png" width="28" height="28" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('Load'), h('b', { style: 'color:#f97316' }, 'boot')]),
+    h('div', { class: 'pk-brand', style: 'font-size:20px;font-weight:800;display:flex;align-items:center;gap:2px' }, [h('span', { html: '<img src="/icon-512.png" width="28" height="28" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('oad'), h('b', { style: 'color:#f97316' }, 'boot')]),
     h('h2', null, 'Carrier Pocket'),
     h('div', { class: 'pk-muted', style: 'text-align:left;padding:0 0 6px' }, 'Sign in to manage your loads, trips, invoices, compliance and support.'),
     email, pass, err, btn,
@@ -66,7 +70,7 @@ async function appView() {
 
   let tab = 'home';
   const top = h('div', { class: 'pk-top' }, [
-    h('div', { class: 'pk-brand', style: 'display:flex;align-items:center;gap:7px' }, [h('span', { html: '<img src="/icon-512.png" width="24" height="24" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('Load'), h('b', null, 'boot'), document.createTextNode(' Pocket')]),
+    h('div', { class: 'pk-brand', style: 'display:flex;align-items:center;gap:2px' }, [h('span', { html: '<img src="/icon-512.png" width="24" height="24" alt="LoadBoot" style="border-radius:22%;display:block">' }), document.createTextNode('oad'), h('b', null, 'boot'), document.createTextNode(' Pocket')]),
     h('div', { class: 'pk-sub' }, ov.carrier || 'Carrier'),
     h('h1', null, 'Welcome back'),
     h('span', { class: 'pk-chip ' + (ov.compliance_ok ? 'ok' : 'warn') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
@@ -89,6 +93,31 @@ async function appView() {
     mount(panel, h('div', { class: 'pk-muted' }, 'Loading…'));
     let c; try { c = await pocketCompliance(); } catch (_) { c = { requirements: [], mandatory_ok: ov.compliance_ok }; }
     let anns = []; try { anns = await pocketAnnouncements(); } catch (_) { anns = []; }
+    // A9 — today's trip, front and center (driver companion: what am I doing RIGHT NOW?)
+    let heroTrip = null; try { const ts = await pocketTrips(10); heroTrip = (ts || []).find(t => t.status === 'in_transit') || (ts || []).find(t => t.status === 'dispatched') || null; } catch (_) {}
+    const heroCard = heroTrip ? h('div', { class: 'pk-card', style: 'border-left:4px solid #2563eb' }, [
+      h('h3', null, heroTrip.status === 'in_transit' ? '🚛 On the road now' : '📋 Today’s trip — confirm & start'),
+      h('div', { class: 'pk-row', style: 'border:0' }, [
+        h('div', null, [h('div', { class: 't' }, (heroTrip.origin || '—') + ' → ' + (heroTrip.destination || '—')), h('div', { class: 's' }, money(heroTrip.rate || 0))]),
+        pill(heroTrip.status),
+      ]),
+      h('button', { class: 'pk-btn', onclick: () => { tab = 'trips'; render(); } }, 'Open trip — share location, arrive/depart, POD →'),
+    ]) : null;
+    // A9 — unified per-user notifications (Command Center pushes; global tone colours)
+    let notifs = []; try { notifs = await myNotifications(15); } catch (_) { notifs = []; }
+    const unread = (notifs || []).filter(n => !n.read_at);
+    const notifCard = (notifs && notifs.length) ? h('div', { class: 'pk-card' }, [
+      h('h3', null, 'Notifications' + (unread.length ? ' (' + unread.length + ' new)' : '')),
+      ...notifs.slice(0, 8).map(n => {
+        const p = n.payload || {}; const tone = p.tone && NTONE[p.tone] ? p.tone : 'info';
+        const row = h('div', { class: 'pk-row', style: 'border-left:3px solid ' + NTONE[tone] + ';padding-left:8px;border-radius:6px;background:' + (n.read_at ? 'transparent' : NBG[tone]), onclick: async () => {
+          if (!n.read_at) { try { await markMyNotification(n.id); n.read_at = '1'; row.style.background = 'transparent'; } catch (_) {} }
+        } }, [
+          h('div', null, [h('div', { class: 't' }, p.title || n.template_key || 'Notification'), p.body ? h('div', { class: 's' }, p.body) : null].filter(Boolean)),
+        ]);
+        return row;
+      }),
+    ]) : null;
     const annCards = (anns || []).map(a => h('div', { class: 'pk-ann ' + (a.kind || 'info') }, [
       h('div', { class: 'pk-ann-t' }, a.title),
       a.body ? h('div', { class: 'pk-ann-b' }, a.body) : null,
@@ -130,7 +159,7 @@ async function appView() {
           h('div', null, [h('div', { class: 't' }, 'Alerts for trips, payments & announcements'), h('div', { class: 's' }, 'On this device')]),
           h('div', { style: 'display:flex;gap:8px;align-items:center' }, [status, btn])])]);
     }
-    mount(panel, h('div', null, [...annCards, kpis, actionCard, pushCard, compCard].filter(Boolean)));
+    mount(panel, h('div', null, [heroCard, notifCard, ...annCards, kpis, actionCard, pushCard, compCard].filter(Boolean)));
   }
 
   // ---------- CP-B + CP-E: Trips (confirm) + live GPS share ----------
@@ -170,12 +199,34 @@ async function appView() {
       } }, label);
       const startBtn = (t.status === 'dispatched') ? adv('▶ Start', 'in_transit') : null;
       const deliverBtn = (t.status === 'dispatched' || t.status === 'in_transit') ? adv('✓ Delivered', 'delivered') : null;
+      // Detention protection — arrive/depart stamps from the driver's phone (measured, not argued).
+      const stamp = (label, fn, stop) => h('button', { class: 'pk-btn sec pk-mini', onclick: async (ev) => {
+        ev.currentTarget.disabled = true;
+        try { const r = await fn(t.id, stop); ev.currentTarget.textContent = '✓ ' + label; if (r && r.detention_minutes > 0) alert('Detention recorded: ' + r.detention_minutes + ' min beyond free time — dispatch is notified.'); }
+        catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not record.'); }
+      } }, label);
+      const stamps = isActive ? [stamp('At pickup', tripArrive, 'pickup'), stamp('Left pickup', tripDepart, 'pickup'), stamp('At delivery', tripArrive, 'delivery'), stamp('Left delivery', tripDepart, 'delivery')] : [];
+      // Emergency / reschedule — defined category + detailed reason + PROOF required (A3 flow).
+      const emWrap = h('div');
+      const emBtn = isActive ? h('button', { class: 'pk-btn sec pk-mini', style: 'color:#dc2626;border-color:#fecaca', onclick: () => {
+        if (emWrap.firstChild) { emWrap.innerHTML = ''; return; }
+        const cat = h('select', { class: 'pk-in' }, ['breakdown', 'accident', 'weather', 'medical', 'road_closure', 'hours_of_service', 'mechanical', 'theft', 'other'].map(k => h('option', { value: k }, k.replace(/_/g, ' '))));
+        const reason = h('input', { class: 'pk-in', placeholder: 'Detailed reason (min 10 characters) *' });
+        const proof = h('input', { class: 'pk-in', placeholder: 'Proof — photo link / doc ref *' });
+        const when = h('input', { class: 'pk-in', type: 'datetime-local' });
+        const send = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
+          try { await tripEmergencyRequest({ trip: t.id, category: cat.value, reason: reason.value.trim(), proof_ref: proof.value.trim(), reschedule_to: when.value || null }); emWrap.innerHTML = ''; emWrap.appendChild(h('div', { class: 's', style: 'color:#16a34a' }, '✓ Sent — dispatch is notified with priority')); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send emergency'; alert((e && e.message) || 'Could not send.'); }
+        } }, 'Send emergency');
+        emWrap.appendChild(h('div', { class: 'pk-issueform' }, [cat, reason, proof, h('div', { class: 's' }, 'New delivery time (optional):'), when, send]));
+      } }, '🚨 Emergency') : null;
       return h('div', { class: 'pk-trip' }, [
         h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
           h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0))]),
           pill(t.status),
         ]),
-        (confirm || startBtn || deliverBtn || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, startBtn, deliverBtn, share, issueBtn, podBtn].filter(Boolean)) : null,
+        (confirm || startBtn || deliverBtn || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, startBtn, deliverBtn, share, issueBtn, podBtn, ...stamps, emBtn].filter(Boolean)) : null,
         formWrap,
         podWrap,
       ].filter(Boolean));

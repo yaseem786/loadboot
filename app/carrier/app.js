@@ -16,6 +16,7 @@ import {
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
   isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests,
+  setMyPaymentProfile, myPaymentProfile, carrierViewPoster,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
@@ -146,7 +147,7 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
       h('div', { class: 'cp-auth-brand' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('Load'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
+        h('div', { class: 'cp-brand cp-brand-dark' }, [document.createTextNode('oad'), h('b', null, 'boot'), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
         h('div', { class: 'cp-tagline' }, TAGLINE),
       ])]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
@@ -247,6 +248,14 @@ const NAV = [
 ];
 
 async function appView(user) {
+  // C4a — auto-claim referral: the marketing site stores ?ref=CODE in localStorage; claim it
+  // once, silently, on first portal entry (server enforces one-referrer-per-org + no self-claim).
+  (async () => {
+    let code = null; try { code = localStorage.getItem('lb_ref'); } catch (_) {}
+    if (!code) return;
+    try { await claimReferral(code); } catch (_) {}
+    try { localStorage.removeItem('lb_ref'); } catch (_) {}
+  })();
   let ov; try { ov = await pocketOverview(); }
   catch (e) { if (/carrier account/i.test((e && e.message) || '')) { notCarrier(); return; } mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [h('h1', null, 'Could not load'), h('p', { class: 'cp-auth-sub' }, 'Please refresh and try again.'), h('button', { class: 'cp-btn cp-btn-lg', onClick: () => boot() }, 'Retry')]))); return; }
 
@@ -267,7 +276,7 @@ async function appView(user) {
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, [brandMark(), h('div', null, [
-        h('div', { class: 'cp-brand' }, [document.createTextNode('Load'), h('b', null, 'boot')]),
+        h('div', { class: 'cp-brand' }, [document.createTextNode('oad'), h('b', null, 'boot')]),
         h('div', { class: 'cp-tagline light' }, TAGLINE),
       ])]),
       sideNav(false),
@@ -500,6 +509,17 @@ async function appView(user) {
     const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading load details…'));
     openModal('Load overview', [bodyEl]);
     let d; try { d = await carrierLoadDetail(loadId); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load details.')); return; }
+    // C3 — posting party's REAL track record (identity stays hidden) appended to the decision set.
+    (async () => {
+      let ps; try { ps = await carrierViewPoster(loadId); } catch (_) { return; }
+      if (!ps) return;
+      const tone = toneOf('info');
+      bodyEl.appendChild(h('div', { class: 'cp-row', style: 'margin-top:10px;border-left:4px solid ' + tone.c + ';padding-left:10px;border-radius:8px;flex-wrap:wrap' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, 'Posting party: ' + (ps.posted_by || '—')),
+          h('div', { class: 'cp-row-s' }, ps.signal || ([ps.loads_delivered != null ? ps.loads_delivered + ' loads delivered' : null, ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null, ps.loads_submitted != null ? ps.loads_submitted + ' submitted' : null].filter(Boolean).join(' · ') || '—')),
+          h('div', { class: 'cp-row-s' }, ps.basis || '')]),
+      ]));
+    })();
     const t = d.terms || {}; const acc = t.accessorials || {};
     const line = (k, v) => v == null || v === '' ? null : h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, String(v))]);
     const rpm = d.rpm != null ? '$' + Number(d.rpm).toFixed(2) + '/mi' : null;
@@ -1258,6 +1278,33 @@ async function appView(user) {
         openModal('Manage ' + (m.name || m.email || 'member'), [h('label', { class: 'cp-row-s' }, 'Role'), role, h('label', { class: 'cp-row-s' }, 'Access'), active, save]);
       }
     })();
+    const payCard = h('div', { class: 'cp-card' }, [cardHead('Payment method (bank)'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    async function loadPayCard() {
+      let p; try { p = await myPaymentProfile(); } catch (_) { p = null; }
+      const editBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => {
+        const bank = h('input', { class: 'cp-in', placeholder: 'Bank name' });
+        const title = h('input', { class: 'cp-in', placeholder: 'Account title (must match your company)' });
+        const acct = h('input', { class: 'cp-in', placeholder: 'Account number / IBAN' });
+        const err = h('div', { class: 'cp-err' });
+        const close = openModal('Bank account for payments', [
+          h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'This account receives your settlements. A person verifies it before any payout references it; editing resets verification.'),
+          bank, title, acct, err,
+          h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev) => {
+            err.textContent = ''; ev.currentTarget.disabled = true;
+            try { await setMyPaymentProfile({ bank_name: bank.value.trim(), account_title: title.value.trim(), account_number: acct.value.trim() }); close(); loadPayCard(); }
+            catch (e) { ev.currentTarget.disabled = false; err.textContent = (e && e.message) || 'Could not save.'; }
+          } }, 'Save bank account'),
+        ]);
+      } }, (p && p.exists) ? 'Update' : 'Add bank account');
+      const vt = toneOf(p && p.exists ? (p.verified ? 'success' : 'action') : 'warning');
+      mount(payCard, [cardHead('Payment method (bank)', p && p.exists ? (p.verified ? 'Verified ✓' : 'Awaiting verification') : 'Not set'),
+        (p && p.exists) ? h('div', { class: 'cp-row', style: 'border-left:4px solid ' + vt.c + ';padding-left:10px;border-radius:8px' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, p.bank_name), h('div', { class: 'cp-row-s' }, p.account_title + ' · ···' + (p.account_last4 || ''))]),
+          h('span', { class: 'cp-pill', style: 'background:' + vt.bg + ';color:' + vt.c }, p.verified ? 'Verified' : 'Pending'),
+        ]) : h('div', { class: 'cp-row-s', style: 'border-left:4px solid ' + vt.c + ';padding-left:10px' }, 'Add your bank account — it is how settlements reach you. Details are masked; only finance staff can see them for verification.'),
+        h('div', { style: 'margin-top:10px' }, editBtn)]);
+    }
+    loadPayCard();
     const setupCard = h('div', { class: 'cp-card' }, [cardHead('Complete your setup'), h('div', { class: 'cp-muted' }, 'Checking…')]);
     (async () => {
       let d; try { d = await carrierDashboard(); } catch (_) { d = null; }
@@ -1276,6 +1323,7 @@ async function appView(user) {
     mount(content, h('div', { class: 'cp-grid' }, [
       h('div', { class: 'cp-card' }, [cardHead('Profile'), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
       setupCard,
+      payCard,
       teamCard,
       h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing out…'; await signOut(); location.reload(); } }, 'Sign out')]),
       dispCard,

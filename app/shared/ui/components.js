@@ -163,7 +163,7 @@ export const BRAND_TAGLINE = 'Higher-paying loads, less deadhead — flat 5%, no
 export function brandLogo(opts = {}) {
   const dark = !!opts.dark;
   const mark = el('span', { class: 'cc-mark', html: BRAND_MARK_SVG });
-  const word = el('span', { class: 'cc-word' + (dark ? ' on-dark' : '') }, ['Load', el('b', null, 'boot')]);
+  const word = el('span', { class: 'cc-word' + (dark ? ' on-dark' : '') }, ['oad', el('b', null, 'boot')]);
   const txt = el('div', { class: 'cc-brandtxt' }, [word,
     opts.sub ? el('small', { class: 'cc-brandsub' + (dark ? ' on-dark' : '') }, opts.sub) : '']);
   return el('div', { class: 'cc-brandrow' }, [mark, txt]);
