@@ -332,11 +332,24 @@ async function brokerDash(user, ov) {
     if (step === 0) body = h('div', { class: 'cp-formgrid' }, [wi('Origin city, ST', 'origin'), wi('Destination city, ST', 'destination'), wi('Miles', 'miles', 'number'), wi('Reference (optional)', 'reference')]);
     else if (step === 1) body = h('div', { class: 'cp-formgrid' }, [wi('Pickup date', 'pickup_date', 'date'), wi('Pickup window', 'pickup_window'), wi('Delivery date', 'delivery_date', 'date'), wi('Delivery window', 'delivery_window')]);
     else if (step === 2) body = h('div', { class: 'cp-formgrid' }, [wi('Equipment (e.g. Dry Van)', 'equipment'), wi('Commodity', 'commodity'), wi('Weight (lb)', 'weight', 'number'), wi('Rate ($)', 'rate', 'number')]);
-    else if (step === 3) body = h('div', null, [h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [toggle('Appointment required', 'appointment_required'), toggle('Tracking required', 'tracking_required')]), wi('Notes / special instructions', 'notes')]);
+    else if (step === 3) body = h('div', null, [
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'A carrier must be able to book without a single phone call — every rate below is REQUIRED before this load can post.'),
+      h('div', { class: 'cp-formgrid' }, [
+        wi('Detention rate ($/hr) *', 'acc_detention_per_hr', 'number'),
+        wi('Free time before detention (hours) *', 'acc_detention_free_hours', 'number'),
+        wi('Layover rate ($/day) *', 'acc_layover_per_day', 'number'),
+        wi('TONU rate ($) *', 'acc_tonu', 'number'),
+      ]),
+      (() => { const sel = h('select', { class: 'cp-in' }, ['', 'Broker pays lumper directly', 'Reimbursed with receipt', 'Included in rate', 'Not covered'].map(o => h('option', { value: o }, o || 'Lumper policy *'))); sel.value = w.acc_lumper_policy || ''; sel.onchange = () => { w.acc_lumper_policy = sel.value; }; return field('Lumper policy *', sel); })(),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [toggle('First come, first served (FCFS)', 'fcfs'), toggle('Appointment required', 'appointment_required'), toggle('Tracking required', 'tracking_required')]),
+      h('div', { class: 'cp-sub', style: 'margin-top:4px' }, 'Scheduling: choose FCFS, or appointment (set the pickup window in Schedule).'),
+      wi('Notes / special instructions', 'notes'),
+    ]);
     else body = h('div', { class: 'cp-card', style: 'background:#f8fafc' }, [
       h('div', { class: 'cp-sub' }, 'Review'),
       h('div', { style: 'font-weight:700;margin:6px 0' }, (w.origin || '?') + ' → ' + (w.destination || '?')),
       h('div', { class: 'cp-sub' }, [w.equipment, w.rate ? ('$' + w.rate) : null, w.miles ? (w.miles + ' mi') : null, w.pickup_date].filter(Boolean).join(' · ')),
+      h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Rate card: detention $' + (w.acc_detention_per_hr || '?') + '/hr after ' + (w.acc_detention_free_hours || '?') + 'h free · layover $' + (w.acc_layover_per_day || '?') + '/day · TONU $' + (w.acc_tonu || '?') + ' · lumper: ' + (w.acc_lumper_policy || '?') + ' · ' + (w.fcfs ? 'FCFS' : (w.appointment_required ? 'appointment' : 'window: ' + (w.pickup_window || '—')))),
       h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'On submit, a required-document checklist (rate con, pickup/delivery #, appointment, billing) is created for our dispatch team.'),
     ]);
     const back = h('button', { class: 'cp-btn ghost', onClick: () => { if (step > 0) { step--; renderStep(); } } }, 'Back');
@@ -344,10 +357,20 @@ async function brokerDash(user, ov) {
     const next = h('button', { class: 'cp-btn', onClick: async () => {
       err.textContent = ''; err.className = 'cp-err';
       if (step === 0 && (!w.origin || !w.destination)) { err.textContent = 'Origin and destination are required.'; return; }
+      if (step === 3) {
+        const missing = [];
+        [['acc_detention_per_hr', 'detention rate'], ['acc_detention_free_hours', 'free hours'], ['acc_layover_per_day', 'layover rate'], ['acc_tonu', 'TONU rate']].forEach(([k, l]) => { if (w[k] === undefined || w[k] === '' || isNaN(Number(w[k])) || Number(w[k]) < 0) missing.push(l); });
+        if (!w.acc_lumper_policy) missing.push('lumper policy');
+        if (!w.fcfs && !w.appointment_required && !(w.pickup_window || '').trim()) missing.push('scheduling (FCFS or appointment / pickup window)');
+        if (missing.length) { err.textContent = 'Required before posting: ' + missing.join(', ') + '.'; return; }
+      }
       if (step < STEPS.length - 1) { step++; renderStep(); return; }
       next.disabled = true; next.textContent = 'Submitting…';
       try {
-        await partnerSubmitLoad(Object.assign({}, w, confirmDup ? { confirm_duplicate: 'true' } : {}));
+        const payload = Object.assign({}, w, confirmDup ? { confirm_duplicate: 'true' } : {});
+        payload.accessorials = { detention_per_hr: String(w.acc_detention_per_hr), detention_free_hours: String(w.acc_detention_free_hours), layover_per_day: String(w.acc_layover_per_day), tonu: String(w.acc_tonu), lumper_policy: w.acc_lumper_policy, fcfs: w.fcfs ? 'true' : 'false' };
+        ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu', 'acc_lumper_policy'].forEach(k => delete payload[k]);
+        await partnerSubmitLoad(payload);
         err.className = 'cp-err ok'; err.textContent = '✓ Load submitted — our dispatch team will review it and generate the document checklist.';
         for (const k in w) delete w[k]; w.appointment_required = false; w.tracking_required = false; step = 0; confirmDup = false; renderStep(); loadList();
       } catch (e) {

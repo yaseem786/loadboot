@@ -44,7 +44,17 @@ export async function signUp(email, password, meta = {}) {
 
 export async function signOut() {
   const sb = await getClient();
-  try { await sb.auth.signOut(); } catch (_) {}
+  // Never let a slow/failed server call keep the user "stuck signed in": race a 3s timeout,
+  // then force-purge the local auth tokens so the session dies locally regardless.
+  try { await Promise.race([sb.auth.signOut(), new Promise(res => setTimeout(res, 3000))]); } catch (_) {}
+  try {
+    const kill = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('sb-') === 0 && k.indexOf('auth-token') !== -1) kill.push(k);
+    }
+    kill.forEach(k => localStorage.removeItem(k));
+  } catch (_) {}
   // Purge any app caches on logout so no private view survives a session — both
   // directly and via the controlling service worker (LB_PURGE).
   try {

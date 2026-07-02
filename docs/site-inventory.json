@@ -2,7 +2,7 @@
  "summary": {
   "generated_note": "Counted from built site/ HTML by scripts/site_inventory.py. No estimates.",
   "page_count": 44,
-  "total_words": 37545,
+  "total_words": 38597,
   "pages_missing_meta_description": [
    "dashboard.html"
   ],
@@ -22,7 +22,32 @@
    "dashboard.html"
   ],
   "pages_with_images_missing_alt": {},
-  "high_duplication_pairs": [],
+  "high_duplication_pairs": [
+   [
+    "accessibility.html",
+    "status.html"
+   ],
+   [
+    "carrier-application.html",
+    "status.html"
+   ],
+   [
+    "cookies.html",
+    "status.html"
+   ],
+   [
+    "login.html",
+    "status.html"
+   ],
+   [
+    "security.html",
+    "status.html"
+   ],
+   [
+    "sitemap.html",
+    "status.html"
+   ]
+  ],
   "pages_without_schema": [
    "dashboard.html"
   ]
@@ -133,10 +158,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 290
+     "words": 287
     }
    ],
-   "word_count": 829,
+   "word_count": 826,
    "cta_count": 10,
    "ctas": [
     {
@@ -245,9 +270,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.077,
-    "most_similar_page": "index.html",
-    "level": "low"
+    "max_similarity": 0.293,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -320,10 +345,10 @@
     {
      "heading": "Need help or found a barrier?",
      "level": "h2",
-     "words": 295
+     "words": 292
     }
    ],
-   "word_count": 406,
+   "word_count": 403,
    "cta_count": 9,
    "ctas": [
     {
@@ -428,9 +453,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.074,
-    "most_similar_page": "sitemap.html",
-    "level": "low"
+    "max_similarity": 0.558,
+    "most_similar_page": "status.html",
+    "level": "high"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -518,32 +543,32 @@
     {
      "heading": "The setup sequence that avoids re-work",
      "level": "h2",
-     "words": 5
+     "words": 4
     },
     {
      "heading": "Form your business entity",
      "level": "h3",
-     "words": 25
+     "words": 24
     },
     {
      "heading": "File USDOT + MC together",
      "level": "h3",
-     "words": 25
+     "words": 24
     },
     {
      "heading": "Insurance filed by your insurer",
      "level": "h3",
-     "words": 23
+     "words": 22
     },
     {
      "heading": "Designate a BOC-3 process agent",
      "level": "h3",
-     "words": 21
+     "words": 20
     },
     {
      "heading": "UCR registration",
      "level": "h3",
-     "words": 21
+     "words": 20
     },
     {
      "heading": "State-level items",
@@ -563,12 +588,12 @@
     {
      "heading": "Build your document pack",
      "level": "h3",
-     "words": 27
+     "words": 26
     },
     {
      "heading": "Line up factoring or cash buffer",
      "level": "h3",
-     "words": 21
+     "words": 20
     },
     {
      "heading": "Get the truck DOT-ready",
@@ -588,7 +613,7 @@
     {
      "heading": "Compliance dates tracked",
      "level": "h3",
-     "words": 21
+     "words": 20
     },
     {
      "heading": "One document home",
@@ -638,10 +663,10 @@
     {
      "heading": "Apply as Carrier",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 1163,
+   "word_count": 1151,
    "cta_count": 11,
    "ctas": [
     {
@@ -756,8 +781,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.068,
-    "most_similar_page": "form-2290-hvut.html",
+    "max_similarity": 0.217,
+    "most_similar_page": "status.html",
     "level": "low"
    },
    "inbound_link_count": 42,
@@ -851,10 +876,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 519,
+   "word_count": 516,
    "cta_count": 10,
    "ctas": [
     {
@@ -960,16 +985,16 @@
    ],
    "links_external": [],
    "internal_link_count": 44,
-   "image_count": 2,
+   "image_count": 3,
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.119,
-    "most_similar_page": "how-to-get-loads-with-new-authority.html",
-    "level": "low"
+    "max_similarity": 0.458,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -1082,12 +1107,12 @@
     {
      "heading": "What it is",
      "level": "h3",
-     "words": 21
+     "words": 20
     },
     {
      "heading": "Bracket pricing",
      "level": "h3",
-     "words": 27
+     "words": 26
     },
     {
      "heading": "Renewal window",
@@ -1157,10 +1182,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 963,
+   "word_count": 958,
    "cta_count": 10,
    "ctas": [
     {
@@ -1270,9 +1295,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.079,
-    "most_similar_page": "form-2290-hvut.html",
-    "level": "low"
+    "max_similarity": 0.257,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -1470,10 +1495,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 901,
+   "word_count": 898,
    "cta_count": 12,
    "ctas": [
     {
@@ -1593,9 +1618,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.048,
-    "most_similar_page": "resources.html",
-    "level": "low"
+    "max_similarity": 0.277,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -1653,7 +1678,7 @@
    "canonical": "https://loadboot.com/brokers.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 41,
+   "section_count": 39,
    "sections": [
     {
      "heading": "A Reliable Carrier Network for Brokers",
@@ -1683,17 +1708,17 @@
     {
      "heading": "Onboarding & verification",
      "level": "h2",
-     "words": 5
+     "words": 6
     },
     {
      "heading": "Apply as a broker partner",
      "level": "h3",
-     "words": 17
+     "words": 18
     },
     {
      "heading": "Authority & verification",
      "level": "h3",
-     "words": 19
+     "words": 20
     },
     {
      "heading": "Approved & active",
@@ -1713,7 +1738,7 @@
     {
      "heading": "Document requirements up front",
      "level": "h3",
-     "words": 20
+     "words": 19
     },
     {
      "heading": "Recurring lanes & reposts",
@@ -1723,27 +1748,12 @@
     {
      "heading": "The right carrier, explained",
      "level": "h2",
-     "words": 3
-    },
-    {
-     "heading": "Eligibility first",
-     "level": "h3",
-     "words": 19
-    },
-    {
-     "heading": "Explainable ranking",
-     "level": "h3",
-     "words": 22
-    },
-    {
-     "heading": "Preferred carriers",
-     "level": "h3",
-     "words": 19
+     "words": 89
     },
     {
      "heading": "Know where your freight is",
      "level": "h2",
-     "words": 4
+     "words": 3
     },
     {
      "heading": "Permitted live status",
@@ -1753,7 +1763,7 @@
     {
      "heading": "Driver & trip tracking",
      "level": "h3",
-     "words": 16
+     "words": 15
     },
     {
      "heading": "Exceptions surfaced",
@@ -1783,12 +1793,12 @@
     {
      "heading": "Structured exception resolution",
      "level": "h2",
-     "words": 4
+     "words": 3
     },
     {
      "heading": "Detention & accessorials",
      "level": "h3",
-     "words": 18
+     "words": 17
     },
     {
      "heading": "Reschedules & re-covers",
@@ -1828,7 +1838,12 @@
     {
      "heading": "Frequently asked questions",
      "level": "h2",
-     "words": 134
+     "words": 113
+    },
+    {
+     "heading": "Already a broker partner?",
+     "level": "h2",
+     "words": 37
     },
     {
      "heading": "Related services & guides",
@@ -1858,10 +1873,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 1002,
+   "word_count": 1039,
    "cta_count": 10,
    "ctas": [
     {
@@ -2019,8 +2034,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.044,
-    "most_similar_page": "partners.html",
+    "max_similarity": 0.245,
+    "most_similar_page": "status.html",
     "level": "low"
    },
    "inbound_link_count": 42,
@@ -2139,10 +2154,10 @@
     {
      "heading": "Apply to Loadboot",
      "level": "h3",
-     "words": 302
+     "words": 299
     }
    ],
-   "word_count": 580,
+   "word_count": 577,
    "cta_count": 9,
    "ctas": [
     {
@@ -2289,9 +2304,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.041,
+    "max_similarity": 0.415,
     "most_similar_page": "status.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -2389,10 +2404,10 @@
     {
      "heading": "New Authority",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 442,
+   "word_count": 439,
    "cta_count": 10,
    "ctas": [
     {
@@ -2579,9 +2594,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.131,
-    "most_similar_page": "contact.html",
-    "level": "low"
+    "max_similarity": 0.532,
+    "most_similar_page": "status.html",
+    "level": "high"
    },
    "inbound_link_count": 19,
    "inbound_links": [
@@ -2616,7 +2631,7 @@
    "canonical": "https://loadboot.com/carriers.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 50,
+   "section_count": 47,
    "sections": [
     {
      "heading": "Truck Dispatch Built Around Your Truck",
@@ -2646,7 +2661,7 @@
     {
      "heading": "Built for every kind of carrier",
      "level": "h2",
-     "words": 2
+     "words": 1
     },
     {
      "heading": "Owner-operators",
@@ -2656,7 +2671,7 @@
     {
      "heading": "New-authority carriers",
      "level": "h3",
-     "words": 21
+     "words": 20
     },
     {
      "heading": "Small & growing fleets",
@@ -2691,7 +2706,7 @@
     {
      "heading": "Real relationships, licensed sources",
      "level": "h3",
-     "words": 24
+     "words": 23
     },
     {
      "heading": "Matched to your preferences",
@@ -2716,7 +2731,7 @@
     {
      "heading": "Pickup & delivery appointments",
      "level": "h3",
-     "words": 22
+     "words": 21
     },
     {
      "heading": "Real-time trip support",
@@ -2786,27 +2801,12 @@
     {
      "heading": "Settlement visibility",
      "level": "h3",
-     "words": 26
+     "words": 49
     },
     {
      "heading": "One dashboard for the whole operation",
      "level": "h2",
-     "words": 3
-    },
-    {
-     "heading": "Fleet & drivers",
-     "level": "h3",
-     "words": 17
-    },
-    {
-     "heading": "Trips & tracking",
-     "level": "h3",
-     "words": 18
-    },
-    {
-     "heading": "Pocket app for drivers",
-     "level": "h3",
-     "words": 23
+     "words": 60
     },
     {
      "heading": "On your lanes the same day",
@@ -2814,17 +2814,17 @@
      "words": 4
     },
     {
-     "heading": "1. Create your profile",
+     "heading": "Create your profile",
      "level": "h3",
-     "words": 17
+     "words": 16
     },
     {
-     "heading": "2. Send authority & insurance",
+     "heading": "Send authority & insurance",
      "level": "h3",
      "words": 13
     },
     {
-     "heading": "3. Start getting loads",
+     "heading": "Start getting loads",
      "level": "h3",
      "words": 18
     },
@@ -2866,10 +2866,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 1228,
+   "word_count": 1242,
    "cta_count": 12,
    "ctas": [
     {
@@ -2989,8 +2989,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.047,
-    "most_similar_page": "faq.html",
+    "max_similarity": 0.204,
+    "most_similar_page": "status.html",
     "level": "low"
    },
    "inbound_link_count": 42,
@@ -3104,10 +3104,10 @@
     {
      "heading": "Pricing",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 476,
+   "word_count": 473,
    "cta_count": 12,
    "ctas": [
     {
@@ -3226,9 +3226,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.057,
-    "most_similar_page": "sitemap.html",
-    "level": "low"
+    "max_similarity": 0.491,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -3351,10 +3351,10 @@
     {
      "heading": "Tracked to done",
      "level": "h3",
-     "words": 273
+     "words": 270
     }
    ],
-   "word_count": 583,
+   "word_count": 580,
    "cta_count": 9,
    "ctas": [
     {
@@ -3573,9 +3573,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.131,
+    "max_similarity": 0.445,
     "most_similar_page": "carrier-application.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -3653,10 +3653,10 @@
     {
      "heading": "Your choices",
      "level": "h2",
-     "words": 295
+     "words": 292
     }
    ],
-   "word_count": 435,
+   "word_count": 432,
    "cta_count": 9,
    "ctas": [
     {
@@ -3761,9 +3761,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.065,
-    "most_similar_page": "sitemap.html",
-    "level": "low"
+    "max_similarity": 0.525,
+    "most_similar_page": "status.html",
+    "level": "high"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -3949,10 +3949,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 875,
+   "word_count": 872,
    "cta_count": 11,
    "ctas": [
     {
@@ -4068,9 +4068,9 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.14,
+    "max_similarity": 0.306,
     "most_similar_page": "power-only-dispatch.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -4143,10 +4143,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 675,
+   "word_count": 672,
    "cta_count": 10,
    "ctas": [
     {
@@ -4256,9 +4256,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.07,
-    "most_similar_page": "terms.html",
-    "level": "low"
+    "max_similarity": 0.358,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -4411,10 +4411,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 889,
+   "word_count": 886,
    "cta_count": 11,
    "ctas": [
     {
@@ -4530,9 +4530,9 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.139,
+    "max_similarity": 0.299,
     "most_similar_page": "dry-van-dispatch.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -4620,17 +4620,17 @@
     {
      "heading": "The dates that matter",
      "level": "h2",
-     "words": 6
+     "words": 5
     },
     {
      "heading": "Trucks in service in July",
      "level": "h3",
-     "words": 21
+     "words": 20
     },
     {
      "heading": "Mid-year first use",
      "level": "h3",
-     "words": 26
+     "words": 25
     },
     {
      "heading": "Sold, destroyed or stolen",
@@ -4640,12 +4640,12 @@
     {
      "heading": "Five tips from carriers who learned the hard way",
      "level": "h2",
-     "words": 7
+     "words": 6
     },
     {
      "heading": "E-file if you have 25+ vehicles",
      "level": "h3",
-     "words": 24
+     "words": 23
     },
     {
      "heading": "EIN, not SSN",
@@ -4660,7 +4660,7 @@
     {
      "heading": "Weight category honesty",
      "level": "h3",
-     "words": 24
+     "words": 23
     },
     {
      "heading": "Keep 3 years of records",
@@ -4725,10 +4725,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 960,
+   "word_count": 951,
    "cta_count": 11,
    "ctas": [
     {
@@ -4843,9 +4843,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.091,
-    "most_similar_page": "ifta-fuel-tax.html",
-    "level": "low"
+    "max_similarity": 0.259,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -4998,10 +4998,10 @@
     {
      "heading": "New Authority",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 836,
+   "word_count": 833,
    "cta_count": 11,
    "ctas": [
     {
@@ -5117,9 +5117,9 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.14,
+    "max_similarity": 0.311,
     "most_similar_page": "power-only-dispatch.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -5232,25 +5232,25 @@
     {
      "heading": "The carrier journey, end to end",
      "level": "h2",
-     "words": 4
+     "words": 3
     },
     {
-     "heading": "1. Profile & documents",
+     "heading": "Profile & documents",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Matched offers",
+     "level": "h3",
+     "words": 20
+    },
+    {
+     "heading": "Dispatch & drive",
      "level": "h3",
      "words": 21
     },
     {
-     "heading": "2. Matched offers",
-     "level": "h3",
-     "words": 21
-    },
-    {
-     "heading": "3. Dispatch & drive",
-     "level": "h3",
-     "words": 22
-    },
-    {
-     "heading": "4. POD to payday",
+     "heading": "POD to payday",
      "level": "h3",
      "words": 24
     },
@@ -5260,39 +5260,39 @@
      "words": 3
     },
     {
-     "heading": "1. Verify once",
+     "heading": "Verify once",
      "level": "h3",
      "words": 15
     },
     {
-     "heading": "2. Post in minutes",
+     "heading": "Post in minutes",
      "level": "h3",
      "words": 16
     },
     {
-     "heading": "3. Matched & booked",
+     "heading": "Matched & booked",
      "level": "h3",
      "words": 18
     },
     {
-     "heading": "4. Watch it deliver",
+     "heading": "Watch it deliver",
      "level": "h3",
      "words": 23
     },
     {
      "heading": "What LoadBoot runs between you both",
      "level": "h2",
-     "words": 3
+     "words": 2
     },
     {
      "heading": "Matching engine",
      "level": "h3",
-     "words": 17
+     "words": 16
     },
     {
      "heading": "Exception desk",
      "level": "h3",
-     "words": 19
+     "words": 18
     },
     {
      "heading": "Money rail",
@@ -5332,10 +5332,10 @@
     {
      "heading": "Dispatcher vs Broker",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 810,
+   "word_count": 800,
    "cta_count": 11,
    "ctas": [
     {
@@ -5450,9 +5450,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.058,
-    "most_similar_page": "resources.html",
-    "level": "low"
+    "max_similarity": 0.31,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -5565,10 +5565,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 1712,
+   "word_count": 1709,
    "cta_count": 9,
    "ctas": [
     {
@@ -5677,16 +5677,17 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.03,
-    "most_similar_page": "owner-operator-dispatch-service-guide.html",
+    "max_similarity": 0.154,
+    "most_similar_page": "blog.html",
     "level": "low"
    },
-   "inbound_link_count": 4,
+   "inbound_link_count": 5,
    "inbound_links": [
     "blog.html",
     "index.html",
     "owner-operator-dispatch-service-guide.html",
-    "pricing.html"
+    "pricing.html",
+    "resources.html"
    ]
   },
   "how-to-get-loads-with-new-authority.html": {
@@ -5739,10 +5740,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 653,
+   "word_count": 650,
    "cta_count": 10,
    "ctas": [
     {
@@ -5852,9 +5853,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.119,
+    "max_similarity": 0.389,
     "most_similar_page": "blog.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 4,
    "inbound_links": [
@@ -5929,7 +5930,7 @@
     {
      "heading": "What an IFTA audit looks for",
      "level": "h2",
-     "words": 4
+     "words": 3
     },
     {
      "heading": "Distance by jurisdiction",
@@ -5939,7 +5940,7 @@
     {
      "heading": "Every fuel receipt",
      "level": "h3",
-     "words": 18
+     "words": 17
     },
     {
      "heading": "The 4-year window",
@@ -6024,10 +6025,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 1002,
+   "word_count": 997,
    "cta_count": 11,
    "ctas": [
     {
@@ -6142,9 +6143,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.091,
-    "most_similar_page": "form-2290-hvut.html",
-    "level": "low"
+    "max_similarity": 0.251,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -6292,72 +6293,87 @@
     {
      "heading": "Available Load Opportunities",
      "level": "h2",
-     "words": 57
+     "words": 56
     },
     {
-     "heading": "How we work with broker partners \u2014 start to delivered",
+     "heading": "Post once. We move it, track it, document it.",
      "level": "h2",
-     "words": 5
+     "words": 21
     },
     {
      "heading": "Join & get verified",
      "level": "h3",
-     "words": 23
+     "words": 16
     },
     {
      "heading": "Post your load",
      "level": "h3",
-     "words": 22
+     "words": 20
     },
     {
      "heading": "We match & book a vetted carrier",
      "level": "h3",
-     "words": 23
+     "words": 21
     },
     {
      "heading": "Watch it move",
      "level": "h3",
-     "words": 19
+     "words": 16
     },
     {
      "heading": "Delivered, documented, done",
      "level": "h3",
-     "words": 32
+     "words": 25
     },
     {
-     "heading": "Your week with LoadBoot \u2014 from sign-up to getting paid",
+     "heading": "Your week with LoadBoot",
      "level": "h2",
-     "words": 3
+     "words": 21
     },
     {
      "heading": "Quick profile",
      "level": "h3",
-     "words": 16
+     "words": 17
     },
     {
      "heading": "Loads come to you",
      "level": "h3",
-     "words": 23
+     "words": 22
     },
     {
-     "heading": "We handle the paperwork",
+     "heading": "We do the paperwork",
      "level": "h3",
-     "words": 18
+     "words": 17
     },
     {
      "heading": "Protected on the road",
      "level": "h3",
-     "words": 20
+     "words": 18
     },
     {
-     "heading": "Paid with a clean file",
+     "heading": "Paid, clean file",
      "level": "h3",
-     "words": 34
+     "words": 30
     },
     {
-     "heading": "Finding freight used to be the hard part",
+     "heading": "One system between brokers and carriers",
      "level": "h2",
-     "words": 77
+     "words": 3
+    },
+    {
+     "heading": "Broker partners",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "LoadBoot",
+     "level": "h3",
+     "words": 15
+    },
+    {
+     "heading": "Carriers",
+     "level": "h3",
+     "words": 32
     },
     {
      "heading": "Built for every kind of carrier on the road",
@@ -6450,24 +6466,9 @@
      "words": 29
     },
     {
-     "heading": "Know a carrier or broker? Get paid for the introduction",
+     "heading": "Turn your network into monthly income",
      "level": "h2",
-     "words": 4
-    },
-    {
-     "heading": "Refer once, earn ongoing",
-     "level": "h3",
-     "words": 28
-    },
-    {
-     "heading": "Track everything",
-     "level": "h3",
-     "words": 19
-    },
-    {
-     "heading": "No cost to anyone",
-     "level": "h3",
-     "words": 30
+     "words": 125
     },
     {
      "heading": "A dispatcher who actually has your back",
@@ -6507,10 +6508,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 2100,
+   "word_count": 2132,
    "cta_count": 13,
    "ctas": [
     {
@@ -6637,9 +6638,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.19,
+    "max_similarity": 0.271,
     "most_similar_page": "services.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -6752,10 +6753,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 1294,
+   "word_count": 1291,
    "cta_count": 11,
    "ctas": [
     {
@@ -6872,8 +6873,8 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.067,
-    "most_similar_page": "index.html",
+    "max_similarity": 0.201,
+    "most_similar_page": "blog.html",
     "level": "low"
    },
    "inbound_link_count": 42,
@@ -6972,10 +6973,10 @@
     {
      "heading": "Need an account?",
      "level": "h3",
-     "words": 270
+     "words": 267
     }
    ],
-   "word_count": 412,
+   "word_count": 409,
    "cta_count": 10,
    "ctas": [
     {
@@ -7087,9 +7088,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.074,
+    "max_similarity": 0.566,
     "most_similar_page": "status.html",
-    "level": "low"
+    "level": "high"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -7242,10 +7243,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 952,
+   "word_count": 949,
    "cta_count": 11,
    "ctas": [
     {
@@ -7362,9 +7363,9 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.114,
+    "max_similarity": 0.274,
     "most_similar_page": "power-only-dispatch.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -7477,10 +7478,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 2273,
+   "word_count": 2270,
    "cta_count": 9,
    "ctas": [
     {
@@ -7592,8 +7593,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.03,
-    "most_similar_page": "how-much-does-a-truck-dispatcher-cost.html",
+    "max_similarity": 0.121,
+    "most_similar_page": "blog.html",
     "level": "low"
    },
    "inbound_link_count": 3,
@@ -7708,10 +7709,10 @@
     {
      "heading": "Load Score Tool",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 897,
+   "word_count": 894,
    "cta_count": 11,
    "ctas": [
     {
@@ -7828,9 +7829,9 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.115,
+    "max_similarity": 0.28,
     "most_similar_page": "hotshot-dispatch.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -7888,7 +7889,7 @@
    "canonical": "https://loadboot.com/partners.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 12,
+   "section_count": 17,
    "sections": [
     {
      "heading": "Loadboot Partner Program",
@@ -7913,12 +7914,37 @@
     {
      "heading": "One point of contact",
      "level": "h3",
-     "words": 17
+     "words": 23
+    },
+    {
+     "heading": "Verified once, then it is easy",
+     "level": "h2",
+     "words": 6
+    },
+    {
+     "heading": "Tell us about your freight",
+     "level": "h3",
+     "words": 13
+    },
+    {
+     "heading": "Verification",
+     "level": "h3",
+     "words": 18
+    },
+    {
+     "heading": "Start posting",
+     "level": "h3",
+     "words": 20
     },
     {
      "heading": "Become a partner",
      "level": "h3",
-     "words": 54
+     "words": 46
+    },
+    {
+     "heading": "Already a partner?",
+     "level": "h2",
+     "words": 23
     },
     {
      "heading": "Related services & guides",
@@ -7948,10 +7974,10 @@
     {
      "heading": "Referral Program",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 459,
+   "word_count": 534,
    "cta_count": 10,
    "ctas": [
     {
@@ -8108,9 +8134,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.062,
-    "most_similar_page": "sitemap.html",
-    "level": "low"
+    "max_similarity": 0.448,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -8263,10 +8289,10 @@
     {
      "heading": "How It Works",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 827,
+   "word_count": 824,
    "cta_count": 11,
    "ctas": [
     {
@@ -8382,9 +8408,9 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.14,
+    "max_similarity": 0.311,
     "most_similar_page": "hotshot-dispatch.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -8457,7 +8483,7 @@
     {
      "heading": "Everything is included in your 5%",
      "level": "h2",
-     "words": 44
+     "words": 93
     },
     {
      "heading": "Why carriers choose us over going it alone",
@@ -8502,10 +8528,10 @@
     {
      "heading": "For Carriers",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 675,
+   "word_count": 721,
    "cta_count": 11,
    "ctas": [
     {
@@ -8621,9 +8647,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.101,
-    "most_similar_page": "services.html",
-    "level": "low"
+    "max_similarity": 0.335,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -8731,10 +8757,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 718,
+   "word_count": 715,
    "cta_count": 10,
    "ctas": [
     {
@@ -8843,9 +8869,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.07,
-    "most_similar_page": "terms.html",
-    "level": "low"
+    "max_similarity": 0.337,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -8998,10 +9024,10 @@
     {
      "heading": "Load Score Tool",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 963,
+   "word_count": 960,
    "cta_count": 11,
    "ctas": [
     {
@@ -9117,9 +9143,9 @@
     "Service"
    ],
    "duplication_risk": {
-    "max_similarity": 0.113,
-    "most_similar_page": "owner-operator-dispatch.html",
-    "level": "low"
+    "max_similarity": 0.27,
+    "most_similar_page": "hotshot-dispatch.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -9170,44 +9196,104 @@
   "referral.html": {
    "url": "https://loadboot.com/referral.html",
    "file": "referral.html",
-   "title": "Carrier Referral Program | Loadboot",
-   "title_length": 35,
-   "meta_description": "Refer an owner-operator or fleet to Loadboot and get rewarded when they start rolling. Simple, fair, no limit on referrals.",
-   "meta_description_length": 123,
+   "title": "Referral & Partner Program \u2014 Carriers, Agencies & Creators | Loadboot",
+   "title_length": 69,
+   "meta_description": "Refer carriers or partner with Loadboot as an agency or creator. Rewards are paid from our own dispatch fee \u2014 never an extra cost to the carrier. Join the early list.",
+   "meta_description_length": 166,
    "canonical": "https://loadboot.com/referral.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 12,
+   "section_count": 24,
    "sections": [
     {
-     "heading": "Refer a Carrier, Get Rewarded",
+     "heading": "Turn your network into monthly income",
      "level": "h1",
-     "words": 39
+     "words": 126
     },
     {
-     "heading": "Simple and fair",
+     "heading": "Pick the path that fits you",
      "level": "h2",
      "words": 4
     },
     {
-     "heading": "Send them over",
+     "heading": "Carriers & drivers",
      "level": "h3",
-     "words": 23
+     "words": 32
     },
     {
-     "heading": "They get set up",
+     "heading": "Dispatch shops & agencies",
      "level": "h3",
-     "words": 21
+     "words": 32
     },
     {
-     "heading": "You get thanked",
+     "heading": "Creators & influencers",
      "level": "h3",
-     "words": 19
+     "words": 27
+    },
+    {
+     "heading": "Four honest steps",
+     "level": "h2",
+     "words": 24
+    },
+    {
+     "heading": "Join the program",
+     "level": "h3",
+     "words": 26
+    },
+    {
+     "heading": "Share it",
+     "level": "h3",
+     "words": 28
+    },
+    {
+     "heading": "They get rolling",
+     "level": "h3",
+     "words": 31
+    },
+    {
+     "heading": "You get paid",
+     "level": "h3",
+     "words": 37
+    },
+    {
+     "heading": "A share of our fee \u2014 not a pyramid",
+     "level": "h2",
+     "words": 20
+    },
+    {
+     "heading": "Paid from our cut",
+     "level": "h3",
+     "words": 32
+    },
+    {
+     "heading": "Up to five levels",
+     "level": "h3",
+     "words": 35
+    },
+    {
+     "heading": "Terms being finalized",
+     "level": "h3",
+     "words": 38
     },
     {
      "heading": "Refer a carrier",
      "level": "h3",
-     "words": 52
+     "words": 61
+    },
+    {
+     "heading": "Apply as a referral partner",
+     "level": "h3",
+     "words": 86
+    },
+    {
+     "heading": "Frequently asked questions",
+     "level": "h2",
+     "words": 272
+    },
+    {
+     "heading": "Ready to keep your truck loaded?",
+     "level": "h2",
+     "words": 29
     },
     {
      "heading": "Related services & guides",
@@ -9237,11 +9323,11 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 468,
-   "cta_count": 10,
+   "word_count": 1256,
+   "cta_count": 11,
    "ctas": [
     {
      "text": "Contact",
@@ -9256,12 +9342,16 @@
      "href": "contact.html"
     },
     {
-     "text": "Get Started",
-     "href": "contact.html"
+     "text": "Join the early list \u2192",
+     "href": "#join"
     },
     {
-     "text": "Get a Quote",
-     "href": "contact.html#quote"
+     "text": "Apply to partner",
+     "href": "#button"
+    },
+    {
+     "text": "Get Started",
+     "href": "contact.html"
     },
     {
      "text": "Apply as CarrierExplore \u2192",
@@ -9339,6 +9429,60 @@
      "fields": [
       {
        "tag": "input",
+       "type": "",
+       "name": "_hp",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "name",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "email",
+       "name": "email",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "tel",
+       "name": "phone",
+       "required": false
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "company",
+       "required": false
+      },
+      {
+       "tag": "select",
+       "type": "",
+       "name": "partner_type",
+       "required": true
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "name": "audience",
+       "required": false
+      },
+      {
+       "tag": "textarea",
+       "type": "",
+       "name": "message",
+       "required": false
+      }
+     ]
+    },
+    {
+     "action": "",
+     "method": "get",
+     "fields": [
+      {
+       "tag": "input",
        "type": "email",
        "name": "",
        "required": true
@@ -9395,11 +9539,12 @@
    "images_missing_alt": [],
    "schema_types": [
     "BreadcrumbList",
+    "FAQPage",
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.06,
-    "most_similar_page": "sitemap.html",
+    "max_similarity": 0.202,
+    "most_similar_page": "status.html",
     "level": "low"
    },
    "inbound_link_count": 42,
@@ -9458,50 +9603,80 @@
    "canonical": "https://loadboot.com/resources.html",
    "robots": "",
    "h1_count": 1,
-   "section_count": 15,
+   "section_count": 21,
    "sections": [
     {
      "heading": "Carrier Resources",
      "level": "h1",
-     "words": 36
+     "words": 42
     },
     {
-     "heading": "Everything in one place",
+     "heading": "Should you take that load? Know in 3 seconds.",
+     "level": "h2",
+     "words": 104
+    },
+    {
+     "heading": "The numbers behind every good decision",
      "level": "h2",
      "words": 3
     },
     {
-     "heading": "Load Score tool",
+     "heading": "Load Profit Calculator",
      "level": "h3",
-     "words": 28
+     "words": 15
     },
     {
-     "heading": "Free calculators",
+     "heading": "Cost-Per-Mile Calculator",
      "level": "h3",
-     "words": 17
+     "words": 15
     },
     {
-     "heading": "Dispatch guides",
+     "heading": "Fuel Cost Calculator",
      "level": "h3",
-     "words": 19
+     "words": 16
     },
     {
-     "heading": "FAQ",
+     "heading": "Break-Even Rate",
      "level": "h3",
-     "words": 17
+     "words": 15
     },
     {
-     "heading": "How it works",
+     "heading": "Owner-Op Take-Home",
      "level": "h3",
      "words": 14
     },
     {
-     "heading": "Pricing",
+     "heading": "Detention Pay",
      "level": "h3",
-     "words": 20
+     "words": 21
     },
     {
-     "heading": "Ready to keep your truck loaded?",
+     "heading": "A reading path that pays for itself",
+     "level": "h2",
+     "words": 16
+    },
+    {
+     "heading": "What a dispatcher really costs",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Dispatcher vs broker vs factoring",
+     "level": "h3",
+     "words": 21
+    },
+    {
+     "heading": "Loads with new authority",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Compliance, sorted",
+     "level": "h3",
+     "words": 23
+    },
+    {
+     "heading": "Want the numbers run for you?",
      "level": "h2",
      "words": 29
     },
@@ -9533,11 +9708,11 @@
     {
      "heading": "Dispatcher vs Broker",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 497,
-   "cta_count": 11,
+   "word_count": 691,
+   "cta_count": 12,
    "ctas": [
     {
      "text": "Contact",
@@ -9560,7 +9735,11 @@
      "href": "contact.html#quote"
     },
     {
-     "text": "Get Started",
+     "text": "Start with authority \u2192",
+     "href": "authority-dot-setup.html"
+    },
+    {
+     "text": "Talk to a dispatcher \u2192",
      "href": "contact.html"
     },
     {
@@ -9620,6 +9799,7 @@
     "form-2290-hvut.html",
     "hotshot-dispatch.html",
     "how-it-works.html",
+    "how-much-does-a-truck-dispatcher-cost.html",
     "how-to-get-loads-with-new-authority.html",
     "ifta-fuel-tax.html",
     "index.html",
@@ -9644,7 +9824,7 @@
     "truck-dispatcher-vs-freight-broker.html"
    ],
    "links_external": [],
-   "internal_link_count": 43,
+   "internal_link_count": 44,
    "image_count": 2,
    "images_missing_alt": [],
    "schema_types": [
@@ -9652,9 +9832,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.088,
-    "most_similar_page": "terms.html",
-    "level": "low"
+    "max_similarity": 0.353,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -9757,10 +9937,10 @@
     {
      "heading": "Report a security concern",
      "level": "h2",
-     "words": 268
+     "words": 265
     }
    ],
-   "word_count": 464,
+   "word_count": 461,
    "cta_count": 9,
    "ctas": [
     {
@@ -9865,9 +10045,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.059,
+    "max_similarity": 0.504,
     "most_similar_page": "status.html",
-    "level": "low"
+    "level": "high"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -10160,10 +10340,10 @@
     {
      "heading": "Free Trucking Tools",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 993,
+   "word_count": 990,
    "cta_count": 12,
    "ctas": [
     {
@@ -10283,9 +10463,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.19,
+    "max_similarity": 0.271,
     "most_similar_page": "index.html",
-    "level": "low"
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -10503,10 +10683,10 @@
     {
      "heading": "FAQ",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 1028,
+   "word_count": 1025,
    "cta_count": 10,
    "ctas": [
     {
@@ -10676,8 +10856,8 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.022,
-    "most_similar_page": "referral.html",
+    "max_similarity": 0.247,
+    "most_similar_page": "status.html",
     "level": "low"
    },
    "inbound_link_count": 42,
@@ -10766,10 +10946,10 @@
     {
      "heading": "Legal & trust",
      "level": "h3",
-     "words": 267
+     "words": 264
     }
    ],
-   "word_count": 367,
+   "word_count": 364,
    "cta_count": 11,
    "ctas": [
     {
@@ -10884,9 +11064,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.09,
+    "max_similarity": 0.615,
     "most_similar_page": "status.html",
-    "level": "low"
+    "level": "high"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -10954,10 +11134,10 @@
     {
      "heading": "Current status",
      "level": "h3",
-     "words": 300
+     "words": 297
     }
    ],
-   "word_count": 355,
+   "word_count": 352,
    "cta_count": 9,
    "ctas": [
     {
@@ -11062,9 +11242,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.09,
+    "max_similarity": 0.615,
     "most_similar_page": "sitemap.html",
-    "level": "low"
+    "level": "high"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -11162,10 +11342,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 523,
+   "word_count": 520,
    "cta_count": 10,
    "ctas": [
     {
@@ -11274,9 +11454,9 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.092,
-    "most_similar_page": "blog.html",
-    "level": "low"
+    "max_similarity": 0.448,
+    "most_similar_page": "status.html",
+    "level": "medium"
    },
    "inbound_link_count": 42,
    "inbound_links": [
@@ -11449,10 +11629,10 @@
     {
      "heading": "Apply as Carrier",
      "level": "h3",
-     "words": 261
+     "words": 258
     }
    ],
-   "word_count": 1335,
+   "word_count": 1332,
    "cta_count": 13,
    "ctas": [
     {
@@ -11577,8 +11757,8 @@
     "WebApplication"
    ],
    "duplication_risk": {
-    "max_similarity": 0.036,
-    "most_similar_page": "resources.html",
+    "max_similarity": 0.19,
+    "most_similar_page": "status.html",
     "level": "low"
    },
    "inbound_link_count": 10,
@@ -11660,10 +11840,10 @@
     {
      "heading": "Ready to keep your truck loaded?",
      "level": "h2",
-     "words": 282
+     "words": 279
     }
    ],
-   "word_count": 1977,
+   "word_count": 1974,
    "cta_count": 9,
    "ctas": [
     {
@@ -11773,7 +11953,7 @@
     "ProfessionalService"
    ],
    "duplication_risk": {
-    "max_similarity": 0.022,
+    "max_similarity": 0.135,
     "most_similar_page": "blog.html",
     "level": "low"
    },

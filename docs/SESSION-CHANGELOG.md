@@ -1059,3 +1059,96 @@ box, no invented data):
 - DEPLOY NOTE: production Netlify publishes from branch `preview/command-center-v1` (confirmed live —
   home shows 9b1bd56 content; origin/main is 1 commit behind and does NOT gate production).
 - No DB change; anon SECURITY DEFINER surface untouched (5).
+
+## B2–B4 — SITE-WIDE DESIGN OVERHAUL (motif library + 11-page pass)
+- **B3 — `motifs_module.py`** (new source module, imported by build_site.py, source-only/not published):
+  7 visually distinct section motifs — m_rail (floating-number process rail), m_timeline (vertical
+  connector timeline), m_split (prose + visual mock panel, optional check bullets), m_dark (dark premium
+  icon/number rows), m_zigzag (alternating icon-tile feature rows), m_statband, m_gradcta (per-page
+  gradient CTA) — plus 34 ORIGINAL inline stroke-SVG icons (mi()). Each motif has its own layout, icon-chip
+  shape and accent; accents varied per page so no two sections (or pages) repeat a look.
+- **B2 — referral.html hero** rebuilt to match the home earnings panel: dark emerald-gradient hero with
+  earnings-led headline ("Turn your network into monthly income"), the same three ILLUSTRATIVE tiers as the
+  home teaser (same disclaimer verbatim — figures labeled illustrative, paid from OUR 5% fee, tiers
+  confirmed in writing), single CTA → #join anchor at the forms. "How it works" → emerald rail;
+  "Multi-level, minus the games" → dark honesty panel.
+- **B4 — page passes** (repeated 3-card grids replaced with varied motifs, content unchanged/honest):
+  how-it-works (rail/timeline/dark/zigzag), pricing (split with an illustrative "Example load" receipt
+  visual — linehaul/fee/you-keep + no-fee footnote), resources (Load Score split w/ verdict mock, icon
+  linkcards, violet reading-path timeline, indigo grad CTA), partners (zigzag + dark 3-step + grad CTA),
+  brokers (blue onboarding rail, indigo wizard timeline, explainable-match split w/ factor-bar visual
+  labeled illustrative, dark visibility panel, amber exceptions zigzag, grad CTA), carriers (teal zigzag,
+  dark sourcing, violet timeline, portal-dashboard split labeled illustrative, orange getting-started rail),
+  authority-dot-setup (6-step violet timeline, teal zigzag, dark LoadBoot-fits), boc3-ucr (blue rail, amber
+  zigzag), form-2290 (rose deadlines timeline, emerald tips zigzag), ifta (violet math rail, dark audit panel).
+- VERIFIED: python build OK on every batch; site_inventory re-run (44 pages; only dashboard.html flagged —
+  expected app shell; 6 dup pairs all involve thin utility status.html, pre-existing, none from this pass);
+  HTML tag-balance + svg-count + no leftover format specifiers checked on all 11 pages; AI-research footer
+  gates ALL PASS; ESM SYNTAX CHECK ALL PASS (91 files); import-reference PASS. No DB change (anon surface
+  untouched at 5). All edits done via sandbox-side python (file-tool large-file truncation avoided — see HOTFIX note).
+
+## HOTFIX 2 + FOOTER AI REDESIGN + REFERRAL PAYOUT ENGINE (owner asks)
+- **HOTFIX 2:** owner's commit cae3183 shipped app/carrier/app.js with a DUPLICATED boot() ending (a
+  delayed file-tool sync landed between my verification and the owner's commit) — live login still hung
+  ("Unexpected token '}'", verified live via dynamic import). Working tree corrected on the WINDOWS side
+  and re-verified; ESM gate PASS. Owner commits/pushes via GitHub Desktop.
+- **Footer AI section redesigned** (owner: "bohot ajeeb lagta tha"): now a clean two-column footer block —
+  small-caps "ASK AI ABOUT LOADBOOT" heading + neutral copy + prompt disclosure left; a vertical provider
+  list right (ChatGPT/Claude/Gemini/Perplexity/Grok), each row a circular chip with an ORIGINAL geometric
+  stroke glyph (no copied logos) + name + hover slide/arrow. All behavior unchanged (copy-first, new tab,
+  analytics, fallback). Frontend gate marker switched to structural id="aiResearch"; ALL AI GATES PASS.
+- **REFERRAL PAYOUTS + AFFILIATE TRACKING — migration `cww_referral_payouts`** (BOTH DBs, md5-identical
+  ×4 fns; anon surface 5 confirmed on both):
+  - `app_private.referral_payout_requests` (amount>0, status requested/approved/rejected/paid, ONE open
+    request per referrer via partial unique index, bank details in payout_details).
+  - `cc_referral_request_payout(details)` — referrer-self; amount = SERVER-computed payable balance
+    (client cannot set it); bank_name/account_title/account_number required; audited.
+  - `cc_my_payout_requests()` — self history, account number masked to last-4 even for self.
+  - `cc_referral_payout_queue(status)` — staff finance.view, full details + live payable.
+  - `cc_referral_payout_decide(id, approve|reject|paid, note)` — staff finance.approve; requested→approved→paid
+    state machine; 'paid' flips the referrer's payable commissions to paid (mark_paid semantics); the
+    REQUESTER CANNOT DECIDE their own payout; decision recorded only — money moves on the normal rail.
+  - Proof: **REFERRAL PAYOUT MATRIX: PASS (12 checks)** live on staging (join, hold-money excluded from
+    payable, missing-details rejected, exact amount, one-open enforced, masked self-view, carrier denied
+    queue, staff queue, paid-before-approve denied, approve→paid flips exactly the payable rows, self-decide
+    denied, nobody denied) + all 4 fns anon-unexecutable. Self-cleaning.
+- **Frontend:** api wrappers ×4. Carrier portal Account referral card gains **Request payout** (bank modal)
+  + payout history with status pills. **Affiliate/influencer mode:** the "No carrier account" dead end now
+  detects a referral account (flag-gated) and renders a full **Referral partner dashboard** (unique link,
+  referrals, accrued/payable/paid, payout request + history) — influencers without a carrier org can track
+  everything themselves. Command Center Referrals view gains a **Payout requests** queue (Approve / Reject /
+  Mark paid, finance.approve-gated, confirm dialog restates money-moves-outside).
+- **Unique-link attribution:** referral.html + carrier-application.html capture `?ref=CODE` (remembered in
+  localStorage) and attach `referral_code` to every lead form submission — an influencer's link is credited
+  even when the carrier applies later. Gates: build OK, import-reference PASS, ESM ALL PASS (91 files).
+
+## A6–A8 DEPTH + OWNER BATCH 2 (signout, account menu, ready-to-go loads, required prefs)
+- **A6 Documents:** "What LoadBoot needs from you" — every requirement tone-graded via the GLOBAL tokens
+  (urgent = required missing/expired/rejected, action = under review, warning = expiring ≤30d / optional,
+  success = valid w/ expiry shown), sorted urgent-first, colored left-border rows + count-based subtitle;
+  submitted docs show date + "awaiting review".
+- **A7 Support:** "Your dispatch desk" card on top — dispatch@ / billing@ direct lines + an urgent-path
+  pointer to the trip 🚨 Emergency flow (urgent tone); honest note that in-portal live chat is roadmap
+  (transport decision still owner-pending).
+- **A8 Account:** "Complete your setup" card — cc_carrier_dashboard setup_gaps rendered with tones + Fix
+  deep-links next to Profile.
+- **Sign-out fixed (owner report):** session.signOut now races the server call against a 3s timeout and
+  FORCE-purges sb-*-auth-token localStorage keys, so the local session always dies; every sign-out button
+  shows "Signing out…" and does location.reload() into a clean state.
+- **Modern account menu (owner ask):** topbar avatar is now a dropdown — carrier name + email, Account &
+  settings, Documents, red Sign out (closes on outside click). CSS added; also added the MISSING
+  .cp-field/.cp-input styles (the Dispatch-preferences form was rendering unstyled/broken).
+- **READY-TO-GO LOADS — migration `cwx_load_ready_rates` (+_fix) — BOTH DBs, md5-identical
+  (d86ae9f2…), trigger present on both, anon surface 5:** BEFORE-INSERT trigger
+  `app_private.enforce_load_ready()` on partner_loads — a broker load CANNOT be submitted without a full
+  numeric rate card (detention_per_hr, detention_free_hours, layover_per_day, tonu) + lumper_policy + a
+  scheduling model (FCFS true OR appointment OR pickup window). Data-layer enforcement = every submit path
+  inherits it. Proof: **LOAD READY-RATES MATRIX: PASS (3 checks)** (incomplete rejected w/ named fields,
+  schedule-less rejected, complete accepted + rate card stored). Self-cleaning.
+- **Partner wizard:** "Requirements" step is now "Rates & requirements" — required detention/free-hours/
+  layover/TONU inputs + lumper-policy select + FCFS toggle; client-side validation names what is missing;
+  Review shows the full rate card line; payload maps to accessorials{} for the server gate.
+- **Dispatch preferences required (owner ask):** Available-Loads tab shows an action-tone banner until the
+  carrier sets min RPM / equipment / lanes ("best-match needs these") deep-linking to Account; prefs remain
+  editable any time and feed cc_carrier_best_loads + CC AI matching (existing engine).
+- Gates: ESM SYNTAX ALL PASS (91 files), import-reference PASS, build OK, AI-footer gates PASS.

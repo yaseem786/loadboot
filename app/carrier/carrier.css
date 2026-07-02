@@ -209,3 +209,19 @@ textarea.cp-in { resize: vertical; }
 .cp-modal-body .cp-in { margin: 0; }
 .cp-formrow2 { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
 @media (min-width: 640px) { .cp-modal { align-items: center; } .cp-modal-card { border-radius: 18px; } }
+
+/* Account menu (avatar dropdown) */
+.cp-menuwrap { position: relative; }
+.cp-avatar { border: none; cursor: pointer; }
+.cp-menu { position: absolute; right: 0; top: 46px; z-index: 90; min-width: 240px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 24px 60px -20px rgba(15,23,42,.35); padding: 8px; }
+.cp-menu-id { padding: 10px 12px 12px; border-bottom: 1px solid #f1f5f9; margin-bottom: 6px; }
+.cp-menu-name { font-weight: 800; font-size: .95rem; }
+.cp-menu-mail { font-size: .8rem; color: #64748b; word-break: break-all; }
+.cp-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 10px 12px; border-radius: 10px; font: inherit; font-weight: 600; color: #0f172a; }
+.cp-menu-item:hover { background: #f1f5f9; }
+.cp-menu-out { color: #dc2626; }
+/* Labeled form fields (dispatch preferences etc.) */
+.cp-field { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.cp-field > span { font-size: .85rem; font-weight: 600; color: #334155; }
+.cp-input { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font: inherit; width: 100%; background: #fff; }
+.cp-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
