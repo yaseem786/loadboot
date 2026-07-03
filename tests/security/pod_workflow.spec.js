@@ -62,7 +62,7 @@ test('driver uploads a POD from the Pocket app (mobile)', async ({ browser }) =>
   test.skip(!READY || !fs.existsSync(stateFile('driver')), 'needs driver storage state');
   const ctx = await browser.newContext({ storageState: stateFile('driver'), viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/app/pocket/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/app/carrier/', { waitUntil: 'networkidle' });
   await page.getByText('Trips', { exact: false }).first().click().catch(() => {});
   const podBtn = page.getByRole('button', { name: /Proof of delivery/i }).first();
   await expect(podBtn).toBeVisible({ timeout: 15000 });

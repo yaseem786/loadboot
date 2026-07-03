@@ -33,10 +33,9 @@ export function renderLogin(root, onSignedIn) {
 
   mount(root, el('div', { class: 'cc-login' }, [
     el('div', { class: 'lb-card' }, [
-      brandLogo({ dark: false }),
+      brandLogo({ dark: false, sub: 'Command Center' }),
       el('p', { class: 'cc-login-tag' }, BRAND_TAGLINE),
-      el('h2', { style: 'margin:18px 0 4px' }, 'Command Center'),
-      el('p', { style: 'color:var(--lb-muted);font-size:.9rem;margin-bottom:6px' }, 'Sign in to your operator console'),
+      el('p', { style: 'color:var(--lb-muted);font-size:.9rem;margin:16px 0 6px' }, 'Sign in to your operator console'),
       form,
     ]),
   ]));

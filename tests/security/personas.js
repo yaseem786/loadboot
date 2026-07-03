@@ -56,7 +56,7 @@ const PERSONAS = {
     forbidden: { fn: 'cc_management_dashboard', args: {} },
   },
   driver: {
-    portal: '/app/pocket/', navText: 'Trips',
+    portal: '/app/carrier/', navText: 'Trips',
     permitted: { fn: 'cc_pocket_trips', args: { p_limit: 5 } },
     forbidden: { fn: 'cc_management_dashboard', args: {} },
   },

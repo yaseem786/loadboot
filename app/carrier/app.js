@@ -32,6 +32,10 @@ import '../shared/ui/chatWidget.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 
+
+// PWA real-app behaviour: remember this portal so the installed app opens here next launch.
+try { localStorage.setItem('lb_last_portal', '/app/carrier/'); } catch (_) {}
+
 registerAppSW(); // /app/sw.js — includes Web Push handlers
 const root = document.getElementById('lb-app');
 
@@ -89,7 +93,7 @@ const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width=
 // so no fake/unreachable contact is ever shown.
 const WHATSAPP_NUMBER = '';
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
-const TAGLINE = 'Keep Your Wheels Earning';
+const TAGLINE = 'The Operating System for Trucking';
 const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (dark ? '/logo-icon-dark.png' : '/icon-512.png') + '" width="34" height="34" alt="LoadBoot" style="display:block">' });
 
 // horizontal/line-ish bar chart from [{label,value}]
@@ -684,6 +688,8 @@ function tripStepper(status) {
       const active = t.status === 'dispatched' || t.status === 'in_transit';
       const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { await pocketConfirmTrip(t.id); ev.currentTarget.textContent = 'Confirmed ✓'; } catch (x) { ev.currentTarget.textContent = 'Error'; } } }, 'Confirm') : null;
       const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, '📍 Share location') : null;
+      const nav = (active && t.destination) ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.destination), '_blank', 'noopener') }, '🧭 Navigate') : null;
+      const live = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: (ev) => toggleLiveLoc(ev, t.id) }, (_liveWatch != null && _liveTrip === t.id) ? '🛰 Tracking ON — tap to stop' : '🛰 Live tracking') : null;
       const fw = h('div');
       const issue = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (fw.firstChild) { fw.innerHTML = ''; return; }
@@ -801,7 +807,7 @@ function tripStepper(status) {
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
         tripStepper(t.status),
-        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, dwell, issue, emergency, pod, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW,
+        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, nav, share, live, dwell, issue, emergency, pod, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW,
       ].filter(Boolean));
     })]));
 
@@ -857,6 +863,29 @@ function tripStepper(status) {
       } }, 'Save');
       openModal('Assign driver / truck', [h('label', { class: 'cp-row-s' }, 'Driver'), dSel, h('label', { class: 'cp-row-s' }, 'Truck'), tSel, save]);
     }
+  }
+  let _liveWatch = null, _liveTrip = null;
+  function toggleLiveLoc(ev, tripId) {
+    // Continuous GPS trail while driving (ported from Carrier Pocket). One trip at a time;
+    // consent is recorded server-side before the first ping; tap again to stop.
+    const btn = ev.currentTarget;
+    if (_liveWatch != null && _liveTrip === tripId) {
+      try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {}
+      _liveWatch = null; _liveTrip = null;
+      btn.textContent = '🛰 Live tracking'; btn.classList.remove('on'); return;
+    }
+    if (!navigator.geolocation) { btn.textContent = 'GPS not available'; return; }
+    if (_liveWatch != null) { try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {} _liveWatch = null; }
+    btn.disabled = true; btn.textContent = 'Starting…';
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try { await pocketSetConsent(tripId, true); } catch (_) {}
+      try { await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); } catch (_) {}
+      _liveTrip = tripId;
+      _liveWatch = navigator.geolocation.watchPosition(async (p) => {
+        try { await pocketPostLocation(tripId, p.coords.latitude, p.coords.longitude, 'portal'); } catch (_) {}
+      }, () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
+      btn.disabled = false; btn.textContent = '🛰 Tracking ON — tap to stop'; btn.classList.add('on');
+    }, () => { btn.disabled = false; btn.textContent = 'Permission denied'; }, { enableHighAccuracy: true, timeout: 10000 });
   }
   function shareLoc(ev, tripId) {
     const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Locating…';

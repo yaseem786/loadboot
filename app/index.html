@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoadBoot</title>
+<meta name="theme-color" content="#0F172A">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;min-height:100%}
+  body{background:radial-gradient(1000px 520px at 50% 20%,#13213f 0%,#0b1220 62%,#070d1a 100%);font-family:Manrope,system-ui,Arial,sans-serif;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .lb-launch{width:100%;max-width:420px;padding:32px 22px;box-sizing:border-box}
+  .lb-lockup{display:flex;align-items:center;gap:25px;justify-content:center}
+  .lb-mark{width:60px;height:64px;overflow:visible;display:block}
+  .lb-boot1{animation:lbBootIn 3.2s ease-out infinite}
+  .lb-boot2{animation:lbBootIn 3.2s ease-out .18s infinite}
+  @keyframes lbBootIn{0%{transform:translateX(-20px);opacity:0}16%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:1}}
+  @media(prefers-reduced-motion:reduce){.lb-boot1,.lb-boot2{animation:none}}
+  .lb-word{height:36px;width:auto;display:block}
+  .lb-tag{margin:16px 0 34px;text-align:center;font-size:13px;font-weight:500;color:#64748B;letter-spacing:.02em}
+  .lb-cards{display:flex;flex-direction:column;gap:12px}
+  a.lb-portal{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:16px 18px;text-decoration:none;color:#fff;transition:background .15s}
+  a.lb-portal:hover{background:rgba(255,255,255,.1)}
+  .lb-portal .ic{font-size:22px;line-height:1}
+  .lb-portal .t{font-weight:800;font-size:15px}
+  .lb-portal .s{font-size:12px;color:#94a3b8;margin-top:2px}
+  .lb-portal .d{margin-left:auto;font-weight:500;font-size:13px}
+  .lb-new{margin-top:22px;text-align:center;font-size:13px;color:#94a3b8}
+  .lb-new a{color:#60A5FA;font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="lb-launch">
+  <div class="lb-lockup">
+    <svg class="lb-mark" viewBox="16 14 68 72" role="img" aria-label="LoadBoot">
+      <path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"></path>
+      <path class="lb-boot1" d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"></path>
+      <path class="lb-boot2" d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"></path>
+    </svg>
+    <img class="lb-word" src="/logo-text-dark.png" alt="LoadBoot">
+  </div>
+  <div class="lb-tag">The Operating System for Trucking</div>
+  <div class="lb-cards">
+    <a class="lb-portal" href="/app/carrier/"><span class="ic">&#128667;</span><span><span class="t">Carrier Portal</span><br><span class="s">Loads, trips, fleet, documents &amp; finance</span></span><span class="d" style="color:#FB923C">&rsaquo;</span></a>
+    <a class="lb-portal" href="/app/partner/"><span class="ic">&#129309;</span><span><span class="t">Partner Portal</span><br><span class="s">Brokers, shippers &amp; facilities</span></span><span class="d" style="color:#94A3B8">&rsaquo;</span></a>
+    <a class="lb-portal" href="/app/developer/"><span class="ic">&#128104;&#8205;&#128187;</span><span><span class="t">Developers &amp; API</span><br><span class="s">API keys, docs &amp; integrations</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
+    <a class="lb-portal" href="/app/command-center/"><span class="ic">&#127970;</span><span><span class="t">Command Center</span><br><span class="s">LoadBoot staff only</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
+  </div>
+  <div class="lb-new">New to LoadBoot? <a href="/get-started.html">Create an account &rarr;</a></div>
+</div>
+<script>
+// Real-app behaviour: remember the last portal used and jump straight to it on launch
+// (like WhatsApp opening your chats, not a website). Add ?choose=1 to pick a different portal.
+(function(){
+  try {
+    var q = new URLSearchParams(location.search);
+    if (q.get('choose')) { localStorage.removeItem('lb_last_portal'); return; }
+    var p = localStorage.getItem('lb_last_portal');
+    var OK = ['/app/carrier/', '/app/partner/', '/app/developer/', '/app/command-center/'];
+    if (p && OK.indexOf(p) !== -1) location.replace(p);
+  } catch (_) {}
+})();
+</script>
+</body>
+</html>
