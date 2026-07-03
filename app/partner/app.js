@@ -11,6 +11,7 @@ import {
   partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
   partnerRequestShipment, partnerMyShipments, shipperPostLoad,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
+  bookRequestsQueue, decideBookRequest, myApprovedPartners,
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
   partnerGetProfile, partnerUpdateProfile,
   getPaymentInstructions, partnerSubmitInvoicePayment,
@@ -19,6 +20,9 @@ import {
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
+import { openPrintable } from '../shared/ui/printDoc.js';
+import '../shared/ui/chatWidget.js';
+import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 
 registerAppSW();
 const root = document.getElementById('lb-app');
@@ -213,21 +217,59 @@ function invoicesCard() {
     try {
       const rows = await partnerMyInvoices(100);
       if (!rows || !rows.length) { mount(host, h('div', { class: 'lb-state' }, 'No invoices yet.')); return; }
+      const invModal = (title, children) => {
+        const scrim = h('div', { style: 'position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px' });
+        const panel = h('div', { class: 'cp-card', style: 'position:relative;max-width:520px;width:92%;max-height:88vh;overflow:auto' }, [h('button', { style: 'position:absolute;top:10px;right:12px;border:none;background:none;font-size:1.1rem;cursor:pointer', onClick: () => scrim.remove() }, '\u2715'), h('h3', { style: 'margin:0 0 10px' }, title), ...children]);
+        scrim.appendChild(panel); scrim.addEventListener('click', (e) => { if (e.target === scrim) scrim.remove(); });
+        document.body.appendChild(scrim); return () => scrim.remove();
+      };
+      const invPdf = (i) => openPrintable('Invoice ' + i.number, 'INVOICE', [
+        { rows: [['Invoice #', i.number], ['Amount', money(i.amount)], ['Description', i.description || '\u2014'], ['Due', fmtDate(i.due_date)], ['Status', String(i.status || '').replace(/_/g, ' ')], i.expected_pay_date ? ['Expected pay date', fmtDate(i.expected_pay_date)] : null, i.payment_ref ? ['Payment reference', i.payment_ref] : null].filter(Boolean) },
+        { note: instructions || 'Thank you for your business \u2014 LoadBoot.' },
+      ]);
+      const rowline = (k, v) => h('div', { class: 'cp-row' }, [h('span', { class: 'cp-sub' }, k), h('span', null, v)]);
+      const preview = (i) => invModal('Invoice ' + i.number, [
+        h('div', { style: 'font-size:1.6rem;font-weight:800' }, money(i.amount)),
+        rowline('Description', i.description || '\u2014'), rowline('Due', fmtDate(i.due_date)), rowline('Status', String(i.status || '').replace(/_/g, ' ')),
+        i.expected_pay_date ? rowline('Expected pay date', fmtDate(i.expected_pay_date)) : null,
+        i.payment_ref ? rowline('Payment ref', i.payment_ref) : null,
+        instructions ? h('div', { class: 'cp-payinfo', style: 'margin-top:8px' }, [h('div', { class: 'cp-payinfo-h' }, 'How to pay'), h('div', { class: 'cp-payinfo-b' }, instructions)]) : null,
+        h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => invPdf(i) }, '\u2b07 Download PDF'),
+      ].filter(Boolean));
+      const payModal = (i) => {
+        const dt = h('input', { class: 'cp-in', type: 'date' });
+        const ref = h('input', { class: 'cp-in', placeholder: 'Payment reference / transaction # (optional)' });
+        const file = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp' });
+        const note = h('input', { class: 'cp-in', placeholder: 'Note (optional)' });
+        const err = h('div', { class: 'cp-err' });
+        let close;
+        const submit = h('button', { class: 'cp-btn', style: 'margin-top:8px', onClick: async (ev) => {
+          err.textContent = ''; ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting\u2026'; let path = null;
+          try {
+            const f = file.files && file.files[0];
+            if (f) { const m = await uploadDocument(f, 'payment_proof'); path = m.path; }
+            await partnerSubmitInvoicePayment(i.id, path, dt.value || null, ref.value.trim() || null, note.value.trim() || null);
+            close(); load();
+          } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit payment report'; err.textContent = (e && e.message) || 'Could not submit.'; }
+        } }, 'Submit payment report');
+        close = invModal('Report payment \u2014 ' + i.number, [
+          h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Tell us when you expect the payment to clear and upload proof (bank receipt / screenshot). Our team confirms receipt.'),
+          h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Expected payment date'), dt]), ref, file, note, err, submit,
+        ]);
+      };
       mount(host, h('table', { class: 'cp-table' }, [
         h('thead', null, h('tr', null, ['Invoice', 'Amount', 'Description', 'Due', 'Status', ''].map(t => h('th', null, t)))),
         h('tbody', null, rows.map(i => {
-          const act = h('td', null);
-          if (i.status === 'sent' || i.status === 'draft') {
-            const b = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => {
-              if (!confirm('Mark invoice ' + i.number + ' as paid? Our team will confirm receipt.')) return;
-              b.disabled = true; b.textContent = '…';
-              try { await partnerSubmitInvoicePayment(i.id); load(); } catch (e) { b.disabled = false; b.textContent = 'I’ve paid'; alert((e && e.message) || 'Failed'); }
-            } }, 'I’ve paid');
-            act.appendChild(b);
-          } else if (i.status === 'payment_submitted') { act.appendChild(h('span', { class: 'cp-sub' }, 'awaiting confirmation')); }
+          const act = h('td', null, h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end' }, [
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => preview(i) }, 'Preview'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => invPdf(i) }, 'PDF'),
+            (i.status === 'sent' || i.status === 'draft') ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => payModal(i) }, 'I\u2019ve paid')
+              : (i.status === 'payment_submitted' ? h('span', { class: 'cp-sub' }, 'awaiting confirmation' + (i.expected_pay_date ? (' \u00b7 exp ' + fmtDate(i.expected_pay_date)) : '')) : null),
+            (i.payment_proof_path && (i.status === 'payment_submitted' || i.status === 'paid')) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { const u = await signedDocumentUrl(i.payment_proof_path, 600); window.open(u, '_blank'); } catch (e) { alert('Could not open proof.'); } } }, 'Proof') : null,
+          ].filter(Boolean)));
           return h('tr', null, [
             h('td', null, h('b', null, i.number)), h('td', null, money(i.amount)),
-            h('td', null, i.description || '—'), h('td', null, fmtDate(i.due_date)), h('td', null, pill(i.status)), act,
+            h('td', null, i.description || '\u2014'), h('td', null, fmtDate(i.due_date)), h('td', null, pill(i.status)), act,
           ]);
         })),
       ]));
@@ -302,6 +344,85 @@ function referralCard() {
       h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'You earn a share of LoadBoot\'s own dispatch fee on every booked trip of carriers or brokers you refer — they never pay extra. Commissions unlock 15 days after accrual; every payout is reviewed by a person.'),
     ]);
   })();
+  return card;
+}
+
+/* ---------- verification gate (broker/shipper cannot post until onboarded) ---------- */
+function verifyGateCard(ov) {
+  const pending = ov.onboarding_pending || 0;
+  const card = h('div', { class: 'cp-card', style: 'border-left:4px solid #d97706' }, [
+    h('div', { class: 'cp-cardhead' }, [icon('shield', 18), h('h3', null, 'Verification required to post loads')]),
+    h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Your account is under verification. You can post loads once onboarding is complete \u2014 every required document must be reviewed and verified by our team. This protects carriers and keeps the marketplace trusted.'),
+    h('div', { class: 'cp-row', style: 'margin-top:10px' }, [h('span', { class: 'cp-row-t' }, 'Required documents still pending'), h('b', { style: 'color:#d97706;font-size:1.1rem' }, String(pending))]),
+    h('div', { class: 'cp-sub', style: 'margin:10px 0 4px;font-weight:700' }, 'Your onboarding packet'),
+  ]);
+  const list = h('div', null, h('div', { class: 'cp-sub' }, 'Loading\u2026'));
+  card.appendChild(list);
+  (async () => {
+    let pk; try { pk = await myOnboardingPacket(); } catch (_) { mount(list, h('div', { class: 'cp-sub' }, 'Could not load your packet.')); return; }
+    mount(list, (pk.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap' }, [
+      h('div', null, [h('b', { style: 'font-size:.9rem' }, it.label), h('div', { class: 'cp-sub' }, '[' + it.tag.toUpperCase() + ']' + (it.note ? ' \u00b7 ' + it.note : ''))]),
+      h('div', { style: 'display:flex;gap:6px;align-items:center' }, [pill(it.status),
+        (it.status === 'pending' || it.status === 'rejected') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+          const ref = prompt('Document link / reference for: ' + it.label);
+          if (!ref) return;
+          try { await onboardingSubmitItem(it.key, ref, null); alert('Submitted \u2014 our team will verify it. You can post loads once all required items are verified.'); }
+          catch (e) { alert((e && e.message) || 'Failed'); }
+        } }, it.status === 'rejected' ? 'Resubmit' : 'Submit') : null].filter(Boolean)),
+    ])));
+  })();
+  return card;
+}
+
+function approvedPartnersCard() {
+  const card = h('div', { class: 'cp-card' });
+  const body = h('div', null, h('div', { class: 'cp-sub' }, 'Loading\u2026'));
+  (async () => {
+    let np; try { np = await myApprovedPartners(); } catch (_) { card.remove(); return; }
+    const ps = (np && np.partners) || [];
+    if (!ps.length) { mount(body, h('div', { class: 'cp-sub' }, 'No approved partners yet. Carriers you approve and shippers you work with appear here as verified, anonymized profiles \u2014 you keep dealing through LoadBoot.')); return; }
+    mount(body, ps.map(p => {
+      const stars = p.rating ? '\u2605'.repeat(Math.round(p.rating)) + '\u2606'.repeat(5 - Math.round(p.rating)) : '';
+      const label = (p.role === 'carrier' ? 'Carrier ' : p.role === 'shipper' ? 'Shipper ' : 'Partner ') + (p.ref || '');
+      return h('div', { style: 'padding:8px 10px;margin:6px 0;border:1px solid #e2e8f0;border-radius:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-left:4px solid ' + (p.verified ? '#16a34a' : '#94a3b8') }, [
+        h('div', null, [h('b', null, label + (p.verified ? ' \u2713' : '')), h('div', { class: 'cp-sub' }, [p.deals + ' deal(s)', p.trust_score != null ? 'Trust ' + p.trust_score + '/100' : null].filter(Boolean).join(' \u00b7 '))]),
+        h('span', { style: 'align-self:center;color:#f59e0b;font-weight:700' }, stars),
+      ]);
+    }));
+  })();
+  mount(card, [h('div', { class: 'cp-cardhead' }, [icon('user', 18), h('h3', null, 'Approved partners')]), body]);
+  return card;
+}
+
+function bookRequestsCard() {
+  const card = h('div', { class: 'cp-card' });
+  const body = h('div', null, h('div', { class: 'cp-sub' }, 'Loading\u2026'));
+  const render = async () => {
+    let rows; try { rows = await bookRequestsQueue('pending'); } catch (_) { card.remove(); return; }
+    if (!rows || !rows.length) { mount(body, h('div', { class: 'cp-sub' }, 'No pending booking requests. Carriers who request your loads appear here \u2014 approve or decline after seeing their verified trust profile. Their identity and contact stay private until you work together through LoadBoot.')); return; }
+    mount(body, rows.map(r => {
+      const t = r.trust || {}; const rate = Number(t.rating || 0);
+      const stars = rate ? '\u2605'.repeat(Math.round(rate)) + '\u2606'.repeat(5 - Math.round(rate)) : '';
+      const badge = h('span', { style: 'padding:3px 9px;border-radius:20px;font-weight:800;font-size:.72rem;' + (t.verified ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e') }, t.verified ? '\u2713 ' + (t.verified_label || 'Verified') : 'Unverified');
+      const note = h('input', { class: 'cp-in', placeholder: 'Optional note to the carrier\u2026' });
+      const decide = async (action, ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '\u2026'; try { await decideBookRequest(r.id, action, note.value || null); render(); } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); } };
+      return h('div', { style: 'padding:10px;margin:8px 0;border:1px solid #e2e8f0;border-radius:12px;border-left:4px solid ' + (t.verified ? '#16a34a' : '#d97706') }, [
+        h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center' }, [
+          h('div', null, [h('b', null, (r.origin || '\u2014') + ' \u2192 ' + (r.destination || '\u2014')), h('div', { class: 'cp-sub' }, [r.equipment, r.rate != null ? ('$' + Number(r.rate).toLocaleString()) : null].filter(Boolean).join(' \u00b7 '))]),
+          h('div', { style: 'text-align:right' }, [badge, h('div', { style: 'color:#f59e0b;font-weight:700' }, stars + ' ' + rate.toFixed(1))]),
+        ]),
+        h('div', { class: 'cp-sub', style: 'margin-top:6px' }, r.carrier + ' \u00b7 Trust ' + (t.trust_score || 0) + '/100 \u00b7 ' + (t.docs_verified || 0) + '/' + (t.docs_required || 0) + ' docs verified' + (t.on_time_pct != null ? (' \u00b7 ' + t.on_time_pct + '% on-time') : '') + (t.deliveries != null ? (' \u00b7 ' + t.deliveries + ' deliveries') : '') + ' \u00b7 identity private'),
+        r.note ? h('div', { class: 'cp-sub' }, 'Carrier note: ' + r.note) : null,
+        note,
+        h('div', { style: 'display:flex;gap:8px;margin-top:6px' }, [
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: (ev) => decide('approve', ev) }, 'Approve & book'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: (ev) => decide('reject', ev) }, 'Decline'),
+        ]),
+      ].filter(Boolean));
+    }));
+  };
+  render();
+  mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'Booking requests')]), body]);
   return card;
 }
 
@@ -522,7 +643,7 @@ async function brokerDash(user, ov) {
     wrap.appendChild(pc); wrap.appendChild(ac);
     return wrap;
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), shipmentInboxCard(), packetAgreementCards(), invoicesCard(), referralCard(), accountCard()])));
+  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), bookRequestsCard(), approvedPartnersCard(), shipmentInboxCard(), packetAgreementCards(), invoicesCard(), referralCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
@@ -578,7 +699,7 @@ async function shipperDash(user, ov) {
       ]));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), invoicesCard(), accountCard()])));
+  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), approvedPartnersCard(), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }

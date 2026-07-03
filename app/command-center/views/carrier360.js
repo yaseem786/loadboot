@@ -5,8 +5,9 @@
 // via cc_carrier_360 (keyed on the carrier organization id), RBAC-gated on carriers.view.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
-import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
-import { carrier360, fmcsaVerify, carrierScorecard } from '../../shared/api.js';
+import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
+import { signedDocumentUrl } from '../../shared/storage.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -70,11 +71,36 @@ export function renderCarrier360(host, orgId) {
     ]);
 
     const docs = d.documents || [];
+    function openDocPreview(x) {
+      const previewBox = el('div', { style: 'margin:12px 0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#0b1220;min-height:130px;display:flex;align-items:center;justify-content:center' }, el('div', { class: 'cc-sub', style: 'color:#94a3b8;padding:26px' }, 'Loading preview…'));
+      const openBtn = el('a', { class: 'lb-btn lb-btn-secondary', target: '_blank', rel: 'noopener', style: 'pointer-events:none;opacity:.5' }, 'Open in new tab');
+      const dlBtn = el('a', { class: 'lb-btn lb-btn-secondary', style: 'pointer-events:none;opacity:.5' }, '\u2b07 Download');
+      (async () => {
+        if (!x.file_path) { mount(previewBox, el('div', { class: 'cc-sub', style: 'color:#94a3b8;padding:26px' }, 'No file attached to this record.')); return; }
+        let url; try { url = await signedDocumentUrl(x.file_path, 600); }
+        catch (e) { mount(previewBox, el('div', { class: 'cc-sub', style: 'color:#fca5a5;padding:26px' }, 'Could not load preview: ' + humanizeError(e))); return; }
+        const ext = String(x.file_name || x.file_path).split('.').pop().toLowerCase();
+        let viewer;
+        if (ext === 'pdf') viewer = el('iframe', { src: url, style: 'width:100%;height:440px;border:0;background:#fff' });
+        else if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) viewer = el('img', { src: url, style: 'max-width:100%;max-height:480px;display:block;margin:0 auto' });
+        else viewer = el('div', { class: 'cc-sub', style: 'color:#cbd5e1;padding:26px;text-align:center' }, '.' + ext + ' file — use Download or Open to view.');
+        mount(previewBox, viewer);
+        openBtn.href = url; openBtn.style.pointerEvents = 'auto'; openBtn.style.opacity = '1';
+        dlBtn.href = url + (url.indexOf('?') > -1 ? '&' : '?') + 'download=' + encodeURIComponent(x.file_name || 'document');
+        dlBtn.style.pointerEvents = 'auto'; dlBtn.style.opacity = '1';
+      })();
+      openDrawer('Document preview', el('div', null, [
+        el('div', { class: 'cc-drawer-title' }, [el('h3', null, x.file_name || 'document'), statusPill(x.status)]),
+        card([el('div', { class: 'cc-field' }, [el('span', null, 'Type'), el('b', null, x.type || '—')]), el('div', { class: 'cc-field' }, [el('span', null, 'Submitted'), el('b', null, fmtDate(x.created_at))])], 'cc-fields'),
+        previewBox,
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [openBtn, dlBtn]),
+      ]), { subtitle: d.name || '' });
+    }
     const docsCard = card([
       el('h4', { class: 'cc-card-title' }, 'Documents (' + docs.length + ')'),
       docs.length ? el('table', { class: 'cc-table cc-table-tight' }, [
         el('thead', null, el('tr', null, [el('th', null, 'Type'), el('th', null, 'File'), el('th', null, 'Status'), el('th', null, 'Added')])),
-        el('tbody', null, docs.map(x => el('tr', null, [el('td', null, x.type || '—'), el('td', null, x.file_name || '—'), el('td', null, statusPill(x.status)), el('td', null, fmtDate(x.created_at))]))),
+        el('tbody', null, docs.map(x => el('tr', { class: 'cc-row', style: 'cursor:pointer', title: 'Preview / download', onClick: () => openDocPreview(x) }, [el('td', null, x.type || '—'), el('td', null, x.file_name || '—'), el('td', null, statusPill(x.status)), el('td', null, [fmtDate(x.created_at), ' ', el('span', { class: 'cc-row-go' }, '\u203a')])]))),
       ]) : el('div', { class: 'cc-sub' }, 'No documents on file.'),
     ]);
 
@@ -157,12 +183,37 @@ export function renderCarrier360(host, orgId) {
         el('a', { class: 'cc-360-link', href: '#/carrier-scorecards', style: 'margin-top:10px;display:inline-block' }, 'Full scorecard \u2192'),
       ]);
     })();
+    const payoutCard = card([el('h4', { class: 'cc-card-title' }, 'Payout & bank details')]);
+    (async () => {
+      let pp; try { pp = await carrierPaymentProfile(orgId); }
+      catch (e) { mount(payoutCard, [el('h4', { class: 'cc-card-title' }, 'Payout & bank details'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, /not authoriz/i.test((e && e.message) || '') ? 'Finance permission required to view bank details.' : humanizeError(e))]); return; }
+      if (!pp || !pp.exists) { mount(payoutCard, [el('h4', { class: 'cc-card-title' }, 'Payout & bank details'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'No bank / payout details on file yet.')]); return; }
+      const verifyBtn = el('button', { class: 'cc-btn-sm ' + (pp.verified ? '' : 'cc-btn-green'), style: 'padding:7px 14px;border-radius:8px;font-weight:700;cursor:pointer;border:1px solid #cbd5e1;background:' + (pp.verified ? '#fff' : '#16a34a') + ';color:' + (pp.verified ? '#334155' : '#fff'), onClick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = pp.verified ? 'Revoking…' : 'Verifying…';
+        try { await verifyPaymentProfile(orgId, !pp.verified); load(); } catch (e) { ev.currentTarget.disabled = false; alert(humanizeError(e)); }
+      } }, pp.verified ? 'Revoke verification' : 'Verify bank details');
+      mount(payoutCard, [
+        el('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, [el('h4', { class: 'cc-card-title' }, 'Payout & bank details'), statusPill(pp.verified ? 'approved' : 'pending')]),
+        kv('Account holder', pp.account_title), kv('Bank', pp.bank_name),
+        kv('Account #', pp.account_number), kv('Routing / ABA', pp.routing_number),
+        kv('Account type', pp.account_type), kv('Pay method', pp.payment_method),
+        pp.swift_bic ? kv('SWIFT / BIC', pp.swift_bic) : '',
+        pp.bank_address ? kv('Bank address', pp.bank_address) : '',
+        pp.remittance_email ? kv('Remittance email', pp.remittance_email) : '',
+        pp.bank_phone ? kv('Bank phone', pp.bank_phone) : '',
+        pp.tax_id ? kv('Tax ID / EIN', pp.tax_id) : '',
+        pp.factoring_company ? kv('Factoring', pp.factoring_company + (pp.factoring_noa ? ' · NOA on file' : '')) : '',
+        kv('Updated', fmtDateTime(pp.updated_at)),
+        can('finance.approve') ? el('div', { style: 'margin-top:10px' }, verifyBtn) : el('div', { class: 'cc-sub', style: 'margin-top:8px' }, 'Verification requires finance approver role.'),
+      ].filter(Boolean));
+    })();
     mount(body, el('div', null, [
       head, kpis,
       el('div', { style: 'margin-top:16px' }, healthCard),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [profileCard, safetyCard]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [docsCard, driversCard]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [tripsCard, scCard]),
+      el('div', { style: 'margin-top:16px' }, payoutCard),
       el('div', { style: 'margin-top:16px' }, timelineCard),
     ]));
   }

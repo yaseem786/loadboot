@@ -13,6 +13,7 @@ import {
   dispatchSheet,
 } from '../shared/api.js';
 import { uploadPodDocument } from '../shared/storage.js';
+import '../shared/ui/chatWidget.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 
 const POD_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -228,14 +229,22 @@ async function appView() {
         if (emWrap.firstChild) { emWrap.innerHTML = ''; return; }
         const cat = h('select', { class: 'pk-in' }, ['breakdown', 'accident', 'weather', 'medical', 'road_closure', 'hours_of_service', 'mechanical', 'theft', 'other'].map(k => h('option', { value: k }, k.replace(/_/g, ' '))));
         const reason = h('input', { class: 'pk-in', placeholder: 'Detailed reason (min 10 characters) *' });
-        const proof = h('input', { class: 'pk-in', placeholder: 'Proof — photo link / doc ref *' });
+        const photo = h('input', { class: 'pk-in', type: 'file', accept: 'image/*', capture: 'environment' });
+        const proof = h('input', { class: 'pk-in', placeholder: 'Or paste a proof link (if no photo)' });
         const when = h('input', { class: 'pk-in', type: 'datetime-local' });
         const send = h('button', { class: 'pk-btn pk-mini', onclick: async (ev) => {
+          const f = photo.files && photo.files[0];
+          if (!f && !proof.value.trim()) { alert('Add a photo of the situation, or paste a proof link.'); return; }
+          if (reason.value.trim().length < 10) { alert('Give a detailed reason (at least 10 characters).'); return; }
           ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
-          try { await tripEmergencyRequest({ trip: t.id, category: cat.value, reason: reason.value.trim(), proof_ref: proof.value.trim(), reschedule_to: when.value || null }); emWrap.innerHTML = ''; emWrap.appendChild(h('div', { class: 's', style: 'color:#16a34a' }, '✓ Sent — dispatch is notified with priority')); }
-          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send emergency'; alert((e && e.message) || 'Could not send.'); }
+          try {
+            let ref = proof.value.trim();
+            if (f) { const m = await uploadPodDocument(f, t.id); ref = m.path; }
+            await tripEmergencyRequest({ trip: t.id, category: cat.value, reason: reason.value.trim(), proof_ref: ref, reschedule_to: when.value || null });
+            emWrap.innerHTML = ''; emWrap.appendChild(h('div', { class: 's', style: 'color:#16a34a' }, '\u2713 Sent \u2014 dispatch and the broker are notified with priority. The decision comes back here.'));
+          } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send emergency'; alert((e && e.message) || 'Could not send.'); }
         } }, 'Send emergency');
-        emWrap.appendChild(h('div', { class: 'pk-issueform' }, [cat, reason, proof, h('div', { class: 's' }, 'New delivery time (optional):'), when, send]));
+        emWrap.appendChild(h('div', { class: 'pk-issueform' }, [cat, reason, h('div', { class: 's' }, '\ud83d\udcf7 Photo proof (opens camera):'), photo, proof, h('div', { class: 's' }, 'New delivery time (optional):'), when, send]));
       } }, '🚨 Emergency') : null;
       return h('div', { class: 'pk-trip' }, [
         h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [

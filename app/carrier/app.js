@@ -14,9 +14,9 @@ import {
   carrierUploadDocument, carrierListDocuments,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
-  pocketAvailableLoads, pocketBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
+  pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
   isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests,
-  setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem,
+  setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
@@ -27,6 +27,7 @@ import {
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { printDispatchSheet, openPrintable } from '../shared/ui/printDoc.js';
+import '../shared/ui/chatWidget.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 
@@ -78,7 +79,7 @@ const ic = (name) => ({
   trips: 'M5 17h14M5 17a2 2 0 11-4 0 2 2 0 014 0zm14 0a2 2 0 11-4 0M7 17V7h8v10M15 9h3l3 4v4', finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
   docs: 'M6 2h9l5 5v15H6zM14 2v6h6', support: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z',
   bell: 'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0', user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8',
-  pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
+  shield: 'M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z', pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 // Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.
@@ -240,7 +241,7 @@ function notCarrier() {
 
 /* ---------- main app ---------- */
 const NAV = [
-  ['dashboard', 'Dashboard', 'dash'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
+  ['dashboard', 'Dashboard', 'dash'], ['health', 'Account health', 'shield'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
   ['fleet', 'Fleet', 'trips'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
   ['support', 'Support', 'support'], ['account', 'Account', 'user'],
 ];
@@ -273,7 +274,7 @@ async function appView(user) {
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' })]),
+      h('div', { class: 'cp-brandrow', style: 'display:flex;align-items:center;gap:9px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('span', { style: 'color:#fff;font-weight:700;font-size:.98rem' }, 'Carrier')]),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
@@ -329,6 +330,7 @@ async function appView(user) {
     else if (tab === 'account') loadAccount();
     else if (tab === 'onboarding') loadOnboarding();
     else if (tab === 'notifications') loadNotifications();
+    else if (tab === 'health') loadHealth();
     else loadDashboard();
   }
 
@@ -360,6 +362,90 @@ async function appView(user) {
   const promptHost = h('div', { class: 'cp-prompts' });
 
   /* ----- Dashboard ----- */
+  async function loadHealth() {
+    mount(content, h('div', { class: 'cp-muted' }, 'Calculating your account health…'));
+    let ah; try { ah = await accountHealth(); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load account health.'))); return; }
+    ah = ah || {}; const score = Number(ah.score || 0);
+    const tone = toneOf(ah.tier === 'healthy' ? 'success' : ah.tier === 'at_risk' ? 'warning' : 'urgent');
+    const ded = Array.isArray(ah.deductions) ? ah.deductions : [];
+    const lost = ded.reduce((a, x) => a + (Number(x.deducted) || 0), 0);
+    const fixDest = (label) => { const t = (label || '').toLowerCase();
+      if (/doc|insur|authorit|complian|coi|w-?9|agreement|bond|expir/.test(t)) return ['documents', 'Fix documents'];
+      if (/dispute|invoice|fee|payment|settle|bank|payout/.test(t)) return ['finance', 'Open finance'];
+      if (/on-?time|deliver|trip|dwell|late|pod/.test(t)) return ['trips', 'View trips'];
+      if (/prefer|match|engage|profile|rate/.test(t)) return ['account', 'Update account'];
+      return ['documents', 'Resolve']; };
+    const gauge = h('div', { style: 'width:150px;height:150px;border-radius:50%;background:conic-gradient(' + tone.c + ' ' + score + '%, #e2e8f0 0);display:flex;align-items:center;justify-content:center;flex:none' },
+      h('div', { style: 'width:116px;height:116px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center' }, [
+        h('div', { style: 'font-size:2.6rem;font-weight:800;line-height:1;color:' + tone.c }, String(score)),
+        h('div', { class: 'cp-row-s' }, 'of 100'),
+      ]));
+    const heroCard = h('div', { class: 'cp-card', style: 'border-top:4px solid ' + tone.c }, [
+      cardHead('Account health', 'Live — recalculated every time you open this'),
+      h('div', { style: 'display:flex;align-items:center;gap:20px;flex-wrap:wrap' }, [gauge,
+        h('div', { style: 'flex:1;min-width:220px' }, [
+          h('span', { class: 'cp-pill', style: 'background:' + tone.bg + ';color:' + tone.c + ';font-size:.95rem;font-weight:800' }, (ah.tier || 'unknown').replace(/_/g, ' ').toUpperCase()),
+          h('div', { class: 'cp-row-t', style: 'margin-top:10px;font-size:1.05rem' }, ded.length ? (ded.length + ' item(s) need attention — fixing them raises your score and your load offers.') : 'Perfect standing — you get first pick of the best-paying loads. Keep it up!'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, ah.basis || 'Score = 100 minus deductions for compliance gaps, late deliveries, disputes and missing documents.'),
+        ])]),
+    ]);
+    const tiles = h('div', { class: 'cp-kpis' }, [
+      statTile('Health score', String(score), 'shield', tone.name || (ah.tier === 'healthy' ? 'green' : ah.tier === 'at_risk' ? 'amber' : 'red')),
+      statTile('Standing', (ah.tier || '—').replace(/_/g, ' '), 'dash', 'blue'),
+      statTile('Points lost', '-' + lost, 'finance', lost ? 'amber' : 'green'),
+      statTile('Open issues', String(ded.length), 'docs', ded.length ? 'red' : 'green', () => { const el2 = document.getElementById('cp-health-actions'); if (el2) el2.scrollIntoView({ behavior: 'smooth' }); }),
+    ]);
+    const actions = h('div', { class: 'cp-card', id: 'cp-health-actions' }, [
+      cardHead('Suggested warnings & actions', ded.length ? lost + ' points recoverable' : 'Nothing to fix'),
+      ded.length ? h('div', { style: 'display:flex;flex-direction:column;gap:8px' }, ded.map(x => {
+        const dest = fixDest(x.label);
+        return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + tone.c + ';padding-left:12px;border-radius:8px' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, x.label), h('div', { class: 'cp-row-s' }, x.basis || '')]),
+          h('div', { style: 'display:flex;gap:12px;align-items:center' }, [h('b', { style: 'color:' + tone.c }, '-' + x.deducted), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go(dest[0]) }, dest[1])]),
+        ]);
+      })) : h('div', { class: 'cp-row-s' }, 'No deductions. Every requirement is met — keep documents current and deliveries on time to stay here.'),
+    ]);
+    const explain = h('div', { class: 'cp-card' }, [cardHead('How your score works'),
+      h('div', { class: 'cp-row-s', style: 'line-height:1.6' }, 'Your account starts at 100. Points come off for expired or missing compliance documents, late deliveries, open disputes, and incomplete dispatch preferences. A higher score means our AI Pilot and dispatchers surface the best-paying loads to you first — the same way a top-rated seller gets more buyers. Fix the items above to climb back to Healthy.')]);
+    const trustCard = h('div', { class: 'cp-card' }, [cardHead('Trust profile', 'What brokers & shippers see about you'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let tp; try { tp = await myTrustProfile(); } catch (_) { trustCard.remove(); return; }
+      if (!tp || !tp.exists) { trustCard.remove(); return; }
+      const vtone = tp.verified ? toneOf('success') : toneOf('warning');
+      const rating = Number(tp.rating || 0);
+      const stars = '\u2605'.repeat(Math.round(rating)) + '\u2606'.repeat(5 - Math.round(rating));
+      const docsOk = tp.docs_required > 0 && tp.docs_verified === tp.docs_required;
+      mount(trustCard, [cardHead('Trust profile', 'What brokers & shippers see about you'),
+        h('div', { style: 'display:flex;align-items:center;gap:14px;flex-wrap:wrap' }, [
+          h('span', { class: 'cp-pill', style: 'background:' + vtone.bg + ';color:' + vtone.c + ';font-weight:800' }, tp.verified ? '\u2713 ' + tp.verified_label : 'Not yet verified'),
+          h('div', { style: 'font-size:1.35rem;color:#f59e0b;letter-spacing:3px' }, stars),
+          h('b', null, rating.toFixed(1) + ' / 5'),
+        ]),
+        h('div', { class: 'cp-kpis', style: 'margin-top:12px' }, [
+          statTile('Trust score', String(tp.trust_score || 0), 'shield', 'blue'),
+          statTile('Docs verified', (tp.docs_verified || 0) + '/' + (tp.docs_required || 0), 'docs', docsOk ? 'green' : 'amber'),
+          tp.on_time_pct != null ? statTile('On-time', tp.on_time_pct + '%', 'trips', tp.on_time_pct >= 90 ? 'green' : 'amber') : statTile('Deliveries', String(tp.deliveries || 0), 'trips', 'blue'),
+          statTile('Member', (tp.tenure_months || 0) + ' mo', 'user', 'violet'),
+        ]),
+        h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, tp.verified ? 'You carry a verified badge \u2014 brokers can trust and book you faster.' : 'Get verified by completing your documents (see actions above). Verified accounts win more, better-paying loads.'),
+      ]);
+    })();
+    const networkCard = h('div', { class: 'cp-card' }, [cardHead('Approved brokers', 'Your network'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let np; try { np = await myApprovedPartners(); } catch (_) { networkCard.remove(); return; }
+      const ps = (np && np.partners) || [];
+      if (!ps.length) { mount(networkCard, [cardHead('Approved brokers', 'Your network'), h('div', { class: 'cp-row-s' }, 'No approved brokers yet. When a broker approves your booking request they appear here \u2014 keep working with trusted partners through LoadBoot. Identities stay private.')]); return; }
+      mount(networkCard, [cardHead('Approved brokers', ps.length + ' in your network'), h('div', null, ps.map(pp => {
+        const vt = toneOf(pp.verified ? 'success' : 'info');
+        const stars = pp.rating ? '\u2605'.repeat(Math.round(pp.rating)) + '\u2606'.repeat(5 - Math.round(pp.rating)) : '';
+        return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + vt.c + ';padding-left:10px;border-radius:8px' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, 'Broker ' + (pp.ref || '\u2014') + (pp.verified ? ' \u2713' : '')), h('div', { class: 'cp-row-s' }, [pp.deals + ' approved load(s)', pp.trust_score != null ? 'Trust ' + pp.trust_score + '/100' : null, stars].filter(Boolean).join(' \u00b7 '))]),
+          h('span', { class: 'cp-pill', style: 'background:' + vt.bg + ';color:' + vt.c }, pp.verified ? 'Verified' : 'Unverified'),
+        ]);
+      }))]);
+    })();
+    mount(content, h('div', null, [tiles, heroCard, trustCard, networkCard, actions, explain]));
+  }
   async function loadDashboard() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let dash = null, comp, anns, invs;
@@ -482,20 +568,19 @@ async function appView(user) {
       const rpm = l.rpm ? '$' + Number(l.rpm).toFixed(2) + '/mi' : '';
       const bookWrap = h('div');
       const book = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
-        if (!confirm('Book this load?\n\n' + (l.origin || '') + ' → ' + (l.destination || '') + '\n' + money(l.rate) + (rpm ? ' · ' + rpm : '') + '\n\nIt will move to My trips.')) return;
-        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Booking…';
+        if (!confirm('Request to book this load?\n\n' + (l.origin || '') + ' → ' + (l.destination || '') + '\n' + money(l.rate) + (rpm ? ' · ' + rpm : '') + '\n\nThe broker reviews your verified trust profile and approves or declines. Nothing moves and you are not committed until approved.')) return;
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending request…';
         try {
-          await pocketBookLoad(l.id);
-          mount(bookWrap, [h('div', { class: 'cp-row-s', style: 'color:var(--lb-green);margin-bottom:6px' }, '✓ Booked — added to your trips'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('trips') }, 'Go to My trips')]);
-        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Book this load'; alert((e && e.message) || 'Could not book this load.'); }
-      } }, 'Book this load');
+          await requestBookLoad(l.id);
+          mount(bookWrap, [h('div', { class: 'cp-row-s', style: 'color:#d97706;font-weight:700;margin-bottom:4px' }, '\u23f3 Requested — pending broker approval'), h('div', { class: 'cp-row-s' }, 'You will be notified when the broker responds. Once approved it appears in My trips.')]);
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request to book'; alert((e && e.message) || 'Could not send your request.'); }
+      } }, 'Request to book');
       bookWrap.appendChild(book);
       const detailsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(l.id) }, 'Detailed overview');
       const meta = [];
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
       if (l.weight) meta.push('Weight: ' + l.weight);
       if (l.deadhead) meta.push(l.deadhead + ' mi deadhead');
-      if (l.broker) meta.push('Broker: ' + l.broker);
       return h('article', { class: 'cp-load' }, [
         h('div', { class: 'cp-load-top' }, [h('div', { class: 'cp-load-lane' }, [h('b', null, l.origin || '—'), h('span', { class: 'cp-arrow' }, '→'), h('b', null, l.destination || '—')]), h('div', { class: 'cp-load-rate' }, [money(l.rate), rpm ? h('span', null, rpm) : null])]),
         h('div', { class: 'cp-load-tags' }, [h('span', { class: 'cp-tag' }, l.equipment || 'Van'), l.miles ? h('span', { class: 'cp-tag' }, Number(l.miles).toLocaleString() + ' mi') : null, l.pickup_date ? h('span', { class: 'cp-tag' }, 'PU ' + l.pickup_date) : null, l.delivery_date ? h('span', { class: 'cp-tag' }, 'DEL ' + l.delivery_date) : null].filter(Boolean)),
@@ -516,10 +601,16 @@ async function appView(user) {
     (async () => {
       let ps; try { ps = await carrierViewPoster(loadId); } catch (_) { return; }
       if (!ps) return;
-      const tone = toneOf('info');
-      bodyEl.appendChild(h('div', { class: 'cp-row', style: 'margin-top:10px;border-left:4px solid ' + tone.c + ';padding-left:10px;border-radius:8px;flex-wrap:wrap' }, [
-        h('div', null, [h('div', { class: 'cp-row-t' }, 'Posting party: ' + (ps.posted_by || '—')),
-          h('div', { class: 'cp-row-s' }, ps.signal || ([ps.loads_delivered != null ? ps.loads_delivered + ' loads delivered' : null, ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null, ps.loads_submitted != null ? ps.loads_submitted + ' submitted' : null].filter(Boolean).join(' · ') || '—')),
+      const bverified = ps.broker_verified === true;
+      const btone = toneOf(bverified ? 'success' : 'info');
+      const brate = Number(ps.broker_rating || 0);
+      const bstars = brate ? '\u2605'.repeat(Math.round(brate)) + '\u2606'.repeat(5 - Math.round(brate)) : '';
+      bodyEl.appendChild(h('div', { class: 'cp-row', style: 'margin-top:10px;border-left:4px solid ' + btone.c + ';padding-left:10px;border-radius:8px;flex-wrap:wrap' }, [
+        h('div', null, [
+          h('div', { class: 'cp-row-t', style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, ['Posting party: ' + (ps.posted_by || '—'),
+            ps.broker_trust_score != null ? h('span', { class: 'cp-pill', style: 'background:' + btone.bg + ';color:' + btone.c + ';font-weight:800' }, bverified ? '\u2713 Verified broker' : 'Unverified broker') : null,
+            bstars ? h('span', { style: 'color:#f59e0b;font-weight:700' }, bstars + ' ' + brate.toFixed(1)) : null].filter(Boolean)),
+          h('div', { class: 'cp-row-s' }, [ps.broker_trust_score != null ? 'Trust ' + ps.broker_trust_score + '/100' : null, ps.loads_delivered != null ? ps.loads_delivered + ' loads delivered' : null, ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null, ps.loads_submitted != null ? ps.loads_submitted + ' submitted' : null].filter(Boolean).join(' \u00b7 ') || ps.signal || '—'),
           h('div', { class: 'cp-row-s' }, ps.basis || '')]),
       ]));
     })();
@@ -553,6 +644,20 @@ async function appView(user) {
   }
 
   /* ----- My trips ----- */
+function tripStepper(status) {
+  const st = (status || '').toLowerCase();
+  if (st === 'canceled' || st === 'cancelled') return h('div', { class: 'cp-row-s', style: 'color:#dc2626;font-weight:700;margin:10px 2px' }, 'Trip canceled');
+  const STEPS = ['Booked', 'Dispatched', 'In transit', 'Delivered'];
+  let cur = 0;
+  if (st === 'dispatched') cur = 1; else if (st === 'in_transit') cur = 2; else if (st === 'delivered' || st === 'invoiced' || st === 'paid') cur = 3;
+  const nodes = [];
+  STEPS.forEach((label, i) => {
+    if (i > 0) nodes.push(h('div', { class: 'cp-step-line' + (i <= cur ? ' done' : '') }));
+    const cls = i < cur ? ' done' : (i === cur ? ' current' : '');
+    nodes.push(h('div', { class: 'cp-step' + cls }, [h('div', { class: 'cp-step-dot' }, i < cur ? '\u2713' : String(i + 1)), h('div', { class: 'cp-step-lbl' }, label)]));
+  });
+  return h('div', { class: 'cp-steps' }, nodes);
+}
   async function loadTrips() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let rows; try { rows = await pocketTrips(80); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Failed to load.'))); return; }
@@ -677,6 +782,7 @@ async function appView(user) {
       } }, '🕑 History');
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
+        tripStepper(t.status),
         h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, share, dwell, issue, emergency, pod, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW,
       ].filter(Boolean));
     })]));
@@ -687,17 +793,21 @@ async function appView(user) {
       const CATS = [['breakdown', 'Truck breakdown'], ['accident', 'Accident'], ['weather', 'Severe weather'], ['medical', 'Medical emergency'], ['road_closure', 'Road closure'], ['hours_of_service', 'Out of hours (HOS)'], ['mechanical', 'Mechanical failure'], ['theft', 'Theft'], ['other', 'Other (explain)']];
       const cat = h('select', { class: 'cp-in' }, CATS.map(([v, l]) => h('option', { value: v }, l)));
       const reason = h('textarea', { class: 'cp-in', rows: '3', placeholder: 'Exactly what happened, where, and what you need (min 10 characters).' });
-      const proof = h('input', { class: 'cp-in', placeholder: 'Proof link — photo, tow receipt, police report, etc. (required)' });
+      const proof = h('input', { class: 'cp-in', placeholder: 'Or paste a proof link — tow receipt, police report (if no photo)' });
+      const photo = h('input', { class: 'cp-in', type: 'file', accept: 'image/*', capture: 'environment' });
       const resched = h('input', { class: 'cp-in', type: 'datetime-local' });
       const msg = h('div', { class: 'cp-err' });
       let closeModal;
       const send = h('button', { class: 'cp-btn', onClick: async () => {
         msg.textContent = ''; msg.className = 'cp-err';
         if (reason.value.trim().length < 10) { msg.textContent = 'Please give a detailed reason (min 10 characters).'; return; }
-        if (!proof.value.trim()) { msg.textContent = 'Proof is required to raise an emergency.'; return; }
+        const pf = photo.files && photo.files[0];
+        if (!pf && !proof.value.trim()) { msg.textContent = 'Attach a photo of the situation, or paste a proof link.'; return; }
         send.disabled = true; send.textContent = 'Submitting…';
         try {
-          await tripEmergencyRequest({ trip: t.id, category: cat.value, reason: reason.value.trim(), proof_ref: proof.value.trim(), reschedule_to: resched.value || null });
+          let ref = proof.value.trim();
+          if (pf) { const m = await uploadPodDocument(pf, t.id); ref = m.path; }
+          await tripEmergencyRequest({ trip: t.id, category: cat.value, reason: reason.value.trim(), proof_ref: ref, reschedule_to: resched.value || null });
           if (closeModal) closeModal();
           alert('Emergency submitted to dispatch. You will be notified once it is reviewed.');
         } catch (e) { send.disabled = false; send.textContent = 'Submit emergency'; msg.textContent = (e && e.message) || 'Could not submit.'; }
@@ -706,7 +816,8 @@ async function appView(user) {
         h('p', { class: 'cp-row-s' }, 'Only for genuine, evidenced emergencies. Every request needs a category, a detailed reason and proof, and is reviewed by dispatch.'),
         h('label', { class: 'cp-row-t' }, 'Category'), cat,
         h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, 'What happened'), reason,
-        h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, 'Proof (required)'), proof,
+        h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, '📷 Photo proof (opens camera on phone)'), photo,
+        h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, 'Proof link (if no photo)'), proof,
         h('label', { class: 'cp-row-t', style: 'margin-top:8px;display:block' }, 'Requested new delivery time (optional)'), resched,
         msg, h('div', { style: 'margin-top:10px' }, send),
       ]);
@@ -1014,15 +1125,23 @@ async function appView(user) {
       } }, '⬇ Download (CSV)');
       const downloadPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openPrintable('Account Statement', 'STATEMENT', [
         { rows: [['Carrier', s.carrier || '—'], ['Generated', new Date().toLocaleString()], ['Invoices', String(s.invoices_total || 0)], ['Fees outstanding', money(s.fees_outstanding || 0)], ['Fees paid', money(s.fees_paid || 0)], ['Adjustments', money(s.adjustments || 0)], ['Open disputes', String(s.open_disputes || 0)]] },
+        { h: 'Invoices', rows: rows.map(i => [i.invoice_no || '—', money(i.gross || 0) + ' gross · ' + money(i.fee || 0) + ' fee · ' + (i.status || '')]) },
         { h: 'Settlements', rows: settlements.map(x => [String(x.no || '—'), money(x.net || 0) + ' · ' + (x.status || '—')]) },
       ]) }, '⬇ Download (PDF)');
+      const settleList = settlements.length ? h('div', { style: 'margin-top:10px' }, [h('b', { class: 'cp-row-s' }, 'Settlements'), ...settlements.map(x => h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, 'Settlement ' + (x.no || '—')), h('div', { class: 'cp-row-s' }, x.status || '—')]),
+        h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('b', null, money(x.net || 0)), h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openPrintable('Settlement ' + (x.no || ''), 'SETTLEMENT', [
+          { rows: [['Settlement #', String(x.no || '—')], ['Status', x.status || '—'], ['Net paid', money(x.net || 0)], ['Gross', money(x.gross || x.net || 0)], ['Fees', money(x.fees || 0)], ['Date', x.date ? new Date(x.date).toLocaleDateString() : (x.paid_at ? new Date(x.paid_at).toLocaleDateString() : '—')]] },
+          { note: 'LoadBoot settlement statement — flat 5% dispatch, no contracts.' },
+        ]) }, '⬇ PDF')]),
+      ]))]) : null;
       mount(stmtCard, [
         cardHead('Account statement'),
         line('Invoices', String(s.invoices_total || 0)),
         line('Fees outstanding', money(s.fees_outstanding || 0)),
         line('Fees paid', money(s.fees_paid || 0)),
         line('Open disputes', String(s.open_disputes || 0)),
-        line('Settlements', String(settlements.length)),
+        settleList || line('Settlements', '0'),
         h('div', { style: 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap' }, [download, downloadPdf]),
       ]);
     })();
@@ -1105,7 +1224,12 @@ async function appView(user) {
           const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { if (!reason.value.trim()) { alert('Enter a reason.'); return; } ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketDisputeInvoice(i.id, reason.value.trim()); dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Dispute opened')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not dispute.'); } } }, 'Send');
           dw.appendChild(h('div', { class: 'cp-inlineform' }, [reason, send]));
         } }, 'Dispute') : null;
-        return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), dispute ? h('div', { class: 'cp-trip-actions' }, [dispute]) : null, dw].filter(Boolean));
+        const invPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openPrintable('Invoice ' + (i.invoice_no || ''), 'INVOICE', [
+          { rows: [['Invoice #', i.invoice_no || '—'], ['Status', i.status || '—'], ['Load', i.load_ref || i.load_id || '—'], ['Lane', i.lane || '—'], ['Issued', i.created_at ? new Date(i.created_at).toLocaleDateString() : '—'], ['Due', i.due_at ? new Date(i.due_at).toLocaleDateString() : '—']] },
+          { h: 'Amounts', rows: [['Load gross', money(i.gross || 0)], ['Dispatch fee (5%)', money(i.fee || 0)], ['Carrier net', money(Number(i.gross || 0) - Number(i.fee || 0))]] },
+          { note: 'LoadBoot flat 5% dispatch fee — no contracts. Questions? Contact support in your carrier portal.' },
+        ]) }, '⬇ PDF');
+        return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, dispute].filter(Boolean)), dw].filter(Boolean));
       })) : h('div', { class: 'cp-muted' }, 'No invoices yet.')]),
     ]));
   }
@@ -1289,25 +1413,57 @@ async function appView(user) {
     const dispCard = h('div', { class: 'cp-card' }, [cardHead('Dispatch preferences (AI Pilot)'), h('div', { class: 'cp-muted' }, 'Loading…')]);
     (async () => {
       let dp = {}; try { dp = await getDispatchPrefs(); } catch (_) { dp = {}; }
-      const fld = (label, val, ph) => { const i = h('input', { class: 'cp-input', placeholder: ph || '' }); i.value = val == null ? '' : String(val); return { row: h('label', { class: 'cp-field' }, [h('span', null, label), i]), i }; };
-      const f1 = fld('Minimum rate ($/mi)', dp.min_rpm, 'e.g. 2.25');
-      const f2 = fld('Preferred equipment (comma separated)', (dp.preferred_equipment || []).join(', '), 'Dry Van, Reefer');
-      const f3 = fld('Preferred lanes / regions (comma separated)', (dp.preferred_lanes || []).join(', '), 'TX, Atlanta, Midwest');
-      const f4 = fld('Max deadhead (miles)', dp.max_deadhead_miles, 'e.g. 250');
-      const f5 = fld('Home base', dp.home_base, 'Dallas, TX');
+      const errBox = h('div', { class: 'cp-err', style: 'margin:6px 0' });
+      const fld = (label, val, ph, opts) => {
+        opts = opts || {};
+        const i = h('input', { class: 'cp-input', placeholder: ph || '', type: opts.type || 'text' });
+        i.value = val == null ? '' : String(val); i.oninput = () => i.classList.remove('cp-invalid');
+        const lbl = h('span', null, [label, opts.req ? h('b', { style: 'color:#dc2626' }, ' *') : null].filter(Boolean));
+        return { row: h('label', { class: 'cp-field' }, [lbl, i, opts.hint ? h('small', { class: 'cp-row-s' }, opts.hint) : null].filter(Boolean)), i };
+      };
+      const tog = (label, val) => { const b = h('button', { type: 'button', class: 'cp-chip2' + (val ? ' on' : ''), onClick: () => b.classList.toggle('on') }, label); return { row: h('label', { class: 'cp-field' }, [h('span', null, label), b]), get: () => b.classList.contains('on') }; };
+      const f1 = fld('Minimum rate ($/mi)', dp.min_rpm, 'e.g. 2.25', { type: 'number', req: true, hint: 'We never push loads below this.' });
+      const fT = fld('Target rate ($/mi)', dp.target_rpm, 'e.g. 2.75', { type: 'number', hint: 'Your ideal — ranked higher.' });
+      const f2 = fld('Preferred equipment (comma separated)', (dp.preferred_equipment || []).join(', '), 'Dry Van, Reefer, Flatbed', { req: true });
+      const f3 = fld('Preferred lanes / regions (comma separated)', (dp.preferred_lanes || []).join(', '), 'TX, Atlanta, Midwest', { req: true });
+      const f5 = fld('Home base (city, ST)', dp.home_base, 'Dallas, TX', { req: true, hint: 'Used for deadhead + home-time matching.' });
+      const f4 = fld('Max deadhead (miles)', dp.max_deadhead_miles, 'e.g. 250', { type: 'number' });
+      const fW = fld('Max weight you can haul (lbs)', dp.max_weight_lbs, 'e.g. 44000', { type: 'number' });
+      const fMin = fld('Shortest trip you want (miles)', dp.min_trip_miles, 'e.g. 200', { type: 'number' });
+      const fMax = fld('Longest trip you want (miles)', dp.max_trip_miles, 'e.g. 1800', { type: 'number' });
+      const fN = fld('Min notice before pickup (hours)', dp.min_notice_hours, 'e.g. 12', { type: 'number' });
+      const fA = fld('Avoid states / regions (comma separated)', (dp.avoid_states || []).join(', '), 'NYC metro, CA', {});
+      const tHaz = tog('Hazmat endorsed', dp.hazmat);
+      const tTeam = tog('Team drivers', dp.team_drivers);
+      const tWk = tog('Available weekends', dp.weekend_ok !== false);
+      const fNotes = (() => { const t = h('textarea', { class: 'cp-input', rows: '2', placeholder: 'Anything else for your dispatcher (preferred brokers, home-time needs)…' }); t.value = dp.notes || ''; return { row: h('label', { class: 'cp-field' }, [h('span', null, 'Notes for your dispatcher'), t]), t }; })();
+      const req = [f1, f2, f3, f5];
+      const arr = (v) => v.split(',').map(x => x.trim()).filter(Boolean);
       const saveBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        errBox.textContent = ''; const miss = [];
+        req.forEach(x => { x.i.classList.remove('cp-invalid'); if (!x.i.value.trim()) { x.i.classList.add('cp-invalid'); miss.push(1); } });
+        if (f1.i.value && (isNaN(Number(f1.i.value)) || Number(f1.i.value) <= 0)) { f1.i.classList.add('cp-invalid'); miss.push(1); }
+        if (miss.length) { errBox.textContent = 'Please complete the required (*) fields — the matching engine needs them to push loads that fit.'; return; }
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
         try {
-          await setDispatchPrefs({ min_rpm: f1.i.value || null,
-            preferred_equipment: f2.i.value.split(',').map(x => x.trim()).filter(Boolean),
-            preferred_lanes: f3.i.value.split(',').map(x => x.trim()).filter(Boolean),
-            max_deadhead_miles: f4.i.value || null, home_base: f5.i.value || null });
+          await setDispatchPrefs({ min_rpm: f1.i.value || null, target_rpm: fT.i.value || null,
+            preferred_equipment: arr(f2.i.value), preferred_lanes: arr(f3.i.value),
+            home_base: f5.i.value.trim() || null, max_deadhead_miles: f4.i.value || null,
+            avoid_states: arr(fA.i.value), max_weight_lbs: fW.i.value || null,
+            min_trip_miles: fMin.i.value || null, max_trip_miles: fMax.i.value || null, min_notice_hours: fN.i.value || null,
+            hazmat: tHaz.get(), team_drivers: tTeam.get(), weekend_ok: tWk.get(), notes: fNotes.t.value.trim() || null });
           ev.currentTarget.textContent = 'Saved ✓'; setTimeout(() => { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save preferences'; }, 1500);
-        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save preferences'; alert((e && e.message) || 'Could not save.'); }
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save preferences'; errBox.textContent = (e && e.message) || 'Could not save.'; }
       } }, 'Save preferences');
+      const txtFields = [f1, fT, f2, f3, f5, f4, fW, fMin, fMax, fN, fA];
+      const pct = Math.round(txtFields.filter(x => x.i.value.trim()).length / txtFields.length * 100);
       mount(dispCard, [cardHead('Dispatch preferences (AI Pilot)'),
-        h('div', { class: 'cp-muted', style: 'margin-bottom:8px' }, 'Tell us what loads you want — the AI Pilot ranks "Best for you" loads and dispatcher pushes using these.'),
-        f1.row, f2.row, f3.row, f4.row, f5.row, h('div', { style: 'margin-top:8px' }, saveBtn)]);
+        h('div', { class: 'cp-muted', style: 'margin-bottom:6px' }, 'The more you tell us, the better the AI Pilot and your dispatcher match — we only push loads that fit your rate, equipment, lanes and limits. Fields marked * are required.'),
+        h('div', { style: 'margin-bottom:8px;font-weight:800;color:' + (pct >= 70 ? 'var(--lb-green,#16a34a)' : 'var(--lb-blue,#0883F7)') }, 'Matching profile ' + pct + '% complete'),
+        errBox,
+        f1.row, fT.row, f2.row, f3.row, f5.row, f4.row, fW.row, fMin.row, fMax.row, fN.row, fA.row,
+        tHaz.row, tTeam.row, tWk.row, fNotes.row,
+        h('div', { style: 'margin-top:8px' }, saveBtn)]);
     })();
     // WEB-2 — Referral program card (flag-gated: referral_program). Earn from OUR fee; client pays nothing extra.
     const refCard = h('div', { class: 'cp-card' }, [cardHead('Referral program'), h('div', { class: 'cp-muted' }, 'Checking…')]);
@@ -1408,24 +1564,36 @@ async function appView(user) {
     async function loadPayCard() {
       let p; try { p = await myPaymentProfile(); } catch (_) { p = null; }
       const editBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => {
-        const bank = h('input', { class: 'cp-in', placeholder: 'Bank name' });
-        const title = h('input', { class: 'cp-in', placeholder: 'Account title (must match your company)' });
-        const acct = h('input', { class: 'cp-in', placeholder: 'Account number / IBAN' });
+        const inp = (ph, val) => { const i = h('input', { class: 'cp-in', placeholder: ph }); if (val != null) i.value = val; return i; };
+        const bank = inp('Bank name *', p && p.bank_name);
+        const title = inp('Account holder name * (must match your company)', p && p.account_title);
+        const acct = inp('Account number *' + (p && p.account_last4 ? ' (current ···' + p.account_last4 + ')' : ''));
+        const routing = inp('Routing number / ABA *' + (p && p.routing_last4 ? ' (current ···' + p.routing_last4 + ')' : ''));
+        const atype = h('select', { class: 'cp-in' }, [['', 'Account type *'], ['checking', 'Checking'], ['savings', 'Savings']].map(([v, l]) => h('option', { value: v, selected: (p && p.account_type) === v ? 'selected' : null }, l)));
+        const method = h('select', { class: 'cp-in' }, [['ach', 'ACH / direct deposit'], ['wire', 'Wire transfer'], ['factoring', 'Pay my factoring company'], ['check', 'Paper check']].map(([v, l]) => h('option', { value: v, selected: (p && p.payment_method) === v ? 'selected' : null }, l)));
+        const baddr = inp('Bank address (for wires)', p && p.bank_address);
+        const swift = inp('SWIFT / BIC (international only)');
+        const remit = inp('Remittance email (where pay stubs go)', p && p.remittance_email);
+        const phone = inp('Bank / accounting phone');
+        const tax = inp('Tax ID / EIN (for your 1099)');
+        const factco = inp('Factoring company (if factored)', p && p.factoring_company);
+        const noaC = h('input', { type: 'checkbox' }); if (p && p.factoring_noa) noaC.checked = true;
+        const noaRow = h('label', { style: 'display:flex;align-items:center;gap:8px;margin:6px 0' }, [noaC, h('span', { class: 'cp-row-s' }, 'Notice of Assignment (NOA) on file — pay my factoring company')]);
         const err = h('div', { class: 'cp-err' });
-        const close = openModal('Bank account for payments', [
-          h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'This account receives your settlements. A person verifies it before any payout references it; editing resets verification.'),
-          bank, title, acct, err,
+        const close = openModal('Payout & bank details', [
+          h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'This is how your settlements reach you. Give us everything so payments never bounce or delay. A person verifies bank details before any payout references them; editing resets verification. For your security we mask stored numbers — re-enter the account and routing number to save.'),
+          bank, title, acct, routing, atype, method, baddr, swift, remit, phone, tax, factco, noaRow, err,
           h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev) => {
             err.textContent = ''; ev.currentTarget.disabled = true;
-            try { await setMyPaymentProfile({ bank_name: bank.value.trim(), account_title: title.value.trim(), account_number: acct.value.trim() }); close(); loadPayCard(); }
+            try { await setMyPaymentProfile({ bank_name: bank.value.trim(), account_title: title.value.trim(), account_number: acct.value.trim(), routing_number: routing.value.trim(), account_type: atype.value, payment_method: method.value, bank_address: baddr.value.trim(), swift_bic: swift.value.trim(), remittance_email: remit.value.trim(), bank_phone: phone.value.trim(), tax_id: tax.value.trim(), factoring_company: factco.value.trim(), factoring_noa: noaC.checked }); close(); loadPayCard(); }
             catch (e) { ev.currentTarget.disabled = false; err.textContent = (e && e.message) || 'Could not save.'; }
-          } }, 'Save bank account'),
+          } }, 'Save payout details'),
         ]);
-      } }, (p && p.exists) ? 'Update' : 'Add bank account');
+      } }, (p && p.exists) ? 'Update' : 'Add payout details');
       const vt = toneOf(p && p.exists ? (p.verified ? 'success' : 'action') : 'warning');
       mount(payCard, [cardHead('Payment method (bank)', p && p.exists ? (p.verified ? 'Verified ✓' : 'Awaiting verification') : 'Not set'),
         (p && p.exists) ? h('div', { class: 'cp-row', style: 'border-left:4px solid ' + vt.c + ';padding-left:10px;border-radius:8px' }, [
-          h('div', null, [h('div', { class: 'cp-row-t' }, p.bank_name), h('div', { class: 'cp-row-s' }, p.account_title + ' · ···' + (p.account_last4 || ''))]),
+          h('div', null, [h('div', { class: 'cp-row-t' }, p.bank_name), h('div', { class: 'cp-row-s' }, [p.account_title, (p.account_type || '') + ' ···' + (p.account_last4 || ''), p.routing_last4 ? 'ABA ···' + p.routing_last4 : null, p.payment_method ? String(p.payment_method).toUpperCase() : null, p.factoring_noa ? 'NOA → factor' : null].filter(Boolean).join(' · '))]),
           h('span', { class: 'cp-pill', style: 'background:' + vt.bg + ';color:' + vt.c }, p.verified ? 'Verified' : 'Pending'),
         ]) : h('div', { class: 'cp-row-s', style: 'border-left:4px solid ' + vt.c + ';padding-left:10px' }, 'Add your bank account — it is how settlements reach you. Details are masked; only finance staff can see them for verification.'),
         h('div', { style: 'margin-top:10px' }, editBtn)]);

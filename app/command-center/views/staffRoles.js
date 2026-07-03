@@ -5,6 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { getStaffDirectory, getRolesCatalog, assignRole, revokeRole, setStaffStatus, revokeStaffSessions, listCarrierOrgs } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
+import { openPermissionEditor } from './permissionEditor.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -51,6 +52,9 @@ function staffRow(s, reload) {
       catch (ex) { toast(humanizeError(ex), 'error'); }
       e.target.disabled = false;
     } }, 'Revoke sessions'));
+  }
+  if (can('staff.assign_role') || can('roles.assign')) {
+    actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => openPermissionEditor(s) }, 'Permissions'));
   }
   return el('tr', null, [
     el('td', null, [el('div', { style: 'font-weight:600' }, s.email || s.user_id),
