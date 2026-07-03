@@ -250,7 +250,7 @@ export function renderFinance(host) {
     mount(drawer.body, el('div', { class: 'cc-doclist' }, (carriers || []).map(c => el('div', { class: 'cc-doc-item cc-row', onClick: async () => {
       try { await createSettlement({ carrier: c.id }); toast('Settlement created · payout approval queued', 'success'); drawer.close(); tab = 'settlements'; route(); loadKpis(); }
       catch (e) { toast(humanizeError(e), 'error'); }
-    } }, [ el('div', null, [el('b', null, c.name), el('div', { class: 'cc-sub' }, 'bundle sent invoices')]), el('span', { class: 'cc-row-go' }, '›') ]))));
+    } }, [ el('div', null, [el('b', null, c.company || c.contact_name || 'Carrier'), el('div', { class: 'cc-sub' }, [(c.mc ? 'MC ' + c.mc : null), 'bundle unpaid invoices'].filter(Boolean).join(' · '))]), el('span', { class: 'cc-row-go' }, '›') ]))));
   }
 
   function chip(label, onClick) { return el('button', { class: 'cc-chip-btn', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true; await onClick(); } }, label); }

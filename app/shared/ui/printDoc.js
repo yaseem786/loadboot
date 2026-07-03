@@ -62,4 +62,57 @@ export function printDocument(doc) {
   if (w) { w.document.write(html); w.document.close(); }
 }
 
-// Open a branded printable wi
+// Generic branded printable: sections = [{ h?, rows?: [[k,v]...], note? }]
+export function openPrintable(title, sub, sections) {
+  const secHtml = (sections || []).map(s => {
+    let h = '';
+    if (s && s.h) h += '<h1>' + s.h + '</h1>';
+    if (s && Array.isArray(s.rows) && s.rows.length) {
+      h += '<table>' + s.rows.map(r => row(Array.isArray(r) ? r[0] : (r && r.k), Array.isArray(r) ? r[1] : (r && r.v))).join('') + '</table>';
+    }
+    if (s && s.note) h += '<div class="terms">' + s.note + '</div>';
+    return h;
+  }).join('');
+  const html = shell(title || 'Document', sub || 'DOCUMENT', secHtml);
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+// Branded dispatch-sheet printable built from a dispatch-sheet object.
+export function printDispatchSheet(d) {
+  d = d || {};
+  const pk = d.pickup || {}, dl = d.delivery || {}, dr = d.driver || {}, det = d.detention || {};
+  openPrintable('Dispatch Sheet', 'DISPATCH SHEET', [
+    { h: 'Load ' + (d.load_ref || d.load_id || d.reference || ''), rows: [
+      ['Rate', money(d.agreed_rate != null ? d.agreed_rate : (d.rate || 0))],
+      ['Loaded miles', d.miles != null ? d.miles : '—'],
+      ['RPM', d.loaded_rpm != null ? ('$' + d.loaded_rpm + '/mi') : '—'],
+      ['Equipment', d.equipment || '—'],
+      ['Commodity', d.commodity || '—'],
+    ] },
+    { h: 'Pickup', rows: [
+      ['Location', pk.address || pk.city || '—'],
+      ['Window', pk.window || pk.date || '—'],
+      ['Number / ref', pk.number || pk.ref || '—'],
+    ] },
+    { h: 'Delivery', rows: [
+      ['Location', dl.address || dl.city || '—'],
+      ['Window', dl.window || dl.date || '—'],
+      ['Number / ref', dl.number || dl.ref || '—'],
+    ] },
+    { h: 'Driver & equipment', rows: [
+      ['Driver', dr.name || '—'],
+      ['Phone', dr.phone || '—'],
+      ['Truck #', d.truck_no || '—'],
+      ['Trailer #', d.trailer_no || '—'],
+    ] },
+    { h: 'Terms', rows: [
+      ['Detention', det.rate_per_hr != null ? ('$' + det.rate_per_hr + '/hr after ' + (det.free_hours || 0) + 'h') : '—'],
+      ['Lumper', d.lumper_process || '—'],
+      ['POD', d.pod_instructions || '—'],
+    ] },
+    { note: d.notes || d.instructions || 'Drive safe. Contact dispatch with any issues or delays.' },
+  ]);
+}
+
+export default { printDocument, openPrintable, printDispatchSheet };
