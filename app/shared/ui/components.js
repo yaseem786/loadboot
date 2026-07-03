@@ -158,16 +158,28 @@ export function card(children, cls) { return el('div', { class: 'lb-card ' + (cl
 
 // ---- real LoadBoot brand logo (mark + wordmark), matches loadboot.com ----
 const BRAND_MARK_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:9px;display:block">';
-export const BRAND_TAGLINE = 'Higher-paying loads, less deadhead — flat 5%, no contracts.';
+export const BRAND_TAGLINE = 'The Operating System for Trucking';
 
 export function brandLogo(opts = {}) {
   const dark = !!opts.dark;
-  // Real LoadBoot lockup image (no box). Dark surfaces get the white-"load" variant.
-  const lockup = el('img', { class: 'cc-lockup', src: dark ? '/logo-full-dark.png' : '/logo-full.png',
-    alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' });
-  const txt = el('div', { class: 'cc-brandtxt' }, [lockup,
-    opts.sub ? el('small', { class: 'cc-brandsub' + (dark ? ' on-dark' : '') }, opts.sub) : '']);
-  return el('div', { class: 'cc-brandrow' }, [txt]);
+  // Official brand-kit product-family lockup: same icon, same wordmark — only the
+  // descriptor changes (kit section 06). Blue = ops/dev, orange = carrier-side, slate = partners.
+  const ink = dark ? '#FFFFFF' : '#0F172A';
+  const FAMILY = { 'command center': '#60A5FA', 'carrier': '#FB923C', 'pocket': '#FB923C',
+    'marketplace': '#FB923C', 'partner': '#94A3B8', 'developer': '#60A5FA', 'developers': '#60A5FA' };
+  const iconSvg = '<svg width="22" height="22" viewBox="0 0 100 100" role="img" aria-label="LoadBoot">'
+    + '<path d="M16 14 H34 V68 H84 V86 H16 Z" fill="' + ink + '"></path>'
+    + '<path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"></path>'
+    + '<path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="' + ink + '"></path></svg>';
+  const kids = [
+    el('span', { html: iconSvg, style: 'display:block;line-height:0;flex:none' }),
+    el('span', { style: 'font-size:14px;font-weight:800;color:' + ink + ';letter-spacing:-.01em;white-space:nowrap' }, 'LoadBoot'),
+  ];
+  if (opts.sub) {
+    const c = FAMILY[String(opts.sub).toLowerCase()] || '#94A3B8';
+    kids.push(el('span', { style: 'font-size:14px;font-weight:500;color:' + c + ';white-space:nowrap' }, opts.sub));
+  }
+  return el('div', { class: 'cc-brandrow', style: 'display:flex;align-items:center;gap:8px' }, kids);
 }
 
 export default {
