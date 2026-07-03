@@ -228,3 +228,16 @@
   each linking to the resolving module (/exceptions, /booking-requests, /documents, /finance).
   So Ops Radar is now the complete unified action inbox across every flow added this session.
 - Gates: ESM ALL PASS, BUILD OK, AUDIT 0 FAIL.
+
+## #78 — CRITICAL fixes: carrier login + settlement names
+- ROOT CAUSE of carrier "Loading…" hang: printDoc.js was truncated at line 65 and lost its
+  openPrintable + printDispatchSheet exports; carrier/partner app.js import them, so the ES
+  module import failed and the app never mounted. RESTORED both functions (reconstructed
+  from the known signatures using the existing shell()/row() helpers). All portal imports
+  now resolve (verified with an export-resolution script — ALL IMPORTS RESOLVE).
+- CC Finance "New settlement": rows showed blank names because cc_list_carriers returns
+  `company` (not `name`); code read c.name. Fixed → c.company (+ MC).
+- Gates: ESM ALL PASS (98), BUILD OK.
+- NOTE for owner: none of this reaches loadboot.com until committed + pushed + merged to
+  main. Empty panels like "No referrer rows"/"0 settlements" are correct empty states for a
+  fresh account, not bugs.
