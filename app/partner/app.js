@@ -25,6 +25,10 @@ import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 
+
+// PWA real-app behaviour: remember this portal so the installed app opens here next launch.
+try { localStorage.setItem('lb_last_portal', '/app/partner/'); } catch (_) {}
+
 registerAppSW();
 const root = document.getElementById('lb-app');
 
@@ -55,7 +59,7 @@ const ic = (name) => ({
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
-const TAGLINE = 'Keep Your Wheels Earning';
+const TAGLINE = 'The Operating System for Trucking';
 const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (dark ? '/logo-icon-dark.png' : '/icon-512.png') + '" width="34" height="34" alt="LoadBoot" style="display:block">' });
 
 const KIND_LABEL = { broker: 'Broker', shipper: 'Shipper', facility: 'Facility' };

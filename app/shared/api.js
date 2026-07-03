@@ -388,7 +388,7 @@ export const setEndpointActive = (id, active) => rpc('cc_set_endpoint_active', {
 export const testEndpoint = (id) => rpc('cc_test_endpoint', { p_id: id });
 export const listDeliveries = (o = {}) => rpc('cc_list_deliveries', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
 
-// ---- Wave 9 Carrier Pocket App (flag: carrier_pocket_enabled) — carrier-scoped, self-resolving ----
+// ---- Wave 9 carrier self-service RPCs (cc_pocket_* server functions; used by the Carrier Portal) ----
 export const pocketOverview = () => rpc('cc_pocket_overview');
 export const pocketTrips = (limit) => rpc('cc_pocket_trips', { p_limit: limit ?? 50 });
 export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: limit ?? 50 });

@@ -1,6 +1,6 @@
 // announcements.js — Control Tower Wave L: Announcements & Broadcast center.
 // Send an Info / Warning / Emergency / Promotion message to ALL carriers or one specific
-// carrier; it appears in their Carrier Pocket app + web portal. Toggle active, set expiry.
+// carrier; it appears in their Carrier Portal (desktop + phone). Toggle active, set expiry.
 // Reads/writes via cc_*announcement* RPCs (announce.view / announce.manage), RBAC-gated.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';

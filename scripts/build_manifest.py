@@ -56,8 +56,6 @@ FILES = [
     "migrations/ct-waveBI-security-gate-repair/cuo_pod_queue_enrich.sql",
     "migrations/ct-waveBI-security-gate-repair/cup_register_pod_module.sql",
     # POD frontend source (carrier/driver upload + Command Center review)
-    "app/pocket/pocket.js",
-    "app/pocket/pocket.css",
     "app/carrier/app.js",
     "app/carrier/carrier.css",
     "app/command-center/views/podReview.js",
