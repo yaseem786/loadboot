@@ -63,3 +63,13 @@ BRAND REFRESH (this batch)
   favicon.ico/-32/-48, apple-touch-icon, icon-192/512/maskable, og-image.
   Root + site/ copies kept in sync; full kit archived in docs/brand-kit/assets.
 - sw.js cache bumped lb-v5 -> lb-v6 so returning visitors fetch the new logos.
+
+INDRIVE-CLASS APP EXPERIENCE (this batch, official brand palette only)
+- Carrier Portal: dark mode (Off/On/System), side drawer with profile + live
+  star rating, Online/Offline availability pill (persisted in dispatch prefs),
+  inDrive-style load request cards, Settings screen, compliance/fees banners.
+- MUTUAL RATING ENGINE v1 (DB live): trip-verified carrier<->broker/shipper
+  ratings; Rating screen replaces Account health tab (health score kept below);
+  rate button on delivered trips; partner portal Ratings card.
+- One carrier account: Pocket merged (live GPS + Navigate ported) and deleted.
+- PWA: root manifest -> /app/ launcher; installed app opens the app, not the site.

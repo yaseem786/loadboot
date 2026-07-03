@@ -10,6 +10,7 @@ import {
   partnerRegister, partnerOverview,
   partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
   partnerRequestShipment, partnerMyShipments, shipperPostLoad,
+  myRating, rateCounterparty, partnerRateableTrips,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   bookRequestsQueue, decideBookRequest, myApprovedPartners,
   partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
@@ -311,6 +312,46 @@ function accountCard() {
 
 /* WEB-2 — referral program card (flag-gated: referral_program). Brokers earn a share of LoadBoot's own
    dispatch fee on carriers/brokers they refer — the referred party never pays extra. Payouts are human-reviewed. */
+/* ----- Mutual rating engine: my rating + rate carriers on delivered trips ----- */
+function ratingCard() {
+  const host = h('div', { class: 'cp-card' }, [
+    h('div', { class: 'cp-cardhead' }, [icon('shield', 18), h('h3', null, 'Ratings')]),
+    h('div', { class: 'cp-muted' }, 'Loading…'),
+  ]);
+  (async () => {
+    let mr = null, rt = [];
+    try { mr = await myRating(); } catch (_) {}
+    try { rt = await partnerRateableTrips(10); } catch (_) { rt = []; }
+    const stars = (n) => h('span', { style: 'color:#F97316;letter-spacing:2px' }, '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0)));
+    const mine = mr ? h('div', { class: 'cp-row', style: 'border:0' }, [
+      h('div', null, [h('div', { class: 'cp-row-t' }, 'Your rating'), h('div', { class: 'cp-row-s' }, (mr.count || 0) + ' reviews · ' + (mr.trips_completed || 0) + ' trips delivered')]),
+      mr.avg != null ? h('div', null, [stars(mr.avg), h('b', { style: 'margin-left:6px' }, String(mr.avg))]) : h('span', { class: 'cp-row-s' }, 'No ratings yet'),
+    ]) : null;
+    const rows = (rt || []).map(x => {
+      const w = h('div');
+      if (x.my_stars) { w.appendChild(h('div', { class: 'cp-row-s' }, ['You rated: ', stars(x.my_stars)])); }
+      else {
+        const bar = h('div', { style: 'display:flex;gap:5px;font-size:22px;cursor:pointer;user-select:none' }, [1, 2, 3, 4, 5].map(n =>
+          h('span', { style: 'color:#94a3b8', onClick: async () => {
+            try { await rateCounterparty(x.trip_id, n, null); w.innerHTML = ''; w.appendChild(h('div', { class: 'cp-row-s', style: 'color:#16a34a' }, '✓ Rated ' + n + '★')); }
+            catch (e) { alert((e && e.message) || 'Could not rate.'); }
+          } }, '☆')));
+        w.appendChild(bar);
+      }
+      return h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, x.lane), h('div', { class: 'cp-row-s' }, 'Delivered ' + String(x.delivered_at || '').slice(0, 10))]),
+        w,
+      ]);
+    });
+    mount(host, [
+      h('div', { class: 'cp-cardhead' }, [icon('shield', 18), h('h3', null, 'Ratings')]),
+      mine,
+      rows.length ? h('div', null, [h('div', { class: 'cp-row-s', style: 'margin:8px 0 2px;font-weight:700' }, 'Rate the carrier on your delivered trips:'), ...rows]) : h('div', { class: 'cp-muted' }, 'Delivered trips appear here so you can rate the carrier.'),
+    ].filter(Boolean));
+  })();
+  return host;
+}
+
 function referralCard() {
   const money2 = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
   const row = (label, valNode) => h('div', { style: 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eef2f7' },
@@ -651,7 +692,7 @@ async function brokerDash(user, ov) {
     wrap.appendChild(pc); wrap.appendChild(ac);
     return wrap;
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), bookRequestsCard(), approvedPartnersCard(), shipmentInboxCard(), packetAgreementCards(), invoicesCard(), referralCard(), accountCard()])));
+  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), bookRequestsCard(), approvedPartnersCard(), shipmentInboxCard(), packetAgreementCards(), invoicesCard(), ratingCard(), referralCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
