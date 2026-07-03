@@ -148,6 +148,10 @@ export const setMyPaymentProfile = (p) => rpc('cc_set_my_payment_profile', { p }
 export const myPaymentProfile = () => rpc('cc_my_payment_profile');
 export const paymentProfilesQueue = (status) => rpc('cc_payment_profiles_queue', { p_status: status || 'unverified' });
 export const verifyPaymentProfile = (org, ok) => rpc('cc_verify_payment_profile', { p_org: org, p_ok: ok });
+export const carrierPaymentProfile = (org) => rpc('cc_carrier_payment_profile', { p_org: org });
+export const trustProfile = (org) => rpc('cc_trust_profile', { p_org: org });
+export const myTrustProfile = () => rpc('cc_my_trust_profile');
+export const myApprovedPartners = () => rpc('cc_my_approved_partners');
 export const marketingIntel = (days = 30) => rpc('cc_marketing_intel', { p_days: days });
 export const rateStandards = () => rpc('cc_rate_standards');
 export const setRateStandard = (k, v) => rpc('cc_set_rate_standard', { p_key: k, p_value: v });
@@ -397,6 +401,10 @@ export const publicLoadOpportunities = (limit) => rpc('get_public_load_opportuni
 // Phase 2B — carrier self-book a load (full detail + race-safe claim → trip).
 export const pocketAvailableLoads = (limit) => rpc('cc_pocket_available_loads', { p_limit: limit ?? 24 });
 export const pocketBookLoad = (loadId) => rpc('cc_pocket_book_load', { p_load: loadId });
+export const requestBookLoad = (load, note) => rpc('cc_request_book_load', { p_load: load, p_note: note ?? null });
+export const myBookRequests = (limit) => rpc('cc_my_book_requests', { p_limit: limit ?? 50 });
+export const bookRequestsQueue = (status) => rpc('cc_book_requests_queue', { p_status: status ?? 'pending' });
+export const decideBookRequest = (id, action, note) => rpc('cc_decide_book_request', { p_id: id, p_action: action, p_note: note ?? null });
 // Carrier notification inbox (Phase 5)
 export const pocketNotifications = (limit) => rpc('cc_pocket_notifications', { p_limit: limit ?? 50 });
 export const pocketMarkNotificationRead = (id) => rpc('cc_pocket_mark_notification_read', { p_id: id });
@@ -480,6 +488,8 @@ export const globalSearch = (q, limit) => rpc('cc_global_search', { p_q: q, p_li
 // ---- Enterprise Completion: Fleet & execution (flag: fleet_enabled) ----
 export const fleetOverview = () => rpc('cc_fleet_overview');
 export const listDrivers = (o = {}) => rpc('cc_list_drivers', { p_carrier: o.carrier ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const listPermissionsFor = (userId) => rpc('cc_list_permissions_for', { p_user: userId });
+export const setUserPermission = (userId, perm, effect) => rpc('cc_set_user_permission', { p_user: userId, p_perm: perm, p_effect: effect });
 export const upsertDriver = (o = {}) => rpc('cc_upsert_driver', { p_id: o.id ?? null, p_carrier: o.carrier, p_name: o.name, p_phone: o.phone ?? null, p_license_no: o.licenseNo ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
 export const upsertTruck = (o = {}) => rpc('cc_upsert_truck', { p_id: o.id ?? null, p_carrier: o.carrier, p_unit: o.unit, p_plate: o.plate ?? null, p_vin: o.vin ?? null, p_equipment: o.equipment ?? null });
 export const assignTripResources = (o = {}) => rpc('cc_assign_trip_resources', { p_trip: o.trip, p_driver: o.driver ?? null, p_truck: o.truck ?? null, p_trailer: o.trailer ?? null });
@@ -681,7 +691,7 @@ export const revokeApiKey = (id) => rpc('cc_revoke_api_key', { p_id: id });
 // manual payments (ctn) — no gateway required
 export const getPaymentInstructions = () => rpc('cc_get_payment_instructions');
 export const setPaymentInstructions = (text) => rpc('cc_set_payment_instructions', { p_text: text });
-export const partnerSubmitInvoicePayment = (id) => rpc('cc_partner_submit_invoice_payment', { p_id: id });
+export const partnerSubmitInvoicePayment = (id, proofPath, expectedDate, ref, note) => rpc('cc_partner_submit_invoice_payment', { p_id: id, p_proof_path: proofPath ?? null, p_expected_date: expectedDate ?? null, p_ref: ref ?? null, p_note: note ?? null });
 // carrier verification center (cua) — real FMCSA-backed
 export const recordCarrierVerification = (carrier, result) => rpc('cc_record_carrier_verification', { p_carrier: carrier, p_result: result });
 export const listCarrierVerifications = (o = {}) => rpc('cc_list_carrier_verifications', { p_carrier: o.carrier ?? null, p_limit: o.limit ?? 100 });

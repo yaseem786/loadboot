@@ -17,6 +17,8 @@ import { renderDispatch } from './views/dispatch.js';
 import { renderCarriers } from './views/carriers.js';
 import { renderLoads } from './views/loads.js';
 import { renderDocuments } from './views/documents.js';
+import { renderBookingRequests } from './views/bookingRequests.js';
+import '../shared/ui/chatWidget.js';
 import { renderSettings } from './views/settings.js';
 import { renderStaffRoles } from './views/staffRoles.js';
 import { renderAudit } from './views/audit.js';
@@ -208,6 +210,7 @@ async function boot() {
     '/carriers': () => { setActive('/carriers'); guard(['carriers.view', 'carriers.edit', 'carriers.approve'], () => renderCarriers(content))(); },
     '/loads': () => { setActive('/loads'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderLoads(content))(); },
     '/documents': () => { setActive('/documents'); guard(['documents.view', 'documents.review'], () => renderDocuments(content))(); },
+    '/booking-requests': () => { setActive('/booking-requests'); guard(['loads.assign', 'loads.publish', 'carriers.view'], () => renderBookingRequests(content))(); },
     '/automation': () => { setActive('/automation'); if (automationEnabled) renderAutomation(content); else renderPlaceholder(content, 'Not available', 'The automation engine is not enabled in this environment.'); },
     '/crm': () => { setActive('/crm'); if (crmEnabled && can('crm.view')) renderCRM(content); else denied(); },
     '/compliance': () => { setActive('/compliance'); if (complianceEnabled && can('compliance.view')) renderCompliance(content); else denied(); },

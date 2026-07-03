@@ -56,7 +56,7 @@ export function printTable(title, subtitle, columns, rows) {
     '.bar{margin-bottom:16px}.btn{background:#0883F7;color:#fff;border:none;border-radius:8px;padding:9px 15px;font-weight:700;cursor:pointer}' +
     '@media print{body{padding:0}.noprint{display:none}}</style></head><body>' +
     '<div class="bar noprint"><button class="btn" onclick="window.print()">Print / Save as PDF</button></div>' +
-    '<div class="head"><div class="brand">Load<b>boot</b></div><div class="sub" style="text-align:right">' + escHtml(subtitle || '') + '</div></div>' +
+    '<div class="head"><img src="/logo-full.png" alt="LoadBoot" style="height:28px;width:auto;display:block"><div class="sub" style="text-align:right">' + escHtml(subtitle || '') + '</div></div>' +
     '<h1>' + escHtml(title) + '</h1><div class="sub">' + (rows || []).length + ' rows · generated ' + new Date().toLocaleString() + '</div>' +
     '<table><thead><tr>' + th + '</tr></thead><tbody>' + trs + '</tbody></table></body></html>';
   const w = window.open('', '_blank');

@@ -5,7 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { can } from '../../shared/permissions.js';
 import { icon } from '../../shared/ui/icons.js';
-import { globalSearch } from '../../shared/api.js';
+import { globalSearch, myNotifications, markMyNotification } from '../../shared/api.js';
 import { avatar, brandLogo, BRAND_TAGLINE } from '../../shared/ui/components.js';
 import ENV from '../../shared/env.js';
 import { signOut } from '../../shared/session.js';
@@ -24,6 +24,7 @@ const NAV = [
   ]},
   { group: 'Operations', items: [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
+    { path: '/booking-requests', label: 'Booking requests', icon: 'list', perm: 'any:loads.assign,loads.publish,carriers.view' },
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/matching', label: 'Smart matching', icon: 'trend', perm: 'carriers.view' },
@@ -105,7 +106,7 @@ function permVisible(item) {
   return can(item.perm);
 }
 
-const SEARCH_HASH = { carrier: '/carriers', load: '/trips', lead: '/crm', invoice: '/finance' };
+const SEARCH_HASH = { carrier: '/carriers', partner: '/partners', load: '/trips', lead: '/crm', invoice: '/finance', driver: '/fleet' };
 function globalSearchBox() {
   const input = el('input', { class: 'cc-input cc-search', placeholder: 'Search carriers, loads, leads, invoices…' });
   const panel = el('div', { class: 'cc-search-panel', hidden: true });
@@ -129,6 +130,39 @@ function globalSearchBox() {
     }, 220);
   });
   document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+  return wrap;
+}
+
+function notifBell() {
+  const badge = el('span', { hidden: true, style: 'position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#ef4444;color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1' });
+  const btn = el('button', { class: 'cc-iconbtn', title: 'Notifications', style: 'position:relative' }, [icon('bell', 18), badge]);
+  const panel = el('div', { class: 'cc-search-panel', hidden: true, style: 'right:0;left:auto;min-width:320px;max-width:370px;max-height:440px;overflow:auto' });
+  const wrap = el('div', { class: 'cc-search-wrap', style: 'position:relative' }, [btn, panel]);
+  let items = [];
+  async function refresh() {
+    try { items = await myNotifications(30); } catch (_) { items = []; }
+    const unread = (items || []).filter(n => !n.read_at).length;
+    if (unread > 0) { badge.textContent = String(unread > 99 ? '99+' : unread); badge.hidden = false; } else badge.hidden = true;
+  }
+  function renderPanel() {
+    if (!items || !items.length) { mount(panel, el('div', { class: 'cc-search-empty' }, 'No notifications')); return; }
+    mount(panel, [
+      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--lb-border,#e2e8f0)' }, [
+        el('b', null, 'Notifications'),
+        el('button', { style: 'font-size:.8rem;color:var(--lb-blue,#0883F7);background:none;border:none;cursor:pointer', onClick: async (e) => { e.stopPropagation(); for (const n of items.filter(x => !x.read_at)) { try { await markMyNotification(n.id); } catch (_) {} } await refresh(); renderPanel(); } }, 'Mark all read'),
+      ]),
+      ...items.map(n => {
+        const p = n.payload || {};
+        const url = p.url ? (String(p.url).charAt(0) === '/' ? '#' + p.url : p.url) : '#';
+        return el('a', { class: 'cc-search-row', href: url, style: n.read_at ? 'opacity:.55' : '', onClick: async () => { try { if (!n.read_at) await markMyNotification(n.id); } catch (_) {} panel.hidden = true; refresh(); } }, [
+          el('div', null, [el('b', null, p.title || n.template_key || 'Update'), p.body ? el('div', { class: 'cc-sub' }, p.body) : '']),
+        ]);
+      }),
+    ]);
+  }
+  btn.addEventListener('click', (e) => { e.stopPropagation(); panel.hidden = !panel.hidden; if (!panel.hidden) renderPanel(); });
+  document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) panel.hidden = true; });
+  refresh(); setInterval(refresh, 60000);
   return wrap;
 }
 
@@ -203,7 +237,7 @@ export function renderShell(root, user, flags) {
         ]),
         globalSearchBox(),
         el('div', { class: 'cc-top-right' }, [
-          el('button', { class: 'cc-iconbtn', title: 'Notifications' }, [icon('bell', 18), el('span', { class: 'dotk' })]),
+          notifBell(),
           el('div', { class: 'cc-user' }, [
             avatar(user && user.email, 'Owner'),
             el('div', { class: 'who' }, [
