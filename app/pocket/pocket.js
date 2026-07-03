@@ -97,14 +97,22 @@ async function appView() {
     let anns = []; try { anns = await pocketAnnouncements(); } catch (_) { anns = []; }
     // A9 — today's trip, front and center (driver companion: what am I doing RIGHT NOW?)
     let heroTrip = null; try { const ts = await pocketTrips(10); heroTrip = (ts || []).find(t => t.status === 'in_transit') || (ts || []).find(t => t.status === 'dispatched') || null; } catch (_) {}
+    const _HSTEPS = [['dispatched', 'Dispatched'], ['in_transit', 'En route'], ['delivered', 'Delivered']];
+    const _hIdx = heroTrip ? Math.max(0, _HSTEPS.findIndex(st => st[0] === heroTrip.status)) : 0;
+    const heroStepper = heroTrip ? h('div', { style: 'display:flex;gap:6px;margin:10px 0 4px' }, _HSTEPS.map(([k, label], i) => h('div', { style: 'flex:1;text-align:center' }, [
+      h('div', { style: 'height:6px;border-radius:99px;background:' + (i <= _hIdx ? '#0883F7' : '#e2e8f0') }),
+      h('div', { style: 'font-size:11px;margin-top:5px;color:' + (i <= _hIdx ? '#0883F7' : '#94a3b8') + ';font-weight:' + (i === _hIdx ? '700' : '500') }, label),
+    ]))) : null;
     const heroCard = heroTrip ? h('div', { class: 'pk-card', style: 'border-left:4px solid #0883F7' }, [
       h('h3', null, heroTrip.status === 'in_transit' ? '🚛 On the road now' : '📋 Today’s trip — confirm & start'),
       h('div', { class: 'pk-row', style: 'border:0' }, [
-        h('div', null, [h('div', { class: 't' }, (heroTrip.origin || '—') + ' → ' + (heroTrip.destination || '—')), h('div', { class: 's' }, money(heroTrip.rate || 0))]),
+        h('div', null, [h('div', { class: 't', style: 'font-size:17px;font-weight:800' }, (heroTrip.origin || '—') + ' → ' + (heroTrip.destination || '—')), h('div', { class: 's' }, money(heroTrip.rate || 0) + (heroTrip.miles ? ' · ' + heroTrip.miles + ' mi' : ''))]),
         pill(heroTrip.status),
       ]),
-      h('button', { class: 'pk-btn', onclick: () => { tab = 'trips'; render(); } }, 'Open trip — share location, arrive/depart, POD →'),
-    ]) : null;
+      heroStepper,
+      h('button', { class: 'pk-btn', onclick: () => { tab = 'trips'; render(); } }, heroTrip.status === 'in_transit' ? 'Continue trip — arrive / depart / POD →' : 'Confirm & start trip →'),
+      heroTrip.status === 'in_transit' ? h('button', { class: 'pk-btn pk-mini', style: 'margin-top:8px', onclick: (ev) => shareLocation(ev, heroTrip.id) }, '📍 Share live location') : null,
+    ].filter(Boolean)) : null;
     // A9 — unified per-user notifications (Command Center pushes; global tone colours)
     let notifs = []; try { notifs = await myNotifications(15); } catch (_) { notifs = []; }
     const unread = (notifs || []).filter(n => !n.read_at);
@@ -246,11 +254,22 @@ async function appView() {
         } }, 'Send emergency');
         emWrap.appendChild(h('div', { class: 'pk-issueform' }, [cat, reason, h('div', { class: 's' }, '\ud83d\udcf7 Photo proof (opens camera):'), photo, proof, h('div', { class: 's' }, 'New delivery time (optional):'), when, send]));
       } }, '🚨 Emergency') : null;
+      const _sIdx = ['dispatched', 'in_transit', 'delivered'].indexOf(t.status);
+      const _tripStepper = ['dispatched', 'in_transit', 'delivered', 'invoiced'].includes(t.status)
+        ? h('div', { style: 'display:flex;gap:5px;margin:8px 0 2px' }, [['dispatched', 'Dispatched'], ['in_transit', 'En route'], ['delivered', 'Delivered']].map(([k, label], i) => {
+            const done = (t.status === 'invoiced') ? true : (i <= _sIdx);
+            return h('div', { style: 'flex:1;text-align:center' }, [
+              h('div', { style: 'height:5px;border-radius:99px;background:' + (done ? '#0883F7' : '#e2e8f0') }),
+              h('div', { style: 'font-size:10px;margin-top:3px;color:' + (done ? '#0883F7' : '#94a3b8') }, label),
+            ]);
+          }))
+        : null;
       return h('div', { class: 'pk-trip' }, [
         h('div', { class: 'pk-row', style: 'border:0;padding:0' }, [
-          h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0))]),
+          h('div', null, [h('div', { class: 't' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 's' }, money(t.rate || 0) + (t.miles ? ' · ' + t.miles + ' mi' : '') + (t.loaded_rpm ? ' · $' + t.loaded_rpm + '/mi' : ''))]),
           pill(t.status),
         ]),
+        _tripStepper,
         (confirm || startBtn || deliverBtn || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, startBtn, deliverBtn, share, shBtn, issueBtn, podBtn, ...stamps, emBtn].filter(Boolean)) : null,
         formWrap,
         podWrap,

@@ -3,7 +3,7 @@
 // (assign/revoke role, suspend/reactivate, revoke sessions) — each server-authorized
 // and audited. Server guards (self-mutation, last-owner) are surfaced as friendly errors.
 import { el, mount } from '../../shared/ui/dom.js';
-import { getStaffDirectory, getRolesCatalog, assignRole, revokeRole, setStaffStatus, revokeStaffSessions, listCarrierOrgs } from '../../shared/api.js';
+import { getStaffDirectory, getRolesCatalog, assignRole, revokeRole, setStaffStatus, revokeStaffSessions, listCarrierOrgs, inviteStaff, listStaffInvites, revokeStaffInvite } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { openPermissionEditor } from './permissionEditor.js';
 import { showLoading, showError } from '../../shared/loading.js';
@@ -105,6 +105,52 @@ function assignForm(staff, reload) {
   ]);
 }
 
+function inviteForm(reload) {
+  const email = el('input', { class: 'cc-input', type: 'email', placeholder: 'new.staff@email.com', style: 'min-width:220px' });
+  const roleSel = el('select', { class: 'cc-input' }, [el('option', { value: '' }, 'Role\u2026')].concat(
+    (_roles || []).filter(r => r.role_key !== 'owner').map(r => el('option', { value: r.role_key }, r.role_key))));
+  const out = el('div', { style: 'margin-top:10px' });
+  const listHost = el('div', { style: 'margin-top:12px' });
+  const loadInvites = async () => {
+    let rows; try { rows = await listStaffInvites(); } catch (_) { return; }
+    rows = (rows || []).filter(r => r.status === 'pending');
+    if (!rows.length) { mount(listHost, ''); return; }
+    mount(listHost, [el('div', { style: 'font-weight:700;font-size:.85rem;margin-bottom:4px' }, 'Pending invites')].concat(
+      rows.map(r => el('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--lb-border,#e2e8f0)' }, [
+        el('div', null, [el('b', null, r.email), el('div', { class: 'cc-sub' }, r.role + ' \u00b7 expires ' + new Date(r.expires_at).toLocaleDateString())]),
+        el('button', { class: 'lb-btn lb-btn-secondary', onClick: async (ev) => { ev.currentTarget.disabled = true; try { await revokeStaffInvite(r.id); loadInvites(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Revoke'),
+      ]))));
+  };
+  const btn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
+    if (!email.value.trim() || !roleSel.value) { toast('Enter an email and pick a role.', 'error'); return; }
+    ev.currentTarget.disabled = true;
+    try {
+      const r = await inviteStaff(email.value.trim(), roleSel.value);
+      const link = (r && r.link) || '';
+      const to = email.value.trim();
+      const subject = encodeURIComponent('You are invited to LoadBoot Command Center');
+      const bodyText = encodeURIComponent('Hello,\n\nYou have been invited to join the LoadBoot Command Center as \"' + roleSel.value + '\".\n\nSet up your account here:\n' + link + '\n\nSign in (or create an account) using THIS email address \u2014 your access is applied automatically on first login.\n\n\u2014 LoadBoot');
+      mount(out, [
+        el('div', { class: 'cc-sub', style: 'margin-bottom:6px' }, 'Invite created. Share this setup link, or email it:'),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [
+          el('input', { class: 'cc-input', value: link, readonly: 'readonly', style: 'min-width:280px' }),
+          el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => { try { navigator.clipboard.writeText(link); toast('Link copied', 'success'); } catch (_) {} } }, 'Copy link'),
+          el('a', { class: 'lb-btn lb-btn-primary', href: 'mailto:' + to + '?subject=' + subject + '&body=' + bodyText }, '\u2709 Send invite email'),
+        ]),
+      ]);
+      email.value = ''; roleSel.value = ''; loadInvites();
+    } catch (e) { toast(humanizeError(e), 'error'); }
+    ev.currentTarget.disabled = false;
+  } }, 'Create invite');
+  loadInvites();
+  return el('div', { class: 'lb-card', style: 'margin-bottom:18px' }, [
+    el('div', { style: 'font-family:var(--lb-head);font-weight:700;margin-bottom:10px' }, 'Invite a staff member by email'),
+    el('div', { class: 'cc-toolbar' }, [email, roleSel, btn]),
+    el('p', { style: 'color:var(--lb-muted);font-size:.8rem;margin-top:6px' }, 'They receive a setup link. When they sign in with this email, the chosen role is applied automatically. Owner cannot be invited.'),
+    out, listHost,
+  ]);
+}
+
 export async function renderStaffRoles(host) {
   const body = el('div');
   mount(host, el('div', null, [
@@ -124,7 +170,7 @@ export async function renderStaffRoles(host) {
           el('th', null, 'Roles'), el('th', null, 'Actions')])),
         el('tbody', null, (staff || []).map(s => staffRow(s, reload))),
       ]);
-      mount(body, [assignForm(staff || [], reload), el('div', { class: 'lb-card' }, table)]);
+      mount(body, [assignForm(staff || [], reload), (canAssignRoles() ? inviteForm(reload) : ''), el('div', { class: 'lb-card' }, table)]);
     } catch (e) { showError(body, humanizeError(e), reload); }
   }
   await reload();

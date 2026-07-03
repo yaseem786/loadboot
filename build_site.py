@@ -332,7 +332,7 @@ def header(active):
     return '''<header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
-<div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="contact.html" class="btn btn-primary hd-btn">Get Started %s</a>
+<div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
 <button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
 </div></header>''' % (links, mob, ARW)
 
@@ -483,7 +483,7 @@ def page(fname, title, desc, active, body, schema=''):
 def final_cta():
     return '''<section><div class="wrap"><div class="fcta reveal"><h2>Ready to keep your truck loaded?</h2>
 <p class="lead center" style="margin:14px auto 26px">Get a free quote today and see how much more your truck could be earning with a dispatcher in your corner.</p>
-<a href="contact.html" class="btn btn-primary">Get Started %s</a></div></div></section>''' % ARW
+<a href="get-started.html" class="btn btn-primary">Get Started %s</a></div></div></section>''' % ARW
 
 def faq_block(items):
     rows = ''.join('<details%s><summary>%s</summary><p>%s</p></details>' % (' open' if i==0 else '', q, a) for i,(q,a) in enumerate(items))
@@ -1157,20 +1157,75 @@ page('services.html','Truck Dispatch Services (Full List) | Loadboot',
      'services.html', serv_body, serv_hub_faq_schema)
 
 # ---------- ABOUT ----------
-about_body = svc_hero('About Loadboot','We started Loadboot to give carriers what most dispatchers don\'t: honesty, real attention, and a partner who actually picks up the phone.')
-about_body += '''<section><div class="wrap prose reveal"><div class="eyebrow">Our Story</div>
-<p>Loadboot was built on a simple belief &mdash; that the people who keep America moving deserve a dispatcher who treats their truck like a business, not a number. Too many carriers get locked into contracts, handed cheap freight, and left on hold when they need answers. We do the opposite.</p></div></section>'''
+about_body = svc_hero('About LoadBoot','We built LoadBoot to give carriers what most dispatchers don&rsquo;t: honesty, real attention, and a partner who actually picks up the phone.')
+
+# Why we exist — problem/solution split with a navy pull-quote visual.
+_about_visual = ('<div style="background:linear-gradient(135deg,#0b1220,#12304f 55%,#0e3b33);color:#fff;border-radius:22px;padding:34px;box-shadow:0 24px 60px -30px rgba(8,131,247,.55)">'
+    '<div style="font-size:2.8rem;font-weight:800;letter-spacing:-.02em;line-height:1">5%</div>'
+    '<div style="color:#93c5fd;font-weight:600;margin-bottom:20px">flat dispatch fee &mdash; that&rsquo;s the entire pricing page</div>'
+    '<p style="color:#e2e8f0;margin:0;font-size:1.06rem;line-height:1.65;font-style:italic">&ldquo;We only win when your truck wins. No contracts means we have to earn your business every single week.&rdquo;</p>'
+    '<div style="margin-top:18px;color:#94a3b8;font-size:.86rem">&mdash; the LoadBoot promise</div></div>')
+about_body += m_split('Why we exist', 'The freight game is stacked against the small carrier',
+    ['Too many owner-operators and new-authority carriers get locked into long contracts, handed the cheapest freight on the board, and left on hold when a load goes sideways. The margin gets squeezed at every turn &mdash; and the people doing the actual driving keep the least.',
+     'LoadBoot flips that. You keep your own operating authority and approve every load. We work the load boards and our broker relationships to find better-paying freight on your lanes, negotiate the rate before you ever see it, and handle the paperwork and back office so you can focus on driving.'],
+    _about_visual, flip=True, accent='#0883F7',
+    bullets=['Flat 5% dispatch fee &mdash; no contracts, cancel anytime',
+             'You approve every load and keep your authority',
+             'A real dispatcher on call, not a ticket queue'])
+
 about_body += m_zigzag('What we stand for', 'A dispatcher that treats your truck like a business', [
  ('scale', 'Honesty over everything', 'We negotiate hard on your rates, tell you the truth even when it&rsquo;s not what you want to hear, and never lock you into a contract. If we&rsquo;re not adding value, you can walk &mdash; and that keeps us honest.'),
  ('route', 'One partner, the whole business', 'You keep your own authority and approve every load. We handle the rest &mdash; finding freight, negotiating rates, talking to brokers, managing paperwork, and the back office: factoring, IFTA, compliance and claims.'),
  ('users', 'Built for where you are', 'Owner-operators, small and growing fleets, independent carriers, and especially new-authority carriers who need a guide through their first months. Wherever you are in your journey, we meet you there.'),
 ], accent='#0d9488')
-_ABOUT_EXTRA = '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How we operate</div><h2>The rules we run the company by</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#129517;</div><h3>Explainable, always</h3><p>Every match score, every detention minute, every settlement line can be traced to real records. If we cannot explain a number, we do not show it.</p></div><div class="card reveal"><div class="icon">&#128274;</div><h3>Your data is yours</h3><p>Tenant-isolated accounts, role-based access, audited actions. Drivers never see company finances; brokers never see carrier internals.</p></div><div class="card reveal"><div class="icon">&#9878;</div><h3>Humans control money</h3><p>Software prepares invoices and settlements; a person approves every payout. Maker and checker are never the same account.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Contact us</div><h2>One company, three front doors</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>General &amp; support</h3><p><a href="mailto:hello@loadboot.com">hello@loadboot.com</a> &mdash; onboarding, questions, compliance and anything else.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>Dispatch &amp; loads</h3><p><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a> &mdash; active loads, trips, appointments and PODs.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>Billing &amp; settlements</h3><p><a href="mailto:billing@loadboot.com">billing@loadboot.com</a> &mdash; invoices, settlements and payment questions.</p></div></div></div></section>'
-about_body += _ABOUT_EXTRA
-about_body += STATS + WHYUS + PROMISE + final_cta()
-page('about.html','About Loadboot | Honest Truck Dispatch for Carriers',
-     'Loadboot is a US truck dispatch service built on honesty and real attention. We help owner-operators and new-authority carriers earn more with no contracts.',
-     'about.html', about_body)
+
+about_body += m_timeline('Our story', 'How LoadBoot came to be', [
+ ('phone', 'It started with a phone that rang', 'People who lived the carrier side got tired of dispatchers who vanished the moment a load went wrong. LoadBoot began as a simple promise: always pick up.'),
+ ('route', 'Built around the load, not the contract', 'We designed every workflow &mdash; matching, rate confirmation, tracking, POD and settlement &mdash; around getting the carrier paid fairly and fast, with no lock-in.'),
+ ('shieldcheck', 'Trust turned into a system', 'Verification, mutual vetting between carriers and brokers, and live account health turned &ldquo;just trust us&rdquo; into records anyone on the load can actually see.'),
+ ('bolt', 'One platform for the whole chain', 'Carriers, drivers, brokers and shippers now run on the same rails &mdash; with a real person in the loop wherever money moves.'),
+], accent='#7c3aed')
+
+about_body += m_dark('How we operate', 'The rules we run the company by',
+    'A few non-negotiables that shape every feature and every decision.',
+    [('target', 'Explainable, always', 'Every match score, every detention minute, every settlement line traces to real records. If we cannot explain a number, we do not show it.'),
+     ('key', 'Your data is yours', 'Tenant-isolated accounts, role-based access and audited actions. Drivers never see company finances; brokers never see carrier internals.'),
+     ('scale', 'Humans control money', 'Software prepares invoices and settlements; a person approves every payout. The maker and the checker are never the same account.')],
+    numbered=False, accent='#60a5fa',
+    cta='<a href="security.html" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800">See our security &amp; trust practices &rarr;</a>')
+
+about_body += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who we serve</div><h2>One platform, every seat in the freight chain</h2></div><div class="grid g3 reveal">'
+ '<div class="card reveal"><div class="icon">&#128667;</div><h3>Owner-operators &amp; fleets</h3><p>Independent carriers and growing fleets who want higher-paying freight on their lanes and one place to run the business. <a href="carriers.html">For carriers &rarr;</a></p></div>'
+ '<div class="card reveal"><div class="icon">&#128295;</div><h3>New-authority carriers</h3><p>Brand-new MC holders who need a guide through their first months &mdash; paperwork, compliance and steady first lanes. <a href="new-authority-dispatch.html">New authority &rarr;</a></p></div>'
+ '<div class="card reveal"><div class="icon">&#129309;</div><h3>Brokers &amp; shippers</h3><p>Freight brokers posting to vetted, tracked capacity, and shippers moving freight through our licensed broker partners. <a href="partners.html">Partner with us &rarr;</a></p></div>'
+ '</div></div></section>')
+
+about_body += m_statband([('5%', 'flat dispatch fee'), ('0', 'long-term contracts'), ('100%', 'loads you approve'), ('1 day', 'typical reply time')],
+    note='These are policy facts, not marketing metrics &mdash; they define how LoadBoot works.')
+
+about_body += '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Contact us</div><h2>One company, three front doors</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>General &amp; support</h3><p><a href="mailto:hello@loadboot.com">hello@loadboot.com</a> &mdash; onboarding, questions, compliance and anything else.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>Dispatch &amp; loads</h3><p><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a> &mdash; active loads, trips, appointments and PODs.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>Billing &amp; settlements</h3><p><a href="mailto:billing@loadboot.com">billing@loadboot.com</a> &mdash; invoices, settlements and payment questions.</p></div></div></div></section>'
+
+_about_faq_html, _about_faq_schema = faq_block([
+ ('Is LoadBoot a dispatcher or a freight broker?', 'LoadBoot is a truck dispatch service. Carriers keep their own operating authority while we find, negotiate and coordinate loads on their behalf. For shippers, freight moves through our licensed broker partners.'),
+ ('How much does LoadBoot cost?', 'A flat 5% dispatch fee on booked loads. There is no sign-up fee, no monthly minimum and no long-term contract &mdash; you can cancel anytime.'),
+ ('Do you work with new-authority carriers?', 'Yes. New-authority and owner-operator carriers are a core focus. We help guide you through your first months, from paperwork and compliance to your first steady lanes.'),
+ ('Who owns my data?', 'You do. Accounts are tenant-isolated with role-based access and audited actions. Drivers never see company finances, and brokers never see carrier internals.'),
+ ('Who does LoadBoot serve, and where?', 'We serve owner-operators, carrier fleets, freight brokers and shippers across the United States, all on one connected platform.'),
+])
+about_body += _about_faq_html
+about_body += m_gradcta('Ready for a dispatcher who actually picks up?',
+    'Create your account in minutes &mdash; carrier, broker, shipper or referral partner. Flat 5%, no contracts, cancel anytime.',
+    'Create your account &rarr;', 'get-started.html',
+    grad='linear-gradient(135deg,#0b1220 0%,#12304f 55%,#0e3b33 100%)', btncolor='#34d399', btntext='#052e2b')
+
+_about_org_schema = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About LoadBoot",'
+    '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
+    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","areaServed":"US",'
+    '"description":"LoadBoot is a U.S. truck dispatch service for owner-operators, fleets and new-authority carriers, with a partner platform for freight brokers and shippers. Flat 5%, no contracts.",'
+    '"knowsAbout":["truck dispatch","freight dispatching","owner-operator dispatch","new authority carriers","load matching","freight brokerage"]}}</script>')
+page('about.html','About LoadBoot | Honest Truck Dispatch for Carriers',
+     'Honest US truck dispatch for owner-operators, new-authority carriers, brokers and shippers. Flat 5%, no contracts, cancel anytime.',
+     'about.html', about_body, schema=_about_org_schema + _about_faq_schema)
 
 # ---------- CONTACT ----------
 contact_body = svc_hero('Get Started with Loadboot','Create your carrier profile in 2 minutes, request a rate quote, or just send us a message &mdash; flat 5%, no contracts, cancel anytime.')
@@ -2913,6 +2968,140 @@ page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Di
      'Apply for Loadboot truck dispatch in two minutes. Owner-operators, fleets and new-authority carriers welcome. Flat 5%, no contracts.',
      'contact.html', capp)
 
+# ---- Unified account-creation hub (#44): carrier / broker / shipper / referral, tabbed ----
+def _hub_value(bullets, portal_href, portal_label):
+    lis = ''.join('<li>' + b + '</li>' for b in bullets)
+    return ('<section><div class="wrap" style="max-width:900px">'
+            '<ul class="hub-checks reveal">' + lis + '</ul>'
+            '<p style="text-align:center;margin-top:6px"><a href="' + portal_href + '" class="btn btn-secondary">' + portal_label + '</a></p>'
+            '</div></section>')
+
+_HUB_STYLE = ('<style>'
+    '.hub-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:820px;margin:0 auto 6px;padding:0 16px}'
+    '.hub-tab{flex:1 1 160px;min-width:150px;display:flex;align-items:center;justify-content:center;gap:8px;'
+    'padding:14px 16px;border:1px solid var(--line,#e2e8f0);background:#fff;border-radius:14px;cursor:pointer;'
+    'font-family:inherit;font-weight:700;font-size:.98rem;color:var(--ink,#10223B);transition:all .15s;box-shadow:0 1px 2px rgba(2,6,23,.04)}'
+    '.hub-tab:hover{border-color:#0883F7;color:#0883F7}'
+    '.hub-tab.on{background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;border-color:transparent;box-shadow:0 10px 26px rgba(8,131,247,.28)}'
+    '.hub-tab .em{font-size:1.15rem;line-height:1}'
+    '.hub-lede{text-align:center;max-width:620px;margin:14px auto 0;color:var(--muted,#64748b)}'
+    '.hub-checks{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}'
+    '.hub-checks li{position:relative;padding-left:28px;color:var(--ink-soft,#475569);line-height:1.5}'
+    '.hub-checks li:before{content:"\\2713";position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;'
+    'background:#e6f2fe;color:#0883F7;font-weight:800;font-size:.8rem;display:flex;align-items:center;justify-content:center}'
+    '@media(max-width:640px){.hub-checks{grid-template-columns:1fr}}'
+    '</style>')
+
+_HUB_ROLES = [
+  ('carrier', '&#128667;', 'Carrier', 'Carriers &amp; owner-operators',
+   'Get a dispatcher in your corner and one place to run every load, trip, document and settlement.',
+   ['A dispatcher working the boards &amp; broker relationships for higher-paying freight on your lanes',
+    'You approve every load before it books &mdash; you keep your authority, no contracts',
+    'Live trip tracking, rate confirmations and paperwork handled for you',
+    'One dashboard for invoices, settlements, per-trip P&amp;L and your team&rsquo;s payroll',
+    'Flat 5% dispatch fee &mdash; cancel anytime',
+    'Real people on call while you&rsquo;re on the road'],
+   '/app/carrier/', 'Open the Carrier Portal &rarr;',
+   'carrier_application', 'Carrier application',
+   'Tell us about your operation and a dispatcher gets you set up. A real person follows up fast.',
+   [('company', 'Company / business name', 'text', True), ('name', 'Your name', 'text', True),
+    ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', True),
+    ('mc', 'MC number', 'text', False), ('dot', 'DOT number', 'text', False),
+    ('authority', 'Authority status', 'select:Active / established authority|New authority|No authority yet', True),
+    ('equipment', 'Equipment', 'select:Dry Van|Reefer|Flatbed|Step Deck|Hotshot|Power Only|Box Truck / Expedited', True),
+    ('trucks', 'Number of trucks', 'select:1|2-5|6-20|20+', False),
+    ('lanes', 'Preferred lanes / home base', 'text', False),
+    ('message', 'Anything else we should know?', 'textarea', False)],
+   'Submit application', 'Got it — a dispatcher will reach out shortly.'),
+
+  ('broker', '&#129309;', 'Broker', 'Freight brokers',
+   'Post loads to vetted, tracked capacity and move faster with clean paperwork and full visibility.',
+   ['Reach vetted carriers with verified authority and insurance on file',
+    'Every trip is tracked from tender to POD &mdash; no more check calls',
+    'Rate confirmations, documents and settlements recorded in one place',
+    'Mutual vetting: you see a carrier&rsquo;s trust profile before you approve a booking',
+    'Onboarding and compliance gates keep your capacity clean',
+    'A partner console built for broker operations, not a spreadsheet'],
+   '/app/partner/', 'Open the Partner Portal &rarr;',
+   'broker_signup', 'Broker account request',
+   'Tell us about your brokerage and we&rsquo;ll set you up with vetted, tracked capacity.',
+   [('company', 'Brokerage / company name', 'text', True), ('name', 'Your name', 'text', True),
+    ('email', 'Work email', 'email', True), ('phone', 'Phone', 'tel', True),
+    ('mc', 'Broker MC number', 'text', False),
+    ('loads', 'Loads per month', 'select:1-10|11-50|51-200|200+', False),
+    ('equipment', 'Primary equipment', 'select:Dry Van|Reefer|Flatbed|Step Deck|Hotshot|Power Only|Mixed', False),
+    ('lanes', 'Main lanes / commodities', 'text', False),
+    ('message', 'Anything else we should know?', 'textarea', False)],
+   'Request broker account', 'Thanks — our partnerships team will reach out shortly.'),
+
+  ('shipper', '&#127970;', 'Shipper', 'Shippers',
+   'Move freight through licensed broker partners with real capacity, live tracking and compliant docs.',
+   ['Access reliable capacity through Loadboot&rsquo;s licensed broker partners',
+    'Live shipment visibility from pickup to delivery',
+    'Compliant documentation &mdash; BOL, rate con and POD collected automatically',
+    'Consistent service standards and vetted carriers on every load',
+    'One point of contact instead of chasing multiple carriers',
+    'Transparent, no games on rate or service'],
+   '/app/partner/', 'Open the Partner Portal &rarr;',
+   'shipper_signup', 'Shipper inquiry',
+   'Tell us what you ship and we&rsquo;ll connect you with compliant capacity through our broker partners.',
+   [('company', 'Company name', 'text', True), ('name', 'Your name', 'text', True),
+    ('email', 'Work email', 'email', True), ('phone', 'Phone', 'tel', True),
+    ('freight', 'Freight type / commodity', 'text', False),
+    ('shipments', 'Shipments per month', 'select:1-10|11-50|51-200|200+', False),
+    ('lanes', 'Main lanes / origins', 'text', False),
+    ('message', 'Requirements or anything else?', 'textarea', False)],
+   'Send shipper inquiry', 'Thanks — our team will reach out to scope your freight.'),
+
+  ('referral', '&#128200;', 'Referral', 'Referral &amp; influencer partners',
+   'Earn a share of Loadboot&rsquo;s dispatch fee for every carrier or broker you refer &mdash; they never pay extra.',
+   ['Earn ongoing commission on the dispatch fee of everyone you refer',
+    'They never pay more &mdash; your reward comes from Loadboot&rsquo;s own fee',
+    'Track your referrals, earnings and payouts right in your account',
+    'Get a personal referral link and ready-to-share materials',
+    'Commissions unlock after a short hold; payouts reviewed by a person',
+    'Perfect for trucking creators, coaches and industry networks'],
+   'referral.html', 'See how the referral program works &rarr;',
+   'referral_signup', 'Become a referral partner',
+   'Tell us about your audience and we&rsquo;ll get you a referral link and materials.',
+   [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True),
+    ('phone', 'Phone', 'tel', False),
+    ('channel', 'Where is your audience?', 'select:YouTube|Instagram / TikTok|Facebook Group|Podcast|Industry network|Other', False),
+    ('audience', 'Audience size', 'select:Under 1k|1k-10k|10k-100k|100k+', False),
+    ('message', 'Who you reach &amp; how you&rsquo;d promote', 'textarea', False)],
+   'Join the referral program', 'Thanks — we&rsquo;ll set up your referral link and reach out.'),
+]
+
+hub = svc_hero('Create your Loadboot account',
+    'One front door for everyone in the freight chain. Pick your role &mdash; carrier, broker, shipper, or referral partner &mdash; and get set up in minutes. Flat, transparent, no contracts.')
+hub += _HUB_STYLE
+_tabbar = '<section style="padding-top:6px"><div class="wrap"><div class="hub-tabs reveal">'
+for i, r in enumerate(_HUB_ROLES):
+    rid, ic, short = r[0], r[1], r[2]
+    _tabbar += '<button type="button" class="hub-tab%s" data-hub="%s"><span class="em">%s</span>%s</button>' % (
+        ' on' if i == 0 else '', rid, ic, short)
+_tabbar += '</div><p class="hub-lede reveal">Not sure? Carriers and drivers start here. Brokers and shippers use the Partner Portal; creators earn with Referral.</p></div></section>'
+hub += _tabbar
+for i, r in enumerate(_HUB_ROLES):
+    rid, ic, short, longname, blurb, bullets, phref, plabel, fkey, fhead, fintro, ffields, fsubmit, fsuccess = r
+    panel = '<div class="hub-panel" id="hp-%s"%s>' % (rid, '' if i == 0 else ' hidden')
+    panel += _sec('Create your account', longname, '<p class="lead center" style="max-width:640px;margin:0 auto">' + blurb + '</p>')
+    panel += _hub_value(bullets, phref, plabel)
+    panel += lead_form(fkey, fhead, fintro, ffields, fsubmit, fsuccess)
+    panel += '</div>'
+    hub += panel
+hub += ('<script>(function(){var tabs=document.querySelectorAll(".hub-tab");var panels=document.querySelectorAll(".hub-panel");'
+        'function show(id){tabs.forEach(function(t){t.classList.toggle("on",t.getAttribute("data-hub")===id);});'
+        'panels.forEach(function(p){p.hidden=(p.id!=="hp-"+id);});'
+        'try{if(history.replaceState)history.replaceState(null,"","#"+id);}catch(e){}'
+        'if(window.lbTrack)window.lbTrack("hub_role_selected",{role:id});}'
+        'tabs.forEach(function(t){t.addEventListener("click",function(){show(t.getAttribute("data-hub"));});});'
+        'var h=(location.hash||"").replace("#","");if(h&&document.getElementById("hp-"+h))show(h);})();</script>')
+hub += REF_CAPTURE_JS
+page('get-started.html', 'Create Your Loadboot Account &mdash; Carrier, Broker, Shipper &amp; Referral',
+     'Create a Loadboot account in minutes. Carriers, freight brokers, shippers and referral partners &mdash; pick your role and get set up. Flat 5%, no contracts.',
+     'get-started.html', hub)
+
 # ---- Login portal chooser ----
 lg = svc_hero('Log in to Loadboot', 'Choose your portal. Not sure which one you need? Carriers and drivers use the Carrier options below.')
 lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
@@ -2921,7 +3110,7 @@ lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
     ('&#129309;', 'Partner Portal', 'Brokers, shippers and facilities. <a href="/app/partner/">Open Partner Portal &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'Developers &amp; API', 'API keys, docs and integrations. <a href="/app/developer/">Open Developer Portal &rarr;</a>'),
     ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
-    ('&#10067;', 'Need an account?', 'New to Loadboot? Apply in about two minutes. <a href="carrier-application.html">Apply now &rarr;</a>'),
+    ('&#10067;', 'Need an account?', 'New to Loadboot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
 ], 'g3'))
 page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Developer Portals',
      'Choose your Loadboot portal: Carrier Portal, Driver Pocket App, Partner Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
@@ -2929,7 +3118,7 @@ page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Develope
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
-  ('Get started', [('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
+  ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status')]),
@@ -2980,14 +3169,15 @@ _APP_CSP = (
   "base-uri 'self'; "
   "object-src 'none'; "
   "frame-ancestors 'none'; "
-  "img-src 'self' data: https://*.tile.openstreetmap.org; "
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://%s.supabase.co; "
+  "frame-src 'self' https://%s.supabase.co; "
   "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
   "font-src 'self' data:; "
   "script-src 'self' https://esm.sh https://cdnjs.cloudflare.com; "
   "worker-src 'self'; "
   "manifest-src 'self'; "
   "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdnjs.cloudflare.com"
-) % (_CSP_REF, _CSP_REF)
+) % (_CSP_REF, _CSP_REF, _CSP_REF, _CSP_REF)
 APP_HEADERS = (
   "\n/app/*\n"
   "  X-Frame-Options: DENY\n"
@@ -3063,6 +3253,8 @@ if os.path.isdir(APP_SRC):
         dest_dir = APP_OUT if rel == '.' else os.path.join(APP_OUT, rel)
         os.makedirs(dest_dir, exist_ok=True)
         for fn in filenames:
+            if fn.startswith('_selftest'):
+                continue  # stray gate self-test scratch files never ship
             if fn.lower().endswith(_APP_OK_EXTS):
                 shutil.copy2(os.path.join(dirpath, fn), os.path.join(dest_dir, fn))
 
