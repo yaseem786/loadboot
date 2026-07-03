@@ -1,0 +1,20 @@
+-- WAVE BJ — Carrier availability (Online/Offline) + MUTUAL RATING ENGINE v1.
+-- Applied to loadboot-staging (snslhvmkjusozgjelghi) on 2026-07-03 via MCP:
+--   1. carrier_availability_online_offline
+--   2. mutual_rating_engine_v1
+--   3. partner_rateable_trips
+--
+-- 1) app_private.carrier_dispatch_prefs.available boolean default true
+--    cc_set_dispatch_prefs now accepts/persists "available" (Online/Offline pill).
+--
+-- 2) app_private.party_ratings — trip-verified mutual ratings:
+--    carrier ↔ broker/shipper, only on trips both parties were part of,
+--    only after delivered/invoiced; one rating per trip per side (upsert).
+--    RPCs: cc_rate_counterparty(trip, stars 1-5, comment),
+--          cc_my_rating() -> avg/count/histogram/reviews/trips/on_time/to_rate,
+--          cc_org_rating(org) -> aggregate only (identity-safe).
+--
+-- 3) cc_partner_rateable_trips(limit) — broker/shipper list of delivered trips
+--    on their posted loads, with their existing rating if any.
+--
+-- See Supabase migration history for the authoritative SQL (this file is the repo record).

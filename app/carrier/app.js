@@ -21,6 +21,7 @@ import {
   pocketNotifications, pocketMarkNotificationRead,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
+  rateCounterparty, myRating,
   fleetServiceAdd, fleetServiceList, fleetServiceDelete,
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
@@ -35,6 +36,18 @@ import { mountOfflineBanner } from '../shared/connectivity.js';
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
 try { localStorage.setItem('lb_last_portal', '/app/carrier/'); } catch (_) {}
+
+// inDrive-style theme system — Off (light) / On (dark) / System. Official palette only.
+const THEME_KEY = 'lb_theme';
+function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
+function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
+function applyTheme() {
+  const m = themeMode();
+  const dark = m === 'on' || (m === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-lbtheme', dark ? 'dark' : 'light');
+}
+try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themeMode() === 'system') applyTheme(); }); } catch (_) {}
+applyTheme();
 
 registerAppSW(); // /app/sw.js — includes Web Push handlers
 const root = document.getElementById('lb-app');
@@ -84,7 +97,9 @@ const ic = (name) => ({
   trips: 'M5 17h14M5 17a2 2 0 11-4 0 2 2 0 014 0zm14 0a2 2 0 11-4 0M7 17V7h8v10M15 9h3l3 4v4', finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
   docs: 'M6 2h9l5 5v15H6zM14 2v6h6', support: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z',
   bell: 'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0', user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8',
-  shield: 'M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z', pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
+  shield: 'M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z',
+  menu: 'M3 6h18M3 12h18M3 18h18',
+  cog: 'M12 15a3 3 0 100-6 3 3 0 000 6zM12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1', pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 // Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.
@@ -246,7 +261,7 @@ function notCarrier() {
 
 /* ---------- main app ---------- */
 const NAV = [
-  ['dashboard', 'Dashboard', 'dash'], ['health', 'Account health', 'shield'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
+  ['dashboard', 'Dashboard', 'dash'], ['health', 'Rating', 'shield'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
   ['fleet', 'Fleet', 'trips'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
   ['support', 'Support', 'support'], ['account', 'Account', 'user'],
 ];
@@ -277,6 +292,51 @@ async function appView(user) {
   const bellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
   const bell = h('button', { class: 'cp-iconbtn cp-bell', title: 'Notifications', onClick: () => go('notifications') }, [icon('bell', 20), bellBadge]);
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
+  // ---- Availability (Online/Offline) — REAL state stored in dispatch preferences ----
+  const availPill = h('button', { class: 'cpx-avail on', title: 'Your availability for new loads', onClick: () => toggleAvail() }, '…');
+  let _dp = null;
+  function setAvailUI(on) { availPill.textContent = on ? 'Online' : 'Offline'; availPill.classList.toggle('on', !!on); availPill.classList.toggle('off', !on); }
+  (async () => { try { _dp = (await getDispatchPrefs()) || {}; setAvailUI(_dp.available !== false); } catch (_) { setAvailUI(true); } })();
+  async function toggleAvail() {
+    if (!_dp) return;
+    const next = !(_dp.available !== false);
+    availPill.disabled = true; const was = availPill.textContent; availPill.textContent = '…';
+    try {
+      await setDispatchPrefs({ min_rpm: _dp.min_rpm || null, preferred_equipment: _dp.preferred_equipment || [],
+        preferred_lanes: _dp.preferred_lanes || [], home_base: _dp.home_base || null,
+        max_deadhead_miles: _dp.max_deadhead_miles || null, notes: _dp.notes || null, available: next });
+      _dp.available = next; setAvailUI(next);
+    } catch (e) { availPill.textContent = was; alert((e && e.message) || 'Could not update availability.'); }
+    availPill.disabled = false;
+  }
+
+  // ---- Side drawer (inDrive pattern): profile + full menu + sign out ----
+  function openDrawer() {
+    const scrim = h('div', { class: 'cpx-scrim' });
+    const dStars = h('div', { class: 'cpx-d-sub', style: 'color:#F97316;font-weight:800' }, '');
+    (async () => { try { const r = await myRating(); if (r && r.avg != null) dStars.textContent = '★ ' + r.avg + ' (' + (r.count || 0) + ')'; } catch (_) {} })();
+    const items = NAV.map(([id, label, iconName]) => h('button', { class: 'cpx-d-item' + (tab === id ? ' active' : ''), onClick: () => { close(); go(id); } }, [icon(iconName, 20), h('span', null, label)]));
+    const notifItem = h('button', { class: 'cpx-d-item', onClick: () => { close(); go('notifications'); } }, [icon('bell', 20), h('span', null, 'Notifications'), bellBadge.hidden ? '' : h('span', { class: 'cpx-d-badge' }, bellBadge.textContent)]);
+    const setItem = h('button', { class: 'cpx-d-item', onClick: () => { close(); go('settings'); } }, [icon('cog', 20), h('span', null, 'Settings')]);
+    const drawer = h('aside', { class: 'cpx-drawer' }, [
+      h('div', { class: 'cpx-d-head', onClick: () => { close(); go('account'); } }, [
+        h('div', { class: 'cpx-d-ava' }, ((ov.carrier || 'C').trim().charAt(0).toUpperCase())),
+        h('div', null, [
+          h('div', { class: 'cpx-d-name' }, ov.carrier || 'Carrier'),
+          dStars,
+          h('div', { class: 'cpx-d-sub' }, (user && user.email) || ''),
+          h('div', { style: 'margin-top:5px' }, h('span', { class: 'cp-chip ' + (ov.compliance_ok ? 'ok' : 'warn'), style: 'font-size:10px' }, ov.compliance_ok ? 'Compliant' : 'Action needed')),
+        ]),
+      ]),
+      h('div', { class: 'cpx-d-items' }, [...items, notifItem, setItem]),
+      h('div', { class: 'cpx-d-foot' }, h('button', { class: 'cpx-d-item', onClick: async () => { await signOut(); location.reload(); } }, [icon('logout', 20), h('span', null, 'Sign out')])),
+    ]);
+    function close() { scrim.classList.remove('show'); drawer.classList.remove('show'); setTimeout(() => { scrim.remove(); drawer.remove(); }, 220); }
+    scrim.onclick = close;
+    document.body.appendChild(scrim); document.body.appendChild(drawer);
+    requestAnimationFrame(() => { scrim.classList.add('show'); drawer.classList.add('show'); });
+  }
+
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow', style: 'display:flex;align-items:flex-start;gap:5px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('span', { style: 'color:#FB923C;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
@@ -288,8 +348,13 @@ async function appView(user) {
     ]),
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
-        titleEl,
+        h('div', { class: 'cp-top-left' }, [
+          h('button', { class: 'cpx-burger', 'aria-label': 'Menu', onClick: (e) => { e.stopPropagation(); openDrawer(); } }, icon('menu', 24)),
+          titleEl,
+        ]),
         h('div', { class: 'cp-top-right' }, [
+          availPill,
+          h('button', { class: 'cp-iconbtn', title: 'Settings', onClick: () => go('settings') }, icon('cog', 20)),
           h('button', { class: 'cp-chip cp-chip-btn ' + (ov.compliance_ok ? 'ok' : 'warn'), title: ov.compliance_ok ? 'Account compliant' : 'Action needed \u2014 finish your setup', onClick: () => go(ov.compliance_ok ? 'account' : 'documents') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
           bell,
           (() => {
@@ -320,12 +385,13 @@ async function appView(user) {
     tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);  // replace, not push — keeps Back working / no hash pile-up
     Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => a.classList.toggle('active', k === tab)));
     const item = NAV.find(n => n[0] === tab);
-    titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding' }[tab] || 'Dashboard');
+    titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding', settings: 'Settings' }[tab] || 'Dashboard');
     render();
   }
   window.addEventListener('hashchange', () => { const t = (location.hash || '').replace('#', ''); if (t && t !== tab && NAV.some(n => n[0] === t)) go(t); });
 
   function render() {
+    if (tab === 'settings') { loadSettings(); return; }
     if (tab === 'loads') loadLoads();
     else if (tab === 'trips') loadTrips();
     else if (tab === 'fleet') loadFleet();
@@ -367,8 +433,14 @@ async function appView(user) {
   const promptHost = h('div', { class: 'cp-prompts' });
 
   /* ----- Dashboard ----- */
+  // Star row helper (official palette: orange stars like the brand accent)
+  const starsRow = (avg, size) => {
+    const full = Math.round(Number(avg) || 0);
+    return h('span', { style: 'color:#F97316;font-size:' + (size || 16) + 'px;letter-spacing:2px' }, '★'.repeat(full) + '☆'.repeat(5 - full));
+  };
   async function loadHealth() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Calculating your account health…'));
+    mount(content, h('div', { class: 'cp-muted' }, 'Calculating your rating…'));
+    let mr = null; try { mr = await myRating(); } catch (_) { mr = null; }
     let ah; try { ah = await accountHealth(); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load account health.'))); return; }
     ah = ah || {}; const score = Number(ah.score || 0);
     const tone = toneOf(ah.tier === 'healthy' ? 'success' : ah.tier === 'at_risk' ? 'warning' : 'urgent');
@@ -449,8 +521,80 @@ async function appView(user) {
         ]);
       }))]);
     })();
-    mount(content, h('div', null, [tiles, heroCard, trustCard, networkCard, actions, explain]));
+    const _bar = (label, valueTxt, pct, color) => h('div', { style: 'margin:10px 0' }, [
+      h('div', { style: 'height:10px;border-radius:99px;background:#e2e8f0;overflow:hidden' },
+        h('div', { style: 'height:100%;width:' + Math.max(3, Math.min(100, pct)) + '%;border-radius:99px;background:' + color })),
+      h('div', { style: 'font-weight:800;font-size:14px;margin-top:6px' }, [label + ': ', h('span', { style: 'font-weight:700' }, valueTxt)]),
+    ]);
+    const _avg = mr && mr.avg != null ? Number(mr.avg) : null;
+    const ratingCard = mr ? h('div', { class: 'cp-card' }, [
+      h('div', { style: 'text-align:center;padding:6px 0 2px' }, [
+        h('div', { style: 'font-size:1.35rem;font-weight:800' }, _avg == null ? 'No ratings yet' : (_avg >= 4.7 ? 'Excellent' : _avg >= 4.2 ? 'Great' : _avg >= 3.5 ? 'Good' : 'Needs work')),
+        _avg != null ? h('div', { style: 'margin-top:4px' }, [starsRow(_avg, 20), h('b', { style: 'margin-left:8px;font-size:1.1rem' }, String(_avg))]) : h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'Ratings come from brokers and shippers after delivered trips.'),
+      ]),
+      _avg != null ? _bar('Average rating', String(_avg) + ' / 5', _avg / 5 * 100, '#F97316') : null,
+      _bar('Trips completed', String(mr.trips_completed || 0), Math.min(100, (mr.trips_completed || 0) * 4), '#0883F7'),
+      mr.on_time_pct != null ? _bar('On-time delivery', mr.on_time_pct + '%', Number(mr.on_time_pct), '#16a34a') : null,
+      h('div', { class: 'cp-kpis', style: 'margin-top:10px' }, [
+        h('div', { class: 'cp-kpi' }, [h('div', { class: 'cp-stat-v', style: 'font-weight:800;font-size:1.3rem' }, String(mr.count || 0)), h('div', { class: 'cp-row-s' }, 'reviews')]),
+        h('div', { class: 'cp-kpi' }, [h('div', { class: 'cp-stat-v', style: 'font-weight:800;font-size:1.3rem' }, String(mr.trips_completed || 0)), h('div', { class: 'cp-row-s' }, 'trips')]),
+        h('div', { class: 'cp-kpi' }, [h('div', { class: 'cp-stat-v', style: 'font-weight:800;font-size:1.3rem' }, String(mr.to_rate || 0)), h('div', { class: 'cp-row-s' }, 'to rate')]),
+      ]),
+      (mr.to_rate || 0) > 0 ? h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('trips') }, 'Rate your recent trips →') : null,
+    ].filter(Boolean)) : null;
+    const reviewsCard = (mr && mr.reviews && mr.reviews.length) ? h('div', { class: 'cp-card' }, [
+      cardHead(String(mr.count || mr.reviews.length) + ' reviews', 'From brokers & shippers on your delivered trips'),
+      h('div', null, mr.reviews.map(r => h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, [starsRow(r.stars, 13), h('span', { style: 'margin-left:8px' }, r.comment || '')]), h('div', { class: 'cp-row-s' }, 'by ' + (r.by || '') + ' · ' + String(r.at || '').slice(0, 10))]),
+      ]))),
+    ]) : null;
+    mount(content, h('div', null, [ratingCard, reviewsCard, tiles, heroCard, trustCard, networkCard, actions, explain].filter(Boolean)));
   }
+  /* ----- Settings (inDrive pattern): appearance, notifications, availability ----- */
+  function loadSettings() {
+    const seg = (cur, onPick) => h('div', { class: 'cpx-seg' }, [['off', 'Off'], ['on', 'On'], ['system', 'System']].map(([v, l]) =>
+      h('button', { class: v === cur ? 'on' : '', onClick: (ev) => { onPick(v); Array.from(ev.currentTarget.parentNode.children).forEach(b => b.classList.toggle('on', b === ev.currentTarget)); } }, l)));
+    const themeCard = h('div', { class: 'cp-card' }, [
+      h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Appearance'),
+      h('div', { class: 'cpx-set-row' }, [
+        h('div', null, [h('div', { class: 'cpx-set-t' }, '🌙 Dark mode'), h('div', { class: 'cpx-set-s' }, 'System follows your device setting')]),
+        seg(themeMode(), (v) => setThemeMode(v)),
+      ]),
+    ]);
+    let pushCard = null;
+    if (pushSupported()) {
+      const st = h('span', { class: 'cp-pill gray' }, 'checking…');
+      const btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Enabling…';
+        try { await enablePush('Carrier portal'); st.textContent = 'on'; st.className = 'cp-pill green'; ev.currentTarget.textContent = 'On ✓'; }
+        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Turn on'; alert((e && e.message) || 'Could not enable notifications.'); }
+      } }, 'Turn on');
+      isPushEnabled().then(on => { st.textContent = on ? 'on' : 'off'; st.className = 'cp-pill ' + (on ? 'green' : 'gray'); if (on) { btn.textContent = 'On ✓'; btn.disabled = true; } }).catch(() => {});
+      pushCard = h('div', { class: 'cp-card' }, [
+        h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Notifications'),
+        h('div', { class: 'cpx-set-row' }, [
+          h('div', null, [h('div', { class: 'cpx-set-t' }, '🔔 Push notifications'), h('div', { class: 'cpx-set-s' }, 'Trips, payments and announcements on this device')]),
+          h('div', { style: 'margin-left:auto;display:flex;gap:8px;align-items:center' }, [st, btn]),
+        ]),
+      ]);
+    }
+    const availBtn = h('button', { class: 'cpx-avail ' + (_dp && _dp.available === false ? 'off' : 'on'), onClick: async () => { await toggleAvail(); availBtn.textContent = availPill.textContent; availBtn.className = availPill.className; }, style: 'margin-left:auto' }, (_dp && _dp.available === false) ? 'Offline' : 'Online');
+    const availCard = h('div', { class: 'cp-card' }, [
+      h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Availability'),
+      h('div', { class: 'cpx-set-row' }, [
+        h('div', null, [h('div', { class: 'cpx-set-t' }, '🚛 Available for loads'), h('div', { class: 'cpx-set-s' }, 'Offline = dispatch pauses new load matches for you')]),
+        availBtn,
+      ]),
+    ]);
+    const acctCard = h('div', { class: 'cp-card' }, [
+      h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Account'),
+      h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Profile, preferences & compliance'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('account') }, 'Open')]),
+      h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Documents'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('documents') }, 'Open')]),
+      h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Sign out'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: async () => { await signOut(); location.reload(); } }, 'Sign out')]),
+    ]);
+    mount(content, h('div', null, [themeCard, pushCard, availCard, acctCard].filter(Boolean)));
+  }
+
   async function loadDashboard() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let dash = null, comp, anns, invs;
@@ -527,7 +671,12 @@ async function appView(user) {
         h('button', { class: 'cp-btn cp-btn-sm' + (ov.compliance_ok ? '' : ' cp-attn-pulse'), onClick: (e) => { e.stopPropagation(); go('account'); } }, 'Review'),
       ]),
     ]);
-    mount(content, h('div', null, [kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    const _dueAmt = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
+    const topBanners = [
+      (comp && comp.mandatory_ok === false) ? h('button', { class: 'cpx-banner red', onClick: () => go('documents') }, [h('span', null, '⚠'), h('span', null, 'Please verify your compliance documents'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
+      _dueAmt > 0 ? h('button', { class: 'cpx-banner amber', onClick: () => go('finance') }, [h('span', null, 'ℹ'), h('span', null, money(_dueAmt) + ' in dispatch fees due'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
+    ].filter(Boolean);
+    mount(content, h('div', null, [...topBanners, kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     openPrompts();
   }
 
@@ -603,9 +752,17 @@ async function appView(user) {
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
       if (l.weight) meta.push('Weight: ' + l.weight);
       if (l.deadhead) meta.push(l.deadhead + ' mi deadhead');
-      return h('article', { class: 'cp-load' }, [
-        h('div', { class: 'cp-load-top' }, [h('div', { class: 'cp-load-lane' }, [h('b', null, l.origin || '—'), h('span', { class: 'cp-arrow' }, '→'), h('b', null, l.destination || '—')]), h('div', { class: 'cp-load-rate' }, [money(l.rate), rpm ? h('span', null, rpm) : null])]),
-        h('div', { class: 'cp-load-tags' }, [h('span', { class: 'cp-tag' }, l.equipment || 'Van'), l.miles ? h('span', { class: 'cp-tag' }, Number(l.miles).toLocaleString() + ' mi') : null, l.pickup_date ? h('span', { class: 'cp-tag' }, 'PU ' + l.pickup_date) : null, l.delivery_date ? h('span', { class: 'cp-tag' }, 'DEL ' + l.delivery_date) : null].filter(Boolean)),
+      return h('article', { class: 'cp-load cpx-req' }, [
+        h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null].filter(Boolean)),
+        h('div', { class: 'cpx-req-chips' }, [
+          h('span', { class: 'cpx-chip eq' }, '🚛 ' + (l.equipment || 'Van')),
+          l.pickup_date ? h('span', { class: 'cpx-chip' }, '🕐 Pickup: ' + l.pickup_date) : null,
+          l.delivery_date ? h('span', { class: 'cpx-chip' }, 'DEL ' + l.delivery_date) : null,
+        ].filter(Boolean)),
+        h('div', { class: 'cpx-route' }, [
+          h('div', { class: 'cpx-pt' }, [h('span', { class: 'cpx-dot' }), h('span', null, l.origin || '—')]),
+          h('div', { class: 'cpx-pt to' }, [h('span', { class: 'cpx-dot' }), h('span', null, [String(l.destination || '—'), l.miles ? h('span', { class: 'sub' }, '  ·  ' + Number(l.miles).toLocaleString() + ' mi') : null].filter(Boolean))]),
+        ]),
         meta.length ? h('div', { class: 'cp-load-meta' }, meta.join(' · ')) : null,
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
         h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px' }, [bookWrap, detailsBtn]),
@@ -701,6 +858,21 @@ function tripStepper(status) {
       const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'border-color:#dc2626;color:#dc2626', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
       const podW = h('div');
       const canPod = t.status === 'delivered' || t.status === 'invoiced';
+      const rateW = h('div');
+      const rateBtn = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+        if (rateW.firstChild) { rateW.innerHTML = ''; return; }
+        let sel = 0; const starEls = [];
+        const paint = () => starEls.forEach((el2, i) => { el2.textContent = i < sel ? '★' : '☆'; el2.style.color = i < sel ? '#F97316' : '#94a3b8'; });
+        const starsBar = h('div', { style: 'display:flex;gap:6px;font-size:26px;cursor:pointer;user-select:none' }, [1, 2, 3, 4, 5].map((n) => { const el2 = h('span', { onClick: () => { sel = n; paint(); } }, '☆'); starEls.push(el2); return el2; }));
+        const cmt = h('input', { class: 'cp-in', placeholder: 'Comment (optional)' });
+        const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          if (!sel) { alert('Choose 1–5 stars.'); return; }
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
+          try { await rateCounterparty(t.id, sel, cmt.value.trim() || null); rateW.innerHTML = ''; rateW.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green, #16a34a)' }, '✓ Rating submitted — thank you')); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit rating'; alert((e && e.message) || 'Could not rate.'); }
+        } }, 'Submit rating');
+        rateW.appendChild(h('div', { class: 'cp-inlineform' }, [h('div', { class: 'cp-row-s' }, 'Rate the posting party for this trip:'), starsBar, cmt, send]));
+      } }, '⭐ Rate') : null;
       const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (podW.firstChild) { podW.innerHTML = ''; return; }
         showCarrierPod(t, podW);
@@ -807,7 +979,7 @@ function tripStepper(status) {
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
         tripStepper(t.status),
-        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, nav, share, live, dwell, issue, emergency, pod, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW,
+        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, nav, share, live, dwell, issue, emergency, pod, rateBtn, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW, rateW,
       ].filter(Boolean));
     })]));
 

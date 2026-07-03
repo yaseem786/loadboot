@@ -114,6 +114,11 @@ export const setMyServices = (arr) => rpc('cc_set_my_services', { p_services: ar
 export const myServices = () => rpc('cc_my_services');
 // cxh — Amazon-style account health (live, itemized; violations ledger staff-issued)
 export const accountHealth = (org) => rpc('cc_account_health', { p_org: org ?? null });
+// Mutual rating engine — trip-verified ratings (carrier↔broker/shipper).
+export const rateCounterparty = (trip, stars, comment) => rpc('cc_rate_counterparty', { p_trip: trip, p_stars: stars, p_comment: comment ?? null });
+export const myRating = () => rpc('cc_my_rating');
+export const orgRating = (org) => rpc('cc_org_rating', { p_org: org });
+export const partnerRateableTrips = (limit = 20) => rpc('cc_partner_rateable_trips', { p_limit: limit });
 export const accountHealthBoard = (limit = 100) => rpc('cc_account_health_board', { p_limit: limit });
 export const issueViolation = (org, kind, severity, note) => rpc('cc_issue_violation', { p_org: org, p_kind: kind, p_severity: severity, p_note: note });
 export const resolveViolation = (id, note) => rpc('cc_resolve_violation', { p_id: id, p_note: note ?? null });
