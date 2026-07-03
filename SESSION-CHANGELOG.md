@@ -241,3 +241,105 @@
 - NOTE for owner: none of this reaches loadboot.com until committed + pushed + merged to
   main. Empty panels like "No referrer rows"/"0 settlements" are correct empty states for a
   fresh account, not bugs.
+
+## #79 — Staff invite-by-email (#65)
+- DB (prod+staging): app_private.staff_invites + cc_invite_staff(email,role) [token + setup
+  link, grant-ceiling, blocks owner], cc_list_staff_invites, cc_revoke_staff_invite,
+  cc_claim_staff_invite (self-service: on first login with the invited email, provisions
+  staff_members + internal-org membership + the role assignment; matched by auth email).
+- Staff & Roles: "Invite a staff member by email" card — email + role → creates invite,
+  shows a copyable setup link + a pre-filled "Send invite email" (mailto template) + a
+  Pending-invites list with Revoke. Gated by staff.assign_role/roles.assign.
+- CC boot: cc_claim_staff_invite() runs before the staff gate, so an invited person who
+  signs in is auto-granted access and lands straight in the Command Center.
+- Gates: ESM ALL PASS (98), BUILD OK, AUDIT 0 FAIL.
+
+## #80 — Health engine (rolling recovery), booking setup-gate, doc-preview CSP, brand labels
+- cc_account_health (prod+staging): 180-day rolling window for performance; staff strikes
+  auto-recover by severity (warning 90d / violation 180d / critical 365d) if not repeated;
+  every deduction now carries an "improve" how-to line; window_days=180. Carrier Account
+  Health tab shows the ↳ improve guidance per deduction.
+- Booking setup-gate: cc_request_book_load now requires matching profile (min rate,
+  equipment, lanes, home base) + mandatory compliance before a carrier can request a load.
+  Available Loads shows a "Complete your setup to start booking loads" banner when incomplete.
+- Document preview fix: CSP img-src/frame-src now allow the Supabase storage domain (was
+  blocking inline image/PDF previews in CC Documents). (build_site.py _APP_CSP)
+- Carrier "Carrier" label: not bold, lighter, nudged to top corner, closer to logo (sidebar
+  + login), matching the partner/shipper reference.
+- All gates: ESM 98 PASS, BUILD OK, AUDIT 0 FAIL.
+
+## #49 — Carrier Finance: real per-trip P&L
+- cc_carrier_pnl (prod+staging) now returns by_trip[]: every delivered/invoiced load with its
+  own linehaul, billable accessorials, gross, 5% dispatch fee, carrier net, mileage-allocated
+  expense share, est. trip profit, RPM, on-time flag, truck, commodity/equipment.
+- Carrier → Finance → new "Per-trip P&L" card: each trip is a tappable row (load + lane +
+  date + gross → profit); expands to a full money breakdown and a "Trip P&L PDF" export.
+- Honest labeling preserved: allocated expenses = month's entered expenses spread by miles;
+  est. profit = net after 5% fee minus allocation.
+- Gates: node --check carrier app.js OK, BUILD OK, AUDIT 0 FAIL.
+
+## #44 — Unified account-creation hub (get-started.html)
+- New tabbed hub: Carrier / Broker / Shipper / Referral & Influencer. Each tab = role value
+  block (what you get) + portal link + a tailored lead form (carrier_application, broker_signup,
+  shipper_signup, referral_signup). Deep-linkable (#broker etc.); tracks hub_role_selected.
+- Repointed the global "Get Started" CTA (header + final CTA) and login "Need an account?"
+  card to get-started.html; added to sitemap (HTML + XML auto).
+- Gates: BUILD OK, AUDIT 53 pages 0 FAIL.
+
+## #46 — About page redesign (motif-rich + SEO)
+- Rebuilt about.html: problem/solution split with navy pull-quote, "What we stand for"
+  zigzag, "Our story" timeline, dark "rules we run by" panel, "Who we serve" cards,
+  policy-fact stat band (5% / 0 contracts / 100% you approve / 1-day reply), three-front-door
+  contact, company FAQ (FAQPage schema), and a gradient CTA to get-started.html.
+- SEO: added AboutPage + Organization JSON-LD (knowsAbout keywords); tuned title/meta length.
+- NOTE: the Edit tool truncates the large build_site.py on write — edit it via python/bash only.
+- Gates: BUILD OK, AUDIT 53 pages 0 FAIL (3 baseline warns).
+
+## #42 — Onboarding & Compliance CC deepening
+- compliance.js: KPI cards now clickable — In onboarding / Pending checks (→ in-review stage) /
+  Expiring 30d / Expired filter the queue; a focus banner shows the active filter with a Clear.
+- One-click "⚠ Warn" on any row that's not mandatory-complete or has documents expiring:
+  issues a document warning (cc_issue_violation) and notifies the carrier instantly.
+- Live expiry retained per-row ("N soon"); warnings gated to compliance.verify / carriers.manage.
+- Validation: node --check compliance.js OK (UTF-8); grand audit 0 FAIL. NOTE: scripts/check_esm_syntax.sh
+  pipes files via stdin and mis-flags multibyte UTF-8 in THIS sandbox (fails on pre-existing '·'/'—'
+  lines too); direct node --check is authoritative and passes.
+
+## TOOLING FIX + truncation recovery (important)
+- DISCOVERY: the Edit/Write tools truncate large files on save in this environment.
+  This silently truncated THREE files this session:
+  * build_site.py (about/hub edits) — recovered by splicing HEAD tail.
+  * app/carrier/app.js — truncated at line 1772 mid-statement by the #49 per-trip P&L edit.
+    This is the SAME class of bug that caused the carrier "Loading…" outage before
+    (truncated module = SyntaxError = login hang). Recovered by splicing HEAD tail at the
+    setup-wizard `st === 2` anchor; per-trip P&L additions preserved; boot() intact.
+  * app/command-center/views/compliance.js — truncated by the #42 edit; recovered by
+    splicing the original tail (openStart→EOF) onto the good edited head.
+- Improved scripts/check_esm_syntax.sh: was piping files via stdin (mangled multibyte UTF-8
+  AND, worse, `node --check *.js` is a lenient no-op that MISSED the truncations). Now it
+  transliterates non-ASCII (only ever inside UI strings) to ASCII and runs a STRICT
+  `node --check` on a temp .mjs — catches truncation/paren/brace/import errors reliably in
+  every environment. Verified it catches a deliberately-truncated file.
+- GOING FORWARD: edit JS/large files via python/bash writes, then verify with the strict
+  .mjs check + line-count sanity, NOT the Edit tool.
+- Stray app/_selftest_broken.js (from a gate self-test) could not be unlinked by the sandbox
+  mount (EPERM); overwritten to a valid inert `export {};`. Safe to delete on your machine.
+- All gates after recovery: ESM ALL PASS (99), BUILD OK, AUDIT 53 pages 0 FAIL.
+
+## #53 (slice) — Pocket app: Uber-style active-trip hero
+- Home tab hero upgraded to a driver-first "current trip" card: 3-step progress tracker
+  (Dispatched → En route → Delivered) with the live step highlighted, bigger route/rate
+  (+ miles), a state-aware primary CTA (Confirm & start vs Continue trip), and a one-tap
+  "📍 Share live location" when in transit (reuses shareLocation → consent + GPS post).
+- Edited via python + strict .mjs verify (Edit tool avoided due to truncation risk).
+- Gates: ESM ALL PASS (99), BUILD OK, AUDIT 0 FAIL.
+- #53 remains open: next slices = Trips tab as a full Uber-style trip-detail flow
+  (arrive/depart/POD as primary actions), and continuous background location.
+
+## #53 (slice 2) — Pocket Trips tab: per-trip step tracker
+- Each trip card now shows the same Dispatched → En route → Delivered progress bar
+  (invoiced counts as fully delivered), consistent with the Home hero. Actions unchanged.
+- python edit + strict .mjs verify; ESM ALL PASS (99), BUILD OK, AUDIT 0 FAIL.
+
+## #53 (slice 3) — Pocket Trips: richer subtitle
+- Trip cards show miles and $/mi alongside rate when present. Gates green.

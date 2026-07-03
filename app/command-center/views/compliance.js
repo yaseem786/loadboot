@@ -7,7 +7,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { complianceOverview, listOnboarding, getCarrierCompliance, startOnboarding, setCompliance, decideOnboarding, getCarriersDirectory } from '../../shared/api.js';
+import { complianceOverview, listOnboarding, getCarrierCompliance, startOnboarding, setCompliance, decideOnboarding, getCarriersDirectory, issueViolation } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -22,46 +22,82 @@ const STATUSES = ['valid', 'pending', 'expired', 'rejected', 'missing'];
 function daysUntil(d) { if (!d) return null; return Math.round((new Date(d) - new Date()) / 86400000); }
 
 export function renderCompliance(host) {
-  let state = { stage: '', search: '' };
+  let state = { stage: '', search: '', focus: '' };
   const kpiHost = el('div');
+  const focusHost = el('div');
   const listHost = el('div', { class: 'cc-table-wrap' });
+
+  const FOCUS_LABEL = { pending: 'Showing carriers with documents pending verification', expiring: 'Showing carriers with documents expiring within 30 days', expired: 'Showing carriers that are not mandatory-complete (out of compliance)' };
+  function setFocus(f, stage) { state.focus = f || ''; if (stage != null) state.stage = stage; renderFocus(); loadList(); }
+  function renderFocus() {
+    if (!state.focus) { mount(focusHost, ''); return; }
+    mount(focusHost, el('div', { class: 'cc-banner cc-banner-info', style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0' }, [
+      el('span', null, FOCUS_LABEL[state.focus] || 'Filtered view'),
+      el('button', { class: 'cc-chip-btn', onClick: () => setFocus('', '') }, 'Clear filter ✕'),
+    ]));
+  }
 
   async function loadKpis() {
     let o; try { o = await complianceOverview(); } catch (e) { mount(kpiHost, ''); return; }
     const n = (k) => Number((o && o[k]) || 0);
     mount(kpiHost, el('div', { class: 'cc-kpi-grid' }, [
-      statCard({ icon: 'truck', label: 'In onboarding', value: String(n('in_onboarding')), sub: n('approved') + ' approved', accent: 'blue' }),
-      statCard({ icon: 'check', label: 'Pending checks', value: String(n('pending_checks')), sub: 'documents to verify', accent: 'amber' }),
-      statCard({ icon: 'shield', label: 'Expiring (30d)', value: String(n('expiring_30')), sub: 'renew soon', accent: 'violet' }),
-      statCard({ icon: 'flag', label: 'Expired', value: String(n('expired')), sub: 'out of compliance', accent: n('expired') > 0 ? 'red' : 'green' }),
+      statCard({ icon: 'truck', label: 'In onboarding', value: String(n('in_onboarding')), sub: n('approved') + ' approved', accent: 'blue', onClick: () => setFocus('', '') }),
+      statCard({ icon: 'check', label: 'Pending checks', value: String(n('pending_checks')), sub: 'documents to verify', accent: 'amber', onClick: () => setFocus('pending', 'compliance_check') }),
+      statCard({ icon: 'shield', label: 'Expiring (30d)', value: String(n('expiring_30')), sub: 'renew soon', accent: 'violet', onClick: () => setFocus('expiring', '') }),
+      statCard({ icon: 'flag', label: 'Expired', value: String(n('expired')), sub: 'out of compliance', accent: n('expired') > 0 ? 'red' : 'green', onClick: () => setFocus('expired', '') }),
     ]));
   }
 
   function header() {
     const actions = can('compliance.verify') ? [el('button', { class: 'lb-btn lb-btn-primary', onClick: openStart }, '+ Start onboarding')] : null;
     return el('div', null, [
-      sectionHead('Carrier Onboarding & Compliance', 'Onboarding queue, document verification and expiry tracking. New onboardings auto-create a review task.', actions),
+      sectionHead('Carrier Onboarding & Compliance', 'Onboarding queue, document verification and live expiry tracking. Click a KPI to filter; warn carriers whose documents lapse. New onboardings auto-create a review task.', actions),
       kpiHost,
-      toolbar([ searchBox('Search carrier…', (v) => { state.search = v; loadList(); }), segmented(STAGES, state.stage, (v) => { state.stage = v; loadList(); }) ]),
+      toolbar([ searchBox('Search carrier…', (v) => { state.search = v; loadList(); }), segmented(STAGES, state.stage, (v) => { state.stage = v; state.focus = ''; renderFocus(); loadList(); }) ]),
+      focusHost,
     ]);
+  }
+
+  function applyFocus(rows) {
+    if (state.focus === 'expiring') return rows.filter(c => (c.expiring || 0) > 0);
+    if (state.focus === 'expired') return rows.filter(c => !c.mandatory_ok);
+    if (state.focus === 'pending') return rows.filter(c => !c.mandatory_ok || (c.expiring || 0) > 0);
+    return rows;
+  }
+
+  async function warnCarrier(c, ev) {
+    ev.stopPropagation();
+    const reason = (c.expiring || 0) > 0
+      ? 'One or more required compliance documents are expiring soon. Please upload current versions and get them verified to stay in good standing.'
+      : 'Required compliance documents (authority / insurance / onboarding packet) are not current. Please upload and get them verified to restore your standing.';
+    if (!confirm('Send a compliance warning to ' + (c.carrier_name || 'this carrier') + '? They will be notified instantly.')) return;
+    const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Sending…';
+    try { await issueViolation(c.carrier_id, 'document', 'warning', reason); toast('Warning sent · carrier notified', 'success'); }
+    catch (e) { toast(humanizeError(e), 'error'); btn.disabled = false; btn.textContent = '⚠ Warn'; }
   }
 
   async function loadList() {
     showLoading(listHost, 'Loading onboarding queue…');
     let rows; try { rows = await listOnboarding({ stage: state.stage || null, search: state.search || null, limit: 300 }); }
     catch (e) { showError(listHost, humanizeError(e), loadList); return; }
-    if (!rows || !rows.length) { showEmpty(listHost, 'No carriers in onboarding yet. Start one to begin compliance review.'); return; }
+    rows = applyFocus(rows || []);
+    if (!rows.length) { showEmpty(listHost, state.focus ? 'No carriers match this filter.' : 'No carriers in onboarding yet. Start one to begin compliance review.'); return; }
+    const canWarn = can('compliance.verify') || can('carriers.manage');
     mount(listHost, el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, [ el('th', null, 'Carrier'), el('th', null, 'Stage'), el('th', null, 'Mandatory docs'), el('th', null, 'Expiring'), el('th', null, 'Submitted'), el('th', null, '') ])),
       el('tbody', null, rows.map(c => {
         const ok = c.mandatory_ok;
+        const needsWarn = canWarn && (!ok || (c.expiring || 0) > 0) && c.stage !== 'approved';
         return el('tr', { class: 'cc-row', onClick: () => openCarrier(c.carrier_id) }, [
           el('td', null, el('b', null, c.carrier_name)),
           el('td', null, el('span', { class: 'cc-pill cc-pill-' + (STAGE_TONE[c.stage] || 'gray') }, (c.stage || '').replace('_', ' '))),
           el('td', null, el('span', { class: 'cc-pill cc-pill-' + (ok ? 'green' : 'amber') }, (c.mandatory_valid || 0) + ' / ' + (c.mandatory_total || 0))),
           el('td', null, (c.expiring || 0) > 0 ? el('span', { class: 'cc-pill cc-pill-violet' }, c.expiring + ' soon') : '—'),
           el('td', null, fmtDate(c.submitted_at)),
-          el('td', null, el('span', { class: 'cc-row-go' }, '›')),
+          el('td', null, el('div', { class: 'cc-status-row', style: 'justify-content:flex-end;gap:6px' }, [
+            needsWarn ? el('button', { class: 'cc-chip-btn', style: 'color:#b45309;border-color:#f59e0b', onClick: (ev) => warnCarrier(c, ev) }, '⚠ Warn') : '',
+            el('span', { class: 'cc-row-go' }, '›'),
+          ])),
         ]);
       })),
     ]));

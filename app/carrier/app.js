@@ -148,7 +148,7 @@ function authScreen() {
   };
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Carrier')]),
+      h('div', { class: 'cp-auth-brand', style: 'align-items:flex-start' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { style: 'color:#64748b;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
     ]),
@@ -274,7 +274,7 @@ async function appView(user) {
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow', style: 'display:flex;align-items:center;gap:9px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('span', { style: 'color:#fff;font-weight:700;font-size:.98rem' }, 'Carrier')]),
+      h('div', { class: 'cp-brandrow', style: 'display:flex;align-items:flex-start;gap:5px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('span', { style: 'color:#cbd5e1;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
@@ -400,7 +400,7 @@ async function appView(user) {
       ded.length ? h('div', { style: 'display:flex;flex-direction:column;gap:8px' }, ded.map(x => {
         const dest = fixDest(x.label);
         return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + tone.c + ';padding-left:12px;border-radius:8px' }, [
-          h('div', null, [h('div', { class: 'cp-row-t' }, x.label), h('div', { class: 'cp-row-s' }, x.basis || '')]),
+          h('div', null, [h('div', { class: 'cp-row-t' }, x.label), h('div', { class: 'cp-row-s' }, x.basis || ''), x.improve ? h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:var(--lb-blue,#0883F7)' }, '\u21b3 ' + x.improve) : null].filter(Boolean)),
           h('div', { style: 'display:flex;gap:12px;align-items:center' }, [h('b', { style: 'color:' + tone.c }, '-' + x.deducted), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go(dest[0]) }, dest[1])]),
         ]);
       })) : h('div', { class: 'cp-row-s' }, 'No deductions. Every requirement is met — keep documents current and deliveries on time to stay here.'),
@@ -563,8 +563,25 @@ async function appView(user) {
       ]))),
       h('div', { class: 'cp-muted', style: 'font-size:11px;margin-top:6px' }, 'Ranked by your stated minimum rate, real last GPS location and saved preferences — set them under Account. Estimates are labeled; nothing is invented.'),
     ]) : null;
-    if (!rows || !rows.length) { mount(content, h('div', null, [bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); return; }
-    mount(content, h('div', null, [bestCard, h('div', { class: 'cp-loadgrid' }, rows.map(l => {
+    let setupBanner = null;
+    try {
+      const dp0 = await getDispatchPrefs();
+      const prefsOk = !!(dp0 && dp0.min_rpm && (dp0.preferred_equipment || []).length && (dp0.preferred_lanes || []).length && dp0.home_base);
+      let compOk = true;
+      try { const ah0 = await accountHealth(); compOk = !((ah0.deductions || []).some(x => /mandatory compliance/i.test(x.label || ''))); } catch (_) {}
+      if (!prefsOk || !compOk) {
+        setupBanner = h('div', { class: 'cp-card', style: 'border-left:4px solid #d97706;margin-bottom:12px' }, [
+          h('div', { class: 'cp-row-t', style: 'font-size:1.05rem' }, '\u26a0 Complete your setup to start booking loads'),
+          h('div', { class: 'cp-row-s', style: 'margin:6px 0' }, [!prefsOk ? 'Set your minimum rate, equipment, lanes and home base.' : null, !compOk ? 'Upload and verify your compliance documents (authority, insurance, required documents).' : null].filter(Boolean).join(' ')),
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+            !prefsOk ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('account') }, 'Complete account setup') : null,
+            !compOk ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('documents') }, 'Upload documents') : null,
+          ].filter(Boolean)),
+        ]);
+      }
+    } catch (_) {}
+    if (!rows || !rows.length) { mount(content, h('div', null, [setupBanner, bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); return; }
+    mount(content, h('div', null, [setupBanner, bestCard, h('div', { class: 'cp-loadgrid' }, rows.map(l => {
       const rpm = l.rpm ? '$' + Number(l.rpm).toFixed(2) + '/mi' : '';
       const bookWrap = h('div');
       const book = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
@@ -1147,6 +1164,8 @@ function tripStepper(status) {
     })();
     // Inc 55 — Profit & Loss (honest labels: confirmed revenue vs manually-entered expenses; ESTIMATE marked).
     const pnlCard = h('div', { class: 'cp-card' }, [cardHead('Profit & Loss (this month)'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    // #49 — real per-trip P&L: every delivered load with its own revenue, dispatch fee, allocated cost, net + PDF.
+    const tripPnlCard = h('div', { class: 'cp-card' }, [cardHead('Per-trip P&L'), h('div', { class: 'cp-muted' }, 'Loading…')]);
     (async () => {
       let p; try { p = await carrierPnl(); } catch (e) { mount(pnlCard, [cardHead('Profit & Loss (this month)'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
       const m = p.metrics || {}, rev = p.revenue || {}, ex = p.expenses || {};
@@ -1175,6 +1194,39 @@ function tripStepper(status) {
         expForm,
         (p.by_lane && p.by_lane.length) ? h('div', { style: 'margin-top:10px' }, [h('b', { class: 'cp-row-s' }, 'Top lanes'), ...p.by_lane.map(x => h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, x.lane + ' (' + x.trips + ')'), h('span', null, money(x.revenue))]))]) : null,
       ].filter(Boolean));
+      // --- per-trip P&L ---
+      const trips2 = Array.isArray(p.by_trip) ? p.by_trip : [];
+      const tripRow = (t) => {
+        const dw = h('div');
+        const prof = Number(t.est_profit || 0);
+        const profColor = prof > 0 ? 'var(--lb-green,#16a34a)' : (prof < 0 ? 'var(--lb-red,#dc2626)' : '');
+        const tripPdf = () => openPrintable('Trip P&L — ' + (t.load_ref || ''), 'TRIP P&L', [
+          { rows: [['Load', t.load_ref || '—'], ['Lane', t.lane || '—'], ['Commodity', t.commodity || '—'], ['Equipment', t.equipment || '—'], ['Truck', t.truck || '—'], ['Delivered', t.delivered ? new Date(t.delivered).toLocaleDateString() : '—'], ['On-time', t.on_time == null ? '—' : (t.on_time ? 'Yes' : 'No')], ['Miles', t.miles != null ? String(t.miles) : '—'], ['Loaded RPM', t.rpm != null ? ('$' + t.rpm + '/mi') : '—']] },
+          { h: 'Money', rows: [['Linehaul', money(t.linehaul || 0)], ['Accessorials', money(t.accessorials || 0)], ['Gross revenue', money(t.gross || 0)], ['Dispatch fee (5%)', '-' + money(t.dispatch_fee || 0)], ['Carrier net', money(t.net || 0)], ['Allocated expenses', '-' + money(t.alloc_expense || 0)], ['Est. trip profit', money(t.est_profit || 0)]] },
+          { note: 'Allocated expenses spread your month’s entered expenses across trips by share of miles. Est. profit = net after 5% dispatch fee minus allocated expenses.' },
+        ]);
+        const detail = h('div', { hidden: true, style: 'margin-top:8px;border-top:1px dashed var(--lb-border,#e2e8f0);padding-top:8px' }, [
+          h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, 'Linehaul'), h('span', null, money(t.linehaul || 0))]),
+          Number(t.accessorials || 0) ? h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, 'Accessorials'), h('span', null, money(t.accessorials))]) : null,
+          h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, 'Gross revenue'), h('b', null, money(t.gross || 0))]),
+          h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, 'Dispatch fee (5%)'), h('span', null, '-' + money(t.dispatch_fee || 0))]),
+          h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, 'Carrier net'), h('span', null, money(t.net || 0))]),
+          h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-s' }, 'Allocated expenses'), h('span', null, '-' + money(t.alloc_expense || 0))]),
+          h('div', { class: 'cp-row' }, [h('span', { class: 'cp-row-t' }, 'Est. trip profit'), h('b', { style: 'color:' + profColor }, money(t.est_profit || 0))]),
+          h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, [t.miles != null ? (t.miles + ' mi') : null, t.rpm != null ? ('$' + t.rpm + '/mi') : null, t.truck ? ('Unit ' + t.truck) : null, t.commodity || null, t.on_time == null ? null : (t.on_time ? 'on-time' : 'late')].filter(Boolean).join(' · ')),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7;margin-top:8px', onClick: tripPdf }, '⬇ Trip P&L PDF'),
+        ].filter(Boolean));
+        const toggle = h('div', { class: 'cp-trip-head', style: 'cursor:pointer', onClick: () => { detail.hidden = !detail.hidden; } }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, (t.load_ref || 'Trip') + ' · ' + (t.lane || '')), h('div', { class: 'cp-row-s' }, [t.delivered ? new Date(t.delivered).toLocaleDateString() : null, t.miles != null ? (t.miles + ' mi') : null, 'gross ' + money(t.gross || 0)].filter(Boolean).join(' · '))]),
+          h('div', { style: 'text-align:right' }, [h('b', { style: 'color:' + profColor }, money(t.est_profit || 0)), h('div', { class: 'cp-row-s' }, 'profit')]),
+        ]);
+        return h('div', { class: 'cp-trip' }, [toggle, detail]);
+      };
+      mount(tripPnlCard, [
+        cardHead('Per-trip P&L', trips2.length + ' delivered'),
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, p.by_trip_note || 'Every delivered load with its own revenue, dispatch fee, allocated cost and net. Tap a trip for the breakdown and a PDF.'),
+        trips2.length ? h('div', null, trips2.map(tripRow)) : h('div', { class: 'cp-muted' }, 'No delivered trips in this period yet.'),
+      ]);
     })();
     // A5 — Payroll / employee salary management (manually entered; self-scoped).
     const payrollCard = h('div', { class: 'cp-card' }, [cardHead('Payroll'), h('div', { class: 'cp-muted' }, 'Loading…')]);
@@ -1210,6 +1262,7 @@ function tripStepper(status) {
     mount(content, h('div', null, [
       h('div', { class: 'cp-kpis' }, [statTile('Fees due', money(due), 'finance', 'amber'), statTile('Fees paid', money(paid), 'dash', 'green'), statTile('Gross hauled', money(gross), 'trips', 'blue'), statTile('Invoices', String(rows.length), 'docs', 'violet')]),
       pnlCard,
+      tripPnlCard,
       payrollCard,
       stmtCard,
       h('div', { class: 'cp-grid' }, [

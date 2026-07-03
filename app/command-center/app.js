@@ -7,7 +7,7 @@
 import { el, mount } from '../shared/ui/dom.js';
 import ENV from '../shared/env.js';
 import { getSession, getUser, onAuthChange } from '../shared/session.js';
-import { isFlagEnabled } from '../shared/api.js';
+import { isFlagEnabled, claimStaffInvite } from '../shared/api.js';
 import { loadStaffContext, isStaff, can, clearStaffContext } from '../shared/permissions.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 import { createRouter } from '../shared/router.js';
@@ -139,6 +139,10 @@ async function boot() {
   try { ctx = await loadStaffContext(true); }
   catch (e) { fatal('Could not verify your access. Please check your connection and retry.'); return; }
 
+  if (!isStaff()) {
+    // Pending email invite? Claim it (provisions staff access + role), then re-verify.
+    try { const _r = await claimStaffInvite(); if (_r && _r.claimed) { try { await loadStaffContext(true); } catch (_) {} } } catch (_) {}
+  }
   if (!isStaff()) { denyNotStaff(); return; }
   if (!ccEnabled) {
     // Owners can still get in to flip the flag; everyone else sees a maintenance notice.

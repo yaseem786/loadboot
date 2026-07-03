@@ -493,6 +493,10 @@ export const contactsDirectory = (o = {}) => rpc('cc_contacts_directory', { p_se
 export const warnDriverExpiry = (driver, kind) => rpc('cc_warn_driver_expiry', { p_driver: driver, p_kind: kind });
 export const listPermissionsFor = (userId) => rpc('cc_list_permissions_for', { p_user: userId });
 export const setUserPermission = (userId, perm, effect) => rpc('cc_set_user_permission', { p_user: userId, p_perm: perm, p_effect: effect });
+export const inviteStaff = (email, roleKey) => rpc('cc_invite_staff', { p_email: email, p_role_key: roleKey });
+export const listStaffInvites = () => rpc('cc_list_staff_invites');
+export const revokeStaffInvite = (id) => rpc('cc_revoke_staff_invite', { p_id: id });
+export const claimStaffInvite = () => rpc('cc_claim_staff_invite');
 export const upsertDriver = (o = {}) => rpc('cc_upsert_driver', { p_id: o.id ?? null, p_carrier: o.carrier, p_name: o.name, p_phone: o.phone ?? null, p_license_no: o.licenseNo ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
 export const upsertTruck = (o = {}) => rpc('cc_upsert_truck', { p_id: o.id ?? null, p_carrier: o.carrier, p_unit: o.unit, p_plate: o.plate ?? null, p_vin: o.vin ?? null, p_equipment: o.equipment ?? null });
 export const assignTripResources = (o = {}) => rpc('cc_assign_trip_resources', { p_trip: o.trip, p_driver: o.driver ?? null, p_truck: o.truck ?? null, p_trailer: o.trailer ?? null });
