@@ -21,6 +21,7 @@ import {
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 import { openPrintable } from '../shared/ui/printDoc.js';
+import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 
@@ -294,8 +295,11 @@ function accountCard() {
   (async () => {
     try { const p = await partnerGetProfile(); company.value = p.company || ''; contact.value = p.contact_name || ''; phone.value = p.phone || ''; email.value = p.email || ''; address.value = p.address || ''; } catch (_) {}
   })();
+  const _pAvatar = h('div', { style: 'margin-bottom:12px' });
+  try { mountAvatarEditor(_pAvatar, { name: (company && company.value) || 'Partner', size: 60 }); } catch (_) {}
   return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
     h('div', { class: 'cp-cardhead' }, [icon('user', 18), h('h3', null, 'Account & company')]),
+    _pAvatar,
     h('div', { class: 'cp-formgrid' }, [field('Company', company), field('Contact name', contact), field('Phone', phone), field('Billing email', email)]),
     field('Address', address), msg, saveBtn,
   ]);

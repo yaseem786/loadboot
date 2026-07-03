@@ -343,3 +343,124 @@
 
 ## #53 (slice 3) — Pocket Trips: richer subtitle
 - Trip cards show miles and $/mi alongside rate when present. Gates green.
+
+## #53 (slice 4) — Pocket: continuous live location tracking
+- New "🛰 Live tracking" toggle on active trips: watchPosition streams GPS to
+  pocketPostLocation continuously (consent set once) until tapped off; one watch at a
+  time. Complements the existing one-shot "Share location". Powers the CC live map.
+- python edit + strict .mjs verify; ESM ALL PASS, BUILD OK, AUDIT 0 FAIL.
+
+## #53 (slice 5) — Pocket: one-tap Navigate
+- Active trips show a "🧭 Navigate" button that opens the device maps app to the
+  destination (Google Maps dir URL). Core Uber-grade driver action.
+- #53 core delivered: hero + step trackers + share/live GPS + navigate. Gates green.
+
+## #27 (slice) — CC Command Overview deepened
+- cc_get_overview extended (prod+staging): + brokers_total, shippers_total,
+  trips_in_transit, book_requests_pending (all live counts).
+- overview.js: added a 2nd KPI row (In transit → map, Book requests → queue, Brokers,
+  Shippers) with real counts + drill links. Gates: ESM ALL PASS, BUILD OK, AUDIT 0 FAIL.
+
+## #27 (slice) + #40 close — brokerSla clickable rows; live map data source
+- brokerSla.js: broker rows now clickable → Partners (drill-through).
+- #40 Live map: opsMap already renders moving markers + rich popups + side list;
+  Pocket continuous "Live tracking" (slice 4) now supplies the real position stream,
+  so the map has live moving trucks end-to-end. Marking #40 complete.
+- Gates: ESM ALL PASS (99), BUILD OK, AUDIT 0 FAIL.
+
+## #27 (slice) — Contacts directory: Export CSV
+- contactsDirectory.js: "⬇ Export CSV" downloads the current (filtered) directory
+  (name/type/contact/email/phone/MC/DOT/status/verified). Gates green.
+
+## #31 — User profile picture (avatar upload)
+- DB (prod+staging): profiles.avatar_path column; cc_set_my_avatar(path) (own-folder
+  guarded) + cc_my_avatar() self-scoped RPCs.
+- storage.js: uploadAvatar(file) → private documents bucket under {uid}/avatar/... (image
+  only, <=5MB). api.js: setMyAvatar/myAvatar wrappers.
+- NEW app/shared/ui/avatar.js: reusable avatar editor (photo or initials fallback +
+  upload/replace, signed-URL display). Mounted in carrier Account → Profile card.
+  Reusable across partner/pocket/CC.
+- Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL. CSP already allows supabase img-src.
+
+## #31 (extend) — avatar in Pocket + Partner portals
+- mountAvatarEditor now also in Pocket Home (top profile card) and Partner "Account &
+  company" card. Same component, own-folder storage, signed-URL display.
+- Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL. carrier/partner/pocket tails intact.
+
+## #54 (first automation) — Auto-expiry compliance sweep (human-gated)
+- cc_run_compliance_expiry_sweep(days) (prod+staging): scans carrier_compliance for docs
+  expiring within N days or expired, auto-issues a 'document' warning + notifies the carrier,
+  logs audit. Idempotent — skips any carrier warned in the last 14 days. Returns
+  {scanned, warned, skipped, window_days}. Gated to compliance.manage/carriers.manage.
+- api.runComplianceExpirySweep; CC compliance header "⚡ Run auto-expiry sweep" button
+  (staff-triggered = the human gate; can be scheduled server-side later).
+- Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL.
+
+## #54 (2nd automation) — Auto-expire stale booking requests
+- cc_run_stale_bookreq_sweep(days) (prod+staging): expires load_book_requests pending
+  beyond N days (default 5), notifies the carrier, logs audit. Returns {scanned, expired}.
+  Gated to dispatch.manage/carriers.manage.
+- api.runStaleBookreqSweep; CC Booking requests header "⚡ Auto-expire stale (>5d)" button.
+- Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL.
+
+## #54 (consolidation) — Automations hub: on-demand sweeps
+- automationsAdmin.js: added an "On-demand automations" section with Run-now cards for
+  the Compliance expiry sweep and Stale booking-request sweep, each showing a live result
+  summary. Both automations now discoverable in one CC hub alongside the event→action rules.
+- Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL.
+
+## #16 (slice) — Pre-booking final checks (SOP §12) at approval
+- bookingRequests.js: each request card now shows a "Pre-booking final checks" list
+  (verified authority/insurance, all required docs verified, trust ≥ 70, on-time ≥ 85%
+  as a soft check) computed from the carrier's trust profile. If any required check fails,
+  Approve & book asks the staff to confirm — a human-gated safety net at the booking point.
+- Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL.
+- NOTE: full D6 SOP §12 spec may include more items; this surfaces the checks derivable
+  from current data. Provide the SOP checklist to complete it exactly.
+
+## Pre-deploy VERIFICATION pass (whole batch)
+- RPC integrity: all 416 rpc() wrappers in api.js map to a real prod function — 0 missing.
+- Prod/staging parity: all 6 new/changed RPCs (cc_carrier_pnl, cc_get_overview,
+  cc_set_my_avatar, cc_my_avatar, cc_run_compliance_expiry_sweep, cc_run_stale_bookreq_sweep)
+  present on BOTH; profiles.avatar_path column on BOTH.
+- File integrity: carrier/partner/pocket/CC entry files all end with boot() — no truncation.
+- Gates: ESM ALL PASS (100 files); import-check clean except the known 'report' string
+  false-positive; build_site.py BUILD OK; grand audit 53 pages 0 FAIL.
+- Verdict: batch is safe to commit + deploy.
+
+## #31 (complete rollout) — avatar in CC settings
+- settings.js: "Your profile photo" card mounts the avatar editor for staff. Avatar now
+  available in all four surfaces: carrier, partner, pocket, Command Center.
+- getUser export verified. Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL.
+
+## #16 — D6 Pre-booking final checks (SOP §12) now authoritative
+- Replaced the client-side heuristic with the real cc_prebook_check RPC (live go/no-go:
+  load available, rate card complete, authority & insurance current, packet, account health,
+  hazmat capability, weight vs equipment, no open emergencies + HOS note).
+- cc_book_requests_queue (prod+staging) now exposes carrier_org to STAFF only (still
+  withheld from brokers) so the CC approval can run the per-carrier check.
+- bookingRequests.js renders the itemized checks with basis; Approve confirms on NO-GO.
+- Gates: ESM ALL PASS (100), BUILD OK, AUDIT 0 FAIL.
+
+## Task list closeout
+- Verified + marked complete (real, functional implementations): #9 D-series parent,
+  #16 D6 prebook (authoritative), #17 D7 STOP/REJECT (load checklist verify/reject in CC
+  partner-intake), #18 D8 delivery doc pack (carrier portal), #19 D-screens batch,
+  #27 CC deepening, #54 automation core.
+- Remaining 5 require owner/legal/credentials — documented turn-key in OWNER-ACTIONS.md:
+  #33 (GA4/GSC secrets — code complete via ga4-insights/gsc-insights edge fns),
+  #20 (legal counsel text), #21 (owner activation), #22 (owner browser proofs),
+  #23 (design direction).
+- Final gates: ESM ALL PASS (100), BUILD OK, AUDIT 53 pages 0 FAIL.
+
+## #21 — Activation bundle delivered (scripts/activation_readiness.sh)
+- One-command production activation gate: runs ESM + import + build + audit gates,
+  prints CODE STATUS + the owner activation checklist (deploy, 2 browser proofs, GA4/GSC
+  secrets, legal publish, stray-file cleanup). Reports ACTIVATION-READY ✓.
+- Remaining truly-external tasks: #20 legal (counsel), #22 owner browser proofs,
+  #23 design direction, #33 Google secrets. All documented in OWNER-ACTIONS.md.
+
+## #23 (assets) — on-brand marketing collateral
+- marketing/loadboot-one-pager.html (sales sheet) + marketing/loadboot-carrier-ad.html
+  (1080×1080 carrier-recruitment ad). On-brand (navy/blue/orange, real tagline + true
+  facts). Starting collateral for the design directive; needs a brief for anything specific.

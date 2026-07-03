@@ -44,7 +44,7 @@ export function renderBrokerSla(host) {
     if (!rows.length) { mount(body, el('div', { class: 'lb-state' }, 'No brokers with submitted loads in this window yet.')); return; }
     mount(body, el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Broker', 'Fill rate', 'On-time', 'Submitted', 'Covered', 'Delivered', 'Avg cover', 'Open exc.'].map(h => el('th', null, h)))),
-      el('tbody', null, rows.map(r => el('tr', { class: 'cc-row' }, [
+      el('tbody', null, rows.map(r => el('tr', { class: 'cc-row', style: 'cursor:pointer', onClick: () => { location.hash = '#/partners'; } }, [
         el('td', null, el('b', null, r.name || '—')),
         el('td', null, el('span', { class: 'cc-pill cc-pill-' + pctTone(r.fill_rate_pct) }, fmtPct(r.fill_rate_pct))),
         el('td', null, el('span', { class: 'cc-pill cc-pill-' + pctTone(r.on_time_pct) }, fmtPct(r.on_time_pct))),

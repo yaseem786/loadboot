@@ -5,17 +5,37 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, fmtDate } from '../../shared/ui/components.js';
-import { listRules, setRuleEnabled } from '../../shared/api.js';
+import { listRules, setRuleEnabled, runComplianceExpirySweep, runStaleBookreqSweep } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 export function renderAutomationsAdmin(host) {
   let rows = [];
   const manage = can('flags.manage');
+  function manualCard(title, desc, run, summarize) {
+    const out = el('div', { class: 'cc-sub', style: 'margin-top:8px;min-height:18px' });
+    const btn = el('button', { class: 'lb-btn lb-btn-primary' }, 'Run now');
+    btn.onclick = async () => {
+      btn.disabled = true; btn.textContent = 'Running…'; out.textContent = '';
+      try { const r = await run(); out.style.color = '#16a34a'; out.textContent = '✓ ' + summarize(r); }
+      catch (e) { out.style.color = '#dc2626'; out.textContent = humanizeError(e); }
+      btn.disabled = false; btn.textContent = 'Run now';
+    };
+    return card([el('h4', { class: 'cc-card-title' }, title), el('p', { class: 'cc-sub' }, desc), btn, out], 'lb-card');
+  }
+  const manualSection = el('div', { style: 'margin-top:20px' }, [
+    el('h3', { class: 'cc-card-title' }, 'On-demand automations'),
+    el('div', { class: 'cc-sub', style: 'margin-bottom:10px' }, 'Run a maintenance sweep now. Each is idempotent, notifies the affected party and is audited — and can be moved onto a server schedule later.'),
+    el('div', { class: 'cc-grid-2' }, [
+      manualCard('Compliance expiry sweep', 'Auto-warn carriers whose documents are expiring within 30 days or already expired (skips anyone warned in the last 14 days).', () => runComplianceExpirySweep(30), (r) => 'Warned ' + (r.warned || 0) + ' of ' + (r.scanned || 0) + ' scanned · ' + (r.skipped || 0) + ' recently warned'),
+      manualCard('Stale booking-request sweep', 'Auto-expire booking requests pending more than 5 days and notify the carriers.', () => runStaleBookreqSweep(5), (r) => 'Expired ' + (r.expired || 0) + ' of ' + (r.scanned || 0) + ' stale'),
+    ]),
+  ]);
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Automations', 'Every rule that turns a system event into a task or notification. High-risk actions wait for human approval.'),
     el('div', { id: 'au-kpis' }),
     el('div', { id: 'au-body' }, el('div', { class: 'lb-state lb-loading' }, 'Loading rules…')),
+    manualSection,
   ]));
   const kpiHost = host.querySelector('#au-kpis');
   const body = host.querySelector('#au-body');

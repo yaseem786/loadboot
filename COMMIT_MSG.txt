@@ -1,0 +1,65 @@
+Marketplace + portals: per-trip P&L, account hub, compliance ops, About redesign, Pocket Uber-hero — plus critical carrier-app truncation fix
+
+WHY THIS MATTERS
+- Recovers app/carrier/app.js from a mid-file truncation that would re-trigger the
+  carrier "Loading…" login outage on deploy. compliance.js and build_site.py were
+  likewise truncated and recovered.
+- Hardens the ESM syntax gate so this class of bug (truncation / unclosed brackets)
+  is caught reliably instead of slipping through.
+
+CHANGED FILES
+- app/carrier/app.js        Carrier Finance: real per-trip P&L card (revenue, 5% fee,
+                            mile-allocated cost, net, RPM, on-time) + per-trip PDF;
+                            brand-label restyle; truncation recovered.
+- app/shared/api.js         cc_carrier_pnl by_trip wrapper + related RPC wrappers.
+- app/command-center/app.js  route/nav wiring for compliance + related views.
+- #54 automation: cc_run_compliance_expiry_sweep (prod+staging) auto-warns carriers
+  with lapsing docs + cc_run_stale_bookreq_sweep auto-expires stale booking
+  requests; both human-triggered from the CC (compliance + booking-requests views)
+  and consolidated in the Automations hub (automationsAdmin.js) with Run-now cards.
+- app/command-center/views/compliance.js  Onboarding & Compliance: clickable KPIs
+                            filter the queue + focus banner; one-click "Warn" on
+                            lapsing/non-compliant carriers; truncation recovered.
+- app/command-center/views/staffRoles.js  staff invite + per-user permissions polish.
+- app/command-center/views/overview.js  Command overview deepened: 2nd KPI row
+                            (in transit / book requests / brokers / shippers), live counts.
+- app/command-center/views/brokerSla.js  broker rows clickable -> Partners.
+- app/command-center/views/bookingRequests.js  authoritative pre-booking checks via
+  cc_prebook_check (SOP §12 go/no-go) + auto-expire stale sweep. cc_book_requests_queue
+  exposes carrier_org to staff only (prod+staging).
+- app/command-center/views/contactsDirectory.js  Export CSV of the directory.
+- #31 avatar: app/shared/ui/avatar.js (new) + storage.uploadAvatar + api
+  setMyAvatar/myAvatar; mounted in carrier Account -> Profile. DB: profiles.avatar_path
+  + cc_set_my_avatar/cc_my_avatar (prod+staging). Also mounted in Pocket Home
+  + Partner Account + CC settings
+  (app/pocket/pocket.js, app/partner/app.js, app/command-center/views/settings.js).
+- app/pocket/pocket.js      Uber-style active-trip hero (3-step tracker, state-aware
+                            CTA, share location); per-trip step tracker + miles/RPM on
+                            the Trips tab; continuous "Live tracking" toggle (watchPosition streams
+                            GPS -> live map); one-tap "Navigate" (opens maps to dest).
+- build_site.py             New unified account hub get-started.html (Carrier/Broker/
+                            Shipper/Referral tabs); About page redesign (motifs + FAQ
+                            + AboutPage/Organization JSON-LD); global "Get Started" CTA
+                            → hub; doc-preview CSP allows Supabase storage; exclude
+                            stray _selftest files from publish.
+- scripts/activation_readiness.sh  one-command production activation gate (#21).
+- scripts/check_esm_syntax.sh  Strict .mjs check (transliterate non-ASCII) so
+                            truncation/paren/import errors are caught in any environment.
+- SESSION-CHANGELOG.md      Running log of the above.
+
+DB (already live on prod + staging; no migration needed at deploy)
+- cc_carrier_pnl.by_trip; cc_account_health rolling recovery + improve guidance;
+  cc_request_book_load setup-gate; cc_get_overview extended (brokers/shippers/
+  trips_in_transit/book_requests_pending).
+
+Do NOT commit: app/_selftest_broken.js (leftover scratch, excluded from build) and
+COMMIT_MSG.txt (this file).
+
+Gates: ESM ALL PASS (99), build_site.py BUILD OK, grand audit 53 pages 0 FAIL.
+
+BRAND REFRESH (this batch)
+- New LoadBoot brand kit applied site-wide by overwriting canonical asset names:
+  logo-full(.png/-dark), logo-icon(.png/-dark), logo-text(.png/-dark),
+  favicon.ico/-32/-48, apple-touch-icon, icon-192/512/maskable, og-image.
+  Root + site/ copies kept in sync; full kit archived in docs/brand-kit/assets.
+- sw.js cache bumped lb-v5 -> lb-v6 so returning visitors fetch the new logos.

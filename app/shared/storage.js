@@ -46,6 +46,24 @@ export async function uploadPodDocument(file, tripId) {
   return { path, fileName: file.name, contentType: file.type, size: file.size };
 }
 
+const AVATAR_ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const AVATAR_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+// Upload a profile avatar image under {auth.uid()}/avatar/... (own-folder RLS). Returns { path }.
+export async function uploadAvatar(file) {
+  if (!file) throw new Error('No image selected.');
+  if (!AVATAR_ALLOWED.includes(file.type)) throw new Error('Please choose a JPG, PNG, WEBP or GIF image.');
+  if (file.size <= 0) throw new Error('That image is empty.');
+  if (file.size > 5 * 1024 * 1024) throw new Error('Image is larger than 5 MB.');
+  const sb = await getClient();
+  const user = await getUser();
+  if (!user) throw new Error('Please sign in again.');
+  const ext = AVATAR_EXT[file.type] || 'img';
+  const path = `${user.id}/avatar/${Date.now()}-${rand()}.${ext}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw new Error(error.message || 'Upload failed.');
+  return { path, fileName: file.name, contentType: file.type, size: file.size };
+}
+
 // Short-lived signed URL so a carrier can re-download their own document.
 export async function signedDocumentUrl(path, expiresSeconds = 300) {
   const sb = await getClient();
@@ -54,4 +72,4 @@ export async function signedDocumentUrl(path, expiresSeconds = 300) {
   return data && data.signedUrl;
 }
 
-export default { uploadDocument, uploadPodDocument, signedDocumentUrl };
+export default { uploadDocument, uploadPodDocument, uploadAvatar, signedDocumentUrl };

@@ -1,4 +1,4 @@
-const CACHE='lb-v5';
+const CACHE='lb-v6';
 const CORE=['/','/index.html','/styles.css','/app.js','/dashboard.html','/load-score.html','/tools.html','/services.html','/pricing.html','/contact.html','/manifest.webmanifest','/icon-192.png','/icon-512.png','/apple-touch-icon.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(CORE).catch(function(){});}));});
 self.addEventListener('message',function(e){if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting();});

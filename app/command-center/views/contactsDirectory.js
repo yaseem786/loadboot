@@ -10,7 +10,7 @@ import { humanizeError } from '../../shared/errors.js';
 const KINDS = [{ value: '', label: 'All' }, { value: 'carrier', label: 'Carriers' }, { value: 'broker', label: 'Brokers' }, { value: 'shipper', label: 'Shippers' }];
 
 export function renderContactsDirectory(host) {
-  let kind = '', search = '';
+  let kind = '', search = '', lastRows = [];
   const kpis = el('div');
   const listHost = el('div', { class: 'cc-table-wrap' });
 
@@ -19,6 +19,7 @@ export function renderContactsDirectory(host) {
     let rows; try { rows = await contactsDirectory({ kind: kind || null, search: search || null, limit: 300 }); }
     catch (e) { showError(listHost, humanizeError(e), load); return; }
     rows = Array.isArray(rows) ? rows : [];
+    lastRows = rows;
     const verified = rows.filter(r => r.verified).length;
     mount(kpis, el('div', { class: 'cc-kpi-grid' }, [
       statCard({ icon: 'users', label: 'Accounts', value: String(rows.length), sub: 'in directory', accent: 'blue' }),
@@ -40,8 +41,18 @@ export function renderContactsDirectory(host) {
     ]));
   }
 
+  const exportBtn = el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: () => {
+    const rs = lastRows || []; if (!rs.length) return;
+    const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const head = ['Name', 'Type', 'Contact', 'Email', 'Phone', 'MC', 'DOT', 'Status', 'Verified'];
+    const lines = [head.join(',')].concat(rs.map(r => [r.name, r.kind, r.contact, r.email, r.phone, r.mc, r.dot, r.status, r.verified ? 'yes' : 'no'].map(esc).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'loadboot-contacts-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  } }, '⬇ Export CSV');
   mount(host, el('div', { class: 'cc-view' }, [
-    sectionHead('Contacts directory', 'Every registered account holder — carrier, broker, shipper, facility — with a verified badge and one-click drill-down into the full record.'),
+    sectionHead('Contacts directory', 'Every registered account holder — carrier, broker, shipper, facility — with a verified badge and one-click drill-down into the full record.', [exportBtn]),
     toolbar([segmented(KINDS, kind, (v) => { kind = v; load(); }), searchBox('Search name, MC, DOT, email, phone...', (v) => { search = v; load(); })]),
     kpis, listHost,
   ]));
