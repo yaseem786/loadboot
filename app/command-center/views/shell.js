@@ -26,12 +26,14 @@ const NAV = [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/booking-requests', label: 'Booking requests', icon: 'list', perm: 'any:loads.assign,loads.publish,carriers.view' },
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
+    { path: '/contacts', label: 'Contacts directory', icon: 'users', perm: 'any:carriers.view,partners.view' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/matching', label: 'Smart matching', icon: 'trend', perm: 'carriers.view' },
     { path: '/carrier-scorecards', label: 'Carrier Scorecards', icon: 'trend', perm: 'any:carriers.view,dispatch.view' },
     { path: '/trips', label: 'Dispatch & trips', icon: 'truck', perm: 'dispatch.view', flag: 'dispatch' },
     { path: '/map', label: 'Live map', icon: 'truck', perm: null, flag: 'opsMap' },
     { path: '/fleet', label: 'Fleet & drivers', icon: 'users', perm: 'fleet.view', flag: 'fleet' },
+    { path: '/fleet-expiry', label: 'License & medical expiry', icon: 'shield', perm: 'any:fleet.view,carriers.view' },
     { path: '/documents', label: 'Documents', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
     { path: '/compliance', label: 'Onboarding & compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
     { path: '/verification', label: 'Verification Center', icon: 'shield', perm: 'compliance.view' },
@@ -107,6 +109,17 @@ function permVisible(item) {
 }
 
 const SEARCH_HASH = { carrier: '/carriers', partner: '/partners', load: '/trips', lead: '/crm', invoice: '/finance', driver: '/fleet' };
+function flattenNav(arr, out) {
+  (arr || []).forEach(it => {
+    if (!it) return;
+    if (Array.isArray(it)) { flattenNav(it, out); return; }
+    if (it.path && it.label) out.push({ path: it.path, label: it.label });
+    if (it.children) flattenNav(it.children, out);
+  });
+  return out;
+}
+const NAV_PAGES = flattenNav(NAV, []);
+
 function globalSearchBox() {
   const input = el('input', { class: 'cc-input cc-search', placeholder: 'Search carriers, loads, leads, invoices…' });
   const panel = el('div', { class: 'cc-search-panel', hidden: true });
@@ -118,14 +131,23 @@ function globalSearchBox() {
     const q = input.value.trim();
     if (q.length < 2) { close(); return; }
     t = setTimeout(async () => {
+      const ql = q.toLowerCase();
+      const pages = NAV_PAGES.filter(p => p.label.toLowerCase().includes(ql)).slice(0, 6);
       let rows = [];
       try { rows = await globalSearch(q, 12); } catch (_) { rows = []; }
-      if (!rows || !rows.length) { mount(panel, el('div', { class: 'cc-search-empty' }, 'No matches')); panel.hidden = false; return; }
-      mount(panel, rows.map(r => el('a', { class: 'cc-search-row', href: '#' + (SEARCH_HASH[r.kind] || '/'), onClick: close }, [
+      const nodes = [];
+      pages.forEach(p => nodes.push(el('a', { class: 'cc-search-row', href: '#' + p.path, onClick: close }, [
+        el('span', { class: 'cc-pill cc-pill-blue' }, 'Page'),
+        el('b', null, p.label),
+        el('span', { class: 'cc-sub' }, 'Go to page'),
+      ])));
+      (rows || []).forEach(r => nodes.push(el('a', { class: 'cc-search-row', href: '#' + (SEARCH_HASH[r.kind] || '/'), onClick: close }, [
         el('span', { class: 'cc-pill cc-pill-gray' }, r.sublabel),
         el('b', null, r.label),
         el('span', { class: 'cc-sub' }, r.status || ''),
       ])));
+      if (!nodes.length) { mount(panel, el('div', { class: 'cc-search-empty' }, 'No matches')); panel.hidden = false; return; }
+      mount(panel, nodes);
       panel.hidden = false;
     }, 220);
   });

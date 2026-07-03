@@ -46,6 +46,8 @@ import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
 import { renderRadar } from './views/radar.js';
 import { renderFleet } from './views/fleet.js';
+import { renderFleetExpiry } from './views/fleetExpiry.js';
+import { renderContactsDirectory } from './views/contactsDirectory.js';
 import { renderManagement } from './views/management.js';
 import { renderAnalyticsWeb } from './views/analyticsWeb.js';
 import { renderForms } from './views/forms.js';
@@ -206,6 +208,8 @@ async function boot() {
     '/radar': () => { setActive('/radar'); renderRadar(content); },
     '/management': () => { setActive('/management'); renderManagement(content); },
     '/fleet': () => { setActive('/fleet'); if (fleetEnabled && can('fleet.view')) renderFleet(content); else denied(); },
+    '/fleet-expiry': () => { setActive('/fleet-expiry'); if (can('fleet.view') || can('carriers.view')) renderFleetExpiry(content); else denied(); },
+    '/contacts': () => { setActive('/contacts'); if (can('carriers.view') || can('partners.view')) renderContactsDirectory(content); else denied(); },
     '/dispatch': () => { setActive('/dispatch'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderDispatch(content))(); },
     '/carriers': () => { setActive('/carriers'); guard(['carriers.view', 'carriers.edit', 'carriers.approve'], () => renderCarriers(content))(); },
     '/loads': () => { setActive('/loads'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderLoads(content))(); },

@@ -488,6 +488,9 @@ export const globalSearch = (q, limit) => rpc('cc_global_search', { p_q: q, p_li
 // ---- Enterprise Completion: Fleet & execution (flag: fleet_enabled) ----
 export const fleetOverview = () => rpc('cc_fleet_overview');
 export const listDrivers = (o = {}) => rpc('cc_list_drivers', { p_carrier: o.carrier ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
+export const fleetExpiryBoard = (days) => rpc('cc_fleet_expiry_board', { p_days: days ?? 45 });
+export const contactsDirectory = (o = {}) => rpc('cc_contacts_directory', { p_search: o.search ?? null, p_kind: o.kind ?? null, p_limit: o.limit ?? 200 });
+export const warnDriverExpiry = (driver, kind) => rpc('cc_warn_driver_expiry', { p_driver: driver, p_kind: kind });
 export const listPermissionsFor = (userId) => rpc('cc_list_permissions_for', { p_user: userId });
 export const setUserPermission = (userId, perm, effect) => rpc('cc_set_user_permission', { p_user: userId, p_perm: perm, p_effect: effect });
 export const upsertDriver = (o = {}) => rpc('cc_upsert_driver', { p_id: o.id ?? null, p_carrier: o.carrier, p_name: o.name, p_phone: o.phone ?? null, p_license_no: o.licenseNo ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });

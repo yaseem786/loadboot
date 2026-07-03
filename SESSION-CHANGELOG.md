@@ -201,3 +201,22 @@
   tokens (toneOf) drive colours across the dashboard.
 - Full gate pass this turn: ESM ALL PASS (96), imports PASS (report = known false-positive),
   BUILD OK, AUDIT 0 FAIL.
+
+## #75 — CC License & medical expiry monitor (#41)
+- cc_fleet_expiry_board(days) [prod+staging]: every driver across all carriers whose CDL
+  or medical card expires within N days (or is expired), sorted most-urgent-first, with
+  carrier name, phone, days-left. cc_warn_driver_expiry(driver,kind) notifies the carrier
+  owner instantly. api: fleetExpiryBoard / warnDriverExpiry.
+- New CC view fleetExpiry.js + nav "License & medical expiry": KPIs (flagged / expired /
+  due ≤14d), 30/45/90-day filter, per-driver cards (tone-coded), "Warn carrier" one-click,
+  and a Carrier 360 deep link. Route /fleet-expiry (fleet.view or carriers.view).
+- Gates: ESM ALL PASS, imports PASS, BUILD OK, AUDIT 0 FAIL.
+
+## #76 — CC search covers menu items + Contacts directory (#38)
+- Global search now also matches NAV/menu pages (flattenNav → NAV_PAGES); typing a page
+  name shows "Page" results that navigate on click, above the data results. (shell.js)
+- cc_contacts_directory(search,kind,limit) [prod+staging]: every account holder with
+  verified badge (onboarding complete + active), contact, MC/DOT, status. New CC view
+  contactsDirectory.js + nav "Contacts directory" (route /contacts): KPIs, kind filter,
+  search (name/MC/DOT/email/phone), verified badges, row → Carrier 360 / partner record.
+- Gates: ESM ALL PASS, imports PASS, BUILD OK, AUDIT 0 FAIL.
