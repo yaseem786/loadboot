@@ -470,7 +470,7 @@ def page(fname, title, desc, active, body, schema=''):
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">%s</head><body><script>(function(){try{if(sessionStorage.getItem('lb_seen'))return;}catch(e){}var o=document.createElement('div');o.id='lbSplash';o.innerHTML='<div class="lbs-logo"><span class="lbs-wrap"><img class="lbs-logo-img" src="/logo-full-dark.png" alt="LoadBoot"></span></div>';document.body.insertBefore(o,document.body.firstChild);try{sessionStorage.setItem('lb_seen','1');}catch(e){}setTimeout(function(){if(o&&o.parentNode)o.parentNode.removeChild(o);},2600);})();</script>
+<link rel="stylesheet" href="styles.css?v=6">%s</head><body><script>(function(){try{if(sessionStorage.getItem('lb_seen'))return;}catch(e){}var o=document.createElement('div');o.id='lbSplash';o.innerHTML='<div class="lbs-stack"><div class="lbs-lockup"><svg class="lbs-mark-svg" viewBox="16 14 68 72" role="img" aria-label="LoadBoot"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"></path><path class="lbs-boot1" d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"></path><path class="lbs-boot2" d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"></path></svg><img class="lbs-word-img" src="/logo-text-dark.png" alt="LoadBoot"></div><div class="lbs-tagline">The Operating System for Trucking</div></div>';document.body.insertBefore(o,document.body.firstChild);try{sessionStorage.setItem('lb_seen','1');}catch(e){}setTimeout(function(){if(o&&o.parentNode)o.parentNode.removeChild(o);},2600);})();</script>
 %s
 %s
 %s
@@ -536,13 +536,16 @@ LOADBOARD_CSS = '''
 '''
 SPLASH_CSS = '''
 #lbSplash{position:fixed;inset:0;z-index:99999;background:radial-gradient(1000px 520px at 50% 34%,#13213f 0%,#0b1220 62%,#070d1a 100%);display:flex;align-items:center;justify-content:center;animation:lbsOut .55s ease 1.9s forwards}
-.lbs-wrap{position:relative;display:inline-block;overflow:hidden}
-.lbs-logo-img{height:60px;width:auto;display:block;filter:drop-shadow(0 16px 40px rgba(8,131,247,.4));opacity:0;transform:translateY(10px) scale(.94);animation:lbsLogo .9s cubic-bezier(.2,.8,.2,1) .1s both}
-.lbs-wrap::after{content:"";position:absolute;top:-20%;bottom:-20%;left:-60%;width:36%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-16deg);animation:lbsShine 1.25s 1s ease-out both}
-@keyframes lbsLogo{0%{opacity:0;transform:translateY(10px) scale(.94)}100%{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes lbsShine{0%{left:-60%}100%{left:130%}}
+.lbs-stack{display:flex;flex-direction:column;align-items:center}
+.lbs-lockup{display:flex;align-items:center;gap:25px}
+.lbs-mark-svg{width:60px;height:64px;overflow:visible;display:block}
+.lbs-boot1{animation:lbBootIn 3.2s ease-out infinite}
+.lbs-boot2{animation:lbBootIn 3.2s ease-out .18s infinite}
+.lbs-word-img{height:36px;width:auto;display:block}
+.lbs-tagline{margin-top:16px;text-align:center;font-family:'Manrope',Arial,sans-serif;font-size:13px;font-weight:500;color:#64748B;letter-spacing:.02em}
+@keyframes lbBootIn{0%{transform:translateX(-20px);opacity:0}16%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:1}}
 @keyframes lbsOut{to{opacity:0;visibility:hidden}}
-@media(prefers-reduced-motion:reduce){#lbSplash{animation:lbsOut .3s ease .2s forwards}.lbs-logo-img{animation:none;opacity:1;transform:none}.lbs-wrap::after{animation:none;opacity:0}}
+@media(prefers-reduced-motion:reduce){#lbSplash{animation:lbsOut .3s ease .2s forwards}.lbs-boot1,.lbs-boot2{animation:none}}
 '''
 ART_CSS = '''
 .crumbs{font-size:.85rem;color:var(--muted);padding:16px 0}.crumbs a{color:var(--blue)}

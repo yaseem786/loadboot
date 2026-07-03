@@ -55,7 +55,7 @@ function authScreen() {
     } catch (e) { err.textContent = (e && e.message) || 'Something went wrong.'; btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Sign in'; }
   };
   mount(root, h('div', { class: 'cp-auth' }, [h('div', { class: 'cp-auth-card' }, [
-    h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub' }, 'Developers')]),
+    h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub', style: 'color:#60A5FA;font-weight:500;letter-spacing:0;text-transform:none' }, 'Developers')]),
     title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, err, btn, toggle,
   ])]));
   setMode(false); root.setAttribute('aria-busy', 'false');
@@ -103,7 +103,7 @@ function appView(user) {
   mount(root, h('div', { class: 'cp-shell cp-shell-1col' }, h('main', { class: 'cp-main dev-main' }, [
     h('header', { class: 'cp-top' }, [
       h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('div', null, [
-        h('span', { class: 'cp-brand-sub' }, 'Developers'),
+        h('span', { class: 'cp-brand-sub', style: 'color:#60A5FA;font-weight:500;letter-spacing:0;text-transform:none' }, 'Developers'),
         h('div', { class: 'cp-carrier-name', style: 'font-size:.82rem' }, (user && user.email) || ''),
       ])]),
       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { await signOut(); boot(); } }, 'Sign out'),

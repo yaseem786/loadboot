@@ -149,7 +149,7 @@ function authScreen() {
   };
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand', style: 'align-items:flex-start' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { style: 'color:#64748b;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
+      h('div', { class: 'cp-auth-brand', style: 'align-items:flex-start' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { style: 'color:#FB923C;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
     ]),
@@ -275,7 +275,7 @@ async function appView(user) {
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow', style: 'display:flex;align-items:flex-start;gap:5px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('span', { style: 'color:#cbd5e1;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
+      h('div', { class: 'cp-brandrow', style: 'display:flex;align-items:flex-start;gap:5px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('span', { style: 'color:#FB923C;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),

@@ -16,12 +16,14 @@
 .cc-splash-glow{position:absolute;top:-46px;left:50%;width:440px;height:230px;transform:translateX(-50%);pointer-events:none;
   background:radial-gradient(closest-side,rgba(8,131,247,.38),transparent 72%);filter:blur(22px);opacity:.3;
   animation:ccGlow 2.6s ease-in-out .2s infinite alternate}
-.cc-splash-logowrap{position:relative;display:inline-block;overflow:hidden;padding:6px}
-.cc-splash-logo{height:78px;width:auto;display:block;opacity:0;filter:blur(9px);transform:scale(.965) translateY(6px);
-  animation:ccLogoIn 1.05s cubic-bezier(.2,.75,.2,1) .15s forwards}
-.cc-splash-logowrap::after{content:"";position:absolute;top:-30%;bottom:-30%;left:-72%;width:42%;pointer-events:none;
-  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-16deg);
-  animation:ccShine 1.5s 1.05s cubic-bezier(.3,0,.2,1) both}
+.cc-splash-logowrap{position:relative;display:inline-block;overflow:visible;padding:6px}
+.cc-splash-lockup{display:flex;align-items:center;gap:28px}
+.cc-splash-mark{width:68px;height:72px;overflow:visible;display:block}
+.lbs-boot1{animation:lbBootIn 3.2s ease-out infinite}
+.lbs-boot2{animation:lbBootIn 3.2s ease-out .18s infinite}
+.cc-splash-word{height:40px;width:auto;display:block}
+.cc-splash-tagline{font-size:14px;font-weight:500;color:#64748B;letter-spacing:.02em;opacity:0;animation:ccup .7s .7s both}
+@keyframes lbBootIn{0%{transform:translateX(-20px);opacity:0}16%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:1}}
 .cc-splash-tag{font-size:.78rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#7c8db5;
   opacity:0;animation:ccup .7s 1.05s both}
 .cc-splash-bar{width:210px;height:3px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
@@ -57,7 +59,7 @@
 .cc-word.on-dark b{color:#60a5fa}
 .cc-brandsub{display:block;font-size:.6rem;font-weight:800;color:#8296bd;letter-spacing:.26em;text-transform:uppercase;margin-top:9px}
 .cc-brandsub.on-dark{color:#7c8db5}
-.cc-brand-tag{font-size:.72rem;color:#61729a;margin:11px 2px 0;line-height:1.5;max-width:200px}
+.cc-brand-tag{font-size:.72rem;color:#64748B;margin:11px 2px 0;line-height:1.5;max-width:200px}
 .cc-side .cc-brand-tag{color:#64748b}
 .cc-login-tag{font-size:.86rem;color:var(--lb-muted);margin-top:10px;line-height:1.4}
 .cc-nav-group{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5b6b8c;padding:14px 11px 5px}
@@ -526,4 +528,5 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
   .cc-top { padding-left: 12px; }
 }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                  
+
+@media(prefers-reduced-motion:reduce){.lbs-boot1,.lbs-boot2{animation:none}}
