@@ -721,3 +721,13 @@ export const uninstallPlugin = (id) => rpc('cc_uninstall_plugin', { p_id: id });
 // They return one-by-one in later phases behind feature flags.
 
 export default { rpc };
+
+// #31 — self-scoped profile avatar
+export const setMyAvatar = (path) => rpc('cc_set_my_avatar', { p_path: path });
+export const myAvatar = () => rpc('cc_my_avatar');
+
+// #54 — automation: sweep lapsing compliance docs and auto-warn carriers (idempotent)
+export const runComplianceExpirySweep = (days) => rpc('cc_run_compliance_expiry_sweep', { p_days: days ?? 30 });
+
+// #54 — automation: auto-expire stale (undecided) booking requests
+export const runStaleBookreqSweep = (days) => rpc('cc_run_stale_bookreq_sweep', { p_days: days ?? 5 });

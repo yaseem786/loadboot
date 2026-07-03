@@ -23,6 +23,13 @@ export async function renderOverview(host, ctx, shell) {
     statCard({ icon: 'users', label: 'Active staff', value: String(n('staff_active')), sub: 'operators with access', accent: 'violet', to: '#/staff' }),
   ]);
 
+  const kpis2 = el('div', { class: 'cc-kpi-grid' }, [
+    statCard({ icon: 'radar', label: 'In transit now', value: String(n('trips_in_transit')), sub: 'live trips on the road', accent: 'blue', to: '#/map' }),
+    statCard({ icon: 'check', label: 'Book requests', value: String(n('book_requests_pending')), sub: 'carriers awaiting approval', accent: n('book_requests_pending') > 0 ? 'amber' : 'green', to: '#/booking-requests' }),
+    statCard({ icon: 'users', label: 'Brokers', value: String(n('brokers_total')), sub: 'partner brokers', accent: 'violet', to: '#/partners' }),
+    statCard({ icon: 'truck', label: 'Shippers', value: String(n('shippers_total')), sub: 'shipper accounts', accent: 'green', to: '#/partners' }),
+  ]);
+
   const carrierBreak = card([
     el('h3', { class: 'cc-card-title' }, 'Carrier pipeline'),
     breakdownBars({ pending: n('carriers_pending'), active: n('carriers_active'), paused: n('carriers_paused') }, n('carriers_total')),
@@ -47,8 +54,9 @@ export async function renderOverview(host, ctx, shell) {
   ], 'cc-pad');
 
   mount(host, el('div', { class: 'cc-view' }, [
-    sectionHead('Command overview', 'Live operational snapshot for your team.'),
+    sectionHead('Command overview', 'Live operational snapshot for your team — every number is a live database count.'),
     kpis,
+    kpis2,
     el('div', { class: 'cc-grid-2' }, [carrierBreak, loadBreak]),
     quick,
   ]));

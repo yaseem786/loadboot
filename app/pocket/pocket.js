@@ -13,6 +13,7 @@ import {
   dispatchSheet,
 } from '../shared/api.js';
 import { uploadPodDocument } from '../shared/storage.js';
+import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 
@@ -169,7 +170,9 @@ async function appView() {
           h('div', null, [h('div', { class: 't' }, 'Alerts for trips, payments & announcements'), h('div', { class: 's' }, 'On this device')]),
           h('div', { style: 'display:flex;gap:8px;align-items:center' }, [status, btn])])]);
     }
-    mount(panel, h('div', null, [heroCard, notifCard, ...annCards, kpis, actionCard, pushCard, compCard].filter(Boolean)));
+    const _pkAvatar = h('div', { class: 'pk-card', style: 'margin-bottom:12px' });
+    try { mountAvatarEditor(_pkAvatar, { name: ov.carrier || 'Driver', size: 60 }); } catch (_) {}
+    mount(panel, h('div', null, [_pkAvatar, heroCard, notifCard, ...annCards, kpis, actionCard, pushCard, compCard].filter(Boolean)));
   }
 
   // ---------- CP-B + CP-E: Trips (confirm) + live GPS share ----------
@@ -183,6 +186,8 @@ async function appView() {
         ev.stopPropagation(); ev.currentTarget.disabled = true; try { await pocketConfirmTrip(t.id); ev.currentTarget.textContent = 'Confirmed ✓'; } catch (x) { ev.currentTarget.textContent = 'Error'; }
       } }, 'Confirm') : null;
       const share = isActive ? h('button', { class: 'pk-btn pk-mini', onclick: (ev) => shareLocation(ev, t.id) }, '📍 Share location') : null;
+      const live = isActive ? h('button', { class: 'pk-btn sec pk-mini', onclick: (ev) => toggleLive(ev, t.id) }, (_liveWatch != null && _liveTrip === t.id) ? '🛰 Tracking ON — tap to stop' : '🛰 Live tracking') : null;
+      const nav = (isActive && t.destination) ? h('button', { class: 'pk-btn pk-mini', onclick: () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.destination), '_blank', 'noopener') }, '🧭 Navigate') : null;
       const formWrap = h('div');
       const issueBtn = isActive ? h('button', { class: 'pk-btn sec pk-mini', onclick: () => {
         if (formWrap.firstChild) { formWrap.innerHTML = ''; return; }
@@ -270,13 +275,34 @@ async function appView() {
           pill(t.status),
         ]),
         _tripStepper,
-        (confirm || startBtn || deliverBtn || share || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [confirm, startBtn, deliverBtn, share, shBtn, issueBtn, podBtn, ...stamps, emBtn].filter(Boolean)) : null,
+        (confirm || startBtn || deliverBtn || nav || share || live || issueBtn || podBtn) ? h('div', { class: 'pk-trip-actions' }, [nav, confirm, startBtn, deliverBtn, share, live, shBtn, issueBtn, podBtn, ...stamps, emBtn].filter(Boolean)) : null,
         formWrap,
         podWrap,
       ].filter(Boolean));
     })]));
   }
 
+  let _liveWatch = null, _liveTrip = null;
+  function toggleLive(ev, tripId) {
+    const btn = ev.currentTarget;
+    if (_liveWatch != null && _liveTrip === tripId) {
+      try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {}
+      _liveWatch = null; _liveTrip = null;
+      btn.textContent = '🛰 Live tracking'; btn.classList.remove('on'); return;
+    }
+    if (!navigator.geolocation) { btn.textContent = 'GPS not available'; return; }
+    if (_liveWatch != null) { try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {} _liveWatch = null; }
+    btn.disabled = true; btn.textContent = 'Starting…';
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try { await pocketSetConsent(tripId, true); } catch (_) {}
+      try { await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'pocket'); } catch (_) {}
+      _liveTrip = tripId;
+      _liveWatch = navigator.geolocation.watchPosition(async (p) => {
+        try { await pocketPostLocation(tripId, p.coords.latitude, p.coords.longitude, 'pocket'); } catch (_) {}
+      }, () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
+      btn.disabled = false; btn.textContent = '🛰 Tracking ON — tap to stop'; btn.classList.add('on');
+    }, () => { btn.disabled = false; btn.textContent = 'Permission denied'; }, { enableHighAccuracy: true, timeout: 10000 });
+  }
   function shareLocation(ev, tripId) {
     const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Locating…';
     if (!navigator.geolocation) { btn.textContent = 'GPS not available'; return; }

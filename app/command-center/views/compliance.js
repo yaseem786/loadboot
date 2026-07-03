@@ -7,7 +7,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { complianceOverview, listOnboarding, getCarrierCompliance, startOnboarding, setCompliance, decideOnboarding, getCarriersDirectory, issueViolation } from '../../shared/api.js';
+import { complianceOverview, listOnboarding, getCarrierCompliance, startOnboarding, setCompliance, decideOnboarding, getCarriersDirectory, issueViolation, runComplianceExpirySweep } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -49,9 +49,15 @@ export function renderCompliance(host) {
   }
 
   function header() {
-    const actions = can('compliance.verify') ? [el('button', { class: 'lb-btn lb-btn-primary', onClick: openStart }, '+ Start onboarding')] : null;
+    const sweepBtn = (can('compliance.verify') || can('carriers.manage')) ? el('button', { class: 'lb-btn lb-btn-secondary', title: 'Auto-warn every carrier whose documents are expiring or expired (skips anyone warned in the last 14 days)', onClick: async (ev) => {
+      const b = ev.currentTarget; b.disabled = true; b.textContent = 'Running…';
+      try { const r = await runComplianceExpirySweep(30); toast('Automation: warned ' + (r.warned || 0) + ' of ' + (r.scanned || 0) + ' lapsing (' + (r.skipped || 0) + ' recently warned)', 'success'); loadKpis(); loadList(); }
+      catch (e) { toast(humanizeError(e), 'error'); }
+      b.disabled = false; b.textContent = '⚡ Run auto-expiry sweep';
+    } }, '⚡ Run auto-expiry sweep') : null;
+    const actions = [ (can('compliance.verify') ? el('button', { class: 'lb-btn lb-btn-primary', onClick: openStart }, '+ Start onboarding') : null), sweepBtn ].filter(Boolean);
     return el('div', null, [
-      sectionHead('Carrier Onboarding & Compliance', 'Onboarding queue, document verification and live expiry tracking. Click a KPI to filter; warn carriers whose documents lapse. New onboardings auto-create a review task.', actions),
+      sectionHead('Carrier Onboarding & Compliance', 'Onboarding queue, document verification and live expiry tracking. Click a KPI to filter; warn carriers whose documents lapse, or run the auto-expiry sweep. New onboardings auto-create a review task.', actions.length ? actions : null),
       kpiHost,
       toolbar([ searchBox('Search carrier…', (v) => { state.search = v; loadList(); }), segmented(STAGES, state.stage, (v) => { state.stage = v; state.focus = ''; renderFocus(); loadList(); }) ]),
       focusHost,

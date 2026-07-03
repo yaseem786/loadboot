@@ -27,6 +27,7 @@ import {
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { printDispatchSheet, openPrintable } from '../shared/ui/printDoc.js';
+import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -1692,8 +1693,10 @@ function tripStepper(status) {
           ]);
         }))]);
     })();
+    const _avatarHost = h('div', { style: 'margin-bottom:10px' });
+    try { mountAvatarEditor(_avatarHost, { name: ov.carrier || (user && user.email) || '' }); } catch (_) {}
     mount(content, h('div', null, [heroCardAcct, h('div', { class: 'cp-grid' }, [
-      h('div', { class: 'cp-card' }, [cardHead('Profile'), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
+      h('div', { class: 'cp-card' }, [cardHead('Profile'), _avatarHost, h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
       setupCard,
       packetCard,
       payCard,

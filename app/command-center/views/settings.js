@@ -7,6 +7,8 @@ import { showLoading, showError } from '../../shared/loading.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, card } from '../../shared/ui/components.js';
+import { mountAvatarEditor } from '../../shared/ui/avatar.js';
+import { getUser } from '../../shared/session.js';
 
 const DEFS = [
   { key: 'support_email', type: 'string', label: 'Support email',
@@ -41,10 +43,14 @@ function settingRow(def, value) {
 
 export async function renderSettings(host) {
   const body = el('div');
+  const profileHost = el('div');
+  const profileCard = card([el('h3', { class: 'cc-card-title' }, 'Your profile photo'), el('div', { class: 'cc-sub', style: 'margin-bottom:10px' }, 'Personalises your account across the Command Center. Replaces the default logo avatar.'), profileHost]);
   mount(host, el('div', null, [
     sectionHead('Settings', 'Typed, validated system settings. Every change is audited.'),
+    profileCard,
     body,
   ]));
+  (async () => { let u = null; try { u = await getUser(); } catch (_) {} try { mountAvatarEditor(profileHost, { name: (u && u.email) || 'Staff' }); } catch (_) {} })();
   showLoading(body, 'Loading settings…');
   try {
     const values = await Promise.all(DEFS.map(d => getSetting(d.key).catch(() => null)));
