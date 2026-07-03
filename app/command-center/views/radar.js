@@ -25,6 +25,9 @@ export function renderRadar(host) {
     const len = (k) => Array.isArray(r[k]) ? r[k].length : 0;
 
     const kpis = el('div', { class: 'cc-kpi-grid' }, [
+      statCard({ icon: 'alert', label: 'Emergencies', value: String(len('open_emergencies')), sub: 'open now', accent: len('open_emergencies') ? 'red' : 'green' }),
+      statCard({ icon: 'truck', label: 'Booking requests', value: String(len('booking_requests')), sub: 'awaiting approval', accent: len('booking_requests') ? 'amber' : 'green' }),
+      statCard({ icon: 'doc', label: 'Docs to review', value: String(len('documents_pending')), sub: 'compliance', accent: len('documents_pending') ? 'amber' : 'green' }),
       statCard({ icon: 'flag', label: 'Overdue tasks', value: String(len('overdue_tasks')), sub: 'past SLA', accent: len('overdue_tasks') ? 'red' : 'green' }),
       statCard({ icon: 'shield', label: 'Awaiting approval', value: String(len('awaiting_approval')), sub: 'human gate', accent: len('awaiting_approval') ? 'amber' : 'green' }),
       statCard({ icon: 'truck', label: 'Unassigned loads', value: String(len('unassigned_loads')), sub: 'booked, no trip', accent: len('unassigned_loads') ? 'amber' : 'green' }),
@@ -62,8 +65,26 @@ export function renderRadar(host) {
       el('div', null, [el('b', null, s.settlement), el('div', { class: 'cc-sub' }, (s.carrier || '—') + ' · ' + money(s.net))]), el('span', { class: 'cc-pill cc-pill-violet' }, s.status),
     ]), 'No settlements awaiting payout.', '/finance');
 
+    const emergencies = feed('Emergencies (open)', r.open_emergencies || [], e => el('div', { class: 'cc-doc-item cc-row', onClick: () => go('/exceptions') }, [
+      el('div', null, [el('b', null, (e.category || 'emergency')), el('div', { class: 'cc-sub' }, (e.carrier || '') + ' · ' + fmtDateTime(e.at))]), el('span', { class: 'cc-pill cc-pill-red' }, 'act'),
+    ]), 'No open emergencies.', '/exceptions');
+
+    const booking = feed('Booking requests', r.booking_requests || [], b => el('div', { class: 'cc-doc-item cc-row', onClick: () => go('/booking-requests') }, [
+      el('div', null, [el('b', null, (b.origin || '?') + ' → ' + (b.destination || '?')), el('div', { class: 'cc-sub' }, (b.carrier || '') + (b.rate != null ? ' · ' + money(b.rate) : ''))]), el('span', { class: 'cc-row-go' }, '›'),
+    ]), 'No booking requests waiting.', '/booking-requests');
+
+    const docsPending = feed('Documents to review', r.documents_pending || [], d => el('div', { class: 'cc-doc-item cc-row', onClick: () => go('/documents') }, [
+      el('div', null, [el('b', null, d.file || d.type || 'document'), el('div', { class: 'cc-sub' }, (d.carrier || '') + ' · ' + (d.type || ''))]), el('span', { class: 'cc-pill cc-pill-amber' }, 'review'),
+    ]), 'No documents awaiting review.', '/documents');
+
+    const payments = feed('Payment reports', r.payment_reports || [], p => el('div', { class: 'cc-doc-item cc-row', onClick: () => go('/finance') }, [
+      el('div', null, [el('b', null, p.invoice || 'invoice'), el('div', { class: 'cc-sub' }, (p.org || '') + (p.amount != null ? ' · ' + money(p.amount) : '') + (p.expected ? ' · exp ' + fmtDate(p.expected) : ''))]), el('span', { class: 'cc-pill cc-pill-violet' }, 'confirm'),
+    ]), 'No payment reports to confirm.', '/finance');
+
     mount(body, el('div', null, [
       kpis,
+      el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [emergencies, booking]),
+      el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [docsPending, payments]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [overdue, approval]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [unassigned, due]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [expiring, settlements]),
