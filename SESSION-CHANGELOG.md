@@ -220,3 +220,11 @@
   contactsDirectory.js + nav "Contacts directory" (route /contacts): KPIs, kind filter,
   search (name/MC/DOT/email/phone), verified badges, row → Carrier 360 / partner record.
 - Gates: ESM ALL PASS, imports PASS, BUILD OK, AUDIT 0 FAIL.
+
+## #77 — Ops Radar extended with new actionable items (#30 covered)
+- cc_ops_radar (prod+staging) now also returns booking_requests (pending), open_emergencies,
+  documents_pending, payment_reports (payment_submitted invoices).
+- radar.js: new KPIs (Emergencies / Booking requests / Docs to review) + four new feed cards,
+  each linking to the resolving module (/exceptions, /booking-requests, /documents, /finance).
+  So Ops Radar is now the complete unified action inbox across every flow added this session.
+- Gates: ESM ALL PASS, BUILD OK, AUDIT 0 FAIL.
