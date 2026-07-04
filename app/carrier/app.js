@@ -11,7 +11,7 @@ import {
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods,
   pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
-  carrierUploadDocument, carrierListDocuments,
+  carrierUploadDocument, carrierListDocuments, fmcsaVerify,
   emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
@@ -1562,10 +1562,21 @@ function tripStepper(status) {
           ]))) : h('div', { class: 'cp-muted' }, 'No history yet.'));
         } catch (e) { mount(host, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load history.')); }
       } }, '🕑 History');
+      const _g = Number(t.rate || 0), _fee = Math.round(_g * 0.05 * 100) / 100, _net = Math.round((_g - _fee) * 100) / 100, _rpm = t.miles ? (_g / Number(t.miles)) : null;
+      const settleBtn = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#f97316;color:#0b1b33', onClick: () => {
+        openModal('Trip settlement \u2014 ' + (t.origin || '') + ' \u2192 ' + (t.destination || ''), [
+          h('div', { class: 'cp-row' }, [h('span', null, 'Gross (linehaul)'), h('b', null, money(_g))]),
+          h('div', { class: 'cp-row' }, [h('span', null, 'LoadBoot fee (5%)'), h('span', null, '-' + money(_fee))]),
+          h('div', { class: 'cp-row' }, [h('b', null, 'Net to you'), h('b', { style: 'color:#16a34a' }, money(_net))]),
+          t.miles ? h('div', { class: 'cp-row' }, [h('span', null, 'Miles / RPM'), h('span', null, t.miles + ' mi \u00b7 $' + _rpm.toFixed(2) + '/mi')]) : null,
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: () => openPrintable('Trip Settlement', 'SETTLEMENT', [{ rows: [['Lane', (t.origin || '') + ' \u2192 ' + (t.destination || '')], ['Status', t.status || ''], ['Gross', money(_g)], ['Dispatch fee (5%)', '-' + money(_fee)], ['Net to carrier', money(_net)], ['Miles', t.miles ? String(t.miles) : '\u2014'], ['RPM', _rpm ? ('$' + _rpm.toFixed(2) + '/mi') : '\u2014']] }, { note: 'Add fuel/tolls/other expenses in Finance for the full trip P&L.' }]) }, '\u2b07 Download PDF'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => go('finance') }, 'Full P&L in Finance \u2192'),
+        ].filter(Boolean));
+      } }, '\ud83d\udcb0 Settlement');
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
         tripStepper(t.status),
-        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, nav, share, live, dwell, issue, emergency, pod, reloadBtn, rateBtn, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW, reloadW, rateW,
+        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, nav, share, live, dwell, issue, emergency, pod, settleBtn, reloadBtn, rateBtn, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW, reloadW, rateW,
       ].filter(Boolean));
     })]));
 
@@ -2319,6 +2330,41 @@ function tripStepper(status) {
         typeSel2, fileIn2, prev2, msg2, upBtn,
       ]);
     };
+    const verifyAuthority = (r) => {
+      const mcIn = h('input', { class: 'cp-in', placeholder: 'MC number (e.g. 1234567)' });
+      const dotIn = h('input', { class: 'cp-in', placeholder: 'USDOT number (e.g. 3456789)' });
+      const res = h('div', { style: 'margin-top:10px' });
+      const msg = h('div', { class: 'cp-err' });
+      const vbtn = h('button', { class: 'cp-btn', style: 'background:linear-gradient(135deg,#0e7490,#06b6d4)', onClick: async (ev) => {
+        const mc = mcIn.value.trim(), dot = dotIn.value.trim();
+        if (!mc && !dot) { msg.className = 'cp-err'; msg.textContent = 'Enter your MC or DOT number.'; return; }
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Verifying with FMCSA\u2026'; msg.textContent = '';
+        try {
+          const d = await fmcsaVerify({ mc: mc || null, dot: dot || null });
+          const g = (k) => (d && (d[k] != null ? d[k] : (d.result && d.result[k])));
+          mount(res, h('div', { class: 'cp-card', style: 'margin-top:8px' }, [
+            h('div', { class: 'cp-row' }, [h('span', null, 'Authority'), h('b', null, String(g('authority_status') || g('operating_status') || g('allowed_to_operate') || 'checked'))]),
+            h('div', { class: 'cp-row' }, [h('span', null, 'Safety rating'), h('span', null, String(g('safety_rating') || 'none'))]),
+            h('div', { class: 'cp-row' }, [h('span', null, 'Out of service'), h('span', null, String(g('out_of_service') != null ? g('out_of_service') : 'No'))]),
+            h('div', { class: 'cp-row-s' }, 'Live from FMCSA (SAFER/QCMobile) via MC/DOT \u2014 no PDF needed.'),
+          ]));
+          msg.className = 'cp-err ok'; msg.textContent = '\u2713 FMCSA verified \u2014 sent to your dispatcher for approval.';
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Verify with FMCSA'; msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'FMCSA verification failed \u2014 try again or upload the authority letter instead.'; }
+      } }, 'Verify with FMCSA');
+      const upl = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: () => uploadFor(r) }, 'Or upload authority letter (PDF) instead');
+      openModal('Operating authority \u2014 verify with FMCSA', [
+        h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Authority is verified live from FMCSA using your MC/DOT number \u2014 no document upload needed.'),
+        mcIn, dotIn, vbtn, msg, res, upl,
+      ]);
+    };
+    const changeDoc = (r) => {
+      const critical = r.mandatory && /authorit|insur|coi|mc\/dot|mcs-?150/i.test(r.name || '');
+      const impact = critical
+        ? 'This is a REQUIRED document. Changing it sends your account back to PENDING and pauses booking until the Command Center re-approves the new file.'
+        : (r.mandatory ? 'This document will go back to In review. Keep it current to avoid a booking pause.' : 'This optional document will go back to In review \u2014 your booking stays open.');
+      if (!confirm('Change \u201C' + r.name + '\u201D?\n\n' + impact + '\n\nContinue?')) return;
+      if ((r.doc_type === 'authority') || /authorit|mc\/dot/i.test(r.name || '')) verifyAuthority(r); else uploadFor(r);
+    };
     const reqRow = (r) => {
       const k = reqTone(r); const tone = toneOf(k.t);
       // FIX: requirements often carry no doc_type — resolve via the same name→type map the
@@ -2348,7 +2394,7 @@ function tripStepper(status) {
           h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
           h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
             h('span', { class: 'cp-pill', style: 'background:' + (rejected ? 'rgba(220,38,38,.1)' : tone.bg) + ';color:' + (rejected ? '#b91c1c' : tone.c) }, rejected ? 'Rejected' : r.status === 'valid' ? 'Approved ✓' : stateIdx >= 2 ? 'In review' : tone.label),
-            actionable ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => uploadFor(r) }, btnLabel) : null,
+            actionable ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => uploadFor(r) }, btnLabel) : (r.status === 'valid' ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => changeDoc(r) }, 'Change') : null),
           ].filter(Boolean)),
         ]),
         stepper, note,

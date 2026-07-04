@@ -85,3 +85,10 @@
   .cp-grid2 { grid-template-columns: 1fr; }
   .cp-formgrid { grid-template-columns: 1fr; }
 }
+
+/* ===================== PREMIUM SKIN (appended · additive) ===================== */
+.cp-card{border-radius:18px;box-shadow:0 12px 30px -20px rgba(2,12,30,.38);border:1px solid #eaf0f7}
+.cp-btn:not(.ghost):not(.sec){background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;box-shadow:0 8px 18px -10px rgba(8,131,247,.55);border:0;border-radius:12px}
+.cp-btn.ghost{border:1px solid #e6ebf3;background:#fff;border-radius:12px}
+.cp-pill{border-radius:99px;font-weight:800}
+.cp-in:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
