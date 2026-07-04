@@ -40,3 +40,13 @@ ACTION: run these after deploying this batch; report back and I'll fix anything 
 ## #23 — Design work via Claude Design Builder — NEEDS DIRECTION/TOOL
 Needs your design direction and the Design Builder tool. ACTION: tell me the specific
 screens/brand direction and I'll produce them.
+
+---
+## UPDATED 2026-07-03 — current owner checklist (in order)
+1. **Commit + deploy** the full batch (COMMIT_MSG.txt ready; uncheck app/_selftest_broken.js + COMMIT_MSG.txt).
+2. Post-deploy: run the 2 browser proofs (carrier trip/POD; CC booking approve).
+3. Reinstall the mobile/desktop PWA — it now opens the /app/ launcher, not the website.
+4. LLC registration (state of your choice) — required before taking payments and for store accounts.
+5. Google Play developer account ($25 one-time) → send me access/keystore fingerprint and I prepare the TWA package (listing text ready in docs/play-store-listing.md).
+6. GA4/GSC: set the 3 Supabase secrets + enable google_data_enabled (unchanged from #33).
+7. Attorney: review DRAFT legal pack (delivered 2026-07-03) + ARC disclaimer question (docs/strategy/ARC-evaluation.md §3).
