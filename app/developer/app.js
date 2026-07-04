@@ -3,6 +3,7 @@
 // at creation (only a hash is stored server-side) and can be revoked any time.
 import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
+import { brandLogo } from '../shared/ui/components.js';
 import { createApiKey, listApiKeys, revokeApiKey } from '../shared/api.js';
 
 
@@ -59,7 +60,7 @@ function authScreen() {
     } catch (e) { err.textContent = (e && e.message) || 'Something went wrong.'; btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Sign in'; }
   };
   mount(root, h('div', { class: 'cp-auth' }, [h('div', { class: 'cp-auth-card' }, [
-    h('div', { class: 'cp-auth-brand' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { class: 'cp-brand-sub', style: 'color:#60A5FA;font-weight:500;letter-spacing:0;text-transform:none' }, 'Developers')]),
+    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#60A5FA;line-height:1;margin-top:7px" }, 'Developers')]),
     title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, err, btn, toggle,
   ])]));
   setMode(false); root.setAttribute('aria-busy', 'false');
