@@ -2760,17 +2760,28 @@ function tripStepper(status) {
     })();
     const _avatarHost = h('div', { style: 'margin-bottom:10px' });
     try { mountAvatarEditor(_avatarHost, { name: ov.carrier || (user && user.email) || '' }); } catch (_) {}
-    mount(content, h('div', null, [heroCardAcct, h('div', { class: 'cp-grid' }, [
-      h('div', { class: 'cp-card' }, [cardHead('Profile'), _avatarHost, h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]),
-      setupCard,
-      packetCard,
-      payCard,
-      teamCard,
-      h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing out…'; await signOut(); location.reload(); } }, 'Sign out')]),
-      dispCard,
-      refCard,
-      prefsCard,
-    ])]));
+    const _profileCard = h('div', { class: 'cp-card' }, [cardHead('Profile'), _avatarHost, h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Carrier'), h('span', null, ov.carrier || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Email'), h('span', null, (user && user.email) || '—')]), h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Onboarding'), pill((ov.onboarding_stage || 'pending'))])]);
+    const _deviceCard = h('div', { class: 'cp-card' }, [cardHead('Device & privacy'), pushRow, h('div', { class: 'cp-row' }, [h('div', null, [h('div', { class: 'cp-row-t' }, 'Location sharing'), h('div', { class: 'cp-row-s' }, 'Asked per active trip, you stay in control')]), h('span', { class: 'cp-pill gray' }, 'per trip')]), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing out…'; await signOut(); location.reload(); } }, 'Sign out')]);
+    const _ini = ((ov.carrier || (user && user.email) || 'C').trim()[0] || 'C').toUpperCase();
+    const _hStat = (v, l) => h('div', { class: 'cpa-stat' }, [h('div', { class: 'cpa-sv' }, v), h('div', { class: 'cpa-sl' }, l)]);
+    const _healthStat = _hStat('…', 'Health');
+    (async () => { try { const ah = await accountHealth(); const sv = _healthStat.querySelector('.cpa-sv'); if (sv) sv.textContent = String(ah.score); _healthStat.classList.add(ah.tier === 'healthy' ? 'ok' : ah.tier === 'at_risk' ? 'warn' : 'bad'); } catch (_) {} })();
+    const _hero = h('div', { class: 'cpa-hero' }, [
+      h('div', { class: 'cpa-idrow' }, [
+        h('div', { class: 'cpa-av' }, _ini),
+        h('div', { class: 'cpa-idtext' }, [h('div', { class: 'cpa-name' }, ov.carrier || 'Your company'), h('div', { class: 'cpa-mail' }, (user && user.email) || '')]),
+        h('span', { class: 'cp-pill ' + (ov.compliance_ok ? 'green' : 'amber'), style: 'margin-left:auto' }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
+      ]),
+      h('div', { class: 'cpa-stats' }, [_healthStat, _hStat((ov.onboarding_stage || 'pending').replace(/_/g, ' '), 'Verification'), _hStat(String(ov.trips_active ?? 0), 'Active trips'), _hStat(money(ov.invoices_due ?? 0), 'Fees due')]),
+    ]);
+    const _panes = { profile: [_profileCard, teamCard], verification: [heroCardAcct, setupCard, packetCard], dispatch: [dispCard], payments: [payCard, refCard], alerts: [prefsCard, _deviceCard] };
+    const _TABS = [['profile', 'Profile'], ['verification', 'Verification'], ['dispatch', 'Dispatch'], ['payments', 'Payments'], ['alerts', 'Alerts & device']];
+    const _paneHost = h('div', { class: 'cp-grid' });
+    const _navBtns = {};
+    const _showTab = (key) => { _paneHost.innerHTML = ''; (_panes[key] || []).forEach(c => _paneHost.appendChild(c)); Object.keys(_navBtns).forEach(k => _navBtns[k].classList.toggle('on', k === key)); };
+    const _nav = h('div', { class: 'cpa-nav' }, _TABS.map(function (t) { var k = t[0], l = t[1]; var b = h('button', { class: 'cpa-tab', onClick: function () { _showTab(k); } }, l); _navBtns[k] = b; return b; }));
+    mount(content, h('div', null, [_hero, _nav, _paneHost]));
+    _showTab('profile');
   }
 
   /* ----- Onboarding wizard (Phase 2A) ----- */
