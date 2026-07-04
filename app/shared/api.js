@@ -761,3 +761,13 @@ export const runComplianceExpirySweep = (days) => rpc('cc_run_compliance_expiry_
 
 // #54 — automation: auto-expire stale (undecided) booking requests
 export const runStaleBookreqSweep = (days) => rpc('cc_run_stale_bookreq_sweep', { p_days: days ?? 5 });
+
+// ---- Safety v2 (design LOCKED 2026-07-04): emergency contacts + trip incident reporting ----
+export const emergencyContacts = () => rpc('cc_emergency_contacts', {});
+export const emergencyContactAdd = (name, relation, phone) => rpc('cc_emergency_contact_add', { p_name: name, p_relation: relation, p_phone: phone });
+export const emergencyContactDelete = (id) => rpc('cc_emergency_contact_delete', { p_id: id });
+export const reportTripIncident = (o) => rpc('cc_report_trip_incident', { p_trip: o.trip, p_type: o.type, p_need: o.need, p_note: o.note ?? null, p_lat: o.lat, p_lng: o.lng, p_accuracy: o.accuracy ?? null, p_location: o.location ?? null, p_proofs: o.proofs ?? [] });
+export const myTripIncidents = (trip) => rpc('cc_my_trip_incidents', { p_trip: trip ?? null });
+export const safetyIncidents = (status) => rpc('cc_safety_incidents', { p_status: status ?? null });
+export const ackIncident = (id) => rpc('cc_ack_incident', { p_id: id });
+export const approveIncidentReschedule = (id, win, note) => rpc('cc_approve_incident_reschedule', { p_id: id, p_new_window: win, p_note: note ?? null });

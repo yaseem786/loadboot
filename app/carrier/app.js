@@ -12,6 +12,7 @@ import {
   pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
   carrierUploadDocument, carrierListDocuments,
+  emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripDepart,
@@ -113,6 +114,7 @@ const ic = (name) => ({
   bell: 'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0', user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8',
   shield: 'M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z',
   menu: 'M3 6h18M3 12h18M3 18h18',
+  sos: 'M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01',
   cog: 'M12 15a3 3 0 100-6 3 3 0 000 6zM12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1', pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
@@ -327,7 +329,7 @@ function notCarrier() {
 const NAV = [
   ['dashboard', 'Dashboard', 'dash'], ['health', 'Rating', 'shield'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
   ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
-  ['support', 'Support', 'support'], ['account', 'Account', 'user'],
+  ['support', 'Support', 'support'], ['safety', 'Safety', 'sos'], ['account', 'Account', 'user'],
 ];
 
 async function appView(user) {
@@ -512,6 +514,7 @@ async function appView(user) {
     else if (tab === 'onboarding') loadOnboarding();
     else if (tab === 'notifications') loadNotifications();
     else if (tab === 'health') loadHealth();
+    else if (tab === 'safety') loadSafety();
     else loadDashboard();
   }
 
@@ -1263,7 +1266,7 @@ async function appView(user) {
           const done = (pos) => buildAdvisor(pos);
           if (navigator.geolocation) navigator.geolocation.getCurrentPosition(done, () => done(null), { enableHighAccuracy: true, timeout: 8000 });
           else done(null);
-        } }, '📊 LoadBoot Score — should I take it?'),
+        } }, '⚡ LoadBoot Match — why it fits you'),
         advW,
       ].filter(Boolean));
     })();
@@ -2244,29 +2247,51 @@ function tripStepper(status) {
       return 'other';
     };
     const uploadFor = (r) => {
-      const t = reqDocType(r.name);
+      // Two-phase submit (owner spec): choose file → SEE it on the spot → 'Submit for review'.
+      // While it is in review the requirement is LOCKED (no replace) until a decision comes back.
+      const t = r.doc_type || reqDocType(r.name);
       const typeSel2 = h('select', { class: 'cp-in' }, DOC_TYPES.map(([v, l]) => h('option', { value: v, selected: v === t ? 'selected' : null }, l)));
       const fileIn2 = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
+      const prev2 = h('div', { style: 'margin:8px 0;display:none' });
       const msg2 = h('div', { class: 'cp-err' });
-      const upBtn = h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev) => {
+      const upBtn = h('button', { class: 'cp-btn', style: 'margin-top:10px', disabled: true, onClick: async (ev) => {
         const file = fileIn2.files && fileIn2.files[0];
         msg2.textContent = ''; msg2.className = 'cp-err';
         if (!file) { msg2.textContent = 'Choose a file first.'; return; }
-        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Uploading…';
+        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting…';
         try {
           const meta = await uploadDocument(file, typeSel2.value);
           await carrierUploadDocument({ type: typeSel2.value, fileName: meta.fileName, filePath: meta.path });
-          close2(); loadDocuments();
-        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Upload'; msg2.className = 'cp-err'; msg2.textContent = (e && e.message) || 'Upload failed.'; }
-      } }, 'Upload');
-      const close2 = openModal('Upload — ' + r.name, [
-        h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it. Your dispatcher reviews it after upload.'),
-        typeSel2, fileIn2, msg2, upBtn,
+          msg2.className = 'cp-err ok'; msg2.textContent = '✓ Submitted — status is now IN REVIEW. You cannot change it until the review decision.';
+          setTimeout(() => { close2(); loadDocuments(); }, 900);
+        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit for review'; msg2.className = 'cp-err'; msg2.textContent = (e && e.message) || 'Upload failed.'; }
+      } }, 'Submit for review');
+      fileIn2.onchange = () => {
+        prev2.innerHTML = ''; upBtn.disabled = true;
+        const f = fileIn2.files && fileIn2.files[0]; if (!f) { prev2.style.display = 'none'; return; }
+        prev2.style.display = 'block';
+        const kb = Math.max(1, Math.round(f.size / 1024));
+        if (/^image\//.test(f.type)) {
+          prev2.appendChild(h('img', { src: URL.createObjectURL(f), style: 'max-width:100%;max-height:220px;border-radius:12px;border:1px solid var(--lb-border, #e2e8f0);display:block' }));
+        } else {
+          prev2.appendChild(h('div', { style: 'display:flex;align-items:center;gap:10px;border:1px solid var(--lb-border, #e2e8f0);border-radius:12px;padding:10px 12px' }, [
+            h('span', { html: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0883F7" stroke-width="1.8"><path d="M6 2h9l5 5v15H6zM14 2v6h6"/></svg>', style: 'line-height:0' }),
+            h('div', null, [h('div', { style: 'font-weight:800;font-size:13px' }, f.name), h('div', { class: 'cp-row-s' }, (f.type || 'file') + ' · ' + kb + ' KB')]),
+          ]));
+        }
+        prev2.appendChild(h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Check the preview — this exact file goes to review.'));
+        upBtn.disabled = false;
+      };
+      const close2 = openModal('Submit — ' + r.name, [
+        h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'PDF or photo, up to 25 MB. Choose the file, check the preview, then submit. While in review it is locked — you can change it again only after a decision.'),
+        typeSel2, fileIn2, prev2, msg2, upBtn,
       ]);
     };
     const reqRow = (r) => {
       const k = reqTone(r); const tone = toneOf(k.t);
-      const d = latestDoc(r.doc_type || '') || null;
+      // FIX: requirements often carry no doc_type — resolve via the same name→type map the
+      // upload dialog uses, so a fresh upload immediately shows as Uploaded → In review.
+      const d = latestDoc(r.doc_type || reqDocType(r.name)) || null;
       const fdate = (x) => x ? new Date(x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + new Date(x).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
       // Amazon-style verification tracker: Uploaded → In review → Approved (or Rejected w/ reason)
       const stateIdx = r.status === 'valid' ? 3 : r.status === 'rejected' ? 2 : (r.status === 'pending' || d) ? 2 : 0;
@@ -2282,8 +2307,10 @@ function tripStepper(status) {
         ].filter(Boolean));
       })) : null;
       const note = rejected && d && d.review_note ? h('div', { style: 'margin-top:6px;border-radius:9px;padding:8px 11px;background:rgba(220,38,38,.08);color:#b91c1c;font-size:12px;font-weight:700' }, '✕ Reason: ' + d.review_note) : null;
-      const actionable = r.status !== 'valid';
-      const btnLabel = rejected ? 'Resubmit' : (stateIdx >= 2 && r.status !== 'valid') ? 'Replace' : 'Upload';
+      // Owner spec: LOCKED while in review — no replace until a decision comes back.
+      const inReview = stateIdx >= 2 && !rejected && r.status !== 'valid';
+      const actionable = r.status !== 'valid' && !inReview;
+      const btnLabel = rejected ? 'Resubmit' : 'Upload';
       return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
           h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
@@ -2755,6 +2782,146 @@ function tripStepper(status) {
   function cardHead(title, sub, onClick) { return h('div', { class: 'cp-cardhead' }, [h('div', null, [h('h3', null, title), sub ? h('span', { class: 'cp-cardhead-sub' }, sub) : null].filter(Boolean)), onClick ? h('button', { class: 'cp-link', onClick }, 'View all →') : null].filter(Boolean)); }
 
   /* ----- Notifications inbox (Phase 5) ----- */
+
+  /* ===== SAFETY v2 (locked design): hub + trip emergency reporting =====
+     Live location REQUIRED (UI gate + server rejects without lat/lng). Proof rules per type.
+     Carrier never sees the word 'CC' — it is '24/7 Dispatch support'. */
+  const INCIDENT_TYPES = [
+    ['accident', 'Accident / collision', 'Proof required: scene + vehicle photos.', true],
+    ['breakdown', 'Breakdown / tire', 'Proof required: photo of the truck where it sits.', true],
+    ['medical', 'Medical emergency', 'Call 911 first. Proof optional.', false],
+    ['security', 'Theft / security threat', 'Proof required: photos; add police report # in the note.', true],
+    ['unsafe_facility', 'Unsafe facility', 'Proof required: facility/condition photos.', true],
+    ['other', 'Other urgent issue', 'Proof recommended.', false],
+  ];
+  function openIncidentSheet(trip, onDone) {
+    let TYPE = null, PROOFREQ = false, NEED = null, LOC = null, PROOFPATH = null;
+    const locOk = h('div', { style: 'display:none;align-items:center;gap:7px;background:#e8f8ee;border:1px solid #bbe7c9;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:700;color:#15803d;margin:8px 0' });
+    const locBtn = h('button', { class: 'cp-btn', style: 'width:100%;background:#F97316', onClick: () => {
+      locBtn.disabled = true; locBtn.textContent = 'Getting live location…';
+      if (!navigator.geolocation) { alert('Location is not available on this device/browser.'); locBtn.disabled = false; locBtn.textContent = 'Enable live location'; return; }
+      navigator.geolocation.getCurrentPosition((pos) => {
+        LOC = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy || 0) };
+        locBtn.style.display = 'none'; locOk.style.display = 'flex';
+        locOk.textContent = '✓ Live location ON — ' + LOC.lat.toFixed(4) + ', ' + LOC.lng.toFixed(4) + ' · accuracy ' + LOC.accuracy + ' m';
+        upd();
+      }, () => { alert('Live location is required to report an emergency — please allow location access.'); locBtn.disabled = false; locBtn.textContent = 'Enable live location'; }, { enableHighAccuracy: true, timeout: 15000 });
+    } }, 'Enable live location (required)');
+    const typeHost = h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0' });
+    INCIDENT_TYPES.forEach(([key, label, proofNote, req]) => {
+      const b = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'text-align:left;padding:9px;line-height:1.35', onClick: () => {
+        TYPE = key; PROOFREQ = req;
+        Array.from(typeHost.children).forEach(x => { x.style.borderColor = ''; x.style.background = ''; });
+        b.style.borderColor = '#dc2626'; b.style.background = 'rgba(220,38,38,.08)'; upd();
+      } }, [h('div', { style: 'font-weight:800;font-size:12px' }, label), h('div', { style: 'font-size:10px;color:#64748b;margin-top:3px' }, proofNote)]);
+      typeHost.appendChild(b);
+    });
+    const needHost = h('div', { style: 'display:flex;gap:7px;margin:8px 0' }, [['reschedule', 'Reschedule delivery'], ['help', 'Immediate help'], ['both', 'Both']].map(([v, l]) => {
+      const b = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'flex:1', onClick: () => { NEED = v; Array.from(needHost.children).forEach(x => { x.style.borderColor = ''; x.style.background = ''; }); b.style.borderColor = '#0883F7'; b.style.background = 'rgba(8,131,247,.08)'; upd(); } }, l);
+      return b;
+    }));
+    const note = h('textarea', { class: 'cp-in', rows: 2, placeholder: 'Short note — e.g. blown tire, on shoulder, no injuries' });
+    const proofIn = h('input', { type: 'file', accept: 'image/*,.pdf', style: 'display:none' });
+    const proofBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'width:100%', onClick: () => proofIn.click() }, 'Add photo proof');
+    proofIn.onchange = async () => {
+      const f = proofIn.files && proofIn.files[0]; if (!f) return;
+      proofBtn.disabled = true; proofBtn.textContent = 'Uploading proof…';
+      try { const m = await uploadDocument(f, 'other'); PROOFPATH = m.path; proofBtn.textContent = '✓ ' + (m.fileName || 'proof attached'); proofBtn.style.color = '#15803d'; }
+      catch (e) { proofBtn.textContent = 'Add photo proof'; alert((e && e.message) || 'Upload failed.'); }
+      proofBtn.disabled = false; upd();
+    };
+    const err = h('div', { class: 'cp-err' });
+    const send = h('button', { class: 'cp-btn', style: 'width:100%;background:#dc2626', disabled: true, onClick: async () => {
+      send.disabled = true; send.textContent = 'Sending to Dispatch…';
+      try {
+        await reportTripIncident({ trip: trip.id, type: TYPE, need: NEED, note: note.value || null,
+          lat: LOC.lat, lng: LOC.lng, accuracy: LOC.accuracy, location: null, proofs: PROOFPATH ? [PROOFPATH] : [] });
+        err.className = 'cp-err ok';
+        err.textContent = '✓ Sent — 24/7 Dispatch support has your live location and is verifying now. You will get a notification the moment they respond.';
+        setTimeout(() => { close(); if (onDone) onDone(); }, 1400);
+      } catch (e) { send.disabled = false; send.textContent = 'Send to 24/7 Dispatch support'; err.className = 'cp-err'; err.textContent = (e && e.message) || 'Could not send.'; }
+    } }, 'Send to 24/7 Dispatch support');
+    function upd() { const proofOk = PROOFREQ ? !!PROOFPATH : true; send.disabled = !(TYPE && NEED && LOC && proofOk); }
+    const close = openModal('Report a problem — this trip', [
+      h('p', { class: 'cp-row-s' }, (trip.origin || '—') + ' → ' + (trip.destination || '—') + ' · your report goes straight to 24/7 Dispatch support with proof and live GPS.'),
+      locBtn, locOk,
+      h('div', { class: 'cp-row-s', style: 'font-weight:800;color:#64748b;margin-top:4px' }, 'WHAT HAPPENED?'),
+      typeHost,
+      h('div', { class: 'cp-row-s', style: 'font-weight:800;color:#64748b' }, 'WHAT DO YOU NEED?'),
+      needHost, note, proofIn, proofBtn, err, send,
+      h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Genuine emergencies are protected: verified reports never hurt your on-time score and carry no penalty under the Emergency Rescheduling Policy. False reports are detected (GPS trail, photo checks) and damage your account.'),
+    ]);
+  }
+  async function loadSafety() {
+    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    let trips = []; try { trips = (await pocketTrips(30)) || []; } catch (_) {}
+    const active = (trips || []).filter(t => ['dispatched', 'in_transit', 'at_pickup', 'loaded'].includes(String(t.status || '').toLowerCase()));
+    let incidents = []; try { incidents = (await myTripIncidents()) || []; } catch (_) {}
+    let contacts = []; try { contacts = (await emergencyContacts()) || []; } catch (_) {}
+    const stTxt = { open: ['⏳ Sent — Dispatch verifying', '#92400e', 'rgba(217,119,6,.12)'],
+      acknowledged: ['✓ Dispatch responding', '#1e40af', 'rgba(8,131,247,.1)'],
+      reschedule_approved: ['✓ Rescheduled — no penalty', '#15803d', 'rgba(22,163,74,.12)'],
+      resolved: ['✓ Resolved', '#475569', 'rgba(100,116,139,.12)'] };
+    const callRow = h('div', { style: 'display:flex;gap:8px;margin-bottom:12px' }, [
+      h('a', { class: 'cp-btn', href: 'tel:911', style: 'flex:1;text-align:center;background:#dc2626;text-decoration:none' }, '📞 Call 911'),
+      h('a', { class: 'cp-btn ghost', href: '/contact.html', style: 'flex:1;text-align:center;text-decoration:none' }, '24/7 Dispatch support'),
+    ]);
+    const trip = active[0] || null;
+    const sosCard = h('div', { class: 'cp-card', style: 'background:linear-gradient(150deg,#101d3a,#0b1220 70%);color:#fff;border:0' }, [
+      h('div', { style: 'font-weight:800;font-size:15px' }, 'Emergency on a trip?'),
+      h('div', { style: 'font-size:12.5px;color:#94a3b8;margin-top:4px;line-height:1.6' }, 'Report with proof — 24/7 Dispatch support is notified the same second, with your live GPS pin. Live location is required.'),
+      trip
+        ? h('div', null, [
+            h('div', { style: 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border-radius:11px;padding:9px 11px;margin-top:10px;font-size:12px;font-weight:700' }, [
+              h('span', { style: 'width:8px;height:8px;border-radius:50%;background:#22c55e;flex:none' }),
+              'ACTIVE TRIP — ' + (trip.origin || '—') + ' → ' + (trip.destination || '—'),
+            ]),
+            h('button', { class: 'cp-btn', style: 'width:100%;margin-top:10px;background:#dc2626', onClick: () => openIncidentSheet(trip, loadSafety) }, 'Report a problem on this trip'),
+          ])
+        : h('div', { style: 'font-size:12px;color:#94a3b8;margin-top:10px' }, 'No active trip right now — emergency reporting is tied to a live trip so proof and rescheduling attach to the right delivery.'),
+    ]);
+    const repCard = incidents.length ? h('div', { class: 'cp-card' }, [cardHead('My reports'),
+      ...incidents.slice(0, 6).map(i => { const t = stTxt[i.status] || stTxt.open; return h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, (i.itype || '').replace('_', ' ') + ' · needs ' + i.need),
+          h('div', { class: 'cp-row-s' }, new Date(i.created_at).toLocaleString() + (i.resolution_note ? ' · ' + i.resolution_note : ''))]),
+        h('span', { class: 'cp-pill', style: 'background:' + t[2] + ';color:' + t[1] }, t[0]),
+      ]); })]) : null;
+    const cName = h('input', { class: 'cp-in', placeholder: 'Name' });
+    const cRel = h('input', { class: 'cp-in', placeholder: 'Relation (optional)' });
+    const cPhone = h('input', { class: 'cp-in', placeholder: 'Phone', type: 'tel' });
+    const cErr = h('div', { class: 'cp-err' });
+    const contactsCard = h('div', { class: 'cp-card' }, [cardHead('My emergency contacts'),
+      ...contacts.map(c => h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, c.name), h('div', { class: 'cp-row-s' }, (c.relation ? c.relation + ' · ' : '') + c.phone)]),
+        h('div', { style: 'display:flex;gap:6px' }, [
+          h('a', { class: 'cp-btn cp-btn-sm', href: 'tel:' + c.phone, style: 'text-decoration:none' }, 'Call'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { await emergencyContactDelete(c.id); loadSafety(); } catch (_) {} } }, '✕'),
+        ]),
+      ])),
+      h('div', { class: 'cp-formrow2', style: 'margin-top:8px' }, [cName, cRel]),
+      cPhone, cErr,
+      h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: async () => {
+        cErr.textContent = ''; cErr.className = 'cp-err';
+        try { await emergencyContactAdd(cName.value, cRel.value, cPhone.value); loadSafety(); }
+        catch (e) { cErr.textContent = (e && e.message) || 'Could not save.'; }
+      } }, '+ Add contact'),
+    ]);
+    const LINKS = [
+      ['Emergency & Rescheduling Policy', 'Verified emergency = reschedule with zero penalty — the full process', '/emergency-rescheduling-policy.html'],
+      ['Detention, TONU & Layover pay', 'Your accessorial rights — enforced from the signed rate con', '/detention-pay-policy.html'],
+      ['How to read a rate confirmation', 'Every clause explained in plain language', '/how-to-read-a-rate-confirmation.html'],
+      ['Carrier guides & resources', 'Practical guides for running safe and getting paid', '/resources.html'],
+    ];
+    const centre = h('div', { class: 'cp-card' }, [cardHead('Safety centre', 'policies & guides'),
+      ...LINKS.map(([t, sub, url]) => h('a', { class: 'cp-row', href: url, target: '_blank', style: 'text-decoration:none;color:inherit' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, t), h('div', { class: 'cp-row-s' }, sub)]),
+        h('span', { style: 'color:#94a3b8;font-size:19px;font-weight:600' }, '›'),
+      ])),
+
+    ]);
+    mount(content, h('div', null, [callRow, sosCard, repCard, contactsCard, centre].filter(Boolean)));
+  }
+
   async function loadNotifications() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let rows; try { rows = await pocketNotifications(60); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Could not load notifications.'))); return; }
