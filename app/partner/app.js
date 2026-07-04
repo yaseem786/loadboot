@@ -618,6 +618,10 @@ async function brokerDash(user, ov) {
         h('a', { href: '/lumper-policy.html', target: '_blank', rel: 'noopener' }, 'Lumper'), ' · ',
         h('a', { href: '/driver-assist-policy.html', target: '_blank', rel: 'noopener' }, 'Driver assist'), ' · ',
         h('a', { href: '/fcfs-policy.html', target: '_blank', rel: 'noopener' }, 'FCFS')]),
+      (() => { const cb = h('input', { type: 'checkbox' }); cb.checked = !!w.emg_policy_ok; cb.onchange = () => { w.emg_policy_ok = cb.checked; };
+        return h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:8px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.6;cursor:pointer' }, [cb,
+          h('span', null, ['I accept the ', h('a', { href: '/emergency-rescheduling-policy.html', target: '_blank', rel: 'noopener' }, 'Emergency Rescheduling Policy'), ' — a VERIFIED on-road emergency (proof + live GPS + Dispatch verification) may reschedule the delivery window; response window 2 hours, then policy auto-reschedule; no carrier penalty/TONU on verified emergencies. Required to post.'])]);
+      })(),
       wi('Notes / special instructions', 'notes'),
     ]);
     else body = h('div', { class: 'cp-card', style: 'background:#f8fafc' }, [
@@ -638,6 +642,7 @@ async function brokerDash(user, ov) {
         if (!w.acc_lumper_policy) missing.push('lumper policy');
         if (w.hazmat_sel !== 'yes' && w.hazmat_sel !== 'no') missing.push('hazmat declaration (yes/no)');
         if (!w.fcfs && !w.appointment_required && !(w.pickup_window || '').trim()) missing.push('scheduling (FCFS or appointment / pickup window)');
+        if (!w.emg_policy_ok) missing.push('Emergency Rescheduling Policy acceptance (required)');
         if (missing.length) { err.textContent = 'Required before posting: ' + missing.join(', ') + '.'; return; }
       }
       if (step < STEPS.length - 1) { step++; renderStep(); return; }

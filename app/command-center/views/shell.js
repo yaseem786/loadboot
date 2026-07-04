@@ -25,6 +25,7 @@ const NAV = [
   { group: 'Operations', items: [
     { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/booking-requests', label: 'Booking requests', icon: 'list', perm: 'any:loads.assign,loads.publish,carriers.view' },
+    { path: '/safety', label: 'Safety desk', icon: 'shield', perm: 'any:compliance.approve,carriers.view' },
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/contacts', label: 'Contacts directory', icon: 'users', perm: 'any:carriers.view,partners.view' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
