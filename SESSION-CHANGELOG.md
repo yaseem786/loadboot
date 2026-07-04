@@ -484,3 +484,19 @@
 - Gates: ESM 99/99, imports PASS, build OK, audit 54 pages 0 FAIL, ACTIVATION-READY ✓.
 - DB: 10 migrations applied via MCP (ratings, post-a-truck, availability, cost/mile,
   expenses, IFTA, maintenance, partner rateable, tagline/misc).
+
+## #20 (drafts delivered) — legal template pack
+- legal/LoadBoot-Legal-Templates-DRAFT.docx: attorney-ready DRAFT templates (Carrier
+  Dispatch Service Agreement, Broker–Carrier key clauses, surety-bond/BMC-84 note, counsel
+  checklist), heavily disclaimed as NOT legal advice. Publish pipeline (cc_publish_agreement)
+  ready for final counsel-approved text. Remaining external step: attorney review/sign-off.
+
+## Design deliverables locked + added to repo
+- previews/account-settings-premium.html (+ .LOCKED.html copy) — approved premium mobile
+  Account & Settings design, phone-frame, real logo embedded (base64). Design LOCKED;
+  wiring map in previews/README-account-settings.md.
+- marketing/LoadBoot-Overview-Deck.pptx (+ pdf), loadboot-one-pager.html, loadboot-carrier-ad.html
+- legal/LoadBoot-Legal-Templates-DRAFT.docx (attorney-review drafts)
+- NOTE: raw output files from the separate "LoadBoot logo placement" Cowork thread are not
+  reachable across sessions; its key deliverable (account settings premium) was rebuilt & locked here.
+- Gates after adding docs/previews: ESM ALL PASS (101), BUILD OK, AUDIT 0 FAIL.

@@ -327,7 +327,7 @@ function notCarrier() {
 
 /* ---------- main app ---------- */
 const NAV = [
-  ['dashboard', 'Dashboard', 'dash'], ['health', 'Rating', 'shield'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
+  ['dashboard', 'Dashboard', 'dash'], ['health', 'Ratings', 'shield'], ['loads', 'Load Board', 'loads'], ['trips', 'My Loads', 'trips'],
   ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
   ['support', 'Support', 'support'], ['safety', 'Safety', 'sos'], ['account', 'Account', 'user'],
 ];
@@ -1145,7 +1145,7 @@ async function appView(user) {
           const pct = (v) => rate > 0 ? Math.max(0, Math.min(100, v / rate * 100)) : 0;
           const flags = [];
           if (milesSuspicious) flags.push(['red', '⚠ Posted ' + postedMi.toLocaleString() + ' mi, but ' + (l.origin||'') + ' → ' + (l.destination||'') + ' is ~' + laneRoad.toLocaleString() + ' mi by road. Real rate ≈ $' + (laneRoad ? (rate/laneRoad).toFixed(2) : '?') + '/mi — verify with the broker before booking.' + (st.useVerified ? ' (Math below uses corrected miles.)' : '')]);
-          if (!st.dhKnown) flags.push(['amber', 'Deadhead unknown — GPS ya home base na hone se. Neeche khud daal dein.']);
+          if (!st.dhKnown) flags.push(['amber', 'Deadhead unknown — no live GPS and no home base on file. Enter it below.']);
           if ((oGeo && isStateFallback(l.origin)) || (dGeo && isStateFallback(l.destination))) flags.push(['amber', 'City not in offline map — state-center estimate used for verification.']);
           const checks = [];
           if (_dp && _dp.max_deadhead_miles && st.dhKnown) checks.push([st.dh <= Number(_dp.max_deadhead_miles), 'Deadhead ' + st.dh + '/' + _dp.max_deadhead_miles + ' mi']);
@@ -1171,16 +1171,45 @@ async function appView(user) {
           if (weekendDel) SC.push(['Weekend delivery risk', 0, 0, 'delivers ' + (delDate.getDay() === 0 ? 'Sunday' : 'Saturday') + ' — receiver hours / detention risk, confirm before booking', 'M']);
           const lbScore = Math.max(0, Math.min(100, SC.reduce((a2, x2) => a2 + x2[1], 0)));
           const hardFails = checks.slice(0, 3).filter(c => !c[0]).length + (milesSuspicious ? 1 : 0);
-          const V = hardFails === 0 ? ['✓', 'TAKE IT', 'by your numbers this load pays', '#16a34a', 'rgba(22,163,74,.12)']
-            : hardFails === 1 ? ['≈', 'CHECK FIRST', 'one issue below — resolve then book', '#d97706', 'rgba(217,119,6,.12)']
-            : ['✕', 'SKIP IT', 'multiple failures by your numbers', '#dc2626', 'rgba(220,38,38,.12)'];
+          const V = hardFails === 0 ? ['✓', 'Best match', 'the top factors line up with your profile', '#16a34a', 'rgba(22,163,74,.12)']
+            : hardFails === 1 ? ['≈', 'Partial match', 'one issue below — resolve it, then book', '#d97706', 'rgba(217,119,6,.12)']
+            : ['✕', 'Poor match', 'the numbers work against you on this one', '#dc2626', 'rgba(220,38,38,.12)'];
           const numIn = (val, step2, onch, w) => { const i2 = h('input', { class: 'cp-in', type: 'number', step: step2, value: val, style: 'margin:0;max-width:' + (w || 96) + 'px;padding:7px 9px;font-size:14px;font-weight:700;text-align:right' }); i2.oninput = () => onch(Number(i2.value) || 0); return i2; };
           mount(host, [
-            h('div', { class: 'cpx-adv-verdict', style: 'background:' + V[4] + ';color:' + V[3] }, [
-              h('span', { class: 'v' }, V[0]),
-              h('span', null, [h('b', { style: 'font-size:16px;letter-spacing:.02em' }, V[1]), h('div', { style: 'font-size:11.5px;font-weight:600;opacity:.85' }, V[2])]),
-              h('span', { style: 'margin-left:auto;text-align:right' }, [h('b', { style: 'font-size:20px;display:block' }, (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString()), h('span', { style: 'font-size:11px;font-weight:700;opacity:.85' }, '≈ $' + perDay.toLocaleString() + '/day · ' + days + ' day' + (days > 1 ? 's' : ''))]),
-            ]),
+            (() => {
+              // LOCKED v8 hero: ring dial + verdict + NET/PER-DAY/TRIP + ranked why-rows + watch strip.
+              const C2 = 2 * Math.PI * 40, off2 = C2 * (1 - lbScore / 100);
+              const dcol = lbScore >= 70 ? '#22c55e' : lbScore >= 45 ? '#f59e0b' : '#ef4444';
+              const rank = SC.filter(x2 => x2[2] > 0).slice().sort((a2, b2) => (b2[1] / b2[2]) - (a2[1] / a2[2]));
+              const tops = rank.slice(0, 3), worst = rank[rank.length - 1];
+              const medals = ['#F97316', '#0883F7', '#475569'];
+              return h('div', { class: 'cpx-mhero' }, [
+                h('div', { class: 'mh-lock' }, [
+                  h('span', { html: '<svg width="19" height="20" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"/></svg>', style: 'line-height:0' }),
+                  h('span', { style: 'display:inline-flex;align-items:flex-start;gap:4px' }, [h('b', { html: 'Load<span style="color:#F97316">Boot</span>', style: 'font-size:15px;letter-spacing:-.02em;line-height:1;color:#fff' }), h('span', { style: 'font-size:11px;font-weight:600;color:#FB923C;line-height:1' }, 'Match')]),
+                  h('span', { class: 'mh-eng' }, 'DECISION ENGINE'),
+                ]),
+                h('div', { style: 'display:flex;align-items:center;gap:14px' }, [
+                  h('div', { style: 'position:relative;width:92px;height:92px;flex:none' }, [
+                    h('span', { html: '<svg width="92" height="92" viewBox="0 0 92 92" style="transform:rotate(-90deg)"><circle cx="46" cy="46" r="40" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="8"/><circle cx="46" cy="46" r="40" fill="none" stroke="' + dcol + '" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + C2.toFixed(1) + '" stroke-dashoffset="' + off2.toFixed(1) + '"/></svg>', style: 'line-height:0;display:block' }),
+                    h('span', { style: 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center' }, [h('b', { style: 'font-size:26px;line-height:1;color:#fff' }, String(lbScore)), h('span', { style: 'font-size:8.5px;color:#94a3b8;font-weight:800;letter-spacing:.08em;margin-top:2px' }, 'OF 100')]),
+                  ]),
+                  h('div', null, [h('div', { style: 'font-size:17px;font-weight:800;color:' + dcol }, V[0] + ' ' + V[1]), h('div', { style: 'font-size:12px;color:#94a3b8;margin-top:2px;line-height:1.5' }, V[2])]),
+                ]),
+                h('div', { class: 'mh-boxes' }, [
+                  h('div', { class: 'bx hl' }, [h('span', null, 'NET PROFIT'), h('b', null, (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString())]),
+                  h('div', { class: 'bx' }, [h('span', null, 'PER DAY'), h('b', null, '$' + perDay.toLocaleString())]),
+                  h('div', { class: 'bx' }, [h('span', null, 'TRIP'), h('b', null, days + ' day' + (days > 1 ? 's' : ''))]),
+                ]),
+                h('div', { class: 'mh-sect' }, 'WHY IT MATCHES YOU'),
+                ...tops.map((t2, i2) => { const pc2 = Math.round(t2[1] / t2[2] * 100); return h('div', { class: 'mh-wrow' }, [
+                  h('span', { class: 'mh-medal', style: 'background:' + medals[i2] }, String(i2 + 1)),
+                  h('span', { style: 'min-width:0;flex:1' }, [h('div', { style: 'font-weight:800;font-size:13px;color:#fff' }, t2[0]), h('div', { style: 'font-size:11.5px;color:#94a3b8;margin-top:1px;line-height:1.45' }, t2[3]), h('div', { class: 'mh-bar' }, h('i', { style: 'width:' + pc2 + '%' }))]),
+                  h('b', { style: 'color:#4ade80;font-size:12px;flex:none' }, t2[1] + '/' + t2[2]),
+                ]); }),
+                (worst && (worst[1] / worst[2]) < 0.6) ? h('div', { class: 'mh-watch' }, '⚠ Watch — ' + worst[0] + ': ' + worst[3]) : null,
+              ].filter(Boolean));
+            })(),
             ...flags.map(f => h('div', { style: 'margin-top:8px;border-radius:11px;padding:9px 12px;font-size:12px;font-weight:700;' + (f[0] === 'red' ? 'background:rgba(220,38,38,.1);color:#b91c1c' : 'background:rgba(217,119,6,.12);color:#92400e') }, f[1])),
             milesSuspicious ? h('label', { style: 'display:flex;gap:7px;align-items:center;margin-top:6px;font-size:12px;font-weight:700;color:#334155' }, [
               (() => { const cb = h('input', { type: 'checkbox' }); cb.checked = st.useVerified; cb.onchange = () => { st.useVerified = cb.checked; render(); }; return cb; })(),
@@ -1218,17 +1247,20 @@ async function appView(user) {
             ]),
             h('div', { class: 'cpx-adv-checks' }, checks.map(c => h('span', { class: 'chk ' + (c[0] ? 'ok' : 'bad') }, (c[0] ? '✓ ' : '✕ ') + c[1]))),
             h('div', { style: 'margin-top:12px;border:1px solid var(--lb-border,#e6ebf3);border-radius:13px;padding:12px;background:#fff' }, [
-              h('div', { style: 'display:flex;align-items:center;gap:12px' }, [
-                h('div', { style: 'width:58px;height:58px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;color:#fff;background:conic-gradient(' + (lbScore >= 70 ? '#16a34a' : lbScore >= 45 ? '#d97706' : '#dc2626') + ' ' + lbScore + '%, #e2e8f0 0)' },
-                  h('span', { style: 'width:44px;height:44px;border-radius:50%;background:#0F172A;display:flex;align-items:center;justify-content:center' }, String(lbScore))),
-                h('div', null, [h('b', { style: 'font-size:14px;color:#0F172A' }, 'LoadBoot Score'), h('div', { class: 'cp-row-s' }, 'Every real factor, weighted — full breakdown below, nothing hidden')]),
-              ]),
+              h('div', { style: 'font-weight:800;font-size:11px;letter-spacing:.08em;color:#64748b;margin-bottom:6px' }, 'FULL BREAKDOWN — NOTHING HIDDEN'),
               ...SC.map(x2 => {
                 const tg = TAG[x2[4]] || TAG.E;
-                return h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11.5px;align-items:center' }, [
-                  h('span', { style: 'font-weight:700;color:#334155' }, [x2[0] + ' (' + x2[1] + '/' + x2[2] + ') ', h('span', { style: 'font-size:8.5px;font-weight:800;letter-spacing:.05em;padding:1px 6px;border-radius:99px;background:' + tg[1] + '1f;color:' + tg[1] }, tg[0])]),
-                  h('span', { style: 'color:#64748b;text-align:right' }, x2[3]),
-                ]);
+                const pc3 = x2[2] > 0 ? Math.round(x2[1] / x2[2] * 100) : 0;
+                const bc3 = pc3 >= 70 ? '#16a34a' : pc3 >= 40 ? '#d97706' : '#dc2626';
+                return h('div', { style: 'padding:8px 0;border-bottom:1px solid #f1f5f9' }, [
+                  h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
+                    h('b', { style: 'font-size:12.5px;color:#0F172A' }, x2[0]),
+                    h('span', { style: 'font-size:8.5px;font-weight:800;letter-spacing:.05em;padding:1px 7px;border-radius:99px;background:' + tg[1] + '1f;color:' + tg[1] }, tg[0]),
+                    h('b', { style: 'margin-left:auto;font-size:12px;color:' + bc3 }, x2[1] + '/' + x2[2]),
+                  ]),
+                  x2[2] > 0 ? h('div', { style: 'height:4px;border-radius:99px;background:#e9eef5;margin:6px 0 5px;overflow:hidden' }, h('i', { style: 'display:block;height:4px;border-radius:99px;width:' + pc3 + '%;background:' + bc3 })) : null,
+                  h('div', { style: 'font-size:11.5px;color:#64748b;line-height:1.5' }, x2[3]),
+                ].filter(Boolean));
               }),
               h('div', { style: 'font-size:9.5px;color:#94a3b8;margin-top:5px' }, 'MEASURED = read from GPS / our board · VERIFIED = documents & trip records · ESTIMATE = labeled approximation · YOU SET = your own saved numbers. Anything unknown is asked — never invented. Dispatch fee (5%) is always auto-deducted before Net.'),
             ]),
