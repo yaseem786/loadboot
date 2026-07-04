@@ -485,3 +485,20 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 .cp-side,.cpx-side{background:linear-gradient(180deg,#0b1220,#0a1120)}
 /* subtle section headers */
 .cp-cardhead h3,.cp-row-t{letter-spacing:-.01em}
+
+/* ---- Premium Account hub: hero header + sub-tab nav ---- */
+.cpa-hero{background:linear-gradient(135deg,#0b1b33,#12294a);border-radius:18px;padding:18px 18px 16px;color:#fff;box-shadow:0 10px 30px rgba(8,30,63,.18);margin-bottom:12px}
+.cpa-idrow{display:flex;align-items:center;gap:12px}
+.cpa-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0883F7,#0a6fd6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.35rem;color:#fff;flex:none;box-shadow:0 4px 12px rgba(8,131,247,.4)}
+.cpa-name{font-weight:800;font-size:1.15rem;line-height:1.2}
+.cpa-mail{opacity:.72;font-size:.82rem;margin-top:2px;word-break:break-all}
+.cpa-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.cpa-stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 6px;text-align:center;min-width:0}
+.cpa-stat.ok .cpa-sv{color:#4ade80}.cpa-stat.warn .cpa-sv{color:#fbbf24}.cpa-stat.bad .cpa-sv{color:#f87171}
+.cpa-sv{font-weight:800;font-size:1.05rem;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cpa-sl{opacity:.65;font-size:.66rem;margin-top:3px;text-transform:uppercase;letter-spacing:.03em}
+.cpa-nav{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cpa-nav::-webkit-scrollbar{display:none}
+.cpa-tab{flex:none;border:1px solid var(--lb-border,#e2e8f0);background:#fff;color:#334155;border-radius:999px;padding:8px 16px;font-weight:700;font-size:.86rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.cpa-tab:hover{border-color:#0883F7;color:#0883F7}
+.cpa-tab.on{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(8,131,247,.3)}
