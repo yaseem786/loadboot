@@ -58,21 +58,49 @@ Deno.serve(async (_req) => {
   const LOGO = Deno.env.get("BRAND_LOGO_URL") || `${SITE}/email-logo-white-2x.png`; // official brand-kit email lockup
   // Professional, reusable branded email shell — authentic hosted logo + compliant footer. Table-based for
   // broad client support; light/dark safe neutral palette. No placeholder or fabricated assets.
-  const shell = (bodyHtml: string, unsubUrl: string) =>
-    `<div style="background:#f1f5f9;padding:24px 0;font-family:Arial,Helvetica,sans-serif">
+  // Premium shell v2 (owner request): big-company header/footer — logo + tagline header,
+  // "related content" rail with REAL destinations only, dark two-row footer with product/legal links.
+  const shell = (bodyHtml: string, unsubUrl: string, subject = "") =>
+    `<div style="background:#eef2f7;padding:28px 0;font-family:Arial,Helvetica,sans-serif">
+      <div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${subject}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
-        <tr><td style="background:#0b1220;padding:18px 24px" align="left">
-          <img src="${LOGO}" width="167" height="40" alt="LoadBoot" style="display:block;border:0">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0">
+        <tr><td style="height:4px;background:#F97316;font-size:0;line-height:0">&nbsp;</td></tr>
+        <tr><td style="background:#0b1220;padding:24px 28px">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td align="left"><img src="${LOGO}" width="167" height="40" alt="LoadBoot" style="display:block;border:0"></td>
+            <td align="right" style="vertical-align:middle"><a href="${SITE}/app/" style="color:#60A5FA;font-size:12.5px;font-weight:700;text-decoration:none">Open portal &rarr;</a></td>
+          </tr></table>
+          <div style="color:#64748b;font-size:12px;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
         </td></tr>
-        <tr><td style="padding:24px;color:#0f172a;font-size:15px;line-height:1.6">${bodyHtml}</td></tr>
-        <tr><td style="padding:18px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;line-height:1.6">
-          <b style="color:#0f172a">LoadBoot</b> &middot; Truck dispatch &amp; logistics technology<br>
-          <a href="${SITE}/contact.html" style="color:#2563eb">Support</a> &middot;
-          <a href="${SITE}/privacy.html" style="color:#2563eb">Privacy</a> &middot;
-          <a href="${SITE}/terms.html" style="color:#2563eb">Terms</a> &middot;
-          <a href="${unsubUrl}" style="color:#2563eb">Unsubscribe</a><br>
-          <span style="color:#94a3b8">You're receiving this because you or your company works with LoadBoot.</span>
+        <tr><td style="padding:30px 30px 24px;color:#0f172a;font-size:15px;line-height:1.65">${bodyHtml}</td></tr>
+        <tr><td style="padding:18px 30px;background:#f8fafc;border-top:1px solid #e2e8f0">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#94a3b8;margin-bottom:9px">MORE ON LOADBOOT</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="font-size:12.5px;line-height:2">
+              <a href="${SITE}/app/carrier/#loads" style="color:#2563eb;text-decoration:none">&rsaquo; Available loads on the board</a><br>
+              <a href="${SITE}/app/carrier/#documents" style="color:#2563eb;text-decoration:none">&rsaquo; Your documents &amp; compliance status</a>
+            </td>
+            <td style="font-size:12.5px;line-height:2">
+              <a href="${SITE}/detention-pay-policy.html" style="color:#2563eb;text-decoration:none">&rsaquo; Accessorial pay policies</a><br>
+              <a href="${SITE}/resources.html" style="color:#2563eb;text-decoration:none">&rsaquo; Carrier guides &amp; resources</a>
+            </td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:20px 30px;background:#0b1220;color:#94a3b8;font-size:12px;line-height:1.9">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td><b style="color:#ffffff;font-size:13px">LoadBoot</b><br><span style="color:#64748b">Truck dispatch &amp; logistics technology &middot; United States</span></td>
+            <td align="right" style="vertical-align:top"><a href="${SITE}/apps.html" style="color:#60A5FA;font-size:12px;font-weight:700;text-decoration:none">Get the app</a></td>
+          </tr></table>
+          <div style="border-top:1px solid rgba(255,255,255,.12);margin:12px 0 10px"></div>
+          <a href="${SITE}/services.html" style="color:#60A5FA;text-decoration:none">Services</a> &middot;
+          <a href="${SITE}/pricing.html" style="color:#60A5FA;text-decoration:none">Pricing</a> &middot;
+          <a href="${SITE}/contact.html" style="color:#60A5FA;text-decoration:none">Support</a> &middot;
+          <a href="${SITE}/privacy.html" style="color:#60A5FA;text-decoration:none">Privacy</a> &middot;
+          <a href="${SITE}/terms.html" style="color:#60A5FA;text-decoration:none">Terms</a> &middot;
+          <a href="${SITE}/security.html" style="color:#60A5FA;text-decoration:none">Security</a> &middot;
+          <a href="${unsubUrl}" style="color:#60A5FA;text-decoration:none">Unsubscribe</a><br>
+          <span style="color:#475569">You're receiving this because you or your company works with LoadBoot. &copy; ${new Date().getFullYear()} LoadBoot.</span>
         </td></tr>
       </table></td></tr></table></div>`;
   // ---- Official sender identity (Inc 61). Identities activate ONLY when the configured RESEND_FROM is on
@@ -102,7 +130,7 @@ Deno.serve(async (_req) => {
   for (const d of claimed ?? []) {
     const subject = (d.meta && d.meta.subject) ? String(d.meta.subject) : "LoadBoot";
     const unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`;
-    const html = (d.meta && d.meta.body_html) ? shell(String(d.meta.body_html), unsubUrl) : null;
+    const html = (d.meta && d.meta.body_html) ? shell(String(d.meta.body_html), unsubUrl, subject) : null;
     const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}`;
     try {
       const ident = senderFor(d);

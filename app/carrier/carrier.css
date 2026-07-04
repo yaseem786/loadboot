@@ -284,7 +284,7 @@ html[data-lbtheme="dark"] .cp-row { border-color: rgba(255,255,255,.07); }
 .cp-top-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .cpx-burger { display: none; background: none; border: 0; color: inherit; cursor: pointer; padding: 6px; border-radius: 10px; }
 .cpx-avail { border-radius: 999px; font-weight: 800; font-size: .82rem; padding: 7px 16px; cursor: pointer; border: 2px solid transparent; font-family: inherit; letter-spacing: .02em; }
-.cpx-avail.on { background: #0883F7; color: #fff; box-shadow: 0 6px 18px -6px rgba(8,131,247,.55); }
+.cpx-avail.on { background: #F97316; color: #fff; box-shadow: 0 6px 18px -6px rgba(249,115,22,.55); }
 .cpx-avail.off { background: transparent; color: #dc2626; border-color: rgba(220,38,38,.55); }
 html[data-lbtheme="dark"] .cpx-avail.off { color: #fca5a5; }
 
@@ -302,7 +302,30 @@ html[data-lbtheme="dark"] .cpx-avail.off { color: #fca5a5; }
 .cpx-d-item:hover, .cpx-d-item.active { background: rgba(255,255,255,.07); }
 .cpx-d-item .cp-ic { color: #94a3b8; }
 .cpx-d-badge { margin-left: auto; background: #dc2626; color: #fff; font-size: 11px; font-weight: 800; border-radius: 99px; padding: 2px 8px; }
-.cpx-d-foot { padding: 10px 18px 4px; border-top: 1px solid rgba(255,255,255,.08); }
+.cpx-d-foot { padding: 10px 14px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.08); }
+/* ---- Drawer v2 (inDrive-class): rating row, chevron, live stats, availability CTA ---- */
+.cpx-drawer { width: 320px; }
+.cpx-d-head { padding: 12px 18px 16px; gap: 13px; }
+.cpx-d-head:active { background: rgba(255,255,255,.04); }
+.cpx-d-rating { font-size: 13.5px; font-weight: 800; color: #F97316; margin-top: 2px; letter-spacing: .01em; }
+.cpx-d-chev { color: #64748b; font-size: 28px; font-weight: 600; line-height: 1; padding-left: 4px; flex: none; }
+.cpx-d-avadot { position: absolute; right: -1px; bottom: -1px; width: 14px; height: 14px; border-radius: 50%; background: #22c55e; border: 2.5px solid #0b1220; }
+.cpx-d-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 12px 14px 4px; }
+.cpx-d-stat { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 9px 6px; text-align: center; color: #fff; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; gap: 2px; }
+.cpx-d-stat b { font-size: 15px; font-weight: 800; }
+.cpx-d-stat span { font-size: 9.5px; color: #94a3b8; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
+.cpx-d-stat:active { background: rgba(255,255,255,.12); }
+.cpx-d-pill { margin-left: auto; background: rgba(217,119,6,.2); color: #fbbf24; font-size: 9.5px; font-weight: 800; border-radius: 99px; padding: 3px 8px; white-space: nowrap; }
+.cpx-d-cta { width: 100%; margin-top: 8px; border: 0; border-radius: 14px; padding: 15px 12px; font-weight: 800; font-size: 14.5px; cursor: pointer; font-family: inherit; letter-spacing: .01em; transition: .15s; }
+.cpx-d-cta.on { background: #F97316; color: #fff; box-shadow: 0 12px 28px -12px rgba(249,115,22,.65); }
+.cpx-d-cta.off { background: transparent; color: #fca5a5; border: 1.5px solid rgba(220,38,38,.5); }
+.cpx-d-cta:disabled { opacity: .7; }
+.cpx-d-site { text-align: center; font-size: 10px; color: #475569; margin-top: 9px; font-weight: 600; letter-spacing: .02em; }
+/* Customize: bottom-tab shortcut picker chips (Settings) */
+.cpx-tabpick { border-radius: 999px; padding: 8px 14px; font-weight: 800; font-size: .82rem; border: 1.5px solid var(--lb-border, #d7dfea); background: transparent; color: inherit; cursor: pointer; font-family: inherit; }
+.cpx-tabpick.on { background: #0F172A; color: #fff; border-color: #0F172A; }
+html[data-lbtheme="dark"] .cpx-tabpick { border-color: rgba(255,255,255,.16); }
+html[data-lbtheme="dark"] .cpx-tabpick.on { background: #F97316; border-color: #F97316; }
 
 /* ---- Alert banners (inDrive pattern, status colours) ---- */
 .cpx-banner { display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 13px 16px; font-weight: 700; font-size: .92rem; cursor: pointer; margin-bottom: 10px; border: 0; width: 100%; text-align: left; font-family: inherit; }
@@ -344,6 +367,9 @@ html[data-lbtheme="dark"] .cpx-seg button.on { background: #fff; color: #0b1220;
 @media (max-width: 900px) {
   .cpx-burger { display: block; }
   .cpx-avail { font-size: .78rem; padding: 6px 13px; }
+  /* Clean mobile header: burger + title | bell + avatar. Everything else lives in the drawer. */
+  .cpx-desktop { display: none !important; }
+  .cp-top-right { gap: 8px; }
 }
 
 /* ===== Premium auth (split brand panel + app-like mobile) ===== */
@@ -414,3 +440,7 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 .cpx-adv-checks .chk { font-size: 11.5px; font-weight: 800; padding: 5px 11px; border-radius: 99px; }
 .cpx-adv-checks .chk.ok { background: rgba(22,163,74,.13); color: #15803d; }
 .cpx-adv-checks .chk.bad { background: rgba(220,38,38,.12); color: #b91c1c; }
+
+/* Buttons: never wrap mid-word — clean single-line, auto-shrink, stack early */
+.cpx-req-actions .cp-btn { white-space: nowrap; font-size: clamp(12px, 3.4vw, 14px); padding: 12px 10px; letter-spacing: -.01em; }
+@media (max-width: 560px) { .cpx-req-actions { flex-direction: column; } .cpx-req-actions .cpx-req-bw { flex: none; } .cpx-req-actions .cp-btn { font-size: 14px; } }

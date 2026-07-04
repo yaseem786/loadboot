@@ -32,6 +32,7 @@ import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
+import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
 import { printDispatchSheet, openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
@@ -101,8 +102,13 @@ const havMi = (a, b, c, d) => { const R = 3959, t = Math.PI / 180, dLat = (c - a
 const STATUS_TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray', active: 'green' };
 const pill = (s) => h('span', { class: 'cp-pill ' + (STATUS_TONE[s] || 'gray') }, (s || '').replace(/_/g, ' '));
 const ic = (name) => ({
-  dash: 'M3 12l9-9 9 9M5 10v10h14V10', loads: 'M3 7h13v10H3zM16 10h3l2 3v4h-5M6 20a2 2 0 100-4 2 2 0 000 4zM18 20a2 2 0 100-4 2 2 0 000 4z',
-  trips: 'M5 17h14M5 17a2 2 0 11-4 0 2 2 0 014 0zm14 0a2 2 0 11-4 0M7 17V7h8v10M15 9h3l3 4v4', finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
+  dash: 'M3 12l9-9 9 9M5 10v10h14V10',
+  // Unique per-tab icons (owner: 'teeno takriban ek jaisi' — Loads/Trips/Fleet must be distinct):
+  // Loads = freight package, Trips = navigation arrow (journey), Fleet = the truck itself.
+  loads: 'M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.3 7l8.7 5 8.7-5M12 22V12',
+  trips: 'M3 11l19-9-9 19-2-8-8-2z',
+  truck: 'M3 7h13v10H3zM16 10h3l2 3v4h-5M6 20a2 2 0 100-4 2 2 0 000 4zM18 20a2 2 0 100-4 2 2 0 000 4z',
+  finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
   docs: 'M6 2h9l5 5v15H6zM14 2v6h6', support: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z',
   bell: 'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0', user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8',
   shield: 'M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z',
@@ -320,7 +326,7 @@ function notCarrier() {
 /* ---------- main app ---------- */
 const NAV = [
   ['dashboard', 'Dashboard', 'dash'], ['health', 'Rating', 'shield'], ['loads', 'Available loads', 'loads'], ['trips', 'My trips', 'trips'],
-  ['fleet', 'Fleet', 'trips'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
+  ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
   ['support', 'Support', 'support'], ['account', 'Account', 'user'],
 ];
 
@@ -341,22 +347,36 @@ async function appView(user) {
   const content = h('div', { class: 'cp-content' });
   const navLinks = {};
 
-  const sideNav = (mobile) => h('nav', { class: mobile ? 'cp-tabbar' : 'cp-nav' }, NAV.map(([id, label, iconName]) => {
+  // ---- Customizable bottom tab bar: the carrier picks their own 5 shortcuts (Settings → Customize).
+  const TABBAR_DEFAULT = ['dashboard', 'health', 'loads', 'trips', 'fleet'];
+  function tabPrefs() {
+    try { const v = JSON.parse(localStorage.getItem('lb_tabs') || 'null'); if (Array.isArray(v) && v.length) { const ok = v.filter(id => NAV.some(n => n[0] === id)).slice(0, 5); if (ok.length) return ok; } } catch (_) {}
+    return TABBAR_DEFAULT;
+  }
+  const sideNav = (mobile) => h('nav', { class: mobile ? 'cp-tabbar' : 'cp-nav' }, (mobile ? tabPrefs().map(id => NAV.find(n => n[0] === id)).filter(Boolean) : NAV).map(([id, label, iconName]) => {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => go(id) }, [icon(iconName, mobile ? 22 : 20), h('span', null, label)]);
     (navLinks[id] = navLinks[id] || []).push(a); return a;
   }));
+  let mobileBar = null;
+  function refreshTabbar() {
+    if (!mobileBar) return;
+    const nu = sideNav(true); mobileBar.replaceWith(nu); mobileBar = nu;
+    Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => a.classList.toggle('active', k === tab)));
+  }
 
   const titleEl = h('h1', { class: 'cp-top-title' }, 'Dashboard');
   const bellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
   const bell = h('button', { class: 'cp-iconbtn cp-bell', title: 'Notifications', onClick: () => go('notifications') }, [icon('bell', 20), bellBadge]);
   async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
   // ---- Availability (Online/Offline) — REAL state stored in dispatch preferences ----
-  const availPill = h('button', { class: 'cpx-avail on', title: 'Your availability for new loads', onClick: () => toggleAvail() }, '…');
-  let _dp = null;
+  const availPill = h('button', { class: 'cpx-avail on cpx-desktop', title: 'Your availability for new loads', onClick: () => toggleAvail() }, '…');
+  let _dp = null, _dashK = null;
   function setAvailUI(on) { availPill.textContent = on ? 'Online' : 'Offline'; availPill.classList.toggle('on', !!on); availPill.classList.toggle('off', !on); }
-  (async () => { try { _dp = (await getDispatchPrefs()) || {}; setAvailUI(_dp.available !== false); } catch (_) { setAvailUI(true); } })();
+  // NOTE: even if prefs fail to load, the toggle must stay ALIVE — previous version left _dp null
+  // on error which made the Online button permanently dead. Default to { available: true }.
+  (async () => { try { _dp = (await getDispatchPrefs()) || {}; } catch (_) { _dp = { available: true }; } setAvailUI(_dp.available !== false); })();
   async function toggleAvail() {
-    if (!_dp) return;
+    if (!_dp) _dp = { available: true };
     const next = !(_dp.available !== false);
     availPill.disabled = true; const was = availPill.textContent; availPill.textContent = '…';
     try {
@@ -371,23 +391,55 @@ async function appView(user) {
   // ---- Side drawer (inDrive pattern): profile + full menu + sign out ----
   function openDrawer() {
     const scrim = h('div', { class: 'cpx-scrim' });
-    const dStars = h('div', { class: 'cpx-d-sub', style: 'color:#F97316;font-weight:800' }, '');
-    (async () => { try { const r = await myRating(); if (r && r.avg != null) dStars.textContent = '★ ' + r.avg + ' (' + (r.count || 0) + ')'; } catch (_) {} })();
-    const items = NAV.map(([id, label, iconName]) => h('button', { class: 'cpx-d-item' + (tab === id ? ' active' : ''), onClick: () => { close(); go(id); } }, [icon(iconName, 20), h('span', null, label)]));
-    const notifItem = h('button', { class: 'cpx-d-item', onClick: () => { close(); go('notifications'); } }, [icon('bell', 20), h('span', null, 'Notifications'), bellBadge.hidden ? '' : h('span', { class: 'cpx-d-badge' }, bellBadge.textContent)]);
-    const setItem = h('button', { class: 'cpx-d-item', onClick: () => { close(); go('settings'); } }, [icon('cog', 20), h('span', null, 'Settings')]);
+    // Rating line — real data from party_ratings; honest "New" state until reviews exist.
+    const dStars = h('div', { class: 'cpx-d-rating' }, 'New — no ratings yet');
+    (async () => { try { const r = await myRating(); if (r && r.avg != null) dStars.textContent = '★ ' + r.avg + '  (' + (r.count || 0) + ')'; } catch (_) {} })();
+    const items = NAV.map(([id, label, iconName]) => h('button', { class: 'cpx-d-item' + (tab === id ? ' active' : ''), onClick: () => { close(); go(id); } }, [
+      icon(iconName, 20), h('span', null, label),
+      (id === 'documents' && !ov.compliance_ok) ? h('span', { class: 'cpx-d-pill' }, 'Action needed') : '',
+    ]));
+    const notifItem = h('button', { class: 'cpx-d-item' + (tab === 'notifications' ? ' active' : ''), onClick: () => { close(); go('notifications'); } }, [icon('bell', 20), h('span', null, 'Notifications'), bellBadge.hidden ? '' : h('span', { class: 'cpx-d-badge' }, bellBadge.textContent)]);
+    const setItem = h('button', { class: 'cpx-d-item' + (tab === 'settings' ? ' active' : ''), onClick: () => { close(); go('settings'); } }, [icon('cog', 20), h('span', null, 'Settings')]);
+    // Big availability CTA — inDrive's bottom-mode-button position, LoadBoot brand orange. REAL state.
+    const cta = h('button', { class: 'cpx-d-cta' }, '');
+    function paintCta() {
+      const on = !(_dp && _dp.available === false);
+      cta.textContent = on ? '● Online — receiving load offers' : 'Go online — start receiving loads';
+      cta.classList.toggle('on', on); cta.classList.toggle('off', !on);
+    }
+    paintCta();
+    cta.onclick = async () => { cta.disabled = true; cta.textContent = 'Updating…'; await toggleAvail(); paintCta(); paintDot(); cta.disabled = false; };
+    // Live week-stats strip — REAL numbers from the same dashboard aggregate (no dummy data).
+    const dStat = (label, goto) => { const b = h('button', { class: 'cpx-d-stat', onClick: () => { close(); go(goto); } }, [h('b', null, '—'), h('span', null, label)]); return b; };
+    const sTrips = dStat('Active trips', 'trips'), sDeliv = dStat('Delivered · week', 'trips'), sRev = dStat('Revenue · week', 'finance');
+    (async () => { try {
+      if (!_dashK) _dashK = await carrierDashboard();
+      const k = (_dashK && _dashK.kpis) || {};
+      sTrips.firstChild.textContent = String(k.active_trips ?? 0);
+      sDeliv.firstChild.textContent = String(k.delivered_this_week ?? 0);
+      sRev.firstChild.textContent = money(k.revenue_this_week ?? 0);
+    } catch (_) {} })();
+    // Availability dot on the avatar (green = online, grey = offline) — mirrors the real toggle.
+    const avaDot = h('span', { class: 'cpx-d-avadot' });
+    function paintDot() { avaDot.style.background = !(_dp && _dp.available === false) ? '#22c55e' : '#64748b'; }
+    paintDot();
     const drawer = h('aside', { class: 'cpx-drawer' }, [
       h('div', { class: 'cpx-d-head', onClick: () => { close(); go('account'); } }, [
-        h('div', { class: 'cpx-d-ava' }, ((ov.carrier || 'C').trim().charAt(0).toUpperCase())),
-        h('div', null, [
+        h('div', { class: 'cpx-d-ava', style: 'position:relative' }, [document.createTextNode((ov.carrier || 'C').trim().charAt(0).toUpperCase()), avaDot]),
+        h('div', { style: 'min-width:0;flex:1' }, [
           h('div', { class: 'cpx-d-name' }, ov.carrier || 'Carrier'),
           dStars,
-          h('div', { class: 'cpx-d-sub' }, (user && user.email) || ''),
-          h('div', { style: 'margin-top:5px' }, h('span', { class: 'cp-chip ' + (ov.compliance_ok ? 'ok' : 'warn'), style: 'font-size:10px' }, ov.compliance_ok ? 'Compliant' : 'Action needed')),
+          h('div', { class: 'cpx-d-sub', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, (user && user.email) || ''),
         ]),
+        h('div', { class: 'cpx-d-chev' }, '›'),
       ]),
+      h('div', { class: 'cpx-d-stats' }, [sTrips, sDeliv, sRev]),
       h('div', { class: 'cpx-d-items' }, [...items, notifItem, setItem]),
-      h('div', { class: 'cpx-d-foot' }, h('button', { class: 'cpx-d-item', onClick: async () => { await signOut(); location.reload(); } }, [icon('logout', 20), h('span', null, 'Sign out')])),
+      h('div', { class: 'cpx-d-foot' }, [
+        h('button', { class: 'cpx-d-item', onClick: async () => { await signOut(); location.reload(); } }, [icon('logout', 20), h('span', null, 'Sign out')]),
+        cta,
+        h('div', { class: 'cpx-d-site' }, 'loadboot.com · The Operating System for Trucking'),
+      ]),
     ]);
     function close() { scrim.classList.remove('show'); drawer.classList.remove('show'); setTimeout(() => { scrim.remove(); drawer.remove(); }, 220); }
     scrim.onclick = close;
@@ -412,8 +464,8 @@ async function appView(user) {
         ]),
         h('div', { class: 'cp-top-right' }, [
           availPill,
-          h('button', { class: 'cp-iconbtn', title: 'Settings', onClick: () => go('settings') }, icon('cog', 20)),
-          h('button', { class: 'cp-chip cp-chip-btn ' + (ov.compliance_ok ? 'ok' : 'warn'), title: ov.compliance_ok ? 'Account compliant' : 'Action needed \u2014 finish your setup', onClick: () => go(ov.compliance_ok ? 'account' : 'documents') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
+          h('button', { class: 'cp-iconbtn cpx-desktop', title: 'Settings', onClick: () => go('settings') }, icon('cog', 20)),
+          h('button', { class: 'cp-chip cp-chip-btn cpx-desktop ' + (ov.compliance_ok ? 'ok' : 'warn'), title: ov.compliance_ok ? 'Account compliant' : 'Action needed \u2014 finish your setup', onClick: () => go(ov.compliance_ok ? 'account' : 'documents') }, ov.compliance_ok ? 'Compliant' : 'Action needed'),
           bell,
           (() => {
             // Account menu — modern avatar dropdown: identity + Settings + Sign out.
@@ -434,7 +486,7 @@ async function appView(user) {
       ]),
       content,
     ]),
-    sideNav(true),
+    (mobileBar = sideNav(true)),
   ]);
   mount(root, shell);
   root.setAttribute('aria-busy', 'false');
@@ -663,13 +715,33 @@ async function appView(user) {
         h('div', { style: 'margin-left:auto;display:flex;gap:8px;align-items:center' }, [cpmIn, cpmSave]),
       ]),
     ]);
+    // Customize — the carrier picks their own 5 bottom-bar shortcuts. Persisted, applies instantly.
+    const tabsCard = (() => {
+      const sel = tabPrefs().slice();
+      const hint = h('div', { class: 'cpx-set-s', style: 'margin-top:6px' }, sel.length + '/5 selected — tap to change, applies instantly.');
+      const wrap = h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px' }, NAV.map(([id, label]) => {
+        const b = h('button', { class: 'cpx-tabpick' + (sel.includes(id) ? ' on' : ''), onClick: () => {
+          const i = sel.indexOf(id);
+          if (i >= 0) { if (sel.length <= 1) { hint.textContent = 'Keep at least 1 shortcut.'; return; } sel.splice(i, 1); b.classList.remove('on'); }
+          else { if (sel.length >= 5) { hint.textContent = 'Max 5 — unselect one first.'; return; } sel.push(id); b.classList.add('on'); }
+          hint.textContent = sel.length + '/5 selected — saved ✓';
+          try { localStorage.setItem('lb_tabs', JSON.stringify(sel)); } catch (_) {}
+          refreshTabbar();
+        } }, label);
+        return b;
+      }));
+      return h('div', { class: 'cp-card' }, [
+        h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Customize'),
+        h('div', null, [h('div', { class: 'cpx-set-t' }, '📱 Bottom tab bar — your shortcuts'), hint, wrap]),
+      ]);
+    })();
     const acctCard = h('div', { class: 'cp-card' }, [
       h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Account'),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Profile, preferences & compliance'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('account') }, 'Open')]),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Documents'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('documents') }, 'Open')]),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Sign out'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: async () => { await signOut(); location.reload(); } }, 'Sign out')]),
     ]);
-    mount(content, h('div', null, [themeCard, cpmCard, pushCard, availCard, acctCard].filter(Boolean)));
+    mount(content, h('div', null, [themeCard, cpmCard, pushCard, availCard, tabsCard, acctCard].filter(Boolean)));
   }
 
   async function loadDashboard() {
@@ -713,9 +785,9 @@ async function appView(user) {
     // 3) KPI strip from the aggregate (falls back to overview).
     const kpis = h('div', { class: 'cp-kpis' }, [
       statTile('Active trips', String(k.active_trips ?? ov.trips_active ?? 0), 'trips', 'blue', () => go('trips')),
-      statTile('Open offers', String(k.open_offers ?? 0), 'docs', 'violet', () => go('loads')),
-      statTile('Delivered (wk)', String(k.delivered_this_week ?? 0), 'dash', 'green', () => go('trips')),
-      statTile('Revenue (wk)', money(k.revenue_this_week ?? 0), 'finance', 'amber', () => go('finance')),
+      statTile('Offers for you', String(k.open_offers ?? 0), 'docs', 'violet', () => go('loads')),
+      statTile('Delivered this week', String(k.delivered_this_week ?? 0), 'dash', 'green', () => go('trips')),
+      statTile('Revenue this week', money(k.revenue_this_week ?? 0), 'finance', 'amber', () => go('finance')),
     ]);
 
     // 4) Active trips.
@@ -847,9 +919,18 @@ async function appView(user) {
       const okM = !fRate.value || Number(l.rate || 0) >= Number(fRate.value);
       return okO && okD && okE && okR && okM;
     });
-    const filterBar = h('div', { class: 'cp-card', style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px' },
-      [fOrigin, fDest, fEq, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Filter'),
-       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; renderList(); } }, 'Clear')]);
+    // Collapsed by default — tap "Filters" to open (inDrive pattern)
+    const fBody = h('div', { style: 'display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px' },
+      [fOrigin, fDest, fEq, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
+       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; renderList(); fCount(); } }, 'Clear')]);
+    const fChip = h('span', { class: 'cpx-chip', style: 'display:none' }, '');
+    const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate].filter(x => x.value.trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
+    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount));
+    const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
+    const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px' }, [
+      h('div', { style: 'display:flex;align-items:center;gap:8px' }, [fToggle]),
+      fBody,
+    ]);
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
     let renderList = () => {};
     // AI Pilot — "best for you": same open loads, ranked for THIS carrier by rate vs your stated
@@ -931,7 +1012,7 @@ async function appView(user) {
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request to book'; alert((e && e.message) || 'Could not send your request.'); }
       } }, 'Request to book');
       bookWrap.appendChild(book);
-      const detailsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(l.id) }, 'Detailed overview');
+      const detailsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(l.id) }, 'Details');
       const meta = [];
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
       if (l.weight) meta.push('Weight: ' + l.weight);
@@ -939,38 +1020,168 @@ async function appView(user) {
       const advW = h('div');
       function buildAdvisor(pos) {
         advW.innerHTML = '';
-        // editable state — GPS/deadhead, cost/mile and expense line items are ALL user-adjustable
+        // ---- AUTO INPUTS (nothing re-typed): saved cost/mile, saved expense template,
+        //      GPS or home-base deadhead, offline city-geo verification of posted miles ----
+        let tpl = [{ label: 'Tolls', amt: 0 }];
+        try { const t0 = JSON.parse(localStorage.getItem('lb_exp_tpl') || 'null'); if (Array.isArray(t0) && t0.length) tpl = t0; } catch (_) {}
+        const oGeo = geo(l.origin), dGeo = geo(l.destination);
+        const laneRoad = (oGeo && dGeo) ? roadMiles(oGeo, dGeo) : null;   // verified lane miles (est.)
+        const postedMi = Number(l.miles) || 0;
+        const milesSuspicious = laneRoad != null && postedMi > 0 && (postedMi < laneRoad * 0.75 || postedMi > laneRoad * 1.6);
+        const tollAuto = tollEstimate(oGeo, dGeo);
         const st = {
-          dh: (pos && l.pickup_lat != null && l.pickup_lng != null) ? Math.round(havMi(pos.coords.latitude, pos.coords.longitude, l.pickup_lat, l.pickup_lng)) : (l.deadhead != null ? Number(l.deadhead) : 0),
-          dhLive: !!(pos && l.pickup_lat != null),
-          cpm: _dp && Number(_dp.cost_per_mile) > 0 ? Number(_dp.cost_per_mile) : 1.80,
-          ex: [{ label: 'Tolls', amt: 0 }],
+          fuel: _dp && Number(_dp.fuel_price) > 0 ? Number(_dp.fuel_price) : 3.85,
+          mpg: _dp && Number(_dp.truck_mpg) > 0 ? Number(_dp.truck_mpg) : 6.5,
+          tolls: tollAuto.total || 0,
+          cpm: _dp && Number(_dp.cost_per_mile) > 0 ? Number(_dp.cost_per_mile) : 0.65,
+          ex: tpl.map(x => ({ label: x.label, amt: Number(x.amt) || 0 })),
+          useVerified: milesSuspicious && laneRoad != null,
+          dh: 0, dhBasis: 'unknown — set below', dhKnown: false,
         };
+        const pickupPt = (l.pickup_lat != null && l.pickup_lng != null) ? [l.pickup_lat, l.pickup_lng] : oGeo;
+        if (pos && pickupPt) {
+          const gps = [pos.coords.latitude, pos.coords.longitude];
+          const d0 = roadMiles(gps, pickupPt);
+          if (d0 != null && d0 <= 1200) { st.dh = d0; st.dhBasis = 'LIVE GPS → pickup (road est.)'; st.dhKnown = true; }
+          else if (d0 != null) {
+            // GPS is far (planning from home/office/abroad) — be honest, use home base instead
+            const hb = geo(_dp && _dp.home_base);
+            if (hb) { st.dh = roadMiles(hb, pickupPt) || 0; st.dhBasis = 'home base (' + _dp.home_base + ') → pickup — you appear ' + d0.toLocaleString() + ' mi from pickup (planning mode)'; st.dhKnown = true; }
+            else { st.dhBasis = 'GPS ' + d0.toLocaleString() + ' mi away (planning mode) — set home base in Account, or type deadhead'; }
+          }
+        } else if (pickupPt) {
+          const hb = geo(_dp && _dp.home_base);
+          if (hb) { st.dh = roadMiles(hb, pickupPt) || 0; st.dhBasis = 'home base → pickup (road est.)'; st.dhKnown = true; }
+        }
+        if (!st.dhKnown && l.deadhead != null) { st.dh = Number(l.deadhead); st.dhBasis = 'posting estimate'; st.dhKnown = true; }
+        const saveTpl = () => { try { localStorage.setItem('lb_exp_tpl', JSON.stringify(st.ex.filter(x => x.label || x.amt))); } catch (_) {} };
+        let cpmTimer = null;
+        const persistCpm = () => { clearTimeout(cpmTimer); cpmTimer = setTimeout(async () => { try {
+          await setDispatchPrefs({ min_rpm: (_dp && _dp.min_rpm) || null, preferred_equipment: (_dp && _dp.preferred_equipment) || [], preferred_lanes: (_dp && _dp.preferred_lanes) || [], home_base: (_dp && _dp.home_base) || null, max_deadhead_miles: (_dp && _dp.max_deadhead_miles) || null, notes: (_dp && _dp.notes) || null, cost_per_mile: st.cpm, fuel_price: st.fuel, truck_mpg: st.mpg });
+          if (_dp) { _dp.cost_per_mile = st.cpm; _dp.fuel_price = st.fuel; _dp.truck_mpg = st.mpg; }
+        } catch (_) {} }, 900); };
         const host = h('div', { class: 'cpx-adv' });
+        // Broker matrix — REAL from our platform (verified authority/bond, trip-verified
+        // ratings, delivered/on-time history). Loaded async once per open.
+        const brokerHost = h('div');
+        let _prot = null; // protection score from the load's real accessorial terms
+        let _hist = null; // the carrier's OWN delivered-trip track record (real benchmark)
+        (async () => {
+          try {
+            const ts = await pocketTrips(50);
+            const done = (ts || []).filter(t2 => (t2.status === 'delivered' || t2.status === 'invoiced') && Number(t2.rate) > 0 && Number(t2.miles) > 0);
+            if (done.length >= 3) { _hist = { n: done.length, rpm: done.reduce((a2, t2) => a2 + Number(t2.rate) / Number(t2.miles), 0) / done.length }; render(); }
+          } catch (_) {}
+        })();
+        (async () => {
+          try {
+            const det = await carrierLoadDetail(l.id);
+            const acc2 = (det && det.terms && det.terms.accessorials) || {};
+            const have = ['detention_per_hr', 'detention_free_hours', 'tonu', 'layover_per_day', 'lumper_policy'].filter(k2 => acc2[k2] !== undefined && acc2[k2] !== null && acc2[k2] !== '');
+            _prot = { n: have.length, total: 5 };
+            render();
+          } catch (_) {}
+        })();
+        (async () => {
+          let ps = null; try { ps = await carrierViewPoster(l.id); } catch (_) {}
+          if (!ps) { brokerHost.innerHTML = ''; return; }
+          const isDirect = ps.broker_trust_score == null && /loadboot/i.test(String(ps.posted_by || ''));
+          if (isDirect) {
+            st.direct = true;
+            if (!_prot) _prot = { n: 5, total: 5, enforced: true }; // LoadBoot standards apply BY POLICY on direct posts
+            mount(brokerHost, h('div', { style: 'margin-top:10px;border-radius:12px;padding:12px;background:#0F172A;color:#fff' }, [
+              h('div', { style: 'display:flex;align-items:center;gap:10px' }, [
+                h('span', { html: '<svg width="24" height="26" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"/></svg>', style: 'line-height:0' }),
+                h('div', null, [h('b', { style: 'font-size:13.5px' }, 'LoadBoot Dispatch — platform post'), h('div', { style: 'font-size:11px;color:#94a3b8' }, 'The marketplace itself is the posting party')]),
+                h('span', { class: 'cp-pill green', style: 'margin-left:auto' }, '✓ Platform'),
+              ]),
+              h('div', { style: 'font-size:11.5px;color:#cbd5e1;margin-top:8px;line-height:1.7' },
+                '✓ All marketplace standards ENFORCED at post time (detention $60/2h · TONU $250 · layover $250 · lumper receipt · assist $75)' +
+                ' — not negotiable, it is policy.'),
+              h('div', { style: 'font-size:10.5px;color:#94a3b8;margin-top:4px' }, 'Carrier ratings of LoadBoot posts build from trip-verified reviews — same rules as brokers, no self-exemption.'),
+            ]));
+            render();
+            return;
+          }
+          st.brokerVerified = ps.broker_verified === true; st.brokerRating = Number(ps.broker_rating || 0); st.brokerTrust = Number(ps.broker_trust_score || 0);
+          const br = Number(ps.broker_rating || 0);
+          const stars = br ? '★'.repeat(Math.round(br)) + '☆'.repeat(5 - Math.round(br)) : '';
+          mount(brokerHost, h('div', { style: 'margin-top:10px;border:1px solid var(--lb-border,#e6ebf3);border-radius:12px;padding:11px;background:#fff' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px' }, [
+              h('b', { style: 'font-size:13px' }, '🏢 ' + (ps.posted_by || 'Posting party')),
+              h('span', null, [
+                ps.broker_verified != null ? h('span', { class: 'cp-pill ' + (ps.broker_verified ? 'green' : 'amber'), style: 'margin-right:6px' }, ps.broker_verified ? '✓ Verified (bond + authority on file)' : 'Unverified') : null,
+                stars ? h('span', { style: 'color:#f59e0b;font-weight:800' }, stars + ' ' + br.toFixed(1)) : null,
+              ].filter(Boolean)),
+            ]),
+            h('div', { class: 'cp-row-s', style: 'margin-top:5px' }, [
+              ps.broker_trust_score != null ? 'Trust ' + ps.broker_trust_score + '/100' : null,
+              ps.loads_delivered != null ? ps.loads_delivered + ' delivered on LoadBoot' : null,
+              ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null,
+            ].filter(Boolean).join(' · ') || (ps.signal || '')),
+            h('div', { class: 'cp-row-s', style: 'color:#94a3b8' }, 'Payment history (days-to-pay): insufficient verified data yet — builds automatically as invoices settle on LoadBoot. Ratings are trip-verified only.'),
+          ]));
+        })();
         const render = () => {
           const rate = Number(l.rate) || 0;
-          const totalMi = (Number(l.miles) || 0) + (st.dh || 0);
-          const cost = Math.round(totalMi * st.cpm);
+          const loadedMi = st.useVerified && laneRoad ? laneRoad : postedMi;
+          const totalMi = loadedMi + (st.dh || 0);
+          const fuelLoaded = Math.round((loadedMi / Math.max(st.mpg, 1)) * st.fuel);
+          const fuelDead = Math.round(((st.dh || 0) / Math.max(st.mpg, 1)) * st.fuel);
+          const otherCost = Math.round(totalMi * st.cpm);
+          const cost = fuelLoaded + fuelDead + otherCost + Math.round(st.tolls || 0);
           const fee = Math.round(rate * 0.05);
           const exSum = st.ex.reduce((a, x) => a + (Number(x.amt) || 0), 0);
           const net = rate - cost - fee - exSum;
           const allInRpm = totalMi > 0 ? rate / totalMi : 0;
+          const days = Math.max(1, Math.ceil(totalMi / 550));           // ~550 practical mi/day
+          const perDay = Math.round(net / days);
+          // reload market at destination — REAL: count loads on OUR board originating near destination state
+          const dstST = String(l.destination || '').trim().slice(-2).toLowerCase();
+          const reloads = (rows || []).filter(r2 => r2.id !== l.id && String(r2.origin || '').trim().slice(-2).toLowerCase() === dstST).length;
           const pct = (v) => rate > 0 ? Math.max(0, Math.min(100, v / rate * 100)) : 0;
+          const flags = [];
+          if (milesSuspicious) flags.push(['red', '⚠ Posted ' + postedMi.toLocaleString() + ' mi, but ' + (l.origin||'') + ' → ' + (l.destination||'') + ' is ~' + laneRoad.toLocaleString() + ' mi by road. Real rate ≈ $' + (laneRoad ? (rate/laneRoad).toFixed(2) : '?') + '/mi — verify with the broker before booking.' + (st.useVerified ? ' (Math below uses corrected miles.)' : '')]);
+          if (!st.dhKnown) flags.push(['amber', 'Deadhead unknown — GPS ya home base na hone se. Neeche khud daal dein.']);
+          if ((oGeo && isStateFallback(l.origin)) || (dGeo && isStateFallback(l.destination))) flags.push(['amber', 'City not in offline map — state-center estimate used for verification.']);
           const checks = [];
-          if (_dp && _dp.max_deadhead_miles) checks.push([st.dh <= Number(_dp.max_deadhead_miles), 'Deadhead ' + st.dh + '/' + _dp.max_deadhead_miles + ' mi']);
-          if (_dp && _dp.min_rpm) checks.push([allInRpm >= Number(_dp.min_rpm), 'All-in $' + allInRpm.toFixed(2) + ' vs min $' + _dp.min_rpm]);
+          if (_dp && _dp.max_deadhead_miles && st.dhKnown) checks.push([st.dh <= Number(_dp.max_deadhead_miles), 'Deadhead ' + st.dh + '/' + _dp.max_deadhead_miles + ' mi']);
+          if (_dp && _dp.min_rpm) checks.push([allInRpm >= Number(_dp.min_rpm), 'All-in $' + allInRpm.toFixed(2) + ' vs your min $' + _dp.min_rpm]);
           checks.push([net > 0, 'Net ' + (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString()]);
-          const fails = checks.filter(c => !c[0]).length;
-          const V = fails === 0 ? ['✓', 'TAKE IT', 'by your numbers this load pays', '#16a34a', 'rgba(22,163,74,.12)']
-            : fails === 1 ? ['≈', 'BORDERLINE', 'one of your rules fails — check below', '#d97706', 'rgba(217,119,6,.12)']
-            : ['✕', 'SKIP IT', 'this load loses money by your numbers', '#dc2626', 'rgba(220,38,38,.12)'];
-          const numIn = (val, step, onch, w) => { const i2 = h('input', { class: 'cp-in', type: 'number', step: step, value: val, style: 'margin:0;max-width:' + (w || 96) + 'px;padding:7px 9px;font-size:14px;font-weight:700;text-align:right' }); i2.oninput = () => onch(Number(i2.value) || 0); return i2; };
+          checks.push([reloads > 0, reloads + ' reload' + (reloads === 1 ? '' : 's') + ' on our board out of ' + (l.destination || 'destination')]);
+          // ---- LoadBoot Score (0-100): every REAL factor weighted; breakdown visible ----
+          const homePt = geo(_dp && _dp.home_base);
+          const homeReturn = (homePt && dGeo) ? roadMiles(dGeo, homePt) : null;
+          const delDate = l.delivery_date ? new Date(l.delivery_date) : null;
+          const weekendDel = delDate ? (delDate.getDay() === 0 || delDate.getDay() === 6) : false;
+          const marginPct = rate > 0 ? net / rate : 0;
+          const SC = [];
+          const TAG = { M: ['MEASURED', '#16a34a'], V: ['VERIFIED', '#0883F7'], E: ['ESTIMATE', '#d97706'], U: ['YOU SET', '#64748b'] };
+          SC.push(['Profit margin', Math.max(0, Math.min(25, Math.round(marginPct * 100))), 25, (marginPct * 100).toFixed(0) + '% of rate stays with you', 'U']);
+          SC.push(['Rate vs your minimum', _dp && _dp.min_rpm ? (allInRpm >= _dp.min_rpm * 1.2 ? 15 : allInRpm >= _dp.min_rpm ? 10 : 0) : 8, 15, '$' + allInRpm.toFixed(2) + '/mi all-in' + (_hist ? ' · your last ' + _hist.n + ' delivered avg $' + _hist.rpm.toFixed(2) + '/mi' : ''), _hist ? 'M' : 'U']);
+          SC.push(['Deadhead', st.dhKnown ? (st.dh <= 50 ? 10 : st.dh <= 150 ? 7 : st.dh <= 300 ? 3 : 0) : 5, 10, st.dh + ' mi to pickup', st.dhBasis.indexOf('LIVE') === 0 ? 'M' : 'E']);
+          SC.push(['Miles verified', milesSuspicious ? 0 : laneRoad ? 10 : 5, 10, milesSuspicious ? 'posted miles look WRONG' : laneRoad ? 'matches city-map distance' : 'not verifiable', 'E']);
+          SC.push(['Your protections', _prot ? Math.round(_prot.n / _prot.total * 15) : 7, 15, _prot ? (_prot.enforced ? '5/5 — LoadBoot standards enforced on platform posts' : _prot.n + '/' + _prot.total + ' accessorial terms set on this load') : 'checking rate card…', 'V']);
+          SC.push(['Posting party', st.direct ? 15 : (st.brokerVerified != null ? Math.round(((st.brokerVerified ? 8 : 0) + Math.min(7, (st.brokerRating || 0) / 5 * 7))) : 7), 15, st.direct ? 'LoadBoot Dispatch — platform post, standards enforced by policy' : (st.brokerVerified != null ? ((st.brokerVerified ? 'verified broker' : 'UNVERIFIED broker') + (st.brokerRating ? ' · ★' + st.brokerRating.toFixed(1) : '')) : 'checking…'), 'V']);
+          SC.push(['Reload market', Math.min(5, reloads * 2), 5, reloads + ' loads out of destination on our board', 'M']);
+          SC.push(['Home return', homeReturn == null ? 2 : homeReturn <= 100 ? 5 : homeReturn <= 400 ? 3 : 1, 5, homeReturn == null ? 'set home base' : homeReturn.toLocaleString() + ' mi back to ' + (_dp.home_base || 'base') + ' after delivery', 'E']);
+          if (weekendDel) SC.push(['Weekend delivery risk', 0, 0, 'delivers ' + (delDate.getDay() === 0 ? 'Sunday' : 'Saturday') + ' — receiver hours / detention risk, confirm before booking', 'M']);
+          const lbScore = Math.max(0, Math.min(100, SC.reduce((a2, x2) => a2 + x2[1], 0)));
+          const hardFails = checks.slice(0, 3).filter(c => !c[0]).length + (milesSuspicious ? 1 : 0);
+          const V = hardFails === 0 ? ['✓', 'TAKE IT', 'by your numbers this load pays', '#16a34a', 'rgba(22,163,74,.12)']
+            : hardFails === 1 ? ['≈', 'CHECK FIRST', 'one issue below — resolve then book', '#d97706', 'rgba(217,119,6,.12)']
+            : ['✕', 'SKIP IT', 'multiple failures by your numbers', '#dc2626', 'rgba(220,38,38,.12)'];
+          const numIn = (val, step2, onch, w) => { const i2 = h('input', { class: 'cp-in', type: 'number', step: step2, value: val, style: 'margin:0;max-width:' + (w || 96) + 'px;padding:7px 9px;font-size:14px;font-weight:700;text-align:right' }); i2.oninput = () => onch(Number(i2.value) || 0); return i2; };
           mount(host, [
             h('div', { class: 'cpx-adv-verdict', style: 'background:' + V[4] + ';color:' + V[3] }, [
-              h('span', { class: 'v' }, V[0]), h('span', null, [h('b', { style: 'font-size:16px;letter-spacing:.02em' }, V[1]), h('div', { style: 'font-size:11.5px;font-weight:600;opacity:.85' }, V[2])]),
-              h('b', { style: 'margin-left:auto;font-size:20px' }, (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString()),
+              h('span', { class: 'v' }, V[0]),
+              h('span', null, [h('b', { style: 'font-size:16px;letter-spacing:.02em' }, V[1]), h('div', { style: 'font-size:11.5px;font-weight:600;opacity:.85' }, V[2])]),
+              h('span', { style: 'margin-left:auto;text-align:right' }, [h('b', { style: 'font-size:20px;display:block' }, (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString()), h('span', { style: 'font-size:11px;font-weight:700;opacity:.85' }, '≈ $' + perDay.toLocaleString() + '/day · ' + days + ' day' + (days > 1 ? 's' : ''))]),
             ]),
-            // money bar: where every dollar of the rate goes
+            ...flags.map(f => h('div', { style: 'margin-top:8px;border-radius:11px;padding:9px 12px;font-size:12px;font-weight:700;' + (f[0] === 'red' ? 'background:rgba(220,38,38,.1);color:#b91c1c' : 'background:rgba(217,119,6,.12);color:#92400e') }, f[1])),
+            milesSuspicious ? h('label', { style: 'display:flex;gap:7px;align-items:center;margin-top:6px;font-size:12px;font-weight:700;color:#334155' }, [
+              (() => { const cb = h('input', { type: 'checkbox' }); cb.checked = st.useVerified; cb.onchange = () => { st.useVerified = cb.checked; render(); }; return cb; })(),
+              'Use corrected miles (' + laneRoad.toLocaleString() + ') in the math']) : null,
             h('div', { class: 'cpx-adv-bar' }, [
               h('span', { style: 'width:' + pct(cost) + '%;background:#0F172A' }),
               h('span', { style: 'width:' + pct(fee) + '%;background:#F97316' }),
@@ -978,29 +1189,49 @@ async function appView(user) {
               h('span', { style: 'width:' + pct(Math.max(net, 0)) + '%;background:#16a34a' }),
             ]),
             h('div', { class: 'cpx-adv-legend' }, [
-              h('span', null, [h('i', { style: 'background:#0F172A' }), 'Cost $' + cost.toLocaleString()]),
+              h('span', null, [h('i', { style: 'background:#0F172A' }), 'Cost $' + cost.toLocaleString() + ' (fuel $' + (fuelLoaded + fuelDead).toLocaleString() + ' + tolls $' + Math.round(st.tolls || 0) + ' + other $' + otherCost.toLocaleString() + ')']),
               h('span', null, [h('i', { style: 'background:#F97316' }), 'Fee $' + fee.toLocaleString()]),
               exSum ? h('span', null, [h('i', { style: 'background:#94a3b8' }), 'Extras $' + exSum.toLocaleString()]) : null,
               h('span', null, [h('i', { style: 'background:#16a34a' }), 'Net ' + (net >= 0 ? '$' + net.toLocaleString() : '−$' + Math.abs(net).toLocaleString())]),
             ].filter(Boolean)),
+            h('div', { style: 'margin-top:10px;border-radius:11px;padding:9px 12px;background:rgba(8,131,247,.07);font-size:12px;font-weight:700;color:#1e3a8a' },
+              '⛽ Deadhead fuel: ' + (st.dh || 0) + ' mi ÷ ' + st.mpg + ' mpg × $' + st.fuel + ' = $' + fuelDead.toLocaleString() + ' just to reach pickup · Loaded-leg fuel: $' + fuelLoaded.toLocaleString()),
             h('div', { class: 'cpx-adv-grid' }, [
-              h('div', { class: 'cell' }, [h('label', null, '📍 Deadhead (mi)' + (st.dhLive ? ' · LIVE' : '')), numIn(st.dh, 1, (v) => { st.dh = v; st.dhLive = false; render(); })]),
-              h('div', { class: 'cell' }, [h('label', null, '💰 My cost / mile'), numIn(st.cpm, 0.05, (v) => { st.cpm = v; render(); })]),
-              h('div', { class: 'cell' }, [h('label', null, 'Loaded mi'), h('b', null, Number(l.miles || 0).toLocaleString())]),
-              h('div', { class: 'cell' }, [h('label', null, 'All-in $/mi'), h('b', null, '$' + allInRpm.toFixed(2))]),
+              h('div', { class: 'cell' }, [h('label', null, '📍 DEADHEAD (MI)'), numIn(st.dh, 1, (v) => { st.dh = v; st.dhKnown = true; st.dhBasis = 'entered by you'; render(); }), h('span', { style: 'font-size:9.5px;color:#94a3b8;font-weight:600' }, st.dhBasis)]),
+              h('div', { class: 'cell' }, [h('label', null, '⛽ FUEL $/GAL (auto-saved)'), numIn(st.fuel, 0.05, (v) => { st.fuel = v; persistCpm(); render(); })]),
+              h('div', { class: 'cell' }, [h('label', null, '🚛 TRUCK MPG (auto-saved)'), numIn(st.mpg, 0.1, (v) => { st.mpg = v; persistCpm(); render(); })]),
+              h('div', { class: 'cell' }, [h('label', null, '🔧 OTHER COST/MI (maint+ins)'), numIn(st.cpm, 0.05, (v) => { st.cpm = v; persistCpm(); render(); })]),
+              h('div', { class: 'cell' }, [h('label', null, '🛣 TOLLS (auto-estimated)'), numIn(Math.round(st.tolls), 1, (v) => { st.tolls = v; render(); }), h('span', { style: 'font-size:9.5px;color:#94a3b8;font-weight:600' }, tollAuto.parts.length ? tollAuto.parts.map(p2 => p2[1]).join(' + ') : tollAuto.basis)]),
+              h('div', { class: 'cell' }, [h('label', null, 'LOADED MI' + (st.useVerified ? ' (CORRECTED)' : '') + ' · ALL-IN'), h('b', null, loadedMi.toLocaleString() + ' mi · $' + allInRpm.toFixed(2) + '/mi')]),
             ]),
             h('div', { style: 'margin-top:8px' }, [
-              h('div', { style: 'font-weight:800;font-size:12px;color:#64748b;margin-bottom:4px' }, 'CUSTOM EXPENSES'),
+              h('div', { style: 'font-weight:800;font-size:12px;color:#64748b;margin-bottom:4px' }, 'MY USUAL EXPENSES (saved — auto-fills every load)'),
               ...st.ex.map((x, idx) => h('div', { style: 'display:flex;gap:8px;align-items:center;margin-bottom:6px' }, [
-                (() => { const li = h('input', { class: 'cp-in', value: x.label, placeholder: 'Label', style: 'margin:0;flex:1;padding:7px 9px;font-size:13px' }); li.oninput = () => { x.label = li.value; }; return li; })(),
-                numIn(x.amt, 1, (v) => { x.amt = v; render(); }),
-                h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'padding:5px 10px', onClick: () => { st.ex.splice(idx, 1); render(); } }, '✕'),
+                (() => { const li = h('input', { class: 'cp-in', value: x.label, placeholder: 'Label', style: 'margin:0;flex:1;padding:7px 9px;font-size:13px' }); li.oninput = () => { x.label = li.value; saveTpl(); }; return li; })(),
+                numIn(x.amt, 1, (v) => { x.amt = v; saveTpl(); render(); }),
+                h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'padding:5px 10px', onClick: () => { st.ex.splice(idx, 1); saveTpl(); render(); } }, '✕'),
               ])),
-              h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { st.ex.push({ label: '', amt: 0 }); render(); } }, '+ Add expense (lumper, parking…)'),
+              h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { st.ex.push({ label: '', amt: 0 }); render(); } }, '+ Add expense (saved for next time)'),
             ]),
             h('div', { class: 'cpx-adv-checks' }, checks.map(c => h('span', { class: 'chk ' + (c[0] ? 'ok' : 'bad') }, (c[0] ? '✓ ' : '✕ ') + c[1]))),
-            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Straight-line deadhead + your own numbers — estimates, not financial advice.'),
-          ]);
+            h('div', { style: 'margin-top:12px;border:1px solid var(--lb-border,#e6ebf3);border-radius:13px;padding:12px;background:#fff' }, [
+              h('div', { style: 'display:flex;align-items:center;gap:12px' }, [
+                h('div', { style: 'width:58px;height:58px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;color:#fff;background:conic-gradient(' + (lbScore >= 70 ? '#16a34a' : lbScore >= 45 ? '#d97706' : '#dc2626') + ' ' + lbScore + '%, #e2e8f0 0)' },
+                  h('span', { style: 'width:44px;height:44px;border-radius:50%;background:#0F172A;display:flex;align-items:center;justify-content:center' }, String(lbScore))),
+                h('div', null, [h('b', { style: 'font-size:14px;color:#0F172A' }, 'LoadBoot Score'), h('div', { class: 'cp-row-s' }, 'Every real factor, weighted — full breakdown below, nothing hidden')]),
+              ]),
+              ...SC.map(x2 => {
+                const tg = TAG[x2[4]] || TAG.E;
+                return h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid #f8fafc;font-size:11.5px;align-items:center' }, [
+                  h('span', { style: 'font-weight:700;color:#334155' }, [x2[0] + ' (' + x2[1] + '/' + x2[2] + ') ', h('span', { style: 'font-size:8.5px;font-weight:800;letter-spacing:.05em;padding:1px 6px;border-radius:99px;background:' + tg[1] + '1f;color:' + tg[1] }, tg[0])]),
+                  h('span', { style: 'color:#64748b;text-align:right' }, x2[3]),
+                ]);
+              }),
+              h('div', { style: 'font-size:9.5px;color:#94a3b8;margin-top:5px' }, 'MEASURED = read from GPS / our board · VERIFIED = documents & trip records · ESTIMATE = labeled approximation · YOU SET = your own saved numbers. Anything unknown is asked — never invented. Dispatch fee (5%) is always auto-deducted before Net.'),
+            ]),
+            brokerHost,
+            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'City-map road + corridor-toll estimates (±) + your saved numbers — everything auto, everything editable. Not financial advice.'),
+          ].filter(Boolean));
         };
         render();
         advW.appendChild(host);
@@ -1032,7 +1263,7 @@ async function appView(user) {
           const done = (pos) => buildAdvisor(pos);
           if (navigator.geolocation) navigator.geolocation.getCurrentPosition(done, () => done(null), { enableHighAccuracy: true, timeout: 8000 });
           else done(null);
-        } }, '🤔 Should I take this load?'),
+        } }, '📊 LoadBoot Score — should I take it?'),
         advW,
       ].filter(Boolean));
     })();
@@ -1085,20 +1316,36 @@ async function appView(user) {
       line('Delivery', [d.delivery_date, t.delivery_window].filter(Boolean).join(' · ')),
       line('Reference', t.reference),
       t.instructions ? h('div', { style: 'margin:8px 0' }, [h('div', { class: 'cp-row-t' }, 'Instructions'), h('div', { class: 'cp-row-s' }, t.instructions)]) : null,
-      accEntries.length ? h('div', { style: 'margin-top:8px' }, [
-        h('div', { class: 'cp-row-t' }, 'Accessorial rate card'),
-        ...accEntries.map(([k, v]) => {
-          const ACC_META = { fcfs: ['FCFS (First Come, First Served)', '/fcfs-policy.html'], tonu: ['TONU (Truck Ordered, Not Used)', '/tonu-policy.html'],
-            lumper_policy: ['Lumper policy', '/lumper-policy.html'], lumper: ['Lumper policy', '/lumper-policy.html'],
-            layover_per_day: ['Layover (per day)', '/layover-policy.html'], layover: ['Layover (per day)', '/layover-policy.html'],
-            detention_per_hr: ['Detention (per hour)', '/detention-pay-policy.html'], detention_free_hours: ['Detention free time (hours)', '/detention-pay-policy.html'],
-            driver_assist: ['Driver assist', '/driver-assist-policy.html'] };
-          const meta = ACC_META[k] || [(k.charAt(0).toUpperCase() + k.slice(1)).replace(/_/g, ' '), null];
-          const label = meta[1] ? h('a', { href: meta[1], target: '_blank', rel: 'noopener', style: 'font-weight:800;color:inherit;text-decoration:underline;text-decoration-color:rgba(8,131,247,.4);text-underline-offset:3px' }, meta[0])
-                                : h('b', null, meta[0]);
-          return h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, label), h('span', null, typeof v === 'object' ? JSON.stringify(v) : String(v))]);
-        }),
-      ]) : h('div', { class: 'cp-muted', style: 'margin-top:8px;font-size:12px' }, 'No accessorial rates specified for this load.'),
+      (() => {
+        // Always show the FULL standard rate card. Posting values win; otherwise the
+        // LoadBoot marketplace standard applies (and is labeled as such — no blanks, no raw values).
+        const money2 = (v) => '$' + Number(v).toLocaleString();
+        const STD = [
+          ['detention_per_hr', 'Detention (per hour)', '/detention-pay-policy.html', (v) => money2(v) + '/hr', '$60/hr'],
+          ['detention_free_hours', 'Detention free time', '/detention-pay-policy.html', (v) => v + ' hours', '2 hours'],
+          ['layover_per_day', 'Layover (per day)', '/layover-policy.html', (v) => money2(v) + '/day', '$250/day'],
+          ['tonu', 'TONU (Truck Ordered, Not Used)', '/tonu-policy.html', (v) => money2(v), '$250'],
+          ['lumper_policy', 'Lumper policy', '/lumper-policy.html', (v) => String(v), 'Reimbursed with receipt'],
+          ['driver_assist', 'Driver assist', '/driver-assist-policy.html', (v) => money2(v) + '/stop', '$75/stop'],
+          ['extra_stop', 'Extra stop', '/driver-assist-policy.html', (v) => money2(v) + '/stop', '$50/stop'],
+          ['fcfs', 'Scheduling', '/fcfs-policy.html', (v) => (v === true || v === 'true') ? 'FCFS — first come, first served' : 'Appointment / window', 'Appointment / window'],
+        ];
+        const rows = STD.map(([k, label, href, fmt, std]) => {
+          const raw = acc[k];
+          const hasVal = raw !== undefined && raw !== null && raw !== '';
+          const val = hasVal ? fmt(raw) : std;
+          return h('div', { class: 'cp-row' }, [
+            h('div', { class: 'cp-row-t', style: 'font-size:.88rem' },
+              h('a', { href: href, target: '_blank', rel: 'noopener', style: 'font-weight:800;color:inherit;text-decoration:underline;text-decoration-color:rgba(8,131,247,.4);text-underline-offset:3px' }, label)),
+            h('span', null, [h('b', null, val), hasVal ? null : h('span', { class: 'cp-muted', style: 'font-size:11px' }, '  · LoadBoot standard')].filter(Boolean)),
+          ]);
+        });
+        return h('div', { style: 'margin-top:8px' }, [
+          h('div', { class: 'cp-row-t' }, 'Accessorial rate card'),
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, 'Every item is clickable — full policy opens. Posted rates are bold; anything not customized uses the LoadBoot marketplace standard.'),
+          ...rows,
+        ]);
+      })(),
       h('div', { class: 'cp-payinfo', style: 'margin-top:10px' }, [h('div', { class: 'cp-payinfo-h' }, '📍 Tracking'), h('div', { class: 'cp-payinfo-b' }, t.tracking_note || 'Location tracking is on from booking until delivery.')]),
     ].filter(Boolean)));
   }
@@ -1888,10 +2135,27 @@ function tripStepper(status) {
 
   /* ----- Documents & compliance ----- */
   const DOC_TYPES = [['insurance', 'Insurance / COI'], ['authority', 'Operating authority'], ['w9', 'W-9'], ['noa', 'Notice of assignment'], ['agreement', 'Signed agreement'], ['rate_con', 'Rate confirmation'], ['bol', 'Bill of lading'], ['pod', 'Proof of delivery'], ['other', 'Other']];
+  // Format enforcement: agent/IRS-issued documents MUST be the original PDF —
+  // screenshots get rejected by brokers and factoring. Field paperwork may be a clear photo.
+  const DOC_FMT = {
+    insurance: { exts: ['pdf'], label: 'PDF only — the certificate your agent emails you (screenshots are rejected)' },
+    w9:        { exts: ['pdf'], label: 'PDF only — the signed IRS form (not a photo of the screen)' },
+    agreement: { exts: ['pdf'], label: 'PDF only — the signed agreement document' },
+    noa:       { exts: ['pdf'], label: 'PDF only — factoring company letter' },
+    rate_con:  { exts: ['pdf'], label: 'PDF only' },
+    authority: { exts: ['pdf', 'jpg', 'jpeg', 'png', 'webp'], label: 'PDF preferred, or a CLEAR photo of the authority letter' },
+    bol:       { exts: ['pdf', 'jpg', 'jpeg', 'png', 'webp'], label: 'PDF or clear photo' },
+    pod:       { exts: ['pdf', 'jpg', 'jpeg', 'png', 'webp'], label: 'PDF or clear photo' },
+    other:     { exts: ['pdf', 'jpg', 'jpeg', 'png', 'webp'], label: 'PDF or clear photo' },
+  };
+  const docFmt = (t) => DOC_FMT[t] || DOC_FMT.other;
+  const extOf = (f) => (f && f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '');
   async function loadDocuments() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let c; try { c = await pocketCompliance(); } catch (e) { c = { requirements: [] }; }
     const reqs = (c && c.requirements) || [];
+    let allDocs = []; try { allDocs = await carrierListDocuments(); } catch (_) { allDocs = []; }
+    const latestDoc = (t) => (allDocs || []).find(d => d.type === t) || null; // list is newest-first
     const listWrap = h('div');
     // 📷 Scan to PDF — camera pages -> one PDF, fully offline, no external service.
     let scanPages = [];
@@ -1931,7 +2195,10 @@ function tripStepper(status) {
     ]);
     // upload form
     const typeSel = h('select', { class: 'cp-in' }, DOC_TYPES.map(([v, l]) => h('option', { value: v }, l)));
-    const fileIn = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
+    const fmtLine = h('div', { class: 'cp-row-s', style: 'font-weight:700;color:#b45309' });
+    const fileIn = h('input', { class: 'cp-in', type: 'file' });
+    const applyFmt = () => { const r = docFmt(typeSel.value); fileIn.accept = r.exts.map(e => '.' + e).join(','); fmtLine.textContent = '📌 Required format: ' + r.label; };
+    typeSel.onchange = applyFmt; applyFmt();
     const msg = h('div', { class: 'cp-err' });
     const up = h('button', { class: 'cp-btn', onClick: async () => {
       const f = fileIn.files && fileIn.files[0];
@@ -1939,6 +2206,13 @@ function tripStepper(status) {
       if (!f) { msg.textContent = 'Choose a file first.'; return; }
       up.disabled = true; up.textContent = 'Uploading…';
       try {
+        const rule = docFmt(typeSel.value);
+        if (!rule.exts.includes(extOf(f))) {
+          msg.className = 'cp-err';
+          msg.textContent = 'This document must be ' + (rule.exts.length === 1 ? rule.exts[0].toUpperCase() : rule.exts.map(e => e.toUpperCase()).join('/')) + ' — ' + rule.label + '. Tip: use 📷 Scan to PDF above to turn photos into a proper PDF.';
+          up.disabled = false; up.textContent = 'Upload';
+          return;
+        }
         const meta = await uploadDocument(f, typeSel.value);
         await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path });
         fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded — your dispatcher will review it.';
@@ -1992,16 +2266,34 @@ function tripStepper(status) {
     };
     const reqRow = (r) => {
       const k = reqTone(r); const tone = toneOf(k.t);
-      const actionable = k.t !== 'success';
-      return h('div', { class: 'cp-row', role: actionable ? 'button' : null, tabindex: actionable ? '0' : null,
-        style: 'border-left:4px solid ' + tone.c + ';padding-left:10px;background:' + (k.t === 'urgent' ? tone.bg : 'transparent') + ';border-radius:8px' + (actionable ? ';cursor:pointer' : ''),
-        onClick: actionable ? () => uploadFor(r) : null }, [
-        h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required · ' : 'Optional · ') + k.why + (actionable ? ' — tap to upload' : ''))]),
-        h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
-          h('span', { class: 'cp-pill', style: 'background:' + tone.bg + ';color:' + tone.c + ';border:1px solid ' + tone.c + '33' }, tone.label),
-          actionable ? h('span', { class: 'cp-btn cp-btn-sm', style: 'pointer-events:none' }, 'Upload') : null,
-        ].filter(Boolean)),
-      ]);
+      const d = latestDoc(r.doc_type || '') || null;
+      const fdate = (x) => x ? new Date(x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + new Date(x).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+      // Amazon-style verification tracker: Uploaded → In review → Approved (or Rejected w/ reason)
+      const stateIdx = r.status === 'valid' ? 3 : r.status === 'rejected' ? 2 : (r.status === 'pending' || d) ? 2 : 0;
+      const rejected = r.status === 'rejected' || (d && d.status === 'rejected');
+      const STEPS = [['Uploaded', d ? fdate(d.created_at) : null], ['In review', stateIdx >= 2 && !rejected && r.status !== 'valid' ? 'dispatch team — usually a few hours' : (rejected ? fdate(d && d.reviewed_at) : null)], [rejected ? 'Rejected' : 'Approved', r.status === 'valid' ? fdate(d && d.reviewed_at) || '✓' : null]];
+      const stepper = stateIdx > 0 ? h('div', { style: 'display:flex;gap:6px;margin:9px 0 2px' }, STEPS.map(([lbl, sub], si) => {
+        const on = si < stateIdx; const isLast = si === 2;
+        const colr = isLast && rejected && on ? '#dc2626' : on ? (isLast && r.status === 'valid' ? '#16a34a' : '#0883F7') : '#e2e8f0';
+        return h('div', { style: 'flex:1;text-align:center' }, [
+          h('div', { style: 'height:5px;border-radius:99px;background:' + colr }),
+          h('div', { style: 'font-size:10px;margin-top:4px;font-weight:' + (on ? '800' : '500') + ';color:' + (on ? colr : '#94a3b8') }, lbl),
+          sub ? h('div', { style: 'font-size:9px;color:#94a3b8' }, sub) : null,
+        ].filter(Boolean));
+      })) : null;
+      const note = rejected && d && d.review_note ? h('div', { style: 'margin-top:6px;border-radius:9px;padding:8px 11px;background:rgba(220,38,38,.08);color:#b91c1c;font-size:12px;font-weight:700' }, '✕ Reason: ' + d.review_note) : null;
+      const actionable = r.status !== 'valid';
+      const btnLabel = rejected ? 'Resubmit' : (stateIdx >= 2 && r.status !== 'valid') ? 'Replace' : 'Upload';
+      return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
+          h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
+            h('span', { class: 'cp-pill', style: 'background:' + (rejected ? 'rgba(220,38,38,.1)' : tone.bg) + ';color:' + (rejected ? '#b91c1c' : tone.c) }, rejected ? 'Rejected' : r.status === 'valid' ? 'Approved ✓' : stateIdx >= 2 ? 'In review' : tone.label),
+            actionable ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => uploadFor(r) }, btnLabel) : null,
+          ].filter(Boolean)),
+        ]),
+        stepper, note,
+      ].filter(Boolean));
     };
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
     mount(content, h('div', null, [scanCard, 
@@ -2010,7 +2302,7 @@ function tripStepper(status) {
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
         sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
       h('div', { class: 'cp-grid' }, [
-        h('div', { class: 'cp-card' }, [cardHead('Upload a document'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fileIn, msg, up]),
+        h('div', { class: 'cp-card' }, [cardHead('Upload a document'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, fileIn, msg, up]),
         h('div', { class: 'cp-card' }, [cardHead('My documents'), listWrap]),
       ]),
     ]));
@@ -2469,8 +2761,12 @@ function tripStepper(status) {
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No notifications yet. Alerts about your loads, payments and onboarding will appear here.'))); refreshUnread(); return; }
     const card = h('div', { class: 'cp-card' }, [cardHead('Notifications', rows.filter(n => !n.read_at).length + ' unread'), ...rows.map(n => {
       const p = n.payload || {};
-      const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'), onClick: async () => { if (!n.read_at) { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); row.classList.remove('unread'); refreshUnread(); } catch (_) {} } if (p.url) location.hash = (p.url.split('#')[1] || ''); } }, [
-        h('div', null, [h('div', { class: 'cp-row-t' }, p.title || n.template_key || 'Notification'), p.body ? h('div', { class: 'cp-row-s' }, p.body) : null].filter(Boolean)),
+      // Owner: every notification carries the official LoadBoot mark (real asset, not a text card),
+      // with a tone-colored ring — like a native push notification showing the app icon.
+      const toneCol = p.tone === 'urgent' ? '#dc2626' : p.tone === 'success' ? '#16a34a' : '#0883F7';
+      const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'), style: 'align-items:flex-start;gap:12px', onClick: async () => { if (!n.read_at) { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); row.classList.remove('unread'); refreshUnread(); } catch (_) {} } if (p.url) location.hash = (p.url.split('#')[1] || ''); } }, [
+        h('span', { html: '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="display:block;border-radius:9px;box-shadow:0 0 0 2px ' + toneCol + '33">', style: 'flex:none;line-height:0;margin-top:2px' }),
+        h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t' }, p.title || n.template_key || 'Notification'), p.body ? h('div', { class: 'cp-row-s' }, p.body) : null].filter(Boolean)),
         n.read_at ? null : h('span', { class: 'cp-pill blue' }, 'new'),
       ].filter(Boolean));
       return row;

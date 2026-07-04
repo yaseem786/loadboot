@@ -1919,3 +1919,14 @@ Remaining deepening captured as tasks #27, #35, #36, #38, #40, #41, #42 (per-tab
 - Gates: BUILD OK, ESM ALL PASS (93), GRAND AUDIT 0 FAIL.
 Task list: 56 items (30+ done). Remaining are owner-gated (deploy/secrets/legal/proofs) or backend programs
 (automation, mobile app, account-health tab, contacts, payouts, fleet warnings, live map, D-series).
+
+## DESIGN LOCK — Safety v2 (owner-approved 2026-07-04)
+Locked from outputs/safety-emergency-live-preview.html. Non-negotiables:
+- Emergency report lives INSIDE My trips on the active trip card ("Report a problem on this trip").
+- Live location is REQUIRED — UI gate + server rejects without lat/lng (cc_report_trip_incident).
+- Per-type required proof shown on type cards; photo mandatory for accident/breakdown/security/unsafe-facility.
+- "What do you need": Reschedule delivery / Immediate help / Both.
+- Safety tab = policy hub (website landing pages: Emergency & Rescheduling Policy, Accident steps, Detention/TONU, Insurance & claims, Driver handbook) + emergency contacts + Call 911 + "24/7 Dispatch support" (the word "CC" never shown to carriers).
+- CC Operations → Safety desk: live location block, proof list, SLA timer, Acknowledge → Verify genuine → approve reschedule & notify broker.
+- Broker consent: Emergency Rescheduling Policy checkbox REQUIRED at load posting (hazmat-declaration pattern); reschedule notification shows old→new window + no-penalty clause.
+DB foundation LIVE (migration safety_v2_foundation): emergency_contacts, trip_incidents, cc_emergency_contacts/add/delete, cc_report_trip_incident (location-required, staff bell + ops email), cc_my_trip_incidents, cc_safety_incidents, cc_ack_incident (carrier notified), cc_approve_incident_reschedule (carrier + broker bell/email via partner_loads.broker_org).
