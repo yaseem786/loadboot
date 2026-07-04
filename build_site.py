@@ -35,7 +35,7 @@ PROD_ANON = os.environ.get('LOADBOOT_PROD_ANON_KEY') or 'sb_publishable_lHr4JKuH
 STAGING_ANON = os.environ.get('LOADBOOT_STAGING_ANON_KEY')   # required for preview builds
 _CTX = (os.environ.get('CONTEXT') or os.environ.get('LOADBOOT_CONTEXT') or 'dev').strip()
 IS_PRODUCTION_CTX = (_CTX == 'production')
-_BUILD_ID = (os.environ.get('COMMIT_REF') or os.environ.get('LOADBOOT_BUILD_ID') or 'dev')[:12]
+_BUILD_ID = (os.environ.get('COMMIT_REF') or os.environ.get('LOADBOOT_BUILD_ID') or ('b' + str(int(__import__('time').time()))))[:12]
 if IS_PRODUCTION_CTX:
     APP_ENV, APP_REF, APP_ANON = 'production', PROD_REF, PROD_ANON
 else:
