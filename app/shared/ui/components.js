@@ -167,18 +167,26 @@ export function brandLogo(opts = {}) {
   const ink = dark ? '#FFFFFF' : '#0F172A';
   const FAMILY = { 'command center': '#60A5FA', 'carrier': '#FB923C', 'pocket': '#FB923C',
     'marketplace': '#FB923C', 'partner': '#94A3B8', 'developer': '#60A5FA', 'developers': '#60A5FA' };
-  const iconSvg = '<svg width="22" height="22" viewBox="0 0 100 100" role="img" aria-label="LoadBoot">'
+  // Official kit crop (16 14 68 72) — never redraw or recolor the mark.
+  const iconSvg = '<svg width="21" height="22" viewBox="16 14 68 72" role="img" aria-label="LoadBoot">'
     + '<path d="M16 14 H34 V68 H84 V86 H16 Z" fill="' + ink + '"></path>'
     + '<path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"></path>'
     + '<path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="' + ink + '"></path></svg>';
-  const kids = [
-    el('span', { html: iconSvg, style: 'display:block;line-height:0;flex:none' }),
-    el('span', { style: "font-family:'Manrope',Inter,sans-serif;font-size:14px;font-weight:800;color:" + ink + ';letter-spacing:-.01em;white-space:nowrap' }, 'LoadBoot'),
+  // Kit wordmark is ALWAYS two-tone: "Load" in ink + "Boot" in brand orange.
+  const wordHtml = 'Load<span style="color:#F97316">Boot</span>';
+  const textKids = [
+    el('span', { html: wordHtml, style: "font-family:'Manrope',Inter,sans-serif;font-size:14px;font-weight:800;color:" + ink + ';letter-spacing:-.02em;white-space:nowrap;line-height:1' }),
   ];
   if (opts.sub) {
+    // LOCKED spec (auth design, owner-approved): descriptor sits at the cap of the wordmark —
+    // superscript, 12px/600, 4px gap, family color.
     const c = FAMILY[String(opts.sub).toLowerCase()] || '#94A3B8';
-    kids.push(el('span', { style: "font-family:'Manrope',Inter,sans-serif;font-size:14px;font-weight:500;color:" + c + ';white-space:nowrap' }, opts.sub));
+    textKids.push(el('span', { style: "font-family:'Manrope',Inter,sans-serif;font-size:12px;font-weight:600;color:" + c + ';white-space:nowrap;line-height:1;align-self:flex-start;margin-top:-1px' }, opts.sub));
   }
+  const kids = [
+    el('span', { html: iconSvg, style: 'display:block;line-height:0;flex:none' }),
+    el('span', { style: 'display:inline-flex;align-items:center;gap:4px' }, textKids),
+  ];
   return el('div', { class: 'cc-brandrow', style: 'display:flex;align-items:center;gap:8px' }, kids);
 }
 

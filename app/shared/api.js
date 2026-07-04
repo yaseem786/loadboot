@@ -467,7 +467,7 @@ export const carrierUploadDocument = async ({ type, fileName, filePath }) => {
 export const carrierListDocuments = async () => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
-  const { data, error } = await sb.from('documents').select('id,type,file_name,file_path,status,created_at').order('created_at', { ascending: false }).limit(100);
+  const { data, error } = await sb.from('documents').select('id,type,file_name,file_path,status,created_at,review_note,reviewed_at').order('created_at', { ascending: false }).limit(100);
   if (error) throw new Error(error.message || 'Could not load documents.');
   return data || [];
 };
