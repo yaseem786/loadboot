@@ -119,6 +119,21 @@ export const rateCounterparty = (trip, stars, comment) => rpc('cc_rate_counterpa
 export const myRating = () => rpc('cc_my_rating');
 export const orgRating = (org) => rpc('cc_org_rating', { p_org: org });
 export const partnerRateableTrips = (limit = 20) => rpc('cc_partner_rateable_trips', { p_limit: limit });
+// Post-a-Truck / Auto-Match v1
+export const postTruck = (o) => rpc('cc_post_truck', { p: o ?? {} });
+export const myTruckPostings = () => rpc('cc_my_truck_postings');
+export const truckPostingMatches = (id) => rpc('cc_truck_posting_matches', { p_posting: id });
+export const updateTruckPosting = (id, action) => rpc('cc_update_truck_posting', { p_id: id, p_action: action });
+export const scanTruckMatches = () => rpc('cc_scan_truck_matches');
+// Expense tracker v1
+export const expenseAdd = (o) => rpc('cc_expense_add', { p: o ?? {} });
+export const expenseList = (month) => rpc('cc_expense_list', { p_month: month ?? null });
+export const expenseDelete = (id) => rpc('cc_expense_delete', { p_id: id });
+// IFTA + maintenance v1
+export const iftaSet = (q, st, mi, gal) => rpc('cc_ifta_set', { p_quarter: q, p_state: st, p_miles: mi, p_gallons: gal ?? null });
+export const iftaSummary = (q) => rpc('cc_ifta_summary', { p_quarter: q });
+export const truckSetMaintenance = (id, service, insp) => rpc('cc_truck_set_maintenance', { p_truck: id, p_service: service ?? null, p_inspection: insp ?? null });
+export const fleetMaintenance = () => rpc('cc_fleet_maintenance');
 export const accountHealthBoard = (limit = 100) => rpc('cc_account_health_board', { p_limit: limit });
 export const issueViolation = (org, kind, severity, note) => rpc('cc_issue_violation', { p_org: org, p_kind: kind, p_severity: severity, p_note: note });
 export const resolveViolation = (id, note) => rpc('cc_resolve_violation', { p_id: id, p_note: note ?? null });

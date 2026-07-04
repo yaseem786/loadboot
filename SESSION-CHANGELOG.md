@@ -464,3 +464,23 @@
 - marketing/loadboot-one-pager.html (sales sheet) + marketing/loadboot-carrier-ad.html
   (1080×1080 carrier-recruitment ad). On-brand (navy/blue/orange, real tagline + true
   facts). Starting collateral for the design directive; needs a brief for anything specific.
+
+## 2026-07-03 — Brand kit + Mobile OS + Marketplace depth (mega-batch)
+- Official brand kit applied site-wide; bootIn splash animation (site + CC); official
+  tagline everywhere; product-family lockups on all portals; sw cache lb-v5→lb-v6.
+- Carrier Pocket merged into Carrier Portal (live GPS + Navigate ported) and DELETED.
+- PWA installs as a real app: /app/ launcher, dark manifest, remembers last portal.
+- Carrier Portal, inDrive-class: dark mode (Off/On/System), drawer w/ live rating,
+  Online/Offline pill (DB-backed), request-card loads, settings, banners.
+- Mutual rating engine v1 (DB live): trip-verified carrier↔broker/shipper ratings;
+  Rating screen; rate on delivered trips; partner Ratings card.
+- Post-a-Truck / Auto-Match v1 (DB live): postings, matcher, notifications,
+  optional auto book-request.
+- Profit engine: cost/mile pref + est. profit on every load card; advanced filters;
+  Suggested Reloads; Scan-to-PDF (offline, dependency-free, qpdf-verified).
+- Expense tracker v1 + IFTA state-miles worksheet + truck maintenance reminders (DB live).
+- Broker/Shipper/Facility portals: tables → mobile-first cards with steppers.
+- apps.html + store-readiness plan; ARC 14-phase evaluation + registry + gap audit.
+- Gates: ESM 99/99, imports PASS, build OK, audit 54 pages 0 FAIL, ACTIVATION-READY ✓.
+- DB: 10 migrations applied via MCP (ratings, post-a-truck, availability, cost/mile,
+  expenses, IFTA, maintenance, partner rateable, tagline/misc).

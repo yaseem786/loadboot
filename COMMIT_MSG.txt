@@ -73,3 +73,34 @@ INDRIVE-CLASS APP EXPERIENCE (this batch, official brand palette only)
   rate button on delivered trips; partner portal Ratings card.
 - One carrier account: Pocket merged (live GPS + Navigate ported) and deleted.
 - PWA: root manifest -> /app/ launcher; installed app opens the app, not the site.
+
+MARKETPLACE DEPTH + MOBILE OS PUSH (this batch)
+- Post-a-Truck / Auto-Match v1 (Relay-style): truck postings, matching engine
+  (equipment/date/RPM/radius), match notifications, optional auto book-request
+  (broker still approves). DB migration live.
+- Net-profit preview: carrier sets cost/mile in Settings -> every load card
+  shows color-coded estimated profit.
+- DAT-style advanced filters on Available Loads (origin/dest/equipment/$/RPM).
+- Suggested Reloads on trips: one tap finds loads near the destination.
+- Shipper portal: shipments table -> mobile-first cards with live status stepper.
+- apps.html: app hub page + install steps (Android/iOS PWA) + footer link.
+- docs/store-readiness.md: Play (TWA, $25) then Apple (Capacitor, $99/yr) plan.
+- Strategy docs: ARC 14-phase evaluation + task registry + carrier portal gap audit.
+- Broker portal mobile pass: My Loads table -> lifecycle-stepper cards
+  (submitted/posted/booked/delivered) with Docs action; invoices table ->
+  big-amount cards with thumb-reachable actions (Preview/PDF/I've paid/Proof).
+- Scan to PDF (Documents tab): camera pages -> one valid PDF, built fully
+  client-side (no libraries, works offline; format verified with qpdf).
+- Facility portal: appointments table -> gate-friendly cards with one-tap
+  Check in / Complete.
+- Expense tracker v1 (Finance tab): log fuel/tolls/maintenance/lumper etc on
+  the go; monthly totals + per-category chips; DB migration live (self-scoped
+  cc_expense_* RPCs). Feeds real cost-per-mile awareness for the profit engine.
+- IFTA state-miles worksheet (Finance): quarterly per-state miles + gallons,
+  totals + avg MPG; labeled a filing worksheet, not tax advice. DB live.
+- Truck maintenance reminders (Fleet): service-due (14d) and inspection-expiry
+  (30d) banners; dates editable on each truck. DB live.
+- Marketing assets: old slogan replaced with the official tagline.
+- Final QA: all gates green (ESM, imports, build, audit, ACTIVATION-READY).
+  SESSION-CHANGELOG + OWNER-ACTIONS updated; Play Store listing draft added.
+

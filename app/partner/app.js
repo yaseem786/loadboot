@@ -263,22 +263,26 @@ function invoicesCard() {
           h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Expected payment date'), dt]), ref, file, note, err, submit,
         ]);
       };
-      mount(host, h('table', { class: 'cp-table' }, [
-        h('thead', null, h('tr', null, ['Invoice', 'Amount', 'Description', 'Due', 'Status', ''].map(t => h('th', null, t)))),
-        h('tbody', null, rows.map(i => {
-          const act = h('td', null, h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end' }, [
-            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => preview(i) }, 'Preview'),
-            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => invPdf(i) }, 'PDF'),
-            (i.status === 'sent' || i.status === 'draft') ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => payModal(i) }, 'I\u2019ve paid')
-              : (i.status === 'payment_submitted' ? h('span', { class: 'cp-sub' }, 'awaiting confirmation' + (i.expected_pay_date ? (' \u00b7 exp ' + fmtDate(i.expected_pay_date)) : '')) : null),
-            (i.payment_proof_path && (i.status === 'payment_submitted' || i.status === 'paid')) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { const u = await signedDocumentUrl(i.payment_proof_path, 600); window.open(u, '_blank'); } catch (e) { alert('Could not open proof.'); } } }, 'Proof') : null,
-          ].filter(Boolean)));
-          return h('tr', null, [
-            h('td', null, h('b', null, i.number)), h('td', null, money(i.amount)),
-            h('td', null, i.description || '\u2014'), h('td', null, fmtDate(i.due_date)), h('td', null, pill(i.status)), act,
-          ]);
-        })),
-      ]));
+      // Mobile-first invoice cards (big amount, status, actions thumb-reachable)
+      mount(host, h('div', null, rows.map(i => {
+        const actions = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => preview(i) }, 'Preview'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => invPdf(i) }, 'PDF'),
+          (i.status === 'sent' || i.status === 'draft') ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => payModal(i) }, 'I\u2019ve paid') : null,
+          (i.payment_proof_path && (i.status === 'payment_submitted' || i.status === 'paid')) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { const u = await signedDocumentUrl(i.payment_proof_path, 600); window.open(u, '_blank'); } catch (e) { alert('Could not open proof.'); } } }, 'Proof') : null,
+        ].filter(Boolean));
+        return h('div', { class: 'cp-card', style: 'margin-bottom:10px' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap' }, [
+            h('div', null, [
+              h('div', { style: 'font-size:22px;font-weight:800;letter-spacing:-.02em' }, money(i.amount)),
+              h('div', { class: 'cp-sub' }, [i.number, i.description || null, 'Due ' + fmtDate(i.due_date)].filter(Boolean).join(' \u00b7 ')),
+              (i.status === 'payment_submitted') ? h('div', { class: 'cp-sub', style: 'color:#d97706;font-weight:700' }, 'awaiting confirmation' + (i.expected_pay_date ? (' \u00b7 exp ' + fmtDate(i.expected_pay_date)) : '')) : null,
+            ].filter(Boolean)),
+            pill(i.status),
+          ]),
+          actions,
+        ]);
+      })));
     } catch (e) { mount(host, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load invoices.')); }
   }
   load();
@@ -559,21 +563,36 @@ async function brokerDash(user, ov) {
     try {
       const rows = await partnerMyLoads(50);
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No loads yet. Post your first load above.')); return; }
-      mount(listHost, h('table', { class: 'cp-table' }, [
-        h('thead', null, h('tr', null, ['Lane', 'Equipment', 'Rate', 'Status', 'Tracking'].map(t => h('th', null, t)))),
-        h('tbody', null, rows.map(l => {
-          let track;
-          if (l.carrier) track = h('span', null, [pill('booked'), h('span', { style: 'margin-left:6px;font-size:.82rem' }, l.carrier)]);
-          else if (l.board_status) track = pill(l.board_status === 'available' ? 'posted' : l.board_status);
-          else track = h('span', { class: 'cp-sub' }, '—');
-          const docsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => brokerDocs(l) }, 'Docs');
-          return h('tr', null, [
-            h('td', null, h('b', null, (l.origin || '—') + ' → ' + (l.destination || '—'))),
-            h('td', null, l.equipment || '—'), h('td', null, l.rate ? money(l.rate) : '—'),
-            h('td', null, pill(l.status)), h('td', null, h('div', { style: 'display:flex;gap:6px;align-items:center' }, [track, docsBtn])),
-          ]);
-        })),
-      ]));
+      // Mobile-first load cards with a lifecycle stepper (submitted -> posted -> booked -> delivered).
+      const BSTEPS = [['submitted', 'Submitted'], ['posted', 'Posted'], ['booked', 'Booked'], ['delivered', 'Delivered']];
+      const bIdx = (l) => {
+        const t = (String(l.status || '') + ' ' + String(l.board_status || '')).toLowerCase();
+        if (/deliver|complete|invoiced/.test(t)) return 3;
+        if (l.carrier || /booked|assigned|covered|transit/.test(t)) return 2;
+        if (/available|posted/.test(t)) return 1;
+        return 0;
+      };
+      mount(listHost, h('div', null, rows.map(l => {
+        const idx = bIdx(l);
+        const stepper = h('div', { style: 'display:flex;gap:5px;margin:10px 0 4px' }, BSTEPS.map(([k, label], i) =>
+          h('div', { style: 'flex:1;text-align:center' }, [
+            h('div', { style: 'height:5px;border-radius:99px;background:' + (i <= idx ? '#0883F7' : '#e2e8f0') }),
+            h('div', { style: 'font-size:10px;margin-top:4px;color:' + (i <= idx ? '#0883F7' : '#94a3b8') + ';font-weight:' + (i === idx ? '700' : '500') }, label),
+          ])));
+        return h('div', { class: 'cp-card', style: 'margin-bottom:10px' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap' }, [
+            h('div', null, [
+              h('div', { style: 'font-weight:800;font-size:15px' }, (l.origin || '—') + ' → ' + (l.destination || '—')),
+              h('div', { class: 'cp-sub' }, [l.equipment || null, l.rate ? money(l.rate) : null, l.carrier ? 'Carrier: ' + l.carrier : null].filter(Boolean).join(' · ')),
+            ]),
+            pill(l.status),
+          ]),
+          stepper,
+          h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => brokerDocs(l) }, '📄 Docs'),
+          ]),
+        ]);
+      })));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
 
@@ -736,16 +755,35 @@ async function shipperDash(user, ov) {
       // C2 — pipeline-aware list: status, QUOTE and who is handling it (broker identity hidden).
       let rows; try { rows = await shipperMyShipments(); } catch (_) { rows = await partnerMyShipments(50); }
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No shipments yet. Request your first above.')); return; }
-      mount(listHost, h('table', { class: 'cp-table' }, [
-        h('thead', null, h('tr', null, ['Lane', 'Ready', 'Equipment', 'Status', 'Quote', 'Handled by'].map(t => h('th', null, t)))),
-        h('tbody', null, rows.map(s => h('tr', null, [
-          h('td', null, h('b', null, (s.origin || '—') + ' → ' + (s.destination || '—'))),
-          h('td', null, fmtDate(s.ready_date)), h('td', null, s.equipment || '—'),
-          h('td', null, pill(s.status)),
-          h('td', null, s.quote_amount ? h('b', { style: 'color:#16a34a' }, '$' + Number(s.quote_amount).toLocaleString() + (s.quote_note ? ' · ' + s.quote_note : '')) : h('span', { class: 'cp-sub' }, '—')),
-          h('td', null, h('span', { class: 'cp-sub' }, s.handled_by || '—')),
-        ]))),
-      ]));
+      // Mobile-first shipment cards with a live status stepper (phone = primary device).
+      const STEPS = [['requested', 'Requested'], ['quoted', 'Quoted'], ['booked', 'Booked'], ['in_transit', 'Moving'], ['delivered', 'Delivered']];
+      const stepIdx = (st) => {
+        const t = String(st || '').toLowerCase();
+        if (/deliver|complete|pod/.test(t)) return 4;
+        if (/transit|moving|dispatch|picked/.test(t)) return 3;
+        if (/book|tender|covered|accept/.test(t)) return 2;
+        if (/quote/.test(t)) return 1;
+        return 0;
+      };
+      mount(listHost, h('div', null, rows.map(sh => {
+        const idx = stepIdx(sh.status);
+        const stepper = h('div', { style: 'display:flex;gap:5px;margin:10px 0 4px' }, STEPS.map(([k, label], i) =>
+          h('div', { style: 'flex:1;text-align:center' }, [
+            h('div', { style: 'height:5px;border-radius:99px;background:' + (i <= idx ? '#0883F7' : '#e2e8f0') }),
+            h('div', { style: 'font-size:10px;margin-top:4px;color:' + (i <= idx ? '#0883F7' : '#94a3b8') + ';font-weight:' + (i === idx ? '700' : '500') }, label),
+          ])));
+        return h('div', { class: 'cp-card', style: 'margin-bottom:10px' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap' }, [
+            h('div', null, [
+              h('div', { style: 'font-weight:800;font-size:15px' }, (sh.origin || '—') + ' → ' + (sh.destination || '—')),
+              h('div', { class: 'cp-sub' }, ['Ready ' + fmtDate(sh.ready_date), sh.equipment || null, sh.handled_by ? 'Handled by ' + sh.handled_by : null].filter(Boolean).join(' · ')),
+            ]),
+            pill(sh.status),
+          ]),
+          stepper,
+          sh.quote_amount ? h('div', { style: 'margin-top:6px;font-weight:800;color:#16a34a' }, 'Quote: $' + Number(sh.quote_amount).toLocaleString() + (sh.quote_note ? ' · ' + sh.quote_note : '')) : null,
+        ].filter(Boolean));
+      })));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
   mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), approvedPartnersCard(), invoicesCard(), accountCard()])));
@@ -807,19 +845,22 @@ async function facilityDash(user, ov) {
       const rows = await partnerAppointments(100);
       renderWeek(rows);
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No appointments yet. Schedule one above.')); return; }
-      mount(listHost, h('table', { class: 'cp-table' }, [
-        h('thead', null, h('tr', null, ['When', 'Dir', 'Dock', 'Carrier', 'Status', ''].map(t => h('th', null, t)))),
-        h('tbody', null, rows.map(a => {
-          const actions = h('td', null);
-          if (a.status === 'scheduled') actions.appendChild(h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => setStatus(a.id, 'checked_in', ev.currentTarget.closest('tr')) }, 'Check in'));
-          else if (a.status === 'checked_in') actions.appendChild(h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => setStatus(a.id, 'completed', ev.currentTarget.closest('tr')) }, 'Complete'));
-          return h('tr', null, [
-            h('td', null, fmtDT(a.window_start)), h('td', null, pill(a.direction)),
-            h('td', null, a.dock || '—'), h('td', null, a.carrier_name || '—'),
-            h('td', null, pill(a.status)), actions,
-          ]);
-        })),
-      ]));
+      // Mobile-first appointment cards (dock staff work from phones/tablets at the gate)
+      mount(listHost, h('div', null, rows.map(a => {
+        const act = h('div', { style: 'display:flex;gap:8px;margin-top:8px' });
+        if (a.status === 'scheduled') act.appendChild(h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => setStatus(a.id, 'checked_in', ev.currentTarget.closest('.cp-card')) }, '✓ Check in'));
+        else if (a.status === 'checked_in') act.appendChild(h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => setStatus(a.id, 'completed', ev.currentTarget.closest('.cp-card')) }, '✓ Complete'));
+        return h('div', { class: 'cp-card', style: 'margin-bottom:10px' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap' }, [
+            h('div', null, [
+              h('div', { style: 'font-weight:800;font-size:15px' }, fmtDT(a.window_start)),
+              h('div', { class: 'cp-sub' }, [a.dock ? 'Dock ' + a.dock : null, a.carrier_name || null, a.reference || null].filter(Boolean).join(' · ')),
+            ]),
+            h('div', { style: 'display:flex;gap:6px' }, [pill(a.direction), pill(a.status)]),
+          ]),
+          act.childNodes.length ? act : null,
+        ].filter(Boolean));
+      })));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
   const weekCard = h('div', { class: 'cp-card', style: 'margin-bottom:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('clock', 18), h('h3', null, 'This week')]), weekHost]);

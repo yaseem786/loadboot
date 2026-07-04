@@ -362,7 +362,7 @@ def footer():
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a></div>
 <div><div class="foot-h">Compliance</div><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
-<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div>
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
@@ -3117,6 +3117,24 @@ lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
 page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Developer Portals',
      'Choose your Loadboot portal: Carrier Portal, Partner Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
      'login.html', lg)
+
+# ---- Apps page: the LoadBoot mobile experience (PWA today, stores in preparation) ----
+ap = svc_hero('The LoadBoot App', 'One operating system for trucking &mdash; carrier, broker and shipper tools that live on your phone. Install in 10 seconds, no app store needed.')
+ap += _sec('Your apps', 'Same account everywhere &mdash; phone, tablet, laptop.', _cards([
+    ('&#128667;', 'LoadBoot Carrier', 'Post your truck, get matched loads, run trips with GPS &amp; detention proof, upload PODs, track your money. <a href="/app/carrier/">Open Carrier &rarr;</a>'),
+    ('&#129309;', 'LoadBoot Partner', 'Brokers &amp; shippers: post loads, vet carriers by rating, track shipments live, manage documents. <a href="/app/partner/">Open Partner &rarr;</a>'),
+    ('&#128104;&#8205;&#128187;', 'LoadBoot Developer', 'API keys, docs and integrations for your systems. <a href="/app/developer/">Open Developer &rarr;</a>'),
+    ('&#127970;', 'Command Center', 'LoadBoot staff operations console. <a href="/app/command-center/">Staff sign-in &rarr;</a>'),
+], 'g2'))
+ap += _sec('Install on your phone', 'Works like a native app: home-screen icon, full screen, push notifications, works on weak truck-stop signal.', (
+    '<div class="cards g2">'
+    '<article class="card"><div class="card-ic">&#129302;</div><h3>Android</h3><p>Open <b>loadboot.com/app</b> in Chrome &rarr; tap the menu (&#8942;) &rarr; <b>&ldquo;Install app&rdquo;</b> or <b>&ldquo;Add to Home screen&rdquo;</b>. The LoadBoot icon appears like any other app.</p></article>'
+    '<article class="card"><div class="card-ic">&#63743;</div><h3>iPhone</h3><p>Open <b>loadboot.com/app</b> in Safari &rarr; tap <b>Share</b> &rarr; <b>&ldquo;Add to Home Screen&rdquo;</b>. Launches full-screen with the LoadBoot icon.</p></article>'
+    '</div>'
+    '<p class="src-disc" style="margin-top:18px">Native listings on the Apple App Store and Google Play are in preparation. The installed web app above is the same product with the same account.</p>'))
+page('apps.html', 'LoadBoot App &mdash; Carrier, Broker &amp; Shipper Tools on Your Phone',
+     'Install the LoadBoot app on Android or iPhone in seconds: post your truck, book loads, track trips, upload PODs and manage freight from your phone.',
+     'apps.html', ap)
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [

@@ -22,11 +22,15 @@ import {
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
   rateCounterparty, myRating,
+  postTruck, myTruckPostings, truckPostingMatches, updateTruckPosting, scanTruckMatches,
+  expenseAdd, expenseList, expenseDelete,
+  iftaSet, iftaSummary, truckSetMaintenance, fleetMaintenance,
   fleetServiceAdd, fleetServiceList, fleetServiceDelete,
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
+import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { printDispatchSheet, openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
@@ -586,13 +590,32 @@ async function appView(user) {
         availBtn,
       ]),
     ]);
+    const cpmIn = h('input', { class: 'cp-in', type: 'number', step: '0.01', placeholder: 'e.g. 1.85', value: (_dp && _dp.cost_per_mile) || '', style: 'max-width:130px;margin:0' });
+    const cpmSave = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+      ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+      try {
+        await setDispatchPrefs({ min_rpm: (_dp && _dp.min_rpm) || null, preferred_equipment: (_dp && _dp.preferred_equipment) || [],
+          preferred_lanes: (_dp && _dp.preferred_lanes) || [], home_base: (_dp && _dp.home_base) || null,
+          max_deadhead_miles: (_dp && _dp.max_deadhead_miles) || null, notes: (_dp && _dp.notes) || null, cost_per_mile: cpmIn.value || null });
+        if (_dp) _dp.cost_per_mile = cpmIn.value || null;
+        ev.currentTarget.textContent = 'Saved ✓';
+      } catch (e) { ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
+      ev.currentTarget.disabled = false;
+    } }, 'Save');
+    const cpmCard = h('div', { class: 'cp-card' }, [
+      h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Profit engine'),
+      h('div', { class: 'cpx-set-row' }, [
+        h('div', null, [h('div', { class: 'cpx-set-t' }, '💰 My all-in cost per mile'), h('div', { class: 'cpx-set-s' }, 'Fuel + truck + insurance + fees per mile. Every load card then shows your estimated profit.')]),
+        h('div', { style: 'margin-left:auto;display:flex;gap:8px;align-items:center' }, [cpmIn, cpmSave]),
+      ]),
+    ]);
     const acctCard = h('div', { class: 'cp-card' }, [
       h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Account'),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Profile, preferences & compliance'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('account') }, 'Open')]),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Documents'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('documents') }, 'Open')]),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Sign out'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: async () => { await signOut(); location.reload(); } }, 'Sign out')]),
     ]);
-    mount(content, h('div', null, [themeCard, pushCard, availCard, acctCard].filter(Boolean)));
+    mount(content, h('div', null, [themeCard, cpmCard, pushCard, availCard, acctCard].filter(Boolean)));
   }
 
   async function loadDashboard() {
@@ -696,7 +719,83 @@ async function appView(user) {
       } catch (_) {}
     })();
     mount(content, h('div', { class: 'cp-muted' }, 'Loading available loads…'));
-    let rows; try { rows = await pocketAvailableLoads(30); } catch (e) { rows = []; }
+    // Post-a-Truck: silent background scan picks up new matches for active postings.
+    (async () => { try { await scanTruckMatches(); refreshUnread(); } catch (_) {} })();
+    let postings = []; try { postings = await myTruckPostings(); } catch (_) { postings = []; }
+    const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
+      h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, '🚚 Post my truck'), h('div', { class: 'cp-row-s' }, 'Tell us where your truck frees up — matching loads alert you automatically.')]),
+        h('button', { class: 'cp-btn cp-btn-sm', onClick: () => {
+          const org = h('input', { class: 'cp-in', placeholder: 'Truck location — City, ST *', value: (_dp && _dp.home_base) || '' });
+          const from = h('input', { class: 'cp-in', type: 'date', value: new Date().toISOString().slice(0, 10) });
+          const to = h('input', { class: 'cp-in', type: 'date', value: new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10) });
+          const eq = h('input', { class: 'cp-in', placeholder: 'Equipment (e.g. Van, Reefer)', value: ((_dp && _dp.preferred_equipment) || []).join(', ') });
+          const rpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi (optional)', value: (_dp && _dp.min_rpm) || '' });
+          const auto = h('input', { type: 'checkbox' });
+          const save = h('button', { class: 'cp-btn', onClick: async (ev) => {
+            if (!org.value.trim()) { alert('Truck location required (City, ST).'); return; }
+            ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Posting…';
+            try {
+              const r = await postTruck({ origin: org.value.trim(), available_from: from.value, available_to: to.value,
+                equipment: eq.value.split(',').map(x => x.trim()).filter(Boolean), min_rpm: rpm.value || null, auto_request: auto.checked });
+              _closePT(); alert('Truck posted ✓ — ' + (r.matches || 0) + ' matching load(s) found now. New matches will notify you.'); loadLoads();
+            } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Post truck'; alert((e && e.message) || 'Could not post.'); }
+          } }, 'Post truck');
+          const _closePT = openModal('Post my truck', [org, h('div', { class: 'cp-formrow2' }, [from, to]), eq, rpm,
+            h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.88rem' }, [auto, 'Auto-request matching loads (broker still approves every booking)']),
+            save]);
+        } }, '+ Post truck'),
+      ]),
+      (postings && postings.length) ? h('div', { style: 'margin-top:10px' }, postings.map(p => {
+        const mWrap = h('div');
+        return h('div', null, [h('div', { class: 'cp-row' }, [
+          h('div', null, [
+            h('div', { class: 'cp-row-t' }, p.origin + (p.dest_pref ? ' → ' + p.dest_pref : ' → anywhere')),
+            h('div', { class: 'cp-row-s' }, String(p.from) + ' – ' + String(p.to) + ((p.equipment || []).length ? ' · ' + p.equipment.join('/') : '') + (p.min_rpm ? ' · min $' + p.min_rpm + '/mi' : '') + (p.auto_request ? ' · auto-request ON' : '') + (p.status === 'paused' ? ' · PAUSED' : '')),
+          ]),
+          h('div', { style: 'display:flex;gap:6px;align-items:center' }, [
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+              if (mWrap.firstChild) { mWrap.innerHTML = ''; return; }
+              mWrap.appendChild(h('div', { class: 'cp-muted' }, 'Loading matches…'));
+              let ms; try { ms = await truckPostingMatches(p.id); } catch (_) { ms = []; }
+              mWrap.innerHTML = '';
+              if (!ms.length) { mWrap.appendChild(h('div', { class: 'cp-row-s', style: 'padding:6px 0' }, 'No matches yet — you will be notified.')); return; }
+              ms.forEach(m => mWrap.appendChild(h('div', { class: 'cp-row' }, [
+                h('div', null, [h('div', { class: 'cp-row-t' }, (m.origin || '—') + ' → ' + (m.destination || '—')),
+                  h('div', { class: 'cp-row-s' }, money(m.rate) + (m.miles ? ' · ' + m.miles + ' mi' : '') + (m.pickup_date ? ' · PU ' + m.pickup_date : '') + (m.still_available ? '' : ' · no longer available'))]),
+                m.requested ? h('span', { class: 'cp-pill amber' }, 'requested') : (m.still_available ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+                  ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…';
+                  try { await requestBookLoad(m.load_id); ev.currentTarget.replaceWith(h('span', { class: 'cp-pill amber' }, 'requested')); }
+                  catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request'; alert((e && e.message) || 'Could not request.'); }
+                } }, 'Request') : h('span', { class: 'cp-pill gray' }, 'gone')),
+              ])));
+            } }, p.matches + ' matches'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { await updateTruckPosting(p.id, p.status === 'paused' ? 'resume' : 'pause'); loadLoads(); } catch (e) { alert((e && e.message) || 'Failed'); } } }, p.status === 'paused' ? '▶' : '⏸'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { if (!confirm('Delete this truck posting?')) return; try { await updateTruckPosting(p.id, 'delete'); loadLoads(); } catch (e) { alert((e && e.message) || 'Failed'); } } }, '✕'),
+          ]),
+        ]), mWrap]);
+      })) : null,
+    ].filter(Boolean));
+    let rows; try { rows = await pocketAvailableLoads(60); } catch (e) { rows = []; }
+    // Advanced filters (client-side, instant — DAT-style)
+    const fOrigin = h('input', { class: 'cp-in', placeholder: 'Origin (city/ST)', style: 'margin:0' });
+    const fDest = h('input', { class: 'cp-in', placeholder: 'Destination', style: 'margin:0' });
+    const fEq = h('input', { class: 'cp-in', placeholder: 'Equipment', style: 'margin:0' });
+    const fRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi', style: 'margin:0;max-width:110px' });
+    const fRate = h('input', { class: 'cp-in', type: 'number', placeholder: 'Min $', style: 'margin:0;max-width:110px' });
+    const applyFilters = (list) => (list || []).filter(l => {
+      const okO = !fOrigin.value.trim() || String(l.origin || '').toLowerCase().includes(fOrigin.value.trim().toLowerCase());
+      const okD = !fDest.value.trim() || String(l.destination || '').toLowerCase().includes(fDest.value.trim().toLowerCase());
+      const okE = !fEq.value.trim() || String(l.equipment || '').toLowerCase().includes(fEq.value.trim().toLowerCase());
+      const okR = !fRpm.value || (l.rate && Number(l.miles) > 0 && (Number(l.rate) / Number(l.miles)) >= Number(fRpm.value));
+      const okM = !fRate.value || Number(l.rate || 0) >= Number(fRate.value);
+      return okO && okD && okE && okR && okM;
+    });
+    const filterBar = h('div', { class: 'cp-card', style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px' },
+      [fOrigin, fDest, fEq, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Filter'),
+       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; renderList(); } }, 'Clear')]);
+    [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
+    let renderList = () => {};
     // AI Pilot — "best for you": same open loads, ranked for THIS carrier by rate vs your stated
     // target, deadhead from your real last GPS, and your saved preferences. Every score is itemized.
     let best = null; try { best = await carrierBestLoads(null, 3); } catch (e) { best = null; }
@@ -734,8 +833,13 @@ async function appView(user) {
         ]);
       }
     } catch (_) {}
-    if (!rows || !rows.length) { mount(content, h('div', null, [setupBanner, bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); return; }
-    mount(content, h('div', null, [setupBanner, bestCard, h('div', { class: 'cp-loadgrid' }, rows.map(l => {
+    if (!rows || !rows.length) { mount(content, h('div', null, [truckCard, setupBanner, bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); return; }
+    renderList = () => {
+      const shown = applyFilters(rows);
+      const grid = document.getElementById('cp-loadgrid-host');
+      if (grid) { grid.innerHTML = ''; shown.forEach(l => grid.appendChild(loadCard(l))); if (!shown.length) grid.appendChild(h('div', { class: 'cp-muted' }, 'No loads match your filters.')); }
+    };
+    const loadCard = (l) => (function () {
       const rpm = l.rpm ? '$' + Number(l.rpm).toFixed(2) + '/mi' : '';
       const bookWrap = h('div');
       const book = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
@@ -752,8 +856,14 @@ async function appView(user) {
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
       if (l.weight) meta.push('Weight: ' + l.weight);
       if (l.deadhead) meta.push(l.deadhead + ' mi deadhead');
+      const _cpm = _dp && Number(_dp.cost_per_mile) > 0 ? Number(_dp.cost_per_mile) : null;
+      const _profit = (_cpm && l.rate && Number(l.miles) > 0) ? Math.round(Number(l.rate) - Number(l.miles) * _cpm) : null;
+      const profitEl = (_profit != null)
+        ? h('span', { class: 'cpx-chip', style: _profit >= 0 ? 'background:rgba(22,163,74,.14);color:#15803d' : 'background:rgba(220,38,38,.12);color:#b91c1c', title: 'Estimate: rate − (miles × your $' + _cpm + '/mi cost). Set cost/mi in Settings.' },
+            (_profit >= 0 ? '≈ +' : '≈ −') + money(Math.abs(_profit)).replace('$', '$') + ' est. profit')
+        : null;
       return h('article', { class: 'cp-load cpx-req' }, [
-        h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null].filter(Boolean)),
+        h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null, profitEl].filter(Boolean)),
         h('div', { class: 'cpx-req-chips' }, [
           h('span', { class: 'cpx-chip eq' }, '🚛 ' + (l.equipment || 'Van')),
           l.pickup_date ? h('span', { class: 'cpx-chip' }, '🕐 Pickup: ' + l.pickup_date) : null,
@@ -767,7 +877,10 @@ async function appView(user) {
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
         h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px' }, [bookWrap, detailsBtn]),
       ].filter(Boolean));
-    }))].filter(Boolean)));
+    })();
+    const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host' });
+    mount(content, h('div', null, [truckCard, filterBar, setupBanner, bestCard, gridHost].filter(Boolean)));
+    renderList();
   }
 
   /* Decision-complete load overview (A2): everything a carrier needs BEFORE booking — accessorial rate card,
@@ -858,6 +971,29 @@ function tripStepper(status) {
       const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'border-color:#dc2626;color:#dc2626', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
       const podW = h('div');
       const canPod = t.status === 'delivered' || t.status === 'invoiced';
+      // Suggested Reloads (Relay-style): loads picking up near this trip's destination
+      const reloadW = h('div');
+      const reloadBtn = (t.destination && (t.status === 'in_transit' || t.status === 'delivered' || t.status === 'dispatched')) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+        if (reloadW.firstChild) { reloadW.innerHTML = ''; return; }
+        reloadW.appendChild(h('div', { class: 'cp-muted' }, 'Finding reloads near ' + t.destination + '…'));
+        let all; try { all = await pocketAvailableLoads(60); } catch (_) { all = []; }
+        const dst = String(t.destination || '').toLowerCase(); const dstST = dst.trim().slice(-2);
+        const near = (all || []).filter(l => {
+          const o = String(l.origin || '').toLowerCase();
+          return o && (o.includes(dst.split(',')[0]) || (dstST.match(/[a-z]{2}/) && o.trim().slice(-2) === dstST));
+        }).slice(0, 5);
+        reloadW.innerHTML = '';
+        if (!near.length) { reloadW.appendChild(h('div', { class: 'cp-row-s', style: 'padding:6px 0' }, 'No reloads near ' + t.destination + ' right now — post your truck there and get alerted.')); return; }
+        near.forEach(l => reloadW.appendChild(h('div', { class: 'cp-row' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, (l.origin || '—') + ' → ' + (l.destination || '—')),
+            h('div', { class: 'cp-row-s' }, money(l.rate) + (l.miles ? ' · ' + l.miles + ' mi' : '') + (l.rate && Number(l.miles) > 0 ? ' · $' + (Number(l.rate) / Number(l.miles)).toFixed(2) + '/mi' : '') + (l.pickup_date ? ' · PU ' + l.pickup_date : ''))]),
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+            ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…';
+            try { await requestBookLoad(l.id); ev.currentTarget.replaceWith(h('span', { class: 'cp-pill amber' }, 'requested')); }
+            catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request'; alert((e && e.message) || 'Could not request.'); }
+          } }, 'Request'),
+        ])));
+      } }, '🔁 Reloads') : null;
       const rateW = h('div');
       const rateBtn = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (rateW.firstChild) { rateW.innerHTML = ''; return; }
@@ -979,7 +1115,7 @@ function tripStepper(status) {
       return h('div', { class: 'cp-trip' }, [
         h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, (t.origin || '—') + ' → ' + (t.destination || '—')), h('div', { class: 'cp-row-s' }, money(t.rate || 0))]), pill(t.status)]),
         tripStepper(t.status),
-        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, nav, share, live, dwell, issue, emergency, pod, rateBtn, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW, rateW,
+        h('div', { class: 'cp-trip-actions' }, [confirm, start, deliver, nav, share, live, dwell, issue, emergency, pod, reloadBtn, rateBtn, assign, history, sheetBtn, rcBtn, packBtn].filter(Boolean)), fw, podW, dwellW, reloadW, rateW,
       ].filter(Boolean));
     })]));
 
@@ -989,7 +1125,7 @@ function tripStepper(status) {
       const CATS = [['breakdown', 'Truck breakdown'], ['accident', 'Accident'], ['weather', 'Severe weather'], ['medical', 'Medical emergency'], ['road_closure', 'Road closure'], ['hours_of_service', 'Out of hours (HOS)'], ['mechanical', 'Mechanical failure'], ['theft', 'Theft'], ['other', 'Other (explain)']];
       const cat = h('select', { class: 'cp-in' }, CATS.map(([v, l]) => h('option', { value: v }, l)));
       const reason = h('textarea', { class: 'cp-in', rows: '3', placeholder: 'Exactly what happened, where, and what you need (min 10 characters).' });
-      const proof = h('input', { class: 'cp-in', placeholder: 'Or paste a proof link — tow receipt, police report (if no photo)' });
+      const proof = h('input', { class: 'cp-in', placeholder: 'Or paste a proof link — tow receipt or police report, if no photo' });
       const photo = h('input', { class: 'cp-in', type: 'file', accept: 'image/*', capture: 'environment' });
       const resched = h('input', { class: 'cp-in', type: 'datetime-local' });
       const msg = h('div', { class: 'cp-err' });
@@ -1206,16 +1342,36 @@ function tripStepper(status) {
       const plate = h('input', { class: 'cp-in', placeholder: 'Plate', value: (t && t.plate) || '' });
       const vin = h('input', { class: 'cp-in', placeholder: 'VIN', value: (t && t.vin) || '' });
       const eq = h('select', { class: 'cp-in' }, ['', 'Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck'].map(o => h('option', { value: o, selected: t && t.equipment === o ? 'selected' : null }, o || 'Equipment…')));
+      const svc = h('input', { class: 'cp-in', type: 'date', value: (t && t.next_service_date) || '' });
+      const insp = h('input', { class: 'cp-in', type: 'date', value: (t && t.inspection_exp) || '' });
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         if (!unit.value.trim()) { alert('Unit number is required.'); return; }
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
-        try { await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin.value.trim(), equipment: eq.value || null }); trucks = await pocketTrucks(); renderTrucks(); }
+        try {
+          await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin.value.trim(), equipment: eq.value || null });
+          trucks = await pocketTrucks();
+          const saved = t && t.id ? t : trucks.find(x => x.unit_no === unit.value.trim());
+          if (saved && saved.id && (svc.value || insp.value)) { try { await truckSetMaintenance(saved.id, svc.value || null, insp.value || null); } catch (_) {} }
+          renderTrucks();
+        }
         catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
       } }, 'Save');
-      openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, eq, save]);
+      openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, eq,
+        h('label', { class: 'cp-row-s' }, 'Next service due'), svc,
+        h('label', { class: 'cp-row-s' }, 'Annual inspection expires'), insp, save]);
     }
 
     const alertHost = h('div');
+    // Maintenance reminders: service due (14d) / inspection due (30d) banners
+    (async () => {
+      let mt; try { mt = await fleetMaintenance(); } catch (_) { return; }
+      (mt || []).forEach(x => {
+        if (x.service_due) alertHost.appendChild(h('button', { class: 'cpx-banner amber', onClick: () => truckForm(trucks.find(tt => tt.id === x.id) || null) },
+          [h('span', null, '🔧'), h('span', null, 'Unit ' + (x.unit_no || '?') + ' — service due ' + String(x.next_service_date)), h('span', { class: 'cpx-b-go' }, '›')]));
+        if (x.inspection_due) alertHost.appendChild(h('button', { class: 'cpx-banner red', onClick: () => truckForm(trucks.find(tt => tt.id === x.id) || null) },
+          [h('span', null, '⚠'), h('span', null, 'Unit ' + (x.unit_no || '?') + ' — annual inspection expires ' + String(x.inspection_exp)), h('span', { class: 'cpx-b-go' }, '›')]));
+      });
+    })();
     (async () => {
       let alerts = []; try { alerts = await pocketFleetAlerts(); } catch (_) { alerts = []; }
       if (!alerts || !alerts.length) return;
@@ -1461,8 +1617,81 @@ function tripStepper(status) {
       ]);
     }
     renderPayroll();
+    // ---- Expense tracker (tax/IFTA prep + feeds cost-per-mile awareness) ----
+    const CATS = [['fuel', '⛽ Fuel'], ['tolls', '🛣 Tolls'], ['maintenance', '🔧 Maintenance'], ['insurance', '🛡 Insurance'], ['lumper', '📦 Lumper'], ['parking', '🅿 Parking'], ['permits', '📋 Permits'], ['other', '💳 Other']];
+    const expCard = h('div', { class: 'cp-card' });
+    const expMonth = h('input', { class: 'cp-in', type: 'month', value: new Date().toISOString().slice(0, 7), style: 'max-width:160px;margin:0' });
+    async function renderExpenses() {
+      let d; try { d = await expenseList(expMonth.value || null); } catch (e) { mount(expCard, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load expenses.')); return; }
+      const cat = h('select', { class: 'cp-in', style: 'margin:0;max-width:150px' }, CATS.map(([v, l]) => h('option', { value: v }, l)));
+      const amt = h('input', { class: 'cp-in', type: 'number', step: '0.01', placeholder: '$', style: 'margin:0;max-width:110px' });
+      const nt = h('input', { class: 'cp-in', placeholder: 'Note (optional)', style: 'margin:0;flex:1;min-width:120px' });
+      const add = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        if (!amt.value || Number(amt.value) <= 0) { alert('Enter an amount.'); return; }
+        ev.currentTarget.disabled = true;
+        try { await expenseAdd({ category: cat.value, amount: amt.value, note: nt.value.trim() || null }); renderExpenses(); }
+        catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not add.'); }
+      } }, '+ Add');
+      const byCat = d.by_category || {};
+      const catChips = Object.keys(byCat).length ? h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px' },
+        CATS.filter(([v]) => byCat[v]).map(([v, l]) => h('span', { class: 'cpx-chip' }, l + ' ' + money(byCat[v])))) : null;
+      mount(expCard, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, '💳 Expenses — ' + (d.month || '')), h('div', { class: 'cp-row-s' }, 'Log fuel, tolls & costs on the go. Month total feeds your real cost per mile.')]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, [expMonth, h('b', { style: 'font-size:1.2rem' }, money(d.total || 0))]),
+        ]),
+        catChips,
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px' }, [cat, amt, nt, add]),
+        (d.rows && d.rows.length) ? h('div', { style: 'margin-top:6px' }, d.rows.slice(0, 20).map(x => h('div', { class: 'cp-row' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, (CATS.find(c => c[0] === x.category) || ['', x.category])[1] + ' · ' + money(x.amount)),
+            h('div', { class: 'cp-row-s' }, String(x.incurred_on) + (x.note ? ' · ' + x.note : ''))]),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { if (!confirm('Delete this expense?')) return; try { await expenseDelete(x.id); renderExpenses(); } catch (e) { alert('Failed'); } } }, '✕'),
+        ]))) : h('div', { class: 'cp-muted' }, 'No expenses logged this month yet.'),
+      ].filter(Boolean));
+    }
+    expMonth.onchange = renderExpenses;
+    renderExpenses();
+    // ---- IFTA state-miles (manual quarterly log; totals + avg MPG) ----
+    const q0 = (() => { const d = new Date(); return d.getFullYear() + '-Q' + (Math.floor(d.getMonth() / 3) + 1); })();
+    const iftaCard = h('div', { class: 'cp-card' });
+    const qSel = h('select', { class: 'cp-in', style: 'margin:0;max-width:130px' }, (() => {
+      const y = new Date().getFullYear(); const out = [];
+      [y, y - 1].forEach(yy => { for (let q = 4; q >= 1; q--) out.push(h('option', { value: yy + '-Q' + q }, yy + ' Q' + q)); });
+      return out;
+    })());
+    qSel.value = q0;
+    async function renderIfta() {
+      let d; try { d = await iftaSummary(qSel.value); } catch (e) { mount(iftaCard, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load IFTA.')); return; }
+      const stIn = h('input', { class: 'cp-in', placeholder: 'State (TX)', maxlength: '2', style: 'margin:0;max-width:90px;text-transform:uppercase' });
+      const miIn = h('input', { class: 'cp-in', type: 'number', placeholder: 'Miles', style: 'margin:0;max-width:110px' });
+      const gaIn = h('input', { class: 'cp-in', type: 'number', step: '0.1', placeholder: 'Gallons (opt)', style: 'margin:0;max-width:130px' });
+      const add = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        const st = stIn.value.trim().toUpperCase();
+        if (!/^[A-Z]{2}$/.test(st)) { alert('2-letter state code (e.g. TX).'); return; }
+        if (!miIn.value) { alert('Enter miles.'); return; }
+        ev.currentTarget.disabled = true;
+        try { await iftaSet(qSel.value, st, Number(miIn.value), gaIn.value ? Number(gaIn.value) : null); renderIfta(); }
+        catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not save.'); }
+      } }, 'Save');
+      mount(iftaCard, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+          h('div', null, [h('div', { class: 'cp-row-t' }, '⛽ IFTA — state miles'), h('div', { class: 'cp-row-s' }, 'Log miles per state each quarter. Setting a state to 0 removes it. This is your filing worksheet — not tax advice.')]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, [qSel,
+            h('b', null, Number(d.total_miles || 0).toLocaleString() + ' mi'),
+            d.avg_mpg ? h('span', { class: 'cpx-chip' }, d.avg_mpg + ' avg MPG') : null].filter(Boolean)),
+        ]),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px' }, [stIn, miIn, gaIn, add]),
+        (d.rows && d.rows.length) ? h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:8px' },
+          d.rows.map(r => h('span', { class: 'cpx-chip', title: 'Tap Save with 0 miles to remove', style: 'cursor:pointer', onClick: () => { stIn.value = r.state; miIn.value = r.miles; gaIn.value = r.gallons || ''; } },
+            r.state + ' · ' + Number(r.miles).toLocaleString() + ' mi' + (r.gallons ? ' · ' + r.gallons + ' gal' : '')))) : h('div', { class: 'cp-muted' }, 'No states logged for this quarter yet.'),
+      ].filter(Boolean));
+    }
+    qSel.onchange = renderIfta;
+    renderIfta();
     mount(content, h('div', null, [
       h('div', { class: 'cp-kpis' }, [statTile('Fees due', money(due), 'finance', 'amber'), statTile('Fees paid', money(paid), 'dash', 'green'), statTile('Gross hauled', money(gross), 'trips', 'blue'), statTile('Invoices', String(rows.length), 'docs', 'violet')]),
+      expCard,
+      iftaCard,
       pnlCard,
       tripPnlCard,
       payrollCard,
@@ -1496,6 +1725,42 @@ function tripStepper(status) {
     let c; try { c = await pocketCompliance(); } catch (e) { c = { requirements: [] }; }
     const reqs = (c && c.requirements) || [];
     const listWrap = h('div');
+    // 📷 Scan to PDF — camera pages -> one PDF, fully offline, no external service.
+    let scanPages = [];
+    const scanPrev = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' });
+    const scanIn = h('input', { type: 'file', accept: 'image/*', capture: 'environment', style: 'display:none' });
+    const scanStatus = h('div', { class: 'cp-row-s' });
+    const renderScan = () => {
+      scanPrev.innerHTML = '';
+      scanPages.forEach((f, i) => {
+        const u = URL.createObjectURL(f);
+        scanPrev.appendChild(h('div', { style: 'position:relative' }, [
+          h('img', { src: u, style: 'width:74px;height:98px;object-fit:cover;border-radius:8px;border:1px solid var(--lb-border, #e2e8f0)' }),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'position:absolute;top:-8px;right:-8px;padding:1px 7px;border-radius:99px', onClick: () => { scanPages.splice(i, 1); renderScan(); } }, '✕'),
+        ]));
+      });
+      scanStatus.textContent = scanPages.length ? (scanPages.length + ' page(s) ready') : '';
+    };
+    scanIn.onchange = () => { if (scanIn.files && scanIn.files[0]) { scanPages.push(scanIn.files[0]); scanIn.value = ''; renderScan(); } };
+    const scanCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
+      h('div', { class: 'cp-row-t' }, '📷 Scan to PDF'),
+      h('div', { class: 'cp-row-s' }, 'Photograph BOL / receipts / permits page by page — get one clean PDF to upload anywhere. Works offline.'),
+      h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
+        h('button', { class: 'cp-btn cp-btn-sm', onClick: () => scanIn.click() }, '+ Add page (camera)'),
+        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => {
+          if (!scanPages.length) { alert('Add at least one page first.'); return; }
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Building…';
+          try {
+            const blob = await imagesToPdf(scanPages);
+            downloadBlob(blob, 'loadboot-scan-' + new Date().toISOString().slice(0, 10) + '.pdf');
+            scanPages = []; renderScan(); scanStatus.textContent = '✓ PDF saved to your downloads — upload it below or in your trip.';
+          } catch (e) { alert((e && e.message) || 'Could not build PDF.'); }
+          ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Make PDF';
+        } }, 'Make PDF'),
+        scanIn,
+      ]),
+      scanPrev, scanStatus,
+    ]);
     // upload form
     const typeSel = h('select', { class: 'cp-in' }, DOC_TYPES.map(([v, l]) => h('option', { value: v }, l)));
     const fileIn = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
@@ -1571,7 +1836,7 @@ function tripStepper(status) {
       ]);
     };
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
-    mount(content, h('div', null, [
+    mount(content, h('div', null, [scanCard, 
       h('div', { class: 'cp-card' }, [cardHead('What LoadBoot needs from you',
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
