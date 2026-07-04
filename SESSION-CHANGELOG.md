@@ -500,3 +500,64 @@
 - NOTE: raw output files from the separate "LoadBoot logo placement" Cowork thread are not
   reachable across sessions; its key deliverable (account settings premium) was rebuilt & locked here.
 - Gates after adding docs/previews: ESM ALL PASS (101), BUILD OK, AUDIT 0 FAIL.
+
+## #23 — Premium design specs (approved & locked)
+- previews/: account-settings-premium (+LOCKED), my-loads-settlement, load-board-premium
+  (rich DECISION-ENGINE match + FULL BREAKDOWN), documents-change-flow (per-document input:
+  FMCSA-API for authority, PDF for insurance/W-9/medical, number fields for MC/DOT/policy,
+  Change→disclaimer→upload/verify→review→status-impact). Real logo embedded, phone-frame.
+- All owner-approved. NEXT PHASE = wire into app/carrier/app.js incrementally (verify + commit
+  each). #20 legal + #22 owner browser proofs remain owner/counsel actions.
+
+## Wiring #1 — Documents: Change approved doc + disclaimer (LIVE in carrier app)
+- app/carrier/app.js loadDocuments: approved (valid) documents ab "Change" button dikhate hain
+  (pehle locked the). Change → confirm disclaimer jo criticality + impact batata hai (required/
+  critical → account PENDING + booking pause warning; optional → booking stays open) → phir
+  existing per-type uploader (docFmt format enforcement already per-type) khulta hai → In review.
+- Gates: ESM ALL PASS (101), BUILD OK, AUDIT 0 FAIL. No duplication; boot() intact.
+
+## Wiring #2 — My Loads: per-trip "Settlement" button (LIVE)
+- app/carrier/app.js loadTrips: each trip card now has a "💰 Settlement" button → modal with
+  Gross / LoadBoot fee 5% / Net to you / miles+RPM, a "Download PDF" (openPrintable settlement)
+  and a "Full P&L in Finance →" link. Gates: ESM ALL PASS (101), BUILD OK, AUDIT 0 FAIL.
+
+## Wiring #3 — Premium skin (carrier.css, additive)
+- Appended premium styling: rounded 18px cards + soft depth shadows, gradient primary buttons
+  with press feedback, pill/trip/kpi rounding, input focus rings, gradient sidebar. Additive
+  (append-only) — no JS touched, no existing rule removed. BUILD OK, AUDIT 0 FAIL.
+
+## Session wiring summary (this batch, all LIVE + verified)
+- Documents: approved-doc Change + disclaimer flow
+- My Loads: per-trip Settlement button (+PDF, Finance link)
+- Premium skin CSS across carrier portal
+- (Already live from earlier: rich LoadBoot Match, per-trip P&L, per-type doc formats,
+  FMCSA verify, emergency-button behaviour, avatars)
+
+## Wiring #4 — Premium skin across all portals (additive CSS)
+- command-center.css + partner.css: rounded premium cards, gradient primary buttons + press
+  feedback, KPI hover lift, pill/table rounding, input focus rings. Additive/append-only.
+- Carrier + CC + Partner now share the premium visual language (pocket already inline-premium).
+- BUILD OK, AUDIT 0 FAIL. No JS touched anywhere.
+
+## Wiring #5 — Authority Change → FMCSA verify (LIVE)
+- app/carrier/app.js: changing/renewing the Operating authority (MC/DOT) now routes to a
+  "Verify with FMCSA" modal (MC/DOT inputs → fmcsaVerify edge fn → live Authority/Safety/
+  Out-of-service) instead of a file upload; "upload authority letter (PDF) instead" fallback.
+  Other docs keep the per-type uploader. Imported fmcsaVerify. Gates: ESM 101, BUILD OK, 0 FAIL.
+
+## Fix #6 — Account never auto-verified (MCS-150 dead-end) [DB: prod + staging]
+Root cause: compliance requirement `mcs150` was MANDATORY with doc_type='mcs150', but the
+carrier upload dropdown (DOC_TYPES) has no mcs150 option — so it could never be uploaded,
+never approved, and `carrier_mandatory_ok()` stayed false forever. Result: after CC approved
+Authority + Insurance + W-9 (all synced to carrier_compliance='valid' correctly), the account
+still showed unverified and booking stayed locked (cc_request_book_load / cc_prebook_check gate
+on carrier_mandatory_ok).
+Fix (industry-correct): MCS-150 (Biennial Update) currency is confirmed by the FMCSA authority
+pull (SAFER/QCMobile returns the MCS-150 date), and carriers hold no separate MCS-150 PDF — so
+it must not be a standalone mandatory upload gate. Set mcs150.mandatory=false (tracked, non-
+blocking, like the FMCSA Safety Rating). Authority+Insurance+W-9 now fully unlock booking.
+Verified: Carrier Account → carrier_mandatory_ok = TRUE; emitted the account.verified unlock
+notification. Applied to BOTH prod (rwscphuhpjoudvljvmdk) and staging (snslhvmkjusozgjelghi).
+Data-flow note: admin_review_document already correctly syncs documents.status ->
+carrier_compliance via compliance_requirements.doc_type match, and cc_pocket_compliance reads
+the same table — so CC approvals DID propagate; the only break was the unsatisfiable mcs150 gate.

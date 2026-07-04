@@ -464,3 +464,24 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 .mh-bar { height: 4px; border-radius: 99px; background: rgba(255,255,255,.12); margin-top: 6px; overflow: hidden; }
 .mh-bar i { display: block; height: 4px; border-radius: 99px; background: linear-gradient(90deg, #22c55e, #4ade80); }
 .mh-watch { background: rgba(217,119,6,.14); border: 1px solid rgba(217,119,6,.4); border-radius: 11px; padding: 9px 11px; font-size: 11.5px; color: #fcd34d; font-weight: 700; line-height: 1.5; }
+
+/* ===================== PREMIUM SKIN (appended · additive) ===================== */
+.cp-card{border-radius:18px;box-shadow:0 12px 30px -20px rgba(2,12,30,.38);border:1px solid #eaf0f7}
+.cp-card:hover{box-shadow:0 16px 38px -22px rgba(2,12,30,.42)}
+.cp-btn{border-radius:12px;font-weight:700;transition:transform .12s ease, box-shadow .15s ease}
+.cp-btn:not(.ghost):not(.sec):not(.cp-btn-secondary){background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;box-shadow:0 8px 18px -10px rgba(8,131,247,.55);border:0}
+.cp-btn:not(.ghost):not(.sec):active{transform:translateY(1px)}
+.cp-btn.ghost{box-shadow:none;border:1px solid #e6ebf3;background:#fff}
+.cp-btn.sec,.cp-btn-secondary{background:#f1f5fb;color:#0b1b33;box-shadow:none;border:0}
+.cp-pill{border-radius:99px;font-weight:800;letter-spacing:.01em}
+.cp-trip{border-radius:16px;border:1px solid #eef2f8;box-shadow:0 8px 22px -18px rgba(2,12,30,.3)}
+.cp-kpi{border-radius:14px}
+.cp-in{border-radius:11px}
+.cp-in:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.cpx-req{border-radius:18px;box-shadow:0 12px 30px -20px rgba(2,12,30,.38)}
+.cp-chip,.cpx-chip{border-radius:99px}
+.cpx-mhero{border-radius:18px}
+/* premium sidebar accent */
+.cp-side,.cpx-side{background:linear-gradient(180deg,#0b1220,#0a1120)}
+/* subtle section headers */
+.cp-cardhead h3,.cp-row-t{letter-spacing:-.01em}

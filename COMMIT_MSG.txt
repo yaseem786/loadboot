@@ -103,4 +103,232 @@ MARKETPLACE DEPTH + MOBILE OS PUSH (this batch)
 - Marketing assets: old slogan replaced with the official tagline.
 - Final QA: all gates green (ESM, imports, build, audit, ACTIVATION-READY).
   SESSION-CHANGELOG + OWNER-ACTIONS updated; Play Store listing draft added.
+- Auth screens LOCKED (owner-approved): original lockup + descriptor at the cap
+  of "Boot" (12px/600, 4px gap), no-logo brand panel with route-line graphic,
+  glow background; password reset + 👁 toggle; premium split/mobile full-screen.
+- CC Settings: User account admin (staff changes any user's email/password via
+  admin-user-update edge fn, staff-verified, audited). Manrope loaded in all
+  portals (kit font); chat FAB 48px, above tabbar, hides while typing.
+- Design standard recorded in docs/brand-kit/BRAND-KIT.md.
+- Onboarding packet: smart per-item submit (PDF/photo upload where a document
+  is needed, typed fields for MC#/contacts) + Change/Update after submission.
+- HAZMAT end-to-end: broker must declare at post time (required); flag flows
+  to the board; carriers see a HAZMAT badge; unverified carriers get a guided
+  popup and the server blocks hazmat requests until the certificate is verified.
+- Load detail: accessorial labels properly capitalized (FCFS, TONU) as bold
+  clickable links to policy pages; verify-first popup on Request to book.
+- Auto-notifications engine: load posted -> instant in-app + branded email to
+  matching posted-truck carriers (DB trigger); doc/packet submitted -> CC in-app
+  + ops email; daily onboarding reminder (pg_cron 14:00 UTC, 72h dedupe) to
+  carriers with missing mandatory items. Rides existing Resend delivery queue.
+- Branded auth email templates (confirm/reset) + 10-min sender setup guide
+  (docs/email-templates/) to replace the default Supabase sender.
+- Broker booking requests: full Carrier Packet status panel (files release
+  after approval); authority letter upload now REQUIRED in packet.
+- Broker & shipper packet submission upgraded to the SAME smart flow as carrier
+  (typed fields / required PDF-photo upload per item, Change/Update after
+  submit). FIXED a crash: partner portal used openModal without defining it
+  (broker Docs button was broken) — proper modal added.
+- Staff notifications/emails cover ALL org kinds' packet submissions.
+- Email branding: official brand-kit email lockup (email-logo-white-2x.png,
+  now published at site root) in the delivery-worker shell (redeployed) and in
+  the auth templates. Animation intentionally not used — email clients strip
+  animation; the kit's dedicated email PNGs are the correct standard.
+- Booking time-window engine: 30-min broker window with live countdown chip,
+  auto-expire + carrier notification, parallel requests allowed, on approval
+  the carrier's other pending requests auto-cancel (both sides emailed).
+- "Should I take this load?" advisor on every load card: live-GPS deadhead,
+  your cost/mile, 5% fee, custom extras -> estimated NET + pass/fail checks
+  against your own min-RPM / max-deadhead. Labeled estimates, not advice.
+- Broker rate card: Driver assist ($75 default) + Extra stop ($50 default).
+- 6 accessorial policy pages (detention/TONU/layover/lumper/driver-assist/
+  FCFS) — marketplace standards, SEO-ready, linked from load details.
+  Site now 60 pages, audit 0 FAIL.
+- Policy pages expanded to full 12-section guides (hero, standard, road
+  scenario, economics, rules, 5-step claim, worked example with numbers,
+  claim-killing mistakes, enforcement, FAQ, related, disclaimer) — About-page
+  depth, SEO-ready. Advisor redesigned as a visual product: verdict banner,
+  stacked money bar, editable deadhead/cost-per-mile, multi-line custom
+  expenses, rule pills.
+- Policy discoverability: Resources page "Accessorial policies" section (6
+  cards), footer "Accessorial Policies" link, broker wizard step-4 policy links.
+- Load detail rate card normalized: all 8 standard items always shown with
+  proper formatting ($60/hr, 2 hours, Appointment/FCFS); missing values fall
+  back to labeled LoadBoot standards; driver assist + extra stop included.
+- Advisor v3 = real decision engine: offline US city-geo module (150+ freight
+  cities, zero APIs) verifies POSTED MILES against real lane distance and red-
+  flags bad postings with the true $/mi; deadhead auto from GPS or home base
+  (honest planning-mode when user is far); expense template + cost/mile
+  auto-persist (never re-typed); adds days + $/day and live reload count at
+  destination from our own board. Everything auto-calculated, all editable.
+- Advisor v4 (real decision engine, deeper): fuel model from the DRIVER's own
+  fuel price + truck MPG (asked once, auto-saved to prefs; DB migration live);
+  explicit deadhead-fuel line; corridor toll auto-estimate from published
+  5-axle schedules (16 toll corridors, labeled estimate, editable); broker
+  matrix panel inside the advisor (verified bond/authority, trip-verified
+  rating, delivered count, on-time %) with honest 'insufficient data' for
+  days-to-pay until real settlements accrue.
+- FIXED (found in live testing): document approval now syncs the compliance
+  requirement (was a disconnected table — docs showed Approved while
+  requirements stayed 'not on file'), notifies the carrier in-app + email on
+  approve/reject, and fires 'account verified — booking unlocked' when all
+  mandatory items turn valid. Retro-fix migration synced already-approved docs.
+- Loads filters collapsed by default — '⚙ Filters' toggle with active-count chip.
+- LoadBoot Score v5 — the branded decision engine: 9 weighted REAL factors
+  (profit margin, rate vs your min, deadhead, miles verification, accessorial
+  protections fetched from the load's actual rate card, broker record,
+  reload market, home-return distance, weekend-delivery risk) -> 0-100 score
+  dial with a fully visible breakdown. No black box, no invented data.
+- LoadBoot Score v6 — 100% transparency layer: every breakdown line carries a
+  source badge (MEASURED / VERIFIED / ESTIMATE / YOU SET); personal benchmark
+  from the carrier's OWN delivered trips (avg $/mi of last N loads) feeds the
+  rate factor; legend states the no-invention rule and auto 5% fee deduction.
+  Buttons: no-wrap + auto-shrink; 'Details' label; advisor renamed
+  'LoadBoot Score — should I take it?'.
 
+
+--- Round: LoadBoot-direct posting profile + Score v6 final preview ---
+carrier: LoadBoot Score — 'Posting party' factor (15/15 for platform posts); LoadBoot-direct detection renders navy branded platform panel (official mark, ✓ Platform, standards ENFORCED at post time — policy, ratings-build note); protections auto 5/5 enforced on direct posts; product copy English-only pass.
+preview: FINAL-loadboot-score-preview.html v6 — Broker/LoadBoot-direct toggle, M/V/E/U source badges on all 9 factors, personal-history benchmark line, dispatch-fee legend.
+gates: ESM 100/100 PASS · build OK.
+
+--- Round: Mobile shell v2 — clean topbar + inDrive-class drawer + customizable tabs ---
+carrier topbar: mobile = burger + title | bell + avatar only (Online pill, cog, compliance chip = desktop-only via .cpx-desktop); Online pill dead-click bug fixed (prefs load failure no longer kills the toggle); Online color = brand orange.
+carrier drawer v2: profile head (avatar + green/grey availability dot, name, real ★ rating from party_ratings, email, chevron → Account); live week-stats strip (Active/Delivered/Revenue from carrierDashboard aggregate — tap navigates); Documents row gets real 'Action needed' pill; bottom brand-orange Online/Offline CTA (real dispatch-prefs toggle, syncs dot+pill); loadboot.com tagline footer.
+carrier tabs: bottom tab bar now customizable — Settings → Customize lets the carrier pick their 5 shortcuts (localStorage lb_tabs, applies instantly, max-5/min-1 guards).
+repair: app.js tail truncation (onboarding wizard + boot block) detected and restored from HEAD splice — node --check + ESM 100/100 re-verified.
+preview: mobile-shell-v2-preview.html — interactive phone frame (drawer, Online toggle, tab customization all clickable).
+gates: ESM 100/100 PASS · imports PASS · BUILD OK.
+
+--- Round: official mark crop fix (platform panel) ---
+carrier: LoadBoot-direct panel mark now uses the official kit crop viewBox 16 14 68 72 (was 0 0 100 100 — rendered distorted). Logo design untouched, crop corrected.
+
+--- Round: LoadBoot Match v8 — premium redesign (preview-first) ---
+preview: FINAL-loadboot-score-preview.html fully regenerated — tool renamed 'LoadBoot Match' (family-lockup header + DECISION ENGINE tag); dark gradient hero with SVG ring dial, big verdict, NET/PER-DAY/TRIP stat boxes; 'Why it matches you' = ranked medal rows with progress bars (readable 13-14px type, no texty card); breakdown rows with colored bars + badges; 'Your numbers' input cells 16px; platform-post panel matches hero style. All type >= 11px. Logic unchanged (same 8 factors, live recalc, broker/direct toggle).
+
+--- Round: kit-true wordmark + premium dashboard/sidebar preview ---
+brand: brandLogo() now renders the TRUE kit wordmark — 'Load' ink + 'Boot' #F97316 (was single-color: wrong); icon uses official crop 16 14 68 72; descriptor at cap height 12px/600 4px gap per LOCKED auth spec. Applies to every portal header via shared component.
+preview: premium-dashboard-preview.html — desktop frame: premium sidebar (kit lockup, profile+rating+online dot, OPERATE/BUSINESS/ACCOUNT groups, orange active bar, badges, bottom Online CTA) + dashboard (compliance-ring hero with next-best-action, KPI tiles, Best-matches ranked by LoadBoot Match with net profit, week money strip, attention alerts, setup progress, honest empty-state rating card). All blocks mapped to real RPCs, no fake numbers.
+gates: components.js node-check OK · ESM 100/100 PASS.
+
+--- Round: mobile dashboard final preview ---
+preview: mobile-dashboard-final-preview.html — phone frame: clean topbar (burger/title/bell/avatar), compliance-ring hero + Finish-documents CTA, 2x2 KPI tiles (stroke icons, full labels, 'Offers for you'), provenance line, Best-matches with tap-to-expand "why" details, attention alerts (stroke icons), week money strip, setup progress, honest rating empty-state; premium drawer (kit two-tone lockup + Carrier at cap 4px, live stats, orange active bar, Online CTA), 5-tab bar with stroke icons. All interactive.
+
+--- Round: CC→carrier auto-notifications verified + gaps fixed + unique tab icons ---
+db (LIVE migration notify_onboarding_decision_and_announcements): cc_decide_onboarding now inserts in-app notification for every active org member (approved = success tone welcome; rejected = urgent + note) AND branded email per member (deduped, safe no-op until Resend key); new trg_announcement_notify AFTER INSERT on app_private.announcements fans warnings/promos out to audience bells (all_carriers → org kind=carrier; target_org → that org). Verified pre-existing live triggers by reading pg_proc: tp_match_new_load (load posted → matched carriers), admin_review_document (doc approve/reject → bell+email+compliance), cc_decide_book_request, cc_warn_driver_expiry, cc_run_onboarding_reminders.
+carrier: tab icons made distinct — Loads = freight package, Trips = navigation arrow, Fleet = truck (new 'truck' ic key); same in both dashboard previews.
+preview: notification-flow-live-preview.html — CC action panel (6 actions, LIVE/FIXED-TODAY tags with real function names) → web dashboard bell+list AND mobile toast+bell update together, demonstrating the single notifications-table pipeline.
+gates: ESM 100/100 PASS.
+
+--- Round: email system — premium shell v2 (DEPLOYED) + announcement email mirror (LIVE) + logo on notification cards ---
+edge (DEPLOYED v2): delivery-worker shell upgraded — header logo + tagline, 'MORE ON LOADBOOT' related-content rail (real pages only), dark two-row footer (product + legal links, unsubscribe, why-received). One shell = every transactional + campaign email.
+db (LIVE migration announcement_email_mirror): announcements (warning/promo) now email every recipient with premium body (label + title + CTA), deduped per announcement+address.
+carrier: in-app notification cards now carry the official LoadBoot mark (icon-512, tone-colored ring) — no more text-only cards.
+preview: email-system-live-preview.html — 9 events (signup, reset, account approve, doc approve/reject, load match, booking approved, warning, promo) → inbox with correct sender identities (hello@/dispatch@) → full premium email render; truth panel: email change (CC-only today, self-serve = next build), fingerprint/face/PIN/passkey = NOT yet (honest, roadmap), template locations map, pipeline explanation.
+gates: ESM 100/100 PASS.
+
+--- Round: email shell v3 (DEPLOYED) + worker cron (LIVE) ---
+edge (DEPLOYED v3): delivery-worker shell — ORIGINAL email-logo-white-2x.png asset, hidden preheader, orange accent bar, header 'Open portal' link, brand block footer + Get-the-app + product/legal rows + copyright.
+db (LIVE): cron 'lb-email-worker' every minute → delivery-worker via pg_net — queue ab khud drain hogi jaise hi RESEND_API_KEY set ho.
+preview: email-system-live-preview shell updated to v3 with real logo asset (text fallback).
+
+--- Round: Safety & Emergency tab (preview-first, design for lock) ---
+preview: safety-emergency-live-preview.html — carrier mobile Safety tab (LoadBoot premium, inDrive-concept): SOS hero with active-trip GPS chip → report flow bottom-sheet (6 emergency types, note, photo/video proof attach, auto GPS pin) → Send; Call 911 + Call CC row; saved emergency contacts (add/call); 'How LoadBoot protects you' grid. CC side: Operations → Safety desk tab — red incident card lands live (type, trip, GPS pin, note, proof thumbs, ticking SLA timer, Acknowledge & respond → driver gets status back, Call driver). Note maps real wiring: emergency_contacts + trip_incidents tables, cc_report_incident RPC, docs storage pipeline for proof, staff-notify trigger pattern, cron_sla_escalation — all reuse.
+
+--- Round: Safety v2 full-loop preview ---
+preview: safety-emergency-live-preview.html rebuilt — (1) report moved into MY TRIPS active-trip card ('Report a problem on this trip'); (2) location force-gate: Send locked until live location enabled, real coords flow to Safety desk (accuracy + 15s trail); (3) per-type REQUIRED proof spelled out on each type card, Send locked until required photo attached; (4) 'What do you need' — Reschedule / Immediate help / Both; (5) Safety tab = policy hub linking to website landing pages (Emergency & Rescheduling Policy, Accident steps, Detention/TONU, Insurance & claims, Driver handbook) + emergency contacts + Call 911 + '24/7 Dispatch support' (never 'CC' to carriers); (6) CC Safety desk: incident with live-location block, proof thumbs, SLA timer, Acknowledge → 'Verify genuine → approve reschedule & notify broker'; (7) Broker panel: posting-step-4 REQUIRED consent checkbox (Emergency Rescheduling Policy — no post without it) + reschedule notification with old→new window + no-penalty clause + acknowledge, status flowing back to carrier. All stroke icons, no emoji.
+
+--- Round: SAFETY v2 LOCKED + DB foundation LIVE ---
+docs: design lock recorded in SESSION-CHANGELOG (non-negotiables list).
+db (LIVE migration safety_v2_foundation): emergency_contacts + trip_incidents tables; carrier RPCs (contacts CRUD, cc_report_trip_incident — server-side live-location requirement, staff urgent bell + ops email, cc_my_trip_incidents); staff RPCs (cc_safety_incidents, cc_ack_incident → carrier 'Dispatch is responding', cc_approve_incident_reschedule → carrier + BROKER bell/email through partner_loads.broker_org with no-penalty policy language).
+next: carrier UI (trips report flow + Safety hub), CC Safety desk tab, broker posting consent checkbox, emergency-rescheduling-policy landing page.
+
+--- Round: Reschedule engine full concept preview ---
+preview: reschedule-engine-preview.html — (1) driver downtime selector (2h/6h/12h/24h/48h/not-sure) → auto-proposed window = old window + downtime + remaining transit, next facility slot; 'not sure' = Dispatch calls first, no auto-window; (2) Dispatch 4-point genuine verification (GPS stationary trail match, proof EXIF timestamp+location, driver call-back, 90-day claim history) — approve locked until 4/4 + window set, adjustable; (3) load-type switcher drives the notify chain: TYPE 1 external (Dispatch call task + script + email log, source agree/counter logged), TYPE 2 broker-posted (portal bell + load-card strip + email + push, Accept / Propose-different, 2h AUTO-ACCEPT per posting-time policy), TYPE 3 shipper→broker (broker accept/counter first, then shipper dock-appointment confirm/propose — chain completes back to carrier with updated rate con); (4) live timeline logging the whole chain. All interactive.
+
+--- Round: Reschedule engine v2 — correct state machine + policy auto + anti-fraud ---
+preview: reschedule-engine-preview.html rebuilt — PROPOSED vs CONFIRMED fixed: driver stepper (REPORTED → VERIFIED → WAITING BROKER [→ WAITING SHIPPER] → CONFIRMED); Type 2 = final only on broker accept/counter-resolution/timeout; Type 3 = broker THEN shipper dock confirm, carrier gets final only after full chain; single shared 2h policy countdown ticking on driver + Dispatch + broker + shipper panels with '⏩ simulate timeout' → policy AUTO-RESCHEDULE (open delivery = proposed locks; appointment = next dock slot); broker counter constrained ±12h → Dispatch driver-readiness check → confirm; every receiver notification carries driver proof chip + LIVE GPS chip + view-tracking; Type 1: Dispatch call task + 'Email source contact' composer (dispatch@ → external address via same Resend ledger — possible & logged) + source agree/counter/timeout logging; fairness/anti-fraud panel (carrier justice, broker/shipper justice, fraud sensors incl. GPS-moving detection, EXIF, claim frequency, disputed state stops auto); policy time-frame card (all parties agreed at signup/posting, same clock visible to all).
+
+--- Round: Type 3 correction — broker par Accept nahi, 'Verify from shipper' ---
+preview: reschedule v2 — Type 3 broker card ka primary button ab 'Verify from shipper →' (forward), accept ka ikhtiyar broker ko nahi; timeout = auto-forward to shipper (auto-accept nahi); final faisla shipper ke dock confirm par; chain/status/timeline wording updated.
+
+--- Round: PROD DB sync (batches 1-3 LIVE) + drawer stats overflow fix ---
+CRITICAL FINDING: live site uses PROD Supabase (rwscphuhpjoudvljvmdk); recent migrations had gone to STAGING (snslhvmkjusozgjelghi). Synced to PROD live: batch1 availability+mutual ratings+partner rateable; batch2 cost/fuel/mpg prefs + admin_review_document v2 (compliance sync + notify + booking-unlocked) + deduped retro-fix for already-approved docs; batch3 expenses + IFTA + maintenance + cc_admin_note + available-loads pickup coords. Online toggle min-rate error resolved (new prefs RPC has no min_rpm requirement).
+css: drawer stats strip no longer overflows narrow screens (minmax(0,1fr), wrapping labels, 8.5px caps).
+STILL TO SYNC TO PROD (next round): post_a_truck_auto_match, hazmat_end_to_end + gate, staff_notify_on_submissions, broker_view_carrier_packet, auto_emails_and_load_match_notify, booking_time_windows, notify_onboarding_decision, announcement_email_mirror, safety_v2_foundation; plus delivery-worker v3 deploy + per-minute cron on PROD project.
+
+--- Round: advisor button renamed to locked product name ---
+carrier: load-details advisor button 'LoadBoot Score — should I take it?' → '⚡ LoadBoot Match — why it fits you' (locked naming; v8 visual wiring queued).
+
+--- Round: documents flow — preview + submit-for-review + review lock + type-link fix ---
+carrier documents: (1) FIX requirement↔document link — requirements without doc_type now resolve through the same name→type map as the upload dialog, so a fresh upload immediately flips the row to Uploaded → In review (was stuck at 'not on file'); (2) upload dialog is now two-phase: choose file → ON-THE-SPOT PREVIEW (image inline / file card with name+size) → 'Submit for review' (disabled until a file is chosen); (3) while IN REVIEW the requirement is LOCKED — no Replace button until the decision; Rejected → Resubmit; (4) success copy tells the carrier status is now In review and locked.
+
+--- Round: PROD SYNC COMPLETE ---
+prod DB (rwscphuhpjoudvljvmdk) now has ALL recent waves: batch4 post-a-truck/auto-match; batch5 hazmat end-to-end + booking hazmat gate; batch6 staff-notify triggers + broker carrier-packet view; batch7 booking 30-min time-windows (expire, parallel, sibling auto-cancel, emails); batch8 onboarding-decision notify + announcement bell/email fan-out + SAFETY v2 foundation (emergency_contacts, trip_incidents, full RPC set). Verified: 6/6 new fns present, onboarding notifies, min-rate toggle bug gone. delivery-worker v3 DEPLOYED to prod + lb-email-worker per-minute cron scheduled. Prod == staging for all engines; live app 404s resolved.
+next build: Safety carrier UI wiring (tasks 44/45) + Match v8 panel.
+
+--- Round: SAFETY v2 CARRIER UI WIRED (real, end-to-end) ---
+api: emergencyContacts/Add/Delete, reportTripIncident, myTripIncidents wrappers.
+carrier: new SAFETY tab (NAV + sos icon + route) — locked design wired for real:
+  Call 911 + '24/7 Dispatch support' row (no fake numbers; support link);
+  dark SOS card with ACTIVE TRIP chip → 'Report a problem on this trip' bottom-sheet:
+    live-location GATE (geolocation required; Send locked until ON — server also rejects),
+    6 incident types with per-type REQUIRED-proof notes (photo mandatory for accident/breakdown/security/unsafe-facility — Send locked until attached, uploads through the documents storage pipeline),
+    need selector (Reschedule / Immediate help / Both), note,
+    Send → cc_report_trip_incident → staff urgent bell + ops email with live GPS;
+  'My reports' list with real status chips (Sent-verifying / Dispatch responding / Rescheduled—no penalty / Resolved) fed by cc_my_trip_incidents;
+  emergency contacts (list/add/delete/call) on cc_emergency_contacts RPCs;
+  Safety centre linking real policy pages + fairness note (verified reports never hurt score; false reports detected).
+Works against PROD immediately after deploy — the DB side is already live there.
+gates: imports PASS · ESM 100/100 · BUILD OK.
+still queued: My-trips card inline report button, CC Safety desk tab, broker posting consent checkbox, emergency-rescheduling-policy page, Match v8 panel.
+
+--- Round: broker consent + Emergency Rescheduling Policy page + Safety links ---
+partner: posting wizard step 4 now has a REQUIRED 'Emergency Rescheduling Policy' consent checkbox (amber card, policy link) — submit blocked without it (hazmat-declaration pattern), so every posted load carries the broker's acceptance.
+site: /emergency-rescheduling-policy.html — full 12-section SEO policy page via the accessorial generator: 4-point verification, driver-supplied downtime → proposed window formula, PROPOSED≠FINAL chain per load type (shipper dock = final on shipper freight), 2-hour response clock + auto-reschedule, ±12h counter bound, zero-penalty clause, driver ETA-only communication rule, fraud consequences, worked example, FAQ; auto cross-linked with the other policy pages.
+carrier: Safety centre now links the live policy page (placeholder note removed).
+
+--- Round: CC SAFETY DESK WIRED — Safety v2 chain complete end-to-end ---
+api: safetyIncidents / ackIncident / approveIncidentReschedule wrappers.
+command-center: new Operations tab 'Safety desk' (route /safety, shield icon, perm any:compliance.approve,carriers.view) — view views/safetyDesk.js: incidents newest/open-first with type + carrier + lane + need + note, LIVE LOCATION block (coords, accuracy, google-maps link), proof-on-file count (amber warning when none — verify via call-back + GPS trail), Acknowledge & respond (carrier gets 'Dispatch is responding'), new-window + note inputs → 'Verify genuine — approve reschedule' (carrier + broker bell/email per policy, no-penalty language), completed states shown green.
+SAFETY v2 IS NOW WIRED END-TO-END: driver report (location-gated, proof-gated) → staff bell/email → Safety desk verify → reschedule → carrier + broker notified. Works on PROD at deploy — DB already live there.
+gates: ESM 100/100 · imports PASS · BUILD OK · grand audit 61 pages 0 FAIL.
+
+--- Round: LoadBoot Match v8 wired into the REAL advisor (locked design) ---
+carrier advisor reskin (logic/data untouched — all real): texty verdict strip replaced by the LOCKED v8 dark hero — kit two-tone lockup + Match at cap + DECISION ENGINE chip, SVG ring dial (score-colored), verdict language now Best/Partial/Poor match, NET PROFIT (orange) / PER DAY / TRIP boxes; WHY IT MATCHES YOU = top-3 factors as medal rows with green bars + points; amber Watch strip for weakest factor; FULL BREAKDOWN rows with colored score bars + M/V/E/U badges (duplicate inner dial removed); Urdu deadhead flag line -> English. CSS: .cpx-mhero set. Works on web AND mobile (same advisor code, responsive).
+gates: ESM 101/101 PASS · BUILD OK.
+
+--- Round: PROD hotfix — Approve error root-caused and fixed ---
+bug: CC Documents Approve threw 'That value is not allowed' — root cause: app_private.sys_email did NOT exist on prod (batch8 wrongly assumed present because tp_match_new_load text referenced it); admin_review_document v2 called the missing helper → 'function does not exist ... unknown' → humanizeError 22023 bucket.
+db (LIVE migration sync_batch9): sys_email + ops_email created on prod (suppressions/message_deliveries/system_settings deps verified present); tp_match_new_load + trg_load_posted_match + tg_document_submitted v2 (org join corrected to owner_user_id for prod's user-keyed documents.carrier_id) applied. Approve/reject, booking emails, match emails, onboarding decision — all sys_email callers now functional on prod.
+
+--- Round: PROD hotfix — staff notifications were invisible in CC ---
+root causes found for 'carrier submitted doc, CC saw nothing': (1) upload happened before the submit-trigger landed on prod; (2) cc_my_notifications/cc_mark_my_notification only matched recipient_user — ROLE-based staff rows (document.submitted, safety.incident, onboarding.item_submitted) could never appear in the CC bell; (3) system_settings.support_email was empty so ops emails never queued.
+db (LIVE migration staff_role_notifications_visible): both RPCs now include recipient_role='staff' rows for active staff; support_email seeded (owner-changeable); retro staff notifications emitted for pending docs of last 24h. Verified: 2 staff unread now waiting in the CC bell.
+note: emails queue now but leave the system only after the owner sets RESEND_API_KEY (OWNER-ACTIONS).
+
+--- Round: LoadBoot Ledger (Trip Finance) concept preview ---
+preview: trip-ledger-preview.html — per-trip live profit ledger (owner idea, preview-first): dark Ledger hero (kit lockup + TRIP FINANCE) with live REAL NET + EARNED/SPENT/FEE/$-per-mile boxes; EARNED list (linehaul + detention auto from platform records, add accessorial income); SPENT list (fuel/tolls/lumper/parking… add during trip); flat 5%-of-linehaul fee auto; trip record card (booked/dispatched/GPS pickup/GPS delivery/POD/invoiced — all auto); live-generated TRIP PROFIT STATEMENT: orange/blue accent bar, two-tone logo, company block (name/MC/DOT), meta grid (9 fields), income & expense tables with totals, navy NET band with per-mile/per-day/margin, provenance footer; real Download via print-to-PDF (print CSS isolates the report). Real wiring note: carrier_expenses.trip_id already exists; income adds = new trip_income rows; dates from trips table.
+
+--- Round: industry-standard naming ---
+carrier tabs renamed to the words US trucking actually uses: 'Available loads' → 'Load Board', 'My trips' → 'My Loads', 'Rating' → 'Ratings' (ids/routes unchanged; drawer + bottom bar inherit automatically).
+preview: Trip Ledger feature speaks settlement language — screen 'Trip Settlement', report title 'TRIP SETTLEMENT & P&L STATEMENT', net line 'NET TO CARRIER — THIS LOAD' (what a dispatch service's statement is called industry-wide).
+
+--- Round: Trip Settlement placement preview (navigable) ---
+preview: trip-ledger-preview upgraded to a 3-screen navigable phone — My Loads (trip card replica with stepper + existing doc chips + NEW orange '💰 Settlement' chip), tap → Trip Settlement ledger (back arrow), Finance tab → TRIP SETTLEMENTS list (per-load NET green/red, first row live-synced to the ledger) — showing exactly where the feature lives and how it is reached; bottom tab bar My Loads/Finance.
+
+--- Round: Account & Settings redesign preview ---
+preview: account-settings-preview.html — full-width aligned cards (lopsided-space fix); profile header with ACCOUNT STATUS pill (flips to VERIFIED—BOOKING OPEN at 7/7); documents block uses the SAME tracker language as the Documents tab (Approved/In review/Upload, steppers, review-lock) with progress ring — includes a live demo: Upload MCS-150 → In review → CC approves → ring/pill/list flip together; SECURITY: change email (dual-confirmation-links flow), password reset (other devices signed out), Face/Fingerprint passkey registration (WebAuthn — works on PWA), two-step verification (email OTP flow with 6-digit entry), sign-out-all-devices. Real-wiring map in footer (pocketCompliance shared source, updateUser/updatePassword, Supabase MFA).
+
+DESIGN / DOC DELIVERABLES (new folders)
+- previews/ — 5 LOCKED premium mobile designs (account-settings, my-loads-settlement,
+  load-board rich match, documents per-type+FMCSA, change-flow). Real logo embedded.
+  Approved; ready to wire into app/carrier/app.js.
+- marketing/ — overview deck (pptx+pdf), sales one-pager, carrier ad.
+- legal/ — attorney-review DRAFT agreement templates (not legal advice).
+
+LIVE WIRING (carrier app)
+- Documents: approved-doc Change + disclaimer flow (app/carrier/app.js)
+- My Loads: per-trip Settlement button + PDF
+- Documents: Authority Change routes to FMCSA verify (MC/DOT); others per-type PDF
+- Premium skin CSS across carrier + command-center + partner (additive, no JS)

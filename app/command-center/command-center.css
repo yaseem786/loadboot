@@ -530,3 +530,17 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 
 
 @media(prefers-reduced-motion:reduce){.lbs-boot1,.lbs-boot2{animation:none}}
+
+/* ===================== PREMIUM SKIN (appended · additive) ===================== */
+.cc-card,.lb-card{border-radius:16px;box-shadow:0 12px 30px -22px rgba(2,12,30,.4);border:1px solid #e8eef6}
+.cc-card:hover,.lb-card:hover{box-shadow:0 16px 38px -24px rgba(2,12,30,.44)}
+.lb-btn,.cc-btn-sm{border-radius:11px;font-weight:700;transition:transform .12s,box-shadow .15s}
+.lb-btn-primary{background:linear-gradient(135deg,#0883F7,#0a6fd6);box-shadow:0 8px 18px -10px rgba(8,131,247,.55);border:0;color:#fff}
+.lb-btn-primary:active{transform:translateY(1px)}
+.lb-btn-secondary,.lb-btn.lb-btn-secondary{background:#eef3fb;color:#0b1b33;border:0;box-shadow:none}
+.cc-kpi{border-radius:14px;box-shadow:0 10px 26px -20px rgba(2,12,30,.35)}
+.cc-kpi.cc-kpi-click:hover{box-shadow:0 14px 30px -18px rgba(8,131,247,.4);transform:translateY(-1px)}
+.cc-pill{border-radius:99px;font-weight:800}
+.cc-table{border-radius:12px;overflow:hidden}
+.cc-input:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.cc-section-head h2{letter-spacing:-.01em}
