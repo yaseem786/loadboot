@@ -26,7 +26,14 @@ export function mountChatWidget(opts = {}) {
   fab.type = 'button';
   fab.title = 'Chat with support';
   fab.setAttribute('aria-label', 'Chat with support');
-  fab.style.cssText = 'position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;background:#0883F7;color:#fff;border:none;box-shadow:0 10px 30px rgba(8,131,247,.42);cursor:pointer;z-index:2147483647;font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center';
+  fab.style.cssText = 'position:fixed;right:14px;bottom:18px;width:48px;height:48px;border-radius:50%;background:#0883F7;color:#fff;border:none;box-shadow:0 8px 24px rgba(8,131,247,.4);cursor:pointer;z-index:2147483647;font-size:1.25rem;line-height:1;display:flex;align-items:center;justify-content:center;transition:opacity .2s,transform .2s';
+  // Mobile: sit above the bottom tab bar; never block taps — shrink & fade while typing.
+  const mq = window.matchMedia('(max-width: 900px)');
+  const place = () => { fab.style.bottom = mq.matches ? 'calc(84px + env(safe-area-inset-bottom))' : '18px'; };
+  place(); try { mq.addEventListener('change', place); } catch (_) {}
+  const isField = (el) => el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName || '');
+  document.addEventListener('focusin', (e) => { if (isField(e.target)) { fab.style.opacity = '0'; fab.style.pointerEvents = 'none'; } });
+  document.addEventListener('focusout', () => { setTimeout(() => { if (!isField(document.activeElement)) { fab.style.opacity = '1'; fab.style.pointerEvents = 'auto'; } }, 150); });
   fab.textContent = '💬';
   fab.addEventListener('click', (e) => { e.stopPropagation(); panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; });
   document.addEventListener('click', (e) => { if (!panel.contains(e.target) && e.target !== fab) panel.style.display = 'none'; });

@@ -55,7 +55,7 @@ Deno.serve(async (_req) => {
   // Base URL of the deployed `unsubscribe` edge function (RFC 8058 one-click). Defaults to this project.
   const UNSUB_BASE = Deno.env.get("UNSUBSCRIBE_URL") || `${SUPABASE_URL}/functions/v1/unsubscribe`;
   const SITE = Deno.env.get("SITE_URL") || "https://loadboot.com";
-  const LOGO = Deno.env.get("BRAND_LOGO_URL") || `${SITE}/icon-512.png`; // authentic brand icon (see BRAND-ASSET-AUDIT.md)
+  const LOGO = Deno.env.get("BRAND_LOGO_URL") || `${SITE}/email-logo-white-2x.png`; // official brand-kit email lockup
   // Professional, reusable branded email shell — authentic hosted logo + compliant footer. Table-based for
   // broad client support; light/dark safe neutral palette. No placeholder or fabricated assets.
   const shell = (bodyHtml: string, unsubUrl: string) =>
@@ -63,8 +63,7 @@ Deno.serve(async (_req) => {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
         <tr><td style="background:#0b1220;padding:18px 24px" align="left">
-          <img src="${LOGO}" width="28" height="28" alt="LoadBoot" style="vertical-align:middle;border-radius:6px">
-          <span style="color:#fff;font-size:18px;font-weight:800;vertical-align:middle;margin-left:8px">LoadBoot</span>
+          <img src="${LOGO}" width="167" height="40" alt="LoadBoot" style="display:block;border:0">
         </td></tr>
         <tr><td style="padding:24px;color:#0f172a;font-size:15px;line-height:1.6">${bodyHtml}</td></tr>
         <tr><td style="padding:18px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;line-height:1.6">

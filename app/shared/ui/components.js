@@ -173,11 +173,11 @@ export function brandLogo(opts = {}) {
     + '<path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="' + ink + '"></path></svg>';
   const kids = [
     el('span', { html: iconSvg, style: 'display:block;line-height:0;flex:none' }),
-    el('span', { style: 'font-size:14px;font-weight:800;color:' + ink + ';letter-spacing:-.01em;white-space:nowrap' }, 'LoadBoot'),
+    el('span', { style: "font-family:'Manrope',Inter,sans-serif;font-size:14px;font-weight:800;color:" + ink + ';letter-spacing:-.01em;white-space:nowrap' }, 'LoadBoot'),
   ];
   if (opts.sub) {
     const c = FAMILY[String(opts.sub).toLowerCase()] || '#94A3B8';
-    kids.push(el('span', { style: 'font-size:14px;font-weight:500;color:' + c + ';white-space:nowrap' }, opts.sub));
+    kids.push(el('span', { style: "font-family:'Manrope',Inter,sans-serif;font-size:14px;font-weight:500;color:" + c + ';white-space:nowrap' }, opts.sub));
   }
   return el('div', { class: 'cc-brandrow', style: 'display:flex;align-items:center;gap:8px' }, kids);
 }

@@ -42,6 +42,16 @@ export async function signUp(email, password, meta = {}) {
   return sb.auth.signUp({ email, password, options: { data: { company: meta.company || '', name: meta.name || '' } } });
 }
 
+export async function resetPassword(email) {
+  const sb = await getClient();
+  return sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+}
+
+export async function updatePassword(newPassword) {
+  const sb = await getClient();
+  return sb.auth.updateUser({ password: newPassword });
+}
+
 export async function signOut() {
   const sb = await getClient();
   // Never let a slow/failed server call keep the user "stuck signed in": race a 3s timeout,

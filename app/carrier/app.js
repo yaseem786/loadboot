@@ -4,7 +4,7 @@
 // RPCs (the server resolves the carrier org from the session — no carrier-id param,
 // so cross-carrier access is impossible). Admin/staff use the Command Center.
 import ENV from '../shared/env.js';
-import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
+import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updatePassword } from '../shared/session.js';
 import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
@@ -31,6 +31,7 @@ import {
 import { uploadDocument, uploadPodDocument } from '../shared/storage.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
+import { brandLogo } from '../shared/ui/components.js';
 import { printDispatchSheet, openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
@@ -94,6 +95,9 @@ function openModal(title, children) {
   return close;
 }
 const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const havMi = (a, b, c, d) => { const R = 3959, t = Math.PI / 180, dLat = (c - a) * t, dLng = (d - b) * t;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.asin(Math.min(1, Math.sqrt(x))); };
 const STATUS_TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray', active: 'green' };
 const pill = (s) => h('span', { class: 'cp-pill ' + (STATUS_TONE[s] || 'gray') }, (s || '').replace(/_/g, ' '));
 const ic = (name) => ({
@@ -132,10 +136,32 @@ function donut(parts) {
 }
 
 /* ---------- auth screens ---------- */
+function recoveryScreen() {
+  const p1 = h('input', { class: 'cp-in', type: 'password', placeholder: 'New password (min 8 characters)' });
+  const p2 = h('input', { class: 'cp-in', type: 'password', placeholder: 'Repeat new password' });
+  const err = h('div', { class: 'cp-err' });
+  const btn = h('button', { class: 'cp-btn cp-btn-lg', onClick: async () => {
+    if ((p1.value || '').length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+    if (p1.value !== p2.value) { err.textContent = 'Passwords do not match.'; return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try { const { error } = await updatePassword(p1.value); if (error) throw error;
+      history.replaceState(null, '', location.pathname); boot(); }
+    catch (e) { err.textContent = (e && e.message) || 'Could not update password.'; btn.disabled = false; btn.textContent = 'Set new password'; }
+  } }, 'Set new password');
+  mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
+    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, 'Carrier')]),
+    h('h1', null, 'Set a new password'),
+    h('p', { class: 'cp-auth-sub' }, 'You followed a reset link — choose a new password for your account.'),
+    p1, p2, err, btn,
+  ])));
+  root.setAttribute('aria-busy', 'false');
+}
 function authScreen() {
   let signup = false;
   const email = h('input', { class: 'cp-in', type: 'email', placeholder: 'you@company.com', autocomplete: 'username' });
-  const pass = h('input', { class: 'cp-in', type: 'password', placeholder: 'Password', autocomplete: 'current-password' });
+  const pass = h('input', { class: 'cp-in', type: 'password', placeholder: 'Password', autocomplete: 'current-password', style: 'margin:0;padding-right:46px' });
+  const eye = h('button', { type: 'button', 'aria-label': 'Show password', style: 'position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:0;cursor:pointer;font-size:18px;opacity:.6', onClick: () => { pass.type = pass.type === 'password' ? 'text' : 'password'; eye.textContent = pass.type === 'password' ? '👁' : '🙈'; } }, '👁');
+  const passWrap = h('div', { style: 'position:relative' }, [pass, eye]);
   const company = h('input', { class: 'cp-in', type: 'text', placeholder: 'Company / carrier name', autocomplete: 'organization' });
   const name = h('input', { class: 'cp-in', type: 'text', placeholder: 'Your full name', autocomplete: 'name' });
   const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name]);
@@ -144,6 +170,15 @@ function authScreen() {
   const sub = h('p', { class: 'cp-auth-sub' }, 'Sign in to your carrier portal.');
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
+  const forgot = h('p', { class: 'cp-auth-toggle', style: 'margin-top:8px' },
+    h('a', { onClick: async () => {
+      const em = email.value.trim();
+      if (!em) { err.textContent = 'Enter your email above first, then tap Forgot password.'; return; }
+      err.textContent = ''; err.className = 'cp-err';
+      try { const { error } = await resetPassword(em); if (error) throw error;
+        err.className = 'cp-err ok'; err.textContent = '✓ Reset link sent to ' + em + ' — check your inbox (and spam).'; }
+      catch (e) { err.textContent = (e && e.message) || 'Could not send reset link.'; }
+    } }, 'Forgot password?'));
   const setMode = (s) => {
     signup = s;
     title.textContent = s ? 'Create your account' : 'Welcome back';
@@ -170,11 +205,30 @@ function authScreen() {
       const { error } = await signInWithPassword(em, pw); if (error) throw error; boot(); return;
     } catch (e) { err.textContent = (e && e.message) || 'Something went wrong.'; btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Sign in'; }
   };
+  const brandPanel = h('div', { class: 'cpx-auth-brand', html:
+    '<svg viewBox="0 0 300 90" style="width:100%;max-width:300px;overflow:visible" aria-hidden="true">'
+    + '<path d="M8 74 C 80 74, 90 18, 170 18 S 282 52, 292 30" fill="none" stroke="rgba(148,163,184,.35)" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round"/>'
+    + '<circle cx="8" cy="74" r="6" fill="none" stroke="#0883F7" stroke-width="3.5"/>'
+    + '<circle cx="292" cy="30" r="6" fill="none" stroke="#16a34a" stroke-width="3.5"/>'
+    + '<text x="150" y="82" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">781 mi · booked in one tap</text></svg>'
+    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Higher-paying loads.<br>Paperwork that handles itself.</div>'
+    + '<div class="cpx-mockstack">'
+    +   '<div class="cpx-mockcard">'
+    +     '<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:19px">$2,850</b><span class="cpx-mockchip green">≈ +$540 profit</span></div>'
+    +     '<div class="cpx-mockroute"><span class="d o"></span>Dallas, TX</div>'
+    +     '<div class="cpx-mockroute"><span class="d g"></span>Atlanta, GA <span style="color:#94a3b8;font-weight:500">· 781 mi · $3.65/mi</span></div>'
+    +   '</div>'
+    +   '<div class="cpx-mocktoast">📍 Arrived 14:02 — detention clock running</div>'
+    +   '<div class="cpx-mocktoast ok">✓ POD approved — invoice ready</div>'
+    + '</div>'
+    + '<div style="margin-top:26px;color:#94a3b8;font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>' });
   mount(root, h('div', { class: 'cp-auth' }, [
+    h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand', style: 'align-items:flex-start' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:31px;width:auto;display:block' }), h('span', { style: 'color:#FB923C;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
-      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
+      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, 'Carrier')]),
+      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), passWrap, extra, err, btn, toggle, forgot,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
+    ]),
     ]),
   ]));
   setMode(false);
@@ -343,7 +397,7 @@ async function appView(user) {
 
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow', style: 'display:flex;align-items:flex-start;gap:5px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('span', { style: 'color:#FB923C;font-weight:500;font-size:.82rem;line-height:1;margin-top:2px' }, 'Carrier')]),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Carrier' })),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
@@ -722,6 +776,8 @@ async function appView(user) {
     // Post-a-Truck: silent background scan picks up new matches for active postings.
     (async () => { try { await scanTruckMatches(); refreshUnread(); } catch (_) {} })();
     let postings = []; try { postings = await myTruckPostings(); } catch (_) { postings = []; }
+    let _pk = null; try { _pk = await myOnboardingPacket(); } catch (_) {}
+    const hazVerified = !!((_pk && _pk.items) || []).find(x => x.key === 'hazmat_cert' && x.status === 'verified');
     const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, '🚚 Post my truck'), h('div', { class: 'cp-row-s' }, 'Tell us where your truck frees up — matching loads alert you automatically.')]),
@@ -841,8 +897,32 @@ async function appView(user) {
     };
     const loadCard = (l) => (function () {
       const rpm = l.rpm ? '$' + Number(l.rpm).toFixed(2) + '/mi' : '';
-      const bookWrap = h('div');
+      const bookWrap = h('div', { class: 'cpx-req-bw' });
       const book = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        if (!ov.compliance_ok) {
+          const closeV = openModal('Verify your account first', [
+            h('div', { style: 'text-align:center;padding:6px 0' }, [
+              h('div', { style: 'font-size:44px;line-height:1' }, '🛡️'),
+              h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'One step before you can book'),
+              h('div', { class: 'cp-row-s', style: 'max-width:340px;margin:0 auto' }, 'Brokers only see booking requests from verified carriers. Upload your MC/DOT authority, insurance (COI) and W-9 — our team verifies fast.'),
+              h('button', { class: 'cp-btn', style: 'margin-top:16px', onClick: () => { closeV(); go('documents'); } }, 'Upload documents →'),
+              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#94a3b8' }, 'Already uploaded? Verification is usually quick — check back soon.'),
+            ]),
+          ]);
+          return;
+        }
+        if (l.hazmat && !hazVerified) {
+          const closeH = openModal('Hazmat certificate required', [
+            h('div', { style: 'text-align:center;padding:6px 0' }, [
+              h('div', { style: 'font-size:44px;line-height:1' }, '☣️'),
+              h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'This is a HAZMAT load'),
+              h('div', { class: 'cp-row-s', style: 'max-width:340px;margin:0 auto' }, 'Your hazmat certificate is not verified yet. If you want to haul hazmat freight, upload your hazmat certificate / permit — once verified, hazmat loads unlock automatically.'),
+              h('button', { class: 'cp-btn', style: 'margin-top:16px', onClick: () => { closeH(); go('account'); } }, 'Upload hazmat certificate →'),
+              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#94a3b8' }, 'Non-hazmat loads are not affected.'),
+            ]),
+          ]);
+          return;
+        }
         if (!confirm('Request to book this load?\n\n' + (l.origin || '') + ' → ' + (l.destination || '') + '\n' + money(l.rate) + (rpm ? ' · ' + rpm : '') + '\n\nThe broker reviews your verified trust profile and approves or declines. Nothing moves and you are not committed until approved.')) return;
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending request…';
         try {
@@ -856,6 +936,75 @@ async function appView(user) {
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
       if (l.weight) meta.push('Weight: ' + l.weight);
       if (l.deadhead) meta.push(l.deadhead + ' mi deadhead');
+      const advW = h('div');
+      function buildAdvisor(pos) {
+        advW.innerHTML = '';
+        // editable state — GPS/deadhead, cost/mile and expense line items are ALL user-adjustable
+        const st = {
+          dh: (pos && l.pickup_lat != null && l.pickup_lng != null) ? Math.round(havMi(pos.coords.latitude, pos.coords.longitude, l.pickup_lat, l.pickup_lng)) : (l.deadhead != null ? Number(l.deadhead) : 0),
+          dhLive: !!(pos && l.pickup_lat != null),
+          cpm: _dp && Number(_dp.cost_per_mile) > 0 ? Number(_dp.cost_per_mile) : 1.80,
+          ex: [{ label: 'Tolls', amt: 0 }],
+        };
+        const host = h('div', { class: 'cpx-adv' });
+        const render = () => {
+          const rate = Number(l.rate) || 0;
+          const totalMi = (Number(l.miles) || 0) + (st.dh || 0);
+          const cost = Math.round(totalMi * st.cpm);
+          const fee = Math.round(rate * 0.05);
+          const exSum = st.ex.reduce((a, x) => a + (Number(x.amt) || 0), 0);
+          const net = rate - cost - fee - exSum;
+          const allInRpm = totalMi > 0 ? rate / totalMi : 0;
+          const pct = (v) => rate > 0 ? Math.max(0, Math.min(100, v / rate * 100)) : 0;
+          const checks = [];
+          if (_dp && _dp.max_deadhead_miles) checks.push([st.dh <= Number(_dp.max_deadhead_miles), 'Deadhead ' + st.dh + '/' + _dp.max_deadhead_miles + ' mi']);
+          if (_dp && _dp.min_rpm) checks.push([allInRpm >= Number(_dp.min_rpm), 'All-in $' + allInRpm.toFixed(2) + ' vs min $' + _dp.min_rpm]);
+          checks.push([net > 0, 'Net ' + (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString()]);
+          const fails = checks.filter(c => !c[0]).length;
+          const V = fails === 0 ? ['✓', 'TAKE IT', 'by your numbers this load pays', '#16a34a', 'rgba(22,163,74,.12)']
+            : fails === 1 ? ['≈', 'BORDERLINE', 'one of your rules fails — check below', '#d97706', 'rgba(217,119,6,.12)']
+            : ['✕', 'SKIP IT', 'this load loses money by your numbers', '#dc2626', 'rgba(220,38,38,.12)'];
+          const numIn = (val, step, onch, w) => { const i2 = h('input', { class: 'cp-in', type: 'number', step: step, value: val, style: 'margin:0;max-width:' + (w || 96) + 'px;padding:7px 9px;font-size:14px;font-weight:700;text-align:right' }); i2.oninput = () => onch(Number(i2.value) || 0); return i2; };
+          mount(host, [
+            h('div', { class: 'cpx-adv-verdict', style: 'background:' + V[4] + ';color:' + V[3] }, [
+              h('span', { class: 'v' }, V[0]), h('span', null, [h('b', { style: 'font-size:16px;letter-spacing:.02em' }, V[1]), h('div', { style: 'font-size:11.5px;font-weight:600;opacity:.85' }, V[2])]),
+              h('b', { style: 'margin-left:auto;font-size:20px' }, (net >= 0 ? '+$' : '−$') + Math.abs(net).toLocaleString()),
+            ]),
+            // money bar: where every dollar of the rate goes
+            h('div', { class: 'cpx-adv-bar' }, [
+              h('span', { style: 'width:' + pct(cost) + '%;background:#0F172A' }),
+              h('span', { style: 'width:' + pct(fee) + '%;background:#F97316' }),
+              h('span', { style: 'width:' + pct(exSum) + '%;background:#94a3b8' }),
+              h('span', { style: 'width:' + pct(Math.max(net, 0)) + '%;background:#16a34a' }),
+            ]),
+            h('div', { class: 'cpx-adv-legend' }, [
+              h('span', null, [h('i', { style: 'background:#0F172A' }), 'Cost $' + cost.toLocaleString()]),
+              h('span', null, [h('i', { style: 'background:#F97316' }), 'Fee $' + fee.toLocaleString()]),
+              exSum ? h('span', null, [h('i', { style: 'background:#94a3b8' }), 'Extras $' + exSum.toLocaleString()]) : null,
+              h('span', null, [h('i', { style: 'background:#16a34a' }), 'Net ' + (net >= 0 ? '$' + net.toLocaleString() : '−$' + Math.abs(net).toLocaleString())]),
+            ].filter(Boolean)),
+            h('div', { class: 'cpx-adv-grid' }, [
+              h('div', { class: 'cell' }, [h('label', null, '📍 Deadhead (mi)' + (st.dhLive ? ' · LIVE' : '')), numIn(st.dh, 1, (v) => { st.dh = v; st.dhLive = false; render(); })]),
+              h('div', { class: 'cell' }, [h('label', null, '💰 My cost / mile'), numIn(st.cpm, 0.05, (v) => { st.cpm = v; render(); })]),
+              h('div', { class: 'cell' }, [h('label', null, 'Loaded mi'), h('b', null, Number(l.miles || 0).toLocaleString())]),
+              h('div', { class: 'cell' }, [h('label', null, 'All-in $/mi'), h('b', null, '$' + allInRpm.toFixed(2))]),
+            ]),
+            h('div', { style: 'margin-top:8px' }, [
+              h('div', { style: 'font-weight:800;font-size:12px;color:#64748b;margin-bottom:4px' }, 'CUSTOM EXPENSES'),
+              ...st.ex.map((x, idx) => h('div', { style: 'display:flex;gap:8px;align-items:center;margin-bottom:6px' }, [
+                (() => { const li = h('input', { class: 'cp-in', value: x.label, placeholder: 'Label', style: 'margin:0;flex:1;padding:7px 9px;font-size:13px' }); li.oninput = () => { x.label = li.value; }; return li; })(),
+                numIn(x.amt, 1, (v) => { x.amt = v; render(); }),
+                h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'padding:5px 10px', onClick: () => { st.ex.splice(idx, 1); render(); } }, '✕'),
+              ])),
+              h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { st.ex.push({ label: '', amt: 0 }); render(); } }, '+ Add expense (lumper, parking…)'),
+            ]),
+            h('div', { class: 'cpx-adv-checks' }, checks.map(c => h('span', { class: 'chk ' + (c[0] ? 'ok' : 'bad') }, (c[0] ? '✓ ' : '✕ ') + c[1]))),
+            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Straight-line deadhead + your own numbers — estimates, not financial advice.'),
+          ]);
+        };
+        render();
+        advW.appendChild(host);
+      }
       const _cpm = _dp && Number(_dp.cost_per_mile) > 0 ? Number(_dp.cost_per_mile) : null;
       const _profit = (_cpm && l.rate && Number(l.miles) > 0) ? Math.round(Number(l.rate) - Number(l.miles) * _cpm) : null;
       const profitEl = (_profit != null)
@@ -866,6 +1015,7 @@ async function appView(user) {
         h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null, profitEl].filter(Boolean)),
         h('div', { class: 'cpx-req-chips' }, [
           h('span', { class: 'cpx-chip eq' }, '🚛 ' + (l.equipment || 'Van')),
+          l.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(220,38,38,.14);color:#b91c1c;font-weight:800' }, '☣ HAZMAT') : null,
           l.pickup_date ? h('span', { class: 'cpx-chip' }, '🕐 Pickup: ' + l.pickup_date) : null,
           l.delivery_date ? h('span', { class: 'cpx-chip' }, 'DEL ' + l.delivery_date) : null,
         ].filter(Boolean)),
@@ -875,7 +1025,15 @@ async function appView(user) {
         ]),
         meta.length ? h('div', { class: 'cp-load-meta' }, meta.join(' · ')) : null,
         l.requirements ? h('div', { class: 'cp-row-s' }, l.requirements) : null,
-        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px' }, [bookWrap, detailsBtn]),
+        h('div', { class: 'cpx-req-actions' }, [bookWrap, detailsBtn]),
+        h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px;width:100%', onClick: (ev) => {
+          if (advW.firstChild) { advW.innerHTML = ''; return; }
+          advW.appendChild(h('div', { class: 'cp-muted' }, '📍 Getting your location for real deadhead…'));
+          const done = (pos) => buildAdvisor(pos);
+          if (navigator.geolocation) navigator.geolocation.getCurrentPosition(done, () => done(null), { enableHighAccuracy: true, timeout: 8000 });
+          else done(null);
+        } }, '🤔 Should I take this load?'),
+        advW,
       ].filter(Boolean));
     })();
     const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host' });
@@ -929,7 +1087,17 @@ async function appView(user) {
       t.instructions ? h('div', { style: 'margin:8px 0' }, [h('div', { class: 'cp-row-t' }, 'Instructions'), h('div', { class: 'cp-row-s' }, t.instructions)]) : null,
       accEntries.length ? h('div', { style: 'margin-top:8px' }, [
         h('div', { class: 'cp-row-t' }, 'Accessorial rate card'),
-        ...accEntries.map(([k, v]) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-s' }, k.replace(/_/g, ' ')), h('span', null, typeof v === 'object' ? JSON.stringify(v) : String(v))])),
+        ...accEntries.map(([k, v]) => {
+          const ACC_META = { fcfs: ['FCFS (First Come, First Served)', '/fcfs-policy.html'], tonu: ['TONU (Truck Ordered, Not Used)', '/tonu-policy.html'],
+            lumper_policy: ['Lumper policy', '/lumper-policy.html'], lumper: ['Lumper policy', '/lumper-policy.html'],
+            layover_per_day: ['Layover (per day)', '/layover-policy.html'], layover: ['Layover (per day)', '/layover-policy.html'],
+            detention_per_hr: ['Detention (per hour)', '/detention-pay-policy.html'], detention_free_hours: ['Detention free time (hours)', '/detention-pay-policy.html'],
+            driver_assist: ['Driver assist', '/driver-assist-policy.html'] };
+          const meta = ACC_META[k] || [(k.charAt(0).toUpperCase() + k.slice(1)).replace(/_/g, ' '), null];
+          const label = meta[1] ? h('a', { href: meta[1], target: '_blank', rel: 'noopener', style: 'font-weight:800;color:inherit;text-decoration:underline;text-decoration-color:rgba(8,131,247,.4);text-underline-offset:3px' }, meta[0])
+                                : h('b', null, meta[0]);
+          return h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, label), h('span', null, typeof v === 'object' ? JSON.stringify(v) : String(v))]);
+        }),
       ]) : h('div', { class: 'cp-muted', style: 'margin-top:8px;font-size:12px' }, 'No accessorial rates specified for this load.'),
       h('div', { class: 'cp-payinfo', style: 'margin-top:10px' }, [h('div', { class: 'cp-payinfo-h' }, '📍 Tracking'), h('div', { class: 'cp-payinfo-b' }, t.tracking_note || 'Location tracking is on from booking until delivery.')]),
     ].filter(Boolean)));
@@ -2127,16 +2295,50 @@ function tripStepper(status) {
       mount(packetCard, [cardHead('Industry onboarding packet', pk.complete ? 'Packet complete ✓' : 'Mandatory items outstanding'),
         h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, (pk.items || []).map(it => {
           const c0 = TAGC[it.tag] || '#64748b';
-          const act = (it.status === 'pending' || it.status === 'rejected') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
-            const ref = h('input', { class: 'cp-in', placeholder: 'Document reference / vault file / note' });
+          // Smart submit: each packet item asks for what it actually needs —
+          // a PDF/photo upload for documents, typed values for numbers/contacts.
+          const SPEC = {
+            operating_authority: { fields: [['MC number', 'MC-000000'], ['USDOT number', '0000000']], file: 'required', fileHint: 'Authority letter / MC certificate (PDF or photo) — brokers require this in your packet' },
+            safer_check:        { fields: [['MC or USDOT number for SAFER check', 'MC-000000']] },
+            emergency_contact:  { fields: [['Contact name', 'Full name'], ['Contact phone', '(555) 000-0000']] },
+            equipment_info:     { fields: [['Equipment summary', 'e.g. 1x Dry Van 53ft, 1x Reefer']], hint: 'Tip: add trucks in the Fleet tab too.' },
+            auto_liability:     { file: 'required', fileHint: 'Insurance filing (PDF or clear photo)' },
+            coi_from_agent:     { file: 'required', fileHint: 'COI from your agent (PDF or clear photo)' },
+            w9:                 { file: 'required', fileHint: 'Signed W-9 (PDF or clear photo)' },
+            carrier_agreement:  { file: 'required', fileHint: 'Signed Carrier Agreement (PDF or photo)' },
+            cargo_insurance:    { file: 'required', fileHint: 'Cargo insurance certificate (PDF or photo)' },
+            reefer_breakdown:   { file: 'required', fileHint: 'Reefer breakdown coverage (PDF or photo)' },
+            noa_factoring:      { file: 'required', fileHint: 'Notice of Assignment / factoring letter (PDF or photo)' },
+            ach_details:        { file: 'required', fileHint: 'Voided check or ACH form (PDF or photo)' },
+            hazmat_cert:        { file: 'required', fileHint: 'Hazmat certificate / permit (PDF or photo)' },
+          };
+          const act = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+            if (it.status === 'verified' && !confirm('This item is already verified. Changing it sends it back for review. Continue?')) return;
+            const spec = SPEC[it.key] || { file: 'optional', fields: [['Reference / note', 'Reference or short note']], fileHint: 'Document (PDF or photo) — optional' };
+            const fieldEls = (spec.fields || []).map(([lbl, ph]) => [lbl, h('input', { class: 'cp-in', placeholder: ph })]);
+            let file = null;
+            const fMeta = h('div', { class: 'cp-row-s' });
+            const fIn = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'display:none' });
+            fIn.onchange = () => { file = fIn.files && fIn.files[0]; fMeta.textContent = file ? ('✓ ' + file.name + ' (' + (file.size > 1048576 ? (file.size / 1048576).toFixed(1) + ' MB' : Math.round(file.size / 1024) + ' KB') + ')') : ''; };
+            const pick = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => fIn.click() }, '📎 Choose PDF / photo');
             const err = h('div', { class: 'cp-err' });
-            const close = openModal('Submit — ' + it.label, [ref, err,
-              h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev) => {
-                ev.currentTarget.disabled = true;
-                try { await onboardingSubmitItem(it.key, ref.value.trim(), null); close(); loadPacket(); }
-                catch (e) { ev.currentTarget.disabled = false; err.textContent = (e && e.message) || 'Failed'; }
+            const kids = [];
+            fieldEls.forEach(([lbl, inp]) => { kids.push(h('label', { class: 'cp-row-s', style: 'font-weight:700;margin-top:6px;display:block' }, lbl)); kids.push(inp); });
+            if (spec.file) { kids.push(h('div', { class: 'cp-row-s', style: 'font-weight:700;margin-top:10px' }, spec.fileHint || 'Document (PDF or photo)')); kids.push(h('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:4px' }, [pick, fIn])); kids.push(fMeta); }
+            if (spec.hint) kids.push(h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#94a3b8' }, spec.hint));
+            const close = openModal('Submit — ' + it.label, [...kids, err,
+              h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: async (ev) => {
+                const vals = fieldEls.map(([lbl, inp]) => inp.value.trim() ? (lbl + ': ' + inp.value.trim()) : null).filter(Boolean);
+                if (spec.file === 'required' && !file) { err.textContent = 'Please attach the document (PDF or a clear photo).'; return; }
+                if (!vals.length && !file) { err.textContent = 'Fill the field(s) or attach the document.'; return; }
+                ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting…';
+                try {
+                  let ref = vals.join(' · ');
+                  if (file) { const m = await uploadDocument(file, 'onboarding-' + it.key); ref = (ref ? ref + ' · ' : '') + 'file:' + m.path; }
+                  await onboardingSubmitItem(it.key, ref, null); close(); loadPacket();
+                } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit'; err.textContent = (e && e.message) || 'Failed'; }
               } }, 'Submit')]);
-          } }, it.status === 'rejected' ? 'Resubmit' : 'Submit') : null;
+          } }, it.status === 'rejected' ? 'Resubmit' : it.status === 'submitted' ? 'Change' : it.status === 'verified' ? 'Update' : 'Submit');
           return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + c0 + ';padding-left:10px;border-radius:8px' }, [
             h('div', null, [h('div', { class: 'cp-row-t' }, it.label), h('div', { class: 'cp-row-s' }, '[' + it.tag.toUpperCase() + ']' + (it.note ? ' · ' + it.note : ''))]),
             h('div', { style: 'display:flex;gap:6px;align-items:center' }, [pill(it.status), act].filter(Boolean)),
@@ -2286,6 +2488,7 @@ let _hadSession = false, _watching = false;
 function watchAuth() { if (_watching) return; _watching = true; onAuthChange((s) => { if (s) { _hadSession = true; return; } if (_hadSession) { _hadSession = false; location.reload(); } }); }
 
 async function boot() {
+  if (/type=recovery/.test(location.hash || '')) { recoveryScreen(); return; }
   root.setAttribute('aria-busy', 'true');
   let session = null;
   try { session = await getSession(); } catch (_) {}

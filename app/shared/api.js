@@ -134,6 +134,16 @@ export const iftaSet = (q, st, mi, gal) => rpc('cc_ifta_set', { p_quarter: q, p_
 export const iftaSummary = (q) => rpc('cc_ifta_summary', { p_quarter: q });
 export const truckSetMaintenance = (id, service, insp) => rpc('cc_truck_set_maintenance', { p_truck: id, p_service: service ?? null, p_inspection: insp ?? null });
 export const fleetMaintenance = () => rpc('cc_fleet_maintenance');
+// Staff-only: change a user's login email/password (edge fn re-verifies staff)
+export async function adminUserUpdate(o) {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('admin-user-update', { body: o });
+  if (error) throw error;
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+export const adminNote = (action, target, note) => rpc('cc_admin_note', { p_action: action, p_target: target, p_note: note ?? null });
+export const bookRequestCarrierPacket = (id) => rpc('cc_book_request_carrier_packet', { p_request: id });
 export const accountHealthBoard = (limit = 100) => rpc('cc_account_health_board', { p_limit: limit });
 export const issueViolation = (org, kind, severity, note) => rpc('cc_issue_violation', { p_org: org, p_kind: kind, p_severity: severity, p_note: note });
 export const resolveViolation = (id, note) => rpc('cc_resolve_violation', { p_id: id, p_note: note ?? null });
