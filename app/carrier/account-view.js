@@ -1,6 +1,7 @@
 // Premium Account & Settings — the LOCKED design ported into the live carrier app.
 // Renders hero + metric strip + sub-tab nav + rich section cards, wired to real data.
-import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile } from '../shared/api.js';
+import { openSignModal, printExecutedAgreement } from './dispatch-agreement.js';
+import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, carrierRequestReverify } from '../shared/api.js';
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -21,10 +22,15 @@ export async function renderPremiumAccount(host, ctx) {
   const reqs = (comp && comp.requirements) || [];
   const totalDocs = reqs.length || 0;
   const okDocs = reqs.filter((r) => String(r.status || '').toLowerCase() === 'valid').length;
+  const agrReq = reqs.find((r) => /dispatch service agreement|dispatch_agreement/i.test(r.name || '')) || null;
+  const agrStatus = agrReq ? String(agrReq.status || 'missing').toLowerCase() : 'missing';
   const healthScore = health && health.score != null ? String(health.score) : '—';
   const rating = trust && trust.rating != null ? (Number(trust.rating).toFixed(1) + '★') : (trust && trust.verified ? 'Verified' : 'New');
   const name = ov.carrier || (comp && comp.carrier) || 'Your company';
   const email = user.email || '';
+  const um = (user && user.user_metadata) || {};
+  const contactName = um.name || user.name || '';
+  const phoneVal = um.phone || ov.phone || '';
   const initials = (name.trim().replace(/[^A-Za-z ]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('') || 'C').toUpperCase();
   const compliant = !!ov.compliance_ok;
   const mc = ov.mc_number || ov.mc || '';
@@ -67,9 +73,9 @@ export async function renderPremiumAccount(host, ctx) {
     +   ['Profile:s-profile', 'Verification:s-verify', 'Business:s-biz', 'Dispatch:s-disp', 'Security:s-sec', 'Alerts:s-notif', 'Payments:s-pay', 'Support:s-support'].map((p, i) => { const a = p.split(':'); return '<div class="chip' + (i === 0 ? ' on' : '') + '" data-t="' + a[1] + '">' + a[0] + '</div>'; }).join('')
     + '</div>'
     + '<div class="body">'
-    + '<div class="card" id="s-profile"><div class="sec-h"><div class="sec-ico ic-blue">&#128100;</div><div class="sec-t">Profile</div></div><div class="sec-s">Your photo and how brokers see you.</div>'
+    + '<div class="card" id="s-profile"><div class="sec-h" style="align-items:center"><div class="sec-ico ic-blue">&#128100;</div><div class="sec-t">Profile</div>' + (contactName ? '<span class="cpa-autopill">&#10003; from sign-up</span>' : '') + '</div><div class="sec-s">Auto-filled from your sign-up \u2014 change anytime.</div>'
     +   '<div class="field"><label>Display name</label><input id="acx-dname" value="' + esc(name) + '"></div>'
-    +   '<div class="grid2"><div class="field"><label>Contact name</label><input value="' + esc(user.name || '') + '"></div><div class="field"><label>Phone</label><input value="' + esc(ov.phone || '') + '"></div></div>'
+    +   '<div class="grid2"><div class="field"><label>Contact name</label><input value="' + esc(contactName) + '"></div><div class="field"><label>Phone' + (phoneVal ? '' : ' <span style=\"color:#d97706;font-size:.66rem;font-weight:800\">\u00b7 recommended</span>') + '</label><input value="' + esc(phoneVal) + '" placeholder="(555) 000-0000"></div></div>'
     +   '<div style="margin-top:13px;display:flex;gap:8px"><button class="btn sm" data-toast="Profile saved">Save changes</button><button class="btn sec sm" id="acx-photo">Change photo</button></div>'
     +   '<input type="file" id="acx-avafile" accept="image/*" hidden></div>'
     + '<div class="card" id="s-verify"><div class="sec-h"><div class="sec-ico ic-green">&#128737;</div><div class="sec-t">Verification &amp; documents</div></div><div class="sec-s">Same live status as the Documents tab — one source of truth.</div>'
@@ -78,17 +84,22 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div>' + docHtml + '</div>'
     +   '<div style="margin-top:12px"><button class="btn sm" data-go="documents">Open Documents</button></div>'
     +   '<div class="hint">Uploading moves an item to <b>In review</b>; the Command Center approves it and every screen updates together.</div></div>'
-    + '<div class="card" id="s-biz"><div class="sec-h"><div class="sec-ico ic-navy">&#127970;</div><div class="sec-t">Business profile</div></div><div class="sec-s">Legal identity used on rate cons, invoices and settlements.</div>'
-    +   '<div class="grid2"><div class="field"><label>Legal entity</label><input value="' + esc(name) + '"></div><div class="field"><label>Entity type</label><select><option>LLC</option><option>Sole proprietor</option><option>Corporation</option></select></div>'
-    +   '<div class="field"><label>MC number</label><input value="' + esc(mc) + '" placeholder="MC-000000"></div><div class="field"><label>USDOT</label><input value="' + esc(dot) + '" placeholder="0000000"></div></div>'
-    +   '<div class="field"><label>Business address</label><input value="' + esc(ov.address || '') + '" placeholder="Street, City, ST ZIP"></div>'
-    +   '<div style="margin-top:12px"><button class="btn sm" data-toast="Business profile saved">Save</button></div></div>'
+    + '<div class="card" id="s-biz"><div class="sec-h" style="align-items:center"><div class="sec-ico ic-navy">&#127970;</div><div class="sec-t">Business profile</div>' + (compliant ? '<span class="cpa-autopill">&#10003; verified</span>' : '') + '</div><div class="sec-s">Legal identity from your approved authority &amp; W-9. Changing a verified detail re-opens review.</div>'
+    +   '<div class="grid2"><div class="field"><label>Legal entity</label><input class="acx-cred" id="acx-entity" value="' + esc(name) + '" readonly></div><div class="field"><label>Entity type</label><select id="acx-etype"><option>LLC</option><option>Sole proprietor</option><option>Corporation</option></select></div>'
+    +   '<div class="field"><label>MC number</label><input class="acx-cred" id="acx-mc" value="' + esc(mc) + '" placeholder="MC-000000" readonly></div><div class="field"><label>USDOT</label><input class="acx-cred" id="acx-dot" value="' + esc(dot) + '" placeholder="0000000" readonly></div></div>'
+    +   '<div class="field"><label>Business address <span style="color:#94a3b8;font-size:.66rem">&middot; freely editable</span></label><input id="acx-addr" value="' + esc(ov.address || '') + '" placeholder="Street, City, ST ZIP"></div>'
+    +   '<div id="acx-bizmsg" class="cp-row-s" style="margin-top:8px"></div>'
+    +   '<div style="margin-top:10px;display:flex;gap:8px"><button class="btn ghost sm" id="acx-bizchange">Change verified details</button><button class="btn sm" id="acx-bizsave">Save</button></div></div>'
     + '<div class="card" id="s-disp"><div class="sec-h"><div class="sec-ico ic-orange">&#128667;</div><div class="sec-t">Dispatch preferences</div></div><div class="sec-s">Drives the load-matching engine — better in, better loads.</div>'
     +   '<div class="grid2"><div class="field"><label>Equipment</label><select id="acx-eq">' + eqSel() + '</select></div><div class="field"><label>Home base</label><input id="acx-home" value="' + esc(dp.home_base || '') + '"></div>'
-    +   '<div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Max deadhead (mi)</label><input id="acx-dead" value="' + esc(dp.max_deadhead_miles || '') + '"></div></div>'
+    +   '<div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Max deadhead (mi)</label><input id="acx-dead" value="' + esc(dp.max_deadhead_miles || '') + '"></div><div class="field"><label>Target rate ($/mi)</label><input id="acx-target" value="' + esc(dp.target_rpm || '') + '"></div><div class="field"><label>Max weight (lbs)</label><input id="acx-weight" value="' + esc(dp.max_weight_lbs || '') + '"></div></div>'
     +   '<div class="field"><label>Preferred lanes</label><input id="acx-lanes" value="' + esc((dp.preferred_lanes || []).join(', ')) + '"></div>'
+    +   '<div class="grid2"><div class="field"><label>Shortest trip (mi)</label><input id="acx-tripmin" value="' + esc(dp.min_trip_miles || '') + '"></div><div class="field"><label>Longest trip (mi)</label><input id="acx-tripmax" value="' + esc(dp.max_trip_miles || '') + '"></div></div>'
+    +   '<div class="grid2"><div class="field"><label>Min notice (hrs)</label><input id="acx-notice" value="' + esc(dp.min_notice_hours || '') + '"></div><div class="field"><label>Avoid states</label><input id="acx-avoid" value="' + esc((dp.avoid_states || []).join(', ')) + '"></div></div>'
     +   '<div class="row"><div><div class="rt">Haul hazmat</div><div class="rs">Requires endorsement on file</div></div><div class="tg' + (dp.hazmat ? ' on' : '') + '" id="acx-haz"></div></div>'
+    +   '<div class="row"><div><div class="rt">Team drivers</div><div class="rs">Two drivers, longer runs</div></div><div class="tg' + (dp.team_drivers ? ' on' : '') + '" id="acx-team"></div></div>'
     +   '<div class="row"><div><div class="rt">Available weekends</div><div class="rs">Include Sat/Sun loads</div></div><div class="tg' + (dp.weekend_ok !== false ? ' on' : '') + '" id="acx-wknd"></div></div>'
+    +   '<div class="hint" style="margin-top:10px;background:#f0f7ff;border:1px solid #d6e8ff;color:#2b5f93;border-radius:11px;padding:9px 12px;font-size:.75rem">More detail = sharper, better-paying matches. Blank fields never hurt your account \u2014 they just mean broader matching.</div>'
     +   '<div style="margin-top:12px"><button class="btn sm" id="acx-savedisp">Save preferences</button></div></div>'
     + '<div class="card" id="s-sec"><div class="sec-h"><div class="sec-ico ic-violet">&#128274;</div><div class="sec-t">Security &amp; sign-in</div></div><div class="sec-s">Protect your account and your money.</div>'
     +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Email address</div><div class="rs" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(email) + '</div></div><button class="btn ghost sm" style="flex:none" data-toast="To change your sign-in email, contact support — it protects your payouts">Change</button></div>'
@@ -111,7 +122,7 @@ export async function renderPremiumAccount(host, ctx) {
     + '<div class="card"><div class="sec-h"><div class="sec-ico ic-navy">&#128196;</div><div class="sec-t">Legal &amp; policies</div></div>'
     +   '<a class="pol" href="/privacy.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Privacy Policy</span><span class="go">&rsaquo;</span></a>'
     +   '<a class="pol" href="/terms.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Terms of Service</span><span class="go">&rsaquo;</span></a>'
-    +   '<a class="pol" href="/terms.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Dispatch Service Agreement</span><span class="go">&rsaquo;</span></a></div>'
+    +   '<div class="pol" style="cursor:default"><span class="rt">Dispatch Service Agreement</span>' + (agrStatus === 'valid' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-green">Approved</span><button class="btn ghost sm" id="acx-agr-dl">Download</button></span>' : (agrStatus === 'pending' || agrStatus === 'in_review' || agrStatus === 'review' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-blue">In review</span><button class="btn ghost sm" id="acx-agr-dl">Download</button></span>' : '<button class="btn sm" id="acx-agr-sign">Sign agreement</button>')) + '</div></div>'
     + '<div class="card dangerc"><div class="sec-h"><div class="sec-ico ic-red">&#9888;</div><div class="sec-t">Danger zone</div></div><div class="sec-s">Pause new load offers or close your account. A person handles every request — nothing happens automatically.</div>'
     +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Pause activation</div><div class="rs">Stop new offers temporarily — your data stays safe</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Pause%20my%20LoadBoot%20account&body=Please%20pause%20new%20load%20offers%20on%20my%20account.">Request pause</a></div>'
     +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Close account</div><div class="rs">Permanently deactivate — we confirm with you first</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Close%20my%20LoadBoot%20account">Contact us</a></div></div>'
@@ -124,17 +135,36 @@ export async function renderPremiumAccount(host, ctx) {
   const toast = (m) => { const t = root.querySelector('#acx-toast'); if (!t) return; t.textContent = m; t.classList.add('show'); clearTimeout(root._tt); root._tt = setTimeout(() => t.classList.remove('show'), 1900); };
   root.querySelectorAll('[data-toast]').forEach((b) => b.addEventListener('click', () => toast(b.getAttribute('data-toast'))));
   root.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { if (ctx.go) ctx.go(b.getAttribute('data-go')); }));
+  // Dispatch Service Agreement: sign -> record (compliance pending) -> CC approves; download executed PDF
+  (function () {
+    const contact = contactName || name;
+    const signBtn = root.querySelector('#acx-agr-sign');
+    if (signBtn) signBtn.addEventListener('click', () => {
+      openSignModal({ openModal: ctx.openModal, toast: toast }, { carrier: name, mc: mc, dot: dot }, (res) => {
+        const pol = signBtn.closest('.pol');
+        if (pol) { pol.innerHTML = '<span class="rt">Dispatch Service Agreement</span><span style="display:flex;gap:8px;align-items:center"><span class="pill p-blue">In review</span><button class="btn ghost sm" id="acx-agr-dl2">Download</button></span>'; const d = root.querySelector('#acx-agr-dl2'); if (d) d.addEventListener('click', () => printExecutedAgreement({ carrier: name, mc: mc, dot: dot, signer: res.signer, date: res.date })); }
+      });
+    });
+    const dl = root.querySelector('#acx-agr-dl');
+    if (dl) dl.addEventListener('click', () => printExecutedAgreement({ carrier: name, mc: mc, dot: dot, signer: contact, date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), approved: (agrStatus === 'valid') }));
+  })();
   const addPay = root.querySelector('#acx-addpay');
   if (addPay) addPay.addEventListener('click', () => {
     if (!ctx.openModal) { if (ctx.go) ctx.go('finance'); return; }
     const mk = (ph, val) => { const i = document.createElement('input'); i.placeholder = ph; i.style.cssText = 'width:100%;border:1px solid #eaf0f7;border-radius:11px;padding:10px 11px;font-size:.9rem;margin-top:8px;box-sizing:border-box'; if (val) i.value = val; return i; };
-    const bank = mk('Bank name *', pay && pay.bank_name), holder = mk('Account holder name *', pay && pay.account_title), acct = mk('Account number *'), routing = mk('Routing / ABA number *');
+    const abaValid = (r) => { r = (r || '').replace(/\D/g, ''); if (r.length !== 9) return false; const d = r.split('').map(Number); return (3 * (d[0] + d[3] + d[6]) + 7 * (d[1] + d[4] + d[7]) + 1 * (d[2] + d[5] + d[8])) % 10 === 0; };
+    const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const bank = mk('Bank name *', pay && pay.bank_name), holder = mk('Account holder name * (must match your company)', pay && pay.account_title), acct = mk('Account number *'), routing = mk('Routing / ABA number *'), baddr = mk('Bank address (for wires)'), phone = mk('Bank / accounting phone');
+    const rfb = document.createElement('div'); rfb.style.cssText = 'font-size:.72rem;font-weight:700;margin-top:2px';
+    const nfb = document.createElement('div'); nfb.style.cssText = 'font-size:.72rem;font-weight:700;margin-top:2px';
+    routing.addEventListener('input', () => { const r = routing.value; if (!r) { rfb.textContent = ''; return; } if (abaValid(r)) { rfb.style.color = '#12a150'; rfb.textContent = '\u2713 Routing valid (auto-checked, free)'; } else { rfb.style.color = '#e0304a'; rfb.textContent = '\u2717 Routing number invalid'; } });
+    holder.addEventListener('input', () => { const h = holder.value.trim(); if (!h) { nfb.textContent = ''; return; } if (norm(h) === norm(name)) { nfb.style.color = '#12a150'; nfb.textContent = '\u2713 Matches your company name'; } else { nfb.style.color = '#d97706'; nfb.textContent = '\u26a0 Does not match \u201C' + name + '\u201D \u2014 use a factoring NOA / DBA proof, or the Command Center will review'; } });
     const msg = document.createElement('div'); msg.style.cssText = 'color:#e0304a;font-size:.8rem;margin-top:6px';
     const note = document.createElement('p'); note.style.cssText = 'font-size:.8rem;color:#64748b;margin:0'; note.textContent = 'A person verifies bank details before any payout. Numbers are masked once saved.';
     const save = document.createElement('button'); save.textContent = 'Save payout details'; save.style.cssText = 'margin-top:12px;width:100%;background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border:0;border-radius:12px;padding:11px;font-weight:700;cursor:pointer';
     let close;
-    save.addEventListener('click', async () => { msg.textContent = ''; if (!bank.value.trim() || !holder.value.trim() || !acct.value.trim() || !routing.value.trim()) { msg.textContent = 'Please complete all required fields.'; return; } save.disabled = true; save.textContent = 'Saving…'; try { await setMyPaymentProfile({ bank_name: bank.value.trim(), account_title: holder.value.trim(), account_number: acct.value.trim(), routing_number: routing.value.trim(), payment_method: 'ach' }); if (close) close(); toast('Payout details saved — pending verification'); } catch (e) { save.disabled = false; save.textContent = 'Save payout details'; msg.textContent = (e && e.message) || 'Could not save.'; } });
-    close = ctx.openModal('Payout & bank details', [note, bank, holder, acct, routing, msg, save]);
+    save.addEventListener('click', async () => { msg.textContent = ''; if (!bank.value.trim() || !holder.value.trim() || !acct.value.trim() || !routing.value.trim()) { msg.textContent = 'Please complete all required fields.'; return; } if (!abaValid(routing.value)) { msg.textContent = 'Routing number is invalid \u2014 please re-check it.'; return; } save.disabled = true; save.textContent = 'Saving…'; try { await setMyPaymentProfile({ bank_name: bank.value.trim(), account_title: holder.value.trim(), account_number: acct.value.trim(), routing_number: routing.value.trim(), bank_address: baddr.value.trim(), bank_phone: phone.value.trim(), payment_method: 'ach' }); if (close) close(); toast('Payout details saved — pending verification'); } catch (e) { save.disabled = false; save.textContent = 'Save payout details'; msg.textContent = (e && e.message) || 'Could not save.'; } });
+    close = ctx.openModal('Payout & bank details', [note, holder, nfb, bank, acct, routing, rfb, baddr, phone, msg, save]);
   });
   // nav chips
   const chips = [].slice.call(root.querySelectorAll('.chip'));
@@ -144,6 +174,47 @@ export async function renderPremiumAccount(host, ctx) {
     const obs = new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting) chips.forEach((c) => c.classList.toggle('on', c.dataset.t === e.target.id)); }); }, { rootMargin: '-40% 0px -55% 0px' });
     secs.forEach((s) => obs.observe(s));
   } catch (_) {}
+  // Desktop masonry: pack cards into balanced shortest-height columns (no dead gaps). Mobile = single column.
+  (function () {
+    const bodyEl = root.querySelector('.body'); if (!bodyEl) return;
+    const cards = [].slice.call(bodyEl.querySelectorAll('.card'));
+    let lastN = -1;
+    const layout = () => {
+      const w = window.innerWidth; const n = w >= 1200 ? 3 : (w >= 860 ? 2 : 1);
+      if (n === lastN) return; lastN = n;
+      bodyEl.innerHTML = '';
+      if (n === 1) { bodyEl.classList.remove('masonry'); cards.forEach((c) => bodyEl.appendChild(c)); return; }
+      bodyEl.classList.add('masonry');
+      const cols = []; for (let i = 0; i < n; i++) { const d = document.createElement('div'); d.className = 'mcol'; cols.push(d); bodyEl.appendChild(d); }
+      cards.forEach((card) => { let min = 0; for (let i = 1; i < n; i++) { if (cols[i].offsetHeight < cols[min].offsetHeight) min = i; } cols[min].appendChild(card); });
+    };
+    layout(); let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { lastN = -1; layout(); }, 180); });
+  })();
+  // Business profile: credibility fields locked; Change -> disclaimer -> editable; Save -> re-verify if changed
+  (function () {
+    const credIds = ['acx-entity', 'acx-mc', 'acx-dot'];
+    const orig = {}; credIds.forEach((id) => { const e = root.querySelector('#' + id); if (e) orig[id] = e.value; });
+    const changeBtn = root.querySelector('#acx-bizchange');
+    const saveBtn = root.querySelector('#acx-bizsave');
+    if (changeBtn) changeBtn.addEventListener('click', () => {
+      if (!confirm('Change a verified detail?\n\nMC / USDOT / legal entity were verified against your official documents. Changing one sends your account back to PENDING and pauses booking until the Command Center re-verifies the new value.\n\nOnly change it if your real authority or entity actually changed. Continue?')) return;
+      credIds.forEach((id) => { const e = root.querySelector('#' + id); if (e) { e.readOnly = false; e.style.background = '#fff'; } });
+      changeBtn.style.display = 'none';
+      const m = root.querySelector('#acx-bizmsg'); if (m) { m.style.color = '#d97706'; m.textContent = 'Editing verified details — saving will send your account for re-verification.'; }
+    });
+    if (saveBtn) saveBtn.addEventListener('click', async () => {
+      const changed = credIds.some((id) => { const e = root.querySelector('#' + id); return e && e.value !== orig[id]; });
+      const m = root.querySelector('#acx-bizmsg');
+      if (!changed) { if (m) { m.style.color = ''; m.textContent = 'Saved. (No verified detail changed.)'; } return; }
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      try {
+        await carrierRequestReverify('mc_authority', 'Business detail changed (MC/DOT/entity)');
+        if (m) { m.style.color = '#b45309'; m.innerHTML = '\u2709 Sent to the Command Center for re-verification. Your account is now <b>pending</b> and booking is paused until approved.'; }
+        credIds.forEach((id) => { const e = root.querySelector('#' + id); if (e) e.readOnly = true; });
+        saveBtn.textContent = 'Sent for review';
+      } catch (e) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; if (m) { m.style.color = '#e0304a'; m.textContent = (e && e.message) || 'Could not save.'; } }
+    });
+  })();
   // avatar
   const avafile = root.querySelector('#acx-avafile'); const ava = root.querySelector('#acx-ava');
   const pick = () => avafile && avafile.click();
@@ -155,6 +226,7 @@ export async function renderPremiumAccount(host, ctx) {
   // dispatch toggles (local) + save
   const hazEl = root.querySelector('#acx-haz'); if (hazEl) hazEl.addEventListener('click', () => hazEl.classList.toggle('on'));
   const wkndEl = root.querySelector('#acx-wknd'); if (wkndEl) wkndEl.addEventListener('click', () => wkndEl.classList.toggle('on'));
+  const teamEl = root.querySelector('#acx-team'); if (teamEl) teamEl.addEventListener('click', () => teamEl.classList.toggle('on'));
   const saveDisp = root.querySelector('#acx-savedisp');
   if (saveDisp) saveDisp.addEventListener('click', async () => {
     saveDisp.disabled = true; saveDisp.textContent = 'Saving…';
@@ -165,7 +237,14 @@ export async function renderPremiumAccount(host, ctx) {
         preferred_lanes: (root.querySelector('#acx-lanes').value || '').split(',').map((x) => x.trim()).filter(Boolean),
         home_base: (root.querySelector('#acx-home').value || '').trim() || null,
         max_deadhead_miles: (root.querySelector('#acx-dead').value || '').trim() || null,
+        target_rpm: (root.querySelector('#acx-target').value || '').trim() || null,
+        max_weight_lbs: (root.querySelector('#acx-weight').value || '').trim() || null,
+        min_trip_miles: (root.querySelector('#acx-tripmin').value || '').trim() || null,
+        max_trip_miles: (root.querySelector('#acx-tripmax').value || '').trim() || null,
+        min_notice_hours: (root.querySelector('#acx-notice').value || '').trim() || null,
+        avoid_states: (root.querySelector('#acx-avoid').value || '').split(',').map((x) => x.trim()).filter(Boolean),
         hazmat: hazEl ? hazEl.classList.contains('on') : false,
+        team_drivers: teamEl ? teamEl.classList.contains('on') : false,
         weekend_ok: wkndEl ? wkndEl.classList.contains('on') : true,
       });
       saveDisp.textContent = 'Saved ✓'; toast('Dispatch preferences saved'); setTimeout(() => { saveDisp.disabled = false; saveDisp.textContent = 'Save preferences'; }, 1400);

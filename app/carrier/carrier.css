@@ -604,6 +604,11 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
   .acx .hero{border-radius:22px;padding-bottom:54px}
   .acx .mstrip{max-width:1120px;margin:-42px auto 0;padding:0 16px}
   .acx .nav{border-radius:0}
-  .acx .body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;max-width:1120px;margin:0 auto}
+  .acx .body{max-width:1120px;margin:0 auto}
+  .acx .body.masonry{display:flex;gap:14px;align-items:flex-start}
+  .acx .body.masonry .mcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+  .acx .body.masonry .card{margin:0}
 }
-@media(min-width:1320px){ .acx .body{grid-template-columns:repeat(3,minmax(0,1fr))} }
+
+.acx .cpa-autopill{margin-left:auto;display:inline-flex;gap:5px;align-items:center;background:#e7f9ee;color:#12a150;border:1px solid #bff0d0;border-radius:99px;padding:3px 10px;font-size:.64rem;font-weight:800}
+.acx .acx-cred[readonly]{background:#f4f7fb;color:#334155}

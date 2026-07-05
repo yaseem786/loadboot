@@ -1,0 +1,130 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><title>Business profile</title><style>
+.acx{--navy:#0B1B33;--blue:#0883F7;--blue2:#38bdf8;--orange:#F97316;--ink:#0f1e36;--slate:#51617a;--mute:#9aa7bd;--line:#eaf0f7;--ice:#e9f3ff;--green:#12a150;--red:#e0304a;--amber:#d97706}
+.acx *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif}
+.acx .hero{background:linear-gradient(160deg,#0a1a33 0%,#0d2444 46%,#0e3b48 100%);color:#fff;padding:6px 20px 62px;position:relative;overflow:hidden}
+.acx .hero .glow{position:absolute;border-radius:50%;filter:blur(6px)}
+.acx .g1{width:230px;height:230px;right:-70px;top:-90px;background:radial-gradient(circle,rgba(8,131,247,.5),transparent 62%)}
+.acx .g2{width:150px;height:150px;left:-50px;bottom:-40px;background:radial-gradient(circle,rgba(249,115,22,.34),transparent 60%)}
+.acx .brandrow{display:flex;justify-content:space-between;align-items:center;margin:8px 0 20px;position:relative;z-index:3}
+.acx .brandrow img{height:26px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
+.acx .glass{background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:6px 12px;font-size:.72rem;font-weight:700;display:flex;gap:7px;align-items:center}
+.acx .gdot{width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.25)}
+.acx .profrow{display:flex;gap:15px;align-items:center;position:relative;z-index:3}
+.acx .ava{width:78px;height:78px;border-radius:26px;background:linear-gradient(135deg,#0883F7,#0e3b48);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.9rem;position:relative;flex:none;box-shadow:0 12px 30px -8px rgba(8,131,247,.6);overflow:hidden;border:2px solid rgba(255,255,255,.22)}
+.acx .ava img{width:100%;height:100%;object-fit:cover}
+.acx .ava .cam{position:absolute;right:-6px;bottom:-6px;width:30px;height:30px;border-radius:50%;background:var(--orange);color:#0b1b33;display:flex;align-items:center;justify-content:center;font-size:.85rem;border:3px solid #0d2444;cursor:pointer;box-shadow:0 4px 10px rgba(249,115,22,.5)}
+.acx .pname{font-size:1.32rem;font-weight:800;letter-spacing:-.02em;line-height:1.12}
+.acx .psub{color:#b9c6db;font-size:.8rem;margin-top:3px}
+.acx .vpill{display:inline-flex;gap:7px;align-items:center;margin-top:10px;background:linear-gradient(90deg,rgba(18,161,80,.28),rgba(18,161,80,.12));color:#8ef0b4;border:1px solid rgba(52,211,153,.4);border-radius:99px;padding:5px 12px;font-size:.7rem;font-weight:800;letter-spacing:.04em;position:relative;overflow:hidden}
+.acx .vpill:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);animation:acx-shine 3.2s infinite}
+@keyframes acx-shine{to{transform:translateX(120%)}}
+.acx .mstrip{display:flex;gap:9px;margin:-42px 16px 0;position:relative;z-index:6}
+.acx .m{flex:1;background:#fff;border-radius:16px;padding:12px 10px;text-align:center;box-shadow:0 12px 26px -16px rgba(2,12,30,.4);border:1px solid var(--line)}
+.acx .m .v{font-weight:800;font-size:1.15rem;color:var(--navy);letter-spacing:-.02em}
+.acx .m .l{font-size:.64rem;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.acx .nav{position:sticky;top:0;z-index:30;background:rgba(238,243,249,.86);backdrop-filter:blur(10px);display:flex;gap:7px;overflow-x:auto;padding:12px 14px;scrollbar-width:none;border-bottom:1px solid var(--line)}
+.acx .nav::-webkit-scrollbar{display:none}
+.acx .chip{flex:none;font-size:.75rem;font-weight:700;color:var(--slate);background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 13px;cursor:pointer;white-space:nowrap;transition:.15s}
+.acx .chip.on{background:linear-gradient(135deg,var(--navy),#123a5c);color:#fff;border-color:transparent;box-shadow:0 6px 16px -6px rgba(11,27,51,.6)}
+.acx .body{padding:6px 14px 30px}
+.acx .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:17px;margin:13px 0;box-shadow:0 10px 28px -20px rgba(2,12,30,.35)}
+.acx .sec-h{display:flex;align-items:center;gap:11px;margin-bottom:3px}
+.acx .sec-ico{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex:none;color:#fff;box-shadow:0 6px 14px -6px rgba(8,131,247,.5)}
+.acx .ic-blue{background:linear-gradient(135deg,#0883F7,#38bdf8)}
+.acx .ic-navy{background:linear-gradient(135deg,#0b1b33,#123a5c)}
+.acx .ic-green{background:linear-gradient(135deg,#12a150,#34d399)}
+.acx .ic-orange{background:linear-gradient(135deg,#f97316,#fb923c)}
+.acx .ic-violet{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+.acx .ic-red{background:linear-gradient(135deg,#e0304a,#f87171)}
+.acx .ic-slate{background:linear-gradient(135deg,#475569,#94a3b8)}
+.acx .sec-t{font-weight:800;font-size:1.06rem;letter-spacing:-.01em}
+.acx .sec-s{color:var(--mute);font-size:.78rem;margin:3px 0 13px}
+.acx .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f2f6fb}
+.acx .row:first-of-type{border-top:0}
+.acx .rt{font-weight:650;font-size:.92rem;color:var(--ink)}
+.acx .rs{color:var(--mute);font-size:.76rem;margin-top:2px}
+.acx .btn{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border:0;border-radius:12px;padding:10px 15px;font-weight:700;font-size:.84rem;cursor:pointer;box-shadow:0 8px 18px -8px rgba(8,131,247,.6)}
+.acx .btn.sec{background:#f1f5fb;color:var(--navy);box-shadow:none}
+.acx .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--navy);box-shadow:none}
+.acx .btn.orange{background:linear-gradient(135deg,#f97316,#fb8c3c);color:#0b1b33;box-shadow:0 8px 18px -8px rgba(249,115,22,.6)}
+.acx .btn.sm{padding:8px 12px;font-size:.79rem}
+.acx .btn.danger{background:#fff5f5;color:var(--red);border:1px solid #fdcdd4;box-shadow:none}
+.acx .btn.block{width:100%;justify-content:center;display:flex;align-items:center;gap:8px}
+.acx .pill{font-size:.68rem;font-weight:800;padding:4px 10px;border-radius:99px}
+.acx .p-green{background:#e7f9ee;color:var(--green)}
+.acx .p-blue{background:var(--ice);color:var(--blue)}
+.acx .p-red{background:#fdeef0;color:var(--red)}
+.acx .p-gray{background:#f1f5fb;color:#64748b}
+.acx .tg{width:46px;height:27px;border-radius:99px;background:#d3dced;position:relative;cursor:pointer;flex:none;transition:.18s}
+.acx .tg:after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 2px 5px rgba(0,0,0,.22)}
+.acx .tg.on{background:linear-gradient(135deg,#0883F7,#38bdf8)}
+.acx .tg.on:after{left:22px}
+.acx .ringwrap{display:flex;align-items:center;gap:15px;margin-bottom:6px;background:linear-gradient(135deg,#f7fbff,#eef5ff);border:1px solid var(--ice);border-radius:16px;padding:12px}
+.acx .ring{width:70px;height:70px;flex:none;filter:drop-shadow(0 6px 12px rgba(18,161,80,.25))}
+.acx .doc{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #f2f6fb}
+.acx .di{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.92rem;flex:none}
+.acx .di.ok{background:linear-gradient(135deg,#e7f9ee,#d0f5df);color:var(--green)}
+.acx .di.rev{background:var(--ice);color:var(--blue)}
+.acx .di.req{background:#fdeef0;color:var(--red)}
+.acx .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.acx .field label{display:block;font-size:.71rem;color:var(--slate);font-weight:650;margin:7px 0 3px}
+.acx .field input, .acx .field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 11px;font-size:.88rem;background:#fafcff;color:var(--ink)}
+.acx .field input:focus, .acx .field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.acx .pol{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #f2f6fb;cursor:pointer}
+.acx .go{color:var(--mute);font-weight:800}
+@keyframes acx-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.acx .mini{font-size:.72rem;color:var(--mute)}
+.acx .dangerc{border:1px solid #fbd5db;background:linear-gradient(#fff,#fff8f8)}
+.acx .sensor{display:inline-flex;width:20px;height:20px;border-radius:50%;border:2px solid var(--blue);align-items:center;justify-content:center;font-size:.72rem;color:var(--blue);animation:acx-pulse 1s infinite;vertical-align:middle}
+@keyframes acx-pulse{0%,100%{box-shadow:0 0 0 0 rgba(8,131,247,.35)}50%{box-shadow:0 0 0 7px rgba(8,131,247,0)}}
+.acx .hint{background:linear-gradient(135deg,#f0f7ff,#eaf3ff);border:1px solid var(--ice);border-radius:12px;padding:10px 12px;font-size:.75rem;color:#2b5f93;margin-top:10px}
+.acx{max-width:680px;margin:0 auto;position:relative}
+.acx-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);background:#0b1b33;color:#fff;padding:11px 17px;border-radius:13px;font-size:.83rem;font-weight:650;opacity:0;pointer-events:none;transition:.28s;z-index:9999;max-width:90%;text-align:center;box-shadow:0 16px 34px -12px rgba(0,0,0,.5)}
+.acx-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.acx .brandrow img{height:26px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
+
+/* Account premium — refinements: overflow-safe rows, desktop full-width, smooth polish */
+.acx .row > div:first-child{min-width:0}
+.acx .row .btn, .acx .row a.btn{flex:none;white-space:nowrap}
+.acx .card{transition:box-shadow .22s ease, transform .22s ease}
+.acx .btn{transition:transform .12s ease, box-shadow .2s ease, filter .2s ease}
+.acx .btn:hover{filter:brightness(1.04)}
+.acx .btn:active{transform:translateY(1px)}
+.acx .chip{transition:all .18s ease}
+.acx .doc, .acx .pol, .acx .row{transition:background .15s ease}
+.acx .pol:hover{background:#f7fbff}
+.acx .card:hover{box-shadow:0 16px 40px -22px rgba(2,12,30,.45)}
+@media(min-width:900px){
+  .acx{max-width:none}
+  .acx .hero{border-radius:22px;padding-bottom:54px}
+  .acx .mstrip{max-width:1120px;margin:-42px auto 0;padding:0 16px}
+  .acx .nav{border-radius:0}
+  .acx .body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;max-width:1120px;margin:0 auto}
+}
+@media(min-width:1320px){ .acx .body{grid-template-columns:repeat(3,minmax(0,1fr))} }
+
+body{margin:0;background:#eef3f9;font-family:'Inter',sans-serif}
+.wrap{max-width:600px;margin:0 auto;padding:22px}
+.note{background:#0b1b33;color:#fff;border-radius:14px;padding:12px 16px;font-size:.9rem;margin-bottom:16px}
+.acx{max-width:none}
+.statusbar{border-radius:14px;padding:12px 15px;font-weight:800;font-size:.82rem;display:flex;align-items:center;gap:9px;margin-bottom:14px;letter-spacing:.03em}
+.st-ok{background:linear-gradient(90deg,#e7f9ee,#f2fdf6);color:#12a150;border:1px solid #bff0d0}
+.st-pend{background:linear-gradient(90deg,#fef3e2,#fffaf3);color:#d97706;border:1px solid #f6d9a8}
+.autopill{display:inline-flex;gap:6px;align-items:center;background:#e7f9ee;color:#12a150;border:1px solid #bff0d0;border-radius:99px;padding:4px 11px;font-size:.68rem;font-weight:800;margin-left:auto}
+.credrow{margin-top:2px}
+.lockwrap{display:flex;gap:8px;align-items:flex-end}
+.lockwrap .field{flex:1;margin:0}
+.locktag{font-size:.6rem;font-weight:800;color:#7c3aed;background:#f3ecff;border:1px solid #ddd0f5;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle}
+.chgd{outline:2px solid #d97706!important}
+.mask{position:fixed;inset:0;background:rgba(11,27,51,.55);display:none;align-items:center;justify-content:center;z-index:99;padding:20px}
+.modal{background:#fff;border-radius:18px;padding:20px;max-width:400px;width:100%;box-shadow:0 30px 70px -20px rgba(0,0,0,.5)}
+.modal h3{margin:0 0 8px;font-size:1.05rem;color:#0b1b33}
+.modal p{font-size:.86rem;color:#51617a;line-height:1.5;margin:0 0 8px}
+.modal .warn{background:#fef3e2;border:1px solid #f6d9a8;border-radius:12px;padding:10px 12px;font-size:.8rem;color:#b45309;margin:10px 0}
+</style></head><body><div class="wrap"><div class="note">PREVIEW — Task 3: Business profile documents verify hone par apne aap bharta hai. Credibility fields (MC / USDOT / legal entity / EIN) LOCKED — "Change" dabao to pehle DISCLAIMER; change karke Save karo to account "PENDING RE-APPROVAL" ho kar CC ko jaata hai. Neeche live try karein. Address/Entity type freely editable (koi status change nahi).</div><div class="acx"><div class="statusbar st-ok" id="sbar">&#10003; VERIFIED — BOOKING OPEN</div><div class="card"><div class="sec-h" style="align-items:center"><div class="sec-ico ic-navy">&#127970;</div><div class="sec-t">Business profile</div><span class="autopill">&#10003; AUTO-FILLED FROM VERIFIED DOCS</span></div><div class="sec-s">Legal identity pulled from your approved authority, insurance &amp; W-9.</div><div class="credrow"><div class="lockwrap"><div class="field"><label>Legal entity <span class="locktag">from W-9 / authority</span></label><input id="in-entity" value="M Yaseen Trucking LLC" readonly style="background:#f4f7fb"></div><button class="btn ghost sm" id="btn-entity" style="margin-bottom:1px" onclick="openDis('entity')">Change</button></div></div><div class="grid2"><div class="credrow"><div class="lockwrap"><div class="field"><label>MC number <span class="locktag">FMCSA authority</span></label><input id="in-mc" value="1234567" readonly style="background:#f4f7fb"></div><button class="btn ghost sm" id="btn-mc" style="margin-bottom:1px" onclick="openDis('mc')">Change</button></div></div><div class="credrow"><div class="lockwrap"><div class="field"><label>USDOT <span class="locktag">FMCSA authority</span></label><input id="in-dot" value="3456789" readonly style="background:#f4f7fb"></div><button class="btn ghost sm" id="btn-dot" style="margin-bottom:1px" onclick="openDis('dot')">Change</button></div></div></div><div class="grid2"><div class="credrow"><div class="lockwrap"><div class="field"><label>EIN <span class="locktag">from W-9</span></label><input id="in-ein" value="&bull;&bull; &bull;&bull;&bull; 4421" readonly style="background:#f4f7fb"></div><button class="btn ghost sm" id="btn-ein" style="margin-bottom:1px" onclick="openDis('ein')">Change</button></div></div><div class="field"><label>Entity type <span style="color:#94a3b8">· editable</span></label><select><option>LLC</option><option>Sole proprietor</option><option>Corporation</option></select></div></div><div class="field"><label>Business address <span style="color:#94a3b8">· freely editable</span></label><input value="1200 Trucker Way, Dallas, TX 75201"></div><div class="hint" id="saveNote" style="display:none;margin-top:12px">You changed a verified field. Saving sends your account for re-verification.</div><div style="margin-top:13px"><button class="btn sm" onclick="saveBiz()">Save business profile</button></div><div class="hint" id="ccmsg" style="display:none;margin-top:12px;background:#fef3e2;border-color:#f6d9a8;color:#b45309">&#9993; Sent to the Command Center — a person re-verifies the changed detail against your documents. Booking resumes once approved.</div></div></div><div class="mask" id="mask"><div class="modal"><h3>&#9888; Change a verified detail?</h3><p>This field was verified against your official documents. Changing it affects your credibility with brokers.</p><div class="warn"><b>Heads-up:</b> saving a change sends your account back to <b>PENDING</b> and <b>pauses booking</b> until the Command Center re-verifies the new value against your paperwork.</div><p>Only change it if your real authority / entity actually changed.</p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn sec sm" style="flex:1" onclick="closeDis()">Cancel</button><button class="btn orange sm" style="flex:1" onclick="proceed()">Continue to change</button></div></div></div><script>
+var status=document.getElementById('sbar');
+function openDis(field){window._pend=field;document.getElementById('mask').style.display='flex';}
+function closeDis(){document.getElementById('mask').style.display='none';}
+function proceed(){var f=window._pend;closeDis();var inp=document.getElementById('in-'+f);inp.readOnly=false;inp.style.background='#fff';inp.classList.add('chgd');inp.focus();document.getElementById('btn-'+f).textContent='editing';window._dirty=true;document.getElementById('saveNote').style.display='block';}
+function saveBiz(){ if(window._dirty){ status.className='statusbar st-pend'; status.innerHTML='&#9203; PENDING RE-APPROVAL — booking paused until the Command Center re-verifies'; document.getElementById('ccmsg').style.display='block'; document.getElementById('saveNote').style.display='none'; } else { alert('No verified fields changed — saved.'); } }
+</script></body></html>

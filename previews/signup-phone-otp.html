@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><title>Signup + phone OTP</title><style>
+*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{margin:0;background:#eef3f9;color:#0f1e36}
+.wrap{max-width:460px;margin:0 auto;padding:22px}
+.note{background:#0b1b33;color:#fff;border-radius:14px;padding:12px 16px;font-size:.85rem;margin-bottom:14px;line-height:1.5}
+.card{background:#fff;border:1px solid #eaf0f7;border-radius:20px;padding:22px;box-shadow:0 16px 44px -26px rgba(2,12,30,.45)}
+.logo{font-weight:800;font-size:1.3rem;text-align:center;margin-bottom:2px}.logo span{color:#F97316}
+.sub{text-align:center;color:#94a3b8;font-size:.82rem;margin-bottom:16px}
+.field label{display:block;font-size:.74rem;color:#51617a;font-weight:700;margin:10px 0 3px}
+.field input,.field select{width:100%;border:1px solid #eaf0f7;border-radius:11px;padding:11px 12px;font-size:.92rem;background:#fafcff}
+.field input:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.phrow{display:flex;gap:8px}.phrow select{width:96px;flex:none}
+.btn{width:100%;background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border:0;border-radius:12px;padding:13px;font-weight:800;font-size:.92rem;cursor:pointer;margin-top:16px}.btn:disabled{opacity:.5;cursor:not-allowed}
+.otpwrap{display:flex;gap:9px;justify-content:center;margin:18px 0}
+.otp{width:46px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;border:2px solid #eaf0f7;border-radius:12px;background:#fafcff}
+.otp:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.center{text-align:center}
+.resend{font-size:.82rem;color:#94a3b8;margin-top:6px;text-align:center}.resend a{color:#0883F7;font-weight:700;cursor:pointer}
+.back{font-size:.82rem;color:#0883F7;font-weight:700;cursor:pointer;display:inline-block;margin-top:10px}
+.hidden{display:none}
+.okwrap{text-align:center;padding:10px 0}
+.okc{width:64px;height:64px;border-radius:50%;background:#e7f9ee;color:#12a150;font-size:2rem;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.vbadge{display:inline-flex;gap:5px;align-items:center;background:#e7f9ee;color:#12a150;border:1px solid #bff0d0;border-radius:99px;padding:3px 9px;font-size:.66rem;font-weight:800}
+.profrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid #f2f6fb;font-size:.86rem}
+.hint{background:#fff8ef;border:1px solid #f6d9a8;border-radius:11px;padding:9px 12px;font-size:.74rem;color:#b45309;margin-top:14px;line-height:1.5}
+</style></head><body><div class="wrap"><div class="note"><b>WORKING PREVIEW — Task 7: mobile number at signup + OTP verify.</b> Account banate waqt mobile number liya jaata hai → SMS par 6-digit code → verify → account active + Profile mein <b>verified phone</b> badge. Live try karein (demo: koi bhi 6 digit daalein).</div><div class="card" id="s1"><div class="logo">Load<span>Boot</span></div><div class="sub">Create your carrier account</div><div class="field"><label>Company</label><input value="M Yaseen Trucking LLC"></div><div class="field"><label>Your name</label><input value="Muhammad Yaseen"></div><div class="field"><label>Email</label><input value="you@company.com"></div><div class="field"><label>Mobile number <span style="color:#e0304a">*</span></label><div class="phrow"><select id="cc"><option>+1</option><option>+92</option><option>+44</option></select><input id="phone" placeholder="(555) 018-2277"></div></div><div class="field"><label>Password</label><input type="password" value="********"></div><button class="btn" onclick="toStep2()">Create account &amp; verify phone</button><div class="hint">SMS OTP needs an SMS provider (Twilio / Supabase phone auth). Setup free; small per-message cost. Live app se real code aayega.</div></div><div class="card hidden" id="s2"><div class="logo">Verify your phone</div><div class="sub">Enter the 6-digit code we texted to <b id="sentto"></b></div><div class="otpwrap"><input class="otp" id="o0" inputmode="numeric" oninput="otpMove(this,0)"><input class="otp" id="o1" inputmode="numeric" oninput="otpMove(this,1)"><input class="otp" id="o2" inputmode="numeric" oninput="otpMove(this,2)"><input class="otp" id="o3" inputmode="numeric" oninput="otpMove(this,3)"><input class="otp" id="o4" inputmode="numeric" oninput="otpMove(this,4)"><input class="otp" id="o5" inputmode="numeric" oninput="otpMove(this,5)"></div><button class="btn" id="verify" disabled onclick="verify()">Verify &amp; continue</button><div class="resend"><div id="resendrow">Resend in <span id="timer">30</span>s</div></div><div class="center"><span class="back" onclick="show('s1')">← Change number</span></div><div class="hint">Demo: koi bhi 6 digit daalein. Real app mein SMS ka actual code chahiye — galat/expire code reject hoga.</div></div><div class="card hidden" id="s3"><div class="okwrap"><div class="okc">✓</div><div style="font-weight:800;font-size:1.15rem">Phone verified</div><div class="sub" style="margin-top:4px">Account active — welcome to LoadBoot</div></div><div style="border:1px solid #eef3f9;border-radius:12px;padding:6px 14px"><div style="font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;padding-top:8px">Profile</div><div class="profrow"><div>Company</div><b>M Yaseen Trucking LLC</b></div><div class="profrow"><div>Contact</div><b>Muhammad Yaseen</b></div><div class="profrow"><div>Mobile</div><div style="display:flex;gap:8px;align-items:center"><b id="vphone"></b><span class="vbadge">✓ VERIFIED</span></div></div></div><div class="hint" style="background:#f0f7ff;border-color:#d6e8ff;color:#2b5f93">Phone ab Profile mein <b>verified</b> ho kar auto-fill ho gaya. Future logins / password reset / dispatch alerts is verified number par ja sakte hain.</div></div></div><script>
+function show(id){['s1','s2','s3'].forEach(function(x){document.getElementById(x).classList.add('hidden')});document.getElementById(id).classList.remove('hidden');}
+function toStep2(){
+  var ph=document.getElementById('phone').value.trim();var cc=document.getElementById('cc').value;
+  if(ph.replace(/\D/g,'').length<7){alert('Enter a valid mobile number');return;}
+  window._ph=cc+' '+ph;
+  document.getElementById('sentto').textContent=cc+' ···'+ph.replace(/\D/g,'').slice(-2);
+  show('s2');setTimeout(function(){document.getElementById('o0').focus();},100);startTimer();
+}
+function otpMove(e,i){var v=e.value.replace(/\D/g,'');e.value=v.slice(-1);
+  if(v&&i<5)document.getElementById('o'+(i+1)).focus();
+  var code='';for(var k=0;k<6;k++)code+=document.getElementById('o'+k).value;
+  document.getElementById('verify').disabled=code.length!==6;}
+function verify(){
+  var code='';for(var k=0;k<6;k++)code+=document.getElementById('o'+k).value;
+  // demo: accept any 6 digits
+  document.getElementById('vphone').textContent=window._ph;show('s3');
+}
+var t;function startTimer(){var n=30;var el=document.getElementById('timer');el.parentElement.style.display='block';
+  clearInterval(t);t=setInterval(function(){n--;el.textContent=n;if(n<=0){clearInterval(t);document.getElementById('resendrow').innerHTML='<a onclick="resend()">Resend code</a>';}},1000);}
+function resend(){document.getElementById('resendrow').innerHTML='Code re-sent. <span id="rt">Resend in <span id="timer">30</span>s</span>';startTimer();}
+</script></body></html>

@@ -423,6 +423,7 @@ export const pocketOverview = () => rpc('cc_pocket_overview');
 export const pocketTrips = (limit) => rpc('cc_pocket_trips', { p_limit: limit ?? 50 });
 export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: limit ?? 50 });
 export const pocketCompliance = () => rpc('cc_pocket_compliance');
+export const carrierRequestReverify = (requirement, reason) => rpc('cc_carrier_request_reverify', { p_requirement: requirement, p_reason: reason ?? null });
 export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
 export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', { p_subject: subject, p_body: body ?? null });
 export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
@@ -671,7 +672,9 @@ export const sendEmail = async (o = {}) => {
 export const fmcsaVerify = async (o = {}) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
-  const { data, error } = await sb.functions.invoke('fmcsa-verify', { body: { carrier_org: o.carrierOrg ?? null, dot: o.dot ?? null, mc: o.mc ?? null } });
+  const _invoke = sb.functions.invoke('fmcsa-verify', { body: { carrier_org: o.carrierOrg ?? null, dot: o.dot ?? null, mc: o.mc ?? null } });
+  const _timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('FMCSA is taking too long. Please try again, or upload your authority letter (PDF) instead.')), 15000));
+  const { data, error } = await Promise.race([_invoke, _timeout]);
   if (error) { const e = new Error((error && error.message) || 'FMCSA verification failed'); e.fn = 'fmcsa-verify'; throw e; }
   if (data && data.error) throw new Error(data.error);
   return data;

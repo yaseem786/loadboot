@@ -172,7 +172,9 @@ function authScreen() {
   const passWrap = h('div', { style: 'position:relative' }, [pass, eye]);
   const company = h('input', { class: 'cp-in', type: 'text', placeholder: 'Company / carrier name', autocomplete: 'organization' });
   const name = h('input', { class: 'cp-in', type: 'text', placeholder: 'Your full name', autocomplete: 'name' });
-  const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name]);
+  const ccSel = h('select', { class: 'cp-in', style: 'width:88px;flex:none' }, [h('option', { value: '+1' }, '+1'), h('option', { value: '+92' }, '+92'), h('option', { value: '+44' }, '+44'), h('option', { value: '+91' }, '+91')]);
+  const phone = h('input', { class: 'cp-in', type: 'tel', placeholder: 'Mobile number', autocomplete: 'tel' });
+  const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
   const err = h('div', { class: 'cp-err' });
   const title = h('h1', null, 'Welcome back');
   const sub = h('p', { class: 'cp-auth-sub' }, 'Sign in to your carrier portal.');
@@ -202,12 +204,26 @@ function authScreen() {
     const em = email.value.trim(), pw = pass.value;
     if (!em || !pw) { err.textContent = 'Enter your email and password.'; return; }
     if (signup && (!company.value.trim() || !name.value.trim())) { err.textContent = 'Enter your company and your name.'; return; }
+    if (signup && phone.value.replace(/\D/g, '').length < 7) { err.textContent = 'Enter a valid mobile number.'; return; }
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
-        const { data, error } = await signUp(em, pw, { company: company.value.trim(), name: name.value.trim() });
+        const { data, error } = await signUp(em, pw, { company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()) });
         if (error) throw error;
         if (!data || !data.session) { err.className = 'cp-err ok'; err.textContent = 'Account created! Check your email to confirm, then sign in.'; setMode(false); btn.disabled = false; return; }
+        // Phone OTP verification — active the moment an SMS provider (Twilio) is configured; graceful otherwise.
+        try {
+          const phv = (ccSel.value + phone.value.trim()).replace(/[^\d+]/g, '');
+          if (phv && phv.replace(/\D/g, '').length >= 7) {
+            const { getClient } = await import('../shared/supabaseClient.js');
+            const sb = await getClient();
+            const { error: pErr } = await sb.auth.updateUser({ phone: phv });
+            if (!pErr) {
+              const code = window.prompt('We texted a 6-digit code to ' + phv + '.\n\nEnter it to verify your mobile number:');
+              if (code && code.trim()) { try { await sb.auth.verifyOtp({ phone: phv, token: code.trim(), type: 'phone_change' }); } catch (_) {} }
+            }
+          }
+        } catch (_) { /* SMS provider not configured yet — phone saved in profile, verification skipped */ }
         boot(); return;
       }
       const { error } = await signInWithPassword(em, pw); if (error) throw error; boot(); return;
@@ -2353,7 +2369,7 @@ function tripStepper(status) {
       } }, 'Verify with FMCSA');
       const upl = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: () => uploadFor(r) }, 'Or upload authority letter (PDF) instead');
       openModal('Operating authority \u2014 verify with FMCSA', [
-        h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Authority is verified live from FMCSA using your MC/DOT number \u2014 no document upload needed.'),
+        h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Enter EITHER your MC or your USDOT \u2014 one is enough. We verify it live from FMCSA; no document upload needed.'),
         mcIn, dotIn, vbtn, msg, res, upl,
       ]);
     };
@@ -2389,12 +2405,18 @@ function tripStepper(status) {
       const inReview = stateIdx >= 2 && !rejected && r.status !== 'valid';
       const actionable = r.status !== 'valid' && !inReview;
       const btnLabel = rejected ? 'Resubmit' : 'Upload';
+      const isAgr = (r.doc_type === 'dispatch_agreement') || /dispatch service agreement/i.test(r.name || '');
+      const _agrCarrier = (c && c.carrier) || '';
+      const signAgr = () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => alert(msg) }, { carrier: _agrCarrier }, () => loadDocuments()));
+      const dlAgr = () => import('./dispatch-agreement.js').then((m) => m.printExecutedAgreement({ carrier: _agrCarrier, approved: r.status === 'valid' }));
       return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
           h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
           h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
             h('span', { class: 'cp-pill', style: 'background:' + (rejected ? 'rgba(220,38,38,.1)' : tone.bg) + ';color:' + (rejected ? '#b91c1c' : tone.c) }, rejected ? 'Rejected' : r.status === 'valid' ? 'Approved ✓' : stateIdx >= 2 ? 'In review' : tone.label),
-            actionable ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => uploadFor(r) }, btnLabel) : (r.status === 'valid' ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => changeDoc(r) }, 'Change') : null),
+            isAgr
+              ? (r.status === 'valid' || inReview ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: dlAgr }, 'Download') : h('button', { class: 'cp-btn cp-btn-sm', onClick: signAgr }, 'Sign'))
+              : (actionable ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => uploadFor(r) }, btnLabel) : (r.status === 'valid' ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => changeDoc(r) }, 'Change') : null)),
           ].filter(Boolean)),
         ]),
         stepper, note,
@@ -2476,7 +2498,7 @@ function tripStepper(status) {
   async function loadAccount() {
     try {
       const m = await import('./account-view.js');
-      await m.renderPremiumAccount(content, { ov, user, go, signOut, enablePush, isPushEnabled, pushSupported });
+      await m.renderPremiumAccount(content, { ov, user, go, signOut, enablePush, isPushEnabled, pushSupported, openModal });
     } catch (e) {
       mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load account.')));
     }

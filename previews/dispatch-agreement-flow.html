@@ -1,0 +1,106 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><title>Dispatch Agreement — full working flow</title><style>
+*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{margin:0;background:#eef3f9;color:#0f1e36}
+.wrap{max-width:1080px;margin:0 auto;padding:18px}
+.note{background:#0b1b33;color:#fff;border-radius:14px;padding:12px 16px;font-size:.85rem;margin-bottom:14px;line-height:1.5}
+.statusbar{border-radius:14px;padding:13px 16px;font-weight:800;font-size:.85rem;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.st-pend{background:linear-gradient(90deg,#fef3e2,#fffaf3);color:#d97706;border:1px solid #f6d9a8}
+.st-ok{background:linear-gradient(90deg,#e7f9ee,#f2fdf6);color:#12a150;border:1px solid #bff0d0}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.cols{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid #eaf0f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 40px -26px rgba(2,12,30,.4)}
+.ph{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid #eef3f9;font-weight:800}
+.ph .who{font-size:.95rem}.ph .sub{font-size:.7rem;color:#94a3b8;font-weight:600}
+.bell{margin-left:auto;position:relative;font-size:1.2rem}
+.badge{position:absolute;top:-6px;right:-8px;background:#e0304a;color:#fff;font-size:.6rem;font-weight:800;border-radius:99px;padding:1px 5px;display:none}.badge.on{display:block}
+.body{padding:14px 16px}
+.step{display:inline-block;background:#e9f3ff;color:#0883F7;font-weight:800;font-size:.68rem;border-radius:99px;padding:2px 9px;margin-bottom:8px}
+.chklist{border:1px solid #eef3f9;border-radius:14px;padding:6px 14px}
+.crow{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid #f2f6fb}.crow:first-child{border-top:0}
+.ci{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex:none}
+.ci.ok{background:#e7f9ee;color:#12a150}.ci.rev{background:#e9f3ff;color:#0883F7}.ci.req{background:#fef3e2;color:#d97706}
+.grow{flex:1;min-width:0}.t{font-weight:700;font-size:.88rem}.s{font-size:.73rem;color:#94a3b8}
+.pill{font-size:.64rem;font-weight:800;padding:4px 9px;border-radius:99px;white-space:nowrap}
+.p-blue{background:#e9f3ff;color:#0883F7}.p-green{background:#e7f9ee;color:#12a150}.p-amber{background:#fef3e2;color:#d97706}
+.btn{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border:0;border-radius:11px;padding:9px 14px;font-weight:800;cursor:pointer;font-size:.8rem}
+.btn.g{background:#12a150}.btn.r{background:#fff;color:#e0304a;border:1px solid #fbd5db}.btn.sec{background:#eef3fb;color:#0b1b33}.btn.sm{padding:6px 10px;font-size:.72rem}.btn:disabled{opacity:.5;cursor:not-allowed}
+.dlchip{display:none;align-items:center;gap:5px;background:#e7f9ee;color:#12a150;border:1px solid #bff0d0;border-radius:9px;padding:6px 10px;font-size:.72rem;font-weight:800;cursor:pointer}
+.dlchip.on{display:inline-flex}
+.signbox{border:1px dashed #cbd6e6;border-radius:12px;padding:12px;margin-top:10px;display:none;background:#f9fbfe}.signbox.on{display:block}
+.fin{width:100%;border:1px solid #eaf0f7;border-radius:10px;padding:9px 11px;margin-top:6px;font-size:.9rem}
+.sig{font-family:'Brush Script MT',cursive;font-size:1.15rem}
+.chk{display:flex;gap:8px;font-size:.78rem;margin:8px 0}
+.empty{color:#94a3b8;font-size:.85rem;text-align:center;padding:22px 0}
+.ccitem{border:1px solid #eef3f9;border-radius:12px;padding:12px;display:none}.ccitem.on{display:block}
+.log{margin-top:14px;background:#0b1b33;border-radius:12px;padding:10px 13px;color:#cfe0f5;font-size:.73rem;line-height:1.7;min-height:40px}.log b{color:#fff}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(10px);background:#0b1b33;color:#fff;padding:11px 16px;border-radius:12px;font-size:.82rem;font-weight:600;opacity:0;transition:.28s;z-index:99}.toast.on{opacity:1;transform:translateX(-50%)}
+.printdoc{display:none}
+@media print{.screen{display:none!important}.printdoc{display:block!important}body{background:#fff}}
+.pd{padding:26px;max-width:820px;margin:0 auto}
+.pd-lh{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0b1b33;padding-bottom:12px}
+.pd-lh img{height:30px}.pd-meta{text-align:right;font-size:.72rem;color:#51617a;line-height:1.6}
+.pd h1{font-size:1.4rem;text-align:center;margin:16px 0 4px;color:#0b1b33}
+.pd .ref{text-align:center;font-size:.75rem;color:#94a3b8;margin-bottom:14px}
+.pd .recital{font-size:.8rem;color:#334155;line-height:1.6;border-bottom:1px solid #eaf0f7;padding-bottom:12px;margin-bottom:12px}
+.pd-cl{font-size:.79rem;color:#334155;line-height:1.55;margin:9px 0}
+.pd-cl b{color:#0b1b33}
+.pd .sb{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:24px;border-top:2px solid #eaf0f7;padding-top:18px}
+.pd .lbl{font-size:.7rem;text-transform:uppercase;color:#94a3b8;font-weight:800}
+.pd .line{border-bottom:1.5px solid #0f1e36;min-height:34px;font-family:'Brush Script MT',cursive;font-size:1.5rem;color:#0b1b33;padding:2px}
+.pd .m{font-size:.72rem;color:#51617a;margin-top:5px;line-height:1.5}
+.pd .stamp{border:3px solid #12a150;color:#12a150;font-weight:800;display:inline-block;padding:5px 12px;border-radius:8px;transform:rotate(-8deg);letter-spacing:.08em;margin-top:14px}
+</style></head><body><div class="printdoc"><div class="pd"><div class="pd-lh"><img src="https://loadboot.com/logo-full.png" alt="LoadBoot"><div class="pd-meta">Agreement No. LB-DSA-2026-004417<br>hello@loadboot.com · dispatch@loadboot.com</div></div><h1>Dispatch Service Agreement</h1><div class="ref">Ref LB-DSA-2026-004417 · Effective on Carrier acceptance</div><div class="recital">Between <b>LoadBoot</b> (&ldquo;Dispatcher&rdquo;) and <b>M Yaseen Trucking LLC</b>, USDOT 3456789 / MC 1234567, 1200 Trucker Way, Dallas, TX 75201 (&ldquo;Carrier&rdquo;). WHEREAS Dispatcher provides truck dispatch and back-office services; NOW, THEREFORE the parties agree to the following terms in full:</div><div class="pd-cl"><b>1. Definitions.</b> &ldquo;Dispatcher&rdquo; means LoadBoot; &ldquo;Carrier&rdquo; the motor carrier below. &ldquo;Booked through Dispatcher&rdquo; means any Load Dispatcher sourced, negotiated, or issued/received the Rate Confirmation for, as recorded in LoadBoot. &ldquo;Gross Line-Haul Revenue&rdquo; is the base transportation charge, excluding fuel surcharge, lumper, detention, TONU, and accessorials unless expressly bundled.</div><div class="pd-cl"><b>2. Services.</b> Dispatcher uses commercial best efforts to source freight, present options, negotiate rates, communicate with brokers/shippers on Carrier&rsquo;s behalf, and relay Rate Confirmations. Dispatcher does not guarantee any number, lane, or rate of Loads; Carrier need not accept any Load.</div><div class="pd-cl"><b>3. Relationship.</b> Dispatcher is an independent contractor, NOT a licensed broker or freight forwarder, takes no title to freight, and is not liable for cargo loss, damage, delay, or claims. Carrier controls its drivers, equipment, and routing.</div><div class="pd-cl"><b>4. Limited Authorization.</b> Carrier authorizes Dispatcher, on a limited basis, to communicate with brokers/shippers and book Loads per Carrier&rsquo;s preferences. Each booking is confirmed by Carrier or auto-booked within pre-approved limits; consent is recorded. Carrier may revoke any booking before dispatch.</div><div class="pd-cl"><b>5. Carrier Obligations.</b> Carrier shall maintain active USDOT/MC authority; insurance of not less than $1,000,000 auto liability and $100,000 cargo; qualified, DOT-compliant drivers; and full FMCSA/DOT compliance (HOS, ELD, drug &amp; alcohol). Carrier shall keep its information accurate and report any lapse.</div><div class="pd-cl"><b>6. Dispatch Fee &amp; Payment.</b> Fee: 5% of Gross Line-Haul Revenue per Load booked through Dispatcher and delivered. Example: $2,000 line-haul &rarr; $100 fee (fuel/lumper/detention excluded). Earned on booked+delivered; collected by settlement deduction or invoice per onboarding. Carrier gets an itemized statement and may audit. Fee disputes: within 15 days in writing; Rate Confirmation and LoadBoot records control. No fee on Carrier&rsquo;s own loads; no double fee. Late fees may accrue 1.5%/mo.</div><div class="pd-cl"><b>7. Cancellations / TONU.</b> Cancelled Loads, TONU, detention, and layover follow Dispatcher&rsquo;s published policies. No fee on a cancelled Load unless a TONU/cancellation payment is received.</div><div class="pd-cl"><b>8. Records / System of Record.</b> The LoadBoot platform is the authoritative record for Loads, Rate Confirmations, bookings, consents, communications, and Fees, and governs any dispute absent clear error.</div><div class="pd-cl"><b>9. Term &amp; Termination.</b> Effective on acceptance; either party may terminate on 30 days&rsquo; notice, or immediately for material breach, loss of authority, or lapse of insurance. Earned Fees survive.</div><div class="pd-cl"><b>10. Non-Exclusivity / Non-Circumvention.</b> Non-exclusive unless a separate addendum is signed. For the Term + 180 days, Carrier shall not circumvent Dispatcher to avoid Fees on relationships first introduced by Dispatcher.</div><div class="pd-cl"><b>11. Confidentiality / Indemnity / Liability.</b> Each party keeps the other&rsquo;s non-public info confidential. Carrier indemnifies Dispatcher for claims from Carrier&rsquo;s operations. Dispatcher&rsquo;s liability is capped at Fees paid in the prior 3 months; no indirect/consequential damages.</div><div class="pd-cl"><b>12. Governing Law / Disputes.</b> Texas law. Binding arbitration under AAA Commercial Rules in Dallas County, TX; either party may seek injunctive relief.</div><div class="pd-cl"><b>13. Miscellaneous.</b> Entire agreement with Exhibit A and onboarding terms; amendments in signed writing (incl. electronic); severability; force majeure; no assignment without consent; electronic notices; ESIGN/UETA consent; counterparts.</div><div class="pd-cl"><b>Exhibit A — Fee Schedule.</b> Dispatch Fee 5% of Gross Line-Haul Revenue per booked &amp; delivered Load. $2,000 &rarr; $100. Excludes fuel surcharge, lumper, detention. No fee on cancelled Loads absent TONU. Collected via settlement deduction or invoice per onboarding.</div><div class="sb"><div><div class="lbl">Dispatcher (pre-signed)</div><div class="line" id="pd-dsig" style="color:#0e7490"></div><div class="m" id="pd-dmeta"></div></div><div><div class="lbl">Carrier</div><div class="line" id="pd-csig"></div><div class="m" id="pd-cmeta"></div></div></div><div style="text-align:center"><span class="stamp" id="pd-stamp">EXECUTED</span></div></div></div><div class="screen"><div class="wrap"><div class="note"><b>FULL WORKING PREVIEW — Task 4 (updated).</b> Onboarding par required; sign na ho to booking locked. Approve ke baad: Approved row mein <b>inline Download</b> + Onboarding documents mein bhi download. CC/carrier dono ko <b>poora full agreement</b> (saare clauses) milta hai jis pe carrier ne sign kiya. Live chalayein.</div><div class="statusbar st-pend" id="acctbar">🔒 ACCOUNT PENDING — sign your Dispatch Agreement + get docs approved to activate. Booking locked.</div><div class="cols"><div class="panel"><div class="ph"><div>&#128100;</div><div><div class="who">Carrier — Onboarding & Account</div><div class="sub">Legal & policies · Onboarding documents</div></div><div class="bell">&#128276;<span class="badge" id="cbadge"></span></div></div><div class="body"><span class="step">STEP 1 — required at onboarding</span><div class="chklist"><div class="crow"><div class="ci ok">✓</div><div class="grow"><div class="t">Authority · Insurance · W-9</div><div class="s">Verified</div></div><span class="pill p-green">Done</span></div><div class="crow"><div class="ci req" id="ci-agr">!</div><div class="grow"><div class="t">Dispatch Service Agreement</div><div class="s" id="dsub">Required — not signed yet (blocks activation)</div></div><div style="display:flex;gap:8px;align-items:center"><span class="pill p-amber" id="dstatus">Not signed</span><span class="dlchip" id="cdl" onclick="download()">&#11015; Download</span></div></div></div><div style="margin-top:10px"><button class="btn" id="signbtn2" onclick="openSign()">Sign dispatch agreement</button></div><div class="signbox" id="sbx"><div style="font-weight:800;font-size:.9rem">Sign &amp; date</div><div style="font-size:.73rem;color:#94a3b8">Dispatcher pre-signed. <a href="dispatch-agreement.html" target="_blank">View full agreement</a></div><input class="fin sig" id="nm" placeholder="Type your full legal name" oninput="chkUpd()"><label style="font-size:.72rem;color:#64748b;font-weight:700;display:block;margin-top:8px">Date (editable)</label><input class="fin" id="dt" oninput="chkUpd()"><label class="chk"><input type="checkbox" id="agree" onchange="chkUpd()"><span>I am authorized and I agree (ESIGN/UETA).</span></label><button class="btn" id="signbtn" disabled onclick="sign()">Sign &amp; execute</button></div><div style="margin-top:12px;border-top:1px solid #eef3f9;padding-top:10px"><div style="font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">Onboarding documents</div><div class="crow" style="border:0"><div class="ci ok">📄</div><div class="grow"><div class="t">Signed Dispatch Agreement</div><div class="s">Executed copy</div></div><span class="dlchip" id="obdl" onclick="download()">&#11015; Download</span></div></div></div></div><div class="panel"><div class="ph"><div>&#127970;</div><div><div class="who">Command Center</div><div class="sub">Agreements queue</div></div><div class="bell">&#128276;<span class="badge" id="ccbadge"></span></div></div><div class="body"><span class="step">STEP 2 — CC reviews</span><div class="empty" id="ccempty">No agreements waiting for review.</div><div class="ccitem" id="ccitem"><div style="font-weight:800;font-size:.9rem">Dispatch Service Agreement</div><div class="s" id="ccmeta" style="font-size:.76rem;color:#64748b;margin:3px 0 10px"></div><button class="btn sec sm" style="margin-bottom:8px" onclick="download()">&#11015; Download signed PDF (full agreement + carrier sig &amp; date)</button><div style="display:flex;gap:8px"><button class="btn g" onclick="ccDecide(true)">Approve</button><button class="btn r" onclick="ccDecide(false)">Reject</button></div></div></div></div></div><div style="font-size:.72rem;font-weight:800;color:#64748b;margin:16px 0 4px">WHAT HAPPENS (live activity log)</div><div class="log" id="log"></div><div class="toast" id="toast"></div></div></div><script>
+var cbell=0,ccbell=0,carrierSig='',carrierDate='',approved=false;
+function bump(w){if(w=='c'){cbell++;var b=document.getElementById('cbadge');b.textContent=cbell;b.classList.add('on');}else{ccbell++;var b=document.getElementById('ccbadge');b.textContent=ccbell;b.classList.add('on');}}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(window._t);window._t=setTimeout(function(){t.classList.remove('on')},2300);}
+function logln(m){document.getElementById('log').innerHTML+='• '+m+'<br>';}
+function today(){return new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});}
+window.onload=function(){document.getElementById('dt').value=today();};
+function openSign(){document.getElementById('sbx').classList.add('on');}
+function chkUpd(){document.getElementById('signbtn').disabled=!(document.getElementById('nm').value.trim().length>2&&document.getElementById('dt').value.trim()&&document.getElementById('agree').checked);}
+function fillDoc(){
+  document.getElementById('pd-csig').textContent=carrierSig;
+  document.getElementById('pd-cmeta').innerHTML='By: '+carrierSig+', Authorized Representative<br>Date: '+carrierDate+'<br>e-signed · timestamp & IP recorded';
+  document.getElementById('pd-dsig').textContent='LoadBoot';
+  document.getElementById('pd-dmeta').innerHTML='By: Authorized Signatory, LoadBoot<br>Date: January 15, 2026 · Pre-signed (config)';
+  document.getElementById('pd-stamp').textContent=approved?'EXECUTED · CC APPROVED':'EXECUTED';
+}
+function download(){fillDoc();window.print();}
+function sign(){
+  carrierSig=document.getElementById('nm').value.trim();carrierDate=document.getElementById('dt').value.trim();
+  document.getElementById('dstatus').className='pill p-blue';document.getElementById('dstatus').textContent='Signed · In review';
+  document.getElementById('ci-agr').className='ci rev';document.getElementById('ci-agr').textContent='⏱';
+  document.getElementById('dsub').textContent='Signed by '+carrierSig+' on '+carrierDate+' — sent for approval';
+  document.getElementById('sbx').classList.remove('on');document.getElementById('signbtn2').style.display='none';
+  logln('Carrier <b>signed</b> ('+carrierDate+') — full agreement, signature + date captured');
+  logln('&rarr; Filed in <b>Onboarding & Legal</b> as “In review”');
+  document.getElementById('ccempty').style.display='none';document.getElementById('ccitem').classList.add('on');
+  document.getElementById('ccmeta').textContent='M Yaseen Trucking LLC · signed '+carrierDate+' · by '+carrierSig;
+  bump('cc');logln('🔔 <b>CC:</b> “New signed dispatch agreement — needs review”');
+  bump('c');logln('🔔 <b>Carrier:</b> “Agreement submitted — pending approval”');
+  toast('Signed — full agreement sent to Command Center');
+}
+function ccDecide(ok){
+  document.getElementById('ccitem').classList.remove('on');document.getElementById('ccempty').style.display='block';
+  if(ok){
+    approved=true;
+    document.getElementById('dstatus').className='pill p-green';document.getElementById('dstatus').textContent='Approved ✓';
+    document.getElementById('ci-agr').className='ci ok';document.getElementById('ci-agr').textContent='✓';
+    document.getElementById('dsub').textContent='Approved by Command Center on '+today();
+    document.getElementById('cdl').classList.add('on');       // inline download in the approved row
+    document.getElementById('obdl').classList.add('on');      // onboarding documents download
+    var sb=document.getElementById('acctbar');sb.className='statusbar st-ok';sb.innerHTML='✓ ACCOUNT ACTIVE — booking unlocked (agreement approved + docs verified)';
+    logln('CC <b>Approved</b> → carrier row shows <b>Approved ✓ + Download</b>');
+    logln('&rarr; Also available in <b>Onboarding documents</b> to download');
+    logln('&rarr; ACCOUNT EFFECT: activation gate cleared → <b>booking unlocked</b>');
+    bump('c');logln('🔔 <b>Carrier:</b> “Dispatch agreement approved — download your copy”');
+    toast('Approved — carrier can download (inline + onboarding docs)');
+  }else{
+    document.getElementById('dstatus').className='pill p-amber';document.getElementById('dstatus').textContent='Changes needed';
+    document.getElementById('ci-agr').className='ci req';document.getElementById('ci-agr').textContent='!';
+    document.getElementById('signbtn2').style.display='inline-block';document.getElementById('signbtn2').textContent='Re-sign agreement';
+    logln('CC <b>Rejected</b> → carrier asked to re-sign');bump('c');logln('🔔 <b>Carrier:</b> “Agreement needs changes — please re-sign”');
+    toast('Rejected — carrier asked to re-sign');
+  }
+}
+</script></body></html>
