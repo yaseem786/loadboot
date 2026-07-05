@@ -1,6 +1,6 @@
 // Premium Account & Settings — the LOCKED design ported into the live carrier app.
 // Renders hero + metric strip + sub-tab nav + rich section cards, wired to real data.
-import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, myTrustProfile } from '../shared/api.js';
+import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile } from '../shared/api.js';
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -53,7 +53,7 @@ export async function renderPremiumAccount(host, ctx) {
   host.innerHTML = ''
     + '<div class="acx">'
     + '<div class="hero"><div class="glow g1"></div><div class="glow g2"></div>'
-    +   '<div class="brandrow"><img src="/logo-full.png" alt="LoadBoot" style="height:24px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))"><div class="glass"><span class="gdot"></span> Online</div></div>'
+    +   '<div class="brandrow"><img src="/logo-full-dark.png" alt="LoadBoot" style="height:24px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))"><div class="glass"><span class="gdot"></span> Online</div></div>'
     +   '<div class="profrow"><div class="ava" id="acx-ava">' + esc(initials) + '<div class="cam" id="acx-cam">&#9998;</div></div>'
     +     '<div><div class="pname">' + esc(name) + '</div><div class="psub">' + esc(sub || 'Owner-operator') + '</div>' + vpill + '</div></div>'
     + '</div>'
@@ -91,7 +91,7 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div class="row"><div><div class="rt">Available weekends</div><div class="rs">Include Sat/Sun loads</div></div><div class="tg' + (dp.weekend_ok !== false ? ' on' : '') + '" id="acx-wknd"></div></div>'
     +   '<div style="margin-top:12px"><button class="btn sm" id="acx-savedisp">Save preferences</button></div></div>'
     + '<div class="card" id="s-sec"><div class="sec-h"><div class="sec-ico ic-violet">&#128274;</div><div class="sec-t">Security &amp; sign-in</div></div><div class="sec-s">Protect your account and your money.</div>'
-    +   '<div class="row"><div><div class="rt">Email address</div><div class="rs">' + esc(email) + '</div></div><button class="btn ghost sm" data-toast="Contact support to change your sign-in email">Change</button></div>'
+    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Email address</div><div class="rs" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(email) + '</div></div><button class="btn ghost sm" style="flex:none" data-toast="To change your sign-in email, contact support — it protects your payouts">Change</button></div>'
     +   '<div class="row"><div><div class="rt">Password</div><div class="rs">Keep it strong and private</div></div><button class="btn ghost sm" id="acx-pw">Reset</button></div>'
     +   '<div class="row"><div><div class="rt">Active sessions</div><div class="rs">Sign out everywhere</div></div><button class="btn ghost sm" id="acx-signout">Sign out</button></div></div>'
     + '<div class="card" id="s-notif"><div class="sec-h"><div class="sec-ico ic-blue">&#128276;</div><div class="sec-t">Notifications</div></div><div class="sec-s">Operational alerts always reach you; the rest are optional.</div>'
@@ -104,14 +104,17 @@ export async function renderPremiumAccount(host, ctx) {
     +   (pay && pay.exists
         ? '<div class="row"><div><div class="rt">Payout method</div><div class="rs">' + esc([pay.bank_name, (pay.account_type || '') + ' ···' + (pay.account_last4 || '')].filter(Boolean).join(' · ')) + '</div></div><span class="pill ' + (pay.verified ? 'p-green">Verified' : 'p-blue">Pending') + '</span></div>'
         : '<div class="row"><div><div class="rt">Payout method</div><div class="rs">Not set — add your bank so settlements reach you</div></div><span class="pill p-red">Add</span></div>')
-    +   '<div style="margin-top:11px"><button class="btn sm block" data-go="finance">Manage payout &amp; finance</button></div></div>'
+    +   '<div style="margin-top:11px;display:flex;flex-direction:column;gap:8px"><button class="btn sm block" id="acx-addpay">' + (pay && pay.exists ? 'Update payout details' : 'Add payout details') + '</button><button class="btn sec sm block" data-go="finance">Open finance &amp; statements</button></div></div>'
     + '<div class="card" id="s-support"><div class="sec-h"><div class="sec-ico ic-slate">&#127911;</div><div class="sec-t">Support</div></div><div class="sec-s">Real people, fast replies.</div>'
     +   '<a class="btn block" style="text-decoration:none;margin-bottom:9px" href="https://wa.me/">&#128172; WhatsApp us</a>'
     +   '<div class="grid2"><a class="btn sec sm block" style="text-decoration:none" href="mailto:hello@loadboot.com">&#9993; Email support</a><a class="btn sec sm block" style="text-decoration:none" href="mailto:dispatch@loadboot.com">&#128667; Dispatch desk</a></div></div>'
     + '<div class="card"><div class="sec-h"><div class="sec-ico ic-navy">&#128196;</div><div class="sec-t">Legal &amp; policies</div></div>'
-    +   '<div class="pol" data-toast="Opening Privacy Policy"><span class="rt">Privacy Policy</span><span class="go">&rsaquo;</span></div>'
-    +   '<div class="pol" data-toast="Opening Terms of Service"><span class="rt">Terms of Service</span><span class="go">&rsaquo;</span></div>'
-    +   '<div class="pol" data-toast="Opening Dispatch Agreement"><span class="rt">Dispatch Service Agreement</span><span class="go">&rsaquo;</span></div></div>'
+    +   '<a class="pol" href="/privacy.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Privacy Policy</span><span class="go">&rsaquo;</span></a>'
+    +   '<a class="pol" href="/terms.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Terms of Service</span><span class="go">&rsaquo;</span></a>'
+    +   '<a class="pol" href="/terms.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Dispatch Service Agreement</span><span class="go">&rsaquo;</span></a></div>'
+    + '<div class="card dangerc"><div class="sec-h"><div class="sec-ico ic-red">&#9888;</div><div class="sec-t">Danger zone</div></div><div class="sec-s">Pause new load offers or close your account. A person handles every request — nothing happens automatically.</div>'
+    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Pause activation</div><div class="rs">Stop new offers temporarily — your data stays safe</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Pause%20my%20LoadBoot%20account&body=Please%20pause%20new%20load%20offers%20on%20my%20account.">Request pause</a></div>'
+    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Close account</div><div class="rs">Permanently deactivate — we confirm with you first</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Close%20my%20LoadBoot%20account">Contact us</a></div></div>'
     + '</div>'
     + '<div class="acx-toast" id="acx-toast"></div>'
     + '</div>';
@@ -121,6 +124,18 @@ export async function renderPremiumAccount(host, ctx) {
   const toast = (m) => { const t = root.querySelector('#acx-toast'); if (!t) return; t.textContent = m; t.classList.add('show'); clearTimeout(root._tt); root._tt = setTimeout(() => t.classList.remove('show'), 1900); };
   root.querySelectorAll('[data-toast]').forEach((b) => b.addEventListener('click', () => toast(b.getAttribute('data-toast'))));
   root.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { if (ctx.go) ctx.go(b.getAttribute('data-go')); }));
+  const addPay = root.querySelector('#acx-addpay');
+  if (addPay) addPay.addEventListener('click', () => {
+    if (!ctx.openModal) { if (ctx.go) ctx.go('finance'); return; }
+    const mk = (ph, val) => { const i = document.createElement('input'); i.placeholder = ph; i.style.cssText = 'width:100%;border:1px solid #eaf0f7;border-radius:11px;padding:10px 11px;font-size:.9rem;margin-top:8px;box-sizing:border-box'; if (val) i.value = val; return i; };
+    const bank = mk('Bank name *', pay && pay.bank_name), holder = mk('Account holder name *', pay && pay.account_title), acct = mk('Account number *'), routing = mk('Routing / ABA number *');
+    const msg = document.createElement('div'); msg.style.cssText = 'color:#e0304a;font-size:.8rem;margin-top:6px';
+    const note = document.createElement('p'); note.style.cssText = 'font-size:.8rem;color:#64748b;margin:0'; note.textContent = 'A person verifies bank details before any payout. Numbers are masked once saved.';
+    const save = document.createElement('button'); save.textContent = 'Save payout details'; save.style.cssText = 'margin-top:12px;width:100%;background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border:0;border-radius:12px;padding:11px;font-weight:700;cursor:pointer';
+    let close;
+    save.addEventListener('click', async () => { msg.textContent = ''; if (!bank.value.trim() || !holder.value.trim() || !acct.value.trim() || !routing.value.trim()) { msg.textContent = 'Please complete all required fields.'; return; } save.disabled = true; save.textContent = 'Saving…'; try { await setMyPaymentProfile({ bank_name: bank.value.trim(), account_title: holder.value.trim(), account_number: acct.value.trim(), routing_number: routing.value.trim(), payment_method: 'ach' }); if (close) close(); toast('Payout details saved — pending verification'); } catch (e) { save.disabled = false; save.textContent = 'Save payout details'; msg.textContent = (e && e.message) || 'Could not save.'; } });
+    close = ctx.openModal('Payout & bank details', [note, bank, holder, acct, routing, msg, save]);
+  });
   // nav chips
   const chips = [].slice.call(root.querySelectorAll('.chip'));
   chips.forEach((c) => c.addEventListener('click', () => { const el = root.querySelector('#' + c.dataset.t); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); chips.forEach((x) => x.classList.toggle('on', x === c)); }));
