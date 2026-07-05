@@ -561,3 +561,25 @@ notification. Applied to BOTH prod (rwscphuhpjoudvljvmdk) and staging (snslhvmkj
 Data-flow note: admin_review_document already correctly syncs documents.status ->
 carrier_compliance via compliance_requirements.doc_type match, and cc_pocket_compliance reads
 the same table — so CC approvals DID propagate; the only break was the unsatisfiable mcs150 gate.
+
+## Account overhaul — Batch 1+2 implemented (7-task scope)
+Frontend (app/carrier/account-view.js, carrier.css, app.js, app/shared/api.js; new app/carrier/dispatch-agreement.js):
+- T1 Desktop masonry (shortest-column JS; mobile single col).
+- T2 Profile auto-fill from signup metadata (company + contact name; phone recommended).
+- T3 Business profile: credibility fields (MC/DOT/entity) locked; Change -> disclaimer -> Save calls
+     cc_carrier_request_reverify -> compliance 'pending' -> booking pauses -> CC re-verifies.
+- T4 Dispatch Service Agreement: sign modal (name+date+ESIGN) -> cc_carrier_sign_agreement ->
+     compliance 'dispatch_agreement' pending -> CC approves in compliance queue; executed-PDF print
+     (LoadBoot pre-signed + carrier sig/date + EXECUTED stamp) via dispatch-agreement.js.
+- T5 (app-side) Payout modal: free ABA routing checksum + company-name match + bank address/phone;
+     submits to existing CC verification (myPaymentProfile.verified). PLAID INSTANT = owner setup (see below).
+- T6 Dispatch prefs: full matching fields (target/weight/trip/notice/avoid/team) + NEUTRAL to health
+     (positive matching only; equipment+home = activation gate).
+DB (prod rwscphuhpjoudvljvmdk + staging snslhvmkjusozgjelghi):
+- cc_carrier_request_reverify(requirement, reason) — carrier-callable re-review trigger.
+- compliance_requirement 'dispatch_agreement' (doc_type dispatch_agreement, optional/active),
+  table dispatch_agreement_signatures, cc_carrier_sign_agreement(name, date, ref).
+OWNER SETUP still needed (external accounts, no upfront cost — pay per use):
+- T5 Plaid instant verify: create Plaid account -> set client_id/secret as secrets -> add plaid-link edge fn.
+- T7 Phone + OTP at signup: enable Supabase phone auth + connect Twilio (SMS) -> add phone field + OTP step.
+All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.

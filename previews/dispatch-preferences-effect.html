@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><title>Dispatch preferences — neutral + positive matching</title><style>
+*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{margin:0;background:#eef3f9;color:#0f1e36}
+.wrap{max-width:1080px;margin:0 auto;padding:18px}
+.note{background:#0b1b33;color:#fff;border-radius:14px;padding:12px 16px;font-size:.85rem;margin-bottom:14px;line-height:1.5}
+.cols{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}@media(max-width:860px){.cols{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid #eaf0f7;border-radius:18px;box-shadow:0 14px 40px -26px rgba(2,12,30,.4);overflow:hidden}
+.ph{padding:13px 16px;border-bottom:1px solid #eef3f9;font-weight:800;font-size:.95rem}.ph .sub{font-size:.7rem;color:#94a3b8;font-weight:600}
+.body{padding:14px 16px}
+.grouphd{display:flex;align-items:center;gap:8px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px}
+.tag{font-size:.6rem;font-weight:800;border-radius:6px;padding:2px 7px}
+.tag.act{background:#e9f3ff;color:#0883F7}.tag.opt{background:#eef3fb;color:#64748b}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.field label{display:block;font-size:.72rem;color:#51617a;font-weight:700;margin:8px 0 3px}
+.field input,.field select{width:100%;border:1px solid #eaf0f7;border-radius:10px;padding:9px 11px;font-size:.86rem;background:#fafcff}
+.field input:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.field.gate input,.field.gate select{border-color:#bcd8fb}
+.tgrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px solid #f4f7fb}
+.tg{width:44px;height:26px;border-radius:99px;background:#d3dced;position:relative;cursor:pointer;flex:none}.tg:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 2px 5px rgba(0,0,0,.2)}.tg.on{background:#0883F7}.tg.on:after{left:21px}
+.meter{height:10px;background:#eef3f9;border-radius:99px;overflow:hidden;margin:8px 0}.meter>i{display:block;height:100%;background:linear-gradient(90deg,#0883F7,#38bdf8);transition:.4s;border-radius:99px}
+.big{font-size:1.6rem;font-weight:800}
+.q{font-weight:800;font-size:1.02rem;padding:5px 12px;border-radius:99px;display:inline-block}
+.q.broad{background:#eef3fb;color:#64748b}.q.good{background:#e9f3ff;color:#0883F7}.q.tail{background:#e7f9ee;color:#12a150}
+.gate{background:#f7fbff;border:1px solid #d6e8ff;border-radius:12px;padding:11px 13px;margin-top:6px;font-size:.82rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.gate.ready{background:#e7f9ee;border-color:#bff0d0;color:#12a150}.gate.need{color:#0883F7}
+.healthbox{background:#f2fdf6;border:1px solid #bff0d0;border-radius:12px;padding:11px 13px;margin-top:14px;font-size:.8rem;color:#12a150;font-weight:700;display:flex;align-items:center;gap:8px}
+.hint{background:#f0f7ff;border:1px solid #d6e8ff;border-radius:11px;padding:9px 12px;font-size:.75rem;color:#2b5f93;margin-top:12px;line-height:1.5}
+.posrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #f4f7fb;font-size:.82rem}
+</style></head><body><div class="wrap"><div class="note"><b>WORKING PREVIEW — Task 6 (updated: neutral to health + positive matching).</b> Preferences se account <b>health par koi penalty NAHI</b>. Zyada bharo → matching <b>behtar/tailored</b> (positive). Sirf <b>Equipment + Home base</b> onboarding activation gate hain (engine ko chahiye). Live bharein — right side dekho.</div><div class="cols"><div class="panel"><div class="ph">Dispatch preferences <span class="sub">— onboarding · editable in Account</span></div><div class="body"><div class="grouphd"><span class="tag act">NEEDED TO ACTIVATE</span> engine requires these</div><div class="grid2"><div class="field gate"><label>Equipment</label><select id="equip" onchange="calc()"><option>— select —</option><option>Dry Van</option><option>Reefer</option><option>Flatbed</option><option>Power Only</option><option>Step Deck</option></select></div><div class="field gate"><label>Home base (city, ST)</label><input id="home" placeholder="Dallas, TX" oninput="calc()"></div></div><div class="grouphd"><span class="tag opt">SHARPENS MATCHING</span> optional — better loads, no penalty</div><div class="grid2"><div class="field"><label>Minimum rate ($/mi)</label><input id="minrate" placeholder="2.15" oninput="calc()"></div><div class="field"><label>Target rate ($/mi)</label><input id="target" placeholder="2.75" oninput="calc()"></div></div><div class="field"><label>Preferred lanes / regions</label><input id="lanes" placeholder="TX↔CA, TX↔IL" oninput="calc()"></div><div class="grid2"><div class="field"><label>Max deadhead (mi)</label><input id="deadhead" placeholder="250" oninput="calc()"></div><div class="field"><label>Max weight (lbs)</label><input id="weight" placeholder="44000" oninput="calc()"></div></div><div class="grid2"><div class="field"><label>Shortest trip (mi)</label><input id="tripmin" placeholder="200" oninput="calc()"></div><div class="field"><label>Longest trip (mi)</label><input id="tripmax" placeholder="1800" oninput="calc()"></div></div><div class="grid2"><div class="field"><label>Min notice (hrs)</label><input id="notice" placeholder="12" oninput="calc()"></div><div class="field"><label>Avoid states</label><input id="avoid" placeholder="NYC metro" oninput="calc()"></div></div><div class="tgrow"><b style="font-size:.86rem">Hazmat endorsed</b><div class="tg" onclick="tog(this)"></div></div><div class="tgrow"><b style="font-size:.86rem">Team drivers</b><div class="tg" onclick="tog(this)"></div></div><div class="tgrow"><b style="font-size:.86rem">Available weekends</b><div class="tg on" onclick="tog(this)"></div></div></div></div><div class="panel"><div class="ph">Live effect</div><div class="body"><div class="gate need" id="gate"></div><div style="margin-top:14px;font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase">Matching profile</div><div style="display:flex;align-items:center;gap:10px"><div class="big" id="pct">0%</div><div class="meter" style="flex:1"><i id="bar" style="width:0"></i></div></div><div style="margin-top:14px;font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase">Match quality (positive only)</div><div style="margin-top:6px"><span class="q broad" id="qual">BROAD</span></div><div id="qdesc" style="font-size:.78rem;color:#64748b;margin-top:6px"></div><div class="healthbox">✓ Account health: <b style="margin:0 4px">unaffected</b> by preferences — health = compliance + performance only.</div><div class="hint"><b>How it works:</b> preferences only make matching <b>sharper</b> (more, better-fit, best-paying loads first). Nothing is deducted for leaving them blank — it just means broader, less-filtered matching. Only <b>Equipment + Home base</b> are required to activate, because the engine literally can’t match without them.</div></div></div></div></div><script>
+var MATCH=['equip','home','minrate','lanes','deadhead','weight','target','tripmin','tripmax','notice','avoid'];
+function filled(id){var e=document.getElementById(id);return e&&e.value&&e.value.trim()!==''&&e.value!=='— select —';}
+function calc(){
+  var got=0;MATCH.forEach(function(id){if(filled(id))got++;});
+  var pct=Math.round(got/MATCH.length*100);
+  document.getElementById('bar').style.width=pct+'%';document.getElementById('pct').textContent=pct+'%';
+  // POSITIVE quality: Broad -> Good -> Tailored (no penalty language)
+  var q=document.getElementById('qual');
+  if(pct>=80){q.className='q tail';q.textContent='TAILORED';document.getElementById('qdesc').textContent='Best-fit, best-paying loads surfaced first.';}
+  else if(pct>=45){q.className='q good';q.textContent='GOOD';document.getElementById('qdesc').textContent='Well-matched loads; add a few more for best-fit.';}
+  else{q.className='q broad';q.textContent='BROAD';document.getElementById('qdesc').textContent='You still get loads — just less filtered. Add prefs to tailor.';}
+  // activation gate: equipment + home base only
+  var gateOk=filled('equip')&&filled('home');var g=document.getElementById('gate');
+  if(gateOk){g.className='gate ready';g.innerHTML='✓ Ready to activate — the engine knows your equipment &amp; base.';}
+  else{g.className='gate need';g.innerHTML='ⓘ Set <b>Equipment</b> &amp; <b>Home base</b> to activate (the engine needs these to match at all).';}
+}
+function tog(el){el.classList.toggle('on');}
+window.onload=calc;
+</script></body></html>

@@ -1,0 +1,74 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><title>Bank account — Plaid instant verify</title><style>
+*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{margin:0;background:#eef3f9;color:#0f1e36}
+.wrap{max-width:1080px;margin:0 auto;padding:18px}
+.note{background:#0b1b33;color:#fff;border-radius:14px;padding:12px 16px;font-size:.85rem;margin-bottom:14px;line-height:1.5}
+.statusbar{border-radius:14px;padding:13px 16px;font-weight:800;font-size:.84rem;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.st-pend{background:linear-gradient(90deg,#fef3e2,#fffaf3);color:#d97706;border:1px solid #f6d9a8}
+.st-ok{background:linear-gradient(90deg,#e7f9ee,#f2fdf6);color:#12a150;border:1px solid #bff0d0}
+.cols{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}@media(max-width:820px){.cols{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid #eaf0f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 40px -26px rgba(2,12,30,.4)}
+.ph{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid #eef3f9;font-weight:800}
+.ph .who{font-size:.95rem}.ph .sub{font-size:.7rem;color:#94a3b8;font-weight:600}
+.bell{margin-left:auto;position:relative;font-size:1.2rem}
+.badge{position:absolute;top:-6px;right:-8px;background:#e0304a;color:#fff;font-size:.6rem;font-weight:800;border-radius:99px;padding:1px 5px;display:none}.badge.on{display:block}
+.body{padding:14px 16px}
+.step{display:inline-block;background:#e9f3ff;color:#0883F7;font-weight:800;font-size:.68rem;border-radius:99px;padding:2px 9px;margin-bottom:10px}
+.plaidbtn{width:100%;background:linear-gradient(135deg,#0b1b33,#123a5c);color:#fff;border:0;border-radius:13px;padding:15px;font-weight:800;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px}
+.altlink{display:block;text-align:center;margin-top:10px;font-size:.8rem;color:#0883F7;cursor:pointer;font-weight:700}
+.secured{font-size:.72rem;color:#12a150;font-weight:700;text-align:center;margin-top:8px}
+.field label{display:block;font-size:.72rem;color:#51617a;font-weight:700;margin:9px 0 3px}
+.field input,.field select{width:100%;border:1px solid #eaf0f7;border-radius:10px;padding:10px 11px;font-size:.88rem;background:#fafcff}
+.field input:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.chkline{font-size:.74rem;font-weight:700;margin-top:4px;display:none}.chkline.ok{color:#12a150;display:block}.chkline.bad{color:#e0304a;display:block}
+.btn{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;border:0;border-radius:11px;padding:11px 15px;font-weight:800;cursor:pointer;font-size:.85rem}
+.btn.g{background:#12a150}.btn.sec{background:#eef3fb;color:#0b1b33}.btn.sm{padding:8px 12px;font-size:.76rem}.btn:disabled{opacity:.5;cursor:not-allowed}
+.pill{font-size:.64rem;font-weight:800;padding:4px 9px;border-radius:99px}.p-green{background:#e7f9ee;color:#12a150}.p-amber{background:#fef3e2;color:#d97706}.p-blue{background:#e9f3ff;color:#0883F7}
+.kv{font-size:.78rem;color:#334155;line-height:1.7}.kv b{color:#0b1b33}
+.result{display:none;background:linear-gradient(135deg,#eafaf0,#f2fdf6);border:1px solid #bff0d0;border-radius:12px;padding:13px;margin-top:12px}.result.on{display:block}
+.hint{background:#f0f7ff;border:1px solid #d6e8ff;border-radius:11px;padding:9px 12px;font-size:.75rem;color:#2b5f93;margin-top:10px;line-height:1.5}
+.log{margin-top:14px;background:#0b1b33;border-radius:12px;padding:10px 13px;color:#cfe0f5;font-size:.73rem;line-height:1.7;min-height:40px}.log b{color:#fff}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(10px);background:#0b1b33;color:#fff;padding:11px 16px;border-radius:12px;font-size:.82rem;font-weight:600;opacity:0;transition:.28s;z-index:99}.toast.on{opacity:1;transform:translateX(-50%)}
+/* plaid modal */
+.mask{position:fixed;inset:0;background:rgba(11,27,51,.6);display:none;align-items:center;justify-content:center;z-index:80;padding:18px}.mask.on{display:flex}
+.pmodal{background:#fff;border-radius:18px;max-width:380px;width:100%;overflow:hidden;box-shadow:0 30px 70px -20px rgba(0,0,0,.5)}
+.pm-h{padding:14px 18px;border-bottom:1px solid #eef3f9;display:flex;align-items:center;gap:8px;font-weight:800}
+.pm-h .x{margin-left:auto;cursor:pointer;color:#94a3b8}
+.pm-b{padding:16px 18px}
+.banklist{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bankopt{border:1px solid #eaf0f7;border-radius:11px;padding:12px;text-align:center;font-weight:700;font-size:.82rem;cursor:pointer}
+.bankopt:hover{border-color:#0883F7;background:#f7fbff}
+.spin{width:16px;height:16px;border:2px solid #cfe0f5;border-top-color:#0883F7;border-radius:50%;animation:sp .7s linear infinite;display:inline-block}@keyframes sp{to{transform:rotate(360deg)}}
+.plock{font-size:.72rem;color:#12a150;font-weight:700;text-align:center;margin-top:10px}
+</style></head><body><div class="wrap"><div class="note"><b>WORKING PREVIEW — Task 5 (Plaid instant verify).</b> Carrier apne bank mein Plaid ke through login karta hai → ownership + name + account/routing <b>turant auto-verify + auto-fill</b>. Koi CC step nahi, koi wait nahi. Cost sirf per-verification (koi advance nahi). Fallback: manual entry + free routing/name check. Live try karein.</div><div class="statusbar st-pend" id="acctbar">🔒 PAYOUTS LOCKED — link & verify a bank account to get paid.</div><div class="cols"><div class="panel"><div class="ph"><div>&#128100;</div><div><div class="who">Carrier — Payments</div><div class="sub">Link bank (required at onboarding)</div></div><div class="bell">&#128276;<span class="badge" id="cbadge"></span></div></div><div class="body"><span class="step">STEP 1 — link &amp; instant verify</span><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="kv"><b>Payout status</b></div><span class="pill p-amber" id="bstatus">Not set</span></div><div class="s" id="bsub" style="font-size:.74rem;color:#94a3b8;margin-bottom:10px">Required to receive settlements</div><div id="choice"><button class="plaidbtn" onclick="openPlaid()">🔒 Verify instantly with your bank</button><div class="secured">✓ Ownership + name auto-confirmed · no manual entry · no wait</div><span class="altlink" onclick="showManual()">or enter bank details manually</span></div><div id="manual" style="display:none"><div class="field"><label>Account holder name (must match company)</label><input placeholder="M Yaseen Trucking LLC"></div><div class="grid2"><div class="field"><label>Bank name</label><input placeholder="Chase"></div><div class="field"><label>Account type</label><select><option>Checking</option><option>Savings</option></select></div></div><div class="grid2"><div class="field"><label>Account number</label><input placeholder="000123456789"></div><div class="field"><label>Routing / ABA</label><input placeholder="021000021"></div></div><div class="field"><label>Bank address (for wires)</label><input placeholder="Branch address"></div><div class="grid2"><div class="field"><label>Bank / accounting phone</label><input placeholder="(555) 000-0000"></div><div class="field"><label>Remittance email</label><input placeholder="pay@company.com"></div></div><div class="hint">Manual details get the FREE routing (ABA) + name auto-check; anything flagged goes to the Command Center. Plaid instant is recommended where supported.</div><button class="btn" style="margin-top:12px">Submit for review</button></div><div class="result" id="result"></div></div></div><div class="panel"><div class="ph"><div>&#127970;</div><div><div class="who">Command Center</div><div class="sub">Bank queue — exceptions only</div></div><div class="bell">&#128276;<span class="badge" id="ccbadge"></span></div></div><div class="body"><span class="step">STEP 2 — CC only for flags</span><div style="color:#94a3b8;font-size:.84rem;text-align:center;padding:22px 6px">Plaid-verified accounts skip CC (auto-verified). Only manual mismatches / invalid routing arrive here for a human check.</div></div></div></div><div style="font-size:.72rem;font-weight:800;color:#64748b;margin:16px 0 4px">WHAT HAPPENS (live activity log)</div><div class="log" id="log"></div><div class="mask" id="mask"><div class="pmodal"><div class="pm-h"><span>🔒</span><span>Connect your bank</span><span style="font-size:.7rem;color:#94a3b8;font-weight:600">via Plaid</span><span class="x" onclick="closePlaid()">✕</span></div><div class="pm-b" id="pm-body"></div></div></div><div class="toast" id="toast"></div></div><script>
+var cbell=0,ccbell=0,pbank='';
+function bump(w){if(w=='c'){cbell++;var b=document.getElementById('cbadge');b.textContent=cbell;b.classList.add('on');}else{ccbell++;var b=document.getElementById('ccbadge');b.textContent=ccbell;b.classList.add('on');}}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(window._t);window._t=setTimeout(function(){t.classList.remove('on')},2600);}
+function logln(m){document.getElementById('log').innerHTML+='• '+m+'<br>';}
+function openPlaid(){document.getElementById('mask').classList.add('on');pmStep('banks');}
+function closePlaid(){document.getElementById('mask').classList.remove('on');}
+function pmStep(s){var b=document.getElementById('pm-body');
+  if(s=='banks'){b.innerHTML='<div style="font-size:.82rem;color:#51617a;margin-bottom:10px">Select your bank to log in securely.</div><div class="banklist"><div class="bankopt" onclick="pmLogin(\'JPMorgan Chase\')">Chase</div><div class="bankopt" onclick="pmLogin(\'Bank of America\')">Bank of America</div><div class="bankopt" onclick="pmLogin(\'Wells Fargo\')">Wells Fargo</div><div class="bankopt" onclick="pmLogin(\'Capital One\')">Capital One</div><div class="bankopt" onclick="pmLogin(\'US Bank\')">US Bank</div><div class="bankopt" onclick="pmLogin(\'Other bank\')">Other</div></div><div class="plock">🔒 Secured by Plaid — LoadBoot never sees your login</div>';}
+}
+function pmLogin(bank){pbank=bank;var b=document.getElementById('pm-body');
+  b.innerHTML='<div style="font-weight:800;margin-bottom:2px">'+bank+'</div><div style="font-size:.75rem;color:#94a3b8;margin-bottom:10px">Log in — entered inside Plaid&rsquo;s encrypted window, not stored by LoadBoot.</div><div class="field"><label>Username</label><input placeholder="Bank username"></div><div class="field"><label>Password</label><input type="password" placeholder="Bank password"></div><button class="btn" style="width:100%;margin-top:12px" onclick="pmConnect()">Log in securely</button><div class="plock">🔒 Bank-grade encryption via Plaid</div>';
+}
+function pmConnect(){var b=document.getElementById('pm-body');b.innerHTML='<div style="text-align:center;padding:26px 0"><span class="spin"></span><div style="margin-top:12px;font-weight:700;color:#51617a">Connecting to '+pbank+'…</div></div>';
+  setTimeout(function(){b.innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:2rem">✅</div><div style="font-weight:800;margin-top:6px">Account linked</div><div style="font-size:.78rem;color:#51617a;margin-top:4px">'+pbank+' · checking ···4419</div></div><button class="btn g" style="width:100%" onclick="plaidDone()">Continue</button>';},1500);
+}
+function plaidDone(){closePlaid();
+  // Plaid returns: verified ownership + account/routing + legal name (auto-matched)
+  document.getElementById('choice').style.display='none';
+  var r=document.getElementById('result');r.classList.add('on');
+  r.innerHTML='<div style="font-weight:800;color:#12a150;font-size:.9rem">✓ Instantly verified via Plaid</div><div class="kv" style="margin-top:6px"><b>Bank:</b> '+pbank+' · checking ···4419<br><b>Holder:</b> M Yaseen Trucking LLC ✓ name matches<br><b>Ownership:</b> confirmed (you logged into this account)<br><b>Routing/account:</b> pulled automatically</div><div class="hint" style="margin-top:8px">No typing, no CC step, no micro-deposit wait. Plaid charged only for this one verification.</div>';
+  document.getElementById('bstatus').className='pill p-green';document.getElementById('bstatus').textContent='Verified ✓ (instant)';
+  document.getElementById('bsub').textContent='Ownership + name confirmed via Plaid. Payouts enabled.';
+  var sb=document.getElementById('acctbar');sb.className='statusbar st-ok';sb.innerHTML='✓ PAYOUTS ENABLED — bank instantly verified (Plaid)';
+  logln('Carrier linked bank via <b>Plaid</b> — ownership + name auto-confirmed, account/routing pulled');
+  logln('&rarr; No CC step needed (clean instant verify). Plaid billed per this verification.');
+  bump('c');logln('🔔 <b>Carrier:</b> “Bank instantly verified — payouts enabled”');
+  toast('Instantly verified via Plaid — payouts enabled');
+}
+function showManual(){document.getElementById('choice').style.display='none';document.getElementById('manual').style.display='block';}
+</script></body></html>
