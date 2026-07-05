@@ -424,6 +424,7 @@ export const pocketTrips = (limit) => rpc('cc_pocket_trips', { p_limit: limit ??
 export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: limit ?? 50 });
 export const pocketCompliance = () => rpc('cc_pocket_compliance');
 export const carrierRequestReverify = (requirement, reason) => rpc('cc_carrier_request_reverify', { p_requirement: requirement, p_reason: reason ?? null });
+export const carrierSignAgreement = (name, date, ref) => rpc('cc_carrier_sign_agreement', { p_name: name, p_date: date ?? null, p_ref: ref ?? null });
 export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
 export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', { p_subject: subject, p_body: body ?? null });
 export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
