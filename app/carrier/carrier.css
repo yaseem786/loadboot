@@ -587,3 +587,23 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 .acx-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);background:#0b1b33;color:#fff;padding:11px 17px;border-radius:13px;font-size:.83rem;font-weight:650;opacity:0;pointer-events:none;transition:.28s;z-index:9999;max-width:90%;text-align:center;box-shadow:0 16px 34px -12px rgba(0,0,0,.5)}
 .acx-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .acx .brandrow img{height:26px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
+
+/* Account premium — refinements: overflow-safe rows, desktop full-width, smooth polish */
+.acx .row > div:first-child{min-width:0}
+.acx .row .btn, .acx .row a.btn{flex:none;white-space:nowrap}
+.acx .card{transition:box-shadow .22s ease, transform .22s ease}
+.acx .btn{transition:transform .12s ease, box-shadow .2s ease, filter .2s ease}
+.acx .btn:hover{filter:brightness(1.04)}
+.acx .btn:active{transform:translateY(1px)}
+.acx .chip{transition:all .18s ease}
+.acx .doc, .acx .pol, .acx .row{transition:background .15s ease}
+.acx .pol:hover{background:#f7fbff}
+.acx .card:hover{box-shadow:0 16px 40px -22px rgba(2,12,30,.45)}
+@media(min-width:900px){
+  .acx{max-width:none}
+  .acx .hero{border-radius:22px;padding-bottom:54px}
+  .acx .mstrip{max-width:1120px;margin:-42px auto 0;padding:0 16px}
+  .acx .nav{border-radius:0}
+  .acx .body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;max-width:1120px;margin:0 auto}
+}
+@media(min-width:1320px){ .acx .body{grid-template-columns:repeat(3,minmax(0,1fr))} }
