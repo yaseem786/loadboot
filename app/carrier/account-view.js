@@ -1,7 +1,7 @@
 // Premium Account & Settings — the LOCKED design ported into the live carrier app.
 // Renders hero + metric strip + sub-tab nav + rich section cards, wired to real data.
 import { openSignModal, printExecutedAgreement } from './dispatch-agreement.js';
-import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, carrierRequestReverify } from '../shared/api.js';
+import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, carrierRequestReverify, carrierAgreementSignature } from '../shared/api.js';
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -122,7 +122,7 @@ export async function renderPremiumAccount(host, ctx) {
     + '<div class="card"><div class="sec-h"><div class="sec-ico ic-navy">&#128196;</div><div class="sec-t">Legal &amp; policies</div></div>'
     +   '<a class="pol" href="/privacy.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Privacy Policy</span><span class="go">&rsaquo;</span></a>'
     +   '<a class="pol" href="/terms.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Terms of Service</span><span class="go">&rsaquo;</span></a>'
-    +   '<div class="pol" style="cursor:default"><span class="rt">Dispatch Service Agreement</span>' + (agrStatus === 'valid' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-green">Approved</span><button class="btn ghost sm" id="acx-agr-dl">Download</button></span>' : (agrStatus === 'pending' || agrStatus === 'in_review' || agrStatus === 'review' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-blue">In review</span><button class="btn ghost sm" id="acx-agr-dl">Download</button></span>' : '<button class="btn sm" id="acx-agr-sign">Sign agreement</button>')) + '</div></div>'
+    +   '<div class="pol" style="cursor:default"><span class="rt">Dispatch Service Agreement</span>' + (agrStatus === 'valid' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-green">Approved</span><button class="btn ghost sm" id="acx-agr-dl">Download</button></span>' : (agrStatus === 'pending' || agrStatus === 'in_review' || agrStatus === 'review' ? '<span class="pill p-blue">In review</span>' : '<button class="btn sm" id="acx-agr-sign">Sign agreement</button>')) + '</div></div>'
     + '<div class="card dangerc"><div class="sec-h"><div class="sec-ico ic-red">&#9888;</div><div class="sec-t">Danger zone</div></div><div class="sec-s">Pause new load offers or close your account. A person handles every request — nothing happens automatically.</div>'
     +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Pause activation</div><div class="rs">Stop new offers temporarily — your data stays safe</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Pause%20my%20LoadBoot%20account&body=Please%20pause%20new%20load%20offers%20on%20my%20account.">Request pause</a></div>'
     +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Close account</div><div class="rs">Permanently deactivate — we confirm with you first</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Close%20my%20LoadBoot%20account">Contact us</a></div></div>'
@@ -142,11 +142,11 @@ export async function renderPremiumAccount(host, ctx) {
     if (signBtn) signBtn.addEventListener('click', () => {
       openSignModal({ openModal: ctx.openModal, toast: toast }, { carrier: name, mc: mc, dot: dot }, (res) => {
         const pol = signBtn.closest('.pol');
-        if (pol) { pol.innerHTML = '<span class="rt">Dispatch Service Agreement</span><span style="display:flex;gap:8px;align-items:center"><span class="pill p-blue">In review</span><button class="btn ghost sm" id="acx-agr-dl2">Download</button></span>'; const d = root.querySelector('#acx-agr-dl2'); if (d) d.addEventListener('click', () => printExecutedAgreement({ carrier: name, mc: mc, dot: dot, signer: res.signer, date: res.date })); }
+        if (pol) { pol.innerHTML = '<span class="rt">Dispatch Service Agreement</span><span class="pill p-blue">In review</span>'; }
       });
     });
     const dl = root.querySelector('#acx-agr-dl');
-    if (dl) dl.addEventListener('click', () => printExecutedAgreement({ carrier: name, mc: mc, dot: dot, signer: contact, date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), approved: (agrStatus === 'valid') }));
+    if (dl) dl.addEventListener('click', async () => { let sig = {}; try { sig = (await carrierAgreementSignature()) || {}; } catch (_) {} printExecutedAgreement({ carrier: name, mc: mc, dot: dot, signer: (sig && sig.signer_name) || contact, date: (sig && sig.signed_date) || '', approved: (agrStatus === 'valid') }); });
   })();
   const addPay = root.querySelector('#acx-addpay');
   if (addPay) addPay.addEventListener('click', () => {

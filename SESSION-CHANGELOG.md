@@ -583,3 +583,9 @@ OWNER SETUP still needed (external accounts, no upfront cost — pay per use):
 - T5 Plaid instant verify: create Plaid account -> set client_id/secret as secrets -> add plaid-link edge fn.
 - T7 Phone + OTP at signup: enable Supabase phone auth + connect Twilio (SMS) -> add phone field + OTP step.
 All gates green after each edit: ESM 103, BUILD OK, AUDIT 0 FAIL.
+
+## Dispatch agreement + W-9 wizard (this session)
+- Dispatch Service Agreement: Download button now shows ONLY after CC approval (status=valid); "In review" state shows just the pill, no download. Downloaded/executed agreement now renders the carrier's REAL typed signature + date via new RPC public.cc_carrier_agreement_signature() (prod+staging). Fixed in both Documents (app.js reqRow) and Account → Legal & policies (account-view.js).
+- W-9 Amazon Seller Central-style guided tax setup wizard (NEW): app/carrier/w9-form.js. 5-step interview (identity → federal tax classification → address → TIN → certify + e-sign). No screenshot upload. Auto-captures signing date. TIN stored server-side (app_private.w9_submissions, RLS on) and masked to last-4 in compliance notes; full number used only for the carrier's own completed W-9.
+  - DB (prod+staging): table app_private.w9_submissions; RPC public.cc_carrier_submit_w9(jsonb) (records submission, sets carrier_compliance requirement_key='w9' -> pending, audit+event); RPC public.cc_carrier_w9() (carrier's latest submission for their own download).
+  - api.js: carrierSubmitW9, carrierW9. app.js reqRow: w9 requirement now shows "Start your W-9" wizard; Download only after CC approval (valid); in-review shows pill only.
