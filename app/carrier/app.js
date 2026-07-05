@@ -1031,6 +1031,24 @@ async function appView(user) {
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request to book'; alert((e && e.message) || 'Could not send your request.'); }
       } }, 'Request to book');
       bookWrap.appendChild(book);
+      const counter = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+        if (!ov.compliance_ok || (l.hazmat && !hazVerified)) { book.click(); return; }
+        const rateIn = h('input', { class: 'cp-in', type: 'number', placeholder: 'Your all-in rate ($)' });
+        const noteIn = h('input', { class: 'cp-in', placeholder: 'Optional note to the broker' });
+        const emsg = h('div', { class: 'cp-err' });
+        const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          const amt = Number(rateIn.value); if (!amt || amt <= 0) { emsg.textContent = 'Enter your proposed rate.'; return; }
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending\u2026';
+          const note = 'Rate counter: $' + amt.toLocaleString() + ' all-in' + (noteIn.value.trim() ? ' \u2014 ' + noteIn.value.trim() : '');
+          try { await requestBookLoad(l.id, note); closeC(); mount(bookWrap, [h('div', { class: 'cp-row-s', style: 'color:#d97706;font-weight:700;margin-bottom:4px' }, '\u21a9 Counter sent \u2014 pending broker approval'), h('div', { class: 'cp-row-s' }, 'The broker sees your proposed rate and approves or declines. Nothing is committed until approved.')]); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send counter'; emsg.textContent = (e && e.message) || 'Could not send.'; }
+        } }, 'Send counter');
+        const closeC = openModal('Propose your rate', [
+          h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Posted: ' + money(l.rate) + (rpm ? ' \u00b7 ' + rpm : '') + '. Propose your all-in rate \u2014 it goes to the broker with your booking request.'),
+          rateIn, noteIn, emsg, send,
+        ]);
+      } }, 'Propose rate');
+      bookWrap.appendChild(counter);
       const detailsBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(l.id) }, 'Details');
       const meta = [];
       if (l.commodity) meta.push('Commodity: ' + l.commodity);
@@ -2515,9 +2533,9 @@ function tripStepper(status) {
     const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Conestoga', 'Tanker', 'Car Hauler'];
     const STEPS = ['Company & authority', 'Operation & equipment', 'Factoring & payment', 'Dispatch preferences', 'Documents', 'Review & submit'];
     let prof = {}; try { prof = await pocketGetProfile(); } catch (_) { prof = {}; }
-    const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', hazmat: false, weekend_ok: false, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '' }, prof || {});
+    const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', hazmat: false, weekend_ok: false, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '', bank_name: '', account_title: '', account_number: '', routing_number: '' }, prof || {});
     if (!Array.isArray(f.equipment_types)) f.equipment_types = [];
-    let st = 0;
+    let st = 0; let fmcsaRes = null;
     // Dispatch preferences are REQUIRED at onboarding (drive best-match loads + CC AI matching);
     // the carrier can change them any time later in Account.
     const dpf = { min_rpm: '', preferred_equipment: '', preferred_lanes: '', max_deadhead_miles: '', home_base: '' };
@@ -2547,6 +2565,14 @@ function tripStepper(status) {
       await setDispatchPrefs({ min_rpm: dpf.min_rpm, preferred_equipment: eq, preferred_lanes: ln,
         max_deadhead_miles: dpf.max_deadhead_miles || null, home_base: (dpf.home_base || f.home_base || '').trim() || null });
     }
+    async function saveBankStep() {
+      const filled = f.bank_name || f.account_title || f.account_number || f.routing_number;
+      const factoring = String(f.factoring_status || '') === 'yes';
+      if (!filled) { if (factoring) return; throw new Error('Add your bank account for payouts (or select factoring above).'); }
+      if (!f.bank_name || !f.account_title || !f.account_number || !f.routing_number) throw new Error('Please complete all bank fields.');
+      if (!/^\d{9}$/.test(String(f.routing_number).trim())) throw new Error('Routing number must be 9 digits.');
+      await setMyPaymentProfile({ bank_name: String(f.bank_name).trim(), account_title: String(f.account_title).trim(), account_number: String(f.account_number).trim(), routing_number: String(f.routing_number).trim(), payment_method: 'ach' });
+    }
     const host = h('div', { class: 'cp-card cp-wiz' });
     const field = (label, key, ph, type) => { const i = h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '', value: f[key] == null ? '' : f[key] }); i.oninput = () => { f[key] = i.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), i]); };
     const selectField = (label, key, opts) => { const s = h('select', { class: 'cp-in' }, opts.map(([v, l]) => h('option', { value: v, selected: f[key] === v ? 'selected' : null }, l))); s.onchange = () => { f[key] = s.value; }; return h('label', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, label), s]); };
@@ -2562,25 +2588,44 @@ function tripStepper(status) {
       const list = h('div'); const refresh = async () => { try { const ds = await carrierListDocuments(); mount(list, (ds && ds.length) ? h('div', null, ds.map(d => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, d.file_name), pill(d.status || 'pending')]))) : h('div', { class: 'cp-muted' }, 'No documents yet.')); } catch (_) {} };
       const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { const file = fileIn.files && fileIn.files[0]; msg.textContent = ''; msg.className = 'cp-err'; if (!file) { msg.textContent = 'Choose a file.'; return; } up.disabled = true; up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; await refresh(); } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Upload failed.'; } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
       refresh();
-      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Upload your W-9, authority letter, insurance/COI and signed agreement. PDF or photo, up to 25 MB each.'), h('div', { class: 'cp-inlineform' }, [typeSel, fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
+      const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => alert(msg) }, { carrier: f.company }, () => refresh())) }, 'Complete W-9 in-app');
+      const agrBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => alert(msg) }, { carrier: f.company }, () => refresh())) }, 'Sign dispatch agreement');
+      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Complete these in-app \u2014 no PDF needed \u2014 or upload your own files below.'), h('div', { class: 'cp-inlineform', style: 'margin-bottom:10px' }, [w9Btn, agrBtn]), h('p', { class: 'cp-row-s' }, 'Or upload your W-9, authority letter, insurance/COI and signed agreement. PDF or photo, up to 25 MB each.'), h('div', { class: 'cp-inlineform' }, [typeSel, fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
     }
     function reviewStep() {
       const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);
-      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Check your details, then submit. Our team reviews and approves your account.'), row('Company', f.company), row('Contact', f.contact_name + (f.phone ? ' · ' + f.phone : '')), row('MC / DOT', (f.mc || '—') + ' / ' + (f.dot || '—')), row('Home base', f.home_base), row('Equipment', (f.equipment_types || []).join(', ')), row('Trucks', f.truck_count), row('Factoring', f.factoring_status + (f.factoring_company ? ' · ' + f.factoring_company : '')), row('Dispatch prefs', (dpf.min_rpm ? '$' + dpf.min_rpm + '/mi min' : '—') + (dpf.preferred_lanes ? ' · ' + dpf.preferred_lanes : ''))]);
+      return h('div', null, [h('p', { class: 'cp-row-s' }, 'Check your details, then submit. Our team reviews and approves your account.'), row('Company', f.company), row('Contact', f.contact_name + (f.phone ? ' · ' + f.phone : '')), row('MC / DOT', (f.mc || '—') + ' / ' + (f.dot || '—')), row('Home base', f.home_base), row('Equipment', (f.equipment_types || []).join(', ')), row('Trucks', f.truck_count), row('Factoring', f.factoring_status + (f.factoring_company ? ' · ' + f.factoring_company : '')), row('Payout', f.bank_name ? (f.bank_name + ' ····' + String(f.account_number || '').slice(-4)) : (String(f.factoring_status) === 'yes' ? 'Via factoring' : '—')), row('Dispatch prefs', (dpf.min_rpm ? '$' + dpf.min_rpm + '/mi min' : '—') + (dpf.preferred_lanes ? ' · ' + dpf.preferred_lanes : ''))]);
     }
     function doneCard() { return [h('div', { class: 'cp-wiz-done' }, [h('div', { style: 'font-size:2.4rem' }, '✓'), h('h3', null, 'Submitted for review'), h('p', { class: 'cp-row-s' }, 'Thanks! Our team is reviewing your onboarding. You’ll get a notification when it’s approved.'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('dashboard') }, 'Back to dashboard')])]; }
     function draw() {
       const pct = Math.round((st / (STEPS.length - 1)) * 100);
       let body;
-      if (st === 0) body = h('div', { class: 'cp-wiz-grid' }, [field('Company / carrier name', 'company', 'Acme Trucking LLC'), field('Your name', 'contact_name'), field('Phone', 'phone'), field('MC number', 'mc', '123456'), field('DOT number', 'dot', '1234567')]);
+      if (st === 0) {
+        const vmsg = h('div', { class: 'cp-err' });
+        const g = (k) => fmcsaRes ? (fmcsaRes[k] != null ? fmcsaRes[k] : (fmcsaRes.result && fmcsaRes.result[k])) : null;
+        const resCard = fmcsaRes ? h('div', { class: 'cp-card', style: 'margin-top:8px' }, [
+          h('div', { class: 'cp-row' }, [h('span', null, 'Legal name'), h('b', null, String(g('legal_name') || g('name') || f.company || '\u2014'))]),
+          h('div', { class: 'cp-row' }, [h('span', null, 'Authority'), h('b', null, String(g('authority_status') || g('operating_status') || g('allowed_to_operate') || 'checked'))]),
+          h('div', { class: 'cp-row' }, [h('span', null, 'Safety rating'), h('span', null, String(g('safety_rating') || 'none'))]),
+          h('div', { class: 'cp-row-s' }, '\u2713 Live from FMCSA (SAFER/QCMobile). Verified authority strengthens your profile.'),
+        ]) : null;
+        const vbtn = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:6px', onClick: async (ev) => {
+          const mc = String(f.mc || '').trim(), dot = String(f.dot || '').trim();
+          if (!mc && !dot) { vmsg.className = 'cp-err'; vmsg.textContent = 'Enter your MC or DOT number first.'; return; }
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Verifying with FMCSA\u2026';
+          try { const dd = await fmcsaVerify({ mc: mc || null, dot: dot || null }); fmcsaRes = dd || {}; const nm = (fmcsaRes.legal_name || fmcsaRes.name || (fmcsaRes.result && (fmcsaRes.result.legal_name || fmcsaRes.result.name))); if (nm && !f.company) f.company = nm; draw(); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Verify with FMCSA'; vmsg.className = 'cp-err'; vmsg.textContent = (e && e.message) || 'FMCSA verification failed \u2014 you can still continue and upload your authority letter.'; }
+        } }, 'Verify with FMCSA');
+        body = h('div', null, [h('div', { class: 'cp-wiz-grid' }, [field('Company / carrier name', 'company', 'Acme Trucking LLC'), field('Your name', 'contact_name'), field('Phone', 'phone'), field('MC number', 'mc', '123456'), field('DOT number', 'dot', '1234567')]), h('p', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Verify your authority live with FMCSA \u2014 no PDF needed.'), vbtn, vmsg, resCard].filter(Boolean));
+      }
       else if (st === 1) { const eq = h('div', { class: 'cp-eqgrid' }, EQUIP.map(e => { const on = (f.equipment_types || []).includes(e); const b = h('button', { class: 'cp-chip2' + (on ? ' on' : ''), onClick: () => { const s = new Set(f.equipment_types || []); if (s.has(e)) s.delete(e); else s.add(e); f.equipment_types = [...s]; b.classList.toggle('on'); } }, e); return b; })); body = h('div', { class: 'cp-wiz-grid' }, [field('Home base (city, ST)', 'home_base', 'Dallas, TX'), field('Search radius (miles)', 'radius_miles', '300', 'number'), field('Number of trucks', 'truck_count', '1'), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Equipment types'), eq]), toggle('Haul hazmat', 'hazmat'), toggle('Available weekends', 'weekend_ok')]); }
-      else if (st === 2) body = h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring'], ['interested', 'Interested']]), field('Factoring company', 'factoring_company'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp')]);
+      else if (st === 2) body = h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring'], ['interested', 'Interested']]), field('Factoring company', 'factoring_company'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp'), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Bank account for settlement payouts'), h('span', { class: 'cp-row-s' }, 'Encrypted & tokenized. Not required if you use a factoring company.')]), field('Bank name', 'bank_name', 'e.g. Chase'), field('Account holder / title', 'account_title', 'Legal business name'), field('Account number', 'account_number'), field('Routing number (ABA)', 'routing_number', '9 digits')]);
       else if (st === 3) body = prefsStep();
       else if (st === 4) body = docStep();
       else body = reviewStep();
       const back = st > 0 ? h('button', { class: 'cp-btn ghost cp-btn-sm', onClick: () => { st--; draw(); } }, '← Back') : h('span');
       const next = st < STEPS.length - 1
-        ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…'; try { if (st === 3) await savePrefsStep(); await save(); st++; draw(); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue'; alert((e && e.message) || 'Could not save.'); } } }, 'Save & continue')
+        ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…'; try { if (st === 2) await saveBankStep(); if (st === 3) await savePrefsStep(); await save(); st++; draw(); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue'; alert((e && e.message) || 'Could not save.'); } } }, 'Save & continue')
         : h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting…'; try { await save(); await pocketSubmitOnboarding(); mount(host, doneCard()); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit for review'; alert((e && e.message) || 'Could not submit.'); } } }, 'Submit for review');
       mount(host, [h('div', { class: 'cp-wiz-head' }, [h('h3', null, 'Step ' + (st + 1) + ' of ' + STEPS.length + ' — ' + STEPS[st]), h('span', { class: 'cp-row-s' }, pct + '%')]), h('div', { class: 'cp-wiz-bar' }, h('div', { class: 'cp-wiz-fill', style: 'width:' + pct + '%' })), h('div', { class: 'cp-wiz-body' }, body), h('div', { class: 'cp-wiz-actions' }, [back, next])]);
     }

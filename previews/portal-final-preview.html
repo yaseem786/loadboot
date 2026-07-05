@@ -1,0 +1,81 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LoadBoot — Final Portal Preview (Mobile + Web)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b14;--bg2:#0a1020;--bd:rgba(255,255,255,.1);--ink:#eaf1fb;--muted:#7f92b3;--acc:#0883F7;--acc2:#4EA6F9;--orange:#FC5305;--grad:linear-gradient(135deg,#0883F7,#4EA6F9)}
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial,sans-serif}
+html,body{margin:0}
+body{background:radial-gradient(1100px 560px at 50% -6%,#16233f,#070b14 58%);color:var(--ink);min-height:100vh}
+.bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:14px 20px;background:rgba(7,11,20,.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
+.logo{font-weight:900;font-size:1.25rem;display:flex;align-items:center;gap:8px}
+.logo .dot{width:10px;height:10px;border-radius:3px;background:var(--grad);transform:rotate(45deg);box-shadow:0 0 12px rgba(8,131,247,.8)}
+.logo .l{color:#dbe7fb}.logo .b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border:1px solid var(--bd);padding:4px 10px;border-radius:8px}
+.toggle{display:flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--bd);padding:4px;border-radius:12px}
+.toggle button{background:transparent;border:0;color:var(--muted);font-weight:800;font-size:.85rem;padding:9px 16px;border-radius:9px;cursor:pointer;transition:.16s}
+.toggle button.on{background:var(--grad);color:#05131f}
+.hint{max-width:900px;margin:16px auto 0;padding:0 18px;color:var(--muted);font-size:.9rem;text-align:center}
+.hint b{color:var(--ink)}
+.stage{display:flex;justify-content:center;padding:26px 14px 60px}
+/* WEB frame */
+.web{width:100%;max-width:1180px;border:1px solid var(--bd);border-radius:16px;overflow:hidden;background:var(--bg2);box-shadow:0 50px 120px -50px #000}
+.web .chrome{display:flex;align-items:center;gap:8px;padding:11px 14px;background:#0e1526;border-bottom:1px solid var(--bd)}
+.web .dots{display:flex;gap:6px}.web .dots i{width:11px;height:11px;border-radius:50%;display:block}
+.web .dots i:nth-child(1){background:#ff5f57}.web .dots i:nth-child(2){background:#febc2e}.web .dots i:nth-child(3){background:#28c840}
+.web .url{flex:1;background:#070b14;border:1px solid var(--bd);border-radius:8px;padding:6px 12px;font-size:.78rem;color:var(--muted);text-align:center}
+.web iframe{width:100%;height:78vh;min-height:640px;border:0;display:block;background:var(--bg)}
+/* PHONE frame */
+.phone{width:398px;max-width:100%;background:linear-gradient(#0c1526,#0a1120);border-radius:52px;padding:13px;box-shadow:0 60px 120px -40px #000,0 0 0 2px #1c273b;position:relative}
+.phone .island{position:absolute;top:26px;left:50%;transform:translateX(-50%);width:120px;height:32px;background:#000;border-radius:20px;z-index:5}
+.phone iframe{width:100%;height:812px;border:0;border-radius:40px;display:block;background:var(--bg)}
+.legend{max-width:1180px;margin:8px auto 0;padding:16px 18px;color:var(--muted);font-size:.85rem;line-height:1.7}
+.legend b{color:var(--ink)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.pill{border:1px solid var(--bd);border-radius:99px;padding:6px 13px;font-size:.8rem;font-weight:700;color:var(--ink)}
+.hidden{display:none}
+@media(max-width:640px){.web iframe{height:70vh}.bar{padding:12px}}
+</style></head>
+<body>
+<div class="bar">
+  <div class="logo"><span class="dot"></span><span class="l">load</span><span class="b">boot</span> <span class="tag">Final Portal Preview</span></div>
+  <div class="toggle">
+    <button id="t-web" class="on" onclick="setView('web')">🖥 Web</button>
+    <button id="t-mob" onclick="setView('mob')">📱 Mobile</button>
+  </div>
+</div>
+<div class="hint">Yeh poora merged portal hai — <b>Carrier</b>, <b>CC Admin</b> aur <b>Broker</b> teeno roles top ke tabs se. Web aur Mobile toggle se dono final shakal dekhein. Sab live hai: DOT verify → onboarding → CC approve → broker post → CC forward → carrier accept → emergency/reschedule → settlement.</div>
+
+<div class="stage">
+  <!-- WEB -->
+  <div id="webWrap" class="web">
+    <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url">app.loadboot.co  ·  Carrier / CC / Broker portal</div></div>
+    <iframe id="webFrame" src="onboarding-system.html" loading="eager"></iframe>
+  </div>
+  <!-- PHONE -->
+  <div id="phoneWrap" class="phone hidden">
+    <div class="island"></div>
+    <iframe id="mobFrame" src="about:blank" loading="lazy"></iframe>
+  </div>
+</div>
+
+<div class="legend" id="legend">
+  <div class="pills">
+    <span class="pill">🚚 Carrier: Overview · Available Loads · My Loads · Finance · Profile · Documents · Settings</span>
+    <span class="pill">🛡️ CC: Carrier Review · Load Forwarding</span>
+    <span class="pill">📦 Broker: Find Carriers · Post Load · Posted Loads (tracking + emergency)</span>
+  </div>
+</div>
+
+<script>
+var loadedMob=false;
+function setView(v){
+  var web=v==='web';
+  document.getElementById('t-web').classList.toggle('on',web);
+  document.getElementById('t-mob').classList.toggle('on',!web);
+  document.getElementById('webWrap').classList.toggle('hidden',!web);
+  document.getElementById('phoneWrap').classList.toggle('hidden',web);
+  if(!web && !loadedMob){document.getElementById('mobFrame').src='onboarding-system.html';loadedMob=true;}
+}
+</script>
+</body></html>

@@ -1,0 +1,22 @@
+feat(carrier): onboarding + marketplace prototype and additive real wiring
+
+Prototype (design spec, clickable, mobile+web):
+- previews/onboarding-system.html: full 3-role flow (carrier onboarding
+  wizard, CC review/forward, broker post/track), dark-premium brand theme
+- previews/portal-final-preview.html: Web/Mobile device-framed viewer
+- previews/carrier-portal-themed.html: real portal shell in brand tokens
+- previews/fmcsa-profile.html: live FMCSA 7-tab carrier profile
+
+Docs:
+- PROTOTYPE-MERGE-PLAN.md (feature->endpoint map + audit findings)
+- PHASE1-ONBOARDING-TEST-CHECKLIST.md
+- brand-kit/loadboot-tokens.css (brand tokens; rollout owner-gated)
+- NEXT-SESSION-HANDOFF.md updated
+
+Real wiring in app/carrier/app.js (additive, 2 scoped areas, node --check clean):
+- Onboarding: FMCSA verify (fmcsaVerify), bank details
+  (setMyPaymentProfile), in-app W-9 + agreement launch
+- Load card: "Propose rate" counter via requestBookLoad note param
+
+No existing logic removed; engines (emergency, booking, settlement) intact.
+Revert: git checkout app/carrier/app.js

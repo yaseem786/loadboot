@@ -1,0 +1,678 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LoadBoot — Carrier OS (Onboarding · Review · Marketplace)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b14;--bg2:#0a1020;--panel:rgba(255,255,255,.045);--panel2:rgba(255,255,255,.07);
+  --bd:rgba(255,255,255,.09);--bd2:rgba(255,255,255,.16);
+  --ink:#eaf1fb;--ink2:#c3d1e6;--muted:#7f92b3;--faint:#5b6b8a;
+  --acc:#3b9dff;--acc2:#4EA6F9;--accd:#0b6fe0;--orange:#FC5305;--orange2:#f9a86b;
+  --ok:#34d399;--okbg:rgba(52,211,153,.13);--warn:#fbbf24;--warnbg:rgba(251,191,36,.13);--bad:#f87171;--badbg:rgba(248,113,113,.13);
+  --glow:0 0 0 1px rgba(8,131,247,.35),0 10px 40px -10px rgba(8,131,247,.45);
+  --grad:linear-gradient(135deg,#0883F7,#4EA6F9);--gradd:linear-gradient(135deg,#0b6fe0,#0883F7);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:
+  radial-gradient(1000px 500px at 80% -10%,rgba(252,83,5,.06),transparent 60%),
+  radial-gradient(900px 500px at 0% 0%,rgba(8,131,247,.13),transparent 55%),
+  var(--bg);color:var(--ink);font-size:15px;line-height:1.5;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:0}
+input,select,textarea{font-family:inherit;font-size:1rem;color:var(--ink)}
+select.inp option,.filters select option,select option{background:#0d1526;color:var(--ink)}
+::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:9px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* appbar */
+.appbar{position:sticky;top:0;z-index:50;background:rgba(7,11,20,.72);backdrop-filter:blur(18px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:12px 18px;gap:12px;flex-wrap:wrap}
+.logo{font-weight:900;font-size:1.3rem;letter-spacing:-.5px;display:flex;align-items:center;gap:9px}
+.logo .l{color:#dbe7fb}.logo .b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo .dot{width:11px;height:11px;border-radius:3px;background:var(--grad);display:inline-block;transform:rotate(45deg);box-shadow:0 0 14px rgba(59,157,255,.8)}
+.roles{display:flex;gap:3px;background:rgba(255,255,255,.05);padding:4px;border-radius:13px;border:1px solid var(--bd)}
+.roles button{background:transparent;color:var(--muted);font-weight:800;font-size:.8rem;padding:8px 14px;border-radius:9px;transition:.18s}
+.roles button.on{background:var(--grad);color:#04121f;box-shadow:0 8px 22px -8px rgba(59,157,255,.7)}
+.stage{max-width:1140px;margin:0 auto;padding:20px 16px 130px}
+.fade{animation:fade .45s ease}@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.slidein{animation:sl .4s cubic-bezier(.2,.7,.3,1)}@keyframes sl{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+/* surfaces */
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:20px;padding:22px;backdrop-filter:blur(12px);box-shadow:0 30px 60px -40px rgba(0,0,0,.9)}
+.h1{font-size:1.55rem;font-weight:900;letter-spacing:-.6px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:.92rem;margin:0}
+.btn{background:var(--grad);color:#05131f;font-weight:800;border-radius:13px;padding:13px 22px;font-size:.95rem;box-shadow:0 14px 30px -12px rgba(59,157,255,.65);transition:.18s;letter-spacing:.01em}
+.btn:hover{transform:translateY(-1px);box-shadow:0 18px 40px -12px rgba(59,157,255,.8)}
+.btn.ghost{background:rgba(255,255,255,.06);color:var(--ink);box-shadow:none;border:1px solid var(--bd2)}
+.btn.green{background:linear-gradient(135deg,#34d399,#0ea5a5);color:#052117}
+.btn.red{background:linear-gradient(135deg,#f87171,#e0533f);color:#2a0808}
+.btn.dis{background:rgba(255,255,255,.06);color:var(--faint);box-shadow:none;cursor:not-allowed;transform:none;border:1px solid var(--bd)}
+.btn.sm{padding:8px 14px;font-size:.82rem}.btn.wide{width:100%;text-align:center}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;font-size:.72rem;font-weight:800}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.bad{background:var(--badbg);color:var(--bad)}
+.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.info{background:rgba(59,157,255,.14);color:var(--acc)}.pill.gray{background:rgba(255,255,255,.06);color:var(--muted)}
+.verified{display:inline-flex;align-items:center;gap:4px;background:var(--okbg);color:var(--ok);font-weight:800;font-size:.66rem;padding:3px 9px;border-radius:99px;border:1px solid rgba(52,211,153,.3)}
+.tag{display:inline-flex;align-items:center;gap:4px;background:rgba(59,157,255,.12);color:var(--acc);font-weight:800;font-size:.64rem;padding:3px 8px;border-radius:7px;letter-spacing:.05em;text-transform:uppercase}
+/* hero */
+.hero{position:relative;overflow:hidden;border:1px solid var(--bd);border-radius:22px;padding:28px;margin-bottom:18px;background:linear-gradient(120deg,rgba(59,157,255,.16),rgba(34,211,238,.06) 60%,transparent),var(--bg2)}
+.hero:after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(34,211,238,.4),transparent 70%);filter:blur(10px)}
+.hero h2{margin:0 0 6px;font-size:1.55rem;font-weight:900}.hero p{margin:0;color:var(--ink2);font-size:.95rem;max-width:64ch;position:relative}
+/* strip */
+.strip{display:flex;align-items:center;gap:22px;flex-wrap:wrap;border:1px solid var(--bd);border-radius:20px;padding:22px;margin-bottom:18px;background:var(--panel);backdrop-filter:blur(12px)}
+.ring{--p:0;width:100px;height:100px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--acc) calc(var(--p)*1%),rgba(255,255,255,.08) 0);box-shadow:0 0 30px -6px rgba(59,157,255,.5)}
+.ring i{width:78px;height:78px;border-radius:50%;background:var(--bg2);display:grid;place-items:center;font-weight:900;font-size:1.3rem;font-style:normal;font-family:var(--mono);color:#dbe7fb}
+.strip .txt{flex:1;min-width:200px}.strip .txt h3{margin:0 0 4px;font-size:1.18rem;font-weight:900}.strip .txt p{margin:0;color:var(--muted);font-size:.9rem}
+/* locked board */
+.locked{position:relative;border:1px dashed var(--bd2);border-radius:18px;overflow:hidden}
+.locked .blurwrap{filter:blur(5px);opacity:.5;pointer-events:none;padding:16px}
+.locked .lock{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.locked .lock .in{background:rgba(10,16,32,.8);backdrop-filter:blur(6px);border:1px solid var(--bd);border-radius:14px;padding:18px 24px}
+.loadrow{display:flex;justify-content:space-between;gap:12px;padding:13px;border:1px solid var(--bd);border-radius:13px;margin-bottom:8px;background:var(--panel)}
+.loadrow b{color:var(--ink)}
+/* forms */
+.enter{max-width:540px;margin:14px auto}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field .opt{color:var(--faint);font-weight:700;text-transform:none;letter-spacing:0}
+.inp{width:100%;border:1.5px solid var(--bd2);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.04);transition:.15s}
+.inp::placeholder{color:var(--faint)}
+.inp:focus{outline:0;border-color:var(--acc);box-shadow:0 0 0 4px rgba(59,157,255,.18);background:rgba(59,157,255,.06)}
+textarea.inp{resize:vertical;min-height:70px}
+select.inp option{background:var(--bg2)}
+/* wizard */
+.wiz{display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start}
+.rail{position:sticky;top:78px}
+.rail .card{padding:14px}
+.rail .step{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:11px;font-size:.84rem;font-weight:700;color:var(--muted);cursor:pointer;transition:.15s}
+.rail .step:hover{background:rgba(255,255,255,.05)}
+.rail .step.on{background:rgba(59,157,255,.14);color:var(--ink)}.rail .step.done{color:var(--ink2)}
+.rail .num{width:25px;height:25px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:.74rem;font-weight:900;background:rgba(255,255,255,.07);color:var(--muted);font-family:var(--mono)}
+.rail .step.on .num{background:var(--grad);color:#05131f}.rail .step.done .num{background:var(--okbg);color:var(--ok)}
+.railbar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;margin:10px 6px 4px;overflow:hidden}
+.railbar i{display:block;height:100%;background:var(--grad);border-radius:99px;transition:width .4s}
+.railpct{text-align:center;font-size:.72rem;font-weight:800;color:var(--muted);font-family:var(--mono)}
+.mstep{display:none}
+.wpanel{min-height:360px}
+.wtitle{display:flex;align-items:center;gap:10px;font-size:1.26rem;font-weight:900;margin:0 0 3px}
+.wsub{color:var(--muted);font-size:.88rem;margin:0 0 16px}
+.wnav{display:flex;justify-content:space-between;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--bd)}
+/* profile detail (dark) */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.box{border:1px solid var(--bd);border-radius:15px;padding:16px;background:var(--panel)}
+.box h3{margin:0 0 10px;font-size:.96rem;display:flex;align-items:center;gap:8px}
+.f{padding:8px 0;border-bottom:1px solid var(--bd)}.f:last-child{border-bottom:0}
+.f .k{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800;margin-bottom:2px}
+.f .v{font-size:.95rem;font-weight:600;color:var(--ink)}
+.sec-h{font-size:1rem;font-weight:800;margin:16px 0 12px;color:var(--ink)}
+.big{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:8px}
+.m{background:var(--panel);border:1px solid var(--bd);border-radius:15px;padding:15px;text-align:center;position:relative;overflow:hidden}
+.m:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(59,157,255,.08),transparent 60%)}
+.m b{display:block;font-size:1.55rem;font-weight:900;font-family:var(--mono);background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;position:relative}
+.m span{font-size:.62rem;color:var(--muted);font-weight:800;letter-spacing:.05em;position:relative}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:rgba(59,157,255,.1);color:#9fd0ff;border:1px solid rgba(59,157,255,.25);border-radius:99px;padding:6px 12px;font-size:.8rem;font-weight:700}
+.chip.tog{cursor:pointer;user-select:none}.chip.sel{background:var(--grad);color:#05131f;border-color:transparent}
+.chip.warn{background:var(--warnbg);color:var(--warn);border-color:rgba(251,191,36,.3)}
+.chip.bad{background:var(--badbg);color:var(--bad);border-color:rgba(248,113,113,.3)}
+.chip.ok{background:var(--okbg);color:var(--ok);border-color:rgba(52,211,153,.3)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th{text-align:left;color:var(--muted);font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--bd2)}
+td{padding:9px 10px;border-bottom:1px solid var(--bd);color:var(--ink2)}
+.pill2{display:inline-block;padding:3px 9px;border-radius:99px;font-size:.7rem;font-weight:800}
+.pill2.ok{background:var(--okbg);color:var(--ok)}.pill2.bad{background:var(--badbg);color:var(--bad)}.pill2.warn{background:var(--warnbg);color:var(--warn)}
+.pcard{border:1px solid var(--bd);border-radius:15px;padding:16px;margin-bottom:12px;background:var(--panel)}
+.pcard .bar{height:4px;background:var(--grad);border-radius:15px 15px 0 0;margin:-16px -16px 14px}
+.rowline{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--bd);font-size:.9rem}
+.insp{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:10px;gap:12px;flex-wrap:wrap;background:var(--panel)}
+.insp .l{font-weight:800}
+.cmp{display:flex;gap:12px;flex-wrap:wrap}
+.cmp .c{flex:1;min-width:150px;border:1px solid var(--bd);border-radius:12px;padding:14px;text-align:center;background:var(--panel)}
+.cmp .c b{font-size:1.5rem;font-weight:900;display:block;font-family:var(--mono)}
+.empty{text-align:center;color:var(--muted);padding:36px;font-size:.92rem}
+.above{color:var(--bad);font-weight:700;font-size:.76rem}.below{color:var(--ok);font-weight:700;font-size:.76rem}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);overflow:auto;margin-bottom:16px}
+.tab{padding:12px 14px;font-weight:700;font-size:.86rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+/* editable + upload */
+.editcard{border:1.5px solid rgba(59,157,255,.3);background:rgba(59,157,255,.06);border-radius:15px;padding:15px 16px;margin-top:12px}
+.editcard .lab{font-weight:900;color:#9fd0ff;font-size:.8rem;display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.uploader{border:2px dashed var(--bd2);border-radius:14px;padding:20px;text-align:center;background:rgba(255,255,255,.03);cursor:pointer;transition:.15s}
+.uploader:hover{border-color:var(--acc);background:rgba(59,157,255,.06)}.uploader.has{border-style:solid;border-color:var(--ok);background:var(--okbg)}
+.uploader .big2{font-size:1.5rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sigpad{border:1.5px solid var(--bd2);border-radius:12px;background:repeating-linear-gradient(rgba(255,255,255,.02),rgba(255,255,255,.02) 30px,rgba(255,255,255,.05) 31px);height:110px;display:grid;place-items:center;color:var(--faint)}
+.signame{font-family:'Segoe Script','Brush Script MT',cursive;font-size:2rem;color:var(--acc2)}
+.chk{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--bd);border-radius:13px;margin-bottom:9px;background:var(--panel)}
+.chk .ic{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:900}
+.chk .ic.y{background:var(--okbg);color:var(--ok)}.chk .ic.n{background:var(--badbg);color:var(--bad)}
+.chk .t{flex:1}.chk .t b{display:block}.chk .t span{font-size:.8rem;color:var(--muted)}
+.policy{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border:1.5px solid var(--bd);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.policy:hover{border-color:var(--bd2)}.policy.on{border-color:var(--ok);background:var(--okbg)}
+.policy .cb{width:22px;height:22px;border-radius:7px;border:2px solid var(--bd2);flex:none;display:grid;place-items:center;font-weight:900;color:#05131f;transition:.15s;margin-top:1px}
+.policy.on .cb{background:var(--ok);border-color:var(--ok)}
+.policy .pt{font-size:.88rem;font-weight:600;color:var(--ink2)}
+.acc{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.acc .an{flex:1;font-size:.88rem;font-weight:600}.acc .au{color:var(--muted);font-size:.76rem;width:96px;text-align:right}
+.acc input{width:112px;border:1.5px solid var(--bd2);border-radius:9px;padding:8px 10px;text-align:right;background:rgba(255,255,255,.04)}
+/* banners */
+.banner{border-radius:16px;padding:18px 20px;display:flex;gap:14px;align-items:center;margin-bottom:16px;border:1px solid var(--bd)}
+.banner .em{font-size:1.9rem}
+.banner.rev{background:linear-gradient(120deg,rgba(59,157,255,.18),rgba(34,211,238,.06));}
+.banner.ok{background:var(--okbg);border-color:rgba(52,211,153,.3)}.banner.bad{background:var(--badbg);border-color:rgba(248,113,113,.3)}
+/* list cards */
+.qcard{display:flex;align-items:center;gap:14px;padding:15px;border:1px solid var(--bd);border-radius:16px;margin-bottom:11px;background:var(--panel);cursor:pointer;transition:.18s}
+.qcard:hover{border-color:var(--bd2);transform:translateX(3px);box-shadow:var(--glow)}
+.qcard .av{width:48px;height:48px;border-radius:13px;flex:none;background:var(--gradd);color:#eaf1fb;display:grid;place-items:center;font-weight:900;font-size:1.05rem}
+.qcard .info{flex:1;min-width:0}.qcard .info b{font-size:1rem}.qcard .info .meta{color:var(--muted);font-size:.82rem;margin-top:2px}
+.subnav{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.subnav button{background:var(--panel);border:1.5px solid var(--bd);color:var(--muted);font-weight:800;padding:9px 15px;border-radius:12px;font-size:.85rem;transition:.15s}
+.subnav button:hover{border-color:var(--bd2);color:var(--ink)}
+.subnav button.on{background:var(--grad);color:#05131f;border-color:transparent}
+.count{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--bad);color:#2a0808;font-size:.7rem;font-weight:900;margin-left:6px}
+/* filters */
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:14px;border:1px solid var(--bd);border-radius:15px;background:var(--panel)}
+.filters b{color:var(--ink);font-size:.8rem}
+.filters select,.filters input{border:1.5px solid var(--bd2);border-radius:11px;padding:9px 12px;background:rgba(255,255,255,.04)}
+/* load card (marketplace) */
+.lcard{border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:11px;background:var(--panel);transition:.18s}
+.lcard:hover{border-color:var(--bd2);box-shadow:var(--glow)}
+.lcard .lane{font-size:1.05rem;font-weight:900;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lcard .meta{color:var(--muted);font-size:.82rem;margin-top:3px}
+.lcard .rate{font-family:var(--mono);font-size:1.35rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lcard .rpm{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.lhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(3,6,14,.7);backdrop-filter:blur(6px);z-index:100;display:grid;place-items:start center;padding:24px 18px;overflow:auto;animation:fade .2s}
+.modal .box{background:var(--bg2);border:1px solid var(--bd2);border-radius:20px;padding:24px;max-width:580px;width:100%;box-shadow:0 40px 90px -20px rgba(0,0,0,.9)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--bd2);color:var(--ink);padding:13px 22px;border-radius:99px;font-weight:700;font-size:.9rem;z-index:120;box-shadow:0 16px 40px -14px rgba(0,0,0,.8);animation:fade .25s}
+.load{text-align:center;padding:56px 20px;color:var(--muted)}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* packet (PDF look) */
+.packet{background:#f4f7fb;color:#0f1e36;border-radius:12px;padding:22px;font-size:.85rem}
+.packet h4{margin:0 0 3px;color:#123a6b}.packet .prow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e6edf5}
+.packet .k{color:#7089ab;font-weight:700}
+@media(max-width:860px){
+  .wiz{grid-template-columns:1fr}.rail{display:none}
+  .mstep{display:block;position:sticky;top:58px;z-index:20;background:rgba(7,11,20,.9);backdrop-filter:blur(10px);padding:10px 0 8px}
+  .mstep .bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}.mstep .bar i{display:block;height:100%;background:var(--grad);transition:width .4s}
+  .mstep .lbl{display:flex;justify-content:space-between;margin-top:7px;font-size:.78rem;font-weight:800;color:var(--muted)}
+  .cols,.grid2,.grid3{grid-template-columns:1fr}.big{grid-template-columns:1fr 1fr}
+  .h1{font-size:1.28rem}.stage{padding:16px 13px 130px}
+}
+@media(max-width:480px){.roles button{padding:8px 10px;font-size:.72rem}.logo{font-size:1.12rem}}
+</style></head>
+<body>
+<div class="appbar">
+  <div class="logo"><span class="dot"></span><span class="l">load</span><span class="b">boot</span></div>
+  <div class="roles">
+    <button id="r-carrier" class="on" onclick="setRole('carrier')">🚚 Carrier</button>
+    <button id="r-cc" onclick="setRole('cc')">🛡️ CC Admin</button>
+    <button id="r-broker" onclick="setRole('broker')">📦 Broker</button>
+  </div>
+</div>
+<div class="stage" id="stage"></div>
+<script>
+var BASE="https://data.transportation.gov/resource";
+var S={
+  role:'carrier', view:'dashboard', wstep:0, ptab:0,
+  fmcsa:null, dot:'', mc:'',
+  custom:{dphone:'',demail:'',equip:[],lanes:[],commodities:[],rpm:'',radius:'',avail:'',bio:'',factoring:'',bank:false,access:null},
+  docs:{coi:false,w9done:false,agree:false,authority:true,noa:false,cdl:false},
+  w9:{name:'',biz:'',tin:'',addr:'',classification:'LLC'},
+  sigName:'', status:'draft', rejectReason:'',
+  submissions:[], posts:[],
+  brokerLoads:[], carrierLoads:[], market:[],
+  ccOpen:null, ccTab:'carriers', brokerOpen:null, carrierSub:'onboard',
+  loadDraft:null, viewLoad:null, bfEquip:'', bfState:'', bfSafety:'',
+  cfOrigin:'', cfDest:'', cfEquip:'', cfRpm:''
+};
+var stage=document.getElementById('stage');
+var LB={phone:'(888) 456-2668',email:'dispatch@loadboot.co'};
+var EQUIP=["Dry Van","Reefer","Flatbed","Step Deck","Power Only","Box Truck","Hotshot","Conestoga","Tanker","Car Hauler","Lowboy","Double Drop"];
+var LANES=["Northeast","Southeast","Midwest","Southwest","West Coast","Pacific NW","Mountain","Texas Triangle","OTR / 48 States","Regional"];
+var COMMOD=["General Freight","Refrigerated Food","Beverages","Building Materials","Machinery","Produce","Paper Products","Automotive","Retail/Consumer","Chemicals"];
+var WSTEPS=[{id:'general',t:'General Information',ic:'📋'},{id:'fleet',t:'Fleet',ic:'🚚'},{id:'insurance',t:'Insurance',ic:'🛡️'},{id:'safety',t:'Safety',ic:'⭐'},{id:'inspections',t:'Inspections',ic:'🔍'},{id:'violations',t:'Violations',ic:'⚠️'},{id:'crashes',t:'Crashes',ic:'💥'},{id:'prefs',t:'Lanes & Rates',ic:'🧭'},{id:'payment',t:'Payment Setup',ic:'🏦'},{id:'agreement',t:'Dispatch Agreement',ic:'✍️'},{id:'w9',t:'W-9 Form',ic:'🧾'},{id:'review',t:'Review & Post',ic:'🚀'}];
+var PTABS=["General Information","Fleet","Insurance","Safety","Inspections","Violations","Crashes"];
+var ACCESSORIALS=[["Detention","$/hr after 2h","50"],["Layover","$/day","150"],["TONU","flat","250"],["Lumper","reimbursed","0"],["Stop-off","$/stop","75"],["Tarping","flat","100"],["Driver assist","flat","60"]];
+var POLICIES=["Carrier maintains min $1M auto liability + $100k cargo coverage","No double brokering or re-brokering of this load","Signed rate confirmation governs payment terms","POD / signed BOL submitted within 24 hrs of delivery","Detention billed only after 2 free hours with in/out times","Carrier responsible for load securement & legal weight","On-time pickup & delivery per appointment windows"];
+/* helpers */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];});}
+function j(v){var n=Number(v);return (v!=null&&v!==''&&isFinite(n))?n:0;}
+function d(v){var s=String(v||'').trim();if(s.length<8)return null;return s.slice(4,6)+'/'+s.slice(6,8)+'/'+s.slice(0,4);}
+function ph(v){var s=String(v||'').replace(/\D/g,'');return s.length===10?('('+s.slice(0,3)+') '+s.slice(3,6)+'-'+s.slice(6)):(v||'—');}
+async function get(path){try{var r=await fetch(BASE+'/'+path,{headers:{'Accept':'application/json'}});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove();},2600);}
+function initials(n){return String(n||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w[0];}).join('').toUpperCase();}
+function money(n){return '$'+Number(n||0).toLocaleString();}
+function vinYear(vin){if(!vin||vin.length<10)return '';var c=vin.charAt(9).toUpperCase();var map={A:2010,B:2011,C:2012,D:2013,E:2014,F:2015,G:2016,H:2017,J:2018,K:2019,L:2020,M:2021,N:2022,P:2023,R:2024,S:2025,T:2026};if(map[c])return map[c];if(/[1-9]/.test(c))return 2000+parseInt(c);return '';}
+var CARGO={crgo_genfreight:"General Freight",crgo_household:"Household Goods",crgo_metalsheet:"Metal: Sheets/Coils",crgo_motorveh:"Motor Vehicles",crgo_logpole:"Logs/Poles/Lumber",crgo_bldgmat:"Building Materials",crgo_machlrg:"Machinery/Large",crgo_produce:"Produce",crgo_liqgas:"Liquids/Gases",crgo_intermodal:"Intermodal",crgo_livestock:"Livestock",crgo_grainfeed:"Grain/Feed/Hay",crgo_chem:"Chemicals",crgo_drybulk:"Dry Bulk",crgo_coldfood:"Refrigerated Food",crgo_beverages:"Beverages",crgo_construct:"Construction"};
+function basicOf(part){var p=String(part||'').slice(0,3);if(p==='392'||p==='397')return "Unsafe Driving";if(p==='395'||p==='398')return "Hours of Service";if(p==='391'||p==='383')return "Driver Fitness";if(p==='382')return "Controlled Substances";return "Vehicle Maintenance";}
+function vType(part){var p=String(part||'').slice(0,3);if(p==='393'||p==='396')return 'Vehicle';if(p==='397')return 'Hazmat';return 'Driver';}
+var BCATS=["Unsafe Driving","Hours of Service","Vehicle Maintenance","Controlled Substances","Driver Fitness"];
+var LVL={"1":"Level I - Full","2":"Level II - Walk-Around","3":"Level III - Driver Only","4":"Level IV - Special","5":"Level V - Vehicle Only","6":"Level VI - Radioactive"};
+/* fetch */
+async function loadFmcsa(dot){
+  dot=String(dot).replace(/\D/g,'');var pad=dot.padStart(8,'0');
+  var census=await get('az4n-8mr2.json?dot_number='+dot+'&$limit=1');var c=(census&&census[0])||null;if(!c)return null;
+  var mcNum=c.docket1?String(c.docket1):'';
+  var R=await Promise.all([get('6eyk-hxee.json?dot_number='+pad+'&$limit=1'),get('qh9u-swkp.json?dot_number='+pad+'&$order=effective_date DESC&$limit=8'),get('fx4q-ay7w.json?dot_number='+dot+'&$order=insp_date DESC&$limit=200'),get('aayw-vxb3.json?dot_number='+dot+'&$order=report_date DESC&$limit=60'),get('rbkj-cgst.json?dot_number='+dot+'&$limit=200'),mcNum?get('6sqe-dvqs.json?docket_number=MC'+mcNum+'&$order=effective_date DESC&$limit=20'):Promise.resolve([])]);
+  var insp=R[2]||[],viol=[];
+  if(insp.length){var ids=insp.map(function(x){return "'"+x.inspection_id+"'";}).filter(Boolean).join(',');var vr=await get("876r-jsdb.json?$where=inspection_id in ("+ids+")&$limit=400");viol=vr||[];}
+  return {c:c,auth:(R[0]&&R[0][0])||null,ins:R[1]||[],insp:insp,crash:R[3]||[],units:R[4]||[],inshist:R[5]||[],viol:viol,dot:dot};
+}
+function demoFmcsa(dot){
+  return {dot:dot||'3761697',auth:{authority_type:'Common'},
+   c:{legal_name:'HORIZON FREIGHTWAYS LLC',dbaname:'Horizon Freight',dot_number:dot||'3761697',docket1:'1408820',docket1prefix:'MC',phy_street:'4820 Logistics Pkwy',phy_city:'DALLAS',phy_state:'TX',phy_zip:'75212',carrier_mailing_street:'PO Box 5521',carrier_mailing_city:'DALLAS',carrier_mailing_state:'TX',carrier_mailing_zip:'75221',phone:'4692215540',email_address:'dispatch@horizonfreight.co',status_code:'A',carrier_operation:'A',classdef:'Authorized For Hire',add_date:'20190614',power_units:'14',total_drivers:'16',total_cdl:'16',driver_inter_total:'16',total_intrastate_drivers:'0',owntract:'11',trmtruck:'3',trptruck:'0',owntrail:'22',trmtrail:'0',trptrail:'0',mcs150_mileage:'1240000',mcs150_mileage_year:'2024',mcs150_date:'20240118',recordable_crash_rate:'0.000',hm_ind:'N',crgo_genfreight:'X',crgo_coldfood:'X',crgo_beverages:'X'},
+   ins:[{name_company:'Great West Casualty',policy_no:'MCP-88213',effective_date:'20240401',max_cov_amount:'1000000',mod_col_1:'PRIMARY',mod_col_3:'BIPD',ins_form_code:'91X'}],
+   inshist:[{name_company:'Progressive Commercial',policy_no:'PC-4471',effective_date:'20210301',cancl_effective_date:'20240331',min_cov_amount:'1000',mod_col_1:'CANCELLED',mod_col_3:'BIPD/PRIMARY',cancl_method:'INSURER'}],
+   insp:[{inspection_id:'a1',insp_date:'20250410',insp_level_id:'2',report_state:'TX',report_number:'TX250410',viol_total:'1',oos_total:'0',driver_oos_total:'0',vehicle_oos_total:'0',location_desc:'I-35 Waco'},{inspection_id:'a2',insp_date:'20250122',insp_level_id:'1',report_state:'OK',report_number:'OK250122',viol_total:'0',oos_total:'0',driver_oos_total:'0',vehicle_oos_total:'0',location_desc:'I-40 OKC'},{inspection_id:'a3',insp_date:'20241108',insp_level_id:'3',report_state:'NM',report_number:'NM241108',viol_total:'2',oos_total:'1',driver_oos_total:'1',vehicle_oos_total:'0',location_desc:'I-10 Las Cruces'}],
+   crash:[], units:[{unique_id:'a1',inspection_id:'a1',vin:'3AKJHHDR8LSLT1234',unit_make:'FRHT',unit_license:'TX88213',unit_license_state:'TX',unit_type_desc:'TRUCK TRACTOR'}],
+   viol:[{inspection_id:'a1',part_no:'393',part_no_section:'75',viol_desc:'Tire tread depth below minimum',out_of_service_indicator:'N'},{inspection_id:'a3',part_no:'395',part_no_section:'8',viol_desc:"Driver's record of duty status not current",out_of_service_indicator:'Y'},{inspection_id:'a3',part_no:'391',part_no_section:'11',viol_desc:'Driver medical certificate expired',out_of_service_indicator:'N'}]};
+}
+/* seed marketplace loads (LoadBoot + brokers) */
+function seedMarket(){
+  S.market=[
+    {id:'mk1',src:'LoadBoot Direct',origin:'Dallas, TX',dest:'Atlanta, GA',oState:'TX',dState:'GA',equip:'Dry Van',weight:'44000',miles:781,commodity:'Retail freight',rate:2450,pickup:'Tue 8:00 AM',delivery:'Wed 3:00 PM'},
+    {id:'mk2',src:'TQL',origin:'Houston, TX',dest:'Memphis, TN',oState:'TX',dState:'TN',equip:'Reefer',weight:'41000',miles:561,commodity:'Frozen food',rate:1980,pickup:'Wed 6:00 AM',delivery:'Thu 10:00 AM'},
+    {id:'mk3',src:'LoadBoot Direct',origin:'OKC, OK',dest:'Denver, CO',oState:'OK',dState:'CO',equip:'Flatbed',weight:'46000',miles:646,commodity:'Steel coils',rate:2120,pickup:'Thu 7:00 AM',delivery:'Fri 2:00 PM'},
+    {id:'mk4',src:'Ryder Logistics',origin:'Fort Worth, TX',dest:'Phoenix, AZ',oState:'TX',dState:'AZ',equip:'Dry Van',weight:'38000',miles:1010,commodity:'Beverages',rate:2890,pickup:'Fri 9:00 AM',delivery:'Sun 8:00 AM'},
+    {id:'mk5',src:'LoadBoot Direct',origin:'San Antonio, TX',dest:'New Orleans, LA',oState:'TX',dState:'LA',equip:'Reefer',weight:'40000',miles:545,commodity:'Produce',rate:1750,pickup:'Mon 5:00 AM',delivery:'Tue 9:00 AM'}
+  ];
+}
+/* aggregates */
+function agg(D){
+  var insp=D.insp||[],viol=D.viol||[];var vehI=0,drvI=0,vehO=0,drvO=0,states={};
+  insp.forEach(function(x){var L=String(x.insp_level_id);if(L==='1'||L==='2'||L==='5')vehI++;if(L==='1'||L==='2'||L==='3')drvI++;if(j(x.vehicle_oos_total)>0)vehO++;if(j(x.driver_oos_total)>0)drvO++;if(x.report_state)states[x.report_state]=1;});
+  var byCat={};BCATS.forEach(function(b){byCat[b]={total:0,oos:0};});var inspHasCat={};
+  viol.forEach(function(v){var b=basicOf(v.part_no);if(!byCat[b])byCat[b]={total:0,oos:0};byCat[b].total++;if(String(v.out_of_service_indicator||'').toUpperCase()==='Y')byCat[b].oos++;var id=v.inspection_id;inspHasCat[id]=inspHasCat[id]||{};inspHasCat[id][b]=1;});
+  var inspCat={};BCATS.forEach(function(b){inspCat[b]=0;});var clean=0;
+  insp.forEach(function(x){var h=inspHasCat[x.inspection_id];if(!h||!Object.keys(h).length){clean++;return;}BCATS.forEach(function(b){if(h[b])inspCat[b]++;});});
+  return {vehI:vehI,drvI:drvI,vehO:vehO,drvO:drvO,states:Object.keys(states).length,byCat:byCat,inspCat:inspCat,clean:clean,vehRate:vehI?100*vehO/vehI:0,drvRate:drvI?100*drvO/drvI:0,totalViol:viol.length,oosViol:viol.filter(function(v){return String(v.out_of_service_indicator||'').toUpperCase()==='Y';}).length,count:insp.length};
+}
+function F(k,v){return '<div class="f"><div class="k">'+k+'</div><div class="v">'+esc(v==null||v===''?'—':v)+'</div></div>';}
+/* full FMCSA panel (0..6) */
+function fpanel(D,cur,mask){
+  var c=D.c,ins=D.ins,insp=D.insp,crash=D.crash,units=D.units,inshist=D.inshist;var A=agg(D);
+  if(cur===0){
+    var cargo=[];for(var k in CARGO){if(String(c[k]||'').toUpperCase()==='X')cargo.push(CARGO[k]);}
+    return '<div class="cols"><div class="box"><h3>📍 Address</h3>'+F('Physical Address',(c.phy_street||'')+', '+(c.phy_city||'')+', '+(c.phy_state||'')+' '+(c.phy_zip||''))+F('Mailing Address',(c.carrier_mailing_street||'')+', '+(c.carrier_mailing_city||'')+', '+(c.carrier_mailing_state||'')+' '+(c.carrier_mailing_zip||''))+'</div>'
+      +'<div class="box"><h3>🗺️ Operation</h3>'+F('Inspections recorded in',A.states+' states')+F('Operating status',String(c.status_code).toUpperCase()==='A'?'ACTIVE':'INACTIVE')+F('Entity',c.classdef)+'</div></div>'
+      +'<div class="cols" style="margin-top:14px"><div class="box"><h3>📞 Contact</h3>'+(mask?F('Coordinate via','💬 LoadBoot Dispatch — '+LB.phone)+F('Carrier direct line','🔒 Not shared — routed through LoadBoot'):F('Phone',ph(c.phone))+F('Email',c.email_address))+'</div>'
+      +'<div class="box"><h3>🛣️ Mileage (MCS-150)</h3>'+F('Annual Mileage',(c.mcs150_mileage?Number(c.mcs150_mileage).toLocaleString():'—')+' mi')+F('Reported Year',c.mcs150_mileage_year)+F('MCS-150 Update',d(c.mcs150_date))+'</div></div>'
+      +'<div class="box" style="margin-top:14px"><h3>📦 Cargo & HazMat</h3><div class="f"><div class="k">Cargo Carried</div><div class="chips" style="margin-top:4px">'+(cargo.length?cargo.map(function(x){return '<span class="chip">'+x+'</span>';}).join(''):'—')+'</div></div>'+F('HazMat',String(c.hm_ind).toUpperCase()==='Y'?'Authorized':'Not Authorized')+'</div>';
+  }
+  if(cur===1){
+    var trucksL=j(c.trmtruck)+j(c.trptruck),trailersL=j(c.trmtrail)+j(c.trptrail);var seen={},rows=[];
+    units.forEach(function(u){[['vin','unit_make','unit_license','unit_license_state','unit_type_desc'],['vin2','unit_make2','unit_license2','unit_license_state2','unit_type_desc2']].forEach(function(f){var vin=u[f[0]];if(vin&&!seen[vin]){seen[vin]=1;rows.push({type:u[f[4]]||'',year:vinYear(vin),make:u[f[1]]||'',vin:vin,plate:(u[f[3]]||'')+' '+(u[f[2]]||'')});}});});
+    return '<div class="sec-h">Equipment Summary</div><div class="big"><div class="m"><b>'+j(c.owntract)+'</b><span>TRUCKS OWNED</span></div><div class="m"><b>'+trucksL+'</b><span>TRUCKS LEASED</span></div><div class="m"><b>'+j(c.owntrail)+'</b><span>TRAILERS OWNED</span></div><div class="m"><b>'+trailersL+'</b><span>TRAILERS LEASED</span></div></div>'
+      +'<div class="sec-h">Driver Summary</div><div class="big"><div class="m"><b>'+j(c.total_cdl)+'</b><span>CDL DRIVERS</span></div><div class="m"><b>'+(j(c.total_drivers)-j(c.total_cdl))+'</b><span>NON-CDL</span></div><div class="m"><b>'+j(c.driver_inter_total)+'</b><span>INTERSTATE</span></div><div class="m"><b>'+j(c.total_intrastate_drivers)+'</b><span>INTRASTATE</span></div></div>'
+      +'<div class="sec-h">Equipment Seen in Inspections ('+rows.length+')</div>'+(rows.length?'<table><thead><tr><th>Type</th><th>Year</th><th>Make</th><th>VIN</th><th>License</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+esc(r.type)+'</td><td>'+esc(r.year)+'</td><td>'+esc(r.make)+'</td><td class="mono">'+esc(r.vin)+'</td><td>'+esc(r.plate.trim())+'</td></tr>';}).join('')+'</tbody></table>':'<div class="empty">No inspected vehicles on record.</div>');
+  }
+  if(cur===2){
+    var h='<div class="sec-h">Current Insurance Policies ('+ins.length+')</div>';
+    if(!ins.length)h+='<div class="empty">No active insurance on file.</div>';else h+=ins.map(function(p,i){return '<div class="pcard"><div class="bar"></div><div class="rowline"><span><b>Policy '+(i+1)+'</b></span><span>Effective: '+esc(d(p.effective_date)||'—')+'</span></div><div class="cols" style="margin-top:8px">'+F('Insurer',p.name_company)+F('Policy number',p.policy_no)+F('Coverage',p.max_cov_amount?money(p.max_cov_amount):'—')+F('Type',p.mod_col_3)+F('Form',p.ins_form_code)+'</div></div>';}).join('');
+    h+='<div class="sec-h" style="margin-top:14px">Previous Insurance History ('+inshist.length+')</div>';
+    if(!inshist.length)h+='<div class="empty">No prior policies on record.</div>';else h+=inshist.map(function(p){var st=(p.mod_col_1||'').toUpperCase();return '<div style="border-left:4px solid '+(st.indexOf('CANCEL')>=0?'var(--bad)':'var(--acc)')+';background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px"><div style="font-weight:800">'+esc((p.mod_col_3+' POLICY '+(st||'ON RECORD')).toUpperCase())+'</div><div class="cols" style="margin-top:6px">'+F('Policy #',p.policy_no)+F('Coverage',p.min_cov_amount?money(Number(p.min_cov_amount)*1000):'—')+F('Effective',d(p.effective_date))+F('Cancelled',d(p.cancl_effective_date))+F('Insurer',p.name_company)+F('Cancel Method',p.cancl_method)+'</div></div>';}).join('');
+    return h;
+  }
+  if(cur===3){return '<div class="cols"><div class="box"><h3>🛡️ Safety</h3>'+F('Safety Rating',c.safety_rating||'Not Rated')+F('Recordable Crash Rate',c.recordable_crash_rate||'0.000')+'</div><div class="box"><h3>🚦 Out of Service Rates</h3><div class="f"><div class="k">% of inspections, last 24 months</div></div>'+F('Driver OOS Rate',A.drvRate.toFixed(1)+'%')+F('Vehicle OOS Rate',A.vehRate.toFixed(1)+'%')+'</div></div><div class="sec-h">Violations by BASIC Category</div><div class="big" style="grid-template-columns:repeat(5,1fr)">'+BCATS.map(function(b){return '<div class="m"><b>'+A.byCat[b].total+'</b><span>'+b.toUpperCase()+'</span></div>';}).join('')+'</div>';}
+  if(cur===4){
+    var chips='<div class="chips" style="margin-bottom:14px">'+BCATS.map(function(b){var n=A.inspCat[b];return '<span class="chip'+(n>3?' bad':(n>0?' warn':''))+'">'+b+' · '+n+'</span>';}).join('')+'<span class="chip ok">Clean · '+A.clean+'</span></div>';
+    if(!insp.length)return '<div class="empty">No inspections on record.</div>';var vByI={};D.viol.forEach(function(v){(vByI[v.inspection_id]=vByI[v.inspection_id]||[]).push(v);});
+    return '<div class="sec-h">Filter by BASIC</div>'+chips+'<div class="sec-h">Recent Inspections ('+insp.length+')</div>'+insp.slice(0,20).map(function(x){var oos=j(x.oos_total)>0;var vs=vByI[x.inspection_id]||[];var vr=vs.map(function(v){var oy=String(v.out_of_service_indicator||'').toUpperCase()==='Y';return '<tr><td>'+vType(v.part_no)+'</td><td>'+esc(v.viol_desc)+'</td><td>Part '+esc(v.part_no)+(v.part_no_section?' §'+esc(v.part_no_section):'')+'</td><td>'+(oy?'<span class="pill2 bad">OOS</span>':'<span class="pill2 warn">Warning</span>')+'</td></tr>';}).join('');return '<div class="insp"><div><div class="l">'+esc(d(x.insp_date))+'</div><div style="color:var(--muted);font-size:.82rem">'+esc(LVL[String(x.insp_level_id)]||('Level '+x.insp_level_id))+' · '+esc(x.report_state)+' — '+esc(x.location_desc||'')+'</div><div style="color:var(--faint);font-size:.74rem">Report #: '+esc(x.report_number)+'</div></div><div style="text-align:right"><span class="pill2 '+(j(x.viol_total)>0?'warn':'ok')+'">'+esc(x.viol_total||'0')+' Viol.</span>'+(oos?' <span class="pill2 bad">OOS</span>':'')+'</div></div>'+(vr?'<div style="border:1px solid var(--bd);border-radius:12px;margin:-4px 0 12px;padding:10px 12px;background:var(--panel)"><table><thead><tr><th>Type</th><th>Description</th><th>Part</th><th>Status</th></tr></thead><tbody>'+vr+'</tbody></table></div>':'');}).join('');
+  }
+  if(cur===5){var L1=insp.filter(function(x){return String(x.insp_level_id)==='1';}).length,L2=insp.filter(function(x){return String(x.insp_level_id)==='2';}).length,L3=insp.filter(function(x){return String(x.insp_level_id)==='3';}).length;
+    return '<div class="sec-h">Violation Summary</div><div class="big" style="grid-template-columns:repeat(3,1fr)"><div class="m"><b>'+insp.length+'</b><span>TOTAL INSPECTIONS</span></div><div class="m"><b>'+A.totalViol+'</b><span>TOTAL VIOLATIONS</span></div><div class="m"><b>'+A.oosViol+'</b><span>OOS VIOLATIONS</span></div></div><div class="sec-h">By Level</div><div class="big" style="grid-template-columns:repeat(5,1fr)"><div class="m"><b>'+L1+'</b><span>LEVEL 1</span></div><div class="m"><b>'+L2+'</b><span>LEVEL 2</span></div><div class="m"><b>'+L3+'</b><span>LEVEL 3</span></div><div class="m"><b>'+A.vehI+'</b><span>VEHICLE</span></div><div class="m"><b>'+A.drvI+'</b><span>DRIVER</span></div></div><div class="sec-h">By BASIC Category</div><table><thead><tr><th>Category</th><th>Total</th><th>OOS</th><th>Ratio</th></tr></thead><tbody>'+BCATS.map(function(b){var o=A.byCat[b];var r=o.total?(100*o.oos/o.total).toFixed(1):'0.0';return '<tr><td><b>'+b+'</b></td><td>'+o.total+'</td><td>'+(o.oos>0?'<span class="pill2 bad">'+o.oos+'</span>':'0')+'</td><td>'+r+'%</td></tr>';}).join('')+'</tbody></table><div class="sec-h">National Average OOS</div><div class="cmp"><div class="c"><span>VEHICLE OOS</span><b style="color:'+(A.vehRate>22.3?'var(--bad)':'var(--ok)')+'">'+A.vehRate.toFixed(1)+'%</b><div class="'+(A.vehRate>22.3?'above':'below')+'">Nat. avg 22.3%</div></div><div class="c"><span>DRIVER OOS</span><b style="color:'+(A.drvRate>6.7?'var(--bad)':'var(--ok)')+'">'+A.drvRate.toFixed(1)+'%</b><div class="'+(A.drvRate>6.7?'above':'below')+'">Nat. avg 6.7%</div></div></div>';}
+  if(cur===6){if(!crash.length)return '<div class="banner ok"><div class="em">✅</div><div><b>No reportable crashes in the last 24 months</b><div style="color:var(--muted);font-size:.85rem">Clean crash record.</div></div></div>';return '<div class="sec-h">Crashes ('+crash.length+')</div><table><thead><tr><th>Date</th><th>State</th><th>Fatal</th><th>Injuries</th><th>Tow</th><th>Report #</th></tr></thead><tbody>'+crash.slice(0,40).map(function(x){return '<tr><td>'+esc(d(x.report_date))+'</td><td>'+esc(x.report_state)+'</td><td>'+esc(x.fatalities||'0')+'</td><td>'+esc(x.injuries||'0')+'</td><td>'+(String(x.tow_away||'').toUpperCase()==='Y'?'Yes':'No')+'</td><td>'+esc(x.report_number)+'</td></tr>';}).join('')+'</tbody></table>';}
+  return '';
+}
+function profileTabs(D,ts,ch,mask){return '<div class="tabs">'+PTABS.map(function(t,i){return '<div class="tab'+(i===ts?' on':'')+'" onclick="'+ch+'('+i+')">'+t+'</div>';}).join('')+'</div><div>'+fpanel(D,ts,mask)+'</div>';}
+
+/* ROUTER */
+function setRole(r){S.role=r;['carrier','cc','broker'].forEach(function(x){document.getElementById('r-'+x).classList.toggle('on',x===r);});render();}
+function render(){if(S.role==='carrier')return renderCarrier();if(S.role==='cc')return renderCC();if(S.role==='broker')return renderBroker();}
+
+/* ===== CARRIER ===== */
+function pctComplete(){if(S.status==='under_review'||S.status==='approved')return 100;return Math.min(Math.round((Math.max(0,S.wstep)/WSTEPS.length)*100),100);}
+function renderCarrier(){
+  stage.className='stage fade';
+  if(S.viewLoad){var l=S.carrierLoads.filter(function(x){return x.id===S.viewLoad;})[0];if(l)return carrierLoadDetail(l);S.viewLoad=null;}
+  if(S.viewSettle){var sl=S.carrierLoads.filter(function(x){return x.id===S.viewSettle;})[0];if(sl)return settlementDetail(sl);S.viewSettle=null;}
+  var approved=(S.status==='under_review'||S.status==='approved'||S.status==='rejected');
+  if(!approved){if(S.view==='dashboard')return carrierDashboard();if(S.view==='enter')return carrierEnter();if(S.view==='wizard')return carrierWizard();}
+  // approved/under-review: subnav app
+  if(S.view==='wizard')return carrierWizard();
+  if(S.carrierSub==='available')return carrierAvailable();
+  if(S.carrierSub==='finance')return carrierFinance();
+  if(S.carrierSub==='loads')return carrierLoads();
+  if(S.carrierSub==='profile')return carrierSelfProfile();
+  if(S.carrierSub==='documents')return carrierDocuments();
+  if(S.carrierSub==='settings')return carrierSettings();
+  return carrierStatusScreen();
+}
+function carrierSubnav(active){
+  var pend=S.carrierLoads.filter(function(l){return l.cstatus==='forwarded';}).length;
+  var approved=S.status==='approved';
+  var items=[['onboard','Overview'],approved?['available','Available Loads']:null,['loads','My Loads'+(pend?'<span class="count">'+pend+'</span>':'')],approved?['finance','Finance']:null,['profile','My Profile'],['documents','Documents'],['settings','Settings']].filter(Boolean);
+  return '<div class="subnav">'+items.map(function(it){return '<button class="'+(S.carrierSub===it[0]?'on':'')+'" onclick="cSub(\''+it[0]+'\')">'+it[1]+'</button>';}).join('')+'</div>';
+}
+window.cSub=function(v){S.carrierSub=v;S.viewLoad=null;render();};
+function carrierDashboard(){
+  var p=pctComplete();
+  stage.innerHTML='<div class="hero"><div class="tag">Carrier OS</div><h2 style="margin-top:8px">Welcome to LoadBoot 👋</h2><p>Your carrier account is live. Complete your profile once — we verify it against FMCSA, our team approves it, then loads flow straight to you.</p></div>'
+  +'<div class="strip"><div class="ring" style="--p:'+p+'"><i>'+p+'%</i></div><div class="txt"><h3>Submit your profile to get loads</h3><p>Enter your DOT — we auto-fill from FMCSA. ~5 minutes.</p></div><button class="btn" onclick="startOnboard()">'+(S.wstep>0?'Resume onboarding →':'Submit Your Profile →')+'</button></div>'
+  +'<div class="locked"><div class="blurwrap"><div class="loadrow"><div><b>Dallas, TX → Atlanta, GA</b><div style="color:var(--muted);font-size:.82rem">Dry Van · 44,000 lbs</div></div><b style="color:var(--ok)">$2,450</b></div><div class="loadrow"><div><b>Houston, TX → Memphis, TN</b><div style="color:var(--muted);font-size:.82rem">Reefer · 41,000 lbs</div></div><b style="color:var(--ok)">$1,980</b></div></div><div class="lock"><div class="in">🔒 <b>Load board locked</b><div style="color:var(--muted);font-size:.85rem;margin-top:4px">Complete your profile to unlock loads</div></div></div></div>';
+}
+window.startOnboard=function(){S.view=S.wstep>0&&S.fmcsa?'wizard':'enter';render();};
+function carrierEnter(){
+  stage.innerHTML='<div class="enter"><div class="card"><div class="tag">Step 0 · Verify</div><h1 class="h1" style="margin-top:8px">Let\'s verify your authority</h1><p class="sub">Enter your USDOT. MC optional — we pull everything else from FMCSA.</p><div style="margin-top:18px"><div class="field"><label>USDOT Number</label><input id="in-dot" class="inp mono" inputmode="numeric" placeholder="e.g. 3761697" value="'+esc(S.dot||'3761697')+'"></div><div class="field"><label>MC / Docket <span class="opt">(optional)</span></label><input id="in-mc" class="inp mono" placeholder="e.g. 1408820" value="'+esc(S.mc)+'"></div></div><div id="enter-msg"></div><div class="wnav" style="border:0;padding-top:6px"><button class="btn ghost" onclick="S.view=\'dashboard\';render()">← Back</button><button class="btn" onclick="doVerify()">Verify & Continue →</button></div><p style="color:var(--muted);font-size:.78rem;margin-top:12px">🔒 Public FMCSA safety data only. Authority stays verified & can\'t be edited — that\'s what brokers trust.</p></div></div>';
+}
+window.doVerify=async function(){
+  var dot=document.getElementById('in-dot').value.replace(/\D/g,'');var mc=document.getElementById('in-mc').value.replace(/\D/g,'');
+  if(!dot){document.getElementById('enter-msg').innerHTML='<div class="pill bad" style="margin-top:6px">Enter a USDOT number</div>';return;}
+  S.dot=dot;S.mc=mc;stage.innerHTML='<div class="load"><div class="spinner"></div>Verifying DOT '+esc(dot)+' with FMCSA — census, authority, insurance, inspections, violations & crashes…</div>';
+  var data=await loadFmcsa(dot);if(!data)data=demoFmcsa(dot);S.fmcsa=data;
+  if(!S.mc&&data.c.docket1)S.mc=String(data.c.docket1);
+  if(!S.custom.dphone)S.custom.dphone=ph(data.c.phone);if(!S.custom.demail)S.custom.demail=data.c.email_address||'';
+  if(!S.custom.access)S.custom.access=ACCESSORIALS.map(function(a){return a.slice();});
+  S.wstep=0;S.view='wizard';render();
+};
+function carrierWizard(){
+  stage.className='stage';var i=S.wstep,st=WSTEPS[i];
+  var railSteps=WSTEPS.map(function(w,k){var cls=k===i?'on':(k<i?'done':'');return '<div class="step '+cls+'" onclick="goStep('+k+')"><div class="num">'+(k<i?'✓':(k+1))+'</div><div>'+w.t+'</div></div>';}).join('');
+  var pct=Math.round((i/(WSTEPS.length-1))*100);
+  var rail='<div class="rail"><div class="card"><div style="font-weight:900;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 4px 10px">Onboarding</div>'+railSteps+'<div class="railbar"><i style="width:'+pct+'%"></i></div><div class="railpct">'+pct+'% complete</div></div></div>';
+  var mstep='<div class="mstep"><div class="bar"><i style="width:'+pct+'%"></i></div><div class="lbl"><span>'+st.ic+' '+st.t+'</span><span class="mono">'+(i+1)+'/'+WSTEPS.length+'</span></div></div>';
+  stage.innerHTML='<div class="wiz">'+rail+'<div>'+mstep+'<div class="card wpanel slidein">'+stepBody(st.id)+wnav(i)+'</div></div></div>';
+}
+window.goStep=function(k){if(k<=S.wstep+1){S.wstep=k;carrierWizard();}};
+function wnav(i){var last=i===WSTEPS.length-1;var back=i===0?'<button class="btn ghost" onclick="S.view=\'enter\';render()">← Authority</button>':'<button class="btn ghost" onclick="S.wstep--;carrierWizard()">← Back</button>';return '<div class="wnav">'+back+(last?'':'<button class="btn" onclick="nextStep()">Continue →</button>')+'</div>';}
+window.nextStep=function(){var id=WSTEPS[S.wstep].id;if(id==='insurance'&&!S.docs.coi){toast('Upload your Certificate of Insurance');return;}if(id==='agreement'&&!S.docs.agree){toast('E-sign the dispatch agreement');return;}if(id==='w9'&&!S.docs.w9done){toast('Complete & generate your W-9');return;}if(S.wstep<WSTEPS.length-1){S.wstep++;carrierWizard();}};
+function editHdr(){return '<div class="sec-h" style="color:#9fd0ff">🔒 Verified from FMCSA — locked <span class="verified">✔ CANNOT BE EDITED</span></div>';}
+function stepBody(id){
+  var D=S.fmcsa,c=D.c;var idx={general:0,fleet:1,insurance:2,safety:3,inspections:4,violations:5,crashes:6}[id];
+  var head=function(ic,t,sub){return '<div class="wtitle">'+ic+' '+t+'</div><p class="wsub">'+sub+'</p>';};
+  if(idx!=null){
+    var sub={general:'Identity & authority — verified from FMCSA. Add the dispatch contact brokers should reach you through.',fleet:'Fleet size verified. Tell brokers which equipment you actually run.',insurance:'Your FMCSA-filed coverage. Upload a current COI — required.',safety:'FMCSA safety picture. Read-only — the trust layer.',inspections:'Roadside inspection history. Read-only.',violations:'Violation summary. Read-only.',crashes:'24-month crash history. Read-only.'}[id];
+    var body=head(WSTEPS[idx].ic,WSTEPS[idx].t,sub)+editHdr()+fpanel(D,idx);
+    if(id==='general')body+='<div class="editcard"><div class="lab">✏️ Customizable — dispatch contact & profile</div><div class="grid2"><div class="field"><label>Dispatch Phone</label><input class="inp" value="'+esc(S.custom.dphone)+'" oninput="S.custom.dphone=this.value"></div><div class="field"><label>Dispatch Email</label><input class="inp" value="'+esc(S.custom.demail)+'" oninput="S.custom.demail=this.value"></div></div><div class="field"><label>Company Bio <span class="opt">(shown to brokers)</span></label><textarea class="inp" oninput="S.custom.bio=this.value" placeholder="e.g. Family-run reefer fleet, 14 trucks, TX-based, 98% on-time…">'+esc(S.custom.bio)+'</textarea></div></div>';
+    if(id==='fleet')body+='<div class="editcard"><div class="lab">✏️ Customizable — equipment you run</div><div class="chips">'+EQUIP.map(function(e){var on=S.custom.equip.indexOf(e)>=0;return '<span class="chip tog'+(on?' sel':'')+'" onclick="toggleC(\'equip\',\''+e+'\')">'+e+'</span>';}).join('')+'</div></div>';
+    if(id==='insurance')body+='<div class="editcard"><div class="lab">📎 Required — Certificate of Insurance (PDF)</div><div class="uploader'+(S.docs.coi?' has':'')+'" onclick="mockUpload(\'coi\')">'+(S.docs.coi?'<div class="big2">✅</div><b>COI_'+esc((c.legal_name||'carrier').split(' ')[0])+'.pdf</b><div style="color:var(--ok);font-size:.82rem">Uploaded · required doc satisfied</div>':'<div class="big2">📄</div><b>Click to upload your COI</b><div style="color:var(--muted);font-size:.82rem">PDF · active auto liability & cargo</div>')+'</div></div>';
+    return body;
+  }
+  if(id==='prefs'){
+    return head('🧭','Lanes & Rates','Tell us where you run and your target rate — we match you to the right loads.')
+      +'<div class="editcard"><div class="lab">🗺️ Preferred lanes / regions</div><div class="chips">'+LANES.map(function(l){var on=S.custom.lanes.indexOf(l)>=0;return '<span class="chip tog'+(on?' sel':'')+'" onclick="toggleC(\'lanes\',\''+l+'\')">'+l+'</span>';}).join('')+'</div></div>'
+      +'<div class="editcard"><div class="lab">📦 Preferred commodities</div><div class="chips">'+COMMOD.map(function(l){var on=S.custom.commodities.indexOf(l)>=0;return '<span class="chip tog'+(on?' sel':'')+'" onclick="toggleC(\'commodities\',\''+l+'\')">'+l+'</span>';}).join('')+'</div></div>'
+      +'<div class="editcard"><div class="lab">💵 Rate & availability</div><div class="grid3"><div class="field"><label>Target Rate ($/mi)</label><input class="inp mono" value="'+esc(S.custom.rpm)+'" oninput="S.custom.rpm=this.value" placeholder="2.60"></div><div class="field"><label>Operating radius (mi)</label><input class="inp mono" value="'+esc(S.custom.radius)+'" oninput="S.custom.radius=this.value" placeholder="1000"></div><div class="field"><label>Availability</label><input class="inp" value="'+esc(S.custom.avail)+'" oninput="S.custom.avail=this.value" placeholder="Available now · Dallas TX"></div></div></div>'
+      +'<div class="editcard"><div class="lab">🧾 Your default accessorial rates <span class="opt" style="text-transform:none">(brokers see these; negotiable per load)</span></div><div class="box">'+(S.custom.access||ACCESSORIALS).map(function(a,i){return '<div class="acc"><div class="an">'+esc(a[0])+'</div><div class="au">'+esc(a[1])+'</div><input class="mono" inputmode="numeric" value="'+esc(a[2])+'" oninput="S.custom.access['+i+'][2]=this.value"></div>';}).join('')+'</div></div>';
+  }
+  if(id==='payment'){
+    return head('🏦','Payment Setup','How you get paid. Add banking (or your factoring company) so settlements are instant once loads deliver.')
+      +'<div class="editcard"><div class="lab">🏦 Banking / Direct Deposit</div>'
+      +'<div class="grid2"><div class="field"><label>Bank Name</label><input class="inp" value="'+esc(S.custom.bankName||'')+'" oninput="S.custom.bankName=this.value" placeholder="e.g. Chase"></div><div class="field"><label>Account Holder</label><input class="inp" value="'+esc(S.custom.bankHolder||'')+'" oninput="S.custom.bankHolder=this.value" placeholder="Legal business name"></div><div class="field"><label>Routing Number</label><input class="inp mono" inputmode="numeric" value="'+esc(S.custom.bankRouting||'')+'" oninput="S.custom.bankRouting=this.value" placeholder="9 digits"></div><div class="field"><label>Account Number</label><input class="inp mono" inputmode="numeric" value="'+esc(S.custom.bankAcct||'')+'" oninput="S.custom.bankAcct=this.value" placeholder="Account #"></div></div>'
+      +'<div class="field"><label>Account Type</label><select class="inp" onchange="S.custom.bankType=this.value"><option'+(S.custom.bankType==='Savings'?'':' selected')+'>Checking</option><option'+(S.custom.bankType==='Savings'?' selected':'')+'>Savings</option></select></div>'
+      +'<div style="font-size:.72rem;color:var(--muted);margin:4px 0 8px">🔒 Encrypted & tokenized — used only for your settlement payouts.</div>'
+      +'<div class="uploader'+(S.custom.bank?' has':'')+'" onclick="mockUpload(\'bank\')">'+(S.custom.bank?'<div class="big2">✅</div><b>Voided_check.pdf</b><div style="color:var(--ok);font-size:.82rem">Bank on file · ACH ready</div>':'<div class="big2">🏦</div><b>Upload a voided check / bank letter</b><div style="color:var(--muted);font-size:.82rem">For ACH settlement · encrypted</div>')+'</div></div>'
+      +'<div class="editcard"><div class="lab">💳 Factoring (optional)</div><div class="field"><label>Factoring Company <span class="opt">(leave blank if none)</span></label><input class="inp" value="'+esc(S.custom.factoring)+'" oninput="S.custom.factoring=this.value" placeholder="e.g. TAFS, RTS, or none"></div><div class="uploader'+(S.docs.noa?' has':'')+'" onclick="mockUpload(\'noa\')">'+(S.docs.noa?'<div class="big2">✅</div><b>Notice_of_Assignment.pdf</b><div style="color:var(--ok);font-size:.82rem">NOA on file</div>':'<div class="big2">📄</div><b>Upload Notice of Assignment (NOA)</b><div style="color:var(--muted);font-size:.82rem">Only if you factor · optional</div>')+'</div></div>';
+  }
+  if(id==='agreement'){return head('✍️','Dispatch Agreement','Review and e-sign. A signed PDF is generated.')+'<div class="box" style="max-height:210px;overflow:auto;font-size:.86rem;line-height:1.6"><b>LOADBOOT DISPATCH SERVICE AGREEMENT</b><br><br>Between LoadBoot ("Dispatcher") and <b>'+esc(c.legal_name||'Carrier')+'</b> ("Carrier", DOT '+esc(S.dot)+').<br><br>1. <b>Services.</b> Dispatcher locates & books loads, negotiates rates.<br>2. <b>Compensation.</b> Dispatch fee per booked load as separately agreed.<br>3. <b>Authority & Insurance.</b> Carrier warrants active authority & insurance.<br>4. <b>Independent Contractor.</b> No employment relationship.<br>5. <b>Term.</b> Continues until terminated with written notice.<br>6. <b>No Forced Dispatch.</b> Carrier may accept or decline any load.</div><div class="editcard"><div class="lab">✍️ Sign electronically</div><div class="field"><label>Type your full legal name to sign</label><input class="inp" value="'+esc(S.sigName)+'" oninput="S.sigName=this.value;var s=document.getElementById(\'sigshow\');if(s)s.innerHTML=this.value?(\'<span class=\\\'signame\\\'>\'+this.value.replace(/[<>]/g,\'\')+\'</span>\'):\'Signature\'"></div><div class="sigpad" id="sigshow">'+(S.sigName?'<span class="signame">'+esc(S.sigName)+'</span>':'Signature')+'</div><button class="btn wide" style="margin-top:12px" onclick="signAgree()">'+(S.docs.agree?'✅ Signed — re-sign':'Adopt & Sign Agreement')+'</button>'+(S.docs.agree?'<div class="pill ok" style="margin-top:10px">✔ Dispatch_Agreement_signed.pdf</div>':'')+'</div>';}
+  if(id==='w9'){return head('🧾','W-9 Tax Form','Fill this in and we generate a signed W-9 PDF for you.')+'<div class="editcard"><div class="lab">🧾 Request for Taxpayer ID (Form W-9)</div><div class="grid2"><div class="field"><label>Legal / Business Name</label><input class="inp" value="'+esc(S.w9.biz||c.legal_name||'')+'" oninput="S.w9.biz=this.value"></div><div class="field"><label>Name of Signer</label><input class="inp" value="'+esc(S.w9.name||S.sigName||'')+'" oninput="S.w9.name=this.value"></div><div class="field"><label>Tax Classification</label><select class="inp" onchange="S.w9.classification=this.value">'+['LLC','Sole Proprietor','C Corporation','S Corporation','Partnership'].map(function(o){return '<option'+(S.w9.classification===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div><div class="field"><label>EIN / TIN</label><input class="inp mono" inputmode="numeric" placeholder="XX-XXXXXXX" value="'+esc(S.w9.tin)+'" oninput="S.w9.tin=this.value"></div></div><div class="field"><label>Business Address</label><input class="inp" value="'+esc(S.w9.addr||((c.phy_street||'')+', '+(c.phy_city||'')+', '+(c.phy_state||'')))+'" oninput="S.w9.addr=this.value"></div><button class="btn wide" onclick="genW9()">'+(S.docs.w9done?'✅ Generated — regenerate':'Generate signed W-9 PDF')+'</button>'+(S.docs.w9done?'<div class="pill ok" style="margin-top:10px">✔ W-9_'+esc((S.w9.biz||'carrier').split(' ')[0])+'.pdf</div>':'')+'</div>';}
+  if(id==='review'){
+    var ok=S.docs.coi&&S.docs.agree&&S.docs.w9done;var chk=function(y,t,s){return '<div class="chk"><div class="ic '+(y?'y':'n')+'">'+(y?'✓':'!')+'</div><div class="t"><b>'+t+'</b><span>'+s+'</span></div><span class="pill '+(y?'ok':'bad')+'">'+(y?'Ready':'Missing')+'</span></div>';};
+    return head('🚀','Review & Post','Final check. When you post, your full profile goes to our team, then to brokers.')+'<div class="sec-h">Required for submission</div>'+chk(true,'FMCSA Authority Verified','DOT '+esc(S.dot)+(S.mc?' · MC '+esc(S.mc):' · MC not provided'))+chk(S.docs.coi,'Certificate of Insurance','COI uploaded')+chk(S.docs.agree,'Dispatch Agreement','Signed electronically')+chk(S.docs.w9done,'W-9 Tax Form','Generated in-app')
+    +'<div class="sec-h">Your customizations</div><div class="grid2">'+F('Equipment',S.custom.equip.length?S.custom.equip.join(', '):'—')+F('Lanes',S.custom.lanes.length?S.custom.lanes.join(', '):'—')+F('Target Rate',S.custom.rpm?('$'+S.custom.rpm+'/mi'):'—')+F('Payment',S.custom.bank?'Banking on file':(S.custom.factoring||'—'))+'</div>'
+    +'<div style="margin-top:20px">'+(ok?'<button class="btn wide" onclick="submitProfile()">🚀 Post Your Profile — Get Loads</button>':'<button class="btn wide dis">Complete required items above to post</button>')+'</div>';
+  }
+  return '';
+}
+window.toggleC=function(field,v){var arr=S.custom[field];var i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);carrierWizard();};
+window.mockUpload=function(k){if(k==='coi'){S.docs.coi=true;toast('COI uploaded ✓');}if(k==='bank'){S.custom.bank=true;toast('Banking added ✓');}if(k==='noa'){S.docs.noa=true;toast('NOA uploaded ✓');}carrierWizard();};
+window.signAgree=function(){if(!S.sigName){toast('Type your name to sign');return;}S.docs.agree=true;toast('Agreement signed ✓ PDF generated');carrierWizard();};
+window.genW9=function(){if(!S.w9.tin){toast('Enter your EIN/TIN');return;}S.docs.w9done=true;toast('W-9 generated ✓');carrierWizard();};
+window.submitProfile=function(){
+  var D=S.fmcsa,c=D.c,A=agg(D);
+  var sub={id:'sub_'+Date.now(),name:c.legal_name,dot:S.dot,mc:S.mc,city:(c.phy_city||'')+', '+(c.phy_state||''),state:c.phy_state,equip:S.custom.equip.slice(),lanes:S.custom.lanes.slice(),commodities:S.custom.commodities.slice(),rpm:S.custom.rpm,phone:S.custom.dphone,email:S.custom.demail,bio:S.custom.bio,avail:S.custom.avail,factoring:S.custom.factoring,bank:S.custom.bank,accessorials:(S.custom.access||ACCESSORIALS),drvRate:A.drvRate,vehRate:A.vehRate,insp:A.count,crash:(D.crash||[]).length,fmcsa:D,status:'under_review',submitted:new Date().toLocaleString()};
+  S.submissions.unshift(sub);S.status='under_review';S.carrierSub='onboard';S.view='dashboard';render();toast('Profile submitted — under review 🎉');
+};
+function carrierStatusScreen(){
+  var nav=carrierSubnav();
+  if(S.status==='under_review'){stage.innerHTML=nav+'<div class="banner rev"><div class="em">🕓</div><div><b style="font-size:1.1rem">Your profile is under review</b><div style="color:var(--ink2);font-size:.9rem;margin-top:2px">Our team is verifying your submission. Approve it in the CC Admin tab to see the board unlock.</div></div></div><div class="card"><h1 class="h1">'+esc(S.fmcsa.c.legal_name)+'</h1><p class="sub">DOT '+esc(S.dot)+(S.mc?' · MC '+esc(S.mc):'')+' · '+esc((S.fmcsa.c.phy_city||'')+', '+(S.fmcsa.c.phy_state||''))+'</p><div class="big" style="margin-top:14px"><div class="m"><b>✔</b><span>AUTHORITY</span></div><div class="m"><b>✔</b><span>INSURANCE</span></div><div class="m"><b>✔</b><span>W-9</span></div><div class="m"><b>✔</b><span>AGREEMENT</span></div></div><button class="btn ghost" style="margin-top:14px" onclick="S.view=\'wizard\';S.wstep=0;render()">View / edit my submission</button></div>';}
+  else if(S.status==='approved'){stage.innerHTML=nav+'<div class="banner ok"><div class="em">🎉</div><div><b style="font-size:1.1rem;color:var(--ok)">You\'re verified — load board unlocked!</b><div style="color:var(--ink2);font-size:.9rem;margin-top:2px">Browse <b>Available Loads</b>, or wait for direct offers in <b>My Loads</b>.</div></div></div><div class="card"><div class="lhead"><div><h3 style="margin:0">Live status</h3><p class="sub">DOT '+esc(S.dot)+(S.mc?' · MC '+esc(S.mc):'')+'</p></div><span class="verified">✔ VERIFIED CARRIER</span></div><div class="big" style="margin-top:14px"><div class="m"><b>'+S.market.length+'</b><span>LOADS AVAILABLE</span></div><div class="m"><b>'+S.carrierLoads.filter(function(l){return l.cstatus==='forwarded';}).length+'</b><span>DIRECT OFFERS</span></div><div class="m"><b>'+S.carrierLoads.filter(function(l){return l.cstatus==='accepted';}).length+'</b><span>BOOKED</span></div><div class="m"><b>'+(S.custom.rpm?'$'+S.custom.rpm:'—')+'</b><span>TARGET $/MI</span></div></div><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="cSub(\'available\')">Browse Available Loads →</button><button class="btn ghost" onclick="cSub(\'profile\')">View my profile</button></div></div>';}
+  else if(S.status==='rejected'){stage.innerHTML=nav+'<div class="banner bad"><div class="em">⚠️</div><div><b style="font-size:1.1rem;color:var(--bad)">Profile needs changes</b><div style="color:var(--ink2);font-size:.9rem;margin-top:2px">Reason: '+esc(S.rejectReason||'Please review and resubmit.')+'</div></div></div><div class="card"><button class="btn" onclick="S.status=\'draft\';S.view=\'wizard\';S.wstep=0;render()">Fix & resubmit →</button></div>';}
+}
+/* carrier self profile (as brokers see it) */
+function carrierSelfProfile(){
+  var D=S.fmcsa,c=D.c,A=agg(D);
+  stage.innerHTML=carrierSubnav()+'<div class="card"><div class="lhead"><div style="display:flex;gap:14px;align-items:center"><div class="qcard" style="padding:0;border:0;background:none;margin:0"><div class="av" style="width:56px;height:56px;border-radius:15px">'+initials(c.legal_name)+'</div></div><div><h1 class="h1" style="margin:0">'+esc(c.legal_name)+' '+(S.status==='approved'?'<span class="verified">✔ VERIFIED</span>':'<span class="pill warn">Under review</span>')+'</h1><p class="sub">DOT '+esc(S.dot)+(S.mc?' · MC '+esc(S.mc):'')+' · '+esc(c.phy_city+', '+c.phy_state)+'</p></div></div></div>'
+    +'<p style="color:var(--ink2);margin:12px 0 0">'+esc(S.custom.bio||'Add a company bio in onboarding to stand out to brokers.')+'</p>'
+    +'<div class="banner" style="margin-top:14px;background:rgba(59,157,255,.08)"><div class="em">👁️</div><div><b>This is how brokers see you</b><div style="color:var(--muted);font-size:.85rem">Your phone & email are hidden from brokers — they\'re released only inside your Carrier Packet (PDF) when a load is booked through dispatch.</div></div></div>'
+    +'<div class="big"><div class="m"><b>'+j(c.power_units)+'</b><span>TRUCKS</span></div><div class="m"><b>'+j(c.total_drivers)+'</b><span>DRIVERS</span></div><div class="m"><b>'+A.drvRate.toFixed(1)+'%</b><span>DRIVER OOS</span></div><div class="m"><b>'+(D.crash||[]).length+'</b><span>CRASHES 24mo</span></div></div>'
+    +'<div class="sec-h">Equipment</div><div class="chips">'+(S.custom.equip.length?S.custom.equip.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip">General Freight</span>')+'</div>'
+    +'<div class="sec-h">Lanes</div><div class="chips">'+(S.custom.lanes.length?S.custom.lanes.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip">OTR / 48 States</span>')+'</div>'
+    +'<div class="sec-h">Compliance <span class="verified">✔ on file</span></div><div class="chips"><span class="chip ok">✔ COI</span><span class="chip ok">✔ W-9</span><span class="chip ok">✔ Signed Agreement</span><span class="chip ok">✔ FMCSA Authority</span>'+(S.custom.bank?'<span class="chip ok">✔ Banking</span>':'')+'</div>'
+    +'<div class="sec-h">🗂️ Full FMCSA profile</div>'+profileTabs(D,S.ptab,'changeSelfTab',true)+'</div>';
+}
+window.changeSelfTab=function(i){S.ptab=i;carrierSelfProfile();};
+/* documents page */
+function carrierDocuments(){
+  var docs=[['Certificate of Insurance','COI','Approved','Expires 04/01/2026',true],['W-9 Tax Form','W-9','Approved','Generated in-app',true],['Signed Dispatch Agreement','AGR','Approved','Signed '+(S.sigName||'—'),true],['Operating Authority (MC)','MC',S.mc?'Approved':'Optional',S.mc?'MC '+S.mc:'Not provided',!!S.mc],['Voided Check / Banking','ACH',S.custom.bank?'Approved':'Missing',S.custom.bank?'ACH ready':'Add in Payment Setup',S.custom.bank],['Notice of Assignment','NOA',S.docs.noa?'Approved':'Optional',S.docs.noa?'Factoring on file':'Only if factoring',S.docs.noa]];
+  var rows=docs.map(function(x){var st=x[2];var cls=st==='Approved'?'ok':st==='Missing'?'bad':'warn';return '<div class="chk"><div class="ic '+(x[4]?'y':'n')+'">'+(x[4]?'✓':'!')+'</div><div class="t"><b>'+x[0]+' <span class="tag">'+x[1]+'</span></b><span>'+x[3]+'</span></div><span class="pill '+cls+'">'+st+'</span></div>';}).join('');
+  stage.innerHTML=carrierSubnav()+'<h1 class="h1">Documents</h1><p class="sub">Everything collected during onboarding, synced with CC review status. Update expiring docs here.</p><div class="card" style="margin-top:14px">'+rows+'<div class="banner" style="margin-top:12px;background:rgba(251,191,36,.08)"><div class="em">⏰</div><div><b>COI renewal reminder</b><div style="color:var(--muted);font-size:.85rem">Your Certificate of Insurance expires 04/01/2026. Upload a renewal 30 days before to avoid load holds.</div></div></div><button class="btn ghost" onclick="toast(\'Upload dialog (demo)\')">↑ Upload / replace a document</button></div>';
+}
+/* settings page */
+function carrierSettings(){
+  var statusPill=S.status==='approved'?'<span class="verified">✔ VERIFIED — BOOKING OPEN</span>':'<span class="pill warn">PENDING VERIFICATION</span>';
+  stage.innerHTML=carrierSubnav()+'<h1 class="h1">Account & Settings</h1><p class="sub">Manage your account, contact, and security.</p>'
+    +'<div class="card" style="margin-top:14px"><div class="lhead"><div><h3 style="margin:0">Account Status</h3><p class="sub">'+esc(S.fmcsa.c.legal_name)+' · DOT '+esc(S.dot)+'</p></div>'+statusPill+'</div></div>'
+    +'<div class="card" style="margin-top:12px"><h3 style="margin-top:0">Dispatch Contact <span class="tag">editable</span></h3><div class="grid2"><div class="field"><label>Dispatch Phone</label><input class="inp" value="'+esc(S.custom.dphone)+'" oninput="S.custom.dphone=this.value"></div><div class="field"><label>Dispatch Email</label><input class="inp" value="'+esc(S.custom.demail)+'" oninput="S.custom.demail=this.value"></div></div><button class="btn sm" onclick="toast(\'Contact saved ✓\')">Save changes</button></div>'
+    +'<div class="card" style="margin-top:12px"><h3 style="margin-top:0">Security</h3>'
+      +'<div class="chk"><div class="ic y">📧</div><div class="t"><b>Change email</b><span>Update login email (verify both addresses)</span></div><button class="btn sm ghost" onclick="toast(\'Email change flow (demo)\')">Change</button></div>'
+      +'<div class="chk"><div class="ic y">🔑</div><div class="t"><b>Reset password</b><span>Signs out other devices</span></div><button class="btn sm ghost" onclick="toast(\'Password reset (demo)\')">Reset</button></div>'
+      +'<div class="chk"><div class="ic y">🔒</div><div class="t"><b>Face / Fingerprint (Passkey)</b><span>WebAuthn biometric login</span></div><button class="btn sm ghost" onclick="toast(\'Passkey register (demo)\')">Register</button></div>'
+      +'<div class="chk"><div class="ic y">📱</div><div class="t"><b>Two-step verification</b><span>Email OTP on new devices</span></div><button class="btn sm ghost" onclick="toast(\'2FA enabled (demo)\')">Enable</button></div>'
+    +'</div>'
+    +'<div class="card" style="margin-top:12px"><h3 style="margin-top:0">Support & Policies</h3><div class="chips"><span class="chip tog" onclick="toast(\'Live chat (demo)\')">💬 Live chat</span><span class="chip tog" onclick="toast(\'Email support (demo)\')">✉️ Email support</span><span class="chip tog" onclick="toast(\'Terms (demo)\')">📜 Terms of Service</span><span class="chip tog" onclick="toast(\'Privacy (demo)\')">🔐 Privacy Policy</span></div></div>';
+}
+/* AVAILABLE LOADS (marketplace) with filters */
+function carrierAvailable(){
+  if(!S.market.length)seedMarket();
+  var fo=(S.cfOrigin||'').toUpperCase(),fd=(S.cfDest||'').toUpperCase(),fe=S.cfEquip||'',fr=parseFloat(S.cfRpm)||0;
+  var loads=S.market.filter(function(l){
+    var oo=!fo||l.oState.toUpperCase()===fo||l.origin.toUpperCase().indexOf(fo)>=0;
+    var dd=!fd||l.dState.toUpperCase()===fd||l.dest.toUpperCase().indexOf(fd)>=0;
+    var ee=!fe||l.equip===fe;var rpm=l.miles?l.rate/l.miles:0;var rr=!fr||rpm>=fr;
+    return oo&&dd&&ee&&rr;
+  });
+  var eqOpts=['<option value="">Any equipment</option>'].concat(EQUIP.map(function(e){return '<option'+(fe===e?' selected':'')+'>'+e+'</option>';})).join('');
+  var filters='<div class="filters"><b>Filter loads:</b>'
+    +'<input placeholder="Origin (city/ST)" value="'+esc(S.cfOrigin||'')+'" oninput="S.cfOrigin=this.value" onkeydown="if(event.key===\'Enter\')render()" style="width:150px">'
+    +'<input placeholder="Dest (city/ST)" value="'+esc(S.cfDest||'')+'" oninput="S.cfDest=this.value" onkeydown="if(event.key===\'Enter\')render()" style="width:150px">'
+    +'<select onchange="S.cfEquip=this.value;render()">'+eqOpts+'</select>'
+    +'<input class="mono" placeholder="Min $/mi" value="'+esc(S.cfRpm||'')+'" oninput="S.cfRpm=this.value" onkeydown="if(event.key===\'Enter\')render()" style="width:110px">'
+    +'<button class="btn sm" onclick="render()">Apply</button>'+((fo||fd||fe||fr)?'<button class="btn sm ghost" onclick="S.cfOrigin=\'\';S.cfDest=\'\';S.cfEquip=\'\';S.cfRpm=\'\';render()">Clear</button>':'')+'</div>';
+  var list=loads.length?loads.map(function(l){var rpm=l.miles?(l.rate/l.miles).toFixed(2):'—';var match=S.custom.equip.indexOf(l.equip)>=0;
+    return '<div class="lcard"><div class="lhead"><div><div class="lane">'+esc(l.origin)+' <span style="color:var(--acc)">→</span> '+esc(l.dest)+(match?' <span class="verified">✔ matches your equipment</span>':'')+'</div><div class="meta">'+esc(l.equip)+' · '+esc(l.weight)+' lbs · '+esc(l.miles)+' mi · '+esc(l.commodity)+'</div><div class="meta">Pickup '+esc(l.pickup)+' · '+(l.src==='LoadBoot Direct'?'<span class="tag">LoadBoot Direct</span>':'Broker: '+esc(l.src))+'</div></div><div style="text-align:right"><div class="rate">'+money(l.rate)+'</div><div class="rpm">$'+rpm+'/mi</div><button class="btn sm" style="margin-top:8px" onclick="bookMarket(\''+l.id+'\')">Book load</button></div></div></div>';}).join(''):'<div class="card"><div class="empty">🔍 No loads match your filter. Try clearing filters.</div></div>';
+  stage.innerHTML=carrierSubnav()+'<h1 class="h1">Available Loads</h1><p class="sub">Open marketplace — LoadBoot Direct + broker loads. Filter to your lanes & rate, then book. Direct offers made to you appear in <b>My Loads</b>.</p>'+filters+'<div>'+list+'</div>';
+}
+window.bookMarket=function(id){var l=S.market.filter(function(x){return x.id===id;})[0];if(!l)return;
+  var cl={id:'ld_'+Date.now(),carrierName:S.fmcsa.c.legal_name,broker:l.src,origin:l.origin,dest:l.dest,equip:l.equip,weight:l.weight,miles:l.miles,commodity:l.commodity,rate:l.rate,pickup:l.pickup,delivery:l.delivery||'TBD',notes:'',accessorials:(S.custom.access||ACCESSORIALS),policies:POLICIES.slice(),cstatus:'forwarded',carrierAgree:{},booked:true};
+  S.carrierLoads.unshift(cl);S.market=S.market.filter(function(x){return x.id!==id;});S.carrierSub='loads';S.viewLoad=cl.id;render();toast('Load reserved — agree to policies to confirm booking');
+};
+/* MY LOADS: direct offers + booked */
+function carrierLoads(){
+  var mine=S.carrierLoads;
+  var list=mine.length?mine.map(function(l){var badge=l.cstatus==='forwarded'?'<span class="pill warn">New offer · action needed</span>':l.cstatus==='accepted'?'<span class="pill ok">'+(l.booked?'Booked':'Accepted')+'</span>':'<span class="pill bad">Declined</span>';
+    return '<div class="qcard" onclick="openCarrierLoad(\''+l.id+'\')"><div class="av">📦</div><div class="info"><b>'+esc(l.origin)+' → '+esc(l.dest)+'</b><div class="meta">'+esc(l.equip)+' · '+esc(l.weight)+' lbs · '+money(l.rate)+' · via '+esc(l.broker)+'</div></div>'+badge+'</div>';}).join(''):'<div class="card"><div class="empty">📭 No loads yet.<br><span style="font-size:.85rem">Book from Available Loads, or wait for a broker\'s direct offer (routed via CC dispatch).</span></div></div>';
+  stage.innerHTML=carrierSubnav()+'<h1 class="h1">My Loads</h1><p class="sub">Direct offers made to you (via dispatch) and loads you\'ve booked. Review terms, agree to policies, then accept.</p><div style="margin-top:14px">'+list+'</div>';
+}
+window.openCarrierLoad=function(id){S.viewLoad=id;render();};
+function carrierLoadDetail(l){
+  var acc=l.accessorials.map(function(a){return '<div class="acc"><div class="an">'+esc(a[0])+'</div><div class="au">'+esc(a[1])+'</div><div class="mono" style="width:110px;text-align:right;font-weight:800;color:var(--ink)">'+(Number(a[2])?'$'+esc(a[2]):'—')+'</div></div>';}).join('');
+  var pol=l.policies.map(function(p,i){var on=(l.carrierAgree||{})[i];return '<div class="policy'+(on?' on':'')+'" onclick="toggleCPolicy(\''+l.id+'\','+i+')"><div class="cb">'+(on?'✓':'')+'</div><div class="pt">'+esc(p)+'</div></div>';}).join('');
+  var allAgreed=l.policies.every(function(p,i){return (l.carrierAgree||{})[i];});
+  var actions;
+  if(l.cstatus==='forwarded'){actions='<div class="wnav"><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn red" onclick="declineLoad(\''+l.id+'\')">Decline</button><button class="btn ghost" onclick="openCounter(\''+l.id+'\')">↩ Counter rate</button></div>'+(allAgreed?'<button class="btn green" onclick="acceptLoad(\''+l.id+'\')">✓ Agree & Accept load</button>':'<button class="btn dis">Tick all policies</button>')+'</div>'+(l.counter&&!l.counterApproved?'<div class="banner" style="margin-top:12px;background:rgba(251,191,36,.1)"><div class="em">↩</div><div><b>Counter sent: '+money(l.counter)+'</b><div style="color:var(--muted);font-size:.85rem">Awaiting broker approval — you can still accept at the posted rate meanwhile.</div></div></div>':'')+(l.counterApproved?'<div class="banner ok" style="margin-top:12px"><div class="em">✓</div><div><b style="color:var(--ok)">Broker approved your rate: '+money(l.rate)+'</b><div style="color:var(--muted);font-size:.85rem">Tick policies & accept to book at the new rate.</div></div></div>':'');}
+  else if(l.cstatus==='accepted'){var trip=l.trip||'accepted';var tripBtn=trip==='delivered'?'<span class="pill ok" style="align-self:center">✓ Delivered · POD ready</span>':trip==='in_transit'?'<button class="btn green" onclick="advanceTrip(\''+l.id+'\',\'delivered\')">📦 Mark delivered</button>':'<button class="btn" onclick="advanceTrip(\''+l.id+'\',\'in_transit\')">🚚 Start trip</button>';actions='<div class="wnav"><button class="btn red" onclick="openEmergency(\''+l.id+'\')">🚨 Emergency</button>'+tripBtn+'</div>'+(l.emergency?'<div class="banner bad" style="margin-top:12px"><div class="em">🚨</div><div><b style="color:var(--bad)">Emergency reported — '+esc(l.emergency.cat)+'</b><div style="color:var(--ink2);font-size:.85rem">Broker & dispatch notified '+esc(l.emergency.at)+'.'+(l.emergency.reschedule?' Proposed new delivery: <b>'+esc(l.emergency.reschedule)+'</b> — awaiting broker approval.':'')+' Verified emergencies carry no on-time penalty.</div></div></div>':'');}
+  else{actions='<div class="wnav"><span></span><span class="pill bad" style="align-self:center">You declined</span></div>';}
+  stage.className='stage fade';
+  stage.innerHTML='<button class="btn ghost" onclick="S.viewLoad=null;cSub(\'loads\')">← My Loads</button><div class="card" style="margin-top:14px"><div class="hero" style="margin:0 0 16px"><div class="tag">'+(l.booked?'Booked load':'Direct offer')+'</div><h2 style="margin-top:8px;font-size:1.3rem">'+esc(l.origin)+' → '+esc(l.dest)+'</h2><p>'+esc(l.equip)+' · '+esc(l.commodity)+' · '+esc(l.weight)+' lbs · '+esc(l.miles)+' mi</p><div class="rate" style="font-size:1.9rem;margin-top:8px">'+money(l.rate)+' <span style="font-size:.8rem;font-weight:700;color:var(--muted)">line haul · $'+(l.miles?(l.rate/l.miles).toFixed(2):'—')+'/mi</span></div></div>'
+    +'<div class="grid3">'+F('Pickup',l.pickup)+F('Delivery',l.delivery)+F('Source',l.broker)+'</div>'+(l.notes?'<div class="box" style="margin-top:12px"><h3>📝 Instructions</h3><div style="font-size:.9rem">'+esc(l.notes)+'</div></div>':'')
+    +'<div class="sec-h">💵 Accessorial Rates</div><div class="box">'+acc+'</div><div class="sec-h">📋 Required policies — tick each to agree</div>'+pol+actions+'</div>';
+}
+window.toggleCPolicy=function(id,i){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;l.carrierAgree=l.carrierAgree||{};l.carrierAgree[i]=!l.carrierAgree[i];carrierLoadDetail(l);};
+window.acceptLoad=function(id){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;l.cstatus='accepted';var bl=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(bl)bl.status='accepted';S.viewLoad=null;cSub('loads');toast('Load accepted 🎉 Rate confirmation generated');};
+window.declineLoad=function(id){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;l.cstatus='declined';var bl=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(bl)bl.status='declined';S.viewLoad=null;cSub('loads');toast('Load declined');};
+window.advanceTrip=function(id,to){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;l.trip=to;var bl=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(bl)bl.status=to;carrierLoadDetail(l);toast(to==='in_transit'?'🚚 Trip started — broker tracking live':'📦 Delivered — POD & settlement ready');};
+window.openCounter=function(id){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;showModal('<h3 style="margin:0 0 4px">↩ Counter the rate</h3><p class="sub" style="margin-bottom:12px">Posted rate is '+money(l.rate)+' ($'+(l.miles?(l.rate/l.miles).toFixed(2):'—')+'/mi). Propose your rate — it goes to the broker for approval.</p><div class="field"><label>Your counter ($)</label><input class="inp mono" id="co-amt" inputmode="numeric" placeholder="'+(l.rate+150)+'"></div><div class="wnav" style="border:0"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="submitCounter(\''+id+'\')">Send counter</button></div>');};
+window.submitCounter=function(id){var v=(document.getElementById('co-amt')||{}).value||'';var amt=Number(String(v).replace(/[^0-9.]/g,''))||0;if(!amt){toast('Enter a counter amount');return;}var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(l){l.counter=amt;l.counterApproved=false;}var bl=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(bl){bl.counter=amt;bl.counterApproved=false;}closeModal();if(l)carrierLoadDetail(l);toast('↩ Counter sent to broker');};
+window.approveCounter=function(id){var bl=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(bl&&bl.counter){bl.rate=bl.counter;bl.counterApproved=true;}var cl=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(cl&&cl.counter){cl.rate=cl.counter;cl.counterApproved=true;}render();toast('✓ Counter approved — new rate set');};
+var EMCATS=[['breakdown','Truck breakdown / tire'],['accident','Accident'],['weather','Severe weather'],['medical','Medical emergency'],['road_closure','Road closure'],['hours_of_service','Out of hours (HOS)'],['mechanical','Mechanical failure'],['theft','Theft'],['other','Other (explain)']];
+window.openEmergency=function(id){
+  showModal('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h3 style="margin:0">🚨 Report an emergency</h3><span class="pill bad">Priority</span></div><p class="sub" style="margin-bottom:14px">This alerts LoadBoot dispatch (CC) and the broker on this load instantly. Genuine, verified emergencies carry no on-time penalty. False reports are detected (GPS + photo) and damage your account.</p>'
+    +'<div class="field"><label>Emergency type</label><select class="inp" id="em-cat">'+EMCATS.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join('')+'</select></div>'
+    +'<div class="field"><label>What happened?</label><textarea class="inp" id="em-reason" placeholder="Describe the situation & your location…"></textarea></div>'
+    +'<div class="field"><label>Reschedule delivery to <span class="opt">(if you need a new time)</span></label><input class="inp" id="em-resched" placeholder="e.g. Thu 2:00 PM"></div>'
+    +'<div class="field"><label>Proof</label><div class="uploader" onclick="this.classList.add(\'has\');this.innerHTML=\'<div class=&quot;big2&quot;>✅</div><b>photo_proof.jpg + live GPS</b>\'"><div class="big2">📷</div><b>Attach photo + share live location</b><div style="color:var(--muted);font-size:.82rem">Required for verification</div></div></div>'
+    +'<div class="wnav"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn red" onclick="submitEmergency(\''+id+'\')">Submit emergency</button></div>');
+};
+window.submitEmergency=function(id){
+  var cat=(document.getElementById('em-cat')||{}).value||'other';var reason=(document.getElementById('em-reason')||{}).value||'';
+  if(!reason.trim()){toast('Please describe what happened');return;}
+  var catLbl=(EMCATS.filter(function(x){return x[0]===cat;})[0]||['','Emergency'])[1];
+  var resched=(document.getElementById('em-resched')||{}).value||'';
+  var em={cat:catLbl,reason:reason.trim(),reschedule:resched,at:new Date().toLocaleString()};
+  var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(l){l.emergency=em;if(resched){l.origDelivery=l.origDelivery||l.delivery;l.delivery=resched+' (proposed)';}}
+  var bl=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(bl){bl.emergency=em;if(resched){bl.origDelivery=bl.origDelivery||bl.delivery;bl.delivery=resched+' (proposed)';}}
+  closeModal();carrierLoadDetail(l);toast('🚨 Emergency sent — broker & dispatch notified');
+};
+/* ===== FINANCE / TRIP SETTLEMENT LEDGER ===== */
+function ensureLedger(l){if(!l.earned)l.earned=[['Linehaul',l.rate]];if(!l.spent)l.spent=[['Dispatch fee (10%)',Math.round(l.rate*0.10)],['Fuel (est.)',Math.round((l.miles||0)*0.55)]];}
+function ledgerNet(l){ensureLedger(l);var e=l.earned.reduce(function(a,x){return a+Number(x[1]||0);},0);var s=l.spent.reduce(function(a,x){return a+Number(x[1]||0);},0);return {e:e,s:s,net:e-s};}
+function refreshNet(l){var n=ledgerNet(l);var nv=document.getElementById('net-val');if(nv){nv.innerHTML=(n.net>=0?'+':'')+money(n.net)+' <span style="font-size:.8rem;font-weight:700;color:var(--muted)">NET</span>';nv.style.webkitTextFillColor=n.net<0?'var(--bad)':'';}var te=document.getElementById('tot-e');if(te)te.textContent=money(n.e);var ts=document.getElementById('tot-s');if(ts)ts.textContent=money(n.s);}
+function carrierFinance(){
+  var booked=S.carrierLoads.filter(function(l){return l.cstatus==='accepted';});
+  var tot={e:0,s:0,net:0};booked.forEach(function(l){var n=ledgerNet(l);tot.e+=n.e;tot.s+=n.s;tot.net+=n.net;});
+  var list=booked.length?booked.map(function(l){var n=ledgerNet(l);return '<div class="qcard" onclick="openSettle(\''+l.id+'\')"><div class="av">🧾</div><div class="info"><b>'+esc(l.origin)+' → '+esc(l.dest)+'</b><div class="meta">'+esc(l.broker)+' · earned '+money(n.e)+' · spent '+money(n.s)+(l.emergency?' · 🚨 emergency':'')+'</div></div><span class="pill '+(n.net>=0?'ok':'bad')+'" style="font-family:var(--mono)">'+(n.net>=0?'+':'')+money(n.net)+'</span></div>';}).join(''):'<div class="card"><div class="empty">🧾 No trips to settle yet.<br><span style="font-size:.85rem">Accept a load — it appears here with a live settlement ledger.</span></div></div>';
+  stage.className='stage fade';
+  stage.innerHTML=carrierSubnav()+'<h1 class="h1">Finance — Trip Settlements</h1><p class="sub">Every booked load with its own live ledger. Add what you earned and spent — NET updates instantly and syncs with My Loads.</p>'
+    +'<div class="big" style="margin:14px 0"><div class="m"><b>'+money(tot.e)+'</b><span>TOTAL EARNED</span></div><div class="m"><b>'+money(tot.s)+'</b><span>TOTAL SPENT</span></div><div class="m"><b style="'+(tot.net<0?'-webkit-text-fill-color:var(--bad)':'')+'">'+money(tot.net)+'</b><span>NET PROFIT</span></div><div class="m"><b>'+booked.length+'</b><span>TRIPS</span></div></div><div>'+list+'</div>';
+}
+window.openSettle=function(id){S.viewSettle=id;render();};
+function settlementDetail(l){
+  var n=ledgerNet(l);
+  var erows=l.earned.map(function(x,i){return '<div class="acc"><div class="an">'+esc(x[0])+'</div><input class="mono" style="width:120px" value="'+esc(x[1])+'" oninput="updEntry(\''+l.id+'\',\'earned\','+i+',this.value)"><button class="btn sm ghost" onclick="delEntry(\''+l.id+'\',\'earned\','+i+')">✕</button></div>';}).join('');
+  var srows=l.spent.map(function(x,i){return '<div class="acc"><div class="an">'+esc(x[0])+'</div><input class="mono" style="width:120px" value="'+esc(x[1])+'" oninput="updEntry(\''+l.id+'\',\'spent\','+i+',this.value)"><button class="btn sm ghost" onclick="delEntry(\''+l.id+'\',\'spent\','+i+')">✕</button></div>';}).join('');
+  stage.className='stage fade';
+  stage.innerHTML='<button class="btn ghost" onclick="S.viewSettle=null;cSub(\'finance\')">← Finance</button>'
+    +'<div class="card" style="margin-top:14px"><div class="hero" style="margin:0 0 16px"><div class="tag">Trip Settlement</div><h2 style="margin-top:8px;font-size:1.3rem">'+esc(l.origin)+' → '+esc(l.dest)+'</h2><p>'+esc(l.equip)+' · '+esc(l.broker)+' · '+esc(l.miles)+' mi</p><div class="rate" id="net-val" style="font-size:2rem;margin-top:8px;'+(n.net<0?'-webkit-text-fill-color:var(--bad)':'')+'">'+(n.net>=0?'+':'')+money(n.net)+' <span style="font-size:.8rem;font-weight:700;color:var(--muted)">NET</span></div></div>'
+    +'<div class="sec-h" style="color:var(--ok)">＋ Earned</div><div class="box">'+erows+'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><input class="inp" id="e-lbl" placeholder="e.g. Detention" style="flex:1;min-width:120px"><input class="inp mono" id="e-amt" placeholder="$" style="width:100px"><button class="btn sm green" onclick="addEntry(\''+l.id+'\',\'earned\')">Add</button></div><div class="rowline" style="font-weight:800;border:0;margin-top:8px"><span>Total earned</span><span class="mono" id="tot-e" style="color:var(--ok)">'+money(n.e)+'</span></div></div>'
+    +'<div class="sec-h" style="color:var(--bad)">－ Spent</div><div class="box">'+srows+'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><input class="inp" id="s-lbl" placeholder="e.g. Fuel / Tolls" style="flex:1;min-width:120px"><input class="inp mono" id="s-amt" placeholder="$" style="width:100px"><button class="btn sm red" onclick="addEntry(\''+l.id+'\',\'spent\')">Add</button></div><div class="rowline" style="font-weight:800;border:0;margin-top:8px"><span>Total spent</span><span class="mono" id="tot-s" style="color:var(--bad)">'+money(n.s)+'</span></div></div>'
+    +'<div style="margin-top:16px"><button class="btn" onclick="toast(\'Settlement PDF downloaded (demo)\')">↓ Download settlement PDF</button></div></div>';
+}
+window.updEntry=function(id,k,i,v){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;l[k][i][1]=Number(String(v).replace(/[^0-9.\-]/g,''))||0;refreshNet(l);};
+window.delEntry=function(id,k,i){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;l[k].splice(i,1);settlementDetail(l);};
+window.addEntry=function(id,k){var l=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(!l)return;var p=k==='earned'?'e':'s';var lbl=(document.getElementById(p+'-lbl')||{}).value||'';var amt=(document.getElementById(p+'-amt')||{}).value||'';if(!lbl.trim()){toast('Enter a label');return;}l[k].push([lbl.trim(),Number(String(amt).replace(/[^0-9.\-]/g,''))||0]);settlementDetail(l);};
+
+/* ===== CC ADMIN ===== */
+function renderCC(){
+  stage.className='stage fade';if(S.ccOpen)return ccProfile();
+  var pendC=S.submissions.filter(function(s){return s.status==='under_review';}).length;var pendL=S.brokerLoads.filter(function(l){return l.status==='pending';}).length;
+  var nav='<div class="subnav"><button class="'+(S.ccTab==='carriers'?'on':'')+'" onclick="S.ccTab=\'carriers\';render()">Carrier Review'+(pendC?'<span class="count">'+pendC+'</span>':'')+'</button><button class="'+(S.ccTab==='loads'?'on':'')+'" onclick="S.ccTab=\'loads\';render()">Load Forwarding'+(pendL?'<span class="count">'+pendL+'</span>':'')+'</button></div>';
+  if(S.ccTab==='loads'){
+    var loads=S.brokerLoads;var list=loads.length?loads.map(function(l){var badge=l.status==='pending'?'<span class="pill warn">Awaiting forward</span>':l.status==='forwarded'?'<span class="pill info">Forwarded</span>':l.status==='accepted'?'<span class="pill ok">Carrier accepted</span>':'<span class="pill bad">Declined</span>';return '<div class="qcard" onclick="openCCLoad(\''+l.id+'\')"><div class="av">📦</div><div class="info"><b>'+esc(l.origin)+' → '+esc(l.dest)+'</b><div class="meta">'+esc(l.broker)+' → '+esc(l.carrierName)+' · '+esc(l.equip)+' · '+money(l.rate)+'</div></div>'+badge+'</div>';}).join(''):'<div class="card"><div class="empty">📭 No loads to forward.<br><span style="font-size:.85rem">When a broker posts a load, it arrives here to forward to the carrier.</span></div></div>';
+    stage.innerHTML=nav+'<h1 class="h1">Load Forwarding</h1><p class="sub">Loads brokers posted to carriers. Review and forward to the carrier\'s dispatch.</p><div style="margin-top:14px">'+list+'</div>';return;
+  }
+  var subs=S.submissions;var list=subs.length?subs.map(function(s){var badge=s.status==='under_review'?'<span class="pill warn">Under review</span>':s.status==='approved'?'<span class="pill ok">Approved</span>':'<span class="pill bad">Rejected</span>';return '<div class="qcard" onclick="openCC(\''+s.id+'\')"><div class="av">'+initials(s.name)+'</div><div class="info"><b>'+esc(s.name)+'</b><div class="meta">DOT '+esc(s.dot)+(s.mc?' · MC '+esc(s.mc):'')+' · '+esc(s.city)+'</div></div>'+badge+'</div>';}).join(''):'<div class="card"><div class="empty">📭 No submissions yet.<br><span style="font-size:.85rem">Post a profile from the Carrier tab — it appears here with full detail.</span></div></div>';
+  stage.innerHTML=nav+'<h1 class="h1">Carrier Review Queue</h1><p class="sub">Submitted profiles with full FMCSA detail + documents. Open to review, then approve or reject.</p><div style="margin-top:14px">'+list+'</div>';
+}
+window.openCC=function(id){S.ccOpen=id;S.ptab=0;render();};
+window.changeCCTab=function(i){S.ptab=i;ccProfile();};
+function ccProfile(){
+  var s=S.submissions.filter(function(x){return x.id===S.ccOpen;})[0];if(!s){S.ccOpen=null;return renderCC();}var D=s.fmcsa;
+  var acts=s.status==='under_review'?'<div class="wnav"><button class="btn red" onclick="rejectCC(\''+s.id+'\')">✕ Reject</button><button class="btn green" onclick="approveCC(\''+s.id+'\')">✓ Approve & Push to Brokers</button></div>':'<div class="wnav"><span></span><span class="pill '+(s.status==='approved'?'ok':'bad')+'" style="align-self:center">'+(s.status==='approved'?'Approved · pushed to brokers':'Rejected')+'</span></div>';
+  stage.innerHTML='<button class="btn ghost" onclick="S.ccOpen=null;render()">← Back to queue</button><div class="card" style="margin-top:14px"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><div class="av" style="width:56px;height:56px;border-radius:15px;background:var(--gradd);color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.2rem">'+initials(s.name)+'</div><div><h1 class="h1" style="margin:0">'+esc(s.name)+'</h1><p class="sub">DOT '+esc(s.dot)+(s.mc?' · MC '+esc(s.mc):'')+' · '+esc(s.city)+' · submitted '+esc(s.submitted)+'</p></div></div>'
+    +'<div class="sec-h">📎 Documents & full contact (CC only)</div><div class="chips" style="margin-bottom:10px"><span class="chip ok">✔ COI</span><span class="chip ok">✔ W-9</span><span class="chip ok">✔ Dispatch Agreement</span><span class="chip '+(s.mc?'ok':'warn')+'">'+(s.mc?'✔ MC Authority':'⚠ MC not provided')+'</span>'+(s.bank?'<span class="chip ok">✔ Banking</span>':'')+(s.factoring?'<span class="chip ok">✔ NOA / Factoring</span>':'')+'</div>'
+    +'<div class="grid2">'+F('Dispatch Phone',s.phone)+F('Dispatch Email',s.email)+F('Equipment',s.equip.length?s.equip.join(', '):'—')+F('Lanes',s.lanes.length?s.lanes.join(', '):'—')+F('Target Rate',s.rpm?('$'+s.rpm+'/mi'):'—')+F('Factoring',s.factoring||'None')+'</div>'+(s.bio?F('Bio',s.bio):'')
+    +'<div class="sec-h">🗂️ Full FMCSA profile — every tab</div>'+profileTabs(D,S.ptab,'changeCCTab')+acts+'</div>';
+}
+window.approveCC=function(id){var s=S.submissions.filter(function(x){return x.id===id;})[0];if(!s)return;s.status='approved';if(!S.posts.some(function(p){return p.id===id;}))S.posts.unshift(s);if(S.dot===s.dot)S.status='approved';toast('Approved ✓ Pushed to broker board');S.ccOpen=null;render();};
+window.rejectCC=function(id){showModal('<h3 style="margin:0 0 8px">Reject profile</h3><p class="sub" style="margin-bottom:12px">Give the carrier a reason to fix & resubmit.</p><textarea id="rej" class="inp" placeholder="e.g. COI expired — upload a current certificate."></textarea><div class="wnav" style="border:0"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn red" onclick="doReject(\''+id+'\')">Reject</button></div>');};
+window.doReject=function(id){var r=document.getElementById('rej').value||'Please review and resubmit.';var s=S.submissions.filter(function(x){return x.id===id;})[0];if(s)s.status='rejected';if(s&&S.dot===s.dot){S.status='rejected';S.rejectReason=r;}closeModal();S.ccOpen=null;render();toast('Profile rejected');};
+window.openCCLoad=function(id){var l=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(!l)return;
+  var acc=l.accessorials.map(function(a){return '<div class="acc"><div class="an">'+esc(a[0])+'</div><div class="au">'+esc(a[1])+'</div><div class="mono" style="width:110px;text-align:right;font-weight:800">'+(Number(a[2])?'$'+esc(a[2]):'—')+'</div></div>';}).join('');
+  var pol=l.policies.map(function(p){return '<div class="policy"><div class="cb" style="background:var(--acc);border-color:var(--acc)">✓</div><div class="pt">'+esc(p)+'</div></div>';}).join('');
+  var act=l.status==='pending'?'<div class="wnav"><button class="btn ghost" onclick="closeModal()">Close</button><button class="btn green" onclick="forwardLoad(\''+l.id+'\')">↗ Forward to '+esc(l.carrierName)+'</button></div>':'<div class="wnav"><span></span><span class="pill '+(l.status==='accepted'?'ok':l.status==='declined'?'bad':'info')+'" style="align-self:center">'+esc(l.status)+'</span></div>';
+  showModal('<h3 style="margin:0 0 4px">📦 '+esc(l.origin)+' → '+esc(l.dest)+'</h3><p class="sub" style="margin-bottom:12px">From '+esc(l.broker)+' → for '+esc(l.carrierName)+'</p><div class="grid3">'+F('Rate',money(l.rate))+F('Equipment',l.equip)+F('Weight',l.weight+' lbs')+F('Commodity',l.commodity)+F('Pickup',l.pickup)+F('Delivery',l.delivery)+'</div>'+(l.notes?'<div class="box" style="margin-top:10px"><h3>📝 Instructions</h3><div style="font-size:.88rem">'+esc(l.notes)+'</div></div>':'')+'<div class="sec-h">Accessorials</div><div class="box">'+acc+'</div><div class="sec-h">Required policies</div>'+pol+act);
+};
+window.forwardLoad=function(id){var l=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(!l)return;l.status='forwarded';if(!S.carrierLoads.some(function(x){return x.id===id;})){var cl=JSON.parse(JSON.stringify(l));cl.cstatus='forwarded';cl.carrierAgree={};S.carrierLoads.unshift(cl);}closeModal();render();toast('Load forwarded to carrier ↗');};
+window.approveResched=function(id){var bl=S.brokerLoads.filter(function(x){return x.id===id;})[0];if(bl&&bl.emergency){bl.emergency.approved=true;if(bl.emergency.reschedule)bl.delivery=bl.emergency.reschedule+' (approved)';}var cl=S.carrierLoads.filter(function(x){return x.id===id;})[0];if(cl&&cl.emergency){cl.emergency.approved=true;if(cl.emergency.reschedule)cl.delivery=cl.emergency.reschedule+' (approved)';}render();toast('Reschedule approved ✓ Carrier notified');};
+
+/* ===== BROKER ===== */
+function renderBroker(){
+  stage.className='stage fade';if(S.brokerOpen)return brokerProfile();
+  var emAlerts=S.brokerLoads.filter(function(l){return l.emergency;}).length;
+  var bnav='<div class="subnav"><button class="'+(S.brokerTab!=='loads'?'on':'')+'" onclick="S.brokerTab=\'carriers\';render()">Find Carriers</button><button class="'+(S.brokerTab==='loads'?'on':'')+'" onclick="S.brokerTab=\'loads\';render()">My Posted Loads'+(emAlerts?'<span class="count">🚨'+emAlerts+'</span>':(S.brokerLoads.length?'<span class="count" style="background:var(--accd)">'+S.brokerLoads.length+'</span>':''))+'</button></div>';
+  if(S.brokerTab==='loads')return brokerLoads(bnav);
+  var posts=S.posts;var fE=S.bfEquip||'',fS=(S.bfState||'').toUpperCase(),fSafe=S.bfSafety||'';
+  var filtered=posts.filter(function(s){var eq=!fE||s.equip.some(function(e){return e===fE;});var st=!fS||(s.state||'').toUpperCase()===fS;var sf=!fSafe||(fSafe==='clean'?(s.drvRate<6.7&&s.vehRate<22.3):true);return eq&&st&&sf;});
+  var eqOpts=['<option value="">Any equipment</option>'].concat(EQUIP.map(function(e){return '<option'+(fE===e?' selected':'')+'>'+e+'</option>';})).join('');
+  var filters='<div class="filters"><b>Find carriers:</b><select onchange="S.bfEquip=this.value;render()">'+eqOpts+'</select><input placeholder="State (e.g. TX)" value="'+esc(S.bfState||'')+'" oninput="S.bfState=this.value" onkeydown="if(event.key===\'Enter\')render()" style="width:130px"><select onchange="S.bfSafety=this.value;render()"><option value="">Any safety</option><option value="clean"'+(fSafe==='clean'?' selected':'')+'>Below-avg OOS only</option></select><button class="btn sm" onclick="render()">Apply</button>'+((fE||fS||fSafe)?'<button class="btn sm ghost" onclick="S.bfEquip=\'\';S.bfState=\'\';S.bfSafety=\'\';render()">Clear</button>':'')+'</div>';
+  var list=filtered.length?filtered.map(function(s){return '<div class="qcard" onclick="openBroker(\''+s.id+'\')"><div class="av">'+initials(s.name)+'</div><div class="info"><b>'+esc(s.name)+' <span class="verified">✔ VERIFIED</span></b><div class="meta">DOT '+esc(s.dot)+' · '+esc(s.city)+' · '+(s.equip.length?esc(s.equip.slice(0,3).join(', ')):'General freight')+'</div><div style="color:var(--acc);font-size:.72rem;font-weight:800;margin-top:3px">Tap to view full profile & post a load →</div></div><span class="pill '+(s.drvRate<6.7?'ok':'info')+'">'+s.drvRate.toFixed(0)+'% drv OOS</span></div>';}).join(''):'<div class="card"><div class="empty">'+(posts.length?'🔍 No carriers match your filter.':'📦 No carriers posted yet.<br><span style="font-size:.85rem">Approve a carrier in the CC Admin tab and it appears here.</span>')+'</div></div>';
+  stage.innerHTML=bnav+'<h1 class="h1">Verified Carriers</h1><p class="sub">Carriers that passed FMCSA verification + LoadBoot review. Filter by equipment, state or safety, then post a load. Contact stays private — released in the Carrier Packet on booking.</p>'+filters+'<div>'+list+'</div>';
+}
+/* broker: track posted loads */
+function brokerLoads(nav){
+  var loads=S.brokerLoads;
+  var steps=['pending','forwarded','accepted','in_transit','delivered'];var lbl={pending:'With dispatch',forwarded:'Sent to carrier',accepted:'Carrier accepted',in_transit:'In transit',delivered:'Delivered',declined:'Declined'};
+  var list=loads.length?loads.map(function(l){
+    var si=steps.indexOf(l.status);var dec=l.status==='declined';
+    var track=steps.map(function(st,k){var done=si>=k&&!dec;return '<div style="flex:1;text-align:center"><div style="height:6px;border-radius:99px;background:'+(done?'var(--grad)':'rgba(255,255,255,.1)')+'"></div><div style="font-size:.6rem;margin-top:4px;color:'+(done?'var(--acc)':'var(--faint)')+';font-weight:700">'+lbl[st].split(' ')[0]+'</div></div>';}).join('<div style="width:6px"></div>');
+    var badge=dec?'<span class="pill bad">Declined</span>':'<span class="pill '+(l.status==='delivered'?'ok':l.status==='accepted'||l.status==='in_transit'?'info':'warn')+'">'+lbl[l.status]+'</span>';
+    var em=l.emergency?'<div class="banner bad" style="margin:10px 0 0;padding:12px 14px"><div class="em">🚨</div><div><b style="color:var(--bad)">EMERGENCY — '+esc(l.emergency.cat)+'</b><div style="color:var(--ink2);font-size:.82rem">'+esc(l.emergency.reason)+' · reported '+esc(l.emergency.at)+'</div>'+(l.emergency.reschedule?'<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill warn">Reschedule to '+esc(l.emergency.reschedule)+'</span>'+(l.emergency.approved?'<span class="pill ok">✓ Approved</span>':'<button class="btn sm green" onclick="event.stopPropagation();approveResched(\''+l.id+'\')">Approve reschedule</button>')+'</div>':'')+'</div></div>':'';
+    var co=(l.counter&&!l.counterApproved)?'<div class="banner" style="margin:10px 0 0;padding:12px 14px;background:rgba(251,191,36,.1)"><div class="em">↩</div><div><b>Carrier counter: '+money(l.counter)+'</b><div style="color:var(--muted);font-size:.82rem">Was '+money(l.rate)+'. </div></div><button class="btn sm green" onclick="event.stopPropagation();approveCounter(\''+l.id+'\')">Approve</button></div>':'';
+    return '<div class="lcard"><div class="lhead"><div><div class="lane">'+esc(l.origin)+' <span style="color:var(--acc)">→</span> '+esc(l.dest)+'</div><div class="meta">'+esc(l.carrierName)+' · '+esc(l.equip)+' · '+esc(l.weight)+' lbs</div></div><div style="text-align:right"><div class="rate">'+money(l.rate)+'</div>'+badge+'</div></div><div style="display:flex;align-items:flex-start;margin-top:14px">'+track+'</div>'+co+em+'</div>';
+  }).join(''):'<div class="card"><div class="empty">📭 You haven\'t posted any loads yet.<br><span style="font-size:.85rem">Open a verified carrier and post a load — track it here through dispatch → carrier → delivery.</span></div></div>';
+  stage.innerHTML=nav+'<h1 class="h1">My Posted Loads</h1><p class="sub">Track every load you posted — through LoadBoot dispatch, to carrier acceptance, transit and delivery. Emergencies from carriers surface here instantly.</p><div style="margin-top:14px">'+list+'</div>';
+}
+window.openBroker=function(id){S.brokerOpen=id;S.ptab=0;render();};
+window.changeBrokerTab=function(i){S.ptab=i;brokerProfile();};
+function brokerProfile(){
+  var s=S.posts.filter(function(x){return x.id===S.brokerOpen;})[0];if(!s){S.brokerOpen=null;return renderBroker();}var D=s.fmcsa,c=D.c;
+  stage.innerHTML='<button class="btn ghost" onclick="S.brokerOpen=null;render()">← All carriers</button><div class="card" style="margin-top:14px"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><div class="av" style="width:56px;height:56px;border-radius:15px;background:var(--gradd);color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.2rem">'+initials(s.name)+'</div><div><h1 class="h1" style="margin:0">'+esc(s.name)+' <span class="verified">✔ VERIFIED</span></h1><p class="sub">DOT '+esc(s.dot)+(s.mc?' · MC '+esc(s.mc):'')+' · '+esc(s.city)+'</p></div></div>'+(s.bio?'<p style="margin:12px 0 0;color:var(--ink2)">'+esc(s.bio)+'</p>':'')
+    +'<div class="banner" style="margin-top:14px;background:rgba(59,157,255,.08)"><div class="em">💬</div><div><b>All contact goes through LoadBoot dispatch</b><div style="color:var(--muted);font-size:.85rem">You never get the carrier\'s direct line — LoadBoot coordinates every load so nothing routes around us. Reach dispatch by phone, email or <b>live chat</b>. The Carrier Packet (authority, COI, W-9, agreement) is in the button below.</div></div></div>'
+    +'<div class="big"><div class="m"><b>'+j(c.power_units)+'</b><span>TRUCKS</span></div><div class="m"><b>'+j(c.total_drivers)+'</b><span>DRIVERS</span></div><div class="m"><b>'+s.drvRate.toFixed(1)+'%</b><span>DRIVER OOS</span></div><div class="m"><b>'+s.crash+'</b><span>CRASHES 24mo</span></div></div>'
+    +'<div class="sec-h">Equipment</div><div class="chips">'+(s.equip.length?s.equip.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip">General Freight</span>')+'</div>'
+    +'<div class="sec-h">Lanes</div><div class="chips">'+(s.lanes&&s.lanes.length?s.lanes.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip">OTR / 48 States</span>')+'</div>'
+    +'<div class="sec-h">Compliance <span class="verified">✔ on file</span></div><div class="chips"><span class="chip ok">✔ COI</span><span class="chip ok">✔ W-9</span><span class="chip ok">✔ Signed Agreement</span><span class="chip ok">✔ FMCSA Authority</span></div>'
+    +'<div class="sec-h">🗂️ Full FMCSA profile</div>'+profileTabs(D,S.ptab,'changeBrokerTab',true)
+    +'<div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="openLoadComposer(\''+s.id+'\')">📦 Post Your Load to This Carrier</button><button class="btn ghost" onclick="showPacket(\''+s.id+'\')">📄 View Carrier Packet (PDF)</button></div></div>';
+}
+window.showPacket=function(id){var s=S.posts.filter(function(x){return x.id===id;})[0];if(!s)return;var c=s.fmcsa.c;
+  showModal('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">📄 Carrier Packet</h3><span class="pill info">via LoadBoot dispatch</span></div>'
+    +'<div class="packet"><h4>'+esc(s.name)+'</h4><div style="color:#7089ab;font-size:.8rem;margin-bottom:10px">DOT '+esc(s.dot)+(s.mc?' · MC '+esc(s.mc):'')+' — Verified by LoadBoot</div>'
+    +'<div style="background:#e9f2ff;border:1px solid #cfe1fb;border-radius:10px;padding:12px;margin-bottom:10px"><div style="font-weight:800;color:#123a6b;margin-bottom:6px">📞 All coordination routes through LoadBoot Dispatch</div><div class="prow"><span class="k">Dispatch Line</span><span>'+LB.phone+'</span></div><div class="prow"><span class="k">Dispatch Email</span><span>'+LB.email+'</span></div><div class="prow" style="border:0"><span class="k">Live Chat</span><span>In-app · 24/7</span></div></div>'
+    +'<div style="font-weight:800;color:#123a6b;margin:6px 0">Enclosed documents</div><div class="prow"><span class="k">✔ Operating Authority (MC)</span><span>PDF</span></div><div class="prow"><span class="k">✔ Certificate of Insurance</span><span>PDF</span></div><div class="prow"><span class="k">✔ W-9 Tax Form</span><span>PDF</span></div><div class="prow"><span class="k">✔ Signed Carrier/Dispatch Agreement</span><span>PDF</span></div></div>'
+    +'<div class="banner" style="margin-top:12px;background:rgba(59,157,255,.08)"><div class="em">🔒</div><div><b>Carrier stays protected</b><div style="color:var(--muted);font-size:.85rem">The carrier\'s own phone & email are never shared. LoadBoot dispatch is your single point of contact — by phone, email or live chat.</div></div></div>'
+    +'<div class="wnav" style="border:0"><button class="btn ghost" onclick="closeModal()">Close</button><button class="btn" onclick="closeModal();openLiveChat()">💬 Live chat with dispatch</button></div>');
+};
+window.openLiveChat=function(){showModal('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">💬 LoadBoot Dispatch</h3><span class="pill ok">🟢 Online</span></div>'
+  +'<div style="background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:14px;min-height:120px"><div style="background:rgba(59,157,255,.14);border-radius:12px 12px 12px 4px;padding:10px 12px;max-width:82%;font-size:.9rem">Hi 👋 You are chatting with LoadBoot dispatch. Share the lane, rate & pickup and we will coordinate with the carrier for you.</div></div>'
+  +'<div style="display:flex;gap:8px;margin-top:12px"><input class="inp" id="lc-msg" placeholder="Type a message…" style="flex:1"><button class="btn" onclick="toast(\'Message sent to dispatch ✓\');closeModal()">Send</button></div>');};
+window.openLoadComposer=function(carrierId){
+  var s=S.posts.filter(function(x){return x.id===carrierId;})[0];if(!s)return;
+  S.loadDraft={carrierId:carrierId,carrierName:s.name,accessorials:(s.accessorials||ACCESSORIALS).map(function(a){return a.slice();}),policies:POLICIES.slice(),reqPolicy:POLICIES.map(function(){return true;})};
+  var acc=S.loadDraft.accessorials.map(function(a,i){return '<div class="acc"><div class="an">'+esc(a[0])+'</div><div class="au">'+esc(a[1])+'</div><input class="mono" inputmode="numeric" value="'+esc(a[2])+'" oninput="S.loadDraft.accessorials['+i+'][2]=this.value"></div>';}).join('');
+  var pol=S.loadDraft.policies.map(function(p,i){return '<div class="policy on" id="rp'+i+'" onclick="toggleReqPolicy('+i+')"><div class="cb">✓</div><div class="pt">'+esc(p)+'</div></div>';}).join('');
+  showModal('<h3 style="margin:0 0 4px">📦 Post load to '+esc(s.name)+'</h3><p class="sub" style="margin-bottom:14px">Define the load, accessorial rates & the policies the carrier must agree to. Routes through LoadBoot dispatch (CC) to the carrier.</p><div class="grid2"><div class="field"><label>Origin</label><input class="inp" id="ld-o" placeholder="Dallas, TX"></div><div class="field"><label>Destination</label><input class="inp" id="ld-d" placeholder="Atlanta, GA"></div></div><div class="grid3"><div class="field"><label>Equipment</label><select class="inp" id="ld-eq">'+(s.equip.length?s.equip:EQUIP).map(function(e){return '<option>'+e+'</option>';}).join('')+'</select></div><div class="field"><label>Weight (lbs)</label><input class="inp mono" id="ld-w" inputmode="numeric" placeholder="44000"></div><div class="field"><label>Miles</label><input class="inp mono" id="ld-mi" inputmode="numeric" placeholder="780"></div></div><div class="grid2"><div class="field"><label>Commodity</label><input class="inp" id="ld-c" placeholder="Palletized beverages"></div><div class="field"><label>Line-haul Rate ($)</label><input class="inp mono" id="ld-r" inputmode="numeric" placeholder="2450"></div></div><div class="grid2"><div class="field"><label>Pickup</label><input class="inp" id="ld-pu" placeholder="Tue 8:00 AM"></div><div class="field"><label>Delivery</label><input class="inp" id="ld-de" placeholder="Wed 3:00 PM"></div></div><div class="field"><label>Special Instructions</label><textarea class="inp" id="ld-n" placeholder="e.g. Lumper at delivery, appointment required."></textarea></div><div class="sec-h">💵 Accessorial rates you offer</div><div class="box">'+acc+'</div><div class="sec-h">📋 Policies the carrier must agree to <span class="verified">tap to toggle</span></div>'+pol+'<div class="wnav"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="submitLoad()">Post Load →</button></div>');
+};
+window.toggleReqPolicy=function(i){S.loadDraft.reqPolicy[i]=!S.loadDraft.reqPolicy[i];var el=document.getElementById('rp'+i);if(el){el.classList.toggle('on',S.loadDraft.reqPolicy[i]);el.querySelector('.cb').textContent=S.loadDraft.reqPolicy[i]?'✓':'';}};
+window.submitLoad=function(){
+  var g=function(id){return (document.getElementById(id)||{}).value||'';};var o=g('ld-o'),dd=g('ld-d'),r=g('ld-r');if(!o||!dd||!r){toast('Fill origin, destination & rate');return;}var ld=S.loadDraft;
+  var load={id:'load_'+Date.now(),carrierId:ld.carrierId,carrierName:ld.carrierName,broker:'Ryder Logistics (You)',origin:o,dest:dd,equip:g('ld-eq'),weight:g('ld-w')||'0',miles:Number(g('ld-mi')||0),commodity:g('ld-c')||'General freight',rate:Number(String(r).replace(/[^0-9.]/g,''))||0,pickup:g('ld-pu')||'TBD',delivery:g('ld-de')||'TBD',notes:g('ld-n'),accessorials:ld.accessorials.slice(),policies:ld.policies.filter(function(p,i){return ld.reqPolicy[i];}),status:'pending',posted:new Date().toLocaleString()};
+  S.brokerLoads.unshift(load);closeModal();toast('Load posted — routed to LoadBoot dispatch 📦');S.ccTab='loads';
+};
+function showModal(html){var m=document.createElement('div');m.className='modal';m.id='modal';m.innerHTML='<div class="box">'+html+'</div>';m.onclick=function(e){if(e.target===m)closeModal();};document.body.appendChild(m);}
+window.closeModal=function(){var m=document.getElementById('modal');if(m)m.remove();};
+seedMarket();render();
+</script>
+</body></html>

@@ -1,6 +1,35 @@
 # LoadBoot — NEXT-SESSION HANDOFF (read this FIRST)
 _Last updated: 2026-07-02 (session 2). Purpose: let a brand-new session (any model) resume with zero context loss._
 
+---
+## ⚡ SESSION UPDATE — Onboarding/Marketplace prototype + real wiring (carrier)
+_Prototype-to-production pass. All code changes are additive, `node --check`-clean, and revert with `git checkout app/carrier/app.js`._
+
+**Prototype (design spec, clickable, mobile+web):**
+- `previews/onboarding-system.html` — full 3-role flow (Carrier onboarding wizard, CC review/forward, Broker post/track). Dark-premium, brand-aligned.
+- `previews/portal-final-preview.html` — device-framed (Web/Mobile toggle) viewer of the above.
+- `previews/carrier-portal-themed.html` — real carrier portal shell restyled with brand tokens (look-and-feel proof for the design-rollout decision).
+- `previews/fmcsa-profile.html` — live FMCSA 7-tab carrier profile (reused as the profile renderer).
+
+**Docs:**
+- `docs/PROTOTYPE-MERGE-PLAN.md` — feature→module→endpoint map + audit findings.
+- `docs/PHASE1-ONBOARDING-TEST-CHECKLIST.md` — dev test steps for the wiring below.
+- `docs/brand-kit/loadboot-tokens.css` — brand design tokens (Navy #10223B / Blue #0883F7 / Orange #FC5305; dark + light). Opt-in; rollout owner-gated.
+
+**Real wiring done in `app/carrier/app.js` (2 scoped areas only):**
+1. Onboarding `loadOnboarding()`: FMCSA verify in step 0 (`fmcsaVerify`); bank account fields in payment step (`setMyPaymentProfile`, factoring-exempt, 9-digit routing check); in-app W-9 + agreement launch buttons in docs step (`openW9Wizard`/`openSignModal`). Review shows Payout row.
+2. Load card: new **"Propose rate"** counter button → sends carrier's all-in rate via the existing `requestBookLoad(id, note)` note param.
+
+**Audit findings (already in production — no change needed):**
+- Broker never sees carrier contact; identity/contact private; live chat via `shared/ui/chatWidget.js` is the single channel (Phase 2 done).
+- Marketplace filters + trip tracking already exist in the carrier `loads` view + `tripArrive/tripDepart` (Phase 3 done).
+- Counter backend (`offerRespond` `p_counter`, CC `suggested_counter_rate`) already present.
+
+**NEXT (needs human / running app):**
+1. Dev-test the two wirings above (use the checklist).
+2. Design-token rollout: apply `loadboot-tokens.css` across portals — OWNER-GATED, one batch, eyeball in dev before ship. Not applied to production yet (safety).
+
+
 ## 0. HOW TO START A NEW SESSION
 1. Request access to the repo folder: `C:\Users\HP\Documents\GitHub\loadboot`.
 2. Read, in order: **this file** → `docs/SESSION-CHANGELOG.md` (full history, newest entries at the bottom) →

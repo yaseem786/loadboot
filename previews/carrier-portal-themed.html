@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LoadBoot Carrier Portal — Brand Dark Theme Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../docs/brand-kit/loadboot-tokens.css">
+<style>
+/* This preview shows the REAL carrier portal shell (sidebar + dashboard) restyled with
+   docs/brand-kit/loadboot-tokens.css. Nothing here touches app/carrier — it's a look-and-feel
+   proof so you can approve/reject the design rollout. */
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial,sans-serif;margin:0}
+body{background:var(--lb-page-bg);color:var(--lb-ink);min-height:100vh}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+/* sidebar */
+.side{border-right:1px solid var(--lb-line);padding:18px 14px;background:rgba(255,255,255,.02);position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:8px;font-weight:900;font-size:1.25rem;letter-spacing:-.5px;padding:6px 8px 18px}
+.brand .dot{width:11px;height:11px;border-radius:3px;background:var(--lb-grad);transform:rotate(45deg);box-shadow:0 0 12px rgba(8,131,247,.8)}
+.brand .load{color:#dbe7fb}.brand .boot{color:var(--lb-blue-light)}
+.nav a{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:11px;color:var(--lb-muted);text-decoration:none;font-weight:700;font-size:.9rem;margin-bottom:2px;cursor:pointer}
+.nav a.on{background:rgba(8,131,247,.14);color:var(--lb-ink)}
+.nav a:hover:not(.on){background:rgba(255,255,255,.05);color:var(--lb-ink)}
+.nav .ic{width:20px;text-align:center}
+/* topbar + content */
+.main{padding:0}
+.top{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;border-bottom:1px solid var(--lb-line);position:sticky;top:0;background:rgba(7,11,20,.7);backdrop-filter:blur(14px);z-index:5}
+.top h1{font-size:1.3rem;font-weight:900}
+.chip{display:inline-flex;gap:5px;align-items:center;background:var(--lb-ok-bg);color:var(--lb-ok);font-weight:800;font-size:.66rem;padding:4px 10px;border-radius:99px;border:1px solid rgba(52,211,153,.3)}
+.wrap{padding:22px 26px 60px;max-width:1000px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{border:1px solid var(--lb-line);border-radius:16px;padding:16px;background:var(--lb-panel);position:relative;overflow:hidden}
+.kpi:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,131,247,.08),transparent 60%)}
+.kpi .v{font-size:1.7rem;font-weight:900;font-family:'JetBrains Mono',monospace;background:var(--lb-grad);-webkit-background-clip:text;background-clip:text;color:transparent;position:relative}
+.kpi .l{font-size:.66rem;font-weight:800;letter-spacing:.05em;color:var(--lb-muted);text-transform:uppercase;position:relative;margin-top:2px}
+.card{border:1px solid var(--lb-line);border-radius:18px;padding:20px;background:var(--lb-panel);margin-bottom:16px;box-shadow:var(--lb-shadow)}
+.card h3{font-size:1rem;margin-bottom:4px}
+.card .sub{color:var(--lb-muted);font-size:.85rem;margin-bottom:12px}
+.load{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;border:1px solid var(--lb-line);border-radius:13px;margin-bottom:9px;background:rgba(255,255,255,.02)}
+.load .lane{font-weight:800}
+.load .meta{color:var(--lb-muted);font-size:.8rem;margin-top:2px}
+.rate{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:1.2rem;background:var(--lb-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{background:var(--lb-grad);color:#05131f;font-weight:800;border:0;border-radius:11px;padding:10px 16px;font-size:.85rem;cursor:pointer}
+.btn.ghost{background:rgba(255,255,255,.06);color:var(--lb-ink);border:1px solid var(--lb-line-2)}
+.orange{color:var(--lb-orange-soft)}
+.note{border:1px dashed var(--lb-line-2);border-radius:14px;padding:14px 16px;color:var(--lb-muted);font-size:.85rem;background:rgba(252,83,5,.04)}
+@media(max-width:820px){.app{grid-template-columns:1fr}.side{display:none}.kpis{grid-template-columns:1fr 1fr}}
+</style></head>
+<body class="lb-dark">
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="dot"></span><span class="load">load</span><span class="boot">boot</span></div>
+    <nav class="nav">
+      <a class="on">📊 Dashboard</a>
+      <a>⭐ Ratings</a>
+      <a>📦 Load Board</a>
+      <a>🚚 My Loads</a>
+      <a>🛠 Fleet</a>
+      <a>💰 Finance</a>
+      <a>📄 Documents</a>
+      <a>🆘 Safety</a>
+      <a>👤 Account</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="top"><h1>Dashboard</h1><span class="chip">✔ VERIFIED CARRIER</span></div>
+    <div class="wrap">
+      <div class="kpis">
+        <div class="kpi"><div class="v mono">14</div><div class="l">Available Loads</div></div>
+        <div class="kpi"><div class="v mono">3</div><div class="l">Active Trips</div></div>
+        <div class="kpi"><div class="v mono">$18.4k</div><div class="l">This Month Net</div></div>
+        <div class="kpi"><div class="v mono">92</div><div class="l">LoadBoot Score</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Best loads for you <span class="orange">· AI Pilot</span></h3>
+        <div class="sub">Ranked by your minimum rate, equipment, lanes and last GPS location.</div>
+        <div class="load"><div><div class="lane">Dallas, TX → Atlanta, GA</div><div class="meta">Dry Van · 44,000 lbs · 781 mi · $3.14/mi</div></div><div style="text-align:right"><div class="rate">$2,450</div><button class="btn" style="margin-top:6px">Request to book</button> <button class="btn ghost" style="margin-top:6px">Propose rate</button></div></div>
+        <div class="load"><div><div class="lane">Houston, TX → Memphis, TN</div><div class="meta">Reefer · 41,000 lbs · 561 mi · $3.53/mi</div></div><div style="text-align:right"><div class="rate">$1,980</div><button class="btn" style="margin-top:6px">Request to book</button> <button class="btn ghost" style="margin-top:6px">Propose rate</button></div></div>
+      </div>
+
+      <div class="card">
+        <h3>Finance — trip settlements</h3>
+        <div class="sub">Live NET per delivered load. Green = profit.</div>
+        <div class="load"><div><div class="lane">OKC, OK → Denver, CO</div><div class="meta">Earned $2,120 · Spent $760</div></div><div class="rate">+$1,360</div></div>
+        <div class="load"><div><div class="lane">Fort Worth, TX → Phoenix, AZ</div><div class="meta">Earned $2,890 · Spent $1,040</div></div><div class="rate">+$1,850</div></div>
+      </div>
+
+      <div class="note">🎨 <b>This is a look-and-feel preview only</b> — the real carrier portal (<code>app/carrier</code>) is untouched. It uses <code>docs/brand-kit/loadboot-tokens.css</code>: brand Navy/Blue with orange accents, no cyan. Approve this and the same tokens roll out across all portals in one batch.</div>
+    </div>
+  </main>
+</div>
+</body></html>

@@ -1,0 +1,69 @@
+/* LoadBoot design tokens — owner-locked brand palette + premium dark/light surfaces.
+   Additive & opt-in: import this and reference var(--lb-*). Does NOT touch existing styles.
+   Palette source of truth: docs/brand-kit/BRAND-KIT.md
+     Navy #10223B (arrow + "load") · Blue #0883F7 ("boot") · Orange #FC5305 (slash) · White.
+   Rollout is owner-gated & one-batch (per BRAND-KIT rule) — this file just makes the tokens ready. */
+
+:root {
+  /* ---- brand ink (owner-locked) ---- */
+  --lb-navy: #10223B;
+  --lb-blue: #0883F7;
+  --lb-blue-light: #4EA6F9;   /* "boot" on dark backgrounds */
+  --lb-orange: #FC5305;       /* accent / the slash — use sparingly */
+  --lb-orange-soft: #f9a86b;  /* orange on dark */
+  --lb-white: #FFFFFF;
+
+  /* ---- status ---- */
+  --lb-ok: #12a150;  --lb-ok-bg: #e7f9ee;
+  --lb-warn: #b45309; --lb-warn-bg: #fff4e6;
+  --lb-bad: #c62828; --lb-bad-bg: #fdecec;
+
+  /* ---- gradients ---- */
+  --lb-grad: linear-gradient(135deg, #0883F7, #4EA6F9);   /* blue duotone (on-brand; no cyan) */
+  --lb-grad-deep: linear-gradient(135deg, #0b6fe0, #0883F7);
+
+  /* ---- LIGHT theme surfaces (default portal look, refined) ---- */
+  --lb-bg: #eef2f7;
+  --lb-panel: #ffffff;
+  --lb-line: #e6edf5;
+  --lb-ink: #0f1e36;
+  --lb-ink-2: #3f5b7a;
+  --lb-muted: #7089ab;
+  --lb-accent: var(--lb-blue);
+  --lb-radius: 16px;
+  --lb-shadow: 0 18px 40px -30px rgba(15, 30, 54, .5);
+}
+
+/* ---- DARK premium theme (the prototype's look, brand-aligned) ----
+   Apply by adding class="lb-dark" on <html> or a container. */
+.lb-dark {
+  --lb-bg: #070b14;
+  --lb-bg-2: #0a1020;
+  --lb-panel: rgba(255, 255, 255, .045);
+  --lb-panel-2: rgba(255, 255, 255, .07);
+  --lb-line: rgba(255, 255, 255, .09);
+  --lb-line-2: rgba(255, 255, 255, .16);
+  --lb-ink: #eaf1fb;
+  --lb-ink-2: #c3d1e6;
+  --lb-muted: #7f92b3;
+  --lb-accent: var(--lb-blue-light);
+  --lb-glow: 0 0 0 1px rgba(8, 131, 247, .35), 0 10px 40px -10px rgba(8, 131, 247, .45);
+  --lb-shadow: 0 30px 60px -40px rgba(0, 0, 0, .9);
+  /* subtle brand ambience: blue + a touch of orange, no cyan */
+  --lb-page-bg:
+    radial-gradient(1000px 500px at 80% -10%, rgba(252, 83, 5, .06), transparent 60%),
+    radial-gradient(900px 500px at 0% 0%, rgba(8, 131, 247, .13), transparent 55%),
+    var(--lb-bg);
+}
+
+/* ---- optional helpers (opt-in classes) ---- */
+.lb-btn { background: var(--lb-grad); color: #05131f; font-weight: 800; border: 0;
+  border-radius: 13px; padding: 13px 22px; cursor: pointer; }
+.lb-verified { display: inline-flex; gap: 4px; align-items: center;
+  background: var(--lb-ok-bg); color: var(--lb-ok); font-weight: 800;
+  font-size: .66rem; padding: 3px 9px; border-radius: 99px; }
+.lb-wordmark { font-weight: 900; letter-spacing: -.5px; }
+.lb-wordmark .load { color: var(--lb-navy); }
+.lb-dark .lb-wordmark .load { color: #dbe7fb; }
+.lb-wordmark .boot { color: var(--lb-blue); }
+.lb-dark .lb-wordmark .boot { color: var(--lb-blue-light); }
