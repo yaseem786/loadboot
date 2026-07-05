@@ -11,7 +11,7 @@ import {
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods,
   pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
-  carrierUploadDocument, carrierListDocuments, fmcsaVerify,
+  carrierUploadDocument, carrierListDocuments, fmcsaVerify, carrierAgreementSignature, carrierW9,
   emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
@@ -2408,14 +2408,19 @@ function tripStepper(status) {
       const isAgr = (r.doc_type === 'dispatch_agreement') || /dispatch service agreement/i.test(r.name || '');
       const _agrCarrier = (c && c.carrier) || '';
       const signAgr = () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => alert(msg) }, { carrier: _agrCarrier }, () => loadDocuments()));
-      const dlAgr = () => import('./dispatch-agreement.js').then((m) => m.printExecutedAgreement({ carrier: _agrCarrier, approved: r.status === 'valid' }));
+      const dlAgr = async () => { let sig = {}; try { sig = (await carrierAgreementSignature()) || {}; } catch (_) {} const m = await import('./dispatch-agreement.js'); m.printExecutedAgreement({ carrier: _agrCarrier, signer: (sig && sig.signer_name) || '', date: (sig && sig.signed_date) || '', approved: r.status === 'valid' }); };
+      const isW9 = (r.doc_type === 'w9') || r.requirement_key === 'w9' || /\bw-?9\b/i.test(r.name || '');
+      const startW9 = () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => alert(msg) }, { carrier: _agrCarrier }, () => loadDocuments()));
+      const dlW9 = async () => { let w = {}; try { w = (await carrierW9()) || {}; } catch (_) {} const m = await import('./w9-form.js'); m.printExecutedW9(Object.assign({}, w, { approved: r.status === 'valid' })); };
       return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + (rejected ? '#dc2626' : tone.c) + ';padding-left:10px;border-radius:8px;flex-direction:column;align-items:stretch;gap:0' }, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap' }, [
           h('div', null, [h('div', { class: 'cp-row-t' }, r.name), h('div', { class: 'cp-row-s' }, (r.mandatory ? 'Required' : 'Optional') + (d ? ' · ' + (d.file_name || '') : ' · ' + k.why))]),
           h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
             h('span', { class: 'cp-pill', style: 'background:' + (rejected ? 'rgba(220,38,38,.1)' : tone.bg) + ';color:' + (rejected ? '#b91c1c' : tone.c) }, rejected ? 'Rejected' : r.status === 'valid' ? 'Approved ✓' : stateIdx >= 2 ? 'In review' : tone.label),
             isAgr
-              ? (r.status === 'valid' || inReview ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: dlAgr }, 'Download') : h('button', { class: 'cp-btn cp-btn-sm', onClick: signAgr }, 'Sign'))
+              ? (r.status === 'valid' ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: dlAgr }, 'Download') : (inReview ? null : h('button', { class: 'cp-btn cp-btn-sm', onClick: signAgr }, 'Sign')))
+              : isW9
+              ? (r.status === 'valid' ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: dlW9 }, 'Download') : (inReview ? null : h('button', { class: 'cp-btn cp-btn-sm', onClick: startW9 }, 'Start your W-9')))
               : (actionable ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => uploadFor(r) }, btnLabel) : (r.status === 'valid' ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => changeDoc(r) }, 'Change') : null)),
           ].filter(Boolean)),
         ]),
