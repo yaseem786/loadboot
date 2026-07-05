@@ -506,6 +506,7 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 /* ===== Premium Account & Settings (locked design, scoped .acx) ===== */
 .acx{--navy:#0B1B33;--blue:#0883F7;--blue2:#38bdf8;--orange:#F97316;--ink:#0f1e36;--slate:#51617a;--mute:#9aa7bd;--line:#eaf0f7;--ice:#e9f3ff;--green:#12a150;--red:#e0304a;--amber:#d97706}
 .acx *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif}
+.acx .hero{background:linear-gradient(160deg,#0a1a33 0%,#0d2444 46%,#0e3b48 100%);color:#fff;padding:6px 20px 62px;position:relative;overflow:hidden}
 .acx .hero .glow{position:absolute;border-radius:50%;filter:blur(6px)}
 .acx .g1{width:230px;height:230px;right:-70px;top:-90px;background:radial-gradient(circle,rgba(8,131,247,.5),transparent 62%)}
 .acx .g2{width:150px;height:150px;left:-50px;bottom:-40px;background:radial-gradient(circle,rgba(249,115,22,.34),transparent 60%)}
@@ -522,12 +523,15 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 .acx .vpill{display:inline-flex;gap:7px;align-items:center;margin-top:10px;background:linear-gradient(90deg,rgba(18,161,80,.28),rgba(18,161,80,.12));color:#8ef0b4;border:1px solid rgba(52,211,153,.4);border-radius:99px;padding:5px 12px;font-size:.7rem;font-weight:800;letter-spacing:.04em;position:relative;overflow:hidden}
 .acx .vpill:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);animation:acx-shine 3.2s infinite}
 @keyframes acx-shine{to{transform:translateX(120%)}}
+.acx .mstrip{display:flex;gap:9px;margin:-42px 16px 0;position:relative;z-index:6}
 .acx .m{flex:1;background:#fff;border-radius:16px;padding:12px 10px;text-align:center;box-shadow:0 12px 26px -16px rgba(2,12,30,.4);border:1px solid var(--line)}
 .acx .m .v{font-weight:800;font-size:1.15rem;color:var(--navy);letter-spacing:-.02em}
 .acx .m .l{font-size:.64rem;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.acx .nav{position:sticky;top:0;z-index:30;background:rgba(238,243,249,.86);backdrop-filter:blur(10px);display:flex;gap:7px;overflow-x:auto;padding:12px 14px;scrollbar-width:none;border-bottom:1px solid var(--line)}
 .acx .nav::-webkit-scrollbar{display:none}
 .acx .chip{flex:none;font-size:.75rem;font-weight:700;color:var(--slate);background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 13px;cursor:pointer;white-space:nowrap;transition:.15s}
 .acx .chip.on{background:linear-gradient(135deg,var(--navy),#123a5c);color:#fff;border-color:transparent;box-shadow:0 6px 16px -6px rgba(11,27,51,.6)}
+.acx .body{padding:6px 14px 30px}
 .acx .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:17px;margin:13px 0;box-shadow:0 10px 28px -20px rgba(2,12,30,.35)}
 .acx .sec-h{display:flex;align-items:center;gap:11px;margin-bottom:3px}
 .acx .sec-ico{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex:none;color:#fff;box-shadow:0 6px 14px -6px rgba(8,131,247,.5)}
@@ -579,6 +583,7 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 .acx .sensor{display:inline-flex;width:20px;height:20px;border-radius:50%;border:2px solid var(--blue);align-items:center;justify-content:center;font-size:.72rem;color:var(--blue);animation:acx-pulse 1s infinite;vertical-align:middle}
 @keyframes acx-pulse{0%,100%{box-shadow:0 0 0 0 rgba(8,131,247,.35)}50%{box-shadow:0 0 0 7px rgba(8,131,247,0)}}
 .acx .hint{background:linear-gradient(135deg,#f0f7ff,#eaf3ff);border:1px solid var(--ice);border-radius:12px;padding:10px 12px;font-size:.75rem;color:#2b5f93;margin-top:10px}
-.acx{position:relative}
+.acx{max-width:680px;margin:0 auto;position:relative}
 .acx-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);background:#0b1b33;color:#fff;padding:11px 17px;border-radius:13px;font-size:.83rem;font-weight:650;opacity:0;pointer-events:none;transition:.28s;z-index:9999;max-width:90%;text-align:center;box-shadow:0 16px 34px -12px rgba(0,0,0,.5)}
 .acx-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.acx .brandrow img{height:26px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}

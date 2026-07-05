@@ -53,7 +53,7 @@ export async function renderPremiumAccount(host, ctx) {
   host.innerHTML = ''
     + '<div class="acx">'
     + '<div class="hero"><div class="glow g1"></div><div class="glow g2"></div>'
-    +   '<div class="brandrow"><div style="font-weight:800;font-size:1.12rem;color:#fff;letter-spacing:-.02em">Load<span style="color:#F97316">Boot</span></div><div class="glass"><span class="gdot"></span> Online</div></div>'
+    +   '<div class="brandrow"><img src="/logo-full.png" alt="LoadBoot" style="height:24px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))"><div class="glass"><span class="gdot"></span> Online</div></div>'
     +   '<div class="profrow"><div class="ava" id="acx-ava">' + esc(initials) + '<div class="cam" id="acx-cam">&#9998;</div></div>'
     +     '<div><div class="pname">' + esc(name) + '</div><div class="psub">' + esc(sub || 'Owner-operator') + '</div>' + vpill + '</div></div>'
     + '</div>'
