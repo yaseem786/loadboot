@@ -7,7 +7,8 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { complianceOverview, listOnboarding, getCarrierCompliance, startOnboarding, setCompliance, decideOnboarding, getCarriersDirectory, issueViolation, runComplianceExpirySweep } from '../../shared/api.js';
+import { complianceOverview, listOnboarding, getCarrierCompliance, startOnboarding, setCompliance, decideOnboarding, getCarriersDirectory, issueViolation, runComplianceExpirySweep, documentFile } from '../../shared/api.js';
+import { signedDocumentUrl } from '../../shared/storage.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -139,12 +140,18 @@ export function renderCompliance(host) {
       const d = daysUntil(r.expiry_date);
       const expiryLabel = r.expiry_date ? (d != null && d < 0 ? 'expired ' + fmtDate(r.expiry_date) : (d != null && d <= 30 ? 'expires in ' + d + 'd' : 'valid to ' + fmtDate(r.expiry_date))) : (r.requires_expiry ? 'no expiry set' : '');
       const verify = can('compliance.verify') ? el('button', { class: 'cc-chip-btn', onClick: () => openVerify(id, r) }, 'Verify') : '';
+      const viewFile = r.document_id ? el('button', { class: 'cc-chip-btn', onClick: async (ev) => {
+        const b0 = ev.currentTarget; b0.disabled = true; b0.textContent = 'Opening…';
+        try { const f = await documentFile(r.document_id); const url = await signedDocumentUrl(f.file_path); window.open(url, '_blank'); }
+        catch (e) { alert((e && e.message) || 'Could not open the file.'); }
+        b0.disabled = false; b0.textContent = '📄 View file';
+      } }, '📄 View file') : '';
       return el('div', { class: 'cc-doc-item' }, [
         el('div', null, [
           el('b', null, [r.name, r.mandatory ? '' : el('span', { class: 'cc-sub', style: 'margin-left:6px' }, '(optional)')]),
           el('div', { class: 'cc-sub' }, [expiryLabel, r.note ? ' · ' + r.note : '']),
         ]),
-        el('div', { class: 'cc-status-row' }, [ el('span', { class: 'cc-pill cc-pill-' + tone }, r.status), verify ]),
+        el('div', { class: 'cc-status-row' }, [ el('span', { class: 'cc-pill cc-pill-' + tone }, r.status), viewFile, verify ]),
       ]);
     };
 

@@ -1,0 +1,76 @@
+/* cc-dark.css — Command Center MIDNIGHT EXECUTIVE override (colors only, additive).
+   Loaded AFTER command-center.css; delete the <link> in index.html to revert.
+   Same palette as carrier-dark.css: bg #0a1322 · surface #111c31 · border rgba(255,255,255,.1)
+   text #eaf1fb · muted #8ea2c3 · accent #0883F7/#3b9dff · ok #34d399 */
+
+/* token-level retint (scoped to CC because only CC links this file) */
+:root{
+  --lb-bg:#0a1322; --lb-surface:#111c31; --lb-navy:#eaf1fb; --lb-muted:#8ea2c3;
+  --lb-border:rgba(255,255,255,.1); --lb-blue-soft:rgba(8,131,247,.14);
+  --cc-shadow-sm:0 1px 2px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3);
+  --cc-shadow:0 10px 30px -12px rgba(0,0,0,.65);
+}
+body{background:var(--lb-bg);color:#eaf1fb}
+
+/* top bar */
+.cc-top{background:rgba(10,19,34,.86);border-bottom-color:rgba(255,255,255,.09)}
+.cc-top h1{color:#eaf1fb}
+.cc-iconbtn{background:#111c31;border-color:rgba(255,255,255,.1);color:#8ea2c3}
+.cc-iconbtn:hover{color:#3b9dff;border-color:rgba(59,157,255,.5)}
+.cc-iconbtn .dotk{border-color:#111c31}
+.cc-user{color:#eaf1fb;border-left-color:rgba(255,255,255,.1)}
+.cc-avatar{background:linear-gradient(135deg,rgba(8,131,247,.28),rgba(29,78,216,.28));color:#9cc5f4}
+
+/* surfaces */
+.cc-kpi,.cc-panel,.cc-card,.cc-dcard,.cc-drawer-x,.cc-mini-item,.cc-quick-btn,.cc-search-panel{background:linear-gradient(180deg,#131f36 0%,#101a2e 100%);border-color:rgba(255,255,255,.1)}
+.cc-mini,.cc-fact,.cc-msg-b{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.09)}
+.cc-mini:hover{background:rgba(255,255,255,.09)}
+.cc-col{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
+.cc-col.over{background:rgba(8,131,247,.12)}
+.cc-kpi-val,.cc-live,.cc-section-head h2,.cc-panel-head h3{color:#eaf1fb}
+
+/* kpi icon tints */
+.cc-kpi-green .cc-kpi-ico{background:rgba(52,211,153,.15);color:#34d399}
+.cc-kpi-amber .cc-kpi-ico{background:rgba(245,158,11,.15);color:#fbbf24}
+.cc-kpi-orange .cc-kpi-ico{background:rgba(249,115,22,.16);color:#fb923c}
+.cc-kpi-red .cc-kpi-ico{background:rgba(239,68,68,.15);color:#f87171}
+
+/* pills / tags / chips */
+.cc-pill-green{background:rgba(52,211,153,.14);color:#34d399}
+.cc-pill-amber{background:rgba(245,158,11,.15);color:#fbbf24}
+.cc-pill-blue{background:rgba(8,131,247,.16);color:#3b9dff}
+.cc-pill-red{background:rgba(239,68,68,.15);color:#f87171}
+.cc-pill-gray{background:rgba(255,255,255,.08);color:#b9c6db}
+.cc-tag{background:rgba(255,255,255,.07);color:#b9c6db}
+.cc-tag-blue{background:rgba(8,131,247,.16);color:#3b9dff}
+.cc-chip-btn{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#b9c6db}
+.cc-chip-btn:hover{background:rgba(8,131,247,.14);color:#3b9dff}
+.cc-chip-warn{background:rgba(217,119,6,.15);color:#fbbf24}
+
+/* inputs / toolbar */
+.cc-search,.cc-input,.cc-toolbar select{background:#0c1628;border-color:rgba(255,255,255,.14);color:#eaf1fb}
+.cc-search::placeholder,.cc-input::placeholder{color:#5c6f8f}
+.cc-seg{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+.cc-seg-btn{color:#8ea2c3}
+.cc-seg-btn.active{background:#111c31;color:#eaf1fb}
+.cc-btn-sm{background:#111c31;border-color:rgba(255,255,255,.12);color:#eaf1fb}
+.cc-btn-red{background:rgba(239,68,68,.14);color:#f87171;border-color:rgba(239,68,68,.35)}
+
+/* tables */
+.cc-tablewrap{background:#111c31;border-color:rgba(255,255,255,.1)}
+.cc-table th{background:rgba(255,255,255,.04);color:#8ea2c3;border-bottom-color:rgba(255,255,255,.1)}
+.cc-table td{border-bottom-color:rgba(255,255,255,.06);color:#eaf1fb}
+
+/* charts / breakdowns */
+.cc-bd-track{background:rgba(255,255,255,.09)}
+.cc-chart-x{color:#8ea2c3}
+
+/* chat */
+.cc-msg.me .cc-msg-bubble{background:rgba(8,131,247,.2);color:#eaf1fb}
+
+/* misc */
+.cc-switch .track::before{background:#8ea2c3}
+.cc-toggle{background:rgba(255,255,255,.09)}
+.cc-ai-guard{background:rgba(8,131,247,.08);border-color:rgba(8,131,247,.25);color:#9cc5f4}
+.lb-btn-secondary{background:#111c31;color:#eaf1fb;border-color:rgba(255,255,255,.14)}
+.lb-badge{background:rgba(8,131,247,.16);color:#3b9dff}

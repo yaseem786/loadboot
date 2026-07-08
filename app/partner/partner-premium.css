@@ -1,0 +1,119 @@
+/* partner-premium.css — final polish skin for the whole broker portal (loads LAST, additive only).
+   Surfaces, depth, focus states, typography rhythm. No layout changes. */
+
+/* ---- canvas & typography ---- */
+.cp-main { background:
+  radial-gradient(900px 340px at 85% -10%, rgba(8,131,247,.05), transparent 60%),
+  radial-gradient(700px 300px at -10% 20%, rgba(16,34,59,.04), transparent 55%),
+  #f5f7fb; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.cp-main h1, .cp-main h2, .cp-main h3 { letter-spacing: -.015em; color: #0f1f38; }
+.bd-hero h2, .cn-hero h2, .bd-net .tt { color: #fff !important; }
+.cp-sub { color: #64748b; line-height: 1.55; }
+
+/* ---- cards: layered depth, soft hover ---- */
+.cp-card { border-radius: 18px; border: 1px solid #e6ebf3;
+  box-shadow: 0 1px 2px rgba(16,34,59,.04), 0 12px 32px -24px rgba(16,34,59,.18);
+  transition: box-shadow .18s, transform .18s; }
+.cp-card:hover { box-shadow: 0 2px 4px rgba(16,34,59,.05), 0 18px 44px -24px rgba(16,34,59,.22); }
+.cp-cardhead { padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
+.cp-cardhead h3 { font-weight: 800; letter-spacing: -.01em; }
+
+/* ---- inputs: crisp rest state, glowing focus ring ---- */
+.cp-in, select.cp-in, textarea.cp-in {
+  border-radius: 12px; border: 1.5px solid #e2e8f0; background: #fbfcfe;
+  transition: border-color .15s, box-shadow .15s, background .15s; font-weight: 600; color: #10223B; }
+.cp-in:hover { border-color: #cbd5e1; }
+.cp-in:focus { outline: none; border-color: #0883F7; background: #fff;
+  box-shadow: 0 0 0 4px rgba(8,131,247,.12); }
+.cp-lbl, .cp-field2 > span { font-weight: 700; color: #334155; font-size: .78rem;
+  text-transform: none; letter-spacing: .01em; }
+
+/* ---- buttons: gradient primary w/ lift, refined ghost ---- */
+.cp-btn { border-radius: 12px; font-weight: 800; letter-spacing: .01em;
+  background: linear-gradient(120deg, #0883F7, #0967d2);
+  box-shadow: 0 8px 20px -10px rgba(8,131,247,.65);
+  transition: transform .12s, box-shadow .12s, filter .12s; }
+.cp-btn:hover { transform: translateY(-1px); filter: brightness(1.05);
+  box-shadow: 0 12px 26px -10px rgba(8,131,247,.7); }
+.cp-btn:active { transform: translateY(0); }
+.cp-btn.ghost { background: #fff; color: #334155; border: 1.5px solid #e2e8f0; box-shadow: none; }
+.cp-btn.ghost:hover { border-color: #0883F7; color: #0883F7; filter: none; }
+.cp-btn.ghost.on { background: #10223B; color: #fff; border-color: #10223B; }
+.cp-btn:disabled { opacity: .55; transform: none; box-shadow: none; }
+
+/* ---- KPI tiles ---- */
+.cp-kpi { border-radius: 16px; border: 1px solid #e6ebf3; background: #fff;
+  box-shadow: 0 10px 28px -22px rgba(16,34,59,.25); transition: transform .15s; }
+.cp-kpi:hover { transform: translateY(-2px); }
+.cp-kpi-v { font-weight: 800; letter-spacing: -.02em; color: #0f1f38; }
+.cp-kpi-l { font-weight: 700; color: #475569; }
+.cp-kpi-s { color: #94a3b8; }
+
+/* ---- pills / tags ---- */
+.cp-pill, .cp-tag { border-radius: 999px; font-weight: 700; letter-spacing: .01em; }
+
+/* ---- tables ---- */
+.cp-tablewrap table { border-collapse: separate; border-spacing: 0; }
+.cp-tablewrap th { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em;
+  color: #7c8aa0; font-weight: 800; background: #f8fafc; }
+.cp-tablewrap tr { transition: background .12s; }
+.cp-tablewrap tbody tr:hover { background: #f8fafc; }
+.cp-tablewrap td { border-bottom: 1px solid #f1f5f9; }
+
+/* ---- sidebar: deeper gradient + glow accents ---- */
+.cp-side { background:
+  radial-gradient(400px 260px at 0% 0%, rgba(8,131,247,.16), transparent 60%),
+  linear-gradient(180deg, #0a1526 0%, #0e1d38 55%, #10223B 100%);
+  border-right: 1px solid rgba(255,255,255,.05); }
+.cp-navlink { border-radius: 12px; }
+.cp-navlink.active { box-shadow: 0 10px 26px -10px rgba(8,131,247,.8), inset 0 1px 0 rgba(255,255,255,.18); }
+
+/* ---- topbar ---- */
+.cp-top { background: rgba(255,255,255,.78); backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid #e9eef5; }
+
+/* ---- wizard chrome ---- */
+.cp-wiz-bar { height: 7px; border-radius: 99px; background: #eef2f7; }
+.cp-wiz-fill { border-radius: 99px; }
+.cp-wiz-actions .cp-btn { min-width: 130px; }
+.cp-formgrid { gap: 14px 16px; }
+
+/* ---- modals ---- */
+.cp-modal-card { border-radius: 20px !important;
+  box-shadow: 0 40px 90px -30px rgba(2,12,30,.5) !important; }
+
+/* ---- error / success text ---- */
+.cp-err { border-radius: 10px; font-weight: 600; }
+.cp-err.ok { color: #166534; }
+
+/* ---- scrollbars (webkit) ---- */
+.cp-main ::-webkit-scrollbar { width: 9px; height: 9px; }
+.cp-main ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; border: 2px solid #f5f7fb; }
+.cp-main ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ---- notification panel ---- */
+.cp-notif-panel { border-radius: 18px; border: 1px solid #e6ebf3;
+  box-shadow: 0 30px 70px -28px rgba(2,12,30,.4); overflow: hidden; }
+
+/* ---- mobile responsiveness for the new broker surfaces ---- */
+@media (max-width: 700px) {
+  .cn-grid { grid-template-columns: 1fr; }
+  .cn-kpis { grid-template-columns: repeat(2, 1fr); }
+  .cn-hero { padding: 20px 16px; }
+  .cn-strip { gap: 16px; }
+  .cn-sort { margin-left: 0; width: 100%; }
+  .bd-hero { padding: 18px 16px; }
+  .bd-qa button { flex: 1 1 44%; }
+  .bd-kgrid { grid-template-columns: repeat(2, 1fr); }
+  .lt-steps { flex-wrap: wrap; row-gap: 14px; }
+  .lt-step { flex: 1 1 32%; }
+  .lt-map { height: 260px; }
+  .cp-modal-card { border-radius: 18px 18px 0 0 !important; max-height: 94vh !important; }
+  .bd-arow { flex-direction: column; align-items: stretch; }
+  .bd-arow button { width: 100%; }
+}
+@media (max-width: 420px) {
+  .lt-step { flex: 1 1 48%; }
+  .cn-foot { flex-direction: column; }
+}

@@ -1,0 +1,6 @@
+-- bl_pause_0026: surface pause status + reason.
+-- cc_get_carrier         -> + pause_info {reason, scope, at} (from app_private.audit_logs, action carrier.pause)
+-- cc_pocket_overview     -> + account_status, pause_reason, pause_scope
+-- Applied: staging snslhvmkjusozgjelghi + prod rwscphuhpjoudvljvmdk (2026-07-07).
+-- Full function bodies applied via Supabase apply_migration 'bl_pause_0026_expose_pause_info'
+-- (CREATE OR REPLACE, grants preserved, anon SECURITY DEFINER surface verified = 5, pgrst reloaded).

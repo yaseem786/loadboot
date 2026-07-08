@@ -30,7 +30,8 @@ const NAV = [
     { path: '/contacts', label: 'Contacts directory', icon: 'users', perm: 'any:carriers.view,partners.view' },
     { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
     { path: '/matching', label: 'Smart matching', icon: 'trend', perm: 'carriers.view' },
-    { path: '/carrier-scorecards', label: 'Carrier Scorecards', icon: 'trend', perm: 'any:carriers.view,dispatch.view' },
+    // MERGED into Carrier 360 (per-carrier scorecard card) + Account health board — route still works, nav hidden.
+    // { path: '/carrier-scorecards', label: 'Carrier Scorecards', icon: 'trend', perm: 'any:carriers.view,dispatch.view' },
     { path: '/trips', label: 'Dispatch & trips', icon: 'truck', perm: 'dispatch.view', flag: 'dispatch' },
     { path: '/map', label: 'Live map', icon: 'truck', perm: null, flag: 'opsMap' },
     { path: '/fleet', label: 'Fleet & drivers', icon: 'users', perm: 'fleet.view', flag: 'fleet' },
@@ -51,6 +52,7 @@ const NAV = [
     { path: '/forms', label: 'Forms inbox', icon: 'bell', perm: 'forms.view', flag: 'forms' },
     { path: '/partners', label: 'Brokers & shippers', icon: 'users', perm: 'partners.view', flag: 'partners' },
     { path: '/partner-intake', label: 'Partner intake', icon: 'doc', perm: 'partners.view', flag: 'partners' },
+    { path: '/market-rates', label: 'Market rates', icon: 'doc' },
     { path: '/broker-sla', label: 'Broker SLA', icon: 'trend', perm: 'partners.view', flag: 'partners' },
   ]},
   { group: 'Support', items: [
@@ -110,12 +112,14 @@ function permVisible(item) {
 }
 
 const SEARCH_HASH = { carrier: '/carriers', partner: '/partners', load: '/trips', lead: '/crm', invoice: '/finance', driver: '/fleet' };
-function flattenNav(arr, out) {
+function flattenNav(arr, out, grp) {
   (arr || []).forEach(it => {
     if (!it) return;
-    if (Array.isArray(it)) { flattenNav(it, out); return; }
-    if (it.path && it.label) out.push({ path: it.path, label: it.label });
-    if (it.children) flattenNav(it.children, out);
+    if (Array.isArray(it)) { flattenNav(it, out, grp); return; }
+    const g = it.group || grp || '';
+    if (it.path && it.label) out.push({ path: it.path, label: it.label, group: g });
+    if (it.items) flattenNav(it.items, out, g);
+    if (it.children) flattenNav(it.children, out, g);
   });
   return out;
 }
@@ -133,16 +137,20 @@ function globalSearchBox() {
     if (q.length < 2) { close(); return; }
     t = setTimeout(async () => {
       const ql = q.toLowerCase();
-      const pages = NAV_PAGES.filter(p => p.label.toLowerCase().includes(ql)).slice(0, 6);
+      const words = ql.split(/\s+/).filter(Boolean);
+      const pages = NAV_PAGES.filter(p => { const hay = (p.label + ' ' + (p.group || '')).toLowerCase(); return words.every(w => hay.includes(w)); }).slice(0, 8);
       let rows = [];
       try { rows = await globalSearch(q, 12); } catch (_) { rows = []; }
       const nodes = [];
       pages.forEach(p => nodes.push(el('a', { class: 'cc-search-row', href: '#' + p.path, onClick: close }, [
         el('span', { class: 'cc-pill cc-pill-blue' }, 'Page'),
         el('b', null, p.label),
-        el('span', { class: 'cc-sub' }, 'Go to page'),
+        el('span', { class: 'cc-sub' }, p.group || 'Go to page'),
       ])));
-      (rows || []).forEach(r => nodes.push(el('a', { class: 'cc-search-row', href: '#' + (SEARCH_HASH[r.kind] || '/'), onClick: close }, [
+      const hashFor = (r) => r.kind === 'carrier' ? ('/carrier?id=' + r.id)
+        : r.kind === 'partner' ? ('/broker?id=' + r.id)
+        : (SEARCH_HASH[r.kind] || '/');
+      (rows || []).forEach(r => nodes.push(el('a', { class: 'cc-search-row', href: '#' + hashFor(r), onClick: close }, [
         el('span', { class: 'cc-pill cc-pill-gray' }, r.sublabel),
         el('b', null, r.label),
         el('span', { class: 'cc-sub' }, r.status || ''),

@@ -30,7 +30,14 @@ export async function getAAL() {
 
 export async function signInWithPassword(email, password) {
   const sb = await getClient();
-  return sb.auth.signInWithPassword({ email, password });
+  // Mobile keyboards inject trailing spaces / zero-width & RTL marks (suggestion taps,
+  // Urdu layouts). Strip whitespace + invisible format chars; normalize digits to ASCII.
+  const clean = (v) => String(v || '')
+    .replace(/[\u200b-\u200f\u202a-\u202e\ufeff\u00a0]/g, '')
+    .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06f0-\u06f9]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .trim();
+  return sb.auth.signInWithPassword({ email: clean(email).toLowerCase(), password: clean(password) });
 }
 
 // Carrier self-registration. The backend new-user trigger creates the carrier

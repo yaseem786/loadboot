@@ -5,6 +5,14 @@
 // location/profile data (those are cross-origin Supabase calls).
 export function registerAppSW() {
   if (!('serviceWorker' in navigator)) return;
+  // DEV HOSTS: never register the service worker on localhost / LAN IPs — its
+  // cache-first precache keeps serving stale builds during development. Also
+  // unregister any SW left over from earlier sessions so dev caches self-heal.
+  const _h = location.hostname;
+  if (_h === 'localhost' || _h === '127.0.0.1' || /^(10|192\.168|172)\./.test(_h)) {
+    navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+    return;
+  }
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' }).then((reg) => {
       function promptReload(worker) {

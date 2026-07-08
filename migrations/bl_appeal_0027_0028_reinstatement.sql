@@ -1,0 +1,12 @@
+-- bl_appeal_0027 + 0028: Amazon-style appeal engine.
+-- Table app_private.reinstatement_requests (kind reinstate|health_poa, status submitted|in_review|approved|rejected,
+--   attachments jsonb, staff_note, decided_by/at, pause reason+scope snapshot from audit_logs).
+-- RPCs: cc_pocket_submit_reinstatement(msg, attachments, kind) - paused required for reinstate kind, one open per kind;
+--       cc_pocket_my_reinstatements(); cc_reinstatement_queue(); cc_review_reinstatement(id, in_review|approve|reject, note)
+--       approve of reinstate kind auto-runs cc_pause_carrier(resume) => welcome-back email; reject requires note + emails carrier.
+-- Applied to staging + prod via Supabase apply_migration bl_appeal_0027/0028 (2026-07-07). anon SECURITY DEFINER surface verified = 5.
+
+-- bl_appeal_0029 (applied both DBs 2026-07-07): per-factor staff controls.
+-- cc_request_poa(org, factor, note): staff demands a written plan of action for one health factor
+--   -> carrier notification + branded email + audit entry, links to #reinstate.
+-- cc_carrier_reinstatements(org): staff view of all appeals/POAs of one carrier (managed inline on Carrier 360).

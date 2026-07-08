@@ -6,7 +6,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
-import { partnersOverview, listPartners, getPartner, upsertPartner, setPartnerStatus } from '../../shared/api.js';
+import { partnersOverview, listPartners, getPartner, upsertPartner, setPartnerStatus, partnersAccounts } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -60,13 +60,39 @@ export function renderPartners(host) {
     try { rows = await listPartners({ kind, search }); }
     catch (e) { showError(body, humanizeError(e), load); return; }
     if (!rows.length) { mount(body, card(el('div', { class: 'cc-sub', style: 'padding:8px' }, 'No partners yet. Add a broker or shipper to get started.'))); return; }
-    mount(body, card(el('table', { class: 'cc-table' }, [
+    // ---- REAL partner accounts (logins) — carrier-tab parity: click opens Broker 360 ----
+    let accs = []; try { accs = await partnersAccounts() || []; } catch (_) { accs = []; }
+    const q9 = (search || '').toLowerCase();
+    const accsF = accs.filter((a) => !q9 || String(a.name || '').toLowerCase().includes(q9) || String(a.email || '').toLowerCase().includes(q9))
+                      .filter((a) => !kind || a.kind === kind);
+    const accCard = card(el('div', null, [
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Partner accounts — real logins'), el('span', { class: 'cc-sub' }, 'click a row \u2192 Broker 360 (packet review, FMCSA, loads, claims)')]),
+      accsF.length ? el('table', { class: 'cc-table' }, [
+        el('thead', null, el('tr', null, [el('th', null, 'Type'), el('th', null, 'Name'), el('th', null, 'Email'), el('th', null, 'Contact'), el('th', null, 'Packet'), el('th', null, 'Loads'), el('th', null, 'Status')])),
+        el('tbody', null, accsF.map((a) => el('tr', { class: 'cc-row-click', style: 'cursor:pointer', onClick: () => { location.hash = '#/broker?id=' + a.id; } }, [
+          el('td', null, statusPill(a.kind)),
+          el('td', null, el('b', null, a.name || '\u2014')),
+          el('td', null, a.email || '\u2014'),
+          el('td', null, a.contact || '\u2014'),
+          el('td', null, (() => {
+            const ok = Number(a.packet_done) >= Number(a.packet_total);
+            const aw = Number(a.awaiting) || 0;
+            return el('span', { class: 'cc-pill', style: aw ? 'background:#fef3c7;color:#b45309' : ok ? 'background:#e7f9ee;color:#12a150' : 'background:#fee2e2;color:#b91c1c' },
+              aw ? aw + ' awaiting \u00b7 ' + a.packet_done + '/' + a.packet_total : (ok ? 'Complete \u2713 (' + a.packet_total + ')' : a.packet_done + '/' + a.packet_total + ' verified'));
+          })()),
+          el('td', null, String(a.loads || 0)),
+          el('td', null, statusPill(a.status)),
+        ]))),
+      ]) : el('div', { class: 'cc-sub', style: 'padding:8px' }, 'No partner accounts yet.'),
+    ]));
+    const crmHead = el('div', { class: 'cc-sub', style: 'margin:14px 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem' }, 'CRM contacts (directory \u2014 not logins)');
+    mount(body, el('div', null, [accCard, crmHead, card(el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, [el('th', null, 'Type'), el('th', null, 'Name'), el('th', null, 'MC'), el('th', null, 'Contact'), el('th', null, 'Email'), el('th', null, 'Status')])),
       el('tbody', null, rows.map(p => el('tr', { class: 'cc-row-click', onClick: () => openPartner(p.id) }, [
         el('td', null, statusPill(p.kind)), el('td', null, el('b', null, p.name)), el('td', null, p.mc || '—'),
         el('td', null, p.contact_name || '—'), el('td', null, p.email || '—'), el('td', null, statusPill(p.status)),
       ]))),
-    ])));
+    ]))]));
   }
 
   async function openPartner(id) {

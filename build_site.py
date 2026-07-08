@@ -362,7 +362,7 @@ def footer():
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a></div>
 <div><div class="foot-h">Compliance</div><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
-<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="detention-pay-policy.html">Accessorial Policies</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
@@ -729,6 +729,28 @@ LIVEBOARD = ('<section id="opportunities" class="bg-soft"><div class="wrap"><div
  '<div class="plb-grid reveal" id="liveLoads"><div class="plb-empty" id="liveEmpty">Loading current opportunities&hellip;</div></div>'
  '<div class="plb-cta reveal"><a href="/app/carrier/" class="btn btn-primary">Sign in to view &amp; book &rarr;</a>'
  '<span class="plb-note">A free verified carrier account is required to view full load details and book.</span></div></div></section>')
+
+# ---- HOME: live market-rates strip (SEO section, feeds from get_public_market_rates) ----
+HOME_RATES = ('<section id="market-rates" class="bg-soft"><div class="wrap">'
+ '<div class="sec-head center reveal"><div class="eyebrow">Live Market Data</div>'
+ '<h2>Today\u2019s Truckload Freight Rates Per Mile</h2>'
+ '<p class="lead center" style="margin:0 auto;max-width:760px">Current national trucking rates per mile \u2014 dry van, reefer, flatbed and hotshot spot rates, blended from real LoadBoot bookings and published industry benchmarks. What carriers get paid, what freight brokers buy and sell at, and what shippers pay \u2014 <b>updated weekly</b>.</p></div>'
+ '<style>.hmr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:22px 0}'
+ '.hmr{background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:18px;text-align:center;box-shadow:0 12px 30px -24px rgba(2,12,30,.35);transition:transform .15s}'
+ '.hmr:hover{transform:translateY(-3px)}'
+ '.hmr .e{font-weight:800;font-size:.92rem;color:#10223B}'
+ '.hmr .p{font-size:1.7rem;font-weight:800;color:#0883F7;margin:4px 0 2px}'
+ '.hmr .r{font-size:.72rem;color:#64748b}'
+ '.hmr-note{text-align:center;font-size:.8rem;color:#64748b;margin-top:6px}</style>'
+ '<div class="hmr-g reveal" id="hmrTiles">'
+ + ''.join('<div class="hmr"><div class="e">' + e + ' Rates</div><div class="p" data-eq="' + e + '">\u2014</div><div class="r" data-eqr="' + e + '">loading\u2026</div></div>'
+           for e in ['Dry Van', 'Reefer', 'Flatbed', 'Hotshot'])
+ + '</div>'
+ '<div class="hmr-note" id="hmrAsOf">National spot averages, all-in linehaul per mile \u00b7 refreshed weekly</div>'
+ '<div class="plb-cta reveal" style="margin-top:16px"><a href="/market-rates.html" class="btn btn-primary">See all freight rates \u2014 carrier, broker &amp; shipper sides &rarr;</a>'
+ '<span class="plb-note">Free lane-level rates (state \u2192 state, low/avg/high, 12-week trends) inside every LoadBoot account.</span></div>'
+ '</div></section>')
+
 # The public load board talks to a Supabase project. In PRODUCTION it uses the
 # production project. In ANY preview/branch/dev build it makes ZERO production
 # requests: the board renders an explicit "disabled in preview" state and never
@@ -741,6 +763,14 @@ LIVEBOARD_JS_PROD = (r"(function(){var SB='" + _BOARD_SB + r"',KEY='" + _BOARD_K
 # Preview variant: NO network call at all — explicit disabled state.
 LIVEBOARD_JS_PREVIEW = (r"(function(){var em=document.getElementById('liveEmpty');if(em){em.textContent='Live load board is disabled in this preview environment.';em.style.display='';}})();")
 LIVEBOARD_JS = LIVEBOARD_JS_PROD if IS_PRODUCTION_CTX else LIVEBOARD_JS_PREVIEW
+
+HOME_RATES_JS = ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
+ "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
+ ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d)return;var asof='';"
+ "d.forEach(function(b){asof=b.as_of||asof;var p=document.querySelector('[data-eq=\"'+b.equipment+'\"]');var r2=document.querySelector('[data-eqr=\"'+b.equipment+'\"]');"
+ "if(p)p.textContent='$'+Number(b.carrier_rpm).toFixed(2)+'/mi';if(r2)r2.textContent='range $'+Number(b.low).toFixed(2)+'\u2013'+Number(b.high).toFixed(2);});"
+ "var a=document.getElementById('hmrAsOf');if(a&&asof)a.textContent='National spot averages, all-in linehaul per mile \u00b7 updated '+asof;"
+ "}).catch(function(){});})();</script>")
 
 # Public announcement bar — fetches active audience='public' announcements (get_active_public_announcements,
 # anon-granted) and renders a dismissible top bar. Emergencies show first in red. Dismissal is per-announcement
@@ -895,7 +925,7 @@ REFTEASER = ('<section style="background:linear-gradient(135deg,#0b1220 0%,#1230
  '<p class="reveal" style="text-align:center;color:#94a3b8;font-size:.82rem;margin:16px auto 0;max-width:720px">*Illustrative only, based on a referred carrier hauling roughly $20k/month. Commissions are paid entirely from LoadBoot&rsquo;s own 5% dispatch fee &mdash; your referrals never pay more, and you invest nothing. Exact tiers are confirmed in writing at signup.</p>'
  '</div></section>')
 
-home_body = HERO+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
+home_body = HERO+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
 home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'
 page('index.html','Truck Dispatch Services for Owner-Operators | Loadboot',
      'Reliable US truck dispatch for owner-operators, fleets, and new-authority carriers. Higher-paying loads, less deadhead, flat 5%, no contracts. Get a free quote.',
@@ -2948,6 +2978,98 @@ page('status.html', 'Loadboot System Status',
      'Live operational status for the Loadboot website, carrier portal, driver app and API.',
      'status.html', st)
 
+# ---- Market Rates (public, SEO + lead-gen): all three audiences on ONE page, live weekly numbers ----
+_MR_JS = ("(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
+  "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
+  ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d||!d.length)return;"
+  "var tb=document.getElementById('mrRows');if(!tb)return;var asof='';"
+  "tb.innerHTML=d.map(function(b){asof=b.as_of||asof;return '<tr><td><b>'+b.equipment+'</b><div class=\"mr-sub\">$'+Number(b.low).toFixed(2)+'–'+Number(b.high).toFixed(2)+'/mi range</div></td>'"
+  "+'<td class=\"mr-c\">$'+Number(b.carrier_rpm).toFixed(2)+'</td>'"
+  "+'<td class=\"mr-b\">$'+Number(b.broker_buy_rpm).toFixed(2)+' / $'+Number(b.broker_sell_rpm).toFixed(2)+'</td>'"
+  "+'<td class=\"mr-s\">$'+Number(b.shipper_rpm).toFixed(2)+'</td></tr>';}).join('');"
+  "var el2=document.getElementById('mrAsOf');if(el2&&asof)el2.textContent='Updated '+asof+' \u00b7 refreshed weekly';"
+  "}).catch(function(){});})();")
+
+_mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20%,rgba(8,131,247,.35),transparent 60%),radial-gradient(700px 320px at 95% 120%,rgba(252,83,5,.22),transparent 55%),linear-gradient(120deg,#0b1830,#10223B 60%,#132c4e);color:#fff;padding:64px 0 46px}.mrx-hero h1{color:#fff;font-size:clamp(1.9rem,4.2vw,3rem);margin:0 0 10px}.mrx-hero p{color:rgba(255,255,255,.82);max-width:780px;font-size:1.02rem;line-height:1.7}.mrx-badge{display:inline-flex;gap:7px;align-items:center;background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(74,222,128,.35);border-radius:999px;padding:6px 15px;font-weight:800;font-size:.74rem;letter-spacing:.06em;margin-bottom:16px}.mrx-badge i{width:8px;height:8px;border-radius:99px;background:#22c55e;display:inline-block;animation:mrb 1.5s infinite}@keyframes mrb{50%{opacity:.25}}.mrx-stats{display:flex;gap:30px;flex-wrap:wrap;margin-top:22px}.mrx-stats b{display:block;font-size:1.5rem;color:#7cc0ff}.mrx-stats span{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;opacity:.65;font-weight:700}.mr-t{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 18px 44px -26px rgba(2,12,30,.4)}.mr-t th{background:#10223B;color:#fff;text-align:left;padding:13px 16px;font-size:.7rem;letter-spacing:.09em;text-transform:uppercase}.mr-t td{padding:13px 16px;border-bottom:1px solid #eef2f7;font-size:.95rem}.mr-sub{font-size:.72rem;color:#64748b}.mr-c{color:#0967d2;font-weight:800}.mr-b{color:#7c3aed;font-weight:800}.mr-s{color:#15803d;font-weight:800}.mrx-aud{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin:26px 0}.mrx-card{background:#fff;border:1px solid #e6ebf3;border-radius:20px;padding:26px;box-shadow:0 14px 36px -26px rgba(2,12,30,.35);position:relative;overflow:hidden}.mrx-card:before{content:"";position:absolute;top:0;left:0;right:0;height:5px}.mrx-card.c:before{background:linear-gradient(90deg,#0883F7,#60a5fa)}.mrx-card.b:before{background:linear-gradient(90deg,#7c3aed,#a78bfa)}.mrx-card.s:before{background:linear-gradient(90deg,#16a34a,#4ade80)}.mrx-card svg{margin-bottom:12px}.mrx-card h3{margin:0 0 8px;font-size:1.12rem}.mrx-card p,.mrx-card li{font-size:.9rem;color:#475569;line-height:1.7}.mrx-card ul{padding-left:18px;margin:10px 0}.mrx-card .cta{display:inline-block;margin-top:12px;font-weight:800;color:#0883F7;text-decoration:none}.mrx-sec h2{font-size:1.5rem;margin:38px 0 10px}.mrx-sec p{max-width:840px;color:#475569;line-height:1.75}.mrx-fac{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}.mrx-f{background:#f7fafd;border:1px solid #e6ebf3;border-radius:14px;padding:16px}.mrx-f b{display:block;margin-bottom:5px}.mrx-f span{font-size:.84rem;color:#64748b;line-height:1.6}.mrx-faq{background:#fff;border:1px solid #e6ebf3;border-radius:16px;margin:10px 0;padding:16px 20px}.mrx-faq h3{margin:0 0 6px;font-size:.98rem}.mrx-faq p{margin:0;font-size:.88rem;color:#475569;line-height:1.7}.mrx-cta{background:linear-gradient(120deg,#0b1830,#14335c);border-radius:22px;color:#fff;padding:36px;text-align:center;margin:40px 0}.mrx-cta h2{color:#fff;margin:0 0 8px}.mrx-cta p{color:rgba(255,255,255,.8);max-width:640px;margin:0 auto 18px}</style>'
+'<section class="mrx-hero"><div class="wrap">'
+'<span class="mrx-badge"><i></i>LIVE \u00b7 UPDATED WEEKLY</span>'
+'<h1>Truckload Freight Rates Per Mile \u2014 Live Spot Rates for Carriers, Brokers &amp; Shippers</h1>'
+'<p>Current trucking rates per mile across dry van, reefer, flatbed, power only and hotshot \u2014 blended from <b style="color:#fff">real LoadBoot marketplace bookings</b> and published national benchmarks. See what the truck gets paid, what freight brokers buy and sell at, and what shippers pay \u2014 every side of the spot market on one page. <span id="mrAsOf">Refreshed weekly.</span></p>'
+'<div class="mrx-stats"><div><b>8</b><span>Equipment types</span></div><div><b>3</b><span>Market sides</span></div><div><b>Weekly</b><span>Benchmark refresh</span></div><div><b>Live</b><span>From real bookings</span></div></div>'
+'</div></section>'
+
+'<section class="wrap" style="padding:34px 0 10px">'
+'<table class="mr-t"><thead><tr><th>Equipment</th><th>Carriers get paid</th><th>Brokers buy / sell</th><th>Shippers pay</th></tr></thead>'
+'<tbody id="mrRows"><tr><td colspan="4" style="text-align:center;color:#64748b">Loading live market rates\u2026</td></tr></tbody></table>'
+'<div class="mr-sub" style="margin-top:8px">National spot-rate averages, all-in linehaul per mile. Lane-level rates (state \u2192 state, low/average/high, 12-week trends) are free inside a LoadBoot account.</div>'
+'</section>'
+
+'<section class="wrap mrx-sec"><h2>One market. Three prices. Know yours.</h2>'
+'<p>Every truckload move has three numbers: the rate the <b>carrier</b> hauls for, the spread the <b>broker</b> works within, and the price the <b>shipper</b> ultimately pays. Free rate charts usually show only one side \u2014 LoadBoot shows you yours, so everyone negotiates from real data and keeps their margin.</p>'
+'<div class="mrx-aud">'
+
+'<div class="mrx-card c"><svg width="54" height="40" viewBox="0 0 54 40"><rect x="2" y="10" width="30" height="18" rx="3" fill="#0883F7"/><path d="M32 15h10l8 8v5H32z" fill="#10223B"/><circle cx="12" cy="32" r="5" fill="#10223B"/><circle cx="42" cy="32" r="5" fill="#10223B"/><circle cx="12" cy="32" r="2" fill="#fff"/><circle cx="42" cy="32" r="2" fill="#fff"/></svg>'
+'<h3>For Carriers &amp; Owner-Operators</h3>'
+'<p>Know what a lane <b>pays the truck</b> before you call anyone \u2014 and never haul below your cost per mile.</p>'
+'<ul><li>Spot rates per mile for your exact equipment</li><li>Low / average / high spread \u2014 spot a cheap load instantly</li><li>Industry minimums: $2.00+ dry van, $2.50+ reefer &amp; flatbed</li><li>Every LoadBoot load shows the full rate card: detention, layover, TONU, lumper \u2014 in writing</li></ul>'
+'<a class="cta" href="/app/carrier/">See what YOUR lanes pay \u2192</a></div>'
+
+'<div class="mrx-card b"><svg width="54" height="40" viewBox="0 0 54 40"><path d="M6 34 L18 20 L28 26 L48 6" stroke="#7c3aed" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="48" cy="6" r="4" fill="#7c3aed"/><rect x="4" y="34" width="46" height="3" rx="1.5" fill="#10223B"/></svg>'
+'<h3>For Freight Brokers</h3>'
+'<p>Buy-side and sell-side on one screen \u2014 benchmark spot rates, protect your margin, quote shippers with confidence.</p>'
+'<ul><li>BUY: what carriers accept on the lane (real bookings)</li><li>SELL: shipper-side guidance with a typical 12\u201318% brokerage margin</li><li>Rate suggestions inside load posting \u2014 under-market posts get flagged before they sit unbooked</li><li>Auto-generated, e-signed rate confirmations on every load</li></ul>'
+'<a class="cta" href="/app/partner/">Unlock lane-level buy/sell rates \u2192</a></div>'
+
+'<div class="mrx-card s"><svg width="54" height="40" viewBox="0 0 54 40"><rect x="6" y="14" width="16" height="20" rx="2" fill="#16a34a"/><rect x="24" y="6" width="16" height="28" rx="2" fill="#10223B"/><rect x="42" y="20" width="8" height="14" rx="2" fill="#4ade80"/></svg>'
+'<h3>For Shippers</h3>'
+'<p>Budget freight with real numbers \u2014 see what moving your load should cost before you tender it.</p>'
+'<ul><li>Shipper-side rates per mile by equipment</li><li>Benchmark broker quotes against the live market</li><li>Plan seasonal budgets with 12-week trendlines</li><li>GPS-tracked delivery and documented settlement on every LoadBoot move</li></ul>'
+'<a class="cta" href="/app/partner/">Check your shipping cost \u2192</a></div>'
+'</div></section>'
+
+'<section class="wrap mrx-sec"><h2>What moves trucking rates per mile</h2>'
+'<div class="mrx-fac">'
+'<div class="mrx-f"><b>\u26fd Diesel prices</b><span>Fuel is ~25\u201330% of a truck\u2019s cost per mile. Rate benchmarks move within weeks of sustained diesel swings.</span></div>'
+'<div class="mrx-f"><b>📦 Load-to-truck ratio</b><span>More loads than trucks on a lane pushes spot rates up fast \u2014 the classic hot-market signal.</span></div>'
+'<div class="mrx-f"><b>🍅 Seasonality</b><span>Produce season lifts reefer rates to $3.50\u2013$4.50/mi in Southeast corridors; construction season lifts flatbed.</span></div>'
+'<div class="mrx-f"><b>📍 Lane density</b><span>Headhaul lanes into dense freight markets pay less than backhaul-starved rural destinations.</span></div>'
+'<div class="mrx-f"><b>🚛 Equipment &amp; service</b><span>Reefer and flatbed carry premiums over dry van; team drivers add 20\u201330%; hazmat ~15%.</span></div>'
+'<div class="mrx-f"><b>📄 Spot vs contract</b><span>Spot rates (this page) price single loads today; contract rates lock a lane for months and lag the spot market.</span></div>'
+'</div></section>'
+
+'<section class="wrap mrx-sec"><h2>Current rates by equipment type</h2>'
+'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above updates weekly; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
+
+'<section class="wrap mrx-sec"><h2>How we calculate these freight rates</h2>'
+'<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed weekly; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
+
+'<section class="wrap mrx-sec"><h2>Freight rate FAQs</h2>'
+'<div class="mrx-faq"><h3>What is the average trucking rate per mile right now?</h3><p>National spot averages currently run roughly $2.00\u2013$2.70/mi for dry van, $2.15\u2013$3.40 for reefer and $2.20\u2013$3.70 for flatbed \u2014 the live table above shows this week\u2019s numbers by equipment and market side.</p></div>'
+'<div class="mrx-faq"><h3>What is a good rate per mile for trucking in 2026?</h3><p>A good rate beats your all-in operating cost (~$1.80\u2013$2.00/mi for most owner-operators) by at least 20%. Practical minimums: $2.00\u2013$2.50/mi dry van, $2.50+ reefer and flatbed, $2.00+ hotshot.</p></div>'
+'<div class="mrx-faq"><h3>How much do freight brokers charge shippers?</h3><p>Brokers typically add a 12\u201318% margin on top of the carrier rate. That is why the shipper column above runs higher than the carrier column on the same lane \u2014 both sides are shown so everyone negotiates informed.</p></div>'
+'<div class="mrx-faq"><h3>What is the difference between spot rates and contract rates?</h3><p>Spot rates price one load, today, on the open market \u2014 they move daily with supply and demand. Contract rates lock a lane for 3\u201312 months and typically sit below spot in hot markets and above it in soft markets.</p></div>'
+'<div class="mrx-faq"><h3>Is there a free freight rate calculator?</h3><p>Yes \u2014 inside every free LoadBoot account: pick origin state, destination state, equipment and miles, and get low/average/high per-mile and flat rates for your side of the market, with a 12-week trend.</p></div>'
+'</section>'
+
+'<section class="wrap"><div class="mrx-cta">'
+'<h2>Stop guessing. Price every load with live market data.</h2>'
+'<p>Free LoadBoot account \u2014 lane-level rates, GPS-tracked loads, signed rate confirmations, documented settlement. Carriers haul at fair rates; brokers protect margin; shippers budget with confidence.</p>'
+'<a class="btn btn-primary" href="/app/carrier/" style="margin-right:10px">I\u2019m a carrier \u2192</a>'
+'<a class="btn btn-primary" style="background:#fff;color:#10223B" href="/app/partner/">I\u2019m a broker or shipper \u2192</a>'
+'</div></section>')
+
+
+_mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":['
+  '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":"National spot averages currently run roughly $2.00-$2.70 per mile for dry van, $2.15-$3.40 for reefer and $2.20-$3.70 for flatbed, depending on lane and season. The live table on this page is refreshed weekly."}},'
+  '{"@type":"Question","name":"What is the difference between shipper, broker and carrier rates?","acceptedAnswer":{"@type":"Answer","text":"The carrier rate is what the truck is paid. Brokers buy capacity at the carrier rate and sell the shipment to shippers with a typical 12-18% margin, so shipper rates run higher than carrier rates on the same lane."}},'
+  '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
+  '<script>' + _MR_JS + '</script>')
+
+page('market-rates.html', 'Truckload Market Rates Per Mile — Live Carrier, Broker & Shipper Rates',
+     'Live national truckload rates per mile, updated weekly: what carriers get paid, what brokers buy/sell at, and what shippers pay. Dry van, reefer, flatbed, power only, hotshot.',
+     'market-rates.html', _mr_body + _mr_faq)
+
+
 # ---- Cookie Policy ----
 ck = svc_hero('Cookie Policy', 'How Loadboot uses cookies and similar technologies, and the choices you have.')
 ck += '<section><div class="wrap prose reveal"><h2>What cookies we use</h2><p>We use a small number of cookies and local-storage items to keep the site working and to understand, in aggregate, how it is used. These fall into two groups: <b>essential</b> items that make the site and your account function, and <b>analytics</b> items that help us improve pages and measure conversions.</p><h2>Analytics</h2><p>We use first-party analytics and Google Analytics to understand traffic and page performance. You can flag your browser as internal/excluded, and you can block analytics cookies in your browser settings without breaking the site.</p><h2>Your choices</h2><p>You can clear or block cookies in your browser at any time. Essential items are required for signed-in features (like your carrier account) to work. For questions, email <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a>.</p><p style="color:var(--muted);font-size:.9rem">See also our <a href="privacy.html">Privacy Policy</a>.</p></div></section>'
@@ -3230,6 +3352,74 @@ _ACC_PAGES.append(dict(slug='emergency-rescheduling-policy', name='Emergency Res
     ('What about loads LoadBoot sourced from external boards?','LoadBoot Dispatch calls and emails the source contact directly, logs the outcome, and the same clock applies to our follow-up.'),
     ('How is fraud caught?','GPS trail continuity, photo EXIF time/location, call-back, claim frequency, and repair-time cross-checks. Any failed sensor freezes auto-reschedule for human review.')]))
 
+# ---- SEO layer for the money pages: search-intent titles, evidence checklists,
+# ---- "broker refuses" escalation, FAQ schema, conversion CTA. (2026 keyword research)
+_ACC_SEO = {
+ 'detention-pay-policy': dict(
+   title='Detention Pay for Truckers 2026: Rates, How to Claim &amp; Get Paid | LoadBoot',
+   desc='Detention pay explained for carriers: $50\u2013$100/hr 2026 rates, the 2-hour free time rule, exactly how to claim detention, what evidence to collect, and what to do when a broker refuses \u2014 plus how LoadBoot pays it automatically.',
+   ev=['Timestamped photo of your truck AT the gate on arrival (phone camera puts time + GPS in the file)',
+       'The appointment time straight off the rate confirmation \u2014 on-time arrival is the foundation of every claim',
+       'GPS arrive/depart stamps (ELD or the LoadBoot app records them for you)',
+       'In/out times WRITTEN and SIGNED on the BOL by the facility \u2014 their own paper is the strongest proof',
+       'Gate ticket or lumper receipt showing times',
+       'The notification you sent the broker BEFORE free time expired (screenshot the send time)'],
+   deny=[('\u201cYou never notified us in time\u201d','Notify before free time ends \u2014 in writing. LoadBoot drafts and stamps this message automatically 30 minutes before your free time expires.'),
+        ('\u201cNo proof of arrival time\u201d','ATRI research: under 50% of detention invoices get paid, and weak documentation is the #1 reason. GPS-stamped arrive/depart ends the argument before it starts.'),
+        ('\u201cDetention wasn\u2019t on the rate con\u201d','If you signed a rate con without a detention clause, that load is lost \u2014 negotiate BEFORE accepting. On LoadBoot every posting carries a written detention rate; a load cannot post without one.'),
+        ('\u201cSubmit within 24 hours or forget it\u201d','Late paperwork dies in an inbox. LoadBoot builds the claim from trip data and files it the moment you tap submit.')]),
+ 'tonu-policy': dict(
+   title='TONU in Trucking 2026: Truck Ordered Not Used Fee \u2014 How to Get Paid | LoadBoot',
+   desc='TONU (Truck Ordered Not Used) explained: typical $150\u2013$300+ fees, who pays, how to invoice a TONU, the evidence you need, and what to do when a broker refuses \u2014 on LoadBoot the TONU is pre-agreed in writing and auto-paid on late cancels.',
+   ev=['The signed rate confirmation with the TONU clause \u2014 without it in WRITING, a TONU is nearly unenforceable',
+       'Proof of dispatch: when the truck was assigned and rolling (LoadBoot trip record)',
+       'GPS trail showing deadhead miles already driven toward the pickup',
+       'The cancellation itself \u2014 who cancelled, when, in writing (LoadBoot snapshots the cancellation trail)',
+       'Timestamped photo at the facility if the load \u201cdied\u201d after arrival'],
+   deny=[('\u201cIt was only a verbal booking\u201d','Verbal promises are almost impossible to enforce. A signed rate con is a binding contract \u2014 LoadBoot executes one on every booking, automatically.'),
+        ('\u201cThe shipper cancelled, not us\u201d','Per contract the broker pays you and recovers from the shipper \u2014 that is their problem, not yours. LoadBoot\u2019s broker-cancel flow generates the TONU accessorial instantly with the evidence snapshot attached.'),
+        ('\u201cYou hadn\u2019t left yet\u201d','TONU eligibility timing must be in the clause. LoadBoot\u2019s standard: a committed, dispatched load that dies late owes the posted TONU \u2014 measured from the trip record, not memory.'),
+        ('Broker simply ghosts the invoice','Escalation path: written demand \u2192 BMC-84 bond claim \u2192 small claims. On LoadBoot you skip all three: settlement runs through the platform.')]),
+ 'layover-policy': dict(
+   title='Layover Pay in Trucking 2026: Rates, Rules &amp; How to Claim | LoadBoot',
+   desc='Layover pay for truck drivers: typical $150\u2013$350/day 2026 rates, when a delay becomes a layover vs detention, the documentation that gets it paid, and how LoadBoot pre-agrees layover on every load.',
+   ev=['Detention record for the same stop \u2014 layover usually begins where detention maxes out',
+       'GPS trail proving the truck stayed at/near the facility overnight',
+       'Written instruction (or refusal to release) from the facility or broker \u2014 screenshot everything',
+       'Hotel/parking receipts if you incurred them',
+       'The rate confirmation layover clause'],
+   deny=[('\u201cYou chose to stay\u201d','A layover is the FACILITY\u2019s hold, not your choice \u2014 the written release-refusal or next-day appointment is your proof. LoadBoot logs it on the trip.'),
+        ('\u201cDetention already covers it\u201d','Industry standard: layover applies ON TOP of earned detention once the hold crosses overnight. LoadBoot\u2019s standard says exactly that, in writing, on every load.'),
+        ('\u201cNo layover in the agreement\u201d','Then it does not exist for that load. On LoadBoot a load cannot post without a layover rate.')]),
+ 'lumper-policy': dict(
+   title='Lumper Fees 2026: Reimbursement Rules \u2014 Never Pay Out of Pocket | LoadBoot',
+   desc='Lumper fees explained: $75\u2013$600 typical (avg ~$300), why it is a PASS-THROUGH cost you must get back, the receipt rules that guarantee reimbursement, and how LoadBoot makes lumper repayment automatic.',
+   ev=['The lumper RECEIPT \u2014 non-negotiable: name of service, amount, date, load/PO reference',
+       'Photo of the receipt uploaded from the dock BEFORE you leave (LoadBoot stop-proof upload)',
+       'Payment proof if you paid card/EFS (statement line)',
+       'The rate con lumper clause (broker pays direct vs reimbursed with receipt)'],
+   deny=[('\u201cNo receipt, no reimbursement\u201d','They are right \u2014 the receipt IS the claim. Photograph it at the dock; LoadBoot attaches it to the trip and the invoice in one tap.'),
+        ('\u201cWe never approved the lumper\u201d','Get approval in writing before paying \u2014 LoadBoot\u2019s standard requires the policy (broker pays direct / reimbursed with receipt) to be declared at posting, so approval already exists.'),
+        ('Reimbursement takes 60+ days','A pass-through cost should never finance the broker. LoadBoot settles lumper with the linehaul \u2014 one settlement, documented.')]),
+ 'driver-assist-policy': dict(
+   title='Driver Assist &amp; Unloading Pay 2026: When the Driver Works the Dock | LoadBoot',
+   desc='Driver assist (driver load/unload) pay: typical $75\u2013$150 per stop in 2026, why it must be agreed in writing BEFORE the dock, the evidence to collect, and how LoadBoot bakes it into every posting.',
+   ev=['The rate con driver-assist clause \u2014 agreed BEFORE the truck rolls',
+       'Photo/video at the dock showing the driver working (timestamped)',
+       'BOL notation \u201cdriver assist / driver unload\u201d signed by the facility',
+       'In/out times \u2014 assists often create detention too; claim both'],
+   deny=[('\u201cThe driver volunteered\u201d','Never touch freight without the fee in writing. On LoadBoot, if a posting requires driver assist it carries the fee \u2014 the broker agreed to industry-standard rates at posting.'),
+        ('\u201cThat\u2019s included in the linehaul\u201d','Loading is the shipper\u2019s job. Industry standard is $75\u2013$150/stop on top \u2014 LoadBoot prints it on the rate confirmation.'),
+        ('Facility denies the driver worked','The signed BOL notation + a 10-second dock photo ends that conversation.')]),
+}
+def _acc_faq_schema(faq):
+    import json as _json, re as _re
+    ents = []
+    for q, a in faq:
+        qq = _re.sub(r'<[^>]+>', '', q); aa = _re.sub(r'<[^>]+>', '', a)
+        ents.append({"@type": "Question", "name": qq, "acceptedAnswer": {"@type": "Answer", "text": aa}})
+    return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": ents}) + '</script>'
+
 for _p in _ACC_PAGES:
     _slug, _name = _p['slug'], _p['name']
     _pg = svc_hero(_name + ' — LoadBoot Policy', _p['defn'])
@@ -3258,16 +3448,31 @@ for _p in _ACC_PAGES:
     _pg += _sec('Related policies', 'The full accessorial standard', (
         '<p class="src-disc">' + ' &middot; '.join('<a href="/' + q2['slug'] + '.html">' + q2['name'] + '</a>' for q2 in _ACC_PAGES if q2['slug'] != _slug) + '</p>'
         '<p class="src-disc" style="margin-top:10px">These policies are LoadBoot marketplace standards agreed between posting parties and carriers. They are operational terms, not legal advice; the rate confirmation for each load is the controlling document.</p>'))
-    page(_slug + '.html', _name + ' Policy | LoadBoot',
-         (_p['defn'][:150])[:168],
-         _slug + '.html', _pg)
+    _seo = _ACC_SEO.get(_slug)
+    if _seo:
+        _pg += _sec('What evidence to collect', 'The checklist that gets claims PAID \u2014 save it, use it on every load', (
+            '<div class="cards g1"><article class="card"><ul style="margin:0;padding-left:22px;line-height:2">'
+            + ''.join('<li>' + x + '</li>' for x in _seo['ev']) + '</ul>'
+            '<p class="src-disc" style="margin-top:10px">On LoadBoot most of this collects itself: GPS arrive/depart stamps, stop-proof photo uploads, the pre-agreed rate card on every posting, and a one-tap claim built from the trip record.</p></article></div>'))
+        _pg += _sec('Broker refusing to pay? Read this first', 'The four denials you will hear \u2014 and the counter for each', (
+            '<div class="cards g2">' + ''.join('<article class="card"><div class="card-ic">&#128683;</div><h3>' + k + '</h3><p>' + v + '</p></article>' for k, v in _seo['deny']) + '</div>'))
+        _pg += _sec('Tired of fighting for money you already earned?', 'This is the exact problem LoadBoot was built to end', (
+            '<div class="cards g1"><article class="card" style="text-align:center">'
+            '<p style="font-size:1.05rem;line-height:1.75;max-width:760px;margin:0 auto 14px">Every LoadBoot load posts with this fee <b>already agreed in writing</b>. Your GPS timestamps are the evidence. The claim builds itself from the trip. And settlement runs through the platform &mdash; no chasing, no ghosting, no bond claims.</p>'
+            '<p><a class="btn btn-primary" href="/get-started.html">Join LoadBoot free &mdash; get paid what you\u2019re owed &rarr;</a></p>'
+            '<p class="src-disc" style="margin-top:8px">Free verified carrier account &middot; live loads with the full rate card in writing &middot; GPS-proof claims</p></article></div>'))
+    page(_slug + '.html',
+         (_seo['title'] if _seo else _name + ' Policy | LoadBoot'),
+         (_seo['desc'] if _seo else (_p['defn'][:150])[:168]),
+         _slug + '.html', _pg,
+         schema=_acc_faq_schema(_p.get('faq') or []) if _seo else '')
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('faq.html', 'FAQ')]),
-  ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status')]),
+  ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
 _sm_body = svc_hero('Sitemap', 'Every page on Loadboot, in one place.')
@@ -3315,14 +3520,14 @@ _APP_CSP = (
   "base-uri 'self'; "
   "object-src 'none'; "
   "frame-ancestors 'none'; "
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://%s.supabase.co; "
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://%s.supabase.co; "
   "frame-src 'self' https://%s.supabase.co; "
   "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
   "font-src 'self' data:; "
-  "script-src 'self' https://esm.sh https://cdnjs.cloudflare.com; "
+  "script-src 'self' https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
   "worker-src 'self'; "
   "manifest-src 'self'; "
-  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdnjs.cloudflare.com"
+  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://photon.komoot.io https://data.transportation.gov https://router.project-osrm.org"
 ) % (_CSP_REF, _CSP_REF, _CSP_REF, _CSP_REF)
 APP_HEADERS = (
   "\n/app/*\n"

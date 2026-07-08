@@ -1,0 +1,8 @@
+-- bl_health_0036 (applied staging + prod 2026-07-07 via Supabase apply_migration):
+-- app_private.health_adjustments (+/- points per factor, reason, fix_hint, expiry, revocable).
+-- cc_account_health patched IN PLACE (server-side replace): adjustments applied to score,
+--   negative ones itemized in deductions, 'adjustments' array in payload; score clamped 0..100.
+-- cc_health_adjust(org,factor,points,reason,fix,expires_days) -> notify+email carrier (why/how-to-fix), audit, returns new score.
+-- cc_health_reset_factor(org,factor_key,reason) -> conduct: resolves open strikes; any factor: compensating credit = current deduction.
+-- cc_pocket_my_strikes() -> carrier-visible itemized strikes (severity, points, expiry, resolved) + active adjustments.
+-- Live-tested on staging: 79 -> +2 -> 81 -> revoked -> 79. anon SECURITY DEFINER surface = 5.

@@ -172,7 +172,6 @@ export function brandLogo(opts = {}) {
     + '<path d="M16 14 H34 V68 H84 V86 H16 Z" fill="' + ink + '"></path>'
     + '<path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"></path>'
     + '<path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="' + ink + '"></path></svg>';
-  // Kit wordmark is ALWAYS two-tone: "Load" in ink + "Boot" in brand orange.
   const wordHtml = 'Load<span style="color:#F97316">Boot</span>';
   const textKids = [
     el('span', { html: wordHtml, style: "font-family:'Manrope',Inter,sans-serif;font-size:14px;font-weight:800;color:" + ink + ';letter-spacing:-.02em;white-space:nowrap;line-height:1' }),

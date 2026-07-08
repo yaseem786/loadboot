@@ -1,0 +1,98 @@
+-- bl_load_0059..0063 — Full-address pipeline (applied to STAGING + PROD via Supabase MCP, July 8 2026)
+-- Goal: broker gives the FULL facility address; system stores it privately + exact coords for
+-- real driving miles and GPS geofences; carriers on the public board see only "City, ST".
+--
+-- 0059 bl_load_0059_full_address_private
+--   * app_private.partner_loads += origin_full, destination_full, pickup_lat/lng, delivery_lat/lng
+--   * public.loads += origin_full, destination_full, delivery_lat/lng (pickup_lat/lng already existed)
+--   * cc_partner_post_load: 6 new optional params, inserted into partner_loads
+--   * cc_decide_partner_load('post'): copies all 6 fields into public.loads
+-- 0060 bl_load_0060_submit_load_full_address
+--   * cc_partner_submit_load(p jsonb) — the wizard's real submit path — persists
+--     p->>'origin_full' / 'destination_full' / 'pickup_lat' / 'pickup_lng' / 'delivery_lat' / 'delivery_lng'
+-- 0061 bl_load_0061_post_load_overload_cleanup
+--   * dropped stale 9-param and 10-param cc_partner_post_load overloads (PostgREST ambiguity)
+--   * revoked default PUBLIC/anon execute on the new 16-param fn; granted authenticated + service_role
+--   * anon SECURITY DEFINER surface verified = 5 on both DBs after this
+-- 0062 bl_load_0062_loads_column_privacy
+--   * public.loads: table-level SELECT for anon/authenticated replaced with a COLUMN LIST that
+--     excludes origin_full, destination_full, pickup_lat/lng, delivery_lat/lng.
+--     RLS policy loads_visible exposes full available rows, so without this a carrier could read
+--     the exact facility address via PostgREST. All app reads use SECURITY DEFINER RPCs (unaffected);
+--     verified no client does .from('loads').
+-- 0063 bl_load_0063_booking_delivery_pin
+--   * app_private.book_accepted_offer now also copies l.delivery_lat/lng into trips
+--     (pickup pin was already copied) — delivery geofence pre-set at booking.
+--
+-- All function changes done by in-place pg_get_functiondef + count-asserted replace + execute
+-- (see the Supabase migration history for exact SQL). Verified end-to-end on staging:
+-- broker submit (rate-card guard intact) -> partner_loads row with full+coords ->
+-- cc_decide_partner_load('post') -> loads row: origin='Dallas, TX', origin_full='2500 Cedar Springs Rd...'
+-- -> authenticated select of origin_full = permission denied.
+
+-- ADDENDUM (same session):
+-- 0064 bl_load_0064_carrier_decision_pack
+--   * partner_loads.details jsonb + loads.details/accessorials jsonb (column-privacy kept: carriers
+--     read them ONLY via curated RPCs); submit/decide copy them through.
+--   * cc_pocket_available_loads v2: + details + accessorials columns; pickup pin rounded to 0.1deg
+--     (city-level ~11km) so the exact facility is never exposed pre-booking.
+-- 0065 bl_dir_0065_partner_carrier_directory
+--   * cc_partner_carrier_directory(): broker-callable list of PUBLISHED carriers
+--     (organizations.broker_visible=true & active) with DOT/MC/authority/safety/power units/health.
+--     This is where "Publish to brokers" (Carrier 360) surfaces: Broker portal -> Network tab.
+-- 0066 bl_load_0066_load_detail_details
+--   * cc_load_detail: terms now include 'details' (load size, reefer temp, tarps, load methods,
+--     dock hours, driver assist/team flags, cargo value) — carrier can decide without a call.
+-- Verified on staging: broker submit w/ details+accessorials -> CC post -> board row shows
+-- details/accessorials with pin 32.8,-96.8 (rounded) and cc_load_detail.terms.details populated.
+-- 0067 bl_dir_0067_carrier_directory_v2 + 0069 bl_dir_0069_fix_partner_org_calls
+--   * cc_partner_carrier_directory v2: full broker decision pack per published carrier —
+--     DOT/MC/authority/safety/OOS/power units (carrier_safety), health score, trip stars +
+--     count (party_ratings), delivered / on-time% / carrier-cancel count (trips),
+--     fleet trucks+trailers+equipment (fleet_trucks/trailers), prefs (home base, lanes,
+--     equipment, hazmat/team/weekend/available/max weight from carrier_dispatch_prefs).
+--     Guard sits OUTSIDE the fallback: only partner accounts can call it at all.
+-- 0068 bl_dir_0068_health_visible_to_brokers (+0069 fix)
+--   * cc_account_health guard: partners may read health of broker_visible carriers ONLY.
+-- 0070 bl_dir_0070_logo_reviews_fleet_mix
+--   * organizations.logo_path + PUBLIC 'org-logos' bucket (own-folder upload policy, public read);
+--     cc_set_org_logo(path) — org sets its own logo; carrier My Profile avatar upload now mirrors
+--     the image into org-logos so brokers see it on the Carriers page.
+--   * cc_partner_carrier_reviews(org): trip-verified broker->carrier reviews (stars, comment, lane,
+--     date, 'Verified broker'), partner-only, published carriers only.
+--   * directory v3: + logo_path, fleet_mix/trailer_mix (equipment NAMES + counts), compliance chips.
+-- 0071 bl_dir_0071_compliance_source_fix
+--   * directory compliance chips now read compliance_requirements+carrier_compliance (the real
+--     engine, same as the carrier profile page) instead of org_onboarding_items.
+-- Frontend: broker Carriers tab v2 (enterprise design: hero + live network stats + search,
+-- equipment/HAZMAT/Team filter chips + sort, skeleton loaders, premium posts with logo avatar,
+-- clickable trip-verified rating -> reviews modal with distribution bars, FMCSA/fleet-by-name/
+-- coverage/compliance/capability sections, '✨ New on LoadBoot' badge for unrated carriers);
+-- broker star-rating now asks for an optional written review (rate only after delivered trip).
+-- 0072 bl_doc_0072_partner_load_full — broker reads own load in full (rate-con generator source).
+-- 0073 bl_track_0073_partner_track_load — Uber/Amazon-style tracker feed for the broker's load:
+--   lifecycle (submitted_at/posted_at/board state), offers race (sent/pending/accepted/declined),
+--   trip (status, carrier/driver/truck, booked/dispatched/started/delivered timestamps, live
+--   last_lat/lng/at, pickup+delivery pins), last 15 trip_events. Broker-owned loads only.
+--   Verified live on staging (submitted-stage load returns full payload).
+-- Frontend: My loads rows -> "🛰 Track live" opens the tracker (dark hero + LIVE badge, 6-step
+-- animated milestone stepper, dark Leaflet map w/ pickup/delivery pins + pulsing truck + OSRM
+-- route, remaining-miles + live ETA + distance-based progress bar, offers-race tiles pre-book,
+-- carrier/driver tiles post-book, server-verified trip-events timeline, 30s auto-refresh);
+-- Documents modal: auto-generated signed rate confirmation (LB-RC-) + structured checklist fields.
+-- 0082 bl_mkt_0082_market_rates_engine (DAT-style Market Rates)
+--   * app_private.rate_benchmarks (national 3-point per equipment, weekly) + rate_history (trends)
+--   * cc_lane_rate(o_state,d_state,equipment,miles): AUDIENCE-AWARE — carrier sees buy side,
+--     shipper sees sell side (+broker_margin, default 15%, tunable via rate_standards key
+--     'broker_margin'), broker sees BOTH, staff sees all three. Blend: own lane bookings (90d,
+--     n>=5, HIGH) > own equipment-wide (30d, n>=3, MEDIUM) > national benchmark (LOW).
+--     Includes 12-week history + 4-week trend + flat rates for given miles.
+--   * get_public_market_rates(): anon teaser for the marketing page.
+--     !! SANCTIONED anon SECURITY DEFINER surface is now SIX (was five).
+-- Frontend: shared app/shared/market-widget.js (DAT-style: tri-point LOW/AVG/HIGH bar, buy/sell
+-- duo cards for brokers, confidence chip, 12wk sparkline, national snapshot tiles, lane search);
+-- mounted as broker tab 'Market Rates', carrier tab 'Market Rates', shipper dashboard card,
+-- CC '/market-rates' view (all three sides); post-load estimator now shows live lane rate with
+-- USE LOW/AVG/HIGH buttons; public SEO page /market-rates.html (3-audience table, live fetch,
+-- FAQ JSON-LD, footer link). Weekly scheduled task 'weekly-market-rates-update' (Mon 08:00)
+-- deep-researches published averages and refreshes benchmarks+history+rate_standards, staging->prod.
