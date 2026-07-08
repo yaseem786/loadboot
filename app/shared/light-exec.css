@@ -1,0 +1,24 @@
+/* light-exec.css — LIGHT EXECUTIVE polish for office portals (partner, command-center,
+   developer). Colors/shadows only, additive. Carrier app stays Midnight dark.
+   Calm, Stripe/Amazon-business feel: soft cool page bg, crisp white cards, one blue accent. */
+
+body { background: #f5f7fb; }
+
+/* cards: crisp white, softer editorial shadow */
+.cp-card, .cc-kpi, .cc-panel, .cc-card, .cc-dcard { box-shadow: 0 10px 28px -22px rgba(16,34,59,.28); border-color: #e6ebf3; }
+.cp-card:hover, .cc-panel:hover { box-shadow: 0 14px 34px -22px rgba(16,34,59,.34); }
+
+/* headings ink, muted softened */
+.cp-cardhead h3, .cc-panel-head h3, .cc-section-head h2, .cp-kpi-v, .cc-kpi-val { color: #10223B; }
+.cp-kpi-s, .cp-sub, .cc-kpi-sub { color: #6b7d99; }
+
+/* focus + accents: one blue, used sparingly */
+.cp-in:focus, .cc-search:focus, .cc-input:focus { outline: none; border-color: #0883F7; box-shadow: 0 0 0 3px rgba(8,131,247,.13); }
+::selection { background: rgba(8,131,247,.18); }
+
+/* tables: airy, uppercase micro-headers */
+.cp-table th, .cc-table th { color: #6b7d99; }
+.cp-table td, .cc-table td { color: #1c2f4d; }
+
+/* top bar: airy white glass */
+.cp-top, .cc-top { background: rgba(255,255,255,.9); border-bottom-color: #e6ebf3; }

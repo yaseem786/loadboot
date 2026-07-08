@@ -54,8 +54,10 @@ import { renderAnalyticsWeb } from './views/analyticsWeb.js';
 import { renderForms } from './views/forms.js';
 import { renderSeo } from './views/seo.js';
 import { renderCarrier360 } from './views/carrier360.js';
+import { renderBroker360 } from './views/broker360.js';
 import { renderPartners } from './views/partners.js';
 import { renderPartnerIntake } from './views/partnerIntake.js';
+import { renderMarketRatesCC } from './views/marketRates.js';
 import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
 import { renderExceptions } from './views/exceptions.js';
@@ -248,8 +250,10 @@ async function boot() {
     '/forms': () => { setActive('/forms'); if (formsEnabled && can('forms.view')) renderForms(content); else denied(); },
     '/seo': () => { setActive('/seo'); if (seoEnabled && can('seo.view')) renderSeo(content); else denied(); },
     '/carrier': ({ query }) => { setActive('/carriers'); if (entity360Enabled && can('carriers.view')) renderCarrier360(content, query.get('id')); else denied(); },
+    '/broker': ({ query }) => { setActive('/partners'); if (can('partners.view') || can('dispatch.manage')) renderBroker360(content, query.get('id')); else denied(); },
     '/partners': () => { setActive('/partners'); if (partnersEnabled && can('partners.view')) renderPartners(content); else denied(); },
     '/partner-intake': () => { setActive('/partner-intake'); if (partnersEnabled && can('partners.view')) renderPartnerIntake(content); else denied(); },
+    '/market-rates': () => { setActive('/market-rates'); renderMarketRatesCC(content); },
     '/verification': () => { setActive('/verification'); if (can('compliance.view')) renderVerificationCenter(content); else denied(); },
     '/pod-review': () => { setActive('/pod-review'); if (can('dispatch.manage') || can('finance.manage') || can('compliance.manage')) renderPodReview(content); else denied(); },
     '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.manage')) renderExceptions(content); else denied(); },

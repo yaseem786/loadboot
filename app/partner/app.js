@@ -7,10 +7,15 @@
 import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
+import { printExecutedW9 } from '../carrier/w9-form.js';
+import { attachAddressSuggest } from '../shared/addr-suggest.js';
+import { renderFmcsaOnly } from '../carrier/profile-view.js';
+import { renderMarketWidget } from '../shared/market-widget.js';
 import {
   partnerRegister, partnerOverview,
   partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
-  partnerRequestShipment, partnerMyShipments, shipperPostLoad,
+  partnerRequestShipment, partnerMyShipments, partnerCarrierDirectory, partnerCarrierReviews, setOrgLogo, partnerLoadFull, partnerTrackLoad, marketRpm, laneRate, partnerExtendOffer, partnerCarrierPacket, partnerEligibleDetail, requestPacketCopies, shipperPostLoad,
+  partnerClaims, partnerReviewClaim, claimEscalate, partnerCancelLoad, partnerEligibleCarriers, partnerOfferSend,
   myRating, rateCounterparty, partnerRateableTrips,
   bookRequestCarrierPacket,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
@@ -68,10 +73,10 @@ const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (
 const KIND_LABEL = { broker: 'Broker', shipper: 'Shipper', facility: 'Facility' };
 
 /* ---------- modal (was missing — brokerDocs crashed without it) ---------- */
-function openModal(title, children) {
+function openModal(title, children, opts) {
   const close = () => { ov.remove(); document.removeEventListener('keydown', onEsc); };
   const onEsc = (e) => { if (e.key === 'Escape') close(); };
-  const card = h('div', { class: 'cp-modal-card', onClick: (e) => e.stopPropagation(), style: 'background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto' }, [
+  const card = h('div', { class: 'cp-modal-card', onClick: (e) => e.stopPropagation(), style: 'background:#fff;width:100%;max-width:' + ((opts && opts.wide) ? 'min(940px,94vw)' : '520px') + ';border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto' }, [
     h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;background:#fff' }, [h('h3', { style: 'margin:0;font-size:1.02rem' }, title), h('button', { style: 'background:none;border:none;font-size:24px;color:#64748b;cursor:pointer', onClick: close }, '×')]),
     h('div', { style: 'padding:14px 18px 18px' }, Array.isArray(children) ? children : [children]),
   ]);
@@ -83,13 +88,31 @@ function openModal(title, children) {
 }
 
 /* ---------- smart packet submit (same pattern as the carrier portal) ---------- */
+const PACKET_RULES = {
+  mc_authority: 'Your FMCSA broker authority — the legal licence to broker freight.',
+  bmc84_bond: 'The $75,000 surety bond/trust that protects carriers if a broker fails to pay.',
+  w9: 'IRS taxpayer form — needed before any settlement money moves.',
+  coi: 'Insurance certificate (GL / E&O / contingent cargo).',
+  broker_agreement: 'Your signed master agreement with LoadBoot.',
+  bank_instructions: 'Verified bank details for invoicing and payments.',
+  claims_procedure: 'Who handles cargo claims on your side and how.',
+  references: 'Optional trade references — speeds up carrier trust.',
+};
+const PACKET_CONSEQ = (tag) => tag === 'optional'
+  ? 'Updating sends it back for review. Optional — posting is NOT affected.'
+  : 'Updating or a rejection sends it back to review, your packet turns INCOMPLETE, the account goes PENDING and load posting stops until LoadBoot verifies it again.';
+const PACKET_FMT = {
+  w9: ['pdf'], coi: ['pdf'], bmc84_bond: ['pdf'], broker_agreement: ['pdf'],
+  signed_agreement: ['pdf'], credit_application: ['pdf'],
+};
+const packetExts = (key) => PACKET_FMT[key] || ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
 const PACKET_SPEC = {
   // broker
   mc_authority:     { fields: [['Broker MC number', 'MC-000000']], file: 'required', fileHint: 'Broker authority letter (PDF or photo)' },
   bmc84_bond:       { file: 'required', fileHint: 'BMC-84 bond / BMC-85 trust certificate (PDF or photo)' },
   broker_agreement: { file: 'required', fileHint: 'Signed Broker Agreement (PDF or photo)' },
-  bank_instructions:{ fields: [['Bank name', ''], ['Account holder', '']], file: 'required', fileHint: 'Voided check / bank letter (PDF or photo)' },
-  claims_procedure: { fields: [['Claims contact / summary', 'Name, phone, process']], file: 'optional', fileHint: 'Claims procedure doc (optional)' },
+  bank_instructions:{ fields: [['Bank name', ''], ['Account holder (legal name)', ''], ['Account number', 'digits only'], ['Routing / ABA (9 digits)', ''], ['Account type', 'Checking / Savings'], ['Bank address', 'street, city, state'], ['Bank phone', ''], ['Remittance / billing email', '']], file: 'required', fileHint: 'Voided check / bank letter (PDF or photo)' },
+  claims_procedure: { fields: [['Claims contact name', 'who owns cargo claims on your side'], ['Claims phone', ''], ['Claims email', ''], ['Process — how a claim is handled', 'acknowledge → investigate → settle, with timelines']], file: 'optional', fileHint: 'Claims procedure doc (optional)' },
   references:       { fields: [['Reference 1 (company · contact · phone)', ''], ['Reference 2 (optional)', '']] },
   coi:              { file: 'required', fileHint: 'Certificate of insurance (PDF or photo)' },
   w9:               { file: 'required', fileHint: 'Signed W-9 (PDF or photo)' },
@@ -110,13 +133,24 @@ function openPacketSubmit(it, onDone) {
   const fieldEls = (spec.fields || []).map(([lbl, ph]) => [lbl, h('input', { class: 'cp-in', placeholder: ph || lbl })]);
   let file = null;
   const fMeta = h('div', { class: 'cp-sub' });
-  const fIn = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'display:none' });
-  fIn.onchange = () => { file = fIn.files && fIn.files[0]; fMeta.textContent = file ? ('✓ ' + file.name) : ''; };
-  const pick = h('button', { class: 'cp-btn ghost cp-btn-sm', onClick: () => fIn.click() }, '📎 Choose PDF / photo');
+  const _exts = packetExts(it.key);
+  const fIn = h('input', { type: 'file', accept: _exts.map((e) => '.' + e).join(','), style: 'display:none' });
+  fIn.onchange = () => {
+    file = fIn.files && fIn.files[0];
+    if (file) { const ex = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+      if (_exts.indexOf(ex) < 0) { alert('This document must be ' + (_exts.length === 1 ? _exts[0].toUpperCase() + ' only — the official document, not a screenshot.' : _exts.map((e) => e.toUpperCase()).join('/') + '.')); file = null; fIn.value = ''; fMeta.textContent = ''; return; } }
+    fMeta.textContent = file ? ('✓ ' + file.name) : '';
+  };
+  const pick = h('button', { class: 'cp-btn ghost cp-btn-sm', onClick: () => fIn.click() }, '📎 Choose ' + (_exts.length === 1 ? 'PDF (only)' : 'PDF / photo'));
+  const fmtLine = h('div', { class: 'cp-sub', style: 'font-weight:700;color:#b45309' }, '📌 Required format: ' + (_exts.length === 1 ? 'PDF only — the official document (screenshots are rejected)' : 'PDF or clear photo'));
   const err = h('div', { class: 'cp-err' });
   const kids = [];
+  kids.push(h('div', { class: 'cp-sub', style: 'background:#f8fafc;border-radius:10px;padding:9px 11px' }, [
+    h('b', null, PACKET_RULES[it.key] || it.label), h('br'), PACKET_CONSEQ(String(it.tag || '').toLowerCase()),
+  ]));
   fieldEls.forEach(([lbl, inp]) => { kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, lbl)); kids.push(inp); });
   if (spec.file) { kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:10px' }, spec.fileHint || 'Document (PDF or photo)')); kids.push(h('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:4px' }, [pick, fIn])); kids.push(fMeta); }
+  if (spec.file) kids.push(fmtLine);
   const close = openModal('Submit — ' + it.label, [...kids, err,
     h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%', onClick: async (ev) => {
       const vals = fieldEls.map(([lbl, inp]) => inp.value.trim() ? (lbl + ': ' + inp.value.trim()) : null).filter(Boolean);
@@ -170,15 +204,50 @@ function authScreen() {
       const { error } = await signInWithPassword(em, pw); if (error) throw error; boot(); return;
     } catch (e) { err.textContent = (e && e.message) || 'Something went wrong.'; btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Sign in'; }
   };
+  // Premium split auth — same owner-approved design family as the carrier login, broker story on the left.
+  const brandPanel = h('div', { class: 'cpx-auth-brand', html:
+    '<style>@keyframes lbOfferDash{to{stroke-dashoffset:-40}}@keyframes lbNodePop{0%,70%{transform:scale(1)}80%{transform:scale(1.25)}100%{transform:scale(1)}}@keyframes lbWinGlow{0%,60%{opacity:.25}75%,100%{opacity:1}}</style>'
+    + '<svg viewBox="0 0 320 150" style="width:100%;max-width:320px;overflow:visible" aria-hidden="true">'
+    // the load — posted once
+    + '<rect x="6" y="56" rx="12" width="86" height="40" fill="rgba(8,131,247,.14)" stroke="#0883F7" stroke-width="1.6"/>'
+    + '<text x="49" y="73" font-size="11" font-weight="800" fill="#fff" text-anchor="middle" font-family="Manrope,sans-serif">YOUR LOAD</text>'
+    + '<text x="49" y="87" font-size="9.5" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="Manrope,sans-serif">posted once</text>'
+    // fan-out to three carriers (15-min race)
+    + '<path d="M92 62 C 150 30, 190 26, 236 34" fill="none" stroke="rgba(148,163,184,.5)" stroke-width="2" stroke-dasharray="5 7" stroke-linecap="round" style="animation:lbOfferDash 1.4s linear infinite"/>'
+    + '<path d="M92 76 C 150 76, 190 76, 236 76" fill="none" stroke="#16a34a" stroke-width="2.6" stroke-dasharray="5 7" stroke-linecap="round" style="animation:lbOfferDash 1.1s linear infinite"/>'
+    + '<path d="M92 90 C 150 122, 190 126, 236 118" fill="none" stroke="rgba(148,163,184,.5)" stroke-width="2" stroke-dasharray="5 7" stroke-linecap="round" style="animation:lbOfferDash 1.4s linear infinite"/>'
+    // carrier nodes
+    + '<g style="transform-origin:262px 34px"><circle cx="262" cy="34" r="15" fill="rgba(148,163,184,.14)" stroke="rgba(148,163,184,.6)" stroke-width="1.6"/><text x="262" y="39" font-size="13" text-anchor="middle">🚛</text></g>'
+    + '<g style="transform-origin:262px 76px;animation:lbNodePop 2.6s ease-in-out infinite"><circle cx="262" cy="76" r="17" fill="rgba(22,163,74,.18)" stroke="#16a34a" stroke-width="2.2"/><text x="262" y="81" font-size="14" text-anchor="middle">🚛</text>'
+    + '<g style="animation:lbWinGlow 2.6s ease-in-out infinite"><circle cx="278" cy="62" r="9" fill="#16a34a"/><text x="278" y="66" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">✓</text></g></g>'
+    + '<g style="transform-origin:262px 118px"><circle cx="262" cy="118" r="15" fill="rgba(148,163,184,.14)" stroke="rgba(148,163,184,.6)" stroke-width="1.6"/><text x="262" y="123" font-size="13" text-anchor="middle">🚛</text></g>'
+    + '<text x="160" y="146" font-size="10.5" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">3 verified carriers · 15-min window · first accept wins</text>'
+    + '</svg>'
+    + '<div style="margin-top:20px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Post once.<br>Covered in minutes — with proof.</div>'
+    + '<div class="cpx-mockstack">'
+    +   '<div class="cpx-mockcard">'
+    +     '<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:19px">Dallas → Atlanta</b><span class="cpx-mockchip green">3 offers out</span></div>'
+    +     '<div class="cpx-mockroute"><span class="d o"></span>Offered to 3 verified carriers · 15-min window</div>'
+    +     '<div class="cpx-mockroute"><span class="d g"></span>Also live on the load board</div>'
+    +   '</div>'
+    +   '<div class="cpx-mocktoast">✓ Booked — TRUCKING ENTERPRISE · other offers auto-closed</div>'
+    +   '<div class="cpx-mocktoast ok">📍 GPS tracking on — arrive/depart recorded as proof</div>'
+    + '</div>'
+    + '<div class="cpx-auth-points">'
+    +   '<span>✓ Verified, health-scored carriers only</span>'
+    +   '<span>✓ First accept wins — zero double-booking</span>'
+    +   '<span>✓ Claims settled on GPS evidence, not arguments</span>'
+    + '</div>' });
   mount(root, h('div', { class: 'cp-auth' }, [
+    h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#94A3B8;line-height:1;margin-top:7px" }, 'Partner')]),
+      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#94A3B8;line-height:1;margin-top:5px" }, 'Partner')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [
         h('a', { href: '/app/carrier/' }, 'Are you a carrier? →'),
         h('a', { href: '/app/command-center/' }, 'Staff? Command Center →'),
       ]),
-    ]),
+    ])]),
   ]));
   setMode(false);
   root.setAttribute('aria-busy', 'false');
@@ -238,13 +307,26 @@ function notifBell() {
     let ns; try { ns = await partnerNotifications(50); } catch (e) { mount(panel, h('div', { class: 'cp-notif-loading' }, 'Could not load.')); return; }
     ns = ns || [];
     if (!ns.length) { mount(panel, h('div', { class: 'cp-notif-empty' }, 'No notifications yet.')); return; }
-    mount(panel, [h('div', { class: 'cp-notif-head' }, 'Notifications')].concat(ns.map(n => h('div', {
+    mount(panel, [h('div', { class: 'cp-notif-head', style: 'display:flex;align-items:center;gap:8px' }, [
+      h('span', { html: '<svg width="18" height="19" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#10223B"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#10223B"/></svg>', style: 'line-height:0' }),
+      h('span', null, 'Notifications'),
+    ])].concat(ns.map(n => h('div', {
       class: 'cp-notif' + (n.read_at ? '' : ' unread'),
-      onClick: async () => { if (!n.read_at) { try { await partnerMarkNotificationRead(n.id); } catch (_) {} } refresh(); load(); },
+      onClick: async () => {
+        if (!n.read_at) { try { await partnerMarkNotificationRead(n.id); } catch (_) {} }
+        refresh();
+        const t9 = (n.url || '').split('#')[1] || '';
+        if (t9) { panel.hidden = true; location.hash = '#' + t9; } else { load(); }
+      },
     }, [
-      h('div', { class: 'cp-notif-t' }, n.title),
-      n.body ? h('div', { class: 'cp-notif-b' }, n.body) : null,
-      h('div', { class: 'cp-notif-time' }, fmtDT(n.created_at)),
+      h('div', { style: 'display:flex;gap:10px;align-items:flex-start' }, [
+        h('span', { html: '<svg width="20" height="21" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#10223B"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#10223B"/></svg>', style: 'flex:none;width:32px;height:32px;border-radius:9px;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;line-height:0;margin-top:2px' }),
+        h('div', { style: 'min-width:0;flex:1' }, [
+          h('div', { class: 'cp-notif-t' }, n.title),
+          n.body ? h('div', { class: 'cp-notif-b' }, n.body) : null,
+          h('div', { class: 'cp-notif-time' }, fmtDT(n.created_at)),
+        ]),
+      ]),
     ]))));
   }
   document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) panel.hidden = true; });
@@ -272,6 +354,19 @@ function shell(user, kind, company, kpis, content) {
       h('div', { class: 'cp-content' }, [kpis, content]),
     ]),
   ]);
+}
+let bgoHook = null;      // set by brokerDash so module-level pages (Carriers) can navigate
+let directCarrier = null; // 'post to this carrier' target, consumed by the wizard
+let __dirCache = null;
+async function dirCarrierInfo(id9) {
+  try { if (!__dirCache) __dirCache = (await partnerCarrierDirectory()) || []; } catch (_) { __dirCache = []; }
+  return __dirCache.find(x => x.id === id9) || null;
+}
+async function dirCarrierEq(id9) {
+  try { if (!__dirCache) __dirCache = (await partnerCarrierDirectory()) || []; } catch (_) { __dirCache = []; }
+  const c9 = __dirCache.find(x => x.id === id9); if (!c9) return null;
+  const a9 = ((c9.fleet_mix || []).map(m => m.type)).concat(c9.preferred_equipment || []).filter(e => e && /[a-zA-Z]{2,}/.test(e));
+  return a9.filter((x, i9) => a9.indexOf(x) === i9);
 }
 const kpiCard = (label, value, sub, accent) => h('div', { class: 'cp-kpi ' + (accent || '') }, [
   h('div', { class: 'cp-kpi-v' }, String(value)), h('div', { class: 'cp-kpi-l' }, label), sub ? h('div', { class: 'cp-kpi-s' }, sub) : null,
@@ -404,7 +499,7 @@ function ratingCard() {
       else {
         const bar = h('div', { style: 'display:flex;gap:5px;font-size:22px;cursor:pointer;user-select:none' }, [1, 2, 3, 4, 5].map(n =>
           h('span', { style: 'color:#94a3b8', onClick: async () => {
-            try { await rateCounterparty(x.trip_id, n, null); w.innerHTML = ''; w.appendChild(h('div', { class: 'cp-row-s', style: 'color:#16a34a' }, '✓ Rated ' + n + '★')); }
+            try { const cm = prompt('Optional \u2014 write a short review (it shows on the carrier\u2019s profile, trip-verified):'); await rateCounterparty(x.trip_id, n, cm && cm.trim() ? cm.trim() : null); w.innerHTML = ''; w.appendChild(h('div', { class: 'cp-row-s', style: 'color:#16a34a' }, '\u2713 Rated ' + n + '\u2605')); }
             catch (e) { alert((e && e.message) || 'Could not rate.'); }
           } }, '☆')));
         w.appendChild(bar);
@@ -481,7 +576,12 @@ function verifyGateCard(ov) {
   (async () => {
     let pk; try { pk = await myOnboardingPacket(); } catch (_) { mount(list, h('div', { class: 'cp-sub' }, 'Could not load your packet.')); return; }
     mount(list, (pk.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap' }, [
-      h('div', null, [h('b', { style: 'font-size:.9rem' }, it.label), h('div', { class: 'cp-sub' }, '[' + it.tag.toUpperCase() + ']' + (it.note ? ' \u00b7 ' + it.note : ''))]),
+      h('div', null, [h('b', { style: 'font-size:.9rem' }, it.label), h('div', { class: 'cp-sub' },
+        (it.note || '').trim().startsWith('{') ? 'Signed online \u2713'
+        : it.status === 'rejected' && it.note ? '\u2715 ' + it.note
+        : it.status === 'submitted' ? 'In review'
+        : it.status === 'verified' ? 'Verified \u2713'
+        : (String(it.tag || '').toLowerCase() === 'optional' ? 'Optional' : 'Required'))]),
       h('div', { style: 'display:flex;gap:6px;align-items:center' }, [pill(it.status),
         h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
           try { openPacketSubmit(it, () => alert('Submitted — our team will verify it. You can post loads once all required items are verified.')); }
@@ -490,6 +590,338 @@ function verifyGateCard(ov) {
     ])));
   })();
   return card;
+}
+
+function openCarrierPacketPreview(c) {
+  const done9 = (c.compliance || []);
+  openModal('\ud83d\udce6 Carrier packet \u2014 ' + (c.name || 'Carrier'), [h('div', { style: 'text-align:center;padding:6px 4px 2px' }, [
+    h('div', { style: 'width:74px;height:74px;border-radius:22px;margin:6px auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:linear-gradient(135deg,#0b1830,#14335c);color:#fff;box-shadow:0 16px 34px -16px rgba(2,12,30,.55)' }, '\ud83d\udd12'),
+    h('div', { style: 'font-weight:800;font-size:1.08rem;color:#10223B' }, 'Locked \u2014 unlocks once you start a deal with this carrier'),
+    h('div', { class: 'cp-sub', style: 'max-width:460px;margin:6px auto 14px' }, 'The moment ' + (c.name || 'this carrier') + ' accepts one of your loads, LoadBoot releases the full verified setup packet to your brokerage \u2014 no chasing, no email attachments.'),
+    h('div', { style: 'text-align:left;max-width:430px;margin:0 auto;background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:14px 16px' }, [
+      h('div', { style: 'font-weight:800;font-size:.78rem;color:#64748b;letter-spacing:.08em;margin-bottom:8px' }, 'WHAT YOU RECEIVE ON ACCEPTANCE'),
+      ...[['\ud83d\udcc4', 'W-9 \u2014 tax reporting'], ['\ud83d\udee1', 'Certificate of Insurance \u2014 $1M auto / $100k cargo, monitored continuously'], ['\ud83d\udcdc', 'MC/DOT operating authority letter'], ['\u270d', 'Signed broker\u2013carrier agreement'], ['\ud83c\udfc5', 'LoadBoot verification certificate \u2014 downloadable audit record']].map(([i9, t9]) =>
+        h('div', { style: 'display:flex;gap:9px;padding:5px 0;font-size:.84rem;color:#334155' }, [h('span', null, i9), h('span', null, t9)])),
+    ]),
+    done9.length ? h('div', { style: 'max-width:430px;margin:12px auto 0;text-align:left;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:12px 16px' }, [
+      h('div', { style: 'font-weight:800;font-size:.74rem;color:#166534;letter-spacing:.06em;margin-bottom:6px' }, '\u2713 ALREADY VERIFIED & WAITING ON FILE (' + done9.length + ')'),
+      h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, done9.map(x9 => h('span', { style: 'padding:3px 10px;border-radius:999px;font-size:.7rem;font-weight:700;background:#dcfce7;color:#166534' }, '\u2713 ' + x9))),
+    ]) : null,
+    h('div', { class: 'cp-sub', style: 'margin-top:12px' }, 'Post a load to this carrier \u2014 the packet unlocks automatically on their acceptance.'),
+  ].filter(Boolean))]);
+}
+
+function brokerCarriersPage() {
+  if (!document.getElementById('cn-css')) {
+    const st = document.createElement('style'); st.id = 'cn-css';
+    st.textContent = `
+      .cn-hero{position:relative;border-radius:20px;overflow:hidden;padding:28px 26px 24px;color:#fff;background:radial-gradient(1100px 420px at 12% -20%,rgba(8,131,247,.5),transparent 60%),radial-gradient(800px 380px at 95% 130%,rgba(252,83,5,.28),transparent 55%),linear-gradient(120deg,#0b1830 0%,#10223B 55%,#132c4e 100%);box-shadow:0 24px 60px -28px rgba(2,12,30,.55);margin-bottom:16px}
+      .cn-hero h2{margin:0;font-size:1.45rem;font-weight:800;letter-spacing:-.01em}
+      .cn-hero .sub{font-size:.85rem;opacity:.82;margin-top:6px;max-width:720px;line-height:1.55}
+      .cn-strip{display:flex;gap:26px;flex-wrap:wrap;margin-top:16px}
+      .cn-strip .s b{display:block;font-size:1.3rem;font-weight:800;color:#7cc0ff}
+      .cn-strip .s span{font-size:.64rem;text-transform:uppercase;letter-spacing:.09em;opacity:.7;font-weight:700}
+      .cn-search{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 15px;margin-top:16px;max-width:560px;backdrop-filter:blur(6px)}
+      .cn-search input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:.9rem}
+      .cn-search input::placeholder{color:rgba(255,255,255,.55)}
+      .cn-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 2px 14px}
+      .cn-loc{display:flex;align-items:center;gap:7px;background:#fff;border:1.5px solid #e2e8f0;border-radius:999px;padding:6px 13px}
+      .cn-loc input{border:0;outline:0;font-size:.8rem;width:170px;font-weight:600;color:#334155}
+      .cn-fchip{padding:7px 14px;border-radius:999px;font-size:.8rem;font-weight:700;color:#334155;background:#fff;border:1.5px solid #e2e8f0;cursor:pointer;transition:all .15s}
+      .cn-fchip:hover{border-color:#0883F7;color:#0883F7}
+      .cn-fchip.on{background:#10223B;border-color:#10223B;color:#fff}
+      .cn-sort{margin-left:auto;padding:8px 12px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;font-size:.8rem;font-weight:600;color:#334155}
+      .cn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+      .cn-card{position:relative;background:#fff;border:1px solid #e6ebf3;border-radius:20px;overflow:hidden;box-shadow:0 14px 38px -26px rgba(2,12,30,.35);transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column}
+      .cn-card:hover{transform:translateY(-4px);box-shadow:0 26px 54px -26px rgba(2,12,30,.45)}
+      .cn-top{background:linear-gradient(120deg,#0d1b33,#10223B 60%,#14335c);padding:14px 16px 40px;position:relative}
+      .cn-top:after{content:'';position:absolute;inset:0;background:radial-gradient(420px 120px at 85% -30%,rgba(8,131,247,.35),transparent 60%)}
+      .cn-idrow{position:relative;z-index:1;display:flex;gap:8px;justify-content:space-between;align-items:flex-start}
+      .cn-since{font-size:.63rem;color:rgba(255,255,255,.55);font-weight:600;letter-spacing:.04em}
+      .cn-ava{width:60px;height:60px;border-radius:16px;margin:-34px 0 0 16px;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.15rem;color:#fff;background:linear-gradient(135deg,#0883F7,#10223B);border:3.5px solid #fff;box-shadow:0 10px 22px -10px rgba(2,12,30,.5);overflow:hidden;flex:0 0 auto}
+      .cn-ava img{width:100%;height:100%;object-fit:cover}
+      .cn-ava.lg{width:74px;height:74px;margin:0;font-size:1.4rem}
+      .cn-body{padding:6px 16px 12px;flex:1;display:flex;flex-direction:column}
+      .cn-name{font-weight:800;font-size:1.02rem;color:#10223B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .cn-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.64rem;font-weight:800;letter-spacing:.02em}
+      .cn-rate{display:inline-flex;align-items:center;gap:7px;margin:5px 0 2px;cursor:pointer;border:0;background:transparent;padding:2px 0;font-size:.83rem;font-weight:700;color:#10223B;text-align:left}
+      .cn-rate .st{color:#f59e0b;letter-spacing:1.5px;font-size:.92rem}
+      .cn-rate .lnk{color:#0883F7;font-size:.76rem;font-weight:700}
+      .cn-rate:hover .lnk{text-decoration:underline}
+      .cn-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:9px 0}
+      .cn-kpi{background:linear-gradient(180deg,#f8fafc,#f1f5f9);border:1px solid #e9eef5;border-radius:13px;padding:8px 3px;text-align:center}
+      .cn-kpi b{display:block;font-size:1rem;font-weight:800;color:#10223B}
+      .cn-kpi span{font-size:.57rem;text-transform:uppercase;letter-spacing:.07em;color:#7c8aa0;font-weight:800}
+      .cn-sec{margin:6px 0}
+      .cn-sec .k{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;font-weight:800;margin-bottom:5px}
+      .cn-chips{display:flex;gap:6px;flex-wrap:wrap}
+      .cn-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;font-size:.7rem;font-weight:700;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}
+      .cn-chip.blue{background:#eff6ff;color:#1d4ed8;border-color:#dbeafe}
+      .cn-chip.green{background:#f0fdf4;color:#166534;border-color:#dcfce7}
+      .cn-chip.amber{background:#fffbeb;color:#92400e;border-color:#fde68a}
+      .cn-chip.red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+      .cn-chip.more{cursor:pointer;color:#0883F7;background:#fff;border-style:dashed}
+      .cn-foot{display:flex;gap:8px;border-top:1px solid #f1f5f9;padding:11px 16px;background:#fbfcfe}
+      .cn-cta{flex:1;border:0;border-radius:12px;padding:10px 14px;font-weight:800;font-size:.8rem;color:#fff;cursor:pointer;background:linear-gradient(120deg,#0883F7,#0967d2);box-shadow:0 8px 18px -8px rgba(8,131,247,.6);transition:transform .12s}
+      .cn-cta:hover{transform:translateY(-1px)}
+      .cn-ghost{flex:1;border:1.5px solid #e2e8f0;background:#fff;border-radius:12px;padding:9px 12px;font-weight:700;font-size:.78rem;color:#334155;cursor:pointer;white-space:nowrap}
+      .cn-ghost:hover{border-color:#0883F7;color:#0883F7}
+      .cn-skel{border-radius:20px;height:330px;background:linear-gradient(100deg,#eef2f7 30%,#f8fafc 45%,#eef2f7 60%);background-size:220% 100%;animation:cnsh 1.1s infinite}
+      @keyframes cnsh{0%{background-position:130% 0}100%{background-position:-70% 0}}
+      .cn-dist{display:flex;align-items:center;gap:8px;font-size:.76rem;color:#64748b;margin:2px 0}
+      .cn-dist .bar{flex:1;height:7px;border-radius:99px;background:#eef2f7;overflow:hidden}
+      .cn-dist .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+      #lbmp{max-width:100%;overflow-x:auto}
+    `;
+    document.head.appendChild(st);
+  }
+  const wrap = h('div', null);
+  const grid = h('div', { class: 'cn-grid' });
+  const q = h('input', { placeholder: 'Search carriers by name, DOT, MC, equipment, lane or home base\u2026' });
+  const loc = h('input', { placeholder: 'Pickup / delivery state or city\u2026' });
+  const stripHost = h('div', { class: 'cn-strip' });
+  const barHost = h('div', { class: 'cn-bar' });
+  let all = [], fEq = 'All', fFlag = null, sortBy = 'rating', logoBase = null;
+  (async () => { try { const sc = await import('../shared/supabaseClient.js'); const sb = await sc.getClient(); const r = sb.storage.from('org-logos').getPublicUrl('x'); logoBase = r && r.data && r.data.publicUrl ? r.data.publicUrl.replace(/\/x$/, '/') : null; } catch (_) {} })();
+  const realEq = (e) => e && /[a-zA-Z]{2,}/.test(String(e));
+  const mixOf = (c) => (c.fleet_mix || []).filter(m => realEq(m.type));
+  const eqOf = (c) => { const a = mixOf(c).map(m => m.type).concat((c.preferred_equipment || []).filter(realEq)); return a.filter((x, i) => a.indexOf(x) === i); };
+  const initials = (nm) => String(nm || '?').split(/\s+/).slice(0, 2).map(x => x[0] || '').join('').toUpperCase();
+  const starsTxt = (v) => '\u2605'.repeat(Math.round(v || 0)) + '\u2606'.repeat(Math.max(0, 5 - Math.round(v || 0)));
+  const pill = (txt, bg, fg) => h('span', { class: 'cn-pill', style: 'background:' + bg + ';color:' + fg }, txt);
+  const chip = (txt, cls) => h('span', { class: 'cn-chip' + (cls ? ' ' + cls : '') }, txt);
+  const kpi = (label, val, fg) => h('div', { class: 'cn-kpi' }, [h('b', { style: fg ? 'color:' + fg : '' }, val), h('span', null, label)]);
+  const sec = (label, kids) => (kids && kids.length) ? h('div', { class: 'cn-sec' }, [h('div', { class: 'k' }, label), h('div', { class: 'cn-chips' }, kids)]) : null;
+  const avaEl = (c, lg) => { const logo = (c.logo_path && logoBase) ? (logoBase + c.logo_path) : null; return h('div', { class: 'cn-ava' + (lg ? ' lg' : '') }, logo ? h('img', { src: logo, alt: '' }) : initials(c.name)); };
+  const rateLine = (c) => h('button', { class: 'cn-rate', onClick: () => openReviews(c) }, (c.ratings_count || 0) > 0 ? [
+    h('span', { class: 'st' }, starsTxt(c.stars)), h('span', null, String(c.stars)),
+    h('span', { class: 'lnk' }, c.ratings_count + ' review' + (c.ratings_count === 1 ? '' : 's') + ' \u2014 read \u2192'),
+  ] : [h('span', { class: 'cn-chip blue', style: 'font-size:.68rem' }, '\u2728 New on LoadBoot \u2014 not rated yet')]);
+  const kpiBand = (c) => {
+    const health = c.health != null ? Number(c.health) : null;
+    const hFg = health == null ? '#7c8aa0' : health >= 85 ? '#16a34a' : health >= 60 ? '#d97706' : '#dc2626';
+    return h('div', { class: 'cn-kpis' }, [
+      kpi('On-time', c.on_time_pct != null ? c.on_time_pct + '%' : 'New', c.on_time_pct != null ? (c.on_time_pct >= 90 ? '#16a34a' : '#d97706') : '#94a3b8'),
+      kpi('Delivered', String(c.delivered || 0)),
+      kpi('Cancels', String(c.carrier_cancels || 0), (c.carrier_cancels || 0) > 0 ? '#dc2626' : '#16a34a'),
+      kpi('Health', health != null ? String(health) : '\u2014', hFg),
+    ]);
+  };
+  const fmcsaChips = (c) => [
+    c.dot ? chip('DOT ' + String(c.dot).replace(/^DOT\s*/i, '')) : null,
+    c.mc ? chip('MC ' + String(c.mc).replace(/^MC\s*/i, '')) : null,
+    c.authority ? chip('Authority: ' + String(c.authority).toUpperCase(), String(c.authority).toLowerCase() === 'active' ? 'green' : 'amber') : null,
+    (c.safety_rating && String(c.safety_rating).toLowerCase() !== 'none') ? chip('Safety: ' + String(c.safety_rating).toUpperCase()) : null,
+    c.driver_count ? chip(c.driver_count + ' drivers') : null,
+  ].filter(Boolean);
+  const fleetChips = (c) => mixOf(c).map(m => chip('\ud83d\ude9b ' + m.type + (m.n > 1 ? ' \u00d7 ' + m.n : ''), 'blue'))
+    .concat((!mixOf(c).length ? (c.preferred_equipment || []).filter(realEq).map(e => chip('\ud83d\ude9b ' + e, 'blue')) : []))
+    .concat((c.trailer_mix || []).filter(m => realEq(m.type)).map(m => chip('\ud83d\udee3 ' + m.type + (m.n > 1 ? ' \u00d7 ' + m.n : ''), 'blue')));
+  const capChips = (c) => [
+    c.hazmat ? chip('\u2622 HAZMAT certified', 'amber') : null,
+    c.team_drivers ? chip('\ud83d\udc65 Team drivers', 'green') : null,
+    c.weekend_ok ? chip('Weekends OK', 'green') : null,
+    c.max_weight_lbs ? chip('Max ' + Number(c.max_weight_lbs).toLocaleString() + ' lb') : null,
+    (c.carrier_cancels || 0) > 0 ? chip('\u26a0 ' + c.carrier_cancels + ' carrier cancel' + (c.carrier_cancels === 1 ? '' : 's'), 'red') : null,
+  ].filter(Boolean);
+  const covChips = (c) => [
+    c.home_base ? chip('\ud83d\udccd ' + c.home_base) : null,
+    (c.preferred_lanes || []).length ? chip('Runs: ' + c.preferred_lanes.join(', ')) : null,
+  ].filter(Boolean);
+  const insured = (c) => (c.compliance || []).some(x => /insurance|coi/i.test(String(x)));
+  const dotClean = (c) => c.dot ? String(c.dot).replace(/^DOT\s*/i, '') : null;
+  const mcClean = (c) => c.mc ? String(c.mc).replace(/^MC\s*/i, '') : null;
+  const statusStrip = (c) => {
+    const authOk = String(c.authority || '').toLowerCase() === 'active';
+    const dotEl = (ok, txt, warnTxt) => h('span', { style: 'display:inline-flex;align-items:center;gap:5px;font-weight:700;color:' + (ok ? '#166534' : '#92400e') }, [
+      h('span', { style: 'width:8px;height:8px;border-radius:99px;background:' + (ok ? '#22c55e' : '#f59e0b') }), ok ? txt : warnTxt]);
+    return h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:.74rem;color:#475569;background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:7px 11px;margin:7px 0 2px' }, [
+      dotClean(c) ? h('span', { style: 'font-weight:700' }, 'DOT ' + dotClean(c)) : null,
+      mcClean(c) ? h('span', { style: 'font-weight:700' }, 'MC ' + mcClean(c)) : null,
+      c.authority ? dotEl(authOk, 'Authority ACTIVE', 'Authority ' + String(c.authority).toUpperCase()) : null,
+      insured(c) ? dotEl(true, '\ud83d\udee1 Insured \u2713') : null,
+    ].filter(Boolean));
+  };
+  const capacityLine = (c) => {
+    const kids = fleetChips(c).slice(0, 3);
+    if (c.hazmat) kids.push(chip('\u2622', 'amber'));
+    if (c.team_drivers) kids.push(chip('\ud83d\udc65', 'green'));
+    return kids;
+  };
+  const clamp = (arr, n, c) => arr.length > n
+    ? arr.slice(0, n).concat(h('span', { class: 'cn-chip more', onClick: () => openProfile(c) }, '+' + (arr.length - n) + ' more'))
+    : arr;
+
+  const openFmcsa = (c) => {
+    const host = h('div', { style: 'width:100%' }, h('div', { class: 'cp-sub' }, 'Loading live FMCSA profile\u2026'));
+    openModal('\ud83d\udee1 ' + (c.name || 'Carrier') + ' \u2014 live FMCSA profile', [host], { wide: true });
+    try { renderFmcsaOnly(host, String(c.dot).replace(/\D/g, ''), { light: true }); }
+    catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load FMCSA data.')); }
+  };
+
+  const openReviews = async (c) => {
+    const bodyEl = h('div', null, h('div', { class: 'cp-sub' }, 'Loading reviews\u2026'));
+    openModal('\u2b50 ' + (c.name || 'Carrier') + ' \u2014 trip-verified reviews', [bodyEl]);
+    let rows; try { rows = (await partnerCarrierReviews(c.id)) || []; } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load reviews.')); return; }
+    const avg = c.stars || (rows.length ? (rows.reduce((a, r) => a + (r.stars || 0), 0) / rows.length) : 0);
+    const dist = [5, 4, 3, 2, 1].map(n => ({ n, c: rows.filter(r => Math.round(r.stars) === n).length }));
+    mount(bodyEl, h('div', null, [
+      h('div', { style: 'display:flex;gap:18px;align-items:center;margin-bottom:12px;flex-wrap:wrap' }, [
+        h('div', { style: 'text-align:center' }, [
+          h('div', { style: 'font-size:2.2rem;font-weight:800;color:#10223B;line-height:1' }, rows.length ? Number(avg).toFixed(1) : '\u2014'),
+          h('div', { style: 'color:#f59e0b;letter-spacing:2px' }, starsTxt(avg)),
+          h('div', { class: 'cp-sub' }, rows.length + ' review' + (rows.length === 1 ? '' : 's')),
+        ]),
+        h('div', { style: 'flex:1;min-width:220px' }, dist.map(d => h('div', { class: 'cn-dist' }, [
+          h('span', { style: 'width:22px;font-weight:700' }, d.n + '\u2605'),
+          h('div', { class: 'bar' }, h('i', { style: 'width:' + (rows.length ? Math.round(100 * d.c / rows.length) : 0) + '%' })),
+          h('span', { style: 'width:18px;text-align:right' }, String(d.c)),
+        ]))),
+      ]),
+      h('div', { style: 'background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#1e40af;margin-bottom:12px' },
+        '\ud83d\udd12 Every review is trip-verified \u2014 only a broker who completed a booking with this carrier on LoadBoot can rate it. No fake reviews.'),
+      rows.length ? h('div', null, rows.map(r => h('div', { style: 'border:1px solid #eef2f7;border-radius:14px;padding:12px 14px;margin-bottom:9px' }, [
+        h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap' }, [
+          h('span', { style: 'color:#f59e0b;letter-spacing:1.5px;font-weight:700' }, starsTxt(r.stars)),
+          h('span', { class: 'cp-sub' }, r.date || ''),
+        ]),
+        r.comment ? h('div', { style: 'margin:6px 0 4px;color:#334155;font-size:.88rem;line-height:1.55' }, '\u201c' + r.comment + '\u201d') : null,
+        h('div', { class: 'cp-sub', style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [
+          h('span', { class: 'cn-chip green', style: 'font-size:.66rem' }, '\u2713 ' + (r.reviewer || 'Verified broker')),
+          h('span', null, '\ud83d\ude9a ' + (r.lane || 'Completed trip')),
+        ]),
+      ].filter(Boolean))))
+        : h('div', { style: 'text-align:center;padding:26px;color:#64748b' }, [
+            h('div', { style: 'font-size:34px' }, '\u2728'),
+            h('div', { style: 'font-weight:700;color:#10223B;margin:6px 0 3px' }, '\u2728 New carrier on LoadBoot'),
+            h('div', { class: 'cp-sub' }, 'This carrier recently joined and has no completed-booking reviews yet. Ratings appear automatically after brokers finish loads with them \u2014 every review is trip-verified.'),
+          ]),
+    ]));
+  };
+
+  const openProfile = (c) => {
+    openModal('Carrier profile', [h('div', null, [
+      h('div', { style: 'display:flex;gap:14px;align-items:center;margin-bottom:4px' }, [
+        avaEl(c, true),
+        h('div', { style: 'min-width:0' }, [
+          h('div', { style: 'font-weight:800;font-size:1.15rem;color:#10223B' }, c.name || 'Carrier'),
+          h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:5px' }, [
+            pill('\u2713 LOADBOOT VERIFIED', '#dcfce7', '#166534'),
+            ((c.compliance || []).length >= 3) ? h('button', { class: 'cn-pill', style: 'background:#ede9fe;color:#6d28d9;border:0;cursor:pointer', onClick: () => openCarrierPacketPreview(c) }, '\ud83d\udce6 Carrier packet \ud83d\udd12') : null,
+            c.out_of_service ? pill('\u26d4 OUT OF SERVICE', '#fee2e2', '#991b1b') : null,
+            c.available === false ? pill('\u23f8 NOT ACCEPTING LOADS', '#fef3c7', '#92400e') : null,
+            pill('MEMBER SINCE ' + String(c.member_since || '\u2014').toUpperCase(), '#f1f5f9', '#334155'),
+          ].filter(Boolean)),
+        ]),
+      ]),
+      rateLine(c),
+      kpiBand(c),
+      sec('FMCSA \u00b7 authority', fmcsaChips(c)),
+      sec('Fleet \u2014 what they run', fleetChips(c)),
+      sec('Coverage', covChips(c)),
+      (c.compliance || []).length ? sec('Compliance on file', c.compliance.map(x => chip('\u2713 ' + x, 'green'))) : null,
+      sec('Capabilities', capChips(c)),
+      h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
+        h('button', { class: 'cn-ghost', onClick: () => openReviews(c) }, '\u2b50 Reviews'),
+        c.dot ? h('button', { class: 'cn-ghost', onClick: () => openFmcsa(c) }, '\ud83d\udee1 Live FMCSA profile') : null,
+        h('button', { class: 'cn-cta', onClick: () => { directCarrier = { id: c.id, name: c.name }; if (bgoHook) { bgoHook('dashboard'); if (window.__lbOpenPost) window.__lbOpenPost(); } } }, '\ud83c\udfaf Post a load to this carrier'),
+      ].filter(Boolean)),
+    ].filter(Boolean))]);
+  };
+
+  const post = (c) => h('div', { class: 'cn-card' }, [
+    h('div', { class: 'cn-top' }, [h('div', { class: 'cn-idrow' }, [
+      h('span', { class: 'cn-since' }, 'MEMBER SINCE ' + String(c.member_since || '\u2014').toUpperCase()),
+      h('div', { style: 'display:flex;gap:6px;position:relative;z-index:1' }, [
+        pill('\u2713 VERIFIED', 'rgba(34,197,94,.18)', '#4ade80'),
+        ((c.compliance || []).length >= 3) ? h('button', { class: 'cn-pill', style: 'background:rgba(139,92,246,.2);color:#c4b5fd;border:0;cursor:pointer', onClick: (e9) => { e9.stopPropagation(); openCarrierPacketPreview(c); } }, '\ud83d\udce6 Carrier packet \ud83d\udd12') : null,
+        c.out_of_service ? pill('\u26d4 OOS', 'rgba(239,68,68,.2)', '#fca5a5') : null,
+        c.available === false ? pill('\u23f8', 'rgba(245,158,11,.2)', '#fcd34d') : null,
+      ].filter(Boolean)),
+    ])]),
+    avaEl(c),
+    h('div', { class: 'cn-body' }, [
+      h('div', { class: 'cn-name', title: c.name || '' }, c.name || 'Carrier'),
+      rateLine(c),
+      kpiBand(c),
+      statusStrip(c),
+      sec('Capacity', clamp(capacityLine(c), 5, c)),
+      sec('Coverage', clamp(covChips(c), 2, c)),
+      h('div', { style: 'flex:1' }),
+    ].filter(Boolean)),
+    h('div', { class: 'cn-foot' }, [
+      h('button', { class: 'cn-ghost', onClick: () => openProfile(c) }, 'View full profile'),
+      h('button', { class: 'cn-cta', onClick: () => { directCarrier = { id: c.id, name: c.name }; if (bgoHook) { bgoHook('dashboard'); if (window.__lbOpenPost) window.__lbOpenPost(); } } }, '\ud83c\udfaf Post a load to this carrier'),
+    ]),
+  ]);
+
+  const applyAll = () => {
+    const t = q.value.trim().toLowerCase();
+    const lv = loc.value.trim().toLowerCase();
+    let list = all.filter(c => {
+      if (fEq !== 'All' && !eqOf(c).some(e => String(e).toLowerCase() === fEq.toLowerCase())) return false;
+      if (fFlag === 'hazmat' && !c.hazmat) return false;
+      if (fFlag === 'team' && !c.team_drivers) return false;
+      if (lv) {
+        const zone = [c.home_base].concat(c.preferred_lanes || []).filter(Boolean).join(' ').toLowerCase();
+        if (!zone.includes(lv)) return false;
+      }
+      if (!t) return true;
+      const hay = [c.name, c.home_base, c.dot, c.mc].concat(eqOf(c), c.preferred_lanes || []).filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(t);
+    });
+    const num = (v) => v == null ? -1 : Number(v);
+    if (sortBy === 'rating') list.sort((a, b) => num(b.stars) - num(a.stars) || num(b.ratings_count) - num(a.ratings_count) || num(b.health) - num(a.health));
+    else if (sortBy === 'delivered') list.sort((a, b) => num(b.delivered) - num(a.delivered));
+    else if (sortBy === 'health') list.sort((a, b) => num(b.health) - num(a.health));
+    mount(grid, list.length ? list.map(post) : h('div', { style: 'grid-column:1/-1;text-align:center;background:#fff;border:1px dashed #cbd5e1;border-radius:20px;padding:44px' }, [
+      h('div', { style: 'font-size:44px' }, '\ud83d\ude9a'),
+      h('div', { style: 'font-weight:800;margin:10px 0 4px;color:#10223B;font-size:1.05rem' }, (t || lv || fEq !== 'All' || fFlag) ? 'No carriers match' : 'No published carriers yet'),
+      h('div', { class: 'cp-sub', style: 'max-width:420px;margin:0 auto' }, (t || lv || fEq !== 'All' || fFlag) ? 'Try a different location, equipment or filter.' : 'LoadBoot verifies every carrier (FMCSA authority, insurance, W-9, signed agreement) and publishes them here once they pass.'),
+    ]));
+  };
+
+  const drawBar = () => {
+    const eqSet = ['All'];
+    all.forEach(c => { eqOf(c).forEach(e => { if (eqSet.indexOf(e) < 0) eqSet.push(e); }); });
+    const sort = h('select', { class: 'cn-sort' }, [['rating', '\u2b50 Top rated'], ['delivered', '\ud83d\udce6 Most delivered'], ['health', '\ud83d\udc9a Best health'], ['name', 'A \u2192 Z']].map(([v, l]) => h('option', { value: v }, l)));
+    sort.value = sortBy; sort.onchange = () => { sortBy = sort.value; applyAll(); };
+    mount(barHost, [
+      h('div', { class: 'cn-loc' }, [h('span', { style: 'font-size:.85rem' }, '\ud83d\udccd'), loc]),
+      ...eqSet.map(e => h('button', { class: 'cn-fchip' + (fEq === e ? ' on' : ''), onClick: () => { fEq = e; drawBar(); applyAll(); } }, e)),
+      h('button', { class: 'cn-fchip' + (fFlag === 'hazmat' ? ' on' : ''), onClick: () => { fFlag = fFlag === 'hazmat' ? null : 'hazmat'; drawBar(); applyAll(); } }, '\u2622 HAZMAT'),
+      h('button', { class: 'cn-fchip' + (fFlag === 'team' ? ' on' : ''), onClick: () => { fFlag = fFlag === 'team' ? null : 'team'; drawBar(); applyAll(); } }, '\ud83d\udc65 Team'),
+      sort,
+    ]);
+  };
+
+  q.addEventListener('input', applyAll);
+  loc.addEventListener('input', applyAll);
+  mount(grid, [1, 2, 3].map(() => h('div', { class: 'cn-skel' })));
+  (async () => {
+    try { all = (await partnerCarrierDirectory()) || []; } catch (_) { all = []; }
+    const tTrucks = all.reduce((a, c) => a + ((c.trucks || 0) || c.power_units || 0), 0);
+    const tDel = all.reduce((a, c) => a + (c.delivered || 0), 0);
+    const hs = all.map(c => Number(c.health)).filter(x => !isNaN(x) && x > 0);
+    mount(stripHost, [
+      h('div', { class: 's' }, [h('b', null, String(all.length)), h('span', null, 'Verified carriers')]),
+      h('div', { class: 's' }, [h('b', null, String(tTrucks)), h('span', null, 'Trucks in network')]),
+      h('div', { class: 's' }, [h('b', null, String(tDel)), h('span', null, 'Loads delivered')]),
+      hs.length ? h('div', { class: 's' }, [h('b', null, String(Math.round(hs.reduce((a, b) => a + b, 0) / hs.length))), h('span', null, 'Avg health score')]) : null,
+    ].filter(Boolean));
+    drawBar(); applyAll();
+  })();
+  mount(wrap, [
+    h('div', { class: 'cn-hero' }, [
+      h('h2', null, 'LoadBoot Carrier Network'),
+      h('div', { class: 'sub' }, 'Every carrier below passed full vetting \u2014 FMCSA authority, insurance, W-9, signed agreement \u2014 and is monitored live by our health engine. Reviews are trip-verified: only brokers who actually booked with a carrier can rate it. Post a load to send direct offers; the first to accept wins.'),
+      h('div', { class: 'cn-search' }, [h('span', { style: 'opacity:.7' }, '\ud83d\udd0d'), q]),
+      stripHost,
+    ]),
+    barHost,
+    grid,
+  ]);
+  return wrap;
 }
 
 function approvedPartnersCard() {
@@ -585,14 +1017,211 @@ async function brokerDash(user, ov) {
   const w = { appointment_required: false, tracking_required: false };
   const stepHost = h('div');
   const STEPS = ['Lane', 'Schedule', 'Equipment & commodity', 'Requirements', 'Review'];
-  let step = 0, confirmDup = false;
+  let step = 0, confirmDup = false, prevStep = 0;
   const wi = (label, key, type) => { const i = inp(label, type || 'text'); i.value = w[key] || ''; i.oninput = () => { w[key] = i.value; }; return field(label, i); };
   const toggle = (label, key) => { const b = h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; b.className = 'cp-btn ghost' + (w[key] ? ' on' : ''); b.textContent = label + ': ' + (w[key] ? 'Yes' : 'No'); } }, label + ': ' + (w[key] ? 'Yes' : 'No')); return b; };
   function renderStep() {
     let body;
-    if (step === 0) body = h('div', { class: 'cp-formgrid' }, [wi('Origin city, ST', 'origin'), wi('Destination city, ST', 'destination'), wi('Miles', 'miles', 'number'), wi('Reference (optional)', 'reference')]);
-    else if (step === 1) body = h('div', { class: 'cp-formgrid' }, [wi('Pickup date', 'pickup_date', 'date'), wi('Pickup window', 'pickup_window'), wi('Delivery date', 'delivery_date', 'date'), wi('Delivery window', 'delivery_window')]);
-    else if (step === 2) body = h('div', { class: 'cp-formgrid' }, [wi('Equipment (e.g. Dry Van)', 'equipment'), wi('Commodity', 'commodity'), wi('Weight (lb)', 'weight', 'number'), wi('Rate ($)', 'rate', 'number')]);
+    if (step === 0) {
+      body = h('div', { class: 'cp-formgrid' }, [
+        h('div', { class: 'cp-sub', style: 'grid-column:1/-1;font-weight:700;color:#10223B' }, 'Pickup facility'),
+        wi('Street address', 'o_street'), wi('City', 'o_city'), wi('State (2 letters)', 'o_state'), wi('ZIP *', 'o_zip'),
+        h('div', { class: 'cp-sub', style: 'grid-column:1/-1;font-weight:700;color:#10223B;margin-top:4px' }, 'Delivery facility'),
+        wi('Street address', 'd_street'), wi('City', 'd_city'), wi('State (2 letters)', 'd_state'), wi('ZIP *', 'd_zip'),
+        h('div', { class: 'cp-sub', style: 'grid-column:1/-1;font-weight:700;color:#10223B;margin-top:4px' }, 'Lane'),
+        wi('Miles', 'miles', 'number'), wi('Reference (optional)', 'reference'),
+      ]);
+      // Street suggestions fill city/state/ZIP + exact pin; driving miles auto-calc when both pins known.
+      try {
+        const ins = body.querySelectorAll('input');
+        const oSt = ins[0], oCi = ins[1], oSa = ins[2], oZp = ins[3];
+        const dSt = ins[4], dCi = ins[5], dSa = ins[6], dZp = ins[7];
+        const mIn = ins[8];
+        const geo = { o: (w.pickup_lat && w.pickup_lng) ? { lat: w.pickup_lat, lng: w.pickup_lng } : null, d: (w.delivery_lat && w.delivery_lng) ? { lat: w.delivery_lat, lng: w.delivery_lng } : null };
+        const recalc = async () => {
+          if (!(geo.o && geo.d)) return;
+          try {
+            const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + geo.o.lng + ',' + geo.o.lat + ';' + geo.d.lng + ',' + geo.d.lat + '?overview=false');
+            const j = await r.json();
+            const m9 = j && j.routes && j.routes[0] && j.routes[0].distance;
+            if (m9) { const miles = Math.round(m9 / 1609.34); mIn.value = String(miles); w.miles = String(miles); w.__auto_miles = true; try { w.__drive_hours = (j.routes[0].duration || 0) / 3600; } catch (_) {}
+              mIn.title = 'Auto-calculated driving miles — edit if you route differently'; }
+          } catch (_) {}
+        };
+        const setIn = (inp, key, val) => { inp.value = val || ''; w[key] = inp.value; };
+        const upSt = (inp, key) => { inp.maxLength = 2; inp.addEventListener('input', () => { inp.value = inp.value.toUpperCase().replace(/[^A-Z]/g, ''); w[key] = inp.value; }); };
+        upSt(oSa, 'o_state'); upSt(dSa, 'd_state');
+        [[oSt, 'o'], [oCi, 'o'], [oSa, 'o'], [dSt, 'd'], [dCi, 'd'], [dSa, 'd']].forEach(([inp, side]) => {
+          inp.addEventListener('input', (ev9) => { if (ev9 && ev9.isTrusted === false) return; geo[side] = null; if (side === 'o') { w.pickup_lat = null; w.pickup_lng = null; } else { w.delivery_lat = null; w.delivery_lng = null; } });
+        });
+        attachAddressSuggest(oSt, { onPick: (r) => { setIn(oSt, 'o_street', r.street); setIn(oCi, 'o_city', r.city); setIn(oSa, 'o_state', r.state); setIn(oZp, 'o_zip', r.zip); if (r.lat && r.lng) { geo.o = { lat: r.lat, lng: r.lng }; w.pickup_lat = r.lat; w.pickup_lng = r.lng; recalc(); } } });
+        attachAddressSuggest(dSt, { onPick: (r) => { setIn(dSt, 'd_street', r.street); setIn(dCi, 'd_city', r.city); setIn(dSa, 'd_state', r.state); setIn(dZp, 'd_zip', r.zip); if (r.lat && r.lng) { geo.d = { lat: r.lat, lng: r.lng }; w.delivery_lat = r.lat; w.delivery_lng = r.lng; recalc(); } } });
+        body.appendChild(h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '🇺🇸 Type the street address and pick a suggestion — city, state and ZIP fill in, real driving miles calculate automatically and the exact pin powers GPS tracking. Carriers on the board see only the City, ST; the full address goes on the rate confirmation after booking.'));
+      } catch (_) {}
+    }
+    else if (step === 1) {
+      // auto-deduce: if delivery date empty, suggest pickup + real drive time (+2h dock buffer)
+      if (!w.delivery_date && w.pickup_date && w.__drive_hours) {
+        try {
+          const base = new Date(w.pickup_date + 'T' + ((w.sched_pu === 'Appointment' ? w.pu_appt : (w.pickup_window || '').slice(0, 5)) || '08:00'));
+          const hos9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10; // 11h driving max, then 10h rest (federal HOS)
+          const eta = new Date(base.getTime() + (hos9 + 2) * 3600 * 1000);
+          w.delivery_date = eta.toISOString().slice(0, 10);
+          w.__eta_suggested = true;
+        } catch (_) {}
+      }
+      const tRange = (label, key) => {
+        const a = h('input', { class: 'cp-in', type: 'time', style: 'margin:0;flex:1' });
+        const b = h('input', { class: 'cp-in', type: 'time', style: 'margin:0;flex:1' });
+        const m9 = String(w[key] || '').match(/(\d{1,2}:\d{2})\s*[\u2013-]\s*(\d{1,2}:\d{2})/);
+        if (m9) { a.value = ('0' + m9[1]).slice(-5); b.value = ('0' + m9[2]).slice(-5); }
+        const upd = () => { w[key] = (a.value && b.value) ? (a.value + '\u2013' + b.value) : ''; };
+        a.oninput = upd; b.oninput = upd;
+        return field(label, h('div', { style: 'display:flex;gap:8px;align-items:center' }, [a, h('span', { class: 'cp-sub', style: 'flex:0 0 auto' }, 'to'), b]));
+      };
+      const tOne = (label, key) => { const a = h('input', { class: 'cp-in', type: 'time', style: 'margin:0' }); a.value = w[key] || ''; a.oninput = () => { w[key] = a.value; }; return field(label, a); };
+      const modeSel = (key) => {
+        const mk = (v9, ttl, sub9) => { const on = w[key] === v9; return h('button', { type: 'button', onClick: () => { w[key] = v9; renderStep(); },
+          style: 'flex:1;min-width:190px;text-align:left;border-radius:14px;padding:11px 14px;cursor:pointer;border:2px solid ' + (on ? '#0883F7' : '#e2e8f0') + ';background:' + (on ? '#eff6ff' : '#fff') }, [
+          h('div', { style: 'font-weight:800;font-size:.84rem;color:#10223B' }, (on ? '\u25c9 ' : '\u25cb ') + ttl),
+          h('div', { class: 'cp-sub', style: 'margin-top:2px' }, sub9),
+        ]); };
+        return h('div', { style: 'grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap' }, [
+          mk('FCFS', 'FCFS \u2014 first come, first served', 'Truck can arrive ANY time inside the window \u2014 dock works the line in arrival order. Most flexible for carriers.'),
+          mk('Appointment', 'Appointment \u2014 fixed time', 'Truck must arrive at the exact appointed time. Late = risk of rescheduling/detention rules.'),
+        ]);
+      };
+      body = h('div', { class: 'cp-formgrid' }, [
+        h('div', { class: 'cp-sub', style: 'grid-column:1/-1;font-weight:700;color:#10223B' }, '\ud83d\udce6 Pickup \u2014 how does the shipper schedule trucks?'),
+        modeSel('sched_pu'),
+        wi('Pickup date *', 'pickup_date', 'date'),
+        w.sched_pu === 'Appointment' ? tOne('Pickup appointment time *', 'pu_appt') : (w.sched_pu === 'FCFS' ? tRange('FCFS window \u2014 dock open from \u2192 to *', 'pickup_window') : null),
+        h('div', { class: 'cp-sub', style: 'grid-column:1/-1;font-weight:700;color:#10223B;margin-top:6px' }, '\ud83c\udfc1 Delivery \u2014 how does the receiver schedule trucks?'),
+        modeSel('sched_del'),
+        wi('Delivery date *', 'delivery_date', 'date'),
+        w.sched_del === 'Appointment' ? tOne('Delivery appointment time *', 'del_appt') : (w.sched_del === 'FCFS' ? tRange('FCFS window \u2014 dock open from \u2192 to *', 'delivery_window') : null),
+      ].filter(Boolean));
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        body.querySelectorAll('input').forEach(i9 => { if (i9.type === 'date') i9.min = today; });
+        if (w.__drive_hours) {
+          const hos9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10;
+          const days9 = Math.max(1, Math.ceil(hos9 / 24));
+          body.appendChild(h('div', { style: 'grid-column:1/-1;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:9px 13px;font-size:.8rem;color:#1e40af' },
+            w.team_required
+              ? '\ud83d\udc65 TEAM load: ~' + Math.round(w.__drive_hours) + 'h NONSTOP driving (two drivers swap \u2014 no HOS overnight stops). Tight delivery windows are allowed.'
+              : '\ud83d\ude9a Real trip duration: ~' + Math.round(w.__drive_hours) + 'h driving \u00b7 with federal HOS rest rules (max 11h driving, then 10h rest) this is a ' + days9 + '-day trip. The system will not accept a delivery window earlier than that.'));
+          body.appendChild(h('button', { type: 'button', class: 'cp-btn cp-btn-sm ' + (w.team_required ? '' : 'ghost'), style: 'grid-column:1/-1', onClick: () => { w.team_required = !w.team_required; renderStep(); } },
+            w.team_required ? '\ud83d\udc65 TEAM drivers: ON \u2014 nonstop driving \u00b7 tap to switch back to solo' : '\ud83d\udc65 Need it faster? Require TEAM drivers (2 drivers, nonstop \u2014 books at +20\u201330%)'));
+        }
+        if (w.__eta_suggested) { body.appendChild(h('div', { class: 'cp-sub', style: 'grid-column:1/-1;color:#0f766e' }, '\ud83e\udde0 Delivery date auto-suggested from the real driving time (' + Math.round(w.__drive_hours) + 'h) + dock buffer \u2014 adjust if you need.')); w.__eta_suggested = false; }
+        body.appendChild(h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '\u23f1 One choice per stop \u2014 FCFS window or exact appointment. This is exactly what the carrier sees on the board and what goes on the rate confirmation; no separate \u201cfacility hours\u201d to fill.'));
+      } catch (_) {}
+    }
+    else if (step === 2) {
+      const sl = (label, key, opts2, onch) => { const sel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, label)].concat(opts2.map(o => h('option', { value: o }, o)))); sel.value = w[key] || ''; sel.onchange = () => { w[key] = sel.value; if (onch) onch(); }; return field(label, sel); };
+      const isReefer = (w.equipment || '') === 'Reefer';
+      const isFlat = ['Flatbed', 'Step Deck', 'Conestoga', 'Hotshot'].indexOf(w.equipment || '') >= 0;
+      body = h('div', null, [
+        h('div', { class: 'cp-formgrid' }, [
+          sl('Equipment *', 'equipment', ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Conestoga', 'Power Only', 'Box Truck', 'Hotshot'], () => renderStep()),
+          (directCarrier && w.equipment) ? (() => {
+            const hint9 = h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '\ud83c\udfaf Checking ' + directCarrier.name + '\u2019s equipment\u2026');
+            (async () => {
+              const eqs9 = await dirCarrierEq(directCarrier.id);
+              if (!hint9.isConnected) return;
+              if (eqs9 === null) { hint9.textContent = ''; return; }
+              if (!eqs9.length) { hint9.style.color = '#b45309'; hint9.textContent = '\u26a0 ' + directCarrier.name + ' has not published any equipment yet \u2014 the direct offer may not match. Consider picking a carrier from the Carriers page.'; return; }
+              if (eqs9.some(e => e.toLowerCase() === w.equipment.toLowerCase())) { hint9.style.color = '#0f766e'; hint9.textContent = '\u2713 ' + directCarrier.name + ' runs ' + w.equipment + ' \u2014 good match.'; }
+              else { hint9.style.color = '#b91c1c'; hint9.textContent = '\u2715 ' + directCarrier.name + ' does NOT run ' + w.equipment + ' \u2014 their fleet: ' + eqs9.join(', ') + '. Change the equipment or remove the direct target.'; }
+            })();
+            return hint9;
+          })() : null,
+          sl('Load size *', 'load_size', ['Full truckload (FTL)', 'Partial (LTL)']),
+          wi('Commodity *', 'commodity'),
+          wi('Weight (lb) *', 'weight', 'number'),
+          wi('Pallets / pieces', 'pallets'),
+          wi('Rate ($) *', 'rate', 'number'),
+          (() => {
+            // \ud83d\udca1 market-rate suggester: LoadBoot baseline $/mi by equipment \u00d7 distance band \u00d7 service premiums.
+            // Baselines are overridable from CC via cc_rate_standards keys (rpm_dry_van, rpm_reefer, ...).
+            const mi9 = Number(w.miles) || 0;
+            if (!w.equipment || mi9 <= 0) return null;
+            const BASE = { 'Dry Van': 2.05, 'Reefer': 2.40, 'Flatbed': 2.55, 'Step Deck': 2.65, 'Conestoga': 2.70, 'Power Only': 1.85, 'Box Truck': 1.60, 'Hotshot': 2.00 };
+            // industry MINIMUM $/mi (2026: owner-operator cost floor ~$1.80\u20132.00 + margin) \u2014 suggestions never go below this
+            const FLOOR = { 'Dry Van': 2.00, 'Reefer': 2.50, 'Flatbed': 2.50, 'Step Deck': 2.55, 'Conestoga': 2.60, 'Power Only': 1.80, 'Box Truck': 1.55, 'Hotshot': 2.00 };
+            let rpm0 = BASE[w.equipment] || 2.10; let liveN = 0;
+            let floor0 = FLOOR[w.equipment] || 2.00;
+            try { const lv = w.__mkt && w.__mkt[w.equipment]; if (lv && Number(lv.rpm) > 0 && Number(lv.n) >= 3) { rpm0 = Math.max(Number(lv.rpm), floor0); liveN = Number(lv.n); } } catch (_) {}
+            try { const f9 = 'floor_' + w.equipment.toLowerCase().replace(/[^a-z]+/g, '_'); if (w.__stds && w.__stds[f9]) floor0 = Number(w.__stds[f9]) || floor0; } catch (_) {}
+            try { const k9 = 'rpm_' + w.equipment.toLowerCase().replace(/[^a-z]+/g, '_'); if (w.__stds && w.__stds[k9]) rpm0 = Number(w.__stds[k9]) || rpm0; } catch (_) {}
+            const distF = mi9 < 250 ? 1.35 : mi9 < 500 ? 1.15 : mi9 <= 1000 ? 1.0 : 0.92;
+            let svcF = 1;
+            if (w.team_required) svcF *= 1.25;
+            if (w.hazmat_sel === 'yes') svcF *= 1.15;
+            const flAdj = floor0 * svcF; // service premiums raise the floor too
+            const lo9 = Math.max(rpm0 * distF * svcF * 0.93, flAdj), hi9 = Math.max(rpm0 * distF * svcF * 1.07, flAdj * 1.08);
+            const mid9 = Math.max(Math.round((rpm0 * distF * svcF * mi9) / 25) * 25, Math.ceil((flAdj * mi9) / 25) * 25);
+            w.__rpm_floor = flAdj; w.__rpm_floor_eq = w.equipment;
+            const cur9 = Number(w.rate) || 0;
+            const tone9 = !cur9 ? '#1e40af' : cur9 < lo9 * mi9 ? '#b45309' : cur9 > hi9 * mi9 * 1.15 ? '#0f766e' : '#166534';
+            const wrap9 = h('div', { style: 'grid-column:1/-1;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:9px 13px;font-size:.8rem;color:' + tone9 }, [
+              liveN ? h('span', { style: 'display:inline-block;background:#dcfce7;color:#166534;border-radius:999px;padding:2px 9px;font-size:.64rem;font-weight:800;margin-right:6px' }, '\ud83d\udfe2 LIVE \u00b7 ' + liveN + ' bookings/30d') : null,
+              h('span', null, '\ud83d\udca1 Market estimate for ' + w.equipment + ' \u00b7 ' + mi9.toLocaleString() + ' mi' + (w.team_required ? ' \u00b7 TEAM +25%' : '') + (w.hazmat_sel === 'yes' ? ' \u00b7 HAZMAT +15%' : '') + ': '),
+              h('b', null, '$' + Math.round(lo9 * mi9).toLocaleString() + ' \u2013 $' + Math.round(hi9 * mi9).toLocaleString()),
+              h('span', null, ' ($' + lo9.toFixed(2) + '\u2013' + hi9.toFixed(2) + '/mi)  '),
+              h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'margin-left:6px;padding:3px 12px', onClick: () => { w.rate = String(mid9); renderStep(); } }, 'Use $' + mid9.toLocaleString()),
+              (cur9 && cur9 < lo9 * mi9) ? h('div', { class: 'cp-sub', style: 'color:#b45309;margin-top:4px' }, '\u26a0 Your $' + cur9.toLocaleString() + ' is under the estimated market range \u2014 under-priced loads sit unbooked.') : null,
+              h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'Estimate from LoadBoot baseline lane rates + distance/equipment/service adjustments, hard-floored at the industry minimum ($' + flAdj.toFixed(2) + '/mi for ' + w.equipment + (svcF > 1 ? ' incl. service premium' : '') + ') \u2014 the suggestion can never be below what carriers accept. A guide, not a quote.'),
+            ].filter(Boolean));
+            try {
+              const lk9 = [w.o_state, w.d_state, w.equipment, mi9].join('|');
+              if (w.__lane && w.__lane_key === lk9 && w.__lane.buy) {
+                const L9 = w.__lane;
+                wrap9.appendChild(h('div', { style: 'margin-top:7px;padding-top:7px;border-top:1px dashed #bfdbfe;display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [
+                  h('b', null, '\ud83d\udcc8 Lane rate ' + (L9.o_state || '') + '\u2192' + (L9.d_state || '') + ' (' + L9.confidence + '):'),
+                  ...(['low', 'avg', 'high'].map(k9 => L9.buy['flat_' + k9] ? h('button', { type: 'button', class: 'cp-btn cp-btn-sm ' + (k9 === 'avg' ? '' : 'ghost'), style: 'padding:3px 11px;font-size:.72rem', onClick: () => { w.rate = String(L9.buy['flat_' + k9]); renderStep(); } }, k9.toUpperCase() + ' $' + Number(L9.buy['flat_' + k9]).toLocaleString()) : null).filter(Boolean)),
+                  h('span', { class: 'cp-sub' }, 'sell-side guide $' + L9.sell.avg + '/mi (+' + L9.margin_pct + '%)'),
+                ]));
+              } else if (w.o_state && w.d_state && !w.__laneP) {
+                w.__laneP = true;
+                (async () => { try { w.__lane = await laneRate(w.o_state, w.d_state, w.equipment, mi9); w.__lane_key = lk9; } catch (_) {} w.__laneP = false; try { renderStep(); } catch (_) {} })();
+              }
+            } catch (_) {}
+            if (!w.__stds && !w.__stds_p) { w.__stds_p = true; (async () => { try { const m9 = {}; ((await rateStandards()) || []).forEach(r9 => { m9[r9.key] = r9.value; }); w.__stds = m9; } catch (_) {} try { w.__mkt = (await marketRpm()) || {}; } catch (_) {} })(); }
+            return wrap9;
+          })(),
+          (w.team_required && w.rate && w.miles && Number(w.miles) > 0) ? h('div', { class: 'cp-sub', style: 'grid-column:1/-1;color:'  + ((Number(w.rate) / Number(w.miles)) < 2.2 ? '#b45309' : '#0f766e') },
+            '\ud83d\udc65 TEAM pricing check: your rate = $' + (Number(w.rate) / Number(w.miles)).toFixed(2) + '/mi. Team freight books at solo +20\u201330% (\u2248 +$0.40\u20130.60/mi) \u2014 under-priced team loads sit unbooked.') : null,
+          wi('Cargo value ($ \u2014 carrier checks cargo insurance)', 'cargo_value', 'number'),
+          isReefer ? wi('Temperature (\u00b0F) \u2014 required for reefer *', 'temperature') : null,
+          isFlat ? sl('Tarps', 'tarps', ['No tarps needed', '4 ft tarps', '6 ft tarps', '8 ft tarps']) : null,
+          sl('Pickup loading *', 'load_method_pickup', ['Live load', 'Drop & hook', 'Preloaded trailer'], () => renderStep()),
+          sl('Delivery unloading *', 'load_method_delivery', ['Live unload', 'Drop trailer', 'Lumper service'], () => renderStep()),
+        ].filter(Boolean)),
+        (() => { const rt = (label, key) => h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; renderStep(); } }, label + ': ' + (w[key] ? 'Yes' : 'No'));
+          return h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [rt('Driver assist required (load/unload)', 'driver_assist_required'), rt('Team drivers required', 'team_required')]); })(),
+        (() => {
+          const svcs = [];
+          if (w.load_method_pickup === 'Drop & hook') svcs.push(['Drop & hook (pickup)', 'trailer stays at the facility \u2014 detention & layover clocks run per the rate card']);
+          if (w.load_method_delivery === 'Lumper service') svcs.push(['Lumper service (delivery)', 'broker pays the lumper directly or reimburses with receipt \u2014 NEVER the carrier\u2019s cost']);
+          if (w.load_method_delivery === 'Drop trailer') svcs.push(['Drop trailer (delivery)', 'detention & layover clocks run per the rate card']);
+          if (w.driver_assist_required) svcs.push(['Driver assist (load/unload)', '$75 per stop \u2014 LoadBoot industry standard (you can set higher in the Rate card step)']);
+          if (w.team_required) svcs.push(['Team drivers', 'no separate fee \u2014 priced in the linehaul: industry standard is +20\u201330% over a solo rate (\u2248 +$0.40\u20130.60/mi), because a team runs 1,000+ mi/day nonstop with two paid drivers']);
+          if (!svcs.length) { w.svc_rates_ok = false; return null; }
+          const cb = h('input', { type: 'checkbox' }); cb.checked = !!w.svc_rates_ok; cb.onchange = () => { w.svc_rates_ok = cb.checked; };
+          return h('div', { style: 'margin-top:10px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:12px 14px' }, [
+            h('div', { style: 'font-weight:800;font-size:.85rem;color:#9a3412;margin-bottom:6px' }, '\ud83e\uddfe Extra services you selected \u2014 industry-standard rates apply'),
+            ...svcs.map(([t9, d9]) => h('div', { style: 'display:flex;gap:8px;padding:5px 0;border-bottom:1px dashed #fed7aa;font-size:.8rem;color:#7c2d12' }, [h('b', { style: 'flex:0 0 auto' }, '\u2022 ' + t9 + ':'), h('span', null, d9)])),
+            h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:9px;cursor:pointer;font-size:.8rem;color:#7c2d12;line-height:1.5' }, [cb,
+              h('span', null, ['I agree these services are payable at the ', h('b', null, 'LoadBoot industry-standard rates'), ' (or higher if I set more in the Rate card step) \u2014 they appear on the rate confirmation and the carrier can claim them with proof. ',
+                h('a', { href: '/lumper-policy.html', target: '_blank', rel: 'noopener' }, 'Lumper'), ' \u00b7 ', h('a', { href: '/driver-assist-policy.html', target: '_blank', rel: 'noopener' }, 'Driver assist'), ' \u00b7 ', h('a', { href: '/detention-pay-policy.html', target: '_blank', rel: 'noopener' }, 'Detention')]),
+            ]),
+          ]);
+        })(),
+        h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Everything here shows on the carrier\u2019s load card \u2014 a carrier must be able to decide YES/NO without calling anyone.'),
+      ]);
+    }
     else if (step === 3) body = h('div', null, [
       h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'A carrier must be able to book without a single phone call — every rate below is REQUIRED before this load can post. By posting you agree these rates apply to this load.'),
       (() => { const b = h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'margin-bottom:8px', onClick: async () => { let m = {}; try { (await rateStandards() || []).forEach(r => { m[r.key] = r.value; }); } catch (_) {} w.acc_detention_per_hr = m.detention_per_hr || '60'; w.acc_detention_free_hours = m.detention_free_hours || '2'; w.acc_layover_per_day = m.layover_per_day || '250'; w.acc_tonu = m.tonu || '250'; w.acc_driver_assist = m.driver_assist || '75'; w.acc_extra_stop = m.extra_stop || '50'; w.acc_lumper_policy = m.lumper_policy || 'Reimbursed with receipt'; renderStep(); } }, 'Use industry-typical defaults ($60/hr after 2h · $250 layover · $250 TONU · lumper reimbursed)'); return b; })(),
@@ -607,10 +1236,30 @@ async function brokerDash(user, ov) {
       (() => { const sel = h('select', { class: 'cp-in' }, ['', 'Broker pays lumper directly', 'Reimbursed with receipt', 'Included in rate', 'Not covered'].map(o => h('option', { value: o }, o || 'Lumper policy *'))); sel.value = w.acc_lumper_policy || ''; sel.onchange = () => { w.acc_lumper_policy = sel.value; }; return field('Lumper policy *', sel); })(),
       (() => { const sel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Hazmat? (required)'), h('option', { value: 'no' }, 'No — not hazmat'), h('option', { value: 'yes' }, 'YES — hazmat (placardable)')]);
         sel.value = w.hazmat_sel || ''; sel.onchange = () => { w.hazmat_sel = sel.value; renderStep(); }; return field('Hazmat declaration *', sel); })(),
-      (w.hazmat_sel === 'yes') ? (() => { const i = inp('UN number / class / details', 'text'); i.value = w.hazmat_info || ''; i.oninput = () => { w.hazmat_info = i.value; }; return field('Hazmat details (UN #, class)', i); })() : null,
-      (w.hazmat_sel === 'yes') ? h('div', { class: 'cp-sub', style: 'color:#b45309' }, '⚠ Only carriers with a VERIFIED hazmat certificate will be able to request this load.') : null,
-      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [toggle('First come, first served (FCFS)', 'fcfs'), toggle('Appointment required', 'appointment_required'), toggle('Tracking required', 'tracking_required')]),
-      h('div', { class: 'cp-sub', style: 'margin-top:4px' }, 'Scheduling: choose FCFS, or appointment (set the pickup window in Schedule).'),
+      (w.hazmat_sel === 'yes') ? (() => {
+        const un = inp('4 digits, e.g. 1203', 'text'); un.maxLength = 6; un.value = (w.hz_un || '').replace(/^UN/i, '');
+        un.oninput = () => { un.value = un.value.replace(/\D/g, '').slice(0, 4); w.hz_un = un.value; };
+        const cls = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Hazard class *')].concat([
+          ['1', 'Class 1 \u2014 Explosives'], ['2', 'Class 2 \u2014 Gases'], ['3', 'Class 3 \u2014 Flammable liquid'],
+          ['4', 'Class 4 \u2014 Flammable solid'], ['5', 'Class 5 \u2014 Oxidizer / organic peroxide'],
+          ['6', 'Class 6 \u2014 Toxic / infectious'], ['7', 'Class 7 \u2014 Radioactive'],
+          ['8', 'Class 8 \u2014 Corrosive'], ['9', 'Class 9 \u2014 Miscellaneous'],
+        ].map(([v9, t9]) => h('option', { value: v9 }, t9))));
+        cls.value = w.hz_class || ''; cls.onchange = () => { w.hz_class = cls.value; };
+        const pg = h('select', { class: 'cp-in' }, ['', 'I', 'II', 'III'].map(v9 => h('option', { value: v9 }, v9 ? 'Packing group ' + v9 : 'Packing group (optional)')));
+        pg.value = w.hz_pg || ''; pg.onchange = () => { w.hz_pg = pg.value; };
+        const nm = inp('Proper shipping name, e.g. Gasoline', 'text'); nm.value = w.hz_name || ''; nm.oninput = () => { w.hz_name = nm.value; };
+        return h('div', { style: 'background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:12px 14px;margin-top:6px' }, [
+          h('div', { style: 'font-weight:800;font-size:.85rem;color:#92400e;margin-bottom:8px' }, '\u2622 DOT hazmat details \u2014 required, they go on the rate confirmation & shipping papers'),
+          h('div', { class: 'cp-formgrid' }, [
+            field('UN number *', un), field('Hazard class *', cls),
+            field('Packing group', pg), field('Proper shipping name *', nm),
+          ]),
+          h('div', { class: 'cp-sub', style: 'color:#b45309;margin-top:4px' }, '\u26a0 Only carriers with a VERIFIED hazmat certificate can see & book this load. Placards per 49 CFR are the shipper\u2019s responsibility.'),
+        ]);
+      })() : null,
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [toggle('Tracking required', 'tracking_required')]),
+      h('div', { class: 'cp-sub', style: 'margin-top:4px' }, 'Scheduling (FCFS / appointment) was set in the Schedule step \u2014 ' + (w.fcfs ? 'FCFS pickup' : w.appointment_required ? 'pickup by appointment' : 'not set yet') + '.'),
       h('div', { class: 'cp-sub', style: 'margin-top:6px' }, ['These are LoadBoot marketplace standards — read the full policies: ',
         h('a', { href: '/detention-pay-policy.html', target: '_blank', rel: 'noopener' }, 'Detention'), ' · ',
         h('a', { href: '/tonu-policy.html', target: '_blank', rel: 'noopener' }, 'TONU'), ' · ',
@@ -624,37 +1273,234 @@ async function brokerDash(user, ov) {
       })(),
       wi('Notes / special instructions', 'notes'),
     ]);
-    else body = h('div', { class: 'cp-card', style: 'background:#f8fafc' }, [
-      h('div', { class: 'cp-sub' }, 'Review'),
-      h('div', { style: 'font-weight:700;margin:6px 0' }, (w.origin || '?') + ' → ' + (w.destination || '?')),
-      h('div', { class: 'cp-sub' }, [w.equipment, w.rate ? ('$' + w.rate) : null, w.miles ? (w.miles + ' mi') : null, w.pickup_date].filter(Boolean).join(' · ')),
-      h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Rate card: detention $' + (w.acc_detention_per_hr || '?') + '/hr after ' + (w.acc_detention_free_hours || '?') + 'h free · layover $' + (w.acc_layover_per_day || '?') + '/day · TONU $' + (w.acc_tonu || '?') + ' · lumper: ' + (w.acc_lumper_policy || '?') + ' · ' + (w.fcfs ? 'FCFS' : (w.appointment_required ? 'appointment' : 'window: ' + (w.pickup_window || '—')))),
-      h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'On submit, a required-document checklist (rate con, pickup/delivery #, appointment, billing) is created for our dispatch team.'),
-    ]);
+    else {
+      const go9 = (i9) => { step = i9; renderStep(); };
+      const sec9 = (icon9, title9, stepIdx, rows9) => h('div', { style: 'background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:13px 15px' }, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px' }, [
+          h('div', { style: 'font-weight:800;font-size:.82rem;color:#10223B' }, icon9 + ' ' + title9),
+          h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'padding:3px 10px;font-size:.7rem', onClick: () => go9(stepIdx) }, '\u270e Edit'),
+        ]),
+        ...rows9.filter(Boolean).map(([k9, v9]) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed #f1f5f9;font-size:.8rem' }, [
+          h('span', { style: 'color:#7c8aa0;font-weight:600;flex:0 0 auto' }, k9), h('b', { style: 'color:#10223B;text-align:right' }, String(v9))])),
+      ]);
+      const rpm9 = (w.rate && w.miles && Number(w.miles) > 0) ? '$' + (Number(w.rate) / Number(w.miles)).toFixed(2) + '/mi' : null;
+      body = h('div', null, [
+        h('div', { style: 'background:radial-gradient(500px 160px at 90% -40%,rgba(8,131,247,.4),transparent 60%),linear-gradient(120deg,#0d1b33,#14335c);border-radius:16px;padding:16px 18px;color:#fff;margin-bottom:12px' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center' }, [
+            h('div', null, [
+              h('div', { style: 'font-size:.64rem;letter-spacing:.1em;opacity:.65;font-weight:800' }, 'READY TO POST \u2014 FINAL CHECK'),
+              h('div', { style: 'font-weight:800;font-size:1.12rem;margin-top:3px' }, (w.origin || '?') + '  \u2192  ' + (w.destination || '?')),
+              h('div', { style: 'font-size:.76rem;opacity:.75;margin-top:2px' }, [w.miles ? Number(w.miles).toLocaleString() + ' mi' : null, w.__drive_hours ? ('~' + Math.round(w.__drive_hours) + 'h drive') : null, (w.pickup_lat && w.delivery_lat) ? 'exact GPS pins locked \u2713' : null].filter(Boolean).join(' \u00b7 ')),
+            ]),
+            h('div', { style: 'text-align:right' }, [
+              h('div', { style: 'font-weight:800;font-size:1.5rem;color:#7cc0ff' }, w.rate ? ('$' + Number(w.rate).toLocaleString()) : '\u2014'),
+              rpm9 ? h('div', { style: 'font-size:.76rem;opacity:.8' }, rpm9 + ' all-in') : null,
+            ]),
+          ]),
+        ]),
+        h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px' }, [
+          sec9('\ud83d\udce6', 'Freight', 2, [
+            ['Equipment', w.equipment || '\u2014'], ['Load size', w.load_size || '\u2014'], ['Commodity', w.commodity || '\u2014'],
+            w.weight ? ['Weight', Number(w.weight).toLocaleString() + ' lb'] : null,
+            w.pallets ? ['Pallets / pieces', w.pallets] : null,
+            w.temperature ? ['Reefer temp', w.temperature + '\u00b0F'] : null,
+            w.tarps ? ['Tarps', w.tarps] : null,
+            w.cargo_value ? ['Cargo value', '$' + Number(w.cargo_value).toLocaleString()] : null,
+            ['Hazmat', w.hazmat_sel === 'yes' ? '\u26a0 YES \u2014 certified carriers only' : 'No'],
+          ]),
+          sec9('\ud83d\udcc5', 'Schedule', 1, [
+            ['Pickup', (w.pickup_date || '\u2014') + (w.pickup_window ? ' \u00b7 ' + w.pickup_window : '')],
+            ['Pickup scheduling', w.sched_pu === 'FCFS' ? 'FCFS \u2014 first come, first served' : w.sched_pu === 'Appointment' ? 'Fixed appointment' : '\u2014'],
+            ['Delivery', (w.delivery_date || '\u2014') + (w.delivery_window ? ' \u00b7 ' + w.delivery_window : '')],
+            ['Delivery scheduling', w.sched_del === 'FCFS' ? 'FCFS \u2014 first come, first served' : w.sched_del === 'Appointment' ? 'Fixed appointment' : '\u2014'],
+          ]),
+          sec9('\ud83e\uddfe', 'Rate card \u2014 what the carrier can claim', 3, [
+            ['Detention', '$' + (w.acc_detention_per_hr || '?') + '/hr after ' + (w.acc_detention_free_hours || '?') + 'h free'],
+            ['Layover', '$' + (w.acc_layover_per_day || '?') + '/day'],
+            ['TONU', '$' + (w.acc_tonu || '?')],
+            ['Lumper', w.acc_lumper_policy || '\u2014'],
+            w.acc_driver_assist ? ['Driver assist', '$' + w.acc_driver_assist + '/stop'] : null,
+            w.acc_extra_stop ? ['Extra stop', '$' + w.acc_extra_stop] : null,
+          ]),
+          sec9('\u2699\ufe0f', 'Services & handling', 2, [
+            ['Pickup loading', w.load_method_pickup || '\u2014'],
+            ['Delivery unloading', w.load_method_delivery || '\u2014'],
+            w.driver_assist_required ? ['Driver assist', '\u26a0 REQUIRED \u2014 paid per rate card'] : null,
+            w.team_required ? ['Drivers', '\u26a0 TEAM required'] : null,
+            w.svc_rates_ok ? ['Service rates', 'Industry-standard rates agreed \u2713'] : null,
+            ['Tracking', w.tracking_required ? 'Required (live GPS)' : 'Standard GPS proof'],
+            w.reference ? ['Reference', w.reference] : null,
+          ]),
+        ]),
+        h('div', { style: 'margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#166534' }, '\ud83d\udcb3 Payment & contact on the rate confirmation: settlement runs through LoadBoot (documented terms, no games), and LoadBoot dispatch is the 24/7 day-of contact \u2014 the carrier never needs to chase anyone by phone.'),
+        h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'On submit, a required-document checklist (rate con, pickup/delivery #, appointment, billing) is created for our dispatch team.'),
+      ]);
+      // duplicate radar — warn BEFORE submitting if an open load already covers this lane+date
+      (async () => {
+        try {
+          const rows9 = (await partnerMyLoads(60)) || [];
+          const dups9 = rows9.filter(r9 => !/reject|cancel|deliver|complete|invoiced/.test(String(r9.status || '').toLowerCase())
+            && String(r9.origin || '').toLowerCase() === String(w.origin || '').toLowerCase()
+            && String(r9.destination || '').toLowerCase() === String(w.destination || '').toLowerCase()
+            && String(r9.pickup_date || '') === String(w.pickup_date || ''));
+          if (dups9.length && body.isConnected) body.insertBefore(h('div', { style: 'background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:12px 14px;margin-bottom:12px' }, [
+            h('div', { style: 'font-weight:800;color:#991b1b;font-size:.86rem' }, '\u26a0 Possible duplicate \u2014 you already have ' + dups9.length + ' open load' + (dups9.length === 1 ? '' : 's') + ' on this exact lane & pickup date'),
+            h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'Duplicates confuse carriers and split your offers. Check My Loads first \u2014 the system will also challenge this on submit.'),
+          ]), body.firstChild);
+        } catch (_) {}
+      })();
+    }
     const back = h('button', { class: 'cp-btn ghost', onClick: () => { if (step > 0) { step--; renderStep(); } } }, 'Back');
     const nextLbl = step < STEPS.length - 1 ? 'Next' : (confirmDup ? 'Submit anyway' : 'Submit load');
     const next = h('button', { class: 'cp-btn', onClick: async () => {
       err.textContent = ''; err.className = 'cp-err';
-      if (step === 0 && (!w.origin || !w.destination)) { err.textContent = 'Origin and destination are required.'; return; }
+      if (step === 0) {
+        const need = [];
+        if (!(w.o_street || '').trim()) need.push('pickup street address');
+        if (!(w.o_city || '').trim()) need.push('pickup city');
+        if (!/^[A-Za-z]{2}$/.test((w.o_state || '').trim())) need.push('pickup state (2 letters)');
+        if (!/^\d{5}(-\d{4})?$/.test((w.o_zip || '').trim())) need.push('pickup ZIP (5 digits)');
+        if (!(w.d_street || '').trim()) need.push('delivery street address');
+        if (!(w.d_city || '').trim()) need.push('delivery city');
+        if (!/^[A-Za-z]{2}$/.test((w.d_state || '').trim())) need.push('delivery state (2 letters)');
+        if (!/^\d{5}(-\d{4})?$/.test((w.d_zip || '').trim())) need.push('delivery ZIP (5 digits)');
+        if (need.length) { err.textContent = 'Required: ' + need.join(', ') + '.'; return; }
+        const stU = (x) => String(x || '').trim().toUpperCase();
+        w.origin_full = [w.o_street.trim(), w.o_city.trim(), stU(w.o_state) + ' ' + w.o_zip.trim()].join(', ');
+        w.destination_full = [w.d_street.trim(), w.d_city.trim(), stU(w.d_state) + ' ' + w.d_zip.trim()].join(', ');
+        w.origin = w.o_city.trim() + ', ' + stU(w.o_state);
+        w.destination = w.d_city.trim() + ', ' + stU(w.d_state);
+      }
+      if (step === 1) {
+        const m1 = [];
+        if (!w.sched_pu) m1.push('pickup scheduling (FCFS or appointment)');
+        if (!w.pickup_date) m1.push('pickup date');
+        if (w.sched_pu === 'FCFS' && !/\d{2}:\d{2}\u2013\d{2}:\d{2}/.test(w.pickup_window || '')) m1.push('pickup FCFS window (from & to)');
+        if (w.sched_pu === 'Appointment' && !(w.pu_appt || '').trim()) m1.push('pickup appointment time');
+        if (!w.sched_del) m1.push('delivery scheduling (FCFS or appointment)');
+        if (!w.delivery_date) m1.push('delivery date');
+        if (w.sched_del === 'FCFS' && !/\d{2}:\d{2}\u2013\d{2}:\d{2}/.test(w.delivery_window || '')) m1.push('delivery FCFS window (from & to)');
+        if (w.sched_del === 'Appointment' && !(w.del_appt || '').trim()) m1.push('delivery appointment time');
+        if (m1.length) { err.textContent = 'Required: ' + m1.join(', ') + '.'; return; }
+        if (w.delivery_date < w.pickup_date) { err.textContent = 'Delivery date cannot be before the pickup date.'; return; }
+        const tod9 = new Date().toISOString().slice(0, 10);
+        if (w.pickup_date < tod9) { err.textContent = 'Pickup date is in the past.'; return; }
+        const rng9 = (v9) => (String(v9).match(/(\d{2}:\d{2})\u2013(\d{2}:\d{2})/) || []).slice(1);
+        if (w.sched_pu === 'FCFS') { const [f9, t9] = rng9(w.pickup_window); if (f9 && t9 && t9 <= f9) { err.textContent = 'Pickup window: \u201cto\u201d must be after \u201cfrom\u201d.'; return; } }
+        if (w.sched_del === 'FCFS') { const [f9, t9] = rng9(w.delivery_window); if (f9 && t9 && t9 <= f9) { err.textContent = 'Delivery window: \u201cto\u201d must be after \u201cfrom\u201d.'; return; } }
+        const puT = (w.sched_pu === 'Appointment' ? w.pu_appt : (w.pickup_window || '').slice(0, 5)) || '00:00';
+        const deT = (w.sched_del === 'Appointment' ? w.del_appt : (w.delivery_window || '').slice(0, 5)) || '23:59';
+        const puDt = new Date(w.pickup_date + 'T' + puT);
+        const deDt = new Date(w.delivery_date + 'T' + deT);
+        if (!(deDt > puDt)) { err.textContent = 'Delivery time frame must be in the FUTURE of the pickup time frame \u2014 fix the delivery date/time.'; return; }
+        if (w.__drive_hours && w.__drive_hours > 0.5) {
+          const hosT9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10;
+          const days9 = Math.max(1, Math.ceil(hosT9 / 24));
+          const minDt = new Date(puDt.getTime() + (w.team_required ? w.__drive_hours : hosT9) * 0.95 * 3600 * 1000);
+          if (deDt < minDt) {
+            err.textContent = 'Not possible for one driver: ~' + Math.round(w.__drive_hours) + 'h of driving means a ' + days9 + '-day trip under federal HOS rules (11h driving max, then 10h rest). Earliest realistic delivery: ' + minDt.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '. ' + (w.team_required ? 'Even TEAM drivers cannot cover it \u2014 move the delivery later.' : 'Move the delivery later \u2014 or switch to TEAM drivers for nonstop driving:');
+            if (!w.team_required) err.appendChild(h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'display:block;margin-top:8px', onClick: () => { w.team_required = true; renderStep(); } }, '\ud83d\udc65 Make this a TEAM load \u2014 2 drivers, nonstop (books at +20\u201330%)'));
+            return;
+          }
+        }
+        if (!w.__dup_ack) {
+          let dups9 = [];
+          try {
+            const rows9 = (await partnerMyLoads(60)) || [];
+            dups9 = rows9.filter(r9 => !/reject|cancel|deliver|complete|invoiced/.test(String(r9.status || '').toLowerCase())
+              && String(r9.origin || '').toLowerCase() === String(w.origin || '').toLowerCase()
+              && String(r9.destination || '').toLowerCase() === String(w.destination || '').toLowerCase()
+              && String(r9.pickup_date || '') === String(w.pickup_date || ''));
+          } catch (_) {}
+          if (dups9.length) {
+            err.textContent = '';
+            err.appendChild(h('div', { style: 'background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:12px 14px;text-align:left' }, [
+              h('div', { style: 'font-weight:800;color:#991b1b;font-size:.86rem' }, '\u26a0 You already have ' + dups9.length + ' open load' + (dups9.length === 1 ? '' : 's') + ' with these details'),
+              ...dups9.slice(0, 3).map(d9 => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;background:#fff;border:1px solid #fee2e2;border-radius:10px;padding:8px 11px;margin-top:7px;font-size:.8rem;flex-wrap:wrap' }, [
+                h('span', null, [h('b', null, (d9.origin || '') + ' \u2192 ' + (d9.destination || '')), ' \u00b7 ' + (d9.equipment || '') + ' \u00b7 $' + Number(d9.rate || 0).toLocaleString() + ' \u00b7 PU ' + (d9.pickup_date || '')]),
+                h('span', { style: 'font-weight:800;color:#92400e' }, String(d9.status || '')),
+              ])),
+              h('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [
+                h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', onClick: () => bgo('loads') }, '\ud83d\udccb View My Loads'),
+                h('button', { type: 'button', class: 'cp-btn cp-btn-sm', onClick: () => { w.__dup_ack = true; err.textContent = ''; next.click(); } }, 'This is a DIFFERENT load \u2014 continue'),
+              ]),
+            ]));
+            return;
+          }
+        }
+        // derive the platform flags + carrier-facing text from the choices
+        w.fcfs = w.sched_pu === 'FCFS';
+        w.appointment_required = w.sched_pu === 'Appointment';
+        if (w.sched_pu === 'Appointment') w.pickup_window = 'Appt ' + w.pu_appt;
+        if (w.sched_del === 'Appointment') w.delivery_window = 'Appt ' + w.del_appt;
+        w.dock_hours_pickup = w.sched_pu === 'Appointment' ? 'By appointment only' : ('FCFS ' + w.pickup_window);
+        w.dock_hours_delivery = w.sched_del === 'Appointment' ? 'By appointment only' : ('FCFS ' + w.delivery_window);
+      }
+      if (step === 2) {
+        const m2 = [];
+        if (!w.equipment) m2.push('equipment');
+        if (!w.load_size) m2.push('load size (FTL/partial)');
+        if (!(w.commodity || '').trim()) m2.push('commodity');
+        if (!w.weight || Number(w.weight) <= 0) m2.push('weight');
+        if (!w.rate || Number(w.rate) <= 0) m2.push('rate');
+        if (w.rate && w.miles && Number(w.miles) > 0 && w.__rpm_floor && w.__rpm_floor_eq === w.equipment) {
+          const rpmNow = Number(w.rate) / Number(w.miles);
+          if (rpmNow < w.__rpm_floor * 0.999) m2.push('rate is $' + rpmNow.toFixed(2) + '/mi \u2014 BELOW the industry minimum $' + w.__rpm_floor.toFixed(2) + '/mi for ' + w.equipment + '. Carriers will not book it and it hurts your acceptance record; raise it to at least $' + Math.ceil(w.__rpm_floor * Number(w.miles)).toLocaleString());
+        }
+        if (w.equipment === 'Reefer' && !(w.temperature || '').trim()) m2.push('reefer temperature');
+        if (!w.load_method_pickup) m2.push('pickup loading method');
+        if (!w.load_method_delivery) m2.push('delivery unloading method');
+        if (directCarrier && w.equipment) {
+          const eqs9 = await dirCarrierEq(directCarrier.id);
+          if (eqs9 && eqs9.length && !eqs9.some(e => e.toLowerCase() === w.equipment.toLowerCase()))
+            m2.push('\ud83c\udfaf ' + directCarrier.name + ' does NOT run ' + w.equipment + ' (their fleet: ' + eqs9.join(', ') + ') \u2014 change equipment or press \u201c\u2715 Remove target\u201d above');
+        }
+        const anySvc9 = w.load_method_pickup === 'Drop & hook' || w.load_method_delivery === 'Lumper service' || w.load_method_delivery === 'Drop trailer' || w.driver_assist_required || w.team_required;
+        if (anySvc9 && !w.svc_rates_ok) m2.push('agree to the industry-standard rates for the extra services you selected (checkbox)');
+        if (m2.length) { err.textContent = 'Required: ' + m2.join(', ') + '.'; return; }
+      }
       if (step === 3) {
         const missing = [];
         [['acc_detention_per_hr', 'detention rate'], ['acc_detention_free_hours', 'free hours'], ['acc_layover_per_day', 'layover rate'], ['acc_tonu', 'TONU rate']].forEach(([k, l]) => { if (w[k] === undefined || w[k] === '' || isNaN(Number(w[k])) || Number(w[k]) < 0) missing.push(l); });
         if (!w.acc_lumper_policy) missing.push('lumper policy');
+        if (w.driver_assist_required && (w.acc_driver_assist === undefined || w.acc_driver_assist === '' || isNaN(Number(w.acc_driver_assist)) || Number(w.acc_driver_assist) <= 0)) missing.push('driver assist rate \u2014 you marked driver assist REQUIRED');
+        if (w.load_method_delivery === 'Lumper service' && w.acc_lumper_policy && /not covered/i.test(w.acc_lumper_policy)) missing.push('a lumper policy that covers the lumper \u2014 you selected Lumper service, so \u201cNot covered\u201d is not allowed');
         if (w.hazmat_sel !== 'yes' && w.hazmat_sel !== 'no') missing.push('hazmat declaration (yes/no)');
-        if (!w.fcfs && !w.appointment_required && !(w.pickup_window || '').trim()) missing.push('scheduling (FCFS or appointment / pickup window)');
+        if (w.hazmat_sel === 'yes') {
+          if (!/^\d{4}$/.test(w.hz_un || '')) missing.push('hazmat UN number (4 digits)');
+          if (!w.hz_class) missing.push('hazard class (1\u20139)');
+          if (!(w.hz_name || '').trim()) missing.push('proper shipping name');
+          if (/^\d{4}$/.test(w.hz_un || '') && w.hz_class && (w.hz_name || '').trim())
+            w.hazmat_info = 'UN' + w.hz_un + ' \u00b7 Class ' + w.hz_class + (w.hz_pg ? ' \u00b7 PG ' + w.hz_pg : '') + ' \u00b7 ' + w.hz_name.trim();
+        }
+
         if (!w.emg_policy_ok) missing.push('Emergency Rescheduling Policy acceptance (required)');
+        if (w.hazmat_sel === 'yes' && directCarrier) {
+          const c9 = await dirCarrierInfo(directCarrier.id);
+          if (c9 && c9.hazmat === false) missing.push('\ud83c\udfaf ' + directCarrier.name + ' is NOT hazmat-certified \u2014 remove the direct target or make the load non-hazmat');
+        }
         if (missing.length) { err.textContent = 'Required before posting: ' + missing.join(', ') + '.'; return; }
       }
       if (step < STEPS.length - 1) { step++; renderStep(); return; }
       next.disabled = true; next.textContent = 'Submitting…';
       try {
         const payload = Object.assign({}, w, confirmDup ? { confirm_duplicate: 'true' } : {});
+        const shortAddr = (a) => { const s1 = String(a || '').replace(/\s*\d{5}(-\d{4})?\s*$/, '').replace(/,\s*(USA|United States)\s*$/i, '').trim(); const parts = s1.split(',').map((x) => x.trim()).filter(Boolean); return parts.length >= 2 ? parts.slice(-2).join(', ') : s1; };
+        payload.origin_full = w.origin_full || w.origin || '';
+        payload.destination_full = w.destination_full || w.destination || '';
+        payload.origin = shortAddr(payload.origin_full);
+        payload.destination = shortAddr(payload.destination_full);
         payload.hazmat = w.hazmat_sel === 'yes' ? 'true' : 'false';
         payload.hazmat_info = w.hazmat_info || null;
         payload.accessorials = { detention_per_hr: String(w.acc_detention_per_hr), detention_free_hours: String(w.acc_detention_free_hours), layover_per_day: String(w.acc_layover_per_day), tonu: String(w.acc_tonu), driver_assist: w.acc_driver_assist ? String(w.acc_driver_assist) : null, extra_stop: w.acc_extra_stop ? String(w.acc_extra_stop) : null, lumper_policy: w.acc_lumper_policy, fcfs: w.fcfs ? 'true' : 'false' };
         ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu', 'acc_driver_assist', 'acc_extra_stop', 'acc_lumper_policy'].forEach(k => delete payload[k]);
+        payload.details = { load_size: w.load_size || null, pallets: w.pallets || null, temperature: w.temperature || null, tarps: w.tarps || null,
+          load_method_pickup: w.load_method_pickup || null, load_method_delivery: w.load_method_delivery || null,
+          driver_assist_required: !!w.driver_assist_required, team_required: !!w.team_required, cargo_value: w.cargo_value || null,
+          dock_hours_pickup: w.dock_hours_pickup || null, dock_hours_delivery: w.dock_hours_delivery || null };
+        if (directCarrier) { payload.details.direct_carrier_id = directCarrier.id; payload.details.direct_carrier_name = directCarrier.name; payload.details.direct_wait_minutes = w.direct_wait_minutes || '15'; }
         await partnerSubmitLoad(payload);
-        err.className = 'cp-err ok'; err.textContent = '✓ Load submitted — our dispatch team will review it and generate the document checklist.';
+        err.className = 'cp-err ok'; err.textContent = '✓ Load submitted' + (directCarrier ? ' \u2014 \ud83c\udfaf direct offer to ' + directCarrier.name + ' fires automatically when dispatch posts it' : '') + ' \u2014 our dispatch team will review it and generate the document checklist.'; directCarrier = null;
         for (const k in w) delete w[k]; w.appointment_required = false; w.tracking_required = false; step = 0; confirmDup = false; renderStep(); loadList();
       } catch (e) {
         const msg = (e && e.message) || 'Could not submit the load.';
@@ -663,10 +1509,61 @@ async function brokerDash(user, ov) {
       }
     } }, nextLbl);
     mount(stepHost, h('div', null, [
-      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Step ' + (step + 1) + ' of ' + STEPS.length + ' — ' + STEPS[step]),
-      body, err,
-      h('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [step > 0 ? back : null, next].filter(Boolean)),
+      (() => {
+        if (!document.getElementById('plw-css')) {
+          const st9 = document.createElement('style'); st9.id = 'plw-css';
+          st9.textContent = `
+            .plw-ring{transform:rotate(-90deg)}
+            .plw-ring .tr{fill:none;stroke:#eef2f7;stroke-width:5}
+            .plw-ring .pr{fill:none;stroke:url(#plwGrad);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .45s cubic-bezier(.4,0,.2,1)}
+            .plw-slide-r{animation:plwR .32s cubic-bezier(.2,.7,.3,1)}
+            .plw-slide-l{animation:plwL .32s cubic-bezier(.2,.7,.3,1)}
+            @keyframes plwR{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+            @keyframes plwL{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+          `;
+          document.head.appendChild(st9);
+        }
+        const frac = step / (STEPS.length - 1);
+        const C9 = 2 * Math.PI * 20;
+        const ringWrap = h('div', { style: 'position:relative;width:52px;height:52px;flex:0 0 auto' });
+        ringWrap.innerHTML = '<svg class="plw-ring" width="52" height="52" viewBox="0 0 52 52">'
+          + '<defs><linearGradient id="plwGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0883F7"/><stop offset="1" stop-color="#22c55e"/></linearGradient></defs>'
+          + '<circle class="tr" cx="26" cy="26" r="20"/>'
+          + '<circle class="pr" cx="26" cy="26" r="20" stroke-dasharray="' + C9.toFixed(2) + '" stroke-dashoffset="' + (C9 * (1 - frac)).toFixed(2) + '"/></svg>'
+          + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.66rem;font-weight:800;color:#10223B">' + Math.round(frac * 100) + '%</div>';
+        return h('div', { style: 'margin-bottom:14px' }, [
+          h('div', { class: 'cp-wiz-head', style: 'align-items:center' }, [
+            h('div', { style: 'display:flex;gap:12px;align-items:center' }, [
+              ringWrap,
+              h('div', null, [
+                h('h3', { style: 'margin:0' }, 'Step ' + (step + 1) + ' of ' + STEPS.length + ' \u2014 ' + STEPS[step]),
+                h('div', { class: 'cp-sub', style: 'margin-top:2px' }, ['Exact facility addresses \u2014 real miles calculate automatically.', 'Windows & dock hours \u2014 the carrier plans the whole day around these.', 'Equipment & freight \u2014 what the truck must be able to carry.', 'Your rate card \u2014 a carrier books without a single phone call.', 'One last look \u2014 then it goes to dispatch.'][step] || ''),
+              ]),
+            ]),
+            step > 0 ? h('span', { class: 'cp-row-s', style: 'white-space:nowrap' }, STEPS[step - 1] + ' \u2713') : null,
+          ].filter(Boolean)),
+          h('div', { class: 'cp-wiz-bar', style: 'margin-top:10px' }, h('div', { class: 'cp-wiz-fill', style: 'background:linear-gradient(90deg,#0883F7,#22c55e);width:' + Math.round(frac * 100) + '%' })),
+        ]);
+      })(),
+      directCarrier ? (() => {
+        const wsel = h('select', { class: 'cp-in', style: 'margin:0;max-width:220px' },
+          [['15', '\u23f1 Wait 15 minutes (standard)'], ['10', '10 minutes'], ['30', '30 minutes'], ['60', '1 hour'], ['120', '2 hours'], ['240', '4 hours']].map(([v9, t9]) => h('option', { value: v9 }, t9)));
+        wsel.value = w.direct_wait_minutes || '15';
+        wsel.onchange = () => { w.direct_wait_minutes = wsel.value; renderStep(); };
+        return h('div', { style: 'background:#eff6ff;border:1.5px solid #93c5fd;border-radius:13px;padding:10px 14px;margin-bottom:10px' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap' }, [
+            h('div', { style: 'font-size:.84rem;color:#1e40af' }, [h('b', null, '\ud83c\udfaf Direct target: ' + directCarrier.name), h('span', null, ' \u2014 the moment dispatch posts this load, a direct offer with YOUR wait window goes to this carrier. A live countdown runs on both sides; if it expires unanswered, the load stays available. First acceptance wins.')]),
+            h('button', { type: 'button', class: 'cp-btn ghost cp-btn-sm', onClick: () => { directCarrier = null; renderStep(); } }, '\u2715 Remove target'),
+          ]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap' }, [
+            h('span', { style: 'font-size:.78rem;font-weight:700;color:#1e40af' }, 'How long should we hold the offer for this carrier?'), wsel,
+          ]),
+        ]);
+      })() : null,
+      h('div', { class: 'cp-wiz-body ' + (step >= prevStep ? 'plw-slide-r' : 'plw-slide-l') }, body), err,
+      h('div', { class: 'cp-wiz-actions' }, [step > 0 ? back : h('span'), next]),
     ]));
+    prevStep = step;
   }
   renderStep();
   const form = h('div', { class: 'cp-card' }, [
@@ -702,42 +1599,815 @@ async function brokerDash(user, ov) {
             pill(l.status),
           ]),
           stepper,
+          h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center' }, [
+            ((l.offers_pending || 0) > 0 && l.offer_expiry) ? (() => {
+              const chip9 = h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#ede9fe;color:#6d28d9' });
+              const lbl9 = l.direct_carrier ? ('\ud83c\udfaf Requested to ' + l.direct_carrier) : ('\ud83d\udce3 Offered to ' + l.offers_pending + ' carrier' + (l.offers_pending === 1 ? '' : 's'));
+              const tick9 = () => {
+                const ms9 = new Date(l.offer_expiry).getTime() - Date.now();
+                if (ms9 <= 0) { chip9.textContent = lbl9 + ' \u00b7 expired \u2014 refreshing\u2026'; clearInterval(chip9.__t9); setTimeout(() => loadList(), 1500); return; }
+                const m9 = Math.floor(ms9 / 60000), s9 = Math.floor((ms9 % 60000) / 1000);
+                chip9.textContent = lbl9 + ' \u00b7 \u23f3 ' + m9 + ':' + String(s9).padStart(2, '0');
+              };
+              tick9(); chip9.__t9 = setInterval(() => { if (!chip9.isConnected) { clearInterval(chip9.__t9); return; } tick9(); }, 1000);
+              return chip9;
+            })() : null,
+            ((l.offers_pending || 0) > 0 && l.offer_expiry) ? (() => {
+              const ext9 = h('select', { class: 'cp-in', style: 'margin:0;max-width:170px;padding:6px 10px;font-size:.76rem' },
+                [['', '\u23f3 Need more time?'], ['15', '+15 minutes'], ['30', '+30 minutes'], ['60', '+1 hour'], ['120', '+2 hours']].map(([v9, t9]) => h('option', { value: v9 }, t9)));
+              ext9.onchange = async () => {
+                const mins9 = Number(ext9.value); if (!mins9) return;
+                ext9.disabled = true;
+                try { const r9 = await partnerExtendOffer(l.id, mins9); alert('\u23f3 Window extended \u2014 the carrier was notified. New expiry: ' + new Date(r9.new_expiry).toLocaleTimeString()); loadList(); }
+                catch (e9) { ext9.disabled = false; ext9.value = ''; alert((e9 && e9.message) || 'Could not extend.'); }
+              };
+              return ext9;
+            })() : null,
+            (!((l.offers_pending || 0) > 0) && String(l.board_status || '') === 'available') ? h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#dcfce7;color:#166534' }, '\ud83d\udfe2 On load board') : null,
+            (/book/.test(String(l.board_status || '') + String(l.status || ''))) ? h('button', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe;cursor:pointer', title: 'View this carrier\u2019s full profile & packet', onClick: async () => {
+              try { if (!__dirCache) __dirCache = (await partnerCarrierDirectory()) || []; } catch (_) { __dirCache = __dirCache || []; }
+              const c9 = (__dirCache || []).find(x9 => x9.name && l.carrier && x9.name.toLowerCase() === String(l.carrier).toLowerCase());
+              if (c9) openCarrierFullProfile(c9, null); else openCarrierPacket(l);
+            } }, '\u2713 Booked by ' + (l.carrier || 'carrier') + ' \u2014 view profile') : null,
+            (!((l.offers_pending || 0) > 0) && String(l.board_status || '') !== 'available' && idx < 2 && !/cancel|reject|book/.test((String(l.status || '') + String(l.board_status || '')).toLowerCase())) ? h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#fef3c7;color:#92400e' }, '\u23f3 Board: with dispatch') : null,
+          ].filter(Boolean)),
           h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
+            h('button', { class: 'cp-btn cp-btn-sm', onClick: () => openLoadTracker(l) }, '\ud83d\udef0 Track live'),
             h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => brokerDocs(l) }, '📄 Docs'),
-          ]),
+            (() => {
+              const booked9 = /book|transit|deliver|complete|invoiced/.test((String(l.status || '') + ' ' + String(l.board_status || '')).toLowerCase());
+              if (!(idx < 2 || booked9)) return null;
+              return booked9
+                ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: () => openCarrierPacket(l) }, '\ud83d\udd13 Carrier packet \u2014 UNLOCKED')
+                : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'opacity:.75', title: 'W-9, COI, authority, signed agreement \u2014 released the moment a carrier accepts', onClick: () => openCarrierPacket(l) }, '\ud83d\udd12 Carrier packet \u2014 unlocks on acceptance');
+            })(),
+            (idx < 2 && !/cancel/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm', title: String(l.board_status || '') === 'available' ? 'Send direct offers on top of the board listing' : 'Direct offers unlock once dispatch posts the load', onClick: () => openOfferPicker(l, loadList) }, '\ud83c\udfaf Offer to specific carriers') : null,
+            (!/cancel|deliver|complete|invoiced/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#b91c1c', onClick: async (ev) => {
+              const b9 = ev.currentTarget;
+              const committed = idx >= 2;
+              if (!confirm(committed
+                ? 'Cancel this load?\n\n\u26a0 A truck is already COMMITTED \u2014 per the rate card this cancellation becomes a TONU claim (truck-ordered-not-used) with the carrier\u2019s GPS evidence attached.'
+                : 'Cancel this load? No truck is committed yet \u2014 no TONU applies.')) return;
+              const why = prompt('Reason (required \u2014 the carrier and dispatch see this):'); if (!why || !why.trim()) return;
+              b9.disabled = true; b9.textContent = 'Cancelling\u2026';
+              try { const r9 = await partnerCancelLoad(l.id, why.trim()); alert(r9.note || 'Cancelled.'); loadList(); }
+              catch (e9) { b9.disabled = false; b9.textContent = '\u2715 Cancel'; alert((e9 && e9.message) || 'Could not cancel.'); }
+            } }, '\u2715 Cancel') : null,
+          ].filter(Boolean)),
         ]);
       })));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
 
-  // Inc 54 — broker document checklist: see what dispatch needs, submit each item, see rejection reasons.
+  // Full decision profile for ONE carrier — usable from the offer picker (and anywhere else).
+  function openCarrierFullProfile(c, logoBase) {
+    const initials = (nm) => String(nm || '?').split(/\s+/).slice(0, 2).map(x => x[0] || '').join('').toUpperCase();
+    const starsTxt = (v) => '\u2605'.repeat(Math.round(v || 0)) + '\u2606'.repeat(Math.max(0, 5 - Math.round(v || 0)));
+    const chip9 = (txt, bg, fg) => h('span', { style: 'display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:999px;font-size:.7rem;font-weight:700;background:' + (bg || '#f1f5f9') + ';color:' + (fg || '#334155') + ';border:1px solid #e2e8f0' }, txt);
+    const sec9 = (label, kids) => (kids && kids.length) ? h('div', { style: 'margin:9px 0' }, [h('div', { style: 'font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;font-weight:800;margin-bottom:5px' }, label), h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, kids)]) : null;
+    const health = c.health != null ? Number(c.health) : null;
+    const hFg = health == null ? '#7c8aa0' : health >= 85 ? '#16a34a' : health >= 60 ? '#d97706' : '#dc2626';
+    const kpi9 = (l9, v9, fg) => h('div', { style: 'background:#f8fafc;border:1px solid #e9eef5;border-radius:13px;padding:9px 4px;text-align:center' }, [h('b', { style: 'display:block;font-size:1rem;font-weight:800;color:' + (fg || '#10223B') }, v9), h('span', { style: 'font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;color:#7c8aa0;font-weight:800' }, l9)]);
+    const mix9 = (c.fleet_mix || []).filter(m => m.type && /[a-zA-Z]{2,}/.test(m.type));
+    const logo = (c.logo_path && logoBase) ? (logoBase + c.logo_path) : null;
+    const revHost = h('div');
+    openModal('Carrier profile \u2014 assign with confidence', [h('div', null, [
+      h('div', { style: 'display:flex;gap:12px;align-items:center;margin-bottom:6px;flex-wrap:wrap' }, [
+        h('div', { style: 'width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;color:#fff;background:linear-gradient(135deg,#0883F7,#10223B);overflow:hidden;flex:0 0 auto' }, logo ? h('img', { src: logo, style: 'width:100%;height:100%;object-fit:cover' }) : initials(c.name)),
+        h('div', { style: 'min-width:0;flex:1' }, [
+          h('div', { style: 'font-weight:800;font-size:1.1rem;color:#10223B' }, c.name || 'Carrier'),
+          h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:4px' }, [
+            chip9('\u2713 LOADBOOT VERIFIED', '#dcfce7', '#166534'),
+            ((c.compliance || []).length >= 3) ? h('button', { style: 'display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:999px;font-size:.7rem;font-weight:700;background:#ede9fe;color:#6d28d9;border:0;cursor:pointer', onClick: () => openCarrierPacketPreview(c) }, '\ud83d\udce6 Carrier packet \ud83d\udd12') : null,
+            c.out_of_service ? chip9('\u26d4 OUT OF SERVICE', '#fee2e2', '#991b1b') : null,
+            c.available === false ? chip9('\u23f8 NOT ACCEPTING', '#fef3c7', '#92400e') : null,
+            chip9('since ' + (c.member_since || '\u2014')),
+          ].filter(Boolean)),
+          h('div', { style: 'font-size:.82rem;font-weight:700;color:#f59e0b;margin-top:4px' }, (c.ratings_count || 0) > 0 ? (starsTxt(c.stars) + ' ' + c.stars + ' \u00b7 ' + c.ratings_count + ' trip-verified review' + (c.ratings_count === 1 ? '' : 's')) : h('span', { style: 'color:#94a3b8;font-weight:600' }, '\u2728 New on LoadBoot \u2014 not rated yet')),
+        ]),
+      ]),
+      h('div', { style: 'display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0' }, [
+        kpi9('On-time', c.on_time_pct != null ? c.on_time_pct + '%' : 'New', c.on_time_pct != null ? (c.on_time_pct >= 90 ? '#16a34a' : '#d97706') : '#94a3b8'),
+        kpi9('Delivered', String(c.delivered || 0)),
+        kpi9('Cancels', String(c.carrier_cancels || 0), (c.carrier_cancels || 0) > 0 ? '#dc2626' : '#16a34a'),
+        kpi9('Health', health != null ? String(health) : '\u2014', hFg),
+      ]),
+      sec9('FMCSA \u00b7 authority', [
+        c.dot ? chip9('DOT ' + String(c.dot).replace(/^DOT\s*/i, '')) : null,
+        c.mc ? chip9('MC ' + String(c.mc).replace(/^MC\s*/i, '')) : null,
+        c.authority ? chip9('Authority: ' + String(c.authority).toUpperCase(), String(c.authority).toLowerCase() === 'active' ? '#dcfce7' : '#fef3c7', String(c.authority).toLowerCase() === 'active' ? '#166534' : '#92400e') : null,
+        (c.safety_rating && String(c.safety_rating).toLowerCase() !== 'none') ? chip9('Safety: ' + String(c.safety_rating).toUpperCase()) : null,
+        c.power_units ? chip9(c.power_units + ' power units') : null,
+        c.driver_count ? chip9(c.driver_count + ' drivers') : null,
+      ].filter(Boolean)),
+      sec9('Fleet \u2014 what they run', mix9.map(m => chip9('\ud83d\ude9b ' + m.type + (m.n > 1 ? ' \u00d7 ' + m.n : ''), '#eff6ff', '#1d4ed8'))
+        .concat((!mix9.length ? (c.preferred_equipment || []).filter(e => /[a-zA-Z]{2,}/.test(e)).map(e => chip9('\ud83d\ude9b ' + e, '#eff6ff', '#1d4ed8')) : []))
+        .concat(((c.trailer_mix || []).filter(m => m.type && /[a-zA-Z]{2,}/.test(m.type))).map(m => chip9('\ud83d\udee3 ' + m.type + (m.n > 1 ? ' \u00d7 ' + m.n : ''), '#eff6ff', '#1d4ed8')))),
+      sec9('Coverage', [
+        c.home_base ? chip9('\ud83d\udccd ' + c.home_base) : null,
+        (c.preferred_lanes || []).length ? chip9('Runs: ' + c.preferred_lanes.join(', ')) : null,
+      ].filter(Boolean)),
+      (c.compliance || []).length ? sec9('Compliance on file', c.compliance.map(x => chip9('\u2713 ' + x, '#f0fdf4', '#166534'))) : null,
+      (() => {
+        const has9 = (re) => (c.compliance || []).some(x => re.test(String(x)));
+        const items9 = [
+          ['\ud83e\uddfe', 'Executed rate confirmation', true, 'auto-generated & signed at booking'],
+          ['\ud83d\udee1', 'Certificate of Insurance \u2014 $1M auto liability \u00b7 $100k cargo (industry standard)', has9(/insurance|coi/i), has9(/insurance|coi/i) ? 'verified on file \u2014 lands in your packet' : 'not on file yet \u2014 LoadBoot collects it before first dispatch'],
+          ['\ud83d\udcc4', 'W-9 tax form', has9(/w-?9/i), has9(/w-?9/i) ? 'verified on file' : 'collected before settlement'],
+          ['\ud83d\udcdc', 'MC/DOT operating authority letter', has9(/authority/i), has9(/authority/i) ? 'verified on file' : 'verified live against FMCSA'],
+          ['\u270d', 'Signed broker\u2013carrier agreement', has9(/agreement/i), has9(/agreement/i) ? 'executed on file' : 'signed during onboarding'],
+          ['\ud83d\udef0', 'Live GPS from booking to delivery + geofenced arrival proof', true, 'platform standard \u2014 every load'],
+          ['\ud83d\udcd1', 'Signed BOL / POD uploaded at every stop', true, 'platform standard'],
+          ['\ud83d\udcb3', 'One documented settlement through LoadBoot', true, 'platform standard \u2014 no chasing invoices'],
+        ];
+        return h('div', { style: 'margin:12px 0;background:linear-gradient(120deg,#0d1b33,#14335c);border-radius:16px;padding:14px 16px;color:#fff' }, [
+          h('div', { style: 'font-weight:800;font-size:.9rem;margin-bottom:8px' }, '\ud83d\udce6 What lands in YOUR packet the moment this carrier accepts'),
+          ...items9.map(([ic9, t9, ok9, s9]) => h('div', { style: 'display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.78rem' }, [
+            h('span', null, ic9),
+            h('div', { style: 'flex:1' }, [h('div', { style: 'font-weight:700' }, t9), h('div', { style: 'opacity:.65;font-size:.68rem' }, s9)]),
+            h('span', { style: 'flex:0 0 auto;font-weight:800;font-size:.66rem;padding:2.5px 9px;border-radius:999px;background:' + (ok9 ? 'rgba(34,197,94,.18)' : 'rgba(245,158,11,.2)') + ';color:' + (ok9 ? '#4ade80' : '#fcd34d') }, ok9 ? '\u2713 INCLUDED' : '\u23f3 PENDING'),
+          ])),
+        ]);
+      })(),
+      sec9('Capabilities', [
+        c.hazmat ? chip9('\u2622 HAZMAT certified', '#fef9c3', '#854d0e') : null,
+        c.team_drivers ? chip9('\ud83d\udc65 Team drivers', '#f0fdf4', '#166534') : null,
+        c.weekend_ok ? chip9('Weekends OK', '#f0fdf4', '#166534') : null,
+        c.max_weight_lbs ? chip9('Max ' + Number(c.max_weight_lbs).toLocaleString() + ' lb') : null,
+      ].filter(Boolean)),
+      h('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [
+        h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'flex:1;min-width:130px', onClick: async (ev9) => {
+          ev9.currentTarget.disabled = true;
+          let rows9 = []; try { rows9 = (await partnerCarrierReviews(c.id)) || []; } catch (_) {}
+          mount(revHost, rows9.length ? h('div', { style: 'margin-top:10px' }, rows9.slice(0, 8).map(r9 => h('div', { style: 'border:1px solid #eef2f7;border-radius:12px;padding:10px 12px;margin-bottom:8px' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap' }, [h('span', { style: 'color:#f59e0b;font-weight:700;letter-spacing:1.5px' }, starsTxt(r9.stars)), h('span', { class: 'cp-sub' }, r9.date || '')]),
+            r9.comment ? h('div', { style: 'margin-top:4px;font-size:.84rem;color:#334155' }, '\u201c' + r9.comment + '\u201d') : null,
+            h('div', { class: 'cp-sub', style: 'margin-top:3px' }, '\u2713 ' + (r9.reviewer || 'Verified broker') + ' \u00b7 \ud83d\ude9a ' + (r9.lane || '')),
+          ].filter(Boolean)))) : h('div', { class: 'cp-sub', style: 'margin-top:8px' }, '\u2728 New carrier \u2014 no completed-booking reviews yet.'));
+        } }, '\u2b50 Read reviews'),
+        c.dot ? h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'flex:1;min-width:130px', onClick: () => {
+          const fh = h('div', { style: 'width:100%' }, h('div', { class: 'cp-sub' }, 'Loading live FMCSA profile\u2026'));
+          openModal('\ud83d\udee1 ' + (c.name || '') + ' \u2014 live FMCSA profile', [fh], { wide: true });
+          try { renderFmcsaOnly(fh, String(c.dot).replace(/\D/g, ''), { light: true }); } catch (_) {}
+        } }, '\ud83d\udee1 Live FMCSA (7 tabs)') : null,
+      ].filter(Boolean)),
+      revHost,
+    ].filter(Boolean))], { wide: true });
+  }
+
+  // ============ CARRIER PACKET — locked until acceptance, then preview + download ============
+  function printCarrierPacketCert(d) {
+    const w9 = window.open('', '_blank'); if (!w9) { alert('Allow pop-ups to download.'); return; }
+    const esc = (x) => String(x || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const cr = d.carrier || {};
+    const rows = (d.items || []).map(it => '<tr><td class="k">' + esc(it.label) + (it.mandatory ? ' <span class="req">REQUIRED</span>' : '') + '</td>'
+      + '<td class="v ' + (/valid|verified|approv|on file|active/i.test(it.status) ? 'ok' : 'bad') + '">' + esc(String(it.status).toUpperCase()) + '</td>'
+      + '<td class="n">' + esc([it.effective_date ? 'from ' + it.effective_date : null, it.expiry_date ? 'expires ' + it.expiry_date : null, it.verified_at ? 'verified ' + String(it.verified_at).slice(0, 10) : null].filter(Boolean).join(' \u00b7 ')) + '</td></tr>').join('');
+    const logo = '<svg width="32" height="34" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#fff"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#FC5305"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#fff"/></svg>';
+    w9.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Carrier Packet \u2014 ' + esc(cr.name) + '</title><style>'
+      + '*{box-sizing:border-box}body{font-family:Inter,system-ui,Arial,sans-serif;color:#0f1e36;margin:0 auto;max-width:880px;padding:0 0 30px}'
+      + '.band{background:linear-gradient(120deg,#0b1830,#10223B 60%,#14335c);color:#fff;padding:24px 36px;display:flex;justify-content:space-between;align-items:center}'
+      + '.band .wd{font-weight:800;font-size:1.25rem}.band .wd span{color:#FC5305}'
+      + '.ribbon{background:#16a34a;color:#fff;text-align:center;font-weight:800;letter-spacing:.3em;font-size:.7rem;padding:6px}'
+      + '.wrap{padding:22px 36px}'
+      + 'h1{font-size:1.15rem;margin:0 0 2px}.sub{color:#51617a;font-size:.78rem;margin-bottom:14px}'
+      + '.id{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}'
+      + '.chip{border:1px solid #e6ecf4;border-radius:999px;padding:5px 13px;font-size:.74rem;font-weight:700}'
+      + 'table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:8px}'
+      + 'th{background:#10223B;color:#fff;text-align:left;padding:9px 12px;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase}'
+      + 'td{padding:9px 12px;border-bottom:1px solid #eef2f7}td.k{font-weight:700}'
+      + 'td.v.ok{color:#16a34a;font-weight:800}td.v.bad{color:#b45309;font-weight:800}td.n{color:#51617a;font-size:.72rem}'
+      + '.req{font-size:.56rem;color:#b45309;font-weight:800;letter-spacing:.06em}'
+      + '.note{background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:11px 14px;font-size:.72rem;color:#51617a;line-height:1.7;margin-top:12px}'
+      + '.stamp{margin:24px auto 0;width:230px;text-align:center;border:3.5px solid #16a34a;color:#16a34a;border-radius:12px;padding:9px;font-weight:800;letter-spacing:.18em;transform:rotate(-3deg)}'
+      + '.ft{margin-top:22px;border-top:1px solid #e6ecf4;padding:10px 36px 0;font-size:.64rem;color:#8795a9;text-align:center}'
+      + '@media print{.band{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'
+      + '<div class="band"><div style="display:flex;gap:12px;align-items:center">' + logo + '<div class="wd">Load<span>Boot</span></div></div>'
+      + '<div style="text-align:right;font-size:.68rem;opacity:.75">CARRIER SETUP PACKET \u00b7 VERIFICATION CERTIFICATE<br>Generated ' + esc(new Date().toISOString().slice(0, 10)) + '</div></div>'
+      + '<div class="ribbon">L O A D B O O T \u2013 V E R I F I E D</div>'
+      + '<div class="wrap"><h1>' + esc(cr.name || 'Carrier') + '</h1>'
+      + '<div class="sub">Released to your brokerage because this carrier accepted your load' + (d.trip && d.trip.booked_at ? ' on ' + esc(String(d.trip.booked_at).slice(0, 10)) : '') + '.</div>'
+      + '<div class="id">'
+      + (cr.dot ? '<span class="chip">DOT ' + esc(String(cr.dot).replace(/^DOT\s*/i, '')) + '</span>' : '')
+      + (cr.mc ? '<span class="chip">MC ' + esc(String(cr.mc).replace(/^MC\s*/i, '')) + '</span>' : '')
+      + (cr.authority ? '<span class="chip" style="color:#16a34a;border-color:#bbf7d0">Authority: ' + esc(String(cr.authority).toUpperCase()) + '</span>' : '')
+      + (cr.safety_rating && String(cr.safety_rating).toLowerCase() !== 'none' ? '<span class="chip">Safety: ' + esc(String(cr.safety_rating).toUpperCase()) + '</span>' : '')
+      + (d.trip && d.trip.driver ? '<span class="chip">Driver: ' + esc(d.trip.driver) + '</span>' : '')
+      + '</div>'
+      + '<table><tr><th>Document</th><th>Status</th><th>Dates</th></tr>' + rows + '</table>'
+      + '<div class="note"><b>' + esc(d.mandatory_verified) + ' of ' + esc(d.mandatory_total) + ' mandatory documents verified.</b><br>'
+      + esc(d.insurance_note || '') + '<br>' + esc(d.payments_note || '') + '<br>' + esc(d.files_note || '') + '</div>'
+      + '<div class="stamp">PACKET VERIFIED</div></div>'
+      + '<div class="ft">This certificate is LoadBoot\u2019s audit record of the carrier\u2019s setup packet at booking time \u00b7 loadboot.com</div>'
+      + '<script>setTimeout(function(){window.print()},400)<\/script></body></html>');
+    w9.document.close();
+  }
+  async function openCarrierPacket(l) {
+    const host = h('div', null, h('div', { class: 'cp-sub' }, 'Opening the carrier packet\u2026'));
+    openModal('\ud83d\udce6 Carrier setup packet', [host], { wide: true });
+    let d; try { d = await partnerCarrierPacket(l.id); } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); return; }
+    if (!d.unlocked) {
+      mount(host, h('div', { style: 'text-align:center;padding:30px 16px' }, [
+        h('div', { style: 'font-size:50px' }, '\ud83d\udd12'),
+        h('div', { style: 'font-weight:800;font-size:1.05rem;color:#10223B;margin:10px 0 6px' }, 'Locked \u2014 unlocks the moment a carrier accepts'),
+        h('div', { class: 'cp-sub', style: 'max-width:460px;margin:0 auto' }, d.reason || ''),
+        h('div', { style: 'margin-top:14px;display:inline-block;background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:10px 16px;font-size:.8rem;color:#334155;text-align:left' }, [
+          'On acceptance you receive:', h('br'), '\u2713 W-9 \u00b7 \u2713 COI ($1M/$100k, monitored) \u00b7 \u2713 MC/DOT authority', h('br'), '\u2713 Signed agreement \u00b7 \u2713 verification certificate (download)',
+        ]),
+      ]));
+      return;
+    }
+    const cr = d.carrier || {};
+    const stOk = (x) => /valid|verified|approv|on file|active/i.test(x || '');
+    mount(host, h('div', null, [
+      h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
+        h('div', null, [
+          h('b', { style: 'font-size:1.05rem;color:#10223B' }, cr.name || 'Carrier'),
+          h('div', { class: 'cp-sub' }, [cr.dot ? 'DOT ' + String(cr.dot).replace(/^DOT\s*/i, '') : null, cr.mc ? 'MC ' + String(cr.mc).replace(/^MC\s*/i, '') : null, cr.authority ? 'Authority ' + String(cr.authority).toUpperCase() : null, d.trip && d.trip.driver ? 'Driver: ' + d.trip.driver : null].filter(Boolean).join(' \u00b7 ')),
+        ]),
+        h('span', { style: 'padding:6px 14px;border-radius:999px;font-weight:800;font-size:.72rem;background:#dcfce7;color:#166534' }, '\ud83d\udd13 UNLOCKED \u2014 ' + d.mandatory_verified + '/' + d.mandatory_total + ' mandatory verified'),
+      ]),
+      h('div', { style: 'margin-top:12px' }, (d.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid #f1f5f9;font-size:.84rem;flex-wrap:wrap' }, [
+        h('span', { style: 'font-weight:700;color:#10223B' }, [it.label, it.mandatory ? h('span', { style: 'font-size:.6rem;color:#b45309;font-weight:800;margin-left:6px' }, 'REQUIRED') : null]),
+        h('span', { style: 'text-align:right' }, [
+          h('b', { style: 'color:' + (stOk(it.status) ? '#16a34a' : '#b45309') }, String(it.status).toUpperCase()),
+          h('div', { class: 'cp-sub' }, [it.expiry_date ? 'expires ' + it.expiry_date : null, it.verified_at ? 'verified ' + String(it.verified_at).slice(0, 10) : null].filter(Boolean).join(' \u00b7 ')),
+          (() => { let j9 = null; try { j9 = it.note ? JSON.parse(it.note) : null; } catch (_) {}
+            return (j9 && j9.signer && /w-?9/i.test(it.key || it.label || '')) ? h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'margin-top:4px;padding:3px 10px;font-size:.68rem', onClick: () => printExecutedW9(j9) }, '\u2b07 Download executed W-9') : null; })(),
+        ].filter(Boolean)),
+      ]))),
+      h('div', { style: 'margin-top:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 13px;font-size:.78rem;color:#166534' }, d.insurance_note || ''),
+      h('div', { class: 'cp-sub', style: 'margin-top:6px' }, (d.files_note || '') + ' ' + (d.payments_note || '')),
+      h('div', { style: 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap' }, [
+        h('button', { class: 'cp-btn', style: 'flex:1;min-width:200px', onClick: () => printCarrierPacketCert(d) }, '\u2b07 Download verification certificate (PDF)'),
+        (d.trip && d.trip.id) ? h('button', { class: 'cp-btn ghost', style: 'flex:1;min-width:200px', onClick: async (ev9) => {
+          const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Requesting\u2026';
+          try { const r9 = await requestPacketCopies(d.trip.id); alert(r9.note || 'We will send document copies to your email shortly.'); b9.textContent = '\u2713 Requested \u2014 check your email'; }
+          catch (e9) { b9.disabled = false; b9.textContent = '\ud83d\udcec Request document copies by email'; alert((e9 && e9.message) || 'Could not request.'); }
+        } }, '\ud83d\udcec Request document copies by email') : null,
+      ].filter(Boolean)),
+    ]));
+  }
+
+  // ============ OFFER PICKER — pick from the verified carrier network, filter, blast ============
+  async function openOfferPicker(l, after) {
+    const host = h('div', null, h('div', { class: 'cp-sub' }, 'Loading your verified carrier network\u2026'));
+    const closeP = openModal('\ud83c\udfaf Offer to specific carriers \u2014 ' + (l.origin || '?') + ' \u2192 ' + (l.destination || '?'), [host], { wide: true });
+    let logoBase = null;
+    try { const sc = await import('../shared/supabaseClient.js'); const sb = await sc.getClient(); const r = sb.storage.from('org-logos').getPublicUrl('x'); logoBase = (r && r.data && r.data.publicUrl) ? r.data.publicUrl.replace(/\/x$/, '/') : null; } catch (_) {}
+    let dir = []; try { dir = (await partnerCarrierDirectory()) || []; } catch (_) {}
+    let eligIds = null, inelig = [];
+    try {
+      const e9 = (await partnerEligibleDetail(l.id)) || [];
+      eligIds = {}; e9.forEach(x => { if (x.eligible) eligIds[x.id] = 1; else inelig.push(x); });
+    } catch (_) { try { const e8 = (await partnerEligibleCarriers(l.id)) || []; eligIds = {}; e8.forEach(x => { eligIds[x.id] = 1; }); } catch (_) { eligIds = null; } }
+    const list = eligIds ? dir.filter(c => eligIds[c.id]) : dir;
+    const hiddenN = dir.length - list.length;
+    if (!list.length) {
+      mount(host, h('div', { style: 'text-align:center;padding:30px' }, [
+        h('div', { style: 'font-size:40px' }, '\ud83d\ude9a'),
+        h('div', { style: 'font-weight:800;color:#10223B;margin:8px 0 4px' }, 'No eligible carriers for this load yet'),
+        h('div', { class: 'cp-sub' }, 'Carriers must be published, active and equipment-matched. The load stays on the board \u2014 any verified carrier can still book it there.'),
+      ]));
+      return;
+    }
+    const sel = {};
+    const q = h('input', { class: 'cp-in', placeholder: '\ud83d\udd0d Name, lane, home base\u2026', style: 'margin:0;max-width:260px' });
+    let fEq = 'All', fHaz = false, fTeam = false;
+    const grid = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:10px' });
+    const bar = h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap;align-items:center' });
+    const foot = h('div', { style: 'position:sticky;bottom:-18px;background:#fff;border-top:1px solid #eef2f7;padding:12px 0 4px;margin-top:12px' });
+    const initials = (nm) => String(nm || '?').split(/\s+/).slice(0, 2).map(x => x[0] || '').join('').toUpperCase();
+    const starsTxt = (v) => '\u2605'.repeat(Math.round(v || 0)) + '\u2606'.repeat(Math.max(0, 5 - Math.round(v || 0)));
+    const eqOf9 = (c) => { const a = ((c.fleet_mix || []).map(m => m.type)).concat(c.preferred_equipment || []).filter(e => e && /[a-zA-Z]{2,}/.test(e)); return a.filter((x, i9) => a.indexOf(x) === i9); };
+    const drawFoot = () => {
+      const n = Object.keys(sel).length;
+      const rate9 = h('input', { class: 'cp-in', type: 'number', placeholder: 'Offered rate (blank = posted $' + (l.rate || '') + ')', style: 'margin:0;max-width:230px' });
+      const exp9 = h('select', { class: 'cp-in', style: 'margin:0;max-width:190px' }, [['15', '\u23f1 15 min window (std)'], ['30', '30 minutes'], ['60', '60 minutes']].map(([v9, t9]) => h('option', { value: v9 }, t9)));
+      mount(foot, [
+        h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, '\ud83c\udfc1 Race rule: the load stays on the load board too \u2014 the FIRST acceptance anywhere wins; every other offer and the board listing close automatically and you\u2019re notified who won.'),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [
+          h('b', { style: 'color:#10223B' }, n + ' selected'), rate9, exp9,
+          h('button', { class: 'cp-btn', style: 'flex:1;min-width:150px', disabled: n ? null : 'disabled', onClick: async (ev9) => {
+            const btn = ev9.currentTarget; btn.disabled = true; btn.textContent = 'Sending\u2026';
+            try {
+              const r9 = await partnerOfferSend(l.id, Object.keys(sel), rate9.value ? Number(rate9.value) : null, Number(exp9.value));
+              let msg9 = '';
+              if ((r9.sent || 0) > 0) msg9 += '\u2705 Request sent to ' + r9.sent + ' carrier(s) \u2014 the countdown is now running on your My Loads card and on the carrier\u2019s board.\n';
+              const sd9 = r9.skipped_detail || [];
+              if (sd9.length) msg9 += '\n\u26a0 Not sent to:\n' + sd9.map(x9 => '\u2022 ' + x9.name + ' \u2014 ' + x9.reason).join('\n');
+              if (!msg9) msg9 = r9.note || 'Done.';
+              alert(msg9); closeP(); if (after) after();
+            }
+            catch (e9) { btn.disabled = false; btn.textContent = '\ud83d\udce3 Send offers'; alert((e9 && e9.message) || 'Failed.'); }
+          } }, '\ud83d\udce3 Send offers'),
+        ]),
+      ]);
+    };
+    const card9 = (c) => {
+      const on = !!sel[c.id];
+      const logo = (c.logo_path && logoBase) ? (logoBase + c.logo_path) : null;
+      const el = h('div', { style: 'cursor:pointer;background:' + (on ? '#eff6ff' : '#fff') + ';border:2px solid ' + (on ? '#0883F7' : '#e6ebf3') + ';border-radius:14px;padding:11px 13px;transition:all .12s' }, [
+        h('div', { style: 'display:flex;gap:10px;align-items:center' }, [
+          h('div', { style: 'width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;color:#fff;background:linear-gradient(135deg,#0883F7,#10223B);overflow:hidden' }, logo ? h('img', { src: logo, style: 'width:100%;height:100%;object-fit:cover' }) : initials(c.name)),
+          h('div', { style: 'min-width:0;flex:1' }, [
+            h('div', { style: 'font-weight:800;font-size:.86rem;color:#10223B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }, (on ? '\u2611 ' : '\u2610 ') + (c.name || 'Carrier')),
+            h('div', { style: 'font-size:.7rem;color:#64748b' }, [(c.ratings_count || 0) > 0 ? (starsTxt(c.stars) + ' ' + c.stars) : '\u2728 new', c.health != null ? 'health ' + c.health : null, c.on_time_pct != null ? c.on_time_pct + '% on-time' : null, c.delivered ? c.delivered + ' delivered' : null].filter(Boolean).join(' \u00b7 ')),
+          ]),
+        ]),
+        (() => {
+          const k9 = (l9, v9, fg9) => h('div', { style: 'flex:1;text-align:center;background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:5px 2px' }, [
+            h('div', { style: 'font-weight:800;font-size:.8rem;color:' + (fg9 || '#10223B') }, v9),
+            h('div', { style: 'font-size:.52rem;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;font-weight:800' }, l9)]);
+          const hl9 = c.health != null ? Number(c.health) : null;
+          return h('div', { style: 'display:flex;gap:5px;margin-top:7px' }, [
+            k9('On-time', c.on_time_pct != null ? c.on_time_pct + '%' : 'New', c.on_time_pct != null ? (c.on_time_pct >= 90 ? '#16a34a' : '#d97706') : '#94a3b8'),
+            k9('Delivered', String(c.delivered || 0)),
+            k9('Cancels', String(c.carrier_cancels || 0), (c.carrier_cancels || 0) > 0 ? '#dc2626' : '#16a34a'),
+            k9('Health', hl9 != null ? String(hl9) : '\u2014', hl9 == null ? '#94a3b8' : hl9 >= 85 ? '#16a34a' : hl9 >= 60 ? '#d97706' : '#dc2626'),
+          ]);
+        })(),
+        (() => {
+          const ins9 = (c.compliance || []).some(x => /insurance|coi/i.test(String(x)));
+          const authOk9 = String(c.authority || '').toLowerCase() === 'active';
+          const bch = (txt, bg, fg) => h('span', { style: 'padding:2.5px 9px;border-radius:999px;font-size:.62rem;font-weight:800;background:' + bg + ';color:' + fg }, txt);
+          return h('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;margin-top:6px' }, [
+            ins9 ? bch('\ud83d\udee1 INSURED \u2713', '#dcfce7', '#166534') : bch('\ud83d\udee1 INSURANCE NOT ON FILE', '#fef3c7', '#92400e'),
+            c.authority ? bch(authOk9 ? '\u25cf AUTHORITY ACTIVE' : 'AUTHORITY ' + String(c.authority).toUpperCase(), authOk9 ? '#dcfce7' : '#fee2e2', authOk9 ? '#166534' : '#991b1b') : null,
+            c.hazmat ? bch('\u2622 HAZMAT', '#fef9c3', '#854d0e') : null,
+            c.team_drivers ? bch('\ud83d\udc65 TEAM', '#f0fdf4', '#166534') : null,
+            (c.safety_rating && String(c.safety_rating).toLowerCase() !== 'none') ? bch('SAFETY: ' + String(c.safety_rating).toUpperCase(), '#f1f5f9', '#334155') : null,
+          ].filter(Boolean));
+        })(),
+        (() => {
+          const mixTxt = (c.fleet_mix || []).filter(m => m.type && /[a-zA-Z]{2,}/.test(m.type)).slice(0, 3).map(m => m.type + (m.n > 1 ? '\u00d7' + m.n : '')).join(', ') || eqOf9(c).slice(0, 3).join(', ');
+          const fleetN9 = ((c.trucks || 0) + (c.trailers || 0)) || c.power_units || null;
+          return h('div', { style: 'font-size:.68rem;color:#64748b;margin-top:6px;line-height:1.6' }, [
+            h('div', null, ['\ud83d\ude9b ' + (mixTxt || '\u2014'), fleetN9 ? fleetN9 + ' units' : null, c.max_weight_lbs ? 'max ' + Number(c.max_weight_lbs).toLocaleString() + ' lb' : null].filter(Boolean).join('  \u00b7  ')),
+            h('div', null, [c.home_base ? '\ud83d\udccd ' + c.home_base : null, (c.preferred_lanes || []).length ? 'runs ' + c.preferred_lanes.join(', ') : null, c.member_since ? 'since ' + c.member_since : null].filter(Boolean).join('  \u00b7  ')),
+          ]);
+        })(),
+      ]);
+      el.appendChild(h('div', { style: 'display:flex;gap:6px;margin-top:7px' }, [
+        h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'flex:1;padding:5px 8px;font-size:.7rem', onClick: (ev9) => { ev9.stopPropagation(); openCarrierFullProfile(c, logoBase); } }, '\ud83d\udd0e Full details \u2014 decide'),
+      ]));
+      el.onclick = () => { if (sel[c.id]) delete sel[c.id]; else sel[c.id] = 1; drawGrid(); drawFoot(); };
+      return el;
+    };
+    const drawGrid = () => {
+      const t = q.value.trim().toLowerCase();
+      const rows = list.filter(c => {
+        if (fEq !== 'All' && !eqOf9(c).some(e => e.toLowerCase() === fEq.toLowerCase())) return false;
+        if (fHaz && !c.hazmat) return false;
+        if (fTeam && !c.team_drivers) return false;
+        if (!t) return true;
+        return [c.name, c.home_base].concat(eqOf9(c), c.preferred_lanes || []).filter(Boolean).join(' ').toLowerCase().includes(t);
+      });
+      mount(grid, rows.length ? rows.map(card9) : h('div', { class: 'cp-sub', style: 'grid-column:1/-1;text-align:center;padding:20px' }, 'No carriers match the filters.'));
+    };
+    const drawBar = () => {
+      const eqs = ['All']; list.forEach(c => eqOf9(c).forEach(e => { if (eqs.indexOf(e) < 0) eqs.push(e); }));
+      mount(bar, [q,
+        ...eqs.map(e => h('button', { class: 'cp-btn cp-btn-sm ' + (fEq === e ? '' : 'ghost'), style: 'padding:5px 12px', onClick: () => { fEq = e; drawBar(); drawGrid(); } }, e)),
+        h('button', { class: 'cp-btn cp-btn-sm ' + (fHaz ? '' : 'ghost'), style: 'padding:5px 12px', onClick: () => { fHaz = !fHaz; drawBar(); drawGrid(); } }, '\u2622 HAZMAT'),
+        h('button', { class: 'cp-btn cp-btn-sm ' + (fTeam ? '' : 'ghost'), style: 'padding:5px 12px', onClick: () => { fTeam = !fTeam; drawBar(); drawGrid(); } }, '\ud83d\udc65 Team'),
+      ]);
+    };
+    q.addEventListener('input', drawGrid);
+    mount(host, [
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, list.length + ' eligible verified carrier' + (list.length === 1 ? '' : 's') + ' for this load' + (hiddenN > 0 ? ' \u00b7 ' + hiddenN + ' hidden (equipment/lane mismatch or not accepting)' : '') + ' \u2014 matched to THIS load\u2019s equipment, hazmat and fleet requirements. Tap a card to select; \u201c\ud83d\udd0e Full details\u201d shows everything you receive on acceptance.'),
+      bar, grid,
+      inelig.length ? h('div', { style: 'margin-top:12px' }, [
+        h('div', { style: 'font-weight:800;font-size:.74rem;color:#94a3b8;letter-spacing:.08em;margin-bottom:6px' }, '\u26d4 NOT ELIGIBLE FOR THIS LOAD (' + inelig.length + ') \u2014 why they\u2019re hidden'),
+        ...inelig.map(x9 => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;background:#f8fafc;border:1px dashed #e2e8f0;border-radius:12px;padding:9px 13px;margin-bottom:6px;opacity:.85;flex-wrap:wrap' }, [
+          h('span', { style: 'font-weight:700;color:#64748b' }, x9.name),
+          h('span', { style: 'font-size:.76rem;color:#b45309;text-align:right' }, x9.reasons || (x9.equipment_match === 'no' ? 'equipment does not match this load' : 'requirements not met')),
+        ])),
+      ]) : null,
+      foot,
+    ].filter(Boolean));
+    drawBar(); drawGrid(); drawFoot();
+  }
+
+  // ============ LIVE LOAD TRACKER — Uber/Amazon-class visibility for the broker ============
+  let __lbLeaf = null;
+  function lbLeaflet() {
+    if (window.L) return Promise.resolve(window.L);
+    if (__lbLeaf) return __lbLeaf;
+    __lbLeaf = new Promise((res, rej) => {
+      const css = document.createElement('link'); css.rel = 'stylesheet';
+      css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
+      const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+      sc.onload = () => res(window.L); sc.onerror = () => { __lbLeaf = null; rej(new Error('Map library failed to load.')); };
+      document.head.appendChild(sc);
+    });
+    return __lbLeaf;
+  }
+  function openLoadTracker(l) {
+    if (!document.getElementById('lt-css')) {
+      const st = document.createElement('style'); st.id = 'lt-css';
+      st.textContent = `
+        .lt-hero{position:relative;border-radius:16px;overflow:hidden;padding:18px 20px;color:#fff;background:radial-gradient(600px 200px at 88% -40%,rgba(8,131,247,.45),transparent 60%),linear-gradient(120deg,#0b1830,#10223B 60%,#14335c);margin-bottom:14px}
+        .lt-live{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.16);color:#4ade80;border:1px solid rgba(74,222,128,.35);border-radius:999px;padding:4px 12px;font-size:.68rem;font-weight:800;letter-spacing:.05em}
+        .lt-live .dot{width:8px;height:8px;border-radius:99px;background:#22c55e;animation:ltblink 1.4s infinite}
+        @keyframes ltblink{0%,100%{opacity:1}50%{opacity:.25}}
+        .lt-steps{display:flex;gap:0;margin:14px 0}
+        .lt-step{flex:1;position:relative;text-align:center;padding-top:26px}
+        .lt-step:before{content:'';position:absolute;top:10px;left:50%;width:100%;height:3px;background:#eef2f7;z-index:0}
+        .lt-step:last-child:before{display:none}
+        .lt-step.done:before{background:linear-gradient(90deg,#22c55e,#16a34a)}
+        .lt-step .b{position:absolute;top:0;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:99px;background:#eef2f7;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;z-index:1;border:3px solid #fff;box-shadow:0 0 0 1.5px #e2e8f0}
+        .lt-step.done .b{background:#16a34a;color:#fff;box-shadow:0 0 0 1.5px #16a34a}
+        .lt-step.cur .b{background:#0883F7;color:#fff;box-shadow:0 0 0 1.5px #0883F7;animation:ltpulse 1.8s infinite}
+        @keyframes ltpulse{0%{box-shadow:0 0 0 1.5px #0883F7}55%{box-shadow:0 0 0 9px rgba(8,131,247,.12)}100%{box-shadow:0 0 0 1.5px #0883F7}}
+        .lt-step .t{font-size:.68rem;font-weight:800;color:#94a3b8}
+        .lt-step.done .t,.lt-step.cur .t{color:#10223B}
+        .lt-step .s{font-size:.6rem;color:#94a3b8;margin-top:1px}
+        .lt-map{height:340px;border-radius:16px;overflow:hidden;border:1px solid #e6ebf3;box-shadow:0 14px 34px -24px rgba(2,12,30,.4)}
+        .lt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0}
+        .lt-tile{background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:11px 14px}
+        .lt-tile .k{font-size:.6rem;text-transform:uppercase;letter-spacing:.09em;color:#94a3b8;font-weight:800}
+        .lt-tile .v{font-weight:800;color:#10223B;font-size:1rem;margin-top:2px}
+        .lt-tile .s{font-size:.7rem;color:#64748b;margin-top:1px}
+        .lt-ev{border-left:2.5px solid #e2e8f0;margin-left:9px;padding-left:16px}
+        .lt-ev .e{position:relative;padding:7px 0}
+        .lt-ev .e:before{content:'';position:absolute;left:-22.5px;top:13px;width:10px;height:10px;border-radius:99px;background:#0883F7;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #bfdbfe}
+        .lt-prog{height:9px;border-radius:99px;background:#eef2f7;overflow:hidden;margin-top:8px}
+        .lt-prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#22c55e);transition:width .6s cubic-bezier(.4,0,.2,1)}
+      `;
+      document.head.appendChild(st);
+    }
+    const host = h('div', null, h('div', { class: 'cp-sub' }, 'Connecting to the live feed\u2026'));
+    const closeM = openModal('\ud83d\udef0 Live tracking \u2014 ' + (l.origin || '?') + ' \u2192 ' + (l.destination || '?'), [host], { wide: true });
+    let map = null, truckMk = null, routeLn = null, timer = null, dead = false;
+    const stop = () => { dead = true; clearTimeout(timer); };
+    const fmtT = (x) => x ? new Date(x).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : null;
+    const ago = (x) => { if (!x) return null; const m9 = Math.round((Date.now() - new Date(x).getTime()) / 60000); return m9 < 1 ? 'just now' : m9 < 60 ? m9 + ' min ago' : Math.round(m9 / 60) + 'h ago'; };
+    async function draw() {
+      if (dead || !document.body.contains(host)) { stop(); return; }
+      let d; try { d = await partnerTrackLoad(l.id); } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load tracking.')); return; }
+      const ld = d.load || {}, bd = d.board || {}, of = d.offers || {}, t = d.trip;
+      const ts = t ? String(t.status || '') : '';
+      const cancelled = ts === 'cancelled' || /reject/.test(String(ld.status || ''));
+      // milestone model
+      const steps = [
+        ['Submitted', ld.submitted_at, true],
+        ['Approved \u00b7 posted', bd.posted_at, !!bd.posted],
+        ['Carrier accepted', t && t.booked_at, !!t],
+        ['Dispatched', t && t.dispatched_at, !!(t && (t.dispatched_at || t.started_at || t.delivered_at))],
+        ['Picked up \u00b7 in transit', t && t.started_at, !!(t && (t.started_at || t.delivered_at))],
+        ['Delivered', t && t.delivered_at, !!(t && t.delivered_at)],
+      ];
+      let cur = steps.findIndex(s9 => !s9[2]); if (cur < 0) cur = steps.length;
+      // hero + live badge
+      const liveOk = t && t.last_loc_at && (Date.now() - new Date(t.last_loc_at).getTime()) < 30 * 60000;
+      const heroSub = cancelled ? '\u26d4 ' + (ts === 'cancelled' ? 'Cancelled by ' + (t.cancelled_by || 'party') : 'Rejected by dispatch')
+        : t ? (t.carrier || 'Carrier') + (t.driver_name ? ' \u00b7 driver ' + t.driver_name : '') + (t.truck_no ? ' \u00b7 truck #' + t.truck_no : '')
+        : bd.on_board_now ? 'Live on the load board \u00b7 offers: ' + (of.sent || 0) + ' sent, ' + (of.pending || 0) + ' awaiting reply' + ((of.declined || 0) ? ', ' + of.declined + ' declined/expired' : '') + ' \u2014 first acceptance wins, everything else closes automatically'
+        : String(ld.status || '') === 'submitted' ? 'With LoadBoot dispatch for approval \u2014 usually under an hour' : 'Preparing\u2026';
+      const mapEl = h('div', { class: 'lt-map', style: (t || (ld.pickup_lat && ld.delivery_lat)) ? '' : 'display:none' });
+      // progress math
+      const havM = (a, b, c2, d2) => { const r9 = (x) => x * Math.PI / 180; return 6371000 * 2 * Math.asin(Math.sqrt(Math.sin(r9(c2 - a) / 2) ** 2 + Math.cos(r9(a)) * Math.cos(r9(c2)) * Math.sin(r9(d2 - b) / 2) ** 2)); };
+      let progPct = null, remainTxt = null, etaTxt = null;
+      mount(host, h('div', null, [
+        h('div', { class: 'lt-hero' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
+            h('div', null, [
+              h('div', { style: 'font-weight:800;font-size:1.08rem' }, (ld.origin || '?') + '  \u2192  ' + (ld.destination || '?')),
+              h('div', { style: 'font-size:.78rem;opacity:.8;margin-top:3px' }, heroSub),
+            ]),
+            h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
+              liveOk ? h('span', { class: 'lt-live' }, [h('span', { class: 'dot' }), 'LIVE \u00b7 ' + ago(t.last_loc_at)]) :
+              t ? h('span', { class: 'lt-live', style: 'background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.3)' }, [h('span', { class: 'dot', style: 'background:#94a3b8;animation:none' }), t.last_loc_at ? 'GPS ' + ago(t.last_loc_at) : 'GPS pending']) : null,
+              h('span', { style: 'font-weight:800;color:#7cc0ff;font-size:1.05rem' }, ld.rate ? '$' + Number(ld.rate).toLocaleString() : ''),
+            ].filter(Boolean)),
+          ]),
+        ]),
+        cancelled ? null : h('div', { class: 'lt-steps' }, steps.map(([nm, at9, done9], i9) => h('div', { class: 'lt-step' + (done9 ? ' done' : i9 === cur ? ' cur' : '') }, [
+          h('span', { class: 'b' }, done9 ? '\u2713' : String(i9 + 1)),
+          h('div', { class: 't' }, nm),
+          h('div', { class: 's' }, fmtT(at9) || (i9 === cur ? 'in progress\u2026' : '')),
+        ]))),
+        mapEl,
+        h('div', { class: 'lt-grid', id: 'lt-tiles' }),
+        (d.events || []).length ? h('div', { style: 'background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:14px 16px;margin-top:2px' }, [
+          h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin-bottom:8px' }, '\ud83d\udcdc Trip events \u2014 every check-in is server-verified'),
+          h('div', { class: 'lt-ev' }, d.events.map(e9 => h('div', { class: 'e' }, [
+            h('div', { style: 'font-weight:700;font-size:.8rem;color:#10223B' }, (e9.kind || 'event').replace(/_/g, ' ') + (e9.to ? ' \u2192 ' + e9.to : '')),
+            h('div', { class: 'cp-sub' }, [fmtT(e9.at), e9.note].filter(Boolean).join(' \u00b7 ')),
+          ]))),
+        ]) : null,
+        h('div', { class: 'cp-sub', style: 'margin-top:10px;text-align:center' }, 'Auto-refreshes every 30 seconds \u00b7 GPS is captured from the driver\u2019s device from booking to delivery \u00b7 every milestone lands in your notifications'),
+      ].filter(Boolean)));
+      // tiles
+      const tiles = [];
+      const tile = (k, v, s9) => h('div', { class: 'lt-tile' }, [h('div', { class: 'k' }, k), h('div', { class: 'v' }, v), s9 ? h('div', { class: 's' }, s9) : null]);
+      if (!t) {
+        tiles.push(tile('Board status', bd.on_board_now ? 'LIVE on board' : (bd.posted ? String(bd.board_status || '') : String(ld.status || '')), bd.posted_at ? 'posted ' + fmtT(bd.posted_at) : 'awaiting dispatch approval'));
+        tiles.push((() => {
+          let sub9 = (of.pending || 0) + ' awaiting reply' + ((of.declined || 0) ? ' \u00b7 ' + of.declined + ' declined' : '');
+          if (of.next_expiry && (of.pending || 0) > 0) {
+            const ms9 = new Date(of.next_expiry).getTime() - Date.now();
+            if (ms9 > 0) sub9 = '\u23f3 expires in ' + Math.floor(ms9 / 60000) + 'm ' + Math.floor((ms9 % 60000) / 1000) + 's \u00b7 ' + sub9;
+          }
+          return tile('Direct offers', (of.sent || 0) + ' sent', sub9);
+        })());
+        tiles.push(tile('Race rule', 'First accept wins', 'all other offers + the board listing close instantly'));
+      } else {
+        tiles.push(tile('Carrier', t.carrier || '\u2014', [t.driver_name, t.truck_no ? '#' + t.truck_no : null].filter(Boolean).join(' \u00b7 ')));
+        tiles.push(tile('Scheduled', (fmtT(t.scheduled_pickup) || '\u2014'), 'delivery ' + (fmtT(t.scheduled_delivery) || '\u2014')));
+      }
+      mount(host.querySelector('#lt-tiles'), tiles);
+      // map + route + ETA
+      if (mapEl.style.display !== 'none') {
+        try {
+          const L = await lbLeaflet();
+          if (!document.body.contains(mapEl)) return;
+          const pk = (t && t.pickup_lat != null) ? [t.pickup_lat, t.pickup_lng] : (ld.pickup_lat != null ? [ld.pickup_lat, ld.pickup_lng] : null);
+          const dl = (t && t.delivery_lat != null) ? [t.delivery_lat, t.delivery_lng] : (ld.delivery_lat != null ? [ld.delivery_lat, ld.delivery_lng] : null);
+          const tk = (t && t.last_lat != null) ? [t.last_lat, t.last_lng] : null;
+          map = L.map(mapEl, { zoomControl: true, attributionControl: false });
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+          const mk = (pt, bg, txt) => L.marker(pt, { icon: L.divIcon({ className: '', html: '<div style="background:' + bg + ';color:#fff;font-weight:800;font-size:10px;padding:4px 9px;border-radius:999px;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.45);white-space:nowrap">' + txt + '</div>', iconAnchor: [24, 12] }) }).addTo(map);
+          const pts = [];
+          if (pk) { mk(pk, '#0883F7', 'PICKUP'); pts.push(pk); }
+          if (dl) { mk(dl, '#FC5305', 'DELIVERY'); pts.push(dl); }
+          if (tk) {
+            L.marker(tk, { icon: L.divIcon({ className: '', html: '<div style="width:20px;height:20px;border-radius:99px;background:#22c55e;border:3.5px solid #fff;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:lbpulse2 1.8s infinite"></div><style>@keyframes lbpulse2{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 18px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}</style>', iconAnchor: [10, 10] }) }).addTo(map);
+            pts.push(tk);
+          }
+          if (pts.length) map.fitBounds(pts, { padding: [46, 46] });
+          const from9 = tk || pk, to9 = dl;
+          if (from9 && to9) {
+            try {
+              const r9 = await fetch('https://router.project-osrm.org/route/v1/driving/' + from9[1] + ',' + from9[0] + ';' + to9[1] + ',' + to9[0] + '?overview=full&geometries=geojson');
+              const j9 = await r9.json(); const rt9 = j9 && j9.routes && j9.routes[0];
+              if (rt9 && map) {
+                L.geoJSON(rt9.geometry, { style: { color: '#0883F7', weight: 4, opacity: .85 } }).addTo(map);
+                const remM = rt9.distance / 1609.34, remH = rt9.duration / 3600;
+                remainTxt = Math.round(remM).toLocaleString() + ' mi to delivery';
+                etaTxt = fmtT(new Date(Date.now() + rt9.duration * 1000));
+                if (ld.miles && Number(ld.miles) > 0 && tk) progPct = Math.max(2, Math.min(98, Math.round(100 * (1 - remM / Number(ld.miles)))));
+                const tl = host.querySelector('#lt-tiles');
+                if (tl && t && !t.delivered_at) {
+                  tl.appendChild(tile(tk ? 'Remaining' : 'Lane', remainTxt, tk ? '~' + (remH >= 1 ? Math.round(remH) + 'h' : Math.round(remH * 60) + 'm') + ' driving' : null));
+                  if (tk) tl.appendChild(tile('ETA (live)', etaTxt || '\u2014', 'straight-through driving estimate'));
+                  if (progPct != null) {
+                    const pr = tile('Trip progress', progPct + '%', null);
+                    pr.appendChild(h('div', { class: 'lt-prog' }, h('i', { style: 'width:' + progPct + '%' })));
+                    tl.appendChild(pr);
+                  }
+                }
+              }
+            } catch (_) {}
+          }
+        } catch (_) { mapEl.style.display = 'none'; }
+      }
+      if (!dead && !(t && (t.delivered_at || ts === 'cancelled'))) timer = setTimeout(draw, 30000);
+    }
+    draw();
+    return stop;
+  }
+
+  // Premium executed RATE CONFIRMATION — auto-generated from the load, unified LoadBoot signatures.
+  function printExecutedRateCon(d) {
+    const w9 = window.open('', '_blank'); if (!w9) { alert('Allow pop-ups to download.'); return; }
+    const esc = (x) => String(x || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const logo = '<svg width="34" height="36" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#fff"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#FC5305"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#fff"/></svg>';
+    const acc = d.accessorials || {}; const det = d.details || {};
+    const rpm = (d.rate && d.miles && Number(d.miles) > 0) ? '$' + (Number(d.rate) / Number(d.miles)).toFixed(2) + '/mi' : '';
+    const now9 = new Date();
+    const kv = (k, v) => v == null || v === '' ? '' : '<div class="kv"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>';
+    const arow = (k, v, note9) => '<tr><td class="ak">' + esc(k) + '</td><td class="av">' + esc(v) + '</td><td class="an">' + esc(note9 || '') + '</td></tr>';
+    w9.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Rate Confirmation ' + esc(d.ref) + '</title><style>'
+      + '*{box-sizing:border-box}body{font-family:Inter,system-ui,Arial,sans-serif;color:#0f1e36;margin:0 auto;max-width:900px;padding:0 0 30px;background:#fff}'
+      + '.band{background:linear-gradient(120deg,#0b1830,#10223B 60%,#14335c);color:#fff;padding:26px 38px;display:flex;justify-content:space-between;align-items:center;gap:14px}'
+      + '.band .wd{font-weight:800;font-size:1.3rem;letter-spacing:-.02em}.band .wd span{color:#FC5305}'
+      + '.band .doc{text-align:right}.band .doc .t{font-weight:800;font-size:1.05rem;letter-spacing:.16em}'
+      + '.band .doc .r{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:4px 10px;margin-top:6px;display:inline-block;letter-spacing:.08em}'
+      + '.ribbon{background:#16a34a;color:#fff;text-align:center;font-weight:800;letter-spacing:.35em;font-size:.72rem;padding:6px}'
+      + '.wrap{padding:24px 38px}'
+      + '.parties{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}'
+      + '.party{border:1px solid #e6ecf4;border-radius:12px;padding:12px 14px}'
+      + '.party .l{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:#8795a9;font-weight:800;margin-bottom:5px}'
+      + '.party .n{font-weight:800;font-size:.9rem}.party .s{font-size:.72rem;color:#51617a;margin-top:3px;line-height:1.6}'
+      + '.lane{display:flex;justify-content:space-between;align-items:stretch;gap:14px;background:#f6f9fd;border:1px solid #e0eaf6;border-radius:14px;padding:18px 20px;margin-bottom:18px}'
+      + '.lane .stop .tag{font-size:.6rem;letter-spacing:.12em;font-weight:800;color:#0883F7}.lane .stop .a{font-weight:800;font-size:.95rem;margin-top:3px;max-width:280px}'
+      + '.lane .stop .w{font-size:.74rem;color:#51617a;margin-top:4px;line-height:1.6}'
+      + '.lane .arrow{align-self:center;color:#94a3b8;font-size:1.4rem}'
+      + '.lane .money{text-align:right;align-self:center}.lane .money b{font-size:1.65rem;color:#0967d2}.lane .money .m{font-size:.74rem;color:#51617a}'
+      + 'h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.16em;color:#8795a9;margin:20px 0 8px;display:flex;align-items:center;gap:8px}'
+      + 'h2:after{content:"";flex:1;height:1px;background:#e6ecf4}'
+      + '.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 34px}'
+      + '.kv{display:flex;justify-content:space-between;gap:14px;padding:6px 2px;border-bottom:1px solid #f1f5f9;font-size:.82rem}'
+      + '.kv span{color:#51617a}.kv b{text-align:right}'
+      + 'table.acc{width:100%;border-collapse:collapse;font-size:.8rem;border:1px solid #e6ecf4;border-radius:10px;overflow:hidden}'
+      + 'table.acc th{background:#10223B;color:#fff;text-align:left;padding:8px 12px;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase}'
+      + 'table.acc td{padding:8px 12px;border-bottom:1px solid #eef2f7}table.acc tr:nth-child(even) td{background:#f8fafc}'
+      + 'td.ak{font-weight:700;width:220px}td.av{font-weight:800;color:#0967d2;width:180px}td.an{color:#51617a;font-size:.74rem}'
+      + '.terms{font-size:.7rem;color:#51617a;line-height:1.7;background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:12px 14px;margin-top:14px}'
+      + '.terms b{color:#0f1e36}'
+      + '.sigrow{display:flex;gap:20px;margin-top:24px;page-break-inside:avoid}'
+      + '.sig{flex:1;border:1px solid #e6ecf4;border-radius:12px;padding:14px 16px}'
+      + '.sig .lbl{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:#8795a9;font-weight:800}'
+      + '.sig .line{font-family:"Segoe Script","Brush Script MT",cursive;font-size:1.45rem;border-bottom:1.5px solid #24344d;padding:14px 4px 5px;min-height:46px}'
+      + '.sig .who{display:flex;justify-content:space-between;font-size:.68rem;color:#51617a;margin-top:6px}'
+      + '.sig.lb .line{color:#0e7490}'
+      + '.stamp{position:relative;margin:24px auto 0;width:190px;text-align:center;border:3.5px solid #16a34a;color:#16a34a;border-radius:12px;padding:9px 4px;font-weight:800;letter-spacing:.25em;transform:rotate(-4deg);font-size:.95rem}'
+      + '.ft{margin-top:24px;border-top:1px solid #e6ecf4;padding:12px 38px 0;font-size:.64rem;color:#8795a9;text-align:center;line-height:1.7}'
+      + '@media print{body{max-width:none}.band{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+      + '</style></head><body>'
+      + '<div class="band"><div style="display:flex;gap:12px;align-items:center">' + logo + '<div><div class="wd">Load<span>Boot</span></div><div style="font-size:.66rem;opacity:.7;letter-spacing:.08em">THE OPERATING SYSTEM FOR TRUCKING \u00b7 LOADBOOT.COM</div></div></div>'
+      + '<div class="doc"><div class="t">RATE CONFIRMATION</div><div class="r">' + esc(d.ref) + '</div><div style="font-size:.62rem;opacity:.65;margin-top:5px">Issued ' + esc(now9.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })) + ' \u00b7 server-timestamped</div></div></div>'
+      + '<div class="ribbon">E X E C U T E D &nbsp;\u00b7&nbsp; L E G A L L Y &nbsp;B I N D I N G</div>'
+      + '<div class="wrap">'
+      + '<div class="parties">'
+      + '<div class="party"><div class="l">Broker (customer)</div><div class="n">' + esc(d.broker_name || '\u2014') + '</div><div class="s">Signed by ' + esc(d.signer) + '<br>' + esc(d.signed_date) + '</div></div>'
+      + '<div class="party"><div class="l">Dispatch & settlement</div><div class="n">LoadBoot Dispatch</div><div class="s">24/7 day-of contact<br>All payments & documents flow through LoadBoot</div></div>'
+      + '<div class="party"><div class="l">Carrier</div><div class="n">Auto-attached at booking</div><div class="s">The accepting carrier\u2019s verified identity, authority & COI join this document the moment the load is accepted</div></div>'
+      + '</div>'
+      + '<div class="lane"><div class="stop"><div class="tag">\u25cf ORIGIN \u2014 PICKUP</div><div class="a">' + esc(d.origin_full || d.origin) + '</div><div class="w">' + esc([d.pickup_date, d.pickup_window].filter(Boolean).join(' \u00b7 ')) + (det.dock_hours_pickup ? '<br>Dock: ' + esc(det.dock_hours_pickup) : '') + '</div></div>'
+      + '<div class="arrow">\u27f6</div>'
+      + '<div class="stop"><div class="tag" style="color:#FC5305">\u25cf DESTINATION \u2014 DELIVERY</div><div class="a">' + esc(d.destination_full || d.destination) + '</div><div class="w">' + esc([d.delivery_date, d.delivery_window].filter(Boolean).join(' \u00b7 ')) + (det.dock_hours_delivery ? '<br>Dock: ' + esc(det.dock_hours_delivery) : '') + '</div></div>'
+      + '<div class="money"><b>$' + esc(Number(d.rate || 0).toLocaleString()) + '</b><div class="m">ALL-IN LINEHAUL' + (rpm ? ' \u00b7 ' + esc(rpm) : '') + (d.miles ? ' \u00b7 ' + esc(Number(d.miles).toLocaleString()) + ' mi' : '') + '</div></div></div>'
+      + '<div class="g2"><div><h2>\ud83d\udce6 Freight</h2>'
+      + kv('Equipment', d.equipment) + kv('Load size', det.load_size) + kv('Commodity', d.commodity)
+      + kv('Weight', d.weight ? Number(d.weight).toLocaleString() + ' lb' : '') + kv('Pallets / pieces', det.pallets)
+      + kv('Reefer temperature', det.temperature ? det.temperature + '\u00b0F' : '') + kv('Tarps', det.tarps)
+      + kv('Cargo value', det.cargo_value ? '$' + Number(det.cargo_value).toLocaleString() : '')
+      + kv('Hazmat', d.hazmat ? 'YES' + (d.hazmat_info ? ' \u2014 ' + d.hazmat_info : '') : 'No')
+      + '</div><div><h2>\ud83d\udcc5 Scheduling & handling</h2>'
+      + kv('Scheduling', d.appointment_required ? 'By appointment' : 'FCFS \u2014 first come, first served')
+      + kv('Pickup loading', det.load_method_pickup) + kv('Delivery unloading', det.load_method_delivery)
+      + kv('Driver assist', det.driver_assist_required ? 'REQUIRED \u2014 payable per schedule below' : 'Not required')
+      + kv('Drivers', det.team_required ? 'TEAM required' : 'Solo OK')
+      + kv('Tracking', 'Mandatory \u2014 live GPS from booking to delivery')
+      + kv('Reference / PO', d.reference)
+      + '</div></div>'
+      + '<h2>\ud83e\uddfe Accessorial schedule \u2014 payable with proof, no negotiation at the dock</h2>'
+      + '<table class="acc"><tr><th>Item</th><th>Rate</th><th>Condition</th></tr>'
+      + arow('Detention', '$' + (acc.detention_per_hr || '60') + '/hr', 'after ' + (acc.detention_free_hours || '2') + ' free hours \u00b7 GPS dwell is proof')
+      + arow('Layover', '$' + (acc.layover_per_day || '250') + '/day', 'when held overnight through no fault of the carrier')
+      + arow('TONU', '$' + (acc.tonu || '250'), 'truck ordered, not used \u2014 auto-paid on broker cancel after commitment')
+      + arow('Lumper', acc.lumper_policy || 'Reimbursed with receipt', 'receipt uploaded in-app')
+      + (acc.driver_assist ? arow('Driver assist', '$' + acc.driver_assist + '/stop', det.driver_assist_required ? 'REQUIRED on this load' : 'if requested at the dock') : '')
+      + (acc.extra_stop ? arow('Extra stop', '$' + acc.extra_stop + '/stop', 'per additional stop') : '')
+      + '</table>'
+      + '<div class="terms"><b>Terms.</b> This Rate Confirmation is issued under and governed by the executed LoadBoot Master Broker Agreement and the LoadBoot marketplace policies (detention, layover, TONU, lumper, driver-assist, FCFS and emergency-rescheduling \u2014 loadboot.com/policies). Live GPS tracking and in-app document capture (signed BOL/POD at every stop) are mandatory and constitute the evidence record. Settlement is processed exclusively through LoadBoot with documented terms; the carrier never invoices the broker directly. Verified on-road emergencies are handled per the Emergency Rescheduling Policy with no carrier penalty. This document was generated by LoadBoot from the posted load data and recorded with a server timestamp.</div>'
+      + '<div class="sigrow">'
+      + '<div class="sig"><div class="lbl">Broker \u2014 ' + esc(d.broker_name || '') + '</div><div class="line">' + esc(d.signer) + '</div><div class="who"><span>' + esc(d.signer) + '</span><span>Signed online \u00b7 ' + esc(d.signed_date) + '</span></div></div>'
+      + '<div class="sig lb"><div class="lbl">LoadBoot \u2014 counter-signature</div><div class="line">LoadBoot Dispatch</div><div class="who"><span>Authorized Signatory, LoadBoot</span><span>' + esc(d.signed_date) + '</span></div></div>'
+      + '</div>'
+      + '<div class="stamp">EXECUTED</div>'
+      + '</div>'
+      + '<div class="ft">Ref ' + esc(d.ref) + ' \u00b7 generated ' + esc(now9.toISOString()) + ' \u00b7 recorded with a server timestamp \u00b7 the accepting carrier\u2019s executed copy is attached to the trip automatically \u00b7 LoadBoot \u00b7 loadboot.com</div>'
+      + '<script>setTimeout(function(){window.print()},450)<\/script></body></html>');
+    w9.document.close();
+  }
+
+  // Premium broker document checklist — auto-generate what CAN be generated, structured inputs for the rest.
   function brokerDocs(l) {
-    const bodyEl = h('div', null, h('div', { class: 'cp-sub' }, 'Loading checklist…'));
-    openModal('Documents — ' + (l.origin || '?') + ' → ' + (l.destination || '?'), [bodyEl]);
+    const bodyEl = h('div', null, h('div', { class: 'cp-sub' }, 'Loading checklist\u2026'));
+    openModal('\ud83d\udce4 Documents YOU provide \u2014 ' + (l.origin || '?') + ' \u2192 ' + (l.destination || '?'), [bodyEl], { wide: true });
     (async () => {
-      let items; try { items = await loadChecklist('partner_load', l.id); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load checklist.')); return; }
+      let items, fl = null;
+      try { items = await loadChecklist('partner_load', l.id); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load checklist.')); return; }
+      try { fl = await partnerLoadFull(l.id); } catch (_) {}
       items = (items || []).filter(it => it.required_from === 'broker');
       if (!items.length) { mount(bodyEl, h('div', { class: 'cp-sub' }, 'No documents required from you for this load.')); return; }
-      mount(bodyEl, h('div', null, items.map(it => {
-        const wrap = h('div', { style: 'padding:8px 0;border-bottom:1px solid #e2e8f0' });
-        const statusColor = it.status === 'verified' ? 'var(--lb-green, #16a34a)' : it.status === 'rejected' ? '#dc2626' : '#d97706';
-        wrap.appendChild(h('div', { style: 'display:flex;justify-content:space-between' }, [
-          h('b', null, it.label || it.doc_key), h('span', { style: 'color:' + statusColor + ';font-weight:700' }, it.status)]));
-        if (it.review_reason) wrap.appendChild(h('div', { class: 'cp-sub', style: 'color:#dc2626' }, 'Fix needed: ' + it.review_reason));
-        if (it.submitted_ref) wrap.appendChild(h('div', { class: 'cp-sub' }, 'You sent: ' + it.submitted_ref));
-        if (it.status === 'required' || it.status === 'rejected') {
-          const ref = h('input', { class: 'cp-in', placeholder: 'Document link / reference / note' });
-          const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
-            if (!ref.value.trim()) { alert('Enter a document reference or note.'); return; }
-            ev.currentTarget.disabled = true;
-            try { await partnerChecklistSubmit(it.id, ref.value.trim()); ev.currentTarget.textContent = 'Sent ✓'; brokerDocs(l); }
-            catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not submit.'); }
-          } }, 'Submit');
-          wrap.appendChild(h('div', { class: 'cp-inlineform', style: 'margin-top:6px' }, [ref, send]));
-        }
-        return wrap;
-      })));
+      const CFG = {
+        rate_confirmation: { ic: '\ud83e\uddfe', help: 'Auto-generated from this load \u2014 review, sign, done. The executed copy goes on the carrier packet and stays downloadable here.' },
+        pickup_number: { ic: '\ud83d\udce6', help: 'The PU / release number the SHIPPER gave you \u2014 the driver quotes it at the gate.', fields: [['Pickup / PU number *', 'pu']] },
+        delivery_number: { ic: '\ud83c\udfc1', help: 'The delivery / confirmation number from the RECEIVER.', fields: [['Delivery number *', 'dn']] },
+        appointment_confirmation: { ic: '\ud83d\udcc5', help: 'Appointment confirmation from the facility (number and confirmed time).', fields: [['Confirmation #', 'ac'], ['Confirmed time (e.g. Jul 16, 10:00 AM)', 'at']] },
+        billing_contact: { ic: '\ud83d\udcb3', help: 'Who receives the invoice \u2014 accounts payable at your company or your customer.', fields: [['Contact name *', 'bn'], ['Email *', 'be'], ['Phone', 'bp']] },
+      };
+      const done = items.filter(it => it.status === 'verified' || it.status === 'received').length;
+      mount(bodyEl, h('div', null, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px' }, [
+          h('div', { class: 'cp-sub' }, done + ' of ' + items.length + ' provided \u2014 these go TO the carrier\u2019s dispatch pack (PU/delivery numbers, signed RC); until you submit them the driver sees \u201cpending from broker\u201d. What you RECEIVE from the carrier is under \ud83d\udce6 Carrier packet on the load card.'),
+        ]),
+        h('div', { style: 'height:6px;border-radius:99px;background:#eef2f7;margin-bottom:14px;overflow:hidden' },
+          h('div', { style: 'height:100%;width:' + Math.round(100 * done / items.length) + '%;background:linear-gradient(90deg,#0883F7,#22c55e);border-radius:99px' })),
+        ...items.map(it => {
+          const cfg = CFG[it.doc_key] || { ic: '\ud83d\udcc4', help: '', fields: [['Reference / note *', 'x']] };
+          const stC = it.status === 'verified' ? ['#dcfce7', '#166534', '\u2713 verified'] : it.status === 'received' ? ['#eff6ff', '#1d4ed8', '\u23f3 submitted \u2014 in review'] : it.status === 'rejected' ? ['#fee2e2', '#991b1b', '\u2715 rejected \u2014 fix below'] : ['#fef3c7', '#92400e', '\u26a0 required'];
+          const wrap = h('div', { style: 'background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:14px 16px;margin-bottom:11px;box-shadow:0 8px 24px -20px rgba(2,12,30,.3)' });
+          wrap.appendChild(h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap' }, [
+            h('div', { style: 'display:flex;gap:10px;align-items:center' }, [
+              h('span', { style: 'font-size:1.25rem' }, cfg.ic),
+              h('div', null, [h('b', { style: 'color:#10223B' }, it.label || it.doc_key), h('div', { class: 'cp-sub', style: 'max-width:520px' }, cfg.help)]),
+            ]),
+            h('span', { style: 'padding:4px 12px;border-radius:999px;font-size:.7rem;font-weight:800;background:' + stC[0] + ';color:' + stC[1] }, stC[2]),
+          ]));
+          if (it.review_reason) wrap.appendChild(h('div', { style: 'margin-top:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:8px 12px;font-size:.8rem;color:#991b1b' }, 'Fix needed: ' + it.review_reason));
+          if (it.submitted_ref && it.status !== 'rejected') wrap.appendChild(h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'You sent: ' + it.submitted_ref));
+          const needsInput = it.status === 'required' || it.status === 'rejected';
+          if (it.doc_key === 'rate_confirmation') {
+            let saved = null; try { saved = it.submitted_note ? JSON.parse(it.submitted_note) : null; } catch (_) {}
+            if (saved && saved.ref) wrap.appendChild(h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'margin-top:9px', onClick: () => printExecutedRateCon(saved) }, '\u2b07 Download executed rate confirmation (' + saved.ref + ')'));
+            if (needsInput) {
+              if (!fl) wrap.appendChild(h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'Could not read the load \u2014 refresh and retry.'));
+              else wrap.appendChild(h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:9px', onClick: () => {
+                const nameIn = h('input', { class: 'cp-in', placeholder: 'Type your full legal name to SIGN' });
+                const emsg = h('div', { class: 'cp-err' });
+                const closeS = openModal('\u270d Sign rate confirmation', [h('div', null, [
+                  h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Generated from this load \u2014 lane, schedule, freight and your full rate card. Signing executes it with a server timestamp; LoadBoot counter-signs automatically and the carrier packet gets the executed copy.'),
+                  h('div', { style: 'background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#334155;margin-bottom:10px' },
+                    (fl.origin_full || fl.origin) + ' \u2192 ' + (fl.destination_full || fl.destination) + ' \u00b7 $' + Number(fl.rate || 0).toLocaleString() + ' \u00b7 ' + (fl.equipment || '') + ' \u00b7 PU ' + (fl.pickup_date || '')),
+                  nameIn, emsg,
+                  h('button', { class: 'cp-btn', style: 'width:100%;margin-top:8px', onClick: async (ev) => {
+                    const btn = ev.currentTarget;
+                    if (!nameIn.value.trim()) { emsg.textContent = 'Type your full legal name to sign.'; return; }
+                    btn.disabled = true;
+                    const d = Object.assign({}, fl, { signer: nameIn.value.trim(), signed_date: new Date().toISOString().slice(0, 10),
+                      ref: 'LB-RC-' + String(fl.id || '').replace(/-/g, '').slice(0, 8).toUpperCase() });
+                    try {
+                      await partnerChecklistSubmit(it.id, 'Rate confirmation ' + d.ref + ' signed online by ' + d.signer + ' on ' + d.signed_date, JSON.stringify(d));
+                      printExecutedRateCon(d); closeS(); brokerDocs(l);
+                    } catch (e) { btn.disabled = false; emsg.textContent = (e && e.message) || 'Could not submit.'; }
+                  } }, '\u270d Sign & download executed copy'),
+                ])]);
+              } }, '\u26a1 Generate & sign rate confirmation'));
+            }
+          } else if (needsInput) {
+            const ins2 = (cfg.fields || []).map(([ph]) => h('input', { class: 'cp-in', placeholder: ph, style: 'margin:0;flex:1;min-width:150px' }));
+            const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+              const btn = ev.currentTarget;
+              const req = (cfg.fields || []).map((f, i9) => [f[0], ins2[i9].value.trim()]);
+              const miss = req.filter(([lbl, v9]) => /\*/.test(lbl) && !v9);
+              if (miss.length) { alert('Required: ' + miss.map(([lbl]) => lbl.replace(' *', '')).join(', ')); return; }
+              btn.disabled = true;
+              const refTxt = req.filter(([, v9]) => v9).map(([lbl, v9]) => lbl.replace(' *', '') + ': ' + v9).join(' \u00b7 ');
+              try { await partnerChecklistSubmit(it.id, refTxt); btn.textContent = 'Sent \u2713'; brokerDocs(l); }
+              catch (e) { btn.disabled = false; alert((e && e.message) || 'Could not submit.'); }
+            } }, 'Submit');
+            wrap.appendChild(h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;align-items:center' }, [...ins2, send]));
+          }
+          return wrap;
+        }),
+      ]));
     })();
+  }
+  // Claims filed by carriers on YOUR loads — GPS + policy evidence, approve or dispute, support escalation.
+  function claimsCard() {
+    const card = h('div', { class: 'cp-card', id: 'claims' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, '\ud83d\udcb0 Claims on your loads')]), h('div', { class: 'cp-sub' }, 'Loading\u2026')]);
+    async function loadClaims() {
+      let rows; try { rows = await partnerClaims(); } catch (e) { mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, '\ud83d\udcb0 Claims on your loads')]), h('div', { class: 'cp-sub' }, (e && e.message) || 'Could not load.')]); return; }
+      rows = rows || [];
+      const pend = rows.filter((b) => b.claim && b.claim.broker_status === 'pending').length;
+      const items = rows.length ? rows.map((b) => {
+        const c = b.claim || {}; const t = b.trip || {}; const dw = b.gps_dwell || []; const cxl = b.cancellation_trail || [];
+        const stPill = c.broker_status === 'approved' ? ['#e7f9ee', '#12a150', '\u2713 You approved'] : c.broker_status === 'disputed' ? ['#fee2e2', '#b91c1c', '\u2715 You disputed'] : ['#fef3c7', '#b45309', '\u23f3 Needs your review'];
+        const supPill = c.support_status === 'open' ? h('span', { class: 'cp-pill', style: 'background:#dbeafe;color:#1d4ed8' }, '\ud83c\udfa7 With LoadBoot support') : c.support_status === 'decided' ? h('span', { class: 'cp-pill', style: 'background:' + (c.support_verdict === 'broker' ? '#e7f9ee;color:#12a150' : '#fee2e2;color:#b91c1c') }, '\u2696 Support ruled: ' + c.support_verdict) : null;
+        const det = h('div', { style: 'display:none;margin-top:8px;border-top:1px dashed #e2e8f0;padding-top:8px' }, [
+          h('div', { style: 'font-weight:700;font-size:.85rem;margin-bottom:4px' }, '\ud83d\udd52 What happened, minute by minute'),
+          (Array.isArray(b.timeline) && b.timeline.length) ? h('div', { style: 'border-left:3px solid #0883F7;padding-left:10px;margin-bottom:8px' }, b.timeline.map((tl9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [h('b', { style: 'color:#0f172a' }, tl9.at ? new Date(tl9.at).toLocaleString() : ''), ' \u2014 ' + (tl9.what || '')]))) : h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'No timeline events yet.'),
+          (Array.isArray(b.stop_documents) && b.stop_documents.length) ? h('div', { style: 'margin-bottom:8px' }, [
+            h('div', { style: 'font-weight:700;font-size:.85rem' }, '\ud83d\udcce Paper proof collected at the stops'),
+            ...b.stop_documents.map((d9) => h('div', { class: 'cp-sub', style: 'padding:2px 0' },
+              ({ bol_signed: '\ud83d\udcdd Facility-SIGNED BOL', pod_signed: '\ud83d\udcdd Facility-SIGNED POD', lumper_receipt: '\ud83e\uddfe Lumper receipt', gate_ticket: '\ud83c\udfab Gate ticket', stop_photo: '\ud83d\udcf7 Stop photo', pod: 'POD' }[d9.kind] || d9.kind) + ' \u2014 ' + (d9.file_name || '') + ' \u00b7 uploaded ' + (d9.uploaded_at ? new Date(d9.uploaded_at).toLocaleString() : '') + ' \u00b7 held by LoadBoot (ask support for a certified copy)')),
+          ] ) : null,
+          h('div', { style: 'font-weight:700;font-size:.85rem' }, 'GPS evidence \u2014 recorded on scene'),
+          dw.length ? h('div', null, dw.map((e9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [
+            (e9.stop || '') + ': arrived ' + (e9.arrived_at ? new Date(e9.arrived_at).toLocaleString() : '\u2014') + ' \u00b7 departed ' + (e9.departed_at ? new Date(e9.departed_at).toLocaleString() : '\u2014')
+            + (e9.held_minutes != null ? ' \u00b7 held ' + e9.held_minutes + ' min (free ' + (e9.free_minutes || 0) + ', detention ' + (e9.detention_minutes || 0) + ' min)' : '')
+            + (e9.gps ? ' \u00b7 GPS \u2713 (' + Math.round(e9.gps.distance_m || 0) + 'm from pin)' : ''),
+            e9.gps ? h('a', { href: (e9.stop_gps ? 'https://www.google.com/maps/dir/?api=1&origin=' + e9.gps.lat + ',' + e9.gps.lng + '&destination=' + e9.stop_gps.lat + ',' + e9.stop_gps.lng + '&travelmode=walking' : 'https://maps.google.com/?q=' + e9.gps.lat + ',' + e9.gps.lng), target: '_blank', rel: 'noopener', style: 'margin-left:6px;color:#0883F7;font-weight:700', title: e9.stop_gps ? 'Opens BOTH pins — the truck\u2019s recorded fix AND your facility; the tiny gap between them is the proof of presence' : '' }, e9.stop_gps ? 'verify: truck vs facility ↗' : 'verify on map ↗') : null,
+          ].filter(Boolean)))) : h('div', { class: 'cp-sub' }, 'No dwell events recorded.'),
+          h('div', { class: 'cp-sub', style: 'margin-top:6px;background:#f8fafc;border-radius:8px;padding:8px 10px' }, '\ud83d\udd12 These timestamps and GPS fixes were recorded automatically by LoadBoot on scene (geofenced arrive/depart) \u2014 neither party can create or edit them. \u201cVerify: truck vs facility\u201d opens BOTH pins on Google Maps \u2014 the truck\u2019s recorded position AND your facility. If they sit together (see the meters shown), the truck was there at those timestamps; that is the proof.'),
+          cxl.length ? h('div', { style: 'margin-top:6px' }, [h('div', { style: 'font-weight:700;font-size:.85rem' }, 'Cancellation trail'), ...cxl.map((x9) => h('div', { class: 'cp-sub' }, new Date(x9.at).toLocaleString() + ' \u2014 ' + (x9.what || '')))]) : null,
+          c.note ? h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Carrier\u2019s note: \u201c' + c.note + '\u201d') : null,
+          b.policy ? h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Rates apply per the LoadBoot rate card agreed at booking (detention/layover/TONU/lumper).') : null,
+          c.broker_note ? h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Your note: ' + c.broker_note) : null,
+          c.support_note ? h('div', { style: 'margin-top:6px;background:#eff6ff;border-radius:8px;padding:8px 10px;font-size:.85rem' }, [h('b', null, 'Support verdict: '), c.support_note]) : null,
+        ].filter(Boolean));
+        const caret = h('span', { style: 'color:#0883F7;font-weight:700;font-size:.82rem;cursor:pointer' }, '\u25be Evidence');
+        const actRow = (c.broker_status === 'pending') ? h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget;
+            if (!confirm('Approve this ' + c.kind + ' claim? LoadBoot finalizes the amount and it lands on your invoice.')) return;
+            b9.disabled = true; try { await partnerReviewClaim(c.id, 'approve', null); loadClaims(); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
+          } }, '\u2713 Approve'),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#fff;border:1px solid #fca5a5;color:#b91c1c', onClick: async (ev) => { const b9 = ev.currentTarget;
+            const nt = prompt('Dispute \u2014 why? (the carrier sees this; LoadBoot support can be called in to decide on the GPS evidence):'); if (!nt) return;
+            b9.disabled = true; try { await partnerReviewClaim(c.id, 'dispute', nt); loadClaims(); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
+          } }, '\u2715 Dispute'),
+        ]) : (c.support_status === 'none' && c.broker_status === 'disputed') ? h('div', { style: 'margin-top:8px' },
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
+            try { await claimEscalate(c.id); loadClaims(); alert('Escalated \u2014 LoadBoot support will investigate the GPS + policy evidence and decide. The verdict is final for both sides.'); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
+          } }, '\ud83c\udfa7 Ask LoadBoot support to decide')) : null;
+        return h('div', { style: 'padding:10px 0;border-bottom:1px solid #e2e8f0' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;cursor:pointer', onClick: () => { const on = det.style.display !== 'none'; det.style.display = on ? 'none' : 'block'; caret.textContent = on ? '\u25be Evidence' : '\u25b4 Hide'; } }, [
+            h('div', null, [h('b', null, String(c.kind || '').toUpperCase() + ' \u2014 ' + (t.origin || '') + ' \u2192 ' + (t.destination || '')), h('div', { class: 'cp-sub' }, (c.ref || '') + ' \u00b7 filed ' + (c.filed_at ? new Date(c.filed_at).toLocaleString() : '') + ' \u00b7 carrier: ' + (t.carrier || ''))]),
+            h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [supPill, h('span', { class: 'cp-pill', style: 'background:' + stPill[0] + ';color:' + stPill[1] }, stPill[2]), caret].filter(Boolean)),
+          ]),
+          actRow, det,
+        ].filter(Boolean));
+      }) : [h('div', { class: 'cp-sub' }, 'No claims filed on your loads.')];
+      mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, '\ud83d\udcb0 Claims on your loads'), pend ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-left:8px' }, pend + ' need review') : null].filter(Boolean)), ...items]);
+    }
+    loadClaims();
+    return card;
   }
   // C2 — shipper requests assigned to THIS broker by Command Center: full facility detail + inline quote.
   function shipmentInboxCard() {
@@ -794,19 +2464,266 @@ async function brokerDash(user, ov) {
     loadInbox();
     return card;
   }
-  function packetAgreementCards() {
+  function openBrokerW9(it, onDone) {
+  const f = (ph, v) => h('input', { class: 'cp-in', placeholder: ph, value: v || '' });
+  const name = f('Legal name (as on tax return)'), biz = f('Business / DBA name (optional)');
+  const cls = h('select', { class: 'cp-in' }, ['Individual/sole proprietor', 'C corporation', 'S corporation', 'Partnership', 'Trust/estate', 'LLC'].map((x) => h('option', { value: x }, x)));
+  const tin = f('EIN or SSN — exactly 9 digits'), addr = f('Street address'), city = f('City, State ZIP');
+  tin.setAttribute('inputmode', 'numeric'); tin.setAttribute('maxlength', '11');
+  const tinHint = h('div', { class: 'cp-sub', style: 'margin-top:3px;font-weight:700' });
+  tin.addEventListener('input', () => {
+    let d = tin.value.replace(/\D/g, '').slice(0, 9);
+    tin.value = d.length > 2 ? d.slice(0, 2) + '-' + d.slice(2) : d;
+    if (!d.length) { tinHint.textContent = ''; return; }
+    if (d.length < 9) { tinHint.textContent = '✕ ' + d.length + '/9 digits — EIN and SSN are both exactly 9 digits'; tinHint.style.color = '#dc2626'; }
+    else { tinHint.textContent = '✓ 9 digits — looks like a valid EIN/SSN format'; tinHint.style.color = '#16a34a'; }
+  });
+  try { attachAddressSuggest(addr, { onPick: (r) => { addr.value = r.street; if (r.tail) city.value = r.tail; } }); } catch (_) {}
+  const addrHint = h('div', { class: 'cp-sub', style: 'margin-top:3px' }, '🇺🇸 US address only — start typing and pick a suggestion; City must end like “Dallas, TX 75201”.');
+  const sig = f('Type your full legal name — this is your signature');
+  const err = h('div', { class: 'cp-err' });
+  const close = openModal('Fill & sign W-9 — online', [
+    h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Same IRS Form W-9 flow as the rest of LoadBoot — fill it once, sign by typing your name, and download the executed PDF any time.'),
+    h('label', { class: 'cp-lbl' }, 'Legal name'), name,
+    h('label', { class: 'cp-lbl' }, 'Business name'), biz,
+    h('label', { class: 'cp-lbl' }, 'Federal tax classification'), cls,
+    h('label', { class: 'cp-lbl' }, 'TIN (EIN / SSN)'), tin, tinHint,
+    h('label', { class: 'cp-lbl' }, 'Address'), addr, city, addrHint,
+    h('label', { class: 'cp-lbl' }, 'Signature'), sig, err,
+    h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%', onClick: async (ev) => {
+      const digits = tin.value.replace(/\D/g, '');
+      if (!name.value.trim()) { err.textContent = 'Legal name is required.'; return; }
+      if (digits.length !== 9) { err.textContent = 'Wrong TIN — EIN and SSN are both EXACTLY 9 digits (you entered ' + digits.length + ').'; return; }
+      if (!addr.value.trim()) { err.textContent = 'Street address is required — pick a US suggestion.'; return; }
+      if (!/^.+,\s*[A-Za-z]{2}\s*\d{5}(-\d{4})?$/.test(city.value.trim())) { err.textContent = 'US address required — City, ST ZIP (e.g. “Dallas, TX 75201”). Non-US addresses are not accepted on a W-9.'; return; }
+      if (!sig.value.trim()) { err.textContent = 'Type your name to sign.'; return; }
+      ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Signing…';
+      const data = { name: name.value.trim(), business: biz.value.trim(), classification: cls.value,
+        tin_last4: digits.slice(-4), address: addr.value.trim(), city: city.value.trim(),
+        signer: sig.value.trim(), signed_date: new Date().toISOString().slice(0, 10) };
+      try {
+        await onboardingSubmitItem('w9', 'W-9 signed online · ' + data.signer + ' · TIN **-***' + data.tin_last4, JSON.stringify(data));
+        close(); if (onDone) onDone(data);
+        const c2 = openModal('W-9 signed ✓', [
+          h('div', { class: 'cp-sub', style: 'margin-bottom:10px' }, 'Submitted for review. Download your executed copy — it also stays on the W-9 row (⬇ Signed W-9).'),
+          h('button', { class: 'cp-btn', style: 'width:100%', onClick: () => printExecutedW9(Object.assign({ tin: digits }, data)) }, '⬇ Download executed W-9'),
+          h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:8px', onClick: () => c2() }, 'Done'),
+        ]);
+      } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Sign & submit'; err.textContent = (e && e.message) || 'Failed'; }
+    } }, 'Sign & submit')]);
+}
+function packetExtraBtn(it) {
+  // executed-copy downloads for online-signed items
+  let data = null; try { data = it.note && it.note.trim().startsWith('{') ? JSON.parse(it.note) : null; } catch (_) {}
+  if (!data) return null;
+  if (it.key === 'w9') return h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => printExecutedW9(Object.assign({ approved: it.status === 'verified' }, data)) }, '⬇ Signed W-9');
+  if (it.key === 'broker_agreement' && data.body) return h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => printExecutedAgreementDoc(data) }, '⬇ Executed copy');
+  return null;
+}
+function printExecutedAgreementDoc(d) {
+  const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to download.'); return; }
+  const esc = (x) => String(x || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const ref = 'LB-BA-' + (d.signed_date || '').replace(/-/g, '') + '-' + (d.signer || 'X').replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase();
+  // split numbered clauses into styled blocks
+  const raw = String(d.body || '');
+  const parts = raw.split(/\n(?=\d{1,2}\. )/);
+  const intro = esc(parts.shift() || '').replace(/\n/g, '<br>');
+  const clauses = parts.map((c) => {
+    const m = /^(\d{1,2})\. ([A-Z &\/\u2013-]+)\.\s*([\s\S]*)$/.exec(c.trim());
+    if (!m) return '<div class="cl"><div class="cl-b">' + esc(c).replace(/\n/g, '<br>') + '</div></div>';
+    return '<div class="cl"><div class="cl-h"><span class="cl-n">' + m[1] + '</span>' + esc(m[2]) + '</div><div class="cl-b">' + esc(m[3]).replace(/\n/g, '<br>') + '</div></div>';
+  }).join('');
+  const logo = '<svg width="30" height="32" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#10223B"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#FC5305"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#10223B"/></svg>';
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(d.title) + ' — Executed</title><style>'
+    + '*{box-sizing:border-box}body{font-family:Inter,system-ui,Arial,sans-serif;color:#0f1e36;margin:0 auto;max-width:860px;padding:34px 38px}'
+    + '.lh{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #FC5305;padding-bottom:14px}'
+    + '.lh .wd{font-weight:800;font-size:1.15rem;letter-spacing:-.02em}.lh .wd span{color:#FC5305}'
+    + '.meta{text-align:right;font-size:.7rem;color:#51617a;line-height:1.7}'
+    + 'h1{text-align:center;font-size:1.28rem;margin:22px 0 2px}.ref{text-align:center;font-size:.72rem;color:#51617a;letter-spacing:.14em;text-transform:uppercase;margin-bottom:16px}'
+    + '.intro{font-size:.85rem;line-height:1.65;background:#f6f8fb;border:1px solid #e6ecf4;border-radius:10px;padding:14px 16px;margin-bottom:14px}'
+    + '.cl{margin:0 0 12px;page-break-inside:avoid}.cl-h{font-weight:800;font-size:.85rem;letter-spacing:.02em;margin-bottom:3px}'
+    + '.cl-n{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#10223B;color:#fff;font-size:.7rem;align-items:center;justify-content:center;margin-right:8px}'
+    + '.cl-b{font-size:.82rem;line-height:1.6;color:#2b3b52;margin-left:30px}'
+    + '.sigrow{display:flex;justify-content:space-between;gap:40px;margin-top:34px;page-break-inside:avoid}' + '.sig{flex:1}.sig .lab{font-size:.6rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}' + '.sig .line{border-bottom:1.5px solid #0f1e36;min-height:32px;font-family:cursive;font-size:1.35rem;color:#0b1b33;padding:2px 0;display:flex;align-items:flex-end}' + '.sig .sub{font-size:.64rem;color:#94a3b8;margin-top:3px}'
+    + '.stamp{margin-top:26px;display:flex;justify-content:space-between;align-items:center;background:#e7f9ee;border:1.5px solid #16a34a;border-radius:10px;padding:10px 14px}'
+    + '.stamp b{color:#12a150;font-size:.8rem;letter-spacing:.08em}.stamp span{font-size:.68rem;color:#51617a}'
+    + '@media print{body{padding:18px 22px}}'
+    + '</style></head><body>'
+    + '<div class="lh"><div style="display:flex;align-items:center;gap:10px">' + logo + '<div class="wd">Load<span>Boot</span></div></div>'
+    + '<div class="meta">LoadBoot — The Operating System for Trucking<br>hello@loadboot.com · loadboot.com<br>Ref ' + esc(ref) + '</div></div>'
+    + '<h1>' + esc(d.title) + '</h1><div class="ref">Version ' + esc(d.version) + ' · EXECUTED ELECTRONICALLY</div>'
+    + '<div class="intro">' + intro + '</div>'
+    + clauses
+    + '<div class="sigrow">' + '<div class="sig"><div class="lab">Broker (signed electronically)</div><div class="line">' + esc(d.signer) + '</div><div class="sub">' + esc(d.company || '') + (d.company ? ' · ' : '') + 'Signed ' + esc(d.signed_date) + '</div></div>' + '<div class="sig"><div class="lab">LoadBoot (pre-signed)</div><div class="line" style="color:#0e7490">LoadBoot</div><div class="sub">Authorized Signatory, LoadBoot · ' + new Date().toLocaleDateString() + '</div></div>' + '</div>'
+    + '<div class="stamp"><b>✓ EXECUTED — SERVER TIMESTAMPED</b><span>This electronic signature was recorded by the LoadBoot platform with an audit entry. Neither party can alter this record.</span></div>'
+    + '<scr' + 'ipt>window.print();</scr' + 'ipt></body></html>');
+  w.document.close();
+}
+function openBrokerAgreementSign(it, onDone) {
+  const host = h('div', { class: 'cp-sub' }, 'Loading agreement…');
+  const sig = h('input', { class: 'cp-in', placeholder: 'Type your full legal name — this is your signature' });
+  const err = h('div', { class: 'cp-err' });
+  const btn = h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%', disabled: 'disabled' }, 'Loading…');
+  const close = openModal('Sign — Broker Agreement', [host, h('label', { class: 'cp-lbl', style: 'margin-top:10px' }, 'Signature'), sig, err, btn]);
+  (async () => {
+    let ag; try { ag = await currentAgreement('broker_carrier'); } catch (e) { host.textContent = (e && e.message) || 'Could not load.'; return; }
+    if (!ag || !ag.available) { host.textContent = (ag && ag.note) || 'Agreement pending legal review — try later.'; return; }
+    mount(host, h('div', null, [
+      h('div', { style: 'font-weight:800' }, ag.title + ' (v' + ag.version + ')'),
+      (() => {
+        const raw = String(ag.body_md || ag.body || ag.text || '');
+        const parts = raw.split(/\n(?=\d{1,2}\. )/);
+        const intro = parts.shift() || '';
+        return h('div', { style: 'max-height:280px;overflow:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-top:8px' }, [
+          h('div', { style: 'font-size:.83rem;line-height:1.6;color:#334155;background:#f6f8fb;border-radius:8px;padding:10px 12px;margin-bottom:10px' }, intro.trim()),
+          ...parts.map((c) => {
+            const m = /^(\d{1,2})\. ([A-Z &\/\u2013-]+)\.\s*([\s\S]*)$/.exec(c.trim());
+            if (!m) return h('div', { style: 'font-size:.82rem;line-height:1.6;color:#334155;margin-bottom:8px' }, c.trim());
+            return h('div', { style: 'margin-bottom:10px' }, [
+              h('div', { style: 'font-weight:800;font-size:.84rem;color:#10223B' }, m[1] + '. ' + m[2].charAt(0) + m[2].slice(1).toLowerCase()),
+              h('div', { style: 'font-size:.82rem;line-height:1.6;color:#334155;margin-top:2px' }, m[3].trim()),
+            ]);
+          }),
+        ]);
+      })(),
+      h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Read it, then sign below — recorded with a server timestamp and audit entry, exactly like the carrier dispatch agreement.'),
+    ]));
+    btn.disabled = false; btn.textContent = '✍ Sign agreement';
+    btn.onclick = async () => {
+      if (!sig.value.trim()) { err.textContent = 'Type your name to sign.'; return; }
+      btn.disabled = true; btn.textContent = 'Signing…';
+      const data = { title: ag.title, version: ag.version, body: ag.body_md || ag.body || ag.text || '', signer: sig.value.trim(), signed_date: new Date().toISOString().slice(0, 10) };
+      try {
+        await acceptAgreement('broker_carrier');
+        await onboardingSubmitItem('broker_agreement', 'Signed online by ' + data.signer + ' on ' + data.signed_date, JSON.stringify(data));
+        close(); if (onDone) onDone(data);
+        const c4 = openModal('Agreement signed ✓', [
+          h('div', { class: 'cp-sub', style: 'margin-bottom:10px' }, 'Recorded and submitted for review. Download your executed copy — it also stays on this row (⬇ Executed copy).'),
+          h('button', { class: 'cp-btn', style: 'width:100%', onClick: () => printExecutedAgreementDoc(data) }, '⬇ Download executed agreement'),
+          h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:8px', onClick: () => c4() }, 'Done'),
+        ]);
+      } catch (e) { btn.disabled = false; btn.textContent = '✍ Sign agreement'; err.textContent = (e && e.message) || 'Failed'; }
+    };
+  })();
+}
+let lbPartnerToast = null;
+function packetDocRow(it, onAction) {
+  const st = String(it.status || 'pending');
+  const V = {
+    verified:  { di: '✓', dibg: '#e7f9ee', dic: '#12a150', pill: ['Approved', '#e7f9ee', '#12a150'], rs: 'Verified by LoadBoot ✓' },
+    waived:    { di: '–', dibg: '#f1f5f9', dic: '#64748b', pill: ['Waived', '#f1f5f9', '#64748b'], rs: it.note ? 'Waived — ' + it.note : 'Waived by LoadBoot' },
+    submitted: { di: '⏳', dibg: '#eff6ff', dic: '#1d4ed8', pill: ['In review', '#dbeafe', '#1d4ed8'], rs: 'Submitted · LoadBoot team reviewing' },
+    rejected:  { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Action', '#fee2e2', '#b91c1c'], rs: (it.note ? '✕ ' + it.note + ' — ' : '') + 'fix and resubmit' },
+    pending:   { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Required', '#fef3c7', '#b45309'], rs: 'Required — not on file yet' },
+  }[st] || { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: [st, '#f1f5f9', '#64748b'], rs: '' };
+  if (st === 'pending' && String(it.tag || '').toLowerCase() === 'optional') { V.di = '–'; V.dibg = '#f1f5f9'; V.dic = '#64748b'; V.pill = ['Optional', '#f1f5f9', '#64748b']; V.rs = 'Recommended'; }
+  return h('div', { style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
+    h('div', { style: 'width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:' + V.dibg + ';color:' + V.dic }, V.di),
+    h('div', { style: 'flex:1;min-width:200px' }, [h('div', { style: 'font-weight:800;font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, V.rs)]),
+    h('div', { style: 'display:flex;gap:8px;align-items:center;flex:none;flex-wrap:wrap' }, [
+      h('span', { class: 'cp-pill', style: 'background:' + V.pill[1] + ';color:' + V.pill[2] + ';font-weight:800' }, V.pill[0]),
+      packetExtraBtn(it),
+      h('button', { class: 'cp-btn cp-btn-sm' + (st === 'pending' || st === 'rejected' ? '' : ' ghost'), onClick: onAction },
+        st === 'rejected' ? 'Fix & resubmit'
+        : (it.key === 'w9' && !packetExtraBtn(it)) ? '✍ Sign W-9 online'
+        : (it.key === 'broker_agreement' && !packetExtraBtn(it)) ? '✍ Sign agreement'
+        : packetBtnLabel(st)),
+    ].filter(Boolean)),
+  ]);
+}
+function brokerOnboardingWizard() {
+  const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Broker onboarding — step by step')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+  (async () => {
+    let pk = { items: [] }; try { pk = await myOnboardingPacket() || { items: [] }; } catch (_) {}
+    let prof = {}; try { prof = await partnerGetProfile() || {}; } catch (_) {}
+    const items = pk.items || [];
+    const byTag = (t) => items.filter((it) => String(it.tag || '').toLowerCase() === t);
+    const legal = byTag('legal');
+    const docs = items.filter((it) => ['required', 'conditional'].indexOf(String(it.tag || '').toLowerCase()) >= 0);
+    const STEPS = ['Company', 'Authority & legal', 'Documents', 'Review & submit'];
+    let step = 0;
+    // resume where work is left: company done? -> legal pending? -> docs pending? -> review
+    const done = (it) => ['submitted', 'verified'].indexOf(String(it.status || '')) >= 0;
+    if (prof.company && prof.phone) { step = legal.every(done) ? (docs.every(done) ? 3 : 2) : 1; }
+    const body = h('div');
+    const chrome = h('div');
+    const drawChrome = () => {
+      const pct = Math.round(((step + 1) / STEPS.length) * 100);
+      const back = step > 0 ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { step -= 1; draw(); } }, '← Back') : null;
+      const next = (step > 0 && step < STEPS.length - 1) ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => { step += 1; draw(); } }, 'Continue →') : null;
+      mount(chrome, h('div', null, [
+        h('div', { class: 'cp-wiz-head' }, [h('h3', null, 'Step ' + (step + 1) + ' of ' + STEPS.length + ' — ' + STEPS[step]), h('span', { class: 'cp-row-s' }, pct + '%')]),
+        h('div', { class: 'cp-wiz-bar' }, h('div', { class: 'cp-wiz-fill', style: 'width:' + pct + '%' })),
+        h('div', { class: 'cp-wiz-body' }, body),
+        h('div', { class: 'cp-wiz-actions' }, [back, next].filter(Boolean)),
+      ]));
+    };
+    const itemRow = (it) => packetDocRow(it, () => { const fin = (d) => { it.status = 'submitted'; if (d) { it.note = JSON.stringify(d); it.ref = (it.key === 'w9' ? 'W-9' : 'Agreement') + ' signed online · ' + d.signer; } draw(); }; if (it.key === 'w9') openBrokerW9(it, fin); else if (it.key === 'broker_agreement') openBrokerAgreementSign(it, fin); else openPacketSubmit(it, () => fin(null)); });
+    function draw() {
+      drawChrome();
+      const kids = [];
+      if (step === 0) {
+        const co = h('input', { class: 'cp-in', placeholder: 'Legal company name', value: prof.company || '' });
+        const mc = h('input', { class: 'cp-in', placeholder: 'MC number', value: prof.mc || '' });
+        const ph = h('input', { class: 'cp-in', placeholder: 'Phone', value: prof.phone || '' });
+        const cn = h('input', { class: 'cp-in', placeholder: 'Contact name', value: prof.contact_name || '' });
+        const msg0 = h('div', { class: 'cp-err' });
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Who are we working with? This appears on rate confirmations and invoices.'));
+        kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700' }, 'Company *'), co, h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'MC number (optional here — verified with your authority letter in Documents)'), mc, h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'Contact name *'), cn, h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'Phone *'), ph, msg0);
+        kids.push(h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: async (ev) => {
+          if (!co.value.trim() || !ph.value.trim() || !cn.value.trim()) { msg0.textContent = 'Company, contact name and phone are required.'; return; }
+
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+          try { await partnerUpdateProfile({ company: co.value.trim(), mc: mc.value.trim() || null, phone: ph.value.trim(), contact_name: cn.value.trim() }); prof = Object.assign(prof, { company: co.value.trim(), mc: mc.value.trim(), phone: ph.value.trim(), contact_name: cn.value.trim() }); step = 1; draw(); }
+          catch (e) { msg0.textContent = (e && e.message) || 'Could not save.'; ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue →'; }
+        } }, 'Save & continue →'));
+      } else if (step === 1) {
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, 'Your legal standing — FMCSA broker authority and the $75,000 bond protect every carrier who hauls for you.'));
+        legal.forEach((it) => kids.push(itemRow(it)));
+
+      } else if (step === 2) {
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, 'Paperwork — PDF or clear photo. Every document is reviewed by the LoadBoot team; you are notified the moment each one is verified or needs a fix.'));
+        docs.forEach((it) => kids.push(itemRow(it)));
+
+      } else {
+        const nDone = items.filter(done).length; const nRej = items.filter((it) => it.status === 'rejected').length;
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Everything in one glance — submit whatever is missing, then our team reviews (usually within 1 business day).'));
+        items.forEach((it) => kids.push(itemRow(it)));
+        const reqd = items.filter((x) => String(x.tag || '').toLowerCase() !== 'optional');
+        const missing = reqd.filter((x) => x.status === 'pending' || x.status === 'rejected');
+        kids.push(h('div', { style: 'margin-top:12px;background:' + (pk.complete ? '#e7f9ee' : nRej ? '#fee2e2' : '#eff6ff') + ';border-radius:12px;padding:12px 14px;font-size:.85rem;color:#334155' },
+          pk.complete ? '🎉 Packet complete — posting is unlocked. Anything you update goes back through review.'
+          : nRej ? '⚠ ' + nRej + ' item(s) were rejected — open each one above, fix it and resubmit.'
+          : nDone + ' of ' + items.length + ' submitted. Once ALL are verified, load posting unlocks automatically and you are notified.'));
+        kids.push(missing.length
+          ? h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%;opacity:.85', onClick: () => {
+              alert('Still missing before you can submit:\n\n' + missing.map((x) => '• ' + x.label + (x.status === 'rejected' ? ' (rejected — fix it)' : '')).join('\n'));
+            } }, '⛔ ' + missing.length + ' required item(s) left — complete them above')
+          : h('div', { style: 'margin-top:12px' }, [
+              h('div', { style: 'background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:12px 14px;text-align:center;font-weight:800;color:#1d4ed8;font-size:.95rem' },
+                pk.complete ? '🎉 ALL VERIFIED — POSTING IS LIVE' : '⏳ SUBMITTED — UNDER REVIEW'),
+              h('div', { class: 'cp-sub', style: 'text-align:center;margin-top:4px' },
+                pk.complete ? 'Anything you update goes back through review.' : 'LoadBoot team reviews within 1 business day — you\u2019ll be notified of every decision here and by email.'),
+              h('button', { class: 'cp-btn ghost', style: 'margin-top:8px;width:100%', onClick: () => bgo('dashboard') }, 'Track on dashboard →'),
+            ]));
+      }
+      mount(body, h('div', null, kids));
+    }
+    mount(card, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Broker onboarding' + (pk.complete ? ' — complete ✓' : ''))]), chrome]);
+    draw();
+  })();
+  return card;
+}
+function packetAgreementCards(skipPacket) {
     const wrap = h('div', null);
     const pc = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Industry onboarding packet')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
     (async () => {
       let pk; try { pk = await myOnboardingPacket(); } catch (_) { pc.remove(); return; }
       mount(pc, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Industry onboarding packet' + (pk.complete ? ' — complete ✓' : ''))]),
-        ...(pk.items || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap' }, [
-          h('div', null, [h('b', { style: 'font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, '[' + it.tag.toUpperCase() + ']' + (it.note ? ' · ' + it.note : ''))]),
-          h('div', { style: 'display:flex;gap:6px;align-items:center' }, [pill(it.status),
-            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
-              openPacketSubmit(it, () => { pc.querySelector('h3').textContent = 'Industry onboarding packet — submitted, refresh to update'; });
-            } }, packetBtnLabel(it.status))].filter(Boolean)),
-        ]))]);
+        ...(pk.items || []).map(it => packetDocRow(it, () => {
+          const done = (d) => { if (d) it.note = JSON.stringify(d); pc.querySelector('h3').textContent = 'Industry onboarding packet — submitted, refresh to update'; };
+          if (it.key === 'w9') openBrokerW9(it, done); else if (it.key === 'broker_agreement') openBrokerAgreementSign(it, done); else openPacketSubmit(it, done);
+        }))]);
     })();
     const ac = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Master agreement')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
     (async () => {
@@ -816,13 +2733,316 @@ async function brokerDash(user, ov) {
         h('pre', { style: 'white-space:pre-wrap;font-size:.82rem;max-height:220px;overflow:auto;background:#f8fafc;padding:10px;border-radius:10px' }, ag.body_md || ''),
         ag.accepted ? h('span', { class: 'cp-pill green' }, 'Accepted ✓') : h('button', { class: 'cp-btn', style: 'margin-top:8px', onClick: async (ev) => {
           ev.currentTarget.disabled = true;
-          try { await acceptAgreement('broker_carrier'); ev.currentTarget.textContent = 'Accepted ✓'; } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); }
+          try {
+            const signer = prompt('Type your full legal name to SIGN this agreement:'); if (!signer || !signer.trim()) { ev.currentTarget.disabled = false; return; }
+            await acceptAgreement('broker_carrier');
+            const data = { title: ag.title, version: ag.version, body: ag.body_md || ag.body || ag.text || '', signer: signer.trim(), signed_date: new Date().toISOString().slice(0, 10) };
+            try { await onboardingSubmitItem('broker_agreement', 'Signed online by ' + data.signer + ' on ' + data.signed_date, JSON.stringify(data)); } catch (_) {}
+            ev.currentTarget.textContent = 'Accepted ✓';
+            const c3 = openModal('Agreement signed ✓', [
+              h('div', { class: 'cp-sub', style: 'margin-bottom:10px' }, 'Recorded with a server timestamp. Download your executed copy — it also stays on the Signed Broker Agreement row (⬇ Executed copy).'),
+              h('button', { class: 'cp-btn', style: 'width:100%', onClick: () => printExecutedAgreementDoc(data) }, '⬇ Download executed agreement'),
+              h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:8px', onClick: () => c3() }, 'Done'),
+            ]);
+          } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); }
         } }, 'Accept agreement (recorded once)')]);
     })();
-    wrap.appendChild(pc); wrap.appendChild(ac);
+    if (!skipPacket) wrap.appendChild(pc); wrap.appendChild(ac);
     return wrap;
   }
-  mount(root, shell(user, 'broker', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost])]), bookRequestsCard(), approvedPartnersCard(), shipmentInboxCard(), packetAgreementCards(), invoicesCard(), ratingCard(), referralCard(), accountCard()])));
+  // ---- carrier-style organized shell: side menu + pages, broker-flavoured ----
+  const BNAV = [
+    ['dashboard', 'Dashboard', 'dash'],
+    ['loads', 'My Loads', 'loads'],
+    ['claims', 'Claims', 'finance'],
+    ['requests', 'Requests', 'clock'],
+    ['carriers', 'Carriers', 'loads'],
+    ['rates', 'Market Rates', 'finance'],
+    ['network', 'Network', 'user'],
+    ['onboarding', 'Documents', 'dock'],
+    ['invoices', 'Invoices', 'finance'],
+    ['account', 'Account', 'user'],
+  ];
+  const myLoadsCard = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost]);
+  const obHero = h('div');
+  (async () => {
+    let pk = null; try { pk = await myOnboardingPacket(); } catch (_) { return; }
+    const items = (pk && pk.items) || [];
+    const rej = items.filter((it) => it.status === 'rejected');
+    const sub = items.filter((it) => it.status === 'submitted');
+    const mk = (border, iconTxt, iconBg, iconCol, titleTxt, titleCol, subTxt, btnTxt) => h('div', { class: 'cp-card', style: 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-left:4px solid ' + border + ';margin-bottom:12px' }, [
+      h('div', { style: 'width:54px;height:54px;border-radius:50%;flex:none;background:' + iconBg + ';color:' + iconCol + ';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px' }, iconTxt),
+      h('div', { style: 'flex:1;min-width:220px' }, [h('div', { style: 'font-weight:800;font-size:1.02rem;color:' + titleCol }, titleTxt), h('div', { class: 'cp-sub' }, subTxt)]),
+      h('button', { class: 'cp-btn cp-btn-sm', onClick: () => bgo('onboarding') }, btnTxt),
+    ]);
+    if (rej.length) mount(obHero, h('div', { class: 'cp-card', style: 'border-left:4px solid #dc2626;margin-bottom:12px' }, [
+      h('div', { style: 'display:flex;align-items:center;gap:14px;flex-wrap:wrap' }, [
+        h('div', { style: 'width:46px;height:46px;border-radius:50%;flex:none;background:#fee2e2;color:#b91c1c;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px' }, '!'),
+        h('div', { style: 'flex:1;min-width:200px;font-weight:800;font-size:1.02rem;color:#b91c1c' }, rej.length + ' onboarding item(s) rejected — fix now'),
+        h('button', { class: 'cp-btn cp-btn-sm', onClick: () => bgo('onboarding') }, 'Fix now →'),
+      ]),
+      ...rej.map((it) => h('div', { style: 'margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px' }, [
+        h('div', { style: 'font-weight:800;font-size:.9rem;color:#b91c1c' }, '✕ ' + it.label),
+        it.note ? h('div', { class: 'cp-sub', style: 'margin-top:3px' }, [h('b', null, 'Reason: '), it.note]) : null,
+        h('div', { class: 'cp-sub', style: 'margin-top:3px' }, [h('b', null, 'Effect: '), 'packet incomplete — account is PENDING and load posting is stopped until this is verified again.']),
+        h('div', { class: 'cp-sub', style: 'margin-top:3px' }, [h('b', null, 'Solution: '), 'open Documents → this item → Fix & resubmit with the corrected document (official PDF where required). Review within 1 business day.']),
+      ].filter(Boolean))),
+    ]));
+    else if (pk.complete) mount(obHero, mk('#16a34a', '🎉', '#e7f9ee', '#12a150', 'Approved — load posting is unlocked', '#12a150', 'Your packet is fully verified. Post loads, offer them to carriers, and track everything with GPS proof.', 'View packet'));
+    else if (sub.length) mount(obHero, mk('#0883F7', '⏳', '#eff6ff', '#1d4ed8', 'Onboarding under review', '#1d4ed8', sub.length + ' item(s) with our team — you\u2019ll be notified as each is verified (usually within 1 business day).', 'Track status →'));
+    else mount(obHero, mk('#d97706', '📋', '#fef3c7', '#b45309', 'Finish onboarding to start posting', '#b45309', 'A few required items are still missing — the guided steps take about 10 minutes.', 'Start →'));
+  })();
+  const PAGES = {
+    dashboard: [],
+    loads: [],
+    claims: [claimsCard()],
+    requests: [bookRequestsCard(), shipmentInboxCard()],
+    carriers: [brokerCarriersPage()],
+    rates: [(() => { const hst = h('div'); renderMarketWidget(hst); return hst; })()],
+    network: [approvedPartnersCard(), ratingCard(), referralCard()],
+    onboarding: [brokerOnboardingWizard()],
+    invoices: [invoicesCard()],
+    account: [accountCard()],
+  };
+  let btab = (location.hash || '').replace('#', '') || 'dashboard';
+  if (!BNAV.some((n) => n[0] === btab)) btab = 'dashboard';
+  const bLinks = {};
+  const bNavEl = h('nav', { class: 'cp-nav' }, BNAV.map(([id, label, ic9]) => {
+    const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => bgo(id) }, [icon(ic9, 20), h('span', null, label)]);
+    (bLinks[id] = bLinks[id] || []).push(a); return a;
+  }));
+  const bTitle = h('h1', { class: 'cp-top-title' }, 'Dashboard');
+  const bContent = h('div', { class: 'cp-content' });
+  // ---- premium dashboard sections (rebuilt fresh on every dashboard visit) ----
+  if (!document.getElementById('bd-css')) {
+    const st = document.createElement('style'); st.id = 'bd-css';
+    st.textContent = `
+      .bd-hero{position:relative;border-radius:20px;overflow:hidden;padding:24px 26px;color:#fff;background:radial-gradient(1000px 400px at 10% -30%,rgba(8,131,247,.5),transparent 60%),radial-gradient(700px 340px at 96% 140%,rgba(252,83,5,.25),transparent 55%),linear-gradient(120deg,#0b1830 0%,#10223B 55%,#132c4e 100%);box-shadow:0 24px 60px -28px rgba(2,12,30,.55);margin-bottom:14px}
+      .bd-hero h2{margin:0;font-size:1.35rem;font-weight:800}
+      .bd-hero .sub{font-size:.82rem;opacity:.8;margin-top:4px}
+      .bd-qa{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+      .bd-qa button{border:0;border-radius:12px;padding:10px 16px;font-weight:800;font-size:.8rem;cursor:pointer;transition:transform .12s}
+      .bd-qa button:hover{transform:translateY(-1px)}
+      .bd-qa .p{background:linear-gradient(120deg,#0883F7,#0967d2);color:#fff;box-shadow:0 8px 18px -8px rgba(8,131,247,.6)}
+      .bd-qa .g{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.22)}
+      .bd-live{display:flex;gap:24px;flex-wrap:wrap;margin-top:16px}
+      .bd-live .s b{display:block;font-size:1.25rem;font-weight:800;color:#7cc0ff}
+      .bd-live .s span{font-size:.62rem;text-transform:uppercase;letter-spacing:.09em;opacity:.7;font-weight:700}
+      .bd-attn{background:#fff;border:1px solid #e6ebf3;border-left:5px solid #f59e0b;border-radius:16px;padding:14px 16px;margin-bottom:14px;box-shadow:0 10px 30px -22px rgba(2,12,30,.3)}
+      .bd-attn.ok{border-left-color:#22c55e}
+      .bd-attn .hd{font-weight:800;color:#10223B;font-size:.92rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+      .bd-arow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;border:1px solid #f1f5f9;border-radius:12px;margin-top:7px;flex-wrap:wrap}
+      .bd-arow .t{font-size:.84rem;color:#334155;font-weight:600;display:flex;gap:9px;align-items:center}
+      .bd-arow button{border:1.5px solid #e2e8f0;background:#fff;border-radius:10px;padding:7px 13px;font-weight:700;font-size:.76rem;color:#0883F7;cursor:pointer}
+      .bd-arow button:hover{border-color:#0883F7}
+      .bd-kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+      .bd-k{background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:14px 16px;box-shadow:0 10px 30px -24px rgba(2,12,30,.35);border-top:3px solid var(--bd-a,#0883F7)}
+      .bd-k b{display:block;font-size:1.5rem;font-weight:800;color:#10223B;line-height:1.1}
+      .bd-k .l{font-size:.78rem;font-weight:700;color:#334155;margin-top:3px}
+      .bd-k .s{font-size:.68rem;color:#94a3b8;margin-top:1px}
+      .bd-net{background:linear-gradient(120deg,#0d1b33,#14335c);border-radius:16px;padding:16px 18px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+      .bd-net .tt{font-weight:800;font-size:.95rem}
+      .bd-net .ss{font-size:.76rem;opacity:.8;margin-top:2px}
+      .bd-net button{border:0;border-radius:11px;padding:9px 15px;font-weight:800;font-size:.78rem;cursor:pointer;background:#fff;color:#10223B}
+      .bd-act .row{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer}
+      .bd-act .row:hover{background:#f8fafc}
+      .bd-act .row:last-child{border-bottom:0}
+    `;
+    document.head.appendChild(st);
+  }
+  let postFoldOpen = false;
+  const postFoldBanner = () => h('div', { style: 'cursor:pointer;border-radius:18px;overflow:hidden;background:#fff;border:1px solid #e6ebf3;box-shadow:0 12px 32px -24px rgba(16,34,59,.18);margin-bottom:14px', onClick: () => { postFoldOpen = true; brender(); } }, [
+    h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;flex-wrap:wrap' }, [
+      h('div', { style: 'display:flex;gap:12px;align-items:center' }, [
+        h('div', { style: 'width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:linear-gradient(135deg,#0883F7,#0967d2);color:#fff;box-shadow:0 8px 18px -8px rgba(8,131,247,.6)' }, '\u26a1'),
+        h('div', null, [
+          h('div', { style: 'font-weight:800;color:#10223B;font-size:.98rem' }, 'Post a load'),
+          h('div', { class: 'cp-sub' }, '5 guided steps \u2014 exact addresses, schedule, equipment, rate card, review. Real miles & transit auto-calculate.'),
+        ]),
+      ]),
+      h('button', { class: 'cp-btn cp-btn-sm', style: 'min-width:110px' }, 'Start \u2192'),
+    ]),
+  ]);
+  const bdHero = () => {
+    const hr = new Date().getHours();
+    const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    const live = h('div', { class: 'bd-live' });
+    const el = h('div', { class: 'bd-hero' }, [
+      h('h2', null, greet + (ov.company ? ', ' + ov.company : '')),
+      h('div', { class: 'sub' }, new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' \u00b7 Your freight command center \u2014 post, track, and settle every load with GPS proof.'),
+      h('div', { class: 'bd-qa' }, [
+        h('button', { class: 'p', onClick: () => { postFoldOpen = true; brender(); setTimeout(() => { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); } }, '\u26a1 Post a load'),
+        h('button', { class: 'g', onClick: () => bgo('carriers') }, '\ud83d\ude9b Browse carriers'),
+        h('button', { class: 'g', onClick: () => bgo('claims') }, '\ud83d\udcb0 Claims'),
+        h('button', { class: 'g', onClick: () => bgo('onboarding') }, '\ud83d\udcc4 Documents'),
+      ]),
+      live,
+    ]);
+    (async () => {
+      try {
+        const rows = (await partnerMyLoads(100)) || [];
+        const st9 = (x) => String(x.status || '').toLowerCase();
+        const booked = rows.filter(r => /book|dispatch|transit/.test(st9(r))).length;
+        const del = rows.filter(r => /deliver|complete|invoiced/.test(st9(r))).length;
+        const onBoard = rows.filter(r => /post|approved|available/.test(st9(r))).length;
+        mount(live, [
+          h('div', { class: 's' }, [h('b', null, String(onBoard)), h('span', null, 'Live on board')]),
+          h('div', { class: 's' }, [h('b', null, String(booked)), h('span', null, 'Booked / in transit')]),
+          h('div', { class: 's' }, [h('b', null, String(del)), h('span', null, 'Delivered')]),
+          h('div', { class: 's' }, [h('b', null, String(rows.length)), h('span', null, 'Total loads')]),
+        ]);
+      } catch (_) {}
+    })();
+    return el;
+  };
+  const bdAttention = () => {
+    const el = h('div', { class: 'bd-attn' , style: 'display:none' });
+    (async () => {
+      const items = [];
+      try {
+        const cls = (await partnerClaims()) || [];
+        const pend = cls.filter(c9 => String(c9.broker_status || 'pending') === 'pending').length;
+        if (pend) items.push(['\ud83d\udcb0', pend + ' claim' + (pend === 1 ? '' : 's') + ' awaiting YOUR review \u2014 carriers are waiting on a decision', 'Review claims', () => bgo('claims')]);
+      } catch (_) {}
+      try {
+        const pk = await myOnboardingPacket();
+        const rej = ((pk && pk.items) || []).filter(it => it.status === 'rejected');
+        if (rej.length) items.push(['\u26a0', rej.length + ' document' + (rej.length === 1 ? '' : 's') + ' rejected \u2014 posting stops until fixed: ' + rej.map(r => r.label).join(', '), 'Fix documents', () => bgo('onboarding')]);
+      } catch (_) {}
+      try {
+        const rows = (await partnerMyLoads(100)) || [];
+        const rej9 = rows.filter(r => String(r.status || '').toLowerCase() === 'rejected').length;
+        if (rej9) items.push(['\ud83d\udeab', rej9 + ' load' + (rej9 === 1 ? '' : 's') + ' rejected by dispatch \u2014 open My Loads for the reason & fix', 'My Loads', () => bgo('loads')]);
+      } catch (_) {}
+      try {
+        const ns = (await partnerNotifications(50)) || [];
+        const un = ns.filter(n => !n.read_at).length;
+        if (un > 3) items.push(['\ud83d\udd14', un + ' unread notifications', 'Open bell \u2191', () => { const b = document.querySelector('.cp-notif-btn, .cp-bell'); if (b) b.click(); }]);
+      } catch (_) {}
+      el.style.display = '';
+      if (!items.length) {
+        el.classList.add('ok');
+        mount(el, h('div', { class: 'hd' }, ['\u2705', ' All clear \u2014 nothing needs your attention right now.']));
+        return;
+      }
+      mount(el, [
+        h('div', { class: 'hd' }, ['\u26a0\ufe0f', ' Needs your attention (' + items.length + ')']),
+        ...items.map(([ic, txt, cta, fn]) => h('div', { class: 'bd-arow' }, [
+          h('div', { class: 't' }, [h('span', { style: 'font-size:1.05rem' }, ic), txt]),
+          h('button', { onClick: fn }, cta + ' \u2192'),
+        ])),
+      ]);
+    })();
+    return el;
+  };
+  const bdKpis = () => {
+    const el = h('div', { class: 'bd-kgrid' });
+    const tile = (v, l, sub9, a) => h('div', { class: 'bd-k', style: '--bd-a:' + a }, [h('b', null, String(v)), h('div', { class: 'l' }, l), h('div', { class: 's' }, sub9)]);
+    mount(el, [
+      tile(ov.loads_submitted || 0, 'Submitted', 'all time', '#0883F7'),
+      tile(ov.loads_open || 0, 'Awaiting dispatch', 'under review', '#f59e0b'),
+      tile(ov.loads_posted || 0, 'Live on board', 'carriers can book', '#22c55e'),
+    ]);
+    (async () => {
+      try {
+        const rows = (await partnerMyLoads(100)) || [];
+        const st9 = (x) => String(x.status || '').toLowerCase();
+        const booked = rows.filter(r => /book|dispatch|transit/.test(st9(r))).length;
+        const del = rows.filter(r => /deliver|complete|invoiced/.test(st9(r))).length;
+        let claims = 0; try { claims = ((await partnerClaims()) || []).filter(c9 => String(c9.broker_status || 'pending') === 'pending').length; } catch (_) {}
+        mount(el, [
+          tile(ov.loads_submitted || 0, 'Submitted', 'all time', '#0883F7'),
+          tile(ov.loads_open || 0, 'Awaiting dispatch', 'under review', '#f59e0b'),
+          tile(ov.loads_posted || 0, 'Live on board', 'carriers can book', '#22c55e'),
+          tile(booked, 'In transit', 'booked \u00b7 moving', '#8b5cf6'),
+          tile(del, 'Delivered', 'completed loads', '#10b981'),
+          tile(claims, 'Claims to review', claims ? 'action needed' : 'all settled', claims ? '#ef4444' : '#94a3b8'),
+        ]);
+      } catch (_) {}
+    })();
+    return el;
+  };
+  const bdNetwork = () => {
+    const el = h('div', { class: 'bd-net', style: 'display:none' });
+    (async () => {
+      let dir; try { dir = (await partnerCarrierDirectory()) || []; } catch (_) { return; }
+      if (!dir.length) return;
+      const trucks = dir.reduce((a, c9) => a + ((c9.trucks || 0) || c9.power_units || 0), 0);
+      const top = dir.filter(c9 => c9.stars).sort((a, b9) => b9.stars - a.stars).slice(0, 2);
+      el.style.display = '';
+      mount(el, [
+        h('div', null, [
+          h('div', { class: 'tt' }, '\ud83d\ude9b Your carrier network: ' + dir.length + ' verified carrier' + (dir.length === 1 ? '' : 's') + ' \u00b7 ' + trucks + ' trucks'),
+          h('div', { class: 'ss' }, top.length ? ('Top rated: ' + top.map(t9 => t9.name + ' \u2605' + t9.stars).join(' \u00b7 ')) : 'Every carrier is FMCSA-verified, insured and under live health monitoring.'),
+        ]),
+        h('button', { onClick: () => bgo('carriers') }, 'Browse carriers \u2192'),
+      ]);
+    })();
+    return el;
+  };
+  const bdActivity = () => {
+    const body = h('div', { class: 'bd-act' }, h('div', { class: 'cp-sub' }, 'Loading\u2026'));
+    const el = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('clock', 18), h('h3', null, 'Recent activity')]), body]);
+    (async () => {
+      let ns; try { ns = (await partnerNotifications(6)) || []; } catch (_) { el.remove(); return; }
+      if (!ns.length) { mount(body, h('div', { class: 'cp-sub' }, 'No activity yet \u2014 it starts the moment you post your first load.')); return; }
+      mount(body, ns.map(n => h('div', { class: 'row', onClick: () => { if (n.url) location.hash = n.url.replace(/^.*#/, '#'); } }, [
+        h('div', { style: 'font-size:1.05rem' }, n.kind === 'success' ? '\u2705' : n.kind === 'warning' ? '\u26a0\ufe0f' : '\ud83d\udce8'),
+        h('div', { style: 'min-width:0' }, [
+          h('div', { style: 'font-weight:700;font-size:.84rem;color:#10223B' }, n.title || 'Notification'),
+          h('div', { class: 'cp-sub', style: 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }, n.body || ''),
+        ]),
+      ])));
+    })();
+    return el;
+  };
+  bgoHook = (id) => bgo(id);
+  window.__lbOpenPost = () => { postFoldOpen = true; brender(); setTimeout(() => { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
+  function brender() {
+    if (btab === 'loads') { mount(bContent, h('div', null, [myLoadsCard])); return; }
+    if (btab === 'dashboard') {
+      mount(bContent, h('div', null, [bdHero(), obHero, bdAttention(), bdKpis(), h('div', { id: 'bd-postload' }, [ov.onboarded ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : verifyGateCard(ov)]), myLoadsCard, bdNetwork(), bdActivity()]));
+      return;
+    }
+    mount(bContent, h('div', null, PAGES[btab] || []));
+  }
+  function bgo(id) {
+    btab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    Object.keys(bLinks).forEach((k) => bLinks[k].forEach((a) => a.classList.toggle('active', k === btab)));
+    const it = BNAV.find((n) => n[0] === btab); bTitle.textContent = it ? it[1] : 'Dashboard';
+    brender();
+  }
+  window.addEventListener('hashchange', () => { const t9 = (location.hash || '').replace('#', ''); if (t9 && t9 !== btab && BNAV.some((n) => n[0] === t9)) bgo(t9); });
+  const bShell = h('div', { class: 'cp-shell' }, [
+    h('aside', { class: 'cp-side' }, [
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Broker' })),
+      bNavEl,
+      h('div', { class: 'cp-side-foot' }, [
+        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.company || 'Broker'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
+        h('button', { class: 'cp-side-out', onClick: async (ev) => { ev.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
+      ]),
+    ]),
+    h('main', { class: 'cp-main' }, [
+      h('header', { class: 'cp-top' }, [
+        h('div', { class: 'cp-top-left' }, bTitle),
+        h('div', { class: 'cp-top-right' }, [h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;font-weight:800' }, 'Broker'), notifBell(), (() => {
+          const menu = h('div', { class: 'cp-menu', hidden: true, style: 'position:absolute;right:0;top:46px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 18px 44px -14px rgba(15,23,42,.28);min-width:230px;z-index:90;padding:10px 0' }, [
+            h('div', { style: 'padding:6px 16px 10px;border-bottom:1px solid #f1f5f9' }, [h('div', { style: 'font-weight:800' }, ov.company || 'Broker'), h('div', { class: 'cp-sub' }, (user && user.email) || '')]),
+            h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:600', onClick: () => { menu.hidden = true; bgo('account'); } }, [icon('user', 16), 'Account & settings']),
+            h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:600', onClick: () => { menu.hidden = true; bgo('onboarding'); } }, [icon('dock', 16), 'Documents']),
+            h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:700;color:#dc2626', onClick: async () => { await signOut(); location.reload(); } }, [icon('logout', 16), 'Sign out']),
+          ]);
+          const btn = h('button', { class: 'cp-avatar', 'aria-haspopup': 'menu', title: (user && user.email) || '', onClick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; },
+            html: '<span style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0883F7,#1d4ed8);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px">' + (((user && user.email) || '?').trim().charAt(0).toUpperCase()) + '</span>' });
+          document.addEventListener('click', () => { menu.hidden = true; });
+          return h('div', { style: 'position:relative' }, [btn, menu]);
+        })()]),
+      ]),
+      bContent,
+    ]),
+  ]);
+  mount(root, bShell);
+  bgo(btab);
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
@@ -897,7 +3117,7 @@ async function shipperDash(user, ov) {
       })));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), approvedPartnersCard(), invoicesCard(), accountCard()])));
+  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), approvedPartnersCard(), (() => { const hst = h('div'); renderMarketWidget(hst, { sub: 'What shipping costs right now \u2014 broker sell rates for your lanes, refreshed weekly.' }); return hst; })(), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }

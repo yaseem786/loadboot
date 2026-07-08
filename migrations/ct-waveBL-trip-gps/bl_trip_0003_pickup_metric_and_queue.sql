@@ -1,0 +1,7 @@
+-- ct-waveBL · Phase C (part 2) — applied to staging + prod on 2026-07-06 via MCP.
+-- Content = cc_accessorial_queue (staff claims queue) + cc_account_health v2.2
+-- (G1 split: delivery 15 / pickup 10 / cancellations 10; on-time metrics grade
+-- APPOINTMENT trips only — FCFS excluded; pickup on-time from GPS-verified
+-- first pickup arrival vs scheduled_pickup; min 3 samples; grace unchanged).
+-- Full SQL text: see Supabase migration bl_trip_0003_pickup_metric_and_queue
+-- (both projects) — identical on staging and production.

@@ -35,7 +35,7 @@ export function renderAccountHealth(host) {
   load();
   loadOnb();
 
-  const orgLink = (kind, org) => (kind === 'carrier') ? ('#/carrier?id=' + org) : '#/partners';
+  const orgLink = (kind, org) => (kind === 'carrier') ? ('#/carrier?id=' + org) : ('#/broker?id=' + org);
 
   async function loadOnb() {
     mount(onbCard, el('div', null, [el('h3', { style: 'margin:0 0 6px' }, 'Onboarding packets (SOP D2)'), el('div', { class: 'cc-sub' }, 'Loading...')]));

@@ -16,13 +16,31 @@
 <link rel="stylesheet" href="../shared/tokens.css">
 <link rel="stylesheet" href="../carrier/carrier.css">
 <link rel="stylesheet" href="./partner.css">
+<link rel="stylesheet" href="../shared/light-exec.css">
+<link rel="stylesheet" href="./partner-premium.css">
 <script src="../env-config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+      @keyframes lbLogoPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 0 rgba(252,83,5,0))}50%{transform:scale(1.08);filter:drop-shadow(0 8px 28px rgba(252,83,5,.45))}}
+      @keyframes lbBarSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+      @keyframes lbWordFade{0%,100%{opacity:.55}50%{opacity:1}}
+    </style>
 </head>
 <body>
 <noscript><div class="lb-card" style="margin:40px 16px">The partner app requires JavaScript.</div></noscript>
 <div id="lb-app" aria-busy="true">
-  <div class="lb-state lb-loading"><div class="lb-spinner" aria-hidden="true"></div><p>Loading…</p></div>
+  <div class="lb-state lb-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:18px">
+    <style>
+      @keyframes lbLogoPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 0 rgba(252,83,5,0))}50%{transform:scale(1.08);filter:drop-shadow(0 8px 28px rgba(252,83,5,.45))}}
+      @keyframes lbBarSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+      @keyframes lbWordFade{0%,100%{opacity:.55}50%{opacity:1}}
+    </style>
+    <svg width="76" height="80" viewBox="10 8 80 84" style="animation:lbLogoPulse 1.6s ease-in-out infinite"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#10223B"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#10223B"/></svg>
+    <div style="font-family:Manrope,system-ui,sans-serif;font-weight:800;font-size:1.05rem;color:#10223B;animation:lbWordFade 1.6s ease-in-out infinite">Load<span style="color:#F97316">Boot</span></div>
+    <div style="width:180px;height:4px;border-radius:99px;background:rgba(16,34,59,.12);overflow:hidden">
+      <div style="width:35%;height:100%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#F97316);animation:lbBarSlide 1.2s ease-in-out infinite"></div>
+    </div>
+  </div>
 </div>
 <script type="module" src="./app.js"></script>
 </body>

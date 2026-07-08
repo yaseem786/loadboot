@@ -12,7 +12,7 @@ import {
   listPartnerShipments, decidePartnerShipment, listPartnerAppointmentsAll,
   listPartnerInvoicesAll, createPartnerInvoice, setPartnerInvoiceStatus, listPartnerOrgs,
   getPaymentInstructions, setPaymentInstructions,
-  loadChecklist, loadChecklistReview, requestUpdate, updateRequests, resolveUpdateRequest,
+  loadChecklist, loadChecklistReview, requestUpdate, updateRequests, resolveUpdateRequest, partnerLoadReview,
 } from '../../shared/api.js';
 import { openDrawer } from '../../shared/ui/components.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -130,6 +130,89 @@ export function renderPartnerIntake(host) {
     }
   }
 
+  async function reviewDrawer(l, reload) {
+    const bodyEl = el('div', null, el('div', { class: 'cc-sub' }, 'Running pre-flight checks\u2026'));
+    openDrawer('\ud83d\udd0d Load review \u2014 ' + (l.origin || '?') + ' \u2192 ' + (l.destination || '?'), bodyEl, { subtitle: (l.broker || '') + ' \u00b7 decide with everything on one screen' });
+    let d; try { d = await partnerLoadReview(l.id); } catch (e) { mount(bodyEl, el('div', { class: 'cc-sub', style: 'color:#dc2626' }, humanizeError(e))); return; }
+    const ld = d.load || {}, ck = d.checks || [], br = d.broker || {};
+    const fails = ck.filter(c => !c.ok), warns = ck.filter(c => c.ok && c.warn);
+    const passN = ck.length - fails.length;
+    const det = ld.details || {}, acc = ld.accessorials || {};
+    const kv = (k, v) => v == null || v === '' ? null : el('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px dashed #eef2f7;font-size:.82rem' }, [el('span', { style: 'color:#64748b' }, k), el('b', { style: 'text-align:right' }, String(v))]);
+    const secH = (t) => el('div', { style: 'font-size:.64rem;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;font-weight:800;margin:14px 0 6px' }, t);
+    const scoreFg = fails.length ? '#dc2626' : warns.length ? '#d97706' : '#16a34a';
+    const dTarget = det.direct_carrier_name || null;
+    mount(bodyEl, el('div', null, [
+      dTarget ? el('div', { style: 'background:#ede9fe;border:1.5px solid #c4b5fd;border-radius:14px;padding:12px 14px;margin-bottom:10px' }, [
+        el('div', { style: 'font-weight:800;color:#5b21b6;font-size:.9rem' }, '\ud83c\udfaf DIRECT LOAD \u2014 exclusively for ' + dTarget),
+        el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'The broker chose this carrier. Posting sends a 15-minute direct offer to ' + dTarget + ' ONLY \u2014 this load will NOT appear on the public board for any other carrier.'),
+      ]) : null,
+      // readiness score
+      el('div', { style: 'display:flex;gap:12px;align-items:center;background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:12px 14px' }, [
+        el('div', { style: 'font-size:1.6rem;font-weight:800;color:' + scoreFg }, passN + '/' + ck.length),
+        el('div', null, [
+          el('b', { style: 'color:' + scoreFg }, fails.length ? fails.length + ' blocking issue' + (fails.length === 1 ? '' : 's') + ' \u2014 not board-ready' : warns.length ? 'Board-ready with warnings' : 'Board-ready \u2014 all checks pass'),
+          el('div', { class: 'cc-sub' }, 'Pre-flight checks run on the exact data carriers will see.'),
+        ]),
+      ]),
+      el('div', { style: 'margin-top:8px' }, ck.map(c => el('div', { style: 'display:flex;gap:9px;align-items:flex-start;padding:6px 2px;border-bottom:1px solid #f8fafc' }, [
+        el('span', { style: 'font-weight:800;color:' + (!c.ok ? '#dc2626' : c.warn ? '#d97706' : '#16a34a') }, !c.ok ? '\u2715' : c.warn ? '\u26a0' : '\u2713'),
+        el('div', null, [el('div', { style: 'font-weight:700;font-size:.82rem' }, c.label), el('div', { class: 'cc-sub' }, c.detail || '')]),
+      ]))),
+      // market + duplicates + rate strips
+      el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px' }, [
+        el('div', { style: 'background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 12px' }, [el('b', { style: 'font-size:1.1rem;color:#1d4ed8' }, String(d.matching_carriers || 0)), el('div', { class: 'cc-sub' }, 'published carriers match this equipment' + (ld.hazmat ? ' + hazmat' : ''))]),
+        el('div', { style: 'background:' + ((d.duplicates_open || 0) > 0 ? '#fef2f2' : '#f0fdf4') + ';border:1px solid ' + ((d.duplicates_open || 0) > 0 ? '#fecaca' : '#bbf7d0') + ';border-radius:12px;padding:10px 12px' }, [el('b', { style: 'font-size:1.1rem;color:' + ((d.duplicates_open || 0) > 0 ? '#dc2626' : '#16a34a') }, String(d.duplicates_open || 0)), el('div', { class: 'cc-sub' }, 'open duplicates on this lane+date')]),
+        el('div', { style: 'background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:10px 12px' }, [el('b', { style: 'font-size:1.1rem' }, d.rpm != null ? '$' + d.rpm + '/mi' : '\u2014'), el('div', { class: 'cc-sub' }, money(ld.rate) + ' \u00b7 ' + (ld.miles || '?') + ' mi (real road)')]),
+      ]),
+      // broker risk
+      secH('Broker risk \u2014 ' + (br.name || '')),
+      el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, [
+        el('span', { class: 'cc-pill cc-pill-' + (br.org_status === 'active' ? 'green' : 'amber') }, 'account ' + (br.org_status || '?')),
+        el('span', { class: 'cc-pill cc-pill-blue' }, (br.loads_posted || 0) + ' posted / ' + (br.loads_submitted || 0) + ' submitted'),
+        (br.loads_rejected || 0) > 0 ? el('span', { class: 'cc-pill cc-pill-amber' }, br.loads_rejected + ' rejected') : null,
+        (br.loads_cancelled || 0) > 0 ? el('span', { class: 'cc-pill cc-pill-red' }, br.loads_cancelled + ' cancelled') : null,
+        (br.claims_pending_review || 0) > 0 ? el('span', { class: 'cc-pill cc-pill-red' }, '\u26a0 ' + br.claims_pending_review + ' carrier claim(s) awaiting THIS broker') : null,
+      ].filter(Boolean)),
+      // full load detail
+      secH('Exactly what the carrier will see (plus private fields)'),
+      el('div', null, [
+        kv('Pickup (private full)', ld.origin_full), kv('Delivery (private full)', ld.destination_full),
+        kv('Board shows', (ld.origin || '') + ' \u2192 ' + (ld.destination || '')),
+        kv('Schedule', [ld.pickup_date, ld.pickup_window, '\u2192', ld.delivery_date, ld.delivery_window].filter(Boolean).join(' ')),
+        kv('Dock hours', [det.dock_hours_pickup, det.dock_hours_delivery].filter(Boolean).join(' / ')),
+        kv('Equipment', [ld.equipment, det.load_size].filter(Boolean).join(' \u00b7 ')),
+        kv('Freight', [ld.commodity, ld.weight ? ld.weight + ' lb' : null, det.pallets ? det.pallets + ' plt' : null, det.temperature ? det.temperature + '\u00b0F' : null, det.tarps].filter(Boolean).join(' \u00b7 ')),
+        kv('Handling', [det.load_method_pickup, det.load_method_delivery, det.driver_assist_required ? 'driver assist REQ' : null, det.team_required ? 'TEAM REQ' : null].filter(Boolean).join(' \u00b7 ')),
+        kv('Cargo value', det.cargo_value ? '$' + Number(det.cargo_value).toLocaleString() : null),
+        kv('Rate card', 'det $' + (acc.detention_per_hr || '?') + '/hr\u00b7' + (acc.detention_free_hours || '?') + 'h free \u00b7 lay $' + (acc.layover_per_day || '?') + ' \u00b7 TONU $' + (acc.tonu || '?') + ' \u00b7 ' + (acc.lumper_policy || '?')),
+        kv('Reference', ld.reference), kv('Submitted', ld.submitted_at ? fmtDateTime(ld.submitted_at) : null),
+        kv('Notes', ld.notes),
+      ].filter(Boolean)),
+      // actions
+      manage ? el('div', { class: 'cc-drawer-actions', style: 'margin-top:14px;display:flex;gap:8px;flex-wrap:wrap' }, [
+        (l.status === 'submitted' || l.status === 'accepted') ? el('button', { class: 'lb-btn lb-btn-primary', style: 'flex:1', onClick: async (ev) => {
+          if (fails.length && !confirm(fails.length + ' blocking issue(s):\n\n' + fails.map(f => '\u2715 ' + f.label).join('\n') + '\n\nPost to the board anyway?')) return;
+          ev.currentTarget.disabled = true;
+          try { await decidePartnerLoad(l.id, 'post'); toast('Load posted to the board.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
+          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+        } }, (dTarget ? '\u2705 Post \u2014 offer ONLY to ' + dTarget : '\u2705 Post to board') + (fails.length ? ' (override)' : '')) : null,
+        fails.length || warns.length ? el('button', { class: 'lb-btn', style: 'flex:1', onClick: async (ev) => {
+          const msg = 'Before we can post this load, please fix:\n' + fails.concat(warns).map(f => '\u2022 ' + f.label + ' \u2014 ' + (f.detail || '')).join('\n');
+          ev.currentTarget.disabled = true;
+          try { await requestUpdate('partner_load', l.id, l.broker_org, msg); toast('Update request sent \u2014 auto-drafted from the failed checks.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
+          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+        } }, '\u2709 Ask update (auto-drafted)') : null,
+        l.status === 'submitted' ? el('button', { class: 'lb-btn', style: 'color:#b91c1c', onClick: async (ev) => {
+          if (!confirm('Decline this load? The broker is notified.')) return;
+          ev.currentTarget.disabled = true;
+          try { await decidePartnerLoad(l.id, 'decline'); toast('Declined.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
+          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+        } }, 'Decline') : null,
+      ].filter(Boolean)) : null,
+    ].filter(Boolean)));
+  }
+
   async function loadBroker() {
     showLoading(body, 'Loading broker loads…');
     let rows; try { rows = await listPartnerLoads({ limit: 200 }); } catch (e) { showError(body, humanizeError(e), loadBroker); return; }
@@ -156,17 +239,21 @@ export function renderPartnerIntake(host) {
       el('thead', null, el('tr', null, ['Broker', 'Lane', 'Equip', 'Rate', 'Pickup', 'Status', ''].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(l => {
         const act = el('td', null);
-        act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => docsDrawer(l) }, 'Docs'));
+        act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => reviewDrawer(l, loadBroker) }, '\ud83d\udd0d Review'));
+        act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: () => docsDrawer(l) }, 'Docs'));
         if (manage) act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: () => askUpdateDrawer(l) }, 'Ask update'));
         if (manage && l.status === 'submitted') {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
+          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Quick post'));
           act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
         } else if (manage && l.status === 'accepted') {
           act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, l.broker || '—')),
-          el('td', null, (l.origin || '—') + ' → ' + (l.destination || '—')),
+          el('td', null, [
+            (l.origin || '—') + ' → ' + (l.destination || '—'),
+            l.direct_carrier ? el('div', { style: 'margin-top:3px' }, el('span', { style: 'padding:2.5px 10px;border-radius:999px;font-size:.66rem;font-weight:800;background:#ede9fe;color:#6d28d9' }, '\ud83c\udfaf DIRECT \u2192 ' + l.direct_carrier)) : null,
+          ].filter(Boolean)),
           el('td', null, l.equipment || '—'), el('td', null, money(l.rate)),
           el('td', null, l.pickup_date ? fmtDateTime(l.pickup_date) : '—'), el('td', null, pill(l.status)), act,
         ]);

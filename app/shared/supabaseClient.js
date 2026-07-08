@@ -4,13 +4,27 @@
 import ENV from './env.js';
 
 // Pinned, integrity-scoped dependency. Bump deliberately (never float to @latest).
-const SUPABASE_JS = 'https://esm.sh/@supabase/supabase-js@2.45.4';
+// Two independent CDNs: if the first is unreachable (CDN outage / DNS blip),
+// the second is tried automatically before surfacing an error.
+const SUPABASE_JS_URLS = [
+  'https://esm.sh/@supabase/supabase-js@2.45.4',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm',
+];
+
+async function importSupabase() {
+  let lastErr;
+  for (const url of SUPABASE_JS_URLS) {
+    try { return await import(/* @vite-ignore */ url); }
+    catch (e) { lastErr = e; }
+  }
+  throw lastErr;
+}
 
 let _clientPromise = null;
 
 export function getClient() {
   if (!_clientPromise) {
-    _clientPromise = import(/* @vite-ignore */ SUPABASE_JS).then(({ createClient }) =>
+    _clientPromise = importSupabase().then(({ createClient }) =>
       createClient(ENV.supabaseUrl, ENV.supabaseAnonKey, {
         auth: {
           persistSession: true,

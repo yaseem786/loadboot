@@ -48,6 +48,20 @@ export const setSetting = (key, value) => rpc('set_setting', { p_key: key, p_val
 // (web analytics, content/blog, page builder, fleet, matching, settlements, messages,
 // search insights) are intentionally NOT wired in V1 — see COMMAND-CENTER scope.
 export const getOverviewStats = () => rpc('cc_get_overview');
+export const setBrokerVisibility = (org, visible, note) => rpc('cc_set_broker_visibility', { p_org: org, p_visible: visible, p_note: note ?? null });
+export const getBrokerVisibility = (org) => rpc('cc_get_broker_visibility', { p_org: org });
+export const submitReinstatement = (message, attachments, kind) => rpc('cc_pocket_submit_reinstatement', { p_message: message, p_attachments: attachments ?? [], p_kind: kind ?? 'reinstate' });
+export const poaThread = (kind) => rpc('cc_pocket_poa_thread', { p_kind: kind ?? 'health_poa' });
+export const myReinstatements = () => rpc('cc_pocket_my_reinstatements', {});
+export const reinstatementQueue = () => rpc('cc_reinstatement_queue', {});
+export const healthAdjust = (org, factor, points, reason, fix, expiresDays) => rpc('cc_health_adjust', { p_org: org, p_factor: factor ?? null, p_points: points, p_reason: reason, p_fix: fix ?? null, p_expires_days: expiresDays ?? null });
+export const healthResetFactor = (org, factorKey, reason) => rpc('cc_health_reset_factor', { p_org: org, p_factor_key: factorKey, p_reason: reason });
+export const myStrikes = () => rpc('cc_pocket_my_strikes', {});
+export const carrierPoaDemands = (org) => rpc('cc_carrier_poa_demands', { p_org: org });
+export const requestPoa = (org, factor, note) => rpc('cc_request_poa', { p_org: org, p_factor: factor, p_note: note ?? null });
+export const carrierReinstatements = (org) => rpc('cc_carrier_reinstatements', { p_org: org });
+export const reviewReinstatement = (id, action, note) => rpc('cc_review_reinstatement', { p_id: id, p_action: action, p_note: note ?? null });
+export const pauseCarrier = (org, action, scope, reason) => rpc('cc_pause_carrier', { p_org: org, p_action: action, p_scope: scope ?? 'all', p_reason: reason ?? null });
 export const getCarriersDirectory = (o = {}) => rpc('cc_list_carriers', {
   p_search: o.search ?? null, p_status: o.status ?? null, p_limit: o.limit ?? 100,
 });
@@ -146,6 +160,7 @@ export const adminNote = (action, target, note) => rpc('cc_admin_note', { p_acti
 export const bookRequestCarrierPacket = (id) => rpc('cc_book_request_carrier_packet', { p_request: id });
 export const accountHealthBoard = (limit = 100) => rpc('cc_account_health_board', { p_limit: limit });
 export const issueViolation = (org, kind, severity, note) => rpc('cc_issue_violation', { p_org: org, p_kind: kind, p_severity: severity, p_note: note });
+export const documentFile = (id) => rpc('cc_document_file', { p_document: id });
 export const resolveViolation = (id, note) => rpc('cc_resolve_violation', { p_id: id, p_note: note ?? null });
 // cxf — shipper<->broker bridge pipeline (request -> assign -> quote; CC controls + sees all)
 export const assignShipment = (id, broker) => rpc('cc_assign_shipment', { p_id: id, p_broker: broker });
@@ -165,6 +180,9 @@ export const publishAgreement = (kind, version, legalOk) => rpc('cc_publish_agre
 export const myOnboardingPacket = () => rpc('cc_my_onboarding_packet');
 export const onboardingSubmitItem = (key, ref, note) => rpc('cc_onboarding_submit_item', { p_key: key, p_ref: ref, p_note: note ?? null });
 export const onboardingReviewItem = (org, key, action, note) => rpc('cc_onboarding_review_item', { p_org: org, p_key: key, p_action: action, p_note: note ?? null });
+export const partnerSetStatus = (org, action, reason) => rpc('cc_partner_set_status', { p_org: org, p_action: action, p_reason: reason ?? null });
+export const partnersAccounts = () => rpc('cc_partners_accounts', {});
+export const partner360 = (org) => rpc('cc_partner_360', { p_org: org });
 export const onboardingBoard = (kind) => rpc('cc_onboarding_board', { p_kind: kind ?? null });
 export const shipperPostLoad = (p) => rpc('cc_shipper_post_load', { p });
 export const brokerClaimShipment = (id) => rpc('cc_broker_claim_shipment', { p_id: id });
@@ -177,10 +195,11 @@ export const carrierViewPoster = (load) => rpc('cc_carrier_view_poster', { p_loa
 export const setMyPaymentProfile = (p) => rpc('cc_set_my_payment_profile', { p });
 export const myPaymentProfile = () => rpc('cc_my_payment_profile');
 export const paymentProfilesQueue = (status) => rpc('cc_payment_profiles_queue', { p_status: status || 'unverified' });
-export const verifyPaymentProfile = (org, ok) => rpc('cc_verify_payment_profile', { p_org: org, p_ok: ok });
+export const verifyPaymentProfile = (org, ok, note) => rpc('cc_verify_payment_profile', { p_org: org, p_ok: ok, p_note: note ?? null });
 export const carrierPaymentProfile = (org) => rpc('cc_carrier_payment_profile', { p_org: org });
 export const trustProfile = (org) => rpc('cc_trust_profile', { p_org: org });
 export const myTrustProfile = () => rpc('cc_my_trust_profile');
+export const myHazmatReadiness = () => rpc('cc_my_hazmat_readiness');
 export const myApprovedPartners = () => rpc('cc_my_approved_partners');
 export const marketingIntel = (days = 30) => rpc('cc_marketing_intel', { p_days: days });
 export const rateStandards = () => rpc('cc_rate_standards');
@@ -250,6 +269,22 @@ export const partnerUpdateRequests = (status) => rpc('cc_partner_update_requests
 export const partnerRespondUpdate = (id, response) => rpc('cc_partner_respond_update', { p_id: id, p_response: response });
 export const resolveUpdateRequest = (id, action) => rpc('cc_resolve_update_request', { p_id: id, p_action: action ?? 'resolve' });
 export const tripArrive = (tripId, stop, freeMinutes) => rpc('cc_trip_arrive', { p_trip: tripId, p_stop: stop, p_free_minutes: freeMinutes ?? 120 });
+export const tripArriveGps = (tripId, stop, lat, lng, freeMinutes) => rpc('cc_trip_arrive_gps', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null, p_free_minutes: freeMinutes ?? 120 });
+export const tripSetStopCoords = (tripId, plat, plng, dlat, dlng) => rpc('cc_trip_set_stop_coords', { p_trip: tripId, p_plat: plat ?? null, p_plng: plng ?? null, p_dlat: dlat ?? null, p_dlng: dlng ?? null });
+export const carrierRequestAccessorial = (tripId, kind, note) => rpc('cc_carrier_request_accessorial', { p_trip: tripId, p_kind: kind, p_note: note ?? null });
+export const tripAccessorials = (tripId) => rpc('cc_trip_accessorials', { p_trip: tripId });
+export const pocketCancelTrip = (trip, reason) => rpc('cc_pocket_cancel_trip', { p_trip: trip, p_reason: reason });
+export const partnerEligibleCarriers = (load) => rpc('cc_partner_eligible_carriers', { p_load: load });
+export const partnerOfferSend = (load, carriers, rate, expiryMinutes) => rpc('cc_partner_offer_send', { p_load: load, p_carriers: carriers, p_rate: rate ?? null, p_expiry_minutes: expiryMinutes ?? 15 });
+export const partnerCancelLoad = (load, reason) => rpc('cc_partner_cancel_load', { p_load: load, p_reason: reason });
+export const pocketUploadTripDoc = (o = {}) => rpc('cc_pocket_upload_trip_doc', { p_trip: o.trip, p_kind: o.kind, p_path: o.path, p_file_name: o.fileName ?? 'proof', p_content_type: o.contentType ?? null, p_size: o.size ?? null });
+export const claimBundle = (id) => rpc('cc_claim_bundle', { p_id: id });
+export const partnerClaims = () => rpc('cc_partner_claims', {});
+export const partnerReviewClaim = (id, action, note) => rpc('cc_partner_review_claim', { p_id: id, p_action: action, p_note: note ?? null });
+export const claimEscalate = (id) => rpc('cc_claim_escalate', { p_id: id });
+export const supportDecideClaim = (id, verdict, amount, note) => rpc('cc_support_decide_claim', { p_id: id, p_verdict: verdict, p_amount: amount ?? null, p_note: note ?? null });
+export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
+export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop });
 export const detentionScan = (ratePerHour) => rpc('cc_detention_scan', { p_rate_per_hour: ratePerHour ?? 50 });
 export const exceptionCenter = (status, limit) => rpc('cc_exception_center', { p_status: status ?? 'open', p_limit: limit ?? 100 });
@@ -425,9 +460,9 @@ export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: li
 export const pocketCompliance = () => rpc('cc_pocket_compliance');
 export const carrierRequestReverify = (requirement, reason) => rpc('cc_carrier_request_reverify', { p_requirement: requirement, p_reason: reason ?? null });
 export const carrierSignAgreement = (name, date, ref) => rpc('cc_carrier_sign_agreement', { p_name: name, p_date: date ?? null, p_ref: ref ?? null });
-export const carrierAgreementSignature = () => rpc('cc_carrier_agreement_signature');
+export const carrierAgreementSignature = (org) => rpc('cc_carrier_agreement_signature', { p_org: org ?? null });
 export const carrierSubmitW9 = (payload) => rpc('cc_carrier_submit_w9', { p: payload });
-export const carrierW9 = () => rpc('cc_carrier_w9');
+export const carrierW9 = (org) => rpc('cc_carrier_w9', { p_org: org ?? null });
 export const pocketConfirmTrip = (tripId) => rpc('cc_pocket_confirm_trip', { p_trip: tripId });
 export const pocketRaiseIssue = (subject, body) => rpc('cc_pocket_raise_issue', { p_subject: subject, p_body: body ?? null });
 export const pocketMyIssues = (limit) => rpc('cc_pocket_my_issues', { p_limit: limit ?? 30 });
@@ -697,10 +732,23 @@ export const listChat = (after = 0, limit = 100) => rpc('cc_list_chat', { p_afte
 export const partnerRegister = (kind, company) => rpc('cc_partner_register', { p_kind: kind, p_company: company });
 export const partnerOverview = () => rpc('cc_partner_overview');
 // broker
-export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null, p_idempotency_key: o.idempotencyKey ?? null });
+export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null, p_idempotency_key: o.idempotencyKey ?? null, p_origin_full: o.originFull ?? null, p_destination_full: o.destinationFull ?? null, p_pickup_lat: o.pickupLat ?? null, p_pickup_lng: o.pickupLng ?? null, p_delivery_lat: o.deliveryLat ?? null, p_delivery_lng: o.deliveryLng ?? null });
 export const partnerMyLoads = (limit) => rpc('cc_partner_my_loads', { p_limit: limit ?? 50 });
 // Load Wizard (Inc 44) — richer broker submission with duplicate detection + document checklist.
 export const partnerSubmitLoad = (o = {}) => rpc('cc_partner_submit_load', { p: o });
+export const partnerCarrierDirectory = () => rpc('cc_partner_carrier_directory');
+export const partnerCarrierReviews = (org) => rpc('cc_partner_carrier_reviews', { p_org: org });
+export const partnerLoadFull = (loadId) => rpc('cc_partner_load_full', { p_load: loadId });
+export const partnerTrackLoad = (loadId) => rpc('cc_partner_track_load', { p_load: loadId });
+export const pocketTripDocs = (tripId) => rpc('cc_pocket_trip_docs', { p_trip: tripId });
+export const partnerEligibleDetail = (loadId) => rpc('cc_partner_eligible_detail', { p_load: loadId });
+export const requestPacketCopies = (tripId) => rpc('cc_request_packet_copies', { p_trip: tripId });
+export const partnerCarrierPacket = (loadId) => rpc('cc_partner_carrier_packet', { p_load: loadId });
+export const partnerExtendOffer = (loadId, minutes) => rpc('cc_partner_extend_offer', { p_load: loadId, p_minutes: minutes ?? 15 });
+export const marketRpm = () => rpc('cc_market_rpm');
+export const laneRate = (o, d2, eq, miles) => rpc('cc_lane_rate', { p_o_state: o ?? null, p_d_state: d2 ?? null, p_equipment: eq, p_miles: miles ?? null });
+export const publicMarketRates = () => rpc('get_public_market_rates');
+export const setOrgLogo = (path) => rpc('cc_set_org_logo', { p_path: path });
 export const loadChecklist = (subjectType, subjectId) => rpc('cc_load_checklist', { p_subject_type: subjectType, p_subject_id: subjectId });
 export const loadChecklistSet = (id, status) => rpc('cc_load_checklist_set', { p_id: id, p_status: status });
 // shipper
@@ -715,6 +763,7 @@ export const partnerSetAppointmentStatus = (id, status) => rpc('cc_partner_set_a
 export const partnerIntakeOverview = () => rpc('cc_partner_intake_overview');
 export const listPartnerLoads = (o = {}) => rpc('cc_list_partner_loads', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
 export const decidePartnerLoad = (id, action) => rpc('cc_decide_partner_load', { p_id: id, p_action: action });
+export const partnerLoadReview = (id) => rpc('cc_partner_load_review', { p_id: id });
 export const listPartnerShipments = (o = {}) => rpc('cc_list_partner_shipments', { p_status: o.status ?? null, p_limit: o.limit ?? 100 });
 export const decidePartnerShipment = (id, action) => rpc('cc_decide_partner_shipment', { p_id: id, p_action: action });
 export const listPartnerAppointmentsAll = (limit) => rpc('cc_list_partner_appointments_all', { p_limit: limit ?? 200 });

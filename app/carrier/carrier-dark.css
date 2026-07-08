@@ -1,0 +1,270 @@
+/* ============================================================================
+   carrier-dark.css — LoadBoot Carrier Portal DARK PREMIUM override.
+   ADDITIVE + REVERSIBLE: colors only, never layout/spacing/logic.
+   Loaded AFTER carrier.css in index.html; delete that <link> to fully revert.
+   Palette (handoff canon): bg #0a1322 · card #111c31 · border rgba(255,255,255,.09)
+   text #eaf1fb · muted #8ea2c3 · accent #0883F7 / #3b9dff · ok #34d399
+   ========================================================================== */
+
+/* ---------- base ---------- */
+body { background: #0a1322; color: #eaf1fb; }
+.cp-main { background: #0a1322; }
+h1, h2, h3, h4 { color: #eaf1fb; }
+.lb-spinner { border-color: rgba(255,255,255,.14); border-top-color: #3b9dff; }
+.lb-state { color: #8ea2c3; }
+
+/* ---------- auth ---------- */
+.cp-auth-card { background: #111c31; color: #eaf1fb; box-shadow: 0 30px 80px -30px rgba(0,0,0,.8); }
+.cp-brand-dark { color: #eaf1fb; }
+.cp-staff { border-top-color: rgba(255,255,255,.09); }
+
+/* ---------- top bar ---------- */
+.cp-top { background: rgba(7,11,20,.86); border-bottom-color: rgba(255,255,255,.09); }
+.cp-top-title { color: #eaf1fb; }
+.cp-iconbtn { background: #111c31; border-color: rgba(255,255,255,.09); color: #8ea2c3; }
+.cp-iconbtn:hover { color: #3b9dff; border-color: rgba(59,157,255,.45); }
+.cp-bell-badge { border-color: #111c31; }
+
+/* ---------- cards / stats ---------- */
+.cp-card, .cp-stat, .cp-load, .cp-kpi { background: #111c31; border-color: rgba(255,255,255,.09); color: #eaf1fb; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.cp-stat.clickable:hover, .cp-load:hover { border-color: rgba(59,157,255,.4); box-shadow: 0 16px 34px -22px rgba(8,131,247,.55); }
+.cp-stat-v, .cp-load-rate, .cp-legend b { color: #eaf1fb; }
+.cp-stat-l, .cp-cardhead-sub, .cp-muted, .cp-row-s, .cp-load-meta, .cp-legend { color: #8ea2c3; }
+.cp-stat.blue .cp-stat-ic { background: rgba(8,131,247,.18); color: #3b9dff; }
+.cp-stat.green .cp-stat-ic { background: rgba(52,211,153,.16); color: #34d399; }
+.cp-stat.amber .cp-stat-ic { background: rgba(245,158,11,.16); color: #fbbf24; }
+.cp-stat.violet .cp-stat-ic { background: rgba(139,92,246,.18); color: #a78bfa; }
+.cp-donut-leg { color: #b9c6db; }
+
+/* ---------- rows ---------- */
+.cp-row { border-bottom-color: rgba(255,255,255,.07); }
+.cp-row-t { color: #eaf1fb; }
+.cp-rowbtn { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.09); color: #eaf1fb; }
+.cp-rowbtn:hover { background: rgba(8,131,247,.12); border-color: rgba(59,157,255,.35); }
+.cp-go { color: #8ea2c3; }
+.cp-trip { border-bottom-color: rgba(255,255,255,.07); }
+
+/* ---------- pills / chips / tags ---------- */
+.cp-pill { background: rgba(255,255,255,.07); color: #b9c6db; }
+.cp-pill.blue { background: rgba(8,131,247,.18); color: #3b9dff; }
+.cp-pill.green { background: rgba(52,211,153,.14); color: #34d399; }
+.cp-pill.amber { background: rgba(245,158,11,.15); color: #fbbf24; }
+.cp-pill.red { background: rgba(239,68,68,.15); color: #f87171; }
+.cp-pill.gray { background: rgba(255,255,255,.07); color: #b9c6db; }
+.cp-chip.ok { background: rgba(52,211,153,.14); color: #34d399; }
+.cp-chip.warn { background: rgba(245,158,11,.15); color: #fbbf24; }
+.cp-tag { background: rgba(8,131,247,.14); color: #9cc5f4; }
+.cp-chip2 { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.12); color: #b9c6db; }
+.cp-chip2.on { background: #0883F7; border-color: #0883F7; color: #fff; }
+.cpx-chip { background: rgba(8,131,247,.2); color: #93c5fd; }
+.cpx-chip.eq { background: rgba(249,115,22,.2); color: #fdba74; }
+.cpx-banner.red { background: rgba(220,38,38,.18); color: #fca5a5; }
+.cpx-banner.amber { background: rgba(217,119,6,.16); color: #fcd34d; }
+.cpx-avail.off { color: #f87171; }
+.cpx-tabpick { border-color: rgba(255,255,255,.16); }
+.cpx-tabpick.on { background: #0883F7; border-color: #0883F7; color: #fff; }
+.cpx-seg button { border-color: rgba(255,255,255,.16); }
+.cpx-seg button.on { background: #eaf1fb; color: #0a1322; border-color: #eaf1fb; }
+
+/* ---------- trip steps ---------- */
+.cp-step-dot { background: #16233c; border-color: #223250; color: #8ea2c3; }
+.cp-step.done .cp-step-dot { background: #34d399; border-color: #34d399; color: #06281c; }
+.cp-step-lbl { color: #8ea2c3; }
+.cp-step.done .cp-step-lbl, .cp-step.current .cp-step-lbl { color: #eaf1fb; }
+.cp-step-line { background: #223250; }
+.cp-step-line.done { background: #34d399; }
+
+/* ---------- announcements / prompts ---------- */
+.cp-ann { background: rgba(8,131,247,.1); }
+.cp-ann.warning { background: rgba(217,119,6,.12); }
+.cp-ann.emergency { background: rgba(220,38,38,.12); }
+.cp-ann.promo { background: rgba(124,58,237,.12); }
+.cp-ann-b { color: #b9c6db; }
+.cp-prompt { background: rgba(8,131,247,.08); border-color: rgba(59,157,255,.25); }
+.cp-prompt > .cp-ic { color: #3b9dff; }
+.cp-prompt-txt span { color: #8ea2c3; }
+
+/* ---------- inline forms / POD ---------- */
+.cp-inlineform, .cp-pod { background: rgba(255,255,255,.04); }
+.cp-podzone { background: #111c31; border-color: rgba(255,255,255,.18); }
+.cp-podzone:hover { border-color: #3b9dff; }
+.cp-podzone.drag { background: rgba(252,83,5,.1); }
+.cp-podzone-t { color: #b9c6db; }
+.cp-podpdf { background: #111c31; border-color: rgba(255,255,255,.18); color: #b9c6db; }
+.cp-podprev img { border-color: rgba(255,255,255,.12); }
+.cpx-adv { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.09); }
+.cpx-adv-bar { background: #223250; }
+.cpx-adv-grid .cell { background: #111c31; border-color: rgba(255,255,255,.09); }
+
+/* ---------- inputs & buttons ---------- */
+.cp-in, select.cp-in, textarea.cp-in { background: #0c1628; border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+.cp-in::placeholder, .cp-input::placeholder { color: #5c6f8f; }
+.cp-btn.ghost { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+.cp-btn.ghost:hover { background: rgba(255,255,255,.12); }
+.cp-btn.sec, .cp-btn-secondary { background: rgba(255,255,255,.08); color: #eaf1fb; }
+.cp-lbl, .cp-field > span { color: #b9c6db; }
+.cp-input { background: #0c1628; border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+.cp-input:focus { border-color: #3b9dff; box-shadow: 0 0 0 3px rgba(8,131,247,.22); }
+.cp-wiz-bar { background: rgba(255,255,255,.08); }
+
+/* ---------- notifications ---------- */
+.cp-notif.unread { background: rgba(8,131,247,.1); }
+.cp-notif:hover { background: rgba(8,131,247,.14); }
+
+/* ---------- modal & account menu ---------- */
+.cp-modal { background: rgba(2,6,15,.7); }
+.cp-modal-card { background: #111c31; color: #eaf1fb; }
+.cp-modal-head { background: #111c31; border-bottom-color: rgba(255,255,255,.09); }
+.cp-modal-x { color: #8ea2c3; }
+.cp-menu { background: #111c31; border-color: rgba(255,255,255,.09); }
+.cp-menu-mail { color: #8ea2c3; }
+.cp-menu-item { color: #eaf1fb; }
+.cp-menu-item:hover { background: rgba(255,255,255,.06); }
+.cp-menu-id { border-bottom-color: rgba(255,255,255,.07); }
+.cp-menu-out { color: #f87171; }
+
+/* ---------- account pill-tabs (cpa) ---------- */
+.cpa-tab { background: #111c31; border-color: rgba(255,255,255,.09); color: #b9c6db; }
+.cpa-tab:hover { border-color: #3b9dff; color: #3b9dff; }
+
+/* ---------- tables ---------- */
+.cp-content table { color: #eaf1fb; }
+.cp-content th { color: #8ea2c3; border-color: rgba(255,255,255,.09); }
+.cp-content td { border-color: rgba(255,255,255,.07); }
+
+/* ---------- mobile tab bar ---------- */
+@media (max-width: 900px) {
+  .cp-tabbar { background: #0c1628; border-top-color: rgba(255,255,255,.09); box-shadow: 0 -8px 24px -16px rgba(0,0,0,.7); }
+  .cp-tabbar .cp-navlink { color: #8ea2c3; }
+  .cp-tabbar .cp-navlink.active { color: #3b9dff; }
+}
+
+/* ============================================================================
+   Account & Settings (.acx scoped) — retint the design tokens + white surfaces
+   ========================================================================== */
+.acx { --ink: #eaf1fb; --slate: #b9c6db; --mute: #8ea2c3; --line: rgba(255,255,255,.09); --ice: rgba(8,131,247,.14); }
+.acx .m { background: #111c31; border-color: rgba(255,255,255,.09); box-shadow: 0 12px 26px -16px rgba(0,0,0,.6); }
+.acx .m .v { color: #eaf1fb; }
+.acx .nav { background: rgba(7,11,20,.86); border-bottom-color: rgba(255,255,255,.09); }
+.acx .chip { background: #111c31; border-color: rgba(255,255,255,.09); color: #b9c6db; }
+.acx .chip.on { background: linear-gradient(135deg, #0883F7, #0a6fd6); color: #fff; border-color: transparent; }
+.acx .card { background: #111c31; border-color: rgba(255,255,255,.09); box-shadow: 0 10px 28px -20px rgba(0,0,0,.6); }
+.acx .card:hover { box-shadow: 0 16px 40px -22px rgba(0,0,0,.7); }
+.acx .sec-t { color: #eaf1fb; }
+.acx .row { border-top-color: rgba(255,255,255,.07); }
+.acx .btn.sec { background: rgba(255,255,255,.08); color: #eaf1fb; }
+.acx .btn.ghost { background: transparent; border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+.acx .btn.danger { background: rgba(224,48,74,.12); color: #f87171; border-color: rgba(224,48,74,.35); }
+.acx .p-green { background: rgba(52,211,153,.14); color: #34d399; }
+.acx .p-blue { background: rgba(8,131,247,.16); color: #3b9dff; }
+.acx .p-red { background: rgba(224,48,74,.15); color: #f87171; }
+.acx .p-gray { background: rgba(255,255,255,.08); color: #9fb0ca; }
+.acx .tg { background: #223250; }
+.acx .ringwrap { background: rgba(8,131,247,.08); border-color: rgba(8,131,247,.2); }
+.acx .doc { border-top-color: rgba(255,255,255,.07); }
+.acx .di.ok { background: rgba(52,211,153,.14); color: #34d399; }
+.acx .di.rev { background: rgba(8,131,247,.16); color: #3b9dff; }
+.acx .di.req { background: rgba(224,48,74,.15); color: #f87171; }
+.acx .field input, .acx .field select { background: #0c1628; border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+.acx .pol { border-top-color: rgba(255,255,255,.07); }
+.acx .pol:hover { background: rgba(255,255,255,.04); }
+.acx .hint { background: rgba(8,131,247,.1); border-color: rgba(8,131,247,.25); color: #9cc5f4; }
+.acx .dangerc { background: rgba(224,48,74,.06); border-color: rgba(224,48,74,.3); }
+.acx .cpa-autopill { background: rgba(52,211,153,.14); color: #34d399; border-color: rgba(52,211,153,.3); }
+.acx .acx-cred[readonly] { background: #0c1628; color: #b9c6db; }
+
+/* ============================================================================
+   MIDNIGHT EXECUTIVE polish (colors/shadows only)
+   ========================================================================== */
+.cp-card, .cp-stat, .cp-load, .cp-modal-card, .acx .card { background: linear-gradient(180deg, #131f36 0%, #101a2e 100%); }
+.cp-in:focus, select.cp-in:focus, textarea.cp-in:focus { outline: none; border-color: #3b9dff; box-shadow: 0 0 0 3px rgba(8,131,247,.2); }
+::selection { background: rgba(8,131,247,.4); color: #fff; }
+
+/* ---------- Partner portal surfaces (loads carrier.css + this file) ---------- */
+.cp-typecard { background: #111c31; border-color: rgba(255,255,255,.09); }
+.cp-typecard:hover { border-color: rgba(59,157,255,.45); }
+.cp-typecard-t { color: #eaf1fb; }
+.cp-typecard-d { color: #8ea2c3; }
+.cp-kpi::before { background: #33456b; }
+.cp-kpi-v, .cp-kpi-l, .cp-cardhead h3, .cp-notif-head, .cp-notif-t, .cp-weekday-n { color: #eaf1fb; }
+.cp-kpi-s, .cp-sub, .cp-notif-time, .cp-weekday-d, .cp-weekday-c { color: #8ea2c3; }
+.cp-card { border-color: rgba(255,255,255,.09); box-shadow: 0 12px 30px -20px rgba(0,0,0,.6); }
+.cp-btn.ghost { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color: #eaf1fb; }
+.cp-table th { color: #8ea2c3; border-bottom-color: rgba(255,255,255,.09); }
+.cp-table td { color: #eaf1fb; border-bottom-color: rgba(255,255,255,.07); }
+.cp-iconbtn:hover { background: rgba(255,255,255,.06); }
+.cp-notif-panel { background: #111c31; border-color: rgba(255,255,255,.09); }
+.cp-notif { border-top-color: rgba(255,255,255,.07); }
+.cp-notif:hover { background: rgba(255,255,255,.05); }
+.cp-notif.unread { background: rgba(8,131,247,.12); }
+.cp-notif.unread:hover { background: rgba(8,131,247,.18); }
+.cp-notif-b { color: #b9c6db; }
+.cp-field2 > span { color: #b9c6db; }
+.cp-weekday { border-color: rgba(255,255,255,.09); }
+.cp-weekday.has { background: rgba(8,131,247,.12); }
+.cp-payinfo { background: rgba(22,163,74,.1); border-color: rgba(52,211,153,.3); }
+.cp-payinfo-h { color: #34d399; }
+.cp-payinfo-b { color: #a7f3d0; }
+
+/* ---------- Developer portal surfaces ---------- */
+.dev-reveal { background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.35); }
+.dev-reveal-h { color: #fdba74; }
+.dev-p { color: #8ea2c3; }
+.dev-ul { color: #eaf1fb; }
+.dev-ul code, .dev-p code, .cp-table code { background: rgba(255,255,255,.08); color: #cfe0ff; }
+
+/* ============================================================================
+   ACCOUNT PAGE (.acx) — premium beauty pass (colors/shadows/glows only)
+   ========================================================================== */
+/* hero: rich navy-blue, on-brand (was teal-ish) */
+.acx .hero { background: linear-gradient(160deg, #0c1730 0%, #10254d 48%, #0b2f5e 100%); }
+.acx .g1 { background: radial-gradient(circle, rgba(8,131,247,.55), transparent 62%); }
+.acx .g2 { background: radial-gradient(circle, rgba(252,83,5,.3), transparent 60%); }
+.acx .ava { background: linear-gradient(135deg, #0883F7, #123a5c); box-shadow: 0 14px 34px -10px rgba(8,131,247,.65); border-color: rgba(255,255,255,.28); }
+
+/* metric strip: glass over the hero */
+.acx .m { background: linear-gradient(180deg, rgba(23,35,62,.92), rgba(16,26,46,.92)); backdrop-filter: blur(8px); border-color: rgba(255,255,255,.12); box-shadow: 0 16px 34px -18px rgba(0,0,0,.7); }
+
+/* cards: hairline top-light = expensive feel */
+.acx .card { box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 14px 34px -24px rgba(0,0,0,.75); }
+.acx .card:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 18px 44px -24px rgba(0,0,0,.8); }
+
+/* nav chips: active = blue glow (matches portal accent) */
+.acx .chip.on { background: linear-gradient(135deg, #0883F7, #0a6fd6); box-shadow: 0 8px 20px -8px rgba(8,131,247,.65); }
+.acx .chip:hover { border-color: rgba(59,157,255,.4); color: #eaf1fb; }
+
+/* inputs: focus ring glow */
+.acx .field input:focus, .acx .field select:focus { border-color: #3b9dff; box-shadow: 0 0 0 3px rgba(8,131,247,.2); }
+
+/* toggles: ON = glow */
+.acx .tg.on { background: linear-gradient(135deg, #0883F7, #3b9dff); box-shadow: 0 4px 14px -4px rgba(8,131,247,.65); }
+
+/* buttons: primary glow, danger calm */
+.acx .btn { box-shadow: 0 10px 22px -10px rgba(8,131,247,.6); }
+.acx .btn.sec, .acx .btn.ghost, .acx .btn.danger { box-shadow: none; }
+.acx .btn.orange { background: linear-gradient(135deg, #FC5305, #fb8c3c); color: #fff; box-shadow: 0 10px 22px -10px rgba(252,83,5,.6); }
+
+/* compliance ring block: subtle blue tint */
+.acx .ringwrap { box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+.acx .ring circle[stroke="#e3ecf6"] { stroke: rgba(255,255,255,.12); }
+.acx .ring text[fill="#0b1b33"] { fill: #eaf1fb; }
+
+/* section subtitles a touch lighter for readability */
+.acx .sec-s { color: #93a7c7; }
+
+/* ---------- Account typography: brand font, calmer weights (premium) ---------- */
+.acx * { font-family: var(--lb-font, 'Manrope', 'Inter', system-ui, sans-serif); }
+.acx .sec-t { font-weight: 700; letter-spacing: -.01em; }
+.acx .rt { font-weight: 600; }
+.acx .pname { font-weight: 700; }
+.acx .btn { font-weight: 700; }
+.acx .chip { font-weight: 600; }
+.acx .m .v { font-weight: 700; }
+.acx .sec-s, .acx .rs, .acx .mini { font-weight: 500; }
+
+/* Load card action row — one family: equal height, radius, weight (no more mismatched pills) */
+.cpx-req-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.cpx-req-actions .cp-btn{margin:0 !important;border-radius:12px !important;padding:12px 16px !important;font-weight:800 !important;font-size:.9rem !important;line-height:1.1 !important}
+.cpx-req-actions .cpx-req-bw{display:flex;gap:8px;flex:1;min-width:0;flex-wrap:wrap}
+.cpx-req-actions .cpx-req-bw .cp-btn{flex:1;white-space:nowrap}
+.cpx-req-actions > .cp-btn{flex:none}

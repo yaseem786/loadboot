@@ -1,3 +1,4 @@
+import { attachAddressSuggest } from '../shared/addr-suggest.js';
 // W-9 tax setup — Amazon Seller Central-style guided interview + completed-form print.
 // Records via cc_carrier_submit_w9 (compliance requirement 'w9' -> pending -> Command
 // Center approves). TIN is stored server-side (app_private, RPC-gated) and masked in notes.
@@ -90,14 +91,27 @@ export function openW9Wizard(ctx, opts, onDone) {
       const ll = mk('label', lblCss, 'LLC tax classification'); const lsel = mk('select', inCss);
       ['C = C corporation', 'S = S corporation', 'P = Partnership'].forEach(function (x) { const o = mk('option', '', x); o.value = x; if (state.llc === x) o.selected = true; lsel.appendChild(o); });
       llcWrap.appendChild(ll); llcWrap.appendChild(lsel);
-      sel.onchange = function () { llcWrap.style.display = sel.value.indexOf('LLC') >= 0 ? '' : 'none'; };
-      body.appendChild(l); body.appendChild(sel); body.appendChild(llcWrap);
+      // Plain-language hints — truck drivers should never need a CPA to pick this.
+      const HINTS = {
+        'Individual / sole proprietor': '\u2705 Most single-truck owner-operators pick THIS. You run the business under your own name (or a DBA) \u2014 no separate company, or a single-member LLC taxed as yourself.',
+        'C corporation': 'Your company files its OWN corporate tax return (Form 1120). Rare for small carriers \u2014 pick only if your accountant set this up.',
+        'S corporation': 'Your company elected S-corp status with the IRS (Form 2553) \u2014 common for established small fleets that pay the owner a salary.',
+        'Partnership': 'Two or more owners legally share the business and its profits.',
+        'Trust / estate': 'Rare \u2014 only if the business is owned by a trust or an estate.',
+        'Limited liability company (LLC)': 'Your company is registered as an LLC with the state. You will also pick how the IRS taxes it below \u2014 it is on your IRS election letter, or ask whoever files your taxes. (Single-owner LLC with no election? Choose \u201cIndividual / sole proprietor\u201d above instead.)'
+      };
+      const hint = mk('div', 'background:#f0f7ff;border:1px solid #d6e8ff;border-radius:11px;padding:10px 12px;font-size:.78rem;line-height:1.55;color:#2b5f93;margin-top:8px', 'Not sure? It\u2019s written on your last tax return \u2014 or ask whoever files your taxes. Most owner-operators are \u201cIndividual / sole proprietor\u201d.');
+      const setHint = function () { hint.textContent = HINTS[sel.value] || 'Not sure? It\u2019s written on your last tax return \u2014 or ask whoever files your taxes. Most owner-operators are \u201cIndividual / sole proprietor\u201d.'; };
+      if (state.cls) setHint();
+      sel.onchange = function () { llcWrap.style.display = sel.value.indexOf('LLC') >= 0 ? '' : 'none'; setHint(); };
+      body.appendChild(l); body.appendChild(sel); body.appendChild(hint); body.appendChild(llcWrap);
       body.appendChild(btnRow(1, function () { if (!sel.value) { msg.textContent = 'Pick a classification.'; return; } state.cls = sel.value; state.llc = lsel.value; step = 3; render(); }));
     } else if (step === 3) {
       body.appendChild(head('Address', 'Step 3 of 5 — Where the IRS should mail correspondence.'));
       const l1 = mk('label', lblCss, 'Street address'); const a = mk('input', inCss); a.value = state.address; a.placeholder = '1200 Trucker Way';
       const l2 = mk('label', lblCss, 'City, State, ZIP'); const cz = mk('input', inCss); cz.value = state.csz; cz.placeholder = 'Dallas, TX 75201';
       body.appendChild(l1); body.appendChild(a); body.appendChild(l2); body.appendChild(cz);
+      try { attachAddressSuggest(a, { onPick: function (r) { a.value = r.street; if (r.tail) cz.value = r.tail; } }); } catch (_) {}
       body.appendChild(btnRow(2, function () { if (a.value.trim().length < 3 || cz.value.trim().length < 3) { msg.textContent = 'Enter your full address.'; return; } state.address = a.value.trim(); state.csz = cz.value.trim(); step = 4; render(); }));
     } else if (step === 4) {
       body.appendChild(head('Taxpayer ID (TIN)', 'Step 4 of 5 — Businesses use an EIN; sole proprietors may use SSN or EIN.'));
@@ -107,7 +121,7 @@ export function openW9Wizard(ctx, opts, onDone) {
       body.appendChild(btnRow(3, function () { const digits = t.value.replace(/\D/g, ''); if (digits.length !== 9) { msg.textContent = 'Enter a valid 9-digit EIN or SSN.'; return; } state.tin = t.value.trim(); step = 5; render(); }));
     } else if (step === 5) {
       body.appendChild(head('Certify & sign', 'Step 5 of 5 — Review, certify, and e-sign (IRS W-9 certification).'));
-      const rev = mk('div', 'background:#f7fbff;border:1px solid #d6e8ff;border-radius:12px;padding:11px;font-size:.82rem;line-height:1.8;margin-top:4px');
+      const rev = mk('div', 'background:#f7fbff;border:1px solid #d6e8ff;border-radius:12px;padding:11px;font-size:.82rem;line-height:1.8;margin-top:4px;color:#0f1e36');
       const digits = state.tin.replace(/\D/g, '');
       rev.innerHTML = '<div><b>Name:</b> ' + state.name + '</div><div><b>Classification:</b> ' + state.cls + (state.cls.indexOf('LLC') >= 0 ? ' (' + state.llc + ')' : '') + '</div><div><b>Address:</b> ' + state.address + ', ' + state.csz + '</div><div><b>TIN:</b> ••-•••' + digits.slice(-4) + '</div>';
       body.appendChild(rev);

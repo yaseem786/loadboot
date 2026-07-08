@@ -64,6 +64,28 @@ export async function uploadAvatar(file) {
   return { path, fileName: file.name, contentType: file.type, size: file.size };
 }
 
+// Org logo — PUBLIC bucket (brokers see it on the Carriers page). Same image rules as avatars.
+const LOGO_BUCKET = 'org-logos';
+export async function uploadOrgLogo(file) {
+  if (!file) throw new Error('No image selected.');
+  if (!AVATAR_ALLOWED.includes(file.type)) throw new Error('Please choose a JPG, PNG, WEBP or GIF image.');
+  if (file.size > 5 * 1024 * 1024) throw new Error('Image is larger than 5 MB.');
+  const sb = await getClient();
+  const user = await getUser();
+  if (!user) throw new Error('Please sign in again.');
+  const ext = AVATAR_EXT[file.type] || 'img';
+  const path = `${user.id}/logo/${Date.now()}-${rand()}.${ext}`;
+  const { error } = await sb.storage.from(LOGO_BUCKET).upload(path, file, { contentType: file.type, upsert: true });
+  if (error) throw new Error(error.message || 'Upload failed.');
+  return { path, fileName: file.name, contentType: file.type, size: file.size };
+}
+export async function orgLogoPublicUrl(path) {
+  if (!path) return null;
+  const sb = await getClient();
+  const { data } = sb.storage.from(LOGO_BUCKET).getPublicUrl(path);
+  return (data && data.publicUrl) || null;
+}
+
 // Short-lived signed URL so a carrier can re-download their own document.
 export async function signedDocumentUrl(path, expiresSeconds = 300) {
   const sb = await getClient();
@@ -72,4 +94,19 @@ export async function signedDocumentUrl(path, expiresSeconds = 300) {
   return data && data.signedUrl;
 }
 
-export default { uploadDocument, uploadPodDocument, uploadAvatar, signedDocumentUrl };
+export async function uploadTripDoc(file, tripId, kind) {
+  if (!file) throw new Error('No file selected.');
+  if (!tripId) throw new Error('Missing trip.');
+  if (!POD_ALLOWED.includes(file.type)) throw new Error('Unsupported file type. Allowed: PDF, JPG, PNG, WEBP.');
+  if (file.size <= 0) throw new Error('That file is empty.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB.');
+  const sb = await getClient();
+  const user = await getUser();
+  if (!user) throw new Error('Please sign in again.');
+  const ext = POD_EXTMAP[file.type] || 'bin';
+  const path = `${user.id}/tripdoc/${tripId}/${kind}-${Date.now()}-${rand()}.${ext}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw new Error(error.message || 'Upload failed.');
+  return { path, fileName: file.name, contentType: file.type, size: file.size };
+}
+export default { uploadDocument, uploadPodDocument, uploadTripDoc, uploadAvatar, signedDocumentUrl };
