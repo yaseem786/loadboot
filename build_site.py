@@ -1094,7 +1094,7 @@ svc_page('flatbed-dispatch.html','Flatbed','Flatbed Dispatch Services for Owner-
   ('Can you keep me loaded on regional flatbed lanes?','Absolutely. Tell us your home base and preferred lanes and we plan loads to keep you regional if that\'s what you want.'),
   ('What does flatbed dispatch cost?','A flat 5% of gross on loads we book, no contract, cancel anytime.')])
 
-svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Services for Owner-Operators | Loadboot',
+svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Service 2026 — Flat 5%, No Contracts | LoadBoot',
  'Dry van truck dispatch for owner-operators and fleets. Consistent, well-paying van freight, rate negotiation, and back-office support. Flat 5%, no contracts.',
  'Dry Van Dispatch Services Across the USA','Steady, consistent van freight that keeps your truck moving &mdash; booked, negotiated, and managed by a dedicated dispatcher.',
  ['Dry van is the backbone of freight, but consistency is everything. The difference between a good week and a bad one is having someone working loads ahead of you. That\'s what we do.',
@@ -1615,7 +1615,7 @@ A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMid
  '<rect x="864" y="120" width="34" height="170" rx="6" fill="#FC5305" opacity=".85"/>'
  '</svg>')
 rich_article('how-much-does-a-truck-dispatcher-cost.html',
- 'How Much Does a Truck Dispatcher Cost in 2026?',
+ 'Truck Dispatcher Cost 2026: Dispatch Fees & Pricing (% vs Flat) — What 5% Gets You',
  'Truck dispatcher pricing explained: percentage vs flat fee, what 5% really gets you, red flags, and how the right dispatcher pays for itself.',
  'Dispatch Pricing','How Much Does a Truck Dispatcher Cost in 2026?',
  'Percentage vs flat fee, what 5% should cover, the red flags that mean you are overpaying, and the simple math on whether a dispatcher pays for itself.',
