@@ -1,0 +1,13 @@
+-- wd_0036 (STAGING 2026-07-09) — trip status now PROPAGATES: in_transit/delivered update
+-- public.loads + partner_loads (broker stepper reaches "Delivered"), broker gets
+-- delivered notification + branded email (idempotency lvdel:<trip>). Backfilled.
+-- wd_0037 — (A) CARRIER lifecycle emails+notifications at every step: dispatched
+-- ("checked in — detention clock armed"), in_transit ("rolling — tracking LIVE"),
+-- delivered ("invoice auto-created, accessorials 100% pass-through").
+-- (B) MUST-gate: cc_pocket_advance_trip refuses in_transit while the broker's rate
+-- confirmation is unsigned — carrier told to hold, broker urgently alerted.
+-- (C) fixed literal \U0001F4E2 emoji escape in cc_offer_send + cleaned old notification rows.
+-- Frontend: trip-map posts live GPS to backend every 25s via cc_pocket_post_location
+-- (works in SIM too — broker tracker was stuck "GPS pending" because NO fix was ever
+-- posted); broker tracker shows "🏁 Delivered — tracking ended" instead of GPS pending.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

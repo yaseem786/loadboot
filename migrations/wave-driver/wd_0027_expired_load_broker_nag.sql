@@ -1,0 +1,8 @@
+-- wd_0027 (STAGING 2026-07-09) — broker alert when a posted load expires.
+-- Pairs with wd_0025/0026 (expired loads leave the board): the broker now gets an
+-- in-app warning + branded email ("Update pickup time" CTA), repeated DAILY until
+-- they reschedule (which puts the load back on the board) or cancel.
+-- New: public.loads.expired_notified_at; app_private.cron_expired_load_nag();
+-- cron 'lb-expired-load-nag' hourly at :20. Email idempotency loadexp:<load>:<yyyymmdd>.
+-- Tested on staging: Minneapolis→Bear Creek expired load → email status 'sent' via Resend.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

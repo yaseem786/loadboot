@@ -1,0 +1,11 @@
+-- wd_0035 (STAGING 2026-07-09) — FIX false "LATE to pickup" on just-booked loads.
+-- Root cause chain: cc_decide_partner_load's insert into public.loads carried NO
+-- pickup_time/delivery_date/delivery_time (windows lost) -> load_sched_ts('' time)
+-- defaulted scheduled_pickup to MIDNIGHT -> a load booked later the same day showed
+-- "PICKUP OVERDUE −23h" immediately.
+-- Fixes: (1) load_sched_ts v2 — empty time => end of day 23:59; parses 'Appt HH:MM'
+-- and 'HH:MM–HH:MM' (FCFS deadline = window END). (2) decide insert copies
+-- pickup_window/delivery_date/delivery_window. (3) backfill posted loads.
+-- (4) repaired planned trips that had the midnight default.
+-- Verified: Appomattox→Milwaukee trip scheduled_pickup now 23:59 (on time).
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

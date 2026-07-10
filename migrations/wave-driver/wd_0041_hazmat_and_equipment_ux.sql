@@ -1,0 +1,10 @@
+-- wd_0041 + 0041b (STAGING 2026-07-10) — hazmat false-lock fix:
+-- org_onboarding_items.hazmat_cert backfilled from app_private.carrier_hazmat_verified()
+-- + sync trigger on carrier_compliance; cc_my_onboarding_packet now derives hazmat_cert
+-- status LIVE from the same fn (was synthesizing 'pending' when no item row existed).
+-- Frontend: hazVerified accepts hazmat* keys with verified/valid/approved;
+-- Equipment prefs = MULTI-select chips (Dry Van/Reefer/Flatbed/Power Only/Step Deck/
+-- Box Truck/Hotshot — backend already stored an array);
+-- Board request gate: load needs equipment your FLEET lacks -> premium popup
+-- "This load is for <X> equipment — add your truck" with ➕ button redirecting to Fleet.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

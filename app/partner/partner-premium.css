@@ -94,7 +94,8 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 
 /* ---- notification panel ---- */
 .cp-notif-panel { border-radius: 18px; border: 1px solid #e6ebf3;
-  box-shadow: 0 30px 70px -28px rgba(2,12,30,.4); overflow: hidden; }
+  box-shadow: 0 30px 70px -28px rgba(2,12,30,.4);
+  max-height: min(72vh, 560px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
 
 /* ---- mobile responsiveness for the new broker surfaces ---- */
 @media (max-width: 700px) {

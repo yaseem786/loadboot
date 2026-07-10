@@ -1,0 +1,7 @@
+-- wd_0047 (STAGING 2026-07-10) — booking through ANY path closes every other pending
+-- offer on the load automatically (trigger trip_closes_offers on trips insert):
+-- losing carriers get an in-app "Load no longer available — booked by another carrier";
+-- winner's stale pending rows purged too. Fixes: request-approve path left direct
+-- offers running with live countdowns. Backfilled: pending offers on already-booked
+-- loads deleted. Broker "Offered to N" chip disappears on next My Loads refresh.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

@@ -1,0 +1,11 @@
+-- wd_0040 (STAGING 2026-07-10) — Uber/Amazon-style post-delivery MUTUAL rating.
+-- Existing engine reused: app_private.party_ratings + cc_rate_counterparty (both
+-- directions) + cc_org_rating/cc_my_rating aggregates + broker dashboard widget.
+-- New: cc_carrier_rateable_trips (carrier's delivered-but-unrated list, anon revoked);
+-- trigger trip_rating_invite on delivered -> BOTH sides get "⭐ Rate your trip"
+-- notification + branded star email (idempotency rateinv:c/b:<trip>).
+-- Frontend: carrier dashboard premium rating card (tap-stars 1-5 + one-line comment +
+-- Submit; ✕ dismisses via localStorage lb:rated:<trip>; thanks state auto-hides).
+-- NOTE "Delivered 3 vs 4": dashboard KPI is "Delivered this week" (Mon-today = 3);
+-- 4th was delivered last week — correct, not a bug.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

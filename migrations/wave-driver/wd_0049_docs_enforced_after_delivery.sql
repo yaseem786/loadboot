@@ -1,0 +1,6 @@
+-- wd_0049 (STAGING 2026-07-10) — broker paperwork enforced AFTER delivery too:
+-- 2-hourly nag cron + posting-pause gate now include 'delivered' trips (billing
+-- contact / delivery number are needed for invoicing). Frontend: My Loads booked/
+-- delivered cards show a pulsing "📋 Finalizing details — N docs missing · provide now"
+-- chip (Uber Freight's hold-state pattern) opening the Docs modal directly.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

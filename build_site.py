@@ -362,7 +362,7 @@ def footer():
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a></div>
 <div><div class="foot-h">Compliance</div><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
-<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
@@ -1365,6 +1365,11 @@ def blog_post(fname,title,desc,excerpt,blocks):
     page(fname,title,desc,'blog.html',body,sch)
 
 BLOGPOSTS = [
+ ('ghost-loads-load-board-problems.html',
+  'Ghost Loads &amp; Fake Freight: Why Load Boards Waste Your Day',
+  'Ghost loads, stale posts, bait-and-switch rates and double brokering: why booking one load takes 15-20 calls, what it costs you, and how a truck operating system fixes it.',
+  'The load you just called on was covered yesterday. The next three don\u2019t exist at the posted rate. 15\u201320 calls and half a day later you book ONE load. Here\u2019s why the boards stay broken \u2014 and the system that ends it.',
+  []),
  ('how-to-avoid-cheap-freight.html',
   'How to Avoid Cheap Freight (Without Sitting Empty)',
   'Cheap freight is a system, not bad luck. The floor-price discipline, the lanes that trap you, the reload math, and how to say no without your truck going broke.',
@@ -2212,7 +2217,129 @@ def blog_card(fn,title,excerpt,read):
     return ('<a class="blogcard" href="'+fn+'"><div class="bc-thumb">'+thumb+img+ov+'</div><div class="bc-body">'
             '<div class="bc-meta">Guide &middot; '+str(read)+' min read</div><h3>'+title+'</h3><p>'+excerpt
             +'</p><span class="bc-link">Read guide &rarr;</span></div></a>')
-READTIME={'how-to-avoid-cheap-freight.html':7,'truck-dispatcher-in-georgia.html':7,'truck-dispatcher-in-california.html':8,'how-to-read-a-rate-confirmation.html':7,'do-new-authority-carriers-need-a-dispatcher.html':7,'truck-dispatcher-in-texas.html':8,'how-much-does-a-truck-dispatcher-cost.html':8,'truck-dispatcher-vs-freight-broker.html':9,'how-to-get-loads-with-new-authority.html':6,'owner-operator-dispatch-service-guide.html':9}
+PREMIUM_ARTICLES.add('ghost-loads-load-board-problems.html')
+
+GL_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">'
+ '<style>.glFade{animation:glF 3.2s ease-in-out infinite}@keyframes glF{0%,100%{opacity:.85}50%{opacity:.12}}'
+ '.glPulse{animation:glP 1.7s ease-in-out infinite}@keyframes glP{0%,100%{opacity:1}50%{opacity:.35}}'
+ '.glTk{animation:glT 6s linear infinite}@keyframes glT{from{transform:translateX(-70px)}to{transform:translateX(470px)}}</style>'
+ '<defs><linearGradient id="glbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs>'
+ '<rect width="400" height="200" fill="url(#glbg)"/>'
+ '<g class="glFade"><rect x="24" y="34" width="104" height="58" rx="9" fill="#16233f" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="5 4"/>'
+ '<text x="38" y="58" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#fca5a5">GHOST</text>'
+ '<text x="38" y="78" font-family="Inter,Arial" font-size="10" fill="#94a3b8">covered yesterday</text></g>'
+ '<g class="glFade" style="animation-delay:-1.4s"><rect x="146" y="34" width="104" height="58" rx="9" fill="#16233f" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="5 4"/>'
+ '<text x="160" y="58" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#fca5a5">EXPIRED</text>'
+ '<text x="160" y="78" font-family="Inter,Arial" font-size="10" fill="#94a3b8">pickup passed</text></g>'
+ '<g><rect x="268" y="34" width="108" height="58" rx="9" fill="#0e2a1c" stroke="#22c55e" stroke-width="2"/>'
+ '<circle class="glPulse" cx="284" cy="52" r="4.5" fill="#22c55e"/>'
+ '<text x="294" y="57" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#86efac">LIVE</text>'
+ '<text x="282" y="78" font-family="Inter,Arial" font-size="10" fill="#bbf7d0">real &middot; bookable now</text></g>'
+ '<text x="24" y="140" font-family="Manrope,Arial" font-weight="800" font-size="21" fill="#fff">Real loads only. Nothing stale.</text>'
+ '<rect x="0" y="168" width="400" height="4" fill="#1e293b"/>'
+ '<g class="glTk"><text x="0" y="164" font-size="26">&#128667;</text></g></svg>')
+
+GL_TOC=[('what-are-ghost-loads','What ghost loads are'),('seven-problems','The 7 board problems'),
+ ('what-it-costs','What it costs you'),('why-it-happens','Why boards stay broken'),
+ ('spot-fakes','Spot a fake in 60 seconds'),('the-fix','The fix: an operating system'),
+ ('board-vs-os','Load board vs operating system'),('bottom-line','The bottom line')]
+
+GL_BODY=('<h2 id="what-are-ghost-loads">What ghost loads are &mdash; and why your calls go nowhere</h2>'
+ '<p>A <b>ghost load</b> is a posting for freight that is no longer available &mdash; usually because the broker covered it hours or days ago on another board and never took the post down. Big brokerages post the same load to <b>multiple boards at once</b> to maximize eyeballs; when it books on one, the copies stay up everywhere else. You call, you wait on hold, and the answer is the same every time: <i>&ldquo;that one&rsquo;s covered.&rdquo;</i></p>'
+ '<p>Add <b>stale posts</b> (pickup date already passed), <b>bait-and-switch rates</b> (the posted number was never real), and outright <b>fake postings</b> built for double-brokering scams, and a big chunk of what you scroll every morning simply is not freight you can haul.</p>'
+ '<div class="statrow">'
+ '<div class="statcard"><div class="n">15&ndash;20</div><div class="l">calls a carrier typically makes before ONE load books</div></div>'
+ '<div class="statcard"><div class="n">3&ndash;6 hrs</div><div class="l">of a driving day burned searching, calling, negotiating</div></div>'
+ '<div class="statcard"><div class="n">$10B+</div><div class="l">total industry fraud losses, 2022&ndash;2025 (incl. $4B double brokering)</div></div>'
+ '</div>'
+ '<p class="pull">The board is not showing you the market. It is showing you what nobody bothered to delete.</p>'
+
+ '<h2 id="seven-problems">The 7 load-board problems every carrier knows by heart</h2>'
+ '<ol>'
+ '<li><b>Ghost loads.</b> Covered freight still posted. Industry reporting calls it standard operating procedure &mdash; brokers rarely take postings down after covering a load elsewhere.</li>'
+ '<li><b>Stale &amp; expired posts.</b> Pickup was yesterday; the post is still live. DAT expires postings at midnight the day they are posted precisely because of this &mdash; and boards still fill with dead freight.</li>'
+ '<li><b>Bait-and-switch rates.</b> The posted rate gets you on the phone; the &ldquo;real&rdquo; rate appears once you are anchored and your truck is empty.</li>'
+ '<li><b>Double brokering.</b> $4 billion lost 2022&ndash;2025; 15,419 broker authorities revoked; a 65% surge in fraud reports in a single six-month window. The load you hauled gets paid &mdash; to someone who was never a real broker.</li>'
+ '<li><b>No rate transparency.</b> You negotiate blind against a broker staring at a rate screen. (Fix that first: our free <a href="market-rates.html">live market rates per mile</a> page shows the buy AND sell side.)</li>'
+ '<li><b>Hundreds of carriers per load.</b> Real loads get swarmed; by the time you dial, position 40 in the queue is generous.</li>'
+ '<li><b>Accessorials vanish.</b> Detention, TONU, layover, lumpers &mdash; promised on the phone, denied on the invoice. Under half of detention invoices ever get paid; see <a href="detention-pay-policy.html">detention pay</a> and <a href="tonu-policy.html">TONU fees</a>.</li>'
+ '</ol>'
+
+ '<h2 id="what-it-costs">What it actually costs you (run your own number)</h2>'
+ '<p>Say load-hunting eats <b>4 hours a day</b>. Over a 5-day week that is 20 hours &mdash; two and a half full working days &mdash; spent NOT driving. At $2.30/mi and 50 mph, an hour of wasted searching is roughly <b>$115 of revenue that never happened</b>. Twenty hours a week &asymp; <b>$2,300/week</b> in opportunity cost, before a single fraud loss, unpaid detention invoice, or bait-rate haircut.</p>'
+ '<figure class="art-fig"><svg viewBox="0 0 600 210" width="100%" role="img" aria-label="20 calls funnel: 8 ghost or expired, 6 already covered, 4 rate games, 2 real loads, 1 booked">'
+ '<text x="0" y="20" font-family="Manrope,Arial" font-weight="800" font-size="18" fill="#10223B">Where 20 calls actually go</text>'
+ '<rect x="0" y="40" width="560" height="24" rx="6" fill="#eef2f7"/><rect x="0" y="40" width="224" height="24" rx="6" fill="#ef4444"/>'
+ '<text x="232" y="57" font-family="Inter,Arial" font-size="12" fill="#334155">8 &mdash; ghost / expired posts</text>'
+ '<rect x="0" y="76" width="560" height="24" rx="6" fill="#eef2f7"/><rect x="0" y="76" width="168" height="24" rx="6" fill="#f59e0b"/>'
+ '<text x="176" y="93" font-family="Inter,Arial" font-size="12" fill="#334155">6 &mdash; &ldquo;already covered&rdquo;</text>'
+ '<rect x="0" y="112" width="560" height="24" rx="6" fill="#eef2f7"/><rect x="0" y="112" width="112" height="24" rx="6" fill="#94a3b8"/>'
+ '<text x="120" y="129" font-family="Inter,Arial" font-size="12" fill="#334155">4 &mdash; rate games / lowballs</text>'
+ '<rect x="0" y="148" width="560" height="24" rx="6" fill="#eef2f7"/><rect x="0" y="148" width="56" height="24" rx="6" fill="#0883F7"/>'
+ '<text x="64" y="165" font-family="Inter,Arial" font-size="12" fill="#334155">2 &mdash; real, negotiable loads</text>'
+ '<text x="0" y="200" font-family="Inter,Arial" font-weight="700" font-size="13" fill="#FC5305">&rarr; 1 booked. Three to six hours gone.</text></svg>'
+ '<figcaption>Typical morning on a legacy load board: most dials never had a chance.</figcaption></figure>'
+
+ '<h2 id="why-it-happens">Why load boards stay broken</h2>'
+ '<p>Because the incentives point the wrong way. Boards charge brokers to post and carriers to search &mdash; <b>volume is the product</b>, so a board full of duplicate and dead posts still <i>looks</i> healthy. Nobody in that transaction is paid to delete a covered load, verify a rate, or guarantee the freight exists. FreightWaves put it bluntly: load boards are broken, and ghost loads are a big reason small carriers are exiting.</p>'
+ '<div class="callout cl-warn"><span class="ic">&#9888;&#65039;</span><div><b>The trust spiral:</b> carriers stop believing posted loads &rarr; they blast calls at everything &rarr; brokers drown in calls for covered freight &rarr; they answer less &rarr; carriers call more. Everyone loses hours; nobody fixes the data.</div></div>'
+
+ '<h2 id="spot-fakes">How to spot a ghost or fake load in 60 seconds</h2>'
+ '<div class="art-steps">'
+ '<div class="art-step"><div class="sn">1</div><b>Check the post age</b><span>Posted days ago and still up? Ghost until proven otherwise.</span></div>'
+ '<div class="art-step"><div class="sn">2</div><b>Check the pickup date</b><span>Pickup already passed = dead post. Do not dial.</span></div>'
+ '<div class="art-step"><div class="sn">3</div><b>Verify the broker</b><span>MC number, FMCSA authority status, bond. Mismatched email domains = walk away.</span></div>'
+ '<div class="art-step"><div class="sn">4</div><b>Rate too good?</b><span>Check it against the <a href="market-rates.html">market rate for the lane</a>. Way above market is bait, not luck.</span></div>'
+ '</div>'
+ '<p>That checklist protects you &mdash; but notice what it really is: <b>you doing the board&rsquo;s quality-control job, for free, twenty times a day.</b></p>'
+
+ '<h2 id="the-fix">The fix is not a better board. It is a truck operating system.</h2>'
+ '<p>A <b>truck operating system</b> (trucking operating software) treats a load as a living record with a state &mdash; posted, offered, booked, dispatched, delivered &mdash; instead of a classified ad. Once software owns the state, every ghost-load failure mode disappears by construction:</p>'
+ '<ul>'
+ '<li><b>Booked means gone.</b> The moment a load books on LoadBoot, it leaves every carrier&rsquo;s board automatically. Ghost loads cannot exist.</li>'
+ '<li><b>Expired means gone.</b> Pickup day passed? The load is pulled off the board automatically and the broker is emailed to reschedule or cancel. No stale posts.</li>'
+ '<li><b>The rate is a contract, not a hook.</b> Every posting carries a written rate card &mdash; linehaul plus detention, TONU, layover, lumper and driver-assist terms &mdash; agreed before you ever call. There is no call.</li>'
+ '<li><b>Real deadhead, from your GPS.</b> The board shows true road miles from where your truck sits to every pickup &mdash; not straight-line guesses.</li>'
+ '<li><b>Verified counterparties.</b> Brokers and carriers exchange verified packets (authority, insurance, W-9) automatically at booking &mdash; the double-brokering entry points get closed.</li>'
+ '<li><b>A dispatch service layer when you want it.</b> LoadBoot&rsquo;s <a href="owner-operator-dispatch.html">truck dispatch service</a> books, negotiates and manages the paperwork at a flat 5% &mdash; the phone work disappears entirely. (Industry dispatchers run 5&ndash;10%.)</li>'
+ '</ul>'
+ '<div class="svc-banner"><div><div class="sb-t">Stop calling on freight that does not exist</div>'
+ '<div class="sb-s">LoadBoot is the truck operating system: a live board with zero ghost loads, written rate cards, GPS-real deadhead, and an optional flat-5% dispatch service on top.</div></div>'
+ '<a class="sb-btn" href="get-started.html">Join free &mdash; see live loads &rarr;</a></div>'
+
+ '<h2 id="board-vs-os">Legacy load board vs. truck operating system</h2>'
+ '<table class="cmp"><tr><th>What happens</th><th>Legacy load board</th><th class="us">LoadBoot (operating system)</th></tr>'
+ '<tr><td>Load gets covered</td><td><span class="no">Post stays up &mdash; ghost load</span></td><td class="us"><span class="yes">Removed from every board instantly</span></td></tr>'
+ '<tr><td>Pickup date passes</td><td><span class="no">Post lingers for days</span></td><td class="us"><span class="yes">Auto-pulled; broker emailed to reschedule</span></td></tr>'
+ '<tr><td>The posted rate</td><td><span class="no">Opening anchor for a phone fight</span></td><td class="us"><span class="yes">Written rate card incl. accessorials</span></td></tr>'
+ '<tr><td>Deadhead miles</td><td><span class="no">You guess from city names</span></td><td class="us"><span class="yes">Live road miles from your GPS</span></td></tr>'
+ '<tr><td>Broker identity</td><td><span class="no">You verify manually, every time</span></td><td class="us"><span class="yes">Verified packet exchanged at booking</span></td></tr>'
+ '<tr><td>Detention / TONU</td><td><span class="no">&lt;50% of invoices ever paid</span></td><td class="us"><span class="yes">Pre-agreed rates, GPS evidence, auto-claim</span></td></tr>'
+ '<tr><td>Booking a load</td><td><span class="no">15&ndash;20 calls, 3&ndash;6 hours</span></td><td class="us"><span class="yes">Request or one-tap accept &mdash; minutes</span></td></tr></table>'
+
+ '<h2 id="bottom-line">The bottom line</h2>'
+ '<p>Ghost loads are not bad luck &mdash; they are the predictable output of boards that sell volume instead of truth. You can keep doing the board&rsquo;s quality control by hand, twenty calls at a time, or you can move to software where a posting is only ever one of two things: <b>real and bookable, or gone</b>.</p>'
+ '<p>Start where the money is: check your lane on the <a href="market-rates.html">live market rates page</a>, read what you are owed on <a href="detention-pay-policy.html">detention</a> and <a href="tonu-policy.html">TONU</a>, then <a href="get-started.html">open a free carrier account</a> and look at a board with nothing stale on it.</p>')
+
+GL_FAQ=[
+ ('What is a ghost load on a load board?','A ghost load is a posting for freight that is no longer available \u2014 usually covered on another board and never deleted. Brokers post the same load to multiple boards at once; when it books on one, the leftover copies become ghosts that waste carriers\u2019 calls.'),
+ ('Why do brokers leave covered loads posted?','Nothing forces them to take posts down, and reposting everywhere maximizes their coverage odds. Legacy boards profit from posting volume, so dead posts linger. On a truck operating system the posting is tied to the load\u2019s real state, so a booked or expired load leaves the board automatically.'),
+ ('How many calls does it take to book one load?','Carriers commonly report calling on 15\u201320 loads over 3\u20136 hours before one books; on bad days 30+ calls book nothing. Brokers report roughly 7 calls to find one qualified carrier \u2014 the waste runs both directions.'),
+ ('How do I avoid fake loads and double brokering?','Verify the MC number and FMCSA authority status, match the contact\u2019s email domain to the company, be suspicious of rates far above the lane\u2019s market rate, and never accept re-tendered freight from a \u201ccarrier.\u201d Double brokering cost the industry about $4B from 2022\u20132025. Platforms that verify both sides and exchange packets at booking close most of these doors.'),
+ ('What is a truck operating system?','Software that runs the whole load lifecycle \u2014 posting, offers, booking, dispatch, GPS tracking, documents, invoicing and claims \u2014 in one place, instead of a classified-ads board plus phone calls. Because the system knows each load\u2019s state, ghost loads and stale posts cannot exist on the board.'),
+ ('Is LoadBoot a load board or a dispatch service?','Both layers of one system: a live, verified load board where booked and expired freight disappears instantly \u2014 plus an optional flat-5% dispatch service where LoadBoot\u2019s dispatchers find, negotiate and book freight for you (industry dispatch services typically charge 5\u201310%).')]
+
+rich_article('ghost-loads-load-board-problems.html',
+ 'Ghost Loads &amp; Load Board Problems 2026: Why Booking One Load Takes 20 Calls | LoadBoot',
+ 'Ghost loads, stale posts, bait rates and double brokering: why carriers burn 3\u20136 hours booking one load, what it costs per week, how to spot fakes \u2014 and how a truck operating system removes the problem entirely.',
+ 'The Carrier\u2019s #1 Time Thief','Ghost Loads &amp; Fake Freight: Why the Load Board Wastes Your Day \u2014 and the System That Fixes It',
+ 'The load you just called on was covered yesterday. The next three don\u2019t exist at the posted rate. Here is why the boards stay broken, what it costs you per week, and what a truck operating system does differently.',
+ 9,'truck-fleet.webp','Owner-operator on the phone next to his truck, searching for loads',
+ GL_TOC,GL_BODY,GL_FAQ,feat_svg=GL_FEAT)
+
+THUMBS['ghost-loads-load-board-problems.html']=GL_FEAT
+
+READTIME={'ghost-loads-load-board-problems.html':9,'how-to-avoid-cheap-freight.html':7,'truck-dispatcher-in-georgia.html':7,'truck-dispatcher-in-california.html':8,'how-to-read-a-rate-confirmation.html':7,'do-new-authority-carriers-need-a-dispatcher.html':7,'truck-dispatcher-in-texas.html':8,'how-much-does-a-truck-dispatcher-cost.html':8,'truck-dispatcher-vs-freight-broker.html':9,'how-to-get-loads-with-new-authority.html':6,'owner-operator-dispatch-service-guide.html':9}
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
 blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
 blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from Loadboot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards
@@ -2301,7 +2428,7 @@ tools_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px
 tools_body = svc_hero('Free Tools for Truckers &amp; Owner-Operators','Price loads, know your true cost per mile, and stop leaving money on the table &mdash; with the same calculators our dispatchers use every day. Free, no signup, instant results.')
 tools_body += LSP + tools_intro + tools_section + tools_seo + tools_faq_html + final_cta() + '<script>' + TOOLS_JS + '</script>'
 tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
-page('tools.html','Free Truck Driver Calculators (No Signup) | Loadboot','Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home and detention calculators for owner-operators. No login.','tools.html', tools_body, tools_schema)
+page('tools.html','Trucking Calculator 2026 — Free Cost Per Mile, Profit Per Load & Rate Tools | LoadBoot','The free trucking calculator suite truckers actually use: cost per mile, profit per load, rate per mile, fuel, break-even, take-home and detention pay — instant answers, no signup, no login.','tools.html', tools_body, tools_schema)
 
 # ======================================================================
 # SPRINT 1 — PUBLIC MARKETING WEBSITE COMPLETION (added pages)
@@ -3411,7 +3538,233 @@ _ACC_SEO = {
    deny=[('\u201cThe driver volunteered\u201d','Never touch freight without the fee in writing. On LoadBoot, if a posting requires driver assist it carries the fee \u2014 the broker agreed to industry-standard rates at posting.'),
         ('\u201cThat\u2019s included in the linehaul\u201d','Loading is the shipper\u2019s job. Industry standard is $75\u2013$150/stop on top \u2014 LoadBoot prints it on the rate confirmation.'),
         ('Facility denies the driver worked','The signed BOL notation + a 10-second dock photo ends that conversation.')]),
+ 'fcfs-policy': dict(
+   title='FCFS in Trucking 2026: First Come First Served \u2014 and Detention Still Applies | LoadBoot',
+   desc='FCFS (first come, first served) explained for truckers: how the arrival window works, why detention still starts at gate check-in, the queue evidence that protects you, and what to do when a dock takes trucks out of order \u2014 plus how LoadBoot stamps your check-in automatically.',
+   ev=['Gate check-in time \u2014 photograph the gate ticket the moment you arrive; with FCFS your check-in IS your whole case',
+       'GPS arrive stamp inside the posted FCFS window (ELD or the LoadBoot app records it)',
+       'The posting showing FCFS + the exact window \u2014 a LoadBoot load always states one',
+       'Your queue position or number if the facility issues one',
+       'Depart stamp to close the stop and prove total time on site'],
+   deny=[('\u201cFCFS means no detention\u201d','False \u2014 free time runs from your gate check-in exactly like an appointment, and past 2 hours the meter runs. LoadBoot stamps check-in automatically so the clock is provable.'),
+        ('\u201cYou arrived too late in the window\u201d','Rolling in at the very end of an 8-hour window often bumps you to the next day. Hit the window early and stamp it \u2014 LoadBoot flags late-window risk before you book.'),
+        ('\u201cThe dock took trucks out of order\u201d','Your gate ticket photo + GPS stamp document the jump. Escalate in-app; repeat offenders surface in facility stats other carriers can see.'),
+        ('\u201cNo window was posted\u201d','A load cannot post on LoadBoot as FCFS without a window \u2014 no window, no ambiguity, no free-detention argument.')]),
+ 'emergency-rescheduling-policy': dict(
+   title='Truck Breakdown &amp; Emergency Load Rescheduling 2026: No-Penalty Process | LoadBoot',
+   desc='What happens when a truck breaks down or has an on-road emergency: how the delivery gets rescheduled with zero carrier penalty, the proof that protects you, the 2-hour broker response clock, and how LoadBoot verifies and re-times the load automatically.',
+   ev=['Live GPS showing the truck stationary where the emergency was reported (the LoadBoot trip records it)',
+       'A timestamped photo of the breakdown or incident with matching time + location (phone EXIF)',
+       'Your honest road-ready estimate \u2014 2h / 6h / 12h / 24h / 48h \u2014 the engine builds the new window from it',
+       'The original delivery window straight off the rate confirmation',
+       'Any repair invoice or roadside receipt once you have it'],
+   deny=[('\u201cYou\u2019re late \u2014 that\u2019s a service failure / TONU\u201d','Not on a verified emergency. Every broker accepted the no-penalty clause at posting; with GPS + photo proof there is no TONU, no late fee and no on-time-score hit.'),
+        ('\u201cWe never agreed to reschedule\u201d','The 2-hour response clock removes the argument: accept, counter within \u00b112h, or the policy auto-reschedules. Refusal is not one of the options on a verified emergency.'),
+        ('\u201cProve it\u2019s a real breakdown\u201d','That is exactly what the 4-point check does \u2014 live GPS trail, photo time/location, driver call-back and claim history. Fake reports fail the sensors and lose protection.'),
+        ('Broker goes silent to run out the clock','Silence does not park the load. After 2 hours open delivery locks the proposed window and appointment freight books the next available dock slot automatically.')]),
 }
+_ACC_CSS = (
+ '.accx-hero{display:flex;gap:26px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,#0b1830,#10223B 60%,#14335c);border-radius:22px;padding:28px 30px;color:#fff;box-shadow:0 24px 60px -28px rgba(2,12,30,.55)}'
+ '.accx-art{flex:0 0 190px;display:flex;justify-content:center}'
+ '.accx-art svg{animation:accxFloat 4.5s ease-in-out infinite}'
+ '@keyframes accxFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}'
+ '.accx-spin{transform-origin:50% 50%;animation:accxSpin 6s linear infinite}'
+ '@keyframes accxSpin{to{transform:rotate(360deg)}}'
+ '.accx-pulse{animation:accxPulse 1.8s ease-in-out infinite}'
+ '@keyframes accxPulse{0%,100%{opacity:1}50%{opacity:.35}}'
+ '.accx-stats{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;min-width:240px}'
+ '.accx-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px;text-align:center}'
+ '.accx-stat b{display:block;font-size:1.45rem;color:#7cc0ff;font-weight:800}'
+ '.accx-stat span{font-size:.64rem;text-transform:uppercase;letter-spacing:.09em;opacity:.7;font-weight:700}'
+ '.accx-tl{position:relative;max-width:760px;margin:0 auto;padding-left:6px}'
+ '.accx-tls{position:relative;display:flex;gap:16px;padding:0 0 26px 0}'
+ '.accx-tls:before{content:"";position:absolute;left:17px;top:38px;bottom:-2px;width:3px;background:linear-gradient(180deg,#0883F7,#22c55e);border-radius:2px}'
+ '.accx-tls:last-child:before{display:none}'
+ '.accx-tls .n{flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0883F7,#0967d2);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -8px rgba(8,131,247,.7);z-index:1}'
+ '.accx-tls p{margin:6px 0 0;font-size:.96rem;line-height:1.65}'
+ '.accx-ck{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}'
+ '.accx-ci{display:flex;gap:11px;align-items:flex-start;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;padding:13px 15px;transition:transform .15s,box-shadow .15s}'
+ '.accx-ci:hover{transform:translateY(-2px);box-shadow:0 14px 30px -22px rgba(2,12,30,.35)}'
+ '.accx-ci .tick{flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#dcfce7;color:#16a34a;font-weight:900;display:flex;align-items:center;justify-content:center}'
+ '.accx-ci p{margin:2px 0 0;font-size:.9rem;line-height:1.6}'
+ '.accx-rel{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}'
+ '.accx-rel a{display:inline-flex;gap:7px;align-items:center;background:var(--card,#fff);border:1.5px solid var(--border,#e2e8f0);border-radius:999px;padding:9px 18px;font-weight:700;font-size:.85rem;text-decoration:none;transition:all .15s}'
+ '.accx-rel a:hover{border-color:#0883F7;color:#0883F7;transform:translateY(-2px)}'
+ '.accx-crumbs{font-size:.82rem;color:var(--muted,#64748b)}'
+ '.accx-crumbs a{color:#0883F7;text-decoration:none}.accx-crumbs a:hover{text-decoration:underline}'
+ '.accx-crumbs span{margin:0 7px;opacity:.5}'
+ '.accx-fresh{display:inline-flex;align-items:center;gap:7px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.22);color:#0967d2;border-radius:999px;padding:5px 14px;font-size:.74rem;font-weight:700;margin-top:16px}'
+ '.accx-fresh i{width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:accxPing 1.8s infinite}'
+ '@keyframes accxPing{70%{box-shadow:0 0 0 6px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}'
+ '.accx-calc{background:linear-gradient(135deg,#0b1830,#132c4e 70%,#16345c);border-radius:22px;padding:26px 28px;color:#fff;box-shadow:0 24px 60px -30px rgba(2,12,30,.6);position:relative;overflow:hidden}'
+ '.accx-calc:before{content:"";position:absolute;top:-40px;right:-30px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(8,131,247,.35),transparent 70%)}'
+ '.accx-calc h3{color:#fff;margin:0 0 4px;font-size:1.28rem;position:relative}'
+ '.accx-calc .sub{color:rgba(255,255,255,.72);font-size:.92rem;margin:0 0 18px;position:relative;max-width:560px}'
+ '.accx-calc .cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;position:relative}'
+ '.accx-fld label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#7cc0ff;font-weight:700;margin-bottom:6px}'
+ '.accx-fld .wrap-in{display:flex;align-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:12px;overflow:hidden;transition:border-color .15s}'
+ '.accx-fld .wrap-in:focus-within{border-color:#0883F7}'
+ '.accx-fld .pfx{padding-left:12px;color:rgba(255,255,255,.55);font-weight:800}'
+ '.accx-fld input{flex:1;min-width:0;background:transparent;border:0;color:#fff;font-size:1.15rem;font-weight:800;padding:11px 12px;outline:none;-moz-appearance:textfield}'
+ '.accx-fld input::-webkit-outer-spin-button,.accx-fld input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}'
+ '.accx-fld .sfx{padding-right:12px;color:rgba(255,255,255,.55);font-size:.78rem;font-weight:700;white-space:nowrap}'
+ '.accx-res{margin-top:20px;background:rgba(34,197,94,.12);border:1px solid rgba(74,222,128,.4);border-radius:16px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;position:relative}'
+ '.accx-res .lab{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#4ade80;font-weight:800;margin-bottom:2px}'
+ '.accx-res .amt{font-size:2.4rem;font-weight:900;color:#fff;line-height:1}'
+ '.accx-res .note{font-size:.84rem;color:rgba(255,255,255,.72);max-width:300px;text-align:right}'
+ '.accx-calc .disc{font-size:.72rem;color:rgba(255,255,255,.5);margin-top:13px;position:relative}'
+ '.accx-cmp{width:100%;border-collapse:collapse;background:var(--card,#fff);border-radius:16px;overflow:hidden;box-shadow:0 16px 40px -28px rgba(2,12,30,.4)}'
+ '.accx-cmp th{background:#10223B;color:#fff;text-align:left;padding:12px 15px;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase}'
+ '.accx-cmp td{padding:12px 15px;border-bottom:1px solid var(--border,#eef2f7);font-size:.9rem;color:var(--ink,#0f172a)}'
+ '.accx-cmp tr:hover td{background:rgba(8,131,247,.04)}'
+ '.accx-cmp tr.hl td{background:rgba(252,83,5,.07)}'
+ '.accx-cmp a{color:#0967d2;font-weight:700;text-decoration:none}.accx-cmp a:hover{text-decoration:underline}'
+ '.accx-cmp .amt{font-weight:800;color:#0967d2;white-space:nowrap}'
+ '@media(max-width:560px){.accx-res .amt{font-size:1.9rem}.accx-res .note{text-align:left}}'
+ '@media(max-width:640px){.accx-hero{padding:20px}.accx-art{flex-basis:130px}}')
+
+def _svg_truck(extra=''):
+    return ('<svg width="170" height="120" viewBox="0 0 170 120" fill="none">'
+      '<rect x="8" y="46" width="86" height="40" rx="6" fill="#0883F7"/>'
+      '<path d="M94 56h30l20 18v12H94z" fill="#dbe7f7"/>'
+      '<rect x="98" y="60" width="16" height="12" rx="2" fill="#10223B"/>'
+      '<circle cx="34" cy="90" r="11" fill="#0b1626" stroke="#dbe7f7" stroke-width="3"/>'
+      '<circle cx="122" cy="90" r="11" fill="#0b1626" stroke="#dbe7f7" stroke-width="3"/>'
+      + extra + '</svg>')
+
+_ACC_ART = {
+ 'detention-pay-policy': dict(svg=_svg_truck(
+    '<circle cx="140" cy="30" r="22" fill="none" stroke="#FC5305" stroke-width="4"/>'
+    '<line class="accx-spin" x1="140" y1="30" x2="140" y2="16" stroke="#fff" stroke-width="4" stroke-linecap="round" style="transform-origin:140px 30px"/>'
+    '<line x1="140" y1="30" x2="150" y2="34" stroke="#FC5305" stroke-width="3.5" stroke-linecap="round"/>'
+    '<text x="14" y="30" fill="#7cc0ff" font-size="13" font-weight="800" font-family="Inter,Arial">WAITING\u2026 $$$</text>'),
+   stats=[('Standard rate','$60/hr'),('Free time','2 hours'),('Industry loses','$15B/yr')]),
+ 'tonu-policy': dict(svg=_svg_truck(
+    '<circle cx="140" cy="28" r="20" fill="rgba(239,68,68,.15)"/>'
+    '<line class="accx-pulse" x1="128" y1="16" x2="152" y2="40" stroke="#f87171" stroke-width="6" stroke-linecap="round"/>'
+    '<line class="accx-pulse" x1="152" y1="16" x2="128" y2="40" stroke="#f87171" stroke-width="6" stroke-linecap="round"/>'),
+   stats=[('LoadBoot standard','$250'),('Industry range','$150\u2013$300+'),('Trigger','late cancel')]),
+ 'layover-policy': dict(svg=_svg_truck(
+    '<path d="M132 14a14 14 0 1 0 14 22 17 17 0 0 1-14-22z" fill="#fbbf24"/>'
+    '<circle class="accx-pulse" cx="112" cy="18" r="2.4" fill="#fff"/>'
+    '<circle class="accx-pulse" cx="158" cy="44" r="2" fill="#fff"/>'),
+   stats=[('Per day','$250'),('Stacks with','detention'),('Trigger','overnight hold')]),
+ 'lumper-policy': dict(svg=_svg_truck(
+    '<rect x="118" y="10" width="20" height="20" rx="3" fill="#FC5305"/>'
+    '<rect x="140" y="18" width="16" height="16" rx="3" fill="#f59e0b"/>'
+    '<rect x="126" y="32" width="14" height="14" rx="3" fill="#7cc0ff"/>'
+    '<text x="118" y="8" fill="#4ade80" font-size="11" font-weight="800" font-family="Inter,Arial">RECEIPT = $$$</text>'),
+   stats=[('Reimbursed','100%'),('Typical fee','$75\u2013$600'),('The claim','the receipt')]),
+ 'driver-assist-policy': dict(svg=_svg_truck(
+    '<circle cx="132" cy="18" r="7" fill="#dbe7f7"/>'
+    '<path d="M132 26v16l-8 12M132 32l10 8" stroke="#dbe7f7" stroke-width="4" stroke-linecap="round" fill="none"/>'
+    '<rect x="146" y="30" width="14" height="12" rx="2" fill="#FC5305"/>'),
+   stats=[('Per stop','$75'),('Agreed','in writing'),('On top of','linehaul')]),
+ 'fcfs-policy': dict(svg=_svg_truck(
+    '<rect x="112" y="14" width="12" height="9" rx="2" fill="#4ade80"/>'
+    '<rect x="128" y="14" width="12" height="9" rx="2" fill="#7cc0ff"/>'
+    '<rect x="144" y="14" width="12" height="9" rx="2" fill="#dbe7f7"/>'
+    '<text x="112" y="38" fill="#7cc0ff" font-size="11" font-weight="800" font-family="Inter,Arial">1st COME 1st SERVED</text>'),
+   stats=[('Arrival order','wins'),('Window','on the posting'),('Proof','GPS check-in')]),
+ 'emergency-rescheduling-policy': dict(svg=_svg_truck(
+    '<path class="accx-pulse" d="M136 8l16 28h-32z" fill="#f87171"/>'
+    '<rect x="134" y="17" width="4" height="9" rx="2" fill="#fff"/>'
+    '<circle cx="136" cy="31" r="2.2" fill="#fff"/>'),
+   stats=[('Response clock','2 hours'),('Carrier penalty','none (verified)'),('Proof','GPS + photo')]),
+}
+_ACC_ART['default'] = dict(svg=_svg_truck(), stats=[('Standard','in writing'),('Proof','GPS'),('Settlement','via LoadBoot')])
+
+_ACC_UPDATED = 'July 2026'
+
+# ---- Interactive pay calculators (top organic-traffic driver + engagement) ----
+_ACC_CALC = {
+ 'detention-pay-policy': dict(type='detention', title='Detention pay calculator', reslabel='You are owed',
+   sub='Enter your times \u2014 see exactly what the facility owes you.',
+   fields=[('hrs','Total time held','',5.5,'hrs',0.25),('free','Free time','',2,'hrs',0.5),('rate','Detention rate','$',60,'/hr',5)]),
+ 'layover-policy': dict(type='layover', title='Layover pay calculator', reslabel='You are owed',
+   sub='Overnight hold? See the day rate \u2014 on top of any detention already earned.',
+   fields=[('days','Days held over','',1,'days',1),('rate','Layover rate','$',250,'/day',10),('det','Detention already earned','$',0,'',10)]),
+ 'tonu-policy': dict(type='tonu', title='TONU calculator', reslabel='You are owed',
+   sub='Confirmed load died late? Add any deadhead you already burned.',
+   fields=[('flat','TONU amount','$',250,'',10),('miles','Deadhead miles driven','',0,'mi',5),('permile','Per deadhead mile','$',2,'/mi',0.25)]),
+ 'lumper-policy': dict(type='lumper', title='Lumper reimbursement calculator', reslabel='Reimbursed to you',
+   sub='Fronted a lumper fee? See what comes back \u2014 and what stays out of pocket.',
+   fields=[('fee','Lumper fee you paid','$',180,'',10)]),
+ 'driver-assist-policy': dict(type='assist', title='Driver assist pay calculator', reslabel='You are owed',
+   sub='Working the dock? Price it before you touch the freight.',
+   fields=[('stops','Stops you assisted','',1,'stops',1),('rate','Assist rate per stop','$',75,'/stop',5)]),
+ 'fcfs-policy': dict(type='detention', title='FCFS detention calculator', reslabel='You are owed',
+   sub='FCFS does NOT cancel detention \u2014 free time runs from gate check-in. Check the math.',
+   fields=[('hrs','Time from check-in','',4,'hrs',0.25),('free','Free time','',2,'hrs',0.5),('rate','Detention rate','$',60,'/hr',5)]),
+}
+
+def _acc_calc_html(c):
+    flds = ''
+    for fid, lab, pfx, dflt, sfx, step in c['fields']:
+        flds += ('<div class="accx-fld"><label for="lbc_' + fid + '">' + lab + '</label>'
+          '<div class="wrap-in">' + ('<span class="pfx">' + pfx + '</span>' if pfx else '')
+          + '<input id="lbc_' + fid + '" type="number" inputmode="decimal" value="' + str(dflt) + '" step="' + str(step) + '" min="0">'
+          + ('<span class="sfx">' + sfx + '</span>' if sfx else '') + '</div></div>')
+    return ('<section class="wrap" style="margin-top:10px"><div class="accx-calc reveal" data-calc-type="' + c['type'] + '">'
+      '<h3>&#129518; ' + c['title'] + '</h3><p class="sub">' + c['sub'] + '</p>'
+      '<div class="cg">' + flds + '</div>'
+      '<div class="accx-res"><div><div class="lab">' + c['reslabel'] + '</div><div class="amt">$0</div></div>'
+      '<div class="note"></div></div>'
+      '<p class="disc">Estimate only \u2014 your rate confirmation is the controlling document. On LoadBoot these figures are pre-agreed in writing on every load, and the claim builds itself from your trip data.</p>'
+      '</div></section>')
+
+# ---- At-a-glance comparison table (internal linking + featured-snippet bait) ----
+_ACC_CMP = [
+ ('detention-pay-policy','Detention','$60/hr after 2 free hrs','Facility holds your truck past free time'),
+ ('layover-policy','Layover','$250 / day','A hold crosses into an overnight'),
+ ('tonu-policy','TONU','$250 + deadhead','A confirmed load cancels late'),
+ ('lumper-policy','Lumper','Reimbursed 100%','Third-party dock labor you fronted'),
+ ('driver-assist-policy','Driver Assist','$75 / stop','The driver physically works the dock'),
+ ('fcfs-policy','FCFS','Detention still applies','No appointment \u2014 clock runs from check-in'),
+ ('emergency-rescheduling-policy','Emergency Reschedule','Zero penalty','A verified on-road emergency'),
+]
+
+def _acc_cmp_html(cur):
+    rows = ''
+    for sl, nm, amt, trig in _ACC_CMP:
+        hl = ' class="hl"' if sl == cur else ''
+        cell = ('<b>' + nm + '</b> \u2014 you\u2019re here') if sl == cur else ('<a href="/' + sl + '.html">' + nm + '</a>')
+        rows += '<tr' + hl + '><td>' + cell + '</td><td class="amt">' + amt + '</td><td>' + trig + '</td></tr>'
+    return ('<div style="overflow-x:auto"><table class="accx-cmp"><thead><tr><th>Accessorial</th><th>LoadBoot standard</th><th>When it triggers</th></tr></thead><tbody>'
+      + rows + '</tbody></table></div>'
+      '<p class="src-disc" style="margin-top:12px;text-align:center">Every one of these is written into the load before you accept it. Tap any row to read the full guide.</p>')
+
+def _acc_fresh_schema(name):
+    import json as _json
+    return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "WebPage",
+      "name": name + " \u2014 LoadBoot Policy", "datePublished": "2026-01-15", "dateModified": "2026-07-08",
+      "isPartOf": {"@type": "WebSite", "name": "LoadBoot", "url": "https://loadboot.com"}}) + '</script>'
+
+# ---- One script per page: count-up hero stats + live calculator compute ----
+_ACC_SCRIPT = ('<script>(function(){'
+ 'function cu(el){var t=el.textContent.trim();var m=t.match(/^([^0-9]*)([0-9]+(?:\\.[0-9]+)?)(.*)$/);if(!m)return;var pre=m[1],num=parseFloat(m[2]),suf=m[3];if(/[0-9]/.test(suf))return;var dur=850,st=null,dec=(num%1?1:0);function step(ts){if(!st)st=ts;var p=Math.min((ts-st)/dur,1);var e=1-Math.pow(1-p,3);el.textContent=pre+(num*e).toFixed(dec)+suf;if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}'
+ 'if("IntersectionObserver" in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){cu(e.target);io.unobserve(e.target);}});},{threshold:.4});document.querySelectorAll(".accx-stat b").forEach(function(el){io.observe(el);});}else{document.querySelectorAll(".accx-stat b").forEach(cu);}'
+ 'var box=document.querySelector("[data-calc-type]");if(box){var type=box.getAttribute("data-calc-type");'
+ 'function v(id){var e=box.querySelector("#lbc_"+id);return e?(parseFloat(e.value)||0):0;}'
+ 'function money(n){return "$"+Math.round(n).toLocaleString("en-US");}'
+ 'function fnum(n){return (Math.round(n*100)/100).toString();}'
+ 'function calc(){var amtEl=box.querySelector(".amt"),noteEl=box.querySelector(".note"),amt=0,note="";'
+ 'if(type==="detention"){var b=Math.max(0,v("hrs")-v("free"));amt=b*v("rate");note=b<=0?"Still inside free time \u2014 nothing owed yet.":fnum(b)+" billable hours \u00d7 "+money(v("rate"))+"/hr";}'
+ 'else if(type==="layover"){amt=v("days")*v("rate")+v("det");note=v("det")>0?"includes "+money(v("det"))+" detention earned before the overnight":v("days")+" day(s) \u00d7 "+money(v("rate"));}'
+ 'else if(type==="tonu"){amt=v("flat")+v("miles")*v("permile");note=v("miles")>0?money(v("flat"))+" TONU + "+v("miles")+" mi deadhead":"flat TONU \u2014 add deadhead if the posting includes it";}'
+ 'else if(type==="assist"){amt=v("stops")*v("rate");note=v("stops")+" stop(s) \u00d7 "+money(v("rate"))+", agreed in writing first";}'
+ 'else if(type==="lumper"){amt=v("fee");note="$0 stays out of your pocket \u2014 reimbursed 100% with receipt, or the broker pays direct.";}'
+ 'amtEl.textContent=money(amt);noteEl.textContent=note;}'
+ 'box.addEventListener("input",calc);calc();}'
+ '})();</script>')
+
+
+def _acc_howto_schema(name, steps):
+    import json as _json, re as _re
+    st = [{"@type": "HowToStep", "position": i + 1, "text": _re.sub(r'<[^>]+>', '', x)} for i, x in enumerate(steps or [])]
+    return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "HowTo",
+      "name": "How to claim " + name + " as a truck driver", "step": st}) + '</script>'
+
 def _acc_faq_schema(faq):
     import json as _json, re as _re
     ents = []
@@ -3422,7 +3775,20 @@ def _acc_faq_schema(faq):
 
 for _p in _ACC_PAGES:
     _slug, _name = _p['slug'], _p['name']
-    _pg = svc_hero(_name + ' — LoadBoot Policy', _p['defn'])
+    _pg = ('<section class="wrap" style="padding:14px 0 2px"><nav class="accx-crumbs" aria-label="Breadcrumb">'
+           '<a href="/">Home</a><span>›</span><a href="/market-rates.html">Rates &amp; Driver Pay</a>'
+           '<span>›</span>' + _name + '</nav></section>')
+    _pg += svc_hero(_name + ' — LoadBoot Policy', _p['defn'])
+    _art = _ACC_ART.get(_slug, _ACC_ART['default'])
+    _pg += ('<section class="wrap" style="margin-top:-14px"><style>' + _ACC_CSS + '</style>'
+      '<div class="accx-hero reveal"><div class="accx-art">' + _art['svg'] + '</div>'
+      '<div class="accx-stats">' + ''.join('<div class="accx-stat"><b>' + v + '</b><span>' + k + '</span></div>' for k, v in _art['stats'])
+      + '</div></div>'
+      '<div style="text-align:center"><span class="accx-fresh"><i></i>Updated ' + _ACC_UPDATED + ' · reviewed by LoadBoot Dispatch</span></div>'
+      '</section>')
+    _calc = _ACC_CALC.get(_slug)
+    if _calc:
+        _pg += _acc_calc_html(_calc)
     _pg += _sec('The standard', 'What applies on every LoadBoot load unless the posting says otherwise', (
         '<div class="cards g1"><article class="card"><div class="card-ic">&#128176;</div><h3>' + _p['std'] + '</h3><p>' + _p['ctx'] + '</p></article></div>'))
     _pg += _sec('What it looks like on the road', 'A real-world scenario', (
@@ -3431,8 +3797,8 @@ for _p in _ACC_PAGES:
         '<p class="src-disc" style="font-size:.95rem;max-width:820px">' + _p['why'] + '</p>'))
     _pg += _sec('The rules', 'Both sides agree to these when posting or booking on LoadBoot', (
         '<div class="cards g1">' + ''.join('<article class="card"><h3>' + k + '</h3><p>' + v + '</p></article>' for k, v in _p['rules']) + '</div>'))
-    _pg += _sec('How to claim it — step by step', 'Five taps in the LoadBoot app', (
-        '<div class="cards g1"><article class="card"><ol style="margin:0;padding-left:22px;line-height:2">' + ''.join('<li>' + x + '</li>' for x in _p['steps']) + '</ol></article></div>'))
+    _pg += _sec('How to claim it — step by step', 'The exact sequence, from the gate to the money', (
+        '<div class="accx-tl reveal">' + ''.join('<div class="accx-tls"><span class="n">' + str(_i + 1) + '</span><p>' + _x + '</p></div>' for _i, _x in enumerate(_p['steps'])) + '</div>'))
     _pg += _sec('Worked example', _p['example'][0], (
         '<div class="cards g1"><article class="card">' + ''.join('<div style="display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--border,#e2e8f0)"><span style="color:var(--muted,#64748b)">' + k + '</span><span style="text-align:right;font-weight:700">' + v + '</span></div>' for k, v in _p['example'][1]) + '</article></div>'))
     _pg += _sec('Mistakes that kill claims', 'Learn them here, not the expensive way', (
@@ -3445,15 +3811,16 @@ for _p in _ACC_PAGES:
         '</div>'))
     _pg += _sec('Frequently asked', 'Straight answers', (
         '<div class="cards g2">' + ''.join('<article class="card"><h3>' + q + '</h3><p>' + a + '</p></article>' for q, a in _p['faq']) + '</div>'))
+    _pg += _sec('All accessorials at a glance', 'Every LoadBoot pay standard in one table', _acc_cmp_html(_slug))
     _pg += _sec('Related policies', 'The full accessorial standard', (
-        '<p class="src-disc">' + ' &middot; '.join('<a href="/' + q2['slug'] + '.html">' + q2['name'] + '</a>' for q2 in _ACC_PAGES if q2['slug'] != _slug) + '</p>'
+        '<div class="accx-rel">' + ''.join('<a href="/' + q2['slug'] + '.html">&#128216; ' + q2['name'] + '</a>' for q2 in _ACC_PAGES if q2['slug'] != _slug) + '<a href="/market-rates.html">&#128200; Market Rates Per Mile</a><a href="/ghost-loads-load-board-problems.html">&#128123; Ghost Loads &amp; Fake Freight</a></div>'
         '<p class="src-disc" style="margin-top:10px">These policies are LoadBoot marketplace standards agreed between posting parties and carriers. They are operational terms, not legal advice; the rate confirmation for each load is the controlling document.</p>'))
     _seo = _ACC_SEO.get(_slug)
     if _seo:
         _pg += _sec('What evidence to collect', 'The checklist that gets claims PAID \u2014 save it, use it on every load', (
-            '<div class="cards g1"><article class="card"><ul style="margin:0;padding-left:22px;line-height:2">'
-            + ''.join('<li>' + x + '</li>' for x in _seo['ev']) + '</ul>'
-            '<p class="src-disc" style="margin-top:10px">On LoadBoot most of this collects itself: GPS arrive/depart stamps, stop-proof photo uploads, the pre-agreed rate card on every posting, and a one-tap claim built from the trip record.</p></article></div>'))
+            '<div class="accx-ck reveal">'
+            + ''.join('<div class="accx-ci"><span class="tick">&#10003;</span><p>' + x + '</p></div>' for x in _seo['ev'])
+            + '</div><p class="src-disc" style="margin-top:14px;text-align:center">On LoadBoot most of this collects itself: GPS arrive/depart stamps, stop-proof photo uploads, the pre-agreed rate card on every posting, and a one-tap claim built from the trip record.</p>'))
         _pg += _sec('Broker refusing to pay? Read this first', 'The four denials you will hear \u2014 and the counter for each', (
             '<div class="cards g2">' + ''.join('<article class="card"><div class="card-ic">&#128683;</div><h3>' + k + '</h3><p>' + v + '</p></article>' for k, v in _seo['deny']) + '</div>'))
         _pg += _sec('Tired of fighting for money you already earned?', 'This is the exact problem LoadBoot was built to end', (
@@ -3461,17 +3828,18 @@ for _p in _ACC_PAGES:
             '<p style="font-size:1.05rem;line-height:1.75;max-width:760px;margin:0 auto 14px">Every LoadBoot load posts with this fee <b>already agreed in writing</b>. Your GPS timestamps are the evidence. The claim builds itself from the trip. And settlement runs through the platform &mdash; no chasing, no ghosting, no bond claims.</p>'
             '<p><a class="btn btn-primary" href="/get-started.html">Join LoadBoot free &mdash; get paid what you\u2019re owed &rarr;</a></p>'
             '<p class="src-disc" style="margin-top:8px">Free verified carrier account &middot; live loads with the full rate card in writing &middot; GPS-proof claims</p></article></div>'))
+    _pg += _ACC_SCRIPT
     page(_slug + '.html',
          (_seo['title'] if _seo else _name + ' Policy | LoadBoot'),
          (_seo['desc'] if _seo else (_p['defn'][:150])[:168]),
          _slug + '.html', _pg,
-         schema=_acc_faq_schema(_p.get('faq') or []) if _seo else '')
+         schema=(_acc_faq_schema(_p.get('faq') or []) + _acc_howto_schema(_name, _p.get('steps') or []) + _acc_fresh_schema(_name)))
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
-  ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('faq.html', 'FAQ')]),
+  ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
@@ -3527,7 +3895,7 @@ _APP_CSP = (
   "script-src 'self' https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
   "worker-src 'self'; "
   "manifest-src 'self'; "
-  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://photon.komoot.io https://data.transportation.gov https://router.project-osrm.org"
+  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://photon.komoot.io https://data.transportation.gov https://router.project-osrm.org https://vpic.nhtsa.dot.gov"
 ) % (_CSP_REF, _CSP_REF, _CSP_REF, _CSP_REF)
 APP_HEADERS = (
   "\n/app/*\n"

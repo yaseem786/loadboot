@@ -1,0 +1,13 @@
+-- wd_0043 (STAGING 2026-07-10) — booking request now confirms BOTH sides: carrier gets
+-- in-app + branded email "Request sent — pending broker approval" (broker already had
+-- trg_bookreq_broker_notify). Also decoded ALL literal \U0001FXXXX emoji escapes in
+-- cc_offer_send / cc_decide_partner_load / cc_pocket_advance_trip + stored rows.
+-- wd_0044 — cc_partner_mark_all_notifications_read + cc_pocket_mark_all_notifications_read
+-- (anon revoked); cleaned \U0001F escapes in partner_notifications too.
+-- Frontend: broker bell panel gets "✓ Mark all read" + per-item "Mark read";
+-- carrier Notifications page gets "✓ Mark all read".
+-- wd_0045 — TRUST SCORE FIX: cc_trust_profile counted docs from stale
+-- org_onboarding_items (0/8 pending => Trust 19). For carriers it now counts LIVE
+-- carrier_compliance (valid + unexpired; hazmat set included only when applicable).
+-- Verified: TRUCKING ENTERPRISE 19 -> 74, docs 9/9.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

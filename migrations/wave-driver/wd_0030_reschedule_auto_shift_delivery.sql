@@ -1,0 +1,7 @@
+-- wd_0030 (STAGING 2026-07-09) — expired-load reschedule needs ONLY the new pickup.
+-- cc_partner_update_pickup: when delivery not given, delivery_date auto-shifts by the
+-- same delta as the pickup move (never lands before pickup); explicit delivery still wins.
+-- Guard: explicit delivery before new pickup -> error. Returns delivery_date for the toast.
+-- Frontend: reschedule modal shows pickup only + "delivery moves automatically" note;
+-- manual delivery fields tucked in an optional <details> fold.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

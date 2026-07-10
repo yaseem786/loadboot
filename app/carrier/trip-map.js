@@ -8,7 +8,7 @@
 // • External navigation row (Google / Waze / phone chooser) like inDrive —
 //   navigate anywhere, proof always lands in LoadBoot
 // • Manual buttons remain as fallback when GPS is flaky
-import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin } from '../shared/api.js';
+import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin, pocketPostLocation } from '../shared/api.js';
 
 const RADIUS_M = 800;
 const ORANGE = '#FC5305', BLUE = '#0883F7';
@@ -478,7 +478,7 @@ export async function openTripMap(t, opts = {}) {
   async function doDepartPickup() {
     if (autoBusy) return; autoBusy = true;
     try {
-      try { await tripDepart(t.id, 'pickup'); } catch (e) { if (!/already|no open/i.test(e.message || '')) throw e; }
+      try { await tripDepart(t.id, 'pickup', me && me.lat, me && me.lng); } catch (e) { if (!/already|no open/i.test(e.message || '')) throw e; }
       try { await pocketAdvanceTrip(t.id, 'in_transit'); } catch (_) {}
       step = 'to_delivery'; setStep(t, step); await drawRoute(); paint();
       buildNav(true);
@@ -487,6 +487,17 @@ export async function openTripMap(t, opts = {}) {
     autoBusy = false;
   }
 
+  async function doDepartDelivery() {
+    if (autoBusy) return; autoBusy = true;
+    try {
+      try { await tripDepart(t.id, 'delivery', me && me.lat, me && me.lng); } catch (e) { if (!/already|no open/i.test(e.message || '')) throw e; }
+      flash('\u2713 Left the receiver \u2014 dock time recorded. Tracking ended.');
+      try { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } } catch (_) {}
+      try { if (sim.on) { sim.on = false; window.__lbSimOn = false; clearInterval(sim.timer); } } catch (_) {}
+      statEl.textContent = 'Delivery dock time is GPS-stamped \u2014 if the receiver held you past free time, the detention claim builds itself.';
+    } catch (e) { statEl.textContent = (e && e.message) || ''; }
+    autoBusy = false;
+  }
   actBtn.onclick = async () => {
     const was = actBtn.textContent; actBtn.disabled = true; actBtn.textContent = '…';
     try {
@@ -498,7 +509,8 @@ export async function openTripMap(t, opts = {}) {
       } else if (step === 'to_pickup') { await doArrive('pickup'); }
       else if (step === 'at_pickup') { await doDepartPickup(); }
       else if (step === 'to_delivery') { await doArrive('delivery'); }
-      else if (step === 'at_delivery') { await pocketAdvanceTrip(t.id, 'delivered'); step = 'done'; setStep(t, step); }
+      else if (step === 'at_delivery') { await pocketAdvanceTrip(t.id, 'delivered'); step = 'done'; setStep(t, step);
+        flash('\ud83c\udfc1 Delivered \u2713 \u2014 tracking stays ON until you leave the receiver (800 m) so your dock time is GPS-proven for detention.'); }
       else { close(); return; }
       paint();
     } catch (e) { actBtn.textContent = was; flash((e && e.message) || 'Could not update the trip.', true); }
@@ -506,8 +518,11 @@ export async function openTripMap(t, opts = {}) {
   };
 
   let firstFix = true;
+  let __lastPost = 0;
   function handleFix(f) {
     me = { lat: f.lat, lng: f.lng };
+    // Broker live tracker + blackout watchdog feed on this — throttled to every 25s.
+    if (Date.now() - __lastPost > 25000) { __lastPost = Date.now(); try { pocketPostLocation(t.id, f.lat, f.lng, null).catch(() => {}); } catch (_) {} }
     lastSpeed = f.speed != null ? f.speed : null;
     if (!meMark) meMark = L.marker([me.lat, me.lng], { icon: truckIcon }).addTo(map); else meMark.setLatLng([me.lat, me.lng]);
     try { if (f.heading != null && meMark._icon) meMark._icon.firstChild.style.transform = 'rotate(' + Math.round(f.heading) + 'deg)'; } catch (_) {}
@@ -525,6 +540,7 @@ export async function openTripMap(t, opts = {}) {
       if (step === 'to_pickup' && onway && dm <= RADIUS_M) doArrive('pickup');
       else if (step === 'at_pickup' && P && hav(me.lat, me.lng, P.lat, P.lng) > RADIUS_M + 150) doDepartPickup();
       else if (step === 'to_delivery' && dm <= RADIUS_M) doArrive('delivery');
+      else if ((step === 'at_delivery' || step === 'done') && D && hav(me.lat, me.lng, D.lat, D.lng) > RADIUS_M + 150) doDepartDelivery();
     }
     paint();
   }
@@ -558,7 +574,7 @@ export async function openTripMap(t, opts = {}) {
   // approach → auto check-in at pickup → 80s dock time (detention proof builds, free time 0)
   // → auto departure → highway → auto check-in at delivery. Everything real except the wheels.
   async function toggleSim() {
-    if (sim.on) { sim.on = false; clearInterval(sim.timer); simBtn.textContent = '🧪'; flash('Simulation stopped'); return; }
+    if (sim.on) { sim.on = false; window.__lbSimOn = false; clearInterval(sim.timer); simBtn.textContent = '🧪'; flash('Simulation stopped'); return; }
     if (!P || !D) { alert('Stops are not pinned yet — wait a moment.'); return; }
     const rt = await osrmRoute(P, D, false);
     const road = rt ? rt.latlngs : [[P.lat, P.lng], [D.lat, D.lng]];
@@ -566,7 +582,7 @@ export async function openTripMap(t, opts = {}) {
     const approach = []; for (let i2 = 0; i2 <= 13; i2++) approach.push([a0.lat + (P.lat - a0.lat) * i2 / 13, a0.lng + (P.lng - a0.lng) * i2 / 13]);
     const stepN = Math.max(1, Math.floor(road.length / 220));
     sim.path = approach.concat(road.filter((_, i2) => i2 % stepN === 0), [[D.lat, D.lng]]);
-    sim.i = 0; sim.on = true; sim.pauseUntil = 0; sim.pausedOnce = false; simBtn.textContent = '⏹';
+    sim.i = 0; sim.on = true; window.__lbSimOn = true; sim.pauseUntil = 0; sim.pausedOnce = false; simBtn.textContent = '⏹';
     onway = true; localStorage.setItem(stKey(t.id, 'onway'), '1');
     follow = true;
     say('Navigation started.');
@@ -580,7 +596,7 @@ export async function openTripMap(t, opts = {}) {
         return;
       }
       const pt2 = sim.path[sim.i];
-      if (!pt2) { sim.on = false; clearInterval(sim.timer); simBtn.textContent = '🧪'; flash('🏁 Simulation complete — mark it delivered'); return; }
+      if (!pt2) { sim.on = false; window.__lbSimOn = false; clearInterval(sim.timer); simBtn.textContent = '🧪'; flash('🏁 Simulation complete — mark it delivered'); return; }
       const prev = sim.path[Math.max(0, sim.i - 1)];
       const hd2 = 90 - Math.atan2(pt2[0] - prev[0], pt2[1] - prev[1]) * 180 / Math.PI;
       handleFix({ lat: pt2[0], lng: pt2[1], speed: 16, heading: hd2 });

@@ -107,7 +107,10 @@ export async function renderPremiumAccount(host, ctx) {
       : '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.28),rgba(217,119,6,.12));color:#fcd34d;border-color:rgba(217,119,6,.4)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> PENDING VERIFICATION</div>';
 
   const dp = (await getDispatchPrefs().catch(() => ({}))) || {};
-  const eqSel = (v) => ['Dry Van', 'Reefer', 'Flatbed', 'Power Only'].map((o) => '<option' + ((dp.preferred_equipment || []).indexOf(o) >= 0 ? ' selected' : '') + '>' + o + '</option>').join('');
+  const eqSel = () => ['Dry Van', 'Reefer', 'Flatbed', 'Power Only', 'Step Deck', 'Box Truck', 'Hotshot'].map((o) => {
+    const on = (dp.preferred_equipment || []).indexOf(o) >= 0;
+    return '<label style="display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1.5px solid ' + (on ? '#0883F7' : 'var(--border,#334155)') + ';background:' + (on ? 'rgba(8,131,247,.14)' : 'transparent') + ';cursor:pointer;font-size:.82rem;font-weight:700;margin:0 6px 6px 0"><input type="checkbox" class="acx-eqc" value="' + o + '"' + (on ? ' checked' : '') + ' style="accent-color:#0883F7">' + o + '</label>';
+  }).join('');
 
   host.innerHTML = ''
     + '<div class="acx">'
@@ -144,7 +147,7 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div id="acx-bizmsg" class="cp-row-s" style="margin-top:8px"></div>'
     +   '<div style="margin-top:10px;display:flex;gap:8px">' + (!compliant && _stageRev ? '<button class="btn ghost sm" disabled style="opacity:.55;cursor:default">&#9203; In review \u2014 editing locked</button>' : '<button class="btn ghost sm" id="acx-bizchange">Change verified details</button>') + '<button class="btn sm" id="acx-bizsave">Save</button></div></div>'
     + '<div class="card" id="s-disp"><div class="sec-h"><div class="sec-ico ic-orange">' + sic('truck') + '</div><div class="sec-t">Dispatch preferences</div></div><div class="sec-s">Drives the load-matching engine — better in, better loads.</div>'
-    +   '<div class="grid2"><div class="field"><label>Equipment</label><select id="acx-eq">' + eqSel() + '</select></div><div class="field"><label>Home base</label><input id="acx-home" value="' + esc(dp.home_base || '') + '"></div>'
+    +   '<div class="grid2"><div class="field"><label>Equipment — select ALL you run</label><div id="acx-eq" style="display:flex;flex-wrap:wrap">' + eqSel() + '</div></div><div class="field"><label>Home base</label><input id="acx-home" value="' + esc(dp.home_base || '') + '"></div>'
     +   '<div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Max deadhead (mi)</label><input id="acx-dead" value="' + esc(dp.max_deadhead_miles || '') + '"></div><div class="field"><label>Target rate ($/mi)</label><input id="acx-target" value="' + esc(dp.target_rpm || '') + '"></div><div class="field"><label>Max weight (lbs)</label><input id="acx-weight" value="' + esc(dp.max_weight_lbs || '') + '"></div></div>'
     +   '<div class="field"><label>Preferred lanes</label><input id="acx-lanes" value="' + esc((dp.preferred_lanes || []).join(', ')) + '"></div>'
     +   '<div class="grid2"><div class="field"><label>Shortest trip (mi)</label><input id="acx-tripmin" value="' + esc(dp.min_trip_miles || '') + '"></div><div class="field"><label>Longest trip (mi)</label><input id="acx-tripmax" value="' + esc(dp.max_trip_miles || '') + '"></div></div>'
@@ -323,7 +326,7 @@ export async function renderPremiumAccount(host, ctx) {
     try {
       await setDispatchPrefs({
         min_rpm: (root.querySelector('#acx-minrpm').value || '').trim() || null,
-        preferred_equipment: (function () { const v9 = [root.querySelector('#acx-eq').value].filter(Boolean); if (!v9.length) { alert('Equipment type is REQUIRED \u2014 brokers match and offer loads by equipment. Pick what you run.'); throw new Error('equipment required'); } return v9; })(),
+        preferred_equipment: (function () { const v9 = Array.from(root.querySelectorAll('.acx-eqc:checked')).map(c9 => c9.value); if (!v9.length) { alert('Equipment type is REQUIRED \u2014 brokers match and offer loads by equipment. Select ALL you run.'); throw new Error('equipment required'); } return v9; })(),
         preferred_lanes: (root.querySelector('#acx-lanes').value || '').split(',').map((x) => x.trim()).filter(Boolean),
         home_base: (root.querySelector('#acx-home').value || '').trim() || null,
         max_deadhead_miles: (root.querySelector('#acx-dead').value || '').trim() || null,
