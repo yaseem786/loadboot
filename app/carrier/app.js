@@ -10,7 +10,7 @@ import {
   pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
-  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember,
+  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
   carrierUploadDocument, carrierListDocuments, fmcsaVerify, carrierAgreementSignature, carrierW9,
   emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
@@ -21,10 +21,10 @@ import {
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
-  submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip,
+  submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
-  rateCounterparty, myRating,
+  rateCounterparty, myRating, carrierRateableTrips, pocketMarkAllNotificationsRead,
   postTruck, myTruckPostings, truckPostingMatches, updateTruckPosting, scanTruckMatches,
   expenseAdd, expenseList, expenseDelete,
   iftaSet, iftaSummary, truckSetMaintenance, fleetMaintenance,
@@ -103,7 +103,11 @@ function lbFutureDate(inputEl, label) {
   return true;
 }
 function lbNotifDest(n, p) {
-  if (p && p.url && p.url.indexOf('#') >= 0) { const t = p.url.split('#')[1]; if (t) return t; }
+  const TABS9 = ['dashboard', 'health', 'loads', 'trips', 'profile', 'fleet', 'finance', 'documents', 'rates', 'notifications', 'account', 'reinstate', 'onboarding', 'support'];
+  const key9 = String((n && n.template_key) || '').toLowerCase();
+  // trip/tracking alerts ALWAYS belong on My Loads, whatever the stored url says
+  if (/^trip\.|^tracking/.test(key9)) return 'trips';
+  if (p && p.url && p.url.indexOf('#') >= 0) { const t = p.url.split('#')[1]; if (t && TABS9.indexOf(t.replace(/^\//, '')) >= 0) return t.replace(/^\//, ''); }
   const txt = (((p && p.title) || '') + ' ' + ((n && n.template_key) || '')).toLowerCase();
   if (/reinstat|plan of action|poa|paused|more information/.test(txt)) return 'reinstate';
   if (/document|coi|insurance|w-?9|agreement|authority|upload/.test(txt)) return 'documents';
@@ -147,6 +151,67 @@ const havMi = (a, b, c, d) => { const R = 3959, t = Math.PI / 180, dLat = (c - a
   return R * 2 * Math.asin(Math.min(1, Math.sqrt(x))); };
 const STATUS_TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray', active: 'green' };
 const FRIENDLY_STATUS = { planned: 'Booked — ready to start', dispatched: 'At pickup', in_transit: 'On the road', delivered: 'Delivered', invoiced: 'Invoiced', cancelled: 'Cancelled' };
+// A load whose pickup DAY has already passed is EXPIRED — it stays visible but cannot be booked
+// until the broker updates its schedule.
+function lbExpired(l) { if (!l || !l.pickup_date) return false; const d = new Date(String(l.pickup_date) + 'T23:59:59'); return !isNaN(d.getTime()) && d.getTime() < Date.now(); }
+// Full-trip feasibility from the driver's live GPS: location -> pickup -> delivery, with HOS.
+// Solo = 11h drive then 10h reset; Team = nonstop. Used for the board badges AND to block a
+// booking the driver physically cannot deliver on time.
+function lbFeas(l, dp) {
+  const pos = window.__lbPos;
+  let dh = (window.__lbDh && window.__lbDh[l.load_id || l.id] != null) ? Number(window.__lbDh[l.load_id || l.id]) : null;
+  if (dh == null && pos && l.pickup_lat != null && l.pickup_lng != null) dh = havMi(pos.coords.latitude, pos.coords.longitude, l.pickup_lat, l.pickup_lng) * 1.2;
+  if (dh == null) return { have: false };
+  const team = !!((dp && dp.team_drivers) || (l.details && l.details.team_required));
+  const hos = (mi) => { const d = mi / 52; return team ? d : (d + Math.floor(d / 11) * 10); };
+  const isFcfs = !!(l.accessorials && (l.accessorials.fcfs === 'true' || l.accessorials.fcfs === true));
+  const dl = (dateStr, timeStr, wnd, endOfWindow) => {
+    if (!dateStr) return null;
+    let tm = null;
+    if (timeStr && /^\d{1,2}:\d{2}/.test(String(timeStr))) tm = String(timeStr).match(/^(\d{1,2}:\d{2})/)[1];
+    else if (wnd) { const mm = String(wnd).match(/(\d{1,2}:\d{2})\s*[-\u2013]\s*(\d{1,2}:\d{2})/); if (mm) tm = endOfWindow ? mm[2] : mm[1]; }
+    const d = new Date(String(dateStr) + 'T' + (tm || (endOfWindow ? '23:59' : '17:00')));
+    return isNaN(d.getTime()) ? null : d;
+  };
+  const puDeadline = dl(l.pickup_date, l.pickup_time, l.pickup_window, isFcfs);
+  const puHoursTo = puDeadline ? (puDeadline.getTime() - Date.now()) / 3600000 : null;
+  const puEtaH = hos(dh);
+  const transitMi = Number(l.miles) > 0 ? Number(l.miles) : ((l.pickup_lat != null && l.delivery_lat != null) ? havMi(l.pickup_lat, l.pickup_lng, l.delivery_lat, l.delivery_lng) * 1.2 : null);
+  const DWELL = 2; // hours to load at pickup
+  const delDeadline = dl(l.delivery_date, l.delivery_time, l.delivery_window, true);
+  const delHoursTo = delDeadline ? (delDeadline.getTime() - Date.now()) / 3600000 : null;
+  const delEtaH = (transitMi != null) ? (puEtaH + DWELL + hos(transitMi)) : null;
+  const teamDelEtaH = (transitMi != null) ? ((dh / 52) + DWELL + (transitMi / 52)) : null;
+  const puOk = (puHoursTo == null) ? true : (puEtaH <= puHoursTo);
+  const delOk = (delEtaH == null || delHoursTo == null) ? true : (delEtaH <= delHoursTo);
+  const teamDelOk = (teamDelEtaH == null || delHoursTo == null) ? true : (teamDelEtaH <= delHoursTo);
+  return { have: true, team, dh, puEtaH, puHoursTo, puOk, transitMi, delEtaH, delHoursTo, delOk, teamDelOk };
+}
+function lbFeasChips(l, dp) {
+  const out = [];
+  const pos = window.__lbPos;
+  let dh = (window.__lbDh && window.__lbDh[l.load_id || l.id] != null) ? Number(window.__lbDh[l.load_id || l.id]) : null;
+  if (dh == null && pos && l.pickup_lat != null && l.pickup_lng != null) dh = Math.round(havMi(pos.coords.latitude, pos.coords.longitude, l.pickup_lat, l.pickup_lng) * 1.2);
+  if (dh == null) return out;
+  out.push(h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' }, '\ud83d\udccd ' + Number(dh).toLocaleString() + ' mi deadhead \u2014 live from your GPS'));
+  const f = lbFeas(l, dp);
+  const rnd = (x) => x < 10 ? Math.round(x * 10) / 10 : Math.round(x);
+  if (f.have && f.puEtaH != null && f.puHoursTo != null && f.puHoursTo > -24) {
+    let bg, col, txt;
+    if (f.puEtaH + 1 <= f.puHoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '\u23f1 ~' + rnd(f.puEtaH) + 'h to pickup \u2014 you\u2019ll make it'; }
+    else if (f.puEtaH <= f.puHoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '\u23f1 ~' + rnd(f.puEtaH) + 'h to pickup \u2014 tight, roll now'; }
+    else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '\u26a0 ~' + rnd(f.puEtaH) + 'h to pickup, only ' + rnd(Math.max(f.puHoursTo, 0)) + 'h left \u2014 you\u2019d be LATE'; }
+    out.push(h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (f.team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' estimate from your live position' }, txt));
+  }
+  if (f.have && f.delEtaH != null && f.delHoursTo != null) {
+    let bg, col, txt;
+    if (f.delEtaH + 2 <= f.delHoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '\ud83c\udfc1 ~' + rnd(f.delEtaH) + 'h to deliver \u2014 on time'; }
+    else if (f.delEtaH <= f.delHoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '\ud83c\udfc1 ~' + rnd(f.delEtaH) + 'h to deliver \u2014 tight'; }
+    else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '\u26a0 can\u2019t deliver in time (~' + rnd(f.delEtaH) + 'h needed, ' + rnd(Math.max(f.delHoursTo, 0)) + 'h left)'; }
+    out.push(h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (f.team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' \u2014 location\u2192pickup\u2192delivery vs the delivery schedule' }, txt));
+  }
+  return out;
+}
 const pill = (s) => h('span', { class: 'cp-pill ' + (STATUS_TONE[s] || 'gray') }, FRIENDLY_STATUS[s] || (s || '').replace(/_/g, ' '));
 const ic = (name) => ({
   dash: 'M3 12l9-9 9 9M5 10v10h14V10',
@@ -1220,12 +1285,17 @@ async function appView(user) {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let dash = null, comp, anns, invs;
     try {
-      [dash, comp, anns, invs] = await Promise.all([
+      let trips9 = [], rate9 = [];
+      [dash, comp, anns, invs, trips9, rate9] = await Promise.all([
         carrierDashboard().catch(() => null),
         pocketCompliance().catch(() => ({ requirements: [], mandatory_ok: ov.compliance_ok })),
         pocketAnnouncements().catch(() => []),
         pocketInvoices(50).catch(() => []),
+        pocketTrips(10).catch(() => []),
+        carrierRateableTrips(5).catch(() => []),
       ]);
+      window.__dashTrips = trips9 || [];
+      window.__dashRateables = (rate9 || []).filter(r9 => { try { return !localStorage.getItem('lb:rated:' + r9.trip_id); } catch (_) { return true; } });
     } catch (_) {}
     const d = dash || {}; const k = d.kpis || {}; const acct = d.account || {};
 
@@ -1421,7 +1491,92 @@ async function appView(user) {
       (_obDone && comp && comp.mandatory_ok === false) ? h('button', { class: 'cpx-banner red', onClick: () => go('documents') }, [h('span', null, '⚠'), h('span', null, 'Please verify your compliance documents'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
       _dueAmt > 0 ? h('button', { class: 'cpx-banner amber', onClick: () => go('finance') }, [h('span', null, 'ℹ'), h('span', null, money(_dueAmt) + ' in dispatch fees due'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
     ].filter(Boolean);
-    mount(content, h('div', null, [onbHero, ...topBanners, kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    const activeTrip9 = (window.__dashTrips || []).find(t9 => ['planned', 'dispatched', 'in_transit'].indexOf(String(t9.status || '')) >= 0);
+    if (activeTrip9) { try { ensureLiveLoc(activeTrip9.id); } catch (_) {} }
+    const tripHero9 = activeTrip9 ? (() => {
+      const t9 = activeTrip9;
+      const inTr9 = t9.status === 'in_transit';
+      const stTxt9 = inTr9 ? '\ud83d\udef0 ON THE ROAD \u2014 tracking live' : (t9.status === 'dispatched' ? '\ud83d\udced At pickup \u2014 check in / load' : '\u25b6 Booked \u2014 ready to start');
+      const cnt9 = h('b', { style: 'font-variant-numeric:tabular-nums' }, '');
+      if (t9.status === 'planned' && t9.scheduled_pickup) {
+        // drive-time hint from live GPS -> "leave by" / "ROLL NOW"
+        let leave9 = '';
+        try {
+          const pos9 = window.__lbPos;
+          if (pos9 && t9.pickup_lat != null && t9.pickup_lng != null) {
+            const dh9 = havMi(pos9.coords.latitude, pos9.coords.longitude, t9.pickup_lat, t9.pickup_lng) * 1.2;
+            const driveMs9 = (dh9 / 52) * 3600000;
+            const leaveAt9 = new Date(t9.scheduled_pickup).getTime() - driveMs9 - 20 * 60000; // 20 min buffer
+            leave9 = { at: leaveAt9, dh: Math.round(dh9), h: Math.round((dh9 / 52) * 10) / 10 };
+          }
+        } catch (_) {}
+        const tick9 = () => {
+          if (cnt9.__t && !cnt9.isConnected) { clearInterval(cnt9.__t); return; }
+          const ms9 = new Date(t9.scheduled_pickup).getTime() - Date.now();
+          if (ms9 <= 0) { cnt9.textContent = '\u26a0 PICKUP OVERDUE \u2014 roll now'; cnt9.style.color = '#fecaca'; return; }
+          const hh9 = Math.floor(ms9 / 3600000), mm9 = Math.floor((ms9 % 3600000) / 60000);
+          let txt9 = '\u23f1 Pickup in ' + (hh9 > 0 ? hh9 + 'h ' : '') + mm9 + 'm \u00b7 due ' + new Date(t9.scheduled_pickup).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          if (leave9) {
+            if (Date.now() >= leave9.at) { txt9 += '  \u00b7  \ud83d\udd34 ROLL NOW \u2014 ~' + leave9.h + 'h drive (' + leave9.dh + ' mi), leave immediately to make it'; cnt9.style.color = '#fecaca'; }
+            else { txt9 += '  \u00b7  \ud83d\ude9b leave by ' + new Date(leave9.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' (~' + leave9.h + 'h drive \u00b7 ' + leave9.dh + ' mi)'; }
+          }
+          cnt9.textContent = txt9;
+        };
+        tick9(); cnt9.__t = setInterval(tick9, 30000);
+      } else cnt9.textContent = '';
+      return h('div', {
+        style: 'position:relative;overflow:hidden;border-radius:18px;padding:18px 20px;margin-bottom:14px;cursor:pointer;background:linear-gradient(120deg,#0b1a33,#10305e 55%,#0883F7);border:1.5px solid rgba(8,131,247,.55);box-shadow:0 18px 44px -18px rgba(8,131,247,.5)',
+        onClick: () => go('loads'),
+      }, [
+        h('div', { style: 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(600px 200px at 85% -20%,rgba(252,83,5,.25),transparent 60%)' }),
+        h('div', { style: 'display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;position:relative' }, [
+          h('div', null, [
+            h('div', { style: 'display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 12px;font-size:.7rem;font-weight:800;color:#fff;letter-spacing:.06em' }, [
+              h('span', { style: 'width:8px;height:8px;border-radius:50%;background:' + (inTr9 ? '#22c55e' : '#FC5305') + ';box-shadow:0 0 0 4px ' + (inTr9 ? 'rgba(34,197,94,.25)' : 'rgba(252,83,5,.25)') + ';animation:pulse 1.6s infinite' }),
+              'ACTIVE TRIP \u00b7 ' + stTxt9,
+            ]),
+            h('div', { style: 'font-weight:800;font-size:1.12rem;color:#fff;margin-top:9px' }, (t9.origin || '\u2014') + ' \u2192 ' + (t9.destination || '\u2014')),
+            h('div', { style: 'color:#bcd3f2;font-size:.8rem;margin-top:3px' }, [(t9.rate ? '$' + Number(t9.rate).toLocaleString() : null), (t9.miles ? Number(t9.miles).toLocaleString() + ' mi' : null)].filter(Boolean).join(' \u00b7 ')),
+            h('div', { style: 'color:#ffd7c2;font-size:.86rem;font-weight:800;margin-top:6px' }, cnt9),
+            (t9.status === 'planned') ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.38);border-radius:10px;padding:8px 12px;font-size:.76rem;line-height:1.5;color:#bbf7d0;font-weight:700;max-width:480px' },
+              '\ud83d\udef0 Tracking is ON since booking \u2014 your GPS proof records automatically (keep the app open while working this load). Tap \u201cStart your trip\u201d when you roll: it opens turn-by-turn navigation and the status then updates on its own from your movement.') : null,
+            inTr9 ? h('div', { style: 'margin-top:8px;background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.4);border-radius:10px;padding:7px 12px;font-size:.76rem;font-weight:800;color:#86efac;max-width:480px' },
+              '\ud83d\udef0 Tracking LIVE \u2014 locked on until delivery. Your GPS is your evidence.') : null,
+          ]),
+          h('button', { class: 'cp-btn', style: 'background:#FC5305;border:0;font-weight:800;box-shadow:0 10px 26px -10px rgba(252,83,5,.8)', onClick: (e9) => { e9.stopPropagation(); go('loads'); } },
+            inTr9 ? '\ud83d\uddfa Open trip map' : '\u25b6 ' + (t9.status === 'planned' ? 'Start your trip' : 'Continue trip')),
+        ]),
+      ]);
+    })() : null;
+    const rateCard9 = (window.__dashRateables && window.__dashRateables.length) ? (() => {
+      const r9 = window.__dashRateables[0];
+      const card9 = h('div', { class: 'cp-card', style: 'position:relative;border:1.5px solid rgba(245,158,11,.45);background:linear-gradient(120deg,rgba(245,158,11,.07),transparent 60%)' });
+      const dismiss9 = h('button', { title: 'Not now', style: 'position:absolute;top:10px;right:12px;border:0;background:transparent;color:#94a3b8;font-size:1.05rem;cursor:pointer;font-weight:800', onClick: () => { try { localStorage.setItem('lb:rated:' + r9.trip_id, 'skip'); } catch (_) {} card9.remove(); } }, '\u2715');
+      let stars9 = 0; const starBtns9 = [];
+      const paint9 = () => starBtns9.forEach((b9, i9) => { b9.textContent = i9 < stars9 ? '\u2b50' : '\u2606'; b9.style.filter = i9 < stars9 ? 'none' : 'grayscale(1)'; b9.style.transform = i9 < stars9 ? 'scale(1.12)' : 'scale(1)'; });
+      for (let i9 = 0; i9 < 5; i9++) starBtns9.push(h('button', { style: 'border:0;background:transparent;font-size:1.9rem;cursor:pointer;transition:transform .12s;padding:2px 4px', onClick: () => { stars9 = i9 + 1; paint9(); } }, '\u2606'));
+      const cm9 = h('input', { class: 'cp-in', placeholder: 'Optional \u2014 one line about this broker (payment, dock, communication)', style: 'margin:8px 0 0' });
+      const send9 = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px', onClick: async () => {
+        if (!stars9) { lbToast('Tap the stars first \u2014 1 to 5.', 'action', 'Pick a rating'); return; }
+        send9.disabled = true; send9.textContent = 'Sending\u2026';
+        try {
+          await rateCounterparty(r9.trip_id, stars9, cm9.value.trim() || null);
+          try { localStorage.setItem('lb:rated:' + r9.trip_id, String(stars9)); } catch (_) {}
+          card9.replaceChildren(h('div', { style: 'text-align:center;padding:8px 0' }, [
+            h('div', { style: 'font-size:1.6rem' }, '\u2705'),
+            h('div', { class: 'cp-row-t' }, 'Thanks \u2014 rated ' + stars9 + '\u2605'),
+            h('div', { class: 'cp-row-s' }, 'Your rating updates ' + (r9.broker || 'the broker') + '\u2019s live score for every carrier.'),
+          ]));
+          setTimeout(() => { try { card9.remove(); } catch (_) {} }, 3500);
+        } catch (e9) { send9.disabled = false; send9.textContent = 'Submit rating'; lbToast((e9 && e9.message) || 'Could not submit.', 'urgent', 'Rating failed'); }
+      } }, 'Submit rating');
+      card9.append(dismiss9,
+        h('div', { class: 'cp-row-t', style: 'font-size:1.02rem' }, '\u2b50 Rate this broker \u2014 ' + (r9.broker || 'your broker')),
+        h('div', { class: 'cp-row-s', style: 'margin-top:2px' }, 'Trip-verified: ' + (r9.origin || '') + ' \u2192 ' + (r9.destination || '') + ' \u00b7 your stars go on the broker\u2019s public score \u2014 payment speed, dock experience, communication'),
+        h('div', { style: 'margin-top:6px' }, starBtns9), cm9, send9);
+      return card9;
+    })() : null;
+    mount(content, h('div', null, [tripHero9, rateCard9, onbHero, ...topBanners, kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     openPrompts();
   }
 
@@ -1482,6 +1637,12 @@ async function appView(user) {
       } catch (_) {}
     })();
     mount(content, h('div', { class: 'cp-muted' }, 'Loading available loads…'));
+    let __cap9 = null; try { __cap9 = await myCapacity(); } catch (_) {}
+    const capNudge = (__cap9 && __cap9.at_capacity) ? h('div', { class: 'cp-card', style: 'border-left:4px solid #f59e0b;margin-bottom:12px' }, [
+      h('div', { class: 'cp-row-t' }, '\ud83d\ude9a All your trucks are booked (' + __cap9.active_trips + '/' + __cap9.capacity + ')'),
+      h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'You can book another load only when a truck frees up. Add another truck to book more loads at the same time \u2014 each truck runs its own load with its own driver.'),
+      h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('fleet') }, '+ Add a truck to book more'),
+    ]) : null;
     // DIRECT REQUESTS — loads a broker posted straight onto THIS carrier's profile (load_offers).
     // Broker side is already collected/approved; the carrier only has to accept before expiry.
     const reqHost = h('div');
@@ -1530,6 +1691,7 @@ async function appView(user) {
             (o.details && o.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
             o.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.15);color:#f87171;font-weight:800' }, '\u2622 HAZMAT') : null,
             (o.details && o.details.temperature) ? h('span', { class: 'cpx-chip' }, '\u2744 ' + o.details.temperature + '\u00b0F') : null,
+            ...lbFeasChips(o),
           ].filter(Boolean)));
           if (exp) {
             let _wc = false;
@@ -1623,7 +1785,8 @@ async function appView(user) {
     (async () => { try { await scanTruckMatches(); refreshUnread(); } catch (_) {} })();
     let postings = []; try { postings = await myTruckPostings(); } catch (_) { postings = []; }
     let _pk = null; try { _pk = await myOnboardingPacket(); } catch (_) {}
-    const hazVerified = !!((_pk && _pk.items) || []).find(x => x.key === 'hazmat_cert' && x.status === 'verified');
+    const hazItems9 = (((_pk && _pk.items) || []).filter(x => /^hazmat/i.test(String(x.key || ''))));
+    const hazVerified = hazItems9.length > 0 && hazItems9.every(x => ['verified', 'valid', 'approved'].indexOf(String(x.status || '').toLowerCase()) >= 0);
     const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, '🚚 Post my truck'), h('div', { class: 'cp-row-s' }, 'Tell us where your truck frees up — matching loads alert you automatically.')]),
@@ -1682,15 +1845,24 @@ async function appView(user) {
     // \ud83d\udccd REAL deadhead: one OSRM table call (live GPS \u2192 every pickup pin, road miles)
     window.__lbDh = window.__lbDh || {};
     (async () => {
+      const p9 = window.__lbPos; if (!p9 || !rows.length) return;
+      const pts9 = rows.filter(r9 => r9.pickup_lat != null && r9.pickup_lng != null).slice(0, 45);
+      if (!pts9.length) return;
+      // Road miles via OSRM; if OSRM has no route (e.g. testing from another continent) or is
+      // unreachable, fall back to straight-line x1.2 so the deadhead badge always shows something.
+      let ds9 = null;
       try {
-        const p9 = window.__lbPos; if (!p9 || !rows.length) return;
-        const pts9 = rows.filter(r9 => r9.pickup_lat != null && r9.pickup_lng != null).slice(0, 45);
-        if (!pts9.length) return;
         const coords9 = p9.coords.longitude + ',' + p9.coords.latitude + ';' + pts9.map(r9 => r9.pickup_lng + ',' + r9.pickup_lat).join(';');
         const j9 = await (await fetch('https://router.project-osrm.org/table/v1/driving/' + coords9 + '?sources=0&annotations=distance')).json();
-        const ds9 = j9 && j9.distances && j9.distances[0];
-        if (ds9) { pts9.forEach((r9, i9) => { if (ds9[i9 + 1] != null) window.__lbDh[r9.id] = Math.round(ds9[i9 + 1] / 1609.34); }); if (typeof renderList === 'function') renderList(); }
+        ds9 = j9 && j9.distances && j9.distances[0];
       } catch (_) {}
+      let any9 = false;
+      pts9.forEach((r9, i9) => {
+        let mi9 = (ds9 && ds9[i9 + 1] != null) ? Math.round(ds9[i9 + 1] / 1609.34) : null;
+        if (mi9 == null) mi9 = Math.round(havMi(p9.coords.latitude, p9.coords.longitude, r9.pickup_lat, r9.pickup_lng) * 1.2);
+        if (mi9 != null) { window.__lbDh[r9.id] = mi9; any9 = true; }
+      });
+      if (any9 && typeof renderList === 'function') renderList();
     })();
     // Advanced filters (client-side, instant — DAT-style)
     const fOrigin = h('input', { class: 'cp-in', placeholder: 'Origin (city/ST)', style: 'margin:0' });
@@ -1727,7 +1899,9 @@ async function appView(user) {
       const dp0 = await getDispatchPrefs();
       const prefsOk = !!(dp0 && dp0.min_rpm && (dp0.preferred_equipment || []).length && (dp0.preferred_lanes || []).length && dp0.home_base);
       let fleetOk = true;
-      try { const fm0 = await fleetMaintenance(); const tr0 = (fm0 && (fm0.trucks || fm0.rows)) || fm0 || []; fleetOk = Array.isArray(tr0) ? tr0.length > 0 : true; } catch (_) {}
+      try { const fm0 = await fleetMaintenance(); const tr0 = (fm0 && (fm0.trucks || fm0.rows)) || fm0 || []; fleetOk = Array.isArray(tr0) ? tr0.length > 0 : true;
+        window.__fleetEq = Array.isArray(tr0) ? tr0.map(t0 => String(t0.equipment || '').trim().toLowerCase()).filter(Boolean) : [];
+      } catch (_) {}
       let compOk = true;
       try { const ah0 = await accountHealth(); compOk = !((ah0.deductions || []).some(x => /mandatory compliance/i.test(x.label || ''))); } catch (_) {}
       if (!prefsOk || !compOk || !fleetOk) {
@@ -1742,7 +1916,7 @@ async function appView(user) {
         ]);
       }
     } catch (_) {}
-    if (!rows || !rows.length) { mount(availWrap, h('div', null, [truckCard, setupBanner, bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); mount(content, h('div', null, [tabsBar, reqHost, availWrap])); return; }
+    if (!rows || !rows.length) { mount(availWrap, h('div', null, [truckCard, setupBanner, bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); mount(content, h('div', null, [capNudge, tabsBar, reqHost, availWrap].filter(Boolean))); return; }
     renderList = () => {
       const shown = applyFilters(rows);
       const grid = document.getElementById('cp-loadgrid-host');
@@ -1776,12 +1950,59 @@ async function appView(user) {
           ]);
           return;
         }
-        if (!confirm('Request to book this load?\n\n' + (l.origin || '') + ' → ' + (l.destination || '') + '\n' + money(l.rate) + (rpm ? ' · ' + rpm : '') + '\n\nThe broker reviews your verified trust profile and approves or declines. Nothing moves and you are not committed until approved.')) return;
-        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending request…';
-        try {
-          await requestBookLoad(l.id);
-          mount(bookWrap, [h('div', { class: 'cp-row-s', style: 'color:#d97706;font-weight:700;margin-bottom:4px' }, '\u23f3 Requested — pending broker approval'), h('div', { class: 'cp-row-s' }, 'You will be notified when the broker responds. Once approved it appears in My trips.')]);
-        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request to book'; alert((e && e.message) || 'Could not send your request.'); }
+        const eqNeed9 = String(l.equipment || '').trim();
+        if (eqNeed9 && Array.isArray(window.__fleetEq) && window.__fleetEq.length && window.__fleetEq.indexOf(eqNeed9.toLowerCase()) < 0) {
+          const closeE9 = openModal('\ud83d\ude9b ' + eqNeed9 + ' equipment required', [
+            h('div', { style: 'text-align:center;padding:6px 0' }, [
+              h('div', { style: 'font-size:44px;line-height:1' }, '\ud83d\ude9b'),
+              h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'This load is for ' + eqNeed9 + ' equipment'),
+              h('div', { class: 'cp-row-s', style: 'max-width:360px;margin:0 auto' }, 'Your fleet doesn\u2019t have a ' + eqNeed9 + ' on file \u2014 brokers match and pay by equipment, so this one can\u2019t be requested. If you run a ' + eqNeed9 + ', add the truck and loads like this unlock automatically.'),
+              h('button', { class: 'cp-btn', style: 'margin-top:16px', onClick: () => { closeE9(); go('fleet'); } }, '\u2795 Add your ' + eqNeed9 + ' truck \u2192 Fleet'),
+              h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#94a3b8' }, 'Your fleet today: ' + (window.__fleetEq.map(e9 => e9.replace(/\b\w/g, c9 => c9.toUpperCase())).join(', ') || '\u2014')),
+            ]),
+          ]);
+          return;
+        }
+        if (lbExpired(l)) { openModal('\u23f0 This load has expired', [h('div', { class: 'cp-row-s' }, 'Its pickup time has already passed. The broker must update the pickup schedule before it can be booked \u2014 it stays on the board as EXPIRED until they do. You can\u2019t request it right now.')]); return; }
+        const _f = lbFeas(l, _dp);
+        if (_f.have && (!_f.delOk || !_f.puOk)) {
+          const rnd = (x) => x == null ? '?' : (x < 10 ? Math.round(x * 10) / 10 : Math.round(x));
+          openModal(!_f.delOk ? '\u26a0 You can\u2019t deliver this on time' : '\u26a0 You can\u2019t reach pickup in time', [
+            h('div', { class: 'cp-row-s' }, !_f.delOk
+              ? ('From where you are now, running ' + (_f.team ? 'team (nonstop)' : 'solo (with HOS breaks)') + ' it takes ~' + rnd(_f.delEtaH) + 'h to reach pickup and deliver \u2014 but only ~' + rnd(Math.max(_f.delHoursTo || 0, 0)) + 'h remain before the delivery appointment. You would deliver LATE.')
+              : ('It takes ~' + rnd(_f.puEtaH) + 'h to reach pickup but only ~' + rnd(Math.max(_f.puHoursTo || 0, 0)) + 'h remain before the pickup window \u2014 you\u2019d be late to pickup.')),
+            (!_f.team && !_f.delOk && _f.teamDelOk) ? h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#4ade80;font-weight:700' }, 'A TEAM (nonstop) could make it \u2014 solo cannot. Run this only if you have a co-driver.') : null,
+            h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Booking is blocked to protect your on-time score. Pick a load you can run on time.'),
+          ].filter(Boolean));
+          return;
+        }
+        const err9 = h('div', { class: 'cp-err', style: 'min-height:1em' });
+        const go9 = h('button', { class: 'cp-btn', style: 'flex:1;background:linear-gradient(120deg,#0883F7,#0967d2);font-weight:800' }, '\ud83c\udfaf Send booking request');
+        const closeB9 = openModal('\ud83c\udfaf Request to book', [
+          h('div', { style: 'background:linear-gradient(120deg,#0b1830,#14335c);border-radius:16px;padding:16px 18px;color:#fff;margin-bottom:12px' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline' }, [
+              h('div', { style: 'font-weight:800;font-size:1.05rem' }, (l.origin || '') + ' → ' + (l.destination || '')),
+              h('div', { style: 'font-weight:800;font-size:1.25rem;color:#7cc0ff' }, money(l.rate)),
+            ]),
+            h('div', { style: 'font-size:.8rem;opacity:.8;margin-top:4px' }, [rpm || null, l.equipment || null, l.miles ? Number(l.miles).toLocaleString() + ' mi' : null, l.pickup_date ? 'PU ' + l.pickup_date : null].filter(Boolean).join(' · ')),
+            h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:10px' }, lbFeasChips(l, _dp)),
+          ]),
+          (l.accessorials && (l.accessorials.detention_per_hr || l.accessorials.tonu)) ? h('div', { style: 'background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:10px 13px;font-size:.8rem;color:#0f766e;font-weight:700;margin-bottom:12px' },
+            '\ud83d\udee1 Protected in writing: detention $' + (l.accessorials.detention_per_hr || '60') + '/hr after ' + (l.accessorials.detention_free_hours || '2') + 'h · TONU $' + (l.accessorials.tonu || '250') + ' · layover $' + (l.accessorials.layover_per_day || '250') + '/day') : null,
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px' }, 'The broker reviews your verified trust profile and approves or declines. Nothing moves and you\u2019re not committed until approved — first acceptance wins the load.'),
+          err9,
+          h('div', { style: 'display:flex;gap:10px' }, [go9, h('button', { class: 'cp-btn ghost', style: 'flex:0 0 auto', onClick: () => closeB9() }, 'Cancel')]),
+        ]);
+        go9.onclick = async () => {
+          go9.disabled = true; go9.textContent = 'Sending request…';
+          try {
+            await requestBookLoad(l.id);
+            closeB9();
+            lbToast('Request sent — pending broker approval. You\u2019ll be notified the moment they respond.', 'ok', '\ud83c\udfaf Requested');
+            mount(bookWrap, [h('div', { class: 'cp-row-s', style: 'color:#d97706;font-weight:700;margin-bottom:4px' }, '\u23f3 Requested — pending broker approval'), h('div', { class: 'cp-row-s' }, 'You will be notified when the broker responds. Once approved it appears in My trips.')]);
+          } catch (e) { go9.disabled = false; go9.textContent = '\ud83c\udfaf Send booking request'; err9.textContent = (e && e.message) || 'Could not send your request.'; }
+        };
+        return;
       } }, 'Request to book');
       bookWrap.appendChild(book);
       const counter = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
@@ -2087,7 +2308,39 @@ async function appView(user) {
             : h('span', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.2);color:#c4b5fd;font-weight:800' }, '\ud83c\udfaf DIRECT REQUEST \u2014 reserved for you')) : null,
           (l.details && l.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\ud83d\udc64 Solo OK'),
           (l.details && l.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
+          lbExpired(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.2);color:#fca5a5;font-weight:800;border:1px solid rgba(239,68,68,.45)' }, '\u23f0 EXPIRED \u2014 pickup date passed, waiting on broker') : null,
           (window.__lbDh && window.__lbDh[l.id] != null) ? h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' }, '\ud83d\udccd ' + window.__lbDh[l.id].toLocaleString() + ' mi deadhead \u2014 live from your GPS') : null,
+          (function () {
+            const dh = (window.__lbDh && window.__lbDh[l.id] != null) ? Number(window.__lbDh[l.id]) : null;
+            if (dh == null || !l.pickup_date) return null;
+            const isFcfs = !!(l.accessorials && (l.accessorials.fcfs === 'true' || l.accessorials.fcfs === true));
+            let tm = null;
+            if (l.pickup_time && /^\d{1,2}:\d{2}/.test(String(l.pickup_time))) tm = String(l.pickup_time).match(/^(\d{1,2}:\d{2})/)[1];
+            else if (l.pickup_window) { const mm = String(l.pickup_window).match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/); if (mm) tm = isFcfs ? mm[2] : mm[1]; }
+            const deadline = new Date(String(l.pickup_date) + 'T' + (tm || (isFcfs ? '23:59' : '17:00')));
+            if (isNaN(deadline.getTime())) return null;
+            const hoursTo = (deadline.getTime() - Date.now()) / 3600000;
+            if (hoursTo <= -24) return null;
+            const team = !!((_dp && _dp.team_drivers) || (l.details && l.details.team_required));
+            const driveH = dh / 52;
+            const etaH = team ? driveH : (driveH + Math.floor(driveH / 11) * 10);
+            const rnd = (x) => x < 10 ? Math.round(x * 10) / 10 : Math.round(x);
+            let bg, col, txt;
+            if (etaH + 1 <= hoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '⏱ ~' + rnd(etaH) + 'h to pickup — you’ll make it'; }
+            else if (etaH <= hoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '⏱ ~' + rnd(etaH) + 'h to pickup — tight, roll now'; }
+            else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '⚠ ~' + rnd(etaH) + 'h to pickup, only ' + rnd(Math.max(hoursTo, 0)) + 'h left — you’d be LATE'; }
+            return h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' estimate from your live deadhead — leave in time or skip the load' }, txt);
+          })(),
+          (function () {
+            const _f = lbFeas(l, _dp);
+            if (!_f.have || _f.delEtaH == null || _f.delHoursTo == null) return null;
+            const rnd = (x) => x < 10 ? Math.round(x * 10) / 10 : Math.round(x);
+            let bg, col, txt;
+            if (_f.delEtaH + 2 <= _f.delHoursTo) { bg = 'rgba(34,197,94,.16)'; col = '#4ade80'; txt = '\ud83c\udfc1 ~' + rnd(_f.delEtaH) + 'h to deliver \u2014 on time'; }
+            else if (_f.delEtaH <= _f.delHoursTo) { bg = 'rgba(245,158,11,.18)'; col = '#fbbf24'; txt = '\ud83c\udfc1 ~' + rnd(_f.delEtaH) + 'h to deliver \u2014 tight'; }
+            else { bg = 'rgba(239,68,68,.16)'; col = '#fca5a5'; txt = '\u26a0 can\u2019t deliver in time (~' + rnd(_f.delEtaH) + 'h needed, ' + rnd(Math.max(_f.delHoursTo, 0)) + 'h left)'; }
+            return h('span', { class: 'cpx-chip', style: 'background:' + bg + ';color:' + col + ';font-weight:800', title: (_f.team ? 'Team (nonstop)' : 'Solo (incl. HOS breaks)') + ' \u2014 location\u2192pickup\u2192delivery vs the delivery appointment' }, txt);
+          })(),
           l.delivery_date ? h('span', { class: 'cpx-chip' }, 'DEL ' + l.delivery_date) : null,
         ].filter(Boolean)),
         h('div', { class: 'cpx-route' }, [
@@ -2108,7 +2361,7 @@ async function appView(user) {
     })();
     const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host' });
     mount(availWrap, h('div', null, [truckCard, filterBar, setupBanner, bestCard, gridHost].filter(Boolean)));
-    mount(content, h('div', null, [tabsBar, reqHost, availWrap]));
+    mount(content, h('div', null, [capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
     renderList();
   }
 
@@ -2172,6 +2425,7 @@ async function appView(user) {
         const DL = [['load_size', 'Load size'], ['pallets', 'Pallets / pieces'], ['temperature', 'Reefer temperature (\u00b0F)'], ['tarps', 'Tarps'],
           ['load_method_pickup', 'Pickup loading'], ['load_method_delivery', 'Delivery unloading'],
           ['dock_hours_pickup', 'Pickup facility hours'], ['dock_hours_delivery', 'Delivery facility hours'],
+          ['facility_contact_pickup', '\ud83d\udcde Pickup dock contact'], ['facility_contact_delivery', '\ud83d\udcde Delivery dock contact'],
           ['cargo_value', 'Cargo value (check your cargo insurance)']];
         const rows2 = DL.map(([k2, lb2]) => dx[k2] != null && dx[k2] !== '' ? line(lb2, k2 === 'cargo_value' ? '$' + Number(dx[k2]).toLocaleString() : dx[k2]) : null).filter(Boolean);
         if (dx.driver_assist_required) rows2.push(line('Driver assist', '\u26a0 REQUIRED \u2014 driver loads/unloads (paid per the rate card)'));
@@ -2232,7 +2486,7 @@ function tripStepper(status) {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let rows; try { rows = await pocketTrips(80); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Failed to load.'))); return; }
     try {
-      const act9 = (rows || []).find(r9 => /dispatched|in_transit/.test(String(r9.status || '')));
+      const act9 = (rows || []).find(r9 => /planned|dispatched|in_transit/.test(String(r9.status || '')));
       if (act9) ensureLiveLoc(act9.id);
       else if (_liveWatch != null) { stopLiveLoc(); }
     } catch (_) {}
@@ -2336,13 +2590,25 @@ function tripStepper(status) {
         ]);
       } }, t.status === 'planned' ? '\u25b6 Start your trip' : '\ud83d\uddfa Live trip') : null;
       const start = null; // status is earned by GPS check-in at the pickup — no manual Start-status button
-      const cancelBtn = (t.status === 'planned' || t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#f87171', onClick: async (ev) => {
-        const b9 = ev.currentTarget;
-        if (!confirm('Cancel this load?\n\n\u26a0 A carrier cancellation counts on your Account Health (Service reliability) for 180 days and the broker is notified. Only cancel if you truly cannot run it.')) return;
-        const why = prompt('Reason (required \u2014 the broker and dispatch see this):'); if (!why || !why.trim()) return;
-        b9.disabled = true; b9.textContent = 'Cancelling\u2026';
-        try { const r9 = await pocketCancelTrip(t.id, why.trim()); lbToast(r9.note || 'Cancelled.', 'warning', 'Load cancelled'); loadLoads(); }
-        catch (e9) { b9.disabled = false; b9.textContent = '\u2715 Cancel load'; lbToast((e9 && e9.message) || 'Could not cancel.', 'urgent'); }
+      const cancelBtn = (t.status === 'planned' || t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#f87171', onClick: async () => {
+        let prev; try { prev = await cancelPreview(t.id); } catch (_) { prev = { tier: 'standard', penalty: false, hours_to_pickup: null, message: 'The load goes back on the board.' }; }
+        const tone = !prev.penalty ? { c: '#4ade80', bd: '#22c55e', bg: 'rgba(34,197,94,.1)' } : (prev.tier === 'very_late' ? { c: '#fca5a5', bd: '#ef4444', bg: 'rgba(239,68,68,.12)' } : { c: '#fcd34d', bd: '#f59e0b', bg: 'rgba(245,158,11,.12)' });
+        const reason = h('input', { class: 'cp-in', placeholder: 'Reason (required \u2014 broker & dispatch see this)' });
+        const emsg = h('div', { class: 'cp-row-s' });
+        let closeM;
+        const doBtn = h('button', { class: 'cp-btn', style: 'flex:1;background:' + tone.bd, onClick: async (ev) => {
+          if (!reason.value.trim()) { emsg.textContent = 'A written reason is required.'; emsg.style.color = '#f87171'; return; }
+          ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Cancelling\u2026';
+          try { const r9 = await pocketCancelTrip(t.id, reason.value.trim()); if (closeM) closeM(); lbToast(r9.note || 'Cancelled.', r9.penalty ? 'urgent' : 'warning', 'Load cancelled'); loadTrips(); }
+          catch (e9) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Cancel this load'; emsg.textContent = (e9 && e9.message) || 'Could not cancel.'; emsg.style.color = '#f87171'; }
+        } }, 'Cancel this load');
+        const keepBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { if (closeM) closeM(); } }, 'Keep it');
+        closeM = openModal('Cancel this load?', [
+          h('div', { style: 'border-left:4px solid ' + tone.bd + ';background:' + tone.bg + ';border-radius:10px;padding:11px 13px;color:' + tone.c + ';font-size:.9rem;line-height:1.55' }, (prev.hours_to_pickup != null ? '\u23f1 ~' + prev.hours_to_pickup + 'h to pickup \u2014 ' : '') + prev.message),
+          h('div', { class: 'cp-row-s', style: 'margin-top:10px' }, 'Verified breakdown / emergency? Use \u201c\u26a0 Report issue \u2192 Emergency\u201d instead \u2014 it reschedules with NO penalty.'),
+          reason, emsg,
+          h('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [keepBtn, doBtn]),
+        ]);
       } }, '\u2715 Cancel load') : null;
       const deliver = (t.status === 'in_transit') ? advBtn('✓ Mark delivered', 'delivered') : null;
       // Detention protection: record REAL arrive/depart times at each stop. If a facility holds you past
@@ -2573,6 +2839,19 @@ function tripStepper(status) {
         };
         const iv = setInterval(tick, 1000); tick();
       }
+      const riskEl = h('div');
+      if (active && (t.status === 'planned' || t.status === 'dispatched')) {
+        (async () => {
+          let a; try { a = await tripPickupStatus(t.id); } catch (_) { return; }
+          if (!a || (a.risk !== 'at_risk' && a.risk !== 'late')) return;
+          const isLate = a.risk === 'late';
+          const bd = isLate ? '#ef4444' : '#f59e0b', bg = isLate ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)', col = isLate ? '#fca5a5' : '#fcd34d';
+          mount(riskEl, h('div', { style: 'margin-top:10px;padding:11px 13px;border-radius:12px;background:' + bg + ';border:1px solid ' + bd + ';color:' + col }, [
+            h('div', { style: 'font-weight:800;font-size:.95rem' }, isLate ? '\ud83d\udd34 You are LATE to pickup' : '\u23f1 Roll now \u2014 pickup at risk'),
+            h('div', { style: 'font-size:.82rem;margin-top:3px;line-height:1.5' }, (a.distance_mi ? '~' + a.distance_mi + ' mi to pickup \u00b7 ~' + a.eta_h + 'h drive. ' : '') + (isLate ? 'You have not moved toward pickup in time \u2014 move now, or tap \u201c\u26a0 Report issue \u2192 Emergency\u201d if you broke down. The broker may cancel (no TONU if you never moved).' : 'Depart now to make the pickup window.')),
+          ]));
+        })();
+      }
       if (liveMap) {
         liveMap.className = '';
         liveMap.style.cssText = 'width:100%;border:0;border-radius:14px;padding:14px;margin-top:10px;font-size:1rem;font-weight:900;cursor:pointer;background:#FC5305;color:#ffffff;box-shadow:0 0 18px rgba(252,83,5,.3);font-family:Manrope,sans-serif';
@@ -2587,7 +2866,7 @@ function tripStepper(status) {
           ]),
         ]),
         t.pickup_mode === 'fcfs' && active ? h('div', { style: 'margin-top:10px;padding:9px 13px;border-radius:12px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fbbf24;font-size:.82rem;font-weight:800' }, '\u26a1 FCFS \u2014 first come, first served \u00b7 no appointment clock, arrive within the window') : null,
-        cdEl, liveMap,
+        riskEl, cdEl, liveMap,
       ].filter(Boolean));
       const loadDetBtn = t.load_id ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(t.load_id) }, '\ud83d\udd0d Load details') : null;
       const dpackBtn = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async () => {
@@ -2639,9 +2918,40 @@ function tripStepper(status) {
         _tRow('Pickup' + (t.pickup_mode === 'fcfs' ? ' (FCFS)' : ''), t.scheduled_pickup, t.started_at),
         _tRow('Delivery', t.scheduled_delivery, t.delivered_at),
       ].filter(Boolean)) : null;
+      const _cancelled = /cancel/.test(String(t.status || '').toLowerCase());
+      const _ev = t.cancel_evidence || {};
+      const _faultCarrier = t.cancel_fault === 'carrier';
+      const _stale = t.cancel_fault === 'stale_load' || (t.cancel_evidence && t.cancel_evidence.stale);
+      const _fmtEv = (v) => { try { return new Date(v).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (_) { return v; } };
+      const tonuEvidence = (_cancelled && t.cancel_fault && t.cancelled_by === 'broker') ? (_faultCarrier
+        ? h('div', { style: 'margin-top:9px;padding:11px 13px;border-radius:11px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)' }, [
+            h('div', { style: 'font-weight:800;color:#fca5a5;font-size:.9rem' }, '⛔ No TONU — you cannot claim this load'),
+            h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'It was cancelled because your truck did not move toward pickup in time. Under the signed rate confirmation, a late / no-show carrier does NOT qualify for TONU — this is decided from your GPS, not opinion.'),
+            h('div', { style: 'margin-top:8px;padding:9px 11px;border-radius:9px;background:rgba(0,0,0,.25)' }, [
+              h('div', { style: 'font-weight:700;font-size:.78rem;color:#e5edf8;margin-bottom:3px' }, '📍 GPS evidence recorded at cancellation'),
+              _ev.distance_mi != null ? h('div', { class: 'cp-row-s' }, '• Truck was ~' + _ev.distance_mi + ' mi from pickup and ' + (_ev.moving ? 'moving' : 'NOT moving toward it')) : null,
+              _ev.must_depart_by ? h('div', { class: 'cp-row-s' }, '• You had to depart by ' + _fmtEv(_ev.must_depart_by) + ' to make the appointment') : null,
+              (_ev.hours_to_pickup != null) ? h('div', { class: 'cp-row-s' }, '• Pickup was ' + (Number(_ev.hours_to_pickup) < 0 ? Math.abs(Math.round(_ev.hours_to_pickup)) + 'h overdue' : 'in ' + Math.round(_ev.hours_to_pickup) + 'h') + ' when the load was cancelled') : null,
+              (_ev.eta_h != null) ? h('div', { class: 'cp-row-s' }, '• Your ETA to pickup was ~' + _ev.eta_h + 'h — too late for the window') : null,
+            ].filter(Boolean)),
+            h('div', { class: 'cp-row-s', style: 'margin-top:7px' }, 'Was this a verified breakdown or emergency? Use “⚠ Report issue → Emergency” to appeal — a proven emergency is never penalised.'),
+          ].filter(Boolean))
+        : h('div', { style: 'margin-top:9px;padding:11px 13px;border-radius:11px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' }, [
+            h('div', { style: 'font-weight:800;color:#4ade80;font-size:.9rem' }, _stale ? '✓ TONU owed — this load was already stale' : '✓ TONU filed for you — you were on track'),
+            h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, _stale ? 'This load’s pickup time had ALREADY passed when you booked it — the lateness isn’t yours, it was a stale listing. So a TONU is owed and it does NOT count against your reliability. A claim was auto-filed; dispatch reviews it.' : 'Your GPS showed you were moving toward pickup and on time, so the broker cancelling means a TONU is owed. A claim was auto-filed with your evidence — dispatch will review it. This does NOT count against your health. Open “💰 Pay claims” below to track it.'),
+          ].filter(Boolean))
+      ) : null;
+      const cancelInfo = _cancelled ? h('div', { style: 'margin:8px 2px 2px;padding:11px 13px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.28)' }, [
+        h('div', { style: 'font-weight:800;color:#f87171;font-size:.92rem' }, t.cancelled_by === 'broker' ? '✕ Cancelled by the broker' : '✕ Trip cancelled'),
+        t.cancel_reason ? h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'Reason: ' + t.cancel_reason) : null,
+        tonuEvidence,
+        h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'This load is no longer assigned to you. Pick up a replacement on the Load Board.'),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7;color:#fff;margin-top:9px', onClick: () => { location.hash = '#loads'; } }, '🔎 Browse Load Board'),
+      ].filter(Boolean)) : null;
       return h('div', { class: 'cp-trip' }, [
         hero,
         tripStepper(t.status),
+        cancelInfo,
         timesEl,
         chips, moreT, moreW, fw, podW, dwellW, accW, reloadW, rateW,
       ].filter(Boolean));
@@ -2708,9 +3018,10 @@ function tripStepper(status) {
     if (_liveWatch != null) { try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {} _liveWatch = null; }
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try { await pocketSetConsent(tripId, true); } catch (_) {}
-      try { await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); } catch (_) {}
+      if (!window.__lbSimOn) { try { await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); } catch (_) {} }
       _liveTrip = tripId;
       _liveWatch = navigator.geolocation.watchPosition(async (p9) => {
+        if (window.__lbSimOn) return; // simulator owns the trip position while running
         try { await pocketPostLocation(tripId, p9.coords.latitude, p9.coords.longitude, 'portal'); } catch (_) {}
       }, () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
       try { lbToast('Live tracking started automatically \u2014 it stays on until delivery (required by the rate confirmation).', 'success', '\ud83d\udef0 Tracking ON'); } catch (_) {}
@@ -2855,7 +3166,10 @@ function tripStepper(status) {
     const renderDrivers = () => mount(driverList, drivers.length ? h('div', null, drivers.map(d => h('div', { class: 'cp-trip' }, [
       h('div', { class: 'cp-trip-head' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, d.name), h('div', { class: 'cp-row-s' }, [d.phone, d.license_no ? 'Lic ' + d.license_no + (d.license_state ? ' (' + d.license_state + ')' : '') : null].filter(Boolean).join(' · ') || '—')]),
-        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => driverForm(d) }, 'Edit'),
+        h('div', { style: 'display:flex;gap:6px' }, [
+          d.id ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => inviteDriverToApp(d) }, d.user_id ? '\u2713 In app' : '\ud83d\udcf2 Invite to app') : null,
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => driverForm(d) }, 'Edit'),
+        ].filter(Boolean)),
       ]),
       d.license_exp ? h('div', { class: 'cp-row-s' }, 'License expires ' + d.license_exp + (d.medical_exp ? ' · Medical ' + d.medical_exp : '')) : null,
     ].filter(Boolean)))) : h('div', { class: 'cp-muted' }, 'No drivers yet. Add your first driver.'));
@@ -2866,6 +3180,20 @@ function tripStepper(status) {
       ]),
     ]))) : h('div', { class: 'cp-muted' }, 'No trucks yet. Add your first truck.'));
 
+    async function inviteDriverToApp(d) {
+      try {
+        const r = await carrierInviteDriver(d.id, d.email || null, d.phone || null);
+        const link = r && r.link ? r.link : '';
+        const inp = h('input', { class: 'cp-in', value: link, readonly: 'readonly', onClick: (e) => e.currentTarget.select() });
+        openModal('Invite ' + (d.name || 'driver') + ' to the app', [
+          (r && r.emailed) ? h('div', { class: 'cp-row-s', style: 'color:#16a34a;font-weight:700' }, '\u2713 Invite emailed to ' + (r.email || d.email)) : (d.email ? null : h('div', { class: 'cp-row-s', style: 'color:#d97706' }, 'No email on file \u2014 add the driver\u2019s email (Edit) to email invites automatically. For now, share the link:')),
+          h('p', { class: 'cp-row-s' }, 'Send this link to the driver. They sign up, and their phone becomes the truck\u2019s tracker \u2014 only their assigned loads, with GPS arrive/depart, POD and issue reporting.'),
+          inp,
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: () => { try { navigator.clipboard.writeText(link); lbToast('Invite link copied.', 'success', 'Copied'); } catch (_) {} } }, 'Copy link'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Link expires in 14 days. One login per driver record.'),
+        ]);
+      } catch (e) { alert((e && e.message) || 'Could not create invite.'); }
+    }
     function driverForm(d) {
       const name = h('input', { class: 'cp-in', placeholder: 'Driver name', value: (d && d.name) || '' });
       const phone = h('input', { class: 'cp-in', placeholder: 'Phone', value: (d && d.phone) || '' });
@@ -2877,13 +3205,23 @@ function tripStepper(status) {
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         if (!name.value.trim()) { alert('Driver name is required.'); return; }
         if (!lbFutureDate(lexp, 'License expiry') || !lbFutureDate(mexp, 'Medical expiry')) return;
+        // FMCSA sanity — catches typos and fake entries at the door:
+        const licV9 = lic.value.trim();
+        if (licV9 && !/^[A-Za-z0-9-]{4,20}$/.test(licV9)) { alert('License # looks wrong \u2014 CDL numbers are 4\u201320 letters/digits. Copy it exactly from the card.'); return; }
+        if (licV9 && !/^[A-Za-z]{2}$/.test(st.value.trim())) { alert('License STATE is required with the license # (2 letters, e.g. TX) \u2014 CDLs are state-issued and verified against the issuing state.'); return; }
+        if (mexp.value) { const mx9 = new Date(mexp.value); const max9 = new Date(); max9.setMonth(max9.getMonth() + 24);
+          if (mx9 > max9) { alert('DOT medical certificates are valid for a MAXIMUM of 24 months (FMCSA rule) \u2014 an expiry more than 2 years out cannot be real. Check the med card date.'); return; } }
+        if (lexp.value) { const lx9 = new Date(lexp.value); const lmax9 = new Date(); lmax9.setFullYear(lmax9.getFullYear() + 10);
+          if (lx9 > lmax9) { alert('License expiry more than 10 years out looks like a typo \u2014 check the card.'); return; } }
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
         try {
           await pocketUpsertDriver({ id: d && d.id, name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(), licenseNo: lic.value.trim(), licenseState: st.value.trim().toUpperCase(), licenseExp: lexp.value || null, medicalExp: mexp.value || null });
           drivers = await pocketDrivers(); renderDrivers();
+          try { closeD9(); } catch (_) {}
+          lbToast('\ud83d\udc64 Driver saved \u2014 valid license & medical unlock booking.', 'ok', 'Fleet updated');
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
       } }, 'Save');
-      openModal((d ? 'Edit driver' : 'Add driver'), [name, phone, email, h('div', { class: 'cp-formrow2' }, [lic, st]), h('label', { class: 'cp-row-s' }, 'License expiry'), lexp, h('label', { class: 'cp-row-s' }, 'Medical expiry'), mexp, save]);
+      const closeD9 = openModal((d ? 'Edit driver' : 'Add driver'), [name, phone, email, h('div', { class: 'cp-formrow2' }, [lic, st]), h('label', { class: 'cp-row-s' }, 'License expiry'), lexp, h('label', { class: 'cp-row-s' }, 'Medical expiry'), mexp, save]);
     }
     function truckForm(t) {
       const unit = h('input', { class: 'cp-in', placeholder: 'Unit number', value: (t && t.unit_no) || '' });
@@ -2892,20 +3230,48 @@ function tripStepper(status) {
       const eq = h('select', { class: 'cp-in' }, ['', 'Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck'].map(o => h('option', { value: o, selected: t && t.equipment === o ? 'selected' : null }, o || 'Equipment…')));
       const svc = h('input', { class: 'cp-in', type: 'date', value: (t && t.next_service_date) || '' });
       const insp = h('input', { class: 'cp-in', type: 'date', value: (t && t.inspection_exp) || '' });
+      const vinInfo = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:-4px 0 4px' });
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        const btn9 = ev.currentTarget;
         if (!unit.value.trim()) { alert('Unit number is required.'); return; }
         if (!lbFutureDate(insp, 'Inspection expiry')) return;
-        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
+        // REAL-truck check: valid 17-char VIN, decoded LIVE against U.S. DOT (NHTSA).
+        const vin9 = vin.value.trim().toUpperCase();
+        if (vin9) {
+          if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin9) || /^\d{17}$/.test(vin9)) {
+            vinInfo.textContent = '\u2715 Not a real VIN \u2014 17 characters, letters AND digits (no I, O, Q). Copy it from the door-jamb sticker or registration.';
+            vinInfo.style.color = '#f87171';
+            alert('\u26a0 \u201c' + vin9 + '\u201d is not a valid VIN.\n\nA real VIN is exactly 17 characters and mixes letters and digits (never I, O or Q). It\u2019s on the door-jamb sticker, dash plate, title and registration. Fake VINs fail verification and can pause your account.');
+            return;
+          }
+          btn9.disabled = true; btn9.textContent = 'Verifying VIN\u2026';
+          try {
+            const ctl9 = new AbortController(); const tm9 = setTimeout(() => ctl9.abort(), 7000);
+            const rV = await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/' + encodeURIComponent(vin9) + '?format=json', { signal: ctl9.signal });
+            clearTimeout(tm9);
+            const jV = await rV.json(); const dV = jV && jV.Results && jV.Results[0];
+            if (dV && dV.Make) {
+              vinInfo.textContent = '\u2713 VIN verified with U.S. DOT: ' + [dV.ModelYear, dV.Make, dV.Model].filter(Boolean).join(' ') + (dV.VehicleType ? ' \u00b7 ' + dV.VehicleType : '');
+              vinInfo.style.color = '#4ade80';
+            } else {
+              vinInfo.textContent = '\u26a0 U.S. DOT registry could not identify this VIN \u2014 double-check it against the truck. Saving anyway; verification may flag it.';
+              vinInfo.style.color = '#fbbf24';
+            }
+          } catch (_) { vinInfo.textContent = '\u26a0 VIN registry unreachable \u2014 format OK, saving. It will be verified later.'; vinInfo.style.color = '#fbbf24'; }
+        }
+        btn9.disabled = true; btn9.textContent = 'Saving\u2026';
         try {
-          await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin.value.trim(), equipment: eq.value || null });
+          await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin9 || vin.value.trim(), equipment: eq.value || null });
           trucks = await pocketTrucks();
           const saved = t && t.id ? t : trucks.find(x => x.unit_no === unit.value.trim());
           if (saved && saved.id && (svc.value || insp.value)) { try { await truckSetMaintenance(saved.id, svc.value || null, insp.value || null); } catch (_) {} }
           renderTrucks();
+          try { closeT9(); } catch (_) {}
+          lbToast('\ud83d\ude9b Truck saved' + (vinInfo.textContent.indexOf('\u2713') === 0 ? ' \u2014 VIN verified with U.S. DOT' : '') + '. Matching loads unlock on the board.', 'ok', 'Fleet updated');
         }
-        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
+        catch (e) { btn9.disabled = false; btn9.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
       } }, 'Save');
-      openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, eq,
+      const closeT9 = openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, vinInfo, eq,
         h('label', { class: 'cp-row-s' }, 'Next service due'), svc,
         h('label', { class: 'cp-row-s' }, 'Annual inspection expires'), insp, save]);
     }
@@ -2966,6 +3332,12 @@ function tripStepper(status) {
     }
     mount(content, h('div', null, [
       alertHost,
+      h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7' }, [
+        h('div', { class: 'cp-row-t' }, '\ud83d\ude9a Capacity: ' + Math.max(trucks.length, 1) + ' load' + (Math.max(trucks.length, 1) === 1 ? '' : 's') + ' at a time'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, trucks.length <= 1
+          ? 'You can run ONE load at a time. Add another truck so a second load can be booked while the first is still rolling \u2014 each truck runs its own load, with its own driver. Add the truck below, add its driver, then tap \u201cInvite to app\u201d so their phone tracks that load.'
+          : 'Each of your ' + trucks.length + ' trucks can carry its own load at the same time (' + trucks.length + ' concurrent loads). Invite each driver to the app so every truck is tracked separately.'),
+      ]),
       h('div', { class: 'cp-card' }, [
         cardHead('Drivers', drivers.length + ' total'),
         h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', onClick: () => driverForm(null) }, '+ Add driver'),
@@ -3910,7 +4282,14 @@ function tripStepper(status) {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let rows; try { rows = await pocketNotifications(60); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Could not load notifications.'))); return; }
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No notifications yet. Alerts about your loads, payments and onboarding will appear here.'))); refreshUnread(); return; }
-    const card = h('div', { class: 'cp-card' }, [cardHead('Notifications', rows.filter(n => !n.read_at).length + ' unread'), ...rows.map(n => {
+    const unread9 = rows.filter(n => !n.read_at).length;
+    const card = h('div', { class: 'cp-card' }, [cardHead('Notifications', unread9 + ' unread'),
+      unread9 ? h('div', { style: 'text-align:right;margin:-6px 0 8px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (e9) => {
+        e9.currentTarget.disabled = true;
+        try { await pocketMarkAllNotificationsRead(); } catch (_) {}
+        refreshUnread(); loadNotifications();
+      } }, '\u2713 Mark all read')) : null,
+      ...rows.map(n => {
       const p = n.payload || {};
       // Owner: every notification carries the official LoadBoot mark (real asset, not a text card),
       // with a tone-colored ring — like a native push notification showing the app icon.

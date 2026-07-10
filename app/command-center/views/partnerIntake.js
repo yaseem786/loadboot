@@ -239,13 +239,23 @@ export function renderPartnerIntake(host) {
       el('thead', null, el('tr', null, ['Broker', 'Lane', 'Equip', 'Rate', 'Pickup', 'Status', ''].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(l => {
         const act = el('td', null);
+        const exp9 = !!(l.pickup_date && new Date(String(l.pickup_date).slice(0, 10) + 'T23:59:59') < new Date());
         act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => reviewDrawer(l, loadBroker) }, '\ud83d\udd0d Review'));
         act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: () => docsDrawer(l) }, 'Docs'));
+        if (manage && exp9 && ['submitted', 'accepted'].indexOf(String(l.status || '')) >= 0) {
+          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px;background:#fef3c7;color:#92400e;border-color:#fcd34d;font-weight:800', onClick: async (ev) => {
+            ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending\u2026';
+            try { const { ccAskReschedule } = await import('../../shared/api.js'); await ccAskReschedule(l.id); ev.currentTarget.textContent = '\u2713 Broker notified'; toast('Broker emailed + notified to update the pickup schedule.', 'success'); }
+            catch (e9) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = '\u23f0 Ask reschedule'; toast((e9 && e9.message) || 'Failed', 'error'); }
+          } }, '\u23f0 Ask reschedule'));
+        }
         if (manage) act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: () => askUpdateDrawer(l) }, 'Ask update'));
-        if (manage && l.status === 'submitted') {
+        if (manage && l.status === 'submitted' && !exp9) {
           act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Quick post'));
           act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
-        } else if (manage && l.status === 'accepted') {
+        } else if (manage && l.status === 'submitted' && exp9) {
+          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
+        } else if (manage && l.status === 'accepted' && !exp9) {
           act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
         }
         return el('tr', null, [
@@ -255,7 +265,9 @@ export function renderPartnerIntake(host) {
             l.direct_carrier ? el('div', { style: 'margin-top:3px' }, el('span', { style: 'padding:2.5px 10px;border-radius:999px;font-size:.66rem;font-weight:800;background:#ede9fe;color:#6d28d9' }, '\ud83c\udfaf DIRECT \u2192 ' + l.direct_carrier)) : null,
           ].filter(Boolean)),
           el('td', null, l.equipment || '—'), el('td', null, money(l.rate)),
-          el('td', null, l.pickup_date ? fmtDateTime(l.pickup_date) : '—'), el('td', null, pill(l.status)), act,
+          el('td', null, [l.pickup_date ? fmtDateTime(l.pickup_date) : '—',
+            exp9 ? el('div', { style: 'margin-top:3px' }, el('span', { style: 'padding:2.5px 10px;border-radius:999px;font-size:.66rem;font-weight:800;background:#fee2e2;color:#b91c1c;border:1px solid #fecaca' }, '\u23f0 EXPIRED \u2014 cannot post')) : null,
+          ].filter(Boolean)), el('td', null, pill(l.status)), act,
         ]);
       })),
     ]))].filter(Boolean)));

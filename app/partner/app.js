@@ -9,18 +9,19 @@ import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange 
 import { brandLogo } from '../shared/ui/components.js';
 import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
+import { lookupCommodity, suggestCommodities } from './commodities.js';
 import { renderFmcsaOnly } from '../carrier/profile-view.js';
 import { renderMarketWidget } from '../shared/market-widget.js';
 import {
   partnerRegister, partnerOverview,
   partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
-  partnerRequestShipment, partnerMyShipments, partnerCarrierDirectory, partnerCarrierReviews, setOrgLogo, partnerLoadFull, partnerTrackLoad, marketRpm, laneRate, partnerExtendOffer, partnerCarrierPacket, partnerEligibleDetail, requestPacketCopies, shipperPostLoad,
+  partnerRequestShipment, partnerMyShipments, partnerCarrierDirectory, partnerCarrierCapacity, partnerCarrierReviews, loadPickupStatus, partnerLoadCancellations, partnerUpdatePickup, setOrgLogo, partnerLoadFull, partnerTrackLoad, marketRpm, laneRate, partnerExtendOffer, partnerOfferWithdraw, partnerCarrierPacket, partnerEligibleDetail, requestPacketCopies, shipperPostLoad,
   partnerClaims, partnerReviewClaim, claimEscalate, partnerCancelLoad, partnerEligibleCarriers, partnerOfferSend,
   myRating, rateCounterparty, partnerRateableTrips,
   bookRequestCarrierPacket,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   bookRequestsQueue, decideBookRequest, myApprovedPartners,
-  partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead,
+  partnerMyInvoices, partnerNotifications, partnerMarkNotificationRead, partnerMarkAllNotificationsRead,
   partnerGetProfile, partnerUpdateProfile,
   getPaymentInstructions, partnerSubmitInvoicePayment,
   loadChecklist, partnerChecklistSubmit, partnerUpdateRequests, partnerRespondUpdate,
@@ -86,6 +87,217 @@ function openModal(title, children, opts) {
   document.addEventListener('keydown', onEsc);
   return close;
 }
+
+/* ---------- premium toast (replaces browser alert) ---------- */
+function lbExpiredP(l) {
+  if (!l || !l.pickup_date) return false;
+  const d = new Date(String(l.pickup_date) + 'T23:59:59');
+  if (isNaN(d.getTime()) || d.getTime() >= Date.now()) return false;
+  return !/book|deliver|complete|invoiced/.test((String(l.status || '') + ' ' + String(l.board_status || '')).toLowerCase());
+}
+function openReschedule(l, after) {
+  const st8 = { team: !!(l.details && l.details.team_required) };
+  const pd = h('input', { class: 'cp-in', type: 'date' });
+  const dd = h('input', { class: 'cp-in', type: 'date' });
+  const mkT = () => h('input', { class: 'cp-in', type: 'time', style: 'max-width:130px' });
+  const puA = mkT(), puF1 = mkT(), puF2 = mkT(), deA = mkT(), deF1 = mkT(), deF2 = mkT();
+  const err = h('div', { style: 'color:#e11d48;font-size:.85rem;min-height:1em;margin-top:6px' });
+  const lbl = (t) => h('label', { style: 'display:block;font-weight:700;font-size:.78rem;color:#334155;margin:10px 0 4px' }, t);
+  const modeSt = { pu: 'FCFS', de: 'FCFS' };
+  const modeRow = (key, hostT) => {
+    const wrap = h('div', { style: 'display:flex;gap:8px;margin:4px 0 6px' });
+    const mk9 = (v9, t9, s9) => h('button', { type: 'button', style: 'flex:1;padding:9px 10px;border-radius:11px;font-weight:800;font-size:.78rem;cursor:pointer;border:1.5px solid #e2e8f0;background:#fff;color:#334155', onClick: () => { modeSt[key] = v9; paint(); } }, [h('div', null, t9), h('div', { style: 'font-weight:600;font-size:.68rem;color:#64748b;margin-top:2px' }, s9)]);
+    const b1 = mk9('FCFS', '\ud83d\ude9b FCFS', 'dock works trucks in arrival order inside a window');
+    const b2 = mk9('Appointment', '\ud83d\udcc5 Appointment', 'fixed dock time');
+    const paint = () => {
+      [b1, b2].forEach((b9, i9) => {
+        const on9 = (i9 === 0 ? 'FCFS' : 'Appointment') === modeSt[key];
+        b9.style.borderColor = on9 ? '#0883F7' : '#e2e8f0';
+        b9.style.background = on9 ? '#eff6ff' : '#fff';
+        b9.style.color = on9 ? '#1d4ed8' : '#334155';
+      });
+      hostT.replaceChildren(...(modeSt[key] === 'FCFS'
+        ? [lbl(key === 'pu' ? 'FCFS window \u2014 dock open from \u2192 to' : 'Delivery FCFS window \u2014 from \u2192 to'),
+           h('div', { style: 'display:flex;gap:8px;align-items:center' }, [key === 'pu' ? puF1 : deF1, h('span', { style: 'font-weight:800;color:#64748b' }, '\u2192'), key === 'pu' ? puF2 : deF2])]
+        : [lbl(key === 'pu' ? 'Pickup appointment time' : 'Delivery appointment time'), key === 'pu' ? puA : deA]));
+    };
+    wrap.append(b1, b2); paint();
+    return wrap;
+  };
+  const puTHost = h('div'); const deTHost = h('div');
+  const teamBtn = h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'width:100%;margin-top:10px' });
+  const paintTeam = () => {
+    teamBtn.textContent = st8.team ? '\ud83d\udc65 TEAM drivers: ON \u2014 nonstop driving \u00b7 tap for solo' : '\ud83d\udc65 Tight schedule? Require TEAM drivers (2 drivers, nonstop)';
+    teamBtn.style.background = st8.team ? '#f59e0b' : ''; teamBtn.style.color = st8.team ? '#fff' : '';
+  };
+  paintTeam();
+  teamBtn.onclick = () => { st8.team = !st8.team; paintTeam(); err.textContent = ''; };
+  // pre-fill: pickup tomorrow, delivery auto-shift preview
+  const iso9 = (d9) => d9.toISOString().slice(0, 10);
+  pd.value = iso9(new Date(Date.now() + 86400000));
+  const shift9 = () => {
+    if (!pd.value || !l.pickup_date || !l.delivery_date) return;
+    const delta9 = (new Date(pd.value) - new Date(String(l.pickup_date))) / 86400000;
+    const nd9 = new Date(new Date(String(l.delivery_date)).getTime() + delta9 * 86400000);
+    if (!dd.__touched) dd.value = iso9(nd9 < new Date(pd.value) ? new Date(pd.value) : nd9);
+  };
+  pd.onchange = shift9; dd.onchange = () => { dd.__touched = true; }; shift9();
+  const save = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7;color:#fff' }, 'Update & re-activate');
+  const close = openModal('\u23f0 Update schedule \u2014 ' + (l.origin || '') + ' \u2192 ' + (l.destination || ''), h('div', null, [
+    h('div', { class: 'cp-sub' }, 'This load\u2019s pickup time has passed, so carriers can\u2019t book it. Set the new schedule to re-activate it on the board.'),
+    lbl('New pickup date *'), pd,
+    lbl('Pickup scheduling'), modeRow('pu', puTHost), puTHost,
+    lbl('New delivery date (auto-shifted \u2014 adjust if needed)'), dd,
+    lbl('Delivery scheduling'), modeRow('de', deTHost), deTHost,
+    teamBtn, err,
+    h('div', { style: 'text-align:right;margin-top:12px' }, save),
+  ]));
+  save.onclick = save.onClick = async () => {
+    err.textContent = ''; err.replaceChildren();
+    if (!pd.value) { err.textContent = 'Pick a new pickup date first.'; return; }
+    const rngv = (a9, b9) => (a9.value && b9.value) ? (a9.value + '\u2013' + b9.value) : '';
+    if (modeSt.pu === 'FCFS' && puF1.value && puF2.value && puF2.value <= puF1.value) { err.textContent = 'Pickup window: \u201cto\u201d must be after \u201cfrom\u201d.'; return; }
+    if (modeSt.de === 'FCFS' && deF1.value && deF2.value && deF2.value <= deF1.value) { err.textContent = 'Delivery window: \u201cto\u201d must be after \u201cfrom\u201d.'; return; }
+    const puT9 = modeSt.pu === 'Appointment' ? puA.value : puF1.value;
+    const deT9 = modeSt.de === 'Appointment' ? deA.value : deF1.value;
+    const puDt9 = new Date(pd.value + 'T' + (puT9 || '08:00'));
+    if (puDt9.getTime() < Date.now() - 60000) { err.textContent = 'That pickup time frame has already PASSED \u2014 pick a future time.'; return; }
+    if (dd.value) {
+      const deDt9 = new Date(dd.value + 'T' + (deT9 || '23:59'));
+      if (!(deDt9 > puDt9)) { err.textContent = 'Delivery must be AFTER the pickup time frame.'; return; }
+      // HOS guard: same model as the post wizard (11h drive / 10h rest; TEAM = nonstop)
+      const driveH9 = Number(l.miles || 0) / 52;
+      if (driveH9 > 0.5) {
+        const hosT9 = driveH9 + Math.floor(driveH9 / 11) * 10;
+        const minDt9 = new Date(puDt9.getTime() + (st8.team ? driveH9 : hosT9) * 0.95 * 3600 * 1000);
+        if (deDt9 < minDt9) {
+          err.textContent = 'Not possible: ~' + Math.round(driveH9) + 'h of driving means earliest realistic delivery ' + minDt9.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + (st8.team ? ' even with TEAM drivers \u2014 move the delivery later.' : ' under HOS rules (11h drive, 10h rest). Move the delivery later \u2014 or switch to TEAM:');
+          if (!st8.team) err.appendChild(h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'display:block;margin-top:8px', onClick: () => { st8.team = true; paintTeam(); err.textContent = ''; } }, '\ud83d\udc65 Make this a TEAM load \u2014 2 drivers, nonstop'));
+          return;
+        }
+      }
+    }
+    save.disabled = true; save.textContent = 'Updating\u2026';
+    try {
+      const pv9 = modeSt.pu === 'Appointment' ? (puA.value || null) : (rngv(puF1, puF2) || null);
+      const dv9 = modeSt.de === 'Appointment' ? (deA.value || null) : (rngv(deF1, deF2) || null);
+      const r = await partnerUpdatePickup(l.id, pd.value, pv9, dd.value || null, dv9, modeSt.pu, modeSt.de, st8.team);
+      close();
+      pToast(r && r.reactivated ? 'Schedule updated \u2014 the load is back on the board and bookable.' : 'Schedule updated.', { kind: 'ok', title: '\u23f0 Rescheduled' });
+      if (after) after();
+    } catch (e) { save.disabled = false; save.textContent = 'Update & re-activate'; err.textContent = (e && e.message) || 'Could not update.'; }
+  };
+}
+function pToast(msg, opts) {
+  opts = opts || {};
+  const kind = opts.kind || 'ok'; // ok | error | info
+  const C = {
+    ok:    { bar: '#12a150', ic: '✓', bg: '#0b1220' },
+    error: { bar: '#e11d48', ic: '⚠', bg: '#0b1220' },
+    info:  { bar: '#0883F7', ic: 'ℹ', bg: '#0b1220' },
+  }[kind] || { bar: '#0883F7', ic: 'ℹ', bg: '#0b1220' };
+  let host = document.getElementById('lbToastHost');
+  if (!host) {
+    host = h('div', { id: 'lbToastHost', style: 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:100001;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;max-width:94vw' });
+    document.body.appendChild(host);
+  }
+  const t = h('div', { style: 'pointer-events:auto;min-width:280px;max-width:440px;background:' + C.bg + ';color:#fff;border-radius:14px;border:1px solid rgba(255,255,255,.08);border-left:4px solid ' + C.bar + ';box-shadow:0 18px 44px -12px rgba(2,12,30,.7);padding:13px 15px;display:flex;gap:11px;align-items:flex-start;font-family:inherit;opacity:0;transform:translateY(10px);transition:opacity .22s ease,transform .22s ease' }, [
+    h('div', { style: 'width:24px;height:24px;flex:none;border-radius:50%;background:' + C.bar + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px' }, C.ic),
+    h('div', { style: 'flex:1;font-size:.9rem;line-height:1.45;font-weight:600' }, [
+      opts.title ? h('div', { style: 'font-weight:800;margin-bottom:2px' }, opts.title) : null,
+      h('div', { style: opts.title ? 'font-weight:500;color:#cbd5e1' : '' }, msg),
+    ].filter(Boolean)),
+    h('button', { style: 'background:none;border:none;color:#94a3b8;font-size:18px;line-height:1;cursor:pointer;flex:none', onClick: () => remove() }, '×'),
+  ]);
+  host.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+  let done = false;
+  const remove = () => { if (done) return; done = true; t.style.opacity = '0'; t.style.transform = 'translateY(10px)'; setTimeout(() => t.remove(), 240); };
+  setTimeout(remove, opts.ms || (kind === 'error' ? 6000 : 4200));
+  return remove;
+}
+
+/* ---------- premium cancel-load modal (replaces confirm()/prompt()) ---------- */
+function openCancelLoadModal(l, committed, onDone) {
+  const wrap = h('div');
+  const assessBox = h('div');
+  const err = h('div', { style: 'color:#e11d48;font-size:.85rem;margin-top:8px;min-height:1em' });
+  const reason = h('textarea', { class: 'cp-in', rows: 3, placeholder: 'Reason (required — the carrier and dispatch see this)…', style: 'width:100%;box-sizing:border-box;resize:vertical;margin-top:6px' });
+  const repostBtn = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7;color:#fff' }, committed ? 'Remove carrier & re-post' : 'Re-post to board');
+  const deleteBtn = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#e11d48;color:#fff' }, 'Delete load');
+  const keepBtn = h('button', { class: 'cp-btn cp-btn-sm ghost' }, 'Keep load');
+
+  const body = h('div', null, [
+    h('div', { style: 'font-weight:700;font-size:.95rem;color:#0f172a' }, (l.origin || '—') + ' → ' + (l.destination || '—')),
+    assessBox,
+    committed
+      ? h('div', { style: 'margin-top:10px;padding:11px 12px;border-radius:11px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.86rem;line-height:1.5' }, [
+          h('b', null, '⚠ A truck is committed.'),
+          h('div', { style: 'margin-top:3px' }, 'If the driver was ON TRACK to pickup, this becomes a TONU claim (carrier is paid, GPS evidence attached). If the driver NEVER MOVED toward pickup, NO TONU is owed — the system decides from the GPS.'),
+        ])
+      : null,
+    h('div', { style: 'margin-top:10px;padding:11px 12px;border-radius:11px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;font-size:.86rem;line-height:1.5' }, [
+      h('b', null, '↩ Re-post to board (recommended)'),
+      h('div', { style: 'margin-top:2px' }, 'Removes ' + (committed ? 'this carrier' : 'the booking') + ' and puts the load back on the load board as available — you can then offer it to another specific carrier. Choose Delete only if the load is no longer needed.'),
+    ]),
+    h('label', { style: 'display:block;font-weight:700;font-size:.8rem;color:#334155;margin-top:12px' }, 'Reason'),
+    reason, err,
+    h('div', { style: 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap' }, [keepBtn, deleteBtn, repostBtn]),
+  ].filter(Boolean));
+  mount(wrap, body);
+  const close = openModal(committed ? '⚠ Cancel this load?' : 'Cancel this load?', wrap);
+  keepBtn.onClick = close; keepBtn.onclick = close;
+
+  // Tailor the message with the live GPS fault read (best-effort).
+  if (committed) (async () => {
+    let a; try { a = await loadPickupStatus(l.id); } catch (_) { return; }
+    if (!a || (a.risk !== 'at_risk' && a.risk !== 'late')) return;
+    const carrierFault = a.fault === 'carrier';
+    mount(assessBox, h('div', { style: 'margin-top:8px;padding:10px 12px;border-radius:11px;background:' + (carrierFault ? '#fef2f2' : '#eff6ff') + ';border:1px solid ' + (carrierFault ? '#fecaca' : '#bfdbfe') + ';color:' + (carrierFault ? '#991b1b' : '#1e40af') + ';font-size:.85rem;line-height:1.5' }, [
+      h('b', null, carrierFault ? '🔴 GPS: driver never moved toward pickup' : '🟢 GPS: driver was on track'),
+      h('div', { style: 'margin-top:2px' }, (a.distance_mi ? 'Truck ~' + a.distance_mi + ' mi out (~' + a.eta_h + 'h). ' : '') + (carrierFault ? 'If you cancel now, NO TONU is owed — the carrier is at fault.' : 'If you cancel now, this is a TONU (the carrier is paid).')),
+    ]));
+  })();
+
+  const submit = async (repost, btn, busyLabel, idleLabel) => {
+    const why = reason.value.trim();
+    if (!why) { err.textContent = 'Please enter a reason — the carrier and dispatch will see it.'; reason.focus(); return; }
+    repostBtn.disabled = true; deleteBtn.disabled = true; keepBtn.disabled = true; btn.textContent = busyLabel;
+    try {
+      const r9 = await partnerCancelLoad(l.id, why, repost);
+      close();
+      pToast(r9 && r9.note ? r9.note : (repost ? 'Load re-posted to the board.' : 'Load deleted.'),
+        { kind: 'ok', title: repost ? '↩ Back on the board' : 'Load deleted' });
+      if (onDone) onDone();
+    } catch (e9) {
+      repostBtn.disabled = false; deleteBtn.disabled = false; keepBtn.disabled = false; btn.textContent = idleLabel;
+      err.textContent = (e9 && e9.message) || 'Could not complete — please try again.';
+    }
+  };
+  repostBtn.onclick = repostBtn.onClick = () => submit(true, repostBtn, 'Re-posting…', committed ? 'Remove carrier & re-post' : 'Re-post to board');
+  deleteBtn.onclick = deleteBtn.onClick = () => submit(false, deleteBtn, 'Deleting…', 'Delete load');
+}
+async function openCancellationHistory(l) {
+  const host = h('div', null, h('div', { class: 'cp-sub' }, 'Loading cancellation history…'));
+  openModal('⟲ Cancellation history — ' + (l.origin || '') + ' → ' + (l.destination || ''), host);
+  let rows; try { rows = await partnerLoadCancellations(l.id); } catch (e) { mount(host, h('div', { style: 'color:#e11d48' }, (e && e.message) || 'Could not load history.')); return; }
+  if (!rows || !rows.length) { mount(host, h('div', { class: 'cp-sub' }, 'No cancellations on record for this load.')); return; }
+  const fmt = (v) => { try { return new Date(v).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (_) { return v; } };
+  mount(host, h('div', null, rows.map(r => {
+    const ev = r.evidence || {};
+    const carrierFault = r.fault === 'carrier';
+    return h('div', { style: 'padding:11px 0;border-bottom:1px solid #e2e8f0' }, [
+      h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [
+        h('div', { style: 'font-weight:800;font-size:.9rem' }, r.carrier || 'Carrier'),
+        h('span', { style: 'font-size:.78rem;color:#64748b' }, fmt(r.cancelled_at)),
+      ]),
+      h('div', { style: 'font-size:.84rem;color:#334155;margin-top:2px' }, 'Cancelled by ' + (r.cancelled_by || '—') + (r.reason ? ' — “' + r.reason + '”' : '')),
+      h('div', { style: 'margin-top:4px;display:inline-block;padding:3px 9px;border-radius:999px;font-size:.74rem;font-weight:800;background:' + (carrierFault ? '#fef2f2;color:#b91c1c' : (r.fault === 'broker' ? '#eff6ff;color:#1e40af' : '#f1f5f9;color:#475569')) }, carrierFault ? 'Carrier at fault — no TONU owed' : (r.fault && r.fault !== 'none' ? 'Fault: ' + r.fault : 'No fault recorded')),
+      (ev && (ev.distance_mi != null || ev.eta_h != null)) ? h('div', { style: 'font-size:.78rem;color:#64748b;margin-top:4px' }, 'GPS evidence: ~' + (ev.distance_mi != null ? ev.distance_mi + ' mi out' : '') + (ev.eta_h != null ? ', ~' + ev.eta_h + 'h ETA' : '') + (ev.moving === false ? ', not moving' : '')) : null,
+    ].filter(Boolean));
+  })));
+}
+
 
 /* ---------- smart packet submit (same pattern as the carrier portal) ---------- */
 const PACKET_RULES = {
@@ -310,6 +522,11 @@ function notifBell() {
     mount(panel, [h('div', { class: 'cp-notif-head', style: 'display:flex;align-items:center;gap:8px' }, [
       h('span', { html: '<svg width="18" height="19" viewBox="16 14 68 72"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#10223B"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#10223B"/></svg>', style: 'line-height:0' }),
       h('span', null, 'Notifications'),
+      ns.some(n9 => !n9.read_at) ? h('button', { style: 'margin-left:auto;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:4px 12px;font-size:.72rem;font-weight:800;cursor:pointer', onClick: async (e9) => {
+        e9.stopPropagation(); e9.currentTarget.disabled = true;
+        try { await partnerMarkAllNotificationsRead(); } catch (_) {}
+        refresh(); load();
+      } }, '\u2713 Mark all read') : null,
     ])].concat(ns.map(n => h('div', {
       class: 'cp-notif' + (n.read_at ? '' : ' unread'),
       onClick: async () => {
@@ -326,6 +543,11 @@ function notifBell() {
           n.body ? h('div', { class: 'cp-notif-b' }, n.body) : null,
           h('div', { class: 'cp-notif-time' }, fmtDT(n.created_at)),
         ]),
+        n.read_at ? null : h('button', { title: 'Mark read', style: 'flex:none;border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;padding:3px 9px;font-size:.68rem;font-weight:800;cursor:pointer;margin-top:2px', onClick: async (e9) => {
+          e9.stopPropagation(); e9.currentTarget.disabled = true;
+          try { await partnerMarkNotificationRead(n.id); } catch (_) {}
+          n.read_at = new Date().toISOString(); refresh(); load();
+        } }, 'Mark read'),
       ]),
     ]))));
   }
@@ -824,7 +1046,9 @@ function brokerCarriersPage() {
       h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
         h('button', { class: 'cn-ghost', onClick: () => openReviews(c) }, '\u2b50 Reviews'),
         c.dot ? h('button', { class: 'cn-ghost', onClick: () => openFmcsa(c) }, '\ud83d\udee1 Live FMCSA profile') : null,
-        h('button', { class: 'cn-cta', onClick: () => { directCarrier = { id: c.id, name: c.name }; if (bgoHook) { bgoHook('dashboard'); if (window.__lbOpenPost) window.__lbOpenPost(); } } }, '\ud83c\udfaf Post a load to this carrier'),
+        (c.at_capacity
+          ? h('button', { class: 'cn-cta', disabled: 'disabled', style: 'opacity:.55;cursor:not-allowed;background:#64748b', title: 'All of this carrier\u2019s trucks are on active loads' }, '\ud83d\ude9a All trucks booked')
+          : h('button', { class: 'cn-cta', onClick: () => { directCarrier = { id: c.id, name: c.name }; if (bgoHook) { bgoHook('dashboard'); if (window.__lbOpenPost) window.__lbOpenPost(); } } }, '\ud83c\udfaf Post a load to this carrier')),
       ].filter(Boolean)),
     ].filter(Boolean))]);
   };
@@ -851,7 +1075,9 @@ function brokerCarriersPage() {
     ].filter(Boolean)),
     h('div', { class: 'cn-foot' }, [
       h('button', { class: 'cn-ghost', onClick: () => openProfile(c) }, 'View full profile'),
-      h('button', { class: 'cn-cta', onClick: () => { directCarrier = { id: c.id, name: c.name }; if (bgoHook) { bgoHook('dashboard'); if (window.__lbOpenPost) window.__lbOpenPost(); } } }, '\ud83c\udfaf Post a load to this carrier'),
+      (c.at_capacity
+          ? h('button', { class: 'cn-cta', disabled: 'disabled', style: 'opacity:.55;cursor:not-allowed;background:#64748b', title: 'All of this carrier\u2019s trucks are on active loads' }, '\ud83d\ude9a All trucks booked')
+          : h('button', { class: 'cn-cta', onClick: () => { directCarrier = { id: c.id, name: c.name }; if (bgoHook) { bgoHook('dashboard'); if (window.__lbOpenPost) window.__lbOpenPost(); } } }, '\ud83c\udfaf Post a load to this carrier')),
     ]),
   ]);
 
@@ -900,6 +1126,10 @@ function brokerCarriersPage() {
   mount(grid, [1, 2, 3].map(() => h('div', { class: 'cn-skel' })));
   (async () => {
     try { all = (await partnerCarrierDirectory()) || []; } catch (_) { all = []; }
+    try {
+      const ids = all.map(c => c.id).filter(Boolean);
+      if (ids.length) { const cap = await partnerCarrierCapacity(ids); all.forEach(c => { const k = cap && cap[c.id]; if (k) { c.at_capacity = !!k.at_capacity; c.available_trucks = k.available; c.active_trips = k.active_trips; } }); }
+    } catch (_) {}
     const tTrucks = all.reduce((a, c) => a + ((c.trucks || 0) || c.power_units || 0), 0);
     const tDel = all.reduce((a, c) => a + (c.delivered || 0), 0);
     const hs = all.map(c => Number(c.health)).filter(x => !isNaN(x) && x > 0);
@@ -1018,7 +1248,10 @@ async function brokerDash(user, ov) {
   const stepHost = h('div');
   const STEPS = ['Lane', 'Schedule', 'Equipment & commodity', 'Requirements', 'Review'];
   let step = 0, confirmDup = false, prevStep = 0;
-  const wi = (label, key, type) => { const i = inp(label, type || 'text'); i.value = w[key] || ''; i.oninput = () => { w[key] = i.value; }; return field(label, i); };
+  // reactive=true => re-render the step live on each keystroke (market estimate, TEAM check, etc.)
+  // stay wired even after the value is cleared and retyped, with focus + caret preserved.
+  function renderStepFocus(fkey, caret) { renderStep(); try { const el = stepHost.querySelector('[data-fkey="' + fkey + '"]'); if (el) { el.focus(); if (el.type !== 'number' && caret != null) { try { el.setSelectionRange(caret, caret); } catch (_) {} } } } catch (_) {} }
+  const wi = (label, key, type, reactive) => { const i = inp(label, type || 'text'); i.value = w[key] || ''; i.setAttribute('data-fkey', key); i.oninput = () => { w[key] = i.value; if (reactive) { let c = null; try { c = i.selectionStart; } catch (_) {} renderStepFocus(key, c); } }; return field(label, i); };
   const toggle = (label, key) => { const b = h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; b.className = 'cp-btn ghost' + (w[key] ? ' on' : ''); b.textContent = label + ': ' + (w[key] ? 'Yes' : 'No'); } }, label + ': ' + (w[key] ? 'Yes' : 'No')); return b; };
   function renderStep() {
     let body;
@@ -1100,6 +1333,13 @@ async function brokerDash(user, ov) {
         modeSel('sched_del'),
         wi('Delivery date *', 'delivery_date', 'date'),
         w.sched_del === 'Appointment' ? tOne('Delivery appointment time *', 'del_appt') : (w.sched_del === 'FCFS' ? tRange('FCFS window \u2014 dock open from \u2192 to *', 'delivery_window') : null),
+        (() => {
+          const tx8 = (label8, key8, ph8) => { const a8 = h('input', { class: 'cp-in', type: 'text', placeholder: ph8 || '', style: 'margin:0' }); a8.value = w[key8] || ''; a8.oninput = () => { w[key8] = a8.value; }; return field(label8, a8); };
+          return h('div', { style: 'grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:6px' }, [
+            tx8('Pickup dock contact (optional \u2014 goes to the driver)', 'fac_pu', 'e.g. Shipping office \u00b7 (414) 555-0192'),
+            tx8('Delivery dock contact (optional \u2014 goes to the driver)', 'fac_del', 'e.g. Receiving \u00b7 (404) 555-0138'),
+          ]);
+        })(),
       ].filter(Boolean));
       try {
         const today = new Date().toISOString().slice(0, 10);
@@ -1138,10 +1378,48 @@ async function brokerDash(user, ov) {
             return hint9;
           })() : null,
           sl('Load size *', 'load_size', ['Full truckload (FTL)', 'Partial (LTL)']),
-          wi('Commodity *', 'commodity'),
+          (() => {
+            const i = inp('Start typing… e.g. frozen chicken, steel coils, drywall', 'text');
+            i.value = w.commodity || ''; i.setAttribute('data-fkey', 'commodity'); i.setAttribute('list', 'lb_comm_list'); i.setAttribute('autocomplete', 'off');
+            i.oninput = () => { w.commodity = i.value; let cc = null; try { cc = i.selectionStart; } catch (_) {} renderStepFocus('commodity', cc); };
+            return field('Commodity * (pick from the list or type your own)', i);
+          })(),
+          h('datalist', { id: 'lb_comm_list' }, suggestCommodities(w.commodity, 15).map(n => h('option', { value: n }))),
+          (() => {
+            // commodity → equipment suggester (soft: one-tap switch, warns on clear mismatch)
+            const c = (w.commodity || '').toLowerCase();
+            if (c.trim().length < 3) return null;
+            const RULES = [
+              { eq: 'Reefer', strong: true, kw: ['frozen', 'ice cream', 'ice-cream', 'gelato', 'popsicle', 'produce', 'perishable', 'refriger', 'chilled', 'cold chain', 'cold-chain', 'temperature control', 'temperature-controlled', 'temp control', 'temp-controlled', 'meat', 'beef', 'pork', 'poultry', 'chicken', 'turkey', 'bacon', 'sausage', 'deli meat', 'seafood', 'fish', 'shrimp', 'lobster', 'crab', 'salmon', 'tuna', 'dairy', 'milk', 'cheese', 'yogurt', 'yoghurt', 'egg', 'vaccine', 'pharmaceutical', 'medicine', 'insulin', 'biologic', 'flowers', 'floral', 'nursery stock', 'strawberr', 'blueberr', 'raspberr', 'berries', 'lettuce', 'spinach', 'broccoli', 'celery', 'citrus', 'melon', 'avocado', 'fresh fruit', 'fresh vegetable', 'fresh produce', 'frozen food', 'frozen meal', 'cold cut'] },
+              { eq: 'Step Deck', strong: false, kw: ['excavator', 'bulldozer', 'backhoe', 'wheel loader', 'skid steer', 'skid-steer', 'forklift', 'boom lift', 'scissor lift', 'harvester', 'combine', 'farm tractor', 'agricultural machinery', 'ag equipment', 'cnc machine', 'construction equipment', 'heavy equipment', 'heavy machinery', 'over height', 'over-height', 'oversize', 'oversized', 'paving equipment', 'road roller'] },
+              { eq: 'Flatbed', strong: true, kw: ['steel', 'coil', 'rebar', 'i-beam', 'h-beam', 'girder', 'lumber', 'timber', 'plywood', 'osb board', 'drywall', 'sheetrock', 'pipe', 'piping', 'tubing', 'conduit', 'building material', 'construction material', 'concrete', 'cement', 'precast', 'brick', 'cinder block', 'concrete block', 'masonry', 'roofing', 'shingle', 'granite', 'marble', 'stone slab', 'structural', 'sheet metal', 'scrap metal', 'utility pole', 'guardrail', 'fencing', 'scaffold', 'truss', 'decking', 'siding', 'aggregate', 'asphalt', 'machinery', 'generator', 'transformer', 'tractor'] },
+              { eq: 'Box Truck', strong: false, kw: ['last mile', 'last-mile', 'final mile', 'local delivery', 'white glove'] },
+            ];
+            let sugEq = null;
+            const dbm = lookupCommodity(w.commodity);
+            if (dbm) sugEq = dbm.eq;
+            if (!sugEq) { for (const r of RULES) { if (r.kw.some(k => c.indexOf(k) >= 0)) { sugEq = r.eq; break; } } }
+            const HZ = ['gasoline', 'diesel fuel', 'propane', 'butane', 'lpg', 'flammable', 'explosive', 'ammonia', 'chlorine', 'lithium', 'battery', 'batteries', 'paint', 'solvent', 'corrosive', ' acid', 'caustic', 'hazmat', 'hazardous', 'chemical', 'aerosol', 'oxidizer', 'radioactive', 'compressed gas', 'cryogenic', 'fireworks', 'ammunition', 'petroleum', 'ethanol', 'methanol', 'pesticide', 'fungicide', 'sulfuric'];
+            const looksHz = HZ.some(k => c.indexOf(k) >= 0);
+            const out = [];
+            if (sugEq && sugEq !== w.equipment) {
+              out.push(h('div', { style: 'grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;border-radius:12px;padding:10px 13px;font-size:.83rem;background:#eff6ff;border:1px solid #dbeafe;color:#1e40af' }, [
+                h('span', null, '💡 “' + (w.commodity || '') + '” often ships on a ' + sugEq + (w.equipment ? ' — you picked ' + w.equipment + '. Switch if that fits.' : '.')),
+                h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'white-space:nowrap', onClick: () => { w.equipment = sugEq; renderStep(); } }, 'Switch to ' + sugEq)]));
+            } else if (!sugEq && (c.indexOf('food') >= 0 || c.indexOf('grocery') >= 0 || c.indexOf('beverage') >= 0) && w.equipment === 'Dry Van') {
+              out.push(h('div', { style: 'grid-column:1/-1;background:#eff6ff;border:1px solid #dbeafe;color:#1e40af;border-radius:12px;padding:10px 13px;font-size:.83rem' }, [
+                h('span', null, '💡 Fresh / frozen / chilled food needs a '),
+                h('a', { style: 'font-weight:800;color:#0883F7;cursor:pointer', onClick: () => { w.equipment = 'Reefer'; renderStep(); } }, 'Reefer'),
+                h('span', null, ' — canned, packaged or dry goods are fine on Dry Van.')]));
+            }
+            if (looksHz && w.hazmat_sel !== 'yes') {
+              out.push(h('div', { style: 'grid-column:1/-1;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:9px 13px;font-size:.82rem' }, '☢ This looks hazmat — you’ll declare it (UN #, hazard class) in the Rate card step, and only hazmat-certified carriers will see it.'));
+            }
+            return out.length ? h('div', { style: 'grid-column:1/-1;display:grid;gap:8px' }, out) : null;
+          })(),
           wi('Weight (lb) *', 'weight', 'number'),
           wi('Pallets / pieces', 'pallets'),
-          wi('Rate ($) *', 'rate', 'number'),
+          wi('Rate ($) *', 'rate', 'number', true),
           (() => {
             // \ud83d\udca1 market-rate suggester: LoadBoot baseline $/mi by equipment \u00d7 distance band \u00d7 service premiums.
             // Baselines are overridable from CC via cc_rate_standards keys (rpm_dry_van, rpm_reefer, ...).
@@ -1152,7 +1430,12 @@ async function brokerDash(user, ov) {
             const FLOOR = { 'Dry Van': 2.00, 'Reefer': 2.50, 'Flatbed': 2.50, 'Step Deck': 2.55, 'Conestoga': 2.60, 'Power Only': 1.80, 'Box Truck': 1.55, 'Hotshot': 2.00 };
             let rpm0 = BASE[w.equipment] || 2.10; let liveN = 0;
             let floor0 = FLOOR[w.equipment] || 2.00;
-            try { const lv = w.__mkt && w.__mkt[w.equipment]; if (lv && Number(lv.rpm) > 0 && Number(lv.n) >= 3) { rpm0 = Math.max(Number(lv.rpm), floor0); liveN = Number(lv.n); } } catch (_) {}
+            // LIVE platform-booking layer is GATED OFF until marketplace volume is meaningful.
+            // Until accepted bookings per equipment reach LIVE_MIN_N within 30 days, the estimate
+            // uses market/baseline lane rates only (no "LIVE · N bookings" badge, no thin-sample skew).
+            // To switch it back on once volume grows, lower LIVE_MIN_N (e.g. to 8–12).
+            const LIVE_MIN_N = 9999;
+            try { const lv = w.__mkt && w.__mkt[w.equipment]; if (lv && Number(lv.rpm) > 0 && Number(lv.n) >= LIVE_MIN_N) { rpm0 = Math.max(Number(lv.rpm), floor0); liveN = Number(lv.n); } } catch (_) {}
             try { const f9 = 'floor_' + w.equipment.toLowerCase().replace(/[^a-z]+/g, '_'); if (w.__stds && w.__stds[f9]) floor0 = Number(w.__stds[f9]) || floor0; } catch (_) {}
             try { const k9 = 'rpm_' + w.equipment.toLowerCase().replace(/[^a-z]+/g, '_'); if (w.__stds && w.__stds[k9]) rpm0 = Number(w.__stds[k9]) || rpm0; } catch (_) {}
             const distF = mi9 < 250 ? 1.35 : mi9 < 500 ? 1.15 : mi9 <= 1000 ? 1.0 : 0.92;
@@ -1191,31 +1474,75 @@ async function brokerDash(user, ov) {
             if (!w.__stds && !w.__stds_p) { w.__stds_p = true; (async () => { try { const m9 = {}; ((await rateStandards()) || []).forEach(r9 => { m9[r9.key] = r9.value; }); w.__stds = m9; } catch (_) {} try { w.__mkt = (await marketRpm()) || {}; } catch (_) {} })(); }
             return wrap9;
           })(),
-          (w.team_required && w.rate && w.miles && Number(w.miles) > 0) ? h('div', { class: 'cp-sub', style: 'grid-column:1/-1;color:'  + ((Number(w.rate) / Number(w.miles)) < 2.2 ? '#b45309' : '#0f766e') },
-            '\ud83d\udc65 TEAM pricing check: your rate = $' + (Number(w.rate) / Number(w.miles)).toFixed(2) + '/mi. Team freight books at solo +20\u201330% (\u2248 +$0.40\u20130.60/mi) \u2014 under-priced team loads sit unbooked.') : null,
+          (w.team_required && w.rate && w.miles && Number(w.miles) > 0) ? (() => {
+            const tRpm = Number(w.rate) / Number(w.miles);
+            const TEAM_MIN_RPM = 2.20; // solo-level floor; team freight should sit 20\u201330% above this
+            const under = tRpm < TEAM_MIN_RPM;
+            return h('div', { class: 'cp-sub', style: 'grid-column:1/-1;color:' + (under ? '#b45309' : '#0f766e') },
+              (under
+                ? '\ud83d\udc65 \u26a0 TEAM pricing check: $' + tRpm.toFixed(2) + '/mi is solo-level \u2014 team freight books at solo +20\u201330% (\u2248 +$0.40\u20130.60/mi), so team loads at this rate sit unbooked.'
+                : '\ud83d\udc65 \u2713 TEAM pricing check: $' + tRpm.toFixed(2) + '/mi looks healthy for team freight \u2014 20\u201330% above solo, as it should be.'));
+          })() : null,
           wi('Cargo value ($ \u2014 carrier checks cargo insurance)', 'cargo_value', 'number'),
           isReefer ? wi('Temperature (\u00b0F) \u2014 required for reefer *', 'temperature') : null,
           isFlat ? sl('Tarps', 'tarps', ['No tarps needed', '4 ft tarps', '6 ft tarps', '8 ft tarps']) : null,
           sl('Pickup loading *', 'load_method_pickup', ['Live load', 'Drop & hook', 'Preloaded trailer'], () => renderStep()),
-          sl('Delivery unloading *', 'load_method_delivery', ['Live unload', 'Drop trailer', 'Lumper service'], () => renderStep()),
+          sl('Delivery unloading *', 'load_method_delivery', ['Live unload', 'Drop trailer'], () => renderStep()),
         ].filter(Boolean)),
-        (() => { const rt = (label, key) => h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; renderStep(); } }, label + ': ' + (w[key] ? 'Yes' : 'No'));
-          return h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [rt('Driver assist required (load/unload)', 'driver_assist_required'), rt('Team drivers required', 'team_required')]); })(),
         (() => {
+          // per-stop freight handling — lumper (fee) and/or driver assist can occur at EITHER stop
+          const rt = (label, key) => h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; renderStep(); } }, label + ': ' + (w[key] ? 'Yes' : 'No'));
+          const stopRow = (stopLabel, lkey, akey) => {
+            const lc = h('input', { type: 'checkbox' }); lc.checked = !!w[lkey]; lc.onchange = () => { w[lkey] = lc.checked; renderStep(); };
+            const ac = h('input', { type: 'checkbox' }); ac.checked = !!w[akey]; ac.onchange = () => { w[akey] = ac.checked; renderStep(); };
+            const box = (cb, t9) => h('label', { style: 'display:flex;gap:7px;align-items:center;cursor:pointer;font-size:.82rem;color:#334155' }, [cb, h('span', null, t9)]);
+            return h('div', { style: 'display:flex;gap:16px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px' }, [
+              h('b', { style: 'font-size:.82rem;color:#10223B;flex:0 0 66px' }, stopLabel), box(lc, 'Lumpers load/unload (fee)'), box(ac, 'Driver assists (load/unload)')]);
+          };
+          return h('div', { style: 'margin-top:8px;display:grid;gap:8px' }, [
+            h('div', { class: 'cp-sub', style: 'font-weight:700;color:#10223B' }, 'Freight handling — tick anything that applies at each stop. Detention, layover, lumper and driver assist can all apply at BOTH pickup and delivery.'),
+            stopRow('Pickup', 'lumper_pickup', 'assist_pickup'),
+            stopRow('Delivery', 'lumper_delivery', 'assist_delivery'),
+            h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:2px' }, [rt('Team drivers required', 'team_required')]),
+          (() => {
+            if (!w.__billInit) { w.__billInit = true; try { const b9 = JSON.parse(localStorage.getItem('lb:billing') || '{}'); if (!w.doc_bn && b9.bn) { w.doc_bn = b9.bn; w.doc_be = b9.be || ''; w.doc_bp = b9.bp || ''; } } catch (_) {} }
+            const tx9 = (label9, key9, ph9) => { const a9 = h('input', { class: 'cp-in', type: 'text', placeholder: ph9 || '', style: 'margin:0' }); a9.value = w[key9] || ''; a9.oninput = () => { w[key9] = a9.value; }; return field(label9, a9); };
+            return h('details', { open: !!(w.doc_pu || w.doc_dn || w.doc_bn), style: 'grid-column:1/-1;margin-top:12px;background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:14px;padding:12px 16px' }, [
+              h('summary', { style: 'cursor:pointer;font-weight:800;font-size:.84rem;color:#334155' }, '\ud83d\udccb Already have the load paperwork? Add it now \u2014 optional, speeds up dispatch'),
+              h('div', { class: 'cp-sub', style: 'margin:8px 0 10px' }, 'Whatever you add here lands in the carrier\u2019s dispatch pack the moment the load posts. Anything you skip is collected after booking \u2014 reminders every 2 hours; 4h+ overdue pauses your new postings.'),
+              h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px' }, [
+                tx9('PU / pickup number (from the shipper)', 'doc_pu', 'e.g. PU-482913'),
+                tx9('Delivery / confirmation number', 'doc_dn', 'e.g. DEL-99120'),
+                tx9('Appointment confirmation #', 'doc_ac', 'if the facility confirmed one'),
+                tx9('Appt confirmed time', 'doc_at', 'e.g. Jul 16, 10:00 AM'),
+                tx9('Billing contact name', 'doc_bn', 'accounts payable'),
+                tx9('Billing email', 'doc_be', 'ap@company.com'),
+                tx9('Billing phone (optional)', 'doc_bp', ''),
+              ]),
+            ]);
+          })(),
+          ]);
+        })(),
+        (() => {
+          // derive combined flags consumed by the rate card + validation
+          w.driver_assist_required = !!(w.assist_pickup || w.assist_delivery);
+          w.lumper_any = !!(w.lumper_pickup || w.lumper_delivery);
           const svcs = [];
-          if (w.load_method_pickup === 'Drop & hook') svcs.push(['Drop & hook (pickup)', 'trailer stays at the facility \u2014 detention & layover clocks run per the rate card']);
-          if (w.load_method_delivery === 'Lumper service') svcs.push(['Lumper service (delivery)', 'broker pays the lumper directly or reimburses with receipt \u2014 NEVER the carrier\u2019s cost']);
+          if (w.load_method_pickup === 'Drop & hook') svcs.push(['Drop & hook (pickup)', 'trailer stays at the facility — detention & layover clocks run per the rate card']);
           if (w.load_method_delivery === 'Drop trailer') svcs.push(['Drop trailer (delivery)', 'detention & layover clocks run per the rate card']);
-          if (w.driver_assist_required) svcs.push(['Driver assist (load/unload)', '$75 per stop \u2014 LoadBoot industry standard (you can set higher in the Rate card step)']);
-          if (w.team_required) svcs.push(['Team drivers', 'no separate fee \u2014 priced in the linehaul: industry standard is +20\u201330% over a solo rate (\u2248 +$0.40\u20130.60/mi), because a team runs 1,000+ mi/day nonstop with two paid drivers']);
+          const lstops = [w.lumper_pickup ? 'pickup' : null, w.lumper_delivery ? 'delivery' : null].filter(Boolean);
+          if (lstops.length) svcs.push(['Lumper at ' + lstops.join(' & '), 'broker pays the lumper directly or reimburses with receipt — NEVER the carrier’s cost (set the Lumper policy in the Rate card step)']);
+          const astops = [w.assist_pickup ? 'pickup' : null, w.assist_delivery ? 'delivery' : null].filter(Boolean);
+          if (astops.length) svcs.push(['Driver assist at ' + astops.join(' & '), '$75 per stop — LoadBoot industry standard (you can set higher in the Rate card step)']);
+          if (w.team_required) svcs.push(['Team drivers', 'no separate fee — priced in the linehaul: industry standard is +20–30% over a solo rate (≈ +$0.40–0.60/mi), because a team runs 1,000+ mi/day nonstop with two paid drivers']);
           if (!svcs.length) { w.svc_rates_ok = false; return null; }
           const cb = h('input', { type: 'checkbox' }); cb.checked = !!w.svc_rates_ok; cb.onchange = () => { w.svc_rates_ok = cb.checked; };
           return h('div', { style: 'margin-top:10px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:12px 14px' }, [
-            h('div', { style: 'font-weight:800;font-size:.85rem;color:#9a3412;margin-bottom:6px' }, '\ud83e\uddfe Extra services you selected \u2014 industry-standard rates apply'),
-            ...svcs.map(([t9, d9]) => h('div', { style: 'display:flex;gap:8px;padding:5px 0;border-bottom:1px dashed #fed7aa;font-size:.8rem;color:#7c2d12' }, [h('b', { style: 'flex:0 0 auto' }, '\u2022 ' + t9 + ':'), h('span', null, d9)])),
+            h('div', { style: 'font-weight:800;font-size:.85rem;color:#9a3412;margin-bottom:6px' }, '🧾 Extra services you selected — industry-standard rates apply'),
+            ...svcs.map(([t9, d9]) => h('div', { style: 'display:flex;gap:8px;padding:5px 0;border-bottom:1px dashed #fed7aa;font-size:.8rem;color:#7c2d12' }, [h('b', { style: 'flex:0 0 auto' }, '• ' + t9 + ':'), h('span', null, d9)])),
             h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:9px;cursor:pointer;font-size:.8rem;color:#7c2d12;line-height:1.5' }, [cb,
-              h('span', null, ['I agree these services are payable at the ', h('b', null, 'LoadBoot industry-standard rates'), ' (or higher if I set more in the Rate card step) \u2014 they appear on the rate confirmation and the carrier can claim them with proof. ',
-                h('a', { href: '/lumper-policy.html', target: '_blank', rel: 'noopener' }, 'Lumper'), ' \u00b7 ', h('a', { href: '/driver-assist-policy.html', target: '_blank', rel: 'noopener' }, 'Driver assist'), ' \u00b7 ', h('a', { href: '/detention-pay-policy.html', target: '_blank', rel: 'noopener' }, 'Detention')]),
+              h('span', null, ['I agree these services are payable at the ', h('b', null, 'LoadBoot industry-standard rates'), ' (or higher if I set more in the Rate card step) — they appear on the rate confirmation and the carrier can claim them with proof. ',
+                h('a', { href: '/lumper-policy.html', target: '_blank', rel: 'noopener' }, 'Lumper'), ' · ', h('a', { href: '/driver-assist-policy.html', target: '_blank', rel: 'noopener' }, 'Driver assist'), ' · ', h('a', { href: '/detention-pay-policy.html', target: '_blank', rel: 'noopener' }, 'Detention')]),
             ]),
           ]);
         })(),
@@ -1223,17 +1550,79 @@ async function brokerDash(user, ov) {
       ]);
     }
     else if (step === 3) body = h('div', null, [
-      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'A carrier must be able to book without a single phone call — every rate below is REQUIRED before this load can post. By posting you agree these rates apply to this load.'),
-      (() => { const b = h('button', { class: 'cp-btn ghost cp-btn-sm', style: 'margin-bottom:8px', onClick: async () => { let m = {}; try { (await rateStandards() || []).forEach(r => { m[r.key] = r.value; }); } catch (_) {} w.acc_detention_per_hr = m.detention_per_hr || '60'; w.acc_detention_free_hours = m.detention_free_hours || '2'; w.acc_layover_per_day = m.layover_per_day || '250'; w.acc_tonu = m.tonu || '250'; w.acc_driver_assist = m.driver_assist || '75'; w.acc_extra_stop = m.extra_stop || '50'; w.acc_lumper_policy = m.lumper_policy || 'Reimbursed with receipt'; renderStep(); } }, 'Use industry-typical defaults ($60/hr after 2h · $250 layover · $250 TONU · lumper reimbursed)'); return b; })(),
-      h('div', { class: 'cp-formgrid' }, [
-        wi('Detention rate ($/hr) *', 'acc_detention_per_hr', 'number'),
-        wi('Free time before detention (hours) *', 'acc_detention_free_hours', 'number'),
-        wi('Layover rate ($/day) *', 'acc_layover_per_day', 'number'),
-        wi('TONU rate ($) *', 'acc_tonu', 'number'),
-        wi('Driver assist ($, if driver loads/unloads)', 'acc_driver_assist', 'number'),
-        wi('Extra stop ($ per stop)', 'acc_extra_stop', 'number'),
-      ]),
-      (() => { const sel = h('select', { class: 'cp-in' }, ['', 'Broker pays lumper directly', 'Reimbursed with receipt', 'Included in rate', 'Not covered'].map(o => h('option', { value: o }, o || 'Lumper policy *'))); sel.value = w.acc_lumper_policy || ''; sel.onchange = () => { w.acc_lumper_policy = sel.value; }; return field('Lumper policy *', sel); })(),
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'These are LoadBoot marketplace standards — pre-agreed on every load, so a carrier can book without a single phone call. You cannot post BELOW standard; you may offer ABOVE to attract carriers on a tough lane.'),
+      (() => {
+        // ---- LoadBoot standard accessorials: fixed floor, broker may raise ABOVE (never below) ----
+        const STD = { acc_detention_per_hr: 60, acc_detention_free_hours: 2, acc_layover_per_day: 250, acc_tonu: 250, acc_driver_assist: 75, acc_extra_stop: 50 };
+        const KEYMAP = { acc_detention_per_hr: 'detention_per_hr', acc_detention_free_hours: 'detention_free_hours', acc_layover_per_day: 'layover_per_day', acc_tonu: 'tonu', acc_driver_assist: 'driver_assist', acc_extra_stop: 'extra_stop' };
+        const sv = (k) => { const s = (w.__stds && Number(w.__stds[KEYMAP[k]])) || STD[k]; return s; };
+        if (!w.__stds && !w.__stds_p3) { w.__stds_p3 = true; (async () => { try { const m = {}; ((await rateStandards()) || []).forEach(r => { m[r.key] = r.value; }); w.__stds = w.__stds || m; } catch (_) {} try { renderStep(); } catch (_) {} })(); }
+        // auto-init always-on protections to standard so nothing is ever blank or below floor
+        ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu'].forEach(k => { if (w[k] === undefined || w[k] === '' || Number(w[k]) < sv(k)) w[k] = String(sv(k)); });
+        if (w.acc_lumper_policy === undefined) w.acc_lumper_policy = 'Reimbursed with receipt';
+        if (w.driver_assist_required && (w.acc_driver_assist === undefined || w.acc_driver_assist === '' || Number(w.acc_driver_assist) < sv('acc_driver_assist'))) w.acc_driver_assist = String(sv('acc_driver_assist'));
+        if (w.svc_extra_stop && (w.acc_extra_stop === undefined || w.acc_extra_stop === '' || Number(w.acc_extra_stop) < sv('acc_extra_stop'))) w.acc_extra_stop = String(sv('acc_extra_stop'));
+        const row = (title, key, std, unit, extra) => {
+          const cur = Number(w[key]) || std; const above = cur > std; const rk = '__raise_' + key;
+          const valTxt = h('b', { style: 'color:#0f766e;white-space:nowrap' }, '$' + std + unit + (above ? ' → $' + cur + unit + ' (above)' : ''));
+          const raiseBtn = h('a', { style: 'font-size:.74rem;font-weight:800;color:#0883F7;cursor:pointer;white-space:nowrap', onClick: () => { w[rk] = !w[rk]; renderStep(); } }, w[rk] ? 'Cancel' : (above ? 'Edit' : 'Offer above ▸'));
+          const parts = [h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap' }, [h('span', null, [h('b', null, title), extra ? h('span', { class: 'cp-sub' }, ' · ' + extra) : null]), h('span', { style: 'display:flex;gap:12px;align-items:center' }, [valTxt, raiseBtn])])];
+          if (w[rk]) {
+            const inpx = h('input', { class: 'cp-in', type: 'number', style: 'margin-top:6px', value: String(cur), min: String(std) });
+            inpx.oninput = () => { const n = Number(inpx.value); w[key] = (n >= std ? String(n) : String(std)); };
+            inpx.onblur = () => { if (Number(w[key]) < std) w[key] = String(std); renderStep(); };
+            parts.push(inpx);
+            parts.push(h('div', { class: 'cp-sub', style: 'color:#b45309;margin-top:3px' }, 'Minimum is the LoadBoot standard $' + std + unit + ' — you can only go higher.'));
+          }
+          return h('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 13px' }, parts);
+        };
+        const protections = h('div', { style: 'display:grid;gap:9px' }, [
+          row('Detention', 'acc_detention_per_hr', sv('acc_detention_per_hr'), '/hr', 'after ' + sv('acc_detention_free_hours') + 'h free time'),
+          row('Layover', 'acc_layover_per_day', sv('acc_layover_per_day'), '/day', 'overnight hold'),
+          row('TONU', 'acc_tonu', sv('acc_tonu'), '', 'late cancel of a confirmed load'),
+        ]);
+        const esCb = h('input', { type: 'checkbox' }); esCb.checked = !!w.svc_extra_stop;
+        esCb.onchange = () => { w.svc_extra_stop = esCb.checked; if (esCb.checked && (w.acc_extra_stop === undefined || Number(w.acc_extra_stop) < sv('acc_extra_stop'))) w.acc_extra_stop = String(sv('acc_extra_stop')); renderStep(); };
+        const optRow = (cb, label, hint, extra) => h('label', { style: 'display:flex;gap:9px;align-items:flex-start;cursor:pointer;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 13px' }, [cb, h('div', { style: 'flex:1' }, [h('b', null, label), h('div', { class: 'cp-sub' }, hint), extra ? h('div', { style: 'margin-top:8px' }, extra) : null])]);
+        const daStops = [w.assist_pickup ? 'pickup' : null, w.assist_delivery ? 'delivery' : null].filter(Boolean).join(' & ');
+        const daInfo = w.driver_assist_required
+          ? h('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 13px' }, [h('b', null, 'Driver assist — enabled at ' + daStops), h('div', { class: 'cp-sub', style: 'margin:2px 0 8px' }, 'You marked the driver loads/unloads — standard $' + sv('acc_driver_assist') + '/stop. Change it under Freight handling in the previous step.'), row('Driver assist', 'acc_driver_assist', sv('acc_driver_assist'), '/stop', '')])
+          : h('div', { class: 'cp-sub', style: 'background:#f8fafc;border:1px dashed #e2e8f0;border-radius:12px;padding:10px 12px' }, 'Driver assist not marked for this load. If the driver may work the dock at pickup or delivery, tick it under Freight handling in the previous step.');
+        const optional = h('div', { style: 'display:grid;gap:9px;margin-top:9px' }, [
+          daInfo,
+          optRow(esCb, 'Extra stops beyond pickup & delivery', 'Multi-stop load — each extra stop pays standard $' + sv('acc_extra_stop') + '/stop.', w.svc_extra_stop ? row('Extra stop', 'acc_extra_stop', sv('acc_extra_stop'), '/stop', '') : null),
+        ]);
+        const lsel = h('select', { class: 'cp-in' }, ['Reimbursed with receipt', 'Broker pays lumper directly', 'Included in rate', 'Not covered'].map(o => h('option', { value: o }, o)));
+        lsel.value = w.acc_lumper_policy || 'Reimbursed with receipt'; lsel.onchange = () => { w.acc_lumper_policy = lsel.value; renderStep(); };
+        const lump = h('div', { style: 'background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 13px;margin-top:9px' }, [h('b', null, 'Lumper policy'), h('div', { class: 'cp-sub', style: 'margin:2px 0 6px' }, 'Who pays third-party dock labor. LoadBoot standard: broker pays direct or reimburses with receipt — never the carrier.'), lsel]);
+        const agCb = h('input', { type: 'checkbox' }); agCb.checked = !!w.acc_agreed; agCb.onchange = () => { w.acc_agreed = agCb.checked; };
+        const li = (label, val, href) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed #bbf7d0;font-size:.82rem;color:#065f46' }, [
+          href ? h('a', { href: href, target: '_blank', rel: 'noopener', style: 'font-weight:700;color:#047857' }, label) : h('b', { style: 'color:#047857' }, label),
+          h('b', { style: 'white-space:nowrap;text-align:right' }, val)]);
+        const items = [
+          li('Detention', '$' + (Number(w.acc_detention_per_hr) || sv('acc_detention_per_hr')) + '/hr after ' + sv('acc_detention_free_hours') + 'h free', '/detention-pay-policy.html'),
+          li('Layover', '$' + (Number(w.acc_layover_per_day) || sv('acc_layover_per_day')) + '/day', '/layover-policy.html'),
+          li('TONU', '$' + (Number(w.acc_tonu) || sv('acc_tonu')), '/tonu-policy.html'),
+          li('Lumper', w.acc_lumper_policy || 'Reimbursed with receipt', '/lumper-policy.html'),
+        ];
+        if (w.driver_assist_required) items.push(li('Driver assist', '$' + (Number(w.acc_driver_assist) || sv('acc_driver_assist')) + '/stop', '/driver-assist-policy.html'));
+        if (w.svc_extra_stop) items.push(li('Extra stop', '$' + (Number(w.acc_extra_stop) || sv('acc_extra_stop')) + '/stop', null));
+        if (w.team_required) items.push(li('Team drivers', 'priced in linehaul (+20–30%)', null));
+        const agree = h('div', { style: 'margin-top:14px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:14px;padding:14px 16px' }, [
+          h('div', { style: 'font-weight:800;color:#065f46;font-size:.92rem;margin-bottom:3px' }, '📋 Standard marketplace terms — please review before continuing'),
+          h('div', { class: 'cp-sub', style: 'color:#047857;margin-bottom:9px;line-height:1.55' }, 'These are industry-standard protections agreed between YOU and the carrier — LoadBoot does not charge, add, or take any of them. They only apply IF the situation happens, and the carrier must prove it. Showing them upfront keeps every load transparent and dispute-proof.'),
+          h('div', null, items),
+          h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:11px;cursor:pointer;font-size:12.5px;line-height:1.6;color:#065f46' }, [agCb,
+            h('span', null, ['I have reviewed the above and ', h('b', null, 'agree these standard rates & policies apply'), ' to this load’s rate confirmation, claimable by the carrier with proof.'])]),
+        ]);
+        return h('div', null, [
+          h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:2px 0 8px' }, '🛡️ Carrier protections — standard on every load'),
+          h('div', { class: 'cp-sub', style: 'margin:-4px 0 8px' }, 'These apply at EVERY stop — pickup, delivery and any stop in between.'),
+          protections,
+          h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:14px 0 4px' }, 'Optional services for this load'),
+          optional, lump, agree,
+        ]);
+      })(),
       (() => { const sel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Hazmat? (required)'), h('option', { value: 'no' }, 'No — not hazmat'), h('option', { value: 'yes' }, 'YES — hazmat (placardable)')]);
         sel.value = w.hazmat_sel || ''; sel.onchange = () => { w.hazmat_sel = sel.value; renderStep(); }; return field('Hazmat declaration *', sel); })(),
       (w.hazmat_sel === 'yes') ? (() => {
@@ -1325,7 +1714,8 @@ async function brokerDash(user, ov) {
           sec9('\u2699\ufe0f', 'Services & handling', 2, [
             ['Pickup loading', w.load_method_pickup || '\u2014'],
             ['Delivery unloading', w.load_method_delivery || '\u2014'],
-            w.driver_assist_required ? ['Driver assist', '\u26a0 REQUIRED \u2014 paid per rate card'] : null,
+            w.lumper_any ? ['Lumper at', [w.lumper_pickup ? 'pickup' : null, w.lumper_delivery ? 'delivery' : null].filter(Boolean).join(' & ')] : null,
+            w.driver_assist_required ? ['Driver assist at', [w.assist_pickup ? 'pickup' : null, w.assist_delivery ? 'delivery' : null].filter(Boolean).join(' & ') + ' \u2014 paid per rate card'] : null,
             w.team_required ? ['Drivers', '\u26a0 TEAM required'] : null,
             w.svc_rates_ok ? ['Service rates', 'Industry-standard rates agreed \u2713'] : null,
             ['Tracking', w.tracking_required ? 'Required (live GPS)' : 'Standard GPS proof'],
@@ -1392,6 +1782,7 @@ async function brokerDash(user, ov) {
         const deT = (w.sched_del === 'Appointment' ? w.del_appt : (w.delivery_window || '').slice(0, 5)) || '23:59';
         const puDt = new Date(w.pickup_date + 'T' + puT);
         const deDt = new Date(w.delivery_date + 'T' + deT);
+        if (puDt.getTime() < Date.now() - 60000) { err.textContent = 'Pickup time frame has already PASSED \u2014 it\u2019s ' + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' now. Update your pickup schedule to a future date/time.'; return; }
         if (!(deDt > puDt)) { err.textContent = 'Delivery time frame must be in the FUTURE of the pickup time frame \u2014 fix the delivery date/time.'; return; }
         if (w.__drive_hours && w.__drive_hours > 0.5) {
           const hosT9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10;
@@ -1455,7 +1846,7 @@ async function brokerDash(user, ov) {
           if (eqs9 && eqs9.length && !eqs9.some(e => e.toLowerCase() === w.equipment.toLowerCase()))
             m2.push('\ud83c\udfaf ' + directCarrier.name + ' does NOT run ' + w.equipment + ' (their fleet: ' + eqs9.join(', ') + ') \u2014 change equipment or press \u201c\u2715 Remove target\u201d above');
         }
-        const anySvc9 = w.load_method_pickup === 'Drop & hook' || w.load_method_delivery === 'Lumper service' || w.load_method_delivery === 'Drop trailer' || w.driver_assist_required || w.team_required;
+        const anySvc9 = w.load_method_pickup === 'Drop & hook' || w.load_method_delivery === 'Drop trailer' || w.lumper_any || w.driver_assist_required || w.team_required;
         if (anySvc9 && !w.svc_rates_ok) m2.push('agree to the industry-standard rates for the extra services you selected (checkbox)');
         if (m2.length) { err.textContent = 'Required: ' + m2.join(', ') + '.'; return; }
       }
@@ -1464,7 +1855,7 @@ async function brokerDash(user, ov) {
         [['acc_detention_per_hr', 'detention rate'], ['acc_detention_free_hours', 'free hours'], ['acc_layover_per_day', 'layover rate'], ['acc_tonu', 'TONU rate']].forEach(([k, l]) => { if (w[k] === undefined || w[k] === '' || isNaN(Number(w[k])) || Number(w[k]) < 0) missing.push(l); });
         if (!w.acc_lumper_policy) missing.push('lumper policy');
         if (w.driver_assist_required && (w.acc_driver_assist === undefined || w.acc_driver_assist === '' || isNaN(Number(w.acc_driver_assist)) || Number(w.acc_driver_assist) <= 0)) missing.push('driver assist rate \u2014 you marked driver assist REQUIRED');
-        if (w.load_method_delivery === 'Lumper service' && w.acc_lumper_policy && /not covered/i.test(w.acc_lumper_policy)) missing.push('a lumper policy that covers the lumper \u2014 you selected Lumper service, so \u201cNot covered\u201d is not allowed');
+        if (w.lumper_any && w.acc_lumper_policy && /not covered/i.test(w.acc_lumper_policy)) missing.push('a lumper policy that covers the lumper \u2014 you marked a lumper stop, so \u201cNot covered\u201d is not allowed');
         if (w.hazmat_sel !== 'yes' && w.hazmat_sel !== 'no') missing.push('hazmat declaration (yes/no)');
         if (w.hazmat_sel === 'yes') {
           if (!/^\d{4}$/.test(w.hz_un || '')) missing.push('hazmat UN number (4 digits)');
@@ -1474,6 +1865,7 @@ async function brokerDash(user, ov) {
             w.hazmat_info = 'UN' + w.hz_un + ' \u00b7 Class ' + w.hz_class + (w.hz_pg ? ' \u00b7 PG ' + w.hz_pg : '') + ' \u00b7 ' + w.hz_name.trim();
         }
 
+        if (!w.acc_agreed) missing.push('agree to the LoadBoot standard accessorial rates (checkbox)');
         if (!w.emg_policy_ok) missing.push('Emergency Rescheduling Policy acceptance (required)');
         if (w.hazmat_sel === 'yes' && directCarrier) {
           const c9 = await dirCarrierInfo(directCarrier.id);
@@ -1492,12 +1884,23 @@ async function brokerDash(user, ov) {
         payload.destination = shortAddr(payload.destination_full);
         payload.hazmat = w.hazmat_sel === 'yes' ? 'true' : 'false';
         payload.hazmat_info = w.hazmat_info || null;
-        payload.accessorials = { detention_per_hr: String(w.acc_detention_per_hr), detention_free_hours: String(w.acc_detention_free_hours), layover_per_day: String(w.acc_layover_per_day), tonu: String(w.acc_tonu), driver_assist: w.acc_driver_assist ? String(w.acc_driver_assist) : null, extra_stop: w.acc_extra_stop ? String(w.acc_extra_stop) : null, lumper_policy: w.acc_lumper_policy, fcfs: w.fcfs ? 'true' : 'false' };
+        payload.accessorials = { detention_per_hr: String(w.acc_detention_per_hr), detention_free_hours: String(w.acc_detention_free_hours), layover_per_day: String(w.acc_layover_per_day), tonu: String(w.acc_tonu), driver_assist: w.acc_driver_assist ? String(w.acc_driver_assist) : null, extra_stop: w.acc_extra_stop ? String(w.acc_extra_stop) : null, lumper_policy: w.acc_lumper_policy, lumper_at: [w.lumper_pickup ? 'pickup' : null, w.lumper_delivery ? 'delivery' : null].filter(Boolean).join(',') || null, driver_assist_at: [w.assist_pickup ? 'pickup' : null, w.assist_delivery ? 'delivery' : null].filter(Boolean).join(',') || null, fcfs: w.fcfs ? 'true' : 'false' };
         ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu', 'acc_driver_assist', 'acc_extra_stop', 'acc_lumper_policy'].forEach(k => delete payload[k]);
         payload.details = { load_size: w.load_size || null, pallets: w.pallets || null, temperature: w.temperature || null, tarps: w.tarps || null,
           load_method_pickup: w.load_method_pickup || null, load_method_delivery: w.load_method_delivery || null,
           driver_assist_required: !!w.driver_assist_required, team_required: !!w.team_required, cargo_value: w.cargo_value || null,
-          dock_hours_pickup: w.dock_hours_pickup || null, dock_hours_delivery: w.dock_hours_delivery || null };
+          dock_hours_pickup: w.dock_hours_pickup || null, dock_hours_delivery: w.dock_hours_delivery || null,
+          facility_contact_pickup: (w.fac_pu || '').trim() || null, facility_contact_delivery: (w.fac_del || '').trim() || null };
+        const docs9 = {};
+        if ((w.doc_pu || '').trim()) docs9.pickup_number = 'Pickup / PU number: ' + w.doc_pu.trim();
+        if ((w.doc_dn || '').trim()) docs9.delivery_number = 'Delivery number: ' + w.doc_dn.trim();
+        if ((w.doc_ac || '').trim() || (w.doc_at || '').trim()) docs9.appointment_confirmation = [(w.doc_ac || '').trim() ? 'Confirmation #: ' + w.doc_ac.trim() : null, (w.doc_at || '').trim() ? 'Confirmed time: ' + w.doc_at.trim() : null].filter(Boolean).join(' \u00b7 ');
+        if ((w.doc_bn || '').trim() && (w.doc_be || '').trim()) {
+          docs9.billing_contact = ['Contact name: ' + w.doc_bn.trim(), 'Email: ' + w.doc_be.trim(), (w.doc_bp || '').trim() ? 'Phone: ' + w.doc_bp.trim() : null].filter(Boolean).join(' \u00b7 ');
+          try { localStorage.setItem('lb:billing', JSON.stringify({ bn: w.doc_bn.trim(), be: w.doc_be.trim(), bp: (w.doc_bp || '').trim() })); } catch (_) {}
+        }
+        ['doc_pu', 'doc_dn', 'doc_ac', 'doc_at', 'doc_bn', 'doc_be', 'doc_bp', '__billInit'].forEach(k => delete payload[k]);
+        if (Object.keys(docs9).length) payload.docs = docs9;
         if (directCarrier) { payload.details.direct_carrier_id = directCarrier.id; payload.details.direct_carrier_name = directCarrier.name; payload.details.direct_wait_minutes = w.direct_wait_minutes || '15'; }
         await partnerSubmitLoad(payload);
         err.className = 'cp-err ok'; err.textContent = '✓ Load submitted' + (directCarrier ? ' \u2014 \ud83c\udfaf direct offer to ' + directCarrier.name + ' fires automatically when dispatch posts it' : '') + ' \u2014 our dispatch team will review it and generate the document checklist.'; directCarrier = null;
@@ -1563,6 +1966,7 @@ async function brokerDash(user, ov) {
       h('div', { class: 'cp-wiz-body ' + (step >= prevStep ? 'plw-slide-r' : 'plw-slide-l') }, body), err,
       h('div', { class: 'cp-wiz-actions' }, [step > 0 ? back : h('span'), next]),
     ]));
+    if (step !== prevStep) { try { requestAnimationFrame(function () { var _c = stepHost.closest('.cp-card') || stepHost; var _y = _c.getBoundingClientRect().top + window.pageYOffset - 90; window.scrollTo({ top: _y < 0 ? 0 : _y, behavior: 'smooth' }); }); } catch (_) {} }
     prevStep = step;
   }
   renderStep();
@@ -1573,6 +1977,8 @@ async function brokerDash(user, ov) {
   async function loadList() {
     try {
       const rows = await partnerMyLoads(50);
+      let __bq9 = {};
+      try { ((await bookRequestsQueue('pending')) || []).forEach(r9 => { const k9 = [r9.origin, r9.destination, r9.equipment].join('|'); (__bq9[k9] = __bq9[k9] || []).push(r9); }); } catch (_) {}
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No loads yet. Post your first load above.')); return; }
       // Mobile-first load cards with a lifecycle stepper (submitted -> posted -> booked -> delivered).
       const BSTEPS = [['submitted', 'Submitted'], ['posted', 'Posted'], ['booked', 'Booked'], ['delivered', 'Delivered']];
@@ -1600,6 +2006,59 @@ async function brokerDash(user, ov) {
           ]),
           stepper,
           h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center' }, [
+            (() => {
+              const rqs9 = __bq9[[l.origin, l.destination, l.equipment].join('|')] || [];
+              if (!rqs9.length || /book|deliver|cancel/.test(String(l.status || '') + String(l.board_status || ''))) return null;
+              const openReqs9 = () => {
+                const host9 = h('div');
+                const closeR9 = openModal('\ud83d\ude9a ' + rqs9.length + ' booking request' + (rqs9.length === 1 ? '' : 's') + ' \u2014 ' + (l.origin || '') + ' \u2192 ' + (l.destination || ''), [
+                  h('div', { class: 'cp-sub', style: 'margin-bottom:10px' }, 'First approval wins \u2014 the load books instantly, every other request closes automatically, rate con + dispatch pack fire on their own.'),
+                  host9,
+                ], { wide: true });
+                mount(host9, rqs9.map((rq9, i9) => {
+                  const t9 = rq9.trust || {};
+                  const exp9 = rq9.expires_at ? Math.max(0, Math.round((new Date(rq9.expires_at).getTime() - Date.now()) / 60000)) : null;
+                  return h('div', { style: 'display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1.5px solid ' + (i9 === 0 ? '#fdba74' : '#e2e8f0') + ';border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 10px 28px -24px rgba(2,12,30,.35)' }, [
+                    h('div', { style: 'width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-weight:800;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex:none' }, String(rq9.carrier || 'C').replace(/Carrier /, '').charAt(0)),
+                    h('div', { style: 'min-width:0;flex:1' }, [
+                      h('div', { style: 'font-weight:800;color:#10223B' }, rq9.carrier || 'Carrier'),
+                      h('div', { class: 'cp-sub' }, [
+                        t9.trust_score != null ? '\u2b50 Trust ' + t9.trust_score + '/100' : null,
+                        t9.docs_verified != null ? t9.docs_verified + '/' + t9.docs_required + ' docs verified' : null,
+                        t9.on_time_pct != null ? t9.on_time_pct + '% on-time' : null,
+                        t9.deliveries != null ? t9.deliveries + ' deliveries' : null,
+                        exp9 != null ? '\u23f3 expires in ' + exp9 + 'm' : null,
+                      ].filter(Boolean).join(' \u00b7 ')),
+                      rq9.note ? h('div', { class: 'cp-sub', style: 'font-style:italic;margin-top:2px' }, '\u201c' + rq9.note + '\u201d') : null,
+                    ]),
+                    h('div', { style: 'display:flex;gap:8px;flex:none' }, [
+                      h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a;color:#fff;font-weight:800;padding:9px 18px', onClick: async (e9) => {
+                        e9.currentTarget.disabled = true; e9.currentTarget.textContent = 'Booking\u2026';
+                        try { await decideBookRequest(rq9.id, 'approve', null); closeR9(); pToast('\u2713 Booked to ' + (rq9.carrier || 'the carrier') + ' \u2014 rate con + dispatch pack fire automatically; other requests closed.', { kind: 'ok', title: '\ud83d\ude9a Booked' }); loadList(); }
+                        catch (e2) { e9.currentTarget.disabled = false; e9.currentTarget.textContent = '\u2713 Approve & book'; alert((e2 && e2.message) || 'Failed'); }
+                      } }, '\u2713 Approve & book'),
+                      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (e9) => {
+                        const why9 = prompt('Optional \u2014 reason for declining (the carrier sees this):') || null;
+                        e9.currentTarget.disabled = true;
+                        try { await decideBookRequest(rq9.id, 'decline', why9); rqs9.splice(i9, 1); if (!rqs9.length) { closeR9(); } loadList(); }
+                        catch (e2) { e9.currentTarget.disabled = false; alert((e2 && e2.message) || 'Failed'); }
+                      } }, 'Decline'),
+                    ]),
+                  ]);
+                }));
+              };
+              return h('button', { style: 'width:100%;display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,#fff7ed,#ffedd5 70%,#fed7aa);border:1.5px solid #fdba74;border-radius:14px;padding:11px 16px;cursor:pointer;text-align:left', onClick: openReqs9 }, [
+                h('span', { style: 'position:relative;display:inline-flex' }, [
+                  h('span', { style: 'width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem;box-shadow:0 6px 16px -6px rgba(234,88,12,.6)' }, '\ud83d\ude9a'),
+                  h('span', { style: 'position:absolute;top:-6px;right:-7px;background:#dc2626;color:#fff;font-size:.62rem;font-weight:800;border-radius:999px;min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;border:2px solid #fff' }, String(rqs9.length)),
+                ]),
+                h('span', { style: 'min-width:0;flex:1' }, [
+                  h('span', { style: 'display:block;font-weight:800;font-size:.88rem;color:#9a3412' }, rqs9.length === 1 ? ('Booking request \u2014 ' + (rqs9[0].carrier || 'carrier') + (rqs9[0].trust && rqs9[0].trust.trust_score != null ? ' \u00b7 Trust ' + rqs9[0].trust.trust_score + '/100' : '')) : rqs9.length + ' carriers want this load'),
+                  h('span', { style: 'display:block;font-size:.72rem;color:#b45309;font-weight:600' }, 'Tap to compare & approve \u2014 first approval wins, the rest close automatically'),
+                ]),
+                h('span', { class: 'cp-btn cp-btn-sm', style: 'background:#ea580c;color:#fff;font-weight:800;flex:none;pointer-events:none' }, 'Review \u2192'),
+              ]);
+            })(),
             ((l.offers_pending || 0) > 0 && l.offer_expiry) ? (() => {
               const chip9 = h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#ede9fe;color:#6d28d9' });
               const lbl9 = l.direct_carrier ? ('\ud83c\udfaf Requested to ' + l.direct_carrier) : ('\ud83d\udce3 Offered to ' + l.offers_pending + ' carrier' + (l.offers_pending === 1 ? '' : 's'));
@@ -1610,7 +2069,13 @@ async function brokerDash(user, ov) {
                 chip9.textContent = lbl9 + ' \u00b7 \u23f3 ' + m9 + ':' + String(s9).padStart(2, '0');
               };
               tick9(); chip9.__t9 = setInterval(() => { if (!chip9.isConnected) { clearInterval(chip9.__t9); return; } tick9(); }, 1000);
-              return chip9;
+              const x9 = h('button', { title: 'Withdraw this request \u2014 the carrier is notified and the load returns to the open board', style: 'border:1.5px solid #ddd6fe;background:#fff;color:#6d28d9;font-weight:900;border-radius:50%;width:22px;height:22px;line-height:1;cursor:pointer;font-size:.72rem;flex:none;display:inline-flex;align-items:center;justify-content:center', onClick: async () => {
+                if (!confirm('Withdraw this request' + (l.direct_carrier ? ' to ' + l.direct_carrier : '') + '?\n\nThe carrier will be notified and the load goes back to the open load board for everyone.')) return;
+                x9.disabled = true;
+                try { await partnerOfferWithdraw(l.id); loadList(); }
+                catch (e9) { x9.disabled = false; alert((e9 && e9.message) || 'Could not withdraw.'); }
+              } }, '\u2715');
+              return h('span', { style: 'display:inline-flex;align-items:center;gap:6px' }, [chip9, x9]);
             })() : null,
             ((l.offers_pending || 0) > 0 && l.offer_expiry) ? (() => {
               const ext9 = h('select', { class: 'cp-in', style: 'margin:0;max-width:170px;padding:6px 10px;font-size:.76rem' },
@@ -1623,16 +2088,48 @@ async function brokerDash(user, ov) {
               };
               return ext9;
             })() : null,
-            (!((l.offers_pending || 0) > 0) && String(l.board_status || '') === 'available') ? h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#dcfce7;color:#166534' }, '\ud83d\udfe2 On load board') : null,
+            (!((l.offers_pending || 0) > 0) && String(l.board_status || '') === 'available' && !lbExpiredP(l)) ? h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#dcfce7;color:#166534' }, '\ud83d\udfe2 On load board') : null,
             (/book/.test(String(l.board_status || '') + String(l.status || ''))) ? h('button', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe;cursor:pointer', title: 'View this carrier\u2019s full profile & packet', onClick: async () => {
               try { if (!__dirCache) __dirCache = (await partnerCarrierDirectory()) || []; } catch (_) { __dirCache = __dirCache || []; }
               const c9 = (__dirCache || []).find(x9 => x9.name && l.carrier && x9.name.toLowerCase() === String(l.carrier).toLowerCase());
               if (c9) openCarrierFullProfile(c9, null); else openCarrierPacket(l);
             } }, '\u2713 Booked by ' + (l.carrier || 'carrier') + ' \u2014 view profile') : null,
             (!((l.offers_pending || 0) > 0) && String(l.board_status || '') !== 'available' && idx < 2 && !/cancel|reject|book/.test((String(l.status || '') + String(l.board_status || '')).toLowerCase())) ? h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#fef3c7;color:#92400e' }, '\u23f3 Board: with dispatch') : null,
+            lbExpiredP(l) ? h('span', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca' }, '\u23f0 EXPIRED \u2014 pickup time passed, update it') : null,
+            (/book|deliver/.test((String(l.status || '') + String(l.board_status || '')).toLowerCase()) && idx < 8) ? (() => {
+              const dchip9 = h('span');
+              (async () => {
+                try {
+                  const items9 = ((await loadChecklist('partner_load', l.id)) || []).filter(it9 => it9.required_from === 'broker' && ['required', 'rejected'].indexOf(String(it9.status || '')) >= 0);
+                  if (!items9.length || !dchip9.parentNode) return;
+                  dchip9.replaceWith(h('button', {
+                    style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#fffbeb;color:#92400e;border:1.5px solid #fcd34d;cursor:pointer;animation:pulse 2s infinite',
+                    title: items9.map(it9 => it9.label).join(', '),
+                    onClick: () => brokerDocs(l),
+                  }, '\ud83d\udccb Finalizing details \u2014 ' + items9.length + ' doc' + (items9.length === 1 ? '' : 's') + ' missing \u00b7 provide now'));
+                } catch (_) {}
+              })();
+              return dchip9;
+            })() : null,
+            ((l.cancel_count || 0) > 0) ? h('button', { style: 'padding:6px 14px;border-radius:999px;font-size:.76rem;font-weight:800;background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca;cursor:pointer', title: 'View who cancelled, why, and the GPS evidence — kept even after the load is re-posted', onClick: () => openCancellationHistory(l) }, '⟲ ' + l.cancel_count + ' prior cancellation' + (l.cancel_count === 1 ? '' : 's') + ' — view history') : null,
           ].filter(Boolean)),
+          (() => {
+            const rh = h('div');
+            const committed9 = idx >= 2 || /book|transit/.test((String(l.status || '') + String(l.board_status || '')).toLowerCase());
+            if (committed9) (async () => {
+              let a; try { a = await loadPickupStatus(l.id); } catch (_) { return; }
+              if (!a || (a.risk !== 'at_risk' && a.risk !== 'late')) return;
+              const isLate = a.risk === 'late';
+              mount(rh, h('div', { style: 'margin-top:8px;padding:10px 12px;border-radius:10px;background:' + (isLate ? '#fef2f2' : '#fffbeb') + ';border:1px solid ' + (isLate ? '#fecaca' : '#fde68a') + ';color:' + (isLate ? '#991b1b' : '#92400e') + ';font-size:.85rem;line-height:1.5' }, [
+                h('b', null, isLate ? '\ud83d\udd34 Pickup is late \u2014 driver still not moving' : '\u26a0 Carrier has not departed \u2014 pickup at risk'),
+                h('div', { style: 'margin-top:2px' }, (a.distance_mi ? 'Truck ~' + a.distance_mi + ' mi out (~' + a.eta_h + 'h drive). ' : '') + 'You can wait, or Cancel below \u2014 if the driver never moved toward pickup, no TONU is owed.'),
+              ]));
+            })();
+            return rh;
+          })(),
           h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
-            h('button', { class: 'cp-btn cp-btn-sm', onClick: () => openLoadTracker(l) }, '\ud83d\udef0 Track live'),
+            lbExpiredP(l) ? null : h('button', { class: 'cp-btn cp-btn-sm', onClick: () => openLoadTracker(l) }, '\ud83d\udef0 Track live'),
+            lbExpiredP(l) ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#f59e0b;color:#fff', onClick: () => openReschedule(l, loadList) }, '\u23f0 Update pickup time') : null,
             h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => brokerDocs(l) }, '📄 Docs'),
             (() => {
               const booked9 = /book|transit|deliver|complete|invoiced/.test((String(l.status || '') + ' ' + String(l.board_status || '')).toLowerCase());
@@ -1641,17 +2138,9 @@ async function brokerDash(user, ov) {
                 ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: () => openCarrierPacket(l) }, '\ud83d\udd13 Carrier packet \u2014 UNLOCKED')
                 : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'opacity:.75', title: 'W-9, COI, authority, signed agreement \u2014 released the moment a carrier accepts', onClick: () => openCarrierPacket(l) }, '\ud83d\udd12 Carrier packet \u2014 unlocks on acceptance');
             })(),
-            (idx < 2 && !/cancel/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm', title: String(l.board_status || '') === 'available' ? 'Send direct offers on top of the board listing' : 'Direct offers unlock once dispatch posts the load', onClick: () => openOfferPicker(l, loadList) }, '\ud83c\udfaf Offer to specific carriers') : null,
-            (!/cancel|deliver|complete|invoiced/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#b91c1c', onClick: async (ev) => {
-              const b9 = ev.currentTarget;
-              const committed = idx >= 2;
-              if (!confirm(committed
-                ? 'Cancel this load?\n\n\u26a0 A truck is already COMMITTED \u2014 per the rate card this cancellation becomes a TONU claim (truck-ordered-not-used) with the carrier\u2019s GPS evidence attached.'
-                : 'Cancel this load? No truck is committed yet \u2014 no TONU applies.')) return;
-              const why = prompt('Reason (required \u2014 the carrier and dispatch see this):'); if (!why || !why.trim()) return;
-              b9.disabled = true; b9.textContent = 'Cancelling\u2026';
-              try { const r9 = await partnerCancelLoad(l.id, why.trim()); alert(r9.note || 'Cancelled.'); loadList(); }
-              catch (e9) { b9.disabled = false; b9.textContent = '\u2715 Cancel'; alert((e9 && e9.message) || 'Could not cancel.'); }
+            (idx < 2 && !lbExpiredP(l) && !/cancel/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm', title: String(l.board_status || '') === 'available' ? 'Send direct offers on top of the board listing' : 'Direct offers unlock once dispatch posts the load', onClick: () => openOfferPicker(l, loadList) }, '\ud83c\udfaf Offer to specific carriers') : null,
+            (!/cancel|deliver|complete|invoiced/.test(String(l.status || '').toLowerCase())) ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'color:#b91c1c', onClick: () => {
+              openCancelLoadModal(l, idx >= 2, () => loadList());
             } }, '\u2715 Cancel') : null,
           ].filter(Boolean)),
         ]);
@@ -1853,6 +2342,17 @@ async function brokerDash(user, ov) {
   async function openOfferPicker(l, after) {
     const host = h('div', null, h('div', { class: 'cp-sub' }, 'Loading your verified carrier network\u2026'));
     const closeP = openModal('\ud83c\udfaf Offer to specific carriers \u2014 ' + (l.origin || '?') + ' \u2192 ' + (l.destination || '?'), [host], { wide: true });
+    // Gate: direct offers require the load to be POSTED to the board. A submitted/with-dispatch
+    // load has no public listing yet, so offering it would fail with a confusing error.
+    const _posted = String(l.board_status || '') === 'available' || /book|transit|deliver|complete|invoiced/.test((String(l.status || '') + ' ' + String(l.board_status || '')).toLowerCase());
+    if (!_posted) {
+      mount(host, h('div', { style: 'text-align:center;padding:30px' }, [
+        h('div', { style: 'font-size:40px' }, '\u23f3'),
+        h('div', { style: 'font-weight:800;color:#10223B;margin:8px 0 4px' }, 'This load is still with dispatch'),
+        h('div', { class: 'cp-sub' }, 'Direct offers unlock the moment dispatch posts it to the load board (usually within minutes). Once it shows \u201cOn load board\u201d you can offer it to specific carriers.'),
+      ]));
+      return;
+    }
     let logoBase = null;
     try { const sc = await import('../shared/supabaseClient.js'); const sb = await sc.getClient(); const r = sb.storage.from('org-logos').getPublicUrl('x'); logoBase = (r && r.data && r.data.publicUrl) ? r.data.publicUrl.replace(/\/x$/, '/') : null; } catch (_) {}
     let dir = []; try { dir = (await partnerCarrierDirectory()) || []; } catch (_) {}
@@ -1892,14 +2392,27 @@ async function brokerDash(user, ov) {
             const btn = ev9.currentTarget; btn.disabled = true; btn.textContent = 'Sending\u2026';
             try {
               const r9 = await partnerOfferSend(l.id, Object.keys(sel), rate9.value ? Number(rate9.value) : null, Number(exp9.value));
-              let msg9 = '';
-              if ((r9.sent || 0) > 0) msg9 += '\u2705 Request sent to ' + r9.sent + ' carrier(s) \u2014 the countdown is now running on your My Loads card and on the carrier\u2019s board.\n';
               const sd9 = r9.skipped_detail || [];
-              if (sd9.length) msg9 += '\n\u26a0 Not sent to:\n' + sd9.map(x9 => '\u2022 ' + x9.name + ' \u2014 ' + x9.reason).join('\n');
-              if (!msg9) msg9 = r9.note || 'Done.';
-              alert(msg9); closeP(); if (after) after();
+              const rows9 = [];
+              if ((r9.sent || 0) > 0) { rows9.push(h('div', { style: 'font-weight:800;color:#166534;font-size:1.02rem' }, '\u2705 Sent to ' + r9.sent + ' carrier(s)')); rows9.push(h('div', { class: 'cp-sub', style: 'margin-top:2px' }, 'The countdown is running on your My Loads card and each carrier\u2019s board \u2014 first to accept wins.')); }
+              if (sd9.length) { rows9.push(h('div', { style: 'font-weight:800;color:#9a3412;margin-top:12px' }, '\u26a0 Not sent to ' + sd9.length + ' carrier(s):')); sd9.forEach(function (x9) { rows9.push(h('div', { style: 'display:flex;gap:10px;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #fde68a;font-size:.86rem' }, [h('b', null, x9.name), h('span', { style: 'color:#92400e;text-align:right' }, x9.reason)])); }); }
+              if (!rows9.length) rows9.push(h('div', { class: 'cp-sub' }, r9.note || 'Done.'));
+              closeP(); if (after) after();
+              openModal('\ud83d\udce3 Offer status', rows9);
             }
-            catch (e9) { btn.disabled = false; btn.textContent = '\ud83d\udce3 Send offers'; alert((e9 && e9.message) || 'Failed.'); }
+            catch (e9) {
+              btn.disabled = false; btn.textContent = '\ud83d\udce3 Send offers';
+              var raw9 = (e9 && e9.message) || 'Something went wrong.';
+              var friendly9 = /not authorized/i.test(raw9)
+                ? 'This load isn\u2019t on the board yet (it may still be with dispatch), or its link needs a refresh. Once it shows \u201cOn load board\u201d you can send direct offers. If it keeps happening, contact support.'
+                : /not a partner/i.test(raw9) ? 'Your account isn\u2019t set up as a broker yet.'
+                : /load is (booked|cancelled|delivered)/i.test(raw9) ? raw9
+                : raw9;
+              openModal('Couldn\u2019t send the offer', [
+                h('div', { class: 'cp-sub', style: 'line-height:1.6;color:#991b1b;font-size:.95rem' }, friendly9),
+                h('div', { class: 'cp-sub', style: 'margin-top:8px;color:#64748b' }, 'Note: a carrier whose trucks are all on active loads won\u2019t receive offers \u2014 they show as \u201cAll trucks booked.\u201d'),
+              ]);
+            }
           } }, '\ud83d\udce3 Send offers'),
         ]),
       ]);
@@ -1975,7 +2488,7 @@ async function brokerDash(user, ov) {
     };
     q.addEventListener('input', drawGrid);
     mount(host, [
-      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, list.length + ' eligible verified carrier' + (list.length === 1 ? '' : 's') + ' for this load' + (hiddenN > 0 ? ' \u00b7 ' + hiddenN + ' hidden (equipment/lane mismatch or not accepting)' : '') + ' \u2014 matched to THIS load\u2019s equipment, hazmat and fleet requirements. Tap a card to select; \u201c\ud83d\udd0e Full details\u201d shows everything you receive on acceptance.'),
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, list.length + ' eligible verified carrier' + (list.length === 1 ? '' : 's') + ' for this load' + (hiddenN > 0 ? (' \u00b7 ' + hiddenN + ' hidden' + ((() => { const capN = (inelig || []).filter(x => /capac|booked|all trucks|active load|truck/i.test(String(x.reasons || ''))).length; return capN > 0 ? ' (' + capN + ' because all their trucks are on active loads' + (hiddenN > capN ? ', the rest equipment/lane mismatch)' : ')') : ' (equipment/lane mismatch or not accepting)'; })())) : '') + ' \u2014 matched to THIS load\u2019s equipment, hazmat and fleet requirements. A carrier whose every truck is already on a load is hidden automatically, so you can\u2019t offer it by mistake. Tap a card to select; \u201c\ud83d\udd0e Full details\u201d shows everything you receive on acceptance.'),
       bar, grid,
       inelig.length ? h('div', { style: 'margin-top:12px' }, [
         h('div', { style: 'font-weight:800;font-size:.74rem;color:#94a3b8;letter-spacing:.08em;margin-bottom:6px' }, '\u26d4 NOT ELIGIBLE FOR THIS LOAD (' + inelig.length + ') \u2014 why they\u2019re hidden'),
@@ -2034,6 +2547,14 @@ async function brokerDash(user, ov) {
         .lt-ev .e:before{content:'';position:absolute;left:-22.5px;top:13px;width:10px;height:10px;border-radius:99px;background:#0883F7;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #bfdbfe}
         .lt-prog{height:9px;border-radius:99px;background:#eef2f7;overflow:hidden;margin-top:8px}
         .lt-prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#22c55e);transition:width .6s cubic-bezier(.4,0,.2,1)}
+        .lt-hero.lt-done{background:radial-gradient(600px 200px at 88% -40%,rgba(34,197,94,.5),transparent 60%),linear-gradient(120deg,#0a2416,#14532d 60%,#166534)}
+        .lt-arrive{font-family:Manrope,Inter,sans-serif;font-weight:800;font-size:1.32rem;margin-top:9px;color:#fff;letter-spacing:-.01em}
+        .lt-arrive small{display:block;font-size:.74rem;font-weight:700;opacity:.75;margin-top:2px;letter-spacing:0}
+        .lt-carrier{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:13px 16px;margin:12px 0 0;box-shadow:0 10px 28px -22px rgba(2,12,30,.4)}
+        .lt-carrier .av{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#0883F7,#1e40af);color:#fff;font-weight:800;font-size:1.15rem;display:flex;align-items:center;justify-content:center;flex:none}
+        .lt-carrier b{color:#10223B;font-size:.95rem}
+        .lt-carrier .sub{font-size:.76rem;color:#64748b;margin-top:1px}
+        .lt-carrier .act{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
       `;
       document.head.appendChild(st);
     }
@@ -2070,15 +2591,19 @@ async function brokerDash(user, ov) {
       const havM = (a, b, c2, d2) => { const r9 = (x) => x * Math.PI / 180; return 6371000 * 2 * Math.asin(Math.sqrt(Math.sin(r9(c2 - a) / 2) ** 2 + Math.cos(r9(a)) * Math.cos(r9(c2)) * Math.sin(r9(d2 - b) / 2) ** 2)); };
       let progPct = null, remainTxt = null, etaTxt = null;
       mount(host, h('div', null, [
-        h('div', { class: 'lt-hero' }, [
+        h('div', { class: 'lt-hero' + ((t && t.delivered_at) ? ' lt-done' : '') }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
             h('div', null, [
               h('div', { style: 'font-weight:800;font-size:1.08rem' }, (ld.origin || '?') + '  \u2192  ' + (ld.destination || '?')),
               h('div', { style: 'font-size:.78rem;opacity:.8;margin-top:3px' }, heroSub),
+              h('div', { class: 'lt-arrive', id: 'lt-arrive' },
+                (t && t.delivered_at) ? [document.createTextNode('\ud83c\udf89 Delivered ' + fmtT(t.delivered_at)), h('small', null, 'GPS-verified drop \u00b7 POD & trip documents are on the load card')]
+                : (t && t.scheduled_delivery && !t.last_lat) ? [document.createTextNode('\ud83d\udce6 Arriving ' + fmtT(t.scheduled_delivery)), h('small', null, 'scheduled delivery \u2014 live ETA appears once the truck is rolling')]
+                : ''),
             ]),
             h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
               liveOk ? h('span', { class: 'lt-live' }, [h('span', { class: 'dot' }), 'LIVE \u00b7 ' + ago(t.last_loc_at)]) :
-              t ? h('span', { class: 'lt-live', style: 'background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.3)' }, [h('span', { class: 'dot', style: 'background:#94a3b8;animation:none' }), t.last_loc_at ? 'GPS ' + ago(t.last_loc_at) : 'GPS pending']) : null,
+              t ? h('span', { class: 'lt-live', style: 'background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.3)' }, [h('span', { class: 'dot', style: 'background:#94a3b8;animation:none' }), (String(t.status || '') === 'delivered') ? '\ud83c\udfc1 Delivered \u2014 tracking ended' : (t.last_loc_at ? 'GPS ' + ago(t.last_loc_at) : 'GPS pending')]) : null,
               h('span', { style: 'font-weight:800;color:#7cc0ff;font-size:1.05rem' }, ld.rate ? '$' + Number(ld.rate).toLocaleString() : ''),
             ].filter(Boolean)),
           ]),
@@ -2114,7 +2639,25 @@ async function brokerDash(user, ov) {
         })());
         tiles.push(tile('Race rule', 'First accept wins', 'all other offers + the board listing close instantly'));
       } else {
-        tiles.push(tile('Carrier', t.carrier || '\u2014', [t.driver_name, t.truck_no ? '#' + t.truck_no : null].filter(Boolean).join(' \u00b7 ')));
+        (() => {
+          const card9 = h('div', { class: 'lt-carrier' }, [
+            h('div', { class: 'av' }, String(t.carrier || 'C').trim().charAt(0).toUpperCase()),
+            h('div', null, [
+              h('b', null, t.carrier || 'Carrier'),
+              h('div', { class: 'sub' }, ['\u2713 Verified LoadBoot carrier', t.driver_name ? 'driver ' + t.driver_name : null, t.truck_no ? 'truck #' + t.truck_no : null].filter(Boolean).join(' \u00b7 ')),
+            ]),
+            h('div', { class: 'act' }, [
+              h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0f766e;color:#fff', onClick: () => openCarrierPacket(l) }, '\ud83d\udd13 Carrier packet'),
+              h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+                try { if (!__dirCache) __dirCache = (await partnerCarrierDirectory()) || []; } catch (_) { __dirCache = __dirCache || []; }
+                const c9 = (__dirCache || []).find(x9 => x9.name && t.carrier && x9.name.toLowerCase() === String(t.carrier).toLowerCase());
+                if (c9) openCarrierFullProfile(c9, null); else alert('Profile not published.');
+              } }, '\ud83d\udc64 Profile'),
+            ]),
+          ]);
+          const heroEl9 = host.querySelector('.lt-hero');
+          if (heroEl9 && heroEl9.parentNode) heroEl9.parentNode.insertBefore(card9, heroEl9.nextSibling);
+        })();
         tiles.push(tile('Scheduled', (fmtT(t.scheduled_pickup) || '\u2014'), 'delivery ' + (fmtT(t.scheduled_delivery) || '\u2014')));
       }
       mount(host.querySelector('#lt-tiles'), tiles);
@@ -2128,12 +2671,12 @@ async function brokerDash(user, ov) {
           const tk = (t && t.last_lat != null) ? [t.last_lat, t.last_lng] : null;
           map = L.map(mapEl, { zoomControl: true, attributionControl: false });
           L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
-          const mk = (pt, bg, txt) => L.marker(pt, { icon: L.divIcon({ className: '', html: '<div style="background:' + bg + ';color:#fff;font-weight:800;font-size:10px;padding:4px 9px;border-radius:999px;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.45);white-space:nowrap">' + txt + '</div>', iconAnchor: [24, 12] }) }).addTo(map);
+          const mk = (pt, bg, txt) => L.marker(pt, { icon: L.divIcon({ className: '', iconSize: [0, 0], iconAnchor: [0, 0], html: '<div style="position:absolute;transform:translate(-50%,-50%);background:' + bg + ';color:#fff;font-weight:800;font-size:10px;padding:5px 12px;border-radius:999px;border:2px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.5);white-space:nowrap;letter-spacing:.04em">' + txt + '</div>' }) }).addTo(map);
           const pts = [];
           if (pk) { mk(pk, '#0883F7', 'PICKUP'); pts.push(pk); }
           if (dl) { mk(dl, '#FC5305', 'DELIVERY'); pts.push(dl); }
           if (tk) {
-            L.marker(tk, { icon: L.divIcon({ className: '', html: '<div style="width:20px;height:20px;border-radius:99px;background:#22c55e;border:3.5px solid #fff;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:lbpulse2 1.8s infinite"></div><style>@keyframes lbpulse2{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 18px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}</style>', iconAnchor: [10, 10] }) }).addTo(map);
+            L.marker(tk, { icon: L.divIcon({ className: '', iconSize: [0, 0], iconAnchor: [0, 0], html: '<div style="position:absolute;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#10223B,#1e3a8a);border:3px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 8px 20px rgba(0,0,0,.55),0 0 0 0 rgba(34,197,94,.5);animation:lbpulse2 1.8s infinite">\ud83d\ude9b</div><div style="position:absolute;transform:translate(-50%,14px);background:#16a34a;color:#fff;font-size:9px;font-weight:800;padding:2px 9px;border-radius:999px;border:1.5px solid #fff;white-space:nowrap;letter-spacing:.05em">LIVE</div><style>@keyframes lbpulse2{0%{box-shadow:0 8px 20px rgba(0,0,0,.55),0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 8px 20px rgba(0,0,0,.55),0 0 0 20px rgba(34,197,94,0)}100%{box-shadow:0 8px 20px rgba(0,0,0,.55),0 0 0 0 rgba(34,197,94,0)}}</style>' }) }).addTo(map);
             pts.push(tk);
           }
           if (pts.length) map.fitBounds(pts, { padding: [46, 46] });
@@ -2147,6 +2690,11 @@ async function brokerDash(user, ov) {
                 const remM = rt9.distance / 1609.34, remH = rt9.duration / 3600;
                 remainTxt = Math.round(remM).toLocaleString() + ' mi to delivery';
                 etaTxt = fmtT(new Date(Date.now() + rt9.duration * 1000));
+                const ar9 = host.querySelector('#lt-arrive');
+                if (ar9 && t && !t.delivered_at && tk) {
+                  ar9.replaceChildren(document.createTextNode('\ud83d\udce6 Arriving ~ ' + etaTxt),
+                    h('small', null, Math.round(remM).toLocaleString() + ' mi to go \u00b7 live from the truck\u2019s GPS'));
+                }
                 if (ld.miles && Number(ld.miles) > 0 && tk) progPct = Math.max(2, Math.min(98, Math.round(100 * (1 - remM / Number(ld.miles)))));
                 const tl = host.querySelector('#lt-tiles');
                 if (tl && t && !t.delivered_at) {
@@ -2917,7 +3465,7 @@ function packetAgreementCards(skipPacket) {
       try {
         const ns = (await partnerNotifications(50)) || [];
         const un = ns.filter(n => !n.read_at).length;
-        if (un > 3) items.push(['\ud83d\udd14', un + ' unread notifications', 'Open bell \u2191', () => { const b = document.querySelector('.cp-notif-btn, .cp-bell'); if (b) b.click(); }]);
+        if (un > 3) items.push(['\ud83d\udd14', un + ' unread notifications', '\u2713 Mark all read', async () => { try { await partnerMarkAllNotificationsRead(); } catch (_) {} try { brender(); } catch (_) {} }]);
       } catch (_) {}
       el.style.display = '';
       if (!items.length) {
@@ -3001,7 +3549,34 @@ function packetAgreementCards(skipPacket) {
   function brender() {
     if (btab === 'loads') { mount(bContent, h('div', null, [myLoadsCard])); return; }
     if (btab === 'dashboard') {
-      mount(bContent, h('div', null, [bdHero(), obHero, bdAttention(), bdKpis(), h('div', { id: 'bd-postload' }, [ov.onboarded ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : verifyGateCard(ov)]), myLoadsCard, bdNetwork(), bdActivity()]));
+      const bdRate9 = h('div');
+      (async () => {
+        let rt9 = []; try { rt9 = (await partnerRateableTrips(5)) || []; } catch (_) {}
+        const r9 = rt9.filter(x9 => !x9.my_stars).find(x9 => { try { return !localStorage.getItem('lb:rated:' + x9.trip_id); } catch (_) { return true; } });
+        if (!r9) return;
+        const card9 = h('div', { class: 'cp-card', style: 'position:relative;border:1.5px solid rgba(245,158,11,.5);background:linear-gradient(120deg,rgba(245,158,11,.06),transparent 60%)' });
+        card9.appendChild(h('button', { title: 'Not now', style: 'position:absolute;top:10px;right:12px;border:0;background:transparent;color:#94a3b8;font-size:1.05rem;cursor:pointer;font-weight:800', onClick: () => { try { localStorage.setItem('lb:rated:' + r9.trip_id, 'skip'); } catch (_) {} card9.remove(); } }, '\u2715'));
+        let st9 = 0; const btns9 = [];
+        const paint9 = () => btns9.forEach((b9, i9) => { b9.textContent = i9 < st9 ? '\u2b50' : '\u2606'; b9.style.filter = i9 < st9 ? 'none' : 'grayscale(1)'; b9.style.transform = i9 < st9 ? 'scale(1.12)' : 'scale(1)'; });
+        for (let i9 = 0; i9 < 5; i9++) btns9.push(h('button', { style: 'border:0;background:transparent;font-size:1.9rem;cursor:pointer;transition:transform .12s;padding:2px 4px', onClick: () => { st9 = i9 + 1; paint9(); } }, '\u2606'));
+        const cm9 = h('input', { class: 'cp-in', placeholder: 'Optional \u2014 one line (on-time, communication, paperwork) \u2014 shows trip-verified on the carrier\u2019s profile', style: 'margin:8px 0 0' });
+        const send9 = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px', onClick: async () => {
+          if (!st9) { alert('Tap the stars first \u2014 1 to 5.'); return; }
+          send9.disabled = true; send9.textContent = 'Sending\u2026';
+          try {
+            await rateCounterparty(r9.trip_id, st9, cm9.value.trim() || null);
+            try { localStorage.setItem('lb:rated:' + r9.trip_id, String(st9)); } catch (_) {}
+            card9.replaceChildren(h('div', { style: 'text-align:center;padding:8px 0' }, [h('div', { style: 'font-size:1.6rem' }, '\u2705'), h('div', { class: 'cp-row-t' }, 'Thanks \u2014 rated ' + st9 + '\u2605'), h('div', { class: 'cp-row-s' }, 'Your rating is live on the carrier\u2019s public profile.')]));
+            setTimeout(() => { try { card9.remove(); } catch (_) {} }, 3500);
+          } catch (e9) { send9.disabled = false; send9.textContent = 'Submit rating'; alert((e9 && e9.message) || 'Could not submit.'); }
+        } }, 'Submit rating');
+        card9.append(
+          h('div', { class: 'cp-row-t', style: 'font-size:1.02rem' }, '\u2b50 Rate this carrier \u2014 ' + (r9.carrier || 'your carrier')),
+          h('div', { class: 'cp-row-s', style: 'margin-top:2px' }, 'Trip-verified: ' + (r9.lane || '') + ' \u00b7 delivered ' + String(r9.delivered_at || '').slice(0, 10) + ' \u00b7 your stars power every broker\u2019s carrier choice'),
+          h('div', { style: 'margin-top:6px' }, btns9), cm9, send9);
+        bdRate9.appendChild(card9);
+      })();
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), bdKpis(), h('div', { id: 'bd-postload' }, [ov.onboarded ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : verifyGateCard(ov)]), myLoadsCard, bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));

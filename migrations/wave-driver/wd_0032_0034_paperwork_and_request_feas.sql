@@ -1,0 +1,12 @@
+-- wd_0032 (STAGING 2026-07-09) — wizard paperwork prefill: cc_partner_submit_load reads
+-- payload.docs {doc_key: ref} and marks matching checklist items 'received' at submission.
+-- wd_0033 — paperwork discipline ladder:
+--   0-4h post-booking: existing 2-hourly nag; 4h+: NEW POSTINGS PAUSED (gate in
+--   cc_partner_post_load + cc_partner_submit_load, errcode 23514 with lane + count);
+--   8h+: CC admins get urgent in-app escalation once per item (load_document_checklist.cc_flagged_at).
+-- wd_0034 — cc_carrier_offers returns rounded pickup pin (0.1°) so Requests cards show
+--   live deadhead + pickup ETA + delivery feasibility (drop/recreate; grants re-applied).
+-- Frontend: wizard Requirements step gets optional "Already have the load paperwork?" fold
+--   (PU#, DEL#, appointment conf, billing contact w/ localStorage default) -> payload.docs;
+--   carrier lbFeasChips() shared strip on Requests boxes (same HOS math as the board).
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

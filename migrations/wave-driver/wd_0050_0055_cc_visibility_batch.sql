@@ -1,0 +1,14 @@
+-- wd_0050 (STAGING 2026-07-10) — cc_ask_reschedule(p_id): CC one-click "Ask broker to
+-- reschedule" on EXPIRED submissions (in-app + branded email); CC intake rows show
+-- red "⏰ EXPIRED — cannot post" chip; Quick post hidden on expired (decide gate wd_0028
+-- still backstops). Frontend partnerIntake.js.
+-- wd_0051/0053 — broker doc submissions notify the CARRIER instantly: every doc gets its
+-- own in-app + EMAIL (billing_contact excluded — broker-private); fires on delivered/
+-- invoiced trips too (late paperwork). RC email = "cleared to roll".
+-- wd_0052 — wizard collects PICKUP/DELIVERY DOCK CONTACTS (optional) -> driver dispatch
+-- pack ("📞 Pickup/Delivery dock contact"). Billing contact remains never-forwarded.
+-- wd_0054 — CC admins get in-app + email for every submitted doc (review queue alert).
+-- wd_0055 — "Request copies by email" also alerts CC admins (in-app + email).
+-- NOTE: support tickets TKT-1001..1005 are SEED fixtures (identical created_at
+-- microsecond) — pre-launch seed cleanup list mein already hai.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

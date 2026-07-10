@@ -1,0 +1,7 @@
+-- wd_0039 (STAGING 2026-07-10) — trip transitions are GPS-locked server-side (no fake buttons):
+-- arrive = cc_trip_arrive_gps only (radius-checked, pre-existing);
+-- depart = refused while inside the 800m stop zone (cc_trip_depart now takes p_lat/p_lng — old
+--   2-arg overload dropped; grants re-applied);
+-- in_transit = refused until a GPS pickup departure exists in trip_dwell_events;
+-- delivered = refused until a GPS delivery ARRIVAL exists in trip_dwell_events.
+-- Frontend: tripDepart passes the live fix. (Full SQL in staging migration history.)

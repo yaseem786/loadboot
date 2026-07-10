@@ -1,0 +1,12 @@
+-- wd_0046 (STAGING 2026-07-10) — packet_item_live_status(org,key,fallback): packet items
+-- (broker request view + carrier own packet) resolve LIVE against carrier_compliance /
+-- fleet_trucks / hazmat fn — "0/8 pending" while all docs verified is fixed. Mapping:
+-- operating_authority->mc_authority; auto_liability/coi_from_agent/cargo_insurance/
+-- reefer_breakdown->insurance_coi; carrier_agreement->dispatch_agreement; w9->w9;
+-- noa_factoring/ach_details->bank_verification; safer_check->safety_rating;
+-- equipment_info->active fleet_trucks exist; hazmat_cert->carrier_hazmat_verified.
+-- Frontend batch: My Loads card shows "🚚 BOOKING REQUEST — <carrier> · Trust N/100"
+-- with inline ✓Approve/Decline (cc_decide_book_request); dashboard attention card's
+-- unread item action = "✓ Mark all read" (live re-render); Fleet/Finance rows contained
+-- premium styling (overflow fix, hover borders, mobile wrap).
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

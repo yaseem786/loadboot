@@ -1,0 +1,9 @@
+-- wd_0028 (STAGING 2026-07-09) — a load with a PASSED pickup date can never enter the marketplace.
+-- Guards ALL posting paths at the DB (frontend checks can be bypassed/cached):
+--   1. cc_partner_post_load  — broker wizard + direct-to-carrier post
+--   2. cc_decide_partner_load — CC approve of an already-stale submission
+--   3. cc_partner_offer_send  — offering an expired load to carriers
+-- errcode 23514 (check_violation), message tells broker to update the pickup schedule.
+-- Frontend: wizard step 1 now also checks date+TIME ("Pickup time frame has already PASSED ...").
+-- Tested: broker impersonation post with pickup = current_date - 2 → check_violation raised.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

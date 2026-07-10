@@ -1,0 +1,11 @@
+-- wd_0031 (STAGING 2026-07-09) — reschedule modal = full scheduling step.
+-- cc_partner_update_pickup extended: (load, pickup_date, pickup_time, delivery_date,
+-- delivery_time, pickup_mode, delivery_mode, team). Old 5-param overload DROPPED
+-- (PGRST203); new signature revoked from anon/public, granted authenticated+service_role.
+-- Encoding matches the post wizard: Appointment -> pickup_time='Appt HH:MM' +
+-- details.dock_hours_*='By appointment only'; FCFS -> 'HH:MM-HH:MM' + 'FCFS <window>';
+-- p_team -> details.team_required. Delivery still auto-shifts when not supplied.
+-- Frontend: modal now has FCFS/Appointment cards for pickup AND delivery, delivery date
+-- pre-filled with the auto-shift, HOS transit guard (miles/52; 11h drive + 10h rest;
+-- TEAM = nonstop) with one-tap "Make this a TEAM load" fix — same model as the wizard.
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

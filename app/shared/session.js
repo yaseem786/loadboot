@@ -49,6 +49,13 @@ export async function signUp(email, password, meta = {}) {
   return sb.auth.signUp({ email, password, options: { data: { company: meta.company || '', name: meta.name || '' } } });
 }
 
+// Driver invite signup — role='driver' + invite_token tell handle_new_user to SKIP carrier-org
+// provisioning; the caller then runs cc_accept_driver_invite to join the inviter's org.
+export async function signUpDriver(email, password, token, meta = {}) {
+  const sb = await getClient();
+  return sb.auth.signUp({ email, password, options: { data: { role: 'driver', invite_token: token || '', name: meta.name || '' } } });
+}
+
 export async function resetPassword(email) {
   const sb = await getClient();
   return sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });

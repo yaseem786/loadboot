@@ -1,0 +1,14 @@
+-- wd_0042 (STAGING 2026-07-10) — booking requires a VALID driver:
+-- app_private.carrier_has_valid_driver(org) + BEFORE-INSERT triggers on trips AND
+-- load_book_requests: expired license OR medical on ALL active drivers -> booking/request
+-- refused with "update your driver in Fleet" message. (Offer-accept, board request,
+-- direct book — every path creates one of these rows, so every path is gated.)
+-- Identity checks (frontend):
+--  • VIN: must be a real 17-char VIN, decoded LIVE against U.S. DOT NHTSA vPIC
+--    (CSP + https://vpic.nhtsa.dot.gov). Fake "1236" rejected; real VIN shows
+--    "✓ VIN verified: 2019 FREIGHTLINER Cascadia".
+--  • Driver: CDL format 4-20 alnum + state required; DOT medical expiry max 24 months
+--    (FMCSA rule); license expiry >10y = typo block; past dates already blocked.
+-- NOTE: real-time CDL/MVR verification has NO free public API (CDLIS is restricted;
+-- MVR pulls are paid ~$5-15 w/ driver consent) — flagged as Phase-2 (PSP/MVR provider).
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)

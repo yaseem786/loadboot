@@ -1,0 +1,9 @@
+-- wd_0029 (STAGING 2026-07-09) — cc_partner_offer_withdraw(p_load):
+-- broker ✕ on the "Requested to <carrier>" chip. Deletes pending (sent/viewed) offers,
+-- clears details.direct_carrier_id/direct_wait_minutes (load returns to the open board),
+-- notifies affected carrier members in-app, audit-logged. Blocked once a trip is active.
+-- Grants: authenticated+service_role only (anon revoked).
+-- Frontend: countdown chip now renders with a small ✕ (confirm → withdraw → list refresh).
+-- Also: EXPIRED cards now show ONLY the real actions — "On load board" chip, "Track live"
+-- and "Offer to specific carriers" are hidden while expired (Update pickup time is the fix).
+-- (Full SQL in supabase_migrations.schema_migrations on staging — extract at prod apply.)
