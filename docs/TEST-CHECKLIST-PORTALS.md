@@ -101,3 +101,8 @@ Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift
 - [ ] 42. Broker: Live tracking mein "🟣 Multi-stop: A → 📤 S1 city (purpose) → B" line
 NOTE: 🧪 SIM mode abhi seedha pickup→delivery chalta hai (stops skip) — real GPS ya
 mobile se test karo, ya batao to sim ko bhi multi-stop bana dun.
+- [ ] 43. Extra stops ka SCHEDULE: Schedule step par har stop ka apna block — FCFS window
+      ya Appointment + date/time; baghair bhare aage na barhe (validation)
+- [ ] 44. Docs section mein har extra stop ka PU/delivery number + appt confirmation # ke
+      fields; bhar kar post karo — carrier ke Dispatch pack mein stop ke saath number +
+      schedule dikhe; trip map par stop leg ke waqt "Appt time" chip stop ka time dikhaye

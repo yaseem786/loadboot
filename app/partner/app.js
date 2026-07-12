@@ -1464,6 +1464,30 @@ async function brokerDash(user, ov) {
         modeSel('sched_del'),
         wi('Delivery date *', 'delivery_date', 'date'),
         w.sched_del === 'Appointment' ? tOne('Delivery appointment time *', 'del_appt') : (w.sched_del === 'FCFS' ? tRange('FCFS window \u2014 dock open from \u2192 to *', 'delivery_window') : null),
+        // ---- per-EXTRA-STOP scheduling: same FCFS/Appointment discipline as the main docks ----
+        ...((Array.isArray(w.stops) && w.stops.length) ? w.stops.map((sp8, i8) => {
+          const kindLbl8 = sp8.kind === 'pickup' ? '\u{1F4E6} Extra PICKUP' : '\u{1F4E4} Extra DELIVERY';
+          const mk8 = (v8, tl8, sb8) => { const on8 = (sp8.sched || 'FCFS') === v8;
+            return h('div', { style: 'flex:1;min-width:200px;border:2px solid ' + (on8 ? '#0883F7' : '#e2e8f0') + ';border-radius:12px;padding:10px 12px;cursor:pointer;background:' + (on8 ? '#eff6ff' : '#fff'), onClick: () => { sp8.sched = v8; renderStep(); } }, [
+              h('div', { style: 'font-weight:800;font-size:.85rem' }, (on8 ? '\u25c9 ' : '\u25cb ') + tl8), h('div', { class: 'cp-sub', style: 'margin-top:2px' }, sb8)]); };
+          const d8 = h('input', { class: 'cp-in', type: 'date', style: 'margin:0' }); d8.value = sp8.date || ''; d8.onchange = () => { sp8.date = d8.value; };
+          const t8a = h('input', { class: 'cp-in', type: 'time', style: 'margin:0' }); t8a.value = sp8.time || ''; t8a.onchange = () => { sp8.time = t8a.value; };
+          const t8f = h('input', { class: 'cp-in', type: 'time', style: 'margin:0;flex:1' }); const t8t = h('input', { class: 'cp-in', type: 'time', style: 'margin:0;flex:1' });
+          const wparts8 = String(sp8.window || '').split('\u2013'); t8f.value = wparts8[0] || ''; t8t.value = wparts8[1] || '';
+          const syncW8 = () => { sp8.window = (t8f.value && t8t.value) ? t8f.value + '\u2013' + t8t.value : ''; };
+          t8f.onchange = syncW8; t8t.onchange = syncW8;
+          return h('div', { style: 'grid-column:1/-1;border:1px dashed #c7d4e8;border-radius:14px;padding:10px 12px;margin-top:4px' }, [
+            h('div', { class: 'cp-sub', style: 'font-weight:800;color:#10223B' }, kindLbl8 + ' ' + (i8 + 1) + ' \u2014 ' + ((sp8.address || '').split(',').slice(0, 2).join(',') || 'set the address in step 1') + (sp8.purpose ? ' \u00b7 ' + sp8.purpose : '')),
+            h('div', { style: 'display:flex;gap:10px;margin-top:6px;flex-wrap:wrap' }, [
+              mk8('FCFS', 'FCFS \u2014 window', 'any time inside the window \u2014 dock works the line'),
+              mk8('Appointment', 'Appointment \u2014 fixed time', 'exact appointed time'),
+            ]),
+            h('div', { style: 'display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center' }, [
+              field('Stop date *', d8),
+              (sp8.sched || 'FCFS') === 'Appointment' ? field('Appointment time *', t8a) : h('div', { style: 'flex:1;min-width:220px' }, [h('div', { class: 'cp-sub', style: 'font-weight:700;margin-bottom:3px' }, 'FCFS window \u2014 from \u2192 to *'), h('div', { style: 'display:flex;gap:8px' }, [t8f, t8t])]),
+            ]),
+          ]);
+        }) : []),
         (() => {
           const tx8 = (label8, key8, ph8) => { const a8 = h('input', { class: 'cp-in', type: 'text', placeholder: ph8 || '', style: 'margin:0' }); a8.value = w[key8] || ''; a8.oninput = () => { w[key8] = a8.value; }; return field(label8, a8); };
           return h('div', { style: 'grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:6px' }, [
@@ -1650,6 +1674,14 @@ async function brokerDash(user, ov) {
                 tx9('Billing contact name', 'doc_bn', 'accounts payable'),
                 tx9('Billing email', 'doc_be', 'ap@company.com'),
                 tx9('Billing phone (optional)', 'doc_bp', ''),
+                ...((Array.isArray(w.stops) ? w.stops : []).flatMap((sp9, i9) => {
+                  const lb9 = (sp9.kind === 'pickup' ? 'Extra PICKUP ' : 'Extra DELIVERY ') + (i9 + 1);
+                  const in1 = h('input', { class: 'cp-in', type: 'text', placeholder: sp9.kind === 'pickup' ? 'e.g. PU-1182' : 'e.g. DEL-2210', style: 'margin:0' });
+                  in1.value = sp9.doc_number || ''; in1.oninput = () => { sp9.doc_number = in1.value; };
+                  const in2 = h('input', { class: 'cp-in', type: 'text', placeholder: 'if the facility confirmed one', style: 'margin:0' });
+                  in2.value = sp9.doc_appt || ''; in2.oninput = () => { sp9.doc_appt = in2.value; };
+                  return [field(lb9 + ' \u2014 ' + (sp9.kind === 'pickup' ? 'PU number' : 'delivery number'), in1), field(lb9 + ' \u2014 appt confirmation #', in2)];
+                })),
               ]),
             ]);
           })(),
@@ -1899,6 +1931,12 @@ async function brokerDash(user, ov) {
         if (!w.pickup_date) m1.push('pickup date');
         if (w.sched_pu === 'FCFS' && !/\d{2}:\d{2}\u2013\d{2}:\d{2}/.test(w.pickup_window || '')) m1.push('pickup FCFS window (from & to)');
         if (w.sched_pu === 'Appointment' && !(w.pu_appt || '').trim()) m1.push('pickup appointment time');
+        (Array.isArray(w.stops) ? w.stops : []).forEach((sp9, i9) => {
+          if (!sp9.lat) return;
+          if (!sp9.date) m1.push('extra stop ' + (i9 + 1) + ' date');
+          if ((sp9.sched || 'FCFS') === 'Appointment' && !(sp9.time || '').trim()) m1.push('extra stop ' + (i9 + 1) + ' appointment time');
+          if ((sp9.sched || 'FCFS') === 'FCFS' && !/\d{2}:\d{2}\u2013\d{2}:\d{2}/.test(sp9.window || '')) m1.push('extra stop ' + (i9 + 1) + ' FCFS window');
+        });
         if (!w.sched_del) m1.push('delivery scheduling (FCFS or appointment)');
         if (!w.delivery_date) m1.push('delivery date');
         if (w.sched_del === 'FCFS' && !/\d{2}:\d{2}\u2013\d{2}:\d{2}/.test(w.delivery_window || '')) m1.push('delivery FCFS window (from & to)');
@@ -2025,9 +2063,12 @@ async function brokerDash(user, ov) {
           dock_hours_pickup: w.dock_hours_pickup || null, dock_hours_delivery: w.dock_hours_delivery || null,
           facility_contact_pickup: (w.fac_pu || '').trim() || null, facility_contact_delivery: (w.fac_del || '').trim() || null };
         const docs9 = {};
-        if ((w.doc_pu || '').trim()) docs9.pickup_number = 'Pickup / PU number: ' + w.doc_pu.trim();
-        if ((w.doc_dn || '').trim()) docs9.delivery_number = 'Delivery number: ' + w.doc_dn.trim();
-        if ((w.doc_ac || '').trim() || (w.doc_at || '').trim()) docs9.appointment_confirmation = [(w.doc_ac || '').trim() ? 'Confirmation #: ' + w.doc_ac.trim() : null, (w.doc_at || '').trim() ? 'Confirmed time: ' + w.doc_at.trim() : null].filter(Boolean).join(' \u00b7 ');
+        const xsPu9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp9) => sp9.kind === 'pickup' && (sp9.doc_number || '').trim()).map((sp9, k9) => 'Extra pickup S' + (sp9.seq || k9 + 1) + ': ' + sp9.doc_number.trim());
+        const xsDn9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp9) => sp9.kind !== 'pickup' && (sp9.doc_number || '').trim()).map((sp9, k9) => 'Extra delivery S' + (sp9.seq || k9 + 1) + ': ' + sp9.doc_number.trim());
+        const xsAc9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp9) => (sp9.doc_appt || '').trim()).map((sp9, k9) => 'Stop S' + (sp9.seq || k9 + 1) + ' appt #: ' + sp9.doc_appt.trim());
+        if ((w.doc_pu || '').trim() || xsPu9.length) docs9.pickup_number = [(w.doc_pu || '').trim() ? 'Pickup / PU number: ' + w.doc_pu.trim() : null, ...xsPu9].filter(Boolean).join(' \u00b7 ');
+        if ((w.doc_dn || '').trim() || xsDn9.length) docs9.delivery_number = [(w.doc_dn || '').trim() ? 'Delivery number: ' + w.doc_dn.trim() : null, ...xsDn9].filter(Boolean).join(' \u00b7 ');
+        if ((w.doc_ac || '').trim() || (w.doc_at || '').trim() || xsAc9.length) docs9.appointment_confirmation = [(w.doc_ac || '').trim() ? 'Confirmation #: ' + w.doc_ac.trim() : null, (w.doc_at || '').trim() ? 'Confirmed time: ' + w.doc_at.trim() : null, ...xsAc9].filter(Boolean).join(' \u00b7 ');
         if ((w.doc_bn || '').trim() && (w.doc_be || '').trim()) {
           docs9.billing_contact = ['Contact name: ' + w.doc_bn.trim(), 'Email: ' + w.doc_be.trim(), (w.doc_bp || '').trim() ? 'Phone: ' + w.doc_bp.trim() : null].filter(Boolean).join(' \u00b7 ');
           try { localStorage.setItem('lb:billing', JSON.stringify({ bn: w.doc_bn.trim(), be: w.doc_be.trim(), bp: (w.doc_bp || '').trim() })); } catch (_) {}

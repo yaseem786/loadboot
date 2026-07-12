@@ -227,7 +227,7 @@ export async function openTripMap(t, opts = {}) {
       const r0 = await ccLoadStops(t.load_id);
       if (!r0 || !r0.count || !r0.full) return;
       XS = (r0.stops || []).filter((s0) => s0.lat && s0.lng)
-        .map((s0) => ({ seq: parseInt(s0.seq, 10) || 0, lat: +s0.lat, lng: +s0.lng, address: s0.address || '', kind: s0.kind || 'delivery', purpose: s0.purpose || '' }))
+        .map((s0) => ({ seq: parseInt(s0.seq, 10) || 0, lat: +s0.lat, lng: +s0.lng, address: s0.address || '', kind: s0.kind || 'delivery', purpose: s0.purpose || '', sched: s0.sched || '', time: s0.time || '', window: s0.window || '', date: s0.date || '' }))
         .sort((a0, b0) => a0.seq - b0.seq);
       if (!XS.length) return;
       try {
@@ -506,6 +506,7 @@ export async function openTripMap(t, opts = {}) {
     sbDist._v.textContent = distM != null ? fmtKm(distM) : '—';
     const schedT = (step === 'to_delivery' || step === 'at_delivery') ? t.scheduled_delivery : t.scheduled_pickup;
     sbSched._v.textContent = t.pickup_mode === 'fcfs' ? 'FCFS' : schedT ? new Date(schedT).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
+    if (step === 'to_delivery' && xsIdx < XS.length && XS[xsIdx]) { sbSched._v.textContent = XS[xsIdx].sched === 'Appointment' ? (XS[xsIdx].time || 'appt') : (XS[xsIdx].window ? 'FCFS' : sbSched._v.textContent); }
     paintSteps(step === 'to_pickup' ? (onway ? 1 : 0) : step === 'at_pickup' ? 1 : step === 'to_delivery' ? 2 : step === 'at_delivery' ? 3 : 4);
     const onSite = step === 'at_pickup' || step === 'at_delivery' || atStop;
     proofRow.style.display = onSite ? 'flex' : 'none'; proofNote.style.display = onSite ? 'block' : 'none';

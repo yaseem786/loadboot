@@ -2705,7 +2705,12 @@ function tripStepper(status) {
               if (!t.load_id) return [];
               const st9 = await ccLoadStops(t.load_id);
               if (!st9 || !st9.count) return [];
-              return (st9.stops || []).map((sp9, i9) => r9((sp9.kind === 'pickup' ? '\u{1F4E6} Extra PICKUP ' : '\u{1F4E4} Extra DELIVERY ') + (i9 + 1), (st9.full ? (sp9.address || '') : ((sp9.city || '') + ', ' + (sp9.state || ''))) + (sp9.purpose ? ' \u2014 ' + sp9.purpose : '')));
+              return (st9.stops || []).map((sp9, i9) => r9((sp9.kind === 'pickup' ? '\u{1F4E6} Extra PICKUP ' : '\u{1F4E4} Extra DELIVERY ') + (i9 + 1),
+                (st9.full ? (sp9.address || '') : ((sp9.city || '') + ', ' + (sp9.state || '')))
+                + (sp9.purpose ? ' \u2014 ' + sp9.purpose : '')
+                + (sp9.date ? ' \u00b7 ' + sp9.date : '')
+                + (sp9.sched === 'Appointment' ? (sp9.time ? ' @ ' + sp9.time : ' (appointment)') : (sp9.window ? ' \u00b7 FCFS ' + sp9.window : ''))
+                + (sp9.doc_number ? ' \u00b7 #' + sp9.doc_number : '')));
             } catch (_) { return []; } })()),
             r9('\ud83d\udccd Delivery address', pk9.destination_full),
             r9('\ud83d\udce6 Pickup / PU number', pk9.pickup_number),
