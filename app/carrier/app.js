@@ -32,7 +32,7 @@ import {
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc } from '../shared/storage.js';
-import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers } from '../shared/api.js';
+import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
@@ -3848,8 +3848,20 @@ function tripStepper(status) {
     (async () => {
       let trs; try { trs = await payMyTransfers(); } catch (e) { mount(payFlightCard, [cardHead('💸 Payments in flight'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
       trs = Array.isArray(trs) ? trs : [];
+      // money OWED to you that the broker has not even sent yet (no transfer row)
+      let owed9 = []; try { const d9 = await payDueItems(); owed9 = ((d9 && d9.receivables) || []).filter((x9) => !x9.transfer_status); } catch (_) {}
       const open9 = trs.filter((x) => x.status === 'sent');
       const done9 = trs.filter((x) => x.status === 'received').slice(0, 5);
+      const owedRow9 = (x9) => {
+        const age9 = x9.due_since ? Math.max(0, Math.round((Date.now() - new Date(x9.due_since).getTime()) / 86400000)) : null;
+        return h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+          h('div', { style: 'flex:1;min-width:200px' }, [
+            h('div', { class: 'cp-row-t' }, '📥 ' + (x9.label || x9.kind) + ' · ' + money(x9.amount)),
+            h('div', { class: 'cp-row-s' }, 'From ' + (x9.counterparty || 'broker') + (x9.due_since ? ' · due since ' + new Date(x9.due_since).toLocaleDateString() + (age9 != null ? ' (' + age9 + 'd)' : '') : '') + ' · memo ' + (x9.memo || '')),
+          ]),
+          h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, '⏰ awaiting broker payment'),
+        ]);
+      };
       const row9 = (x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
         h('div', { style: 'flex:1;min-width:200px' }, [
           h('div', { class: 'cp-row-t' }, (x.direction === 'incoming' ? '📥 ' : '📤 ') + (x.label || x.kind) + ' · ' + money(x.amount)),
@@ -3863,9 +3875,11 @@ function tripStepper(status) {
           } }, '✓ I received it')
         : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, x.kind === 'platform_fee' ? '⏳ LoadBoot verifying' : '⏳ awaiting their ✓'),
       ]);
-      mount(payFlightCard, [cardHead('💸 Payments in flight'),
-        (open9.length || done9.length) ? h('div', null, [...open9.map(row9), ...done9.map(row9)])
-          : h('div', { class: 'cp-muted' }, 'Nothing in flight. When a broker pays an approved claim (or you pay a LoadBoot fee), it appears here with a live status: on the way → ✓ received.')]);
+      const owedTotal9 = owed9.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+      mount(payFlightCard, [cardHead('💸 Your money — owed & in flight'),
+        owedTotal9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, money(owedTotal9) + ' owed to you — brokers see these as DUE with your bank details and pay through the same receipt procedure.') : null,
+        (owed9.length || open9.length || done9.length) ? h('div', null, [...owed9.map(owedRow9), ...open9.map(row9), ...done9.map(row9)])
+          : h('div', { class: 'cp-muted' }, 'Nothing owed or in flight. Delivered loads and approved claims appear here the moment money is due — then: on the way → ✓ received.')]);
     })();
     const SECS = [
       ['earn', '💰 Earnings', () => [earningsHub()]],

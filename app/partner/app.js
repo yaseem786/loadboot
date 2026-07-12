@@ -33,7 +33,7 @@ import { openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
-import { payInstructions, payMarkSent } from '../shared/api.js';
+import { payInstructions, payMarkSent, payDueItems } from '../shared/api.js';
 
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
@@ -3546,6 +3546,40 @@ function packetAgreementCards(skipPacket) {
     else if (sub.length) mount(obHero, mk('#0883F7', '⏳', '#eff6ff', '#1d4ed8', 'Onboarding under review', '#1d4ed8', sub.length + ' item(s) with our team — you\u2019ll be notified as each is verified (usually within 1 business day).', 'Track status →'));
     else mount(obHero, mk('#d97706', '📋', '#fef3c7', '#b45309', 'Finish onboarding to start posting', '#b45309', 'A few required items are still missing — the guided steps take about 10 minutes.', 'Start →'));
   })();
+  // ---- 💰 Payables: every dollar this broker owes right now (freight + approved claims),
+  //      each with the same procedure: bank details → pay → receipt → carrier ✓ Received ----
+  function payablesCard() {
+    const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '💰 Payables — money you owe carriers')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+    (async () => {
+      let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '💰 Payables — money you owe carriers')]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
+      const items9 = (d9 && Array.isArray(d9.payables)) ? d9.payables : [];
+      const openIt = items9.filter((x9) => x9.transfer_status !== 'received');
+      const doneIt = items9.filter((x9) => x9.transfer_status === 'received').slice(0, 5);
+      const totalDue = openIt.filter((x9) => !x9.transfer_status).reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+      const row9 = (x9) => {
+        const age9 = x9.due_since ? Math.max(0, Math.round((Date.now() - new Date(x9.due_since).getTime()) / 86400000)) : null;
+        return h('div', { style: 'padding:10px 0;border-bottom:1px solid #eef2f7' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
+            h('div', null, [
+              h('div', { class: 'cp-row-t' }, (x9.label || x9.kind) + ' · ' + money(x9.amount)),
+              h('div', { class: 'cp-row-s' }, 'to ' + (x9.counterparty || 'carrier') + (x9.due_since ? ' · due since ' + new Date(x9.due_since).toLocaleDateString() + (age9 != null ? ' (' + age9 + 'd)' : '') : '') + ' · memo: ' + (x9.memo || '')),
+            ]),
+            x9.transfer_status === 'received' ? h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150' }, '✓ Paid & confirmed')
+            : x9.transfer_status === 'sent' ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, '💸 On the way · awaiting carrier ✓')
+            : h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, '⏰ DUE'),
+          ]),
+          x9.transfer_status ? null : payRailBlock(x9.kind, x9.ref_id, x9.memo || '', x9.kind === 'claim' ? 'Pay this claim' : 'Pay freight'),
+        ].filter(Boolean));
+      };
+      mount(host9, [
+        h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '💰 Payables — money you owe carriers'),
+          totalDue ? h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c;margin-left:8px' }, money(totalDue) + ' due') : h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-left:8px' }, 'all settled')]),
+        h('div', { class: 'cp-sub', style: 'margin-bottom:4px' }, 'Every delivered load and approved claim lands here the moment it is owed. Pay it, attach the receipt — the carrier confirms and the row turns green.'),
+        (openIt.length || doneIt.length) ? h('div', null, [...openIt.map(row9), ...doneIt.map(row9)]) : h('div', { class: 'cp-muted' }, 'Nothing owed right now — delivered loads and approved claims appear here automatically.'),
+      ]);
+    })();
+    return host9;
+  }
   const PAGES = {
     dashboard: [],
     loads: [],
@@ -3555,7 +3589,7 @@ function packetAgreementCards(skipPacket) {
     rates: [(() => { const hst = h('div'); renderMarketWidget(hst); return hst; })()],
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     onboarding: [brokerOnboardingWizard()],
-    invoices: [invoicesCard()],
+    invoices: [payablesCard(), invoicesCard()],
     account: [accountCard()],
   };
   let btab = (location.hash || '').replace('#', '') || 'dashboard';
@@ -3782,7 +3816,7 @@ function packetAgreementCards(skipPacket) {
           h('div', { style: 'margin-top:6px' }, btns9), cm9, send9);
         bdRate9.appendChild(card9);
       })();
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), bdKpis(), h('div', { id: 'bd-postload' }, [ov.onboarded ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : verifyGateCard(ov)]), myLoadsCard, bdNetwork(), bdActivity()]));
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(), bdKpis(), h('div', { id: 'bd-postload' }, [ov.onboarded ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : verifyGateCard(ov)]), myLoadsCard, bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));

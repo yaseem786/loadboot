@@ -295,6 +295,7 @@ export const payMarkSent = (o = {}) => rpc('pay_mark_sent', { p_kind: o.kind, p_
 export const payConfirmReceived = (id) => rpc('pay_confirm_received', { p_id: id });
 export const payMyTransfers = () => rpc('pay_my_transfers', {});
 export const ccPayPendingFees = () => rpc('cc_pay_pending_fees', {});
+export const payDueItems = () => rpc('pay_due_items', {});
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });

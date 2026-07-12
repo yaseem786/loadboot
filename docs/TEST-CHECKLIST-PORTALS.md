@@ -60,3 +60,9 @@ Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift
       🧾 Receipt khul jaye + "✓ Money received" dabao — carrier ki invoice PAID ho jaye
 - [ ] 27. Broker: delivered load ki Live tracking kholo — "💰 Pay freight to carrier" button
       steps ke neeche dikhe (same bank-details + receipt flow)
+- [ ] 28. Broker: Dashboard + Invoices tab — "💰 Payables — money you owe carriers" card:
+      har delivered load (freight) + har approved claim khud DUE ban kar aaye,
+      "due since <date> (Xd)" ke saath; har item par wahi pay procedure (bank → receipt)
+- [ ] 29. Carrier: Finance → "💸 Your money — owed & in flight" — jo abhi broker ne
+      bheja hi nahi wo "⏰ awaiting broker payment" dikhe (total owed upar), bheja hua
+      "on the way", confirm kiya hua ✓ — teeno states ek jagah
