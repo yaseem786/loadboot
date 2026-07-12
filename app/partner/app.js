@@ -1388,15 +1388,43 @@ async function brokerDash(user, ov) {
         const stopsHost = h('div', { style: 'grid-column:1/-1' });
         if (!Array.isArray(w.stops)) w.stops = [];
         const paintStops = () => {
+          // manual-typing fallback: if the broker typed instead of picking a suggestion,
+          // geocode the composed address on blur so the pin (✓) still lands.
+          const geocodeStop = async (sp) => {
+            if (sp.lat || !((sp.street || '').trim() && (sp.city || '').trim() && (sp.state || '').trim())) return;
+            try {
+              const q9 = [sp.street, sp.city, sp.state, sp.zip].filter(Boolean).join(', ');
+              const r9 = await fetch('https://photon.komoot.io/api/?q=' + encodeURIComponent(q9) + '&limit=1&lang=en&bbox=-125,24,-66.5,49.6');
+              const j9 = await r9.json();
+              const f9 = j9 && j9.features && j9.features[0];
+              if (f9 && f9.geometry && f9.geometry.coordinates) {
+                sp.lng = f9.geometry.coordinates[0]; sp.lat = f9.geometry.coordinates[1];
+                w.svc_extra_stop = true; paintStops(); recalc();
+              }
+            } catch (_) {}
+          };
           const rows9 = w.stops.map((sp, i9) => {
-            const inp9 = h('input', { class: 'cp-in', type: 'text', placeholder: 'Extra stop ' + (i9 + 1) + ' — street address', style: 'margin:0;flex:1' });
-            inp9.value = sp.address || '';
-            inp9.addEventListener('input', (ev9) => { if (ev9 && ev9.isTrusted === false) return; sp.lat = null; sp.lng = null; sp.address = inp9.value; });
-            attachAddressSuggest(inp9, { onPick: (r9) => {
-              sp.address = [r9.street, r9.city, r9.state, r9.zip].filter(Boolean).join(', ');
-              sp.city = r9.city || ''; sp.state = r9.state || ''; sp.zip = r9.zip || ''; sp.seq = i9 + 1;
+            const composeAddr9 = () => { sp.address = [sp.street, sp.city, sp.state, sp.zip].filter(Boolean).join(', '); };
+            const mkF9 = (key9, ph9, wd9, up9) => {
+              const a9 = h('input', { class: 'cp-in', type: 'text', placeholder: ph9, style: 'margin:0;' + (wd9 || 'flex:1;min-width:140px') });
+              a9.value = sp[key9] || '';
+              if (up9) { a9.maxLength = 2; }
+              a9.addEventListener('input', (ev9) => { if (ev9 && ev9.isTrusted === false) return;
+                if (up9) a9.value = a9.value.toUpperCase().replace(/[^A-Z]/g, '');
+                sp[key9] = a9.value; sp.lat = null; sp.lng = null; composeAddr9(); });
+              a9.addEventListener('blur', () => setTimeout(() => geocodeStop(sp), 250));
+              return a9;
+            };
+            const st9 = mkF9('street', 'Street address', 'flex:2;min-width:200px');
+            const ci9 = mkF9('city', 'City');
+            const sa9 = mkF9('state', 'ST', 'flex:none;width:64px', true);
+            const zp9 = mkF9('zip', 'ZIP', 'flex:none;width:90px');
+            attachAddressSuggest(st9, { onPick: (r9) => {
+              sp.street = r9.street || ''; sp.city = r9.city || ''; sp.state = r9.state || ''; sp.zip = r9.zip || ''; sp.seq = i9 + 1;
+              composeAddr9();
               if (r9.lat && r9.lng) { sp.lat = r9.lat; sp.lng = r9.lng; }
-              inp9.value = sp.address; w.svc_extra_stop = true; recalc();
+              st9.value = sp.street; ci9.value = sp.city; sa9.value = sp.state; zp9.value = sp.zip;
+              w.svc_extra_stop = true; paintStops(); recalc();
             } });
             const del9 = h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'flex:none', onClick: () => { w.stops.splice(i9, 1); w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); if (!w.stops.length) w.svc_extra_stop = false; paintStops(); recalc(); } }, '✕');
             const kind9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;max-width:170px' }, [['pickup', '📦 Extra PICKUP (load more)'], ['delivery', '📤 Extra DELIVERY (drop part)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
@@ -1405,7 +1433,9 @@ async function brokerDash(user, ov) {
             const purp9 = h('input', { class: 'cp-in', type: 'text', placeholder: 'Purpose — e.g. drop 6 pallets at Ace Hardware', style: 'margin:0;flex:1' });
             purp9.value = sp.purpose || ''; purp9.oninput = () => { sp.purpose = purp9.value; };
             return h('div', { style: 'margin-top:8px;padding:8px;border:1px dashed #dbe3ee;border-radius:10px' }, [
-              h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)), inp9, sp.lat ? h('span', { title: 'pinned', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓') : h('span', { title: 'pick a suggestion to pin', style: 'flex:none;color:#f59e0b' }, '…'), del9]),
+              h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
+                h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)), st9, ci9, sa9, zp9,
+                sp.lat ? h('span', { title: 'pinned — exact GPS geofence set', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓ pinned') : h('span', { title: 'pick a suggestion, or fill street+city+ST and click away — the pin sets itself', style: 'flex:none;color:#f59e0b;font-size:.78rem;font-weight:700' }, '… pin pending'), del9]),
               h('div', { style: 'display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap' }, [kind9, purp9]),
               h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'Order matters: the driver runs Pickup → stops 1‑2‑3 (in this order) → Final delivery. Put an extra PICKUP right after the main pickup, extra DELIVERY before the final one.'),
             ]);
