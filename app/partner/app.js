@@ -1456,9 +1456,43 @@ async function brokerDash(user, ov) {
               h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'THIS order is the driver\u2019s run: Main pickup \u2192 stop 1 \u2192 stop 2 \u2192 stop 3 \u2192 Final delivery. Use \u25b2\u25bc to set the real sequence \u2014 the route, miles, ETA and the driver\u2019s turn-by-turn all follow it. (Main pickup is ALWAYS first and final delivery ALWAYS last \u2014 if a pickup must happen before the main one, make THAT the main pickup.)'),
             ]);
           });
+          // ---- RUN ORDER: the system ASKS the broker for the sequence, in plain sight ----
+          const hav9 = (a9, b9, c9, d9) => { const r9 = (x9) => x9 * Math.PI / 180; return 6371 * 2 * Math.asin(Math.sqrt(Math.sin(r9(c9 - a9) / 2) ** 2 + Math.cos(r9(a9)) * Math.cos(r9(c9)) * Math.sin(r9(d9 - b9) / 2) ** 2)); };
+          const pinned9 = w.stops.filter((z9) => z9 && z9.lat);
+          const orderCard9 = pinned9.length ? (() => {
+            const posSel9 = (sp9) => {
+              const sel9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;width:64px;font-weight:800' }, w.stops.map((_z9, k9) => h('option', { value: String(k9) }, String(k9 + 1))));
+              sel9.value = String(w.stops.indexOf(sp9));
+              sel9.onchange = () => { const from9 = w.stops.indexOf(sp9); const to9 = Math.max(0, Math.min(w.stops.length - 1, parseInt(sel9.value, 10) || 0));
+                w.stops.splice(to9, 0, w.stops.splice(from9, 1)[0]); w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); paintStops(); recalc(); };
+              return sel9;
+            };
+            const rowO9 = (icon9, label9, ctrl9, tone9) => h('div', { style: 'display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:10px;background:' + (tone9 || '#fff') + ';border:1px solid #e2e8f0;margin-top:6px' }, [
+              h('span', { style: 'flex:none;font-size:1rem' }, icon9), h('div', { style: 'flex:1;font-size:.85rem;font-weight:700;color:#10223B' }, label9), ctrl9 || null].filter(Boolean));
+            const optimize9 = h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: () => {
+              if (!(geo.o && geo.d)) { alert('Pin the main pickup & delivery first.'); return; }
+              const rest9 = w.stops.slice(); const ordered9 = []; let cur9 = { lat: geo.o.lat, lng: geo.o.lng };
+              while (rest9.length) { let bi9 = 0, bd9 = Infinity; rest9.forEach((z9, k9) => { const dd9 = z9.lat ? hav9(cur9.lat, cur9.lng, z9.lat, z9.lng) : Infinity; if (dd9 < bd9) { bd9 = dd9; bi9 = k9; } });
+                const nx9 = rest9.splice(bi9, 1)[0]; ordered9.push(nx9); if (nx9.lat) cur9 = { lat: nx9.lat, lng: nx9.lng }; }
+              w.stops = ordered9; w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); paintStops(); recalc();
+            } }, '✨ Suggest shortest-route order');
+            const seqTxt9 = ['🅰 ' + (w.o_city || 'Pickup')].concat(w.stops.map((z9, k9) => (z9.kind === 'pickup' ? '📦' : '📤') + (k9 + 1) + ' ' + (z9.city || z9.street || '?'))).concat(['🏁 ' + (w.d_city || 'Delivery')]).join('  →  ');
+            return h('div', { style: 'grid-column:1/-1;margin-top:10px;background:#f0f7ff;border:1.5px solid #bfdbfe;border-radius:14px;padding:12px 14px' }, [
+              h('div', { style: 'font-weight:800;font-size:.92rem;color:#10223B' }, '🔢 Set the RUN ORDER — the driver serves the stops exactly in this sequence'),
+              h('div', { class: 'cp-sub', style: 'margin-top:2px' }, 'Main pickup is always FIRST and final delivery always LAST. Pick each stop\u2019s position (1 = right after pickup) — the route, miles, ETA and every arrival time in the next step recalculate instantly.'),
+              rowO9('🅰', 'Main PICKUP — ' + ((w.o_city || '') + (w.o_state ? ', ' + w.o_state : '') || 'set in the fields above'), h('span', { class: 'cp-pill', style: 'background:#dbeafe;color:#1d4ed8' }, 'always 1st'), '#eff6ff'),
+              ...w.stops.map((sp9, k9) => rowO9(sp9.kind === 'pickup' ? '📦' : '📤',
+                (sp9.kind === 'pickup' ? 'Extra PICKUP' : 'Extra DELIVERY') + ' — ' + ((sp9.city ? sp9.city + (sp9.state ? ', ' + sp9.state : '') : sp9.street || 'stop ' + (k9 + 1))) + (sp9.purpose ? ' · ' + sp9.purpose : ''),
+                posSel9(sp9))),
+              rowO9('🏁', 'Final DELIVERY — ' + ((w.d_city || '') + (w.d_state ? ', ' + w.d_state : '') || 'set in the fields above'), h('span', { class: 'cp-pill', style: 'background:#ffedd5;color:#c2410c' }, 'always last'), '#fff7ed'),
+              w.stops.length > 1 ? optimize9 : null,
+              h('div', { class: 'cp-sub', style: 'margin-top:8px;font-weight:700' }, seqTxt9),
+            ].filter(Boolean));
+          })() : null;
           mount(stopsHost, h('div', null, [
             h('div', { class: 'cp-sub', style: 'font-weight:700;color:#10223B;margin-top:8px' }, '➕ Extra stops (optional — multi-stop load)'),
             ...rows9,
+            orderCard9,
             (w.stops.length < 3) ? h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => { w.stops.push({ seq: w.stops.length + 1, address: '' }); paintStops(); } }, '+ Add extra stop') : null,
             w.stops.length ? h('div', { class: 'cp-sub', style: 'margin-top:4px' }, '$' + (w.acc_extra_stop || '100') + '/stop pays the carrier per the rate card · the detour is added to the real driving miles and the delivery ETA below · each stop gets its own GPS geofence, detention clock and stop-off fee on the trip.') : null,
           ].filter(Boolean)));
