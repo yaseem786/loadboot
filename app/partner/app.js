@@ -3059,7 +3059,7 @@ async function brokerDash(user, ov) {
       const pend = rows.filter((b) => b.claim && b.claim.broker_status === 'pending').length;
       const items = rows.length ? rows.map((b) => {
         const c = b.claim || {}; const t = b.trip || {}; const dw = b.gps_dwell || []; const cxl = b.cancellation_trail || [];
-        const stPill = c.broker_status === 'approved' ? ['#e7f9ee', '#12a150', '\u2713 You approved'] : c.broker_status === 'disputed' ? ['#fee2e2', '#b91c1c', '\u2715 You disputed'] : ['#fef3c7', '#b45309', '\u23f3 Needs your review'];
+        const stPill = c.broker_status === 'approved' ? ['#e7f9ee', '#12a150', '\u2713 You approved'] : c.broker_status === 'disputed' ? ['#fee2e2', '#b91c1c', '\u2715 You rejected'] : ['#fef3c7', '#b45309', '\u23f3 Needs your review'];
         const supPill = c.support_status === 'open' ? h('span', { class: 'cp-pill', style: 'background:#dbeafe;color:#1d4ed8' }, '\ud83c\udfa7 With LoadBoot support') : c.support_status === 'decided' ? h('span', { class: 'cp-pill', style: 'background:' + (c.support_verdict === 'broker' ? '#e7f9ee;color:#12a150' : '#fee2e2;color:#b91c1c') }, '\u2696 Support ruled: ' + c.support_verdict) : null;
         const det = h('div', { style: 'display:none;margin-top:8px;border-top:1px dashed #e2e8f0;padding-top:8px' }, [
           h('div', { style: 'font-weight:700;font-size:.85rem;margin-bottom:4px' }, '\ud83d\udd52 What happened, minute by minute'),
@@ -3093,9 +3093,9 @@ async function brokerDash(user, ov) {
             b9.disabled = true; try { await partnerReviewClaim(c.id, 'approve', null); loadClaims(); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
           } }, '\u2713 Approve'),
           h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#fff;border:1px solid #fca5a5;color:#b91c1c', onClick: async (ev) => { const b9 = ev.currentTarget;
-            const nt = prompt('Dispute \u2014 why? (the carrier sees this; LoadBoot support can be called in to decide on the GPS evidence):'); if (!nt) return;
+            const nt = prompt('Reject \u2014 why? (the carrier sees this; LoadBoot support can be called in to decide on the GPS evidence):'); if (!nt) return;
             b9.disabled = true; try { await partnerReviewClaim(c.id, 'dispute', nt); loadClaims(); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
-          } }, '\u2715 Dispute'),
+          } }, '\u2715 Reject'),
         ]) : (c.support_status === 'none' && c.broker_status === 'disputed') ? h('div', { style: 'margin-top:8px' },
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
             try { await claimEscalate(c.id); loadClaims(); alert('Escalated \u2014 LoadBoot support will investigate the GPS + policy evidence and decide. The verdict is final for both sides.'); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }

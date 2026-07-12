@@ -72,3 +72,11 @@ Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift
 - [ ] 31. Carrier: File-a-claim dropdown mein ab 7 kinds (detention/layover/TONU/lumper/
       driver assist/extra stop/other); lumper ya other chuno to "Receipt total $" box aaye —
       baghair amount ke file na ho; TONU/driver assist file karo to amount khud rate card se aaye
+- [ ] 32. Detention FAIRNESS: sim trip chalao — 10 min ke andar nikal jao to claim BANE HI NA
+      (exit grace); 45+ min ruko to 30-min block mein bill ho ("30-min blocks, 10 min exit
+      grace deducted" calc mein likha ho). Chhoti $1–3 claims ab kabhi nahi banni chahiye
+- [ ] 33. Broker Claims par ab "✕ Reject" hai (Dispute nahi) — reject karo to carrier ko
+      "✕ Broker rejected" + support-escalate ka rasta dikhe
+- [ ] 34. Carrier: Finance → owed item 3+ din purana ho to "⚠ Dispute non-payment" button —
+      dabao to broker ko urgent notice + LoadBoot support ko report jaye
+      (dispute ab PAYMENT stage ka hathiyar hai, claim-review ka nahi)

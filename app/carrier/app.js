@@ -32,7 +32,7 @@ import {
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc } from '../shared/storage.js';
-import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems } from '../shared/api.js';
+import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
@@ -2655,7 +2655,7 @@ function tripStepper(status) {
               h('div', { class: 'cp-row-s' }, (a.note || '') + (a.decision_note ? ' — ' + a.decision_note : '')),
               (a.evidence && a.evidence.calc) ? h('div', { class: 'cp-row-s', style: 'color:#7cc0ff' }, '🧮 ' + a.evidence.calc) : null,
               h('div', { style: 'display:flex;gap:6px;margin-top:3px;flex-wrap:wrap' }, [
-                bs === 'approved' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ Broker approved') : bs === 'disputed' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171', title: a.broker_note || '' }, '✕ Broker disputed') : bs ? h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:#94a3b8' }, 'Broker reviewing') : null,
+                bs === 'approved' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ Broker approved') : bs === 'disputed' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171', title: a.broker_note || '' }, '✕ Broker rejected') : bs ? h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:#94a3b8' }, 'Broker reviewing') : null,
                 ss === 'open' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.14);color:#3b9dff' }, '🎧 With support') : null,
                 ss === 'decided' ? h('span', { class: 'cp-pill', style: 'background:' + (a.support_verdict === 'carrier' ? 'rgba(34,197,94,.14);color:#4ade80' : 'rgba(239,68,68,.14);color:#f87171') }, '⚖ ' + (a.support_verdict === 'carrier' ? 'Ruled FOR you' : 'Ruled against you')) : null,
                 (trMap9[a.id] && trMap9[a.id].status === 'sent') ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, '\u{1F4B8} Payment on the way \u00b7 by ' + (trMap9[a.id].expected_by ? new Date(trMap9[a.id].expected_by).toLocaleDateString() : 'soon')) : null,
@@ -3865,7 +3865,13 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-t' }, '📥 ' + (x9.label || x9.kind) + ' · ' + money(x9.amount)),
             h('div', { class: 'cp-row-s' }, 'From ' + (x9.counterparty || 'broker') + (x9.due_since ? ' · due since ' + new Date(x9.due_since).toLocaleDateString() + (age9 != null ? ' (' + age9 + 'd)' : '') : '') + ' · memo ' + (x9.memo || '')),
           ]),
-          h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, '⏰ awaiting broker payment'),
+          h('div', { style: 'display:flex;flex-direction:column;gap:6px;align-items:flex-end' }, [
+            h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, '⏰ awaiting broker payment'),
+            (age9 != null && age9 >= 3 && (x9.kind === 'claim' || x9.kind === 'freight')) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+              const nt9 = prompt('Dispute non-payment — what happened? (goes to the broker AND LoadBoot support):'); if (!nt9) return;
+              b9.disabled = true; try { const r9 = await payDispute(x9.kind, x9.ref_id, nt9); lbToast((r9 && r9.note) || 'Dispute filed.', 'success', 'Dispute filed'); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
+            } }, '⚠ Dispute non-payment') : null,
+          ].filter(Boolean)),
         ]);
       };
       const row9 = (x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
