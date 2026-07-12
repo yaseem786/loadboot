@@ -8,7 +8,7 @@
 // • External navigation row (Google / Waze / phone chooser) like inDrive —
 //   navigate anywhere, proof always lands in LoadBoot
 // • Manual buttons remain as fallback when GPS is flaky
-import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin, pocketPostLocation } from '../shared/api.js';
+import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin, pocketPostLocation, pocketUploadTripDoc } from '../shared/api.js';
 
 const RADIUS_M = 800;
 const ORANGE = '#FC5305', BLUE = '#0883F7';
@@ -394,6 +394,26 @@ export async function openTripMap(t, opts = {}) {
   extRow.append(gBtn, wBtn, oBtn);
   const extNote = el('div', 'color:#7f8a9c;font-size:.72rem;font-weight:600;text-align:center;margin-top:7px', 'Navigate with any app — check-ins and proof stay in LoadBoot automatically.');
   card.append(statEl, actBtn, extRow, extNote);
+  // ---- dock evidence quick-capture: shows ONLY while on site (paper + GPS = bulletproof claim) ----
+  const proofRow = el('div', 'display:none;gap:8px;margin-top:9px');
+  const proofNote = el('div', 'display:none;color:#7f8a9c;font-size:.72rem;font-weight:600;text-align:center;margin-top:6px', '\u{1F4CE} While you wait: photo the dock, the facility-signed BOL/POD (with IN/OUT times) and any lumper receipt \u2014 they attach to this trip and land in any claim automatically.');
+  const proofInput = (() => { const i9 = el('input', 'display:none'); i9.type = 'file'; i9.accept = '.pdf,.jpg,.jpeg,.png,.webp'; return i9; })();
+  let proofKind = 'stop_photo';
+  const mkProof = (label9, kind9) => { const b9 = extBtn(label9); b9.onclick = () => { proofKind = kind9; proofInput.click(); }; return b9; };
+  proofRow.append(mkProof('\u{1F4F7} Dock photo', 'stop_photo'), mkProof('\u{1F4DD} Signed BOL/POD', 'bol_signed'), mkProof('\u{1F9FE} Lumper receipt', 'lumper_receipt'));
+  proofInput.onchange = async () => {
+    const f9 = proofInput.files && proofInput.files[0]; if (!f9) return;
+    const kind9 = (proofKind === 'bol_signed' && (step === 'at_delivery' || step === 'to_delivery' || step === 'done')) ? 'pod_signed' : proofKind;
+    try {
+      flash('\u23F3 Uploading proof\u2026');
+      const st9 = await import('../shared/storage.js');
+      const m9 = await st9.uploadTripDoc(f9, t.id, kind9);
+      await pocketUploadTripDoc({ trip: t.id, kind: kind9, path: m9.path, fileName: m9.fileName, contentType: m9.contentType, size: m9.size });
+      flash('\u2713 Proof attached \u2014 it goes into any claim automatically');
+    } catch (e9) { flash((e9 && e9.message) || 'Upload failed', true); }
+    proofInput.value = '';
+  };
+  card.append(proofRow, proofNote, proofInput);
   const destLL = () => { const tg = target(); return tg ? tg.lat + ',' + tg.lng : encodeURIComponent(((step === 'to_delivery' || step === 'at_delivery') ? t.destination : t.origin) || ''); };
   gBtn.onclick = () => window.open('https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + destLL(), '_blank');
   wBtn.onclick = () => window.open('https://waze.com/ul?ll=' + destLL() + '&navigate=yes', '_blank');
@@ -459,6 +479,8 @@ export async function openTripMap(t, opts = {}) {
     const schedT = (step === 'to_delivery' || step === 'at_delivery') ? t.scheduled_delivery : t.scheduled_pickup;
     sbSched._v.textContent = t.pickup_mode === 'fcfs' ? 'FCFS' : schedT ? new Date(schedT).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
     paintSteps(step === 'to_pickup' ? (onway ? 1 : 0) : step === 'at_pickup' ? 1 : step === 'to_delivery' ? 2 : step === 'at_delivery' ? 3 : 4);
+    const onSite = step === 'at_pickup' || step === 'at_delivery';
+    proofRow.style.display = onSite ? 'flex' : 'none'; proofNote.style.display = onSite ? 'block' : 'none';
     const near = distM != null && distM <= RADIUS_M;
     actBtn.disabled = false; actBtn.style.opacity = '1';
     const etaTxt = nav.min != null ? (nav.min + ' min · ' + nav.km.toFixed(1) + ' km · ' + nav.at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) : null;

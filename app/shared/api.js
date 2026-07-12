@@ -289,6 +289,12 @@ export const partnerClaims = () => rpc('cc_partner_claims', {});
 export const partnerReviewClaim = (id, action, note) => rpc('cc_partner_review_claim', { p_id: id, p_action: action, p_note: note ?? null });
 export const claimEscalate = (id) => rpc('cc_claim_escalate', { p_id: id });
 export const supportDecideClaim = (id, verdict, amount, note) => rpc('cc_support_decide_claim', { p_id: id, p_verdict: verdict, p_amount: amount ?? null, p_note: note ?? null });
+// ---- Manual payment rails (Phase 0 payment engine — bl_pay_0065) ----
+export const payInstructions = (kind, ref) => rpc('pay_instructions', { p_kind: kind, p_ref: ref });
+export const payMarkSent = (o = {}) => rpc('pay_mark_sent', { p_kind: o.kind, p_ref: o.ref, p_receipt_path: o.receiptPath, p_receipt_name: o.receiptName ?? 'receipt', p_payment_ref: o.paymentRef ?? null, p_method: o.method ?? null });
+export const payConfirmReceived = (id) => rpc('pay_confirm_received', { p_id: id });
+export const payMyTransfers = () => rpc('pay_my_transfers', {});
+export const ccPayPendingFees = () => rpc('cc_pay_pending_fees', {});
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });

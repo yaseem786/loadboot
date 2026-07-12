@@ -33,6 +33,7 @@ import { openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
+import { payInstructions, payMarkSent } from '../shared/api.js';
 
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
@@ -55,6 +56,53 @@ const h = (tag, attrs, kids) => {
 };
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
 const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+// ---- payment rails (bl_pay_0065): HOW-TO-PAY panel + receipt upload + live status ----
+function payRailBlock(kind9, ref9, memo9, label9) {
+  const host9 = h('div');
+  (async () => {
+    let pi; try { pi = await payInstructions(kind9, ref9); } catch (_) { return; }
+    const tr9 = pi && pi.transfer;
+    if (tr9 && tr9.status === 'received') {
+      mount(host9, h('div', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-top:8px' }, '\u2713 ' + (label9 || 'Payment') + ' \u2014 carrier confirmed received' + (tr9.received_at ? ' ' + new Date(tr9.received_at).toLocaleDateString() : ''))); return;
+    }
+    if (tr9 && tr9.status === 'sent') {
+      mount(host9, h('div', { style: 'margin-top:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;font-size:.85rem' },
+        '\u{1F4B8} ' + (label9 || 'Payment') + ' sent \u2014 receipt uploaded. Expected to land by ' + (tr9.expected_by ? new Date(tr9.expected_by).toLocaleDateString() : '1\u20133 business days') + ' \u00b7 shows as PAID once the carrier taps \u201C\u2713 Received\u201D.' + (tr9.payment_ref ? ' \u00b7 ref: ' + tr9.payment_ref : ''))); return;
+    }
+    const bank = pi.payee_bank || {};
+    const row9 = (k9, v9) => v9 ? h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #e2e8f0;font-size:.85rem' }, [h('span', { style: 'color:#64748b' }, k9), h('b', { style: 'user-select:all' }, String(v9))]) : null;
+    const refIn = h('input', { class: 'cp-in', placeholder: 'Bank transfer reference / confirmation #', style: 'margin-top:8px' });
+    const fIn = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.85rem;margin-top:6px' });
+    const msg9 = h('div', { class: 'cp-sub', style: 'margin-top:4px' });
+    const sendB = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+      const f9 = fIn.files && fIn.files[0]; if (!f9) { msg9.textContent = 'Attach the payment receipt/screenshot first \u2014 that is what the carrier sees.'; return; }
+      b9.disabled = true; b9.textContent = 'Sending\u2026';
+      try {
+        const m9 = await uploadDocument(f9, 'payment_receipt');
+        await payMarkSent({ kind: kind9, ref: ref9, receiptPath: m9.path, receiptName: m9.fileName, paymentRef: refIn.value.trim() || null, method: 'bank_transfer' });
+        mount(host9, h('div', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-top:8px' }, '\u{1F4B8} Receipt sent \u2014 the carrier now sees this payment on the way.'));
+      } catch (e9) { b9.disabled = false; b9.textContent = 'I have paid \u2014 submit receipt'; msg9.textContent = (e9 && e9.message) || 'Failed.'; }
+    } }, 'I have paid \u2014 submit receipt');
+    const panel = h('div', { style: 'display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;color:#10223B;text-align:left' }, [
+      h('div', { style: 'font-weight:800;font-size:.9rem' }, 'How to pay \u2014 ' + (pi.label || label9 || '')),
+      h('div', { style: 'font-size:1.3rem;font-weight:900;margin:4px 0' }, money(pi.amount || 0)),
+      pi.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi.noa_warning) : null,
+      bank.instructions ? h('div', { class: 'cp-sub', style: 'white-space:pre-wrap' }, bank.instructions) : h('div', null, [
+        row9('Payee', bank.account_title), row9('Bank', bank.bank_name), row9('Account #', bank.account_number),
+        row9('Routing (ACH)', bank.routing_number), row9('Account type', bank.account_type), row9('SWIFT/BIC', bank.swift_bic),
+        row9('Remittance email', bank.remittance_email), row9('Preferred method', bank.payment_method),
+        bank.verified ? h('div', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-top:6px' }, '\u2713 Bank details verified by LoadBoot') : h('div', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-top:6px' }, '\u26a0 Details not yet verified \u2014 confirm with the carrier before a large transfer'),
+      ].filter(Boolean)),
+      h('div', { class: 'cp-sub', style: 'margin-top:8px' }, (pi.guidelines || '') + ' Use this memo reference: '),
+      h('b', { style: 'user-select:all' }, memo9 || ''),
+      refIn, fIn, sendB, msg9,
+    ].filter(Boolean));
+    const openB = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a;margin-top:8px', onClick: () => { openB.style.display = 'none'; panel.style.display = 'block'; } }, '\u{1F4B0} ' + (label9 || 'Pay') + ' \u2014 ' + money(pi.amount || 0));
+    mount(host9, h('div', null, [openB, panel]));
+  })();
+  return host9;
+}
 const fmtDate = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return '—'; } };
 const fmtDT = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return '—'; } };
 const TONE = { submitted: 'amber', accepted: 'blue', declined: 'red', posted: 'green', requested: 'amber', quoted: 'blue', booked: 'green', scheduled: 'blue', checked_in: 'amber', completed: 'green', no_show: 'red', cancelled: 'gray', inbound: 'blue', outbound: 'violet' };
@@ -2658,6 +2706,7 @@ async function brokerDash(user, ov) {
           h('div', { class: 't' }, nm),
           h('div', { class: 's' }, fmtT(at9) || (i9 === cur ? 'in progress\u2026' : '')),
         ]))),
+        (t && t.delivered_at && !cancelled) ? payRailBlock('freight', t.id, (ld.ref || ('LOAD-' + String(l.id).slice(0, 8).toUpperCase())), 'Pay freight to carrier') : null,
         mapEl,
         h('div', { class: 'lt-grid', id: 'lt-tiles' }),
         (d.events || []).length ? h('div', { style: 'background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:14px 16px;margin-top:2px' }, [
@@ -3017,8 +3066,10 @@ async function brokerDash(user, ov) {
           (Array.isArray(b.timeline) && b.timeline.length) ? h('div', { style: 'border-left:3px solid #0883F7;padding-left:10px;margin-bottom:8px' }, b.timeline.map((tl9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [h('b', { style: 'color:#0f172a' }, tl9.at ? new Date(tl9.at).toLocaleString() : ''), ' \u2014 ' + (tl9.what || '')]))) : h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'No timeline events yet.'),
           (Array.isArray(b.stop_documents) && b.stop_documents.length) ? h('div', { style: 'margin-bottom:8px' }, [
             h('div', { style: 'font-weight:700;font-size:.85rem' }, '\ud83d\udcce Paper proof collected at the stops'),
-            ...b.stop_documents.map((d9) => h('div', { class: 'cp-sub', style: 'padding:2px 0' },
-              ({ bol_signed: '\ud83d\udcdd Facility-SIGNED BOL', pod_signed: '\ud83d\udcdd Facility-SIGNED POD', lumper_receipt: '\ud83e\uddfe Lumper receipt', gate_ticket: '\ud83c\udfab Gate ticket', stop_photo: '\ud83d\udcf7 Stop photo', pod: 'POD' }[d9.kind] || d9.kind) + ' \u2014 ' + (d9.file_name || '') + ' \u00b7 uploaded ' + (d9.uploaded_at ? new Date(d9.uploaded_at).toLocaleString() : '') + ' \u00b7 held by LoadBoot (ask support for a certified copy)')),
+            ...b.stop_documents.map((d9) => h('div', { class: 'cp-sub', style: 'padding:2px 0' }, [
+              ({ bol_signed: '\ud83d\udcdd Facility-SIGNED BOL', pod_signed: '\ud83d\udcdd Facility-SIGNED POD', lumper_receipt: '\ud83e\uddfe Lumper receipt', gate_ticket: '\ud83c\udfab Gate ticket', stop_photo: '\ud83d\udcf7 Stop photo', pod: 'POD' }[d9.kind] || d9.kind) + ' \u2014 ' + (d9.file_name || '') + ' \u00b7 uploaded ' + (d9.uploaded_at ? new Date(d9.uploaded_at).toLocaleString() : ''),
+              d9.path ? h('a', { href: '#', style: 'margin-left:8px;color:#0883F7;font-weight:700', onClick: async (ev9) => { ev9.preventDefault(); const a9 = ev9.currentTarget; const was9 = a9.textContent; a9.textContent = 'opening\u2026'; try { const u9 = await signedDocumentUrl(d9.path, 600); window.open(u9, '_blank', 'noopener'); } catch (e9) { alert((e9 && e9.message) || 'Could not open the document.'); } a9.textContent = was9; } }, 'View \u2197') : h('span', { style: 'margin-left:8px;color:#94a3b8' }, '(ask support for a copy)'),
+            ].filter(Boolean))),
           ] ) : null,
           h('div', { style: 'font-weight:700;font-size:.85rem' }, 'GPS evidence \u2014 recorded on scene'),
           dw.length ? h('div', null, dw.map((e9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [
@@ -3048,12 +3099,63 @@ async function brokerDash(user, ov) {
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
             try { await claimEscalate(c.id); loadClaims(); alert('Escalated \u2014 LoadBoot support will investigate the GPS + policy evidence and decide. The verdict is final for both sides.'); } catch (e) { b9.disabled = false; alert((e && e.message) || 'Failed.'); }
           } }, '\ud83c\udfa7 Ask LoadBoot support to decide')) : null;
+        // ---- PAY THIS CLAIM: bank details + guidelines -> receipt upload -> carrier confirms ----
+        const payW = h('div');
+        if (c.broker_status === 'approved') (async () => {
+          let pi; try { pi = await payInstructions('claim', c.id); } catch (_) { return; }
+          const tr9 = pi && pi.transfer;
+          const renderState = () => {
+            if (tr9 && tr9.status === 'received') {
+              mount(payW, h('div', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-top:8px' }, '\u2713 Paid \u2014 carrier confirmed received ' + (tr9.received_at ? new Date(tr9.received_at).toLocaleDateString() : '')));
+              return;
+            }
+            if (tr9 && tr9.status === 'sent') {
+              mount(payW, h('div', { style: 'margin-top:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;font-size:.85rem' }, [
+                h('b', null, '\u{1F4B8} Payment sent \u2014 receipt uploaded. '),
+                'Expected to land by ' + (tr9.expected_by ? new Date(tr9.expected_by).toLocaleDateString() : '1\u20133 business days') + ' \u00b7 shows as PAID once the carrier taps \u201C\u2713 Received\u201D.',
+                tr9.payment_ref ? ' \u00b7 ref: ' + tr9.payment_ref : '',
+              ]));
+              return;
+            }
+            const openB = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a;margin-top:8px', onClick: () => { openB.style.display = 'none'; panel.style.display = 'block'; } }, '\u{1F4B8} Pay this claim \u2014 ' + money(pi.amount || c.amount || 0));
+            const bank = pi.payee_bank || {};
+            const row9 = (k9, v9) => v9 ? h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #e2e8f0;font-size:.85rem' }, [h('span', { style: 'color:#64748b' }, k9), h('b', { style: 'user-select:all' }, String(v9))]) : null;
+            const refIn = h('input', { class: 'cp-in', placeholder: 'Bank transfer reference / confirmation #', style: 'margin-top:8px' });
+            const fIn = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.85rem;margin-top:6px' });
+            const msg9 = h('div', { class: 'cp-sub', style: 'margin-top:4px' });
+            const sendB = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+              const f9 = fIn.files && fIn.files[0]; if (!f9) { msg9.textContent = 'Attach the payment receipt/screenshot first \u2014 that is what the carrier sees.'; return; }
+              b9.disabled = true; b9.textContent = 'Sending\u2026';
+              try {
+                const m9 = await uploadDocument(f9, 'payment_receipt');
+                await payMarkSent({ kind: 'claim', ref: c.id, receiptPath: m9.path, receiptName: m9.fileName, paymentRef: refIn.value.trim() || null, method: 'bank_transfer' });
+                loadClaims();
+              } catch (e9) { b9.disabled = false; b9.textContent = 'I have paid \u2014 submit receipt'; msg9.textContent = (e9 && e9.message) || 'Failed.'; }
+            } }, 'I have paid \u2014 submit receipt');
+            const panel = h('div', { style: 'display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px' }, [
+              h('div', { style: 'font-weight:800;font-size:.9rem' }, 'How to pay \u2014 ' + (pi.label || 'this claim')),
+              h('div', { style: 'font-size:1.3rem;font-weight:900;margin:4px 0' }, money(pi.amount || 0)),
+              pi.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi.noa_warning) : null,
+              bank.instructions ? h('div', { class: 'cp-sub', style: 'white-space:pre-wrap' }, bank.instructions) : h('div', null, [
+                row9('Payee', bank.account_title), row9('Bank', bank.bank_name), row9('Account #', bank.account_number),
+                row9('Routing (ACH)', bank.routing_number), row9('Account type', bank.account_type), row9('SWIFT/BIC', bank.swift_bic),
+                row9('Remittance email', bank.remittance_email), row9('Preferred method', bank.payment_method),
+                bank.verified ? h('div', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-top:6px' }, '\u2713 Bank details verified by LoadBoot') : h('div', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-top:6px' }, '\u26a0 Details not yet verified \u2014 confirm with the carrier before a large transfer'),
+              ].filter(Boolean)),
+              h('div', { class: 'cp-sub', style: 'margin-top:8px' }, (pi.guidelines || '') + ' Use this memo reference: '),
+              h('b', { style: 'user-select:all' }, c.ref || ''),
+              refIn, fIn, sendB, msg9,
+            ].filter(Boolean));
+            mount(payW, h('div', null, [openB, panel]));
+          };
+          renderState();
+        })();
         return h('div', { style: 'padding:10px 0;border-bottom:1px solid #e2e8f0' }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;cursor:pointer', onClick: () => { const on = det.style.display !== 'none'; det.style.display = on ? 'none' : 'block'; caret.textContent = on ? '\u25be Evidence' : '\u25b4 Hide'; } }, [
             h('div', null, [h('b', null, String(c.kind || '').toUpperCase() + ' \u2014 ' + (t.origin || '') + ' \u2192 ' + (t.destination || '')), h('div', { class: 'cp-sub' }, (c.ref || '') + ' \u00b7 filed ' + (c.filed_at ? new Date(c.filed_at).toLocaleString() : '') + ' \u00b7 carrier: ' + (t.carrier || ''))]),
             h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [supPill, h('span', { class: 'cp-pill', style: 'background:' + stPill[0] + ';color:' + stPill[1] }, stPill[2]), caret].filter(Boolean)),
           ]),
-          actRow, det,
+          actRow, payW, det,
         ].filter(Boolean));
       }) : [h('div', { class: 'cp-sub' }, 'No claims filed on your loads.')];
       mount(card, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, '\ud83d\udcb0 Claims on your loads'), pend ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-left:8px' }, pend + ' need review') : null].filter(Boolean)), ...items]);

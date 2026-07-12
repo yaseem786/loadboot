@@ -4,7 +4,8 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, card, money, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
-import { opsRadar } from '../../shared/api.js';
+import { opsRadar, ccPayPendingFees, payConfirmReceived } from '../../shared/api.js';
+import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError } from '../../shared/errors.js';
 
 function go(hash) { location.hash = hash; }
@@ -22,6 +23,25 @@ export function renderRadar(host) {
 
   async function load() {
     let r; try { r = await opsRadar(); } catch (e) { showError(body, humanizeError(e), load); return; }
+    let feeRows = []; try { const fr = await ccPayPendingFees(); feeRows = Array.isArray(fr) ? fr : []; } catch (_) {}
+    const feeCard = feeRows.length ? card([
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '💳 Fee receipts to verify'), el('span', { class: 'cc-pill cc-pill-amber' }, String(feeRows.length))]),
+      el('div', { class: 'cc-doclist' }, feeRows.slice(0, 10).map((x) => el('div', { class: 'cc-docrow', style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding:6px 0' }, [
+        el('div', null, [
+          el('div', { style: 'font-weight:700' }, (x.carrier || 'Carrier') + ' — ' + money(x.amount || 0) + (x.invoice_no ? ' · ' + x.invoice_no : '')),
+          el('div', { class: 'cc-sub' }, 'sent ' + (x.sent_at ? fmtDateTime(x.sent_at) : '') + (x.payment_ref ? ' · ref ' + x.payment_ref : '')),
+        ]),
+        el('div', { style: 'display:flex;gap:6px' }, [
+          x.receipt_path ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const b9 = ev.currentTarget; const w9 = b9.textContent; b9.textContent = '…';
+            try { const u9 = await signedDocumentUrl(x.receipt_path, 600); window.open(u9, '_blank', 'noopener'); } catch (e9) { alert((e9 && e9.message) || 'Could not open receipt.'); }
+            b9.textContent = w9; } }, '🧾 Receipt') : '',
+          el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget;
+            if (!confirm('Confirm this fee payment landed in the LoadBoot account? The carrier invoice flips to PAID.')) return;
+            b9.disabled = true; try { await payConfirmReceived(x.id); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); }
+          } }, '✓ Money received'),
+        ]),
+      ]))),
+    ]) : '';
     const len = (k) => Array.isArray(r[k]) ? r[k].length : 0;
 
     const kpis = el('div', { class: 'cc-kpi-grid' }, [

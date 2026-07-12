@@ -32,6 +32,7 @@ import {
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc } from '../shared/storage.js';
+import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
@@ -2643,6 +2644,8 @@ function tripStepper(status) {
         if (accW.firstChild) { accW.innerHTML = ''; return; }
         accW.appendChild(h('div', { class: 'cp-muted' }, 'Loading claims…'));
         let list = []; try { list = await tripAccessorials(t.id) || []; } catch (_) {}
+        let trs9 = []; try { trs9 = await payMyTransfers() || []; } catch (_) {}
+        const trMap9 = {}; (Array.isArray(trs9) ? trs9 : []).forEach((x9) => { if (x9.kind === 'claim') trMap9[x9.ref_id] = x9; });
         accW.innerHTML = '';
         const rows = h('div', null, list.map(a => {
           const tone2 = a.status === 'approved' ? ['rgba(34,197,94,.14)', '#4ade80'] : a.status === 'rejected' ? ['rgba(239,68,68,.14)', '#f87171'] : ['rgba(245,158,11,.14)', '#fbbf24'];
@@ -2654,11 +2657,16 @@ function tripStepper(status) {
                 bs === 'approved' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ Broker approved') : bs === 'disputed' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171', title: a.broker_note || '' }, '✕ Broker disputed') : bs ? h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:#94a3b8' }, 'Broker reviewing') : null,
                 ss === 'open' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.14);color:#3b9dff' }, '🎧 With support') : null,
                 ss === 'decided' ? h('span', { class: 'cp-pill', style: 'background:' + (a.support_verdict === 'carrier' ? 'rgba(34,197,94,.14);color:#4ade80' : 'rgba(239,68,68,.14);color:#f87171') }, '⚖ ' + (a.support_verdict === 'carrier' ? 'Ruled FOR you' : 'Ruled against you')) : null,
+                (trMap9[a.id] && trMap9[a.id].status === 'sent') ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, '\u{1F4B8} Payment on the way \u00b7 by ' + (trMap9[a.id].expected_by ? new Date(trMap9[a.id].expected_by).toLocaleDateString() : 'soon')) : null,
+                (trMap9[a.id] && trMap9[a.id].status === 'received') ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '\u2713 Payment received') : null,
               ].filter(Boolean)),
               ss === 'decided' && a.support_note ? h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'Verdict: ' + a.support_note) : null,
               bs === 'disputed' && ss === 'none' ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:5px', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
                 try { await claimEscalate(a.id); b9.textContent = '🎧 Escalated ✓'; lbToast('LoadBoot support will investigate your GPS evidence and decide — the verdict binds both sides.', 'success', 'Escalated'); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
               } }, '🎧 Ask support to decide') : null,
+              (trMap9[a.id] && trMap9[a.id].status === 'sent') ? h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:5px;background:#16a34a', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+                try { await payConfirmReceived(trMap9[a.id].id); b9.textContent = '\u2713 Confirmed'; lbToast('Marked received \u2014 the broker sees this claim as settled now.', 'success', 'Payment received'); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
+              } }, '\u2713 I received this payment') : null,
             ].filter(Boolean)),
             h('span', { class: 'cp-pill', style: 'background:' + tone2[0] + ';color:' + tone2[1] + ';font-weight:800' }, a.status === 'requested' ? 'in review' : a.status),
           ]);
@@ -3835,9 +3843,33 @@ function tripStepper(status) {
     }
     const feesChart = h('div', { class: 'cp-card' }, [cardHead('Dispatch fees over time'), series.length ? miniBars(series, { height: 84 }) : h('div', { class: 'cp-muted' }, 'No data yet.')]);
     const statusCard = h('div', { class: 'cp-card' }, [cardHead('Invoice status'), h('div', { class: 'cp-donut-wrap' }, [donut(statusParts), h('div', { class: 'cp-donut-leg' }, statusParts.map(p => h('div', null, [h('i', { style: 'background:' + p.color }), p.label + ' · ' + p.value])))])]);
+    // ---- 💸 payments in flight: claim/freight money coming in, fee payments going out ----
+    const payFlightCard = h('div', { class: 'cp-card' }, [cardHead('💸 Payments in flight'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => {
+      let trs; try { trs = await payMyTransfers(); } catch (e) { mount(payFlightCard, [cardHead('💸 Payments in flight'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      trs = Array.isArray(trs) ? trs : [];
+      const open9 = trs.filter((x) => x.status === 'sent');
+      const done9 = trs.filter((x) => x.status === 'received').slice(0, 5);
+      const row9 = (x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+        h('div', { style: 'flex:1;min-width:200px' }, [
+          h('div', { class: 'cp-row-t' }, (x.direction === 'incoming' ? '📥 ' : '📤 ') + (x.label || x.kind) + ' · ' + money(x.amount)),
+          h('div', { class: 'cp-row-s' }, (x.direction === 'incoming' ? 'From ' : 'To ') + (x.counterparty || '') + ' · sent ' + (x.sent_at ? new Date(x.sent_at).toLocaleDateString() : '')
+            + (x.status === 'sent' && x.expected_by ? ' · expected by ' + new Date(x.expected_by).toLocaleDateString() : '')
+            + (x.payment_ref ? ' · ref ' + x.payment_ref : '')),
+        ]),
+        x.status === 'received' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ received' + (x.received_at ? ' ' + new Date(x.received_at).toLocaleDateString() : ''))
+        : x.direction === 'incoming' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+            try { await payConfirmReceived(x.id); lbToast('Marked received — the payer sees this as settled.', 'success', 'Payment received'); loadFinance(); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
+          } }, '✓ I received it')
+        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, x.kind === 'platform_fee' ? '⏳ LoadBoot verifying' : '⏳ awaiting their ✓'),
+      ]);
+      mount(payFlightCard, [cardHead('💸 Payments in flight'),
+        (open9.length || done9.length) ? h('div', null, [...open9.map(row9), ...done9.map(row9)])
+          : h('div', { class: 'cp-muted' }, 'Nothing in flight. When a broker pays an approved claim (or you pay a LoadBoot fee), it appears here with a live status: on the way → ✓ received.')]);
+    })();
     const SECS = [
       ['earn', '💰 Earnings', () => [earningsHub()]],
-      ['in',   '📥 Money in', () => [cashCard(rows), statusCard, stmtCard]],
+      ['in',   '📥 Money in', () => [payFlightCard, cashCard(rows), statusCard, stmtCard]],
       ['cost', '📤 Costs',    () => [expCard, feesChart]],
       ['tax',  '🧾 Taxes',    () => [taxCenter(), iftaCard]],
       ['pay',  '👥 Payroll',  () => [payrollCard]],
@@ -3867,7 +3899,33 @@ function tripStepper(status) {
           { h: 'Amounts', rows: [['Load gross', money(i.gross || 0)], ['Dispatch fee (5%)', money(i.fee || 0)], ['Carrier net', money(Number(i.gross || 0) - Number(i.fee || 0))]] },
           { note: 'LoadBoot flat 5% dispatch fee — no contracts. Questions? Contact support in your carrier portal.' },
         ]) }, '⬇ PDF');
-        return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, dispute].filter(Boolean)), dw].filter(Boolean));
+        const payFee = i.status === 'sent' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async () => {
+          if (dw.firstChild) { dw.innerHTML = ''; return; }
+          dw.appendChild(h('div', { class: 'cp-muted' }, 'Loading payment instructions…'));
+          let pi; try { pi = await payInstructions('platform_fee', i.id); } catch (e9) { dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s' }, (e9 && e9.message) || 'Failed.')); return; }
+          dw.innerHTML = '';
+          const tr9 = pi && pi.transfer;
+          if (tr9 && tr9.status === 'sent') { dw.appendChild(h('div', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24;margin-top:6px' }, '⏳ Receipt uploaded — LoadBoot is verifying. This invoice flips to PAID once confirmed.')); return; }
+          const refIn = h('input', { class: 'cp-in', placeholder: 'Transfer reference / confirmation #' });
+          const fIn = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.85rem;margin-top:6px' });
+          const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:4px' });
+          const sendB = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:6px', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+            const f9 = fIn.files && fIn.files[0]; if (!f9) { msg9.textContent = 'Attach the payment receipt/screenshot first — that is what LoadBoot verifies.'; return; }
+            b9.disabled = true; b9.textContent = 'Sending…';
+            try {
+              const m9 = await uploadDocument(f9, 'payment_receipt');
+              await payMarkSent({ kind: 'platform_fee', ref: i.id, receiptPath: m9.path, receiptName: m9.fileName, paymentRef: refIn.value.trim() || null, method: 'bank_transfer' });
+              lbToast('Receipt sent — LoadBoot verifies it and marks the invoice paid.', 'success', 'Payment submitted'); loadFinance();
+            } catch (e9) { b9.disabled = false; b9.textContent = 'I have paid — submit receipt'; msg9.textContent = (e9 && e9.message) || 'Failed.'; }
+          } }, 'I have paid — submit receipt');
+          dw.appendChild(h('div', { style: 'margin-top:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px' }, [
+            h('div', { class: 'cp-row-t' }, '💳 Pay LoadBoot — ' + money(pi.amount || i.fee || 0)),
+            h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;margin:4px 0' }, (pi.payee_bank && pi.payee_bank.instructions) || 'Payment instructions are being finalised — contact support and we will send bank/Payoneer details.'),
+            h('div', { class: 'cp-row-s' }, 'Put this in the transfer memo: ' + (i.invoice_no || '')),
+            h('div', { class: 'cp-inlineform', style: 'margin-top:6px' }, [refIn]), fIn, sendB, msg9,
+          ]));
+        } }, '💳 Pay now') : null;
+        return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, payFee, dispute].filter(Boolean)), dw].filter(Boolean));
       })) : h('div', { class: 'cp-muted' }, 'No invoices yet.')]),
     ]));
   }

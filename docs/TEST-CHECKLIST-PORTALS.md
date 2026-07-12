@@ -40,3 +40,23 @@ Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift
 | # | Test no. | Kya hua (screenshot bhi le lo) |
 |---|----------|--------------------------------|
 |   |          |                                |
+
+## E. Payment rails (NAYA — staging par test karo)
+- [ ] 21. Broker: Claims → kisi claim ki Evidence kholo — "📎 Paper proof" mein ab
+      har document ke saath "View ↗" ho (khulna chahiye, pehle sirf naam tha)
+- [ ] 22. Carrier: trip kholo, pickup/delivery zone ke ANDAR (ya sim mein dock par) —
+      neeche 3 naye buttons dikhein: 📷 Dock photo · 📝 Signed BOL/POD · 🧾 Lumper receipt;
+      koi photo attach karo, "✓ Proof attached" flash aaye
+- [ ] 23. Broker: approved claim par "💸 Pay this claim" dabao — carrier ke bank details +
+      how-to-pay + memo reference dikhein; receipt/screenshot attach karke
+      "I have paid — submit receipt" — status "Payment sent — awaiting carrier ✓" ho jaye
+- [ ] 24. Carrier: Finance → "💸 Payments in flight" card mein wahi claim
+      "📥 on the way · expected by <date>" dikhe + "✓ I received it" button; dabao —
+      broker side ab "✓ Paid — carrier confirmed received" dikhaye
+- [ ] 25. Carrier: Finance → Invoices mein kisi DUE (sent) invoice par "💳 Pay now" —
+      LoadBoot payment instructions dikhein; receipt attach + submit —
+      "⏳ LoadBoot verifying" ho jaye
+- [ ] 26. CC (dispatcher): Ops Radar upar "💳 Fee receipts to verify" card —
+      🧾 Receipt khul jaye + "✓ Money received" dabao — carrier ki invoice PAID ho jaye
+- [ ] 27. Broker: delivered load ki Live tracking kholo — "💰 Pay freight to carrier" button
+      steps ke neeche dikhe (same bank-details + receipt flow)
