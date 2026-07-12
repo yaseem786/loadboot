@@ -498,6 +498,19 @@ export async function openTripMap(t, opts = {}) {
     } catch (e) { statEl.textContent = (e && e.message) || ''; }
     autoBusy = false;
   }
+  function warnGate(o) {
+    return new Promise(function (resolve) {
+      const ov = el('div', 'position:absolute;inset:0;z-index:1003;background:rgba(2,8,20,.74);display:flex;align-items:center;justify-content:center;padding:20px', '');
+      const card = el('div', 'background:#0f1a2e;border:1px solid rgba(255,255,255,.12);border-radius:18px;max-width:340px;width:100%;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.6)', '');
+      card.appendChild(el('div', 'font-weight:800;font-size:1.02rem;color:#fca5a5;margin-bottom:8px', o.title));
+      card.appendChild(el('div', 'font-size:.9rem;color:#cbd5e1;line-height:1.55;margin-bottom:16px', o.body));
+      const yes = el('button', 'width:100%;border:0;border-radius:12px;padding:13px;font-weight:800;font-size:1rem;cursor:pointer;background:#FC5305;color:#fff;font-family:inherit', o.cta);
+      const no = el('button', 'width:100%;border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:11px;margin-top:9px;font-weight:700;cursor:pointer;background:transparent;color:#cbd5e1;font-family:inherit', 'Not yet \u2014 go back');
+      yes.onclick = function () { ov.remove(); resolve(true); };
+      no.onclick = function () { ov.remove(); resolve(false); };
+      card.appendChild(yes); card.appendChild(no); ov.appendChild(card); mapWrap.appendChild(ov);
+    });
+  }
   actBtn.onclick = async () => {
     const was = actBtn.textContent; actBtn.disabled = true; actBtn.textContent = '…';
     try {
@@ -507,10 +520,16 @@ export async function openTripMap(t, opts = {}) {
         say('Navigation started.');
         try { await tripCheckin(t.id, { lat: me && me.lat, lng: me && me.lng, note: 'Driver is on the way to the pickup', source: 'onway' }); } catch (_) {}
       } else if (step === 'to_pickup') { await doArrive('pickup'); }
-      else if (step === 'at_pickup') { await doDepartPickup(); }
+      else if (step === 'at_pickup') {
+        if (!(await warnGate({ title: '\u26a0 Only if you\u2019re actually rolling out', body: 'Tap this only once you\u2019re LOADED and driving out of the facility. Your detention is measured until you leave \u2014 tapping while the dock still has you can cost your detention pay. It also records automatically the moment you drive 800 m out, so you can just drive.', cta: '\ud83d\ude9b Yes, I\u2019m loaded & leaving' }))) { actBtn.textContent = was; actBtn.disabled = false; return; }
+        actBtn.textContent = '\u2026'; await doDepartPickup();
+      }
       else if (step === 'to_delivery') { await doArrive('delivery'); }
-      else if (step === 'at_delivery') { await pocketAdvanceTrip(t.id, 'delivered'); step = 'done'; setStep(t, step);
-        flash('\ud83c\udfc1 Delivered \u2713 \u2014 tracking stays ON until you leave the receiver (800 m) so your dock time is GPS-proven for detention.'); }
+      else if (step === 'at_delivery') {
+        if (!(await warnGate({ title: '\u26a0 Has the receiver released you?', body: 'Mark delivered ONLY after the facility has finished unloading and released you. Your dock time (detention) is measured until then \u2014 marking early can lose your detention proof. Tracking keeps running until you drive out of the receiver.', cta: '\u2713 Yes, unloaded & released' }))) { actBtn.textContent = was; actBtn.disabled = false; return; }
+        actBtn.textContent = '\u2026'; await pocketAdvanceTrip(t.id, 'delivered'); step = 'done'; setStep(t, step);
+        flash('\ud83c\udfc1 Delivered \u2713 \u2014 tracking stays ON until you leave the receiver (800 m) so your dock time is GPS-proven for detention.');
+      }
       else { close(); return; }
       paint();
     } catch (e) { actBtn.textContent = was; flash((e && e.message) || 'Could not update the trip.', true); }

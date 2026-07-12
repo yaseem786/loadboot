@@ -42,7 +42,26 @@ else:
     APP_ENV, APP_REF, APP_ANON = 'preview', STAGING_REF, STAGING_ANON
 
 # ---------------- shared CSS ----------------
-CSS = r''':root{--navy:#10223B;--blue:#0883F7;--orange:#FC5305;--white:#fff;--bg:#F8FAFC;--muted:#64748B;--border:#E2E8F0;--blue-soft:#EFF6FF;--maxw:1200px;--r:16px}
+CSS = r''':root{--pdc:1}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.pdcalc{background:linear-gradient(160deg,#0b1220,#14532d);border:1px solid rgba(34,197,94,.35);border-radius:18px;padding:22px;margin:26px 0;color:#e6edf8}
+.pdc-h{font-weight:800;font-size:1.15rem;color:#4ade80}
+.pdc-s{color:#93a4bd;font-size:.95rem;margin:4px 0 14px;line-height:1.6}
+.pdc-row{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.pdc-row output{font-size:1.5rem;font-weight:900;color:#fbbf24}
+.pdcalc input[type=range]{width:100%;margin:8px 0 16px;accent-color:#22c55e}
+.pdc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pdc-tile{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px}
+.pdc-tile span{display:block;font-size:.62rem;letter-spacing:.1em;font-weight:800;color:#7f92b3}
+.pdc-tile b{display:block;font-size:1.75rem;font-weight:900;margin:3px 0;color:#fff}
+.pdc-tile i{font-size:.72rem;color:#93a4bd;font-style:normal}
+.pdc-tile.pdc-hi{border-color:rgba(34,197,94,.5)}.pdc-tile.pdc-hi b{color:#4ade80}
+.pdc-note{font-size:.9rem;color:#cbd5e1;line-height:1.65;margin:14px 0 12px}
+.pdc-cta{display:inline-block;background:#FC5305;color:#fff;font-weight:800;padding:13px 22px;border-radius:11px;text-decoration:none}
+.art-shot{margin:26px 0}.art-shot svg{width:100%;height:auto;border-radius:16px;display:block;box-shadow:0 24px 60px -30px rgba(2,12,30,.7)}
+.art-shot figcaption{color:var(--muted);font-size:.88rem;margin-top:9px;text-align:center;line-height:1.6}
+@media(max-width:640px){.pdc-grid{grid-template-columns:1fr}.pdc-cta{display:block;text-align:center}}
+:root{--navy:#10223B;--blue:#0883F7;--orange:#FC5305;--white:#fff;--bg:#F8FAFC;--muted:#64748B;--border:#E2E8F0;--blue-soft:#EFF6FF;--maxw:1200px;--r:16px}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #0883F7;outline-offset:2px;border-radius:4px}
@@ -369,7 +388,7 @@ def footer():
 <span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html" class="btn btn-primary">Get Started</a></div>
-<a class="wa-btn" href="contact.html" rel="noopener" aria-label="Contact us"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.2-1.2l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1112 20zm4.4-5.6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 00-.7.3A2.9 2.9 0 006 9.9c0 1.7 1.3 3.4 1.4 3.6.2.2 2.5 3.9 6.1 5.2 2.2.8 2.5.6 3 .6s1.4-.6 1.6-1.1.2-1 .2-1.1-.2-.2-.5-.3z"/></svg></a>'''
+<a class="wa-btn" href="contact.html" rel="noopener" aria-label="Contact Loadboot dispatch"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.2-1.2l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1112 20zm4.4-5.6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 00-.7.3A2.9 2.9 0 006 9.9c0 1.7 1.3 3.4 1.4 3.6.2.2 2.5 3.9 6.1 5.2 2.2.8 2.5.6 3 .6s1.4-.6 1.6-1.1.2-1 .2-1.1-.2-.2-.5-.3z"/></svg><span class="sr-only">Contact Loadboot dispatch</span></a>'''
 
 GA_ID = 'G-C2ELQ7H8EM'  # GA4 Measurement ID — injected on every page.
 LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Loadboot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Professional truck dispatch services for owner-operators, fleets, and new-authority carriers — flat 5%, no contracts.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
@@ -470,7 +489,7 @@ def page(fname, title, desc, active, body, schema=''):
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">%s</head><body><script>(function(){try{if(sessionStorage.getItem('lb_seen'))return;}catch(e){}var o=document.createElement('div');o.id='lbSplash';o.innerHTML='<div class="lbs-stack"><div class="lbs-lockup"><svg class="lbs-mark-svg" viewBox="16 14 68 72" role="img" aria-label="LoadBoot"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"></path><path class="lbs-boot1" d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"></path><path class="lbs-boot2" d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"></path></svg><img class="lbs-word-img" src="/logo-text-dark.png" alt="LoadBoot"></div><div class="lbs-tagline">The Operating System for Trucking</div></div>';document.body.insertBefore(o,document.body.firstChild);try{sessionStorage.setItem('lb_seen','1');}catch(e){}setTimeout(function(){if(o&&o.parentNode)o.parentNode.removeChild(o);},2600);})();</script>
+<link rel="stylesheet" href="styles.css?v=6">%s</head><body>
 %s
 %s
 %s
@@ -1324,7 +1343,7 @@ if(ml){ml.innerHTML=(!isAcct&&!isQuote)?'Your message':((isQuote?'Load / lane de
 var b=document.getElementById('submitBtn');if(b)b.innerHTML=(isAcct?'Create My Carrier Account':(isQuote?'Get My Rate Quote':'Send Message'))+' &rarr;';
 var t=document.getElementById('formIntro');if(t)t.textContent=isAcct?'Tell us about your operation and a dispatcher gets you set up.':(isQuote?'Tell us about a load or lane and we will send you a rate.':'Send us a message and we will get right back to you.');}
 (function(){if(location.hash==='#quote'){var q=document.getElementById('iQuote');if(q){q.checked=true;}}qfIntent();
-var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var d=new URLSearchParams(new FormData(f)).toString();fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A Loadboot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
+var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A Loadboot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
 </script>"""
 page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section>')
 
@@ -1365,6 +1384,11 @@ def blog_post(fname,title,desc,excerpt,blocks):
     page(fname,title,desc,'blog.html',body,sch)
 
 BLOGPOSTS = [
+ ('truck-driver-per-diem-2026.html',
+  'Truck Driver Per Diem 2026: The $12,800 Most Owner-Operators Never Claim',
+  'IRS per diem for truck drivers is $80/day in 2026 and 80% deductible. 200 nights out is $12,800 in deductions — and most owner-operators lose it because they cannot prove the days.',
+  'You do not need a single meal receipt. You DO need proof of the nights you were away — and that is exactly where most drivers lose thousands. Here is the 2026 rule, the real math, and how to make the proof build itself.',
+  []),
  ('ghost-loads-load-board-problems.html',
   'Ghost Loads &amp; Fake Freight: Why Load Boards Waste Your Day',
   'Ghost loads, stale posts, bait-and-switch rates and double brokering: why booking one load takes 15-20 calls, what it costs you, and how a truck operating system fixes it.',
@@ -2340,6 +2364,228 @@ rich_article('ghost-loads-load-board-problems.html',
 THUMBS['ghost-loads-load-board-problems.html']=GL_FEAT
 
 READTIME={'ghost-loads-load-board-problems.html':9,'how-to-avoid-cheap-freight.html':7,'truck-dispatcher-in-georgia.html':7,'truck-dispatcher-in-california.html':8,'how-to-read-a-rate-confirmation.html':7,'do-new-authority-carriers-need-a-dispatcher.html':7,'truck-dispatcher-in-texas.html':8,'how-much-does-a-truck-dispatcher-cost.html':8,'truck-dispatcher-vs-freight-broker.html':9,'how-to-get-loads-with-new-authority.html':6,'owner-operator-dispatch-service-guide.html':9}
+
+
+# ---------- PER DIEM (money page: trucking tax deductions) ----------
+PREMIUM_ARTICLES.add('truck-driver-per-diem-2026.html')
+
+PD_FEAT = ('<svg viewBox="0 0 900 320" role="img" aria-label="Truck driver per diem 2026: $80 per day, 80% deductible, proven by GPS trip records">'
+ '<defs><linearGradient id="pdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#14532d"/></linearGradient></defs>'
+ '<rect width="900" height="320" rx="18" fill="url(#pdg)"/>'
+ '<text x="48" y="86" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#4ade80" letter-spacing="3">IRS PER DIEM &#183; 2026</text>'
+ '<text x="48" y="140" font-family="Manrope,Arial" font-weight="900" font-size="46" fill="#ffffff">$80/day &#215; 80% = $64</text>'
+ '<text x="48" y="180" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fbbf24">200 nights out = $12,800 deducted</text>'
+ '<text x="48" y="222" font-family="Inter,Arial" font-size="17" fill="#93a4bd">No meal receipts needed. Only proof of the nights away &#8212;</text>'
+ '<text x="48" y="248" font-family="Inter,Arial" font-size="17" fill="#93a4bd">which is exactly what most drivers cannot produce.</text>'
+ '<g transform="translate(640,70)">'
+ '<rect width="210" height="180" rx="14" fill="#0b1220" stroke="#22c55e" stroke-opacity=".45"/>'
+ '<text x="18" y="34" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#7f92b3">NIGHTS AWAY</text>'
+ '<text x="18" y="72" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">214</text>'
+ '<text x="18" y="102" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#7f92b3">DEDUCTION</text>'
+ '<text x="18" y="140" font-family="Manrope,Arial" font-weight="900" font-size="30" fill="#ffffff">$13,696</text>'
+ '<text x="18" y="164" font-family="Inter,Arial" font-size="12" fill="#93a4bd">counted from GPS trips</text>'
+ '</g></svg>')
+
+# --- HD product visual 1: the Tax centre, as it actually ships ---
+PD_SHOT1 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria-label="LoadBoot Tax centre screen showing per diem nights away, deduction total, tax deadlines and Schedule C expense rollup">'
+ '<rect width="880" height="520" rx="16" fill="#0f172a"/>'
+ '<rect x="1" y="1" width="878" height="518" rx="16" fill="none" stroke="#22314e"/>'
+ '<text x="28" y="44" font-family="Manrope,Arial" font-weight="800" font-size="19" fill="#e6edf8">&#129534; Tax centre &#8212; 2026</text>'
+ '<text x="28" y="66" font-family="Inter,Arial" font-size="12.5" fill="#7f92b3">estimates only &#183; not tax advice</text>'
+ # per diem hero box
+ '<rect x="28" y="86" width="824" height="112" rx="12" fill="#0d2b1c" stroke="#22c55e" stroke-opacity=".38"/>'
+ '<text x="48" y="116" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="#4ade80">&#128716; Per diem &#8212; 214 nights away</text>'
+ '<text x="48" y="158" font-family="Manrope,Arial" font-weight="900" font-size="34" fill="#4ade80">$13,696</text>'
+ '<text x="48" y="182" font-family="Inter,Arial" font-size="13" fill="#93a4bd">214 nights &#215; $80/day &#215; 80% deductible &#183; counted automatically from your GPS trip records</text>'
+ # deadlines
+ '<text x="28" y="228" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#dbe6f5">&#128197; Deadlines</text>'
+ '<g font-family="Inter,Arial" font-size="13">'
+ '<text x="28" y="256" fill="#dbe6f5" font-weight="700">Apr 15</text><text x="120" y="256" fill="#7f92b3">Q1 estimated tax + Form 1040</text>'
+ '<text x="28" y="282" fill="#dbe6f5" font-weight="700">Jun 16</text><text x="120" y="282" fill="#7f92b3">Q2 estimated tax</text>'
+ '<text x="28" y="308" fill="#fbbf24" font-weight="800">Aug 31</text><text x="120" y="308" fill="#7f92b3">Form 2290 (HVUT, 55,000+ lb)</text>'
+ '<text x="770" y="308" fill="#fbbf24" font-weight="800">NEXT UP</text>'
+ '<text x="28" y="334" fill="#dbe6f5" font-weight="700">Sep 15</text><text x="120" y="334" fill="#7f92b3">Q3 estimated tax</text>'
+ '<text x="28" y="360" fill="#dbe6f5" font-weight="700">Jan 15</text><text x="120" y="360" fill="#7f92b3">Q4 estimated tax</text>'
+ '</g>'
+ '<line x1="28" y1="378" x2="852" y2="378" stroke="#22314e"/>'
+ # schedule C
+ '<text x="28" y="404" font-family="Manrope,Arial" font-weight="800" font-size="13" fill="#dbe6f5">&#128202; Schedule C &#8212; deductible expenses logged</text>'
+ '<g font-family="Inter,Arial" font-size="13">'
+ '<text x="28" y="432" fill="#dbe6f5">fuel</text><text x="800" y="432" fill="#dbe6f5" font-weight="800" text-anchor="end">$38,214</text>'
+ '<text x="28" y="456" fill="#dbe6f5">maintenance</text><text x="800" y="456" fill="#dbe6f5" font-weight="800" text-anchor="end">$6,480</text>'
+ '<text x="28" y="480" fill="#dbe6f5">tolls &#183; scales &#183; parking</text><text x="800" y="480" fill="#dbe6f5" font-weight="800" text-anchor="end">$2,905</text>'
+ '<text x="28" y="504" fill="#4ade80" font-weight="800">TOTAL LOGGED</text><text x="800" y="504" fill="#4ade80" font-weight="800" text-anchor="end">$47,599</text>'
+ '</g></svg>'
+ '<figcaption>Loadboot Tax centre &mdash; nights away are counted from your GPS trip records, so the per diem number (and its proof) builds itself.</figcaption></figure>')
+
+# --- HD product visual 2: per-trip P&L ---
+PD_SHOT2 = ('<figure class="art-shot"><svg viewBox="0 0 880 520" role="img" aria-label="LoadBoot per-trip profit and loss statement showing linehaul, detention, fuel, driver pay, factoring and net profit per load">'
+ '<rect width="880" height="520" rx="16" fill="#0f172a"/>'
+ '<rect x="1" y="1" width="878" height="518" rx="16" fill="none" stroke="#22314e"/>'
+ '<text x="28" y="42" font-family="Manrope,Arial" font-weight="800" font-size="18" fill="#e6edf8">Baltimore, MD &#8594; Nashville, TN</text>'
+ '<text x="28" y="64" font-family="Inter,Arial" font-size="12.5" fill="#7f92b3">702 mi &#183; $2.79/mi</text>'
+ '<text x="852" y="46" font-family="Manrope,Arial" font-weight="900" font-size="22" fill="#4ade80" text-anchor="end">$610.66</text>'
+ '<text x="852" y="66" font-family="Inter,Arial" font-size="12" fill="#4ade80" text-anchor="end">31.2% margin</text>'
+ '<text x="28" y="102" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#4ade80">MONEY IN</text>'
+ '<g font-family="Inter,Arial" font-size="13.5">'
+ '<text x="28" y="128" fill="#dbe6f5" font-weight="700">Linehaul</text><text x="852" y="128" fill="#4ade80" font-weight="800" text-anchor="end">$1,881.00</text>'
+ '<text x="28" y="154" fill="#dbe6f5" font-weight="700">DETENTION</text><text x="140" y="154" fill="#7f92b3" font-size="11.5">approved &#10003; &#183; GPS-stamped</text><text x="852" y="154" fill="#4ade80" font-weight="800" text-anchor="end">$60.00</text>'
+ '<text x="28" y="180" fill="#dbe6f5" font-weight="700">On-time bonus</text><text x="852" y="180" fill="#4ade80" font-weight="800" text-anchor="end">$75.00</text>'
+ '<text x="28" y="208" fill="#4ade80" font-weight="800">GROSS</text><text x="852" y="208" fill="#4ade80" font-weight="800" text-anchor="end">$1,956.00</text>'
+ '</g>'
+ '<text x="28" y="244" font-family="Manrope,Arial" font-weight="800" font-size="12" fill="#f87171">MONEY OUT</text>'
+ '<g font-family="Inter,Arial" font-size="13.5">'
+ '<text x="28" y="270" fill="#dbe6f5">Fuel &#8212; 702 mi @ 6.5 mpg &#215; $3.85</text><text x="852" y="270" fill="#f87171" font-weight="800" text-anchor="end">&#8722;$415.86</text>'
+ '<text x="28" y="296" fill="#dbe6f5">Driver pay &#8212; 702 mi &#215; $0.65/mi</text><text x="852" y="296" fill="#f87171" font-weight="800" text-anchor="end">&#8722;$456.30</text>'
+ '<text x="28" y="322" fill="#dbe6f5">Maintenance reserve</text><text x="852" y="322" fill="#f87171" font-weight="800" text-anchor="end">&#8722;$126.36</text>'
+ '<text x="28" y="348" fill="#dbe6f5">Fixed overhead</text><text x="852" y="348" fill="#f87171" font-weight="800" text-anchor="end">&#8722;$245.70</text>'
+ '<text x="28" y="374" fill="#dbe6f5">Factoring &#8212; 3% of gross</text><text x="852" y="374" fill="#f87171" font-weight="800" text-anchor="end">&#8722;$58.68</text>'
+ '<text x="28" y="400" fill="#dbe6f5">I-95 tolls</text><text x="852" y="400" fill="#f87171" font-weight="800" text-anchor="end">&#8722;$42.50</text>'
+ '<text x="28" y="428" fill="#f87171" font-weight="800">TOTAL COST</text><text x="852" y="428" fill="#f87171" font-weight="800" text-anchor="end">&#8722;$1,345.34</text>'
+ '</g>'
+ '<line x1="28" y1="446" x2="852" y2="446" stroke="#3d4d6b" stroke-width="2"/>'
+ '<text x="28" y="476" font-family="Manrope,Arial" font-weight="900" font-size="16" fill="#e6edf8">NET PROFIT</text>'
+ '<text x="852" y="476" font-family="Manrope,Arial" font-weight="900" font-size="20" fill="#4ade80" text-anchor="end">$610.66</text>'
+ '<g font-family="Inter,Arial" font-size="12" fill="#7f92b3">'
+ '<text x="28" y="502">RPM $2.79</text><text x="150" y="502">COST/MI $1.92</text><text x="300" y="502">NET/MI $0.87</text><text x="440" y="502">BREAK-EVEN $1.92/mi</text>'
+ '</g></svg>'
+ '<figcaption>Every load gets its own profit statement &mdash; detention and accessorials land on it automatically, so nothing is forgotten at tax time.</figcaption></figure>')
+
+PD_CALC = ('<div class="pdcalc">'
+ '<div class="pdc-h">&#128176; What is YOUR per diem worth?</div>'
+ '<div class="pdc-s">Move the slider to the nights you sleep away from home in a year. That is it &mdash; no receipts, no forms.</div>'
+ '<div class="pdc-row"><label for="pdNights">Nights away per year</label>'
+ '<output id="pdOut">220</output></div>'
+ '<input id="pdNights" type="range" min="50" max="330" step="5" value="220" aria-label="Nights away from home per year">'
+ '<div class="pdc-grid">'
+ '<div class="pdc-tile"><span>YOUR DEDUCTION</span><b id="pdDed">$14,080</b><i>nights &#215; $80 &#215; 80%</i></div>'
+ '<div class="pdc-tile pdc-hi"><span>CASH BACK IN YOUR POCKET</span><b id="pdSave">$5,209</b><i>estimated, ~37% marginal rate</i></div>'
+ '</div>'
+ '<div class="pdc-note">Most drivers claim <b>none of this</b> &mdash; not because they are not owed it, but because they cannot prove the nights. Loadboot GPS-stamps every trip, so the proof writes itself.</div>'
+ '<a class="pdc-cta" href="get-started.html">Get my nights counted automatically &rarr;</a>'
+ '<script>(function(){var r=document.getElementById("pdNights"),o=document.getElementById("pdOut"),'
+ 'd=document.getElementById("pdDed"),s=document.getElementById("pdSave");if(!r)return;'
+ 'function f(n){return "$"+Math.round(n).toLocaleString();}'
+ 'function u(){var n=+r.value;var ded=n*80*0.8;o.textContent=n;d.textContent=f(ded);s.textContent=f(ded*0.37);}'
+ 'r.addEventListener("input",u);u();})();</script>'
+ '</div>')
+
+PD_TOC = [('the-money','The money you are losing'),('what-is-per-diem','What per diem actually is (2026)'),
+ ('the-math','The math: what it is really worth'),('who-can-claim','Who can claim it &mdash; and who cannot'),
+ ('why-missed','Why most drivers lose it: the proof problem'),('loadboot','How Loadboot proves it for you'),
+ ('beyond','Beyond per diem: the rest of the money'),('mistakes','Five mistakes that cost you'),('bottom-line','The bottom line')]
+
+PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
+ '<p>If you are an owner-operator who sleeps in the truck, there is a deduction sitting in front of you that costs nothing to earn, requires no purchase, and needs <b>not one meal receipt</b>. It is the transportation-industry <b>per diem</b>. And a large share of drivers either never claim it, or claim a fraction of what they are owed.</p>'
+ '<p>The scale is not small. Industry tax specialists put it plainly: a driver who spends around <b>200 days on the road and does not claim per diem is leaving over $11,000 in deductions on the table &mdash; every single year</b>. For drivers running 250+ nights, the loss is bigger still.</p>'
+ '<p>That is not a rounding error. That is a truck payment. And the reason it goes unclaimed is almost never greed or laziness &mdash; it is <b>proof</b>. Keep reading; the fix is more boring, and more automatic, than you think.</p>'
+ + svc_banner('Your trips already ARE the proof','Loadboot GPS-stamps every pickup and delivery, then counts your nights away and computes the deduction for you &mdash; flat 5%, no contract.','See carrier services','carriers.html') +
+
+ '<h2 id="what-is-per-diem">What per diem actually is (2026 rates)</h2>'
+ '<p>Per diem is a <b>flat daily allowance</b> the IRS lets you deduct for <b>meals and incidental expenses</b> while you are away from your tax home overnight &mdash; instead of saving and adding up every receipt.</p>'
+ '<ul>'
+ '<li><b>$80 per full day</b> inside the continental U.S. (CONUS) for the special transportation-industry rate.</li>'
+ '<li><b>$86 per day</b> if your route takes you outside CONUS.</li>'
+ '<li><b>Partial days</b> (the day you leave and the day you get home) are claimed at a reduced amount &mdash; commonly treated as 75% of the standard rate.</li>'
+ '<li><b>80% is deductible</b> for workers subject to DOT hours-of-service rules. Everyone else in business only gets 50% &mdash; truckers get a better deal.</li>'
+ '</ul>'
+ '<p>So the number that actually reaches your tax return is <b>$80 &times; 80% = $64 per night</b>.</p>'
+ '<p>One important limit: in trucking, per diem covers <b>meals and incidentals only</b> &mdash; not lodging. Tips, laundry on the road, that kind of thing. Your truck payment, fuel and repairs are separate deductions entirely.</p>'
+
+ '<h2 id="the-math">The math: what it is really worth</h2>'
+ '<p>Run it on your own year:</p>'
+ '<table><thead><tr><th>Nights away</th><th>Deduction ($64/night)</th><th>Roughly saved*</th></tr></thead><tbody>'
+ '<tr><td>150</td><td>$9,600</td><td>~$3,500</td></tr>'
+ '<tr><td>200</td><td>$12,800</td><td>~$4,700</td></tr>'
+ '<tr><td>250</td><td>$16,000</td><td>~$5,900</td></tr>'
+ '<tr><td>300</td><td>$19,200</td><td>~$7,100</td></tr>'
+ '</tbody></table>'
+ '<p class="small">*A deduction is not a refund &mdash; it lowers the income you are taxed on. For a self-employed owner-operator, the combined bite of self-employment tax (15.3%) plus federal income tax often lands somewhere near the mid-30s as a marginal rate, so every $100 deducted commonly keeps roughly $35&ndash;$37 in your pocket. Your exact number depends on your bracket. Talk to your CPA.</p>'
+ '<p>Even at the low end, this single line is usually worth <b>more than a month of net revenue</b> to a solo owner-operator. And notice what it costs you to claim it: nothing. You already slept in the truck.</p>'
+
+ + PD_CALC +
+
+ '<h2 id="who-can-claim">Who can claim it &mdash; and who cannot</h2>'
+ '<p>This is where a lot of drivers get burned, so read it twice.</p>'
+ '<ul>'
+ '<li><b>Owner-operators / self-employed (Schedule C): YES.</b> You claim per diem as a business expense against your business income.</li>'
+ '<li><b>Company drivers on a W-2: NO.</b> Since the Tax Cuts and Jobs Act removed unreimbursed employee expenses, a W-2 company driver <b>cannot</b> deduct per diem on their return. Some carriers run a per diem <i>pay program</i> instead &mdash; that is payroll, not a deduction, and it is a different conversation (it can lower your taxable wages but also your reported income for loans and Social Security).</li>'
+ '</ul>'
+ '<p>Also non-negotiable: you must be <b>away from your tax home overnight</b>, long enough to need rest. A 14-hour turn where you sleep in your own bed is not a per diem night. The overnight is the whole test.</p>'
+
+ '<h2 id="why-missed">Why most drivers lose it: the proof problem</h2>'
+ '<p>Here is the trap. The IRS does <b>not</b> want your meal receipts &mdash; that is the entire point of a flat allowance. What it <b>does</b> want, if it ever asks, is evidence of <b>which nights you were away from your tax home</b>.</p>'
+ '<p>Now be honest about what most owner-operators actually have at tax time:</p>'
+ '<ul>'
+ '<li>A glovebox of fuel receipts and a memory.</li>'
+ '<li>ELD logs they have never exported and would not know how to hand to a CPA.</li>'
+ '<li>A calendar they meant to keep in January and abandoned by February.</li>'
+ '</ul>'
+ '<p>So one of two things happens. Either the driver <b>does not claim it at all</b> (&ldquo;I can&rsquo;t prove it, skip it&rdquo;), or the CPA <b>lowballs the number</b> to stay safe. Both cost real money, quietly, every year. The deduction was never the hard part. <b>The record was.</b></p>'
+
+ '<h2 id="loadboot">How Loadboot proves it for you &mdash; automatically</h2>'
+ '<p>This is precisely the problem Loadboot was built to remove, and the fix comes free with how the platform already works.</p>'
+ '<p>Every load you run on Loadboot is <b>GPS-stamped end to end</b>. When you roll out, the trip starts. When you enter the pickup geofence, arrival is recorded. When you clear the delivery, the drop is stamped. You do not tap anything &mdash; the truck&rsquo;s position writes the record.</p>'
+ '<p>Those stamps are not just for detention claims and on-time scores. They are <b>exactly the substantiation the IRS asks for</b>: a dated, objective record of which nights you were away from home. So the Tax centre simply counts them:</p>'
+ + PD_SHOT1 +
+ '<p>Nights away, the deduction, the deadlines, and your Schedule C categories &mdash; assembled from work you already did. Nothing to remember in January. Nothing to reconstruct in April.</p>'
+ '<p>And because the same trip record drives your money, the rest of the picture lines up with it:</p>'
+ + PD_SHOT2 +
+ '<p>Every load carries its own profit statement. Detention and accessorials land on it <b>automatically</b> from the same GPS stamps, so the income side is as complete as the deduction side. At tax time you are not hunting &mdash; you are exporting.</p>'
+ + svc_banner('Stop reconstructing your year in April','Run your loads on Loadboot and the tax record writes itself &mdash; nights away, per-load profit, detention, Schedule C. Flat 5%, no contract, cancel anytime.','Get started','get-started.html') +
+
+ '<h2 id="beyond">Beyond per diem: the rest of the money</h2>'
+ '<p>Per diem is the biggest one drivers miss, but it is not the only one. The same records feed the rest of your return:</p>'
+ '<ul>'
+ '<li><b>Fuel</b> &mdash; usually 28&ndash;35% of your gross, and fully deductible.</li>'
+ '<li><b>Truck payment</b> &mdash; the <b>interest</b> is deductible; the <b>principal is not</b>. A lot of drivers get this backwards.</li>'
+ '<li><b>Insurance</b> &mdash; liability, cargo, physical damage, bobtail, occupational accident.</li>'
+ '<li><b>Maintenance &amp; repairs</b> &mdash; tires, brakes, oil, filters, belts.</li>'
+ '<li><b>Tolls, scales, parking, permits</b> &mdash; small, constant, and easy to lose.</li>'
+ '<li><b>Factoring fees</b> &mdash; a real business expense; log it as one.</li>'
+ '</ul>'
+ '<p>And the calendar you cannot ignore: <b>quarterly estimated taxes</b> (Apr 15, Jun 16, Sep 15, Jan 15) plus <b>Form 2290</b> (HVUT) by Aug 31 if your truck is 55,000 lb or heavier. Miss those and penalties eat the deduction you just fought for.</p>'
+
+ '<h2 id="mistakes">Five mistakes that cost you</h2>'
+ '<ol>'
+ '<li><b>Not claiming it because you &ldquo;can&rsquo;t prove it.&rdquo;</b> Your trip records are the proof. If your system does not produce them, change the system.</li>'
+ '<li><b>Forgetting partial days.</b> The day out and the day home are claimable at a reduced rate. Across 10&ndash;20 round trips a year that is another <b>$500&ndash;$1,000</b> most drivers never take.</li>'
+ '<li><b>Claiming per diem as a W-2 company driver.</b> You cannot. Do not let anyone tell you otherwise.</li>'
+ '<li><b>Trying to put lodging in it.</b> Trucking per diem is meals and incidentals only.</li>'
+ '<li><b>Deducting truck loan principal.</b> Interest yes. Principal no.</li>'
+ '</ol>'
+
+ '<h2 id="bottom-line">The bottom line</h2>'
+ '<p>Per diem is the rare deduction that is large, legal, and free &mdash; you have already earned it by sleeping in the truck. The only thing standing between you and roughly <b>$64 for every night you were out</b> is a record of the nights.</p>'
+ '<p>You can build that record by hand, in a notebook, hoping you remember. Or you can run your freight on a system that <b>stamps every trip with GPS by default</b>, counts the nights for you, files the detention you earned, and hands you a Schedule C rollup and a per-load profit statement at the end of it.</p>'
+ '<p>The deduction was always yours. Loadboot just makes it provable.</p>'
+ '<p class="small">Loadboot is a dispatch and carrier-operations platform, not a tax preparer or CPA firm. The figures here are estimates to help you plan; per diem rates, deductibility and eligibility change and depend on your circumstances. Confirm your numbers with a qualified tax professional before filing.</p>')
+
+PD_FAQ = [
+ ('What is the truck driver per diem rate for 2026?',
+  'For 2026 the IRS special transportation-industry rate is $80 per full day within the continental U.S. (CONUS) and $86 per day outside CONUS. Partial travel days &mdash; the day you leave and the day you return &mdash; are claimed at a reduced amount, commonly 75% of the standard rate.'),
+ ('Is truck driver per diem 80% or 100% deductible?',
+  'It is 80% deductible for workers subject to DOT hours-of-service rules, which includes truck drivers. Regular business travellers only get 50%. So the effective deduction is $80 &times; 80% = $64 per full night away.'),
+ ('Can a company driver on a W-2 claim per diem?',
+  'No. After the Tax Cuts and Jobs Act removed unreimbursed employee expenses, W-2 company drivers cannot deduct per diem on their tax return. Only self-employed owner-operators filing Schedule C can claim it. Some carriers instead run a per diem PAY program through payroll, which is a different thing entirely.'),
+ ('Do I need meal receipts to claim per diem?',
+  'No. That is the whole advantage of a flat per diem &mdash; you do not save individual meal receipts. But you DO need records proving which nights you were away from your tax home overnight. Trip records, ELD logs or GPS-stamped load records all work. Loadboot produces this automatically from your trips.'),
+ ('How much is per diem worth to an owner-operator?',
+  'At $64 per night, 200 nights away is $12,800 in deductions and 250 nights is $16,000. Depending on your bracket and self-employment tax, that typically keeps roughly $4,700&ndash;$5,900 of real cash in your pocket. Specialists note that drivers who skip it lose over $11,000 in deductions a year.'),
+ ('What proof does the IRS want for per diem?',
+  'Evidence of the days you were travelling away from your tax home overnight &mdash; not meal receipts. A dated, objective record is what matters. GPS-stamped pickup and delivery times, like the ones Loadboot writes on every trip, are exactly that kind of record.'),
+]
+
+rich_article('truck-driver-per-diem-2026.html',
+ 'Truck Driver Per Diem 2026: Rates, Rules &amp; the $12,800 Most Owner-Operators Miss | Loadboot',
+ 'IRS per diem for truck drivers 2026: $80/day, 80% deductible ($64/night). 200 nights out = $12,800 in deductions. Who can claim it, the proof the IRS wants, and how to make that proof build itself.',
+ 'Trucking Tax Deductions','Truck Driver Per Diem 2026: The $12,800 Most Owner-Operators Never Claim',
+ 'The IRS does not want your meal receipts. It wants proof of the nights you were away &mdash; and that is exactly where drivers lose thousands. Here is the 2026 rule, the real math, and how to make the record write itself.',
+ 9,'owner-operator-dispatch-hero.jpg','Owner-operator truck driver reviewing per diem tax deductions and trip records',
+ PD_TOC, PD_BODY, PD_FAQ, feat_svg=PD_FEAT)
+
+THUMBS['truck-driver-per-diem-2026.html'] = PD_FEAT
+READTIME['truck-driver-per-diem-2026.html'] = 9
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
 blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
 blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from Loadboot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards

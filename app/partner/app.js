@@ -1186,6 +1186,51 @@ function bookRequestsCard() {
       const badge = h('span', { style: 'padding:3px 9px;border-radius:20px;font-weight:800;font-size:.72rem;' + (t.verified ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e') }, t.verified ? '\u2713 ' + (t.verified_label || 'Verified') : 'Unverified');
       const note = h('input', { class: 'cp-in', placeholder: 'Optional note to the carrier\u2026' });
       const decide = async (action, ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '\u2026'; try { await decideBookRequest(r.id, action, note.value || null); render(); } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); } };
+      const openApproveBook = async (ev) => {
+        const btn = ev.currentTarget; btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Loading\u2026';
+        let items = [], fl = null;
+        try { if (r.partner_load) items = (await loadChecklist('partner_load', r.partner_load)) || []; } catch (_) {}
+        try { fl = await partnerLoadFull(r.load); } catch (_) {}
+        btn.disabled = false; btn.textContent = orig;
+        const rcItem = items.find(x => x.doc_key === 'rate_confirmation');
+        const apptItem = items.find(x => x.doc_key === 'appointment_confirmation');
+        const rcSigned = rcItem && (rcItem.status === 'received' || rcItem.status === 'verified');
+        const needAppt = !r.fcfs;
+        const nameIn = h('input', { class: 'cp-in', placeholder: 'Type your full legal name to SIGN the rate confirmation' });
+        const apptIn = h('input', { class: 'cp-in', placeholder: 'Confirmed pickup time (e.g. Jul 16, 10:00 AM)' });
+        const apptNo = h('input', { class: 'cp-in', placeholder: 'Appointment / confirmation # (optional)', style: 'margin-top:6px' });
+        const err = h('div', { class: 'cp-err' });
+        const doIt = h('button', { class: 'cp-btn', style: 'background:#16a34a;width:100%;margin-top:12px' }, '\u270d Sign & book');
+        const summary = ((fl && (fl.origin_full || fl.origin)) || r.origin || '') + ' \u2192 ' + ((fl && (fl.destination_full || fl.destination)) || r.destination || '') + ' \u00b7 $' + Number((fl && fl.rate) || r.rate || 0).toLocaleString() + ' \u00b7 ' + ((fl && fl.equipment) || r.equipment || '') + (fl && fl.pickup_date ? ' \u00b7 PU ' + fl.pickup_date : '');
+        const close = openModal('\u270d Issue the dispatch pack & book \u2014 ' + (r.origin || '') + ' \u2192 ' + (r.destination || ''), h('div', null, [
+          h('div', { class: 'cp-sub' }, 'Two things the driver can\u2019t roll without \u2014 provide them now to book. Pickup #, delivery # and billing are collected later, just-in-time.'),
+          h('div', { style: 'background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:10px 13px;font-size:.82rem;color:#334155;margin:10px 0' }, summary),
+          h('label', { style: 'display:block;font-weight:700;font-size:.8rem;color:#334155' }, rcSigned ? '\u2460 Rate confirmation \u2713 already signed' : '\u2460 Rate confirmation \u2014 sign to execute'),
+          rcSigned ? null : nameIn,
+          needAppt ? h('label', { style: 'display:block;font-weight:700;font-size:.8rem;color:#334155;margin-top:10px' }, '\u2461 Appointment (this is an appointment load)') : h('div', { class: 'cp-sub', style: 'margin-top:10px' }, 'FCFS load \u2014 no appointment needed (the carrier checks in within the window).'),
+          needAppt ? apptIn : null, needAppt ? apptNo : null,
+          err, doIt,
+          h('div', { class: 'cp-sub', style: 'margin-top:10px;color:#64748b' }, 'After booking: pickup # before the driver reaches pickup \u00b7 delivery # before delivery \u00b7 billing after POD.'),
+        ].filter(Boolean)));
+        doIt.onclick = async () => {
+          if (!rcSigned && rcItem && !nameIn.value.trim()) { err.textContent = 'Type your legal name to sign the rate confirmation.'; return; }
+          if (needAppt && apptItem && !apptIn.value.trim()) { err.textContent = 'Enter the confirmed appointment time.'; return; }
+          doIt.disabled = true; doIt.textContent = 'Booking\u2026';
+          try {
+            if (!rcSigned && rcItem) {
+              const d = Object.assign({}, fl || {}, { signer: nameIn.value.trim(), signed_date: new Date().toISOString().slice(0, 10), ref: 'LB-RC-' + String((fl && fl.id) || r.load || '').replace(/-/g, '').slice(0, 8).toUpperCase() });
+              await partnerChecklistSubmit(rcItem.id, 'Rate confirmation ' + d.ref + ' signed online by ' + d.signer + ' on ' + d.signed_date, JSON.stringify(d));
+            }
+            if (needAppt && apptItem && apptIn.value.trim()) {
+              await partnerChecklistSubmit(apptItem.id, ['Confirmation #: ' + (apptNo.value.trim() || '\u2014'), 'Confirmed time: ' + apptIn.value.trim()].join(' \u00b7 '));
+            }
+            await decideBookRequest(r.id, 'approve', (note && note.value) || null);
+            close();
+            pToast('Rate confirmation issued to the carrier. Add pickup # before the driver reaches pickup, delivery # before delivery, billing after POD.', { kind: 'ok', title: '\ud83d\ude9a Booked \u2014 driver can roll' });
+            render();
+          } catch (e) { doIt.disabled = false; doIt.textContent = '\u270d Sign & book'; err.textContent = (e && e.message) || 'Could not book.'; }
+        };
+      };
       const cdEl = h('span', { style: 'font-weight:800;font-size:.78rem;padding:3px 10px;border-radius:20px;background:#fef3c7;color:#92400e' }, '');
       if (r.expires_at) {
         const tick = () => {
@@ -1223,7 +1268,7 @@ function bookRequestsCard() {
         })(),
         note,
         h('div', { style: 'display:flex;gap:8px;margin-top:6px' }, [
-          h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: (ev) => decide('approve', ev) }, 'Approve & book'),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: (ev) => openApproveBook(ev) }, 'Approve & book'),
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: (ev) => decide('reject', ev) }, 'Decline'),
         ]),
       ].filter(Boolean));
@@ -2622,6 +2667,50 @@ async function brokerDash(user, ov) {
             h('div', { class: 'cp-sub' }, [fmtT(e9.at), e9.note].filter(Boolean).join(' \u00b7 ')),
           ]))),
         ]) : null,
+        (function () {
+          const dwell = d.dwell || [], acc = d.accessorials || [], rates = d.rates || {};
+          const detRate = Number(rates.detention_per_hr) || 0;
+          const hm = (m) => m >= 60 ? (Math.floor(m / 60) + 'h ' + (m % 60) + 'm') : (m + 'm');
+          const rows = [];
+          // LIVE detention accruing at the stop the truck is currently sitting in
+          dwell.forEach(dw => {
+            if (!dw.arrived_at || dw.departed_at) return;
+            const arr = new Date(dw.arrived_at).getTime();
+            const dwellMin = Math.max(0, Math.round((Date.now() - arr) / 60000));
+            const freeMin = Number(dw.free_minutes) || 0;
+            const overMin = Math.max(0, dwellMin - freeMin);
+            const amt = detRate ? (overMin / 60 * detRate) : 0;
+            rows.push(h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed #eef2f7' }, [
+              h('div', null, [
+                h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B' }, (overMin > 0 ? '\u23f1 Detention RUNNING at ' : '\u23f3 In dock at ') + dw.stop),
+                h('div', { class: 'cp-sub' }, 'In dock ' + hm(dwellMin) + ' \u00b7 free ' + hm(freeMin) + (overMin > 0 ? (' \u00b7 ' + hm(overMin) + ' over free') : ' \u00b7 within free time')),
+              ]),
+              h('div', { style: 'text-align:right;font-weight:800;color:' + (overMin > 0 ? '#b45309' : '#16a34a') }, overMin > 0 ? ('$' + Math.round(amt).toLocaleString() + ' \u23eb') : '$0'),
+            ]));
+          });
+          // Filed accessorials = the detention/layover invoice building up
+          let total = 0;
+          acc.forEach(a => {
+            const amt = Number(a.amount) || 0; total += amt;
+            const stC = a.status === 'approved' ? ['#dcfce7', '#166534'] : a.status === 'rejected' ? ['#fee2e2', '#991b1b'] : ['#fef3c7', '#92400e'];
+            rows.push(h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed #eef2f7' }, [
+              h('div', null, [
+                h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;text-transform:capitalize' }, (a.kind || 'accessorial') + ' claim'),
+                h('span', { style: 'font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:999px;background:' + stC[0] + ';color:' + stC[1] }, a.status === 'requested' ? 'in review' : (a.status || '')),
+              ]),
+              h('div', { style: 'font-weight:800;color:#10223B' }, '$' + amt.toLocaleString()),
+            ]));
+          });
+          if (!rows.length) return null;
+          return h('div', { style: 'background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:14px 16px;margin-top:10px' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px' }, [
+              h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B' }, '\ud83d\udcb0 Detention \u00b7 layover \u00b7 accessorials \u2014 live'),
+              total ? h('div', { style: 'font-weight:800;color:#0883F7' }, 'Invoice so far: $' + total.toLocaleString()) : null,
+            ].filter(Boolean)),
+            ...rows,
+            h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'Detention & layover accrue from the driver\u2019s GPS arrive/depart stamps at each stop. Approved amounts pass straight through to the carrier\u2019s invoice \u2014 LoadBoot takes no cut.'),
+          ]);
+        })(),
         h('div', { class: 'cp-sub', style: 'margin-top:10px;text-align:center' }, 'Auto-refreshes every 30 seconds \u00b7 GPS is captured from the driver\u2019s device from booking to delivery \u00b7 every milestone lands in your notifications'),
       ].filter(Boolean)));
       // tiles
@@ -2830,6 +2919,15 @@ async function brokerDash(user, ov) {
         appointment_confirmation: { ic: '\ud83d\udcc5', help: 'Appointment confirmation from the facility (number and confirmed time).', fields: [['Confirmation #', 'ac'], ['Confirmed time (e.g. Jul 16, 10:00 AM)', 'at']] },
         billing_contact: { ic: '\ud83d\udcb3', help: 'Who receives the invoice \u2014 accounts payable at your company or your customer.', fields: [['Contact name *', 'bn'], ['Email *', 'be'], ['Phone', 'bp']] },
       };
+      // WHEN each item is needed — the just-in-time sequence so the driver is never blocked.
+      const WHEN = {
+        rate_confirmation:        [1, '\u2460 NEEDED NOW \u2014 the driver can\u2019t legally roll without it', '#b91c1c', '#fef2f2'],
+        appointment_confirmation: [1, '\u2460 NEEDED NOW (appointment loads) \u2014 the confirmed pickup time', '#b91c1c', '#fef2f2'],
+        pickup_number:            [2, '\u2461 Before the driver reaches pickup \u2014 released at the gate', '#92400e', '#fffbeb'],
+        delivery_number:          [3, '\u2462 Before delivery \u2014 can follow after pickup', '#1e40af', '#eff6ff'],
+        billing_contact:          [4, '\u2463 Only to get paid \u2014 after POD, before you invoice', '#475569', '#f1f5f9'],
+      };
+      items.sort((a, b) => ((WHEN[a.doc_key] && WHEN[a.doc_key][0]) || 9) - ((WHEN[b.doc_key] && WHEN[b.doc_key][0]) || 9));
       const done = items.filter(it => it.status === 'verified' || it.status === 'received').length;
       mount(bodyEl, h('div', null, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px' }, [
@@ -2837,10 +2935,16 @@ async function brokerDash(user, ov) {
         ]),
         h('div', { style: 'height:6px;border-radius:99px;background:#eef2f7;margin-bottom:14px;overflow:hidden' },
           h('div', { style: 'height:100%;width:' + Math.round(100 * done / items.length) + '%;background:linear-gradient(90deg,#0883F7,#22c55e);border-radius:99px' })),
+        h('div', { style: 'background:#f8fafc;border:1px solid #e6ebf3;border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:.82rem;color:#334155;line-height:1.65' }, [
+          h('b', { style: 'color:#10223B' }, 'When each item is needed \u2014 so the driver is never blocked:'),
+          h('div', { style: 'margin-top:2px' }, '\u2460 Rate confirmation + appointment \u2014 the moment you book, so the driver can roll. \u2461 Pickup # \u2014 before the driver reaches pickup. \u2462 Delivery # \u2014 before delivery. \u2463 Billing contact \u2014 only to get paid, after POD.'),
+        ]),
         ...items.map(it => {
           const cfg = CFG[it.doc_key] || { ic: '\ud83d\udcc4', help: '', fields: [['Reference / note *', 'x']] };
           const stC = it.status === 'verified' ? ['#dcfce7', '#166534', '\u2713 verified'] : it.status === 'received' ? ['#eff6ff', '#1d4ed8', '\u23f3 submitted \u2014 in review'] : it.status === 'rejected' ? ['#fee2e2', '#991b1b', '\u2715 rejected \u2014 fix below'] : ['#fef3c7', '#92400e', '\u26a0 required'];
           const wrap = h('div', { style: 'background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:14px 16px;margin-bottom:11px;box-shadow:0 8px 24px -20px rgba(2,12,30,.3)' });
+          const _wn = WHEN[it.doc_key];
+          if (_wn) wrap.appendChild(h('div', { style: 'display:inline-block;font-size:.66rem;font-weight:800;padding:3px 10px;border-radius:999px;margin-bottom:9px;background:' + _wn[3] + ';color:' + _wn[2] }, _wn[1]));
           wrap.appendChild(h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap' }, [
             h('div', { style: 'display:flex;gap:10px;align-items:center' }, [
               h('span', { style: 'font-size:1.25rem' }, cfg.ic),

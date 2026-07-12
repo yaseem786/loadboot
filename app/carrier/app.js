@@ -7,7 +7,7 @@ import ENV from '../shared/env.js';
 import { US_CITIES } from './us-cities.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updatePassword } from '../shared/session.js';
 import {
-  pocketOverview, pocketTrips, pocketInvoices, pocketCompliance, pocketConfirmTrip,
+  pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
   pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
@@ -3380,6 +3380,221 @@ function tripStepper(status) {
   }
 
   /* ----- Finance ----- */
+  // ---------- 🧾 TAX CENTER — per diem, deadlines, Schedule C (the pieces owner-ops always miss) ----------
+  function taxCenter() {
+    const card = h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Loading tax centre…'));
+    (async () => {
+      const yr = new Date().getFullYear();
+      const y0 = yr + '-01-01';
+      let d = { trips: [], totals: {} }; try { d = (await carrierEarnings(y0, null)) || d; } catch (_) {}
+      let ex = []; try { ex = (await carrierExpenses(y0, null, 500)) || []; } catch (_) {}
+      // PER DIEM — $80/day, 80% deductible (worth $5k+/yr to an OTR owner-op)
+      let nights = 0;
+      (d.trips || []).forEach(p => {
+        const t = p.trip || {};
+        if (t.started_at && t.delivered_at) nights += Math.max(0, Math.round((new Date(t.delivered_at) - new Date(t.started_at)) / 864e5));
+      });
+      const PD_RATE = 80, PD_PCT = 0.8;
+      const pdDeduct = Math.round(nights * PD_RATE * PD_PCT);
+      // SCHEDULE C — expense rollup by category
+      const byCat = {};
+      (ex || []).forEach(e => { const c = String(e.category || 'other'); byCat[c] = (byCat[c] || 0) + (Number(e.amount) || 0); });
+      const cats = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
+      const exTotal = cats.reduce((a, c) => a + byCat[c], 0);
+      // DEADLINES
+      const DL = [['Apr 15', 'Q1 estimated tax + Form 1040'], ['Jun 16', 'Q2 estimated tax'],
+                  ['Aug 31', 'Form 2290 (HVUT, 55,000+ lb)'], ['Sep 15', 'Q3 estimated tax'], ['Jan 15', 'Q4 estimated tax']];
+      const mIdx = { 'Apr': 3, 'Jun': 5, 'Aug': 7, 'Sep': 8, 'Jan': 0 };
+      const now = new Date();
+      const nextI = DL.findIndex(([dt]) => { const [mo, dy] = dt.split(' '); const dd = new Date(yr + (mo === 'Jan' ? 1 : 0), mIdx[mo], Number(dy)); return dd >= now; });
+      const row = (k, v, sub, col) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(148,163,184,.18)' }, [
+        h('div', { style: 'min-width:0' }, [h('div', { class: 'cp-row-s', style: 'font-weight:700;color:#dbe6f5' }, k), sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)),
+        h('div', { style: 'font-weight:800;flex:none;color:' + (col || '#dbe6f5') }, v),
+      ]);
+      mount(card, h('div', null, [
+        cardHead('🧾 Tax centre — ' + yr, 'estimates only · not tax advice'),
+        h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:12px 14px;margin-bottom:10px' }, [
+          h('div', { style: 'font-weight:800;color:#4ade80' }, '🛏 Per diem — ' + nights + ' nights away'),
+          h('div', { style: 'font-size:1.6rem;font-weight:900;color:#4ade80;margin:2px 0' }, '$' + pdDeduct.toLocaleString()),
+          h('div', { class: 'cp-row-s' }, nights + ' nights × $' + PD_RATE + '/day × 80% deductible. Most owner-ops leave this on the table — your GPS trip records ARE the proof.'),
+        ]),
+        h('div', { class: 'cp-row-s', style: 'font-weight:800;margin:10px 0 2px' }, '📅 Deadlines'),
+        ...DL.map(([dt, what], i) => row(dt, i === nextI ? 'NEXT UP' : '', what, i === nextI ? '#fbbf24' : '#7f92b3')),
+        h('div', { class: 'cp-row-s', style: 'font-weight:800;margin:12px 0 2px' }, '📊 Schedule C — deductible expenses logged'),
+        cats.length ? h('div', null, [...cats.map(c => row(c, '$' + Math.round(byCat[c]).toLocaleString())), row('TOTAL LOGGED', '$' + Math.round(exTotal).toLocaleString(), null, '#4ade80')])
+          : h('div', { class: 'cp-muted', style: 'padding:6px 0' }, 'No expenses logged yet — log fuel, tolls, scales, repairs under Costs and they roll up here for Schedule C.'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#7f92b3' }, 'Deduct: fuel · per diem · truck payment interest · insurance · maintenance · tolls · scales · parking · permits. Principal on the truck loan is NOT deductible. This is a worksheet, not tax advice.'),
+      ]));
+    })();
+    return card;
+  }
+
+  // ---------- 📥 CASH POSITION — what you're owed and when it lands ----------
+  function cashCard(rows) {
+    const now = Date.now();
+    const sent = (rows || []).filter(i => i.status === 'sent');
+    const awaiting = sent.reduce((a, i) => a + (Number(i.gross) || 0), 0);
+    const overdue = sent.filter(i => i.created_at && (now - new Date(i.created_at).getTime()) > 30 * 864e5);
+    const overdueAmt = overdue.reduce((a, i) => a + (Number(i.gross) || 0), 0);
+    const paidAmt = (rows || []).filter(i => i.status === 'paid').reduce((a, i) => a + (Number(i.gross) || 0), 0);
+    const t = (k, v, col, sub) => h('div', { style: 'flex:1;min-width:130px;padding:12px 14px;border:1px solid var(--lb-line,#22314e);border-radius:14px' }, [
+      h('div', { style: 'font-size:.6rem;letter-spacing:.09em;color:#7f92b3;font-weight:800' }, k),
+      h('div', { style: 'font-weight:900;font-size:1.3rem;margin-top:2px;color:' + col }, '$' + Math.round(v).toLocaleString()),
+      sub ? h('div', { class: 'cp-row-s' }, sub) : null,
+    ].filter(Boolean));
+    return h('div', { class: 'cp-card' }, [
+      cardHead('📥 Cash position', 'trucking pays in 30–45 days — watch the gap'),
+      h('div', { style: 'display:flex;gap:9px;flex-wrap:wrap' }, [
+        t('AWAITING PAYMENT', awaiting, '#fbbf24', sent.length + ' invoice(s) out'),
+        t('OVERDUE 30+ DAYS', overdueAmt, overdueAmt > 0 ? '#f87171' : '#4ade80', overdue.length + ' invoice(s)'),
+        t('PAID', paidAmt, '#4ade80', 'received'),
+      ]),
+      overdueAmt > 0 ? h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3)' },
+        h('div', { class: 'cp-row-s', style: 'color:#fca5a5' }, '⚠ $' + Math.round(overdueAmt).toLocaleString() + ' is past 30 days. Chase it, or factor it to free the cash.')) : null,
+    ].filter(Boolean));
+  }
+
+  // ---------- 💰 EARNINGS HUB — per-trip A-to-Z P&L (Uber-style) ----------
+  function earningsHub() {
+    const card = h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Loading earnings…'));
+    let days = 30;
+    const M = (v) => '$' + Math.round(Number(v) || 0).toLocaleString();
+    const M2 = (v) => (v == null ? '—' : '$' + Number(v).toFixed(2));
+    const HC = { good: ['rgba(34,197,94,.16)', '#4ade80'], ok: ['rgba(245,158,11,.16)', '#fbbf24'], risky: ['rgba(239,68,68,.16)', '#f87171'], unknown: ['rgba(148,163,184,.14)', '#94a3b8'] };
+
+    const costModelBox = () => {
+      const w = h('div', { style: 'display:none' });
+      const btn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+        if (w.style.display !== 'none') { w.style.display = 'none'; return; }
+        w.style.display = 'block';
+        let cm = {}; try { cm = (await getCostModel()) || {}; } catch (_) {}
+        const f = (lbl, key, ph) => { const i = h('input', { class: 'cp-in', type: 'number', step: '0.01', placeholder: ph, value: cm[key] != null ? cm[key] : '' }); i.dataset.k = key; return h('div', null, [h('div', { class: 'cp-row-s', style: 'font-weight:700' }, lbl), i]); };
+        const fields = [f('Truck MPG', 'truck_mpg', '6.5'), f('Fuel $/gal', 'fuel_price', '3.85'), f('Driver pay $/mi', 'driver_pay_per_mile', '0.65'), f('Maintenance $/mi', 'maint_per_mile', '0.18'), f('Fixed overhead $/mi', 'fixed_per_mile', '0.35'), f('Factoring %', 'factoring_pct', '3')];
+        const save = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: async (ev) => {
+          const b = ev.currentTarget; b.disabled = true; b.textContent = 'Saving…';
+          const o = {}; fields.forEach(fd => { const i = fd.querySelector('input'); const v = i.value.trim(); if (v !== '') o[i.dataset.k] = Number(v); });
+          try { await setCostModel(o); b.textContent = 'Saved ✓'; render(); } catch (e) { b.disabled = false; b.textContent = 'Save cost model'; lbToast((e && e.message) || 'Failed.', 'urgent'); }
+        } }, 'Save cost model');
+        mount(w, h('div', { style: 'margin-top:10px;padding:12px;border:1px solid var(--lb-line,#22314e);border-radius:12px' }, [
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'These numbers drive every automatic cost line below. Set them once — every trip is priced with YOUR real costs.'),
+          h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px' }, fields),
+          save,
+        ]));
+      } }, '⚙ Cost model');
+      return h('div', null, [btn, w]);
+    };
+
+    const tripRow = (p) => {
+      const tr = p.trip || {}, rev = p.revenue || {}, cst = p.costs || {}, mt = p.metrics || {};
+      const hc = HC[mt.health || 'unknown'] || HC.unknown;
+      const body = h('div', { style: 'display:none' });
+      const head = h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer;padding:10px 0', onClick: () => {
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        if (!open) drawBody();
+      } }, [
+        h('div', { style: 'min-width:0' }, [
+          h('div', { class: 'cp-row-t' }, (tr.origin || '—') + ' → ' + (tr.destination || '—')),
+          h('div', { class: 'cp-row-s' }, [tr.delivered_at ? new Date(tr.delivered_at).toLocaleDateString() : (tr.status || ''), (tr.miles_total ? Math.round(tr.miles_total) + ' mi' : null), (mt.rpm != null ? '$' + mt.rpm + '/mi' : null)].filter(Boolean).join(' · ')),
+        ]),
+        h('div', { style: 'text-align:right;flex:none' }, [
+          h('div', { style: 'font-weight:900;font-size:1.05rem;color:' + (Number(p.net) >= 0 ? '#4ade80' : '#f87171') }, M(p.net)),
+          h('span', { class: 'cp-pill', style: 'background:' + hc[0] + ';color:' + hc[1] + ';font-weight:800' }, (mt.margin_pct != null ? mt.margin_pct + '% margin' : 'n/a')),
+        ]),
+      ]);
+      const drawBody = () => {
+        const ln = (lbl, amt, sub, col, onDel) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.18)' }, [
+          h('div', { style: 'min-width:0' }, [h('div', { class: 'cp-row-s', style: 'font-weight:700;color:#dbe6f5' }, lbl), sub ? h('div', { class: 'cp-row-s' }, sub) : null].filter(Boolean)),
+          h('div', { style: 'display:flex;gap:8px;align-items:center;flex:none' }, [
+            h('span', { style: 'font-weight:800;color:' + (col || '#dbe6f5') }, amt),
+            onDel ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'padding:2px 8px', onClick: onDel }, '✕') : null,
+          ].filter(Boolean)),
+        ]);
+        const rows = [];
+        rows.push(h('div', { class: 'cp-row-s', style: 'font-weight:800;color:#4ade80;margin-top:6px' }, 'MONEY IN'));
+        rows.push(ln('Linehaul', M2(rev.linehaul), null, '#4ade80'));
+        (rev.accessorials || []).forEach(a => rows.push(ln(String(a.kind || '').toUpperCase(), M2(a.amount), a.status === 'approved' ? 'approved ✓' : a.status, a.status === 'approved' ? '#4ade80' : '#94a3b8')));
+        (rev.custom || []).forEach(c => rows.push(ln(c.label, M2(c.amount), c.category, '#4ade80', async () => { try { await tripFinanceRemove(c.id); render(); } catch (_) {} })));
+        rows.push(ln('GROSS', M2(rev.gross), null, '#4ade80'));
+        rows.push(h('div', { class: 'cp-row-s', style: 'font-weight:800;color:#f87171;margin-top:10px' }, 'MONEY OUT'));
+        (cst.auto || []).forEach(c => rows.push(ln(c.label, '−' + M2(c.amount).slice(1), 'auto', '#f87171')));
+        (cst.custom || []).forEach(c => rows.push(ln(c.label, '−' + M2(c.amount).slice(1), c.category, '#f87171', async () => { try { await tripFinanceRemove(c.id); render(); } catch (_) {} })));
+        rows.push(ln('TOTAL COST', '−' + M2(cst.total).slice(1), null, '#f87171'));
+        rows.push(h('div', { style: 'display:flex;justify-content:space-between;padding:10px 0 4px;border-top:2px solid rgba(148,163,184,.25);margin-top:6px' }, [
+          h('div', { style: 'font-weight:900;font-size:1rem' }, 'NET PROFIT'),
+          h('div', { style: 'font-weight:900;font-size:1.15rem;color:' + (Number(p.net) >= 0 ? '#4ade80' : '#f87171') }, M2(p.net)),
+        ]));
+        const mtile = (k, v) => h('div', { style: 'flex:1;min-width:88px;text-align:center;padding:7px 4px;border:1px solid var(--lb-line,#22314e);border-radius:10px' }, [
+          h('div', { style: 'font-size:.62rem;letter-spacing:.08em;color:#7f92b3;font-weight:800' }, k),
+          h('div', { style: 'font-weight:800;margin-top:2px' }, v),
+        ]);
+        rows.push(h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap;margin-top:10px' }, [
+          mtile('RPM', mt.rpm != null ? '$' + mt.rpm : '—'),
+          mtile('COST/MI', mt.cpm != null ? '$' + mt.cpm : '—'),
+          mtile('NET/MI', mt.net_per_mile != null ? '$' + mt.net_per_mile : '—'),
+          mtile('NET/HR', mt.net_per_hour != null ? '$' + mt.net_per_hour : '—'),
+          mtile('BREAK-EVEN', mt.breakeven_rpm != null ? '$' + mt.breakeven_rpm + '/mi' : '—'),
+        ]));
+        // add a custom line to THIS trip
+        const dir = h('select', { class: 'cp-in', style: 'max-width:110px' }, [h('option', { value: 'cost' }, '− Cost'), h('option', { value: 'earning' }, '+ Earning')]);
+        const catI = h('select', { class: 'cp-in', style: 'max-width:130px' }, ['tolls', 'fuel', 'lumper', 'scale', 'parking', 'repair', 'bonus', 'other'].map(c => h('option', { value: c }, c)));
+        const labI = h('input', { class: 'cp-in', placeholder: 'What was it?' });
+        const amtI = h('input', { class: 'cp-in', type: 'number', step: '0.01', placeholder: '$', style: 'max-width:100px' });
+        const addB = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+          const b = ev.currentTarget;
+          if (!labI.value.trim() || !(Number(amtI.value) > 0)) { lbToast('Add a label and an amount.', 'warning'); return; }
+          b.disabled = true; b.textContent = '…';
+          try { await tripFinanceAdd(tr.id, dir.value, catI.value, labI.value.trim(), Number(amtI.value)); render(); }
+          catch (e) { b.disabled = false; b.textContent = '+ Add'; lbToast((e && e.message) || 'Failed.', 'urgent'); }
+        } }, '+ Add');
+        rows.push(h('div', { style: 'margin-top:10px' }, [
+          h('div', { class: 'cp-row-s', style: 'font-weight:700;margin-bottom:5px' }, 'Add anything specific to THIS trip — tolls, scale, a repair, a bonus:'),
+          h('div', { class: 'cp-inlineform' }, [dir, catI, labI, amtI, addB]),
+        ]));
+        mount(body, h('div', { style: 'padding:4px 2px 10px' }, rows));
+      };
+      return h('div', { style: 'border-bottom:1px solid rgba(148,163,184,.14)' }, [head, body]);
+    };
+
+    async function render() {
+      mount(card, h('div', { class: 'cp-muted' }, 'Loading earnings…'));
+      const from = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+      let d; try { d = await carrierEarnings(from, null); }
+      catch (e) { mount(card, [cardHead('💰 Earnings'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      const t = d.totals || {}, trips = d.trips || [];
+      const chip = (n, lbl) => h('button', { class: 'cp-btn cp-btn-sm ' + (days === n ? '' : 'ghost'), style: 'padding:5px 12px', onClick: () => { days = n; render(); } }, lbl);
+      const big = h('div', { style: 'text-align:center;padding:6px 0 12px' }, [
+        h('div', { style: 'font-size:.66rem;letter-spacing:.12em;color:#7f92b3;font-weight:800' }, 'NET PROFIT · LAST ' + days + ' DAYS'),
+        h('div', { style: 'font-size:2.5rem;font-weight:900;letter-spacing:-.02em;color:' + (Number(t.net) >= 0 ? '#4ade80' : '#f87171') }, M(t.net)),
+        h('div', { class: 'cp-row-s' }, M(t.gross) + ' gross − ' + M(t.costs) + ' costs · ' + (t.trip_count || 0) + ' trips · ' + Math.round(t.miles || 0).toLocaleString() + ' mi'),
+      ]);
+      const kt = (k, v, col) => h('div', { style: 'flex:1;min-width:90px;text-align:center;padding:9px 5px;border:1px solid var(--lb-line,#22314e);border-radius:12px' }, [
+        h('div', { style: 'font-size:.6rem;letter-spacing:.09em;color:#7f92b3;font-weight:800' }, k),
+        h('div', { style: 'font-weight:900;margin-top:2px;color:' + (col || '#dbe6f5') }, v),
+      ]);
+      mount(card, h('div', null, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' }, [
+          h('div', { class: 'cp-row-t', style: 'font-size:1.05rem' }, '💰 Earnings — every trip, A to Z'),
+          h('div', { style: 'display:flex;gap:6px;align-items:center' }, [chip(7, '7d'), chip(30, '30d'), chip(90, '90d'), costModelBox()]),
+        ]),
+        big,
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px' }, [
+          kt('REVENUE/MI', t.rpm != null ? '$' + t.rpm : '—'),
+          kt('COST/MI', t.cpm != null ? '$' + t.cpm : '—'),
+          kt('NET/MI', t.net_per_mile != null ? '$' + t.net_per_mile : '—', Number(t.net_per_mile) >= 0 ? '#4ade80' : '#f87171'),
+          kt('NET/HR', t.net_per_hour != null ? '$' + t.net_per_hour : '—'),
+          kt('MARGIN', t.margin_pct != null ? t.margin_pct + '%' : '—', (t.margin_pct >= 30 ? '#4ade80' : t.margin_pct >= 15 ? '#fbbf24' : '#f87171')),
+        ]),
+        (d.settings_hint === false) ? null : null,
+        trips.length
+          ? h('div', null, [h('div', { class: 'cp-row-s', style: 'font-weight:800;margin-bottom:2px' }, 'Tap any trip for its full profit statement'), ...trips.map(tripRow)])
+          : h('div', { class: 'cp-muted', style: 'text-align:center;padding:16px' }, 'No trips in this period yet. Once you deliver, each trip gets its own full P&L here.'),
+      ].filter(Boolean)));
+    }
+    render();
+    return card;
+  }
+
   async function loadFinance() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let rows; try { rows = await pocketInvoices(100); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Failed to load.'))); return; }
@@ -3609,18 +3824,36 @@ function tripStepper(status) {
     }
     qSel.onchange = renderIfta;
     renderIfta();
+    // Mobile-first sectioned Finance. No duplicates: the Earnings hub REPLACES the old
+    // "Profit & Loss (this month)" and "Per-trip P&L" cards.
+    if (!document.getElementById('lb-fin-css')) {
+      const st = document.createElement('style'); st.id = 'lb-fin-css';
+      st.textContent = '.finnav{display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0 8px;scrollbar-width:none}.finnav::-webkit-scrollbar{display:none}'
+        + '.finnav button{flex:none;white-space:nowrap}'
+        + '@media(max-width:640px){.cp-kpis{grid-template-columns:repeat(2,1fr)!important}.cp-grid{display:block!important}.cp-grid>*{margin-bottom:12px}}';
+      document.head.appendChild(st);
+    }
+    const feesChart = h('div', { class: 'cp-card' }, [cardHead('Dispatch fees over time'), series.length ? miniBars(series, { height: 84 }) : h('div', { class: 'cp-muted' }, 'No data yet.')]);
+    const statusCard = h('div', { class: 'cp-card' }, [cardHead('Invoice status'), h('div', { class: 'cp-donut-wrap' }, [donut(statusParts), h('div', { class: 'cp-donut-leg' }, statusParts.map(p => h('div', null, [h('i', { style: 'background:' + p.color }), p.label + ' · ' + p.value])))])]);
+    const SECS = [
+      ['earn', '💰 Earnings', () => [earningsHub()]],
+      ['in',   '📥 Money in', () => [cashCard(rows), statusCard, stmtCard]],
+      ['cost', '📤 Costs',    () => [expCard, feesChart]],
+      ['tax',  '🧾 Taxes',    () => [taxCenter(), iftaCard]],
+      ['pay',  '👥 Payroll',  () => [payrollCard]],
+    ];
+    let sec = 'earn';
+    const secHost = h('div');
+    const nav = h('div', { class: 'finnav' });
+    const paint = () => {
+      mount(nav, SECS.map(([k, lbl]) => h('button', { class: 'cp-btn cp-btn-sm ' + (sec === k ? '' : 'ghost'), onClick: () => { sec = k; paint(); } }, lbl)));
+      const f = SECS.find(x => x[0] === sec);
+      mount(secHost, h('div', null, f ? f[2]() : []));
+    };
+    paint();
     mount(content, h('div', null, [
-      h('div', { class: 'cp-kpis' }, [statTile('Fees due', money(due), 'finance', 'amber'), statTile('Fees paid', money(paid), 'dash', 'green'), statTile('Gross hauled', money(gross), 'trips', 'blue'), statTile('Invoices', String(rows.length), 'docs', 'violet')]),
-      expCard,
-      iftaCard,
-      pnlCard,
-      tripPnlCard,
-      payrollCard,
-      stmtCard,
-      h('div', { class: 'cp-grid' }, [
-        h('div', { class: 'cp-card cp-col2' }, [cardHead('Dispatch fees over time'), series.length ? miniBars(series, { height: 84 }) : h('div', { class: 'cp-muted' }, 'No data yet.')]),
-        h('div', { class: 'cp-card' }, [cardHead('Invoice status'), h('div', { class: 'cp-donut-wrap' }, [donut(statusParts), h('div', { class: 'cp-donut-leg' }, statusParts.map(p => h('div', null, [h('i', { style: 'background:' + p.color }), p.label + ' · ' + p.value])))])]),
-      ]),
+      nav,
+      secHost,
       h('div', { class: 'cp-card' }, [cardHead('Invoices'), rows.length ? h('div', null, rows.map(i => {
         const dw = h('div');
         const dispute = (i.status === 'sent' || i.status === 'paid') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {

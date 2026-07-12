@@ -478,6 +478,13 @@ export const publicLoadOpportunities = (limit) => rpc('get_public_load_opportuni
 export const pocketAvailableLoads = (limit) => rpc('cc_pocket_available_loads', { p_limit: limit ?? 24 });
 export const pocketBookLoad = (loadId) => rpc('cc_pocket_book_load', { p_load: loadId });
 export const requestBookLoad = (load, note) => rpc('cc_request_book_load', { p_load: load, p_note: note ?? null });
+// ---- Per-trip P&L engine (Uber-style earnings) ----
+export const tripPnl = (trip) => rpc('cc_trip_pnl', { p_trip: trip });
+export const tripFinanceAdd = (trip, direction, category, label, amount, note) => rpc('cc_trip_finance_add', { p_trip: trip, p_direction: direction, p_category: category ?? 'other', p_label: label, p_amount: amount, p_note: note ?? null });
+export const tripFinanceRemove = (id) => rpc('cc_trip_finance_remove', { p_id: id });
+export const carrierEarnings = (from, to) => rpc('cc_carrier_earnings', { p_from: from ?? null, p_to: to ?? null });
+export const getCostModel = () => rpc('cc_get_cost_model');
+export const setCostModel = (o = {}) => rpc('cc_set_cost_model', { p_truck_mpg: o.truck_mpg ?? null, p_fuel_price: o.fuel_price ?? null, p_driver_pay_per_mile: o.driver_pay_per_mile ?? null, p_maint_per_mile: o.maint_per_mile ?? null, p_fixed_per_mile: o.fixed_per_mile ?? null, p_factoring_pct: o.factoring_pct ?? null });
 export const partnerUpdatePickup = (loadId, puDate, puTime, delDate, delTime, puMode, delMode, team) => rpc('cc_partner_update_pickup', { p_load: loadId, p_pickup_date: puDate, p_pickup_time: puTime ?? null, p_delivery_date: delDate ?? null, p_delivery_time: delTime ?? null, p_pickup_mode: puMode ?? null, p_delivery_mode: delMode ?? null, p_team: team ?? null });
 export const myBookRequests = (limit) => rpc('cc_my_book_requests', { p_limit: limit ?? 50 });
 export const bookRequestsQueue = (status) => rpc('cc_book_requests_queue', { p_status: status ?? 'pending' });
