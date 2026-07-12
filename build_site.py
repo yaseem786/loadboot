@@ -443,7 +443,7 @@ RELATED = {
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
  'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('referral.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
- 'tools.html':              [('load-score.html','Load Score'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
+ 'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('load-score.html','Load Score'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
  'case-studies.html':       [('carriers.html','For Carriers'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('pricing.html','Pricing')],
  'authority-dot-setup.html':[('new-authority-dispatch.html','New Authority Dispatch'),('boc3-ucr.html','BOC-3 / UCR Guide'),('form-2290-hvut.html','Form 2290 (HVUT)'),('ifta-fuel-tax.html','IFTA Guide'),('carrier-application.html','Apply as Carrier')],
@@ -2676,6 +2676,90 @@ tools_body += LSP + tools_intro + tools_section + tools_seo + tools_faq_html + f
 tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
 page('tools.html','Trucking Calculator 2026 — Free Cost Per Mile, Profit Per Load & Rate Tools | LoadBoot','The free trucking calculator suite truckers actually use: cost per mile, profit per load, rate per mile, fuel, break-even, take-home and detention pay — instant answers, no signup, no login.','tools.html', tools_body, tools_schema)
 
+
+# ---------- COST PER MILE CALCULATOR (dedicated GSC landing: "trucking calculator" / "cost per mile") ----------
+CPMC_CALC = ('<section style="padding-top:0"><div class="wrap">'
+ '<div class="tk-card" id="calc">'
+ '<div class="tk-head"><span class="tk-ic"><svg viewBox="0 0 24 24"><path d="M2 7h12v9H2z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="6.5" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/></svg></span><h2>Cost Per Mile Calculator</h2></div>'
+ '<p class="tk-sub">Itemize what your truck really costs every month &mdash; the calculator turns it into your true cost per mile and the minimum rate you can accept.</p>'
+ '<div class="tk-row">'
+ '<div class="tk-in"><label for="x_truck">Truck payment / month ($)</label><input type="number" id="x_truck" value="1800" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_trailer">Trailer payment / month ($)</label><input type="number" id="x_trailer" value="550" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_ins">Insurance / month ($)</label><input type="number" id="x_ins" value="1300" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_permits">Plates, permits, ELD / month ($)</label><input type="number" id="x_permits" value="250" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_park">Parking &amp; other fixed / month ($)</label><input type="number" id="x_park" value="300" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_miles">Miles you run / month</label><input type="number" id="x_miles" value="9500" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_price">Diesel price ($/gal)</label><input type="number" id="x_price" value="3.85" step="0.01" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_mpg">Truck MPG</label><input type="number" id="x_mpg" value="6.5" step="0.1" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_maint">Maintenance / mile ($)</label><input type="number" id="x_maint" value="0.20" step="0.01" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_tires">Tires / mile ($)</label><input type="number" id="x_tires" value="0.04" step="0.01" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_driver">Driver pay / mile ($, 0 if you drive)</label><input type="number" id="x_driver" value="0" step="0.01" oninput="cpmc()"></div>'
+ '<div class="tk-in"><label for="x_rate">Rate you are offered ($/mile)</label><input type="number" id="x_rate" value="2.50" step="0.01" oninput="cpmc()"></div>'
+ '</div>'
+ '<div class="tk-out"><div><div class="big" id="x_cpm">$0.00</div><div class="lbl">Your TRUE cost per mile</div></div>'
+ '<div class="side"><b id="x_fix">$0.00</b>fixed / mi<br><b id="x_var">$0.00</b>variable / mi</div></div>'
+ '<div class="tk-out"><div><div class="big pos" id="x_month">$0</div><div class="lbl">Profit this month at that rate</div></div>'
+ '<div class="side"><b id="x_break">$0.00</b>break-even rate / mi<br><b id="x_profit">$0.00</b>profit / mi at your rate</div></div>'
+ '<p class="tk-note">Any load priced below your cost per mile loses money before the wheels turn. Know this number before you ever talk to a broker. More tools: <a href="tools.html">all 8 free trucking calculators</a>.</p>'
+ '</div></div></section>'
+ '<script>function cpmc(){function n(i){var e=document.getElementById(i);return parseFloat(e&&e.value)||0}'
+ 'function m(v){return "$"+v.toFixed(2)}'
+ 'var fx=n("x_truck")+n("x_trailer")+n("x_ins")+n("x_permits")+n("x_park");var mi=n("x_miles");'
+ 'var fpm=mi>0?fx/mi:0;var fuel=n("x_mpg")>0?n("x_price")/n("x_mpg"):0;'
+ 'var vpm=fuel+n("x_maint")+n("x_tires")+n("x_driver");var cpm=fpm+vpm;var rate=n("x_rate");'
+ 'function s(i,v){var e=document.getElementById(i);if(e)e.textContent=v}'
+ 's("x_cpm",m(cpm));s("x_fix",m(fpm));s("x_var",m(vpm));s("x_break",m(cpm));s("x_profit",m(rate-cpm));'
+ 'var mo=Math.round((rate-cpm)*mi);s("x_month","$"+mo.toLocaleString());'
+ 'var el=document.getElementById("x_month");if(el)el.className=mo>=0?"big pos":"big";}'
+ 'cpmc();</script>')
+
+CPMC_BODY_TOP = ('<section><div class="wrap" style="max-width:880px"><div class="reveal">'
+ '<h2>Why cost per mile is the one number that runs your trucking business</h2>'
+ '<p class="lead">Every load you book is priced per mile &mdash; but most carriers negotiate without knowing what a mile actually costs them. That is how a $2.10 load that "sounds fine" quietly loses money, and why the first thing any good dispatcher asks is: <b>what is your cost per mile?</b></p>'
+ '<p>Your cost per mile (CPM) is simply everything your operation spends in a month, divided by the miles you run. Once you know it, three decisions become automatic: which loads to reject instantly, what rate to counter at, and whether a lane is worth the deadhead. Industry research (ATRI) has put the average marginal cost of running a truck at roughly <b>$2.20&ndash;$2.30 per mile</b> in recent years including driver wages &mdash; if you are booking below that without knowing your own number, you are guessing with your business.</p>'
+ '</div></div></section>')
+
+CPMC_BODY_MID = ('<section class="bg-soft"><div class="wrap" style="max-width:880px"><div class="reveal">'
+ '<h2>Fixed vs variable: the two halves of your cost per mile</h2>'
+ '<p><b>Fixed costs</b> hit every month whether the truck moves or not: truck and trailer payments, insurance, plates and permits, ELD subscription, parking. Because they are fixed, <b>running more miles spreads them thinner</b> &mdash; a $4,200 fixed month is $0.42/mi at 10,000 miles but $0.60/mi at 7,000 miles. Sitting still literally raises your cost per mile.</p>'
+ '<p><b>Variable costs</b> scale with every mile: fuel (your biggest &mdash; diesel price divided by your MPG), maintenance reserve, and tires. A realistic maintenance reserve is $0.15&ndash;$0.25 per mile on an older truck; skipping it does not make the repair cheaper, it just makes it a surprise.</p>'
+ '<h2>Typical owner-operator numbers (2026)</h2>'
+ '<table><thead><tr><th>Cost item</th><th>Typical range</th><th>Type</th></tr></thead><tbody>'
+ '<tr><td>Truck payment</td><td>$1,200&ndash;$2,500 / mo</td><td>Fixed</td></tr>'
+ '<tr><td>Trailer payment</td><td>$400&ndash;$700 / mo</td><td>Fixed</td></tr>'
+ '<tr><td>Insurance</td><td>$900&ndash;$1,800 / mo</td><td>Fixed</td></tr>'
+ '<tr><td>Plates, permits, ELD</td><td>$150&ndash;$350 / mo</td><td>Fixed</td></tr>'
+ '<tr><td>Fuel</td><td>$0.55&ndash;$0.70 / mi</td><td>Variable</td></tr>'
+ '<tr><td>Maintenance reserve</td><td>$0.15&ndash;$0.25 / mi</td><td>Variable</td></tr>'
+ '<tr><td>Tires</td><td>$0.03&ndash;$0.05 / mi</td><td>Variable</td></tr>'
+ '</tbody></table>'
+ '<p style="margin-top:14px">Plug your own numbers into the calculator above &mdash; averages are for sanity-checking, not for pricing your loads. Compare the result against <a href="market-rates.html">this week&rsquo;s market rates per mile</a> to see which lanes actually clear your break-even.</p>'
+ '<h2>Six ways to cut your cost per mile</h2>'
+ '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">$64 per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
+ '</div></div></section>')
+
+RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier')]
+
+_cpmc_faq_html, _cpmc_faq_sch = faq_block([
+ ('What is a good cost per mile for a trucking company in 2026?',
+  'Industry research (ATRI) puts the average marginal cost of trucking at roughly $2.20 to $2.30 per mile including driver wages. A solo owner-operator who drives their own truck typically lands between $1.40 and $1.90 per mile before paying themselves. Your number depends on your truck payment, insurance, fuel economy and monthly miles - which is exactly what this calculator works out.'),
+ ('How do I calculate cost per mile for my truck?',
+  'Add up your fixed monthly costs (truck and trailer payments, insurance, plates, permits, parking) and divide by the miles you run per month. Then add your variable cost per mile: fuel (diesel price divided by MPG), a maintenance reserve, and tires. Fixed per mile plus variable per mile is your true cost per mile.'),
+ ('What rate per mile should I charge?',
+  'Never book below your cost per mile - that is your break-even. Most dispatchers target at least a 20-30% margin above break-even, adjusted for the lane, deadhead, and the week&rsquo;s market. Check current market rates per mile on our live rates page before you negotiate.'),
+ ('Does this calculator include driver pay?',
+  'Driver pay is an optional field. If you drive your own truck, leave it at zero and treat profit as your pay. If you put a company driver in the seat, enter their per-mile wage so the cost per mile reflects it.'),
+ ('Is this trucking calculator really free?',
+  'Yes - free, no signup, no login, and it runs entirely in your browser. It is the same math our dispatch team uses when pricing loads for Loadboot carriers. We also have seven more free calculators covering profit per load, fuel, break-even, take-home pay and detention.'),
+])
+
+cpmc_body = svc_hero('Trucking Cost Per Mile Calculator','Enter your real costs &mdash; truck payment, insurance, fuel, maintenance &mdash; and see your true cost per mile, your break-even rate, and what any load actually pays you. Free, instant, no signup.')
+cpmc_body += CPMC_CALC + CPMC_BODY_TOP
+cpmc_body += '<section style="padding-top:0"><div class="wrap">' + svc_banner('Know your number. Then let us beat it.','Loadboot dispatchers price every load against YOUR cost per mile &mdash; flat 5%, no contracts, no forced dispatch.','See how dispatch works','how-it-works.html') + '</div></section>'
+cpmc_body += CPMC_BODY_MID + _cpmc_faq_html + final_cta()
+cpmc_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Trucking Cost Per Mile Calculator","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free cost per mile calculator for truckers: itemize fixed and variable costs to get true cost per mile, break-even rate and profit per mile."}</script>' + _cpmc_faq_sch
+page('cost-per-mile-calculator.html','Cost Per Mile Calculator for Trucking (2026) &mdash; Free &amp; Itemized | LoadBoot'.replace('&mdash;','—').replace('&amp;','&'),'Free trucking cost per mile calculator: itemize your fixed and variable costs, get your true cost per mile, break-even rate and profit per mile instantly. No signup, no login.','tools.html', cpmc_body, cpmc_schema)
+
 # ======================================================================
 # SPRINT 1 — PUBLIC MARKETING WEBSITE COMPLETION (added pages)
 # Real, SEO-complete pages built on the same header/footer/design system.
@@ -4085,7 +4169,7 @@ for _p in _ACC_PAGES:
 _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
-  ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
+  ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
