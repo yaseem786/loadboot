@@ -80,3 +80,12 @@ Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift
 - [ ] 34. Carrier: Finance → owed item 3+ din purana ho to "⚠ Dispute non-payment" button —
       dabao to broker ko urgent notice + LoadBoot support ko report jaye
       (dispute ab PAYMENT stage ka hathiyar hai, claim-review ka nahi)
+
+## F. Multi-stop loads — Stage 1 (posting + routing)
+- [ ] 35. Broker: Post load → step 1 (addresses) — "➕ Extra stops" section: address type karo,
+      suggestion pick karo → ✓ pin lage, MILES foran barh jayein (asli detour route se)
+- [ ] 36. Delivery ETA/HOS box mein "(route includes N extra stops + 2h dock each)" aaye
+      aur suggested delivery date aage ho jaye
+- [ ] 37. Load post karo → book karo carrier se → carrier ke Dispatch pack mein
+      "➡ Extra stop 1/2" full addresses ke saath dikhein
+- [ ] 38. Rate card step par extra-stop $50/stop auto-on ho (kyunke stops add kiye)

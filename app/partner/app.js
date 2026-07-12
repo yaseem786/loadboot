@@ -33,7 +33,7 @@ import { openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
-import { payInstructions, payMarkSent, payDueItems } from '../shared/api.js';
+import { payInstructions, payMarkSent, payDueItems, ccLoadStops } from '../shared/api.js';
 
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
@@ -1367,11 +1367,13 @@ async function brokerDash(user, ov) {
         const recalc = async () => {
           if (!(geo.o && geo.d)) return;
           try {
-            const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + geo.o.lng + ',' + geo.o.lat + ';' + geo.d.lng + ',' + geo.d.lat + '?overview=false');
+            const wp9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp) => sp && sp.lat && sp.lng).map((sp) => sp.lng + ',' + sp.lat);
+            const coords9 = [geo.o.lng + ',' + geo.o.lat, ...wp9, geo.d.lng + ',' + geo.d.lat].join(';');
+            const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + coords9 + '?overview=false');
             const j = await r.json();
             const m9 = j && j.routes && j.routes[0] && j.routes[0].distance;
             if (m9) { const miles = Math.round(m9 / 1609.34); mIn.value = String(miles); w.miles = String(miles); w.__auto_miles = true; try { w.__drive_hours = (j.routes[0].duration || 0) / 3600; } catch (_) {}
-              mIn.title = 'Auto-calculated driving miles — edit if you route differently'; }
+              mIn.title = 'Auto-calculated driving miles (via ' + ((Array.isArray(w.stops) ? w.stops.filter((sp) => sp && sp.lat).length : 0) || 'no') + ' extra stop(s)) — edit if you route differently'; }
           } catch (_) {}
         };
         const setIn = (inp, key, val) => { inp.value = val || ''; w[key] = inp.value; };
@@ -1382,6 +1384,32 @@ async function brokerDash(user, ov) {
         });
         attachAddressSuggest(oSt, { onPick: (r) => { setIn(oSt, 'o_street', r.street); setIn(oCi, 'o_city', r.city); setIn(oSa, 'o_state', r.state); setIn(oZp, 'o_zip', r.zip); if (r.lat && r.lng) { geo.o = { lat: r.lat, lng: r.lng }; w.pickup_lat = r.lat; w.pickup_lng = r.lng; recalc(); } } });
         attachAddressSuggest(dSt, { onPick: (r) => { setIn(dSt, 'd_street', r.street); setIn(dCi, 'd_city', r.city); setIn(dSa, 'd_state', r.state); setIn(dZp, 'd_zip', r.zip); if (r.lat && r.lng) { geo.d = { lat: r.lat, lng: r.lng }; w.delivery_lat = r.lat; w.delivery_lng = r.lng; recalc(); } } });
+        // ---- EXTRA STOPS: real addresses, real detour in the route/ETA, each gets its own geofence on the trip ----
+        const stopsHost = h('div', { style: 'grid-column:1/-1' });
+        if (!Array.isArray(w.stops)) w.stops = [];
+        const paintStops = () => {
+          const rows9 = w.stops.map((sp, i9) => {
+            const inp9 = h('input', { class: 'cp-in', type: 'text', placeholder: 'Extra stop ' + (i9 + 1) + ' — street address', style: 'margin:0;flex:1' });
+            inp9.value = sp.address || '';
+            inp9.addEventListener('input', (ev9) => { if (ev9 && ev9.isTrusted === false) return; sp.lat = null; sp.lng = null; sp.address = inp9.value; });
+            attachAddressSuggest(inp9, { onPick: (r9) => {
+              sp.address = [r9.street, r9.city, r9.state, r9.zip].filter(Boolean).join(', ');
+              sp.city = r9.city || ''; sp.state = r9.state || ''; sp.zip = r9.zip || ''; sp.seq = i9 + 1;
+              if (r9.lat && r9.lng) { sp.lat = r9.lat; sp.lng = r9.lng; }
+              inp9.value = sp.address; w.svc_extra_stop = true; recalc();
+            } });
+            const del9 = h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'flex:none', onClick: () => { w.stops.splice(i9, 1); w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); if (!w.stops.length) w.svc_extra_stop = false; paintStops(); recalc(); } }, '✕');
+            return h('div', { style: 'display:flex;gap:8px;margin-top:6px;align-items:center' }, [h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)), inp9, sp.lat ? h('span', { title: 'pinned', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓') : h('span', { title: 'pick a suggestion to pin', style: 'flex:none;color:#f59e0b' }, '…'), del9]);
+          });
+          mount(stopsHost, h('div', null, [
+            h('div', { class: 'cp-sub', style: 'font-weight:700;color:#10223B;margin-top:8px' }, '➕ Extra stops (optional — multi-stop load)'),
+            ...rows9,
+            (w.stops.length < 3) ? h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => { w.stops.push({ seq: w.stops.length + 1, address: '' }); paintStops(); } }, '+ Add extra stop') : null,
+            w.stops.length ? h('div', { class: 'cp-sub', style: 'margin-top:4px' }, '$' + (w.acc_extra_stop || '50') + '/stop pays the carrier per the rate card · the detour is added to the real driving miles and the delivery ETA below · each stop gets its own GPS geofence, detention clock and stop-off fee on the trip.') : null,
+          ].filter(Boolean)));
+        };
+        paintStops();
+        body.appendChild(stopsHost);
         body.appendChild(h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '🇺🇸 Type the street address and pick a suggestion — city, state and ZIP fill in, real driving miles calculate automatically and the exact pin powers GPS tracking. Carriers on the board see only the City, ST; the full address goes on the rate confirmation after booking.'));
       } catch (_) {}
     }
@@ -1391,7 +1419,8 @@ async function brokerDash(user, ov) {
         try {
           const base = new Date(w.pickup_date + 'T' + ((w.sched_pu === 'Appointment' ? w.pu_appt : (w.pickup_window || '').slice(0, 5)) || '08:00'));
           const hos9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10; // 11h driving max, then 10h rest (federal HOS)
-          const eta = new Date(base.getTime() + (hos9 + 2) * 3600 * 1000);
+          const dock9 = 2 + ((Array.isArray(w.stops) ? w.stops.filter((sp) => sp && sp.lat).length : 0) * 2); // 2h dock buffer per extra stop
+          const eta = new Date(base.getTime() + (hos9 + dock9) * 3600 * 1000);
           w.delivery_date = eta.toISOString().slice(0, 10);
           w.__eta_suggested = true;
         } catch (_) {}
@@ -1438,12 +1467,13 @@ async function brokerDash(user, ov) {
         const today = new Date().toISOString().slice(0, 10);
         body.querySelectorAll('input').forEach(i9 => { if (i9.type === 'date') i9.min = today; });
         if (w.__drive_hours) {
-          const hos9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10;
+          const nStops9 = Array.isArray(w.stops) ? w.stops.filter((sp) => sp && sp.lat).length : 0;
+          const hos9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10 + nStops9 * 2;
           const days9 = Math.max(1, Math.ceil(hos9 / 24));
           body.appendChild(h('div', { style: 'grid-column:1/-1;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:9px 13px;font-size:.8rem;color:#1e40af' },
             w.team_required
               ? '\ud83d\udc65 TEAM load: ~' + Math.round(w.__drive_hours) + 'h NONSTOP driving (two drivers swap \u2014 no HOS overnight stops). Tight delivery windows are allowed.'
-              : '\ud83d\ude9a Real trip duration: ~' + Math.round(w.__drive_hours) + 'h driving \u00b7 with federal HOS rest rules (max 11h driving, then 10h rest) this is a ' + days9 + '-day trip. The system will not accept a delivery window earlier than that.'));
+              : '\ud83d\ude9a Real trip duration: ~' + Math.round(w.__drive_hours) + 'h driving' + (nStops9 ? ' (route includes ' + nStops9 + ' extra stop' + (nStops9 > 1 ? 's' : '') + ' + 2h dock each)' : '') + ' \u00b7 with federal HOS rest rules (max 11h driving, then 10h rest) this is a ' + days9 + '-day trip. The system will not accept a delivery window earlier than that.'));
           body.appendChild(h('button', { type: 'button', class: 'cp-btn cp-btn-sm ' + (w.team_required ? '' : 'ghost'), style: 'grid-column:1/-1', onClick: () => { w.team_required = !w.team_required; renderStep(); } },
             w.team_required ? '\ud83d\udc65 TEAM drivers: ON \u2014 nonstop driving \u00b7 tap to switch back to solo' : '\ud83d\udc65 Need it faster? Require TEAM drivers (2 drivers, nonstop \u2014 books at +20\u201330%)'));
         }
@@ -1979,7 +2009,8 @@ async function brokerDash(user, ov) {
         payload.hazmat_info = w.hazmat_info || null;
         payload.accessorials = { detention_per_hr: String(w.acc_detention_per_hr), detention_free_hours: String(w.acc_detention_free_hours), layover_per_day: String(w.acc_layover_per_day), tonu: String(w.acc_tonu), driver_assist: w.acc_driver_assist ? String(w.acc_driver_assist) : null, extra_stop: w.acc_extra_stop ? String(w.acc_extra_stop) : null, lumper_policy: w.acc_lumper_policy, lumper_at: [w.lumper_pickup ? 'pickup' : null, w.lumper_delivery ? 'delivery' : null].filter(Boolean).join(',') || null, driver_assist_at: [w.assist_pickup ? 'pickup' : null, w.assist_delivery ? 'delivery' : null].filter(Boolean).join(',') || null, fcfs: w.fcfs ? 'true' : 'false' };
         ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu', 'acc_driver_assist', 'acc_extra_stop', 'acc_lumper_policy'].forEach(k => delete payload[k]);
-        payload.details = { load_size: w.load_size || null, pallets: w.pallets || null, temperature: w.temperature || null, tarps: w.tarps || null,
+        payload.stops = (Array.isArray(w.stops) ? w.stops.filter((sp) => sp && sp.lat && sp.lng) : []);
+        payload.details = { stops: payload.stops, load_size: w.load_size || null, pallets: w.pallets || null, temperature: w.temperature || null, tarps: w.tarps || null,
           load_method_pickup: w.load_method_pickup || null, load_method_delivery: w.load_method_delivery || null,
           driver_assist_required: !!w.driver_assist_required, team_required: !!w.team_required, cargo_value: w.cargo_value || null,
           dock_hours_pickup: w.dock_hours_pickup || null, dock_hours_delivery: w.dock_hours_delivery || null,

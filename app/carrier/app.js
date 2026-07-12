@@ -32,7 +32,7 @@ import {
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc } from '../shared/storage.js';
-import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute } from '../shared/api.js';
+import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, ccLoadStops } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
@@ -2701,6 +2701,12 @@ function tripStepper(status) {
           mount(packHost, h('div', { style: 'margin:8px 0;padding:10px 12px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:12px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, '\ud83d\udd13 Dispatch pack \u2014 unlocked because this load is YOURS'),
             r9('\ud83d\udccd Pickup address', pk9.origin_full),
+            ...(await (async () => { try {
+              if (!t.load_id) return [];
+              const st9 = await ccLoadStops(t.load_id);
+              if (!st9 || !st9.count) return [];
+              return (st9.stops || []).map((sp9, i9) => r9('\u27a1 Extra stop ' + (i9 + 1), st9.full ? (sp9.address || '') : ((sp9.city || '') + ', ' + (sp9.state || ''))));
+            } catch (_) { return []; } })()),
             r9('\ud83d\udccd Delivery address', pk9.destination_full),
             r9('\ud83d\udce6 Pickup / PU number', pk9.pickup_number),
             r9('\ud83c\udfc1 Delivery number', pk9.delivery_number),
