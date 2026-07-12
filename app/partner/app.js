@@ -1372,7 +1372,7 @@ async function brokerDash(user, ov) {
             const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + coords9 + '?overview=false');
             const j = await r.json();
             const m9 = j && j.routes && j.routes[0] && j.routes[0].distance;
-            if (m9) { const miles = Math.round(m9 / 1609.34); mIn.value = String(miles); w.miles = String(miles); w.__auto_miles = true; try { w.__drive_hours = (j.routes[0].duration || 0) / 3600; } catch (_) {}
+            if (m9) { const miles = Math.round(m9 / 1609.34); mIn.value = String(miles); w.miles = String(miles); w.__auto_miles = true; try { w.__drive_hours = (j.routes[0].duration || 0) / 3600; w.__leg_hours = (j.routes[0].legs || []).map((lg9) => (lg9.duration || 0) / 3600); } catch (_) {}
               mIn.title = 'Auto-calculated driving miles (via ' + ((Array.isArray(w.stops) ? w.stops.filter((sp) => sp && sp.lat).length : 0) || 'no') + ' extra stop(s)) — edit if you route differently'; }
           } catch (_) {}
         };
@@ -1532,6 +1532,20 @@ async function brokerDash(user, ov) {
               field('Stop date *', d8),
               (sp8.sched || 'FCFS') === 'Appointment' ? field('Appointment time *', t8a) : h('div', { style: 'flex:1;min-width:220px' }, [h('div', { class: 'cp-sub', style: 'font-weight:700;margin-bottom:3px' }, 'FCFS window \u2014 from \u2192 to *'), h('div', { style: 'display:flex;gap:8px' }, [t8f, t8t])]),
             ]),
+            (() => { // earliest realistic arrival at THIS stop (drive time + HOS + earlier docks)
+              try {
+                if (!w.pickup_date || !w.__drive_hours) return null;
+                const pinned8 = w.stops.filter((z8) => z8 && z8.lat);
+                const pos8 = pinned8.indexOf(sp8); if (pos8 < 0) return null;
+                const legs8 = (Array.isArray(w.__leg_hours) && w.__leg_hours.length === pinned8.length + 1) ? w.__leg_hours : null;
+                let cum8 = 0; for (let k8 = 0; k8 <= pos8; k8++) cum8 += legs8 ? legs8[k8] : (w.__drive_hours / (pinned8.length + 1));
+                const hos8 = w.team_required ? cum8 : cum8 + Math.floor(cum8 / 11) * 10;
+                const base8 = new Date(w.pickup_date + 'T' + ((w.sched_pu === 'Appointment' ? w.pu_appt : (w.pickup_window || '').slice(0, 5)) || '08:00'));
+                const ea8 = new Date(base8.getTime() + (hos8 * 0.95 + pos8 * 2) * 3600 * 1000);
+                if (!sp8.date) { sp8.date = ea8.toISOString().slice(0, 10); d8.value = sp8.date; }
+                return h('div', { class: 'cp-sub', style: 'margin-top:5px;color:#0f766e' }, '\u23f1 Earliest realistic arrival here: ' + ea8.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' (~' + Math.round(cum8) + 'h driving from pickup' + (w.team_required ? ', TEAM nonstop' : ' + HOS rest') + (pos8 ? ' + earlier dock time' : '') + ') \u2014 date auto-suggested, adjust as needed.');
+              } catch (_) { return null; }
+            })(),
           ]);
         }) : []),
         (() => {
@@ -2007,6 +2021,39 @@ async function brokerDash(user, ov) {
         const deDt = new Date(w.delivery_date + 'T' + deT);
         if (puDt.getTime() < Date.now() - 60000) { err.textContent = 'Pickup time frame has already PASSED \u2014 it\u2019s ' + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' now. Update your pickup schedule to a future date/time.'; return; }
         if (!(deDt > puDt)) { err.textContent = 'Delivery time frame must be in the FUTURE of the pickup time frame \u2014 fix the delivery date/time.'; return; }
+        // ---- MULTI-STOP CHAIN: pickup -> S1 -> S2 -> ... -> delivery, each leg HOS-checked ----
+        const XSv = (Array.isArray(w.stops) ? w.stops.filter((sp9) => sp9 && sp9.lat) : []);
+        if (XSv.length) {
+          const legs9 = (Array.isArray(w.__leg_hours) && w.__leg_hours.length === XSv.length + 1) ? w.__leg_hours : null;
+          const hos9f = (hrs9) => w.team_required ? hrs9 : hrs9 + Math.floor(hrs9 / 11) * 10;
+          let cum9 = 0; let clock9 = puDt.getTime(); let prevLbl9 = 'pickup'; let prevT9 = puDt;
+          const fmt9 = (d9) => d9.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          for (let i9 = 0; i9 < XSv.length; i9++) {
+            const sp9 = XSv[i9];
+            const legH9 = legs9 ? legs9[i9] : (w.__drive_hours / (XSv.length + 1));
+            cum9 += legH9;
+            const earliest9 = new Date(puDt.getTime() + hos9f(cum9) * 0.95 * 3600 * 1000 + i9 * 2 * 3600 * 1000);
+            const spT9 = (sp9.sched === 'Appointment' ? (sp9.time || '00:00') : (String(sp9.window || '').slice(0, 5) || '00:00'));
+            const spDt9 = sp9.date ? new Date(sp9.date + 'T' + spT9) : null;
+            const lbl9 = (sp9.kind === 'pickup' ? 'Extra pickup ' : 'Extra delivery ') + (i9 + 1);
+            if (!spDt9) { err.textContent = lbl9 + ': set the stop date/time.'; return; }
+            if (spDt9.getTime() < Date.now() - 60000) { err.textContent = lbl9 + ' date/time has already PASSED — move it to the future.'; return; }
+            if (spDt9 <= prevT9) { err.textContent = lbl9 + ' must be AFTER the ' + prevLbl9 + ' time — the truck runs the stops in order.'; return; }
+            if (spDt9 < earliest9) {
+              err.textContent = '🚚 ' + lbl9 + ' is not reachable in time: ~' + Math.round(cum9) + 'h driving from pickup' + (w.team_required ? ' (TEAM, nonstop)' : ' + HOS rest') + (i9 ? ' + dock time at earlier stops' : '') + '. Earliest realistic arrival: ' + fmt9(earliest9) + ' — move this stop later (or reorder the stops ▲▼ in step 1).';
+              return;
+            }
+            clock9 = Math.max(spDt9.getTime(), earliest9.getTime()) + 2 * 3600 * 1000; // serve the dock ~2h
+            prevLbl9 = lbl9; prevT9 = new Date(clock9);
+          }
+          const lastLeg9 = legs9 ? legs9[legs9.length - 1] : (w.__drive_hours / (XSv.length + 1));
+          const finEarliest9 = new Date(clock9 + hos9f(lastLeg9) * 0.95 * 3600 * 1000);
+          if (deDt < finEarliest9) {
+            err.textContent = '🏁 Final delivery is too early for this multi-stop run: after serving ' + XSv.length + ' stop(s) the truck can realistically deliver by ' + fmt9(finEarliest9) + '. Move the delivery later' + (w.team_required ? '.' : ' — or switch to TEAM drivers:');
+            if (!w.team_required) err.appendChild(h('button', { type: 'button', class: 'cp-btn cp-btn-sm', style: 'display:block;margin-top:8px', onClick: () => { w.team_required = true; renderStep(); } }, '\ud83d\udc65 Make this a TEAM load \u2014 2 drivers, nonstop (books at +20\u201330%)'));
+            return;
+          }
+        }
         if (w.__drive_hours && w.__drive_hours > 0.5) {
           const hosT9 = w.__drive_hours + Math.floor(w.__drive_hours / 11) * 10;
           const days9 = Math.max(1, Math.ceil(hosT9 / 24));
