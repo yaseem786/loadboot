@@ -1390,6 +1390,14 @@ async function brokerDash(user, ov) {
         const paintStops = () => {
           // manual-typing fallback: if the broker typed instead of picking a suggestion,
           // geocode the composed address on blur so the pin (✓) still lands.
+          const cityFromPin9 = async (sp) => {
+            if ((sp.city || '').trim() || !sp.lat) return;
+            try {
+              const r9 = await fetch('https://photon.komoot.io/reverse?lat=' + sp.lat + '&lon=' + sp.lng + '&limit=1&lang=en');
+              const j9 = await r9.json(); const p9 = j9 && j9.features && j9.features[0] && j9.features[0].properties;
+              if (p9) { sp.city = p9.city || p9.district || p9.county || ''; if (!sp.state) sp.state = (p9.state || '').length === 2 ? p9.state : sp.state; if (sp.city) paintStops(); }
+            } catch (_) {}
+          };
           const geocodeStop = async (sp) => {
             if (sp.lat || !((sp.street || '').trim() && (sp.city || '').trim() && (sp.state || '').trim())) return;
             try {
@@ -1419,12 +1427,14 @@ async function brokerDash(user, ov) {
             const ci9 = mkF9('city', 'City');
             const sa9 = mkF9('state', 'ST', 'flex:none;width:64px', true);
             const zp9 = mkF9('zip', 'ZIP', 'flex:none;width:90px');
+            [st9, ci9, sa9, zp9].forEach((a9) => { a9.autocomplete = 'off'; a9.name = 'lb-stop-' + Math.random().toString(36).slice(2, 8); });
             attachAddressSuggest(st9, { onPick: (r9) => {
               sp.street = r9.street || ''; sp.city = r9.city || ''; sp.state = r9.state || ''; sp.zip = r9.zip || ''; sp.seq = i9 + 1;
               composeAddr9();
               if (r9.lat && r9.lng) { sp.lat = r9.lat; sp.lng = r9.lng; }
               st9.value = sp.street; ci9.value = sp.city; sa9.value = sp.state; zp9.value = sp.zip;
               w.svc_extra_stop = true; paintStops(); recalc();
+              if (!sp.city) cityFromPin9(sp);
             } });
             const del9 = h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'flex:none', onClick: () => { w.stops.splice(i9, 1); w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); if (!w.stops.length) w.svc_extra_stop = false; paintStops(); recalc(); } }, '✕');
             const kind9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;max-width:170px' }, [['pickup', '📦 Extra PICKUP (load more)'], ['delivery', '📤 Extra DELIVERY (drop part)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
@@ -1434,10 +1444,16 @@ async function brokerDash(user, ov) {
             purp9.value = sp.purpose || ''; purp9.oninput = () => { sp.purpose = purp9.value; };
             return h('div', { style: 'margin-top:8px;padding:8px;border:1px dashed #dbe3ee;border-radius:10px' }, [
               h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
-                h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)), st9, ci9, sa9, zp9,
-                sp.lat ? h('span', { title: 'pinned — exact GPS geofence set', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓ pinned') : h('span', { title: 'pick a suggestion, or fill street+city+ST and click away — the pin sets itself', style: 'flex:none;color:#f59e0b;font-size:.78rem;font-weight:700' }, '… pin pending'), del9]),
+                h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)),
+                h('span', { style: 'flex:none;display:flex;flex-direction:column;gap:2px' }, [
+                  h('button', { type: 'button', title: 'move earlier in the run', style: 'border:1px solid #dbe3ee;background:#fff;border-radius:6px;font-size:.6rem;padding:1px 6px;cursor:pointer;opacity:' + (i9 === 0 ? '.3' : '1'), onClick: () => { if (i9 === 0) return; const tmp9 = w.stops[i9 - 1]; w.stops[i9 - 1] = w.stops[i9]; w.stops[i9] = tmp9; w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); paintStops(); recalc(); } }, '▲'),
+                  h('button', { type: 'button', title: 'move later in the run', style: 'border:1px solid #dbe3ee;background:#fff;border-radius:6px;font-size:.6rem;padding:1px 6px;cursor:pointer;opacity:' + (i9 === w.stops.length - 1 ? '.3' : '1'), onClick: () => { if (i9 === w.stops.length - 1) return; const tmp9 = w.stops[i9 + 1]; w.stops[i9 + 1] = w.stops[i9]; w.stops[i9] = tmp9; w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); paintStops(); recalc(); } }, '▼'),
+                ]), st9, ci9, sa9, zp9,
+                (sp.lat && (sp.city || '').trim()) ? h('span', { title: 'pinned — exact GPS geofence set', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓ pinned')
+                : sp.lat ? h('span', { title: 'pin set but the city is missing — type it (the board shows City, ST to carriers)', style: 'flex:none;color:#f59e0b;font-size:.78rem;font-weight:700' }, '⚠ add city')
+                : h('span', { title: 'pick a suggestion, or fill street+city+ST and click away — the pin sets itself', style: 'flex:none;color:#f59e0b;font-size:.78rem;font-weight:700' }, '… pin pending'), del9]),
               h('div', { style: 'display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap' }, [kind9, purp9]),
-              h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'Order matters: the driver runs Pickup → stops 1‑2‑3 (in this order) → Final delivery. Put an extra PICKUP right after the main pickup, extra DELIVERY before the final one.'),
+              h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'THIS order is the driver\u2019s run: Main pickup \u2192 stop 1 \u2192 stop 2 \u2192 stop 3 \u2192 Final delivery. Use \u25b2\u25bc to set the real sequence \u2014 the route, miles, ETA and the driver\u2019s turn-by-turn all follow it. (Main pickup is ALWAYS first and final delivery ALWAYS last \u2014 if a pickup must happen before the main one, make THAT the main pickup.)'),
             ]);
           });
           mount(stopsHost, h('div', null, [
@@ -1948,6 +1964,13 @@ async function brokerDash(user, ov) {
         if (!(w.d_city || '').trim()) need.push('delivery city');
         if (!/^[A-Za-z]{2}$/.test((w.d_state || '').trim())) need.push('delivery state (2 letters)');
         if (!/^\d{5}(-\d{4})?$/.test((w.d_zip || '').trim())) need.push('delivery ZIP (5 digits)');
+        (Array.isArray(w.stops) ? w.stops : []).forEach((sp0, i0) => {
+          const any0 = (sp0.street || sp0.city || sp0.address || '').trim();
+          if (!any0) return;
+          if (!sp0.lat) need.push('extra stop ' + (i0 + 1) + ' pin (pick a suggestion or complete the address)');
+          if (!(sp0.city || '').trim()) need.push('extra stop ' + (i0 + 1) + ' city');
+          if (!/^[A-Za-z]{2}$/.test((sp0.state || '').trim())) need.push('extra stop ' + (i0 + 1) + ' state (2 letters)');
+        });
         if (need.length) { err.textContent = 'Required: ' + need.join(', ') + '.'; return; }
         const stU = (x) => String(x || '').trim().toUpperCase();
         w.origin_full = [w.o_street.trim(), w.o_city.trim(), stU(w.o_state) + ' ' + w.o_zip.trim()].join(', ');
