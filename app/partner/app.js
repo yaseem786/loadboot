@@ -1369,6 +1369,11 @@ async function brokerDash(user, ov) {
           try {
             const wp9 = (Array.isArray(w.stops) ? w.stops : []).filter((sp) => sp && sp.lat && sp.lng).map((sp) => sp.lng + ',' + sp.lat);
             const coords9 = [geo.o.lng + ',' + geo.o.lat, ...wp9, geo.d.lng + ',' + geo.d.lat].join(';');
+            if (wp9.length && !w.__direct_miles) { try {
+              const rd9 = await fetch('https://router.project-osrm.org/route/v1/driving/' + geo.o.lng + ',' + geo.o.lat + ';' + geo.d.lng + ',' + geo.d.lat + '?overview=false');
+              const jd9 = await rd9.json(); const dm9 = jd9 && jd9.routes && jd9.routes[0] && jd9.routes[0].distance;
+              if (dm9) w.__direct_miles = Math.round(dm9 / 1609.34);
+            } catch (_) {} }
             const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + coords9 + '?overview=false');
             const j = await r.json();
             const m9 = j && j.routes && j.routes[0] && j.routes[0].distance;
@@ -1382,8 +1387,8 @@ async function brokerDash(user, ov) {
         [[oSt, 'o'], [oCi, 'o'], [oSa, 'o'], [dSt, 'd'], [dCi, 'd'], [dSa, 'd']].forEach(([inp, side]) => {
           inp.addEventListener('input', (ev9) => { if (ev9 && ev9.isTrusted === false) return; geo[side] = null; if (side === 'o') { w.pickup_lat = null; w.pickup_lng = null; } else { w.delivery_lat = null; w.delivery_lng = null; } });
         });
-        attachAddressSuggest(oSt, { onPick: (r) => { setIn(oSt, 'o_street', r.street); setIn(oCi, 'o_city', r.city); setIn(oSa, 'o_state', r.state); setIn(oZp, 'o_zip', r.zip); if (r.lat && r.lng) { geo.o = { lat: r.lat, lng: r.lng }; w.pickup_lat = r.lat; w.pickup_lng = r.lng; recalc(); } } });
-        attachAddressSuggest(dSt, { onPick: (r) => { setIn(dSt, 'd_street', r.street); setIn(dCi, 'd_city', r.city); setIn(dSa, 'd_state', r.state); setIn(dZp, 'd_zip', r.zip); if (r.lat && r.lng) { geo.d = { lat: r.lat, lng: r.lng }; w.delivery_lat = r.lat; w.delivery_lng = r.lng; recalc(); } } });
+        attachAddressSuggest(oSt, { onPick: (r) => { setIn(oSt, 'o_street', r.street); setIn(oCi, 'o_city', r.city); setIn(oSa, 'o_state', r.state); setIn(oZp, 'o_zip', r.zip); if (r.lat && r.lng) { geo.o = { lat: r.lat, lng: r.lng }; w.pickup_lat = r.lat; w.pickup_lng = r.lng; w.__direct_miles = null; recalc(); } } });
+        attachAddressSuggest(dSt, { onPick: (r) => { setIn(dSt, 'd_street', r.street); setIn(dCi, 'd_city', r.city); setIn(dSa, 'd_state', r.state); setIn(dZp, 'd_zip', r.zip); if (r.lat && r.lng) { geo.d = { lat: r.lat, lng: r.lng }; w.delivery_lat = r.lat; w.delivery_lng = r.lng; w.__direct_miles = null; recalc(); } } });
         // ---- EXTRA STOPS: real addresses, real detour in the route/ETA, each gets its own geofence on the trip ----
         const stopsHost = h('div', { style: 'grid-column:1/-1' });
         if (!Array.isArray(w.stops)) w.stops = [];
@@ -1496,6 +1501,22 @@ async function brokerDash(user, ov) {
               rowO9('🏁', 'Final DELIVERY — ' + ((w.d_city || '') + (w.d_state ? ', ' + w.d_state : '') || 'set in the fields above'), h('span', { class: 'cp-pill', style: 'background:#ffedd5;color:#c2410c' }, 'always last'), '#fff7ed'),
               w.stops.length > 1 ? optimize9 : null,
               h('div', { class: 'cp-sub', style: 'margin-top:8px;font-weight:700' }, seqTxt9),
+              (() => { // LANE FIT: extra stops must live on the main corridor — otherwise it's a separate load
+                const tot9 = Number(w.miles) || 0, dir9 = Number(w.__direct_miles) || 0;
+                if (!(tot9 && dir9 && pinned9.length)) return null;
+                const extra9 = Math.max(0, tot9 - dir9); const pct9 = Math.round(extra9 / dir9 * 100);
+                if (pct9 > 75 || extra9 > 400) {
+                  w.__lane_block = true;
+                  return h('div', { style: 'margin-top:8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:9px 12px;font-size:.83rem;color:#b91c1c;font-weight:700' },
+                    '🚫 This is NOT one lane: the stops add ' + extra9 + ' mi (+' + pct9 + '%) over the direct ' + dir9 + ' mi route. A carrier will not run this as one trip — post the far-off freight as its OWN load (it will match a truck already heading that way). Remove the off-lane stop to continue.');
+                }
+                w.__lane_block = false;
+                if (pct9 > 35 && extra9 > 150) {
+                  return h('div', { style: 'margin-top:8px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:9px 12px;font-size:.83rem;color:#92400e;font-weight:700' },
+                    '⚠ Big detour: +' + extra9 + ' mi (+' + pct9 + '%) vs the direct route. Carriers may skip it or want a higher rate — consider ✨ shortest-route order, or post the far stop as a separate load.');
+                }
+                return h('div', { class: 'cp-sub', style: 'margin-top:6px;color:#0f766e' }, '✓ Lane fit: detour +' + extra9 + ' mi (+' + pct9 + '%) vs direct — fine for one multi-stop run.');
+              })(),
             ].filter(Boolean));
           })() : null;
           mount(stopsHost, h('div', null, [
@@ -2021,6 +2042,7 @@ async function brokerDash(user, ov) {
         if (!(w.d_city || '').trim()) need.push('delivery city');
         if (!/^[A-Za-z]{2}$/.test((w.d_state || '').trim())) need.push('delivery state (2 letters)');
         if (!/^\d{5}(-\d{4})?$/.test((w.d_zip || '').trim())) need.push('delivery ZIP (5 digits)');
+        if (w.__lane_block) { err.textContent = '🚫 One of your extra stops is far OFF this lane — the route balloons past what any carrier runs as one trip. Remove that stop (post it as its own load) to continue.'; return; }
         (Array.isArray(w.stops) ? w.stops : []).forEach((sp0, i0) => {
           const any0 = (sp0.street || sp0.city || sp0.address || '').trim();
           if (!any0) return;
