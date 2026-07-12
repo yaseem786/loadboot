@@ -1439,9 +1439,9 @@ async function brokerDash(user, ov) {
             const del9 = h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'flex:none', onClick: () => { w.stops.splice(i9, 1); w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); if (!w.stops.length) w.svc_extra_stop = false; paintStops(); recalc(); } }, '✕');
             const kind9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;max-width:170px' }, [['pickup', '📦 Extra PICKUP (load more)'], ['delivery', '📤 Extra DELIVERY (drop part)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
             kind9.value = sp.kind || 'delivery'; sp.kind = kind9.value;
-            kind9.onchange = () => { sp.kind = kind9.value; };
+            kind9.onchange = () => { sp.kind = kind9.value; paintStops(); };
             const purp9 = h('input', { class: 'cp-in', type: 'text', placeholder: 'Purpose — e.g. drop 6 pallets at Ace Hardware', style: 'margin:0;flex:1' });
-            purp9.value = sp.purpose || ''; purp9.oninput = () => { sp.purpose = purp9.value; };
+            purp9.value = sp.purpose || ''; purp9.oninput = () => { sp.purpose = purp9.value; }; purp9.addEventListener('blur', () => paintStops());
             return h('div', { style: 'margin-top:8px;padding:8px;border:1px dashed #dbe3ee;border-radius:10px' }, [
               h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
                 h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)),
@@ -1481,9 +1481,18 @@ async function brokerDash(user, ov) {
               h('div', { style: 'font-weight:800;font-size:.92rem;color:#10223B' }, '🔢 Set the RUN ORDER — the driver serves the stops exactly in this sequence'),
               h('div', { class: 'cp-sub', style: 'margin-top:2px' }, 'Main pickup is always FIRST and final delivery always LAST. Pick each stop\u2019s position (1 = right after pickup) — the route, miles, ETA and every arrival time in the next step recalculate instantly.'),
               rowO9('🅰', 'Main PICKUP — ' + ((w.o_city || '') + (w.o_state ? ', ' + w.o_state : '') || 'set in the fields above'), h('span', { class: 'cp-pill', style: 'background:#dbeafe;color:#1d4ed8' }, 'always 1st'), '#eff6ff'),
-              ...w.stops.map((sp9, k9) => rowO9(sp9.kind === 'pickup' ? '📦' : '📤',
-                (sp9.kind === 'pickup' ? 'Extra PICKUP' : 'Extra DELIVERY') + ' — ' + ((sp9.city ? sp9.city + (sp9.state ? ', ' + sp9.state : '') : sp9.street || 'stop ' + (k9 + 1))) + (sp9.purpose ? ' · ' + sp9.purpose : ''),
-                posSel9(sp9))),
+              ...w.stops.map((sp9, k9) => {
+                const kindSel9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;width:150px;font-size:.78rem;font-weight:800' }, [['pickup', '📦 Extra PICKUP'], ['delivery', '📤 Extra DELIVERY']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+                kindSel9.value = sp9.kind || 'delivery';
+                kindSel9.onchange = () => { sp9.kind = kindSel9.value; paintStops(); };
+                return h('div', { style: 'display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;margin-top:6px;flex-wrap:wrap' }, [
+                  h('span', { style: 'flex:none;font-weight:900;color:#0883F7' }, String(k9 + 1) + '.'),
+                  kindSel9,
+                  h('div', { style: 'flex:1;min-width:160px;font-size:.85rem;font-weight:700;color:#10223B' }, ((sp9.city ? sp9.city + (sp9.state ? ', ' + sp9.state : '') : sp9.street || 'stop ' + (k9 + 1))) + (sp9.purpose ? ' · ' + sp9.purpose : '')),
+                  h('span', { class: 'cp-sub', style: 'flex:none' }, 'position:'),
+                  posSel9(sp9),
+                ]);
+              }),
               rowO9('🏁', 'Final DELIVERY — ' + ((w.d_city || '') + (w.d_state ? ', ' + w.d_state : '') || 'set in the fields above'), h('span', { class: 'cp-pill', style: 'background:#ffedd5;color:#c2410c' }, 'always last'), '#fff7ed'),
               w.stops.length > 1 ? optimize9 : null,
               h('div', { class: 'cp-sub', style: 'margin-top:8px;font-weight:700' }, seqTxt9),
