@@ -1414,7 +1414,7 @@ async function brokerDash(user, ov) {
             h('div', { class: 'cp-sub', style: 'font-weight:700;color:#10223B;margin-top:8px' }, '➕ Extra stops (optional — multi-stop load)'),
             ...rows9,
             (w.stops.length < 3) ? h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => { w.stops.push({ seq: w.stops.length + 1, address: '' }); paintStops(); } }, '+ Add extra stop') : null,
-            w.stops.length ? h('div', { class: 'cp-sub', style: 'margin-top:4px' }, '$' + (w.acc_extra_stop || '50') + '/stop pays the carrier per the rate card · the detour is added to the real driving miles and the delivery ETA below · each stop gets its own GPS geofence, detention clock and stop-off fee on the trip.') : null,
+            w.stops.length ? h('div', { class: 'cp-sub', style: 'margin-top:4px' }, '$' + (w.acc_extra_stop || '100') + '/stop pays the carrier per the rate card · the detour is added to the real driving miles and the delivery ETA below · each stop gets its own GPS geofence, detention clock and stop-off fee on the trip.') : null,
           ].filter(Boolean)));
         };
         paintStops();
