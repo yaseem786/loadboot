@@ -272,7 +272,7 @@ export const resolveUpdateRequest = (id, action) => rpc('cc_resolve_update_reque
 export const tripArrive = (tripId, stop, freeMinutes) => rpc('cc_trip_arrive', { p_trip: tripId, p_stop: stop, p_free_minutes: freeMinutes ?? 120 });
 export const tripArriveGps = (tripId, stop, lat, lng, freeMinutes) => rpc('cc_trip_arrive_gps', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null, p_free_minutes: freeMinutes ?? 120 });
 export const tripSetStopCoords = (tripId, plat, plng, dlat, dlng) => rpc('cc_trip_set_stop_coords', { p_trip: tripId, p_plat: plat ?? null, p_plng: plng ?? null, p_dlat: dlat ?? null, p_dlng: dlng ?? null });
-export const carrierRequestAccessorial = (tripId, kind, note) => rpc('cc_carrier_request_accessorial', { p_trip: tripId, p_kind: kind, p_note: note ?? null });
+export const carrierRequestAccessorial = (trip, kind, note, amount) => rpc('cc_carrier_request_accessorial', { p_trip: trip, p_kind: kind, p_note: note ?? null, p_amount: amount ?? null });
 export const tripAccessorials = (tripId) => rpc('cc_trip_accessorials', { p_trip: tripId });
 export const pocketCancelTrip = (trip, reason) => rpc('cc_pocket_cancel_trip', { p_trip: trip, p_reason: reason });
 export const cancelPreview = (trip) => rpc('cc_cancel_preview', { p_trip: trip });

@@ -2639,7 +2639,7 @@ function tripStepper(status) {
       } }, '⏱ Arrive / depart') : null;
       // Pay claims — detention / layover / TONU / lumper with automatic GPS+time evidence
       const accW = h('div');
-      const KLBL = { detention: 'Detention', layover: 'Layover', tonu: 'TONU', lumper: 'Lumper', other: 'Other' };
+      const KLBL = { detention: 'Detention', layover: 'Layover', tonu: 'TONU', lumper: 'Lumper', driver_assist: 'Driver assist', stop_off: 'Extra stop', other: 'Other' };
       const accBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         if (accW.firstChild) { accW.innerHTML = ''; return; }
         accW.appendChild(h('div', { class: 'cp-muted' }, 'Loading claims…'));
@@ -2653,6 +2653,7 @@ function tripStepper(status) {
           return h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
             h('div', { style: 'min-width:200px;flex:1' }, [h('div', { class: 'cp-row-t' }, (KLBL[a.kind] || a.kind) + (a.amount != null ? ' · ' + money(a.amount) : '')),
               h('div', { class: 'cp-row-s' }, (a.note || '') + (a.decision_note ? ' — ' + a.decision_note : '')),
+              (a.evidence && a.evidence.calc) ? h('div', { class: 'cp-row-s', style: 'color:#7cc0ff' }, '🧮 ' + a.evidence.calc) : null,
               h('div', { style: 'display:flex;gap:6px;margin-top:3px;flex-wrap:wrap' }, [
                 bs === 'approved' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ Broker approved') : bs === 'disputed' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171', title: a.broker_note || '' }, '✕ Broker disputed') : bs ? h('span', { class: 'cp-pill', style: 'background:rgba(148,163,184,.15);color:#94a3b8' }, 'Broker reviewing') : null,
                 ss === 'open' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.14);color:#3b9dff' }, '🎧 With support') : null,
@@ -2721,20 +2722,25 @@ function tripStepper(status) {
           h('div', { class: 'cp-row-s' }, 'Get the facility to write IN/OUT times on the BOL and sign it, keep lumper receipts and gate tickets \u2014 photo them here. Paper + your GPS = a claim brokers can\u2019t argue with.'),
           h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px' }, [pk, pf, pUp]), pMsg,
         ]);
-        const sel = h('select', { class: 'cp-in' }, ['detention', 'layover', 'tonu', 'lumper', 'other'].map(k2 => h('option', { value: k2 }, KLBL[k2])));
-        const note = h('input', { class: 'cp-in', placeholder: 'What happened? (e.g. held 3 hours at dock)' });
+        const sel = h('select', { class: 'cp-in' }, ['detention', 'layover', 'tonu', 'lumper', 'driver_assist', 'stop_off', 'other'].map(k2 => h('option', { value: k2 }, KLBL[k2])));
+        const amtIn = h('input', { class: 'cp-in', type: 'number', step: '0.01', placeholder: 'Receipt total $', style: 'display:none;max-width:150px' });
+        const rateHint = h('div', { class: 'cp-row-s' }, '');
+        const HINTS = { detention: 'Auto-computed from your GPS dwell: minutes past free time × the agreed $/hr.', layover: 'Agreed per-day layover rate × days held.', tonu: 'Flat TONU rate from the rate card agreed at posting.', lumper: 'Enter the receipt total and ATTACH the lumper receipt above — reimbursed in full.', driver_assist: 'Flat driver-assist rate from the agreed rate card.', stop_off: 'Flat extra-stop rate from the agreed rate card.', other: 'Enter the amount and attach proof above — dispatch verifies.' };
+        const syncKind = () => { const need$ = sel.value === 'lumper' || sel.value === 'other'; amtIn.style.display = need$ ? '' : 'none'; rateHint.textContent = HINTS[sel.value] || ''; };
+        sel.onchange = syncKind; syncKind();
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
           const _b = ev.currentTarget; _b.disabled = true; _b.textContent = 'Filing…';
           try {
-            await carrierRequestAccessorial(t.id, sel.value, note.value.trim() || null);
-            lbToast('Claim filed with your recorded arrive/depart times and GPS attached as proof. Dispatch will review it.', 'success', 'Claim submitted ✓');
+            const r0 = await carrierRequestAccessorial(t.id, sel.value, note.value.trim() || null, amtIn.value ? Number(amtIn.value) : null);
+            lbToast((r0 && r0.note) || 'Claim filed with your recorded arrive/depart times and GPS attached as proof. Dispatch will review it.', 'success', 'Claim submitted ✓');
             accW.innerHTML = ''; accBtn.click();
           } catch (e) { _b.disabled = false; _b.textContent = 'File claim'; lbToast((e && e.message) || 'Could not file the claim.', 'urgent', 'Claim failed'); }
         } }, 'File claim');
+        const note = h('input', { class: 'cp-in', placeholder: 'What happened? (e.g. held 3 hours at dock)' });
         accW.appendChild(h('div', { class: 'cp-inlineform' }, [
           list.length ? rows : h('div', { class: 'cp-row-s' }, 'No pay claims on this trip yet.'),
           h('div', { class: 'cp-row-s', style: 'margin-top:6px;font-weight:700' }, 'File a new claim — your Arrive/Depart stamps and GPS go with it automatically:'),
-          packHost, proofRow, sel, note, send,
+          packHost, proofRow, sel, amtIn, note, send, rateHint,
           h('div', { class: 'cp-row-s' }, 'Detention is auto-detected when you leave a stop past free time. TONU is auto-filed if a load is cancelled after your truck was committed.'),
         ]));
       } }, '💰 Pay claims');

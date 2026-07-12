@@ -66,3 +66,9 @@ Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift
 - [ ] 29. Carrier: Finance → "💸 Your money — owed & in flight" — jo abhi broker ne
       bheja hi nahi wo "⏰ awaiting broker payment" dikhe (total owed upar), bheja hua
       "on the way", confirm kiya hua ✓ — teeno states ek jagah
+- [ ] 30. Claim amounts REAL hain (ab $0 nahi): sim trip chalao → detention claim ki
+      amount = minutes × $60/hr, saath 🧮 calc line ("0h 3m past free time × $60/hr");
+      broker ke claim card par bhi amount + calc dikhe, "How to pay" mein bhi wahi amount
+- [ ] 31. Carrier: File-a-claim dropdown mein ab 7 kinds (detention/layover/TONU/lumper/
+      driver assist/extra stop/other); lumper ya other chuno to "Receipt total $" box aaye —
+      baghair amount ke file na ho; TONU/driver assist file karo to amount khud rate card se aaye

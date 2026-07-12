@@ -3064,6 +3064,7 @@ async function brokerDash(user, ov) {
         const det = h('div', { style: 'display:none;margin-top:8px;border-top:1px dashed #e2e8f0;padding-top:8px' }, [
           h('div', { style: 'font-weight:700;font-size:.85rem;margin-bottom:4px' }, '\ud83d\udd52 What happened, minute by minute'),
           (Array.isArray(b.timeline) && b.timeline.length) ? h('div', { style: 'border-left:3px solid #0883F7;padding-left:10px;margin-bottom:8px' }, b.timeline.map((tl9) => h('div', { class: 'cp-sub', style: 'padding:3px 0' }, [h('b', { style: 'color:#0f172a' }, tl9.at ? new Date(tl9.at).toLocaleString() : ''), ' \u2014 ' + (tl9.what || '')]))) : h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'No timeline events yet.'),
+          (b.filed_evidence && b.filed_evidence.calc) ? h('div', { class: 'cp-sub', style: 'margin-bottom:8px;background:#eff6ff;border-radius:8px;padding:8px 10px' }, [h('b', null, '\u{1F9EE} Amount ' + money(c.amount || 0) + ': '), b.filed_evidence.calc + ' \u2014 the rates you agreed to when posting this load.']) : null,
           (Array.isArray(b.stop_documents) && b.stop_documents.length) ? h('div', { style: 'margin-bottom:8px' }, [
             h('div', { style: 'font-weight:700;font-size:.85rem' }, '\ud83d\udcce Paper proof collected at the stops'),
             ...b.stop_documents.map((d9) => h('div', { class: 'cp-sub', style: 'padding:2px 0' }, [
@@ -3152,7 +3153,7 @@ async function brokerDash(user, ov) {
         })();
         return h('div', { style: 'padding:10px 0;border-bottom:1px solid #e2e8f0' }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;cursor:pointer', onClick: () => { const on = det.style.display !== 'none'; det.style.display = on ? 'none' : 'block'; caret.textContent = on ? '\u25be Evidence' : '\u25b4 Hide'; } }, [
-            h('div', null, [h('b', null, String(c.kind || '').toUpperCase() + ' \u2014 ' + (t.origin || '') + ' \u2192 ' + (t.destination || '')), h('div', { class: 'cp-sub' }, (c.ref || '') + ' \u00b7 filed ' + (c.filed_at ? new Date(c.filed_at).toLocaleString() : '') + ' \u00b7 carrier: ' + (t.carrier || ''))]),
+            h('div', null, [h('b', null, String(c.kind || '').toUpperCase() + ' \u00b7 ' + money(c.amount || 0) + ' \u2014 ' + (t.origin || '') + ' \u2192 ' + (t.destination || '')), h('div', { class: 'cp-sub' }, (c.ref || '') + ' \u00b7 filed ' + (c.filed_at ? new Date(c.filed_at).toLocaleString() : '') + ' \u00b7 carrier: ' + (t.carrier || ''))]),
             h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [supPill, h('span', { class: 'cp-pill', style: 'background:' + stPill[0] + ';color:' + stPill[1] }, stPill[2]), caret].filter(Boolean)),
           ]),
           actRow, payW, det,
