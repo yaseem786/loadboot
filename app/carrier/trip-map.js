@@ -345,6 +345,44 @@ export async function openTripMap(t, opts = {}) {
   const sbSpeed = statBox('Speed'), sbDist = statBox('Dist left'), sbSched = statBox('Appt time');
   statsRow.append(sbSpeed, sbDist, sbSched);
   contentWrap.appendChild(statsRow);
+  // ---- journey step tracker: shows WHERE you are + what comes next (hint system) ----
+  const STEPS = [['\u{1F697}','Start'],['\u{1F4CD}','Pickup'],['\u{1F6E3}\uFE0F','Drive'],['\u{1F3C1}','Deliver'],['\u{1F4B0}','Paid']];
+  const stepsRow = el('div', 'display:flex;align-items:flex-start;gap:0;margin:2px 0 10px');
+  const stepEls = STEPS.map(([ic, lb], i) => {
+    const wrap = el('div', 'flex:1;display:flex;flex-direction:column;align-items:center;position:relative');
+    if (i > 0) wrap.appendChild(el('div', 'position:absolute;left:-50%;top:13px;width:100%;height:2px;background:rgba(255,255,255,.12);z-index:0'));
+    const dot = el('div', 'width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.14);z-index:1;transition:all .25s', ic);
+    const txt = el('div', 'font-size:.6rem;font-weight:800;letter-spacing:.04em;color:#7f8a9c;margin-top:4px;text-transform:uppercase', lb);
+    wrap.append(dot, txt); wrap._dot = dot; wrap._txt = txt; wrap._line = i > 0 ? wrap.firstChild : null;
+    return wrap;
+  });
+  stepEls.forEach(w => stepsRow.appendChild(w));
+  contentWrap.appendChild(stepsRow);
+  function paintSteps(idx) { // idx = current step 0..4
+    stepEls.forEach((w, i) => {
+      const done = i < idx, cur = i === idx;
+      w._dot.style.background = done ? '#16a34a' : cur ? ORANGE : 'rgba(255,255,255,.07)';
+      w._dot.style.borderColor = done ? '#16a34a' : cur ? ORANGE : 'rgba(255,255,255,.14)';
+      w._dot.style.boxShadow = cur ? '0 0 14px rgba(252,83,5,.55)' : 'none';
+      if (done) w._dot.textContent = '\u2713';
+      w._txt.style.color = done ? '#4ade80' : cur ? '#fff' : '#7f8a9c';
+      if (w._line) w._line.style.background = done || cur ? '#16a34a' : 'rgba(255,255,255,.12)';
+    });
+  }
+  // ---- one-time coach banner: explains that the trip runs itself ----
+  let coachEl = null;
+  try {
+    if (!localStorage.getItem('lb:trip:coach')) {
+      coachEl = el('div', 'background:linear-gradient(135deg,rgba(8,131,247,.16),rgba(252,83,5,.10));border:1px solid rgba(8,131,247,.35);border-radius:14px;padding:12px 13px;margin:0 0 10px');
+      coachEl.append(
+        el('div', 'color:#fff;font-weight:900;font-size:.88rem;margin-bottom:4px', '\u{1F4A1} This trip mostly drives itself'),
+        el('div', 'color:#b9c6da;font-size:.79rem;font-weight:600;line-height:1.55', 'Just drive \u2014 LoadBoot checks you in automatically at pickup and delivery, starts your detention clock at the dock, and records departure. Your only taps: \u201CI am on my way\u201D at the start, \u201CMark delivered\u201D at the end, then upload the POD to get paid.'));
+      const okB = el('button', 'margin-top:9px;border:0;border-radius:10px;padding:8px 16px;font-weight:800;font-size:.78rem;cursor:pointer;background:rgba(8,131,247,.9);color:#fff;font-family:Manrope,sans-serif', 'Got it \u2713');
+      okB.onclick = () => { try { localStorage.setItem('lb:trip:coach', '1'); } catch (_) {} coachEl.remove(); coachEl = null; };
+      coachEl.appendChild(okB);
+      contentWrap.appendChild(coachEl);
+    }
+  } catch (_) {}
   const card = el('div', '');
   contentWrap.appendChild(card);
   const statEl = el('div', 'color:#93a0b4;font-size:.83rem;font-weight:600;margin:2px 0 11px;line-height:1.5');
@@ -420,6 +458,7 @@ export async function openTripMap(t, opts = {}) {
     sbDist._v.textContent = distM != null ? fmtKm(distM) : '—';
     const schedT = (step === 'to_delivery' || step === 'at_delivery') ? t.scheduled_delivery : t.scheduled_pickup;
     sbSched._v.textContent = t.pickup_mode === 'fcfs' ? 'FCFS' : schedT ? new Date(schedT).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
+    paintSteps(step === 'to_pickup' ? (onway ? 1 : 0) : step === 'at_pickup' ? 1 : step === 'to_delivery' ? 2 : step === 'at_delivery' ? 3 : 4);
     const near = distM != null && distM <= RADIUS_M;
     actBtn.disabled = false; actBtn.style.opacity = '1';
     const etaTxt = nav.min != null ? (nav.min + ' min · ' + nav.km.toFixed(1) + ' km · ' + nav.at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) : null;
