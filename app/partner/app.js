@@ -1399,7 +1399,16 @@ async function brokerDash(user, ov) {
               inp9.value = sp.address; w.svc_extra_stop = true; recalc();
             } });
             const del9 = h('button', { type: 'button', class: 'cp-btn cp-btn-sm ghost', style: 'flex:none', onClick: () => { w.stops.splice(i9, 1); w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); if (!w.stops.length) w.svc_extra_stop = false; paintStops(); recalc(); } }, '✕');
-            return h('div', { style: 'display:flex;gap:8px;margin-top:6px;align-items:center' }, [h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)), inp9, sp.lat ? h('span', { title: 'pinned', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓') : h('span', { title: 'pick a suggestion to pin', style: 'flex:none;color:#f59e0b' }, '…'), del9]);
+            const kind9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;max-width:170px' }, [['pickup', '📦 Extra PICKUP (load more)'], ['delivery', '📤 Extra DELIVERY (drop part)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+            kind9.value = sp.kind || 'delivery'; sp.kind = kind9.value;
+            kind9.onchange = () => { sp.kind = kind9.value; };
+            const purp9 = h('input', { class: 'cp-in', type: 'text', placeholder: 'Purpose — e.g. drop 6 pallets at Ace Hardware', style: 'margin:0;flex:1' });
+            purp9.value = sp.purpose || ''; purp9.oninput = () => { sp.purpose = purp9.value; };
+            return h('div', { style: 'margin-top:8px;padding:8px;border:1px dashed #dbe3ee;border-radius:10px' }, [
+              h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)), inp9, sp.lat ? h('span', { title: 'pinned', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓') : h('span', { title: 'pick a suggestion to pin', style: 'flex:none;color:#f59e0b' }, '…'), del9]),
+              h('div', { style: 'display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap' }, [kind9, purp9]),
+              h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'Order matters: the driver runs Pickup → stops 1‑2‑3 (in this order) → Final delivery. Put an extra PICKUP right after the main pickup, extra DELIVERY before the final one.'),
+            ]);
           });
           mount(stopsHost, h('div', null, [
             h('div', { class: 'cp-sub', style: 'font-weight:700;color:#10223B;margin-top:8px' }, '➕ Extra stops (optional — multi-stop load)'),
@@ -2683,6 +2692,8 @@ async function brokerDash(user, ov) {
       document.head.appendChild(st);
     }
     const host = h('div', null, h('div', { class: 'cp-sub' }, 'Connecting to the live feed\u2026'));
+    let __xs = null; // extra stops (fetched once)
+    (async () => { try { const r0 = await ccLoadStops(l.id); __xs = (r0 && r0.count) ? (r0.stops || []) : []; } catch (_) { __xs = []; } })();
     const closeM = openModal('\ud83d\udef0 Live tracking \u2014 ' + (l.origin || '?') + ' \u2192 ' + (l.destination || '?'), [host], { wide: true });
     let map = null, truckMk = null, routeLn = null, timer = null, dead = false;
     const stop = () => { dead = true; clearTimeout(timer); };
@@ -2720,6 +2731,7 @@ async function brokerDash(user, ov) {
             h('div', null, [
               h('div', { style: 'font-weight:800;font-size:1.08rem' }, (ld.origin || '?') + '  \u2192  ' + (ld.destination || '?')),
               h('div', { style: 'font-size:.78rem;opacity:.8;margin-top:3px' }, heroSub),
+              (Array.isArray(__xs) && __xs.length) ? h('div', { style: 'font-size:.76rem;opacity:.85;margin-top:3px;color:#c4b5fd' }, '🟣 Multi-stop: ' + (ld.origin || 'A') + ' → ' + __xs.map((s9, i9) => (s9.kind === 'pickup' ? '📦' : '📤') + ' S' + (i9 + 1) + ' ' + (s9.city ? s9.city + ', ' + (s9.state || '') : (s9.address || '').split(',').slice(-3, -1).join(',')) + (s9.purpose ? ' (' + s9.purpose + ')' : '')).join(' → ') + ' → ' + (ld.destination || 'B') + ' · each stop GPS-geofenced (detention + stop-off tracked)') : null,
               h('div', { class: 'lt-arrive', id: 'lt-arrive' },
                 (t && t.delivered_at) ? [document.createTextNode('\ud83c\udf89 Delivered ' + fmtT(t.delivered_at)), h('small', null, 'GPS-verified drop \u00b7 POD & trip documents are on the load card')]
                 : (t && t.scheduled_delivery && !t.last_lat) ? [document.createTextNode('\ud83d\udce6 Arriving ' + fmtT(t.scheduled_delivery)), h('small', null, 'scheduled delivery \u2014 live ETA appears once the truck is rolling')]

@@ -89,3 +89,15 @@ Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift
 - [ ] 37. Load post karo → book karo carrier se → carrier ke Dispatch pack mein
       "➡ Extra stop 1/2" full addresses ke saath dikhein
 - [ ] 38. Rate card step par extra-stop $50/stop auto-on ho (kyunke stops add kiye)
+
+## G. Multi-stop — Stage 2 (trip engine)
+- [ ] 39. Broker: post par har extra stop ka KIND (📦 Extra pickup / 📤 Extra delivery) +
+      PURPOSE likho ("drop 6 pallets at Ace") — carrier ke Dispatch pack mein dono dikhein
+- [ ] 40. Multi-stop trip book karke map kholo — purple S1/S2 markers + circles dikhein;
+      pickup depart ke baad agla target STOP ho (delivery nahi) — "To stop 1/2" chip
+- [ ] 41. Stop ke 800m mein auto check-in ("Checked in at stop 1/2 — its own detention
+      clock"), zone se nikalne par auto depart + agla leg; stop par 30+ min ruko to us
+      stop ki detention claim alag bane + stop_off $50 khud file ho
+- [ ] 42. Broker: Live tracking mein "🟣 Multi-stop: A → 📤 S1 city (purpose) → B" line
+NOTE: 🧪 SIM mode abhi seedha pickup→delivery chalta hai (stops skip) — real GPS ya
+mobile se test karo, ya batao to sim ko bhi multi-stop bana dun.

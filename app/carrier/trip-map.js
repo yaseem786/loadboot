@@ -8,7 +8,7 @@
 // • External navigation row (Google / Waze / phone chooser) like inDrive —
 //   navigate anywhere, proof always lands in LoadBoot
 // • Manual buttons remain as fallback when GPS is flaky
-import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin, pocketPostLocation, pocketUploadTripDoc } from '../shared/api.js';
+import { tripArriveGps, tripDepart, pocketAdvanceTrip, tripSetStopCoords, tripCheckin, pocketPostLocation, pocketUploadTripDoc, ccLoadStops, tripStopsProgress } from '../shared/api.js';
 
 const RADIUS_M = 800;
 const ORANGE = '#FC5305', BLUE = '#0883F7';
@@ -219,14 +219,42 @@ export async function openTripMap(t, opts = {}) {
   let step = getStep(t);
   let onway = localStorage.getItem(stKey(t.id, 'onway')) === '1';
   let autoBusy = false, follow = true;
-  const target = () => (step === 'to_delivery' || step === 'at_delivery') ? D : P;
+  // ---- MULTI-STOP (Stage 2): extra stops ride between pickup and delivery ----
+  let XS = [], xsIdx = 0, atStop = false;
+  (async () => {
+    try {
+      if (!t.load_id) return;
+      const r0 = await ccLoadStops(t.load_id);
+      if (!r0 || !r0.count || !r0.full) return;
+      XS = (r0.stops || []).filter((s0) => s0.lat && s0.lng)
+        .map((s0) => ({ seq: parseInt(s0.seq, 10) || 0, lat: +s0.lat, lng: +s0.lng, address: s0.address || '', kind: s0.kind || 'delivery', purpose: s0.purpose || '' }))
+        .sort((a0, b0) => a0.seq - b0.seq);
+      if (!XS.length) return;
+      try {
+        const pr = await tripStopsProgress(t.id);
+        (Array.isArray(pr) ? pr : []).forEach((d0) => {
+          const k0 = parseInt(String(d0.stop || '').replace('stop_', ''), 10) || 0;
+          if (d0.departed_at) xsIdx = Math.max(xsIdx, k0);
+          else if (d0.arrived_at) { xsIdx = Math.max(xsIdx, k0 - 1); atStop = true; }
+        });
+      } catch (_) {}
+      XS.forEach((s0, i0) => { try {
+        L.marker([s0.lat, s0.lng], { icon: dot('#a855f7', 'S' + (i0 + 1)) }).addTo(map);
+        L.circle([s0.lat, s0.lng], { radius: RADIUS_M, color: '#a855f7', weight: 1, opacity: .5, fillOpacity: .07 }).addTo(map);
+      } catch (_) {} });
+      buildNav(true); paint();
+    } catch (_) {}
+  })();
+  const target = () => (step === 'to_delivery' || step === 'at_delivery')
+    ? ((step === 'to_delivery' && xsIdx < XS.length) ? XS[xsIdx] : D) : P;
 
   const nav = { line: null, steps: null, idx: 0, legKey: null, lastFetch: 0, spoke: {} };
   async function buildNav(force) {
     const tg = target(); if (!me || !tg) return;
     const now2 = Date.now();
-    if (!force && nav.legKey === step && nav.steps && now2 - nav.lastFetch < 45000) return;
-    nav.lastFetch = now2; nav.legKey = step;
+    const lk9 = step + ':x' + xsIdx + ':' + (atStop ? 1 : 0);
+    if (!force && nav.legKey === lk9 && nav.steps && now2 - nav.lastFetch < 45000) return;
+    nav.lastFetch = now2; nav.legKey = lk9;
     const routes = await osrmRoute(me, tg, true, true);
     if (!routes || !routes.length) return;
     const useRt = (rt) => {
@@ -479,7 +507,7 @@ export async function openTripMap(t, opts = {}) {
     const schedT = (step === 'to_delivery' || step === 'at_delivery') ? t.scheduled_delivery : t.scheduled_pickup;
     sbSched._v.textContent = t.pickup_mode === 'fcfs' ? 'FCFS' : schedT ? new Date(schedT).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
     paintSteps(step === 'to_pickup' ? (onway ? 1 : 0) : step === 'at_pickup' ? 1 : step === 'to_delivery' ? 2 : step === 'at_delivery' ? 3 : 4);
-    const onSite = step === 'at_pickup' || step === 'at_delivery';
+    const onSite = step === 'at_pickup' || step === 'at_delivery' || atStop;
     proofRow.style.display = onSite ? 'flex' : 'none'; proofNote.style.display = onSite ? 'block' : 'none';
     const near = distM != null && distM <= RADIUS_M;
     actBtn.disabled = false; actBtn.style.opacity = '1';
@@ -502,6 +530,14 @@ export async function openTripMap(t, opts = {}) {
       stageChip.textContent = '📦 At pickup · detention clock running';
       actBtn.textContent = '🚛  Loaded — leaving pickup';
       statEl.textContent = 'Checked in at A ✓ (broker notified). When you drive out of the zone we record departure automatically — or tap when loaded.';
+    } else if (step === 'to_delivery' && atStop && XS[xsIdx]) {
+      stageChip.textContent = '📦 At stop ' + (xsIdx + 1) + '/' + XS.length + ' · detention clock running';
+      actBtn.textContent = '🚛  Done here — leaving stop ' + (xsIdx + 1);
+      statEl.textContent = (XS[xsIdx].kind === 'pickup' ? '📦 Load the freight: ' : '📤 Drop the freight: ') + (XS[xsIdx].purpose || 'as per rate con') + ' — GPS-stamped, broker notified. Drive out of the zone and departure records itself.';
+    } else if (step === 'to_delivery' && xsIdx < XS.length) {
+      stageChip.textContent = etaTxt ? '🚛 ' + etaTxt + ' · stop ' + (xsIdx + 1) + '/' + XS.length : '🚛 To stop ' + (xsIdx + 1) + '/' + XS.length + (distM != null ? ' · ' + fmtKm(distM) : '');
+      if (near) { actBtn.textContent = '📍  Checking you in at stop ' + (xsIdx + 1) + '…'; statEl.textContent = 'Inside the stop zone — auto check-in is running.'; }
+      else { actBtn.textContent = '📍  Auto check-in at 800 m — stop ' + (xsIdx + 1) + (distM != null ? ' · ' + fmtKm(distM) : ''); actBtn.disabled = true; actBtn.style.opacity = '.55'; statEl.textContent = (XS[xsIdx].kind === 'pickup' ? '📦 EXTRA PICKUP' : '📤 EXTRA DELIVERY') + ' ' + (xsIdx + 1) + (XS[xsIdx].purpose ? ' — ' + XS[xsIdx].purpose : '') + (XS[xsIdx].address ? ' · ' + XS[xsIdx].address : '') + '. Entering the purple circle checks you in automatically — its own detention clock and stop-off fee are tracked.'; }
     } else if (step === 'to_delivery') {
       stageChip.textContent = etaTxt ? '🚛 ' + etaTxt : '🚛 On the road' + (distM != null ? ' · ' + fmtKm(distM) + ' to B' : '') + ' · ' + money(t.rate);
       if (!tg) { actBtn.textContent = '📍  Pinning the delivery location…'; actBtn.disabled = true; actBtn.style.opacity = '.55'; statEl.textContent = 'Setting the delivery point on the map — one moment. Check-in stays locked until it is pinned.'; }
@@ -559,6 +595,29 @@ export async function openTripMap(t, opts = {}) {
     } catch (e) { statEl.textContent = (e && e.message) || ''; }
     autoBusy = false;
   }
+  async function doArriveStop() {
+    if (autoBusy || xsIdx >= XS.length) return; autoBusy = true;
+    const k9 = 'stop_' + (xsIdx + 1);
+    try {
+      try { await tripArriveGps(t.id, k9, me && me.lat, me && me.lng, sim.on ? 0 : undefined); }
+      catch (e) { if (!/already recorded/i.test(e.message || '')) throw e; }
+      atStop = true; await drawRoute(); paint();
+      if (nav.line) { nav.line.remove(); nav.line = null; } nav.steps = null; navBox.style.display = 'none';
+      flash('\u2713 Checked in at stop ' + (xsIdx + 1) + '/' + XS.length + ' \u2014 its own detention clock is running');
+    } catch (e) { flash((e && e.message) || 'Stop check-in failed \u2014 try the button.', true); statEl.textContent = (e && e.message) || ''; }
+    autoBusy = false;
+  }
+  async function doDepartStop() {
+    if (autoBusy || !atStop) return; autoBusy = true;
+    const k9 = 'stop_' + (xsIdx + 1);
+    try {
+      try { await tripDepart(t.id, k9, me && me.lat, me && me.lng); } catch (e) { if (!/already|no open/i.test(e.message || '')) throw e; }
+      atStop = false; xsIdx = Math.min(xsIdx + 1, XS.length);
+      await drawRoute(); paint(); buildNav(true);
+      flash('\ud83d\ude9b Stop ' + xsIdx + '/' + XS.length + ' done \u2014 dock time + stop-off fee recorded. Next: ' + (xsIdx < XS.length ? 'stop ' + (xsIdx + 1) : 'final delivery'));
+    } catch (e) { statEl.textContent = (e && e.message) || 'Could not record stop departure.'; }
+    autoBusy = false;
+  }
   function warnGate(o) {
     return new Promise(function (resolve) {
       const ov = el('div', 'position:absolute;inset:0;z-index:1003;background:rgba(2,8,20,.74);display:flex;align-items:center;justify-content:center;padding:20px', '');
@@ -585,7 +644,7 @@ export async function openTripMap(t, opts = {}) {
         if (!(await warnGate({ title: '\u26a0 Only if you\u2019re actually rolling out', body: 'Tap this only once you\u2019re LOADED and driving out of the facility. Your detention is measured until you leave \u2014 tapping while the dock still has you can cost your detention pay. It also records automatically the moment you drive 800 m out, so you can just drive.', cta: '\ud83d\ude9b Yes, I\u2019m loaded & leaving' }))) { actBtn.textContent = was; actBtn.disabled = false; return; }
         actBtn.textContent = '\u2026'; await doDepartPickup();
       }
-      else if (step === 'to_delivery') { await doArrive('delivery'); }
+      else if (step === 'to_delivery') { if (atStop) { await doDepartStop(); } else if (xsIdx < XS.length) { await doArriveStop(); } else { await doArrive('delivery'); } }
       else if (step === 'at_delivery') {
         if (!(await warnGate({ title: '\u26a0 Has the receiver released you?', body: 'Mark delivered ONLY after the facility has finished unloading and released you. Your dock time (detention) is measured until then \u2014 marking early can lose your detention proof. Tracking keeps running until you drive out of the receiver.', cta: '\u2713 Yes, unloaded & released' }))) { actBtn.textContent = was; actBtn.disabled = false; return; }
         actBtn.textContent = '\u2026'; await pocketAdvanceTrip(t.id, 'delivered'); step = 'done'; setStep(t, step);
@@ -619,7 +678,8 @@ export async function openTripMap(t, opts = {}) {
       const dm = hav(me.lat, me.lng, tg.lat, tg.lng);
       if (step === 'to_pickup' && onway && dm <= RADIUS_M) doArrive('pickup');
       else if (step === 'at_pickup' && P && hav(me.lat, me.lng, P.lat, P.lng) > RADIUS_M + 150) doDepartPickup();
-      else if (step === 'to_delivery' && dm <= RADIUS_M) doArrive('delivery');
+      else if (step === 'to_delivery' && atStop && XS[xsIdx] && hav(me.lat, me.lng, XS[xsIdx].lat, XS[xsIdx].lng) > RADIUS_M + 150) doDepartStop();
+      else if (step === 'to_delivery' && !atStop && dm <= RADIUS_M) { if (xsIdx < XS.length) doArriveStop(); else doArrive('delivery'); }
       else if ((step === 'at_delivery' || step === 'done') && D && hav(me.lat, me.lng, D.lat, D.lng) > RADIUS_M + 150) doDepartDelivery();
     }
     paint();
