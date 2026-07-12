@@ -716,13 +716,19 @@ export async function openTripMap(t, opts = {}) {
   async function toggleSim() {
     if (sim.on) { sim.on = false; window.__lbSimOn = false; clearInterval(sim.timer); simBtn.textContent = '🧪'; flash('Simulation stopped'); return; }
     if (!P || !D) { alert('Stops are not pinned yet — wait a moment.'); return; }
-    const rt = await osrmRoute(P, D, false);
-    const road = rt ? rt.latlngs : [[P.lat, P.lng], [D.lat, D.lng]];
+    // multi-stop sim: drive THROUGH every extra stop (P → S1 → … → D)
+    const wps9 = [P, ...XS, D];
+    let road = [];
+    for (let w9 = 0; w9 < wps9.length - 1; w9++) {
+      const rt9 = await osrmRoute(wps9[w9], wps9[w9 + 1], false);
+      const leg9 = rt9 ? rt9.latlngs : [[wps9[w9].lat, wps9[w9].lng], [wps9[w9 + 1].lat, wps9[w9 + 1].lng]];
+      road = road.concat(leg9, [[wps9[w9 + 1].lat, wps9[w9 + 1].lng]]);
+    }
     const a0 = { lat: P.lat + 0.045, lng: P.lng - 0.055 };
     const approach = []; for (let i2 = 0; i2 <= 13; i2++) approach.push([a0.lat + (P.lat - a0.lat) * i2 / 13, a0.lng + (P.lng - a0.lng) * i2 / 13]);
-    const stepN = Math.max(1, Math.floor(road.length / 220));
+    const stepN = Math.max(1, Math.floor(road.length / (220 + XS.length * 80)));
     sim.path = approach.concat(road.filter((_, i2) => i2 % stepN === 0), [[D.lat, D.lng]]);
-    sim.i = 0; sim.on = true; window.__lbSimOn = true; sim.pauseUntil = 0; sim.pausedOnce = false; simBtn.textContent = '⏹';
+    sim.i = 0; sim.on = true; window.__lbSimOn = true; sim.pauseUntil = 0; sim.pausedOnce = false; sim.stopPaused = {}; simBtn.textContent = '⏹';
     onway = true; localStorage.setItem(stKey(t.id, 'onway'), '1');
     follow = true;
     say('Navigation started.');
@@ -733,6 +739,11 @@ export async function openTripMap(t, opts = {}) {
       if (step === 'at_pickup' && !sim.pausedOnce) {
         sim.pausedOnce = true; sim.pauseUntil = Date.now() + 80000;
         flash('⏳ Dock time (80s) — watch the detention proof build');
+        return;
+      }
+      if (atStop && !((sim.stopPaused || (sim.stopPaused = {}))[xsIdx])) {
+        sim.stopPaused[xsIdx] = true; sim.pauseUntil = Date.now() + 50000;
+        flash('⏳ Extra stop ' + (xsIdx + 1) + ' dock time (50s) — stop-off + detention proof building');
         return;
       }
       const pt2 = sim.path[sim.i];
