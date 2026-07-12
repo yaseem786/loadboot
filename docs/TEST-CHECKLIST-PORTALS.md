@@ -1,0 +1,42 @@
+# Portal Test Checklist — Marketplace v3 (owner testing)
+Tarika: har test karo → box mein x likho `[x]` → agar TOOTA to neeche "BUGS" section
+mein number ke saath likho kya hua + screenshot le lo. Claude fix karega.
+
+⚠️ Test SIRF localhost par (staging DB). Live loadboot.com par test data mat banao.
+Pehle: `python build_site.py` (staging key ke saath) + server chalu + Ctrl+Shift+R.
+
+## A. Carrier portal (localhost:8080/app/carrier/)
+- [ ] 1. Login `carrier-owner@lb.test` — dashboard khule, koi error na aaye
+- [ ] 2. Marketplace/Loads board khulе — loads dikhein, har card par rate + pickup info ho
+- [ ] 3. Ek load "Accept/Book" karo — trip banna chahiye, status "Booked — ready to start"
+- [ ] 4. Trip kholo → map dikhe (light style default), truck marker + route line ho
+- [ ] 5. Map par 🧪 SIMULATION button dabao (sirf localhost par dikhta hai) —
+      truck khud pickup tak jaye → auto check-in ho → "detention clock" chale →
+      auto depart → delivery check-in. Poora cycle bina error ke chale
+- [ ] 6. Turn-by-turn card dikhe (arrow + "Turn left..." text) aur 🔊 voice toggle kaam kare
+- [ ] 7. Delivery ke baad POD/paperwork upload manga jaye (paperwork enforcement)
+- [ ] 8. Trip complete par RATING poochha jaye (carrier→broker rating)
+- [ ] 9. Finance/#finance tab — trip ka P&L dikhe (revenue, fuel, detention line items)
+- [ ] 10. Account → Documents — koi document "View" karo, preview khule
+
+## B. Partner/Broker portal (localhost:8080/app/partner/)
+- [ ] 11. Broker login — dashboard khule
+- [ ] 12. Naya load post karo — rate suggestion dikhe, post hone ke baad board par aaye
+- [ ] 13. Jo load carrier ne book kiya — uska tracking/status broker ko dikhe
+- [ ] 14. Delivered load par broker→carrier rating poochha jaye
+
+## C. Command Center (localhost:8083/app/command-center/)
+- [ ] 15. Login `dispatcher@lb.test` — console khule
+- [ ] 16. Ops Radar — active trips dikhein, booked trip ka status sahi ho
+- [ ] 17. Carriers → kisi carrier ka 360 kholo — health score card + FMCSA verify button
+- [ ] 18. Radar page NEECHE broker-loads table → "Docs" button — checklist submissions khulen
+
+## D. Live site (sirf dekhna, data nahi banana)
+- [ ] 19. loadboot.com — splash screen ab NAHI aani chahiye (page seedha khule)
+- [ ] 20. loadboot.com/cost-per-mile-calculator.html — slider/inputs mein number badlo,
+      results foran update hon
+
+## BUGS (jo toota yahan likho)
+| # | Test no. | Kya hua (screenshot bhi le lo) |
+|---|----------|--------------------------------|
+|   |          |                                |
