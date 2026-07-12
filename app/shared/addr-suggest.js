@@ -18,10 +18,12 @@ function fmt(p) {
 export function attachAddressSuggest(input, opts = {}) {
   if (!input || input.__lbAddr) return; input.__lbAddr = true;
   let box = null, timer = 0, ctrl = null;
-  const parent = input.parentNode; if (parent && getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
   const close = () => { if (box) { box.remove(); box = null; } };
   const open = (items) => {
     close(); if (!items.length) return;
+    // parent resolved LAZILY — the input may not have been in the DOM at attach time
+    const parent = input.parentNode; if (!parent) return;
+    if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
     box = document.createElement('div');
     box.style.cssText = 'position:absolute;left:' + input.offsetLeft + 'px;width:' + Math.max(input.offsetWidth, 260) + 'px;max-width:92vw;max-height:260px;overflow-y:auto;top:' + (input.offsetTop + input.offsetHeight + 4) + 'px;z-index:1200;background:#fff;color:#10223B;border:1px solid #d7dfea;border-radius:12px;box-shadow:0 18px 44px -14px rgba(2,12,30,.45);overflow:hidden;font-size:.88rem';
     items.forEach((r) => {
