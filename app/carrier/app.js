@@ -344,7 +344,30 @@ function authScreen() {
       const { error } = await signInWithPassword(em, pw); if (error) throw error; boot(); return;
     } catch (e) { err.textContent = (e && e.message) || 'Something went wrong.'; btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Sign in'; }
   };
-  const brandPanel = h('div', { class: 'cpx-auth-brand', html:
+  const AGENT_BRAND = '<svg viewBox="0 0 300 74" style="width:100%;max-width:300px;overflow:visible" aria-hidden="true">'
+    + '<line x1="30" y1="37" x2="270" y2="37" stroke="rgba(148,163,184,.3)" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round"/>'
+    + '<circle cx="30" cy="37" r="15" fill="rgba(8,131,247,.15)" stroke="#0883F7" stroke-width="2.5"/><text x="30" y="42" font-size="13" text-anchor="middle">🏢</text>'
+    + '<circle cx="150" cy="37" r="17" fill="rgba(252,83,5,.15)" stroke="#FC5305" stroke-width="2.5"/><text x="150" y="42" font-size="13" text-anchor="middle">⚡</text>'
+    + '<circle cx="270" cy="37" r="15" fill="rgba(34,197,94,.12)" stroke="#16a34a" stroke-width="2.5"/><text x="270" y="42" font-size="13" text-anchor="middle">🚛</text>'
+    + '<text x="150" y="70" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">your broker · LoadBoot · your carrier — one chain</text></svg>'
+    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Bring the people.<br>The software does the work.<br><span style="color:#4ade80">You earn 1% — forever.</span></div>'
+    + '<div class="cpx-mockstack">'
+    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🏢 Apex Logistics <span style="font-weight:600;color:#64748b;font-size:12px">— your broker</span></b><span class="cpx-mockchip green">joined ✓</span></div>'
+    +     '<div class="cpx-mockroute"><span class="d o"></span>posted: Dallas, TX → Atlanta, GA · $2,850</div></div>'
+    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🚛 Ironhide Freight <span style="font-weight:600;color:#64748b;font-size:12px">— your carrier</span></b><span class="cpx-mockchip green">booked ★</span></div>'
+    +     '<div class="cpx-mockroute"><span class="d g"></span>delivered · GPS-verified POD</div></div>'
+    +   '<div class="cpx-mocktoast ok">💰 +$28.50 — your 1% landed automatically</div>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap">'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Get your link</span>'
+    +   '<span style="color:#3b4f75;font-weight:800">›</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Bring a pair</span>'
+    +   '<span style="color:#3b4f75;font-weight:800">›</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:#34d399;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Earn 1% on every load</span>'
+    + '</div>'
+    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">Recurring &nbsp;·&nbsp; No cap &nbsp;·&nbsp; Costs your clients nothing</div>'
+    + '<div style="margin-top:20px;color:#94a3b8;font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>';
+  const brandPanel = window.__LB_AGENT ? h('div', { class: 'cpx-auth-brand', html: AGENT_BRAND }) : h('div', { class: 'cpx-auth-brand', html:
     '<svg viewBox="0 0 300 90" style="width:100%;max-width:300px;overflow:visible" aria-hidden="true">'
     + '<path d="M8 74 C 80 74, 90 18, 170 18 S 282 52, 292 30" fill="none" stroke="rgba(148,163,184,.35)" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round"/>'
     + '<circle cx="8" cy="74" r="6" fill="none" stroke="#0883F7" stroke-width="3.5"/>'
