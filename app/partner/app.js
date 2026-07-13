@@ -3261,6 +3261,10 @@ async function brokerDash(user, ov) {
         delivery_number: { ic: '\ud83c\udfc1', help: 'The delivery / confirmation number from the RECEIVER.', fields: [['Delivery number *', 'dn']] },
         appointment_confirmation: { ic: '\ud83d\udcc5', help: 'Appointment confirmation from the facility (number and confirmed time).', fields: [['Confirmation #', 'ac'], ['Confirmed time (e.g. Jul 16, 10:00 AM)', 'at']] },
         billing_contact: { ic: '\ud83d\udcb3', help: 'Who receives the invoice \u2014 accounts payable at your company or your customer.', fields: [['Contact name *', 'bn'], ['Email *', 'be'], ['Phone', 'bp']] },
+        // AGENT-POSTED LOADS — the 3 LOAD SOURCE proofs (due 2h after posting; overdue pauses your postings)
+        source_identity: { ic: '\ud83c\udfe2', help: 'WHO really pays this load \u2014 the source broker/shipper\u2019s legal company name (+ MC/DOT if a broker; shippers have none).', fields: [['Source company name *', 'sc'], ['MC / DOT # (brokers only)', 'sm']] },
+        source_rate_con: { ic: '\ud83e\uddfe', help: 'The rate confirmation / tender you got FROM the source \u2014 reference # here (upload the file under the load\u2019s documents). Shipper direct: PO / contract / tender email reference.', fields: [['Rate con / PO / tender reference *', 'sr']] },
+        source_billing: { ic: '\ud83d\udcb3', help: 'The SOURCE\u2019s accounts-payable contact \u2014 where invoices for this load go.', fields: [['AP contact name *', 'sn'], ['AP email *', 'se'], ['AP phone', 'sp']] },
       };
       // WHEN each item is needed — the just-in-time sequence so the driver is never blocked.
       const WHEN = {
@@ -3269,6 +3273,9 @@ async function brokerDash(user, ov) {
         pickup_number:            [2, '\u2461 Before the driver reaches pickup \u2014 released at the gate', '#92400e', '#fffbeb'],
         delivery_number:          [3, '\u2462 Before delivery \u2014 can follow after pickup', '#1e40af', '#eff6ff'],
         billing_contact:          [4, '\u2463 Only to get paid \u2014 after POD, before you invoice', '#475569', '#f1f5f9'],
+        source_identity:          [0, '\u26a1 AGENT \u2014 DUE 2H AFTER POSTING or your postings pause', '#9a3412', '#fff7ed'],
+        source_rate_con:          [0, '\u26a1 AGENT \u2014 DUE 2H AFTER POSTING or your postings pause', '#9a3412', '#fff7ed'],
+        source_billing:           [0, '\u26a1 AGENT \u2014 DUE 2H AFTER POSTING or your postings pause', '#9a3412', '#fff7ed'],
       };
       items.sort((a, b) => ((WHEN[a.doc_key] && WHEN[a.doc_key][0]) || 9) - ((WHEN[b.doc_key] && WHEN[b.doc_key][0]) || 9));
       const done = items.filter(it => it.status === 'verified' || it.status === 'received').length;
