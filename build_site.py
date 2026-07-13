@@ -378,7 +378,7 @@ def footer():
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
-<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a></div>
+<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
 <div><div class="foot-h">Compliance</div><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
 <div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
@@ -3344,6 +3344,123 @@ page('referral.html', 'Referral &amp; Partner Program &mdash; Carriers, Agencies
      'Refer carriers or partner with Loadboot as an agency or creator. Rewards are paid from our own dispatch fee &mdash; never an extra cost to the carrier. Join the early list.',
      'referral.html', ref, _rfaq_sch)
 
+# ---------- AGENT PROGRAM (independent dispatchers — pair-based 1% recurring) ----------
+AGENT_CSS = '''<style>
+.ag-hero{background:linear-gradient(135deg,#0a1526,#10223B 55%,#0d2a4d);color:#fff;padding:86px 20px 70px;position:relative;overflow:hidden}
+.ag-hero:before{content:"";position:absolute;inset:0;background:radial-gradient(700px 300px at 80% 20%,rgba(8,131,247,.25),transparent 60%),radial-gradient(500px 260px at 15% 85%,rgba(252,83,5,.18),transparent 60%)}
+.ag-wrap{max-width:1100px;margin:0 auto;position:relative}
+.ag-eyebrow{display:inline-block;background:rgba(252,83,5,.15);border:1px solid rgba(252,83,5,.45);color:#ffb38a;font-weight:800;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:7px 14px;border-radius:999px}
+.ag-h1{font-family:Manrope,sans-serif;font-weight:800;font-size:clamp(1.9rem,4.6vw,3.3rem);line-height:1.12;margin:18px 0 14px}
+.ag-h1 b{color:#4ade80}
+.ag-sub{color:#b9c6da;font-size:1.06rem;line-height:1.7;max-width:640px}
+.ag-cta{display:inline-block;background:#FC5305;color:#fff;font-weight:800;padding:15px 28px;border-radius:13px;text-decoration:none;font-size:1.02rem;box-shadow:0 14px 34px -10px rgba(252,83,5,.55);margin-top:24px}
+.ag-cta.ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);box-shadow:none;margin-left:10px}
+.ag-chain{display:flex;align-items:center;justify-content:center;gap:0;margin:56px auto 6px;max-width:860px;flex-wrap:wrap}
+.ag-node{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:18px;padding:18px 22px;text-align:center;min-width:150px;position:relative;animation:agfloat 4s ease-in-out infinite}
+.ag-node:nth-child(3){animation-delay:1s}.ag-node:nth-child(5){animation-delay:2s}
+.ag-node .ic{font-size:1.9rem}.ag-node b{display:block;margin-top:6px;font-size:.95rem}.ag-node span{display:block;color:#8fa3bf;font-size:.72rem;margin-top:3px}
+.ag-link{flex:none;width:74px;height:3px;background:linear-gradient(90deg,#0883F7,#4ade80);position:relative;overflow:visible}
+.ag-link:after{content:"$";position:absolute;top:-13px;left:0;color:#4ade80;font-weight:900;font-size:.95rem;animation:agflow 2.2s linear infinite}
+@keyframes agflow{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:calc(100% - 10px);opacity:0}}
+@keyframes agfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.ag-badge{position:absolute;top:-13px;right:-9px;background:#16a34a;color:#fff;font-size:.62rem;font-weight:900;padding:4px 9px;border-radius:999px;letter-spacing:.05em}
+.ag-sec{padding:64px 20px}
+.ag-sec.soft{background:#F4F8FC}
+.ag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;max-width:1100px;margin:26px auto 0}
+.ag-card{background:#fff;border:1px solid #e4ebf4;border-radius:18px;padding:22px;box-shadow:0 10px 34px -18px rgba(2,12,30,.18);transition:transform .2s}
+.ag-card:hover{transform:translateY(-4px)}
+.ag-card .n{width:34px;height:34px;border-radius:10px;background:#0883F7;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.ag-card h3{font-family:Manrope,sans-serif;font-size:1.04rem;margin-bottom:8px;color:#10223B}
+.ag-card p{color:#5b6b80;font-size:.9rem;line-height:1.65}
+.agc{background:linear-gradient(160deg,#0b1220,#10223B);border:1px solid rgba(8,131,247,.35);border-radius:22px;padding:30px;max-width:860px;margin:30px auto 0;color:#e6edf8}
+.agc h3{color:#7cc0ff;font-family:Manrope,sans-serif;margin-bottom:4px}
+.agc .row{display:flex;justify-content:space-between;font-weight:700;margin-top:18px;font-size:.92rem}
+.agc input[type=range]{width:100%;accent-color:#FC5305;margin:6px 0 2px}
+.agc output{color:#fbbf24;font-weight:900}
+.agc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:24px}
+.agc-tile{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:15px;padding:16px;text-align:center}
+.agc-tile span{display:block;font-size:.62rem;letter-spacing:.1em;font-weight:800;color:#7f92b3;text-transform:uppercase}
+.agc-tile b{display:block;font-size:1.9rem;font-weight:900;margin-top:4px;color:#fff}
+.agc-tile.hi b{color:#4ade80}
+@media(max-width:720px){.ag-link{width:3px;height:40px;transform:rotate(90deg) scale(.5)}}
+</style>'''
+
+AGENT_BODY = AGENT_CSS + '''
+<section class="ag-hero"><div class="ag-wrap" style="text-align:center">
+<span class="ag-eyebrow">Agent Program &middot; Independent Dispatchers</span>
+<h1 class="ag-h1">Bring the people.<br>The software does the work.<br><b>You earn 1% of every load &mdash; forever.</b></h1>
+<p class="ag-sub" style="margin:0 auto">LoadBoot runs the dispatch: live board, one-tap booking, GPS proof, automatic invoicing and payments. Your job is the one thing software can&rsquo;t do &mdash; bring a broker and a carrier together. Every load your chain delivers pays you 1% of the gross. Recurring. No cap.</p>
+<a class="ag-cta" href="contact.html">Apply as an Agent &rarr;</a><a class="ag-cta ghost" href="#calc">See the money &darr;</a>
+<div class="ag-chain">
+ <div class="ag-node"><div class="ic">&#127970;</div><b>Your Broker</b><span>posts loads</span><span class="ag-badge">YOURS</span></div>
+ <div class="ag-link"></div>
+ <div class="ag-node" style="border-color:rgba(252,83,5,.5)"><div class="ic">&#9889;</div><b>LoadBoot</b><span>books &middot; tracks &middot; pays</span></div>
+ <div class="ag-link"></div>
+ <div class="ag-node"><div class="ic">&#128666;</div><b>Your Carrier</b><span>delivers</span><span class="ag-badge">YOURS</span></div>
+</div>
+<div style="color:#4ade80;font-weight:800;margin-top:16px">every delivered load &rarr; 1% lands in YOUR account, automatically</div>
+</div></section>
+
+<section class="ag-sec"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How it works</div><h2>Four steps. Then it compounds.</h2></div>
+<div class="ag-grid">
+<div class="ag-card reveal"><div class="n">1</div><h3>Get your agent account</h3><p>Log in to your dashboard and grab your personal referral link. Every client who joins through it is tied to you &mdash; permanently and automatically.</p></div>
+<div class="ag-card reveal"><div class="n">2</div><h3>Bring a PAIR</h3><p>A broker + a carrier, or a shipper + a broker. One side alone stays pending &mdash; a pair makes a living marketplace, and that activates your chain.</p></div>
+<div class="ag-card reveal"><div class="n">3</div><h3>Watch it live</h3><p>Your dashboard shows everything in real time: who joined, loads posted, trucks moving on GPS, deliveries confirmed &mdash; and your commission landing on each one.</p></div>
+<div class="ag-card reveal"><div class="n">4</div><h3>Get paid monthly</h3><p>1% of gross on every GPS-verified delivered load your chain touches. Payable after a 15-day clearing window, paid out monthly from $100. No invoices, no chasing.</p></div>
+</div></div></section>
+
+<section class="ag-sec soft" id="calc"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">The money</div><h2>Move the sliders &mdash; this is YOUR math</h2></div>
+<div class="agc reveal">
+<h3>&#128176; Agent earnings calculator</h3>
+<div class="row"><label for="agChains">Active chains (pairs you brought)</label><output id="agChainsOut">3</output></div>
+<input type="range" id="agChains" min="1" max="15" value="3">
+<div class="row"><label for="agLoads">Loads per chain / month</label><output id="agLoadsOut">15</output></div>
+<input type="range" id="agLoads" min="4" max="60" value="15">
+<div class="row"><label for="agRate">Average load value ($)</label><output id="agRateOut">$2,200</output></div>
+<input type="range" id="agRate" min="800" max="5000" step="100" value="2200">
+<div class="agc-out">
+<div class="agc-tile"><span>Freight your chains move</span><b id="agGross">$99,000</b></div>
+<div class="agc-tile hi"><span>Your monthly income (1%)</span><b id="agMo">$990</b></div>
+<div class="agc-tile hi"><span>Your yearly income</span><b id="agYr">$11,880</b></div>
+</div>
+<div style="font-size:.85rem;color:#9fb3d1;margin-top:16px">Recurring &mdash; for as long as your clients keep moving freight. Refer other agents and earn override levels down 5 deep (0.5%, 0.25%&hellip;).</div>
+</div>
+<script>(function(){var c=document.getElementById("agChains"),l=document.getElementById("agLoads"),r=document.getElementById("agRate");if(!c)return;
+function m(v){return "$"+Math.round(v).toLocaleString()}
+function u(){var g=(+c.value)*(+l.value)*(+r.value);document.getElementById("agChainsOut").textContent=c.value;document.getElementById("agLoadsOut").textContent=l.value;document.getElementById("agRateOut").textContent=m(+r.value);document.getElementById("agGross").textContent=m(g);document.getElementById("agMo").textContent=m(g*0.01);document.getElementById("agYr").textContent=m(g*0.12);}
+[c,l,r].forEach(function(x){x.addEventListener("input",u)});u();})();</script>
+</div></section>
+
+<section class="ag-sec"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Why it pays you forever</div><h2>You&rsquo;re not selling. You&rsquo;re building an asset.</h2></div>
+<div class="ag-grid">
+<div class="ag-card reveal"><h3>&#129309; Costs your clients nothing</h3><p>Your 1% comes out of LoadBoot&rsquo;s own 5% fee &mdash; the broker and carrier pay nothing extra. You can promote with a straight face.</p></div>
+<div class="ag-card reveal"><h3>&#128274; GPS-verified only</h3><p>Commission counts only on delivered, GPS-proven trips. No fake volume, no clawback drama &mdash; a 15-day clearing window keeps it clean.</p></div>
+<div class="ag-card reveal"><h3>&#128200; Recurring by design</h3><p>You earn on load #1 and on load #500. Your income grows with your clients&rsquo; business &mdash; so helping them win literally pays you.</p></div>
+<div class="ag-card reveal"><h3>&#128101; 5 levels deep</h3><p>Recruit other agents: you earn overrides on their chains too &mdash; 1% / 0.5% / 0.25% / 0.15% / 0.10% down five levels.</p></div>
+</div>
+<div class="reveal" style="text-align:center;margin-top:36px">
+<a class="ag-cta" href="contact.html" style="background:#0883F7">Apply now &mdash; reply &ldquo;I&rsquo;M IN&rdquo; &rarr;</a>
+<div style="color:#64748B;font-size:.85rem;margin-top:12px">Or email <b>hello@loadboot.com</b> with subject &ldquo;Agent Program&rdquo; &mdash; we set up your account and walk you through the dashboard in 15 minutes.</div>
+</div>
+</div></section>'''
+
+_ag_faq_html, _ag_faq_sch = faq_block([
+ ('How do I get my referral link?', 'Apply, and we create your agent account. Your dashboard shows your personal link (loadboot.com/?ref=YOURCODE). Anyone who joins LoadBoot through that link is permanently credited to you - the system records it automatically at signup.'),
+ ('When do I start earning?', 'The moment your chain is ACTIVE - meaning you have referred at least one pair (a broker + a carrier, or a shipper + a broker). From then on, every GPS-verified delivered load involving your referred clients credits 1% of the gross load value to your account.'),
+ ('Is it really recurring - every load, forever?', 'Yes. This is not a one-time signup bonus. As long as your referred clients keep moving freight on LoadBoot, every delivered load pays your commission. Your book of clients is your asset.'),
+ ('Who pays my commission - do my clients pay extra?', 'No. Your commission comes out of LoadBoot&rsquo;s own service fee. Your broker and carrier pay exactly what they would pay anyway.'),
+ ('How and when am I paid?', 'Commissions become payable after a 15-day clearing window (protects against cancelled or disputed loads), and payouts run monthly from a $100 minimum balance - bank transfer or Payoneer.'),
+ ('Do I need a dispatch license or MC authority?', 'No. You are an independent agent, not a broker of record. You connect people; LoadBoot&rsquo;s licensed marketplace handles the freight, documents and payments.'),
+])
+
+_ag_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Independent Agent — Trucking Marketplace (Commission, Remote)","description":"Bring brokers, carriers and shippers to the LoadBoot marketplace in pairs and earn 1% of every delivered load your chain touches — recurring, uncapped, paid monthly. The software does the dispatch: live load board, GPS tracking, automatic invoicing and payments. You own the relationships.","datePosted":"2026-07-12","employmentType":"CONTRACTOR","hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":0,"maxValue":10000}},"directApply":true}</script>'
+
+page('agents.html', 'Become a LoadBoot Agent — Earn 1% of Every Load, Recurring | Independent Dispatchers',
+ 'Commission role for independent dispatchers: bring a broker + carrier pair to LoadBoot and earn 1% of every GPS-verified delivered load — recurring, no cap, paid monthly. The software does the dispatch; you own the relationships.',
+ 'partners.html', AGENT_BODY + _ag_faq_html + final_cta(), _ag_job_schema + _ag_faq_sch)
+RELATED['agents.html'] = [('referral.html','Referral Program'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
+
+
 # ---- Resources ----
 resr = svc_hero('Carrier Resources', 'Free tools, guides and answers to help you run a stronger trucking business &mdash; whether you dispatch with us or not.')
 _ls_visual = ('<div style="background:linear-gradient(150deg,#10223B,#1e293b);border-radius:20px;padding:28px;color:#fff;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -28px rgba(15,23,42,.6)">'
@@ -4170,7 +4287,7 @@ _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
-  ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
+  ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
 _sm_body = svc_hero('Sitemap', 'Every page on Loadboot, in one place.')
