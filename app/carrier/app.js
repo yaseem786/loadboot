@@ -758,9 +758,73 @@ async function agentPortal(user) {
         ]));
       }
     } else if (tab === 'chain') {
-      mount(content, h('div', null, [banner9(), h('div', { style: 'height:12px' }), agCard('🔗 Your chain — live', chainRows())]));
+      const CH = window.__agch = window.__agch || { q: '', side: 'all', sort: 'newest', show: 30 };
+      const all9 = Array.isArray(feed.chain) ? feed.chain.slice() : [];
+      const now9 = Date.now();
+      const days9 = (x9) => x9.last_activity ? Math.round((now9 - new Date(x9.last_activity).getTime()) / 86400000) : 999;
+      const health9 = (x9) => { const dd9 = days9(x9); const nn9 = (now9 - new Date(x9.joined_at || 0).getTime()) / 86400000;
+        return nn9 < 7 && !(x9.trips_delivered || 0) ? ['🆕 NEW', 'rgba(8,131,247,.15)', '#3b9dff']
+          : dd9 <= 7 ? ['🔥 ACTIVE', 'rgba(34,197,94,.15)', '#4ade80']
+          : dd9 <= 30 ? ['🌤 QUIET ' + dd9 + 'd', 'rgba(245,158,11,.15)', '#fbbf24']
+          : ['😴 IDLE ' + dd9 + 'd', 'rgba(239,68,68,.15)', '#f87171']; };
+      // KPI strip
+      const act9 = all9.filter((x9) => days9(x9) <= 7).length, idle9 = all9.filter((x9) => days9(x9) > 30).length;
+      const earnTot9 = all9.reduce((a9, x9) => a9 + Number(x9.your_earnings || 0), 0);
+      // filter/sort
+      let list9 = all9.filter((x9) => (CH.side === 'all' || (CH.side === 'carrier' ? x9.side === 'carrier' : x9.side !== 'carrier'))
+        && (!CH.q || String(x9.org || '').toLowerCase().includes(CH.q.toLowerCase())));
+      if (CH.sort === 'newest') list9.sort((a9, b9) => new Date(b9.joined_at || 0) - new Date(a9.joined_at || 0));
+      else if (CH.sort === 'earnings') list9.sort((a9, b9) => Number(b9.your_earnings || 0) - Number(a9.your_earnings || 0));
+      else if (CH.sort === 'delivered') list9.sort((a9, b9) => (b9.trips_delivered || 0) - (a9.trips_delivered || 0));
+      else if (CH.sort === 'idle') list9.sort((a9, b9) => days9(b9) - days9(a9));
+      const qIn9 = h('input', { class: 'cp-in', placeholder: '🔍 Search your clients…', style: 'margin:0;flex:1;min-width:180px' });
+      qIn9.value = CH.q; qIn9.oninput = () => { CH.q = qIn9.value; render(); };
+      const mkSel9 = (val9, opts9, on9, w9) => { const e9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;width:' + (w9 || '150px') }, opts9.map(([v9, l9]) => h('option', { value: v9 }, l9))); e9.value = val9; e9.onchange = () => on9(e9.value); return e9; };
+      const nudge9 = (x9) => x9.side === 'carrier'
+        ? 'Salaam! Quick one — the board has fresh ' + '(your lanes)' + ' loads today, zero ghost posts, detention auto-paid with GPS proof. Jump in: loadboot.com/app/carrier/ — I\u2019m here if you need anything.'
+        : 'Hi! Reminder — posting on LoadBoot takes 2 minutes and verified carriers book in one tap (GPS tracking + auto paperwork included). Post one today: loadboot.com/app/partner/ — I\u2019ll personally watch it get covered.';
+      const row9x = (x9) => { const hb9 = health9(x9); return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 14px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+        h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
+          h('div', { style: 'flex:1;min-width:200px' }, [
+            h('div', { style: 'font-weight:800;font-size:.95rem' }, (x9.side === 'carrier' ? '🚛 ' : '🏢 ') + (x9.org || '')),
+            h('div', { class: 'cp-row-s' }, x9.side + ' · joined ' + (x9.joined_at ? new Date(x9.joined_at).toLocaleDateString() : '') + ' · last activity ' + (days9(x9) >= 999 ? '—' : days9(x9) === 0 ? 'today' : days9(x9) + 'd ago')),
+          ]),
+          h('span', { class: 'cp-pill', style: 'background:' + hb9[1] + ';color:' + hb9[2] + ';font-weight:800' }, hb9[0]),
+          h('b', { style: 'color:#4ade80;font-size:1.02rem' }, money9(x9.your_earnings)),
+        ]),
+        h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
+          h('span', { class: 'cp-row-s' }, '📦 ' + (x9.loads_posted || 0) + ' posted'),
+          h('span', { class: 'cp-row-s' }, '✓ ' + (x9.trips_delivered || 0) + ' delivered'),
+          h('span', { style: 'flex:1' }),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { window.__agLoadFilter = x9.org; go('loads'); } }, '📦 View loads'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { await navigator.clipboard.writeText(nudge9(x9)); ev9.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev9.currentTarget.textContent = '👋 Nudge'; }, 1400); } catch (_) { alert(nudge9(x9)); } } }, '👋 Nudge'),
+        ]),
+      ]); };
+      mount(content, h('div', null, [
+        banner9(), h('div', { style: 'height:12px' }),
+        h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px' }, [
+          tile9('Clients', String(all9.length)), tile9('Active 7d', String(act9), true), tile9('Idle 30d+', String(idle9)), tile9('Earned total', money9(earnTot9), true)]),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px' }, [
+          qIn9,
+          mkSel9(CH.side, [['all', 'All sides'], ['carrier', '🚛 Carriers'], ['broker', '🏢 Brokers/Shippers']], (v9) => { CH.side = v9; render(); }),
+          mkSel9(CH.sort, [['newest', 'Newest first'], ['earnings', '💰 Top earnings'], ['delivered', '✓ Most delivered'], ['idle', '😴 Idle first']], (v9) => { CH.sort = v9; render(); }, '170px'),
+        ]),
+        list9.length ? h('div', null, list9.slice(0, CH.show).map(row9x)) : h('div', { class: 'cp-muted', style: 'margin-top:10px' }, all9.length ? 'No client matches that search/filter.' : 'Nobody yet — copy an invite from the Dashboard link card and send it to the broker or carrier you already know.'),
+        list9.length > CH.show ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:10px', onClick: () => { CH.show += 50; render(); } }, '↓ Show ' + Math.min(50, list9.length - CH.show) + ' more (' + (list9.length - CH.show) + ' left)') : null,
+        h('div', { class: 'cp-row-s', style: 'margin-top:12px;background:rgba(8,131,247,.07);border-radius:10px;padding:9px 12px' }, '💡 Pro move: sort by 😴 Idle first once a week and Nudge everyone quiet for 14+ days — reactivated clients are the cheapest money in this business.'),
+      ].filter(Boolean)));
     } else if (tab === 'loads') {
-      mount(content, agCard('📦 Chain loads — live', loadRows()));
+      const f9 = window.__agLoadFilter || '';
+      const rows9 = f9 ? (Array.isArray(feed.loads) ? feed.loads : []).filter((x9) => (x9.broker === f9) || (x9.booked_by === f9)) : null;
+      mount(content, h('div', null, [
+        f9 ? h('div', { style: 'display:flex;gap:8px;align-items:center;margin-bottom:8px' }, [
+          h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff;font-weight:800' }, 'Filtered: ' + f9),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { window.__agLoadFilter = ''; render(); } }, '✕ Clear'),
+        ]) : null,
+        agCard('📦 Chain loads — live', f9
+          ? (rows9.length ? rows9.map((x9) => loadRows.call ? null : null) : null) || (rows9.length ? (() => { const keep9 = feed.loads; feed.loads = rows9; const out9 = loadRows(); feed.loads = keep9; return out9; })() : [h('div', { class: 'cp-muted' }, 'No loads for ' + f9 + ' yet.')])
+          : loadRows()),
+      ].filter(Boolean)));
     } else if (tab === 'earnings') {
       const hostE = agCard('💰 Commission ledger', [h('div', { class: 'cp-muted' }, 'Loading…')]);
       mount(content, h('div', null, [
