@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, card, money, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
-import { opsRadar, ccPayPendingFees, payConfirmReceived, ccAgentsQueue, ccAgentDecide } from '../../shared/api.js';
+import { opsRadar, ccPayPendingFees, payConfirmReceived, ccAgentsQueue, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError } from '../../shared/errors.js';
 
@@ -34,6 +34,12 @@ export function renderRadar(host) {
           el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget; if (!confirm('Approve this agent? Their chain starts earning immediately.')) return; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'approve', null); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✓ Approve'),
           el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const nt9 = prompt('What info is needed? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'info', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '？ More info'),
           el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const nt9 = prompt('Reject — why? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'reject', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✕ Reject'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async () => {
+            let th9 = []; try { th9 = (await ccAgentMsgs(x.user_id)) || []; } catch (_) {}
+            const hist9 = th9.length ? th9.map((m9) => (m9.sender === 'staff' ? 'CC' : 'Agent') + ' (' + new Date(m9.at).toLocaleString() + '): ' + m9.body).join('\n') : '(no messages yet)';
+            const rep9 = prompt('💬 Thread with ' + (x.name || 'agent') + ':\n\n' + hist9 + '\n\nReply (agent gets a notification):');
+            if (rep9 && rep9.trim()) { try { await ccAgentMsgSend(x.user_id, rep9.trim()); alert('Sent ✓'); } catch (e9) { alert((e9 && e9.message) || 'Failed.'); } }
+          } }, '💬 Message'),
         ]),
       ]))),
     ]) : '';

@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
@@ -478,7 +478,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification ✓' : 'Get Verified', 'shield'], ['post', 'Post a Load', 'loads'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Post a Load', 'loads'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
   let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -673,12 +673,44 @@ async function agentPortal(user) {
                 agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
       ]));
     } else if (tab === 'verify') {
+      // ---- VERIFICATION CENTER shared widgets (tracker + CC thread) ----
+      const obDocs9 = (ob && ob.docs) || {};
+      const itemRow9 = (lbl9, ok9, hint9) => h('div', { class: 'cp-row' }, [
+        h('div', null, [h('div', { class: 'cp-row-t' }, lbl9), hint9 ? h('div', { class: 'cp-row-s' }, hint9) : null].filter(Boolean)),
+        ok9 ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing'),
+      ]);
+      const trackerCard9 = () => agCard('📋 Submission tracker — what CC sees', [
+        itemRow9('Identity (name + mobile)', !!(obProfile && (obProfile.full_name || '').trim() && (obProfile.phone || '').trim())),
+        itemRow9('Full address + country', !!(obProfile && (obProfile.country || '').trim() && (obProfile.street || '').trim() && (obProfile.city || '').trim())),
+        itemRow9('Network profile', !!(obProfile && obProfile.network && Object.keys(obProfile.network).length), 'lanes/equipment — matching engine seed'),
+        itemRow9('Payout method + tax form', !!(obProfile && (obProfile.payout_method || '').trim() && (obProfile.tax_form || '').trim())),
+        itemRow9('Government photo ID', !!obDocs9.id_doc),
+        itemRow9('Bank proof document', !!obDocs9.bank_doc),
+        itemRow9('Agent Agreement e-signed', !!(obProfile && obProfile.agreement_signed_at), obProfile && obProfile.agreement_name ? 'signed: ' + obProfile.agreement_name : null),
+      ]);
+      const tl9 = () => { const steps9 = [['Submitted', ['under_review','info_needed','approved','rejected'].includes(obStatus)], ['Under review', ['under_review','info_needed'].includes(obStatus) || obStatus === 'approved' || obStatus === 'rejected'], ['Decision', obStatus === 'approved' || obStatus === 'rejected' || obStatus === 'info_needed'], ['Active', obStatus === 'approved']];
+        return h('div', { style: 'display:flex;gap:6px;margin-bottom:12px' }, steps9.map(([nm9, on9], i9) => h('div', { style: 'flex:1;text-align:center;font-size:.68rem;font-weight:800;padding:7px 4px;border-radius:9px;background:' + (on9 ? (nm9 === 'Active' ? 'rgba(34,197,94,.2)' : 'rgba(8,131,247,.2)') : 'rgba(255,255,255,.05)') + ';color:' + (on9 ? (nm9 === 'Active' ? '#4ade80' : '#7cc0ff') : '#64748b') }, (i9 + 1) + '. ' + nm9))); };
+      const threadCard9 = () => { const host9 = agCard('💬 Talk to LoadBoot dispatch — about YOUR verification', [h('div', { class: 'cp-muted' }, 'Loading…')]);
+        (async () => {
+          let msgs9 = []; try { msgs9 = (await agentMsgList()) || []; } catch (_) {}
+          const list9 = h('div', { style: 'max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 0' },
+            msgs9.length ? msgs9.map((m9) => h('div', { style: 'max-width:85%;padding:8px 12px;border-radius:12px;font-size:.85rem;line-height:1.55;' + (m9.sender === 'agent' ? 'align-self:flex-end;background:rgba(8,131,247,.2);color:#dbeafe' : 'align-self:flex-start;background:rgba(255,255,255,.07);color:#e6edf8') }, [
+              h('div', null, m9.body), h('div', { style: 'font-size:.62rem;opacity:.6;margin-top:3px' }, (m9.sender === 'agent' ? 'You' : 'LoadBoot dispatch') + ' · ' + (m9.at ? new Date(m9.at).toLocaleString() : ''))]))
+            : [h('div', { class: 'cp-muted' }, 'No messages yet — ask anything about your verification, documents or the program. Dispatch replies here and you get a notification.')]);
+          const inp9 = h('input', { class: 'cp-in', placeholder: 'Type a message to dispatch…', style: 'flex:1;margin:0' });
+          const send9 = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => {
+            if (!inp9.value.trim()) return; const b9 = ev9.currentTarget; b9.disabled = true;
+            try { await agentMsgSend(inp9.value.trim()); inp9.value = ''; render(); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
+          } }, 'Send');
+          mount(host9, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💬 Talk to LoadBoot dispatch')]), list9, h('div', { style: 'display:flex;gap:8px;margin-top:8px' }, [inp9, send9])]);
+        })();
+        return host9; };
       const W = window.__agw = window.__agw || { step: 0, d: Object.assign({ full_name: feed.name || '', network: {} }, obProfile || {}) };
       const d = W.d;
       const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:#e6edf8' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
-      if (obStatus === 'under_review') { mount(content, agCard('🛡 Verification', [stEl('⏳ UNDER REVIEW', 'LoadBoot dispatch is reviewing your application — usually under 24 hours. You will get an in-app + email decision. Your link works meanwhile; earnings switch on at approval.', 'warn'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Download your signed agreement (PDF)')])); return; }
-      if (obStatus === 'approved') { mount(content, agCard('🛡 Verification', [stEl('✅ VERIFIED AGENT', 'Your chain earns on every delivered load. Nothing more needed here.', 'ok'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Download your signed agreement (PDF)')])); return; }
-      if (obStatus === 'rejected') { mount(content, agCard('🛡 Verification', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')])); return; }
+      if (obStatus === 'under_review') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('⏳ UNDER REVIEW', 'LoadBoot dispatch is reviewing your application — usually under 24 hours. You will get an in-app + email decision. Your link works meanwhile; earnings switch on at approval.', 'warn'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Download your signed agreement (PDF)')]), trackerCard9(), threadCard9()])); return; }
+      if (obStatus === 'approved') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✅ VERIFIED AGENT', 'Your chain earns on every delivered load.', 'ok'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Download your signed agreement (PDF)')]), trackerCard9(), threadCard9()])); return; }
+      if (obStatus === 'rejected') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')]), threadCard9()])); return; }
       const fld = (lbl9, key9, ph9, type9) => { const i9 = h('input', { class: 'cp-in', type: type9 || 'text', placeholder: ph9 || '' }); i9.value = d[key9] || ''; i9.oninput = () => { d[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
       const steps9 = ['Identity', 'Your network', 'Payout & agreement'];
       const bar9 = h('div', { style: 'display:flex;gap:8px;margin-bottom:14px' }, steps9.map((nm9, i9) => h('div', { style: 'flex:1;text-align:center;font-size:.72rem;font-weight:800;padding:7px;border-radius:9px;background:' + (i9 === W.step ? '#0883F7' : 'rgba(255,255,255,.06)') + ';color:' + (i9 === W.step ? '#fff' : '#7f92b3') }, (i9 + 1) + '. ' + nm9)));
@@ -771,12 +803,12 @@ async function agentPortal(user) {
           location.reload();
         } catch (e9) { b9.disabled = false; b9.textContent = 'Submit for review'; err9.textContent = (e9 && e9.message) || 'Failed.'; }
       } }, W.step < 2 ? 'Next →' : 'Submit for review');
-      mount(content, agCard('🛡 Get Verified — 3 steps, 5 minutes', [
+      mount(content, h('div', null, [agCard('🛡 Verification Center — 3 steps, 5 minutes', [
         h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'Verification unlocks earnings: LoadBoot dispatch approves every agent (usually <24h). Your link already works — joins are recorded; commissions release at approval.'),
         obStatus === 'info_needed' ? stEl('⚠ MORE INFO NEEDED', (obProfile && obProfile.review_note) || '', 'warn') : null,
         bar9, body9, err9,
         h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [backB, nextB].filter(Boolean)),
-      ].filter(Boolean)));
+      ].filter(Boolean)), trackerCard9(), threadCard9()]));
     } else if (tab === 'post') {
       if (isVerified && feed.own_broker_org) {
         mount(content, agCard('📦 Post a load — the full broker wizard', [
