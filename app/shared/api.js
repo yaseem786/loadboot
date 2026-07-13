@@ -318,6 +318,7 @@ export const agentClaimUpline = (code) => rpc('agent_claim_upline', { p_code: co
 export const ccAgentsList = () => rpc('cc_agents_list', {});
 export const ccAgent360 = (user) => rpc('cc_agent_360', { p_user: user });
 export const ccAgentNotifySend = (user, title, body, email) => rpc('cc_agent_notify_send', { p_user: user, p_title: title, p_body: body, p_email: !!email });
+export const ccAgentDocReview = (user, doc, action, reason) => rpc('cc_agent_doc_review', { p_user: user, p_doc: doc, p_action: action, p_reason: reason ?? null });
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });

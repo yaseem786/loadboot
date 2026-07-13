@@ -701,8 +701,20 @@ async function agentPortal(user) {
         itemRow9('Full address + country', !!(obProfile && (obProfile.country || '').trim() && (obProfile.street || '').trim() && (obProfile.city || '').trim())),
         itemRow9('Network profile', !!(obProfile && obProfile.network && Object.keys(obProfile.network).length), 'lanes/equipment — matching engine seed'),
         itemRow9('Payout method + tax form', !!(obProfile && (obProfile.payout_method || '').trim() && (obProfile.tax_form || '').trim())),
-        itemRow9('Government photo ID', !!obDocs9.id_doc),
-        itemRow9('Bank proof document', !!obDocs9.bank_doc),
+        (() => { const st9 = obDocs9.id_doc_status || 'pending';
+          return h('div', { class: 'cp-row' }, [
+            h('div', null, [h('div', { class: 'cp-row-t' }, 'Government photo ID'), st9 === 'rejected' && obDocs9.id_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:#f87171' }, '✕ ' + obDocs9.id_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
+            !obDocs9.id_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing')
+              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ accepted')
+              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ rejected')
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending review')]); })(),
+        (() => { const st9 = obDocs9.bank_doc_status || 'pending';
+          return h('div', { class: 'cp-row' }, [
+            h('div', null, [h('div', { class: 'cp-row-t' }, 'Bank proof document'), st9 === 'rejected' && obDocs9.bank_doc_reason ? h('div', { class: 'cp-row-s', style: 'color:#f87171' }, '✕ ' + obDocs9.bank_doc_reason + ' — re-upload in step 3') : null].filter(Boolean)),
+            !obDocs9.bank_doc ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ missing')
+              : st9 === 'accepted' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ accepted')
+              : st9 === 'rejected' ? h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '✕ rejected')
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending review')]); })(),
         itemRow9('Agent Agreement e-signed', !!(obProfile && obProfile.agreement_signed_at), obProfile && obProfile.agreement_name ? 'signed: ' + obProfile.agreement_name : null),
       ]);
       const tl9 = () => { const steps9 = [['Submitted', ['under_review','info_needed','approved','rejected'].includes(obStatus)], ['Under review', ['under_review','info_needed'].includes(obStatus) || obStatus === 'approved' || obStatus === 'rejected'], ['Decision', obStatus === 'approved' || obStatus === 'rejected' || obStatus === 'info_needed'], ['Active', obStatus === 'approved']];
