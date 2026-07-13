@@ -4744,6 +4744,9 @@ async function boot() {
   _hadSession = true; watchAuth();
   try { mountOfflineBanner(); } catch (_) {}
   let user = null; try { user = await getUser(); } catch (_) {}
+  // /app/agent/ is the AGENT product — never render the carrier portal here,
+  // even if this login also owns a carrier org (agents are a separate persona).
+  if (window.__LB_AGENT) { notCarrier(); return; }
   appView(user);
 }
 
