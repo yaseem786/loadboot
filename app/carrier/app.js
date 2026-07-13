@@ -527,7 +527,41 @@ async function agentPortal(user) {
     const k = feed.kpis || {}; const tt = feed.totals || {};
     if (tab === 'dashboard') {
       const notices = (Array.isArray(feed.notices) ? feed.notices : []).slice(0, 8);
+      // ---- verification status card — front and centre until fully approved ----
+      const obDone = {
+        identity: !!(obProfile && (obProfile.full_name || '').trim() && (obProfile.phone || '').trim()),
+        network: !!(obProfile && obProfile.network && Object.keys(obProfile.network).length),
+        payout: !!(obProfile && (obProfile.payout_method || '').trim() && (obProfile.tax_form || '').trim()),
+        signed: !!(obProfile && obProfile.agreement_signed_at),
+      };
+      const obCount = Object.values(obDone).filter(Boolean).length;
+      const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? '#4ade80' : '#94a3b8') }, (ok9 ? '✓ ' : '○ ') + lbl9);
+      const verifyCard =
+        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, '🛡 Verified agent — payouts unlocked.')
+        : obStatus === 'under_review' ? h('div', { style: 'background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
+            h('div', { style: 'font-weight:800;color:#7cc0ff' }, '⏳ Verification UNDER REVIEW'),
+            h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot dispatch is reviewing your application — usually under 24 hours. Your link works; earnings switch on at approval.')])
+        : obStatus === 'info_needed' ? h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
+            h('div', { style: 'font-weight:800;color:#fbbf24' }, '⚠ Verification — more info needed'),
+            h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, (obProfile && obProfile.review_note) || ''),
+            h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('verify') }, 'Update & resubmit →')])
+        : obStatus === 'rejected' ? h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fca5a5;font-weight:700' }, '✕ Application not approved — ' + ((obProfile && obProfile.review_note) || 'contact support.'))
+        : isVerified ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, '🛡 Verified agent — payouts unlocked.')
+        : h('div', { style: 'background:linear-gradient(120deg,rgba(252,83,5,.14),rgba(8,131,247,.1));border:1.5px solid rgba(252,83,5,.5);border-radius:14px;padding:16px 18px;margin-bottom:12px' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
+              h('div', null, [
+                h('div', { style: 'font-weight:900;font-size:1.02rem;color:#fff' }, '🛡 Complete your verification — ' + obCount + ' of 4 steps done'),
+                h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
+                  obStep('Identity', obDone.identity), obStep('Network', obDone.network), obStep('Payout & tax', obDone.payout), obStep('Agreement signed', obDone.signed)]),
+                h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Earnings stay locked until LoadBoot approves you. Your link works meanwhile — joins are recorded.'),
+              ]),
+              h('button', { class: 'cp-btn', style: 'background:#FC5305;flex:none', onClick: () => go('verify') }, obCount ? 'Continue verification →' : 'Start verification →'),
+            ]),
+            h('div', { style: 'height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
+              h('div', { style: 'height:100%;width:' + (obCount * 25) + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
+          ]);
       mount(content, h('div', null, [
+        verifyCard,
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [
           tile9('Referred', String(k.referred || 0)), tile9('Brokers', String(k.brokers || 0)), tile9('Carriers', String(k.carriers || 0)),
           tile9('Clearing', money9(tt.accrued)), tile9('Payable', money9(tt.payable), true), tile9('Paid', money9(tt.paid), true)]),
