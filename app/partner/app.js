@@ -2402,7 +2402,8 @@ async function brokerDash(user, ov) {
                 mount(host9, rqs9.map((rq9, i9) => {
                   const t9 = rq9.trust || {};
                   const exp9 = rq9.expires_at ? Math.max(0, Math.round((new Date(rq9.expires_at).getTime() - Date.now()) / 60000)) : null;
-                  return h('div', { style: 'display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1.5px solid ' + (i9 === 0 ? '#fdba74' : '#e2e8f0') + ';border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 10px 28px -24px rgba(2,12,30,.35)' }, [
+                  const err9 = h('div', { style: 'display:none;width:100%;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:9px 12px;font-size:.82rem;color:#991b1b' });
+                return h('div', { style: 'display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1.5px solid ' + (i9 === 0 ? '#fdba74' : '#e2e8f0') + ';border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 10px 28px -24px rgba(2,12,30,.35)' }, [
                     h('div', { style: 'width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-weight:800;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex:none' }, String(rq9.carrier || 'C').replace(/Carrier /, '').charAt(0)),
                     h('div', { style: 'min-width:0;flex:1' }, [
                       h('div', { style: 'font-weight:800;color:#10223B' }, rq9.carrier || 'Carrier'),
@@ -2419,7 +2420,15 @@ async function brokerDash(user, ov) {
                       h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a;color:#fff;font-weight:800;padding:9px 18px', onClick: async (e9) => {
                         e9.currentTarget.disabled = true; e9.currentTarget.textContent = 'Booking\u2026';
                         try { await decideBookRequest(rq9.id, 'approve', null); closeR9(); pToast('\u2713 Booked to ' + (rq9.carrier || 'the carrier') + ' \u2014 rate con + dispatch pack fire automatically; other requests closed.', { kind: 'ok', title: '\ud83d\ude9a Booked' }); loadList(); }
-                        catch (e2) { e9.currentTarget.disabled = false; e9.currentTarget.textContent = '\u2713 Approve & book'; alert((e2 && e2.message) || 'Failed'); }
+                        catch (e2) {
+                          e9.currentTarget.disabled = false; e9.currentTarget.textContent = '\u2713 Approve & book';
+                          const m9 = (e2 && e2.message) || 'Failed';
+                          err9.style.display = 'block';
+                          mount(err9, h('div', null, [
+                            h('div', null, '\u26a0 ' + m9),
+                            /rate conf/i.test(m9) ? h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:7px', onClick: () => { closeR9(); brokerDocs(l); } }, '\ud83d\udcc4 Open Docs \u2014 sign the rate confirmation') : null,
+                          ].filter(Boolean)));
+                        }
                       } }, '\u2713 Approve & book'),
                       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (e9) => {
                         const why9 = prompt('Optional \u2014 reason for declining (the carrier sees this):') || null;
@@ -2428,6 +2437,7 @@ async function brokerDash(user, ov) {
                         catch (e2) { e9.currentTarget.disabled = false; alert((e2 && e2.message) || 'Failed'); }
                       } }, 'Decline'),
                     ]),
+                    err9,
                   ]);
                 }));
               };
