@@ -4209,6 +4209,17 @@ function packetAgreementCards(skipPacket) {
       agFormBox9,
       h('div', { style: 'height:14px' }),
       myLoadsCard,
+      h('div', { style: 'height:14px' }),
+      // MONEY DUTIES: on YOUR posted loads you stand where the broker stands —
+      // carrier claims (detention/layover/lumper/TONU/assist/stop-off) come to YOU to approve/reject,
+      // and payables (freight on delivery + approved claims) are YOURS to pay via the pay rail.
+      h('div', { style: 'border-radius:14px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.35);padding:12px 16px;margin-bottom:2px' }, [
+        h('div', { style: 'font-weight:900;color:#fdba74' }, '💼 Your broker duties on posted loads'),
+        h('div', { style: 'color:#cbb69f;font-size:.8rem;margin-top:3px;line-height:1.6' }, 'Carrier claims (detention · layover · lumper · TONU · driver assist · stop-off) land below with GPS evidence and the exact rate-card amount — you Approve or Reject them, exactly like a broker. Delivered freight + approved claims become DUE items you pay through the pay rail (bank details → transfer → upload receipt → carrier confirms). You collect from your LOAD SOURCE — LoadBoot verifies both sides.'),
+      ]),
+      payablesCard(),
+      h('div', { style: 'height:14px' }),
+      claimsCard(),
     ].filter(Boolean)));
   })();
 }
