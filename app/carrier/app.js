@@ -819,16 +819,67 @@ async function agentPortal(user) {
         h('div', { class: 'cp-row-s', style: 'margin-top:12px;background:rgba(8,131,247,.07);border-radius:10px;padding:9px 12px' }, '💡 Pro move: sort by 😴 Idle first once a week and Nudge everyone quiet for 14+ days — reactivated clients are the cheapest money in this business.'),
       ].filter(Boolean)));
     } else if (tab === 'loads') {
-      const f9 = window.__agLoadFilter || '';
-      const rows9 = f9 ? (Array.isArray(feed.loads) ? feed.loads : []).filter((x9) => (x9.broker === f9) || (x9.booked_by === f9)) : null;
+      const LD = window.__agld = window.__agld || { q: '', st: 'all', side: 'all', sort: 'newest', show: 30 };
+      if (window.__agLoadFilter) { LD.q = window.__agLoadFilter; window.__agLoadFilter = ''; }
+      const all9 = Array.isArray(feed.loads) ? feed.loads.slice() : [];
+      const stOf9 = (x9) => x9.delivered_at ? 'delivered' : x9.trip_status ? 'booked' : 'posted';
+      let list9 = all9.filter((x9) =>
+        (LD.st === 'all' || stOf9(x9) === LD.st)
+        && (LD.side === 'all'
+          || (LD.side === 'own' && x9.own_post)
+          || (LD.side === 'broker' && x9.broker_yours && !x9.own_post)
+          || (LD.side === 'carrier' && x9.booked_by_yours)
+          || (LD.side === 'double' && x9.broker_yours && x9.booked_by_yours))
+        && (!LD.q || ((x9.lane || '') + ' ' + (x9.broker || '') + ' ' + (x9.booked_by || '')).toLowerCase().includes(LD.q.toLowerCase())));
+      if (LD.sort === 'newest') list9.sort((a9, b9) => new Date(b9.posted_at || 0) - new Date(a9.posted_at || 0));
+      else if (LD.sort === 'rate') list9.sort((a9, b9) => Number(b9.rate || 0) - Number(a9.rate || 0));
+      else if (LD.sort === 'cut') list9.sort((a9, b9) => Number(b9.your_commission || 0) - Number(a9.your_commission || 0));
+      const cnt9 = { posted: 0, booked: 0, delivered: 0 }; let cutT9 = 0;
+      all9.forEach((x9) => { cnt9[stOf9(x9)]++; cutT9 += Number(x9.your_commission || 0); });
+      const qIn9 = h('input', { class: 'cp-in', placeholder: '🔍 Lane ya company…', style: 'margin:0;flex:1;min-width:170px' });
+      qIn9.value = LD.q; qIn9.oninput = () => { LD.q = qIn9.value; render(); };
+      const mkSel9 = (val9, opts9, on9, w9) => { const e9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;width:' + (w9 || '150px') }, opts9.map(([v9, l9]) => h('option', { value: v9 }, l9))); e9.value = val9; e9.onchange = () => on9(e9.value); return e9; };
+      const fmtD9 = (x9) => x9 ? new Date(x9).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      const row9 = (x9) => {
+        const st9 = stOf9(x9);
+        const clearBy9 = x9.delivered_at ? new Date(new Date(x9.delivered_at).getTime() + 15 * 86400000) : null;
+        return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 14px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+          h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
+            h('div', { style: 'flex:1;min-width:210px' }, [
+              h('div', { style: 'font-weight:800;font-size:.95rem' }, (x9.lane || '') + (x9.rate ? ' · $' + Number(x9.rate).toLocaleString() : '')),
+              h('div', { class: 'cp-row-s' }, [
+                x9.own_post ? '📝 YOUR post' : ('🏢 ' + (x9.broker || '—') + (x9.broker_yours ? ' ★yours' : '')),
+                x9.booked_by ? ' · 🚛 ' + x9.booked_by + (x9.booked_by_yours ? ' ★YOURS' : '') : '',
+                (x9.broker_yours || x9.own_post) && x9.booked_by_yours ? ' · ⚡ double chain' : '',
+              ].join('')),
+            ]),
+            st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ DELIVERED')
+              : st9 === 'booked' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff;font-weight:800' }, '🚛 MOVING')
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, '📦 ON BOARD'),
+          ]),
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:.74rem;color:#8fa3bf;font-weight:700' }, [
+            h('span', null, '📦 posted ' + fmtD9(x9.posted_at)),
+            x9.booked_at ? h('span', null, '→ 🚛 booked ' + fmtD9(x9.booked_at)) : null,
+            x9.delivered_at ? h('span', null, '→ ✓ delivered ' + fmtD9(x9.delivered_at)) : null,
+            h('span', { style: 'flex:1' }),
+            Number(x9.your_commission) ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80;font-weight:800' }, '💰 your 1% = ' + money9(x9.your_commission) + (clearBy9 && clearBy9 > new Date() ? ' · clears ~' + fmtD9(clearBy9) : ' · cleared'))
+              : st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:#fbbf24' }, '⏳ 1% crediting…') : null,
+          ].filter(Boolean)),
+        ]);
+      };
       mount(content, h('div', null, [
-        f9 ? h('div', { style: 'display:flex;gap:8px;align-items:center;margin-bottom:8px' }, [
-          h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff;font-weight:800' }, 'Filtered: ' + f9),
-          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { window.__agLoadFilter = ''; render(); } }, '✕ Clear'),
-        ]) : null,
-        agCard('📦 Chain loads — live', f9
-          ? (rows9.length ? rows9.map((x9) => loadRows.call ? null : null) : null) || (rows9.length ? (() => { const keep9 = feed.loads; feed.loads = rows9; const out9 = loadRows(); feed.loads = keep9; return out9; })() : [h('div', { class: 'cp-muted' }, 'No loads for ' + f9 + ' yet.')])
-          : loadRows()),
+        h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px' }, [
+          tile9('Loads', String(all9.length)), tile9('On board', String(cnt9.posted)), tile9('Moving', String(cnt9.booked)), tile9('Delivered', String(cnt9.delivered), true), tile9('Your cut (these)', money9(cutT9), true)]),
+        h('div', { class: 'cp-row-s', style: 'background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.22);border-radius:11px;padding:9px 12px;margin-bottom:8px;font-weight:700' },
+          '💰 Money flow: ✓ DELIVERED → 1% auto-credits your account → 15-day clearing → PAYABLE → payout request unlocks at $100 (Payouts tab). Sab automatic — aap kuch nahi karte.'),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px' }, [
+          qIn9,
+          mkSel9(LD.st, [['all', 'All statuses'], ['posted', '📦 On board'], ['booked', '🚛 Moving'], ['delivered', '✓ Delivered']], (v9) => { LD.st = v9; render(); }),
+          mkSel9(LD.side, [['all', 'All involvement'], ['own', '📝 My posts'], ['broker', '🏢 My brokers'], ['carrier', '🚛 My carriers'], ['double', '⚡ Double chain']], (v9) => { LD.side = v9; render(); }, '170px'),
+          mkSel9(LD.sort, [['newest', 'Newest'], ['rate', '$ Rate'], ['cut', '💰 My cut']], (v9) => { LD.sort = v9; render(); }, '120px'),
+        ]),
+        list9.length ? h('div', null, list9.slice(0, LD.show).map(row9)) : h('div', { class: 'cp-muted', style: 'margin-top:10px' }, all9.length ? 'Koi load is filter par nahi.' : 'Loads your clients post or haul appear here live: ON BOARD → MOVING → DELIVERED (+ your cut).'),
+        list9.length > LD.show ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:10px', onClick: () => { LD.show += 50; render(); } }, '↓ Show ' + Math.min(50, list9.length - LD.show) + ' more (' + (list9.length - LD.show) + ' left)') : null,
       ].filter(Boolean)));
     } else if (tab === 'earnings') {
       const hostE = agCard('💰 Commission ledger', [h('div', { class: 'cp-muted' }, 'Loading…')]);
