@@ -3877,6 +3877,8 @@ function packetAgreementCards(skipPacket) {
     account: [accountCard()],
   };
   let btab = (location.hash || '').replace('#', '') || 'dashboard';
+  let __openPostOnBoot = false;
+  if (btab === 'post') { btab = 'dashboard'; __openPostOnBoot = true; try { history.replaceState(null, '', '#dashboard'); } catch (_) {} }
   if (!BNAV.some((n) => n[0] === btab)) btab = 'dashboard';
   const bLinks = {};
   const bNavEl = h('nav', { class: 'cp-nav' }, BNAV.map(([id, label, ic9]) => {
@@ -3923,6 +3925,7 @@ function packetAgreementCards(skipPacket) {
     document.head.appendChild(st);
   }
   let postFoldOpen = false;
+  if (typeof __openPostOnBoot !== 'undefined' && __openPostOnBoot) { postFoldOpen = true; setTimeout(() => { try { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} }, 700); }
   const postFoldBanner = () => h('div', { style: 'cursor:pointer;border-radius:18px;overflow:hidden;background:#fff;border:1px solid #e6ebf3;box-shadow:0 12px 32px -24px rgba(16,34,59,.18);margin-bottom:14px', onClick: () => { postFoldOpen = true; brender(); } }, [
     h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;flex-wrap:wrap' }, [
       h('div', { style: 'display:flex;gap:12px;align-items:center' }, [
