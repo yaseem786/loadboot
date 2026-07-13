@@ -33,7 +33,8 @@ import { openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
-import { payInstructions, payMarkSent, payDueItems, ccLoadStops } from '../shared/api.js';
+import { payInstructions, payMarkSent, payDueItems, ccLoadStops, isMyOrgAgent } from '../shared/api.js';
+(async () => { try { window.__lbAgentOrg = !!(await isMyOrgAgent()); } catch (_) { window.__lbAgentOrg = false; } })();
 
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
@@ -1529,6 +1530,24 @@ async function brokerDash(user, ov) {
         };
         paintStops();
         body.appendChild(stopsHost);
+        // ---- AGENT-POSTED LOAD: the SOURCE of this freight is mandatory (who really pays) ----
+        if (window.__lbAgentOrg) {
+          const srcF = (lbl9, key9, ph9) => { const i9 = h('input', { class: 'cp-in', type: 'text', placeholder: ph9 || '', style: 'margin:0;flex:1;min-width:180px' }); i9.value = w[key9] || ''; i9.oninput = () => { w[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
+          const srcSel = h('select', { class: 'cp-in', style: 'margin:0' }, [['', 'Where is this load from? *'], ['my_broker', 'My referred broker'], ['other_broker', 'Another broker'], ['shipper_direct', 'Shipper direct']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+          srcSel.value = w.src_type || ''; srcSel.onchange = () => { w.src_type = srcSel.value; };
+          body.appendChild(h('div', { style: 'grid-column:1/-1;margin-top:12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:12px 14px' }, [
+            h('div', { style: 'font-weight:800;color:#c2410c' }, '🧾 LOAD SOURCE — required for agent-posted loads'),
+            h('div', { class: 'cp-sub', style: 'margin:3px 0 8px' }, 'You are posting as an AGENT: name the real broker/shipper who pays this load. Dispatch verifies it, and their rate confirmation + billing contact are due within 2 HOURS of posting (overdue pauses your postings). Wrong/fake source = program termination.'),
+            h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+              h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Source type *'), srcSel]),
+              srcF('Source company name *', 'src_company', 'e.g. Apex Logistics LLC'),
+              srcF('Source MC / DOT #', 'src_mc', 'e.g. MC-123456'),
+              srcF('Source contact name *', 'src_contact', ''),
+              srcF('Source email *', 'src_email', 'ap@company.com'),
+              srcF('Source phone', 'src_phone', ''),
+            ]),
+          ]));
+        }
         body.appendChild(h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '🇺🇸 Type the street address and pick a suggestion — city, state and ZIP fill in, real driving miles calculate automatically and the exact pin powers GPS tracking. Carriers on the board see only the City, ST; the full address goes on the rate confirmation after booking.'));
       } catch (_) {}
     }
@@ -2050,6 +2069,12 @@ async function brokerDash(user, ov) {
         if (!(w.d_city || '').trim()) need.push('delivery city');
         if (!/^[A-Za-z]{2}$/.test((w.d_state || '').trim())) need.push('delivery state (2 letters)');
         if (!/^\d{5}(-\d{4})?$/.test((w.d_zip || '').trim())) need.push('delivery ZIP (5 digits)');
+        if (window.__lbAgentOrg) {
+          if (!w.src_type) need.push('load source type (agent posts must name the source)');
+          if (!(w.src_company || '').trim()) need.push('source company name');
+          if (!(w.src_contact || '').trim()) need.push('source contact name');
+          if (!/.+@.+\..+/.test(w.src_email || '')) need.push('source email');
+        }
         if (w.__lane_block) { err.textContent = '🚫 One of your extra stops is far OFF this lane — the route balloons past what any carrier runs as one trip. Remove that stop (post it as its own load) to continue.'; return; }
         (Array.isArray(w.stops) ? w.stops : []).forEach((sp0, i0) => {
           const any0 = (sp0.street || sp0.city || sp0.address || '').trim();
@@ -2229,8 +2254,9 @@ async function brokerDash(user, ov) {
         payload.hazmat_info = w.hazmat_info || null;
         payload.accessorials = { detention_per_hr: String(w.acc_detention_per_hr), detention_free_hours: String(w.acc_detention_free_hours), layover_per_day: String(w.acc_layover_per_day), tonu: String(w.acc_tonu), driver_assist: w.acc_driver_assist ? String(w.acc_driver_assist) : null, extra_stop: w.acc_extra_stop ? String(w.acc_extra_stop) : null, lumper_policy: w.acc_lumper_policy, lumper_at: [w.lumper_pickup ? 'pickup' : null, w.lumper_delivery ? 'delivery' : null].filter(Boolean).join(',') || null, driver_assist_at: [w.assist_pickup ? 'pickup' : null, w.assist_delivery ? 'delivery' : null].filter(Boolean).join(',') || null, fcfs: w.fcfs ? 'true' : 'false' };
         ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu', 'acc_driver_assist', 'acc_extra_stop', 'acc_lumper_policy'].forEach(k => delete payload[k]);
+        if (window.__lbAgentOrg) payload.details_load_source = null; // marker (details built below)
         payload.stops = (Array.isArray(w.stops) ? w.stops.filter((sp) => sp && sp.lat && sp.lng) : []);
-        payload.details = { stops: payload.stops, load_size: w.load_size || null, pallets: w.pallets || null, temperature: w.temperature || null, tarps: w.tarps || null,
+        payload.details = { load_source: window.__lbAgentOrg ? { type: w.src_type || null, company: (w.src_company || '').trim() || null, mc: (w.src_mc || '').trim() || null, contact: (w.src_contact || '').trim() || null, email: (w.src_email || '').trim() || null, phone: (w.src_phone || '').trim() || null } : undefined, stops: payload.stops, load_size: w.load_size || null, pallets: w.pallets || null, temperature: w.temperature || null, tarps: w.tarps || null,
           load_method_pickup: w.load_method_pickup || null, load_method_delivery: w.load_method_delivery || null,
           driver_assist_required: !!w.driver_assist_required, team_required: !!w.team_required, cargo_value: w.cargo_value || null,
           dock_hours_pickup: w.dock_hours_pickup || null, dock_hours_delivery: w.dock_hours_delivery || null,

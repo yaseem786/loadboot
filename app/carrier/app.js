@@ -689,7 +689,7 @@ async function agentPortal(user) {
         const rows = (await myReferralEarnings(100)) || [];
         mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💰 Commission ledger')]),
           rows.length ? h('div', null, rows.map((x) => h('div', { class: 'cp-row' }, [
-            h('div', null, [h('div', { class: 'cp-row-t' }, money9(x.amount) + ' · level ' + (x.level || 1)), h('div', { class: 'cp-row-s' }, (x.source || x.source_org || '') + ' · ' + (x.accrued_at ? new Date(x.accrued_at).toLocaleDateString() : ''))]),
+            h('div', null, [h('div', { class: 'cp-row-t' }, money9(x.amount) + ' · ' + ((x.level || 1) === 1 ? 'direct client (1%)' : 'level ' + x.level + ' override — recruited agent\u2019s chain')), h('div', { class: 'cp-row-s' }, (x.source || x.source_org || '') + ' · ' + (x.accrued_at ? new Date(x.accrued_at).toLocaleDateString() : ''))]),
             pill(x.status)]))) : h('div', { class: 'cp-muted' }, 'Commissions appear here per delivered load — 1% of gross, 15-day clearing, then payable.')]);
       } catch (_) { mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💰 Commission ledger')]), h('div', { class: 'cp-muted' }, 'Could not load.')]); }
     } else if (tab === 'payouts') {
