@@ -289,7 +289,7 @@ function authScreen() {
   const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
   const err = h('div', { class: 'cp-err' });
   const title = h('h1', null, 'Welcome back');
-  const sub = h('p', { class: 'cp-auth-sub' }, 'Sign in to your carrier portal.');
+  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your AGENT dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
   const forgot = h('p', { class: 'cp-auth-toggle', style: 'margin-top:8px' },
@@ -616,7 +616,7 @@ async function appView(user) {
 
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Carrier' })),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: window.__LB_AGENT ? 'Agent' : 'Carrier' })),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
