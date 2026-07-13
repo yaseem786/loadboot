@@ -780,7 +780,7 @@ async function agentPortal(user) {
               fld('SSN or EIN *', 'tax_tin', 'XXX-XX-XXXX / XX-XXXXXXX'),
               fld('Business name (if different)', 'tax_biz', ''),
             ]),
-            h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Address wahi use hoga jo Step 1 mein diya. Aap ki neeche wali e-signature is W-9 (substitute) par bhi lagti hai — certification included (backup withholding & TIN correctness).'),
+            h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Your Step-1 address is used on the form. Your e-signature below also signs this W-9 (substitute) — certification included (backup withholding & TIN correctness).'),
           ]) : null,
           d.tax_form === 'w8ben' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, '🧾 W-8BEN (substitute) — non-US person'),
@@ -789,22 +789,24 @@ async function agentPortal(user) {
               fld('Foreign tax ID (CNIC/NTN etc.)', 'tax_tin', ''),
               fld('Date of birth *', 'tax_dob', 'YYYY-MM-DD'),
             ]),
-            h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Aap ki neeche wali e-signature is W-8BEN (substitute) par bhi lagti hai — certification of foreign status included.'),
+            h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Your e-signature below also signs this W-8BEN (substitute) — certification of foreign status included.'),
           ]) : null,
           // ---- verification documents: govt ID + bank proof ----
           h('div', { style: 'margin-top:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:12px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, '📎 Verification documents (required)'),
-            h('div', { class: 'cp-row-s', style: 'margin:3px 0 8px' }, 'Payouts sirf verified identity par jaate hain — fraud se sab ki hifazat.'),
+            h('div', { class: 'cp-row-s', style: 'margin:3px 0 8px' }, 'Payouts only go to a verified identity — this protects everyone from fraud.'),
             h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap' }, [
               (() => { const i9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.8rem' });
                 const st9 = h('span', { class: 'cp-row-s' }, d.id_doc ? '✓ uploaded' : '');
                 i9.onchange = async () => { const f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…';
-                  try { const m9 = await uploadDocument(f9, 'agent_id'); d.id_doc = m9.path; d.id_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; } catch (e9) { st9.textContent = (e9 && e9.message) || 'failed'; } };
+                  const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_id'); d.id_doc = m9.path; d.id_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
+                  try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('ID upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — check internet/ad-blocker and retry'; } } };
                 return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Government photo ID * (passport / CNIC / licence)'), i9, st9]); })(),
               (() => { const i9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.8rem' });
                 const st9 = h('span', { class: 'cp-row-s' }, d.bank_doc ? '✓ uploaded' : '');
                 i9.onchange = async () => { const f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…';
-                  try { const m9 = await uploadDocument(f9, 'agent_bank'); d.bank_doc = m9.path; d.bank_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; } catch (e9) { st9.textContent = (e9 && e9.message) || 'failed'; } };
+                  const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_bank'); d.bank_doc = m9.path; d.bank_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
+                  try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('bank-proof upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — check internet/ad-blocker and retry'; } } };
                 return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9]); })(),
             ]),
           ]),
@@ -824,17 +826,17 @@ async function agentPortal(user) {
       const backB = W.step > 0 ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { W.step--; render(); } }, '← Back') : null;
       const nextB = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => {
         err9.textContent = '';
-        if (W.step === 0 && (!String(d.full_name || '').trim() || String(d.phone || '').replace(/\D/g, '').length < 7 || !d.country || !String(d.street || '').trim() || !String(d.city || '').trim())) { err9.textContent = 'Name, mobile, country, street address aur city — sab required hain.'; return; }
+        if (W.step === 0 && (!String(d.full_name || '').trim() || String(d.phone || '').replace(/\D/g, '').length < 7 || !d.country || !String(d.street || '').trim() || !String(d.city || '').trim())) { err9.textContent = 'Name, mobile, country, street address and city are all required.'; return; }
         if (W.step < 2) { try { await agentSaveOnboarding(d, false); } catch (_) {} W.step++; render(); return; }
         if (!d.payout_method || !d.tax_form || !String(d.agreement_name || '').trim()) { err9.textContent = 'Payout method, tax form and your typed signature are required.'; return; }
-        if (!String(d.payout_title || '').trim()) { err9.textContent = 'Account title (aap ke legal name se match) required hai.'; return; }
-        if (!d.id_doc || !d.bank_doc) { err9.textContent = 'Government ID aur bank proof — dono documents upload karo.'; return; }
-        if (d.payout_method === 'ach' && (!String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name, routing aur account number required.'; return; }
-        if (d.payout_method === 'intl' && (!String(d.payout_iban || '').trim() || !String(d.payout_swift || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name, IBAN aur SWIFT required.'; return; }
-        if (d.payout_method === 'payoneer' && (!/.+@.+\..+/.test(d.payout_email || '') || !String(d.payout_bank || '').trim() || !String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim())) { err9.textContent = 'Payoneer: email + receiving bank name, routing aur account number sab required (Payoneer app → Global Payment Service).'; return; }
-        if (d.payout_method === 'other' && !String(d.payout_other || '').trim()) { err9.textContent = 'Apna payout method describe karo.'; return; }
-        if (d.tax_form === 'w9' && (!d.tax_class || !String(d.tax_tin || '').trim())) { err9.textContent = 'W-9: tax classification aur SSN/EIN required.'; return; }
-        if (d.tax_form === 'w8ben' && (!String(d.tax_citizen || '').trim() || !String(d.tax_dob || '').trim())) { err9.textContent = 'W-8BEN: citizenship country aur date of birth required.'; return; }
+        if (!String(d.payout_title || '').trim()) { err9.textContent = 'Account title is required (must match your legal name).'; return; }
+        if (!d.id_doc || !d.bank_doc) { err9.textContent = 'Upload both documents — government ID and bank proof.'; return; }
+        if (d.payout_method === 'ach' && (!String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name, routing and account number are required.'; return; }
+        if (d.payout_method === 'intl' && (!String(d.payout_iban || '').trim() || !String(d.payout_swift || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name, IBAN and SWIFT are required.'; return; }
+        if (d.payout_method === 'payoneer' && (!/.+@.+\..+/.test(d.payout_email || '') || !String(d.payout_bank || '').trim() || !String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim())) { err9.textContent = 'Payoneer: email + receiving bank name, routing and account number are all required (Payoneer app → Global Payment Service).'; return; }
+        if (d.payout_method === 'other' && !String(d.payout_other || '').trim()) { err9.textContent = 'Describe your payout method.'; return; }
+        if (d.tax_form === 'w9' && (!d.tax_class || !String(d.tax_tin || '').trim())) { err9.textContent = 'W-9: tax classification and SSN/EIN are required.'; return; }
+        if (d.tax_form === 'w8ben' && (!String(d.tax_citizen || '').trim() || !String(d.tax_dob || '').trim())) { err9.textContent = 'W-8BEN: country of citizenship and date of birth are required.'; return; }
         const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Submitting…';
         try {
           d.payout_details = { account_title: d.payout_title || null, bank_name: d.payout_bank || null, email: d.payout_email || null, routing: d.payout_routing || null, account: d.payout_account || null, iban: d.payout_iban || null, swift: d.payout_swift || null, bank_address: d.payout_bank_addr2 || d.payout_bank_addr || null, other: d.payout_other || null, id_doc: d.id_doc || null, id_doc_name: d.id_doc_name || null, bank_doc: d.bank_doc || null, bank_doc_name: d.bank_doc_name || null, tax: { form: d.tax_form || null, classification: d.tax_class || null, tin: d.tax_tin || null, business_name: d.tax_biz || null, citizenship: d.tax_citizen || null, dob: d.tax_dob || null } };
@@ -938,7 +940,7 @@ async function agentPortal(user) {
       else if (LD.sort === 'cut') list9.sort((a9, b9) => Number(b9.your_commission || 0) - Number(a9.your_commission || 0));
       const cnt9 = { posted: 0, booked: 0, delivered: 0 }; let cutT9 = 0;
       all9.forEach((x9) => { cnt9[stOf9(x9)]++; cutT9 += Number(x9.your_commission || 0); });
-      const qIn9 = h('input', { class: 'cp-in', placeholder: '🔍 Lane ya company…', style: 'margin:0;flex:1;min-width:170px' });
+      const qIn9 = h('input', { class: 'cp-in', placeholder: '🔍 Search lane or company…', style: 'margin:0;flex:1;min-width:170px' });
       qIn9.value = LD.q; qIn9.oninput = () => { LD.q = qIn9.value; render(); };
       const mkSel9 = (val9, opts9, on9, w9) => { const e9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;width:' + (w9 || '150px') }, opts9.map(([v9, l9]) => h('option', { value: v9 }, l9))); e9.value = val9; e9.onchange = () => on9(e9.value); return e9; };
       const fmtD9 = (x9) => x9 ? new Date(x9).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
@@ -973,14 +975,14 @@ async function agentPortal(user) {
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px' }, [
           tile9('Loads', String(all9.length)), tile9('On board', String(cnt9.posted)), tile9('Moving', String(cnt9.booked)), tile9('Delivered', String(cnt9.delivered), true), tile9('Your cut (these)', money9(cutT9), true)]),
         h('div', { class: 'cp-row-s', style: 'background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.22);border-radius:11px;padding:9px 12px;margin-bottom:8px;font-weight:700' },
-          '💰 Money flow: ✓ DELIVERED → 1% auto-credits your account → 15-day clearing → PAYABLE → payout request unlocks at $100 (Payouts tab). Sab automatic — aap kuch nahi karte.'),
+          '💰 Money flow: ✓ DELIVERED → 1% auto-credits your account → 15-day clearing → PAYABLE → payout request unlocks at $100 (Payouts tab). Fully automatic — you do nothing.'),
         h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px' }, [
           qIn9,
           mkSel9(LD.st, [['all', 'All statuses'], ['posted', '📦 On board'], ['booked', '🚛 Moving'], ['delivered', '✓ Delivered']], (v9) => { LD.st = v9; render(); }),
           mkSel9(LD.side, [['all', 'All involvement'], ['own', '📝 My posts'], ['broker', '🏢 My brokers'], ['carrier', '🚛 My carriers'], ['double', '⚡ Double chain']], (v9) => { LD.side = v9; render(); }, '170px'),
           mkSel9(LD.sort, [['newest', 'Newest'], ['rate', '$ Rate'], ['cut', '💰 My cut']], (v9) => { LD.sort = v9; render(); }, '120px'),
         ]),
-        list9.length ? h('div', null, list9.slice(0, LD.show).map(row9)) : h('div', { class: 'cp-muted', style: 'margin-top:10px' }, all9.length ? 'Koi load is filter par nahi.' : 'Loads your clients post or haul appear here live: ON BOARD → MOVING → DELIVERED (+ your cut).'),
+        list9.length ? h('div', null, list9.slice(0, LD.show).map(row9)) : h('div', { class: 'cp-muted', style: 'margin-top:10px' }, all9.length ? 'No loads match this filter.' : 'Loads your clients post or haul appear here live: ON BOARD → MOVING → DELIVERED (+ your cut).'),
         list9.length > LD.show ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:10px', onClick: () => { LD.show += 50; render(); } }, '↓ Show ' + Math.min(50, list9.length - LD.show) + ' more (' + (list9.length - LD.show) + ' left)') : null,
       ].filter(Boolean)));
     } else if (tab === 'earnings') {
@@ -1018,7 +1020,7 @@ async function agentPortal(user) {
               ]),
               h('span', { class: 'cp-pill', style: 'background:' + m9[1] + ';color:' + m9[2] + ';font-weight:800' }, m9[0]),
               (r9.status === 'paid' || r9.status === 'sent' || r9.status === 'approved') ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
-                try { await agentConfirmPayoutReceived(r9.id); lbToast('Confirmed — shukriya!', 'success', '✓ Received'); render(); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
+                try { await agentConfirmPayoutReceived(r9.id); lbToast('Confirmed — thank you!', 'success', '✓ Received'); render(); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
               } }, '✓ I received it') : null,
             ].filter(Boolean)),
           ]); });
