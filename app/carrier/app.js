@@ -468,6 +468,131 @@ function referralPayoutUI(wrap, r) {
   loadHist();
 }
 
+// ---------- AGENT PORTAL — its own organized shell (sidebar nav + header + pages) ----------
+async function agentPortal(user) {
+  let feed = null; try { feed = await agentFeed(); } catch (_) {}
+  let r0 = null; try { r0 = await myReferral(); } catch (_) {}
+  if (!feed || !feed.has_code) { notCarrier(); return; }
+  const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
+  let tab = (location.hash || '').replace('#', '') || 'dashboard';
+  if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
+  const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
+  const content = h('div', { class: 'cp-content' });
+  const links = {};
+  const nav = h('nav', { class: 'cp-nav' }, AGNAV.map(([id, label, ic]) => {
+    const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
+    links[id] = a; return a;
+  }));
+  const agCard = (t9, kids9) => h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
+  const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;text-align:center' }, [
+    h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
+    h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
+  const banner9 = () => feed.pair_active
+    ? h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:11px 14px;font-weight:800;color:#4ade80' }, '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.')
+    : h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:11px 14px;font-weight:700;color:#fbbf24' }, '⏳ CHAIN PENDING — bring the missing side of your pair (a broker + a carrier) to switch earnings on.');
+  const linkCard = () => agCard('🔗 Your referral link', [
+    h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Code'), h('b', null, feed.code)]),
+    h('div', { class: 'cp-row-s', style: 'word-break:break-all;margin:4px 0 8px' }, feed.link),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+      h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { try { await navigator.clipboard.writeText(feed.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(feed.link); } } }, 'Copy link'),
+      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const t9 = 'I moved my freight ops to LoadBoot — post a load and verified carriers book it in one tap, GPS-tracked with automatic paperwork. Join free with my link: ' + feed.link; try { await navigator.clipboard.writeText(t9); ev.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev.currentTarget.textContent = '📋 Broker invite'; }, 1400); } catch (_) { alert(t9); } } }, '📋 Broker invite'),
+      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const t9 = 'Real loads, zero ghost posts — booked loads vanish from the board instantly. GPS proof gets your detention PAID. Free verified account, join with my link: ' + feed.link; try { await navigator.clipboard.writeText(t9); ev.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev.currentTarget.textContent = '📋 Carrier invite'; }, 1400); } catch (_) { alert(t9); } } }, '📋 Carrier invite'),
+    ]),
+  ]);
+  const chainRows = () => (Array.isArray(feed.chain) && feed.chain.length) ? feed.chain.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+      h('div', { style: 'flex:1;min-width:190px' }, [
+        h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
+        h('div', { class: 'cp-row-s' }, x.side + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
+      ]), h('b', { style: 'color:#4ade80' }, money9(x.your_earnings)),
+    ])) : [h('div', { class: 'cp-muted' }, 'Nobody yet — copy an invite from your link card and send it to the broker or carrier you already know.')];
+  const loadRows = () => {
+    const loads = Array.isArray(feed.loads) ? feed.loads : [];
+    if (!loads.length) return [h('div', { class: 'cp-muted' }, 'Loads your clients post or haul appear here live: POSTED → BOOKED → DELIVERED (+ your cut).')];
+    return loads.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+      h('div', { style: 'flex:1;min-width:200px' }, [
+        h('div', { class: 'cp-row-t' }, (x.lane || '') + (x.rate ? ' · $' + Number(x.rate).toLocaleString() : '')),
+        h('div', { class: 'cp-row-s' }, 'broker: ' + (x.broker || '—') + (x.broker_yours ? ' ★yours' : '') + (x.booked_by ? ' · carrier: ' + x.booked_by + (x.booked_by_yours ? ' ★YOURS — double chain ✓' : '') : '') + (Number(x.your_commission) ? ' · your cut ' + money9(x.your_commission) : '')),
+      ]),
+      x.delivered_at ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ DELIVERED')
+        : x.trip_status ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff' }, '🚛 BOOKED')
+        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '📦 POSTED'),
+    ]));
+  };
+  async function render() {
+    const k = feed.kpis || {}; const tt = feed.totals || {};
+    if (tab === 'dashboard') {
+      const notices = (Array.isArray(feed.notices) ? feed.notices : []).slice(0, 8);
+      mount(content, h('div', null, [
+        h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [
+          tile9('Referred', String(k.referred || 0)), tile9('Brokers', String(k.brokers || 0)), tile9('Carriers', String(k.carriers || 0)),
+          tile9('Clearing', money9(tt.accrued)), tile9('Payable', money9(tt.payable), true), tile9('Paid', money9(tt.paid), true)]),
+        banner9(),
+        h('div', { style: 'height:12px' }),
+        linkCard(),
+        agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
+      ]));
+    } else if (tab === 'chain') {
+      mount(content, h('div', null, [banner9(), h('div', { style: 'height:12px' }), agCard('🔗 Your chain — live', chainRows())]));
+    } else if (tab === 'loads') {
+      mount(content, agCard('📦 Chain loads — live', loadRows()));
+    } else if (tab === 'earnings') {
+      const hostE = agCard('💰 Commission ledger', [h('div', { class: 'cp-muted' }, 'Loading…')]);
+      mount(content, h('div', null, [
+        h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [tile9('Clearing', money9(tt.accrued)), tile9('Payable', money9(tt.payable), true), tile9('Paid', money9(tt.paid), true)]),
+        hostE]));
+      try {
+        const rows = (await myReferralEarnings(100)) || [];
+        mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💰 Commission ledger')]),
+          rows.length ? h('div', null, rows.map((x) => h('div', { class: 'cp-row' }, [
+            h('div', null, [h('div', { class: 'cp-row-t' }, money9(x.amount) + ' · level ' + (x.level || 1)), h('div', { class: 'cp-row-s' }, (x.source || x.source_org || '') + ' · ' + (x.accrued_at ? new Date(x.accrued_at).toLocaleDateString() : ''))]),
+            pill(x.status)]))) : h('div', { class: 'cp-muted' }, 'Commissions appear here per delivered load — 1% of gross, 15-day clearing, then payable.')]);
+      } catch (_) { mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💰 Commission ledger')]), h('div', { class: 'cp-muted' }, 'Could not load.')]); }
+    } else if (tab === 'payouts') {
+      const wrapP = h('div');
+      mount(content, h('div', null, [r0 ? agCard('📊 Program stats', [buildReferralStats(r0)]) : null, agCard('🏦 Payouts', [wrapP])].filter(Boolean)));
+      if (r0) referralPayoutUI(wrapP, r0);
+    } else if (tab === 'resources') {
+      mount(content, h('div', null, [
+        linkCard(),
+        agCard('📚 How the program works', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '1% of gross on every GPS-verified DELIVERED load your chain touches · pair (broker + carrier) activates earnings · 15-day clearing window · monthly payouts from $100 · your cut comes out of LoadBoot’s own fee — your clients never pay extra · full program details: loadboot.com/agents.html'),
+        ]),
+      ]));
+    }
+  }
+  function go(id) { tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
+    const it = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it ? it[1] : 'Dashboard';
+    (async () => { try { feed = (await agentFeed()) || feed; } catch (_) {} render(); })();
+  }
+  const shell = h('div', { class: 'cp-shell' }, [
+    h('aside', { class: 'cp-side' }, [
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Agent' })),
+      nav,
+      h('div', { class: 'cp-side-foot' }, [
+        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || 'Agent'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
+        h('button', { class: 'cp-side-out', onClick: async (ev) => { ev.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
+      ]),
+    ]),
+    h('main', { class: 'cp-main' }, [
+      h('header', { class: 'cp-top' }, [
+        h('div', { class: 'cp-top-left' }, [titleEl]),
+        h('div', { class: 'cp-top-right' }, [
+          feed.pair_active ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✅ Chain active')
+            : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, '⏳ Pair pending'),
+        ]),
+      ]),
+      content,
+    ]),
+  ]);
+  mount(root, shell);
+  Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
+  const it0 = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it0 ? it0[1] : 'Dashboard';
+  render();
+  root.setAttribute('aria-busy', 'false');
+}
+
 function notCarrier() {
   const card = h('div', { class: 'cp-auth-card' }, [
     h('h1', null, 'No carrier account'),
@@ -4746,7 +4871,7 @@ async function boot() {
   let user = null; try { user = await getUser(); } catch (_) {}
   // /app/agent/ is the AGENT product — never render the carrier portal here,
   // even if this login also owns a carrier org (agents are a separate persona).
-  if (window.__LB_AGENT) { notCarrier(); return; }
+  if (window.__LB_AGENT) { agentPortal(user); return; }
   appView(user);
 }
 
