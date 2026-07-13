@@ -4152,15 +4152,20 @@ function packetAgreementCards(skipPacket) {
     let isAgentWs = false; try { isAgentWs = !!(await isMyOrgAgent()); } catch (_) {}
     if (!isAgentWs) return;
     postFoldOpen = true;
-    mount(root, h('div', { style: 'max-width:1100px;margin:0 auto;padding:16px 14px 40px' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap' }, [
+    const embedded9 = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
+    if (embedded9) {
+      // seamless inside the agent portal: same dark canvas, no double branding, no outer chrome
+      try { document.body.style.background = '#0d1526'; document.documentElement.style.background = '#0d1526'; } catch (_) {}
+    }
+    mount(root, h('div', { style: 'max-width:1100px;margin:0 auto;padding:' + (embedded9 ? '4px 6px 30px' : '16px 14px 40px') }, [
+      embedded9 ? null : h('div', { style: 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap' }, [
         brandLogo({ dark: false, sub: 'Agent posting' }),
         h('div', { class: 'cp-sub', style: 'flex:1;min-width:220px' }, 'Post a load and track it exactly like a broker — everything else lives in your Agent dashboard.'),
       ]),
       form,
       h('div', { style: 'height:14px' }),
       myLoadsCard,
-    ]));
+    ].filter(Boolean)));
   })();
 }
 

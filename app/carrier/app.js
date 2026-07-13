@@ -870,7 +870,7 @@ async function agentPortal(user) {
         mount(content, h('div', null, [
           h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.3);border-radius:11px;padding:9px 12px;font-weight:700' },
             '📦 The FULL broker wizard, right here in your workspace (“' + (feed.name || 'Agent') + ' (Agent)”) — multi-stop, schedule, rate card, 🎯 direct-carrier targeting. Every post carries your LOAD SOURCE details and is reviewed by dispatch. When it DELIVERS, your 1% lands automatically. ' ),
-          h('iframe', { src: '/app/partner/#post', style: 'width:100%;height:calc(100vh - 210px);min-height:640px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:#fff' }),
+          h('iframe', { src: '/app/partner/#post', style: 'width:100%;height:calc(100vh - 210px);min-height:640px;border:0;border-radius:16px;background:#0d1526' }),
           h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, [
             'Prefer a full tab? ', h('a', { href: '/app/partner/#post', target: '_blank', rel: 'noopener', style: 'color:#7cc0ff;font-weight:700' }, 'Open the workspace in a new tab →'),
           ]),
