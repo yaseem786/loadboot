@@ -488,6 +488,9 @@ async function agentPortal(user) {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
     links[id] = a; return a;
   }));
+  const SIDE9 = { carrier: ['🚛', 'Carrier'], broker: ['🏢', 'Broker'], shipper: ['🏭', 'Shipper'] };
+  const sideIc9 = (k9) => (SIDE9[k9] || ['🏢', k9 || ''])[0];
+  const sideLb9 = (k9) => (SIDE9[k9] || ['🏢', String(k9 || '')])[1];
   const agCard = (t9, kids9) => h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, t9)]), ...(Array.isArray(kids9) ? kids9 : [kids9])].filter(Boolean));
   const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;text-align:center' }, [
     h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
@@ -542,8 +545,8 @@ async function agentPortal(user) {
   ]);
   const chainRows = () => (Array.isArray(feed.chain) && feed.chain.length) ? feed.chain.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
       h('div', { style: 'flex:1;min-width:190px' }, [
-        h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
-        h('div', { class: 'cp-row-s' }, x.side + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
+        h('div', { class: 'cp-row-t' }, sideIc9(x.side) + ' ' + (x.org || '')),
+        h('div', { class: 'cp-row-s' }, sideLb9(x.side) + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
       ]), h('b', { style: 'color:#4ade80' }, money9(x.your_earnings)),
     ])) : [h('div', { class: 'cp-muted' }, 'Nobody yet — copy an invite from your link card and send it to the broker or carrier you already know.')];
   const loadRows = () => {
@@ -598,7 +601,7 @@ async function agentPortal(user) {
       mount(content, h('div', null, [
         verifyCard,
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [
-          tile9('Referred', String(k.referred || 0)), tile9('Brokers', String(k.brokers || 0)), tile9('Carriers', String(k.carriers || 0)),
+          tile9('Referred', String(k.referred || 0)), tile9('Brokers', String(k.brokers || 0)), tile9('Shippers', String(k.shippers || 0)), tile9('Carriers', String(k.carriers || 0)),
           tile9('Clearing', money9(tt.accrued)), tile9('Payable', money9(tt.payable), true), tile9('Paid', money9(tt.paid), true)]),
         banner9(),
         h('div', { style: 'height:12px' }),
@@ -771,7 +774,7 @@ async function agentPortal(user) {
       const act9 = all9.filter((x9) => days9(x9) <= 7).length, idle9 = all9.filter((x9) => days9(x9) > 30).length;
       const earnTot9 = all9.reduce((a9, x9) => a9 + Number(x9.your_earnings || 0), 0);
       // filter/sort
-      let list9 = all9.filter((x9) => (CH.side === 'all' || (CH.side === 'carrier' ? x9.side === 'carrier' : x9.side !== 'carrier'))
+      let list9 = all9.filter((x9) => (CH.side === 'all' || x9.side === CH.side)
         && (!CH.q || String(x9.org || '').toLowerCase().includes(CH.q.toLowerCase())));
       if (CH.sort === 'newest') list9.sort((a9, b9) => new Date(b9.joined_at || 0) - new Date(a9.joined_at || 0));
       else if (CH.sort === 'earnings') list9.sort((a9, b9) => Number(b9.your_earnings || 0) - Number(a9.your_earnings || 0));
@@ -780,14 +783,16 @@ async function agentPortal(user) {
       const qIn9 = h('input', { class: 'cp-in', placeholder: '🔍 Search your clients…', style: 'margin:0;flex:1;min-width:180px' });
       qIn9.value = CH.q; qIn9.oninput = () => { CH.q = qIn9.value; render(); };
       const mkSel9 = (val9, opts9, on9, w9) => { const e9 = h('select', { class: 'cp-in', style: 'margin:0;flex:none;width:' + (w9 || '150px') }, opts9.map(([v9, l9]) => h('option', { value: v9 }, l9))); e9.value = val9; e9.onchange = () => on9(e9.value); return e9; };
-      const nudge9 = (x9) => x9.side === 'carrier'
+      const nudge9 = (x9) => x9.side === 'shipper'
+        ? 'Hi! Your freight can be on a verified truck within hours — request a shipment on LoadBoot and brokers quote it with GPS tracking + documented settlement built in: loadboot.com/app/partner/ — I\u2019ll watch it personally.'
+        : x9.side === 'carrier'
         ? 'Salaam! Quick one — the board has fresh ' + '(your lanes)' + ' loads today, zero ghost posts, detention auto-paid with GPS proof. Jump in: loadboot.com/app/carrier/ — I\u2019m here if you need anything.'
         : 'Hi! Reminder — posting on LoadBoot takes 2 minutes and verified carriers book in one tap (GPS tracking + auto paperwork included). Post one today: loadboot.com/app/partner/ — I\u2019ll personally watch it get covered.';
       const row9x = (x9) => { const hb9 = health9(x9); return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:12px 14px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
         h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
           h('div', { style: 'flex:1;min-width:200px' }, [
-            h('div', { style: 'font-weight:800;font-size:.95rem' }, (x9.side === 'carrier' ? '🚛 ' : '🏢 ') + (x9.org || '')),
-            h('div', { class: 'cp-row-s' }, x9.side + ' · joined ' + (x9.joined_at ? new Date(x9.joined_at).toLocaleDateString() : '') + ' · last activity ' + (days9(x9) >= 999 ? '—' : days9(x9) === 0 ? 'today' : days9(x9) + 'd ago')),
+            h('div', { style: 'font-weight:800;font-size:.95rem' }, sideIc9(x9.side) + ' ' + (x9.org || '')),
+            h('div', { class: 'cp-row-s' }, sideLb9(x9.side) + ' · joined ' + (x9.joined_at ? new Date(x9.joined_at).toLocaleDateString() : '') + ' · last activity ' + (days9(x9) >= 999 ? '—' : days9(x9) === 0 ? 'today' : days9(x9) + 'd ago')),
           ]),
           h('span', { class: 'cp-pill', style: 'background:' + hb9[1] + ';color:' + hb9[2] + ';font-weight:800' }, hb9[0]),
           h('b', { style: 'color:#4ade80;font-size:1.02rem' }, money9(x9.your_earnings)),
@@ -806,7 +811,7 @@ async function agentPortal(user) {
           tile9('Clients', String(all9.length)), tile9('Active 7d', String(act9), true), tile9('Idle 30d+', String(idle9)), tile9('Earned total', money9(earnTot9), true)]),
         h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px' }, [
           qIn9,
-          mkSel9(CH.side, [['all', 'All sides'], ['carrier', '🚛 Carriers'], ['broker', '🏢 Brokers/Shippers']], (v9) => { CH.side = v9; render(); }),
+          mkSel9(CH.side, [['all', 'All sides'], ['carrier', '🚛 Carriers'], ['broker', '🏢 Brokers'], ['shipper', '🏭 Shippers']], (v9) => { CH.side = v9; render(); }),
           mkSel9(CH.sort, [['newest', 'Newest first'], ['earnings', '💰 Top earnings'], ['delivered', '✓ Most delivered'], ['idle', '😴 Idle first']], (v9) => { CH.sort = v9; render(); }, '170px'),
         ]),
         list9.length ? h('div', null, list9.slice(0, CH.show).map(row9x)) : h('div', { class: 'cp-muted', style: 'margin-top:10px' }, all9.length ? 'No client matches that search/filter.' : 'Nobody yet — copy an invite from the Dashboard link card and send it to the broker or carrier you already know.'),
