@@ -478,7 +478,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved' || (ob && ob.referrer_status === 'active');
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification ✓' : 'Get Verified', 'shield'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification ✓' : 'Get Verified', 'shield'], ['post', 'Post a Load', 'loads'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
   let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -492,9 +492,32 @@ async function agentPortal(user) {
   const tile9 = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:120px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:14px;text-align:center' }, [
     h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
     h('div', { style: 'font-size:1.45rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
-  const banner9 = () => feed.pair_active
-    ? h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:11px 14px;font-weight:800;color:#4ade80' }, '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.')
-    : h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:11px 14px;font-weight:700;color:#fbbf24' }, '⏳ CHAIN PENDING — bring the missing side of your pair (a broker + a carrier) to switch earnings on.');
+  const rulesModal9 = () => openModal('📖 Agent Program — rules & policies', [
+    h('div', { style: 'font-size:.88rem;line-height:1.75;color:#cbd5e1' }, [
+      h('b', { style: 'color:#fff' }, 'Chain activation (pair rule)'), h('br'),
+      '• Your chain goes ACTIVE only when you have BOTH sides: a CARRIER + demand (a broker/shipper you referred, OR loads you post yourself).', h('br'),
+      '• One side alone = PENDING: joins are recorded, your link keeps working, but no commissions accrue yet.', h('br'), h('br'),
+      h('b', { style: 'color:#fff' }, 'Earning (1% rule)'), h('br'),
+      '• 1% of gross ONLY on GPS-verified DELIVERED loads — a completed transaction is mandatory. Booked-but-not-delivered pays nothing.', h('br'),
+      '• Counts when ANY side of the transaction is yours: your broker\u2019s load delivered by any carrier ✓ · your carrier delivering any load ✓ · your own posted load delivered ✓.', h('br'),
+      '• 15-day clearing window, then payable · payouts monthly from $100 · paid from LoadBoot\u2019s own fee — your clients never pay extra.', h('br'), h('br'),
+      h('b', { style: 'color:#fff' }, 'Conduct'), h('br'),
+      '• No self-referrals, fake companies or circumvention — instant termination + forfeiture.', h('br'),
+      '• No spam (CAN-SPAM/TCPA) · truthful claims only · you are an independent agent, not a LoadBoot employee or broker.', h('br'), h('br'),
+      h('span', { class: 'cp-row-s' }, 'Full agreement: the one you e-signed in Get Verified · program page: loadboot.com/agents.html'),
+    ]),
+  ]);
+  const banner9 = () => h('div', {
+    style: (feed.pair_active
+      ? 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#4ade80;font-weight:800'
+      : 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#fbbf24;font-weight:700')
+      + ';border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
+  }, [
+    h('div', null, feed.pair_active
+      ? '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.'
+      : '⏳ CHAIN PENDING — bring the missing side of your pair (carrier + broker/shipper, or post a load yourself) to switch earnings on.'),
+    h('div', { style: 'font-size:.72rem;font-weight:700;opacity:.75;margin-top:3px' }, '📖 Tap to read the program rules & policies'),
+  ]);
   const linkCard = () => agCard('🔗 Your referral link', [
     h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Code'), h('b', null, feed.code)]),
     h('div', { class: 'cp-row-s', style: 'word-break:break-all;margin:4px 0 8px' }, feed.link),
@@ -641,6 +664,19 @@ async function agentPortal(user) {
         bar9, body9, err9,
         h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [backB, nextB].filter(Boolean)),
       ].filter(Boolean)));
+    } else if (tab === 'post') {
+      if (isVerified && feed.own_broker_org) {
+        mount(content, agCard('📦 Post a load — the full broker wizard', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:10px' }, 'You post with the EXACT same wizard brokers use: real addresses + multi-stop, schedule, rate card, and either 🎯 TAG A SPECIFIC CARRIER (direct offer — perfect for your own referred carrier) or post straight to the load board. LoadBoot dispatch reviews every post before it goes live. When your load DELIVERS, your 1% lands automatically.'),
+          h('button', { class: 'cp-btn', style: 'background:#FC5305', onClick: () => window.open('/app/partner/', '_blank', 'noopener') }, '🚀 Open the posting wizard →'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Opens your broker workspace (“' + (feed.name || 'Agent') + ' (Agent)”) in a new tab — same login.'),
+        ]));
+      } else {
+        mount(content, agCard('📦 Post a load', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '🔒 Unlocks after verification: once LoadBoot approves your agent application (Get Verified tab), you get your own posting workspace — the same wizard brokers use, with direct-carrier targeting for your referred carriers. A load you post counts as the DEMAND side of your pair.'),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, '🛡 Go to Get Verified →'),
+        ]));
+      }
     } else if (tab === 'chain') {
       mount(content, h('div', null, [banner9(), h('div', { style: 'height:12px' }), agCard('🔗 Your chain — live', chainRows())]));
     } else if (tab === 'loads') {
