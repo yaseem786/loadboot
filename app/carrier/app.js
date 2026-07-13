@@ -603,16 +603,41 @@ async function agentPortal(user) {
         banner9(),
         h('div', { style: 'height:12px' }),
         linkCard(),
-        agCard('📈 How your money works — the whole engine', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:8px' }, '① Share your link → client joins (permanently yours) · ② Pair completes (carrier + broker/shipper, or you post a load) → CHAIN ACTIVE · ③ Any DELIVERED load your chain touches → commission accrues automatically · ④ 15-day clearing → PAYABLE · ⑤ Monthly payout from $100 to your verified account.'),
-          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
-            ['L1 — YOUR clients', '1.00%', '#4ade80'], ['L2 — agents you recruit', '0.50%', '#7cc0ff'], ['L3', '0.25%', '#93a4bd'], ['L4', '0.15%', '#93a4bd'], ['L5', '0.10%', '#93a4bd'],
-          ].map(([l9, p9, c9]) => h('div', { style: 'flex:1;min-width:110px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:10px;text-align:center' }, [
-            h('div', { style: 'font-size:.62rem;font-weight:800;color:#7f92b3;letter-spacing:.05em' }, l9),
-            h('div', { style: 'font-weight:900;font-size:1.1rem;color:' + c9 }, p9)]))),
-          h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Levels 2–5 = OVERRIDE income: recruit other agents with your same link — when THEIR chains earn, you earn a slice too, five levels deep. Build a team once, earn on its whole tree.'),
+        agCard('📈 How your money works — tap any line to open it', [
+          (() => {
+            const det9 = (icon9, title9, body9) => {
+              const d9 = h('details', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:11px;margin-top:6px;background:rgba(255,255,255,.03);overflow:hidden' }, [
+                h('summary', { style: 'cursor:pointer;padding:10px 13px;font-weight:800;font-size:.88rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, icon9), h('span', { style: 'flex:1' }, title9), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
+                h('div', { style: 'padding:0 13px 12px;color:#b9c6da;font-size:.84rem;line-height:1.75' }, body9),
+              ]);
+              return d9;
+            };
+            return h('div', null, [
+              det9('🔗', 'STEP 1 — Share your link (client becomes YOURS, permanently)',
+                'Your link (loadboot.com/?ref=' + (feed.code || 'YOURCODE') + ') is your ownership record. The moment a broker, shipper or carrier signs up through it, the system ties them to you FOREVER — no paperwork, no claims later. They cannot be "taken" by another agent, and it costs them nothing.'),
+              det9('🤝', 'STEP 2 — Complete the PAIR → chain goes ACTIVE',
+                'A marketplace needs both sides. Your chain activates when you have: a CARRIER + demand. Demand = a broker/shipper you referred, OR a load you post yourself from Post a Load. Until then your status shows PENDING — joins still count, they just wait for the switch to flip.'),
+              det9('🚚', 'STEP 3 — A load DELIVERS → commission is born',
+                'Only a COMPLETED transaction pays: GPS-verified delivery with POD. Booked-but-cancelled = $0. It counts when ANY side is yours — your broker\u2019s load delivered by any carrier ✓, your carrier delivering anyone\u2019s load ✓, your own posted load ✓. The instant delivery is verified, your 1% is calculated on the GROSS load value and appears in Earnings with an in-app alert + email.'),
+              det9('⏳', 'STEP 4 — 15-day clearing (why the wait?)',
+                'Freight has disputes, claims and reversals. The 15-day window lets every load settle cleanly — it protects YOU too: once cleared, that money is firmly yours. Ledger shows it as "Accrued" during clearing, then it flips to PAYABLE automatically.'),
+              det9('🏦', 'STEP 5 — Monthly payout to your VERIFIED account',
+                'Payable balance ≥ $100 → request payout from the Payouts tab (or it goes out on the monthly run). Money goes only to the account you verified in onboarding (that\u2019s why we take the ID + bank proof — nobody can redirect your money). W-9/W-8BEN keeps you tax-clean; US persons get a 1099.'),
+              h('div', { style: 'margin:14px 0 4px;font-weight:900;font-size:.8rem;letter-spacing:.08em;color:#7f92b3' }, 'THE 5 LEVELS — TAP EACH TO SEE THE MATH'),
+              det9('🥇', 'LEVEL 1 — your direct clients · 1.00%',
+                'Every delivered load your OWN referrals (or your own posted loads) touch. Example: your broker moves 20 loads/month averaging $2,400 → $48,000 moved → YOU earn $480 every month from that one relationship. This is your bread and butter.'),
+              det9('🥈', 'LEVEL 2 — agents YOU recruit · 0.50%',
+                'Share the SAME link with other dispatchers — when they become agents, they are your Level-2 team. You earn 0.50% on everything their chains deliver, without touching their work. Example: your recruit\u2019s chain moves $50,000/month → you earn $250/month extra, forever.'),
+              det9('🥉', 'LEVEL 3 — your recruits\u2019 recruits · 0.25%',
+                'When YOUR agents build their own teams, you earn on that too. Example: 3 level-3 agents each moving $40,000/month → $120,000 × 0.25% = $300/month — from people you may have never met.'),
+              det9('4️⃣', 'LEVEL 4 · 0.15%  —  and  5️⃣ LEVEL 5 · 0.10%',
+                'The tree keeps paying five levels deep. Individually small, but a healthy tree compounds: 10 agents at L4–L5 moving $30,000 each = $300,000 × ~0.12% ≈ $375/month of pure override. Build the network once — it pays while you sleep.'),
+              h('div', { class: 'cp-row-s', style: 'margin-top:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:9px 12px' },
+                '💡 The whole engine is automatic: joins, tracking, commission math, clearing, notifications, emails — the software does it. Your only job: bring good people and keep them winning.'),
+            ]);
+          })(),
         ]),
-        agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
+                agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
       ]));
     } else if (tab === 'verify') {
       const W = window.__agw = window.__agw || { step: 0, d: Object.assign({ full_name: feed.name || '', network: {} }, obProfile || {}) };
