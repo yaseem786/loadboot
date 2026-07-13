@@ -480,7 +480,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Post a Load', 'loads'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Post a Load', 'loads'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
   let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -1077,6 +1077,45 @@ async function agentPortal(user) {
           h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '1% of gross on every GPS-verified DELIVERED load your chain touches · pair (broker + carrier) activates earnings · 15-day clearing window · monthly payouts from $100 · your cut comes out of LoadBoot’s own fee — your clients never pay extra · full program details: loadboot.com/agents.html'),
         ]),
       ]));
+    } else if (tab === 'settings') {
+      const kv9 = (k9, v9) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem' }, [h('span', { class: 'cp-row-s' }, k9), h('b', { style: 'text-align:right;word-break:break-word' }, v9 || '—')]);
+      const stMap9 = { approved: ['#4ade80', '✅ Verified'], under_review: ['#fbbf24', '⏳ Under review'], info_needed: ['#fbbf24', '✋ Info needed'], rejected: ['#f87171', '✕ Not approved'], draft: ['#94a3b8', '📝 Not submitted'] };
+      const st9 = stMap9[obStatus] || stMap9.draft;
+      mount(content, h('div', null, [
+        agCard('👤 Account', [
+          kv9('Name', (obProfile && obProfile.full_name) || feed.name),
+          kv9('Email', (user && user.email) || ''),
+          kv9('Agent code', feed.code || ''),
+          kv9('Referral link', 'loadboot.com/?ref=' + (feed.code || '')),
+          kv9('Phone', obProfile && obProfile.phone),
+          kv9('Location', [obProfile && obProfile.city, obProfile && obProfile.state, obProfile && obProfile.country].filter(Boolean).join(', ')),
+          kv9('Agent since', (obProfile && obProfile.created_at) ? new Date(obProfile.created_at).toLocaleDateString() : ''),
+        ]),
+        agCard('🛡 Verification & payout account', [
+          h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [
+            h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1]),
+            h('button', { class: 'cp-btn', onClick: () => go('verify') }, isVerified ? 'View / update details' : 'Open Verification Center'),
+          ]),
+          h('div', { class: 'cp-row-s', style: 'margin-top:9px;line-height:1.6' }, 'Your payout method, bank details, tax form and verification documents all live in the Verification Center. Any change to bank details goes through a quick review so payouts stay safe.'),
+        ]),
+        agCard('📄 My signed documents', [
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+            h('button', { class: 'cp-btn-ghost', onClick: agreementPdf9 }, '⬇ Agent Agreement (signed PDF)'),
+            h('button', { class: 'cp-btn-ghost', onClick: taxPdf9 }, '⬇ Tax form (signed PDF)'),
+            h('button', { class: 'cp-btn-ghost', onClick: rulesModal9 }, '📖 Program rules & policies'),
+          ]),
+        ]),
+        agCard('🔒 Security', [
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [
+            h('button', { class: 'cp-btn-ghost', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true; try { const r9 = await resetPassword((user && user.email) || ''); if (r9 && r9.error) throw r9.error; b9.textContent = '✓ Reset link sent to your email'; } catch (_) { b9.textContent = 'Could not send — try again later'; b9.disabled = false; } } }, 'Send password-reset email'),
+            h('button', { class: 'cp-btn-ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; await signOut(); location.reload(); } }, 'Sign out'),
+          ]),
+          h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'We never ask for your password by email or phone. Payout bank changes always require re-verification.'),
+        ]),
+        agCard('💬 Support', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Program or account questions: hello@loadboot.com — or message the review team any time from the Verification Center thread. Full program details: loadboot.com/agents.html'),
+        ]),
+      ]));
     }
   }
   function go(id) { tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
@@ -1084,6 +1123,33 @@ async function agentPortal(user) {
     const it = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it ? it[1] : 'Dashboard';
     (async () => { try { feed = (await agentFeed()) || feed; } catch (_) {} render(); })();
   }
+  // ---- 🔔 notification bell (top-right): commissions, chain joins, payout + doc updates ----
+  const agBellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
+  const agBellList = h('div', { style: 'max-height:380px;overflow:auto' });
+  const agBellPanel = h('div', { hidden: true, style: 'position:absolute;top:44px;right:0;width:min(360px,86vw);background:#0f1b30;border:1px solid rgba(255,255,255,.14);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);z-index:60;overflow:hidden;text-align:left' }, [
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.09)' }, [
+      h('b', { style: 'font-size:.85rem' }, '🔔 Notifications'),
+      h('button', { class: 'cp-btn-ghost', style: 'font-size:.72rem;padding:4px 8px', onClick: async () => { try { await pocketMarkAllNotificationsRead(); } catch (_) {} agLoadBell(); } }, 'Mark all read'),
+    ]),
+    agBellList,
+  ]);
+  async function agLoadBell() {
+    let ns9 = []; try { ns9 = (await pocketNotifications(30)) || []; } catch (_) {}
+    const un9 = ns9.filter((n) => !n.read_at).length;
+    agBellBadge.hidden = un9 === 0; agBellBadge.textContent = un9 > 9 ? '9+' : String(un9);
+    mount(agBellList, ns9.length ? h('div', null, ns9.map((n) => {
+      const p9 = n.payload || {};
+      return h('button', { style: 'display:block;width:100%;text-align:left;background:' + (n.read_at ? 'transparent' : 'rgba(8,131,247,.09)') + ';border:0;border-bottom:1px solid rgba(255,255,255,.06);padding:10px 14px;cursor:pointer;color:inherit;font:inherit', onClick: async () => { try { await pocketMarkNotificationRead(n.id); } catch (_) {} agLoadBell(); } }, [
+        h('div', { style: 'font-weight:800;font-size:.82rem' }, p9.title || n.template_key || 'Update'),
+        p9.body ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, String(p9.body).slice(0, 160)) : null,
+        h('div', { class: 'cp-row-s', style: 'margin-top:3px;opacity:.7;font-size:.68rem' }, new Date(n.created_at).toLocaleString()),
+      ].filter(Boolean));
+    })) : h('div', { class: 'cp-row-s', style: 'padding:18px 14px;text-align:center' }, 'Nothing yet — commissions, chain joins, payout and verification updates land here.'));
+  }
+  const agBell = h('button', { class: 'cp-iconbtn cp-bell', title: 'Notifications', style: 'position:relative', onClick: () => { agBellPanel.hidden = !agBellPanel.hidden; if (!agBellPanel.hidden) agLoadBell(); } }, [icon('bell', 20), agBellBadge]);
+  const agBellWrap = h('div', { style: 'position:relative;display:inline-flex' }, [agBell, agBellPanel]);
+  agLoadBell(); try { setInterval(agLoadBell, 60000); } catch (_) {}
+  document.addEventListener('click', (e9) => { if (!agBellWrap.contains(e9.target)) agBellPanel.hidden = true; });
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Agent' })),
@@ -1097,6 +1163,7 @@ async function agentPortal(user) {
       h('header', { class: 'cp-top' }, [
         h('div', { class: 'cp-top-left' }, [titleEl]),
         h('div', { class: 'cp-top-right' }, [
+          agBellWrap,
           feed.pair_active ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✅ Chain active')
             : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, '⏳ Pair pending'),
         ]),
