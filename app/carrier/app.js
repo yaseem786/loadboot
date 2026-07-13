@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
@@ -894,9 +894,61 @@ async function agentPortal(user) {
             pill(x.status)]))) : h('div', { class: 'cp-muted' }, 'Commissions appear here per delivered load — 1% of gross, 15-day clearing, then payable.')]);
       } catch (_) { mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💰 Commission ledger')]), h('div', { class: 'cp-muted' }, 'Could not load.')]); }
     } else if (tab === 'payouts') {
-      const wrapP = h('div');
-      mount(content, h('div', null, [r0 ? agCard('📊 Program stats', [buildReferralStats(r0)]) : null, agCard('🏦 Payouts', [wrapP])].filter(Boolean)));
-      if (r0) referralPayoutUI(wrapP, r0);
+      const hostP = h('div');
+      mount(content, hostP);
+      (async () => {
+        let pc; try { pc = await agentPayoutCenter(); } catch (e9) { mount(hostP, agCard('🏦 Payout Center', [h('div', { class: 'cp-muted' }, (e9 && e9.message) || 'Could not load.')])); return; }
+        if (!pc || !pc.has_code) { mount(hostP, agCard('🏦 Payout Center', [h('div', { class: 'cp-muted' }, 'No agent account.')])); return; }
+        const pct9 = Math.min(100, Math.round(Number(pc.payable || 0) / Number(pc.min_required || 100) * 100));
+        const reqBtn = pc.eligible ? h('button', { class: 'cp-btn', style: 'background:#16a34a;font-size:1.02rem;padding:14px 26px', onClick: async (ev9) => {
+          if (!confirm('Request payout of ' + money9(pc.payable) + ' to your verified account on file?')) return;
+          const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Requesting…';
+          try { const r9 = await agentRequestPayout(); lbToast((r9 && r9.note) || 'Requested.', 'success', '💸 Payout requested'); render(); }
+          catch (e9) { b9.disabled = false; b9.textContent = '💸 Request payout — ' + money9(pc.payable); lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
+        } }, '💸 Request payout — ' + money9(pc.payable)) : null;
+        const stMap9 = { requested: ['🕐 REQUESTED — under review', 'rgba(245,158,11,.15)', '#fbbf24'], approved: ['✅ APPROVED — transfer being prepared', 'rgba(8,131,247,.15)', '#3b9dff'], sent: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], paid: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], received: ['✓ RECEIVED', 'rgba(34,197,94,.15)', '#4ade80'], rejected: ['✕ REJECTED', 'rgba(239,68,68,.15)', '#f87171'] };
+        const reqRows9 = (Array.isArray(pc.requests) ? pc.requests : []).map((r9) => { const m9 = stMap9[r9.status] || [r9.status, 'rgba(148,163,184,.15)', '#94a3b8'];
+          return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 13px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
+            h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
+              h('div', { style: 'flex:1;min-width:170px' }, [
+                h('div', { style: 'font-weight:900;font-size:1.05rem' }, money9(r9.amount)),
+                h('div', { class: 'cp-row-s' }, (r9.bank_name || '') + ' ···' + (r9.last4 || '') + ' · requested ' + (r9.requested_at ? new Date(r9.requested_at).toLocaleDateString() : '') + (r9.note ? ' · ' + r9.note : '')),
+              ]),
+              h('span', { class: 'cp-pill', style: 'background:' + m9[1] + ';color:' + m9[2] + ';font-weight:800' }, m9[0]),
+              (r9.status === 'paid' || r9.status === 'sent' || r9.status === 'approved') ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+                try { await agentConfirmPayoutReceived(r9.id); lbToast('Confirmed — shukriya!', 'success', '✓ Received'); render(); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
+              } }, '✓ I received it') : null,
+            ].filter(Boolean)),
+          ]); });
+        mount(hostP, h('div', null, [
+          h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px' }, [
+            tile9('Available for payout', money9(pc.payable), true), tile9('In clearing (15d)', money9(pc.accrued)), tile9('Paid out — lifetime', money9(pc.paid), true),
+            pc.next_clearing ? tile9('Next release', new Date(pc.next_clearing).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) : null].filter(Boolean)),
+          pc.eligible
+            ? h('div', { style: 'background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.45);border-radius:14px;padding:16px 18px;margin-bottom:12px;text-align:center' }, [
+                h('div', { style: 'font-weight:900;font-size:1.05rem;color:#4ade80;margin-bottom:10px' }, '✅ You are ELIGIBLE — money is ready to move'), reqBtn,
+                h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Goes to your verified account on file · reviewed by a person · bank transfers land in 3–5 business days after SENT.')])
+            : h('div', { style: 'background:rgba(245,158,11,.09);border:1.5px solid rgba(245,158,11,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
+                h('div', { style: 'font-weight:900;color:#fbbf24' }, '⏳ Not eligible yet — here is exactly why:'),
+                ...(Array.isArray(pc.reasons) ? pc.reasons : []).map((x9) => h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, (x9.icon || '•') + ' ' + (x9.text || ''))),
+                h('div', { style: 'height:7px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden' },
+                  h('div', { style: 'height:100%;width:' + pct9 + '%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#4ade80)' })),
+                h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, money9(pc.payable) + ' of ' + money9(pc.min_required) + ' minimum (' + pct9 + '%)')]),
+          pc.bank ? agCard('🏦 Payout account on file', [
+            h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Method'), h('b', null, (pc.bank.method || '—').toUpperCase())]),
+            pc.bank.title ? h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Account title'), h('span', null, pc.bank.title)]) : null,
+            pc.bank.bank_name ? h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Bank'), h('span', null, pc.bank.bank_name)]) : null,
+            h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Account'), h('span', null, '···' + (pc.bank.last4 || '——'))]),
+            h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
+              pc.bank.verified ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ Verified by LoadBoot') : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '⏳ pending verification'),
+              pc.bank.docs_ok ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '📎 ID + bank proof on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '📎 documents missing'),
+              h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('verify') }, '✎ Update account'),
+            ].filter(Boolean)),
+            h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, '🔒 Payouts only ever go to this verified account — nobody can redirect your money.'),
+          ].filter(Boolean)) : agCard('🏦 Payout account', [h('div', { class: 'cp-row-s' }, 'No account on file yet — add it in Get Verified step 3.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, '🛡 Add payout account →')]),
+          agCard('📜 Payout history & tracking', reqRows9.length ? reqRows9 : [h('div', { class: 'cp-muted' }, 'No payouts yet. Flow: REQUESTED → APPROVED → 💸 SENT (3–5 business days) → ✓ you confirm RECEIVED.')]),
+        ]));
+      })();
     } else if (tab === 'resources') {
       mount(content, h('div', null, [
         linkCard(),
