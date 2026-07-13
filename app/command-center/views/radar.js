@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, card, money, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
-import { opsRadar, ccPayPendingFees, payConfirmReceived } from '../../shared/api.js';
+import { opsRadar, ccPayPendingFees, payConfirmReceived, ccAgentsQueue, ccAgentDecide } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError } from '../../shared/errors.js';
 
@@ -24,6 +24,19 @@ export function renderRadar(host) {
   async function load() {
     let r; try { r = await opsRadar(); } catch (e) { showError(body, humanizeError(e), load); return; }
     let feeRows = []; try { const fr = await ccPayPendingFees(); feeRows = Array.isArray(fr) ? fr : []; } catch (_) {}
+    let agRows = []; try { const ar = await ccAgentsQueue(); agRows = Array.isArray(ar) ? ar : []; } catch (_) {}
+    const agCard9 = agRows.length ? card([
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '🤝 Agents to verify'), el('span', { class: 'cc-pill cc-pill-amber' }, String(agRows.length))]),
+      el('div', { class: 'cc-doclist' }, agRows.slice(0, 8).map((x) => el('div', { style: 'padding:8px 0;border-bottom:1px solid #eef2f7' }, [
+        el('div', { style: 'font-weight:700' }, (x.name || '(no name)') + (x.agency ? ' — ' + x.agency : '') + ' · ' + (x.email || '')),
+        el('div', { class: 'cc-sub' }, (x.city ? x.city + ', ' + (x.state || '') + ' · ' : '') + (x.years_exp != null ? x.years_exp + 'y exp · ' : '') + 'code ' + (x.code || '—') + ' · payout ' + (x.payout_method || '—') + ' · ' + (x.tax_form || 'no tax form') + ' · agreement ' + (x.agreement_signed ? '✓ ' + (x.signed_name || '') : '✕ UNSIGNED')),
+        el('div', { style: 'display:flex;gap:6px;margin-top:6px' }, [
+          el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget; if (!confirm('Approve this agent? Their chain starts earning immediately.')) return; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'approve', null); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✓ Approve'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const nt9 = prompt('What info is needed? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'info', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '？ More info'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const nt9 = prompt('Reject — why? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'reject', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✕ Reject'),
+        ]),
+      ]))),
+    ]) : '';
     const feeCard = feeRows.length ? card([
       el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '💳 Fee receipts to verify'), el('span', { class: 'cc-pill cc-pill-amber' }, String(feeRows.length))]),
       el('div', { class: 'cc-doclist' }, feeRows.slice(0, 10).map((x) => el('div', { class: 'cc-docrow', style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding:6px 0' }, [
@@ -121,6 +134,8 @@ export function renderRadar(host) {
 
     mount(body, el('div', null, [
       kpis,
+      agCard9,
+      feeCard,
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [emergencies, booking]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [docsPending, payments]),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [overdue, approval]),
