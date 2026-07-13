@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
@@ -534,10 +534,31 @@ async function agentPortal(user) {
       : '⏳ CHAIN PENDING — bring the missing side of your pair (carrier + broker/shipper, or post a load yourself) to switch earnings on.'),
     h('div', { style: 'font-size:.72rem;font-weight:700;opacity:.75;margin-top:3px' }, '📖 Tap to read the program rules & policies'),
   ]);
+  const inviteModal9 = () => {
+    const sideSel = h('select', { class: 'cp-in' }, [['broker', '🏢 Broker'], ['shipper', '🏭 Shipper'], ['carrier', '🚛 Carrier']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+    const nameIn = h('input', { class: 'cp-in', placeholder: 'Their first name (personalises the email)' });
+    const emailIn = h('input', { class: 'cp-in', type: 'email', placeholder: 'their@company.com *' });
+    const err9 = h('div', { class: 'cp-err' });
+    const close = openModal('✉ Send a premium invite — with YOUR link inside', [
+      h('p', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'A branded LoadBoot email goes out instantly — hero pitch for their side, your name as the personal inviter, and your referral link on the button. The join credits to you automatically. (Max 25/day.)'),
+      h('label', { class: 'cp-lbl' }, 'Who are they? *'), sideSel,
+      h('label', { class: 'cp-lbl' }, 'Their name'), nameIn,
+      h('label', { class: 'cp-lbl' }, 'Their email *'), emailIn, err9,
+      h('button', { class: 'cp-btn', style: 'margin-top:10px;background:#FC5305', onClick: async (ev9) => {
+        err9.textContent = '';
+        if (!/.+@.+\..+/.test(emailIn.value || '')) { err9.textContent = 'Enter a valid email.'; return; }
+        const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Sending…';
+        try { const r9 = await agentSendInvite(sideSel.value, emailIn.value.trim(), nameIn.value.trim() || null);
+          close(); lbToast((r9 && r9.note) || 'Invite sent.', 'success', '✉ Invite sent');
+        } catch (e9) { b9.disabled = false; b9.textContent = '🚀 Send invite'; err9.textContent = (e9 && e9.message) || 'Failed.'; }
+      } }, '🚀 Send invite'),
+    ]);
+  };
   const linkCard = () => agCard('🔗 Your referral link', [
     h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Code'), h('b', null, feed.code)]),
     h('div', { class: 'cp-row-s', style: 'word-break:break-all;margin:4px 0 8px' }, feed.link),
     h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+      h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#FC5305', onClick: inviteModal9 }, '✉ Invite by email'),
       h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { try { await navigator.clipboard.writeText(feed.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(feed.link); } } }, 'Copy link'),
       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const t9 = 'I moved my freight ops to LoadBoot — post a load and verified carriers book it in one tap, GPS-tracked with automatic paperwork. Join free with my link: ' + feed.link; try { await navigator.clipboard.writeText(t9); ev.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev.currentTarget.textContent = '📋 Broker invite'; }, 1400); } catch (_) { alert(t9); } } }, '📋 Broker invite'),
       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const t9 = 'Real loads, zero ghost posts — booked loads vanish from the board instantly. GPS proof gets your detention PAID. Free verified account, join with my link: ' + feed.link; try { await navigator.clipboard.writeText(t9); ev.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev.currentTarget.textContent = '📋 Carrier invite'; }, 1400); } catch (_) { alert(t9); } } }, '📋 Carrier invite'),
