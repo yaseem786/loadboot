@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
@@ -449,13 +449,40 @@ function notCarrier() {
     if (!on) return;
     let r; try { r = await myReferral(); } catch (_) { return; }
     if (!r || !r.code) return;
-    card.querySelector('h1').textContent = 'Referral partner';
-    card.querySelector('.cp-auth-sub').textContent = 'This account is a referral partner account — your referrals, earnings and payouts are tracked below.';
+    card.querySelector('h1').textContent = '🤝 Agent dashboard';
+    card.querySelector('.cp-auth-sub').textContent = 'You are a LoadBoot AGENT — bring clients in pairs, earn 1% of every delivered load your chain touches. Everything below is live.';
     const panel = h('div', { class: 'cp-auth-card', style: 'margin-top:14px;text-align:left' }, [
-      h('h2', { style: 'margin:0 0 4px' }, 'Your referral program'),
-      h('p', { class: 'cp-auth-sub', style: 'margin-bottom:10px' }, 'Share your unique link — every carrier or broker who joins through it is credited to you, and you earn from LoadBoot’s own fee on every load they haul.'),
+      h('h2', { style: 'margin:0 0 4px' }, 'Your agent program'),
+      h('p', { class: 'cp-auth-sub', style: 'margin-bottom:10px' }, 'Share your link — every broker, carrier or shipper who joins through it is yours, permanently. Your 1% comes out of LoadBoot’s own fee: your clients never pay extra.'),
     ]);
     panel.appendChild(buildReferralStats(r));
+    // ---- LIVE CHAIN: pair state + every referred org with activity + earnings ----
+    const chainW = h('div', { style: 'margin-top:14px' });
+    panel.appendChild(chainW);
+    (async () => {
+      let cs; try { cs = await agentChainStatus(); } catch (_) { return; }
+      if (!cs || !cs.has_code) return;
+      const refs = Array.isArray(cs.referred) ? cs.referred : [];
+      const sides = { c: refs.filter((x) => x.side === 'carrier').length, b: refs.filter((x) => x.side !== 'carrier').length };
+      const banner = cs.pair_active
+        ? h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.')
+        : h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:10px 14px;font-weight:700;color:#fbbf24' },
+            refs.length === 0
+              ? '⏳ CHAIN PENDING — share your link and bring your first PAIR (a broker + a carrier) to switch earnings on.'
+              : ('⏳ CHAIN PENDING — you have ' + (sides.c ? sides.c + ' carrier(s)' : sides.b + ' broker/shipper(s)') + '. Bring the OTHER side (' + (sides.c ? 'a broker or shipper' : 'a carrier') + ') and every load starts paying you.'));
+      const rows = refs.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+        h('div', { style: 'flex:1;min-width:190px' }, [
+          h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
+          h('div', { class: 'cp-row-s' }, x.side + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' loads posted · ' + (x.trips_delivered || 0) + ' delivered'),
+        ]),
+        h('b', { style: 'color:var(--lb-green,#4ade80)' }, '$' + Number(x.your_earnings || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })),
+      ]));
+      mount(chainW, h('div', null, [
+        h('div', { class: 'cp-row-t', style: 'margin-bottom:6px' }, '🔗 Your chain — live'),
+        banner,
+        rows.length ? h('div', { style: 'margin-top:8px' }, rows) : h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Nobody yet — your link is ready above. First stop: that broker or carrier you already know.'),
+      ]));
+    })();
     const pw = h('div'); panel.appendChild(pw); referralPayoutUI(pw, r);
     shell.appendChild(panel);
   })();

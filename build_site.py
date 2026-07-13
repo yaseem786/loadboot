@@ -3045,18 +3045,37 @@ page('ifta-fuel-tax.html','IFTA Fuel Tax Guide — Quarterly Returns, Records &a
  'How IFTA works: qualified vehicles, base-state license, quarterly return math, the records auditors demand, deadlines, and clean-filing habits.',
  'services.html', ifp, _iffaq_sch)
 
+_ag_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Independent Agent — Trucking Marketplace (Commission, Remote)","description":"Bring brokers, carriers and shippers to the LoadBoot marketplace in pairs and earn 1% of every delivered load your chain touches — recurring, uncapped, paid monthly. The software does the dispatch: live load board, GPS tracking, automatic invoicing and payments. You own the relationships.","datePosted":"2026-07-12","employmentType":"CONTRACTOR","hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":0,"maxValue":10000}},"directApply":true}</script>'
+
 # ---- Careers ----
 car = svc_hero('Careers at Loadboot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')
-car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>Loadboot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p><h2>Open roles</h2><p>We are a growing team and hire as we scale. If you have dispatch, brokerage, carrier sales, compliance or trucking-tech experience, apply below and tell us what you are great at. Real people read every message.</p></div></section>'
+car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>Loadboot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p></div></section>'
+# ---- OPEN ROLES — the Agent role is live and featured ----
+car += ('<section class="bg-soft" id="roles"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Open roles</div><h2>We&rsquo;re hiring right now</h2></div>'
+ '<div class="grid g2 reveal" style="max-width:980px;margin:0 auto">'
+ '<a class="card reveal" href="agents.html" style="display:block;text-decoration:none;border:2px solid #FC5305;position:relative;background:linear-gradient(160deg,#10223B,#0d2a4d);color:#fff">'
+ '<span style="position:absolute;top:14px;right:14px;background:#FC5305;color:#fff;font-size:.65rem;font-weight:900;padding:5px 11px;border-radius:999px;letter-spacing:.06em">&#9889; OPEN NOW &middot; REMOTE</span>'
+ '<div class="icon">&#129309;</div><h3 style="color:#fff">Independent Agent &mdash; commission, uncapped</h3>'
+ '<p style="color:#b9c6da">Bring brokers, carriers and shippers to the marketplace in pairs and earn <b style="color:#4ade80">1% of every delivered load your chain touches &mdash; recurring, forever</b>. The software does the dispatch; you own the relationships. No license needed.</p>'
+ '<p style="color:#7cc0ff;font-weight:800;margin-top:10px">See the full program + earnings calculator &rarr;</p></a>'
+ '<div class="card reveal"><div class="icon">&#128222;</div><h3>Dispatcher &amp; carrier success</h3><p>Load hunting, rate negotiation, onboarding carriers, keeping accounts healthy. Trucking experience wins; hustle and honesty are non-negotiable. Apply below with your story.</p><p style="color:#64748B;font-size:.85rem;margin-top:8px">Full-time / contract &middot; remote-friendly</p></div>'
+ '</div></div></section>')
+# ---- how hiring works ----
+car += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How it works</div><h2>From application to your first day</h2></div>'
+ '<div class="grid g3 reveal">'
+ '<div class="card reveal"><div class="icon">1</div><h3>Apply (5 minutes)</h3><p>The form below &mdash; a real person reads every message, usually within 48 hours. A LinkedIn or CV link beats a formal cover letter.</p></div>'
+ '<div class="card reveal"><div class="icon">2</div><h3>One honest conversation</h3><p>15&ndash;30 minutes about what you&rsquo;ve actually done &mdash; lanes you&rsquo;ve run, brokers you know, systems you&rsquo;ve used. No trick questions.</p></div>'
+ '<div class="card reveal"><div class="icon">3</div><h3>Start doing the work</h3><p>Agents get their account + referral link the same week. Dispatch roles start with a paid working trial on real loads.</p></div>'
+ '</div></div></section>')
 car += '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Life at LoadBoot</div><h2>What the work is actually like</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#127919;</div><h3>Real stakes, real people</h3><p>Every shift you keep a driver earning and a shipper informed. The feedback loop is measured in hours, not quarters.</p></div><div class="card reveal"><div class="icon">&#128200;</div><h3>Modern tooling</h3><p>Our Command Center automates the busywork — matching, documents, reminders — so your judgment goes where software cannot.</p></div><div class="card reveal"><div class="icon">&#127758;</div><h3>Remote-friendly</h3><p>Dispatch runs on outcomes, not seat time. Reliable coverage matters; your zip code does not.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Teams we hire for</div><h2>Where you could fit</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128222;</div><h3>Dispatch &amp; operations</h3><p>Load hunting, rate negotiation, trip babysitting, exception handling. Trucking experience wins; hustle and honesty are non-negotiable.</p></div><div class="card reveal"><div class="icon">&#129309;</div><h3>Carrier &amp; partner success</h3><p>Onboarding carriers, verifying brokers, keeping accounts healthy and honest.</p></div><div class="card reveal"><div class="icon">&#128187;</div><h3>Product &amp; engineering</h3><p>The platform behind it all — dispatch tooling, portals, automation and analytics.</p></div></div></div></section>'
 car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and what you would want to own here.',
     [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True), ('phone', 'Phone', 'tel', False),
      ('company', 'Current / most recent role', 'text', False),
      ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
     'Send application', 'Thanks — we&rsquo;ll be in touch.')
-page('careers.html', 'Careers at Loadboot | Join an Honest Dispatch Company',
-     'Join Loadboot. We hire dispatchers, carrier-success reps and builders who care about doing right by carriers. See how to apply.',
-     'careers.html', car)
+page('careers.html', 'Careers at Loadboot — Independent Agents (1% Commission) & Dispatch Roles',
+     'LoadBoot is hiring: independent agents earning 1% of every delivered load (recurring, remote, uncapped) plus dispatch and carrier-success roles. Apply in 5 minutes.',
+     'careers.html', car, _ag_job_schema)
 
 # ---- Partner Program ----
 pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.')
@@ -3453,7 +3472,6 @@ _ag_faq_html, _ag_faq_sch = faq_block([
  ('Do I need a dispatch license or MC authority?', 'No. You are an independent agent, not a broker of record. You connect people; LoadBoot&rsquo;s licensed marketplace handles the freight, documents and payments.'),
 ])
 
-_ag_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Independent Agent — Trucking Marketplace (Commission, Remote)","description":"Bring brokers, carriers and shippers to the LoadBoot marketplace in pairs and earn 1% of every delivered load your chain touches — recurring, uncapped, paid monthly. The software does the dispatch: live load board, GPS tracking, automatic invoicing and payments. You own the relationships.","datePosted":"2026-07-12","employmentType":"CONTRACTOR","hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":0,"maxValue":10000}},"directApply":true}</script>'
 
 page('agents.html', 'Become a LoadBoot Agent — Earn 1% of Every Load, Recurring | Independent Dispatchers',
  'Commission role for independent dispatchers: bring a broker + carrier pair to LoadBoot and earn 1% of every GPS-verified delivered load — recurring, no cap, paid monthly. The software does the dispatch; you own the relationships.',
