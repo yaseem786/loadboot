@@ -477,7 +477,7 @@ async function agentPortal(user) {
   let ob = null; try { ob = await agentOnboardingStatus(); } catch (_) {}
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
-  const isVerified = obStatus === 'approved' || (ob && ob.referrer_status === 'active');
+  const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
   const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification ✓' : 'Get Verified', 'shield'], ['post', 'Post a Load', 'loads'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
   let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
@@ -569,7 +569,6 @@ async function agentPortal(user) {
             h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, (obProfile && obProfile.review_note) || ''),
             h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('verify') }, 'Update & resubmit →')])
         : obStatus === 'rejected' ? h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fca5a5;font-weight:700' }, '✕ Application not approved — ' + ((obProfile && obProfile.review_note) || 'contact support.'))
-        : isVerified ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, '🛡 Verified agent — payouts unlocked.')
         : h('div', { style: 'background:linear-gradient(120deg,rgba(252,83,5,.14),rgba(8,131,247,.1));border:1.5px solid rgba(252,83,5,.5);border-radius:14px;padding:16px 18px;margin-bottom:12px' }, [
             h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
               h('div', null, [
