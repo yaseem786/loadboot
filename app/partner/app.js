@@ -4162,18 +4162,51 @@ function packetAgreementCards(skipPacket) {
   (async () => {
     let isAgentWs = false; try { isAgentWs = !!(await isMyOrgAgent()); } catch (_) {}
     if (!isAgentWs) return;
-    postFoldOpen = true;
     const embedded9 = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
-    if (embedded9) {
-      // seamless inside the agent portal: same dark canvas, no double branding, no outer chrome
-      try { document.body.style.background = '#0d1526'; document.documentElement.style.background = '#0d1526'; } catch (_) {}
-    }
+    // AGENT DARK SKIN: the wizard must look like a native agent-portal page, not a white broker page
+    try {
+      document.body.style.background = '#0d1526'; document.documentElement.style.background = '#0d1526';
+      document.body.classList.add('lb-agdark');
+      if (!document.getElementById('lb-agdark-css')) {
+        const st9 = document.createElement('style'); st9.id = 'lb-agdark-css';
+        st9.textContent = [
+          'body.lb-agdark{background:#0d1526!important;color:#dbe4f3}',
+          'body.lb-agdark .cp-card{background:#111c31!important;border-color:rgba(255,255,255,.10)!important;box-shadow:none!important;color:#dbe4f3}',
+          'body.lb-agdark .cp-card:hover{box-shadow:none!important}',
+          'body.lb-agdark .cp-card h1,body.lb-agdark .cp-card h2,body.lb-agdark .cp-card h3,body.lb-agdark .cp-card h4,body.lb-agdark .cp-cardhead h3{color:#f1f5f9!important}',
+          'body.lb-agdark .cp-in,body.lb-agdark select.cp-in,body.lb-agdark textarea.cp-in{background:#0c1628!important;border-color:rgba(255,255,255,.16)!important;color:#eef2f9!important}',
+          'body.lb-agdark .cp-in:focus{border-color:#0883F7!important;background:#0c1628!important}',
+          'body.lb-agdark .cp-in::placeholder{color:#5f7191!important}',
+          'body.lb-agdark select.cp-in option{background:#0c1628;color:#eef2f9}',
+          'body.lb-agdark .cp-lbl,body.lb-agdark .cp-field2>span{color:#9fb0cc!important}',
+          'body.lb-agdark .cp-sub{color:#8ea1bf!important}',
+          'body.lb-agdark table,body.lb-agdark th,body.lb-agdark td{color:#dbe4f3;border-color:rgba(255,255,255,.08)!important}',
+        ].join('\n');
+        document.head.appendChild(st9);
+      }
+    } catch (_) {}
+    // START MINIMIZED: a slim dark banner — the full wizard opens on tap and can fold away again
+    const agFormBox9 = h('div', null, [
+      h('div', { style: 'text-align:right;margin-bottom:6px' },
+        h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'background:rgba(255,255,255,.08);color:#cbd5e1;border:1px solid rgba(255,255,255,.14)', onClick: () => { agFormBox9.hidden = true; agFoldBar9.hidden = false; } }, '✕ Minimize')),
+      form,
+    ]);
+    agFormBox9.hidden = true;
+    const agFoldBar9 = h('div', { style: 'cursor:pointer;border-radius:16px;background:linear-gradient(120deg,#101d36,#0e2246);border:1px solid rgba(8,131,247,.35);padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap', onClick: () => { agFoldBar9.hidden = true; agFormBox9.hidden = false; try { agFormBox9.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} } }, [
+      h('div', { style: 'font-size:1.6rem' }, '⚡'),
+      h('div', { style: 'flex:1;min-width:220px' }, [
+        h('div', { style: 'font-weight:900;color:#fff;font-size:1.02rem' }, 'Post a load'),
+        h('div', { style: 'color:#8ea1bf;font-size:.8rem;margin-top:2px' }, 'Full broker wizard — lane, multi-stop, schedule, rate card, LOAD SOURCE. Tap to open.'),
+      ]),
+      h('span', { style: 'background:#0883F7;color:#fff;font-weight:800;border-radius:10px;padding:9px 16px;font-size:.85rem' }, '+ Open wizard'),
+    ]);
     mount(root, h('div', { style: 'max-width:1100px;margin:0 auto;padding:' + (embedded9 ? '4px 6px 30px' : '16px 14px 40px') }, [
       embedded9 ? null : h('div', { style: 'display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap' }, [
-        brandLogo({ dark: false, sub: 'Agent posting' }),
+        brandLogo({ dark: true, sub: 'Agent posting' }),
         h('div', { class: 'cp-sub', style: 'flex:1;min-width:220px' }, 'Post a load and track it exactly like a broker — everything else lives in your Agent dashboard.'),
       ]),
-      form,
+      agFoldBar9,
+      agFormBox9,
       h('div', { style: 'height:14px' }),
       myLoadsCard,
     ].filter(Boolean)));

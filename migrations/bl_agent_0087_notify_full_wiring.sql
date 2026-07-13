@@ -45,7 +45,7 @@ begin
     end if;
     begin
       insert into app_private.notifications(recipient_role, channel, template_key, payload)
-      values ('staff', 'inapp', 'agent.review_requested',
+      values ('staff', 'in_app', 'agent.review_requested',
         jsonb_build_object('user', auth.uid(), 'title', '🤝 Agent verification requested', 'body', coalesce(p->>'full_name','An agent') || ' submitted onboarding — review in the Agents tab.'));
     exception when others then null; end;
     -- NEW: confirm receipt to the agent (in-app + email)
@@ -98,7 +98,7 @@ begin
   returning id into v_id;
   begin
     insert into app_private.notifications(recipient_role, channel, template_key, payload)
-    values ('staff', 'inapp', 'agent.payout_requested',
+    values ('staff', 'in_app', 'agent.payout_requested',
       jsonb_build_object('title', '💸 Agent payout requested', 'body', coalesce(v_prof.full_name,'Agent') || ' — $' || v_payable || ' to ' || v_prof.payout_method, 'request', v_id));
   exception when others then null; end;
   -- NEW: confirmation to the agent (in-app + email)
@@ -205,7 +205,7 @@ begin
   if not found then raise exception 'request not found or not yet sent' using errcode='22023'; end if;
   begin
     insert into app_private.notifications(recipient_role, channel, template_key, payload)
-    values ('staff', 'inapp', 'agent.payout_received',
+    values ('staff', 'in_app', 'agent.payout_received',
       jsonb_build_object('title', '✅ Agent confirmed payout received', 'body', coalesce(v_ref.display_name,'Agent') || ' confirmed $' || v_amt || ' landed — payout loop closed.', 'request', p_id));
   exception when others then null; end;
   return jsonb_build_object('ok', true);

@@ -102,7 +102,7 @@ begin
     end if;
     begin
       insert into app_private.notifications(recipient_role, channel, template_key, payload)
-      values ('staff', 'inapp', 'agent.review_requested',
+      values ('staff', 'in_app', 'agent.review_requested',
         jsonb_build_object('user', auth.uid(), 'title', '🤝 Agent verification requested', 'body', coalesce(p->>'full_name','An agent') || ' submitted onboarding — review in Ops Radar.'));
     exception when others then null; end;
   end if;
