@@ -269,7 +269,7 @@ function recoveryScreen() {
     catch (e) { err.textContent = (e && e.message) || 'Could not update password.'; btn.disabled = false; btn.textContent = 'Set new password'; }
   } }, 'Set new password');
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
-    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, 'Carrier')]),
+    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : 'Carrier')]),
     h('h1', null, 'Set a new password'),
     h('p', { class: 'cp-auth-sub' }, 'You followed a reset link — choose a new password for your account.'),
     p1, p2, err, btn,
@@ -286,7 +286,7 @@ function authScreen() {
   const name = h('input', { class: 'cp-in', type: 'text', placeholder: 'Your full name', autocomplete: 'name' });
   const ccSel = h('select', { class: 'cp-in', style: 'width:88px;flex:none' }, [h('option', { value: '+1' }, '+1'), h('option', { value: '+92' }, '+92'), h('option', { value: '+44' }, '+44'), h('option', { value: '+91' }, '+91')]);
   const phone = h('input', { class: 'cp-in', type: 'tel', placeholder: 'Mobile number', autocomplete: 'tel' });
-  const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
+  const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, window.__LB_AGENT ? 'Agency / company (optional)' : 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
   const err = h('div', { class: 'cp-err' });
   const title = h('h1', null, 'Welcome back');
   const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your AGENT dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
@@ -303,24 +303,27 @@ function authScreen() {
     } }, 'Forgot password?'));
   const setMode = (s) => {
     signup = s;
-    title.textContent = s ? 'Create your account' : 'Welcome back';
-    sub.textContent = s ? 'Set up your carrier profile — it’s free.' : 'Sign in to your carrier portal.';
+    const AG = !!window.__LB_AGENT;
+    title.textContent = s ? (AG ? 'Become a LoadBoot Agent' : 'Create your account') : 'Welcome back';
+    sub.textContent = s ? (AG ? 'Free agent account — your referral link is ready the moment you sign up. Bring a pair, earn 1% on every delivered load.' : 'Set up your carrier profile — it’s free.')
+                        : (AG ? 'Sign in to your AGENT dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
     extra.style.display = s ? 'block' : 'none';
     btn.textContent = s ? 'Create account' : 'Sign in';
     err.textContent = ''; err.className = 'cp-err';
     mount(toggle, s ? [document.createTextNode('Already have an account? '), h('a', { onClick: () => setMode(false) }, 'Sign in')]
-      : [document.createTextNode('New carrier? '), h('a', { onClick: () => setMode(true) }, 'Create an account')]);
+      : [document.createTextNode(AG ? 'New agent? ' : 'New carrier? '), h('a', { onClick: () => setMode(true) }, AG ? 'Create your agent account' : 'Create an account')]);
   };
   btn.onclick = async () => {
     err.textContent = ''; err.className = 'cp-err';
     const em = email.value.trim(), pw = pass.value;
     if (!em || !pw) { err.textContent = 'Enter your email and password.'; return; }
-    if (signup && (!company.value.trim() || !name.value.trim())) { err.textContent = 'Enter your company and your name.'; return; }
+    if (signup && !name.value.trim()) { err.textContent = 'Enter your name.'; return; }
+    if (signup && !window.__LB_AGENT && !company.value.trim()) { err.textContent = 'Enter your company.'; return; }
     if (signup && phone.value.replace(/\D/g, '').length < 7) { err.textContent = 'Enter a valid mobile number.'; return; }
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
-        const { data, error } = await signUp(em, pw, { company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()) });
+        const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()) }, window.__LB_AGENT ? { role: 'agent' } : {}));
         if (error) throw error;
         if (!data || !data.session) { err.className = 'cp-err ok'; err.textContent = 'Account created! Check your email to confirm, then sign in.'; setMode(false); btn.disabled = false; return; }
         // Phone OTP verification — active the moment an SMS provider (Twilio) is configured; graceful otherwise.
@@ -369,7 +372,7 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
-      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, 'Carrier')]),
+      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : 'Carrier')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), passWrap, extra, err, btn, toggle, forgot,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
     ]),
