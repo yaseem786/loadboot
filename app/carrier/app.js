@@ -552,6 +552,16 @@ async function agentPortal(user) {
           close(); lbToast((r9 && r9.note) || 'Invite sent.', 'success', '✉ Invite sent');
         } catch (e9) { b9.disabled = false; b9.textContent = '🚀 Send invite'; err9.textContent = (e9 && e9.message) || 'Failed.'; }
       } }, '🚀 Send invite'),
+      h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: async (ev9) => {
+        const nm9 = nameIn.value.trim(); const hi9 = nm9 ? nm9 + '! ' : '';
+        const MSG9 = {
+          broker: hi9 + 'I moved my freight ops to LoadBoot — post a load and verified carriers book it in one tap, GPS-tracked with automatic paperwork. Join free with my link: ',
+          shipper: hi9 + 'Your freight on a verified truck within hours — live GPS door to door, documented settlement. Free to start, join with my link: ',
+          carrier: hi9 + 'Real loads, zero ghost posts — booked loads vanish from the board instantly, GPS proof gets your detention PAID. Free verified account: ',
+        };
+        const t9 = (MSG9[sideSel.value] || '') + feed.link;
+        try { await navigator.clipboard.writeText(t9); ev9.currentTarget.textContent = 'Copied ✓ — paste in WhatsApp/SMS'; setTimeout(() => { ev9.currentTarget.textContent = '📋 Copy as message instead (WhatsApp/SMS)'; }, 1800); } catch (_) { alert(t9); }
+      } }, '📋 Copy as message instead (WhatsApp/SMS)'),
     ]);
   };
   const linkCard = () => agCard('🔗 Your referral link', [
@@ -560,8 +570,7 @@ async function agentPortal(user) {
     h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
       h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#FC5305', onClick: inviteModal9 }, '✉ Invite by email'),
       h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { try { await navigator.clipboard.writeText(feed.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(feed.link); } } }, 'Copy link'),
-      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const t9 = 'I moved my freight ops to LoadBoot — post a load and verified carriers book it in one tap, GPS-tracked with automatic paperwork. Join free with my link: ' + feed.link; try { await navigator.clipboard.writeText(t9); ev.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev.currentTarget.textContent = '📋 Broker invite'; }, 1400); } catch (_) { alert(t9); } } }, '📋 Broker invite'),
-      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { const t9 = 'Real loads, zero ghost posts — booked loads vanish from the board instantly. GPS proof gets your detention PAID. Free verified account, join with my link: ' + feed.link; try { await navigator.clipboard.writeText(t9); ev.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev.currentTarget.textContent = '📋 Carrier invite'; }, 1400); } catch (_) { alert(t9); } } }, '📋 Carrier invite'),
+
     ]),
   ]);
   const chainRows = () => (Array.isArray(feed.chain) && feed.chain.length) ? feed.chain.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
