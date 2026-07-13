@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
@@ -459,32 +459,64 @@ function notCarrier() {
       h('p', { class: 'cp-auth-sub', style: 'margin-bottom:10px' }, 'Share your link — every broker, carrier or shipper who joins through it is yours, permanently. Your 1% comes out of LoadBoot’s own fee: your clients never pay extra.'),
     ]);
     panel.appendChild(buildReferralStats(r));
-    // ---- LIVE CHAIN: pair state + every referred org with activity + earnings ----
+    // ---- AGENT DASHBOARD v2: one feed, everything live ----
     const chainW = h('div', { style: 'margin-top:14px' });
     panel.appendChild(chainW);
     (async () => {
-      let cs; try { cs = await agentChainStatus(); } catch (_) { return; }
+      let cs; try { cs = await agentFeed(); } catch (_) { return; }
       if (!cs || !cs.has_code) return;
-      const refs = Array.isArray(cs.referred) ? cs.referred : [];
-      const sides = { c: refs.filter((x) => x.side === 'carrier').length, b: refs.filter((x) => x.side !== 'carrier').length };
+      const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      const k = cs.kpis || {}; const tt = cs.totals || {};
+      const tile = (lbl, val, hi) => h('div', { style: 'flex:1;min-width:110px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:12px;text-align:center' }, [
+        h('div', { style: 'font-size:.6rem;letter-spacing:.09em;font-weight:800;color:#7f92b3;text-transform:uppercase' }, lbl),
+        h('div', { style: 'font-size:1.35rem;font-weight:900;margin-top:3px;color:' + (hi ? '#4ade80' : '#fff') }, val)]);
+      const kpis = h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+        tile('Referred', String(k.referred || 0)), tile('Brokers', String(k.brokers || 0)), tile('Carriers', String(k.carriers || 0)),
+        tile('Clearing', money9(tt.accrued)), tile('Payable', money9(tt.payable), true), tile('Paid', money9(tt.paid), true)]);
       const banner = cs.pair_active
-        ? h('div', { style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.')
-        : h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:10px 14px;font-weight:700;color:#fbbf24' },
-            refs.length === 0
-              ? '⏳ CHAIN PENDING — share your link and bring your first PAIR (a broker + a carrier) to switch earnings on.'
-              : ('⏳ CHAIN PENDING — you have ' + (sides.c ? sides.c + ' carrier(s)' : sides.b + ' broker/shipper(s)') + '. Bring the OTHER side (' + (sides.c ? 'a broker or shipper' : 'a carrier') + ') and every load starts paying you.'));
-      const rows = refs.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
-        h('div', { style: 'flex:1;min-width:190px' }, [
-          h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
-          h('div', { class: 'cp-row-s' }, x.side + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' loads posted · ' + (x.trips_delivered || 0) + ' delivered'),
-        ]),
-        h('b', { style: 'color:var(--lb-green,#4ade80)' }, '$' + Number(x.your_earnings || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })),
-      ]));
+        ? h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.')
+        : h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:10px 14px;font-weight:700;color:#fbbf24' },
+            (k.referred || 0) === 0 ? '⏳ CHAIN PENDING — share your link and bring your first PAIR (a broker + a carrier).'
+            : ('⏳ CHAIN PENDING — bring the other side (' + ((k.carriers || 0) ? 'a broker or shipper' : 'a carrier') + ') and every load starts paying you.'));
+      // invite templates — one-tap copy
+      const invite = (label9, txt9) => h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { await navigator.clipboard.writeText(txt9); ev9.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev9.currentTarget.textContent = label9; }, 1500); } catch (_) { alert(txt9); } } }, label9);
+      const inviteRow = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
+        invite('📋 Broker invite', 'I moved my freight ops to LoadBoot — post a load and verified carriers book it in one tap, GPS-tracked with automatic paperwork. Join free with my link: ' + cs.link),
+        invite('📋 Carrier invite', 'Real loads, zero ghost posts — booked loads vanish from the board instantly. GPS proof gets your detention PAID. Free verified account, join with my link: ' + cs.link),
+      ]);
+      // live loads of the chain
+      const loads = Array.isArray(cs.loads) ? cs.loads : [];
+      const badge9 = (txt9, bg9, cl9) => h('span', { class: 'cp-pill', style: 'background:' + bg9 + ';color:' + cl9 }, txt9);
+      const loadRows = loads.map((x) => {
+        const st9 = x.delivered_at ? badge9('✓ DELIVERED', 'rgba(34,197,94,.15)', '#4ade80')
+          : x.trip_status ? badge9('🚛 BOOKED', 'rgba(8,131,247,.15)', '#3b9dff')
+          : badge9('📦 POSTED', 'rgba(245,158,11,.15)', '#fbbf24');
+        return h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+          h('div', { style: 'flex:1;min-width:190px' }, [
+            h('div', { class: 'cp-row-t' }, (x.lane || '') + (x.rate ? ' · $' + Number(x.rate).toLocaleString() : '')),
+            h('div', { class: 'cp-row-s' }, 'broker: ' + (x.broker || '—') + (x.broker_yours ? ' ★yours' : '')
+              + (x.booked_by ? ' · carrier: ' + x.booked_by + (x.booked_by_yours ? ' ★YOURS — double chain ✓' : '') : '')
+              + (Number(x.your_commission) ? ' · your cut ' + money9(x.your_commission) : '')),
+          ]), st9,
+        ]);
+      });
+      // notices feed
+      const notices = Array.isArray(cs.notices) ? cs.notices : [];
+      const noticeRows = notices.slice(0, 8).map((n) => h('div', { class: 'cp-row-s', style: 'padding:4px 0;border-bottom:1px dashed rgba(148,163,184,.2)' },
+        (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : '')));
       mount(chainW, h('div', null, [
-        h('div', { class: 'cp-row-t', style: 'margin-bottom:6px' }, '🔗 Your chain — live'),
-        banner,
-        rows.length ? h('div', { style: 'margin-top:8px' }, rows) : h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Nobody yet — your link is ready above. First stop: that broker or carrier you already know.'),
-      ]));
+        kpis, banner, inviteRow,
+        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '🔗 Your chain'),
+        (Array.isArray(cs.chain) && cs.chain.length) ? h('div', null, cs.chain.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+          h('div', { style: 'flex:1;min-width:190px' }, [
+            h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
+            h('div', { class: 'cp-row-s' }, x.side + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
+          ]), h('b', { style: 'color:#4ade80' }, money9(x.your_earnings)),
+        ]))) : h('div', { class: 'cp-row-s' }, 'Nobody yet — copy an invite above and send it to that broker or carrier you already know.'),
+        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '📦 Chain loads — live'),
+        loadRows.length ? h('div', null, loadRows) : h('div', { class: 'cp-row-s' }, 'Loads your clients post or haul appear here the moment they happen: POSTED → BOOKED → DELIVERED (+ your cut).'),
+        noticeRows.length ? h('div', null, [h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '🔔 Latest activity'), ...noticeRows]) : null,
+      ].filter(Boolean)));
     })();
     const pw = h('div'); panel.appendChild(pw); referralPayoutUI(pw, r);
     shell.appendChild(panel);

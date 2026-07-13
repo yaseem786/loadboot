@@ -300,6 +300,7 @@ export const payDispute = (kind, ref, note) => rpc('pay_dispute', { p_kind: kind
 export const ccLoadStops = (load) => rpc('cc_load_stops', { p_load: load });
 export const tripStopsProgress = (trip) => rpc('cc_trip_stops_progress', { p_trip: trip });
 export const agentChainStatus = () => rpc('agent_chain_status', {});
+export const agentFeed = () => rpc('agent_feed', {});
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });
