@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead,
@@ -474,8 +474,12 @@ async function agentPortal(user) {
   let r0 = null; try { r0 = await myReferral(); } catch (_) {}
   if (!feed || !feed.has_code) { notCarrier(); return; }
   const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
-  let tab = (location.hash || '').replace('#', '') || 'dashboard';
+  let ob = null; try { ob = await agentOnboardingStatus(); } catch (_) {}
+  const obProfile = (ob && ob.profile) || null;
+  const obStatus = (obProfile && obProfile.status) || 'draft';
+  const isVerified = obStatus === 'approved' || (ob && ob.referrer_status === 'active');
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification ✓' : 'Get Verified', 'shield'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs']];
+  let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
   const content = h('div', { class: 'cp-content' });
@@ -532,6 +536,77 @@ async function agentPortal(user) {
         linkCard(),
         agCard('🔔 Latest activity', notices.length ? notices.map((n) => h('div', { class: 'cp-row-s', style: 'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,.2)' }, (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : ''))) : [h('div', { class: 'cp-muted' }, 'Joins, posted loads, bookings and deliveries land here the moment they happen.')]),
       ]));
+    } else if (tab === 'verify') {
+      const W = window.__agw = window.__agw || { step: 0, d: Object.assign({ full_name: feed.name || '', network: {} }, obProfile || {}) };
+      const d = W.d;
+      const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:#e6edf8' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
+      if (obStatus === 'under_review') { mount(content, agCard('🛡 Verification', [stEl('⏳ UNDER REVIEW', 'LoadBoot dispatch is reviewing your application — usually under 24 hours. You will get an in-app + email decision. Your link works meanwhile; earnings switch on at approval.', 'warn')])); return; }
+      if (obStatus === 'approved') { mount(content, agCard('🛡 Verification', [stEl('✅ VERIFIED AGENT', 'Your chain earns on every delivered load. Nothing more needed here.', 'ok')])); return; }
+      if (obStatus === 'rejected') { mount(content, agCard('🛡 Verification', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')])); return; }
+      const fld = (lbl9, key9, ph9, type9) => { const i9 = h('input', { class: 'cp-in', type: type9 || 'text', placeholder: ph9 || '' }); i9.value = d[key9] || ''; i9.oninput = () => { d[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
+      const steps9 = ['Identity', 'Your network', 'Payout & agreement'];
+      const bar9 = h('div', { style: 'display:flex;gap:8px;margin-bottom:14px' }, steps9.map((nm9, i9) => h('div', { style: 'flex:1;text-align:center;font-size:.72rem;font-weight:800;padding:7px;border-radius:9px;background:' + (i9 === W.step ? '#0883F7' : 'rgba(255,255,255,.06)') + ';color:' + (i9 === W.step ? '#fff' : '#7f92b3') }, (i9 + 1) + '. ' + nm9)));
+      const err9 = h('div', { class: 'cp-err' });
+      let body9;
+      if (W.step === 0) body9 = h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap' }, [
+        fld('Full name *', 'full_name', 'Your legal name'), fld('Mobile *', 'phone', '+1 555 0100'),
+        fld('City', 'city', ''), fld('State/Region', 'state', ''), fld('Agency / company (optional)', 'agency', ''), fld('Website / LinkedIn (optional)', 'website', '')]);
+      else if (W.step === 1) {
+        if (!d.network) d.network = {};
+        const chk9 = (lbl9, key9) => { const c9 = h('input', { type: 'checkbox' }); c9.checked = !!d.network[key9]; c9.onchange = () => { d.network[key9] = c9.checked; }; return h('label', { style: 'display:flex;gap:8px;align-items:center;font-size:.9rem;font-weight:700' }, [c9, lbl9]); };
+        const nfld9 = (lbl9, key9, ph9) => { const i9 = h('input', { class: 'cp-in', placeholder: ph9 || '' }); i9.value = d.network[key9] || ''; i9.oninput = () => { d.network[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
+        body9 = h('div', null, [
+          fld('Years in dispatch / freight', 'years_exp', 'e.g. 3', 'number'),
+          h('div', { class: 'cp-lbl', style: 'margin-top:10px' }, 'Who do you already know? (matching engine uses this)'),
+          h('div', { style: 'display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 10px' }, [chk9('Brokers', 'has_brokers'), chk9('Carriers', 'has_carriers'), chk9('Shippers', 'has_shippers')]),
+          h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap' }, [nfld9('Lanes you know', 'lanes', 'e.g. TX → Southeast, Midwest reefer'), nfld9('Equipment', 'equipment', 'e.g. dry van, reefer, flatbed')]),
+        ]);
+      } else {
+        const sel9 = h('select', { class: 'cp-in' }, [['', 'Choose payout method *'], ['payoneer', 'Payoneer (email)'], ['ach', 'US bank (ACH)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+        sel9.value = d.payout_method || ''; sel9.onchange = () => { d.payout_method = sel9.value; render(); };
+        const tax9 = h('select', { class: 'cp-in' }, [['', 'Tax form *'], ['w9', 'W-9 (US person)'], ['w8ben', 'W-8BEN (non-US)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+        tax9.value = d.tax_form || ''; tax9.onchange = () => { d.tax_form = tax9.value; };
+        const signI = h('input', { class: 'cp-in', placeholder: 'Type your FULL LEGAL NAME to sign' }); signI.value = d.agreement_name || ''; signI.oninput = () => { d.agreement_name = signI.value; };
+        body9 = h('div', null, [
+          h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap' }, [
+            h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Payout method *'), sel9]),
+            d.payout_method === 'payoneer' ? fld('Payoneer email *', 'payout_email', 'you@payoneer.com') : null,
+            d.payout_method === 'ach' ? fld('Routing # *', 'payout_routing', '9 digits') : null,
+            d.payout_method === 'ach' ? fld('Account # *', 'payout_account', '') : null,
+            h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Tax form *'), tax9]),
+          ].filter(Boolean)),
+          h('div', { style: 'margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;max-height:190px;overflow:auto;font-size:.82rem;line-height:1.7;color:#b9c6da' }, [
+            h('b', { style: 'color:#fff' }, 'LoadBoot Agent Agreement — summary (full text on loadboot.com/agents.html)'), h('br'),
+            '1. Independent contractor — not an employee; you handle your own taxes (1099). ',
+            '2. Commission: 1% of gross on GPS-verified DELIVERED loads only; pair-activation required; 15-day clearing; monthly payout from $100; paid from LoadBoot\u2019s own fee; nothing on cancelled/disputed loads. ',
+            '3. Anti-fraud: self-referrals, fake companies or circumvention = immediate termination + forfeiture. ',
+            '4. Non-circumvention: don\u2019t move chain clients off-platform. ',
+            '5. No authority to bind LoadBoot; you may describe yourself only as an independent LoadBoot agent. ',
+            '6. Marketing: no spam (CAN-SPAM/TCPA), truthful claims only. ',
+            '7. Confidentiality of chain data. 8. Platform ToS & Privacy Policy apply. 9. Either side may end with 15-day notice; earned balance paid out.',
+          ]),
+          h('div', { style: 'margin-top:10px' }, [h('label', { class: 'cp-lbl' }, '✍ E-sign — type your full legal name *'), signI]),
+        ]);
+      }
+      const backB = W.step > 0 ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { W.step--; render(); } }, '← Back') : null;
+      const nextB = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => {
+        err9.textContent = '';
+        if (W.step === 0 && (!String(d.full_name || '').trim() || String(d.phone || '').replace(/\D/g, '').length < 7)) { err9.textContent = 'Name aur sahi mobile number required.'; return; }
+        if (W.step < 2) { try { await agentSaveOnboarding(d, false); } catch (_) {} W.step++; render(); return; }
+        if (!d.payout_method || !d.tax_form || !String(d.agreement_name || '').trim()) { err9.textContent = 'Payout method, tax form and your typed signature are required.'; return; }
+        const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Submitting…';
+        try {
+          d.payout_details = { email: d.payout_email || null, routing: d.payout_routing || null, account: d.payout_account || null };
+          await agentSaveOnboarding(d, true);
+          location.reload();
+        } catch (e9) { b9.disabled = false; b9.textContent = 'Submit for review'; err9.textContent = (e9 && e9.message) || 'Failed.'; }
+      } }, W.step < 2 ? 'Next →' : 'Submit for review');
+      mount(content, agCard('🛡 Get Verified — 3 steps, 5 minutes', [
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'Verification unlocks earnings: LoadBoot dispatch approves every agent (usually <24h). Your link already works — joins are recorded; commissions release at approval.'),
+        obStatus === 'info_needed' ? stEl('⚠ MORE INFO NEEDED', (obProfile && obProfile.review_note) || '', 'warn') : null,
+        bar9, body9, err9,
+        h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [backB, nextB].filter(Boolean)),
+      ].filter(Boolean)));
     } else if (tab === 'chain') {
       mount(content, h('div', null, [banner9(), h('div', { style: 'height:12px' }), agCard('🔗 Your chain — live', chainRows())]));
     } else if (tab === 'loads') {
