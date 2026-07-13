@@ -1,0 +1,14 @@
+-- bl_agent_0085 — CC AGENTS MODULE + agent-recruits-agent downline + signup notif fix.
+-- Applied to staging 2026-07-13 (canonical SQL = supabase migration of the same name):
+-- 1) send_welcome_email v2 — AGENT-aware: agents get an agent welcome email +
+--    staff notice "🤝 New AGENT signup" (was wrongly "New carrier signup").
+-- 2) referrers.parent_referrer + agent_claim_upline(code) — agent joins via another
+--    agent's link → upline recorded; referral_next() helper walks org-edges OR
+--    parent_referrer so levels 2–5 pay across agent teams (referral_accrue_core v3;
+--    level-1 pair-gated, override levels flow to active uplines).
+-- 3) cc_agents_list() — every agent w/ status, referred count, downline count,
+--    earned/payable, open payout flag.
+-- 4) cc_agent_360(user) — application (full incl payout_details for staff), chain,
+--    recursive downline levels 2–5 with per-level earnings, commissions summary +
+--    recent, payout requests, message thread.
+-- 5) cc_agent_notify_send(user, title, body, email?) — staff push in-app (+email).

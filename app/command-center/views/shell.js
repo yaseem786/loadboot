@@ -16,6 +16,7 @@ const NAV = [
   { group: 'Overview', items: [
     { path: '/', label: 'Dashboard', icon: 'grid', perm: null },
     { path: '/radar', label: 'Ops Radar', icon: 'bell', perm: null },
+    { path: '/agents', label: 'Agents', icon: 'user', perm: 'carriers.approve' },
     { path: '/management', label: 'Management', icon: 'grid', perm: null },
     { path: '/bi', label: 'Business Intelligence', icon: 'trend', perm: 'any:analytics.view,reports.view' },
     { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics', children: [
