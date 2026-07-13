@@ -755,7 +755,7 @@ async function agentPortal(user) {
         const sel9 = h('select', { class: 'cp-in' }, [['', 'Choose payout method *'], ['payoneer', 'Payoneer (email + receiving account)'], ['ach', 'US bank (ACH)'], ['intl', 'International bank (IBAN/SWIFT)'], ['other', 'Other (describe)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
         sel9.value = d.payout_method || ''; sel9.onchange = () => { d.payout_method = sel9.value; render(); };
         const tax9 = h('select', { class: 'cp-in' }, [['', 'Tax form *'], ['w9', 'W-9 (US person)'], ['w8ben', 'W-8BEN (non-US)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
-        tax9.value = d.tax_form || ''; tax9.onchange = () => { d.tax_form = tax9.value; };
+        tax9.value = d.tax_form || ''; tax9.onchange = () => { d.tax_form = tax9.value; render(); };
         const signI = h('input', { class: 'cp-in', placeholder: 'Type your FULL LEGAL NAME to sign' }); signI.value = d.agreement_name || ''; signI.oninput = () => { d.agreement_name = signI.value; };
         body9 = h('div', null, [
           h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap' }, [
