@@ -1841,7 +1841,7 @@ async function brokerDash(user, ov) {
       h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'These are LoadBoot marketplace standards — pre-agreed on every load, so a carrier can book without a single phone call. You cannot post BELOW standard; you may offer ABOVE to attract carriers on a tough lane.'),
       (() => {
         // ---- LoadBoot standard accessorials: fixed floor, broker may raise ABOVE (never below) ----
-        const STD = { acc_detention_per_hr: 60, acc_detention_free_hours: 2, acc_layover_per_day: 250, acc_tonu: 250, acc_driver_assist: 75, acc_extra_stop: 50 };
+        const STD = { acc_detention_per_hr: 60, acc_detention_free_hours: 2, acc_layover_per_day: 250, acc_tonu: 250, acc_driver_assist: 75, acc_extra_stop: 100 };
         const KEYMAP = { acc_detention_per_hr: 'detention_per_hr', acc_detention_free_hours: 'detention_free_hours', acc_layover_per_day: 'layover_per_day', acc_tonu: 'tonu', acc_driver_assist: 'driver_assist', acc_extra_stop: 'extra_stop' };
         const sv = (k) => { const s = (w.__stds && Number(w.__stds[KEYMAP[k]])) || STD[k]; return s; };
         if (!w.__stds && !w.__stds_p3) { w.__stds_p3 = true; (async () => { try { const m = {}; ((await rateStandards()) || []).forEach(r => { m[r.key] = r.value; }); w.__stds = w.__stds || m; } catch (_) {} try { renderStep(); } catch (_) {} })(); }
@@ -1878,7 +1878,15 @@ async function brokerDash(user, ov) {
           : h('div', { class: 'cp-sub', style: 'background:#f8fafc;border:1px dashed #e2e8f0;border-radius:12px;padding:10px 12px' }, 'Driver assist not marked for this load. If the driver may work the dock at pickup or delivery, tick it under Freight handling in the previous step.');
         const optional = h('div', { style: 'display:grid;gap:9px;margin-top:9px' }, [
           daInfo,
-          optRow(esCb, 'Extra stops beyond pickup & delivery', 'Multi-stop load — each extra stop pays standard $' + sv('acc_extra_stop') + '/stop.', w.svc_extra_stop ? row('Extra stop', 'acc_extra_stop', sv('acc_extra_stop'), '/stop', '') : null),
+          (() => {
+            const nst9 = (Array.isArray(w.stops) ? w.stops.filter((z9) => z9 && z9.lat) : []).length;
+            if (nst9) { w.svc_extra_stop = true; esCb.checked = true; esCb.disabled = true; }
+            const rate9 = Number(w.acc_extra_stop) || sv('acc_extra_stop');
+            const desc9 = nst9
+              ? 'This load has ' + nst9 + ' extra stop' + (nst9 > 1 ? 's' : '') + ' (from step 1): ' + w.stops.filter((z9) => z9 && z9.lat).map((z9, k9) => (z9.kind === 'pickup' ? '📦' : '📤') + ' ' + (z9.city || 'stop ' + (k9 + 1))).join(', ') + ' — ' + nst9 + ' × $' + rate9 + ' = $' + (nst9 * rate9) + ' total, auto-billed as each stop is served (GPS-verified).'
+              : 'Multi-stop load — each extra stop pays standard $' + sv('acc_extra_stop') + '/stop.';
+            return optRow(esCb, 'Extra stops beyond pickup & delivery' + (nst9 ? ' — ' + nst9 + ' on this load' : ''), desc9, w.svc_extra_stop ? row('Extra stop' + (nst9 ? ' (×' + nst9 + ')' : ''), 'acc_extra_stop', sv('acc_extra_stop'), '/stop', '') : null);
+          })(),
         ]);
         const lsel = h('select', { class: 'cp-in' }, ['Reimbursed with receipt', 'Broker pays lumper directly', 'Included in rate', 'Not covered'].map(o => h('option', { value: o }, o)));
         lsel.value = w.acc_lumper_policy || 'Reimbursed with receipt'; lsel.onchange = () => { w.acc_lumper_policy = lsel.value; renderStep(); };
@@ -1894,7 +1902,7 @@ async function brokerDash(user, ov) {
           li('Lumper', w.acc_lumper_policy || 'Reimbursed with receipt', '/lumper-policy.html'),
         ];
         if (w.driver_assist_required) items.push(li('Driver assist', '$' + (Number(w.acc_driver_assist) || sv('acc_driver_assist')) + '/stop', '/driver-assist-policy.html'));
-        if (w.svc_extra_stop) items.push(li('Extra stop', '$' + (Number(w.acc_extra_stop) || sv('acc_extra_stop')) + '/stop', null));
+        if (w.svc_extra_stop) { const nst9 = (Array.isArray(w.stops) ? w.stops.filter((z9) => z9 && z9.lat) : []).length; const rt9 = Number(w.acc_extra_stop) || sv('acc_extra_stop'); items.push(li('Extra stop' + (nst9 ? 's ×' + nst9 : ''), '$' + rt9 + '/stop' + (nst9 ? ' = $' + (nst9 * rt9) + ' total' : ''), null)); }
         if (w.team_required) items.push(li('Team drivers', 'priced in linehaul (+20–30%)', null));
         const agree = h('div', { style: 'margin-top:14px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:14px;padding:14px 16px' }, [
           h('div', { style: 'font-weight:800;color:#065f46;font-size:.92rem;margin-bottom:3px' }, '📋 Standard marketplace terms — please review before continuing'),
