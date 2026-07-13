@@ -1534,19 +1534,30 @@ async function brokerDash(user, ov) {
         if (window.__lbAgentOrg) {
           const srcF = (lbl9, key9, ph9) => { const i9 = h('input', { class: 'cp-in', type: 'text', placeholder: ph9 || '', style: 'margin:0;flex:1;min-width:180px' }); i9.value = w[key9] || ''; i9.oninput = () => { w[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
           const srcSel = h('select', { class: 'cp-in', style: 'margin:0' }, [['', 'Where is this load from? *'], ['my_broker', 'My referred broker'], ['other_broker', 'Another broker'], ['shipper_direct', 'Shipper direct']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
-          srcSel.value = w.src_type || ''; srcSel.onchange = () => { w.src_type = srcSel.value; };
+          // per-source guidance: brokers have an MC# + rate con; a direct shipper has neither — their PO/contract + AP contact is the proof
+          const srcHint9 = h('div', { class: 'cp-sub', style: 'margin-top:8px;font-weight:600' }, '');
+          const SRC_HINTS9 = {
+            my_broker: '📄 Proof due in 2h: the broker\u2019s RATE CONFIRMATION + their billing (AP) contact.',
+            other_broker: '📄 Proof due in 2h: that broker\u2019s RATE CONFIRMATION (with their MC#) + billing contact.',
+            shipper_direct: '📄 Shipper direct = no broker, no MC#. Proof due in 2h: the shipper\u2019s PO / signed contract / load tender email + their accounts-payable contact. Best margin — no broker in the middle.',
+          };
+          const syncSrc9 = () => { w.src_type = srcSel.value; try { srcMcWrap9.style.display = srcSel.value === 'shipper_direct' ? 'none' : ''; } catch (_) {} srcHint9.textContent = SRC_HINTS9[srcSel.value] || ''; };
+          srcSel.value = w.src_type || ''; srcSel.onchange = syncSrc9;
           body.appendChild(h('div', { style: 'grid-column:1/-1;margin-top:12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;color:#c2410c' }, '🧾 LOAD SOURCE — required for agent-posted loads'),
             h('div', { class: 'cp-sub', style: 'margin:3px 0 8px' }, 'You are posting as an AGENT: name the real broker/shipper who pays this load. Dispatch verifies it, and their rate confirmation + billing contact are due within 2 HOURS of posting (overdue pauses your postings). Wrong/fake source = program termination.'),
             h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
               h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Source type *'), srcSel]),
               srcF('Source company name *', 'src_company', 'e.g. Apex Logistics LLC'),
-              srcF('Source MC / DOT #', 'src_mc', 'e.g. MC-123456'),
+              (() => { const w9 = srcF('Source MC / DOT # (brokers)', 'src_mc', 'e.g. MC-123456'); window.__srcMcTmp9 = w9; return w9; })(),
               srcF('Source contact name *', 'src_contact', ''),
               srcF('Source email *', 'src_email', 'ap@company.com'),
               srcF('Source phone', 'src_phone', ''),
             ]),
+            srcHint9,
           ]));
+          const srcMcWrap9 = window.__srcMcTmp9; delete window.__srcMcTmp9;
+          syncSrc9();
         }
         body.appendChild(h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '🇺🇸 Type the street address and pick a suggestion — city, state and ZIP fill in, real driving miles calculate automatically and the exact pin powers GPS tracking. Carriers on the board see only the City, ST; the full address goes on the rate confirmation after booking.'));
       } catch (_) {}
