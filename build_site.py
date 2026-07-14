@@ -1302,8 +1302,9 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 <a class="ap-tab" href="/app/partner/"><span class="ap-i">&#127970;</span><span>Broker (licensed)<small>Post loads &amp; manage carriers</small></span></a>
 <a class="ap-tab" href="/shipper-solutions.html"><span class="ap-i">&#128230;</span><span>Shipper<small>Move freight via a licensed broker</small></span></a>
 <a class="ap-tab" href="/referral.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
+<a class="ap-tab" href="/app/agent/"><span class="ap-i">&#129309;</span><span>Agent (independent dispatcher)<small>Bring clients, earn 1% of every delivered load</small></span></a>
 </div>
-<div class="ap-note">You&rsquo;re creating a <b>Carrier</b> account below. Broker, shipper and referral each have their own quick flow &mdash; pick one above.</div>
+<div class="ap-note">You&rsquo;re creating a <b>Carrier</b> account below. Broker, shipper, referral and agent each have their own quick flow &mdash; pick one above.</div>
 </div>
 <h3 style="margin:26px 0 16px">Your business</h3>
 <div class="form-grid">
@@ -3798,6 +3799,22 @@ _HUB_ROLES = [
     ('audience', 'Audience size', 'select:Under 1k|1k-10k|10k-100k|100k+', False),
     ('message', 'Who you reach &amp; how you&rsquo;d promote', 'textarea', False)],
    'Join the referral program', 'Thanks — we&rsquo;ll set up your referral link and reach out.'),
+  ('agent', '&#129297;', 'Agent', 'Agents &amp; independent dispatchers',
+   'Bring clients in pairs (a carrier + a broker/shipper, or post loads yourself) and earn 1% of the gross on every GPS-verified delivered load your chain touches &mdash; paid from Loadboot&rsquo;s own fee.',
+   ['1% of gross on every delivered load where any side of the deal is yours',
+    'One referral link for everyone &mdash; the system detects carrier, broker or shipper automatically',
+    'Recruit other agents and earn level 2&ndash;5 overrides on their whole chains',
+    'Post loads yourself with a broker-grade wizard (source-verified)',
+    'CRM-grade chain tracking, live earnings, Amazon-style payout center',
+    'Free to join &mdash; verification takes about a day, worldwide remote'],
+   'agents.html', 'See how the agent program works &rarr;',
+   'agent_signup', 'Become a LoadBoot agent',
+   'The full program runs in the Agent Portal &mdash; create your account there in 2 minutes.',
+   [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True),
+    ('phone', 'Phone (any country)', 'tel', False),
+    ('network', 'Who do you already know?', 'select:Carriers|Brokers|Shippers|Carriers + brokers (a pair!)|Building from scratch', False),
+    ('message', 'Tell us about your dispatch experience', 'textarea', False)],
+   'Apply &mdash; then open the Agent Portal', 'Thanks! Now create your login at loadboot.com/app/agent/ — your application links up automatically.'),
 ]
 
 hub = svc_hero('Create your Loadboot account',
@@ -3808,7 +3825,7 @@ for i, r in enumerate(_HUB_ROLES):
     rid, ic, short = r[0], r[1], r[2]
     _tabbar += '<button type="button" class="hub-tab%s" data-hub="%s"><span class="em">%s</span>%s</button>' % (
         ' on' if i == 0 else '', rid, ic, short)
-_tabbar += '</div><p class="hub-lede reveal">Not sure? Carriers and drivers start here. Brokers and shippers use the Partner Portal; creators earn with Referral.</p></div></section>'
+_tabbar += '</div><p class="hub-lede reveal">Not sure? Carriers and drivers start here. Brokers and shippers use the Partner Portal; creators earn with Referral; independent dispatchers join as Agents.</p></div></section>'
 hub += _tabbar
 for i, r in enumerate(_HUB_ROLES):
     rid, ic, short, longname, blurb, bullets, phref, plabel, fkey, fhead, fintro, ffields, fsubmit, fsuccess = r
@@ -3826,8 +3843,8 @@ hub += ('<script>(function(){var tabs=document.querySelectorAll(".hub-tab");var 
         'tabs.forEach(function(t){t.addEventListener("click",function(){show(t.getAttribute("data-hub"));});});'
         'var h=(location.hash||"").replace("#","");if(h&&document.getElementById("hp-"+h))show(h);})();</script>')
 hub += REF_CAPTURE_JS
-page('get-started.html', 'Create Your Loadboot Account &mdash; Carrier, Broker, Shipper &amp; Referral',
-     'Create a Loadboot account in minutes. Carriers, freight brokers, shippers and referral partners &mdash; pick your role and get set up. Flat 5%, no contracts.',
+page('get-started.html', 'Create Your Loadboot Account &mdash; Carrier, Broker, Shipper, Agent &amp; Referral',
+     'Create a Loadboot account in minutes. Carriers, freight brokers, shippers, agents and referral partners &mdash; pick your role and get set up. Flat 5%, no contracts.',
      'get-started.html', hub)
 
 # ---- Login portal chooser ----
@@ -3835,12 +3852,13 @@ lg = svc_hero('Log in to Loadboot', 'Choose your portal. Not sure which one you 
 lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
     ('&#128667;', 'Carrier Portal', 'Manage loads, trips, documents, finance and your team. <a href="/app/carrier/">Open Carrier Portal &rarr;</a>'),
     ('&#129309;', 'Partner Portal', 'Brokers, shippers and facilities. <a href="/app/partner/">Open Partner Portal &rarr;</a>'),
+    ('&#129297;', 'Agent Portal', 'Independent dispatchers &amp; agents &mdash; your chain, earnings and payouts. <a href="/app/agent/">Open Agent Portal &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'Developers &amp; API', 'API keys, docs and integrations. <a href="/app/developer/">Open Developer Portal &rarr;</a>'),
     ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
     ('&#10067;', 'Need an account?', 'New to Loadboot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
 ], 'g3'))
 page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Developer Portals',
-     'Choose your Loadboot portal: Carrier Portal, Partner Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
+     'Choose your Loadboot portal: Carrier Portal, Partner Portal, Agent Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
      'login.html', lg)
 
 # ---- Apps page: the LoadBoot mobile experience (PWA today, stores in preparation) ----
