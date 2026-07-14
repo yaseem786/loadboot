@@ -90,6 +90,8 @@ function payRailBlock(kind9, ref9, memo9, label9) {
       h('div', { style: 'font-size:1.3rem;font-weight:900;margin:4px 0' }, money(pi.amount || 0)),
       pi.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi.noa_warning) : null,
       bank.instructions ? h('div', { class: 'cp-sub', style: 'white-space:pre-wrap' }, bank.instructions) : h('div', null, [
+        bank.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, '🏦 PAY THE FACTORING COMPANY — ' + (bank.factoring_company || '') + (bank.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')) : null,
+        bank.pay_to ? row9('Factoring company', bank.factoring_company) : null,
         row9('Payee', bank.account_title), row9('Bank', bank.bank_name), row9('Account #', bank.account_number),
         row9('Routing (ACH)', bank.routing_number), row9('Account type', bank.account_type), row9('SWIFT/BIC', bank.swift_bic),
         row9('Remittance email', bank.remittance_email), row9('Preferred method', bank.payment_method),
@@ -3449,7 +3451,9 @@ async function brokerDash(user, ov) {
               h('div', { style: 'font-size:1.3rem;font-weight:900;margin:4px 0' }, money(pi.amount || 0)),
               pi.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi.noa_warning) : null,
               bank.instructions ? h('div', { class: 'cp-sub', style: 'white-space:pre-wrap' }, bank.instructions) : h('div', null, [
-                row9('Payee', bank.account_title), row9('Bank', bank.bank_name), row9('Account #', bank.account_number),
+                bank.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, '🏦 PAY THE FACTORING COMPANY — ' + (bank.factoring_company || '') + (bank.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')) : null,
+        bank.pay_to ? row9('Factoring company', bank.factoring_company) : null,
+        row9('Payee', bank.account_title), row9('Bank', bank.bank_name), row9('Account #', bank.account_number),
                 row9('Routing (ACH)', bank.routing_number), row9('Account type', bank.account_type), row9('SWIFT/BIC', bank.swift_bic),
                 row9('Remittance email', bank.remittance_email), row9('Preferred method', bank.payment_method),
                 bank.verified ? h('div', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-top:6px' }, '\u2713 Bank details verified by LoadBoot') : h('div', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-top:6px' }, '\u26a0 Details not yet verified \u2014 confirm with the carrier before a large transfer'),

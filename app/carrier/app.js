@@ -20,7 +20,7 @@ import {
   isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
-  pocketNotifications, pocketMarkNotificationRead,
+  pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
@@ -4476,6 +4476,51 @@ function tripStepper(status) {
       { label: 'Due', value: rows.filter(i => i.status === 'sent').length, color: '#f59e0b' },
       { label: 'Draft', value: rows.filter(i => i.status === 'draft').length, color: '#94a3b8' },
     ];
+    // ---- 🏦 FACTORING (NOA) — org-level by design: an NOA legally binds ALL your invoices (UCC 9-406);
+    // there is no per-load bank/factor toggle. Switching back needs the factor's signed RELEASE letter.
+    const factoringCard9 = (() => {
+      const host9 = h('div', { class: 'cp-card', style: 'margin-top:14px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🏦 Factoring — how brokers pay you')]), h('div', { class: 'cp-muted' }, 'Loading…')]);
+      (async () => {
+        let pp9 = null; try { pp9 = await myPaymentProfile(); } catch (_) {}
+        const st9 = (pp9 && pp9.noa_status) || 'none';
+        const on9 = !!(pp9 && pp9.factoring_noa);
+        const chip9 = { pending: ['#fbbf24', '⏳ NOA under LoadBoot review — brokers already see the factor\u2019s details with a “verification pending” note'], verified: ['#4ade80', '✅ NOA verified — every broker payment panel shows your FACTOR\u2019s remit-to, never your bank'], rejected: ['#f87171', '✕ NOA rejected — fix and resubmit'], released: ['#94a3b8', '↩ Factoring released — brokers pay your own bank again'], none: ['#94a3b8', 'Not using factoring — brokers pay your bank on file directly'] }[st9] || ['#94a3b8', ''];
+        const f9 = { factoring_company: (pp9 && pp9.factoring_company) || '', account_title: '', bank_name: '', account_number: '', routing_number: '', remittance_email: '', payment_method: 'ACH' };
+        const inp9 = (k9, lbl9, ph9) => { const i9 = h('input', { class: 'cp-in', placeholder: ph9 || '', value: f9[k9] || '' }); i9.oninput = () => { f9[k9] = i9.value; }; return h('div', { style: 'flex:1;min-width:190px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
+        const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:6px;min-height:1em' });
+        const form9 = h('div', { style: on9 ? 'display:none' : '' }, [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.7;margin:8px 0' }, 'Use a factoring company? Declare it here ONCE — it applies to ALL your loads (a Notice of Assignment legally covers every invoice — that\u2019s why there is no per-trip choice). Brokers then automatically see your factor\u2019s remit-to details instead of your bank, with the NOA warning. First upload the factor\u2019s NOA letter under Documents → Factoring NOA.'),
+          h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+            inp9('factoring_company', 'Factoring company *', 'e.g. OTR Capital'),
+            inp9('account_title', 'Remit-to payee name *', 'exactly as the factor wrote it'),
+            inp9('bank_name', 'Factor\u2019s bank *', ''),
+            inp9('account_number', 'Factor account #', ''),
+            inp9('routing_number', 'Factor routing (ACH)', ''),
+            inp9('remittance_email', 'Factor remittance email', 'payments@factor.com'),
+          ]),
+          h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+            try { await carrierFactoringSet({ action: 'activate', factoring_company: f9.factoring_company, remit: { account_title: f9.account_title, bank_name: f9.bank_name, account_number: f9.account_number, routing_number: f9.routing_number, remittance_email: f9.remittance_email, payment_method: f9.payment_method } }); lbToast('Factoring submitted — LoadBoot verifies the NOA, brokers with open loads are being notified.', 'ok', '🏦 NOA filed'); loadFinance(); }
+            catch (e9) { b9.disabled = false; msg9.textContent = (e9 && e9.message) || 'Failed.'; } } }, 'Activate factoring — file the NOA'),
+          msg9,
+        ]);
+        const releaseRow9 = on9 ? h('div', { style: 'margin-top:10px' }, [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, 'Leaving your factor? Upload their signed RELEASE LETTER under Documents → Factoring NOA, then tap below — until the release, brokers must keep paying the factor.'),
+          h('button', { class: 'cp-btn-ghost', style: 'margin-top:7px', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+            try { await carrierFactoringSet({ action: 'release', release_doc: 'documents:noa-release' }); lbToast('Release filed — after LoadBoot verifies it, brokers pay your own bank again.', 'ok', '↩ Release filed'); loadFinance(); }
+            catch (e9) { b9.disabled = false; msg9.textContent = (e9 && e9.message) || 'Failed.'; } } }, '↩ I left my factoring company — file the release'),
+          msg9,
+        ]) : null;
+        mount(host9, h('div', null, [
+          h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🏦 Factoring — how brokers pay you')]),
+          h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
+            h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + chip9[0] }, (on9 ? ((pp9 && pp9.factoring_company) || 'Factoring') + ' · ' : '') + st9.toUpperCase()),
+          ]),
+          h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.65' }, chip9[1]),
+          form9, releaseRow9,
+        ].filter(Boolean)));
+      })();
+      return host9;
+    })();
     const stmtCard = h('div', { class: 'cp-card' }, [cardHead('Account statement'), h('div', { class: 'cp-muted' }, 'Loading…')]);
     (async () => {
       let s; try { s = await pocketStatement(); } catch (e) { mount(stmtCard, [cardHead('Account statement'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
@@ -4766,6 +4811,7 @@ function tripStepper(status) {
     mount(content, h('div', null, [
       nav,
       secHost,
+      factoringCard9,
       h('div', { class: 'cp-card' }, [cardHead('Invoices'), rows.length ? h('div', null, rows.map(i => {
         const dw = h('div');
         const dispute = (i.status === 'sent' || i.status === 'paid') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
