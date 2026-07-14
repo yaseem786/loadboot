@@ -33,7 +33,7 @@ import { openPrintable } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
-import { payInstructions, payMarkSent, payDueItems, ccLoadStops, isMyOrgAgent } from '../shared/api.js';
+import { payInstructions, payMarkSent, payDueItems, payTripMarkSent, ccLoadStops, isMyOrgAgent } from '../shared/api.js';
 (async () => { try { window.__lbAgentOrg = !!(await isMyOrgAgent()); } catch (_) { window.__lbAgentOrg = false; } })();
 
 
@@ -101,6 +101,7 @@ function payRailBlock(kind9, ref9, memo9, label9) {
       h('b', { style: 'user-select:all' }, memo9 || ''),
       refIn, fIn, sendB, msg9,
     ].filter(Boolean));
+    panel.appendChild(h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: () => { panel.style.display = 'none'; openB.style.display = ''; } }, '\u2715 Hide payment details'));
     const openB = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a;margin-top:8px', onClick: () => { openB.style.display = 'none'; panel.style.display = 'block'; } }, '\u{1F4B0} ' + (label9 || 'Pay') + ' \u2014 ' + money(pi.amount || 0));
     mount(host9, h('div', null, [openB, panel]));
   })();
@@ -3913,6 +3914,32 @@ function packetAgreementCards(skipPacket) {
                 : h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, '💸 payments on the way'),
             ]),
           ]),
+          (due9 > 0 && g9.items[0] && g9.items[0].trip_id) ? (() => {
+            const w9 = h('div', { style: 'margin:4px 0 8px' });
+            const refIn9 = h('input', { class: 'cp-in', placeholder: 'Bank transfer reference / confirmation #', style: 'margin-top:8px' });
+            const fIn9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.85rem;margin-top:6px' });
+            const m9 = h('div', { class: 'cp-sub', style: 'margin-top:4px' });
+            const pan9 = h('div', { style: 'display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px' }, [
+              h('div', { style: 'font-weight:800' }, 'One transfer settles this whole trip — ' + money(due9)),
+              h('div', { class: 'cp-sub', style: 'margin:4px 0' }, 'Send ONE payment of ' + money(due9) + ' (freight + all approved claims of this trip) to the payee shown on any item above — same bank/factor for every item. Attach the single receipt; every item flips to “on the way” together and the carrier confirms each.'),
+              refIn9, fIn9,
+              h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+                const f9 = fIn9.files && fIn9.files[0]; if (!f9) { m9.textContent = 'Attach the payment receipt first.'; return; }
+                b9.disabled = true; b9.textContent = 'Sending\u2026';
+                try {
+                  const up9 = await uploadDocument(f9, 'payment_receipt');
+                  const r9 = await payTripMarkSent(g9.items[0].trip_id, up9.path, up9.fileName, refIn9.value.trim() || null);
+                  pToast('\u2713 Whole trip marked paid — ' + (r9.items || 0) + ' items on the way; the carrier confirms each.', { kind: 'ok', title: '\ud83d\udcb0 Trip settled' });
+                  loadList(); location.hash = location.hash; setTimeout(() => { try { document.location.reload(); } catch (_) {} }, 900);
+                } catch (e9) { b9.disabled = false; b9.textContent = 'I paid the trip total \u2014 submit ONE receipt'; m9.textContent = (e9 && e9.message) || 'Failed.'; }
+              } }, 'I paid the trip total \u2014 submit ONE receipt'),
+              m9,
+              h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => { pan9.style.display = 'none'; ob9.style.display = ''; } }, '\u2715 Hide'),
+            ]);
+            const ob9 = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7;color:#fff;font-weight:800', onClick: () => { ob9.style.display = 'none'; pan9.style.display = 'block'; } }, '\ud83d\udcb0 Pay trip total \u2014 ' + money(due9) + ' (one receipt, all items)');
+            mount(w9, h('div', null, [ob9, pan9]));
+            return w9;
+          })() : null,
           ...g9.items.map(row9),
         ]);
       };

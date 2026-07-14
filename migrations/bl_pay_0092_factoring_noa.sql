@@ -43,3 +43,13 @@ alter table app_private.org_payment_profiles
 -- pay_due_items: every freight/claim row now carries trip_id + lane (platform_fee carries trip_id)
 -- so the broker payables UI groups ONE TRIP = one settlement block (freight + that trip's claims
 -- + trip subtotal + still-due badge), never mixing trips. Copy function def from staging for PROD.
+
+-- ---------- bl_pay_0095 + 0096 (applied staging 2026-07-14) ----------
+-- 0095 PER-BROKER factoring control: org_payment_profiles.direct_brokers jsonb (broker org ids that
+--   pay the carrier DIRECTLY — spot/non-exclusive factoring). carrier_factoring_brokers() lists every
+--   broker hauled for + mode; carrier_factoring_broker_set(broker, direct) flips one broker and
+--   notifies that broker in-app+email both directions. pay_instructions + trg_trip_noa_notice honor
+--   the exception (direct broker → carrier bank, no NOA notice).
+-- 0096 PAY TRIP TOTAL: pay_trip_mark_sent(trip, receipt, ...) — ONE transfer + ONE receipt marks
+--   freight + every approved claim of the trip 'sent' together; single carrier notification with total.
+-- Copy function defs from staging pg_get_functiondef for PROD replay.
