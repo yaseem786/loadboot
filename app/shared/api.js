@@ -200,6 +200,7 @@ export const verifyPaymentProfile = (org, ok, note) => rpc('cc_verify_payment_pr
 export const carrierPaymentProfile = (org) => rpc('cc_carrier_payment_profile', { p_org: org });
 export const carrierFactoringSet = (p) => rpc('carrier_factoring_set', { p });
 export const ccFactoringVerify = (org, ok, note) => rpc('cc_factoring_verify', { p_org: org, p_ok: ok, p_note: note ?? null });
+export const carrierFactoringPacket = (trip) => rpc('carrier_factoring_packet', { p_trip: trip });
 export const trustProfile = (org) => rpc('cc_trust_profile', { p_org: org });
 export const myTrustProfile = () => rpc('cc_my_trust_profile');
 export const myHazmatReadiness = () => rpc('cc_my_hazmat_readiness');

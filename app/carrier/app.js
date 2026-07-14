@@ -20,7 +20,7 @@ import {
   isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
-  pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet,
+  pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
@@ -4485,7 +4485,7 @@ function tripStepper(status) {
         const st9 = (pp9 && pp9.noa_status) || 'none';
         const on9 = !!(pp9 && pp9.factoring_noa);
         const chip9 = { pending: ['#fbbf24', '⏳ NOA under LoadBoot review — brokers already see the factor\u2019s details with a “verification pending” note'], verified: ['#4ade80', '✅ NOA verified — every broker payment panel shows your FACTOR\u2019s remit-to, never your bank'], rejected: ['#f87171', '✕ NOA rejected — fix and resubmit'], released: ['#94a3b8', '↩ Factoring released — brokers pay your own bank again'], none: ['#94a3b8', 'Not using factoring — brokers pay your bank on file directly'] }[st9] || ['#94a3b8', ''];
-        const f9 = { factoring_company: (pp9 && pp9.factoring_company) || '', account_title: '', bank_name: '', account_number: '', routing_number: '', remittance_email: '', payment_method: 'ACH' };
+        const f9 = { factoring_company: (pp9 && pp9.factoring_company) || '', account_title: '', bank_name: '', account_number: '', routing_number: '', remittance_email: '', payment_method: 'ACH', advance_pct: '', fee_pct: '', terms_days_broker: '30' };
         const inp9 = (k9, lbl9, ph9) => { const i9 = h('input', { class: 'cp-in', placeholder: ph9 || '', value: f9[k9] || '' }); i9.oninput = () => { f9[k9] = i9.value; }; return h('div', { style: 'flex:1;min-width:190px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
         const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:6px;min-height:1em' });
         const form9 = h('div', { style: on9 ? 'display:none' : '' }, [
@@ -4497,9 +4497,12 @@ function tripStepper(status) {
             inp9('account_number', 'Factor account #', ''),
             inp9('routing_number', 'Factor routing (ACH)', ''),
             inp9('remittance_email', 'Factor remittance email', 'payments@factor.com'),
+            inp9('advance_pct', 'Advance % they pay you', 'e.g. 95'),
+            inp9('fee_pct', 'Factor fee %', 'e.g. 3'),
+            inp9('terms_days_broker', 'Days the broker gets to pay the factor', '30'),
           ]),
           h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
-            try { await carrierFactoringSet({ action: 'activate', factoring_company: f9.factoring_company, remit: { account_title: f9.account_title, bank_name: f9.bank_name, account_number: f9.account_number, routing_number: f9.routing_number, remittance_email: f9.remittance_email, payment_method: f9.payment_method } }); lbToast('Factoring submitted — LoadBoot verifies the NOA, brokers with open loads are being notified.', 'ok', '🏦 NOA filed'); loadFinance(); }
+            try { await carrierFactoringSet({ action: 'activate', factoring_company: f9.factoring_company, remit: { account_title: f9.account_title, bank_name: f9.bank_name, account_number: f9.account_number, routing_number: f9.routing_number, remittance_email: f9.remittance_email, payment_method: f9.payment_method, advance_pct: f9.advance_pct || null, fee_pct: f9.fee_pct || null, terms_days_broker: f9.terms_days_broker || '30' } }); lbToast('Factoring submitted — LoadBoot verifies the NOA, brokers with open loads are being notified.', 'ok', '🏦 NOA filed'); loadFinance(); }
             catch (e9) { b9.disabled = false; msg9.textContent = (e9 && e9.message) || 'Failed.'; } } }, 'Activate factoring — file the NOA'),
           msg9,
         ]);
@@ -4814,6 +4817,24 @@ function tripStepper(status) {
       factoringCard9,
       h('div', { class: 'cp-card' }, [cardHead('Invoices'), rows.length ? h('div', null, rows.map(i => {
         const dw = h('div');
+        const packetBtn9 = i.trip_id ? h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'margin:4px 6px 0 0;font-size:.74rem', onClick: async () => {
+          let pk9; try { pk9 = await carrierFactoringPacket(i.trip_id); } catch (e9) { lbToast((e9 && e9.message) || 'Could not load the packet.', 'urgent', 'Packet'); return; }
+          const li9 = (t9) => h('div', { class: 'cp-row-s', style: 'padding:3px 0;line-height:1.6' }, t9);
+          openModal('📦 Factoring packet — ' + ((pk9.trip && pk9.trip.origin) || '') + ' → ' + ((pk9.trip && pk9.trip.destination) || ''), [
+            pk9.factor ? h('div', { style: 'background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.35);border-radius:11px;padding:10px 13px;margin-bottom:10px' }, [
+              h('b', null, '🏦 ' + (pk9.factor.company || 'Your factor') + (pk9.factor.noa_status === 'verified' ? ' · NOA verified ✓' : ' · NOA ' + (pk9.factor.noa_status || ''))),
+              li9('Send the bundle to: ' + (pk9.factor.remittance_email || 'your factor') + (pk9.factor.advance_pct ? ' · advance ~' + pk9.factor.advance_pct + '%' : '') + ' · broker pays them in ' + (pk9.factor.terms_days_broker || '30') + ' days'),
+            ]) : h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'No factoring on file — this packet works for direct billing too.'),
+            (pk9.missing && pk9.missing.length) ? h('div', { style: 'background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:10px 13px;margin-bottom:10px' },
+              [h('b', { style: 'color:#fbbf24' }, '⚠ Still needed for funding'), ...pk9.missing.map((m9) => li9('• ' + m9))]) : h('div', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800;margin-bottom:10px' }, '✅ Packet complete — fund-ready'),
+            h('b', null, 'In this packet (collected automatically during the trip):'),
+            li9('🧾 Invoice ' + ((pk9.invoice && pk9.invoice.invoice_no) || '—') + (pk9.invoice ? ' · $' + Number(pk9.invoice.gross || 0).toLocaleString() : '')),
+            li9('✍ Executed rate confirmation: ' + (pk9.rate_confirmation ? 'on file (signed by the broker' + (pk9.rate_confirmation.submitted_at ? ' ' + new Date(pk9.rate_confirmation.submitted_at).toLocaleDateString() : '') + ')' : 'not yet')),
+            ...(((pk9.documents || []).length ? pk9.documents : []).map((d9) => li9('📄 ' + (d9.kind || '').replace(/_/g, ' ').toUpperCase() + ' — ' + (d9.file_name || '') + ' · ' + new Date(d9.uploaded_at).toLocaleDateString() + ' (open it from the trip\u2019s documents)'))),
+            li9('🛰 GPS proof: ' + ((pk9.gps_proof && pk9.gps_proof.note) || '')),
+            h('div', { class: 'cp-row-s', style: 'margin-top:10px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:10px;padding:9px 12px;line-height:1.65' }, pk9.how_to_fund || ''),
+          ]);
+        } }, '📦 Factoring packet') : null;
         const dispute = (i.status === 'sent' || i.status === 'paid') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
           if (dw.firstChild) { dw.innerHTML = ''; return; }
           const reason = h('input', { class: 'cp-in', placeholder: 'Reason for dispute' });
@@ -4851,7 +4872,7 @@ function tripStepper(status) {
             h('div', { class: 'cp-inlineform', style: 'margin-top:6px' }, [refIn]), fIn, sendB, msg9,
           ]));
         } }, '💳 Pay now') : null;
-        return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, payFee, dispute].filter(Boolean)), dw].filter(Boolean));
+        return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, packetBtn9, payFee, dispute].filter(Boolean)), dw].filter(Boolean));
       })) : h('div', { class: 'cp-muted' }, 'No invoices yet.')]),
     ]));
   }

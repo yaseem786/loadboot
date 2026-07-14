@@ -27,3 +27,14 @@ alter table app_private.org_payment_profiles
 -- copy the four function definitions from staging:
 --   select pg_get_functiondef(oid) from pg_proc where proname in
 --     ('carrier_factoring_set','cc_factoring_verify','pay_instructions','cc_my_payment_profile');
+
+-- ---------- bl_pay_0093 additions (same factoring engine, applied staging 2026-07-14) ----------
+-- 1) trg_trip_noa_notice on app_private.trips (AFTER INSERT): every booking path fires
+--    · broker owner: in-app + email "all bills for this trip → factor, due in N days (UCC 9-406)"
+--    · carrier owner: in-app "this trip pays via your factor (~advance%), grab 📦 packet after delivery"
+--    Terms come from factor_details: terms_days_broker (default 30), advance_pct, fee_pct.
+-- 2) carrier_factoring_packet(p_trip): everything the factor needs to fund —
+--    invoice, executed rate con (broker checklist), signed POD/BOL/lumper/gate docs, GPS proof,
+--    missing-items list, factor terms + remittance email. Collected automatically during the trip.
+-- Canonical SQL: copy from staging pg_get_functiondef('app_private.trg_trip_noa_notice()'),
+-- ('public.carrier_factoring_packet(uuid)') for PROD replay.
