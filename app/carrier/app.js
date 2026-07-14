@@ -20,7 +20,7 @@ import {
   isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
-  pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket,
+  pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
@@ -4513,13 +4513,40 @@ function tripStepper(status) {
             catch (e9) { b9.disabled = false; msg9.textContent = (e9 && e9.message) || 'Failed.'; } } }, '↩ I left my factoring company — file the release'),
           msg9,
         ]) : null;
+        // PER-BROKER control: choose which brokers pay your factor and which pay you directly
+        const brokerList9 = on9 ? (() => {
+          const w9 = h('div', { style: 'margin-top:12px' }, h('div', { class: 'cp-muted' }, 'Loading your brokers…'));
+          (async () => {
+            let bl9; try { bl9 = await carrierFactoringBrokers(); } catch (_) { mount(w9, h('span')); return; }
+            const bs9 = (bl9 && bl9.brokers) || [];
+            if (!bs9.length) { mount(w9, h('div', { class: 'cp-row-s' }, 'No brokers hauled for yet — as soon as you book a load, the broker appears here with a factor/direct switch.')); return; }
+            mount(w9, h('div', null, [
+              h('div', { style: 'font-weight:800;margin-bottom:4px' }, '🎛 Per-broker control — full freedom'),
+              h('div', { class: 'cp-row-s', style: 'line-height:1.6;margin-bottom:8px' }, 'Choose which brokers pay your FACTOR and which pay YOU directly. ⚠ Use “direct” only if your factoring contract is non-exclusive AND that broker never got an NOA from your factor — otherwise keep them on factor.'),
+              ...bs9.map((b9) => {
+                const isDirect9 = b9.mode === 'direct';
+                const btn9 = h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'font-size:.74rem', onClick: async (ev9) => { const x9 = ev9.currentTarget; x9.disabled = true;
+                  try { await carrierFactoringBrokerSet(b9.org_id, !isDirect9); lbToast((b9.name || 'Broker') + ' → ' + (!isDirect9 ? 'DIRECT to your bank' : 'via ' + ((bl9 && bl9.factoring_company) || 'factor')) + ' — the broker was notified.', 'ok', '🎛 Switched'); loadFinance(); }
+                  catch (e9) { x9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent', 'Switch'); } } }, isDirect9 ? '→ Switch to factor' : '→ Switch to direct');
+                return h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);flex-wrap:wrap' }, [
+                  h('div', null, [h('b', { style: 'font-size:.86rem' }, b9.name || 'Broker'), h('div', { class: 'cp-row-s' }, (b9.trips || 0) + ' trips')]),
+                  h('div', { style: 'display:flex;align-items:center;gap:8px' }, [
+                    h('span', { class: 'cp-pill', style: 'font-weight:800;' + (isDirect9 ? 'background:rgba(34,197,94,.15);color:#4ade80' : 'background:rgba(139,92,246,.18);color:#c4b5fd') }, isDirect9 ? '🏛 pays YOU directly' : '🏦 pays your FACTOR'),
+                    btn9,
+                  ]),
+                ]);
+              }),
+            ]));
+          })();
+          return w9;
+        })() : null;
         mount(host9, h('div', null, [
           h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🏦 Factoring — how brokers pay you')]),
           h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
             h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + chip9[0] }, (on9 ? ((pp9 && pp9.factoring_company) || 'Factoring') + ' · ' : '') + st9.toUpperCase()),
           ]),
           h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.65' }, chip9[1]),
-          form9, releaseRow9,
+          form9, brokerList9, releaseRow9,
         ].filter(Boolean)));
       })();
       return host9;
