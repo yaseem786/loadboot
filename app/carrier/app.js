@@ -4487,7 +4487,7 @@ function tripStepper(status) {
         const chip9 = { pending: ['#fbbf24', '⏳ NOA under LoadBoot review — brokers already see the factor\u2019s details with a “verification pending” note'], verified: ['#4ade80', '✅ NOA verified — every broker payment panel shows your FACTOR\u2019s remit-to, never your bank'], rejected: ['#f87171', '✕ NOA rejected — fix and resubmit'], released: ['#94a3b8', '↩ Factoring released — brokers pay your own bank again'], none: ['#94a3b8', 'Not using factoring — brokers pay your bank on file directly'] }[st9] || ['#94a3b8', ''];
         const f9 = { factoring_company: (pp9 && pp9.factoring_company) || '', account_title: '', bank_name: '', account_number: '', routing_number: '', remittance_email: '', payment_method: 'ACH', advance_pct: '', fee_pct: '', terms_days_broker: '30' };
         const inp9 = (k9, lbl9, ph9) => { const i9 = h('input', { class: 'cp-in', placeholder: ph9 || '', value: f9[k9] || '' }); i9.oninput = () => { f9[k9] = i9.value; }; return h('div', { style: 'flex:1;min-width:190px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
-        const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:6px;min-height:1em' });
+        const msg9 = h('div', { style: 'margin-top:6px;min-height:1em;color:#f87171;font-weight:700;font-size:.82rem' });
         const form9 = h('div', { style: on9 ? 'display:none' : '' }, [
           h('div', { class: 'cp-row-s', style: 'line-height:1.7;margin:8px 0' }, 'Use a factoring company? Declare it here ONCE — it applies to ALL your loads (a Notice of Assignment legally covers every invoice — that\u2019s why there is no per-trip choice). Brokers then automatically see your factor\u2019s remit-to details instead of your bank, with the NOA warning. First upload the factor\u2019s NOA letter under Documents → Factoring NOA.'),
           h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
@@ -4905,7 +4905,7 @@ function tripStepper(status) {
   }
 
   /* ----- Documents & compliance ----- */
-  const DOC_TYPES = [['insurance', 'Insurance / COI'], ['authority', 'Operating authority'], ['w9', 'W-9'], ['noa', 'Notice of assignment'], ['agreement', 'Signed agreement'], ['hazmat_reg', 'PHMSA Hazmat Registration'], ['hazmat_h', 'CDL Hazmat (H) Endorsement'], ['hazmat_coi', 'Hazmat Insurance COI'], ['rate_con', 'Rate confirmation'], ['bol', 'Bill of lading'], ['pod', 'Proof of delivery'], ['bank_check', 'Bank verification (voided check / letter)'], ['other', 'Other']];
+  const DOC_TYPES = [['insurance', 'Insurance / COI'], ['authority', 'Operating authority'], ['w9', 'W-9'], ['noa', '🏦 Factoring NOA (Notice of assignment)'], ['agreement', 'Signed agreement'], ['hazmat_reg', 'PHMSA Hazmat Registration'], ['hazmat_h', 'CDL Hazmat (H) Endorsement'], ['hazmat_coi', 'Hazmat Insurance COI'], ['rate_con', 'Rate confirmation'], ['bol', 'Bill of lading'], ['pod', 'Proof of delivery'], ['bank_check', 'Bank verification (voided check / letter)'], ['other', 'Other']];
   // Format enforcement: agent/IRS-issued documents MUST be the original PDF —
   // screenshots get rejected by brokers and factoring. Field paperwork may be a clear photo.
   const DOC_FMT = {
@@ -4934,6 +4934,17 @@ function tripStepper(status) {
     let allDocs = []; try { allDocs = await carrierListDocuments(); } catch (_) { allDocs = []; }
     const latestDoc = (t) => (allDocs || []).find(d => d.type === t) || null; // list is newest-first
     const listWrap = h('div');
+    // 🏦 factoring active but NOA letter not uploaded yet → loud reminder at the top
+    let noaBanner9 = null;
+    try {
+      const pp9 = await myPaymentProfile();
+      if (pp9 && pp9.factoring_noa && !latestDoc('noa')) {
+        noaBanner9 = h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(139,92,246,.5);background:rgba(139,92,246,.08);margin-bottom:12px' }, [
+          h('div', { style: 'font-weight:900' }, '🏦 Upload your factor\u2019s NOA letter'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.65' }, 'You activated factoring with ' + (pp9.factoring_company || 'your factor') + ' but the Notice of Assignment letter is not on file yet. Get the PDF from your factoring company, then upload it below with type \u201C🏦 Factoring NOA\u201D \u2014 LoadBoot verifies it against your remit-to details and brokers see \u201Cverified\u201D on every pay panel.'),
+        ]);
+      }
+    } catch (_) {}
     // 📷 Scan to PDF — camera pages -> one PDF, fully offline, no external service.
     let scanPages = [];
     const scanPrev = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' });
@@ -5143,7 +5154,7 @@ function tripStepper(status) {
       ].filter(Boolean));
     };
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
-    mount(content, h('div', null, [scanCard, 
+    mount(content, h('div', null, [noaBanner9, scanCard, 
       h('div', { class: 'cp-card' }, [cardHead('What LoadBoot needs from you',
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
