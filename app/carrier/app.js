@@ -1150,6 +1150,44 @@ async function agentPortal(user) {
   const agBellWrap = h('div', { style: 'position:relative;display:inline-flex' }, [agBell, agBellPanel]);
   agLoadBell(); try { setInterval(agLoadBell, 60000); } catch (_) {}
   document.addEventListener('click', (e9) => { if (!agBellWrap.contains(e9.target)) agBellPanel.hidden = true; });
+  // ⏳/✅ PAIR EXPLAINER — tap the header pill: what the pair is, YOUR live status, how it links to earnings
+  async function pairModal9() {
+    let cs9 = null; try { cs9 = await agentChainStatus(); } catch (_) {}
+    const refs9 = (cs9 && cs9.referred) || [];
+    const car9 = refs9.filter((r9) => r9.side === 'carrier');
+    const dem9 = refs9.filter((r9) => r9.side !== 'carrier');
+    const ownPosts9 = Number((feed && (feed.my_loads_posted || feed.loads_posted)) || 0);
+    const demandOk9 = dem9.length > 0 || ownPosts9 > 0;
+    const active9 = !!(cs9 ? cs9.pair_active : feed.pair_active);
+    let close9 = null;
+    const sideBox9 = (ok9, ic9, t9, lines9) => h('div', { style: 'flex:1;min-width:220px;border-radius:14px;padding:14px;border:1.5px solid ' + (ok9 ? 'rgba(34,197,94,.4)' : 'rgba(245,158,11,.4)') + ';background:' + (ok9 ? 'rgba(34,197,94,.07)' : 'rgba(245,158,11,.06)') }, [
+      h('div', { style: 'font-size:1.3rem' }, ic9 + (ok9 ? ' ✅' : ' ⏳')),
+      h('div', { style: 'font-weight:900;margin-top:4px;color:#fff' }, t9),
+      h('div', { class: 'cp-row-s', style: 'margin-top:5px;line-height:1.65' }, lines9),
+    ]);
+    close9 = openModal(active9 ? '✅ Your chain is ACTIVE — earning is ON' : '⏳ Pair pending — one step from earning', [
+      h('div', { class: 'cp-row-s', style: 'line-height:1.7;margin-bottom:12px' },
+        'Think of it like a marketplace stall: you need SUPPLY (a truck) and DEMAND (freight). The moment you have BOTH, every GPS-verified delivered load your people touch pays you 1% of the gross — automatically, from LoadBoot\u2019s own fee. One side alone earns nothing yet, but nothing is lost: joins are recorded and your link keeps working.'),
+      h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+        sideBox9(car9.length > 0, '🚛', 'Side 1 — a CARRIER (the truck)', car9.length
+          ? 'You have ' + car9.length + ': ' + car9.map((r9) => r9.org).slice(0, 3).join(', ') + (car9.length > 3 ? '…' : '')
+          : 'No carrier yet — share your link with any trucking company. The moment one signs up through it, this box turns green.'),
+        sideBox9(demandOk9, '🏢', 'Side 2 — DEMAND (the freight)', demandOk9
+          ? (dem9.length ? 'You have ' + dem9.length + ' broker/shipper: ' + dem9.map((r9) => r9.org).slice(0, 3).join(', ') + (dem9.length > 3 ? '…' : '') : 'You post loads yourself — that counts as your demand side.')
+          : 'No freight side yet — refer a broker or shipper with your link, OR post a load yourself from the Post a Load tab. Either one turns this green.'),
+      ]),
+      h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3)' }, [
+        h('div', { style: 'font-weight:800;color:#93c5fd' }, active9 ? '💰 What happens now' : '💰 What happens the moment both are green'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.7' },
+          '1) A load is GPS-verified DELIVERED where any side is yours → 2) 1% of the gross lands in Earnings within the half hour (🔔 + email) → 3) it clears in 15 days → 4) from $100 you request a payout in the Payouts tab. Your clients never pay extra — your cut comes out of LoadBoot\u2019s own 5% fee.'),
+      ]),
+      h('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [
+        h('button', { class: 'cp-btn', onClick: () => { try { navigator.clipboard.writeText((cs9 && cs9.link) || ('https://loadboot.com/?ref=' + (feed.code || ''))); } catch (_) {} } }, '🔗 Copy my link — one link for every side'),
+        h('button', { class: 'cp-btn-ghost', onClick: () => { if (close9) close9(); go('chain'); } }, 'Open My Chain'),
+        h('button', { class: 'cp-btn-ghost', onClick: rulesModal9 }, '📖 Full rules'),
+      ]),
+    ]);
+  }
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Agent' })),
@@ -1164,8 +1202,7 @@ async function agentPortal(user) {
         h('div', { class: 'cp-top-left' }, [titleEl]),
         h('div', { class: 'cp-top-right' }, [
           agBellWrap,
-          feed.pair_active ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✅ Chain active')
-            : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, '⏳ Pair pending'),
+          h('button', { class: 'cp-pill', title: 'Tap to see exactly what the pair is and how earning switches ON', style: 'cursor:pointer;border:0;font:inherit;' + (feed.pair_active ? 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' : 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800'), onClick: () => pairModal9() }, feed.pair_active ? '✅ Chain active' : '⏳ Pair pending'),
         ]),
       ]),
       content,

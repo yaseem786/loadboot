@@ -1,0 +1,16 @@
+-- bl_fix_0091 — "Update pickup time" on a SUBMITTED (not-yet-posted) load did nothing:
+-- cc_partner_update_pickup only updated public.loads (raising 'not authorized' when
+-- posted_load_id was null) and NEVER updated app_private.partner_loads.pickup_date,
+-- so the broker UI kept showing EXPIRED forever. Now the partner_loads row itself is
+-- rescheduled (dates + windows, delivery auto-shift) and the promoted board load, when
+-- it exists, is updated exactly as before (incl. cancelled→available reactivation).
+-- Applied to staging 2026-07-14 (verified on the Cedar Park, TX load). Replay on PROD.
+-- Canonical SQL applied via execute_sql — full definition below.
+
+-- [full cc_partner_update_pickup definition — see staging pg_get_functiondef or session log]
+-- Key changes vs previous version:
+--   1) select * into v_pl from app_private.partner_loads where id=p_load and broker_org=v_org;
+--      v_pub := v_pl.posted_load_id  (no more 'not authorized' for submitted loads)
+--   2) update app_private.partner_loads set pickup_date, delivery_date (auto-shift),
+--      pickup_window/delivery_window ('Appt HH:MM' encoding), updated_at=now()
+--   3) board-load update block unchanged, now conditional on v_pub is not null
