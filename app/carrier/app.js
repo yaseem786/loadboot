@@ -2418,7 +2418,20 @@ async function appView(user) {
         h('div', { style: 'margin-top:6px' }, starBtns9), cm9, send9);
       return card9;
     })() : null;
-    mount(content, h('div', null, [tripHero9, rateCard9, onbHero, ...topBanners, kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    const noaDash9 = h('div');
+    (async () => {
+      try {
+        const pp9 = await myPaymentProfile();
+        if (!(pp9 && pp9.factoring_noa)) return;
+        let docs9 = []; try { docs9 = await carrierListDocuments(); } catch (_) {}
+        if ((docs9 || []).some((d9) => d9.type === 'noa')) return;
+        mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(139,92,246,.5);background:rgba(139,92,246,.08);cursor:pointer', onClick: () => go('documents') }, [
+          h('div', { style: 'font-weight:900' }, '🏦 One step left on factoring — upload your NOA letter'),
+          h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.6' }, 'You activated factoring with ' + (pp9.factoring_company || 'your factor') + ' but the Notice of Assignment letter is not on file. Tap here → Documents → upload with type “🏦 Factoring NOA”. Until LoadBoot verifies it, brokers see “verification pending” on your payments.'),
+        ]));
+      } catch (_) {}
+    })();
+    mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     openPrompts();
   }
 
@@ -5297,7 +5310,7 @@ function tripStepper(status) {
       if (factoring) {
         if (!String(f.fr_title || '').trim() || !String(f.fr_bank || '').trim()) throw new Error('Add your factor\u2019s remit-to payee name and bank \u2014 that is what every broker pays.');
         try {
-          await carrierFactoringSet({ action: 'activate', factoring_company: f.factoring_company, remit: { account_title: f.fr_title, bank_name: f.fr_bank, account_number: f.fr_account || null, routing_number: f.fr_routing || null, remittance_email: f.fr_email || null, payment_method: 'ACH', advance_pct: f.fr_advance || null, fee_pct: f.fr_fee || null, terms_days_broker: f.fr_days || '30' } });
+          await carrierFactoringSet({ action: 'activate', factoring_company: f.factoring_company, noa_doc: f.noa_path || null, remit: { account_title: f.fr_title, bank_name: f.fr_bank, account_number: f.fr_account || null, routing_number: f.fr_routing || null, remittance_email: f.fr_email || null, payment_method: 'ACH', advance_pct: f.fr_advance || null, fee_pct: f.fr_fee || null, terms_days_broker: f.fr_days || '30' } });
           lbToast('Factoring filed \u2014 LoadBoot verifies your NOA (upload the letter at the Documents step, type: Notice of assignment). Brokers will pay your factor automatically.', 'action', '🏦 NOA filed');
         } catch (e9) { lbToast((e9 && e9.message) || 'Factoring setup failed \u2014 you can redo it any time in Finance.', 'urgent', 'Factoring'); }
       }
@@ -5394,6 +5407,25 @@ function tripStepper(status) {
             field('Advance % they pay you', 'fr_advance', 'e.g. 95'),
             field('Factor fee %', 'fr_fee', 'e.g. 3'),
             field('Days the broker gets to pay the factor', 'fr_days', '30'),
+          ]),
+          (() => {
+            const fIn9 = h('input', { type: 'file', accept: '.pdf', style: 'font-size:.85rem' });
+            const st9 = h('span', { class: 'cp-row-s' }, f.noa_uploaded ? '✓ NOA letter attached' : '');
+            const up9 = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+              const f9 = fIn9.files && fIn9.files[0]; if (!f9) { st9.textContent = 'Choose the factor\u2019s NOA PDF first.'; st9.style.color = '#f87171'; return; }
+              b9.disabled = true; b9.textContent = 'Uploading\u2026';
+              try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
+              catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#f87171'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }
+            } }, 'Upload NOA');
+            return h('div', { style: 'margin-top:10px' }, [
+              h('div', { class: 'cp-row-t' }, '📄 The NOA letter itself (PDF from your factoring company)'),
+              h('div', { class: 'cp-row-s', style: 'margin:3px 0 6px' }, 'Your factor emails you this letter when you sign with them — attach it here (or later under Documents).'),
+              h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [fIn9, up9]), st9,
+            ]);
+          })(),
+          h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:11px;padding:10px 13px' }, [
+            h('div', { style: 'font-weight:800;color:#4ade80' }, '💡 Don\u2019t worry — nothing gets locked'),
+            h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.65' }, 'Add your own bank below too (recommended): direct-pay / quick-pay brokers and fee settlements use it. Later you can switch ANY broker between factor and direct per-broker (Finance → 🏦 Factoring), and if you ever leave your factor, one release letter flips everything back. You stay in control.'),
           ]),
         ]) : null)]);
       else if (st === 3) body = prefsStep();
