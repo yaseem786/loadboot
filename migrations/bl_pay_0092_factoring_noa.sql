@@ -38,3 +38,8 @@ alter table app_private.org_payment_profiles
 --    missing-items list, factor terms + remittance email. Collected automatically during the trip.
 -- Canonical SQL: copy from staging pg_get_functiondef('app_private.trg_trip_noa_notice()'),
 -- ('public.carrier_factoring_packet(uuid)') for PROD replay.
+
+-- ---------- bl_pay_0094 (applied staging 2026-07-14) ----------
+-- pay_due_items: every freight/claim row now carries trip_id + lane (platform_fee carries trip_id)
+-- so the broker payables UI groups ONE TRIP = one settlement block (freight + that trip's claims
+-- + trip subtotal + still-due badge), never mixing trips. Copy function def from staging for PROD.

@@ -3887,11 +3887,40 @@ function packetAgreementCards(skipPacket) {
           x9.transfer_status ? null : payRailBlock(x9.kind, x9.ref_id, x9.memo || '', x9.kind === 'claim' ? 'Pay this claim' : 'Pay freight'),
         ].filter(Boolean));
       };
+      // GROUP PER TRIP: one block per load — freight + every claim/accessorial of THAT trip together
+      // with the trip's own subtotal; other trips never mix in. (platform_fee rows have no lane → own group)
+      const groups9 = {};
+      [...openIt, ...doneIt].forEach((x9) => {
+        const k9 = x9.trip_id || ('misc:' + x9.ref_id);
+        (groups9[k9] = groups9[k9] || { lane: x9.lane, carrier: x9.counterparty, items: [] }).items.push(x9);
+      });
+      const gArr9 = Object.values(groups9);
+      const gBlock9 = (g9) => {
+        const open9 = g9.items.filter((x9) => x9.transfer_status !== 'received');
+        const sub9 = g9.items.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+        const due9 = open9.filter((x9) => !x9.transfer_status).reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+        const allPaid9 = open9.length === 0;
+        return h('div', { style: 'border:1.5px solid ' + (allPaid9 ? '#bbf7d0' : due9 > 0 ? '#fecaca' : '#fde68a') + ';border-radius:14px;padding:12px 14px;margin-bottom:12px;background:' + (allPaid9 ? '#f0fdf4' : '#fff') }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:4px' }, [
+            h('div', null, [
+              h('div', { style: 'font-weight:900;color:#10223B' }, '🚛 ' + (g9.lane || g9.items[0].label || 'Other')),
+              h('div', { class: 'cp-sub' }, (g9.carrier ? 'Carrier: ' + g9.carrier + ' · ' : '') + g9.items.length + ' item' + (g9.items.length > 1 ? 's' : '') + ' — freight + claims of THIS trip only'),
+            ]),
+            h('div', { style: 'text-align:right' }, [
+              h('div', { style: 'font-weight:900;font-size:1.05rem;color:#10223B' }, 'Trip total ' + money(sub9)),
+              allPaid9 ? h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150' }, '✓ Trip fully settled')
+                : due9 > 0 ? h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, money(due9) + ' still DUE')
+                : h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, '💸 payments on the way'),
+            ]),
+          ]),
+          ...g9.items.map(row9),
+        ]);
+      };
       mount(host9, [
         h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '💰 Payables — money you owe carriers'),
           totalDue ? h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c;margin-left:8px' }, money(totalDue) + ' due') : h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-left:8px' }, 'all settled')]),
-        h('div', { class: 'cp-sub', style: 'margin-bottom:4px' }, 'Every delivered load and approved claim lands here the moment it is owed. Pay it, attach the receipt — the carrier confirms and the row turns green.'),
-        (openIt.length || doneIt.length) ? h('div', null, [...openIt.map(row9), ...doneIt.map(row9)]) : h('div', { class: 'cp-muted' }, 'Nothing owed right now — delivered loads and approved claims appear here automatically.'),
+        h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Grouped per trip: each block is ONE load — its freight plus every approved claim (detention, lumper, TONU…) with the trip\u2019s own total. Pay each item, attach the receipt — the carrier (or their factor) confirms and the row turns green.'),
+        gArr9.length ? h('div', null, gArr9.map(gBlock9)) : h('div', { class: 'cp-muted' }, 'Nothing owed right now — delivered loads and approved claims appear here automatically.'),
       ]);
     })();
     return host9;
