@@ -2425,9 +2425,28 @@ async function appView(user) {
         if (!(pp9 && pp9.factoring_noa)) return;
         let docs9 = []; try { docs9 = await carrierListDocuments(); } catch (_) {}
         if ((docs9 || []).some((d9) => d9.type === 'noa')) return;
-        mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(139,92,246,.5);background:rgba(139,92,246,.08);cursor:pointer', onClick: () => go('documents') }, [
+        const bIn9 = h('input', { type: 'file', accept: '.pdf', style: 'font-size:.85rem' });
+        const bSt9 = h('span', { style: 'font-size:.8rem;color:#f87171;font-weight:700' });
+        mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(139,92,246,.5);background:rgba(139,92,246,.08)' }, [
           h('div', { style: 'font-weight:900' }, '🏦 One step left on factoring — upload your NOA letter'),
-          h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.6' }, 'You activated factoring with ' + (pp9.factoring_company || 'your factor') + ' but the Notice of Assignment letter is not on file. Tap here → Documents → upload with type “🏦 Factoring NOA”. Until LoadBoot verifies it, brokers see “verification pending” on your payments.'),
+          h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px;line-height:1.6' }, 'You activated factoring with ' + (pp9.factoring_company || 'your factor') + ' but the Notice of Assignment letter (PDF from your factor) is not on file. Upload it right here — LoadBoot verifies it and brokers see “verified” on every pay panel.'),
+          h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
+            bIn9,
+            h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+              const f9 = bIn9.files && bIn9.files[0]; if (!f9) { bSt9.textContent = 'Choose the NOA PDF first.'; return; }
+              b9.disabled = true; b9.textContent = 'Uploading\u2026';
+              try {
+                const m9 = await uploadDocument(f9, 'noa');
+                await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path });
+                mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(34,197,94,.45);background:rgba(34,197,94,.08)' }, [
+                  h('div', { style: 'font-weight:900;color:#4ade80' }, '✓ NOA letter uploaded — in review'),
+                  h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot verifies it against your remit-to details (usually a few hours). Track it in Documents — this card disappears on your next visit.'),
+                ]));
+              } catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; bSt9.textContent = (e9 && e9.message) || 'Upload failed.'; }
+            } }, 'Upload NOA'),
+            h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => go('documents') }, 'Open Documents'),
+            bSt9,
+          ]),
         ]));
       } catch (_) {}
     })();
@@ -5166,6 +5185,15 @@ function tripStepper(status) {
         stepper, note,
       ].filter(Boolean));
     };
+    // 🏦 factoring active → NOA becomes a FIRST-CLASS requirement card (tracker + Upload/Resubmit)
+    try {
+      const ppN9 = await myPaymentProfile();
+      if (ppN9 && ppN9.factoring_noa && !reqs.some((r9) => r9.doc_type === 'noa' || /assignment/i.test(r9.name || ''))) {
+        const nd9 = latestDoc('noa');
+        reqs.push({ name: '🏦 Factoring NOA (Notice of Assignment) — ' + (ppN9.factoring_company || 'your factor'), doc_type: 'noa', mandatory: true,
+          status: nd9 ? (nd9.status === 'approved' ? 'valid' : nd9.status === 'rejected' ? 'rejected' : 'pending') : 'missing' });
+      }
+    } catch (_) {}
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
     mount(content, h('div', null, [noaBanner9, scanCard, 
       h('div', { class: 'cp-card' }, [cardHead('What LoadBoot needs from you',
