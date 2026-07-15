@@ -3925,9 +3925,26 @@ function packetAgreementCards(skipPacket) {
             const refIn9 = h('input', { class: 'cp-in', placeholder: 'Bank transfer reference / confirmation #', style: 'margin-top:8px' });
             const fIn9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.85rem;margin-top:6px' });
             const m9 = h('div', { class: 'cp-sub', style: 'margin-top:4px' });
+            const remitHost9 = h('div', null, h('div', { class: 'cp-sub' }, 'Loading payee details…'));
+            (async () => {
+              try {
+                const it9 = g9.items.find((z9) => z9.kind === 'freight') || g9.items[0];
+                const pi9 = await payInstructions(it9.kind, it9.ref_id);
+                const bk9 = (pi9 && pi9.payee_bank) || {};
+                const rr9 = (k9, v9) => v9 ? h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #e2e8f0;font-size:.85rem' }, [h('span', { style: 'color:#64748b' }, k9), h('b', { style: 'user-select:all' }, String(v9))]) : null;
+                mount(remitHost9, h('div', null, [
+                  pi9.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi9.noa_warning) : null,
+                  bk9.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, '🏦 PAY THE FACTORING COMPANY — ' + (bk9.factoring_company || '') + (bk9.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')) : null,
+                  rr9('Payee', bk9.account_title), rr9('Bank', bk9.bank_name), rr9('Account #', bk9.account_number),
+                  rr9('Routing (ACH)', bk9.routing_number), rr9('Remittance email', bk9.remittance_email),
+                  bk9.pay_to ? null : (bk9.verified ? h('div', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-top:6px' }, '\u2713 Bank details verified by LoadBoot') : h('div', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-top:6px' }, '\u26a0 Details not yet verified — confirm with the carrier before a large transfer')),
+                ].filter(Boolean)));
+              } catch (_) { mount(remitHost9, h('div', { class: 'cp-sub' }, 'Could not load payee details — open any single item above to see them.')); }
+            })();
             const pan9 = h('div', { style: 'display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px' }, [
               h('div', { style: 'font-weight:800' }, 'One transfer settles this whole trip — ' + money(due9)),
-              h('div', { class: 'cp-sub', style: 'margin:4px 0' }, 'Send ONE payment of ' + money(due9) + ' (freight + all approved claims of this trip) to the payee shown on any item above — same bank/factor for every item. Attach the single receipt; every item flips to “on the way” together and the carrier confirms each.'),
+              h('div', { class: 'cp-sub', style: 'margin:4px 0' }, 'Send ONE payment of ' + money(due9) + ' (freight + all approved claims of this trip) to the payee below — same bank/factor for every item of this trip. Attach the single receipt; every item flips to “on the way” together and the carrier confirms each.'),
+              remitHost9,
               refIn9, fIn9,
               h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: async (ev9) => { const b9 = ev9.currentTarget;
                 const f9 = fIn9.files && fIn9.files[0]; if (!f9) { m9.textContent = 'Attach the payment receipt first.'; return; }
