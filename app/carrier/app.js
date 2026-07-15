@@ -3931,6 +3931,23 @@ function tripStepper(status) {
     if (_liveWatch != null) { try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {} }
     _liveWatch = null; _liveTrip = null;
   }
+  // BACKGROUND-PROOF tracking: start on ANY portal entry (not just dashboard/trips render),
+  // and the moment the driver returns from Google Maps / another app, push a fresh fix instantly.
+  (async () => {
+    try {
+      const tr9 = await pocketTrips(10);
+      const a9 = (tr9 || []).find((r9) => /planned|dispatched|in_transit/.test(String(r9.status || '')));
+      if (a9) ensureLiveLoc(a9.id);
+    } catch (_) {}
+  })();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !_liveTrip || window.__lbSimOn) return;
+    try {
+      navigator.geolocation.getCurrentPosition((p9) => {
+        try { pocketPostLocation(_liveTrip, p9.coords.latitude, p9.coords.longitude, 'portal-resume').catch(() => {}); } catch (_) {}
+      }, () => {}, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+    } catch (_) {}
+  });
   function toggleLiveLoc(ev, tripId) {
     // Continuous GPS trail while driving (ported from Carrier Pocket). One trip at a time;
     // consent is recorded server-side before the first ping; tap again to stop.

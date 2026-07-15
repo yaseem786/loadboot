@@ -145,10 +145,17 @@ export async function openTripMap(t, opts = {}) {
   fsBtn.onclick = () => toggleSheet();
   const sim = { on: false, timer: null, path: [], i: 0, pauseUntil: 0, pausedOnce: false };
   const DEV_HOST = /^(\d+\.|localhost$|192\.|172\.|10\.)/.test(location.hostname);
+  const gmapBtn = chipBtn('🗺'); gmapBtn.title = 'Navigate in Google Maps — LoadBoot keeps tracking in the background';
   const simBtn = DEV_HOST ? chipBtn('🧪') : null;
   const x = chipBtn('✕');
   const btns = el('div', 'display:flex;gap:7px;align-items:center');
-  btns.append(...[simBtn, voiceBtn, styleBtn, fsBtn, docsBtn, x].filter(Boolean));
+  btns.append(...[gmapBtn, simBtn, voiceBtn, styleBtn, fsBtn, docsBtn, x].filter(Boolean));
+  gmapBtn.onclick = () => {
+    const tg9 = (typeof target === 'function' ? target() : null) || D || P;
+    if (!tg9) { flash('Stops not pinned yet — wait a moment.'); return; }
+    try { window.open('https://www.google.com/maps/dir/?api=1&destination=' + tg9.lat + ',' + tg9.lng + '&travelmode=driving', '_blank', 'noopener'); } catch (_) {}
+    flash('🗺 Google Maps opened for navigation — DO NOT close the LoadBoot tab: tracking, geofence check-ins and detention proof keep running in the background, and update the moment you switch back.');
+  };
   top.append(topSpacer, btns);
   ui.appendChild(top);
   const navBox = el('div', 'position:absolute;top:66px;left:10px;right:10px;z-index:1000;display:none;background:linear-gradient(135deg,#10223B,#173456);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:15px 18px;box-shadow:0 12px 34px rgba(0,0,0,.55)');
