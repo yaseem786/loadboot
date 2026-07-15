@@ -9,3 +9,8 @@
 -- due_since + carrier's factoring terms_days_broker (default net-30); platform_fee uses invoice due_at.
 -- Also receipt_path now included on transfer join (payee can view the payer's receipt).
 -- Copy def from staging for PROD.
+
+-- bl_pay_0101 (staging 2026-07-14): pay_confirm_nag() + cron 'lb-pay-confirm-nag' (*/12h) —
+-- payment past expected_by and payee silent → daily in-app+email nudge ("✓ Received or dispute,
+-- payer is waiting"); 4+ days silent → staff 'pay.confirm_stuck' alert (3-day dedupe).
+-- Copy def from staging for PROD + re-create the cron job there.
