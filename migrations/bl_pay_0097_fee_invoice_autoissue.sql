@@ -1,0 +1,6 @@
+-- bl_pay_0097 — fee invoices auto-ISSUE on delivery (premium fee loop).
+-- auto_invoice_on_delivery: status 'draft' → 'sent' at creation (DUE immediately, net-15),
+-- + carrier owner notified in-app ("🧾 invoice due — Pay now flow"). Backfilled existing drafts
+-- of delivered trips to 'sent' (12 rows staging). payment_config.instructions upgraded to premium
+-- demo remit-to (LoadBoot LLC · Chase · memo rules · Payoneer alt) — REPLACE WITH REAL DETAILS ON PROD.
+-- Copy function def from staging pg_get_functiondef('app_private.auto_invoice_on_delivery()') for PROD.

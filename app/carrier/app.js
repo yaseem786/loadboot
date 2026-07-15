@@ -4891,7 +4891,11 @@ function tripStepper(status) {
       nav,
       secHost,
       factoringCard9,
-      h('div', { class: 'cp-card' }, [cardHead('Invoices'), rows.length ? h('div', null, rows.map(i => {
+      h('div', { class: 'cp-card' }, [cardHead('🧾 LoadBoot fee invoices', 'the flat 5% dispatch fee — nothing else'),
+        h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;margin-bottom:10px' }, [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'What these are: every time a load DELIVERS, LoadBoot auto-issues an invoice for its flat 5% service fee (e.g. $1,175 gross → $59). This is the ONLY thing you ever pay LoadBoot — broker freight money is separate and tracked under 📥 Money in. DUE = pay within 15 days (💳 Pay now → transfer to the details shown → attach receipt → LoadBoot verifies → PAID). Factored carriers: this fee comes from YOUR account, not your factor.'),
+        ]),
+        rows.length ? h('div', null, rows.map(i => {
         const dw = h('div');
         const packetBtn9 = i.trip_id ? h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'margin:4px 6px 0 0;font-size:.74rem', onClick: async () => {
           let pk9; try { pk9 = await carrierFactoringPacket(i.trip_id); } catch (e9) { lbToast((e9 && e9.message) || 'Could not load the packet.', 'urgent', 'Packet'); return; }
@@ -4917,10 +4921,12 @@ function tripStepper(status) {
           const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { if (!reason.value.trim()) { alert('Enter a reason.'); return; } ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketDisputeInvoice(i.id, reason.value.trim()); dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Dispute opened')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not dispute.'); } } }, 'Send');
           dw.appendChild(h('div', { class: 'cp-inlineform' }, [reason, send]));
         } }, 'Dispute') : null;
-        const invPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openPrintable('Invoice ' + (i.invoice_no || ''), 'INVOICE', [
-          { rows: [['Invoice #', i.invoice_no || '—'], ['Status', i.status || '—'], ['Load', i.load_ref || i.load_id || '—'], ['Lane', i.lane || '—'], ['Issued', i.created_at ? new Date(i.created_at).toLocaleDateString() : '—'], ['Due', i.due_at ? new Date(i.due_at).toLocaleDateString() : '—']] },
-          { h: 'Amounts', rows: [['Load gross', money(i.gross || 0)], ['Dispatch fee (5%)', money(i.fee || 0)], ['Carrier net', money(Number(i.gross || 0) - Number(i.fee || 0))]] },
-          { note: 'LoadBoot flat 5% dispatch fee — no contracts. Questions? Contact support in your carrier portal.' },
+        const invPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openPrintable('Invoice ' + (i.invoice_no || ''), i.status === 'paid' ? 'INVOICE · PAID ✓' : 'INVOICE · ' + String(i.status || '').toUpperCase(), [
+          { h: 'From', rows: [['Issued by', 'LoadBoot LLC — The Operating System for Trucking'], ['Billing', 'billing@loadboot.com · loadboot.com'], ['Invoice #', i.invoice_no || '—'], ['Issued', (i.issued_at || i.created_at) ? new Date(i.issued_at || i.created_at).toLocaleDateString() : '—'], ['Due', i.due_at ? new Date(i.due_at).toLocaleDateString() + ' (net 15)' : '—'], ['Status', i.status === 'paid' ? 'PAID ✓' : i.status === 'sent' ? 'DUE — unpaid' : (i.status || '—')]] },
+          { h: 'Bill to', rows: [['Carrier', (window.__lbOrgName || (typeof ov !== 'undefined' && ov && (ov.company || ov.org_name)) || 'Your company')], ['Account', (typeof user !== 'undefined' && user && user.email) || '']] },
+          { h: 'Service — line items', rows: [['Load', (i.load_ref || i.load_id || '—') + (i.lane ? ' · ' + i.lane : '')], ['Load gross (what the broker pays you)', money(i.gross || 0)], ['Dispatch service — flat 5% of gross', money(i.fee || 0)], ['Your net after fee', money(Number(i.gross || 0) - Number(i.fee || 0))], ['', ''], ['TOTAL DUE TO LOADBOOT', money(i.fee || 0)]] },
+          { h: 'How to pay', rows: [['Method', 'ACH / wire to LoadBoot LLC (details in Finance → 💳 Pay now) or Payoneer link from billing@loadboot.com'], ['Memo (required)', i.invoice_no || ''], ['After paying', 'Upload the receipt in Finance — LoadBoot verifies (usually same business day) and this invoice flips to PAID']] },
+          { note: 'LoadBoot flat 5% dispatch fee — no contracts, no monthly charges, nothing else ever. This fee funds dispatch, GPS verification, paperwork and payment protection. Factored carriers: this is payable from your own account (your factor only handles broker freight). Questions: billing@loadboot.com' },
         ]) }, '⬇ PDF');
         const payFee = i.status === 'sent' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async () => {
           if (dw.firstChild) { dw.innerHTML = ''; return; }
