@@ -2331,8 +2331,26 @@ async function appView(user) {
     const _dueAmt = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const topBanners = [
       (_obDone && comp && comp.mandatory_ok === false) ? h('button', { class: 'cpx-banner red', onClick: () => go('documents') }, [h('span', null, '⚠'), h('span', null, 'Please verify your compliance documents'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
-      _dueAmt > 0 ? h('button', { class: 'cpx-banner amber', onClick: () => go('finance') }, [h('span', null, 'ℹ'), h('span', null, money(_dueAmt) + ' in dispatch fees due'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
+      _dueAmt > 0 ? h('button', { class: 'cpx-banner amber', onClick: () => go('finance') }, [h('span', null, 'ℹ'), h('span', null, money(_dueAmt) + ' in dispatch fees due — pays off in Finance, clears when LoadBoot confirms your receipt'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
     ].filter(Boolean);
+    // 📥 money OWED TO YOU by brokers (direct-pay) — live banner, disappears once everything is confirmed received
+    (async () => {
+      try {
+        const d9 = await payDueItems();
+        const recv9 = (d9 && d9.receivables) || [];
+        const owed9 = recv9.filter((x9) => x9.transfer_status !== 'received' && x9.kind !== 'platform_fee');
+        const amt9 = owed9.filter((x9) => !x9.transfer_status).reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+        const fly9 = owed9.filter((x9) => x9.transfer_status === 'sent').reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+        if (amt9 <= 0 && fly9 <= 0) return;
+        const host9 = document.getElementById('lb-recv-banner'); if (!host9) return;
+        host9.appendChild(h('button', { class: 'cpx-banner', style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#4ade80', onClick: () => go('finance') }, [
+          h('span', null, '📥'),
+          h('span', null, (amt9 > 0 ? money(amt9) + ' owed to you by brokers' : '') + (amt9 > 0 && fly9 > 0 ? ' · ' : '') + (fly9 > 0 ? money(fly9) + ' on the way — tap ✓ Received when it lands' : '')),
+          h('span', { class: 'cpx-b-go' }, '›'),
+        ]));
+      } catch (_) {}
+    })();
+    topBanners.push(h('div', { id: 'lb-recv-banner' }));
     const activeTrip9 = (window.__dashTrips || []).find(t9 => ['planned', 'dispatched', 'in_transit'].indexOf(String(t9.status || '')) >= 0);
     if (activeTrip9) { try { ensureLiveLoc(activeTrip9.id); } catch (_) {} }
     const tripHero9 = activeTrip9 ? (() => {

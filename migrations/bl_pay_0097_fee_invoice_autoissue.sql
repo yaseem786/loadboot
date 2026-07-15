@@ -4,3 +4,8 @@
 -- of delivered trips to 'sent' (12 rows staging). payment_config.instructions upgraded to premium
 -- demo remit-to (LoadBoot LLC · Chase · memo rules · Payoneer alt) — REPLACE WITH REAL DETAILS ON PROD.
 -- Copy function def from staging pg_get_functiondef('app_private.auto_invoice_on_delivery()') for PROD.
+
+-- 0097b (staging 2026-07-14): auto_invoice_on_delivery also EMAILS the carrier (premium invoice
+-- email w/ amounts table + memo rule); pay_confirm_received now notifies + emails the PAYER on
+-- confirmation (fee → "Invoice PAID ✓" to carrier; freight/claim → "confirmed received" to broker).
+-- Copy defs from staging for PROD.
