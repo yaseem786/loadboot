@@ -3880,7 +3880,13 @@ function packetAgreementCards(skipPacket) {
             h('div', null, [
               h('div', { class: 'cp-row-t' }, (x9.label || x9.kind) + ' · ' + money(x9.amount)),
               h('div', { class: 'cp-row-s' }, 'to ' + (x9.counterparty || 'carrier') + (x9.due_since ? ' · due since ' + new Date(x9.due_since).toLocaleDateString() + (age9 != null ? ' (' + age9 + 'd)' : '') : '') + ' · memo: ' + (x9.memo || '')),
-            ]),
+              (x9.pay_by && !x9.transfer_status) ? (() => {
+                const left9 = Math.ceil((new Date(x9.pay_by).getTime() - Date.now()) / 86400000);
+                const c9 = left9 < 0 ? ['#fee2e2', '#b91c1c', '⚠ OVERDUE — was due '] : left9 <= 5 ? ['#fef3c7', '#b45309', '⏳ PAY BY '] : ['#eff6ff', '#1d4ed8', '📅 PAY BY '];
+                return h('div', { style: 'display:inline-block;margin-top:4px;padding:3px 12px;border-radius:999px;font-size:.72rem;font-weight:800;background:' + c9[0] + ';color:' + c9[1] },
+                  c9[2] + new Date(x9.pay_by).toLocaleDateString() + (left9 >= 0 ? ' · ' + left9 + 'd left' : ' · ' + (-left9) + 'd ago'));
+              })() : null,
+            ].filter(Boolean)),
             x9.transfer_status === 'received' ? h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150' }, '✓ Paid & confirmed')
             : x9.transfer_status === 'sent' ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, '💸 On the way · awaiting carrier ✓')
             : h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, '⏰ DUE'),
