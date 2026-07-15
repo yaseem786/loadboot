@@ -2396,7 +2396,7 @@ async function appView(user) {
       const dismiss9 = h('button', { title: 'Not now', style: 'position:absolute;top:10px;right:12px;border:0;background:transparent;color:#94a3b8;font-size:1.05rem;cursor:pointer;font-weight:800', onClick: () => { try { localStorage.setItem('lb:rated:' + r9.trip_id, 'skip'); } catch (_) {} card9.remove(); } }, '\u2715');
       let stars9 = 0; const starBtns9 = [];
       const paint9 = () => starBtns9.forEach((b9, i9) => { b9.textContent = i9 < stars9 ? '\u2b50' : '\u2606'; b9.style.filter = i9 < stars9 ? 'none' : 'grayscale(1)'; b9.style.transform = i9 < stars9 ? 'scale(1.12)' : 'scale(1)'; });
-      for (let i9 = 0; i9 < 5; i9++) starBtns9.push(h('button', { style: 'border:0;background:transparent;font-size:1.9rem;cursor:pointer;transition:transform .12s;padding:2px 4px', onClick: () => { stars9 = i9 + 1; paint9(); } }, '\u2606'));
+      for (let i9 = 0; i9 < 5; i9++) starBtns9.push(h('button', { style: 'border:0;background:transparent;font-size:1.9rem;cursor:pointer;transition:transform .12s;padding:2px 4px;color:#fbbf24;text-shadow:0 0 1px #fbbf24', onClick: () => { stars9 = i9 + 1; paint9(); } }, '\u2606'));
       const cm9 = h('input', { class: 'cp-in', placeholder: 'Optional \u2014 one line about this broker (payment, dock, communication)', style: 'margin:8px 0 0' });
       const send9 = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px', onClick: async () => {
         if (!stars9) { lbToast('Tap the stars first \u2014 1 to 5.', 'action', 'Pick a rating'); return; }
