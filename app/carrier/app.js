@@ -31,7 +31,7 @@ import {
   fleetServiceAdd, fleetServiceList, fleetServiceDelete,
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
-import { uploadDocument, uploadPodDocument, uploadTripDoc } from '../shared/storage.js';
+import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
 import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
@@ -4874,19 +4874,25 @@ function tripStepper(status) {
           ].filter(Boolean)),
         ]);
       };
-      const row9 = (x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+      const row9 = (x) => {
+        const dl9 = (x.status === 'sent' && x.expected_by) ? Math.ceil((new Date(x.expected_by).getTime() - Date.now()) / 86400000) : null;
+        const eta9 = dl9 == null ? '' : dl9 > 0 ? ('🕐 landing in ~' + dl9 + ' day' + (dl9 > 1 ? 's' : '') + ' (by ' + new Date(x.expected_by).toLocaleDateString() + ')') : '⚠ past the expected date — check your bank, then ✓ or dispute';
+        return h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
         h('div', { style: 'flex:1;min-width:200px' }, [
           h('div', { class: 'cp-row-t' }, (x.direction === 'incoming' ? '📥 ' : '📤 ') + (x.label || x.kind) + ' · ' + money(x.amount)),
           h('div', { class: 'cp-row-s' }, (x.direction === 'incoming' ? 'From ' : 'To ') + (x.counterparty || '') + ' · sent ' + (x.sent_at ? new Date(x.sent_at).toLocaleDateString() : '')
-            + (x.status === 'sent' && x.expected_by ? ' · expected by ' + new Date(x.expected_by).toLocaleDateString() : '')
             + (x.payment_ref ? ' · ref ' + x.payment_ref : '')),
-        ]),
+          x.status === 'sent' ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;font-weight:700;color:' + (dl9 != null && dl9 <= 0 ? '#fbbf24' : '#60a5fa') }, eta9) : null,
+          (x.status === 'sent' && x.receipt_path) ? h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'margin-top:5px;font-size:.72rem', onClick: async (ev9) => {
+            try { const u9 = await signedDocumentUrl(x.receipt_path); window.open(u9, '_blank', 'noopener'); } catch (_) { lbToast('Could not open the receipt.', 'urgent'); }
+          } }, '📎 View their receipt') : null,
+        ].filter(Boolean)),
         x.status === 'received' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80' }, '✓ received' + (x.received_at ? ' ' + new Date(x.received_at).toLocaleDateString() : ''))
         : x.direction === 'incoming' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
             try { await payConfirmReceived(x.id); lbToast('Marked received — the payer sees this as settled.', 'success', 'Payment received'); loadFinance(); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
           } }, '✓ I received it')
         : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, x.kind === 'platform_fee' ? '⏳ LoadBoot verifying' : '⏳ awaiting their ✓'),
-      ]);
+      ]); };
       const owedTotal9 = owed9.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
       mount(payFlightCard, [cardHead('💸 Your money — owed & in flight'),
         owedTotal9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, money(owedTotal9) + ' owed to you — brokers see these as DUE with your bank details and pay through the same receipt procedure.') : null,
