@@ -78,6 +78,91 @@ export function openPrintable(title, sub, sections) {
   if (w) { w.document.write(html); w.document.close(); }
 }
 
+
+// PREMIUM INVOICE — bespoke branded layout: navy header, meta strip, line-items table,
+// big total block, how-to-pay card with memo pill, diagonal PAID watermark when settled.
+export function openInvoicePdf(inv) {
+  const i = inv || {};
+  const m = (v) => '$' + Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const d = (v) => v ? new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014';
+  const paid = String(i.status || '') === 'paid';
+  const due = String(i.status || '') === 'sent';
+  const html = '<!doctype html><html><head><meta charset="utf-8"><title>Invoice ' + (i.invoice_no || '') + '</title><style>'
+    + '@page{size:letter;margin:0}'
+    + '*{box-sizing:border-box;margin:0;padding:0}'
+    + 'body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#10223B;-webkit-print-color-adjust:exact;print-color-adjust:exact;position:relative}'
+    + '.page{max-width:820px;margin:0 auto;padding:0 0 40px}'
+    + '.hd{background:linear-gradient(120deg,#10223B,#0d2f56);color:#fff;padding:34px 44px;display:flex;justify-content:space-between;align-items:flex-start}'
+    + '.logo{font-size:26px;font-weight:900;letter-spacing:-.5px}.logo b{color:#FC5305}'
+    + '.tag{font-size:11px;color:#9fb0cc;margin-top:4px;letter-spacing:.06em}'
+    + '.inv-t{text-align:right}.inv-t .t{font-size:30px;font-weight:900;letter-spacing:.14em}'
+    + '.inv-t .no{font-size:13px;color:#9fb0cc;margin-top:3px}'
+    + '.ribbon{display:inline-block;margin-top:10px;padding:6px 16px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.08em;'
+    + 'background:' + (paid ? '#16a34a' : due ? '#f59e0b' : '#64748b') + ';color:#fff}'
+    + '.meta{display:flex;gap:0;border-bottom:2px solid #eef2f7}'
+    + '.meta div{flex:1;padding:16px 24px;border-right:1px solid #eef2f7}.meta div:last-child{border-right:0}'
+    + '.meta .k{font-size:10px;letter-spacing:.1em;color:#64748b;font-weight:800;text-transform:uppercase}'
+    + '.meta .v{font-size:14px;font-weight:800;margin-top:3px}'
+    + '.cols{display:flex;gap:24px;padding:22px 44px 6px}'
+    + '.col{flex:1}.col .k{font-size:10px;letter-spacing:.1em;color:#64748b;font-weight:800;text-transform:uppercase;margin-bottom:6px}'
+    + '.col .n{font-weight:900;font-size:15px}.col .s{font-size:12px;color:#475569;line-height:1.7}'
+    + 'table.items{width:calc(100% - 88px);margin:18px 44px;border-collapse:collapse}'
+    + '.items th{background:#10223B;color:#fff;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;text-align:left}'
+    + '.items th:last-child,.items td:last-child{text-align:right}'
+    + '.items td{padding:12px 14px;border-bottom:1px solid #eef2f7;font-size:13.5px}'
+    + '.items .sub td{color:#64748b;font-size:12px}'
+    + '.totals{display:flex;justify-content:flex-end;padding:0 44px}'
+    + '.tot{min-width:300px;background:linear-gradient(120deg,#10223B,#0d2f56);color:#fff;border-radius:14px;padding:16px 22px}'
+    + '.tot .k{font-size:10px;letter-spacing:.12em;color:#9fb0cc;font-weight:800}'
+    + '.tot .v{font-size:28px;font-weight:900;margin-top:2px}'
+    + '.tot .s{font-size:11px;color:#9fb0cc;margin-top:4px}'
+    + '.pay{margin:22px 44px;background:#f8fafc;border:1.5px solid #e6ebf3;border-radius:14px;padding:16px 20px}'
+    + '.pay .h{font-weight:900;font-size:13px;letter-spacing:.04em;margin-bottom:8px}'
+    + '.pay .row{display:flex;gap:10px;font-size:12.5px;line-height:1.9}.pay .row .k{width:150px;color:#64748b;font-weight:700;flex:none}'
+    + '.memo{display:inline-block;background:#FC5305;color:#fff;font-weight:900;border-radius:8px;padding:4px 14px;letter-spacing:.05em}'
+    + '.steps{display:flex;gap:10px;margin-top:12px}'
+    + '.step{flex:1;background:#fff;border:1px solid #e6ebf3;border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.6}'
+    + '.step b{display:block;font-size:12px;color:#0883F7}'
+    + '.ft{margin:26px 44px 0;padding-top:14px;border-top:2px solid #eef2f7;font-size:10.5px;color:#64748b;line-height:1.8}'
+    + '.wm{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-24deg);font-size:120px;font-weight:900;color:rgba(22,163,74,.13);letter-spacing:.1em;pointer-events:none}'
+    + '@media print{.noprint{display:none}}'
+    + '.noprint{position:fixed;top:14px;right:14px;background:#0883F7;color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer}'
+    + '</style></head><body>'
+    + (paid ? '<div class="wm">PAID \u2713</div>' : '')
+    + '<button class="noprint" onclick="print()">\ud83d\udda8 Print / Save PDF</button>'
+    + '<div class="page">'
+    + '<div class="hd"><div><div class="logo">Load<b>Boot</b></div><div class="tag">THE OPERATING SYSTEM FOR TRUCKING \u00b7 loadboot.com</div></div>'
+    + '<div class="inv-t"><div class="t">INVOICE</div><div class="no">' + (i.invoice_no || '') + '</div>'
+    + '<span class="ribbon">' + (paid ? 'PAID \u2713' : due ? 'DUE \u2014 NET 15' : String(i.status || '').toUpperCase()) + '</span></div></div>'
+    + '<div class="meta">'
+    + '<div><div class="k">Issued</div><div class="v">' + d(i.issued_at || i.created_at) + '</div></div>'
+    + '<div><div class="k">Due</div><div class="v">' + d(i.due_at) + '</div></div>'
+    + '<div><div class="k">Load</div><div class="v">' + (i.load_ref || (i.load_id ? String(i.load_id).slice(0, 8) : '\u2014')) + '</div></div>'
+    + '<div><div class="k">Amount due</div><div class="v" style="color:' + (paid ? '#16a34a' : '#FC5305') + '">' + (paid ? 'PAID' : m(i.fee)) + '</div></div>'
+    + '</div>'
+    + '<div class="cols">'
+    + '<div class="col"><div class="k">From</div><div class="n">LoadBoot LLC</div><div class="s">The Operating System for Trucking<br>billing@loadboot.com \u00b7 loadboot.com</div></div>'
+    + '<div class="col"><div class="k">Bill to</div><div class="n">' + (i.__carrier || 'Carrier') + '</div><div class="s">' + (i.__email || '') + '</div></div>'
+    + '</div>'
+    + '<table class="items"><tr><th>Description</th><th>Amount</th></tr>'
+    + '<tr class="sub"><td>Load gross \u2014 what the broker pays you' + (i.lane ? ' \u00b7 ' + i.lane : '') + '</td><td>' + m(i.gross) + '</td></tr>'
+    + '<tr><td><b>Dispatch service \u2014 flat 5% of gross</b><br><span style="font-size:11px;color:#64748b">Load sourcing \u00b7 GPS trip verification \u00b7 rate confirmation & paperwork \u00b7 payment protection</span></td><td><b>' + m(i.fee) + '</b></td></tr>'
+    + '<tr class="sub"><td>Your net after fee</td><td>' + m(Number(i.gross || 0) - Number(i.fee || 0)) + '</td></tr>'
+    + '</table>'
+    + '<div class="totals"><div class="tot"><div class="k">TOTAL DUE TO LOADBOOT</div><div class="v">' + m(i.fee) + '</div><div class="s">' + (paid ? 'Settled ' + d(i.paid_at) + ' \u2014 thank you' : 'Net 15 \u00b7 due ' + d(i.due_at)) + '</div></div></div>'
+    + '<div class="pay"><div class="h">\ud83d\udcb3 HOW TO PAY</div>'
+    + '<div class="row"><span class="k">Bank (ACH / wire)</span><span>LoadBoot LLC \u00b7 JPMorgan Chase \u00b7 Acct 7700123456 \u00b7 Routing 021000021</span></div>'
+    + '<div class="row"><span class="k">International</span><span>Payoneer \u2014 request a link from billing@loadboot.com</span></div>'
+    + '<div class="row"><span class="k">Transfer memo</span><span class="memo">' + (i.invoice_no || '') + '</span></div>'
+    + '<div class="steps"><div class="step"><b>1 \u00b7 Transfer</b>ACH lands in 1\u20133 business days; wires same day</div>'
+    + '<div class="step"><b>2 \u00b7 Receipt</b>Upload the receipt in Finance \u2192 \ud83d\udcb3 Pay now</div>'
+    + '<div class="step"><b>3 \u00b7 PAID</b>LoadBoot verifies \u2014 usually same business day</div></div></div>'
+    + '<div class="ft">LoadBoot\u2019s flat 5% dispatch fee is the only thing you ever pay \u2014 no contracts, no monthly charges. Factored carriers: this fee is payable from your own account; your factor only handles broker freight. Questions: billing@loadboot.com</div>'
+    + '</div></body></html>';
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
 // Branded dispatch-sheet printable built from a dispatch-sheet object.
 export function printDispatchSheet(d) {
   d = d || {};

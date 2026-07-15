@@ -32,12 +32,12 @@ import {
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc } from '../shared/storage.js';
-import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, ccLoadStops } from '../shared/api.js';
+import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
 import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
-import { printDispatchSheet, openPrintable } from '../shared/ui/printDoc.js';
+import { printDispatchSheet, openPrintable, openInvoicePdf } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { registerAppSW } from '../shared/sw-register.js';
@@ -4863,6 +4863,10 @@ function tripStepper(status) {
           ]),
           h('div', { style: 'display:flex;flex-direction:column;gap:6px;align-items:flex-end' }, [
             h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, '⏰ awaiting broker payment'),
+            (x9.kind === 'claim' || x9.kind === 'freight') ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+              try { await payRequestReminder(x9.kind, x9.ref_id); b9.textContent = '✓ Requested'; lbToast('Payment request sent — the broker got a 🔔 + email with the pay panel link.', 'success', '🔔 Requested'); }
+              catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent', 'Request'); }
+            } }, '🔔 Request payment') : null,
             (age9 != null && age9 >= 3 && (x9.kind === 'claim' || x9.kind === 'freight')) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget;
               const nt9 = prompt('Dispute non-payment — what happened? (goes to the broker AND LoadBoot support):'); if (!nt9) return;
               b9.disabled = true; try { const r9 = await payDispute(x9.kind, x9.ref_id, nt9); lbToast((r9 && r9.note) || 'Dispute filed.', 'success', 'Dispute filed'); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
@@ -4939,13 +4943,7 @@ function tripStepper(status) {
           const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { if (!reason.value.trim()) { alert('Enter a reason.'); return; } ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketDisputeInvoice(i.id, reason.value.trim()); dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Dispute opened')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not dispute.'); } } }, 'Send');
           dw.appendChild(h('div', { class: 'cp-inlineform' }, [reason, send]));
         } }, 'Dispute') : null;
-        const invPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openPrintable('Invoice ' + (i.invoice_no || ''), i.status === 'paid' ? 'INVOICE · PAID ✓' : 'INVOICE · ' + String(i.status || '').toUpperCase(), [
-          { h: 'From', rows: [['Issued by', 'LoadBoot LLC — The Operating System for Trucking'], ['Billing', 'billing@loadboot.com · loadboot.com'], ['Invoice #', i.invoice_no || '—'], ['Issued', (i.issued_at || i.created_at) ? new Date(i.issued_at || i.created_at).toLocaleDateString() : '—'], ['Due', i.due_at ? new Date(i.due_at).toLocaleDateString() + ' (net 15)' : '—'], ['Status', i.status === 'paid' ? 'PAID ✓' : i.status === 'sent' ? 'DUE — unpaid' : (i.status || '—')]] },
-          { h: 'Bill to', rows: [['Carrier', (window.__lbOrgName || (typeof ov !== 'undefined' && ov && (ov.company || ov.org_name)) || 'Your company')], ['Account', (typeof user !== 'undefined' && user && user.email) || '']] },
-          { h: 'Service — line items', rows: [['Load', (i.load_ref || i.load_id || '—') + (i.lane ? ' · ' + i.lane : '')], ['Load gross (what the broker pays you)', money(i.gross || 0)], ['Dispatch service — flat 5% of gross', money(i.fee || 0)], ['Your net after fee', money(Number(i.gross || 0) - Number(i.fee || 0))], ['', ''], ['TOTAL DUE TO LOADBOOT', money(i.fee || 0)]] },
-          { h: 'How to pay', rows: [['Method', 'ACH / wire to LoadBoot LLC (details in Finance → 💳 Pay now) or Payoneer link from billing@loadboot.com'], ['Memo (required)', i.invoice_no || ''], ['After paying', 'Upload the receipt in Finance — LoadBoot verifies (usually same business day) and this invoice flips to PAID']] },
-          { note: 'LoadBoot flat 5% dispatch fee — no contracts, no monthly charges, nothing else ever. This fee funds dispatch, GPS verification, paperwork and payment protection. Factored carriers: this is payable from your own account (your factor only handles broker freight). Questions: billing@loadboot.com' },
-        ]) }, '⬇ PDF');
+        const invPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openInvoicePdf(Object.assign({}, i, { __carrier: window.__lbOrgName || 'Your company', __email: (typeof user !== 'undefined' && user && user.email) || '' })) }, '⬇ PDF');
         const payFee = i.status === 'sent' ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#16a34a', onClick: async () => {
           if (dw.firstChild) { dw.innerHTML = ''; return; }
           dw.appendChild(h('div', { class: 'cp-muted' }, 'Loading payment instructions…'));
@@ -4965,11 +4963,35 @@ function tripStepper(status) {
               lbToast('Receipt sent — LoadBoot verifies it and marks the invoice paid.', 'success', 'Payment submitted'); loadFinance();
             } catch (e9) { b9.disabled = false; b9.textContent = 'I have paid — submit receipt'; msg9.textContent = (e9 && e9.message) || 'Failed.'; }
           } }, 'I have paid — submit receipt');
-          dw.appendChild(h('div', { style: 'margin-top:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px' }, [
-            h('div', { class: 'cp-row-t' }, '💳 Pay LoadBoot — ' + money(pi.amount || i.fee || 0)),
-            h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;margin:4px 0' }, (pi.payee_bank && pi.payee_bank.instructions) || 'Payment instructions are being finalised — contact support and we will send bank/Payoneer details.'),
-            h('div', { class: 'cp-row-s' }, 'Put this in the transfer memo: ' + (i.invoice_no || '')),
-            h('div', { class: 'cp-inlineform', style: 'margin-top:6px' }, [refIn]), fIn, sendB, msg9,
+          // PREMIUM pay panel: remit card + copyable memo pill + 1-2-3 steps
+          const insTxt9 = (pi.payee_bank && pi.payee_bank.instructions) || '';
+          const parts9 = insTxt9.split(/\n\s*RULES\s*\n/i);
+          const remit9 = (parts9[0] || '').trim(); const rules9 = (parts9[1] || '').trim();
+          const memoPill9 = h('button', { class: 'cp-pill', style: 'background:#FC5305;color:#fff;font-weight:900;letter-spacing:.04em;cursor:pointer;border:0;font-size:.9rem;padding:7px 16px', title: 'Tap to copy', onClick: (ev9) => { try { navigator.clipboard.writeText(i.invoice_no || ''); ev9.currentTarget.textContent = '✓ copied — ' + (i.invoice_no || ''); } catch (_) {} } }, i.invoice_no || '');
+          const step9 = (n9, t9, s9) => h('div', { style: 'flex:1;min-width:140px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:9px 11px' }, [
+            h('div', { style: 'font-weight:900;color:#60a5fa;font-size:.78rem' }, n9 + ' · ' + t9),
+            h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, s9)]);
+          dw.appendChild(h('div', { style: 'margin-top:8px;border:1px solid rgba(255,255,255,.14);border-radius:16px;overflow:hidden' }, [
+            h('div', { style: 'background:linear-gradient(120deg,#10223B,#0d2f56);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+              h('div', null, [h('div', { style: 'font-weight:900;color:#fff' }, '💳 Pay LoadBoot'), h('div', { style: 'font-size:.72rem;color:#9fb0cc' }, 'flat 5% dispatch fee · net 15')]),
+              h('div', { style: 'font-size:1.5rem;font-weight:900;color:#fff' }, money(pi.amount || i.fee || 0)),
+            ]),
+            h('div', { style: 'padding:12px 16px' }, [
+              h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:12px;padding:10px 13px' }, [
+                h('div', { style: 'font-weight:800;font-size:.78rem;letter-spacing:.06em;color:#93c5fd;margin-bottom:4px' }, '🏛 REMIT-TO'),
+                h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;line-height:1.8;font-family:ui-monospace,Menlo,monospace;font-size:.8rem;user-select:all' }, remit9 || 'Payment instructions are being finalised — contact billing@loadboot.com.'),
+              ]),
+              h('div', { style: 'display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap' }, [
+                h('span', { class: 'cp-row-s', style: 'font-weight:800' }, 'Transfer memo (required — tap to copy):'), memoPill9,
+              ]),
+              h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px' }, [
+                step9('1', 'Transfer', 'ACH 1–3 business days · wires same day'),
+                step9('2', 'Receipt', 'attach the screenshot/PDF below'),
+                step9('3', 'PAID', 'LoadBoot verifies — usually same business day'),
+              ]),
+              rules9 ? h('details', { style: 'margin-bottom:8px' }, [h('summary', { class: 'cp-row-s', style: 'cursor:pointer;font-weight:700' }, '📖 Payment rules'), h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;line-height:1.7;margin-top:4px' }, rules9)]) : null,
+              h('div', { class: 'cp-inlineform' }, [refIn]), fIn, sendB, msg9,
+            ].filter(Boolean)),
           ]));
         } }, '💳 Pay now') : null;
         return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, packetBtn9, payFee, dispute].filter(Boolean)), dw].filter(Boolean));

@@ -204,6 +204,7 @@ export const carrierFactoringPacket = (trip) => rpc('carrier_factoring_packet', 
 export const carrierFactoringBrokers = () => rpc('carrier_factoring_brokers');
 export const carrierFactoringBrokerSet = (broker, direct) => rpc('carrier_factoring_broker_set', { p_broker: broker, p_direct: direct });
 export const payTripMarkSent = (trip, receiptPath, receiptName, paymentRef) => rpc('pay_trip_mark_sent', { p_trip: trip, p_receipt_path: receiptPath, p_receipt_name: receiptName, p_payment_ref: paymentRef ?? null, p_method: 'bank_transfer' });
+export const payRequestReminder = (kind, ref) => rpc('pay_request_reminder', { p_kind: kind, p_ref: ref });
 export const trustProfile = (org) => rpc('cc_trust_profile', { p_org: org });
 export const myTrustProfile = () => rpc('cc_my_trust_profile');
 export const myHazmatReadiness = () => rpc('cc_my_hazmat_readiness');
