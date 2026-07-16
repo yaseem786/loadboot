@@ -265,6 +265,20 @@ export function renderCarrier360(host, orgId) {
     const scCard = card([el('h4', { class: 'cc-card-title' }, 'Performance scorecard'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Loading\u2026')]);
     (async () => {
       let sc; try { sc = await carrierScorecard(orgId, 90); } catch (_) { mount(scCard, [el('h4', { class: 'cc-card-title' }, 'Performance scorecard'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'No delivered trips to score yet.')]); return; }
+      // UNRATED, not punished: a carrier with zero delivered trips has no performance to grade
+      if (!((sc.metrics || {}).delivered > 0)) {
+        mount(scCard, [
+          el('h4', { class: 'cc-card-title' }, 'Performance scorecard'),
+          el('div', { style: 'display:flex;align-items:center;gap:14px;margin-top:8px' }, [
+            el('div', { style: 'width:70px;height:70px;border-radius:50%;flex:none;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-weight:800;color:#94a3b8' }, '—'),
+            el('div', null, [
+              el('div', { style: 'font-weight:800;font-size:1.05rem;color:#64748b' }, 'Unrated — no delivered trips yet'),
+              el('div', { class: 'cc-sub', style: 'font-size:.82rem' }, 'The grade appears after their first GPS-verified delivery. New carriers start clean — not at D.'),
+            ]),
+          ]),
+        ]);
+        return;
+      }
       const grade = sc.grade || '-';
       const gcol = { A: '#16a34a', B: '#0883F7', C: '#f59e0b', D: '#dc2626' }[grade] || '#64748b';
       const score = Math.max(0, Math.min(100, Number(sc.score || 0)));
