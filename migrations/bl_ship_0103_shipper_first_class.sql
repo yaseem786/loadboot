@@ -1,0 +1,15 @@
+-- bl_ship_0103 — SHIPPER = first-class posting partner (applied staging + PROD 2026-07-15).
+-- WHY: ~30 partner functions gated on my_partner_org('broker') — shippers hit "not a partner".
+-- FIX (one helper, zero function rewrites):
+--   1) app_private.my_broker_org_strict() — broker-ONLY resolver.
+--   2) The 5 broker-marketplace fns (cc_broker_claim/quote/tender_shipment, cc_broker_shipment_inbox,
+--      cc_broker_sla) now use the STRICT resolver — a shipper can never claim/quote/tender shipments.
+--   3) my_partner_org('broker') now returns broker OR shipper (broker preferred) — the whole
+--      posting/tracking/booking/checklist/claims/payables/invoices engine unlocks for shipper orgs.
+-- Wiring that now works for shippers automatically (all keyed on loads.broker_org / partner org owner):
+--   submit → staff review notify · CC approve → board · booking request/approve (RC-sign gate incl.)
+--   · booking-time NOA notice · claims to review · payables + pay-by + trip-total + receipts
+--   · pay.incoming / confirm / nag notifications+emails · carrier invoices PDF · onboarding = the
+--   9-item SHIPPER packet from onboarding_packet_templates (credit app, shipper agreement, payment
+--   terms, billing instructions, cargo profile, claims contact, facility rules, insurance, hazmat).
+-- Frontend: partner portal routes kind='shipper' → full brokerDash with kind-aware branding.
