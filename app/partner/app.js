@@ -4046,7 +4046,7 @@ function packetAgreementCards(skipPacket) {
     dashboard: [],
     loads: [],
     claims: [claimsCard()],
-    requests: [bookRequestsCard(), shipmentInboxCard()],
+    requests: ov.kind === 'shipper' ? [bookRequestsCard()] : [bookRequestsCard(), shipmentInboxCard()],
     carriers: [brokerCarriersPage()],
     rates: [(() => { const hst = h('div'); renderMarketWidget(hst); return hst; })()],
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
