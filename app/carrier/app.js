@@ -1215,6 +1215,28 @@ async function agentPortal(user) {
   root.setAttribute('aria-busy', 'false');
 }
 
+// 🟣 multi-stop route modal from a board card — shows the redacted route (City, ST + purpose);
+// exact street addresses & pins unlock after booking (they go on the rate confirmation).
+function lbStopsModal9(l9) {
+  const st9 = (l9.details && l9.details.stops) || [];
+  const row9 = (ic9, t9, s9, hot9) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07)' }, [
+    h('span', { style: 'font-size:1.15rem;flex:none' }, ic9),
+    h('div', null, [
+      h('div', { style: 'font-weight:800;color:' + (hot9 ? '#c4b5fd' : '#fff') }, t9),
+      s9 ? h('div', { class: 'cp-row-s', style: 'margin-top:1px' }, s9) : null,
+    ].filter(Boolean)),
+  ]);
+  openModal('🟣 Route — ' + (st9.length + 2) + ' stops total', [
+    h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;line-height:1.6' }, 'Run order as the broker posted it. Exact street addresses + GPS pins unlock the moment you BOOK — they print on your rate confirmation and light up the Trip Map.'),
+    row9('🔵', '1 · PICKUP — ' + (l9.origin || ''), l9.pickup_date ? 'Pickup: ' + l9.pickup_date : null, false),
+    ...st9.map((s9, i9) => row9(String(s9.kind || '') === 'pickup' ? '🟣' : '🟪',
+      (i9 + 2) + ' · EXTRA ' + String(s9.kind || 'stop').toUpperCase() + ' — ' + (s9.city || '?') + (s9.state ? ', ' + s9.state : ''),
+      (s9.purpose ? s9.purpose + ' · ' : '') + 'address unlocks on booking', true)),
+    row9('🟢', (st9.length + 2) + ' · DELIVERY — ' + (l9.destination || ''), l9.delivery_date ? 'DEL ' + l9.delivery_date : null, false),
+    h('div', { style: 'margin-top:10px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:11px;padding:9px 12px' },
+      h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, '💰 Every extra stop carries stop-off pay on the rate card, and each stop gets its own GPS check-in — detention protection applies at EVERY stop, not just pickup and delivery.')),
+  ]);
+}
 function notCarrier() {
   const card = h('div', { class: 'cp-auth-card' }, [
     h('h1', null, 'No carrier account'),
@@ -2343,7 +2365,7 @@ async function appView(user) {
         const fly9 = owed9.filter((x9) => x9.transfer_status === 'sent').reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
         if (amt9 <= 0 && fly9 <= 0) return;
         const host9 = document.getElementById('lb-recv-banner'); if (!host9) return;
-        host9.appendChild(h('button', { class: 'cpx-banner', style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#4ade80', onClick: () => go('finance') }, [
+        host9.appendChild(h('button', { class: 'cpx-banner', style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#4ade80', onClick: () => { window.__finSec9 = 'in'; go('finance'); } }, [
           h('span', null, '📥'),
           h('span', null, (amt9 > 0 ? money(amt9) + ' owed to you by brokers' : '') + (amt9 > 0 && fly9 > 0 ? ' · ' : '') + (fly9 > 0 ? money(fly9) + ' on the way — tap ✓ Received when it lands' : '')),
           h('span', { class: 'cpx-b-go' }, '›'),
@@ -2579,7 +2601,7 @@ async function appView(user) {
           const cd = h('b', { style: 'color:#FC5305;font-variant-numeric:tabular-nums;font-size:1.02rem' }, '\u2014');
           box.appendChild(h('div', { style: 'margin:2px 0 6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'font-size:.72rem;padding:4px 11px', onClick: () => openBrokerPacketPreview() }, '\ud83c\udfe2 Broker packet \ud83d\udd12 \u2014 what you get once accepted')));
           box.appendChild(h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 6px' }, [
-            (o.details && Array.isArray(o.details.stops) && o.details.stops.length) ? h('span', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:#c4b5fd;font-weight:800;border:1px solid rgba(139,92,246,.35)', title: 'Multi-stop load \u2014 full route unlocks on booking' }, '\ud83d\udfe3 +' + o.details.stops.length + ' STOP' + (o.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + o.details.stops.map((s9) => s9.city || '?').join(' \u2192 ')) : null,
+            (o.details && Array.isArray(o.details.stops) && o.details.stops.length) ? h('button', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:#c4b5fd;font-weight:800;border:1px solid rgba(139,92,246,.35);cursor:pointer;font:inherit', title: 'Tap for the stop-by-stop route', onClick: (e9) => { e9.stopPropagation(); lbStopsModal9(o); } }, '\ud83d\udfe3 +' + o.details.stops.length + ' STOP' + (o.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + o.details.stops.map((s9) => s9.city || '?').join(' \u2192 ') + ' \u203a') : null,
           (o.details && o.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\ud83d\udc64 Solo OK'),
             (o.details && o.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
             o.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.15);color:#f87171;font-weight:800' }, '\u2622 HAZMAT') : null,
@@ -3199,7 +3221,7 @@ async function appView(user) {
           l.direct_to_you ? (l.direct_offer_expired
             ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.18);color:#94a3b8;font-weight:800', title: 'The broker\u2019s direct request window ran out unanswered \u2014 the load is still yours to book from the board at the posted rate.' }, '\ud83c\udfaf DIRECT REQUEST \u2014 expired \u00b7 still bookable')
             : h('span', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.2);color:#c4b5fd;font-weight:800' }, '\ud83c\udfaf DIRECT REQUEST \u2014 reserved for you')) : null,
-          (l.details && Array.isArray(l.details.stops) && l.details.stops.length) ? h('span', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:#c4b5fd;font-weight:800;border:1px solid rgba(139,92,246,.35)', title: 'Multi-stop load \u2014 full route unlocks on booking' }, '\ud83d\udfe3 +' + l.details.stops.length + ' STOP' + (l.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + l.details.stops.map((s9) => s9.city || '?').join(' \u2192 ')) : null,
+          (l.details && Array.isArray(l.details.stops) && l.details.stops.length) ? h('button', { class: 'cpx-chip', style: 'background:rgba(139,92,246,.16);color:#c4b5fd;font-weight:800;border:1px solid rgba(139,92,246,.35);cursor:pointer;font:inherit', title: 'Tap for the stop-by-stop route', onClick: (e9) => { e9.stopPropagation(); lbStopsModal9(l); } }, '\ud83d\udfe3 +' + l.details.stops.length + ' STOP' + (l.details.stops.length > 1 ? 'S' : '') + ' \u00b7 ' + l.details.stops.map((s9) => s9.city || '?').join(' \u2192 ') + ' \u203a') : null,
           (l.details && l.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\ud83d\udc64 Solo OK'),
           (l.details && l.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
           lbExpired(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.2);color:#fca5a5;font-weight:800;border:1px solid rgba(239,68,68,.45)' }, '\u23f0 EXPIRED \u2014 pickup date passed, waiting on broker') : null,
@@ -4907,6 +4929,7 @@ function tripStepper(status) {
       ['pay',  '👥 Payroll',  () => [payrollCard]],
     ];
     let sec = 'earn';
+    try { if (window.__finSec9) { sec = window.__finSec9; window.__finSec9 = null; } } catch (_) {}
     const secHost = h('div');
     const nav = h('div', { class: 'finnav' });
     const paint = () => {

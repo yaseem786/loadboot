@@ -107,9 +107,10 @@ export async function renderPremiumAccount(host, ctx) {
       : '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.28),rgba(217,119,6,.12));color:#fcd34d;border-color:rgba(217,119,6,.4)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> PENDING VERIFICATION</div>';
 
   const dp = (await getDispatchPrefs().catch(() => ({}))) || {};
+  const EQ_IC = { 'Dry Van': '🚚', 'Reefer': '❄️', 'Flatbed': '🛻', 'Power Only': '🔌', 'Step Deck': '📐', 'Box Truck': '📦', 'Hotshot': '⚡' };
   const eqSel = () => ['Dry Van', 'Reefer', 'Flatbed', 'Power Only', 'Step Deck', 'Box Truck', 'Hotshot'].map((o) => {
     const on = (dp.preferred_equipment || []).indexOf(o) >= 0;
-    return '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1.5px solid ' + (on ? '#0883F7' : 'var(--border,#334155)') + ';background:' + (on ? 'rgba(8,131,247,.14)' : 'transparent') + ';cursor:pointer;font-size:.82rem;font-weight:700;white-space:nowrap;transition:border-color .15s,background .15s"><input type="checkbox" class="acx-eqc" value="' + o + '"' + (on ? ' checked' : '') + ' style="accent-color:#0883F7;flex:none">' + o + '</label>';
+    return '<label class="acx-eqp' + (on ? ' on' : '') + '"><input type="checkbox" class="acx-eqc" value="' + o + '"' + (on ? ' checked' : '') + ' style="position:absolute;opacity:0;pointer-events:none"><span class="ic">' + (EQ_IC[o] || '🚛') + '</span>' + o + '<span class="ck">✓</span></label>';
   }).join('');
 
   host.innerHTML = ''
@@ -147,11 +148,18 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div id="acx-bizmsg" class="cp-row-s" style="margin-top:8px"></div>'
     +   '<div style="margin-top:10px;display:flex;gap:8px">' + (!compliant && _stageRev ? '<button class="btn ghost sm" disabled style="opacity:.55;cursor:default">&#9203; In review \u2014 editing locked</button>' : '<button class="btn ghost sm" id="acx-bizchange">Change verified details</button>') + '<button class="btn sm" id="acx-bizsave">Save</button></div></div>'
     + '<div class="card" id="s-disp"><div class="sec-h"><div class="sec-ico ic-orange">' + sic('truck') + '</div><div class="sec-t">Dispatch preferences</div></div><div class="sec-s">Drives the load-matching engine — better in, better loads.</div>'
-    +   '<div class="grid2"><div class="field"><label>Equipment — select ALL you run</label><div id="acx-eq" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px">' + eqSel() + '</div></div><div class="field"><label>Home base</label><input id="acx-home" value="' + esc(dp.home_base || '') + '"></div>'
-    +   '<div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Max deadhead (mi)</label><input id="acx-dead" value="' + esc(dp.max_deadhead_miles || '') + '"></div><div class="field"><label>Target rate ($/mi)</label><input id="acx-target" value="' + esc(dp.target_rpm || '') + '"></div><div class="field"><label>Max weight (lbs)</label><input id="acx-weight" value="' + esc(dp.max_weight_lbs || '') + '"></div></div>'
-    +   '<div class="field"><label>Preferred lanes</label><input id="acx-lanes" value="' + esc((dp.preferred_lanes || []).join(', ')) + '"></div>'
-    +   '<div class="grid2"><div class="field"><label>Shortest trip (mi)</label><input id="acx-tripmin" value="' + esc(dp.min_trip_miles || '') + '"></div><div class="field"><label>Longest trip (mi)</label><input id="acx-tripmax" value="' + esc(dp.max_trip_miles || '') + '"></div></div>'
-    +   '<div class="grid2"><div class="field"><label>Min notice (hrs)</label><input id="acx-notice" value="' + esc(dp.min_notice_hours || '') + '"></div><div class="field"><label>Avoid states</label><input id="acx-avoid" value="' + esc((dp.avoid_states || []).join(', ')) + '"></div></div>'
+    +   '<style>.acx-eqp{position:relative;display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;border:1.5px solid var(--border,#334155);cursor:pointer;font-size:.82rem;font-weight:800;transition:all .15s;user-select:none}.acx-eqp .ic{font-size:.95rem}.acx-eqp .ck{display:none;color:#0883F7;font-weight:900}.acx-eqp.on{border-color:#0883F7;background:rgba(8,131,247,.16);box-shadow:0 4px 14px -6px rgba(8,131,247,.5)}.acx-eqp.on .ck{display:inline}.acx-sub{display:flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#7f92b3;margin:16px 0 8px}.acx-sub::after{content:"";flex:1;height:1px;background:var(--border,#33415566)}</style>'
+    +   '<div class="acx-sub">🚛 Equipment — select all you run</div>'
+    +   '<div id="acx-eq" style="display:flex;flex-wrap:wrap;gap:8px">' + eqSel() + '</div>'
+    +   '<div class="acx-sub">📍 Lanes & distance</div>'
+    +   '<div class="grid2"><div class="field"><label>Home base</label><input id="acx-home" value="' + esc(dp.home_base || '') + '"></div><div class="field"><label>Max deadhead (mi)</label><input id="acx-dead" value="' + esc(dp.max_deadhead_miles || '') + '"></div>'
+    +   '<div class="field"><label>Shortest trip (mi)</label><input id="acx-tripmin" value="' + esc(dp.min_trip_miles || '') + '"></div><div class="field"><label>Longest trip (mi)</label><input id="acx-tripmax" value="' + esc(dp.max_trip_miles || '') + '"></div></div>'
+    +   '<div class="field"><label>Preferred lanes</label><input id="acx-lanes" placeholder="e.g. GA → FL, Southeast" value="' + esc((dp.preferred_lanes || []).join(', ')) + '"></div>'
+    +   '<div class="field"><label>Avoid states</label><input id="acx-avoid" placeholder="e.g. NY, CA" value="' + esc((dp.avoid_states || []).join(', ')) + '"></div>'
+    +   '<div class="acx-sub">💰 Money & load limits</div>'
+    +   '<div class="grid2"><div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Target rate ($/mi)</label><input id="acx-target" value="' + esc(dp.target_rpm || '') + '"></div>'
+    +   '<div class="field"><label>Max weight (lbs)</label><input id="acx-weight" value="' + esc(dp.max_weight_lbs || '') + '"></div><div class="field"><label>Min notice (hrs)</label><input id="acx-notice" value="' + esc(dp.min_notice_hours || '') + '"></div></div>'
+    +   '<div class="acx-sub">⚙ Operations</div>'
     +   '<div class="row"><div><div class="rt">Haul hazmat</div><div class="rs">Requires endorsement on file</div></div><div class="tg' + (dp.hazmat ? ' on' : '') + '" id="acx-haz"></div></div>'
     +   '<div class="row"><div><div class="rt">Team drivers</div><div class="rs">Two drivers, longer runs</div></div><div class="tg' + (dp.team_drivers ? ' on' : '') + '" id="acx-team"></div></div>'
     +   '<div class="row"><div><div class="rt">Available weekends</div><div class="rs">Include Sat/Sun loads</div></div><div class="tg' + (dp.weekend_ok !== false ? ' on' : '') + '" id="acx-wknd"></div></div>'
@@ -299,6 +307,7 @@ export async function renderPremiumAccount(host, ctx) {
   // toggles that persist to preferences
   root.querySelectorAll('[data-pref]').forEach((t) => t.addEventListener('click', async () => { t.classList.toggle('on'); const state = Object.assign({}, prefs); state[t.getAttribute('data-pref')] = t.classList.contains('on'); Object.assign(prefs, state); try { await pocketSavePreferences(state); toast('Preference saved'); } catch (e) { toast((e && e.message) || 'Could not save'); } }));
   // dispatch toggles (local) + save
+  root.querySelectorAll('.acx-eqc').forEach((c9) => c9.addEventListener('change', () => { const p9 = c9.closest('.acx-eqp'); if (p9) p9.classList.toggle('on', c9.checked); }));
   const hazEl = root.querySelector('#acx-haz');
   if (hazEl && hazEl.classList.contains('on')) (async () => { try { const r = await myHazmatReadiness(); if (!(r && r.ready)) {
     hazEl.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
