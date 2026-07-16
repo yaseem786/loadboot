@@ -649,6 +649,73 @@ const field = (label, input) => h('label', { class: 'cp-field2' }, [h('span', nu
 const inp = (ph, type) => h('input', { class: 'cp-in', type: type || 'text', placeholder: ph || '' });
 
 /* invoices — shown on every partner dashboard (read-only; staff issue + mark paid) */
+// 🚛 CARRIER INVOICES — what the broker actually owes per trip, routing-aware:
+// factored carrier → "REMIT TO <factor> per NOA"; direct → carrier's own bank. Premium printable.
+function carrierInvoicesCard() {
+  const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+  (async () => {
+    let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
+    const items9 = ((d9 && d9.payables) || []).filter((x9) => x9.kind !== 'platform_fee');
+    const groups9 = {};
+    items9.forEach((x9) => { const k9 = x9.trip_id || x9.ref_id; (groups9[k9] = groups9[k9] || { lane: x9.lane, carrier: x9.counterparty, items: [] }).items.push(x9); });
+    const gs9 = Object.values(groups9);
+    if (!gs9.length) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]), h('div', { class: 'cp-sub' }, 'No carrier invoices yet — they appear automatically the moment a load delivers or a claim is approved.')]); return; }
+    const pdf9 = async (g9) => {
+      const it9 = g9.items.find((z9) => z9.kind === 'freight') || g9.items[0];
+      let pi9 = null; try { pi9 = await payInstructions(it9.kind, it9.ref_id); } catch (_) {}
+      const bk9 = (pi9 && pi9.payee_bank) || {};
+      const factored9 = !!bk9.pay_to;
+      const m9 = (v9) => '$' + Number(v9 || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+      const tot9 = g9.items.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+      const payBy9 = g9.items.map((x9) => x9.pay_by).filter(Boolean).sort()[0];
+      const rowsHtml9 = g9.items.map((x9) => '<tr><td>' + (x9.label || x9.kind) + '<br><span style="font-size:11px;color:#64748b">memo ' + (x9.memo || '') + (x9.transfer_status ? ' · ' + x9.transfer_status : ' · DUE') + '</span></td><td style="text-align:right"><b>' + m9(x9.amount) + '</b></td></tr>').join('');
+      const html9 = '<!doctype html><html><head><meta charset="utf-8"><title>Invoice — ' + (g9.carrier || '') + '</title><style>'
+        + 'body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#10223B;max-width:820px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+        + '.hd{background:linear-gradient(120deg,#10223B,#0d2f56);color:#fff;padding:30px 40px;display:flex;justify-content:space-between;border-radius:0 0 0 0}'
+        + 'table{width:calc(100% - 80px);margin:18px 40px;border-collapse:collapse}th{background:#10223B;color:#fff;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;text-align:left}th:last-child{text-align:right}td{padding:12px 14px;border-bottom:1px solid #eef2f7;font-size:13.5px}'
+        + '.remit{margin:0 40px 18px;border-radius:14px;padding:16px 20px;' + (factored9 ? 'background:#f5f3ff;border:2px solid #7c3aed' : 'background:#f8fafc;border:1.5px solid #e6ebf3') + '}'
+        + '.noprint{position:fixed;top:14px;right:14px;background:#0883F7;color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer}@media print{.noprint{display:none}}'
+        + '</style></head><body>'
+        + '<button class="noprint" onclick="print()">🖨 Print / Save PDF</button>'
+        + '<div class="hd"><div><div style="font-size:24px;font-weight:900">INVOICE</div><div style="color:#9fb0cc;font-size:12px;margin-top:4px">From ' + (g9.carrier || 'Carrier') + ' · served via LoadBoot</div></div>'
+        + '<div style="text-align:right"><div style="font-size:12px;color:#9fb0cc">TOTAL DUE</div><div style="font-size:26px;font-weight:900">' + m9(tot9) + '</div>' + (payBy9 ? '<div style="font-size:12px;color:#9fb0cc">pay by ' + new Date(payBy9).toLocaleDateString() + '</div>' : '') + '</div></div>'
+        + '<div style="padding:18px 40px 0;color:#475569;font-size:13px"><b>Bill to:</b> your brokerage · <b>Lane:</b> ' + (g9.lane || '') + '</div>'
+        + '<table><tr><th>Item</th><th>Amount</th></tr>' + rowsHtml9 + '<tr><td style="font-weight:900">TOTAL</td><td style="text-align:right;font-weight:900;font-size:16px">' + m9(tot9) + '</td></tr></table>'
+        + '<div class="remit">'
+        + (factored9
+            ? '<div style="font-weight:900;color:#5b21b6;font-size:14px;margin-bottom:6px">🏦 REMIT TO — ' + (bk9.factoring_company || 'Factoring company') + ' (Notice of Assignment)</div>'
+              + '<div style="font-size:12.5px;line-height:2">Payee: <b>' + (bk9.account_title || '') + '</b> · Bank: <b>' + (bk9.bank_name || '') + '</b>' + (bk9.account_number ? ' · Acct: <b>' + bk9.account_number + '</b>' : '') + (bk9.routing_number ? ' · Routing: <b>' + bk9.routing_number + '</b>' : '') + (bk9.remittance_email ? ' · ' + bk9.remittance_email : '') + '</div>'
+              + '<div style="color:#b91c1c;font-size:12px;margin-top:6px;font-weight:700">Under UCC §9-406, pay the factoring company — paying the carrier directly can leave you liable to pay twice.' + (bk9.verified ? ' NOA verified by LoadBoot ✓' : ' NOA verification pending — confirm with the factor before a large transfer.') + '</div>'
+            : '<div style="font-weight:900;font-size:14px;margin-bottom:6px">🏛 REMIT TO — ' + (g9.carrier || 'Carrier') + ' (direct)</div>'
+              + '<div style="font-size:12.5px;line-height:2">Payee: <b>' + (bk9.account_title || '') + '</b> · Bank: <b>' + (bk9.bank_name || '') + '</b>' + (bk9.account_number ? ' · Acct: <b>' + bk9.account_number + '</b>' : '') + (bk9.routing_number ? ' · Routing: <b>' + bk9.routing_number + '</b>' : '') + '</div>'
+              + '<div style="color:#64748b;font-size:12px;margin-top:6px">' + (bk9.verified ? 'Bank details verified by LoadBoot ✓' : 'Details not yet verified — confirm with the carrier before a large transfer.') + '</div>')
+        + '</div>'
+        + '<div style="margin:0 40px;color:#64748b;font-size:11px;line-height:1.8;border-top:2px solid #eef2f7;padding-top:12px">Put each memo in the transfer note. Pay from your Dashboard → Payables (per item or one trip-total transfer) and attach the receipt — the payee confirms and everything turns green. Served via LoadBoot · loadboot.com</div>'
+        + '</body></html>';
+      const w9 = window.open('', '_blank'); if (w9) { w9.document.write(html9); w9.document.close(); }
+    };
+    mount(host9, [
+      h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]),
+      h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'One invoice per trip — freight + its approved claims. The REMIT-TO switches automatically: factored carrier → their factoring company (NOA), direct carrier → their own bank. Pay from Dashboard → Payables.'),
+      ...gs9.map((g9) => {
+        const tot9 = g9.items.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
+        const open9 = g9.items.filter((x9) => x9.transfer_status !== 'received');
+        const payBy9 = g9.items.map((x9) => x9.pay_by).filter(Boolean).sort()[0];
+        return h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #eef2f7' }, [
+          h('div', null, [
+            h('div', { class: 'cp-row-t' }, '🚛 ' + (g9.lane || '') + ' · ' + money(tot9)),
+            h('div', { class: 'cp-row-s' }, (g9.carrier || '') + ' · ' + g9.items.length + ' item' + (g9.items.length > 1 ? 's' : '') + (payBy9 ? ' · pay by ' + new Date(payBy9).toLocaleDateString() : '')),
+          ]),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
+            open9.length ? h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, open9.length + ' unsettled') : h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150' }, '✓ settled'),
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => pdf9(g9) }, '⬇ Invoice PDF'),
+          ]),
+        ]);
+      }),
+    ]);
+  })();
+  return host9;
+}
 function invoicesCard() {
   const host = h('div', { class: 'cp-tablewrap' }, h('div', { class: 'lb-state lb-loading' }, 'Loading…'));
   const payInfo = h('div');
@@ -3984,7 +4051,7 @@ function packetAgreementCards(skipPacket) {
     rates: [(() => { const hst = h('div'); renderMarketWidget(hst); return hst; })()],
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     onboarding: [brokerOnboardingWizard()],
-    invoices: [payablesCard(), invoicesCard()],
+    invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
     account: [accountCard()],
   };
   let btab = (location.hash || '').replace('#', '') || 'dashboard';
