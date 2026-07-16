@@ -23,16 +23,24 @@
 <body>
 <noscript><div class="lb-card" style="margin:40px 16px">The agent portal requires JavaScript.</div></noscript>
 <div id="lb-app" aria-busy="true">
-  <div class="lb-state lb-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:18px">
+  <div class="lb-state lb-loading" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(1000px 520px at 50% 34%,#13213f 0%,#0b1220 62%,#070d1a 100%);z-index:9999">
     <style>
-      @keyframes lbLogoPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 0 rgba(252,83,5,0))}50%{transform:scale(1.08);filter:drop-shadow(0 8px 28px rgba(252,83,5,.45))}}
-      @keyframes lbBarSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
-      @keyframes lbWordFade{0%,100%{opacity:.55}50%{opacity:1}}
+      @keyframes lbArw{0%{opacity:0;transform:translateX(-72px) scale(.78)}55%{opacity:1}100%{opacity:1;transform:translateX(0) scale(1)}}
+      @keyframes lbWipe{0%{clip-path:inset(0 100% 0 0)}100%{clip-path:inset(0 0 0 0)}}
+      @keyframes lbShine{0%{left:-45%}100%{left:135%}}
+      @keyframes lbUp{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+      @keyframes lbSlide{0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
     </style>
-    <svg width="76" height="80" viewBox="10 8 80 84" style="animation:lbLogoPulse 1.6s ease-in-out infinite"><path d="M16 14 H34 V68 H84 V86 H16 Z" fill="#FFFFFF"/><path d="M34 14 H58 Q76 14 76 24 Q76 34 58 34 H34 Z" fill="#F97316"/><path d="M34 40 H64 Q84 40 84 51 Q84 62 64 62 H34 Z" fill="#FFFFFF"/></svg>
-    <div style="font-family:Manrope,system-ui,sans-serif;font-weight:800;font-size:1.05rem;color:#eaf1fb;animation:lbWordFade 1.6s ease-in-out infinite">Load<span style="color:#F97316">Boot</span></div>
-    <div style="width:180px;height:4px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden">
-      <div style="width:35%;height:100%;border-radius:99px;background:linear-gradient(90deg,#FC5305,#F97316);animation:lbBarSlide 1.2s ease-in-out infinite"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+      <div style="position:relative;display:flex;align-items:center;gap:14px;padding:8px 12px">
+        <img src="/logo-icon-dark.png" alt="" style="height:64px;width:auto;display:block;filter:drop-shadow(0 14px 34px rgba(8,131,247,.5));animation:lbArw 1s cubic-bezier(.16,.9,.3,1.35) both">
+        <img src="/logo-text-dark.png" alt="LoadBoot" style="height:46px;width:auto;display:block;clip-path:inset(0 100% 0 0);animation:lbWipe .7s .55s cubic-bezier(.4,0,.2,1) forwards">
+        <span style="position:absolute;inset:0;overflow:hidden;pointer-events:none"><span style="content:'';position:absolute;top:-20%;bottom:-20%;left:-45%;width:32%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);animation:lbShine 1.3s 1.15s ease-out both"></span></span>
+      </div>
+      <div style="font-size:.74rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:#64748b;opacity:0;animation:lbUp .6s 1s both;font-family:Manrope,system-ui,sans-serif">Agent Portal</div>
+      <div style="width:170px;height:3px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden">
+        <div style="display:block;height:100%;width:40%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#60a5fa);animation:lbSlide 1.1s ease-in-out infinite"></div>
+      </div>
     </div>
   </div>
 </div>
