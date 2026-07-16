@@ -5129,6 +5129,12 @@ function tripStepper(status) {
       const f = fileIn.files && fileIn.files[0];
       msg.textContent = ''; msg.className = 'cp-err';
       if (!f) { msg.textContent = 'Choose a file first.'; return; }
+      // DUPLICATE GUARD: same type already pending review → stop the re-upload spiral
+      const dup9 = (allDocs || []).find((d9) => d9.type === typeSel.value && d9.status === 'pending');
+      if (dup9 && !confirm('A ' + (DOC_TYPES.find((t9) => t9[0] === typeSel.value) || ['', typeSel.value])[1] + ' is ALREADY uploaded and in review (' + (dup9.file_name || '') + ') — you do NOT need to send it again.\n\nUpload another copy anyway?')) {
+        msg.className = 'cp-err ok'; msg.textContent = '✓ Already in review — no need to re-upload. LoadBoot verifies it, usually within a few hours.';
+        return;
+      }
       up.disabled = true; up.textContent = 'Uploading…';
       try {
         const rule = docFmt(typeSel.value);
@@ -5140,7 +5146,13 @@ function tripStepper(status) {
         }
         const meta = await uploadDocument(f, typeSel.value);
         await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path });
-        fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded — your dispatcher will review it.';
+        fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded — in review. You will NOT be asked again; track it right here.';
+        lbToast('✓ Document received — status is IN REVIEW. No need to upload it again.', 'success', 'Uploaded');
+        // factored-but-not-set-up: NOA letter without a factoring profile can't route broker payments
+        if (typeSel.value === 'noa') {
+          try { const pp9 = await myPaymentProfile(); if (!(pp9 && pp9.factoring_noa)) lbToast('You uploaded a factoring NOA but factoring is NOT set up yet — go to Finance → 🏦 Factoring and add your factor\u2019s remit-to details, otherwise brokers still see your own bank.', 'action', '🏦 One more step'); } catch (_) {}
+        }
+        try { loadDocuments(); return; } catch (_) {}
         await loadList();
       } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Upload failed.'; }
       up.disabled = false; up.textContent = 'Upload document';
