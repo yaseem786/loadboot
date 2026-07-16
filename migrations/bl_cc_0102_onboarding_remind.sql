@@ -1,0 +1,7 @@
+-- bl_cc_0102 — CC manual onboarding reminders + visibility (hybrid with the auto engine).
+-- cc_onboarding_remind(org, doc?) — per-document OR all-missing premium email (branded header,
+--   missing list, CTA, help footer) + in-app to the carrier owner; 6h cooldown per target.
+-- cc_onboarding_reminder_status(org) — last manual / last auto timestamps for the CC card.
+-- UI: carrier360 Onboarding & compliance card — ✉ Remind per non-valid document row +
+--   "✉ Send onboarding reminder (all missing)" + status line. Auto engine untouched.
+-- Applied to staging 2026-07-15. Copy fn defs from staging for PROD + grants (authenticated only).

@@ -200,6 +200,8 @@ export const verifyPaymentProfile = (org, ok, note) => rpc('cc_verify_payment_pr
 export const carrierPaymentProfile = (org) => rpc('cc_carrier_payment_profile', { p_org: org });
 export const carrierFactoringSet = (p) => rpc('carrier_factoring_set', { p });
 export const ccFactoringVerify = (org, ok, note) => rpc('cc_factoring_verify', { p_org: org, p_ok: ok, p_note: note ?? null });
+export const ccOnboardingRemind = (org, doc) => rpc('cc_onboarding_remind', { p_org: org, p_doc: doc ?? null });
+export const ccOnboardingReminderStatus = (org) => rpc('cc_onboarding_reminder_status', { p_org: org });
 export const carrierFactoringPacket = (trip) => rpc('carrier_factoring_packet', { p_trip: trip });
 export const carrierFactoringBrokers = () => rpc('carrier_factoring_brokers');
 export const carrierFactoringBrokerSet = (broker, direct) => rpc('carrier_factoring_broker_set', { p_broker: broker, p_direct: direct });

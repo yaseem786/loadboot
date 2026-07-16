@@ -7,7 +7,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 import { can } from '../../shared/permissions.js';
@@ -481,7 +481,11 @@ export function renderCarrier360(host, orgId) {
         } }, '\u2699 Actions') : '';
         return el('div', { style: 'display:flex;gap:9px;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eef2f7' }, [
           el('div', { style: 'min-width:0' }, [el('b', { style: 'font-size:.88rem' }, r.name), el('div', { class: 'cc-sub' }, (r.mandatory ? 'Required' : 'Optional') + exp + (r.note ? ' · ' + r.note : ''))]),
-          el('div', { style: 'display:flex;gap:6px;align-items:center;flex:none' }, [el('span', { class: 'cc-pill cc-pill-' + tone }, r.status), execBtn, viewBtn, verifyBtn, warnBtn].filter(Boolean)),
+          el('div', { style: 'display:flex;gap:6px;align-items:center;flex:none' }, [el('span', { class: 'cc-pill cc-pill-' + tone }, r.status),
+            (r.status !== 'valid') ? el('button', { class: 'cc-chip-btn', title: 'Email + in-app reminder for THIS document (6h cooldown)', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
+              try { const r9 = await ccOnboardingRemind(orgId, r.name || r.key); b9.textContent = '✓ Sent'; alert('Reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email + in-app, for: ' + (r.name || r.key)); }
+              catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, '✉ Remind') : null,
+            execBtn, viewBtn, verifyBtn, warnBtn].filter(Boolean)),
         ]);
       });
       const allOk = reqs.filter((r) => r.mandatory).every((r) => r.status === 'valid');
@@ -517,7 +521,18 @@ export function renderCarrier360(host, orgId) {
         step('Agreement', agr && agr.status === 'valid' ? 'ok' : agr && agr.status === 'pending' ? 'wait' : 'todo'),
         step('Decision', String(stage).toLowerCase() === 'approved' ? 'ok' : ['submitted', 'in_review', 'review'].indexOf(String(stage).toLowerCase()) >= 0 ? 'wait' : 'todo'),
       ]);
-      mount(compCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding & compliance'), el('span', { class: 'cc-pill cc-pill-' + (allOk ? 'green' : 'amber') }, allOk ? 'all mandatory valid' : 'action needed')]), pipeline, el('div', null, rows.length ? rows : el('div', { class: 'cc-sub' }, 'No requirements found.')), gate]);
+      const remindWrap9 = el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:2px 0 10px' });
+      (async () => {
+        let st9 = null; try { st9 = await ccOnboardingReminderStatus(orgId); } catch (_) {}
+        const f9 = (x9) => x9 ? new Date(x9).toLocaleString() : 'never';
+        mount(remindWrap9, el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%' }, [
+          allOk ? null : el('button', { class: 'lb-btn', style: 'border:1px solid #0883F7;color:#0883F7;background:#fff;font-weight:800;border-radius:10px;padding:8px 16px;cursor:pointer', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
+            try { const r9 = await ccOnboardingRemind(orgId, null); b9.textContent = '✓ Reminder sent'; alert('Overall onboarding reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email listing every missing item + in-app. Auto-nags keep running on their own schedule.'); }
+            catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, '✉ Send onboarding reminder (all missing)'),
+          el('span', { class: 'cc-sub', style: 'font-size:.76rem' }, st9 ? ('Last manual reminder: ' + f9(st9.last_manual) + (st9.last_auto ? ' · last auto: ' + f9(st9.last_auto) : '') + ' · auto engine runs on cron — these buttons are the extra human push') : ''),
+        ].filter(Boolean)));
+      })();
+      mount(compCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding & compliance'), el('span', { class: 'cc-pill cc-pill-' + (allOk ? 'green' : 'amber') }, allOk ? 'all mandatory valid' : 'action needed')]), pipeline, remindWrap9, el('div', null, rows.length ? rows : el('div', { class: 'cc-sub' }, 'No requirements found.')), gate]);
     }
     loadComp();
 
