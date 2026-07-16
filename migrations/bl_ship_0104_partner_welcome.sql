@@ -1,0 +1,11 @@
+-- bl_ship_0104 — WELCOME emails for BROKER & SHIPPER orgs (staging + PROD 2026-07-15).
+-- Gap: send_welcome_email only covered carrier + agent signups; broker/shipper got NOTHING.
+-- New trigger trg_partner_org_welcome_t on public.organizations (insert, kind broker|shipper,
+-- agent workspaces excluded via is_agent_org + '%(Agent)' name guard):
+--   · owner gets a kind-specific premium welcome email (3-step start: packet → first post → booking)
+--   · staff get '🏢 New BROKER signup' / '🏭 New SHIPPER signup' in-app (→ /partners)
+-- Idempotent via sys_email key 'welcome-org:<org_id>'.
+-- Also this round: CC broker360 is kind-aware (shipper gets commercial-verification card instead of
+-- FMCSA; executed-doc signer label 'Partner'); partner portal onboarding wizard title kind-aware;
+-- shipper Requests tab hides the broker-only shipment-marketplace inbox.
+-- Copy fn def from staging for PROD replay (applied both already).
