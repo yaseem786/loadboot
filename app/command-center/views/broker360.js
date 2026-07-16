@@ -42,7 +42,7 @@ function printExecutedAgreementDoc(d) {
     + '<div class="meta">LoadBoot — The Operating System for Trucking<br>hello@loadboot.com · loadboot.com<br>Ref ' + esc(ref) + '</div></div>'
     + '<h1>' + esc(d.title) + '</h1><div class="ref">Version ' + esc(d.version) + ' · EXECUTED ELECTRONICALLY</div>'
     + '<div class="intro">' + intro + '</div>' + clauses
-    + '<div class="sigrow">' + '<div class="sig"><div class="lab">Broker (signed electronically)</div><div class="line">' + esc(d.signer) + '</div><div class="sub">' + esc(d.company || '') + (d.company ? ' · ' : '') + 'Signed ' + esc(d.signed_date) + '</div></div>' + '<div class="sig"><div class="lab">LoadBoot (pre-signed)</div><div class="line" style="color:#0e7490">LoadBoot</div><div class="sub">Authorized Signatory, LoadBoot · ' + new Date().toLocaleDateString() + '</div></div>' + '</div>'
+    + '<div class="sigrow">' + '<div class="sig"><div class="lab">Partner (signed electronically)</div><div class="line">' + esc(d.signer) + '</div><div class="sub">' + esc(d.company || '') + (d.company ? ' · ' : '') + 'Signed ' + esc(d.signed_date) + '</div></div>' + '<div class="sig"><div class="lab">LoadBoot (pre-signed)</div><div class="line" style="color:#0e7490">LoadBoot</div><div class="sub">Authorized Signatory, LoadBoot · ' + new Date().toLocaleDateString() + '</div></div>' + '</div>'
     + '<div class="stamp"><b>✓ EXECUTED — SERVER TIMESTAMPED</b><span>Recorded by the LoadBoot platform with an audit entry. Neither party can alter this record.</span></div>'
     + '<scr' + 'ipt>window.print();</scr' + 'ipt></body></html>');
   w.document.close();
@@ -255,7 +255,10 @@ export function renderBroker360(host, orgId) {
     const dotGuess = (/DOT[:\s#]*([0-9]{5,8})/i.exec(allRefs) || [])[1] || '';
     const fmcsaHost = el('div', { style: 'margin-top:8px' });
     const dotIn = el('input', { class: 'cc-input', placeholder: 'DOT number', value: dotGuess, style: 'max-width:160px' });
-    const fmcsaCard = card([
+    const fmcsaCard = (o.kind === 'shipper') ? card([
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '🏭 Shipper verification — no FMCSA record'), el('span', { class: 'cc-sub' }, 'shippers are not carriers/brokers')]),
+      el('div', { class: 'cc-sub', style: 'margin-top:6px;line-height:1.7' }, 'Shippers have no MC/DOT — verify them commercially instead: ① legal entity + EIN on the W-9/credit application, ② business address & website, ③ trade/credit references called, ④ payment terms agreed in writing, ⑤ facility contacts answer the phone. All of that lives in the packet above.'),
+    ]) : card([
       el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'FMCSA — verify broker authority'), el('span', { class: 'cc-sub' }, 'live government record')]),
       el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Brokers appear in the FMCSA census by DOT number. Enter it (from the authority letter) and verify the legal name, authority status and bond on file.'),
       el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap' }, [dotIn,

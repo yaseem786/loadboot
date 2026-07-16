@@ -1400,6 +1400,7 @@ function bookRequestsCard() {
 
 /* ---------- BROKER dashboard ---------- */
 async function brokerDash(user, ov) {
+  try { window.__lbKindLabel = (ov.kind === 'shipper') ? 'Shipper' : 'Broker'; } catch (_) {}
   const kpis = h('div', { class: 'cp-kpis' }, [
     kpiCard('Loads submitted', ov.loads_submitted, 'all time', 'blue'),
     kpiCard('Open', ov.loads_open, 'awaiting dispatch', 'amber'),
@@ -3770,7 +3771,7 @@ function packetDocRow(it, onAction) {
   ]);
 }
 function brokerOnboardingWizard() {
-  const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Broker onboarding — step by step')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+  const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, (window.__lbKindLabel || 'Broker') + ' onboarding — step by step')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
   (async () => {
     let pk = { items: [] }; try { pk = await myOnboardingPacket() || { items: [] }; } catch (_) {}
     let prof = {}; try { prof = await partnerGetProfile() || {}; } catch (_) {}
