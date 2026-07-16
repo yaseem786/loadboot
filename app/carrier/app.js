@@ -4871,6 +4871,17 @@ function tripStepper(status) {
     const payFlightCard = h('div', { class: 'cp-card' }, [cardHead('💸 Payments in flight'), h('div', { class: 'cp-muted' }, 'Loading…')]);
     (async () => {
       let trs; try { trs = await payMyTransfers(); } catch (e) { mount(payFlightCard, [cardHead('💸 Payments in flight'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      // 🏦 vs 🏛 — where each payment lands: factor (NOA) or your own bank, per-broker aware
+      let fb9 = null; try { fb9 = await carrierFactoringBrokers(); } catch (_) {}
+      const dirMap9 = {}; ((fb9 && fb9.brokers) || []).forEach((b9) => { dirMap9[b9.name] = b9.mode; });
+      const routeChip9 = (x9) => {
+        if (x9.kind === 'platform_fee' || x9.direction === 'outgoing') return null;
+        const factOn9 = !!(fb9 && fb9.factoring_on);
+        const direct9 = !factOn9 || dirMap9[x9.counterparty] === 'direct';
+        return direct9
+          ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.13);color:#4ade80;font-weight:800' }, '🏛 lands in YOUR bank (direct)')
+          : h('span', { class: 'cp-pill', style: 'background:rgba(139,92,246,.18);color:#c4b5fd;font-weight:800' }, '🏦 goes to ' + ((fb9 && fb9.factoring_company) || 'your factor') + ' (NOA)');
+      };
       trs = Array.isArray(trs) ? trs : [];
       // money OWED to you that the broker has not even sent yet (no transfer row)
       let owed9 = []; try { const d9 = await payDueItems(); owed9 = ((d9 && d9.receivables) || []).filter((x9) => !x9.transfer_status); } catch (_) {}
@@ -4885,6 +4896,7 @@ function tripStepper(status) {
           ]),
           h('div', { style: 'display:flex;flex-direction:column;gap:6px;align-items:flex-end' }, [
             h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, '⏰ awaiting broker payment'),
+            routeChip9(x9),
             (x9.kind === 'claim' || x9.kind === 'freight') ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
               try { await payRequestReminder(x9.kind, x9.ref_id); b9.textContent = '✓ Requested'; lbToast('Payment request sent — the broker got a 🔔 + email with the pay panel link.', 'success', '🔔 Requested'); }
               catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent', 'Request'); }
@@ -4905,6 +4917,7 @@ function tripStepper(status) {
           h('div', { class: 'cp-row-s' }, (x.direction === 'incoming' ? 'From ' : 'To ') + (x.counterparty || '') + ' · sent ' + (x.sent_at ? new Date(x.sent_at).toLocaleDateString() : '')
             + (x.payment_ref ? ' · ref ' + x.payment_ref : '')),
           x.status === 'sent' ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;font-weight:700;color:' + (dl9 != null && dl9 <= 0 ? '#fbbf24' : '#60a5fa') }, eta9) : null,
+          (() => { const c9 = routeChip9(Object.assign({ direction: x.direction }, x)); return c9 ? h('div', { style: 'margin-top:4px' }, c9) : null; })(),
           (x.status === 'sent' && x.receipt_path) ? h('button', { class: 'cp-btn-ghost cp-btn-sm', style: 'margin-top:5px;font-size:.72rem', onClick: async (ev9) => {
             try { const u9 = await signedDocumentUrl(x.receipt_path); window.open(u9, '_blank', 'noopener'); } catch (_) { lbToast('Could not open the receipt.', 'urgent'); }
           } }, '📎 View their receipt') : null,
