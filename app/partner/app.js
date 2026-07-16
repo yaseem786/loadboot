@@ -4295,7 +4295,7 @@ function packetAgreementCards(skipPacket) {
   window.addEventListener('hashchange', () => { const t9 = (location.hash || '').replace('#', ''); if (t9 && t9 !== btab && BNAV.some((n) => n[0] === t9)) bgo(t9); });
   const bShell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Broker' })),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: KIND_LABEL[ov.kind] || 'Broker' })),
       bNavEl,
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.company || 'Broker'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
@@ -4305,7 +4305,7 @@ function packetAgreementCards(skipPacket) {
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
         h('div', { class: 'cp-top-left' }, bTitle),
-        h('div', { class: 'cp-top-right' }, [h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;font-weight:800' }, 'Broker'), notifBell(), (() => {
+        h('div', { class: 'cp-top-right' }, [h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;font-weight:800' }, KIND_LABEL[ov.kind] || 'Broker'), notifBell(), (() => {
           const menu = h('div', { class: 'cp-menu', hidden: true, style: 'position:absolute;right:0;top:46px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 18px 44px -14px rgba(15,23,42,.28);min-width:230px;z-index:90;padding:10px 0' }, [
             h('div', { style: 'padding:6px 16px 10px;border-bottom:1px solid #f1f5f9' }, [h('div', { style: 'font-weight:800' }, ov.company || 'Broker'), h('div', { class: 'cp-sub' }, (user && user.email) || '')]),
             h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:600', onClick: () => { menu.hidden = true; bgo('account'); } }, [icon('user', 16), 'Account & settings']),
@@ -4556,7 +4556,10 @@ async function appView(user) {
     ]))); return;
   }
   if (ov.kind === 'broker') return brokerDash(user, ov);
-  if (ov.kind === 'shipper') return shipperDash(user, ov);
+  // SHIPPER = full broker-grade portal. Same wizard/tracking/payables/claims/invoices engine;
+  // the onboarding packet is kind-aware server-side (credit app, shipper agreement, payment terms,
+  // billing instructions, cargo profile, claims contact, facility rules, insurance, hazmat).
+  if (ov.kind === 'shipper') return brokerDash(user, ov);
   if (ov.kind === 'facility') return facilityDash(user, ov);
   choosePartnerType(user);
 }
