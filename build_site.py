@@ -943,7 +943,7 @@ REFTEASER = ('<section style="background:linear-gradient(135deg,#0b1220 0%,#1230
      ('Refer 20 active carriers','~ $4,000/mo*','your network, working for you'),
      ('They refer others too','5 levels deep*','earn down your whole chain')]) +
  '</div>'
- '<div class="reveal" style="text-align:center;margin-top:30px"><a href="referral.html" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800">Get my referral link &rarr;</a></div>'
+ '<div class="reveal" style="text-align:center;margin-top:30px"><a href="/app/agent/" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800">Get my referral link &rarr;</a></div>'
  '<p class="reveal" style="text-align:center;color:#94a3b8;font-size:.82rem;margin:16px auto 0;max-width:720px">*Illustrative only, based on a referred carrier hauling roughly $20k/month. Commissions are paid entirely from LoadBoot&rsquo;s own 5% dispatch fee &mdash; your referrals never pay more, and you invest nothing. Exact tiers are confirmed in writing at signup.</p>'
  '</div></section>')
 
@@ -3325,9 +3325,15 @@ ref += _sec('Who it is for', 'Pick the path that fits you', _cards([
     ('&#127970;', 'Dispatch shops &amp; agencies', 'Run a book of carriers you cannot fully cover? Refer the overflow to Loadboot and earn on the freight they haul &mdash; while they keep their own authority.'),
     ('&#127908;', 'Creators &amp; influencers', 'Trucking audience on YouTube, TikTok or a newsletter? Become an affiliate partner &mdash; no client roster required, just a genuine recommendation.'),
 ], 'g3'))
+ref += '<section class="section"><div class="wrap"><div class="reveal" style="background:linear-gradient(120deg,#10223B,#0d2f56);border-radius:18px;padding:26px 30px;color:#fff">'
+ref += '<div style="font-size:.72rem;font-weight:800;letter-spacing:.14em;color:#93c5fd;text-transform:uppercase;margin-bottom:6px">Now live — one program, one portal</div>'
+ref += '<h3 style="margin:0 0 8px;font-size:1.35rem">The referral program now runs inside the <span style="color:#FC5305">Agent Portal</span></h3>'
+ref += '<p style="color:#9fb0cc;line-height:1.75;margin:0 0 14px">Referral partners, influencers and independent dispatchers all use the SAME engine: create your agent account, get ONE link that works for carriers, brokers and shippers, and track every join, every delivered load and every dollar live — 1% of gross on delivered loads, levels 2&ndash;5 overrides when you recruit other agents, monthly payouts from $100.</p>'
+ref += '<a href="/app/agent/" class="btn btn-primary" style="background:#FC5305;border:none;font-weight:800">Create your agent account &rarr;</a> <a href="agents.html" class="btn btn-secondary" style="margin-left:8px">Program details</a>'
+ref += '</div></div></section>'
 ref += m_rail('How it works', 'Four honest steps',
  'From your first share to your first payout &mdash; each step recorded, nothing owed until it is confirmed in writing.', [
- ('badge', 'Join the program', 'Apply below. Once approved you get a personal referral code and share link from inside your Loadboot portal &mdash; carrier, partner or affiliate.'),
+ ('badge', 'Join the program', 'Create your account at loadboot.com/app/agent/ &mdash; your personal code and share link are live the moment verification clears. One link works for carriers, brokers and shippers.'),
  ('megaphone', 'Share it', 'Send your link, or introduce a carrier directly. Each carrier is credited to the first partner who referred them &mdash; recorded once, no double-claims.'),
  ('truck', 'They get rolling', 'Your referral runs their own freight with Loadboot at a flat 5% &mdash; no contract. You earn only when they actually haul and we actually get paid.'),
  ('wallet', 'You get paid', 'Your reward is calculated from Loadboot&rsquo;s fee on that freight, held briefly to clear cancellations, then released for payout. A human approves every payment.'),
