@@ -4714,6 +4714,19 @@ if os.path.isdir(APP_SRC):
 else:
     _APP_FATAL = None
 
+# ---------- SHOTS: real portal screenshots for the public docs pages ----------
+try:
+    _shots_src = os.path.join(SRC, 'shots')
+    if os.path.isdir(_shots_src):
+        _shots_dst = os.path.join(OUT, 'shots')
+        os.makedirs(_shots_dst, exist_ok=True)
+        for _f in os.listdir(_shots_src):
+            if _f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                shutil.copy2(os.path.join(_shots_src, _f), os.path.join(_shots_dst, _f))
+        print('SHOTS copied:', len(os.listdir(_shots_dst)))
+except Exception as _e:
+    print('SHOTS copy skipped:', _e)
+
 # ---------- PREVIEW REBIND (item 8: ENTIRE preview is staging-bound) ----------
 # The legacy dashboard.html (and any other copied artifact) hardcodes the PRODUCTION
 # Supabase project. In any non-production build we rewrite every production project
