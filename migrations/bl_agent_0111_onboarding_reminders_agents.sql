@@ -1,0 +1,22 @@
+-- bl_agent_0111 — extend cc_run_onboarding_reminders() to AGENTS.
+-- NOTE-STUB: canonical SQL = pg_get_functiondef('public.cc_run_onboarding_reminders') in the DB.
+-- Applied: STAGING (snslhvmkjusozgjelghi) + PROD (rwscphuhpjoudvljvmdk) 2026-07-17.
+--
+-- What changed vs the carrier-only version:
+--   1) The CARRIER loop now EXCLUDES anyone with an app_private.agent_profiles row
+--      (agents also carry profiles.role='carrier', so without this they'd wrongly get
+--       carrier "finish FMCSA verification" emails).
+--   2) NEW agent loop: for app_private.agent_profiles with status='draft' (created but
+--      onboarding never submitted), aged >= 24h, send a staged reminder (d1/d3/d7):
+--        - email NOT confirmed  -> 'agent.confirm_email' (activate account)
+--        - confirmed but draft   -> in-app 'agent.onboarding_reminder' + premium
+--                                   'agent.onboarding_reminder' email (finish + e-sign).
+--      Deduped via app_private.onboarding_reminders_sent(user_id, stage) with an
+--      'agent_' stage prefix so it never collides with carrier stages.
+--
+-- Runs on the existing daily cron `loadboot-onboarding-reminders` (0 14 * * *) →
+-- select public.cc_run_onboarding_reminders();
+--
+-- Lifecycle reference: agent_profiles.status = draft -> under_review (agent_save_onboarding
+-- p_submit=true) -> approved|rejected|info_needed (cc_agent_decide). referrers.status =
+-- pending at signup -> active on cc_agent_decide('approve').
