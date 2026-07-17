@@ -4573,7 +4573,17 @@ APP_HEADERS = (
   "  X-Robots-Tag: noindex, nofollow\n"
   "  Content-Security-Policy: " + _APP_CSP + "\n"
 )
-with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADERS + APP_HEADERS)
+# The service worker script and env identity MUST always be revalidated against the
+# network — never served from the browser's HTTP cache. Otherwise an installed PWA can
+# keep running an old build (stale sw.js means new deploys are never detected). These
+# more-specific rules sit AFTER /app/* so Netlify applies them on top.
+SW_NOCACHE_HEADERS = (
+  "\n/app/sw.js\n"
+  "  Cache-Control: no-cache, no-store, must-revalidate\n"
+  "\n/app/env-config.js\n"
+  "  Cache-Control: no-cache, no-store, must-revalidate\n"
+)
+with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADERS + APP_HEADERS + SW_NOCACHE_HEADERS)
 
 # ---------- _redirects ----------
 # Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files

@@ -14,7 +14,14 @@ export function registerAppSW() {
     return;
   }
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' }).then((reg) => {
+    // updateViaCache:'none' — ALWAYS revalidate sw.js against the network when checking
+    // for updates, so a new deploy is detected even if the browser cached the old sw.js.
+    // Without this, installed PWAs can serve a stale build until the user clears data.
+    navigator.serviceWorker.register('/app/sw.js', { scope: '/app/', updateViaCache: 'none' }).then((reg) => {
+      // Actively look for a newer SW: right now, and every 60s while the app is open,
+      // so an installed PWA picks up new deploys without a manual reinstall.
+      reg.update().catch(() => {});
+      setInterval(() => reg.update().catch(() => {}), 60000);
       function promptReload(worker) {
         if (!worker || document.getElementById('lb-sw-update')) return;
         const bar = document.createElement('div');
