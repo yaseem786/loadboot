@@ -497,7 +497,7 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 %s
 <script>%s</script>
-<script src="app.js?v=6"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), ANNOUNCE_JS)
+<script src="app.js?v=6"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -799,6 +799,47 @@ HOME_RATES_JS = ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD
 # (sessionStorage) so a visitor is not nagged after closing it. Production only (needs the live anon key).
 ANNOUNCE_JS_PROD = (r"(function(){var SB='" + _BOARD_SB + r"',KEY='" + _BOARD_KEY + r"';var TONE={emergency:['#7f1d1d','#fecaca'],warning:['#78350f','#fde68a'],promo:['#4c1d95','#ddd6fe'],info:['#0c4a6e','#bae6fd']};function esc(s){return (s==null?'':String(s)).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}fetch(SB+'/rest/v1/rpc/get_active_public_announcements',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){if(!d||!d.length)return;var a=null;for(var i=0;i<d.length;i++){var seen=false;try{seen=sessionStorage.getItem('lb_ann_'+d[i].id);}catch(e){}if(!seen){a=d[i];break;}}if(!a)return;var t=TONE[a.kind]||TONE.info;var bar=document.createElement('div');bar.className='lb-annbar';bar.setAttribute('role','status');bar.style.cssText='background:'+t[0]+';color:'+t[1]+';font:600 14px/1.4 Inter,system-ui,sans-serif;padding:10px 44px 10px 18px;text-align:center;position:relative;z-index:60';bar.innerHTML='<b style=\"color:#fff\">'+esc(a.title)+'</b>'+(a.body?' <span style=\"opacity:.92\">'+esc(a.body)+'</span>':'');var x=document.createElement('button');x.setAttribute('aria-label','Dismiss');x.textContent='×';x.style.cssText='position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:0;color:'+t[1]+';font-size:22px;line-height:1;cursor:pointer;padding:0 6px';x.onclick=function(){try{sessionStorage.setItem('lb_ann_'+a.id,'1');}catch(e){}bar.parentNode&&bar.parentNode.removeChild(bar);};bar.appendChild(x);document.body.insertBefore(bar,document.body.firstChild);}).catch(function(){});})();")
 ANNOUNCE_JS = ANNOUNCE_JS_PROD if IS_PRODUCTION_CTX else ""
+
+# ---- EMAIL-CONFIRMED landing (big-brand UX) ----
+# Supabase confirmation links redirect to the Site URL (this marketing site) with the session
+# tokens in the hash (#access_token=...&type=signup). Without this, the user just lands on the
+# homepage with an ugly token URL and no feedback. This overlay: (1) shows a premium
+# "Email confirmed" screen, (2) decodes the JWT to pick the right portal (agent/partner/carrier),
+# (3) forwards the hash to that portal, where supabase-js detectSessionInUrl signs them in
+# automatically — confirm click lands INSIDE their dashboard, like Uber/Amazon activation flows.
+CONFIRM_JS = r"""
+(function(){
+  var h = location.hash || '';
+  if (!/access_token=/.test(h) || !/type=signup/.test(h)) return;
+  var portal = '/app/carrier/';
+  try {
+    var tk = (h.match(/access_token=([^&]+)/) || [])[1] || '';
+    var pl = JSON.parse(atob(tk.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    var md = (pl && pl.user_metadata) || {};
+    if (md.role === 'agent') portal = '/app/agent/';
+    else if (md.partner_kind) portal = '/app/partner/';
+  } catch (e) {}
+  var ov = document.createElement('div');
+  ov.id = 'lbConfirmOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:radial-gradient(900px 500px at 50% 34%,#13213f 0%,#0b1220 62%,#070d1a 100%);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Manrope,system-ui,Arial,sans-serif';
+  ov.innerHTML =
+    '<style>@keyframes lbCkPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}@keyframes lbCkDraw{to{stroke-dashoffset:0}}@keyframes lbCfUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}@keyframes lbCfBar{0%{transform:translateX(-120%)}100%{transform:translateX(340%)}}</style>'
+    + '<div style="max-width:430px;width:100%;background:#0f1b30;border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:42px 34px;text-align:center;box-shadow:0 40px 90px -30px rgba(2,8,23,.9)">'
+    + '<div style="width:86px;height:86px;margin:0 auto 22px;border-radius:50%;background:rgba(22,163,74,.14);border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;animation:lbCkPop .55s cubic-bezier(.2,1.4,.4,1) both">'
+    + '<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 10 18.5 20 6.5" style="stroke-dasharray:30;stroke-dashoffset:30;animation:lbCkDraw .5s .35s ease-out forwards"/></svg>'
+    + '</div>'
+    + '<div style="font-size:24px;font-weight:800;color:#fff;letter-spacing:-.02em;animation:lbCfUp .5s .2s both">Email confirmed!</div>'
+    + '<div style="font-size:14.5px;color:#94a3b8;line-height:1.65;margin:10px 0 24px;animation:lbCfUp .5s .35s both">Your LoadBoot account is active.<br>Taking you to your dashboard&hellip;</div>'
+    + '<div style="width:180px;height:4px;margin:0 auto 24px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden"><div style="height:100%;width:40%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#60a5fa);animation:lbCfBar 1.1s ease-in-out infinite"></div></div>'
+    + '<a id="lbCfGo" style="display:inline-block;background:#0883F7;color:#fff;font-weight:800;font-size:15px;padding:13px 30px;border-radius:11px;text-decoration:none;animation:lbCfUp .5s .5s both">Open my dashboard →</a>'
+    + '</div>';
+  (document.body || document.documentElement).appendChild(ov);
+  var dest = portal + h;
+  var go = document.getElementById('lbCfGo');
+  if (go) go.href = dest;
+  setTimeout(function(){ location.replace(dest); }, 2800);
+})();
+"""
 
 COMPARE = '''<section id="compare" class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The Difference</div><h2>Why carriers choose us over going it alone</h2></div>
 <div class="reveal"><table class="cmp"><thead><tr><th>What matters to you</th><th>Dispatching yourself</th><th>A typical dispatcher</th><th class="us">Loadboot</th></tr></thead><tbody>
