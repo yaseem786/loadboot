@@ -187,7 +187,8 @@ function notifBell() {
         const p = n.payload || {};
         const url = p.url ? (String(p.url).charAt(0) === '/' ? '#' + p.url : p.url) : '#';
         return el('a', { class: 'cc-search-row', href: url, style: n.read_at ? 'opacity:.55' : '', onClick: async () => { try { if (!n.read_at) await markMyNotification(n.id); } catch (_) {} panel.hidden = true; refresh(); } }, [
-          el('div', null, [el('b', null, p.title || n.template_key || 'Update'), p.body ? el('div', { class: 'cc-sub' }, p.body) : '']),
+          el('div', null, [el('b', null, p.title || n.template_key || 'Update'), p.body ? el('div', { class: 'cc-sub' }, p.body) : '',
+            n.created_at ? el('div', { class: 'cc-sub', style: 'font-size:11px;opacity:.75;margin-top:2px' }, new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + new Date(n.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) : '']),
         ]);
       }),
     ]);

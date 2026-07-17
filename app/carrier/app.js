@@ -5770,7 +5770,8 @@ function tripStepper(status) {
       const toneCol = p.tone === 'urgent' ? '#dc2626' : p.tone === 'success' ? '#16a34a' : '#0883F7';
       const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'), style: 'align-items:flex-start;gap:12px', onClick: async () => { if (!n.read_at) { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); row.classList.remove('unread'); refreshUnread(); } catch (_) {} } go(lbNotifDest(n, p)); }, title: 'Open the page this notification is about' }, [
         h('span', { html: '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="display:block;border-radius:9px;box-shadow:0 0 0 2px ' + toneCol + '33">', style: 'flex:none;line-height:0;margin-top:2px' }),
-        h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t' }, p.title || n.template_key || 'Notification'), p.body ? h('div', { class: 'cp-row-s' }, p.body) : null].filter(Boolean)),
+        h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t' }, p.title || n.template_key || 'Notification'), p.body ? h('div', { class: 'cp-row-s' }, p.body) : null,
+          n.created_at ? h('div', { class: 'cp-row-s', style: 'font-size:.68rem;opacity:.75;margin-top:2px' }, new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + new Date(n.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) : null].filter(Boolean)),
         n.read_at ? null : h('span', { class: 'cp-pill blue' }, 'new'),
       ].filter(Boolean));
       return row;
