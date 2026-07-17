@@ -1,0 +1,6 @@
+-- bl_fix_0105 — email DISPLAY dates in US Central (trucking standard). Applied staging + PROD 2026-07-15.
+-- Rationale: DB runs UTC; "lands by / due" day boundaries shifted up to 7h for US users.
+-- Display-only changes (no due_at/expected_by calculations touched):
+--   · pay_mark_sent: "lands by <Mon DD>" now (now() at time zone 'America/Chicago') + 4 days
+--   · auto_invoice_on_delivery email: "Due <Mon DD, YYYY>" now Chicago-date + 15
+-- Portal UI timestamps stay in the VIEWER's local timezone (correct default).
