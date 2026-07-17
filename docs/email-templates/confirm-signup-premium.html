@@ -1,111 +1,89 @@
 <!--
-  LoadBoot — Supabase Auth "Confirm signup" email (PREMIUM, brand-matched).
-  WHERE TO PASTE: Supabase Dashboard → Authentication → Emails → Templates →
-  "Confirm signup" → paste this whole block into the Message (HTML) body → Save.
-  Keep the "Confirm email" setting ON.
-  Variable used: {{ .ConfirmationURL }} (Supabase fills this in).
-  Subject line to set above the body:  Confirm your email to activate your LoadBoot account
-  Works for every signup type (carrier / broker / shipper / agent) — brand-generic.
+  LoadBoot — Supabase Auth "Confirm signup" email.
+  MATCHES the app's transactional email shell (delivery-worker edge fn v4) EXACTLY:
+  same orange top-bar, navy header + logo, "MORE ON LOADBOOT" band, navy footer.
+  So every LoadBoot email — app-sent OR Supabase auth — shares one header/footer; only the body changes.
+
+  WHERE TO PASTE: Supabase Dashboard → Authentication → Emails → Templates → "Confirm signup"
+    → paste this whole block into the Message (HTML) body → Save.
+  Subject to set above the body:  Confirm your email to activate your LoadBoot account
+  Keep the "Confirm email" setting ON. Variable used: {{ .ConfirmationURL }}
+  (For the other auth templates — Reset password, Magic link, Change email — reuse this same
+   shell and swap only the <h1>/<p> body + the button's {{ ... }} URL.)
 -->
-<div style="margin:0;padding:0;background:#0b1220;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b1220;padding:28px 12px;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 18px 50px -20px rgba(2,8,23,.6);font-family:'Inter',Arial,Helvetica,sans-serif;">
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{margin:0;padding:0}
+  @media only screen and (max-width:620px){
+    .lb-card{width:100%!important;border-radius:0!important}
+    .lb-pad{padding-left:20px!important;padding-right:20px!important}
+    .lb-hpad{padding-left:20px!important;padding-right:20px!important}
+    .lb-h1{font-size:22px!important;line-height:1.3!important}
+    .lb-btn{display:block!important;text-align:center!important}
+    .lb-2col>tbody>tr>td{display:block!important;width:100%!important}
+  }
+</style></head>
+<body style="margin:0;padding:0;background:#e9eef6">
+<div style="background:#e9eef6;padding:26px 12px;font-family:'Segoe UI',Arial,Helvetica,sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" class="lb-card" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #dfe7f0">
 
-        <!-- Brand header (real brand-kit logo, hosted at loadboot.com) -->
-        <tr>
-          <td style="background:#10223B;padding:24px 32px;">
-            <img src="https://loadboot.com/email-logo-white-2x.png" alt="LoadBoot" width="170" height="41" style="display:block;border:0;outline:none;width:170px;height:auto;">
-            <span style="display:block;margin-top:8px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#7dd3fc;">The Operating System for Trucking</span>
-          </td>
-        </tr>
+  <!-- orange top bar -->
+  <tr><td style="height:5px;background:#FC5305;background:linear-gradient(90deg,#FC5305,#F97316);font-size:0;line-height:0">&nbsp;</td></tr>
 
-        <!-- Accent bar -->
-        <tr><td style="height:4px;background:linear-gradient(90deg,#0883F7,#FC5305);font-size:0;line-height:0;">&nbsp;</td></tr>
+  <!-- navy header: logo + open portal + tagline -->
+  <tr><td class="lb-hpad" style="background:#0b1220;padding:26px 32px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td align="left"><img src="https://loadboot.com/email-logo-white-2x.png" width="150" height="36" alt="LoadBoot" style="display:block;border:0;max-width:150px;height:auto"></td>
+      <td align="right" style="vertical-align:middle"><a href="https://loadboot.com/app/" style="color:#60A5FA;font-size:12.5px;font-weight:700;text-decoration:none">Open portal &rarr;</a></td>
+    </tr></table>
+    <div style="color:#5c6f8f;font-size:11.5px;margin-top:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">The Operating System for Trucking</div>
+  </td></tr>
 
-        <!-- Body -->
-        <tr>
-          <td style="padding:34px 32px 8px;">
-            <h1 style="margin:0 0 10px;font-size:22px;line-height:1.25;color:#10223B;">Confirm your email to activate your account</h1>
-            <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#334155;">
-              Welcome to LoadBoot. You're one click away from your dashboard — confirm this email address to activate your account and sign in.
-            </p>
+  <!-- BODY (only this part changes per email) -->
+  <tr><td class="lb-pad" style="padding:36px 32px 28px;color:#0f172a;font-size:15px;line-height:1.7">
+    <h1 class="lb-h1" style="margin:0 0 10px;font-size:24px;line-height:1.25;color:#0b1220">Confirm your email to activate your account</h1>
+    <p style="margin:0 0 18px">Welcome to LoadBoot. You're one click from your dashboard — confirm this email address to activate your account and sign in.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 22px"><tr><td class="lb-btn" style="border-radius:11px;background:#0883F7">
+      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:11px">Confirm my email &rarr;</a>
+    </td></tr></table>
+    <p style="margin:0 0 6px;font-size:13px;color:#64748b">Or paste this link into your browser:</p>
+    <p style="margin:0 0 20px;font-size:12px;word-break:break-all"><a href="{{ .ConfirmationURL }}" style="color:#0883F7">{{ .ConfirmationURL }}</a></p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;border-radius:12px"><tr><td style="padding:14px 16px;font-size:13px;line-height:1.55;color:#475569">
+      After you confirm, setup takes about <b>5 minutes</b>. If you didn't create a LoadBoot account, you can safely ignore this email.
+    </td></tr></table>
+  </td></tr>
 
-            <!-- CTA -->
-            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 22px;">
-              <tr><td style="border-radius:11px;background:#0883F7;">
-                <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:11px;">Confirm my email &rarr;</a>
-              </td></tr>
-            </table>
+  <!-- MORE ON LOADBOOT -->
+  <tr><td class="lb-pad" style="padding:18px 32px;background:#f6f9fd;border-top:1px solid #e6edf6">
+    <div style="font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#94a3b8;margin-bottom:9px">MORE ON LOADBOOT</div>
+    <table role="presentation" class="lb-2col" width="100%" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="font-size:12.5px;line-height:2.1;vertical-align:top">
+        <a href="https://loadboot.com/how-it-works.html" style="color:#0883F7;text-decoration:none;font-weight:600">&rsaquo; How LoadBoot works</a><br>
+        <a href="https://loadboot.com/pricing.html" style="color:#0883F7;text-decoration:none;font-weight:600">&rsaquo; Pricing &amp; plans</a>
+      </td>
+      <td style="font-size:12.5px;line-height:2.1;vertical-align:top">
+        <a href="https://loadboot.com/market-rates.html" style="color:#0883F7;text-decoration:none;font-weight:600">&rsaquo; Market rates per mile</a><br>
+        <a href="https://loadboot.com/agents.html" style="color:#0883F7;text-decoration:none;font-weight:600">&rsaquo; Agent program (earn 1%)</a>
+      </td>
+    </tr></tbody></table>
+  </td></tr>
 
-            <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#64748b;">
-              Or paste this link into your browser:
-            </p>
-            <p style="margin:0 0 20px;font-size:12px;line-height:1.5;word-break:break-all;">
-              <a href="{{ .ConfirmationURL }}" style="color:#0883F7;">{{ .ConfirmationURL }}</a>
-            </p>
+  <!-- navy footer -->
+  <tr><td class="lb-pad" style="padding:22px 32px;background:#0b1220;color:#8ea2c3;font-size:12px;line-height:2">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td><b style="color:#ffffff;font-size:14px">Load<span style="color:#60A5FA">Boot</span></b><br><span style="color:#5c6f8f">Truck dispatch &amp; logistics technology &middot; United States</span></td>
+      <td align="right" style="vertical-align:top"><a href="https://loadboot.com/apps.html" style="color:#60A5FA;font-size:12px;font-weight:700;text-decoration:none">Get the app</a></td>
+    </tr></table>
+    <div style="border-top:1px solid rgba(255,255,255,.12);margin:12px 0 10px"></div>
+    <a href="https://loadboot.com/services.html" style="color:#60A5FA;text-decoration:none">Services</a> &middot;
+    <a href="https://loadboot.com/pricing.html" style="color:#60A5FA;text-decoration:none">Pricing</a> &middot;
+    <a href="https://loadboot.com/contact.html" style="color:#60A5FA;text-decoration:none">Support</a> &middot;
+    <a href="https://loadboot.com/privacy.html" style="color:#60A5FA;text-decoration:none">Privacy</a> &middot;
+    <a href="https://loadboot.com/terms.html" style="color:#60A5FA;text-decoration:none">Terms</a><br>
+    <span style="color:#475569">You received this because someone signed up for LoadBoot with this email address. &copy; 2026 LoadBoot.</span>
+  </td></tr>
 
-            <!-- Reassurance strip -->
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 4px;background:#f1f5f9;border-radius:12px;">
-              <tr><td style="padding:14px 16px;font-size:13px;line-height:1.55;color:#475569;">
-                After you confirm, setup takes about <b>5 minutes</b>. If you didn't create a LoadBoot account, you can safely ignore this email.
-              </td></tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- Premium footer -->
-        <tr><td style="height:3px;background:linear-gradient(90deg,#0883F7,#FC5305);font-size:0;line-height:0;">&nbsp;</td></tr>
-        <tr>
-          <td style="background:#10223B;padding:26px 32px 28px;">
-            <img src="https://loadboot.com/email-logo-white-2x.png" alt="LoadBoot" width="140" height="34" style="display:block;border:0;outline:none;width:140px;height:auto;margin-bottom:12px;">
-            <p style="margin:0 0 18px;font-size:12.5px;line-height:1.6;color:#94a3b8;">Verified loads, GPS-proof trips and faster settlements — one platform for carriers, brokers, shippers &amp; agents.</p>
-
-            <!-- website links -->
-            <p style="margin:0 0 9px;font-size:13px;line-height:2;">
-              <a href="https://loadboot.com/how-it-works.html" style="color:#cbd5e1;text-decoration:none;">How It Works</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/pricing.html" style="color:#cbd5e1;text-decoration:none;">Pricing</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/services.html" style="color:#cbd5e1;text-decoration:none;">Services</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/market-rates.html" style="color:#cbd5e1;text-decoration:none;">Market Rates</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/blog.html" style="color:#cbd5e1;text-decoration:none;">Blog</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/about.html" style="color:#cbd5e1;text-decoration:none;">About</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/contact.html" style="color:#cbd5e1;text-decoration:none;">Contact</a>
-            </p>
-
-            <!-- portal links -->
-            <p style="margin:0 0 16px;font-size:13px;line-height:2;">
-              <a href="https://loadboot.com/app/carrier/" style="color:#7dd3fc;text-decoration:none;font-weight:700;">Carrier Portal</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/app/partner/" style="color:#7dd3fc;text-decoration:none;font-weight:700;">Broker / Shipper Portal</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/agents.html" style="color:#7dd3fc;text-decoration:none;font-weight:700;">Agent Program</a>
-            </p>
-
-            <div style="height:1px;background:#1e2f4a;font-size:0;line-height:0;margin:0 0 14px;">&nbsp;</div>
-
-            <!-- legal -->
-            <p style="margin:0 0 9px;font-size:11.5px;line-height:1.9;">
-              <a href="https://loadboot.com/privacy.html" style="color:#94a3b8;text-decoration:none;">Privacy Policy</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/terms.html" style="color:#94a3b8;text-decoration:none;">Terms of Service</a>
-              <span style="color:#334155;">&nbsp;·&nbsp;</span>
-              <a href="https://loadboot.com/contact.html" style="color:#94a3b8;text-decoration:none;">Help &amp; Support</a>
-            </p>
-
-            <p style="margin:0;font-size:11px;line-height:1.65;color:#64748b;">
-              &copy; 2026 LoadBoot &middot; US trucking dispatch platform &middot; <a href="https://loadboot.com" style="color:#94a3b8;text-decoration:underline;">loadboot.com</a><br>
-              You received this because someone signed up for LoadBoot with this email address. If that wasn't you, you can safely ignore this message.
-            </p>
-          </td>
-        </tr>
-
-      </table>
-    </td></tr>
-  </table>
-</div>
+</table></td></tr></table></div></body></html>
