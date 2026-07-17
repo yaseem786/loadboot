@@ -14,3 +14,14 @@
 -- UI: carrier Fleet (📈 optimization + 🛰 ELD cards), Finance Taxes (export), Costs (fuel import).
 -- integrations.html: these moved to "Live today" with accurate labels; native OAuth/provider APIs
 -- remain on the honest roadmap. Copy fn defs from staging/prod pg_get_functiondef as needed.
+
+-- bl_int_0107 (staging + PROD 2026-07-15): ELD PROVIDER POLLING — direct Samsara/Motive connection
+-- using the CARRIER'S OWN api token (no partnership needed):
+--   · eld_integrations.api_token; carrier_eld_setup(provider, rotate, api_token) 3-arg (2-arg dropped)
+--   · eld_poll_targets() — service-role-only list of active integrations w/ tokens + active trips
+--   · edge function 'eld-poll' (both projects): polls Samsara (Bearer) / Motive (X-Api-Key) latest
+--     vehicle location → feeds public.eld_ingest via the integration's ingest token; 3-min throttle
+--   · cron 'lb-eld-poll' (*/5) via pg_net http_post with the project anon key (verify_jwt)
+-- UI: Fleet → ELD card gains provider select + API-token Connect (Samsara/Motive instructions).
+-- STILL contract-blocked: QuickBooks OAuth two-way (needs owner's Intuit app keys — will build on
+-- request), fuel-card provider APIs (WEX/Comdata partnerships), multi-fleet enterprise (deferred).
