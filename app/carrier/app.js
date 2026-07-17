@@ -341,7 +341,7 @@ function authScreen() {
       if (signup) {
         const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()) }, window.__LB_AGENT ? { role: 'agent' } : {}));
         if (error) throw error;
-        if (!data || !data.session) { err.className = 'cp-err ok'; err.textContent = 'Account created! Check your email to confirm, then sign in.'; setMode(false); btn.disabled = false; return; }
+        if (!data || !data.session) { setMode(false); err.className = 'cp-err ok'; err.textContent = '✓ Account created! We emailed a confirmation link to ' + em + '. Click it (check spam too), then sign in here.'; btn.disabled = false; return; }
         // Phone OTP verification — active the moment an SMS provider (Twilio) is configured; graceful otherwise.
         try {
           const phv = (ccSel.value + phone.value.trim()).replace(/[^\d+]/g, '');

@@ -483,7 +483,7 @@ function authScreen() {
       if (signup) {
         const { data, error } = await signUp(em, pw, { name: name.value.trim(), partner_kind: chosenKind });
         if (error) throw error;
-        if (!data || !data.session) { err.className = 'cp-err ok'; err.textContent = 'Account created! Check your email to confirm, then sign in.'; setMode(false); btn.disabled = false; return; }
+        if (!data || !data.session) { setMode(false); err.className = 'cp-err ok'; err.textContent = '✓ Account created! We emailed a confirmation link to ' + em + '. Click it (check spam too), then sign in here.'; btn.disabled = false; return; }
         boot(); return;
       }
       const { error } = await signInWithPassword(em, pw); if (error) throw error; boot(); return;
