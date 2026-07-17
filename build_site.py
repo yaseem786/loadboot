@@ -380,8 +380,8 @@ def footer():
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral &amp; Agent Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
 <div><div class="foot-h">Compliance</div><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
-<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
-<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral &amp; Agent Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
+<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="features.html">All Features</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral &amp; Agent Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="create-carrier-account.html">Create Carrier Account</a><a href="create-broker-account.html">Create Broker Account</a><a href="create-shipper-account.html">Create Shipper Account</a><a href="create-agent-account.html">Create Agent Account</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div style="margin-bottom:20px"><a href="https://www.capterra.com/p/10050953/LoadBoot/" rel="noopener" target="_blank" aria-label="LoadBoot reviews on Capterra" style="display:inline-flex;align-items:center;gap:10px;background:#0d1b30;border:1px solid #1e3a5f;border-radius:12px;padding:10px 16px;text-decoration:none;margin:0">
@@ -3868,6 +3868,163 @@ page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Develope
      'Choose your Loadboot portal: Carrier Portal, Partner Portal, Agent Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
      'login.html', lg)
 
+# ============================================================================
+# PUBLIC PLATFORM DOCUMENTATION — deep, SEO-optimized feature + guide pages.
+# Real portal screenshots live in /shots/<name>.png (owner captures per docs list);
+# missing images hide gracefully so pages never break.
+# ============================================================================
+def shot(name, caption):
+    return ('<figure class="reveal" style="margin:26px 0;border-radius:16px;overflow:hidden;border:1px solid #e6ebf3;box-shadow:0 18px 44px -28px rgba(16,34,59,.35)">'
+        '<img src="/shots/' + name + '.png" alt="' + caption + '" loading="lazy" style="display:block;width:100%" onerror="this.parentNode.style.display=\'none\'">'
+        '<figcaption style="padding:10px 16px;background:#f8fafc;color:#475569;font-size:.85rem">' + caption + '</figcaption></figure>')
+
+def docsec(h, sub, body_html):
+    return '<section class="section"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">' + sub + '</div><h2>' + h + '</h2></div><div class="reveal" style="max-width:860px;font-size:1.02rem;line-height:1.85;color:#334155">' + body_html + '</div></div></section>'
+
+def steps_html(items):
+    out = '<div style="margin:18px 0">'
+    for i, (t, d) in enumerate(items):
+        out += ('<div style="display:flex;gap:16px;margin-bottom:18px"><div style="flex:none;width:38px;height:38px;border-radius:12px;background:#10223B;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">' + str(i+1) + '</div>'
+            '<div><b style="color:#10223B">' + t + '</b><div style="color:#475569;line-height:1.75">' + d + '</div></div></div>')
+    return out + '</div>'
+
+def cta_row(pairs):
+    return '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">' + ''.join(
+        '<a href="' + h + '" class="btn ' + ('btn-primary' if i == 0 else 'btn-secondary') + '">' + t + '</a>' for i, (t, h) in enumerate(pairs)) + '</div>'
+
+# ---------------- FEATURES HUB ----------------
+feat = svc_hero('Every feature, publicly documented', 'LoadBoot is a complete trucking operating system — not a dispatch phone desk. This page maps everything that exists in the product today, with a guide for each piece.')
+_FEAT = [
+ ('&#128230;','Live load board','Ghost-load-free board — booked or expired loads vanish instantly. Direct offers, propose-a-rate, multi-stop chips.','how-it-works.html'),
+ ('&#128752;','GPS tracking &amp; geofence proof','Built-in live tracking, 800m geofence check-ins at EVERY stop, detention clock, background-proof handoff to Google Maps.','gps-tracking.html'),
+ ('&#128176;','Payments &amp; settlements','Receipt-verified rails: DUE ledger with pay-by dates, one-receipt trip settlement, confirm loops, reminders and disputes.','payments-settlements.html'),
+ ('&#127974;','Factoring &amp; NOA engine','Full Notice-of-Assignment support: factor remit-to on every pay panel, per-broker direct control, releases, UCC &sect;9-406 guardrails.','factoring-noa.html'),
+ ('&#9888;','Detention / TONU / layover / lumper','Auto-filed claims with GPS evidence and rate-card amounts. Every accessorial has a public policy page.','detention-pay-policy.html'),
+ ('&#128101;','Fleet management','Drivers, trucks, trailers, service records, driver payroll, safety desk, IFTA state miles and per-trip P&amp;L.','fleet-management.html'),
+ ('&#129309;','Agent Program','Independent dispatchers earn 1% of gross on delivered loads, 5 levels of overrides, CRM-grade chain tracking and a payout center.','agents.html'),
+ ('&#128279;','API &amp; integrations','Developer portal with API keys today; ELD, accounting and fuel-card integrations on the public roadmap.','integrations.html'),
+]
+feat += '<section class="section"><div class="wrap"><div class="cards g4">' + ''.join(
+ '<div class="card reveal"><div class="card-ico">' + i + '</div><h3>' + t + '</h3><p>' + d + '</p><a href="' + h + '">Read the full guide &rarr;</a></div>' for i,t,d,h in _FEAT) + '</div></div></section>'
+feat += docsec('Four portals, one system', 'Who uses what',
+ '<p><b>Carrier Portal</b> — load board, trips, GPS, documents, finance, fleet, safety. <a href="create-carrier-account.html">How to create a carrier account &rarr;</a></p>'
+ '<p><b>Broker portal</b> — full posting wizard (multi-stop, scheduling, rate card), booking approvals, claims review, payables with pay-by dates, carrier invoices. <a href="create-broker-account.html">How to create a broker account &rarr;</a></p>'
+ '<p><b>Shipper portal</b> — the same broker-grade engine with a shipper onboarding packet (credit application, payment terms, facility rules). <a href="create-shipper-account.html">How to create a shipper account &rarr;</a></p>'
+ '<p><b>Agent Portal</b> — referral chain, live earnings, payout center. <a href="create-agent-account.html">How to create an agent account &rarr;</a></p>'
+ + shot('carrier-loadboard', 'The carrier load board — every load real and bookable in one tap')
+ + cta_row([('Create an account','get-started.html'),('See pricing','pricing.html')]))
+RELATED['features.html'] = [('how-it-works.html','How It Works'),('gps-tracking.html','GPS Tracking'),('payments-settlements.html','Payments'),('factoring-noa.html','Factoring & NOA'),('fleet-management.html','Fleet Management'),('integrations.html','Integrations')]
+page('features.html', 'LoadBoot Features — Complete Trucking Software Platform, Documented',
+     'Every LoadBoot feature publicly documented: ghost-load-free load board, GPS geofence tracking, receipt-verified payments, factoring/NOA engine, detention & TONU automation, fleet management, agent program and API.',
+     'features.html', feat)
+
+# ---------------- ACCOUNT / ONBOARDING GUIDES (per role) ----------------
+def _acct_page(fname, role, emoji, hero_sub, steps, shots_list, docs_note, portal_url):
+    b = svc_hero('How to create a ' + role + ' account ' + emoji, hero_sub)
+    b += docsec('Step by step', role.capitalize() + ' onboarding', steps_html(steps)
+        + ''.join(shot(n, c) for n, c in shots_list)
+        + '<p><b>What you&rsquo;ll need:</b> ' + docs_note + '</p>'
+        + cta_row([('Start now &rarr;', portal_url), ('All features','features.html')]))
+    RELATED[fname] = [('features.html','All Features'),('get-started.html','Get Started'),('pricing.html','Pricing'),('faq.html','FAQ'),('contact.html','Contact')]
+    page(fname, 'How to Create a LoadBoot ' + role.capitalize() + ' Account — Step-by-Step Onboarding',
+         'Step-by-step guide to creating a LoadBoot ' + role + ' account: signup, verification documents, onboarding packet and your first load. With real portal screenshots.',
+         fname, b)
+
+_acct_page('create-carrier-account.html', 'carrier', '&#128667;',
+ 'From signup to your first matched load in about 5 minutes of your time — verification runs the same day.',
+ [('Sign up with your company email','Go to the Carrier Portal and create your login. Your DOT number auto-fills company details straight from FMCSA.'),
+  ('Run the 5-step onboarding wizard','Company &rarr; equipment &amp; lanes &rarr; dispatch preferences &rarr; payment (direct bank or factoring with full NOA support) &rarr; e-sign the carrier agreement.'),
+  ('Upload documents','COI direct from your insurance agent, W-9, operating authority. PDFs verify fastest; the built-in Scan-to-PDF turns photos into clean PDFs.'),
+  ('Get verified','A real person reviews the same business day. You get an email + in-app notification at every status change.'),
+  ('Book your first load','The board only shows real, bookable freight. One tap = written rate confirmation with detention, TONU and layover protection built in.')],
+ [('carrier-onboarding','The carrier onboarding wizard'),('carrier-loadboard','Your load board after verification')],
+ 'MC/DOT, certificate of insurance ($1M auto liability), W-9, and bank details or your factoring company&rsquo;s NOA.',
+ '/app/carrier/')
+
+_acct_page('create-broker-account.html', 'broker', '&#127970;',
+ 'Licensed brokers get the full posting engine: multi-stop wizard, booking approvals, claims review and receipt-verified payables.',
+ [('Create your broker login','Sign up from the Partner Portal and pick Broker.'),
+  ('Complete the broker packet','FMCSA broker authority (MC), $75k BMC-84 bond, W-9, signed Broker Agreement, bank instructions and claims procedure — reviewed by a human.'),
+  ('Post your first load','The 5-step wizard: exact facility addresses with suggestions, extra stops with run-order control, per-stop scheduling with drive-time validation, and your rate card.'),
+  ('Approve a booking','Carriers request to book; first approval wins. Sign the rate confirmation electronically — the carrier packet fires automatically.'),
+  ('Settle with one receipt','Delivered freight and approved claims land in Payables with pay-by dates. Pay item by item or the whole trip with ONE receipt.')],
+ [('broker-wizard','The posting wizard with multi-stop and scheduling'),('broker-payables','Payables grouped per trip with pay-by dates')],
+ 'FMCSA broker MC, BMC-84 surety bond, W-9 and business bank details.',
+ '/app/partner/')
+
+_acct_page('create-shipper-account.html', 'shipper', '&#127981;',
+ 'Shippers get the same broker-grade portal — posting, tracking, claims and payments — with a shipper-specific onboarding packet.',
+ [('Create your shipper login','Sign up from the Partner Portal and pick Shipper. No MC or bond needed — shippers move their own freight.'),
+  ('Complete the shipper packet','Credit application, signed Shipper Agreement, payment terms (Net 15/30/45), billing instructions, cargo profile, claims contact and facility rules.'),
+  ('Post your first shipment','The same full wizard brokers use — exact addresses, appointment windows, rate. Verified carriers book it directly.'),
+  ('Track door to door','Live GPS with geofence check-ins at every stop; documents collect themselves.'),
+  ('Pay with proof','Every payment runs the receipt loop — transfer, attach receipt, carrier confirms. Deadlines shown on every item.')],
+ [('shipper-portal','The shipper portal — full posting and tracking engine')],
+ 'Business identity (EIN / W-9), credit references or agreed prepay terms, and your facility contacts.',
+ '/app/partner/')
+
+_acct_page('create-agent-account.html', 'agent', '&#129309;',
+ 'Independent dispatchers: one link for carriers, brokers and shippers — 1% of gross on every delivered load your chain touches.',
+ [('Create your agent login','Sign up at the Agent Portal — worldwide, remote, free.'),
+  ('Complete the Verification Center','Full address (any country), payout account with full receiving-bank details, W-9 or W-8BEN with a real e-signature, government ID and bank proof.'),
+  ('Get approved','A human reviews within a business day. Your referral link goes live the moment you&rsquo;re approved.'),
+  ('Build your pair','One carrier + demand (a broker/shipper you referred, or loads you post yourself) switches earning ON.'),
+  ('Watch the 1% land','Every GPS-verified delivered load pays your chain automatically — 15-day clearing, payouts from $100 with Amazon-style tracking.')],
+ [('agent-dashboard','The agent dashboard — chain, earnings and payouts')],
+ 'Government ID, proof of your payout account, and a W-9 (US) or W-8BEN (international).',
+ '/app/agent/')
+
+# ---------------- DEEP FEATURE PAGES ----------------
+trk = svc_hero('GPS tracking &amp; geofence proof', 'Tracking is not an add-on — it is the spine of LoadBoot: check-ins, detention evidence, claims and per-diem all hang off the same GPS trail.')
+trk += docsec('How it works', 'Built-in, background-proof',
+ '<p>Tracking starts automatically when a trip starts and survives everything short of closing the browser: it runs from any portal tab, pushes a fresh fix the instant a driver returns from Google Maps (there&rsquo;s a one-tap handoff to Google navigation that keeps LoadBoot tracking in the background), and re-arms itself on every reload.</p>'
+ '<p><b>Geofence check-ins at every stop.</b> An 800-meter geofence arms at pickup, every extra stop and delivery. Arrival and departure stamp themselves — no driver taps needed — and each stamp doubles as legal detention evidence with a 10-minute exit grace so leaving the gate never bills the facility unfairly.</p>'
+ '<p><b>What the broker/shipper sees:</b> a live map per load, blackout watchdogs if pings stop, and a GPS-verified timeline on every claim.</p>'
+ + shot('trip-map', 'The trip map — live position, route and geofenced stops')
+ + cta_row([('See detention policy','detention-pay-policy.html'),('All features','features.html')]))
+RELATED['gps-tracking.html'] = [('detention-pay-policy.html','Detention Pay'),('features.html','All Features'),('how-it-works.html','How It Works'),('payments-settlements.html','Payments'),('fleet-management.html','Fleet')]
+page('gps-tracking.html', 'GPS Load Tracking with Geofence Proof — LoadBoot', 'Built-in GPS tracking for trucking: automatic geofence check-ins at every stop, detention evidence, background-proof tracking with Google Maps handoff, and blackout watchdogs.', 'gps-tracking.html', trk)
+
+pay = svc_hero('Payments &amp; settlements', 'Every dollar has a paper trail: who owes it, when it is due, when it moved, and proof it landed.')
+pay += docsec('The receipt-verified rail', 'No black boxes',
+ steps_html([
+  ('It becomes DUE automatically','Delivered freight, approved claims and service-fee invoices appear in the payer&rsquo;s ledger the moment they are owed — grouped per trip, each with a PAY-BY deadline (net-30 or the carrier&rsquo;s factoring terms).'),
+  ('Pay with proof','The pay panel shows exactly where money goes — the carrier&rsquo;s verified bank or their factoring company under an NOA. Transfer, attach the receipt. One receipt can settle a whole trip.'),
+  ('The payee confirms','The receiver gets an instant notification with a landing ETA, can open the payer&rsquo;s receipt, and taps &ldquo;Received&rdquo; when it lands. Silence triggers daily nudges and staff escalation — nothing rots unconfirmed.'),
+  ('Disputes with teeth','Unpaid past due? One-tap payment request first, formal dispute at 3 days — with LoadBoot support in the loop.')])
+ + shot('broker-payables', 'Payables — one trip, one block, one deadline')
+ + shot('carrier-money-in', 'The carrier&rsquo;s money-in view — owed, on the way, received')
+ + cta_row([('Factoring &amp; NOA','factoring-noa.html'),('All features','features.html')]))
+RELATED['payments-settlements.html'] = [('factoring-noa.html','Factoring & NOA'),('detention-pay-policy.html','Detention'),('tonu-policy.html','TONU'),('features.html','All Features'),('pricing.html','Pricing')]
+page('payments-settlements.html', 'Trucking Payments & Settlement Automation — LoadBoot', 'Receipt-verified payment rails for trucking: automatic DUE ledger with pay-by dates, one-receipt trip settlement, confirmation loops, reminders, disputes and full factoring support.', 'payments-settlements.html', pay)
+
+fac = svc_hero('Factoring &amp; the NOA engine', 'Full Notice-of-Assignment support, built the way the law works (UCC &sect;9-406) — so nobody ever pays the same invoice twice.')
+fac += docsec('What LoadBoot automates', 'For factored carriers',
+ '<p>Declare your factor once — during onboarding or any time in Finance: remit-to details from the NOA letter, advance %, fee % and the days your brokers get. Upload the NOA letter; LoadBoot verifies it.</p>'
+ '<p>From that moment every payer automatically sees your <b>factor&rsquo;s</b> remit-to (never your bank) with the NOA warning, on every pay panel and every generated invoice. Brokers get notified at booking with the payment terms. Per-broker control lets non-exclusive carriers route specific brokers direct. Leaving your factor takes one release letter.</p>'
+ '<p>After delivery, the <b>Factoring Packet</b> bundles everything your factor needs to fund — invoice, executed rate confirmation, signed POD, receipts, GPS proof — with a missing-items checklist.</p>'
+ + shot('factoring-invoice', 'A generated invoice — REMIT TO the factoring company per NOA')
+ + cta_row([('Payments overview','payments-settlements.html'),('For carriers','carriers.html')]))
+RELATED['factoring-noa.html'] = [('payments-settlements.html','Payments'),('carriers.html','For Carriers'),('features.html','All Features'),('faq.html','FAQ'),('contact.html','Contact')]
+page('factoring-noa.html', 'Factoring & NOA Support for Carriers — LoadBoot', 'Complete factoring support: Notice of Assignment engine, factor remit-to on every payment, per-broker direct control, release workflow, and a fund-ready factoring packet after every delivery.', 'factoring-noa.html', fac)
+
+flt = svc_hero('Fleet management', 'Drivers, trucks, service records, payroll, safety and taxes — the whole back office in the carrier portal.')
+flt += docsec('What&rsquo;s inside', 'Carrier back office',
+ '<p><b>Drivers &amp; equipment</b> — driver roster with invites, trucks and trailers, assignment per trip. <b>Service records</b> keep maintenance history per unit. <b>Safety</b> — violations, plans of action and an account-health engine that rewards clean operation. <b>Payroll</b> — driver settlements from actual trips. <b>Expenses &amp; P&amp;L</b> — fuel, tolls, factoring fees and a per-trip profit statement with cost-per-mile. <b>IFTA</b> — state miles collected from the same GPS trail. <b>Per-diem</b> — nights away counted from trip stamps for the IRS deduction.</p>'
+ + shot('carrier-finance', 'Per-trip profit &amp; loss — revenue, costs and margin per load')
+ + cta_row([('Cost per mile calculator','cost-per-mile-calculator.html'),('All features','features.html')]))
+RELATED['fleet-management.html'] = [('cost-per-mile-calculator.html','Cost Per Mile'),('ifta-fuel-tax.html','IFTA'),('truck-driver-per-diem-2026.html','Per Diem'),('features.html','All Features'),('carriers.html','For Carriers')]
+page('fleet-management.html', 'Fleet Management Software for Carriers — LoadBoot', 'Fleet management inside the carrier portal: drivers, trucks, maintenance records, driver payroll, safety desk, IFTA state miles, expenses and per-trip profit & loss.', 'fleet-management.html', flt)
+
+intg = svc_hero('API &amp; integrations', 'What is live today, and what is on the public roadmap — no vaporware.')
+intg += docsec('Live today', 'Developer platform',
+ '<p><b>Developer portal &amp; API keys</b> — <a href="/app/developer/">/app/developer/</a> issues keys for programmatic access. <b>FMCSA</b> — live authority/safety lookups power carrier verification. <b>Webhooks</b> — event delivery infrastructure for load and trip events. <b>Google Maps handoff</b> — one-tap navigation that keeps LoadBoot tracking in the background.</p>')
+intg += docsec('On the roadmap — not live yet', 'Honest list',
+ '<p>These are planned and tracked, and are <b>not</b> part of the product today: <b>ELD telematics sync</b> (Motive, Samsara — the data model exists, provider connections do not), <b>QuickBooks / accounting export</b>, <b>fuel card integrations</b>, and <b>enterprise fleet optimization</b>. When each one ships it will be documented here first. Want one prioritized? <a href="contact.html">Tell us</a> — real demand moves the roadmap.</p>'
+ + cta_row([('Developer portal','/app/developer/'),('All features','features.html')]))
+RELATED['integrations.html'] = [('features.html','All Features'),('security.html','Security'),('contact.html','Contact'),('faq.html','FAQ'),('how-it-works.html','How It Works')]
+page('integrations.html', 'API & Integrations — LoadBoot Developer Platform', 'LoadBoot integrations: developer API keys and webhooks live today, FMCSA verification built in; ELD, QuickBooks and fuel-card integrations on the public roadmap.', 'integrations.html', intg)
+
 # ---- Apps page: the LoadBoot mobile experience (PWA today, stores in preparation) ----
 ap = svc_hero('The LoadBoot App', 'One operating system for trucking &mdash; carrier, broker and shipper tools that live on your phone. Install in 10 seconds, no app store needed.')
 ap += _sec('Your apps', 'Same account everywhere &mdash; phone, tablet, laptop.', _cards([
@@ -3882,6 +4039,19 @@ ap += _sec('Install on your phone', 'Works like a native app: home-screen icon, 
     '<article class="card"><div class="card-ic">&#63743;</div><h3>iPhone</h3><p>Open <b>loadboot.com/app</b> in Safari &rarr; tap <b>Share</b> &rarr; <b>&ldquo;Add to Home Screen&rdquo;</b>. Launches full-screen with the LoadBoot icon.</p></article>'
     '</div>'
     '<p class="src-disc" style="margin-top:18px">Native listings on the Apple App Store and Google Play are in preparation. The installed web app above is the same product with the same account.</p>'))
+ap += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff"><div class="wrap" style="padding:64px 0">'
+ '<div class="sec-head center reveal" style="color:#fff"><div class="eyebrow" style="color:#7dd3fc">Coming soon</div>'
+ '<h2 style="color:#fff;font-size:2rem">LoadBoot is coming to the <span style="color:#FC5305">App Store</span> &amp; <span style="color:#34d399">Google Play</span></h2>'
+ '<p class="lead center" style="color:#cbd5e1;max-width:680px;margin:14px auto 0">Native apps with true background GPS, push notifications and offline paperwork are in development. The web app already installs on any phone today — the native apps take it further.</p></div>'
+ '<div class="reveal" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px">'
+ '<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 26px;display:flex;align-items:center;gap:12px"><span style="font-size:1.7rem">&#63743;</span><div style="text-align:left"><div style="font-size:.68rem;color:#94a3b8;letter-spacing:.06em">COMING SOON ON THE</div><div style="font-weight:800;font-size:1.05rem">App Store</div></div></div>'
+ '<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 26px;display:flex;align-items:center;gap:12px"><span style="font-size:1.7rem">&#9654;</span><div style="text-align:left"><div style="font-size:.68rem;color:#94a3b8;letter-spacing:.06em">COMING SOON ON</div><div style="font-weight:800;font-size:1.05rem">Google Play</div></div></div>'
+ '</div>'
+ '<div class="reveal" style="max-width:520px;margin:30px auto 0;text-align:center">'
+ '<p style="color:#cbd5e1;margin-bottom:12px">Be first in line — we email launch day only, nothing else:</p>'
+ '<form class="news" style="justify-content:center" onsubmit="event.preventDefault();var f=this,em=f.querySelector(\'input\').value;var done=function(){f.innerHTML=\'<span style=\\\'color:#86efac;font-weight:700\\\'>You are on the launch list &#10003;</span>\';};if(window.lbSubmitLead){window.lbSubmitLead(\'app_waitlist\',{email:em}).then(done).catch(done);}else{done();}">'
+ '<input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Join the launch list</button></form>'
+ '</div></div></section>')
 page('apps.html', 'LoadBoot App &mdash; Carrier, Broker &amp; Shipper Tools on Your Phone',
      'Install the LoadBoot app on Android or iPhone in seconds: post your truck, book loads, track trips, upload PODs and manage freight from your phone.',
      'apps.html', ap)
