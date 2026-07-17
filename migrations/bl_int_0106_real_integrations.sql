@@ -1,0 +1,16 @@
+-- bl_int_0106 — REAL integrations (staging + PROD 2026-07-15). No vaporware:
+-- 1) ELD/TELEMATICS LIVE INGEST — eld_integrations + ingest_token/last_ping_at;
+--    carrier_eld_setup(provider, rotate) → per-carrier webhook token + POST instructions;
+--    eld_ingest(token, lat, lng, speed?, at?) [granted to anon — token IS the auth]:
+--    validates token+coords, routes position to the carrier's ACTIVE trip (trip_locations +
+--    trips.last_* , tracking_method 'eld'). Any device that can POST = live integration.
+--    NOTE: webhook URL string embeds the project ref — staging/prod versions differ by ref only.
+-- 2) carrier_accounting_export(from,to) — invoices (gross/fee/net/lane/paid), expenses, confirmed
+--    payments as JSON → portal downloads QuickBooks-compatible CSVs (Finance → Taxes).
+-- 3) carrier_fuel_import(rows[]) — EFS/Comdata/WEX statement rows (parsed client-side) → fuel
+--    expenses, max 500/import (Finance → Costs).
+-- 4) carrier_fleet_optimization(days) — per-truck trips/miles/revenue/$mi/active-days + top-5
+--    lanes from delivered trips (Fleet tab card).
+-- UI: carrier Fleet (📈 optimization + 🛰 ELD cards), Finance Taxes (export), Costs (fuel import).
+-- integrations.html: these moved to "Live today" with accurate labels; native OAuth/provider APIs
+-- remain on the honest roadmap. Copy fn defs from staging/prod pg_get_functiondef as needed.
