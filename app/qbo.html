@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Connecting QuickBooks — LoadBoot</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<style>body{margin:0;font-family:Inter,system-ui,sans-serif;background:#0b1220;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{max-width:420px;text-align:center;padding:40px 30px}.sp{width:44px;height:44px;border:4px solid rgba(255,255,255,.15);border-top-color:#0883F7;border-radius:50%;margin:0 auto 18px;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}
+a{color:#60a5fa}</style></head><body>
+<div class="card"><div class="sp" id="sp"></div><h2 id="t">Connecting QuickBooks…</h2><p id="m" style="color:#94a3b8;line-height:1.7">Finishing the secure handshake with Intuit.</p></div>
+<script src="/app/env-config.js"></script>
+<script type="module">
+import { getClient } from '/app/shared/supabaseClient.js';
+const q = new URLSearchParams(location.search);
+const t = document.getElementById('t'), m = document.getElementById('m'), sp = document.getElementById('sp');
+(async () => {
+  try {
+    const code = q.get('code'), realmId = q.get('realmId');
+    if (!code || !realmId) throw new Error(q.get('error') || 'Intuit did not return a code — try connecting again.');
+    const sb = await getClient();
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { t.textContent = 'Sign in required'; m.innerHTML = 'Open your <a href="/app/carrier/">carrier portal</a>, sign in, then connect QuickBooks again.'; sp.style.display='none'; return; }
+    const env = window.__LB_ENV;
+    const r = await fetch(env.supabaseUrl + '/functions/v1/qbo-exchange', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': env.supabaseAnonKey, 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ code, realmId, redirect: location.origin + '/app/qbo.html' })
+    });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'Connection failed.');
+    t.textContent = '✓ QuickBooks connected';
+    m.textContent = (j.company ? j.company + ' — ' : '') + 'taking you back to Finance…';
+    sp.style.display = 'none';
+    setTimeout(() => { location.href = '/app/carrier/#finance'; }, 1400);
+  } catch (e) {
+    t.textContent = 'Could not connect';
+    m.textContent = (e && e.message) || 'Something went wrong — try again from Finance.';
+    sp.style.display = 'none';
+  }
+})();
+</script></body></html>

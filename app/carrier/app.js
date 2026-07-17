@@ -21,7 +21,7 @@ import {
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
-  carrierEldSetup, carrierAccountingExport, carrierFuelImport, carrierFleetOptimization,
+  carrierEldSetup, carrierAccountingExport, carrierFuelImport, carrierFleetOptimization, qboAuthUrl, qboStatus,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
@@ -5046,11 +5046,47 @@ function tripStepper(status) {
           } }, 'Import statement'), msg9]),
       ]);
     })();
+    // 🟢 QUICKBOOKS ONLINE — OAuth two-way sync (invoices out, paid-status back)
+    function qboCard9() {
+      const host9 = h('div', { class: 'cp-card' }, [cardHead('🟢 QuickBooks Online', 'two-way sync'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+      (async () => {
+        let st9 = null; try { st9 = await qboStatus(); } catch (_) { mount(host9, h('span')); return; }
+        const syncBtn9 = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Syncing…';
+          try {
+            const { getClient } = await import('../shared/supabaseClient.js');
+            const sb9 = await getClient(); const { data: { session } } = await sb9.auth.getSession();
+            const env9 = window.__LB_ENV;
+            const r9 = await fetch(env9.supabaseUrl + '/functions/v1/qbo-sync', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: env9.supabaseAnonKey, Authorization: 'Bearer ' + session.access_token }, body: '{}' });
+            const j9 = await r9.json();
+            if (!j9.ok) throw new Error(j9.error || 'Sync failed');
+            lbToast('✓ Synced — ' + (j9.note || (j9.invoices + ' invoices, ' + j9.expenses + ' expenses')), 'success', '🟢 QuickBooks'); loadFinance();
+          } catch (e9) { lbToast((e9 && e9.message) || 'Sync failed.', 'urgent', 'QuickBooks'); b9.disabled = false; b9.textContent = '🔄 Sync now'; }
+        } }, '🔄 Sync now');
+        if (st9 && st9.connected) {
+          mount(host9, [cardHead('🟢 QuickBooks Online', 'connected'),
+            h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
+              h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ ' + (st9.company || 'Connected')),
+              syncBtn9,
+            ]),
+            h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.6' }, 'Pushes your delivered-freight invoices (customer = broker) and every expense into QuickBooks, and pulls back which invoices got PAID there. ' + (st9.synced || 0) + ' records synced' + (st9.paid_in_qbo ? ' · ' + st9.paid_in_qbo + ' marked paid in QBO' : '') + (st9.last_sync_note ? ' · last sync: ' + st9.last_sync_note : '') + '.'),
+          ]);
+        } else {
+          mount(host9, [cardHead('🟢 QuickBooks Online', 'two-way sync'),
+            h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;line-height:1.65' }, 'Connect once — LoadBoot pushes your freight invoices and expenses straight into QuickBooks and pulls payment status back. No CSVs, no double entry.'),
+            h('button', { class: 'cp-btn', style: 'background:#2CA01C', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+              try { const u9 = await qboAuthUrl(location.origin + '/app/qbo.html'); location.href = u9.url; }
+              catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Could not start.', 'urgent', 'QuickBooks'); }
+            } }, '🟢 Connect QuickBooks'),
+          ]);
+        }
+      })();
+      return host9;
+    }
     const SECS = [
       ['earn', '💰 Earnings', () => [earningsHub()]],
       ['in',   '📥 Money in', () => [payFlightCard, cashCard(rows), statusCard, stmtCard]],
       ['cost', '📤 Costs',    () => [fuelImportCard9, expCard, feesChart]],
-      ['tax',  '🧾 Taxes',    () => [acctExportCard9, taxCenter(), iftaCard]],
+      ['tax',  '🧾 Taxes',    () => [qboCard9(), acctExportCard9, taxCenter(), iftaCard]],
       ['pay',  '👥 Payroll',  () => [payrollCard]],
     ];
     let sec = 'earn';

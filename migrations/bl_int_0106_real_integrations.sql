@@ -25,3 +25,13 @@
 -- UI: Fleet → ELD card gains provider select + API-token Connect (Samsara/Motive instructions).
 -- STILL contract-blocked: QuickBooks OAuth two-way (needs owner's Intuit app keys — will build on
 -- request), fuel-card provider APIs (WEX/Comdata partnerships), multi-fleet enterprise (deferred).
+
+-- bl_int_0108 (staging + PROD 2026-07-16): QUICKBOOKS ONLINE OAUTH TWO-WAY SYNC (phase 1, sandbox keys)
+--   · app_private.qbo_config (owner's Intuit DEV keys, env 'sandbox'), qbo_connections, qbo_synced
+--   · authenticated RPCs qbo_auth_url/qbo_status/qbo_my_org; service RPCs qbo_cfg/save_conn/sync_payload/mark/note
+--   · edge fns both projects: qbo-exchange (code→tokens, org from caller JWT), qbo-sync (auto refresh;
+--     freight → QBO Invoices w/ auto Customer + 'Freight Services' Item; expenses → Purchases; Balance→paid)
+--   · UI: /app/qbo.html callback + Finance→Taxes 🟢 QuickBooks card (Connect / Sync now / status)
+-- OWNER TODO: Intuit app → add BOTH redirect URIs: https://loadboot.com/app/qbo.html AND
+-- http://localhost:8080/app/qbo.html. Test with an Intuit SANDBOX company first; production keys
+-- + env flip after Intuit app assessment.

@@ -211,6 +211,8 @@ export const carrierEldSetup = (provider, rotate, apiToken) => rpc('carrier_eld_
 export const carrierAccountingExport = (from, to) => rpc('carrier_accounting_export', { p_from: from ?? null, p_to: to ?? null });
 export const carrierFuelImport = (rows) => rpc('carrier_fuel_import', { p_rows: rows });
 export const carrierFleetOptimization = (days) => rpc('carrier_fleet_optimization', { p_days: days ?? 90 });
+export const qboAuthUrl = (redirect) => rpc('qbo_auth_url', { p_redirect: redirect ?? null });
+export const qboStatus = () => rpc('qbo_status');
 export const trustProfile = (org) => rpc('cc_trust_profile', { p_org: org });
 export const myTrustProfile = () => rpc('cc_my_trust_profile');
 export const myHazmatReadiness = () => rpc('cc_my_hazmat_readiness');
