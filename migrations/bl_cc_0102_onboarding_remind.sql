@@ -5,3 +5,11 @@
 -- UI: carrier360 Onboarding & compliance card — ✉ Remind per non-valid document row +
 --   "✉ Send onboarding reminder (all missing)" + status line. Auto engine untouched.
 -- Applied to staging 2026-07-15. Copy fn defs from staging for PROD + grants (authenticated only).
+
+-- v2 (staging + PROD 2026-07-15): fixed after first real Gmail delivery test —
+--   · double header removed (sys_email already wraps in the branded LoadBoot template; body now
+--     starts at the h2 like every other system email)
+--   · missing list is now REAL: every mandatory active compliance requirement WITHOUT a 'valid'
+--     row for the org (new carriers with zero rows get the full mandatory list, not a placeholder)
+--   · items render as MISSING-chip rows in a card table; subject counts items
+--     ("N documents between you and your first load"); 💡 Pro tips box added.
