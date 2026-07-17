@@ -437,6 +437,25 @@ function authScreen() {
   const pass = h('input', { class: 'cp-in', type: 'password', placeholder: 'Password', autocomplete: 'current-password' });
   const name = h('input', { class: 'cp-in', type: 'text', placeholder: 'Your full name', autocomplete: 'name' });
   const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, 'Your name'), name]);
+  // Partner type — chosen right on the create-account screen (broker / shipper / facility)
+  let chosenKind = null;
+  const typeCards = {};
+  const typeOpt = (kind9, t9, d9) => {
+    const c9 = h('button', { type: 'button', class: 'cp-typecard', onClick: () => {
+      chosenKind = kind9;
+      Object.values(typeCards).forEach(x9 => x9.classList.remove('sel'));
+      c9.classList.add('sel');
+    } }, [h('div', { class: 'cp-typecard-t' }, t9), h('div', { class: 'cp-typecard-d' }, d9)]);
+    typeCards[kind9] = c9; return c9;
+  };
+  const typeBlock = h('div', { style: 'display:none' }, [
+    h('label', { class: 'cp-lbl' }, 'What kind of partner are you?'),
+    h('div', { class: 'cp-typegrid' }, [
+      typeOpt('broker', 'Freight Broker', 'Post loads to our carrier network and track them.'),
+      typeOpt('shipper', 'Shipper', 'Request freight, get it moved, and track shipments.'),
+      typeOpt('facility', 'Facility / Warehouse', 'Schedule dock appointments and manage check-ins.'),
+    ]),
+  ]);
   const err = h('div', { class: 'cp-err' });
   const title = h('h1', null, 'Welcome back');
   const sub = h('p', { class: 'cp-auth-sub' }, 'Sign in to your partner portal.');
@@ -447,6 +466,7 @@ function authScreen() {
     title.textContent = s ? 'Create your account' : 'Welcome back';
     sub.textContent = s ? 'Set up your partner account — it’s free.' : 'Sign in to your partner portal.';
     extra.style.display = s ? 'block' : 'none';
+    typeBlock.style.display = s ? 'block' : 'none';
     btn.textContent = s ? 'Create account' : 'Sign in';
     err.textContent = ''; err.className = 'cp-err';
     mount(toggle, s ? [document.createTextNode('Already have an account? '), h('a', { onClick: () => setMode(false) }, 'Sign in')]
@@ -457,10 +477,11 @@ function authScreen() {
     const em = email.value.trim(), pw = pass.value;
     if (!em || !pw) { err.textContent = 'Enter your email and password.'; return; }
     if (signup && !name.value.trim()) { err.textContent = 'Enter your name.'; return; }
+    if (signup && !chosenKind) { err.textContent = 'Pick whether you are a broker, shipper or facility.'; return; }
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
-        const { data, error } = await signUp(em, pw, { name: name.value.trim() });
+        const { data, error } = await signUp(em, pw, { name: name.value.trim(), partner_kind: chosenKind });
         if (error) throw error;
         if (!data || !data.session) { err.className = 'cp-err ok'; err.textContent = 'Account created! Check your email to confirm, then sign in.'; setMode(false); btn.disabled = false; return; }
         boot(); return;
@@ -506,7 +527,7 @@ function authScreen() {
     h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
       h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#94A3B8;line-height:1;margin-top:5px" }, 'Partner')]),
-      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, err, btn, toggle,
+      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, typeBlock, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [
         h('a', { href: '/app/carrier/' }, 'Are you a carrier? →'),
         h('a', { href: '/app/command-center/' }, 'Staff? Command Center →'),
@@ -549,6 +570,12 @@ function choosePartnerType(user) {
         opt('shipper', 'Shipper', 'Request freight, get it moved, and track shipments.'),
         opt('facility', 'Facility / Warehouse', 'Schedule dock appointments and manage check-ins.'),
       ]),
+      (function preselectFromSignup9() {
+        try {
+          var k9 = user && user.user_metadata && user.user_metadata.partner_kind;
+          if (k9 && cards[k9]) { chosen = k9; cards[k9].classList.add('sel'); }
+        } catch (_) {}
+      })(),
       h('label', { class: 'cp-lbl' }, 'Company name'), company, err, btn,
       h('div', { class: 'cp-staff' }, [h('a', { onClick: async () => { await signOut(); boot(); } }, 'Sign out')]),
     ]),

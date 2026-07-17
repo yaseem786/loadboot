@@ -46,7 +46,7 @@ export async function signInWithPassword(email, password) {
 // caller should ask the user to confirm via email before signing in.
 export async function signUp(email, password, meta = {}) {
   const sb = await getClient();
-  return sb.auth.signUp({ email, password, options: { data: { company: meta.company || '', name: meta.name || '' } } });
+  return sb.auth.signUp({ email, password, options: { data: { company: meta.company || '', name: meta.name || '', partner_kind: meta.partner_kind || '' } } });
 }
 
 // Driver invite signup — role='driver' + invite_token tell handle_new_user to SKIP carrier-org

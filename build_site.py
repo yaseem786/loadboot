@@ -4812,7 +4812,16 @@ try:
                     missing.add(rel+'  (sw precache)')
 except Exception:
     pass
-for x in sorted(missing): _errors.append('MISSING LOCAL ASSET: '+x)
+_warnings = []
+for x in sorted(missing):
+    # Owner-captured product screenshots (/shots/*.png) are optional at build time —
+    # the shot() helper hides any missing <img> via onerror, so a missing preview never
+    # breaks a page. Treat these as warnings so a deploy is never blocked on pending
+    # screenshots; every other missing asset stays a hard failure.
+    if x.startswith('shots/'):
+        _warnings.append('PENDING SCREENSHOT (optional): '+x)
+    else:
+        _errors.append('MISSING LOCAL ASSET: '+x)
 
 # (3) Publish dir must contain NO source-only files, anywhere (recursive).
 #     Catches .py/.md/.sql/.toml and any stray migrations/docs dirs at any depth.
@@ -4911,6 +4920,10 @@ _forms_html = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
 os.makedirs(os.path.join(OUT, 'forms'), exist_ok=True)
 with open(os.path.join(OUT, 'forms', 'index.html'), 'w', encoding='utf-8') as _ff:
     _ff.write(_forms_html)
+
+if _warnings:
+    print('BUILD WARNINGS — %d optional item(s) (deploy NOT blocked):' % len(_warnings))
+    for w in _warnings: print('  - '+w)
 
 if _errors:
     print('BUILD FAILED — %d problem(s):' % len(_errors))
