@@ -483,6 +483,29 @@ async function agentPortal(user) {
   let r0 = null; try { r0 = await myReferral(); } catch (_) {}
   if (!feed || !feed.has_code) { notCarrier(); return; }
   const money9 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  // Phone camera photos are 5-15MB and blow past the storage bucket's object-size limit
+  // ("The object exceeded the maximum allowed size"). Shrink large images client-side
+  // (max 1800px, JPEG q0.82) before upload — invisible to the user, PDFs pass through.
+  const lbShrink9 = (f9) => new Promise((res9) => {
+    try {
+      if (!f9 || !/^image\//.test(f9.type || '') || f9.size < 1200000) { res9(f9); return; }
+      const url9 = URL.createObjectURL(f9); const im9 = new Image();
+      im9.onload = () => {
+        try {
+          const mx9 = 1800; const sc9 = Math.min(1, mx9 / Math.max(im9.width, im9.height));
+          const cv9 = document.createElement('canvas');
+          cv9.width = Math.round(im9.width * sc9); cv9.height = Math.round(im9.height * sc9);
+          cv9.getContext('2d').drawImage(im9, 0, 0, cv9.width, cv9.height);
+          cv9.toBlob((b9) => { URL.revokeObjectURL(url9);
+            if (b9 && b9.size < f9.size) res9(new File([b9], (f9.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+            else res9(f9);
+          }, 'image/jpeg', 0.82);
+        } catch (_) { URL.revokeObjectURL(url9); res9(f9); }
+      };
+      im9.onerror = () => { URL.revokeObjectURL(url9); res9(f9); };
+      im9.src = url9;
+    } catch (_) { res9(f9); }
+  });
   let ob = null; try { ob = await agentOnboardingStatus(); } catch (_) {}
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
@@ -827,15 +850,15 @@ async function agentPortal(user) {
             h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap' }, [
               (() => { const i9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.8rem' });
                 const st9 = h('span', { class: 'cp-row-s' }, d.id_doc ? '✓ uploaded' : '');
-                i9.onchange = async () => { const f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…';
+                i9.onchange = async () => { let f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…'; f9 = await lbShrink9(f9);
                   const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_id'); d.id_doc = m9.path; d.id_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
-                  try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('ID upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — check internet/ad-blocker and retry'; } } };
+                  try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('ID upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — if this mentions size, retake at lower resolution or use a screenshot; otherwise check internet and retry'; } } };
                 return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Government photo ID * (passport / CNIC / licence)'), i9, st9]); })(),
               (() => { const i9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.8rem' });
                 const st9 = h('span', { class: 'cp-row-s' }, d.bank_doc ? '✓ uploaded' : '');
-                i9.onchange = async () => { const f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…';
+                i9.onchange = async () => { let f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…'; f9 = await lbShrink9(f9);
                   const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_bank'); d.bank_doc = m9.path; d.bank_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
-                  try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('bank-proof upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — check internet/ad-blocker and retry'; } } };
+                  try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('bank-proof upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — if this mentions size, retake at lower resolution or use a screenshot; otherwise check internet and retry'; } } };
                 return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9]); })(),
             ]),
           ]),
