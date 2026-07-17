@@ -497,6 +497,14 @@ async function agentPortal(user) {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
     links[id] = a; return a;
   }));
+  // Mobile bottom tab bar — same pattern as the carrier shell (.cp-tabbar shows <=900px,
+  // sidebar hides). Without this the agent portal had NO navigation on phones.
+  const tabLinks = {};
+  const MOBTABS = [['dashboard', 'Home', 'dash'], ['verify', 'Verify', 'shield'], ['post', 'Post', 'loads'], ['chain', 'Chain', 'user'], ['earnings', 'Earnings', 'finance']];
+  const tabbar = h('nav', { class: 'cp-tabbar' }, MOBTABS.map(([id, label, ic]) => {
+    const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
+    tabLinks[id] = a; return a;
+  }));
   const SIDE9 = { carrier: ['🚛', 'Carrier'], broker: ['🏢', 'Broker'], shipper: ['🏭', 'Shipper'] };
   const sideIc9 = (k9) => (SIDE9[k9] || ['🏢', k9 || ''])[0];
   const sideLb9 = (k9) => (SIDE9[k9] || ['🏢', String(k9 || '')])[1];
@@ -1127,6 +1135,7 @@ async function agentPortal(user) {
   }
   function go(id) { tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
     Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
+    Object.entries(tabLinks).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
     const it = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it ? it[1] : 'Dashboard';
     (async () => { try { feed = (await agentFeed()) || feed; } catch (_) {} render(); })();
   }
@@ -1214,9 +1223,11 @@ async function agentPortal(user) {
       ]),
       content,
     ]),
+    tabbar,
   ]);
   mount(root, shell);
   Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
+  Object.entries(tabLinks).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
   const it0 = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it0 ? it0[1] : 'Dashboard';
   render();
   root.setAttribute('aria-busy', 'false');
