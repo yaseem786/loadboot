@@ -4034,6 +4034,7 @@ ap = svc_hero('The LoadBoot App', 'One operating system for trucking &mdash; car
 ap += _sec('Your apps', 'Same account everywhere &mdash; phone, tablet, laptop.', _cards([
     ('&#128667;', 'LoadBoot Carrier', 'Post your truck, get matched loads, run trips with GPS &amp; detention proof, upload PODs, track your money. <a href="/app/carrier/">Open Carrier &rarr;</a>'),
     ('&#129309;', 'LoadBoot Partner', 'Brokers &amp; shippers: post loads, vet carriers by rating, track shipments live, manage documents. <a href="/app/partner/">Open Partner &rarr;</a>'),
+    ('&#129297;', 'LoadBoot Agent', 'Independent dispatchers: refer carriers, brokers &amp; shippers, track your chain and earn 1% of every delivered load. <a href="/app/agent/">Open Agent &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'LoadBoot Developer', 'API keys, docs and integrations for your systems. <a href="/app/developer/">Open Developer &rarr;</a>'),
     ('&#127970;', 'Command Center', 'LoadBoot staff operations console. <a href="/app/command-center/">Staff sign-in &rarr;</a>'),
 ], 'g2'))

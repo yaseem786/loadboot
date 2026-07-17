@@ -45,6 +45,7 @@
   <div class="lb-cards">
     <a class="lb-portal" href="/app/carrier/"><span class="ic">&#128667;</span><span><span class="t">Carrier Portal</span><br><span class="s">Loads, trips, fleet, documents &amp; finance</span></span><span class="d" style="color:#FB923C">&rsaquo;</span></a>
     <a class="lb-portal" href="/app/partner/"><span class="ic">&#129309;</span><span><span class="t">Partner Portal</span><br><span class="s">Brokers, shippers &amp; facilities</span></span><span class="d" style="color:#94A3B8">&rsaquo;</span></a>
+        <a class="lb-portal" href="/app/agent/"><span class="ic">&#129297;</span><span><span class="t">Agent Portal</span><br><span class="s">Independent dispatchers &mdash; chain, earnings &amp; payouts</span></span><span class="d" style="color:#FB923C">&rsaquo;</span></a>
     <a class="lb-portal" href="/app/developer/"><span class="ic">&#128104;&#8205;&#128187;</span><span><span class="t">Developers &amp; API</span><br><span class="s">API keys, docs &amp; integrations</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
     <a class="lb-portal" href="/app/command-center/"><span class="ic">&#127970;</span><span><span class="t">Command Center</span><br><span class="s">LoadBoot staff only</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
   </div>
@@ -58,7 +59,7 @@
     var q = new URLSearchParams(location.search);
     if (q.get('choose')) { localStorage.removeItem('lb_last_portal'); return; }
     var p = localStorage.getItem('lb_last_portal');
-    var OK = ['/app/carrier/', '/app/partner/', '/app/developer/', '/app/command-center/'];
+    var OK = ['/app/carrier/', '/app/partner/', '/app/agent/', '/app/developer/', '/app/command-center/'];
     if (p && OK.indexOf(p) !== -1) location.replace(p);
   } catch (_) {}
 })();
