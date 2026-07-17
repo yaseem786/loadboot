@@ -44,9 +44,15 @@ import '../shared/ui/chatWidget.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 
+// Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
+// agent/index.html sets an inline window.__LB_AGENT flag, but the site CSP (script-src
+// without 'unsafe-inline'/nonce) can block that inline script, leaving the flag unset and
+// the agent URL rendering the carrier portal. Derive it here from the path instead —
+// this runs inside app.js (an allowed 'self' script), so it is CSP-proof and reliable.
+if (location.pathname.indexOf('/app/agent/') === 0) window.__LB_AGENT = 1;
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
-try { localStorage.setItem('lb_last_portal', '/app/carrier/'); } catch (_) {}
+try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' : '/app/carrier/'); } catch (_) {}
 
 // inDrive-style theme system — Off (light) / On (dark) / System. Official palette only.
 const THEME_KEY = 'lb_theme';
