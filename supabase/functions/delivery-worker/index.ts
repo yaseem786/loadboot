@@ -31,6 +31,7 @@ Deno.serve(async (_req) => {
     .lb-card{width:100%!important;border-radius:0!important}
     .lb-pad{padding-left:22px!important;padding-right:22px!important}
     .lb-btn{display:block!important;text-align:center!important}
+    .lb-2col>tbody>tr>td{display:block!important;width:100%!important;padding-right:0!important;padding-bottom:14px!important}
   }
 </style></head>
 <body style="margin:0;padding:0;background:#eef2f8">
@@ -44,28 +45,61 @@ Deno.serve(async (_req) => {
   </td></tr>
   <tr><td style="height:4px;background:#0883F7;background:linear-gradient(90deg,#0883F7,#FC5305);font-size:0;line-height:0">&nbsp;</td></tr>
   <tr><td class="lb-pad" style="padding:34px 32px 30px;color:#0f172a;font-size:15px;line-height:1.7">${bodyHtml}</td></tr>
-  <tr><td class="lb-pad" style="padding:24px 32px 26px;background:#10223B;color:#94a3b8;font-size:12px;line-height:1.7">
-    <img src="${LOGO}" width="128" height="31" alt="LoadBoot" style="display:block;border:0;max-width:128px;height:auto;margin-bottom:13px">
-    <div style="font-size:13px;line-height:2.05;margin-bottom:6px">
-      <a href="${SITE}/how-it-works.html" style="color:#cbd5e1;text-decoration:none">How It Works</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/pricing.html" style="color:#cbd5e1;text-decoration:none">Pricing</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/services.html" style="color:#cbd5e1;text-decoration:none">Services</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/market-rates.html" style="color:#cbd5e1;text-decoration:none">Market Rates</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/contact.html" style="color:#cbd5e1;text-decoration:none">Contact</a>
-    </div>
-    <div style="font-size:13px;line-height:2.05;margin-bottom:14px">
-      <a href="${SITE}/app/carrier/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Carrier Portal</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/app/partner/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Broker / Shipper Portal</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/agents.html" style="color:#7dd3fc;text-decoration:none;font-weight:700">Agent Program</a>
-    </div>
-    <div style="border-top:1px solid rgba(255,255,255,.12);margin:0 0 12px"></div>
-    <div style="font-size:11.5px;line-height:1.9">
-      <a href="${SITE}/privacy.html" style="color:#94a3b8;text-decoration:none">Privacy</a> &middot;
-      <a href="${SITE}/terms.html" style="color:#94a3b8;text-decoration:none">Terms</a> &middot;
-      <a href="${SITE}/contact.html" style="color:#94a3b8;text-decoration:none">Support</a> &middot;
+  <tr><td class="lb-pad" style="padding:30px 32px 8px;background:#10223B">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td align="left" style="vertical-align:middle"><img src="${LOGO}" width="140" height="34" alt="LoadBoot" style="display:block;border:0;max-width:140px;height:auto"></td>
+      <td align="right" style="vertical-align:middle">
+        <table role="presentation" cellpadding="0" cellspacing="0" align="right"><tr><td style="border:1px solid rgba(255,255,255,.28);border-radius:999px">
+          <a href="${SITE}/apps.html" style="display:inline-block;padding:9px 18px;font-size:12.5px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px">&#9660;&nbsp; Get the app</a>
+        </td></tr></table>
+      </td>
+    </tr></table>
+    <div style="color:#5c6f8f;font-size:11px;margin-top:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">The Operating System for Trucking</div>
+  </td></tr>
+  <tr><td class="lb-pad" style="padding:22px 32px 4px;background:#10223B">
+    <table role="presentation" class="lb-2col" width="100%" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td width="33%" style="vertical-align:top;padding-right:10px">
+        <div style="font-size:10.5px;font-weight:800;letter-spacing:.13em;color:#5c6f8f;text-transform:uppercase;margin-bottom:8px">Company</div>
+        <div style="font-size:13px;line-height:2.15">
+          <a href="${SITE}/about.html" style="color:#cbd5e1;text-decoration:none">About us</a><br>
+          <a href="${SITE}/how-it-works.html" style="color:#cbd5e1;text-decoration:none">How it works</a><br>
+          <a href="${SITE}/blog.html" style="color:#cbd5e1;text-decoration:none">Blog</a><br>
+          <a href="${SITE}/contact.html" style="color:#cbd5e1;text-decoration:none">Contact</a>
+        </div>
+      </td>
+      <td width="33%" style="vertical-align:top;padding-right:10px">
+        <div style="font-size:10.5px;font-weight:800;letter-spacing:.13em;color:#5c6f8f;text-transform:uppercase;margin-bottom:8px">Products</div>
+        <div style="font-size:13px;line-height:2.15">
+          <a href="${SITE}/services.html" style="color:#cbd5e1;text-decoration:none">Dispatch services</a><br>
+          <a href="${SITE}/pricing.html" style="color:#cbd5e1;text-decoration:none">Pricing</a><br>
+          <a href="${SITE}/market-rates.html" style="color:#cbd5e1;text-decoration:none">Market rates</a><br>
+          <a href="${SITE}/cost-per-mile-calculator.html" style="color:#cbd5e1;text-decoration:none">Cost-per-mile calculator</a>
+        </div>
+      </td>
+      <td width="33%" style="vertical-align:top">
+        <div style="font-size:10.5px;font-weight:800;letter-spacing:.13em;color:#5c6f8f;text-transform:uppercase;margin-bottom:8px">Sign in</div>
+        <div style="font-size:13px;line-height:2.15">
+          <a href="${SITE}/app/carrier/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Carrier portal</a><br>
+          <a href="${SITE}/app/partner/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Broker &amp; shipper portal</a><br>
+          <a href="${SITE}/app/agent/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Agent portal</a><br>
+          <a href="${SITE}/agents.html" style="color:#7dd3fc;text-decoration:none;font-weight:700">Agent program (1%)</a>
+        </div>
+      </td>
+    </tr></tbody></table>
+  </td></tr>
+  <tr><td class="lb-pad" style="padding:18px 32px 26px;background:#10223B">
+    <div style="border-top:1px solid rgba(255,255,255,.12);margin:0 0 14px"></div>
+    <div style="font-size:11.5px;line-height:2">
+      <a href="${SITE}/privacy.html" style="color:#94a3b8;text-decoration:none">Privacy</a> &nbsp;&middot;&nbsp;
+      <a href="${SITE}/terms.html" style="color:#94a3b8;text-decoration:none">Terms</a> &nbsp;&middot;&nbsp;
+      <a href="${SITE}/contact.html" style="color:#94a3b8;text-decoration:none">Support</a> &nbsp;&middot;&nbsp;
       <a href="${unsubUrl}" style="color:#94a3b8;text-decoration:none">Unsubscribe</a>
     </div>
-    <div style="color:#5c6f8f;font-size:11px;margin-top:9px">Truck dispatch &amp; logistics technology &middot; United States &middot; &copy; ${new Date().getFullYear()} LoadBoot</div>
+    <div style="color:#5c6f8f;font-size:11px;line-height:1.8;margin-top:8px">
+      LoadBoot &middot; Truck dispatch &amp; logistics technology &middot; United States<br>
+      This email was sent to you because you or your company works with LoadBoot.<br>
+      &copy; ${new Date().getFullYear()} LoadBoot. All rights reserved.
+    </div>
   </td></tr>
 </table></td></tr></table></div></body></html>`;
 
