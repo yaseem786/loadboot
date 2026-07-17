@@ -286,7 +286,7 @@ section{padding:66px 0}.promise,.fcta{padding:48px 24px}.form-grid{grid-template
 header{-webkit-backdrop-filter:blur(14px)}.mcta{-webkit-backdrop-filter:blur(10px)}
 img{max-width:100%;height:auto}*{-webkit-tap-highlight-color:transparent}
 @media(max-width:880px){.cmp{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}.wrap{padding:0 18px}h1,h2{word-break:break-word}.hero{padding:74px 0 78px}.sec-head{margin-bottom:34px}.promise,.fcta{border-radius:20px;padding:42px 22px}.quote-wrap{padding:26px}.scroll-road{height:120px}.hero-btns{flex-direction:column;align-items:stretch}.hero-btns .btn{width:100%;justify-content:center}.hd-btn{display:none}.nav-cta{gap:0}}
-@media(max-width:520px){.g4{grid-template-columns:1fr}.links5{grid-template-columns:1fr}.cards,.stats-grid{gap:14px}h1{font-size:2rem}.btn{padding:13px 22px}}'''
+@media(max-width:520px){.g4{grid-template-columns:1fr}.links5{grid-template-columns:repeat(2,1fr);gap:22px 16px}.cards,.stats-grid{gap:14px}h1{font-size:2rem}.btn{padding:13px 22px}}'''
 
 JS = r'''const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
@@ -378,10 +378,10 @@ def footer():
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
-<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="referral.html">Referral Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
+<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral &amp; Agent Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
 <div><div class="foot-h">Compliance</div><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="about.html">About</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
-<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="referral.html">Referral Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral &amp; Agent Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div style="margin-bottom:20px"><a href="https://www.capterra.com/p/10050953/LoadBoot/" rel="noopener" target="_blank" aria-label="LoadBoot reviews on Capterra" style="display:inline-flex;align-items:center;gap:10px;background:#0d1b30;border:1px solid #1e3a5f;border-radius:12px;padding:10px 16px;text-decoration:none;margin:0">
@@ -444,7 +444,7 @@ RELATED = {
  'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools')],
  'pricing.html':            [('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('carriers.html','For Carriers')],
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
- 'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('referral.html','Referral Program')],
+ 'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Agent Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
  'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('load-score.html','Load Score'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
@@ -928,22 +928,22 @@ BRIDGE = ('<section class="bg-soft"><div class="wrap"><div class="sec-head cente
  '</div><p class="reveal" style="text-align:center;color:var(--muted);margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">Every match explainable, every document tracked, every step audited.</p></div></section>')
 
 # REFTEASER — desire-driven earnings panel (bold gradient). Illustrative figures, clearly labelled + honest.
-REFTEASER = ('<section style="background:linear-gradient(135deg,#0b1220 0%,#12304f 55%,#0e3b33 100%);color:#fff;position:relative;overflow:hidden">'
+REFTEASER = ('<section style="background:linear-gradient(135deg,#0b1220 0%,#12304f 55%,#3b1a0e 100%);color:#fff;position:relative;overflow:hidden">'
  '<div class="wrap" style="position:relative;z-index:1;padding:60px 0"><div class="sec-head center reveal" style="color:#fff">'
- '<div class="eyebrow" style="color:#7dd3fc">Referral program &mdash; earn on autopilot</div>'
- '<h2 style="color:#fff;font-size:2.1rem">Turn your network into monthly income</h2>'
- '<p class="lead center" style="color:#cbd5e1;max-width:700px;margin:14px auto 0">Refer a carrier or broker <b style="color:#fff">once</b>. Earn a slice of our dispatch fee on <b style="color:#fff">every load they haul</b> &mdash; month after month, for as long as they keep rolling. It costs them nothing extra, and you nothing at all.</p></div>'
+ '<div class="eyebrow" style="color:#fdba74">Agent Program &mdash; the independent dispatcher model</div>'
+ '<h2 style="color:#fff;font-size:2.1rem">Bring the people. The software does the work. <span style="color:#34d399">You earn 1% &mdash; forever.</span></h2>'
+ '<p class="lead center" style="color:#cbd5e1;max-width:720px;margin:14px auto 0">One link works for <b style="color:#fff">carriers, brokers and shippers</b>. Every GPS-verified delivered load your chain touches pays you <b style="color:#fff">1% of the gross</b> &mdash; automatically, from LoadBoot&rsquo;s own fee. Recruit other agents and earn overrides <b style="color:#fff">5 levels deep</b>.</p></div>'
  '<div class="reveal" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:32px">'
  + ''.join('<div style="flex:1 1 220px;max-width:280px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:26px;text-align:center">'
    '<div style="color:#94a3b8;font-size:.9rem;letter-spacing:.02em;text-transform:uppercase">%s</div>'
    '<div style="font-size:2.3rem;font-weight:800;color:#34d399;margin:6px 0 4px">%s</div>'
    '<div style="color:#cbd5e1;font-size:.92rem">%s</div></div>' % (label, amount, sub)
    for label,amount,sub in [
-     ('Refer 5 active carriers','~ $1,000/mo*','recurring, while they haul'),
-     ('Refer 20 active carriers','~ $4,000/mo*','your network, working for you'),
-     ('They refer others too','5 levels deep*','earn down your whole chain')]) +
+     ('Every delivered load','1% of gross','tracked live \u2014 lands within the half hour'),
+     ('An active chain of 20 trucks','~ $4,000/mo*','recurring, while they haul'),
+     ('Recruit other agents','5 levels deep','0.50% \u00b7 0.25% \u00b7 0.15% \u00b7 0.10% overrides')]) +
  '</div>'
- '<div class="reveal" style="text-align:center;margin-top:30px"><a href="/app/agent/" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800">Get my referral link &rarr;</a></div>'
+ '<div class="reveal" style="text-align:center;margin-top:30px"><a href="/app/agent/" class="btn btn-primary" style="background:#FC5305;border:none;font-weight:800">Become a LoadBoot Agent &rarr;</a> <a href="agents.html" class="btn btn-secondary" style="margin-left:10px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">See the full program</a></div>'
  '<p class="reveal" style="text-align:center;color:#94a3b8;font-size:.82rem;margin:16px auto 0;max-width:720px">*Illustrative only, based on a referred carrier hauling roughly $20k/month. Commissions are paid entirely from LoadBoot&rsquo;s own 5% dispatch fee &mdash; your referrals never pay more, and you invest nothing. Exact tiers are confirmed in writing at signup.</p>'
  '</div></section>')
 
@@ -1301,7 +1301,7 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 <span class="ap-tab active"><span class="ap-i">&#128666;</span><span>Carrier / Owner-operator<small>You&rsquo;re on this one &mdash; fill it below</small></span></span>
 <a class="ap-tab" href="/app/partner/"><span class="ap-i">&#127970;</span><span>Broker (licensed)<small>Post loads &amp; manage carriers</small></span></a>
 <a class="ap-tab" href="/shipper-solutions.html"><span class="ap-i">&#128230;</span><span>Shipper<small>Move freight via a licensed broker</small></span></a>
-<a class="ap-tab" href="/referral.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
+<a class="ap-tab" href="/agents.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
 <a class="ap-tab" href="/app/agent/"><span class="ap-i">&#129309;</span><span>Agent (independent dispatcher)<small>Bring clients, earn 1% of every delivered load</small></span></a>
 </div>
 <div class="ap-note">You&rsquo;re creating a <b>Carrier</b> account below. Broker, shipper, referral and agent each have their own quick flow &mdash; pick one above.</div>
@@ -3369,9 +3369,10 @@ _rfaq_html, _rfaq_sch = faq_block([
 ref += _rfaq_html
 ref += REF_CAPTURE_JS
 ref += final_cta()
-page('referral.html', 'Referral &amp; Partner Program &mdash; Carriers, Agencies &amp; Creators | Loadboot',
-     'Refer carriers or partner with Loadboot as an agency or creator. Rewards are paid from our own dispatch fee &mdash; never an extra cost to the carrier. Join the early list.',
-     'referral.html', ref, _rfaq_sch)
+page('referral.html', 'Referral Program &mdash; now the LoadBoot Agent Program',
+     'The LoadBoot referral program has grown into the Agent Program: one link for carriers, brokers and shippers, 1% of gross on every delivered load, 5 levels of overrides.',
+     'referral.html', '<section class="section"><div class="wrap" style="text-align:center;padding:80px 0"><h1>The referral program is now the <span style="color:#FC5305">Agent Program</span></h1><p class="lead center" style="max-width:640px;margin:14px auto 24px">Same idea, bigger engine: one link for carriers, brokers and shippers \u00b7 1% of gross on every delivered load \u00b7 overrides 5 levels deep \u00b7 live chain tracking and monthly payouts.</p><a href="agents.html" class="btn btn-primary">See the Agent Program &rarr;</a> <a href="/app/agent/" class="btn btn-secondary" style="margin-left:8px">Create your agent account</a></div></section>',
+     '<meta http-equiv="refresh" content="4;url=/agents.html">')
 
 # ---------- AGENT PROGRAM (independent dispatchers — pair-based 1% recurring) ----------
 AGENT_CSS = '''<style>
@@ -3486,7 +3487,7 @@ _ag_faq_html, _ag_faq_sch = faq_block([
 page('agents.html', 'Become a LoadBoot Agent — Earn 1% of Every Load, Recurring | Independent Dispatchers',
  'Commission role for independent dispatchers: bring a broker + carrier pair to LoadBoot and earn 1% of every GPS-verified delivered load — recurring, no cap, paid monthly. The software does the dispatch; you own the relationships.',
  'partners.html', AGENT_BODY + _ag_faq_html + final_cta(), _ag_job_schema + _ag_faq_sch)
-RELATED['agents.html'] = [('referral.html','Referral Program'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
+RELATED['agents.html'] = [('agents.html','Agent Program'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
 
 
 # ---- Resources ----
@@ -3796,7 +3797,7 @@ _HUB_ROLES = [
     'Get a personal referral link and ready-to-share materials',
     'Commissions unlock after a short hold; payouts reviewed by a person',
     'Perfect for trucking creators, coaches and industry networks'],
-   'referral.html', 'See how the referral program works &rarr;',
+   'agents.html', 'See how the agent program works &rarr;',
    'referral_signup', 'Become a referral partner',
    'Tell us about your audience and we&rsquo;ll get you a referral link and materials.',
    [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True),
@@ -4332,7 +4333,7 @@ _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
-  ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('referral.html', 'Referral Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
+  ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
 _sm_body = svc_hero('Sitemap', 'Every page on Loadboot, in one place.')
