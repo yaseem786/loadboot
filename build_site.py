@@ -4054,7 +4054,10 @@ ap += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color
  '</div>'
  '<div class="reveal" style="max-width:520px;margin:30px auto 0;text-align:center">'
  '<p style="color:#cbd5e1;margin-bottom:12px">Be first in line — we email launch day only, nothing else:</p>'
- '<form class="news" style="justify-content:center" onsubmit="event.preventDefault();var f=this,em=f.querySelector(\'input\').value;var done=function(){f.innerHTML=\'<span style=\\\'color:#86efac;font-weight:700\\\'>You are on the launch list &#10003;</span>\';};if(window.lbSubmitLead){window.lbSubmitLead(\'app_waitlist\',{email:em}).then(done).catch(done);}else{done();}">'
+ # NOTE: use the HEX entity &#x2713; here (not &#10003;) — deglyph() rewrites &#10003; into an
+ # inline SVG containing double quotes, which TERMINATES this double-quoted onsubmit attribute
+ # and dumps the rest of the handler as visible text on the page.
+ '<form class="news" style="justify-content:center" onsubmit="event.preventDefault();var f=this,em=f.querySelector(\'input\').value;var done=function(){f.innerHTML=\'<span style=\\\'color:#86efac;font-weight:700\\\'>You are on the launch list &#x2713;</span>\';};if(window.lbSubmitLead){window.lbSubmitLead(\'app_waitlist\',{email:em}).then(done).catch(done);}else{done();}">'
  '<input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Join the launch list</button></form>'
  '</div></div></section>')
 page('apps.html', 'LoadBoot App &mdash; Carrier, Broker &amp; Shipper Tools on Your Phone',
