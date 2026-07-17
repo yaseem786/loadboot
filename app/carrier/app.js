@@ -21,6 +21,7 @@ import {
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
+  carrierEldSetup, carrierAccountingExport, carrierFuelImport, carrierFleetOptimization,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
@@ -4287,8 +4288,47 @@ function tripStepper(status) {
       } }, 'Save');
       closeM = openModal('Log service', [h('label', { class: 'cp-row-s' }, 'Truck'), truck, h('label', { class: 'cp-row-s' }, 'Type'), kind, h('label', { class: 'cp-row-s' }, 'Service date'), date, odo, cost, vendor, notes, h('label', { class: 'cp-row-s' }, 'Next due date'), nextDue, save]);
     }
+    // 📈 FLEET OPTIMIZATION — real per-truck utilization + top lanes from delivered trips
+    const optCard9 = (() => {
+      const host9 = h('div', { class: 'cp-card' }, [cardHead('📈 Fleet optimization', 'last 90 days'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+      (async () => {
+        let d9; try { d9 = await carrierFleetOptimization(90); } catch (_) { mount(host9, h('span')); return; }
+        const tr9 = (d9 && d9.trucks) || []; const ln9 = (d9 && d9.top_lanes) || [];
+        if (!tr9.length) { mount(host9, [cardHead('📈 Fleet optimization', 'last 90 days'), h('div', { class: 'cp-muted' }, 'Analytics appear after your first delivered trips — per-truck utilization, $/mile and your best lanes.')]); return; }
+        mount(host9, [cardHead('📈 Fleet optimization', 'last ' + (d9.window_days || 90) + ' days — real delivered trips'),
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Which trucks earn and which sit — and the lanes that pay you best. Assign trucks on every trip to sharpen this.'),
+          ...tr9.map((t9) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
+            h('div', { style: 'flex:1;min-width:180px' }, [h('div', { class: 'cp-row-t' }, '🚛 ' + t9.truck), h('div', { class: 'cp-row-s' }, (t9.trips || 0) + ' trips · ' + Number(t9.miles || 0).toLocaleString() + ' mi · ' + (t9.active_days || 0) + ' active days')]),
+            h('div', { style: 'text-align:right' }, [h('div', { class: 'cp-row-t', style: 'color:#4ade80' }, money(t9.revenue || 0)), t9.rpm != null ? h('div', { class: 'cp-row-s' }, '$' + t9.rpm + '/mi') : null]),
+          ])),
+          ln9.length ? h('div', { style: 'margin-top:10px' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, '🗺 Your best lanes'),
+            ...ln9.map((l9) => h('div', { class: 'cp-row-s', style: 'padding:3px 0' }, l9.lane + ' — ' + (l9.trips || 0) + ' trips · ' + money(l9.revenue || 0) + (l9.rpm != null ? ' · $' + l9.rpm + '/mi' : '')))]) : null,
+        ].filter(Boolean));
+      })();
+      return host9;
+    })();
+    // 🛰 ELD / TELEMATICS — live webhook ingest (Motive, Samsara, any device that can POST)
+    const eldCard9 = (() => {
+      const host9 = h('div', { class: 'cp-card' }, [cardHead('🛰 ELD & telematics', 'device GPS feeds your trips'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+      const paint9 = async (rotate9) => {
+        let d9 = null; try { d9 = await carrierEldSetup('generic', !!rotate9); } catch (_) { mount(host9, h('span')); return; }
+        mount(host9, [cardHead('🛰 ELD & telematics', 'device GPS feeds your trips'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.65;margin-bottom:8px' }, 'Point your ELD / telematics webhook (Motive, Samsara, Garmin — anything that can POST a position) at LoadBoot and your trucks track themselves even with the app closed. Positions route to the active trip automatically.'),
+          h('div', { class: 'cp-row-s' }, 'Status: ' + (d9.last_ping_at ? '🟢 last ping ' + new Date(d9.last_ping_at).toLocaleString() : '⚪ no pings yet')),
+          h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;margin:8px 0;font-family:ui-monospace,Menlo,monospace;font-size:.72rem;line-height:1.8;user-select:all;word-break:break-all' }, d9.webhook || ''),
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+            h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { try { navigator.clipboard.writeText(String(d9.token || '')); lbToast('Ingest token copied.', 'ok', '🛰 Copied'); } catch (_) {} } }, '📋 Copy token'),
+            h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { if (confirm('Rotate the token? The old one stops working immediately.')) paint9(true); } }, '♻ Rotate token'),
+          ]),
+        ]);
+      };
+      paint9(false);
+      return host9;
+    })();
     mount(content, h('div', null, [
       alertHost,
+      optCard9,
+      eldCard9,
       h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7' }, [
         h('div', { class: 'cp-row-t' }, '\ud83d\ude9a Capacity: ' + Math.max(trucks.length, 1) + ' load' + (Math.max(trucks.length, 1) === 1 ? '' : 's') + ' at a time'),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, trucks.length <= 1
@@ -4934,11 +4974,65 @@ function tripStepper(status) {
         (owed9.length || open9.length || done9.length) ? h('div', null, [...owed9.map(owedRow9), ...open9.map(row9), ...done9.map(row9)])
           : h('div', { class: 'cp-muted' }, 'Nothing owed or in flight. Delivered loads and approved claims appear here the moment money is due — then: on the way → ✓ received.')]);
     })();
+    // 📤 QuickBooks / accounting export — CSVs QuickBooks and any bookkeeper can import
+    const acctExportCard9 = (() => {
+      const from9 = h('input', { class: 'cp-in', type: 'date', style: 'max-width:160px' });
+      const to9 = h('input', { class: 'cp-in', type: 'date', style: 'max-width:160px' });
+      const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:6px' });
+      const dl9 = (name9, header9, rows9) => {
+        const csv9 = [header9.join(',')].concat(rows9.map((r9) => header9.map((h9) => '"' + String(r9[h9.toLowerCase().replace(/ /g, '_')] ?? '').replace(/"/g, '""') + '"').join(','))).join('\n');
+        const a9 = document.createElement('a'); a9.href = URL.createObjectURL(new Blob([csv9], { type: 'text/csv' })); a9.download = name9; a9.click();
+      };
+      return h('div', { class: 'cp-card' }, [cardHead('📤 Accounting export', 'QuickBooks-compatible CSVs — invoices, expenses, payments'),
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;line-height:1.6' }, 'Download your books as clean CSVs: revenue (invoices with gross/fee/net), every expense, and confirmed payments. Import directly into QuickBooks (File → Import), Wave, Xero or hand to your accountant.'),
+        h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [h('span', { class: 'cp-row-s' }, 'From'), from9, h('span', { class: 'cp-row-s' }, 'to'), to9,
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+            try {
+              const d9 = await carrierAccountingExport(from9.value || null, to9.value || null);
+              dl9('loadboot-invoices.csv', ['Date','Invoice_No','Lane','Gross','Fee','Net','Status','Paid_Date'], d9.invoices || []);
+              dl9('loadboot-expenses.csv', ['Date','Category','Amount','Note'], d9.expenses || []);
+              dl9('loadboot-payments.csv', ['Date','Kind','Direction','Amount','Ref'], d9.payments || []);
+              msg9.textContent = '✓ 3 CSVs downloaded — invoices, expenses, payments.';
+            } catch (e9) { msg9.textContent = (e9 && e9.message) || 'Export failed.'; }
+            b9.disabled = false;
+          } }, '⬇ Export CSVs'), msg9]),
+      ]);
+    })();
+    // ⛽ Fuel card statement import (EFS / Comdata / WEX CSV)
+    const fuelImportCard9 = (() => {
+      const fIn9 = h('input', { type: 'file', accept: '.csv', style: 'font-size:.85rem' });
+      const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:6px' });
+      return h('div', { class: 'cp-card' }, [cardHead('⛽ Fuel card import', 'EFS · Comdata · WEX statement CSV → expenses'),
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;line-height:1.6' }, 'Export the transactions CSV from your fuel-card portal and drop it here — each purchase lands as a fuel expense (feeds your P&L and cost-per-mile). Columns auto-detected: date, amount, location.'),
+        h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [fIn9,
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { const b9 = ev9.currentTarget;
+            const f9 = fIn9.files && fIn9.files[0]; if (!f9) { msg9.textContent = 'Choose the CSV first.'; return; }
+            b9.disabled = true;
+            try {
+              const txt9 = await f9.text();
+              const lines9 = txt9.split(/\r?\n/).filter((l9) => l9.trim());
+              const head9 = lines9[0].toLowerCase().split(',').map((x9) => x9.replace(/"/g, '').trim());
+              const di9 = head9.findIndex((h9) => /date/.test(h9));
+              const ai9 = head9.findIndex((h9) => /amount|total|cost/.test(h9));
+              const li9 = head9.findIndex((h9) => /location|merchant|site|city|stop/.test(h9));
+              if (di9 < 0 || ai9 < 0) throw new Error('Could not find date/amount columns — export the standard transactions CSV from your fuel-card portal.');
+              const rows9 = lines9.slice(1).map((l9) => { const c9 = l9.split(','); const d9 = new Date((c9[di9] || '').replace(/"/g, ''));
+                return { date: isNaN(d9.getTime()) ? null : d9.toISOString().slice(0, 10), amount: parseFloat(String(c9[ai9] || '').replace(/[^0-9.\-]/g, '')) || null, location: li9 >= 0 ? String(c9[li9] || '').replace(/"/g, '').trim() : null };
+              }).filter((r9) => r9.date && r9.amount);
+              if (!rows9.length) throw new Error('No usable rows found in that CSV.');
+              const r9 = await carrierFuelImport(rows9);
+              msg9.textContent = '✓ Imported ' + (r9.imported || 0) + ' fuel purchases — $' + Number(r9.total || 0).toLocaleString() + ' added to expenses.';
+              lbToast('Fuel statement imported — your P&L and cost-per-mile just got sharper.', 'success', '⛽ Imported'); loadFinance();
+            } catch (e9) { msg9.textContent = (e9 && e9.message) || 'Import failed.'; }
+            b9.disabled = false;
+          } }, 'Import statement'), msg9]),
+      ]);
+    })();
     const SECS = [
       ['earn', '💰 Earnings', () => [earningsHub()]],
       ['in',   '📥 Money in', () => [payFlightCard, cashCard(rows), statusCard, stmtCard]],
-      ['cost', '📤 Costs',    () => [expCard, feesChart]],
-      ['tax',  '🧾 Taxes',    () => [taxCenter(), iftaCard]],
+      ['cost', '📤 Costs',    () => [fuelImportCard9, expCard, feesChart]],
+      ['tax',  '🧾 Taxes',    () => [acctExportCard9, taxCenter(), iftaCard]],
       ['pay',  '👥 Payroll',  () => [payrollCard]],
     ];
     let sec = 'earn';
