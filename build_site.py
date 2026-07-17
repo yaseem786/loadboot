@@ -1293,7 +1293,7 @@ about_body += m_dark('How we operate', 'The rules we run the company by',
 about_body += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who we serve</div><h2>One platform, every seat in the freight chain</h2></div><div class="grid g3 reveal">'
  '<div class="card reveal"><div class="icon">&#128667;</div><h3>Owner-operators &amp; fleets</h3><p>Independent carriers and growing fleets who want higher-paying freight on their lanes and one place to run the business. <a href="carriers.html">For carriers &rarr;</a></p></div>'
  '<div class="card reveal"><div class="icon">&#128295;</div><h3>New-authority carriers</h3><p>Brand-new MC holders who need a guide through their first months &mdash; paperwork, compliance and steady first lanes. <a href="new-authority-dispatch.html">New authority &rarr;</a></p></div>'
- '<div class="card reveal"><div class="icon">&#129309;</div><h3>Brokers &amp; shippers</h3><p>Freight brokers posting to vetted, tracked capacity, and shippers moving freight through our licensed broker partners. <a href="partners.html">Partner with us &rarr;</a></p></div>'
+ '<div class="card reveal"><div class="icon">&#129309;</div><h3>Brokers &amp; shippers</h3><p>Freight brokers posting to vetted, tracked capacity, and shippers posting freight directly on LoadBoot with verified carriers and live tracking. <a href="partners.html">Partner with us &rarr;</a></p></div>'
  '</div></div></section>')
 
 about_body += m_statband([('5%', 'flat dispatch fee'), ('0', 'long-term contracts'), ('100%', 'loads you approve'), ('1 day', 'typical reply time')],
@@ -1302,7 +1302,7 @@ about_body += m_statband([('5%', 'flat dispatch fee'), ('0', 'long-term contract
 about_body += '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Contact us</div><h2>One company, three front doors</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>General &amp; support</h3><p><a href="mailto:hello@loadboot.com">hello@loadboot.com</a> &mdash; onboarding, questions, compliance and anything else.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>Dispatch &amp; loads</h3><p><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a> &mdash; active loads, trips, appointments and PODs.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>Billing &amp; settlements</h3><p><a href="mailto:billing@loadboot.com">billing@loadboot.com</a> &mdash; invoices, settlements and payment questions.</p></div></div></div></section>'
 
 _about_faq_html, _about_faq_schema = faq_block([
- ('Is LoadBoot a dispatcher or a freight broker?', 'LoadBoot is a truck dispatch service. Carriers keep their own operating authority while we find, negotiate and coordinate loads on their behalf. For shippers, freight moves through our licensed broker partners.'),
+ ('Is LoadBoot a dispatcher or a freight broker?', 'LoadBoot is a truck dispatch service. Carriers keep their own operating authority while we find, negotiate and coordinate loads on their behalf. Shippers post freight directly in their own LoadBoot portal and our dispatch coordinates verified carriers end to end.'),
  ('How much does LoadBoot cost?', 'A flat 5% dispatch fee on booked loads. There is no sign-up fee, no monthly minimum and no long-term contract &mdash; you can cancel anytime.'),
  ('Do you work with new-authority carriers?', 'Yes. New-authority and owner-operator carriers are a core focus. We help guide you through your first months, from paperwork and compliance to your first steady lanes.'),
  ('Who owns my data?', 'You do. Accounts are tenant-isolated with role-based access and audited actions. Drivers never see company finances, and brokers never see carrier internals.'),
@@ -1341,7 +1341,7 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 <div class="ap-tabs">
 <span class="ap-tab active"><span class="ap-i">&#128666;</span><span>Carrier / Owner-operator<small>You&rsquo;re on this one &mdash; fill it below</small></span></span>
 <a class="ap-tab" href="/app/partner/"><span class="ap-i">&#127970;</span><span>Broker (licensed)<small>Post loads &amp; manage carriers</small></span></a>
-<a class="ap-tab" href="/shipper-solutions.html"><span class="ap-i">&#128230;</span><span>Shipper<small>Move freight via a licensed broker</small></span></a>
+<a class="ap-tab" href="/app/partner/"><span class="ap-i">&#128230;</span><span>Shipper<small>Post your freight &amp; track it live</small></span></a>
 <a class="ap-tab" href="/agents.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
 <a class="ap-tab" href="/app/agent/"><span class="ap-i">&#129309;</span><span>Agent (independent dispatcher)<small>Bring clients, earn 1% of every delivered load</small></span></a>
 </div>
@@ -3289,8 +3289,8 @@ page('brokers.html', 'For Freight Brokers &mdash; A Reliable Carrier Network | L
 # HONESTY GUARD: LoadBoot is a dispatch service company. Freight from shippers requires a licensed
 # freight broker in the US; this page never claims broker authority and offers inquiry/consultation only.
 _sfaq_html, _sfaq_sch = faq_block([
-    ('Can I book a truck directly on this page?', 'Not yet &mdash; shipper freight moves through licensed broker partners. Start with a consultation and we will map the compliant path for your lanes.'),
-    ('Is LoadBoot a freight broker?', 'No. LoadBoot is a dispatch and logistics technology company. Where broker authority is required, freight is handled with licensed broker partners &mdash; we are transparent about that boundary.'),
+    ('Can I post freight directly on LoadBoot?', 'Yes &mdash; create your shipper account, post your freight and track every shipment live. LoadBoot dispatch pairs each load with verified, health-scored carriers and handles documents, appointments and claims.'),
+    ('Is LoadBoot a freight broker?', 'LoadBoot is a dispatch and logistics technology platform. You post freight directly in your own shipper portal and our dispatch team runs it with verified carriers. Where broker authority is required, licensed partners are involved &mdash; we are always transparent about who is doing what on your shipment.'),
     ('What information should I prepare?', 'Lanes (origin/destination), freight type, weight, equipment needs, monthly volume and any appointment or facility requirements. The more detail, the faster the consultation.'),
     ('How do facilities and appointments work?', 'We coordinate pickup and delivery appointments, capture facility instructions, and track arrive/depart times so detention is documented from real timestamps.'),
 ])
@@ -3301,7 +3301,7 @@ sp += _sec('Scenarios', 'Where we help shippers', _cards([
     ('&#9889;', 'Coverage gaps', 'When your usual capacity falls through and you need a professionally coordinated plan instead of a scramble.'),
     ('&#128203;', 'Process cleanup', 'Late PODs, surprise accessorials and untracked detention &mdash; we bring documentation discipline to every shipment conversation.'),
 ]))
-sp += _sec('Straight answer', 'What LoadBoot is &mdash; and is not', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p><strong>LoadBoot is a truck dispatch and logistics technology company, not a licensed freight broker.</strong> In the USA, moving freight on behalf of shippers requires broker authority. Where that authority is required, your freight is handled together with licensed broker partners &mdash; and we tell you exactly who is doing what on your shipment. No blurred lines, no implied authority.</p></div>', soft=True)
+sp += _sec('Straight answer', 'What LoadBoot is &mdash; and is not', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p><strong>Shippers work directly on LoadBoot.</strong> You create your own shipper account, post freight, and track every shipment live &mdash; our dispatch pairs each load with verified, health-scored carriers and manages documents, appointments, detention proof and claims end to end. Where U.S. broker authority is required, licensed partners are involved and we tell you exactly who is doing what on your shipment &mdash; no blurred lines, no implied authority.</p></div>', soft=True)
 sp += _sec('Visibility', 'See your shipment, not a mystery', _cards([
     ('&#128205;', 'Tracking with consent', 'Trips are tracked via driver app GPS, ELD/telematics or structured check-ins &mdash; source and freshness are always labeled, never invented.'),
     ('&#9200;', 'Appointment awareness', 'Pickup and delivery windows, countdowns and late-risk flags &mdash; surprises surface early, while there is still time to act.'),
@@ -3812,8 +3812,8 @@ _HUB_ROLES = [
    'Request broker account', 'Thanks — our partnerships team will reach out shortly.'),
 
   ('shipper', '&#127970;', 'Shipper', 'Shippers',
-   'Move freight through licensed broker partners with real capacity, live tracking and compliant docs.',
-   ['Access reliable capacity through Loadboot&rsquo;s licensed broker partners',
+   'Post your freight directly on LoadBoot &mdash; verified capacity, live tracking and compliant docs.',
+   ['Post shipments directly in your own LoadBoot shipper portal',
     'Live shipment visibility from pickup to delivery',
     'Compliant documentation &mdash; BOL, rate con and POD collected automatically',
     'Consistent service standards and vetted carriers on every load',
