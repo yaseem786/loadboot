@@ -1204,6 +1204,41 @@ async function agentPortal(user) {
       ]),
     ]);
   }
+  // ---- Mobile side drawer (same inDrive pattern as the carrier shell): profile + FULL menu + sign out ----
+  function openAgDrawer() {
+    const scrim9 = h('div', { class: 'cpx-scrim' });
+    const k9 = feed.kpis || {}; const tt9 = feed.totals || {};
+    const dStat9 = (label9, val9, goto9) => h('button', { class: 'cpx-d-stat', onClick: () => { close9(); go(goto9); } }, [h('b', null, val9), h('span', null, label9)]);
+    const items9 = AGNAV.map(([id9, label9, ic9]) => h('button', { class: 'cpx-d-item' + (tab === id9 ? ' active' : ''), onClick: () => { close9(); go(id9); } }, [
+      icon(ic9, 20), h('span', null, label9),
+    ]));
+    const drawer9 = h('aside', { class: 'cpx-drawer' }, [
+      h('div', { class: 'cpx-d-head', onClick: () => { close9(); go('settings'); } }, [
+        h('div', { class: 'cpx-d-ava' }, (feed.name || 'A').trim().charAt(0).toUpperCase()),
+        h('div', { style: 'min-width:0;flex:1' }, [
+          h('div', { class: 'cpx-d-name' }, feed.name || 'Agent'),
+          h('div', { class: 'cpx-d-rating' }, isVerified ? '\u2713 Verified agent' : 'Verification pending'),
+          h('div', { class: 'cpx-d-sub', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, (user && user.email) || ''),
+        ]),
+        h('div', { class: 'cpx-d-chev' }, '\u203a'),
+      ]),
+      h('div', { class: 'cpx-d-stats' }, [
+        dStat9('Referred', String(k9.referred || 0), 'chain'),
+        dStat9('Carriers', String(k9.carriers || 0), 'chain'),
+        dStat9('Clearing', money9(tt9.accrued || 0), 'earnings'),
+      ]),
+      h('div', { class: 'cpx-d-items' }, items9),
+      h('div', { class: 'cpx-d-foot' }, [
+        h('button', { class: 'cpx-d-item', onClick: async () => { await signOut(); location.reload(); } }, [icon('logout', 20), h('span', null, 'Sign out')]),
+        h('div', { class: 'cpx-d-site' }, 'loadboot.com \u00b7 The Operating System for Trucking'),
+      ]),
+    ]);
+    function close9() { scrim9.classList.remove('show'); drawer9.classList.remove('show'); setTimeout(() => { scrim9.remove(); drawer9.remove(); }, 220); }
+    scrim9.onclick = close9;
+    document.body.appendChild(scrim9); document.body.appendChild(drawer9);
+    requestAnimationFrame(() => { scrim9.classList.add('show'); drawer9.classList.add('show'); });
+  }
+
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Agent' })),
@@ -1215,7 +1250,10 @@ async function agentPortal(user) {
     ]),
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
-        h('div', { class: 'cp-top-left' }, [titleEl]),
+        h('div', { class: 'cp-top-left' }, [
+          h('button', { class: 'cpx-burger', 'aria-label': 'Menu', onClick: (e) => { e.stopPropagation(); openAgDrawer(); } }, icon('menu', 24)),
+          titleEl,
+        ]),
         h('div', { class: 'cp-top-right' }, [
           agBellWrap,
           h('button', { class: 'cp-pill', title: 'Tap to see exactly what the pair is and how earning switches ON', style: 'cursor:pointer;border:0;font:inherit;' + (feed.pair_active ? 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' : 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800'), onClick: () => pairModal9() }, feed.pair_active ? '✅ Chain active' : '⏳ Pair pending'),
