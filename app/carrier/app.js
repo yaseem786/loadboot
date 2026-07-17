@@ -820,7 +820,7 @@ async function agentPortal(user) {
             (d.payout_method === 'payoneer' || d.payout_method === 'ach' || d.payout_method === 'intl') ? fld('Bank address', 'payout_bank_addr2', 'city, state, country') : null,
             d.payout_method === 'other' ? fld('Describe your payout method *', 'payout_other', 'e.g. Wise account — details…') : null,
             d.payout_method === 'intl' ? fld('IBAN / account # *', 'payout_iban', '') : null,
-            d.payout_method === 'intl' ? fld('SWIFT / BIC *', 'payout_swift', '') : null,
+            d.payout_method === 'intl' ? fld('SWIFT / BIC (optional — leave blank if you don\u2019t know it; we\u2019ll look it up from your bank name)', 'payout_swift', 'e.g. HABBPKKA') : null,
             d.payout_method === 'intl' ? fld('Bank address', 'payout_bank_addr', 'city, country') : null,
             h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Tax form *'), tax9]),
           ].filter(Boolean)),
@@ -884,7 +884,7 @@ async function agentPortal(user) {
         if (!String(d.payout_title || '').trim()) { err9.textContent = 'Account title is required (must match your legal name).'; return; }
         if (!d.id_doc || !d.bank_doc) { err9.textContent = 'Upload both documents — government ID and bank proof.'; return; }
         if (d.payout_method === 'ach' && (!String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name, routing and account number are required.'; return; }
-        if (d.payout_method === 'intl' && (!String(d.payout_iban || '').trim() || !String(d.payout_swift || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name, IBAN and SWIFT are required.'; return; }
+        if (d.payout_method === 'intl' && (!String(d.payout_iban || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name and IBAN / account # are required.'; return; }
         if (d.payout_method === 'payoneer' && (!/.+@.+\..+/.test(d.payout_email || '') || !String(d.payout_bank || '').trim() || !String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim())) { err9.textContent = 'Payoneer: email + receiving bank name, routing and account number are all required (Payoneer app → Global Payment Service).'; return; }
         if (d.payout_method === 'other' && !String(d.payout_other || '').trim()) { err9.textContent = 'Describe your payout method.'; return; }
         if (d.tax_form === 'w9' && (!d.tax_class || !String(d.tax_tin || '').trim())) { err9.textContent = 'W-9: tax classification and SSN/EIN are required.'; return; }
