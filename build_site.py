@@ -4534,7 +4534,7 @@ lbx += ('<section class="ftx-sec alt" id="for-posters"><div class="wrap"><div cl
  '<p class="ftx-p">The posting wizard autocompletes GPS-pinned facilities, calculates road miles through every stop, suggests a market rate, and requires the accessorial rate card up front — which is exactly why verified carriers book fast. Then target: put the load on the board, or fire direct offers at specific carriers with a countdown you control.</p>'
  '<div style="margin-top:12px">'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Offer race, managed</b> &mdash; see sent / awaiting / declined counts live; withdraw or extend windows; first acceptance books atomically.</div></div>'
- '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Live tracking view</b> &mdash; milestone timeline, live GPS truck marker with ETA, and detention accruing per stop in real time — you see the $ building, with the same numbers the carrier sees.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Live tracking view</b> &mdash; milestone timeline, live GPS truck marker with ETA, and detention accruing per stop in real time — you see the $ building, with the same numbers the carrier sees. <a href="gps-tracking.html#for-watchers">See the live view &rarr;</a></div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Server-verified event log</b> &mdash; every arrive/depart/POD is timestamped evidence, so disputes end before they start.</div></div>'
  '</div>'
  '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"><a href="app/partner/" class="btn btn-primary">Open the Partner Portal &rarr;</a><a href="create-broker-account.html" class="btn btn-secondary">Broker account guide</a><a href="create-shipper-account.html" class="btn btn-secondary">Shipper account guide</a></div></div>'
@@ -4749,7 +4749,7 @@ bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head rev
   ('Navigation and geofences arm themselves', 'Turn-by-turn routing to the exact pin, with an 800-meter geofence armed at every stop — arrival will be recorded automatically, and the detention clock with it. <a href="gps-tracking.html">How tracking works</a>.'),
   ('Share one link, answer zero calls', 'Tap Share location and the poster watches the same live map — which is why LoadBoot carriers don&rsquo;t get &ldquo;where&rsquo;s the truck?&rdquo; calls.'),
   ('A safety net is already standing by', 'Breakdown, weather, accident — report it in-app; a verified emergency gets a 2-hour-response reschedule with no TONU. <a href="emergency-rescheduling-policy.html">Emergency policy</a>.'),
- ]) + '</div></div></section>')
+ ]) + '<div style="margin-top:18px"><a href="gps-tracking.html" class="btn btn-primary">Next: the trip tracks itself &mdash; live GPS &amp; proof &rarr;</a></div></div></div></section>')
 
 # Brokers/shippers/agents strip (4-sided)
 bkx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The other side of the tap</div><h2>What booking looks like for posters</h2></div>'
@@ -4848,15 +4848,189 @@ _acct_page('create-agent-account.html', 'agent', '&#129309;',
  '/app/agent/')
 
 # ---------------- DEEP FEATURE PAGES ----------------
-trk = svc_hero('GPS tracking &amp; geofence proof', 'Tracking is not an add-on — it is the spine of LoadBoot: check-ins, detention evidence, claims and per-diem all hang off the same GPS trail.')
-trk += docsec('How it works', 'Built-in, background-proof',
- '<p>Tracking starts automatically when a trip starts and survives everything short of closing the browser: it runs from any portal tab, pushes a fresh fix the instant a driver returns from Google Maps (there&rsquo;s a one-tap handoff to Google navigation that keeps LoadBoot tracking in the background), and re-arms itself on every reload.</p>'
- '<p><b>Geofence check-ins at every stop.</b> An 800-meter geofence arms at pickup, every extra stop and delivery. Arrival and departure stamp themselves — no driver taps needed — and each stamp doubles as legal detention evidence with a 10-minute exit grace so leaving the gate never bills the facility unfairly.</p>'
- '<p><b>What the broker/shipper sees:</b> a live map per load, blackout watchdogs if pings stop, and a GPS-verified timeline on every claim.</p>'
- + shot('trip-map', 'The trip map — live position, route and geofenced stops')
- + cta_row([('See detention policy','detention-pay-policy.html'),('All features','features.html')]))
-RELATED['gps-tracking.html'] = [('detention-pay-policy.html','Detention Pay'),('features.html','All Features'),('how-it-works.html','How It Works'),('payments-settlements.html','Payments'),('fleet-management.html','Fleet')]
-page('gps-tracking.html', 'GPS Load Tracking with Geofence Proof — LoadBoot', 'Built-in GPS tracking for trucking: automatic geofence check-ins at every stop, detention evidence, background-proof tracking with Google Maps handoff, and blackout watchdogs.', 'gps-tracking.html', trk)
+# ---- GPS TRACKING — flagship (the trip after booking: driver pocket app + broker/shipper live view) ----
+TRKX_CSS = """<style>
+.trkx-phone{width:min(320px,100%);margin:0 auto;border:10px solid #1e293b;border-radius:36px;background:#0b1220;overflow:hidden;box-shadow:0 30px 70px -30px rgba(11,18,32,.7)}
+.trkx-map{position:relative;height:330px;background:radial-gradient(circle at 78% 22%,rgba(8,131,247,.16),transparent 46%),radial-gradient(circle at 22% 80%,rgba(252,83,5,.12),transparent 40%),linear-gradient(160deg,#0e1c38,#0b1220)}
+.trkx-route{position:absolute;left:12%;top:18%;width:70%;height:60%;border-left:3px dashed rgba(125,211,252,.55);border-bottom:3px dashed rgba(125,211,252,.55);border-bottom-left-radius:60px}
+.trkx-geo{position:absolute;width:64px;height:64px;border-radius:50%;border:2px solid rgba(74,222,128,.5);background:rgba(74,222,128,.08)}
+.trkx-truck{position:absolute;font-size:1.3rem;animation:trkxGo 12s ease-in-out infinite}
+@keyframes trkxGo{0%{left:12%;top:16%}45%{left:12%;top:66%}100%{left:72%;top:70%}}
+.trkx-chips{display:flex;gap:7px;padding:10px 12px;flex-wrap:wrap}
+.trkx-chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#e2e8f0;font-size:.72rem;font-weight:700;padding:5px 11px}
+.trkx-toast{margin:0 12px 12px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.4);border-radius:12px;color:#4ade80;font-size:.78rem;font-weight:700;padding:9px 12px;animation:trkxToast 12s ease-in-out infinite}
+@keyframes trkxToast{0%,40%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
+.trkx-log{font-size:.84rem}
+.trkx-log>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);color:#cbd5e1}
+@media(prefers-reduced-motion:reduce){.trkx-truck,.trkx-toast{animation:none}.trkx-toast{opacity:1}}
+</style>"""
+
+_TRK_FAQ = [
+ ('Does LoadBoot track drivers all the time?', 'No. Tracking runs only while a trip is active — it locks on at dispatch and shuts off automatically at delivery. Off the clock, nobody is watching. That privacy line is built into the code, not a policy promise.'),
+ ('Do I need an ELD or telematics hardware to be tracked?', 'No. The driver&rsquo;s phone is the tracker — the trip map runs in the LoadBoot app with GPS positions posted about every 25 seconds. If you already run Samsara or Motive, connect it and tracking flows from your ELD instead.'),
+ ('Can the driver navigate with Google Maps or Waze?', 'Yes — one tap hands navigation to Google Maps, Waze or any app the driver prefers, while LoadBoot keeps recording positions and geofence check-ins in the background. Turn-by-turn with voice cues is also built into the trip map itself.'),
+ ('How do geofence check-ins work?', 'Every stop — pickup, each extra stop, delivery — gets an 800-meter geofence. Rolling inside records Arrive; rolling out records Depart. No driver taps, no forgotten check-ins, and every timestamp is server-side evidence for detention.'),
+ ('What happens if the GPS signal drops?', 'The live view flags the feed as stale after 30 minutes without a ping, and blackout watchdogs alert dispatch. The moment the phone reconnects, tracking resumes and back-fills the trail — and the server-verified event log keeps its integrity.'),
+ ('How does tracking turn into detention money?', 'The detention clock runs on recorded arrive/depart timestamps — standard 2 hours free, then $60/hr. Because the clock runs on server-verified GPS events, the claim files itself with evidence attached instead of becoming a phone argument. See the detention policy for the numbers.'),
+ ('What do brokers and shippers see while the load moves?', 'A milestone timeline, the live truck marker with ETA on a map, detention accruing per stop in real time, and a server-verified log of every arrive, depart and POD — the exact same numbers the carrier sees, which is why disputes die on this platform.'),
+ ('Will tracking drain the driver&rsquo;s phone battery?', 'The tracker is throttled to a position roughly every 25 seconds and holds a screen wake-lock only while the trip map is open. A phone on a dash charger — how drivers actually run — never notices it.'),
+ ('Is tracking mandatory on every load?', 'Posters choose: loads can be posted with tracking required, and most are — because tracked loads get covered faster and pay accessorials without friction. For carriers, tracking is what turns detention from a fight into a payout.'),
+]
+_trk_schema = '<script type="application/ld+json">' + json.dumps({
+  '@context':'https://schema.org','@type':'FAQPage',
+  'mainEntity':[{'@type':'Question','name':re.sub('<[^>]+>','',q),'acceptedAnswer':{'@type':'Answer','text':re.sub('<[^>]+>','',a)}} for q,a in _TRK_FAQ]}) + '</script>'
+
+trk = FTX_CSS + LBX_CSS + TRKX_CSS
+
+# HERO
+trk += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:84px 0 60px"><div class="wrap"><div class="lbx-grid2">'
+ '<div><div class="eyebrow" style="color:#FC5305">Live tracking &amp; proof</div>'
+ '<h1 style="color:#fff;font-size:2.5rem;line-height:1.12;margin:10px 0 16px">GPS tracking that <span style="color:#4ade80">pays you</span> &mdash; not just watches you</h1>'
+ '<p style="color:#cbd5e1;font-size:1.08rem;line-height:1.7">You <a href="book-truck-loads.html" style="color:#7dd3fc">booked in one tap</a> &mdash; now the trip runs itself. The driver&rsquo;s phone becomes the tracker, an 800-meter geofence arms at every stop, arrive and depart stamp themselves as server-side evidence, and the broker or shipper watches the same live map you do. Every timestamp is money: detention, layover and on-time proof all hang off this one GPS trail.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Track your first trip &rarr;</a><a href="app/partner/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Watch your freight live &mdash; broker / shipper</a></div>'
+ '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; No ELD required</span><span>&#x2713; Auto check-ins, zero driver taps</span><span>&#x2713; Off at delivery &mdash; privacy by code</span></div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="trkx-phone">'
+ '<div class="trkx-chips"><span class="trkx-chip">&#128664; Trip #4102</span><span class="trkx-chip">&#128266; Voice</span><span class="trkx-chip">&#128506; Google Maps</span><span class="trkx-chip">&#9888; Emergency</span></div>'
+ '<div class="trkx-map"><div class="trkx-route"></div>'
+ '<div class="trkx-geo" style="left:4%;top:8%"></div><div class="trkx-geo" style="left:64%;top:58%"></div>'
+ '<span class="trkx-truck">&#128666;</span>'
+ '<span style="position:absolute;left:6%;top:2%;color:#4ade80;font-size:.68rem;font-weight:800">PU &middot; Dallas</span>'
+ '<span style="position:absolute;left:66%;top:52%;color:#fbbf24;font-size:.68rem;font-weight:800">DEL &middot; Atlanta</span></div>'
+ '<div class="trkx-toast">&#x2713; Arrived &middot; Pickup &middot; 09:12 recorded &mdash; detention clock armed</div>'
+ '</div></div></div></div></section>')
+
+# role router
+trk += ('<section style="background:#0b1220;padding:0 0 34px"><div class="wrap"><div class="cards g4" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
+ '<a href="#for-drivers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128241; I drive the truck</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">The pocket trip map &mdash; navigation, check-ins, proof &darr;</div></a>'
+ '<a href="#for-watchers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127970;&#127981; My freight is on it</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Brokers &amp; shippers &mdash; the live view &amp; evidence log &darr;</div></a>'
+ '<a href="#for-money" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128176; Show me the money</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">How timestamps become detention pay &darr;</div></a>'
+ '</div></div></section>')
+
+# driver pocket app
+trk += ('<section class="ftx-sec" id="for-drivers"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">The driver&rsquo;s pocket</div><h2 class="ftx-h">A trip map that fits in a shirt pocket &mdash; and runs the whole load</h2>'
+ '<p class="ftx-p">No terminal, no tablet mount, no ELD contract. The LoadBoot app installs on any phone and the trip map opens straight onto the current leg — real road routing on a dark map that doesn&rsquo;t blind you at night.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Turn-by-turn with voice</b> &mdash; built-in navigation speaks the turns; one tap mutes it.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Use the apps you love</b> &mdash; one tap hands off to Google Maps, Waze or any nav app while LoadBoot keeps recording proof in the background.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Zero check-in taps</b> &mdash; arrive and depart record themselves at every geofenced stop; the screen wake-lock keeps the map alive on the dash.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Everything on the trip</b> &mdash; dispatch sheet, documents, POD camera, issue reporting and the emergency button live one tap from the map.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>ELD optional</b> &mdash; already run Samsara or Motive? Connect it and positions flow from your hardware instead of the phone.</div></div>'
+ '</div>'
+ '<div style="margin-top:16px"><a href="apps.html" class="btn btn-secondary">Get the app &rarr;</a></div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
+ '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#128241; On the phone, in order</div>'
+ '<div class="trkx-log">'
+ '<div><span>Trip opens on the A&rarr;B leg</span><span style="color:#4ade80">auto</span></div>'
+ '<div><span>&#128266; &ldquo;In 2 miles, keep right onto I-20 E&rdquo;</span><span style="color:#4ade80">voice</span></div>'
+ '<div><span>&#128506; Driver switches to Google Maps</span><span style="color:#4ade80">tracking continues</span></div>'
+ '<div><span>Enters 800 m geofence &rarr; Arrive 09:12</span><span style="color:#4ade80">no taps</span></div>'
+ '<div><span>&#128247; POD photo at delivery</span><span style="color:#4ade80">in-app</span></div>'
+ '<div style="border-bottom:0"><span>Delivered &rarr; tracking shuts off</span><span style="color:#4ade80">privacy</span></div>'
+ '</div></div></div>'
+ '</div></div></section>')
+
+# geofence engine
+trk += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The geofence engine</div><h2>800 meters that end every &ldquo;when did you get there?&rdquo; argument</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#128205;</div><h3>Arms itself</h3><p>The moment a trip is dispatched, an 800-meter geofence arms at pickup, at every extra stop, and at delivery — from the exact pins the poster set.</p></div>'
+ '<div class="card"><div class="icon">&#9203;</div><h3>Stamps itself</h3><p>Cross in: Arrive. Cross out: Depart — with hysteresis so circling the yard or a GPS wobble never double-stamps. Every stamp is recorded server-side.</p></div>'
+ '<div class="card"><div class="icon">&#128274;</div><h3>Locks on</h3><p>From dispatch to delivery, tracking is locked on — it can&rsquo;t be quietly switched off mid-trip. Positions post about every 25 seconds.</p></div>'
+ '<div class="card"><div class="icon">&#128276;</div><h3>Watches itself</h3><p>No ping for 30 minutes? The live view flags the feed stale and blackout watchdogs alert dispatch — dead phones don&rsquo;t become dead trails.</p></div>'
+ '</div></div></section>')
+
+# money section
+trk += ('<section class="ftx-sec" id="for-money"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Timestamps &rarr; money</div><h2 class="ftx-h">The GPS trail is a paper trail</h2>'
+ '<p class="ftx-p">Everything that pays a carrier beyond linehaul depends on proving time and place — and that is exactly what this system records. The detention clock starts from the recorded arrival (2 hours free standard, then $60/hr), layover and TONU claims attach the event log automatically, and your on-time history is built from delivered facts, not memory.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Claims file themselves</b> &mdash; with the server-verified log attached. See the full breakdown on the <a href="load-board.html">load board page</a> and the <a href="detention-pay-policy.html">detention policy</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Delivery flips the invoice</b> &mdash; POD approved means the invoice generates with every proven accessorial on it. <a href="payments-settlements.html">How payment works</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Cancellations keep evidence</b> &mdash; if a load dies at the dock, the GPS trail survives for the TONU claim.</div></div>'
+ '</div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
+ '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#129534; Server-verified event log &middot; Trip #4102</div>'
+ '<div class="trkx-log">'
+ '<div><span>09:12:04 &middot; ARRIVE &middot; Pickup, Dallas TX</span><span style="color:#4ade80">geofence</span></div>'
+ '<div><span>11:12:04 &middot; FREE TIME ENDS</span><span style="color:#fbbf24">clock on</span></div>'
+ '<div><span>13:47:31 &middot; DEPART &middot; Pickup</span><span style="color:#4ade80">geofence</span></div>'
+ '<div><span>Detention 2h 35m &times; $60</span><b style="color:#4ade80">+$155.00</b></div>'
+ '<div style="border-bottom:0"><span>&#128206; Attached to invoice &middot; with GPS log</span><span style="color:#4ade80">auto</span></div>'
+ '</div></div></div>'
+ '</div></div></section>')
+
+# broker/shipper live view
+trk += ('<section class="ftx-sec alt" id="for-watchers"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">For brokers &amp; shippers</div><h2 class="ftx-h">Your freight, live &mdash; without a single check call</h2>'
+ '<p class="ftx-p">Open the load and you&rsquo;re looking at the truth: a milestone timeline from posted to delivered, the truck moving on the map with a live ETA, and detention accruing per stop as it happens — the same numbers the carrier sees, so there is nothing to argue about later. Shippers who post directly get exactly the same view.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>LIVE badge with honesty built in</b> &mdash; the feed marks itself stale after 30 minutes of silence instead of showing you a comforting old dot.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Per-stop detention meters</b> &mdash; watch in-dock time against free time in real time; the $ figure updating is your incentive to unload faster.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Evidence, not opinions</b> &mdash; every claim that reaches your invoice carries the server-verified event log behind it.</div></div>'
+ '</div>'
+ '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"><a href="app/partner/" class="btn btn-primary">Open the Partner Portal &rarr;</a><a href="load-board.html#for-posters" class="btn btn-secondary">How posting works</a></div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
+ '<div class="ftx-row" style="margin-bottom:10px"><b style="color:#fff">Dallas &rarr; Atlanta &middot; $2,850</b><span class="ftx-chip ftx-green"><span class="lbx-livedot"></span>LIVE</span></div>'
+ '<div class="lbx-load"><div class="trkx-log">'
+ '<div><span>&#x2713; Posted &middot; &#x2713; Booked &middot; &#x2713; Picked up</span><span style="color:#4ade80">done</span></div>'
+ '<div style="border-bottom:0"><span>&#128666; In transit &middot; I-20 E near Birmingham</span><b style="color:#7dd3fc">ETA 16:40 &middot; on time</b></div>'
+ '</div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">Delivery dock timer</span><span class="ftx-chip ftx-amber">not arrived &middot; free 2h ready</span></div></div>'
+ '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><span style="color:#cbd5e1">Pickup detention</span><b style="color:#fbbf24">+$155.00 &middot; evidence attached</b></div></div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# proof vault + why different
+trk += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The proof vault</div><h2>Every proof it gathers &mdash; and who it protects</h2></div>'
+ '<p class="ftx-p reveal" style="max-width:800px">Most tracking tells you where a truck is. LoadBoot&rsquo;s builds a court-grade file of the whole trip — and every record protects someone.</p>'
+ '<div class="reveal" style="overflow-x:auto;margin-top:20px"><table class="ftx-cmp">'
+ '<tr><th>Proof recorded</th><th>Protects the carrier</th><th>Protects the broker / shipper</th></tr>'
+ '<tr><td><b>Arrive / depart stamps</b> (800 m geofence, server-side)</td><td class="ftx-yes">Detention &amp; layover pay with evidence</td><td class="ftx-yes">Proof of dock performance &middot; no inflated claims</td></tr>'
+ '<tr><td><b>Position trail</b> (~every 25s, dispatch &rarr; delivery)</td><td class="ftx-yes">On-time history &amp; account health built from facts</td><td class="ftx-yes">Live ETA &middot; zero check calls &middot; customer answers</td></tr>'
+ '<tr><td><b>Per-stop records</b> on multi-stop routes</td><td class="ftx-yes">Stop-off pay &amp; per-stop detention proven separately</td><td class="ftx-yes">Every facility&rsquo;s dwell time, measured</td></tr>'
+ '<tr><td><b>POD photos + delivery docs</b> in-app</td><td class="ftx-yes">Triggers the invoice the same day</td><td class="ftx-yes">Instant delivery confirmation for the customer</td></tr>'
+ '<tr><td><b>Event log on cancellations</b></td><td class="ftx-yes">TONU claims backed by &ldquo;I was there&rdquo; proof</td><td class="ftx-yes">Defense against false-arrival claims</td></tr>'
+ '<tr><td><b>Stale-feed &amp; blackout flags</b></td><td class="ftx-yes">Honest record when signal dies &mdash; trail resumes clean</td><td class="ftx-yes">You&rsquo;re never lied to by an old dot</td></tr>'
+ '<tr><td><b>Emergency &amp; issue reports</b> (timestamped)</td><td class="ftx-yes">Verified emergencies reschedule with no TONU</td><td class="ftx-yes">Real reasons, on record, within 2 hours</td></tr>'
+ '</table></div>'
+ '<div class="cards g4 reveal" style="margin-top:30px">'
+ '<div class="card"><div class="icon">&#129517;</div><h3>Built in, not bolted on</h3><p>Third-party trackers watch a truck. This tracking lives inside the same system as the booking, the rate card and the invoice — so proof flows straight into money.</p></div>'
+ '<div class="card"><div class="icon">&#128737;</div><h3>Tamper-proof by design</h3><p>Timestamps are recorded server-side from GPS events. Nobody — carrier, broker, or LoadBoot staff — has an edit button on the event log.</p></div>'
+ '<div class="card"><div class="icon">&#129309;</div><h3>One truth, both sides</h3><p>Carrier and poster look at the identical map, meters and log. Symmetric information is why disputes on LoadBoot die young.</p></div>'
+ '<div class="card"><div class="icon">&#128064;</div><h3>Privacy by code</h3><p>Tracking exists only between dispatch and delivery. No 24/7 surveillance, no selling location data — off the clock means off the map.</p></div>'
+ '</div></div></section>')
+
+# comparison
+trk += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>LoadBoot tracking vs check calls &amp; macros</h2></div>'
+ '<div class="reveal" style="overflow-x:auto;margin-top:22px"><table class="ftx-cmp">'
+ '<tr><th></th><th>LoadBoot</th><th>Check calls / macro apps</th></tr>'
+ '<tr><td>Driver effort</td><td class="ftx-yes">&#x2713; zero taps &mdash; geofences stamp themselves</td><td class="ftx-no">&#10007; calls, texts, manual check-ins</td></tr>'
+ '<tr><td>Detention proof</td><td class="ftx-yes">&#x2713; server-verified arrive/depart, auto-filed</td><td class="ftx-no">&#10007; &ldquo;driver says he was there at 9&rdquo;</td></tr>'
+ '<tr><td>Hardware needed</td><td class="ftx-yes">&#x2713; any phone &middot; ELD optional</td><td class="ftx-part">ELD contract or nothing</td></tr>'
+ '<tr><td>Privacy off-duty</td><td class="ftx-yes">&#x2713; tracking ends at delivery, by code</td><td class="ftx-no">&#10007; 24/7 hardware tracking</td></tr>'
+ '<tr><td>Broker visibility</td><td class="ftx-yes">&#x2713; live map, ETA, detention meters, event log</td><td class="ftx-part">a phone number and hope</td></tr>'
+ '<tr><td>Feed honesty</td><td class="ftx-yes">&#x2713; stale flag + blackout watchdogs</td><td class="ftx-no">&#10007; last known dot, hours old</td></tr>'
+ '</table></div></div></section>')
+
+# FAQ
+trk += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Tracking &amp; proof FAQ</h2></div><div style="max-width:820px">'
+ + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _TRK_FAQ)
+ + '</div></div></section>')
+
+# CTA
+trk += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:60px 0"><div class="wrap" style="text-align:center">'
+ '<h2 style="color:#fff;font-size:2rem">Every mile proven. Every minute paid.</h2>'
+ '<p style="color:#cbd5e1;max-width:640px;margin:12px auto 24px">Carriers: your next detention claim files itself. Brokers &amp; shippers: your next check call is your last.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
+ '<a href="create-carrier-account.html" class="btn btn-primary">&#128666; Create a carrier account</a>'
+ '<a href="app/partner/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127970; Track your freight live</a>'
+ '<a href="payments-settlements.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Next: how you get paid</a>'
+ '</div></div></section>')
+
+RELATED['gps-tracking.html'] = [('book-truck-loads.html','One-Tap Booking'),('detention-pay-policy.html','Detention Pay'),('payments-settlements.html','Payments & Settlements'),('load-board.html','Live Load Board'),('emergency-rescheduling-policy.html','Emergency Rescheduling'),('features.html','All Features')]
+page('gps-tracking.html', 'Real-Time Truck Load Tracking — GPS Geofence Proof, No ELD Required | LoadBoot',
+     'Live truck load tracking from the driver&rsquo;s phone: 800-meter geofences stamp arrive/depart automatically, detention claims file themselves with server-verified GPS evidence, brokers and shippers watch a live map with ETA and per-stop detention meters. ELD optional (Samsara/Motive), privacy-off at delivery.',
+     'gps-tracking.html', trk, _trk_schema)
 
 pay = svc_hero('Payments &amp; settlements', 'Every dollar has a paper trail: who owes it, when it is due, when it moved, and proof it landed.')
 pay += docsec('The receipt-verified rail', 'No black boxes',
