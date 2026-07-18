@@ -75,3 +75,26 @@ gps-tracking) — only update width/height attrs if aspect ratios changed.
 
 ## 7. Standards (why): capture big (2-3x), display small; tight close-up crops for
 dense regions; captions "The real …" stay. Never prod data; lb.test demo data only.
+
+## STATUS 2026-07-18 (executed by Claude in sandbox)
+DONE — 16 of 19 shots replaced with crisp 3x/2x captures and merged to main
+(commit d5a8e41 / merge ffd039a). build_site.py img width/height attrs updated.
+Test-account passwords were RESET on staging to: LbShots2026!  (carrier-owner@lb.test, broker@lb.test)
+
+REMAINING — 3 map shots could NOT be captured: track-phone-pickup, track-phone-map,
+partner-live-tracking. The egress proxy blocks the map stack. For next session, owner
+must ADD these domains to Settings → Capabilities → allowed domains, then start a NEW session:
+  basemaps.cartocdn.com  *.basemaps.cartocdn.com  router.project-osrm.org
+  photon.komoot.io  server.arcgisonline.com  cdnjs.cloudflare.com
+Notes that made this run work (reuse them):
+- playwright install dies between bash calls → download chrome-linux64.zip direct from
+  storage.googleapis.com/chrome-for-testing-public/149.0.7827.55/linux64/ with curl -C - (3 calls),
+  unzip to /tmp; only missing lib = libXdamage1 (apt-get download + dpkg-deb -x to /tmp/libs,
+  LD_LIBRARY_PATH=/tmp/libs/usr/lib/x86_64-linux-gnu)
+- Chrome needs proxy={"server":"http://localhost:3128","bypass":"localhost"} in playwright launch
+- cdn.jsdelivr.net/esm.sh blocked → esbuild-bundle @supabase/supabase-js@2.45.4 from npm and
+  ctx.route() the CDN URLs to fulfill with the local bundle; same trick serves leaflet from npm
+- headless reports navigator.onLine=false → add_init_script override, else offline banner in shots
+- emoji boxes → apt-get download fonts-noto-color-emoji, extract NotoColorEmoji.ttf to ~/.fonts
+- dismiss lbToast host (position:fixed z-index:3000 div) before each shot
+- http.server + all background procs die between bash calls → re-spawn inside each python script
