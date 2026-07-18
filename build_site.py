@@ -4151,7 +4151,7 @@ feat += fsec('fleet','Run the fleet','Fleet tools that scale past one truck',
 
 feat += fsec('docs','Stay compliant','Compliance that runs itself',
  fbody('Stay compliant','Compliance that runs itself',
-  'FMCSA verification is built into onboarding, documents live on the account with expiry tracking, and everything signable is e-signed &mdash; W-9, dispatch agreement, rate confirmations.',
+  'FMCSA verification is built into onboarding, documents live on the account with expiry tracking, and everything signable is e-signed &mdash; W-9 and dispatch agreement &mdash; and every rate confirmation is issued and acknowledged in-app.',
   ['<b>FMCSA verify</b> &mdash; MC/DOT checked at signup; authority status on your profile.',
    '<b>Document vault</b> &mdash; COI, W-9, authority letters with expiry reminders before anything lapses.',
    '<b>E-signatures</b> &mdash; dispatch agreement and W-9 signed in-app (E-SIGN Act), PDFs generated instantly.',
