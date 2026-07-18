@@ -364,6 +364,7 @@ NAV_MENU = [
   ('Features', 'features.html', [
     ('features.html', 'All features'),
     ('load-board.html', 'Live load board'),
+    ('book-truck-loads.html', 'One-tap booking'),
     ('gps-tracking.html', 'GPS tracking &amp; proof'),
     ('payments-settlements.html', 'Payments &amp; settlements'),
     ('factoring-noa.html', 'Factoring &amp; NOA'),
@@ -4079,7 +4080,7 @@ feat += fsec('booking','Book &amp; roll','Booking with paperwork that enforces i
    '<b>Booking approvals</b> &mdash; brokers approve requests with the carrier&rsquo;s safety record and document status in view.',
    '<b>Dispatch sheet</b> &mdash; one-click printable sheet with stops, contacts, PU/DEL numbers and rate card.',
    '<b>Emergency rescheduling</b> &mdash; breakdowns and delays follow a published policy, not an argument. <a href="emergency-rescheduling-policy.html">Read the policy</a>.'],
-  ('See the full booking flow, step by step','how-it-works.html')),
+  ('Booking deep-dive: one tap to rolling','book-truck-loads.html')),
  ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128666; Booking checklist</div>'
   '<div class="ftx-card ftx-row"><span>Rate confirmation</span><span class="ftx-chip ftx-green">&#x2713; issued &middot; acknowledged</span></div>'
   '<div class="ftx-card ftx-row"><span>Driver + truck assigned</span><span class="ftx-chip ftx-green">&#x2713; Marcus &middot; #402</span></div>'
@@ -4524,7 +4525,7 @@ lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"
   ('GPS proof from mile zero', '800-meter geofences auto-record arrive/depart at every stop, detention clocks run themselves, and tracking locks on until delivery. Breakdown? A 2-hour-response emergency engine reschedules verified emergencies with no TONU. <a href="gps-tracking.html">See tracking &amp; proof</a>.'),
   ('Delivery flips the money', 'POD uploaded &rarr; invoice generated and emailed. Settlement shows gross &minus; flat 5% = net, with your per-mile. Factoring supported (NOA on file, per-broker routing) and books sync to QuickBooks. <a href="payments-settlements.html">See payments</a>.'),
   ('Reload before you park', 'Suggested reloads near your destination appear on the delivered trip — keep the wheels earning.'),
- ]) + '</div></div></section>')
+ ]) + '<div style="margin-top:18px"><a href="book-truck-loads.html" class="btn btn-primary">Booking deep-dive: one tap to rolling &rarr;</a></div></div></div></section>')
 
 # Posting side
 lbx += ('<section class="ftx-sec alt" id="for-posters"><div class="wrap"><div class="lbx-grid2">'
@@ -4613,10 +4614,182 @@ lbx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="features.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">All features</a>'
  '</div></div></section>')
 
-RELATED['load-board.html'] = [('features.html','All Features'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('how-to-get-loads-with-new-authority.html','Loads with New Authority'),('gps-tracking.html','GPS Tracking'),('market-rates.html','Market Rates'),('payments-settlements.html','Payments & Settlements')]
+RELATED['load-board.html'] = [('book-truck-loads.html','One-Tap Booking'),('features.html','All Features'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('how-to-get-loads-with-new-authority.html','Loads with New Authority'),('gps-tracking.html','GPS Tracking'),('market-rates.html','Market Rates')]
 page('load-board.html', 'Load Board for Truckers with Zero Ghost Loads — Find & Book Truck Loads Free | LoadBoot',
      'Free-to-search truck load board with zero ghost loads: booked freight vanishes instantly. Direct offers with live countdowns, propose-a-rate, real GPS deadhead, published detention/TONU/layover pay, one-tap booking with instant rate confirmations. For carriers, owner-operators, brokers & shippers.',
      'load-board.html', lbx, _lbx_schema)
+
+# ---------------- ONE-TAP BOOKING — flagship page (decision -> tap -> everything before roll-out) ----------------
+BKX_CSS = """<style>
+.bkx-doc{background:#fff;border:1px solid #e6ebf3;border-radius:16px;box-shadow:0 18px 50px -30px rgba(16,34,59,.35);overflow:hidden}
+.bkx-doc-head{background:#10223B;color:#fff;padding:13px 18px;font-weight:800;font-size:.9rem}
+.bkx-doc-row{display:flex;justify-content:space-between;gap:10px;padding:10px 18px;border-bottom:1px solid #eef2f7;font-size:.88rem;color:#334155}
+.bkx-doc-row b{color:#10223B}
+.bkx-seq>div{opacity:0;transform:translateY(6px);animation:bkxIn 9s ease-in-out infinite}
+.bkx-seq>div:nth-child(1){animation-delay:.3s}.bkx-seq>div:nth-child(2){animation-delay:1.1s}
+.bkx-seq>div:nth-child(3){animation-delay:1.9s}.bkx-seq>div:nth-child(4){animation-delay:2.7s}
+.bkx-seq>div:nth-child(5){animation-delay:3.5s}
+@keyframes bkxIn{0%{opacity:0;transform:translateY(6px)}8%,80%{opacity:1;transform:none}92%,100%{opacity:0}}
+.bkx-lock{filter:blur(4px);user-select:none}
+.bkx-timer{font-variant-numeric:tabular-nums;font-weight:900;color:#4ade80;font-size:1.5rem;letter-spacing:.04em}
+@media(prefers-reduced-motion:reduce){.bkx-seq>div{animation:none;opacity:1;transform:none}}
+</style>"""
+
+_BKX_FAQ = [
+ ('How do I book a truck load online with LoadBoot?', 'Three ways, all in the app: (1) Request to book — send a booking request the broker approves; (2) Propose rate — send your all-in counter, and approval books the load at your number; (3) Accept a direct offer — brokers push loads to matched carriers with a countdown, and accepting books instantly. No phone calls, no faxed setup packets.'),
+ ('Is anything committed before the broker approves my request?', 'No. A booking request (with or without a proposed rate) commits nothing until the broker approves it. Only a direct-offer accept books instantly — because there the broker already chose you.'),
+ ('What happens the exact moment a load is booked?', 'Booking is one atomic database transaction: the load converts to a trip, leaves every carrier&rsquo;s board, the rate confirmation and dispatch sheet are generated into your Documents, and the booking packet — exact addresses, GPS pins, pickup and release numbers — unlocks. It takes seconds, not a day of emails.'),
+ ('What is in the booking packet?', 'Everything that was redacted on the board: exact street addresses for every stop, GPS pins, pickup/release numbers, delivery confirmation numbers, appointment confirmations and facility contacts — plus the broker packet with the documents you&rsquo;ll need.'),
+ ('What is a dispatch sheet?', 'A one-page, printable trip brief generated automatically on booking: pickup and delivery details, freight specs, truck and driver, the accessorial rate card, documents to collect, tracking and POD instructions, and special notes — grouped so a driver can run the load without a single phone call.'),
+ ('Can a broker change the rate confirmation after booking?', 'No. The generated rate confirmation is immutable — there is no edit path for anyone, including LoadBoot dispatch. Any change requires a new, mutually accepted revision. You acknowledge the RC in-app and the PDF lives on the trip forever.'),
+ ('What if I book a load I can&rsquo;t actually make?', 'The board tries to stop that before it happens: an HOS-aware feasibility guard blocks bookings you can&rsquo;t legally reach on time (and suggests team if only a team can make it). After booking, a verified emergency gets a 2-hour-response reschedule instead of a TONU.'),
+ ('Do I need to call anyone before pickup?', 'No. By the time you assign a driver and truck, the trip has turn-by-turn navigation, armed geofences at every stop, a live countdown to pickup, and a documents-to-collect checklist. The first phone call most carriers make on LoadBoot is to say nothing at all.'),
+ ('How do brokers approve booking requests?', 'In the Partner Portal, with the carrier&rsquo;s verification status, safety record, equipment and document status in view — approve or decline in one click. Direct offers skip approval because the broker already picked the carrier.'),
+ ('Can shippers use one-tap booking too?', 'Booking is the carrier&rsquo;s side of the handshake — shippers and brokers post loads and run the offer race from the Partner Portal, then watch the booked trip live. See the load board page for the posting side.'),
+]
+_bkx_schema = '<script type="application/ld+json">' + json.dumps({
+  '@context':'https://schema.org','@type':'FAQPage',
+  'mainEntity':[{'@type':'Question','name':re.sub('<[^>]+>','',q),'acceptedAnswer':{'@type':'Answer','text':re.sub('<[^>]+>','',a)}} for q,a in _BKX_FAQ]}) + '</script>'
+
+bkx = FTX_CSS + LBX_CSS + BKX_CSS
+
+# HERO — the tap and the cascade
+bkx += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:84px 0 60px"><div class="wrap"><div class="lbx-grid2">'
+ '<div><div class="eyebrow" style="color:#FC5305">One-tap booking</div>'
+ '<h1 style="color:#fff;font-size:2.55rem;line-height:1.12;margin:10px 0 16px">Book truck loads in one tap &mdash; <span style="color:#4ade80">everything after it is automatic</span></h1>'
+ '<p style="color:#cbd5e1;font-size:1.08rem;line-height:1.7">On the phone-and-email system, &ldquo;booked&rdquo; means hours of setup packets, waiting on a rate con, and re-typing addresses into a driver text. On LoadBoot, the tap IS the booking: the rate confirmation, dispatch sheet, exact addresses and pickup numbers generate themselves in the same second. You found the load on the <a href="load-board.html" style="color:#7dd3fc">live board</a> &mdash; this page is what happens when you tap.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Book your first load &rarr;</a><a href="load-board.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">See the load board first</a></div>'
+ '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Rate con in seconds</span><span>&#x2713; Dispatch sheet auto-generated</span><span>&#x2713; Addresses &amp; PU numbers unlock instantly</span></div></div>'
+ '<div class="lbx-board reveal" aria-hidden="true">'
+ '<div class="lbx-load hot" style="margin-bottom:14px"><div class="ftx-row"><b style="color:#fff">Dallas, TX &rarr; Atlanta, GA &middot; $2,850</b><span class="ftx-chip ftx-green">&#x2713; BOOKED</span></div></div>'
+ '<div class="bkx-seq">'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">&#129534; Rate confirmation</span><span class="ftx-chip ftx-green">issued to Documents</span></div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">&#128203; Dispatch sheet</span><span class="ftx-chip ftx-green">generated &middot; PDF</span></div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">&#128274;&rarr;&#128275; Exact addresses + PU/release numbers</span><span class="ftx-chip ftx-green">unlocked</span></div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">&#128100; Assign driver &amp; truck</span><span class="ftx-chip ftx-blue">Marcus &middot; #402</span></div></div>'
+ '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><span style="color:#cbd5e1">&#9201; Pickup countdown</span><span class="bkx-timer" style="font-size:1rem">14:22:08</span></div></div>'
+ '</div>'
+ '<div style="text-align:center;color:#64748b;font-size:.76rem;margin-top:8px">One tap &mdash; then the platform does the paperwork.</div>'
+ '</div></div></div></section>')
+
+# The decision — the board does your math
+bkx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Before the tap</div><h2>Deciding is the hard part &mdash; so the platform does the math</h2></div>'
+ '<p class="ftx-p reveal" style="max-width:820px">A booking decision is really four questions: does it pay, can I get there, can I deliver on time, and who am I working with. On LoadBoot each one is answered on the card itself — computed, not claimed. (Full card anatomy is on the <a href="load-board.html">load board page</a>; here is the decision layer.)</p>'
+ '<div class="cards g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#128176;</div><h3>Does it pay?</h3><p>Set your <a href="cost-per-mile-calculator.html">cost per mile</a> once and every load shows estimated profit — rate minus your real running cost, not gross that lies to you.</p></div>'
+ '<div class="card"><div class="icon">&#128205;</div><h3>Can I get there?</h3><p>Deadhead is computed live from your GPS over real roads, and an HOS-aware chip answers it plainly: you&rsquo;ll make it &middot; tight, roll now &middot; you&rsquo;d be late.</p></div>'
+ '<div class="card"><div class="icon">&#127937;</div><h3>Can I deliver on time?</h3><p>The same clock runs to the delivery appointment — solo and team math are different, and the card knows which one you run.</p></div>'
+ '<div class="card"><div class="icon">&#129309;</div><h3>Who am I working with?</h3><p>The poster&rsquo;s verified badge, trust score, star rating, loads delivered and on-time % sit on the card — and their accessorial rate card is in writing before you commit.</p></div>'
+ '</div></div></section>')
+
+# The guards
+bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The guards</div><h2>Six gates that stop a bad booking before it happens</h2></div>'
+ '<p class="ftx-p reveal" style="max-width:780px">Most booking damage is self-inflicted: a load you weren&rsquo;t insured for, equipment you don&rsquo;t have, an appointment you couldn&rsquo;t legally make. LoadBoot checks all of it in the milliseconds before the request goes out — protecting your on-time score, your account health and your reputation.</p>'
+ '<div class="cards g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#128737;</div><h3>Verification gate</h3><p>MC/DOT authority, insurance and W-9 must be verified once — then booking is one tap forever.</p></div>'
+ '<div class="card"><div class="icon">&#9762;</div><h3>HAZMAT gate</h3><p>Hazmat loads stay locked until your hazmat certification is on file and verified.</p></div>'
+ '<div class="card"><div class="icon">&#128667;</div><h3>Equipment gate</h3><p>No reefer on your fleet roster, no reefer bookings — the board checks your actual trucks.</p></div>'
+ '<div class="card"><div class="icon">&#9200;</div><h3>Feasibility gate</h3><p>If HOS math says you&rsquo;d be late, the booking is blocked — and if a team could make it, it says so.</p></div>'
+ '<div class="card"><div class="icon">&#128197;</div><h3>Expiry gate</h3><p>Pickup date passed? The card is flagged EXPIRED and can&rsquo;t be booked by accident.</p></div>'
+ '<div class="card"><div class="icon">&#128202;</div><h3>Capacity gate</h3><p>All trucks rolling? The board tells you before you double-commit a truck you don&rsquo;t have free.</p></div>'
+ '</div></div></section>')
+
+# Three ways to book
+bkx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Three ways in</div><h2>Request it, price it, or accept it</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:26px;grid-template-columns:repeat(3,1fr)">'
+ '<div class="card"><div class="icon">&#128203;</div><h3>1 &middot; Request to book</h3><p>Happy with the posted rate? Send a booking request with an optional note. The broker approves with your safety record and documents in view. <b>Nothing is committed until they approve.</b></p></div>'
+ '<div class="card"><div class="icon">&#9998;</div><h3>2 &middot; Propose your rate</h3><p>Rate too low? Send your all-in counter. Approval books the load at <b>your</b> number, printed on the rate confirmation. Negotiation without a single hold queue.</p></div>'
+ '<div class="card"><div class="icon">&#9889;</div><h3>3 &middot; Accept a direct offer</h3><p>When a broker offers a load to you with a countdown, accepting <b>books instantly</b> — no approval step, because they already chose you. First accept wins.</p></div>'
+ '</div></div></section>')
+
+# The atomic second + packet unlock
+bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">The atomic second</div><h2 class="ftx-h">What happens in the second you book</h2>'
+ '<p class="ftx-p">Booking is a single race-safe transaction. In one indivisible step: the load converts to a trip on your account, it leaves every other carrier&rsquo;s board and inbox, competing offers auto-close, and the paperwork engine fires. There is no window — however small — where two carriers can hold the same load.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>The packet unlocks</b> &mdash; exact street addresses, GPS pins, pickup/release numbers, delivery confirmation numbers and facility contacts, all redacted until this second.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>The rate con is born immutable</b> &mdash; generated instantly, no edit path for anyone (including dispatch). Acknowledge in-app; the PDF lives on the trip forever. <a href="how-to-read-a-rate-confirmation.html">How to read a rate con</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Both sides get notified</b> &mdash; push and in-app, carrier and poster, the same second.</div></div>'
+ '</div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
+ '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#128275; Booking packet &middot; unlocked</div>'
+ '<div class="lbx-load"><div style="color:#94a3b8;font-size:.76rem">BEFORE BOOKING</div><div class="bkx-lock" style="color:#cbd5e1;margin-top:4px">4281 Commerce Dr, Dallas TX &middot; PU# 88-4471</div></div>'
+ '<div class="lbx-load" style="border-color:rgba(34,197,94,.45)"><div style="color:#4ade80;font-size:.76rem">AFTER BOOKING</div><div style="color:#fff;margin-top:4px;font-weight:700">4281 Commerce Dr, Dallas TX &middot; PU# 88-4471</div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#128205; GPS pin</span><span class="ftx-chip ftx-blue">Dock 06:00&ndash;14:00</span><span class="ftx-chip ftx-blue">Facility contact</span></div></div>'
+ '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><span style="color:#cbd5e1">Delivery confirmation #</span><b style="color:#fff">DL-20991</b></div></div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# Dispatch sheet anatomy
+bkx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Paperwork that writes itself</div><h2 class="ftx-h">The dispatch sheet: a trip brief your driver can run on</h2>'
+ '<p class="ftx-p">Generated the second you book, grouped the way a driver actually needs it, printable as PDF. Old-school dispatchers charge 5&ndash;10% partly to type this document; LoadBoot&rsquo;s writes itself from the load data — every time, no typos, no missed pickup number.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Nothing to re-type</b> &mdash; addresses, numbers and rates flow straight from the booked load.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Documents to collect</b> &mdash; the sheet lists exactly what the driver must bring back (BOL, lumper receipts, seals), so the invoice never waits on missing paper.</div></div>'
+ '</div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="bkx-doc">'
+ '<div class="bkx-doc-head">&#128203; DISPATCH SHEET &middot; Trip #4102 &middot; Dallas &rarr; Atlanta</div>'
+ '<div class="bkx-doc-row"><span>1 &middot; Pickup</span><b>4281 Commerce Dr &middot; PU# 88-4471 &middot; FCFS 06:00&ndash;14:00</b></div>'
+ '<div class="bkx-doc-row"><span>2 &middot; Delivery</span><b>DL-20991 &middot; appointment Jul 22, 09:00</b></div>'
+ '<div class="bkx-doc-row"><span>3 &middot; Freight</span><b>Paper goods &middot; 42,000 lb &middot; 24 pallets</b></div>'
+ '<div class="bkx-doc-row"><span>4 &middot; Truck &amp; driver</span><b>#402 &middot; Marcus T &middot; Dry Van 53&#8242;</b></div>'
+ '<div class="bkx-doc-row"><span>5 &middot; Accessorial rates</span><b>Det $60/hr after 2h &middot; TONU $250</b></div>'
+ '<div class="bkx-doc-row"><span>6 &middot; Documents to collect</span><b>Signed BOL &middot; lumper receipt</b></div>'
+ '<div class="bkx-doc-row"><span>7 &middot; Tracking &amp; POD</span><b>Geofence check-ins &middot; POD photo in-app</b></div>'
+ '<div class="bkx-doc-row" style="border-bottom:0"><span>8 &middot; Special instructions</span><b>Check in at guard shack, gate 3</b></div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# Booked -> rolling
+bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Booked &rarr; rolling</div><h2>Everything you need before the wheels turn</h2></div>'
+ '<div class="reveal" style="max-width:820px">' + steps_html([
+  ('Assign driver and truck', 'Pick from your fleet roster in two taps. The trip stepper starts: Booked &rarr; Dispatched &rarr; In transit &rarr; Delivered — and your whole team sees the same state.'),
+  ('The countdown starts', 'The trip hero shows a live HH:MM:SS countdown to pickup (it flips to overdue if you let it). No sticky-note ETAs.'),
+  ('Navigation and geofences arm themselves', 'Turn-by-turn routing to the exact pin, with an 800-meter geofence armed at every stop — arrival will be recorded automatically, and the detention clock with it. <a href="gps-tracking.html">How tracking works</a>.'),
+  ('Share one link, answer zero calls', 'Tap Share location and the poster watches the same live map — which is why LoadBoot carriers don&rsquo;t get &ldquo;where&rsquo;s the truck?&rdquo; calls.'),
+  ('A safety net is already standing by', 'Breakdown, weather, accident — report it in-app; a verified emergency gets a 2-hour-response reschedule with no TONU. <a href="emergency-rescheduling-policy.html">Emergency policy</a>.'),
+ ]) + '</div></div></section>')
+
+# Brokers/shippers/agents strip (4-sided)
+bkx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The other side of the tap</div><h2>What booking looks like for posters</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:26px;grid-template-columns:repeat(3,1fr)">'
+ '<div class="card"><div class="icon">&#127970;</div><h3>Brokers</h3><p>Approve requests with the carrier&rsquo;s verification, safety record and documents in one view — or skip approval entirely with direct offers. Every booking lands with the same instant paperwork. <a href="load-board.html#for-posters">Posting &amp; offers &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#127981;</div><h3>Shippers</h3><p>Your directly-posted freight books the same way — verified carriers, instant rate con, and a live trip you can watch from the same second. <a href="create-shipper-account.html">Shipper account guide &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#129309;</div><h3>Agents</h3><p>Every one-tap booking by a client you referred pays you 1% of gross on delivery. More bookings, more recurring income. <a href="agents.html">Agent program &rarr;</a></p></div>'
+ '</div></div></section>')
+
+# Comparison — booking specifically
+bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>One-tap booking vs phone-and-email booking</h2></div>'
+ '<div class="reveal" style="overflow-x:auto;margin-top:22px"><table class="ftx-cmp">'
+ '<tr><th></th><th>LoadBoot</th><th>Phone &amp; email</th></tr>'
+ '<tr><td>Time from yes to rate con</td><td class="ftx-yes">&#x2713; seconds &mdash; generated on booking</td><td class="ftx-no">&#10007; minutes to hours, sometimes after pickup</td></tr>'
+ '<tr><td>Setup packet</td><td class="ftx-yes">&#x2713; done once at verification, never again</td><td class="ftx-no">&#10007; emailed and re-signed per broker</td></tr>'
+ '<tr><td>Addresses &amp; PU numbers</td><td class="ftx-yes">&#x2713; unlock automatically, flow to dispatch sheet</td><td class="ftx-part">read over the phone, re-typed into texts</td></tr>'
+ '<tr><td>Rate con integrity</td><td class="ftx-yes">&#x2713; immutable &mdash; no edit path for anyone</td><td class="ftx-no">&#10007; &ldquo;revised&rdquo; PDFs appear after the fact</td></tr>'
+ '<tr><td>Double-booking</td><td class="ftx-yes">&#x2713; impossible &mdash; atomic transaction</td><td class="ftx-no">&#10007; two trucks show up; one goes home unpaid</td></tr>'
+ '<tr><td>Bad-fit bookings</td><td class="ftx-yes">&#x2713; six gates block them pre-tap</td><td class="ftx-no">&#10007; discovered at the dock</td></tr>'
+ '</table></div></div></section>')
+
+# FAQ
+bkx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>One-tap booking FAQ</h2></div><div style="max-width:820px">'
+ + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _BKX_FAQ)
+ + '</div></div></section>')
+
+# CTA
+bkx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:60px 0"><div class="wrap" style="text-align:center">'
+ '<h2 style="color:#fff;font-size:2rem">The next load you book takes one tap</h2>'
+ '<p style="color:#cbd5e1;max-width:620px;margin:12px auto 24px">Verify once — MC/DOT, insurance, W-9 — and booking is instant forever after.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
+ '<a href="create-carrier-account.html" class="btn btn-primary">&#128666; Create a carrier account</a>'
+ '<a href="load-board.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Explore the live board</a>'
+ '<a href="how-it-works.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Full platform flow</a>'
+ '</div></div></section>')
+
+RELATED['book-truck-loads.html'] = [('load-board.html','Live Load Board'),('how-to-read-a-rate-confirmation.html','Read a Rate Confirmation'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('features.html','All Features')]
+page('book-truck-loads.html', 'Book Truck Loads Online in One Tap — Instant Rate Confirmation & Dispatch Sheet | LoadBoot',
+     'Book truck loads online without phone calls: one tap books atomically, the immutable rate confirmation and dispatch sheet generate in seconds, exact addresses and pickup numbers unlock instantly, and six smart gates stop bad bookings before they happen. For carriers and owner-operators.',
+     'book-truck-loads.html', bkx, _bkx_schema)
 
 # ---------------- ACCOUNT / ONBOARDING GUIDES (per role) ----------------
 def _acct_page(fname, role, emoji, hero_sub, steps, shots_list, docs_note, portal_url):
