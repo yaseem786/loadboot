@@ -4275,7 +4275,7 @@ page('features.html', 'LoadBoot Features — Load Board, GPS Tracking, Payments,
      'Explore every LoadBoot feature: ghost-free load board, one-tap booking with e-signed rate confirmations, GPS geofence tracking with detention proof, receipt-verified payments, a full factoring/NOA engine, fleet tools, compliance automation and live two-way QuickBooks sync.',
      'features.html', feat, _feat_schema)
 
-# ---------------- LIVE LOAD BOARD — flagship product page (ghost-free board, portal-real UI) ----------------
+# ---------------- LIVE LOAD BOARD — flagship product page (code-verified features, zero invention) ----------------
 LBX_CSS = """<style>
 .lbx-board{background:linear-gradient(160deg,#0e1c38,#0b1220 70%);border-radius:22px;padding:22px;box-shadow:0 34px 80px -32px rgba(11,18,32,.6);color:#e2e8f0;font-size:.9rem}
 .lbx-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
@@ -4284,57 +4284,75 @@ LBX_CSS = """<style>
 .lbx-load{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:15px;padding:15px 17px;margin-bottom:11px;position:relative}
 .lbx-load.hot{border-color:rgba(34,197,94,.45)}
 .lbx-timerbar{height:5px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:10px}
-.lbx-timerbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#fbbf24,#f97316);animation:lbxDrain 14s linear infinite}
-@keyframes lbxDrain{0%{width:86%}100%{width:4%}}
-.lbx-booked{animation:lbxGone 7s ease-in-out infinite}
-@keyframes lbxGone{0%,55%{opacity:1;transform:none;max-height:200px}70%{opacity:1}82%{opacity:0;transform:translateX(26px)}92%,100%{opacity:0;max-height:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0}}
-.lbx-bookstamp{position:absolute;top:12px;right:14px;background:rgba(34,197,94,.18);color:#4ade80;font-weight:900;font-size:.72rem;padding:4px 11px;border-radius:999px;border:1px solid rgba(34,197,94,.5);opacity:0;animation:lbxStamp 7s ease-in-out infinite}
-@keyframes lbxStamp{0%,52%{opacity:0;transform:scale(.7)}60%,80%{opacity:1;transform:scale(1)}92%,100%{opacity:0}}
-.lbx-anat{position:relative;max-width:660px;margin:34px auto 0}
+.lbx-timerbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#fbbf24,#f97316);animation:lbxDrain 32s linear infinite}
+@keyframes lbxDrain{0%{width:88%}100%{width:6%}}
+.lbx-booked{animation:lbxFade 10s ease-in-out infinite}
+@keyframes lbxFade{0%,42%{opacity:1}52%,86%{opacity:.28}96%,100%{opacity:1}}
+.lbx-bookstamp{position:absolute;top:12px;right:14px;background:rgba(34,197,94,.18);color:#4ade80;font-weight:900;font-size:.72rem;padding:4px 11px;border-radius:999px;border:1px solid rgba(34,197,94,.5);opacity:0;animation:lbxStamp 10s ease-in-out infinite;pointer-events:none}
+@keyframes lbxStamp{0%,40%{opacity:0}48%,88%{opacity:1}97%,100%{opacity:0}}
+.lbx-livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px;animation:lbxPulse 1.6s ease-in-out infinite}
+@keyframes lbxPulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.5)}55%{box-shadow:0 0 0 7px rgba(74,222,128,0)}}
+@media(prefers-reduced-motion:reduce){.lbx-timerbar i,.lbx-booked,.lbx-bookstamp,.lbx-livedot{animation:none}.lbx-booked{opacity:1}}
 .lbx-callout{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
 .lbx-cnum{flex:none;width:24px;height:24px;border-radius:50%;background:#0883F7;color:#fff;font-weight:900;font-size:.74rem;display:flex;align-items:center;justify-content:center}
 .lbx-grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
 @media(max-width:880px){.lbx-grid2{grid-template-columns:1fr}}
 .lbx-ghost{background:#fff;border:1.5px dashed #fca5a5;border-radius:15px;padding:15px 17px;color:#7f1d1d;position:relative}
 .lbx-ghost .tag{position:absolute;top:-11px;left:14px;background:#dc2626;color:#fff;font-size:.66rem;font-weight:900;letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+.lbx-panel{background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:20px 22px;box-shadow:0 14px 40px -26px rgba(16,34,59,.25)}
+.lbx-ratecard td,.lbx-ratecard th{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:left;font-size:.9rem}
+.lbx-ratecard th{background:#f8fafc;color:#10223B}
+.lbx-ratecard td b{color:#0b7a3b}
 </style>"""
 
 _LBX_FAQ = [
- ('What is a ghost load?', 'A ghost load is a load posted on a load board that is no longer actually available — it was already covered, expired, or posted only to fish for carrier rates. Carriers waste hours calling on freight that does not exist. Industry surveys consistently rank ghost/fake loads among the top complaints about traditional load boards.'),
- ('How does LoadBoot guarantee zero ghost loads?', 'Because booking happens ON the platform, the board and the booking are the same system. The moment a load is booked or expires, it is removed from every carrier’s board automatically — in real time. A load you can see is a load you can book, always.'),
- ('How do direct offers work?', 'Brokers can push a load to matched carriers as a direct offer with a 15-minute window. Every offered carrier sees a live countdown; the first to accept wins the load and all other offers auto-close instantly — zero double-booking.'),
- ('Can I negotiate the rate?', 'Yes. Every load supports propose-a-rate: send your counter with one tap, the broker accepts or declines in-app, and an accepted counter converts straight into a booking with your rate on the rate confirmation.'),
- ('Who posts the loads on LoadBoot?', 'FMCSA-verified brokers and direct shippers post loads through the Partner Portal, with rate cards that include accessorial pay (detention, layover, TONU, lumper) up front. Carriers see the posting party on every card.'),
- ('Does it cost anything to use the load board?', 'Browsing and booking are free — carriers pay a flat 5% of gross only on loads dispatched through LoadBoot. No subscription, unlike load boards that charge $45–$150+ per month just to search.'),
+ ('What is a ghost load on a load board?', 'A ghost load is a load that looks bookable but is not — it was covered hours or days ago, expired, got reposted by a second broker, or was posted only to test what carriers will haul for. On classic load boards the posting and the booking live in different systems (phone and email), so nobody removes the dead post, and drivers burn hours calling freight that does not exist.'),
+ ('How does LoadBoot guarantee zero ghost loads?', 'Because booking happens ON the platform, the board and the booking are one system. The moment a load is booked it becomes a trip and leaves every carrier&rsquo;s board automatically — booking is atomic, so two carriers can never book the same load. Loads whose pickup date passed are flagged EXPIRED on the card instead of silently rotting.'),
+ ('Is the LoadBoot load board free?', 'Searching, filtering and booking are free — there is no monthly subscription. Carriers pay a flat 5% of gross only on loads dispatched through LoadBoot, and the settlement math (gross &minus; 5% = net) is printed on every trip. Classic boards charge $45–$150+ per month just to search.'),
+ ('What is the best load board for owner-operators?', 'The best board for an owner-operator is the one that protects your time and your rate: no ghost loads, the full all-in rate and rate-per-mile up front, accessorial pay (detention, layover, TONU, lumper) in writing before you book, live deadhead from your actual GPS position, and booking that instantly produces a rate confirmation. That is exactly how the LoadBoot board is built.'),
+ ('Can I find loads with a new MC or new authority?', 'Yes. LoadBoot verifies your MC/DOT authority, insurance and W-9 once, and from then on every load on the board is bookable in one tap — there is no authority-age wall. See our guide on getting loads with a new authority.'),
+ ('How do direct load offers work?', 'Brokers can push a load straight to matched carriers as a direct offer with a live countdown — 15 minutes standard (the broker can set 10 minutes up to 4 hours). Every offered carrier sees the timer ticking per second; the first to accept wins the load and every other offer closes automatically. If the window expires, the load simply stays on the open board.'),
+ ('Can I negotiate the rate on a load?', 'Yes — every card has Propose rate. You send your all-in counter with an optional note; the broker sees it and approves or declines in-app. Nothing is committed until the broker approves, and an approved counter books the load at your number.'),
+ ('What happens after I book a load?', 'The rate confirmation and a full dispatch sheet are issued to your Documents automatically, exact street addresses and GPS pins unlock, you assign a driver and truck, and live tracking with 800-meter geofence check-ins starts collecting detention evidence at every stop. Delivery flips the load to an invoice and a settlement statement.'),
+ ('Do loads include detention and accessorial pay?', 'Every load on LoadBoot carries a published accessorial rate card before you book: detention (standard $60/hr after 2 hours free), layover ($250/day), TONU ($250), lumper policy, driver-assist and extra-stop pay. Detention is auto-tracked from GPS arrive/depart times, so claims file themselves with proof.'),
+ ('Who posts the loads on LoadBoot?', 'Verified freight brokers and direct shippers post through the Partner Portal with exact GPS-pinned facilities, auto-calculated road miles, a market-rate estimator and a mandatory accessorial rate card. Carriers see who posted every load, with a trust score, star rating, loads delivered and on-time percentage.'),
 ]
 _lbx_schema = '<script type="application/ld+json">' + json.dumps({
   '@context':'https://schema.org','@type':'FAQPage',
-  'mainEntity':[{'@type':'Question','name':q,'acceptedAnswer':{'@type':'Answer','text':a}} for q,a in _LBX_FAQ]}) + '</script>'
+  'mainEntity':[{'@type':'Question','name':re.sub('<[^>]+>','',q),'acceptedAnswer':{'@type':'Answer','text':re.sub('<[^>]+>','',a)}} for q,a in _LBX_FAQ]}) + '</script>'
 
 lbx = FTX_CSS + LBX_CSS
 
+# HERO + live board
 lbx += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:84px 0 60px"><div class="wrap"><div class="lbx-grid2">'
  '<div><div class="eyebrow" style="color:#FC5305">Live load board</div>'
- '<h1 style="color:#fff;font-size:2.6rem;line-height:1.12;margin:10px 0 16px">The load board where <span style="color:#4ade80">every load is real</span></h1>'
- '<p style="color:#cbd5e1;font-size:1.1rem;line-height:1.7">No ghost freight. No “already covered” phone calls. No week-old reposts. On LoadBoot the board and the booking are one system — the second a load is booked or expires it vanishes from every screen, automatically. What you see is bookable right now, in one tap.</p>'
+ '<h1 style="color:#fff;font-size:2.55rem;line-height:1.12;margin:10px 0 16px">The truck load board where <span style="color:#4ade80">every load is real</span></h1>'
+ '<p style="color:#cbd5e1;font-size:1.08rem;line-height:1.7">Find truck loads without the ghost freight, the &ldquo;already covered&rdquo; phone calls or week-old reposts. On LoadBoot the board and the booking are one system: booked loads vanish from every screen instantly, rates are all-in with accessorial pay published before you book, and deadhead is computed live from your GPS — not guessed.</p>'
  '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Find real loads &rarr;</a><a href="create-broker-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Post a load</a></div>'
- '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Booked loads vanish instantly</span><span>&#x2713; 15-min direct offers</span><span>&#x2713; Propose-a-rate</span><span>&#x2713; $0 to browse</span></div></div>'
+ '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Zero ghost loads</span><span>&#x2713; Direct offers with live countdown</span><span>&#x2713; Propose-a-rate</span><span>&#x2713; $0 to search &middot; flat 5% only when dispatched</span></div></div>'
  '<div class="lbx-board reveal" aria-hidden="true">'
- '<div class="lbx-filters"><span class="lbx-filter on">All loads</span><span class="lbx-filter">Dry Van</span><span class="lbx-filter">Reefer</span><span class="lbx-filter">Flatbed</span><span class="lbx-filter">Near me</span></div>'
+ '<div class="lbx-filters"><span class="lbx-filter on">&#127760; Available loads</span><span class="lbx-filter">&#128232; Requests <b style="color:#fbbf24">2</b></span><span class="lbx-filter">&#9881; Filters &#9662;</span></div>'
  '<div class="lbx-load hot"><div class="ftx-row"><b style="color:#fff;font-size:1.03rem">Dallas, TX &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.12rem">$2,850</b></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">781 mi</span><span class="ftx-chip ftx-green">$3.65/mi &middot; Grade A</span><span class="ftx-chip ftx-purple">+1 stop</span></div>'
- '<div class="ftx-row" style="margin-top:9px"><span class="ftx-chip ftx-amber">&#9203; Direct offer &middot; 12:44 left</span><span class="ftx-chip ftx-green">Book in one tap &rarr;</span></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#128667; Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">781 mi &middot; $3.65/mi</span><span class="ftx-chip ftx-green">&asymp; est. profit +$1,240</span></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#128205; 42 mi deadhead &middot; live from your GPS</span><span class="ftx-chip ftx-green">&#9201; ~6h to pickup &mdash; you&rsquo;ll make it</span></div>'
+ '<div class="ftx-row" style="margin-top:9px"><span class="ftx-chip ftx-amber">&#127919; DIRECT REQUEST &middot; 12:44 left</span><span class="ftx-chip ftx-green">Request to book &rarr;</span></div>'
  '<div class="lbx-timerbar"><i></i></div></div>'
- '<div class="lbx-load lbx-booked"><span class="lbx-bookstamp">&#x2713; BOOKED &mdash; removed from board</span><div class="ftx-row"><b style="color:#fff">Chicago, IL &rarr; Newark, NJ</b><b style="color:#4ade80">$3,120</b></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer</span><span class="ftx-chip ftx-green">$3.90/mi</span><span class="ftx-chip ftx-blue">Propose a rate</span></div></div>'
  '<div class="lbx-load"><div class="ftx-row"><b style="color:#fff">Houston, TX &rarr; Memphis, TN</b><b style="color:#4ade80">$1,940</b></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Flatbed</span><span class="ftx-chip ftx-amber">$3.36/mi &middot; Grade B</span><span class="ftx-chip ftx-blue">FCFS 06:00&ndash;14:00</span></div></div>'
- '<div style="text-align:center;color:#64748b;font-size:.76rem;margin-top:4px">Live view &mdash; watch the booked load disappear. That is the whole point.</div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Flatbed &middot; tarps</span><span class="ftx-chip ftx-amber">$3.36/mi</span><span class="ftx-chip ftx-blue">FCFS 06:00&ndash;14:00</span><span class="ftx-chip ftx-blue">&#9998; Propose rate</span></div></div>'
+ '<div class="lbx-load lbx-booked"><span class="lbx-bookstamp">&#x2713; BOOKED &mdash; off every board</span><div class="ftx-row"><b style="color:#fff">Chicago, IL &rarr; Newark, NJ</b><b style="color:#4ade80">$3,120</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer &minus;10&deg;F</span><span class="ftx-chip ftx-green">$3.90/mi</span><span class="ftx-chip ftx-purple">+1 stop &middot; stop-off pay</span></div></div>'
+ '<div style="text-align:center;color:#64748b;font-size:.76rem;margin-top:4px"><span class="lbx-livedot"></span>Live board &mdash; a booked load dims out for everyone, instantly.</div>'
  '</div></div></div></section>')
 
+# SEO prose strip
+lbx += ('<section class="ftx-sec" style="padding-top:48px;padding-bottom:8px"><div class="wrap"><div class="lbx-panel reveal" style="max-width:900px;margin:0 auto">'
+ '<p class="ftx-p" style="margin:0">LoadBoot is a <b>free-to-search load board for truckers, owner-operators and small fleets</b> connected directly to verified freight brokers and shippers. Unlike subscription load boards, LoadBoot is a full dispatch platform: the same system that shows you the load also books it, issues the rate confirmation, tracks the trip by GPS, files detention with proof and settles the invoice. That is why ghost loads — the #1 complaint about traditional load boards — are structurally impossible here.</p>'
+ '</div></div></section>')
+
+# Ghost problem vs live
 lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
- '<div class="reveal"><div class="ftx-kicker">The industry problem</div><h2 class="ftx-h">What is a ghost load &mdash; and why boards are full of them</h2>'
- '<p class="ftx-p">A ghost load looks bookable but is not: it was covered hours ago, expired, got reposted by a second broker, or was never real — posted just to harvest carrier rate quotes. On classic boards the posting and the booking live in different worlds (the deal closes over phone and email), so nobody deletes the post. The result: drivers burn hours calling dead freight, and brokers drown in calls for loads they covered yesterday.</p>'
+ '<div class="reveal"><div class="ftx-kicker">The industry problem</div><h2 class="ftx-h">What is a ghost load &mdash; and why other boards are full of them</h2>'
+ '<p class="ftx-p">A ghost load looks bookable but is not: covered hours ago, expired, double-posted by a second broker, or never real at all — posted just to harvest carrier rate quotes. On classic boards the deal closes over phone and email, so nobody deletes the post. Drivers burn hours calling dead freight; brokers drown in calls for loads covered yesterday.</p>'
  '<div style="margin-top:14px">'
  '<div class="ftx-li"><span class="ftx-tick" style="background:#fee2e2;color:#dc2626">&#10007;</span><div><b>Stale posts</b> &mdash; covered loads stay listed for days because removal is manual.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick" style="background:#fee2e2;color:#dc2626">&#10007;</span><div><b>Double posting</b> &mdash; the same load on five boards under three brokers.</div></div>'
@@ -4343,69 +4361,196 @@ lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
  '<div style="margin-top:16px"><a href="ghost-loads-load-board-problems.html" class="btn btn-secondary">Deep dive: the ghost-load problem &rarr;</a></div></div>'
  '<div class="reveal"><div class="lbx-ghost" style="margin-bottom:14px"><span class="tag">GHOST LOAD</span><div style="display:flex;justify-content:space-between;font-weight:800"><span>Laredo, TX &rarr; Denver, CO</span><span>$2,400</span></div>'
  '<div style="font-size:.85rem;color:#b91c1c;margin-top:6px">Posted 3 days ago &middot; still listed</div>'
- '<div style="margin-top:10px;background:#fef2f2;border-radius:10px;padding:9px 12px;font-size:.85rem">&#128222; “Sorry, that one’s been covered since Tuesday…”</div></div>'
+ '<div style="margin-top:10px;background:#fef2f2;border-radius:10px;padding:9px 12px;font-size:.85rem">&#128222; &ldquo;Sorry, that one&rsquo;s been covered since Tuesday&hellip;&rdquo;</div></div>'
  '<div style="text-align:center;font-weight:900;color:#64748b;margin:10px 0">vs</div>'
  '<div class="lbx-board" style="padding:16px"><div class="lbx-load hot" style="margin-bottom:0"><div class="ftx-row"><b style="color:#fff">Laredo, TX &rarr; Denver, CO</b><b style="color:#4ade80">$2,400</b></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-green">&#9679; LIVE &mdash; bookable now</span><span class="ftx-chip ftx-blue">posted 14 min ago</span><span class="ftx-chip ftx-green">Book &rarr;</span></div></div></div></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-green"><span class="lbx-livedot"></span>LIVE &mdash; bookable now</span><span class="ftx-chip ftx-blue">posted 14 min ago</span></div></div></div></div>'
  '</div></div></section>')
 
+# How we kill them
 lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">How LoadBoot kills them</div><h2>One system for the post AND the booking</h2></div>'
- '<p class="ftx-p reveal" style="max-width:780px">Ghost loads survive when the board is just an ad and the deal happens elsewhere. LoadBoot closes that gap: posting, offering, negotiating, booking and paperwork all run in the same engine — so board truth is enforced by code, not by courtesy.</p>'
+ '<p class="ftx-p reveal" style="max-width:780px">Ghost loads survive when the board is just an advertisement and the deal happens elsewhere. LoadBoot closes that gap: posting, offering, negotiating, booking and paperwork run in one engine — so board truth is enforced by code, not by courtesy.</p>'
  '<div class="cards g4 reveal" style="margin-top:26px">'
- '<div class="card"><div class="icon">&#128228;</div><h3>1 &middot; Posted once</h3><p>A verified broker or shipper posts with a full rate card &mdash; accessorial pay included up front.</p></div>'
- '<div class="card"><div class="icon">&#9889;</div><h3>2 &middot; Offered live</h3><p>Matched carriers get a direct offer with a 15-minute countdown; the board shows it to everyone else.</p></div>'
- '<div class="card"><div class="icon">&#x2713;</div><h3>3 &middot; First accept wins</h3><p>One tap books it. Every other offer closes itself the same second &mdash; double-booking is impossible.</p></div>'
- '<div class="card"><div class="icon">&#128171;</div><h3>4 &middot; Gone everywhere</h3><p>Booked or expired &rarr; removed from every board, every phone, instantly. No stale posts, ever.</p></div>'
+ '<div class="card"><div class="icon">&#128228;</div><h3>1 &middot; Posted once</h3><p>A verified broker or shipper posts with GPS-pinned facilities, auto-calculated road miles and a full accessorial rate card.</p></div>'
+ '<div class="card"><div class="icon">&#9889;</div><h3>2 &middot; Offered live</h3><p>Matched carriers get a direct offer with a live countdown &mdash; 15 minutes standard &mdash; while the board shows it to everyone.</p></div>'
+ '<div class="card"><div class="icon">&#x2713;</div><h3>3 &middot; First accept wins</h3><p>Booking is atomic &mdash; one accept books it and every other offer closes itself the same second. Double-booking is impossible.</p></div>'
+ '<div class="card"><div class="icon">&#128171;</div><h3>4 &middot; Gone everywhere</h3><p>Booked &rarr; it becomes a trip and leaves every board instantly. Pickup date passed &rarr; the card is flagged EXPIRED, never silently stale.</p></div>'
  '</div></div></section>')
 
-lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Anatomy of a load card</div><h2>Every pixel on the card earns its place</h2></div>'
+# Search & filters
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Find loads your way</div><h2 class="ftx-h">Two feeds, instant filters, real deadhead</h2>'
+ '<p class="ftx-p">The board has two tabs: <b>&#128232; Requests</b> — loads brokers pushed directly to you, with live countdowns — and <b>&#127760; Available loads</b>, the open market. DAT-style instant filters narrow by origin, destination, equipment, minimum $/mi and minimum total rate.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Deadhead from your real position</b> &mdash; road miles from your live GPS or home base, not straight-line guesses.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Can-you-make-it chips</b> &mdash; every card computes hours to pickup and delivery against HOS (solo or team): green &ldquo;you&rsquo;ll make it&rdquo;, amber &ldquo;tight, roll now&rdquo;, red &ldquo;you&rsquo;d be late&rdquo;.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Est. profit on the card</b> &mdash; set your cost per mile once and every load shows estimated profit next to the rate. <a href="cost-per-mile-calculator.html">Know your cost per mile</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>&#128666; Post my truck</b> &mdash; post your truck&rsquo;s location, window and minimum $/mi, and auto-matching requests loads for you in the background.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><div class="lbx-board">'
+ '<div class="lbx-filters"><span class="lbx-filter on">Origin: Dallas, TX</span><span class="lbx-filter on">Dest: any</span><span class="lbx-filter on">Reefer</span><span class="lbx-filter on">Min $3.00/mi</span><span class="lbx-filter">Clear</span></div>'
+ '<div class="lbx-load"><div class="ftx-row"><b style="color:#fff">Dallas, TX &rarr; Miami, FL</b><b style="color:#4ade80">$4,380</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer 34&deg;F</span><span class="ftx-chip ftx-green">$3.32/mi</span><span class="ftx-chip ftx-blue">&#128205; 12 mi deadhead</span><span class="ftx-chip ftx-green">&#9201; makes it</span></div></div>'
+ '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><b style="color:#fff">Fort Worth, TX &rarr; Chicago, IL</b><b style="color:#4ade80">$3,150</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer &minus;10&deg;F</span><span class="ftx-chip ftx-green">$3.28/mi</span><span class="ftx-chip ftx-amber">&#9201; tight &mdash; roll now</span></div></div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# Card anatomy
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Anatomy of a load card</div><h2>Every pixel on the card earns its place</h2></div>'
  '<div class="lbx-grid2" style="margin-top:26px"><div class="reveal">'
  '<div class="lbx-board"><div class="lbx-load hot" style="margin-bottom:0"><div class="ftx-row"><b style="color:#fff;font-size:1.05rem">Benton, WI &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.2rem">$2,909</b></div>'
- '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">858 mi</span><span class="ftx-chip ftx-green">$3.39/mi &middot; Grade A</span></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-purple">&#128230; +1 stop &middot; stop-off pay $75</span><span class="ftx-chip ftx-amber">PU Jul 21 &middot; FCFS</span></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#127970; Persona Broker LLC &middot; &#9733; 4.8</span><span class="ftx-chip ftx-amber">&#9203; offer 09:12 left</span></div>'
- '<div class="ftx-row" style="margin-top:10px"><span class="ftx-chip ftx-blue">&#9998; Propose a rate</span><span class="ftx-chip ftx-green" style="font-size:.8rem">BOOK IN ONE TAP &rarr;</span></div>'
- '<div class="lbx-timerbar"><i></i></div></div></div></div>'
+ '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">858 mi &middot; $3.39/mi</span><span class="ftx-chip ftx-green">&asymp; est. profit +$1,180</span></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-purple">&#128230; +1 stop &middot; stop-off pay</span><span class="ftx-chip ftx-amber">PU Jul 21 &middot; FCFS 06:00&ndash;14:00</span><span class="ftx-chip ftx-blue">&#128100; Solo OK</span></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#127970; Verified broker &middot; trust 92/100 &middot; &#9733; 4.8</span></div>'
+ '<div style="margin-top:6px;color:#94a3b8;font-size:.78rem">&#129534; Rate card: detention $60/hr after 2h &middot; layover $250/day &middot; TONU $250 &middot; lumper reimbursed</div>'
+ '<div class="ftx-row" style="margin-top:10px"><span class="ftx-chip ftx-blue">&#9998; Propose rate</span><span class="ftx-chip ftx-blue">Details</span><span class="ftx-chip ftx-green" style="font-size:.8rem">REQUEST TO BOOK &rarr;</span></div></div></div></div>'
  '<div class="reveal">'
- '<div class="lbx-callout"><span class="lbx-cnum">1</span><div><b>All-in rate + true RPM</b> &mdash; rate-per-mile computed on road miles, not straight-line guesses. <a href="cost-per-mile-calculator.html">Know your cost per mile</a>.</div></div>'
- '<div class="lbx-callout"><span class="lbx-cnum">2</span><div><b>Load Score grade</b> &mdash; A–F grade against live market benchmarks, so a bad rate can’t hide. <a href="load-score.html">How Load Score works</a>.</div></div>'
- '<div class="lbx-callout"><span class="lbx-cnum">3</span><div><b>Multi-stop chips</b> &mdash; every extra pickup/drop shown per stop with its stop-off pay; the full route opens in one tap.</div></div>'
- '<div class="lbx-callout"><span class="lbx-cnum">4</span><div><b>Who posted it</b> &mdash; the broker/shipper name and rating on the card; both sides rate each other after delivery.</div></div>'
- '<div class="lbx-callout"><span class="lbx-cnum">5</span><div><b>Offer countdown</b> &mdash; a live 15-minute window when you’re directly offered; first accept wins.</div></div>'
- '<div class="lbx-callout"><span class="lbx-cnum">6</span><div><b>One-tap book / propose-a-rate</b> &mdash; book instantly, or counter and let the broker accept in-app. An accepted counter becomes the booking automatically.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">1</span><div><b>All-in rate + true RPM</b> &mdash; rate-per-mile on real road miles, plus estimated profit against your own cost model.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">2</span><div><b>Live deadhead &amp; feasibility</b> &mdash; miles from your GPS and HOS-aware &ldquo;can you make it&rdquo; chips protect your on-time record before you tap.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">3</span><div><b>Multi-stop chips</b> &mdash; every extra stop with its own stop-off pay; the full route opens in one tap (exact addresses unlock after booking).</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">4</span><div><b>Who posted it</b> &mdash; verified badge, trust score out of 100, star rating, loads delivered and on-time % — before you commit.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">5</span><div><b>Rate card on the card</b> &mdash; detention, layover, TONU and lumper policy printed before booking, with LoadBoot standards filling any gap.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">6</span><div><b>Everything disclosed</b> &mdash; commodity, weight, pallets, reefer temp, tarps, dock hours, load method, HAZMAT, team-required, cargo value. No &ldquo;call for details&rdquo;.</div></div>'
  '</div></div></div></section>')
 
-lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">After the tap</div><h2>Booking is a workflow, not a phone call</h2></div>'
+# Direct offers
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Direct offers</div><h2 class="ftx-h">The 15-minute race: first accept wins</h2>'
+ '<p class="ftx-p">Brokers push loads straight to matched carriers as <b>direct requests</b>. Each carrier sees a live countdown ticking every second — it turns red under five minutes. Accept, and the load books instantly: the rate confirmation and dispatch sheet are issued to your Documents automatically. Every other offer closes the same second.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>15 minutes standard</b> &mdash; the broker can set anywhere from 10 minutes to 4 hours, and extend a live window.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Expired &ne; dead</b> &mdash; if nobody accepts, the load simply stays on the open board, still bookable.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Declines carry a reason</b> &mdash; brokers learn why (rate, lane, timing) instead of silence.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><div class="lbx-board">'
+ '<div class="lbx-load hot"><div class="ftx-row"><b style="color:#fff">&#127919; Direct request &middot; reserved for you</b><b style="color:#f87171;font-variant-numeric:tabular-nums">04:52</b></div>'
+ '<div class="ftx-row" style="margin-top:8px"><b style="color:#fff">Kansas City, MO &rarr; Columbus, OH</b><b style="color:#4ade80">$2,640</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Dry Van</span><span class="ftx-chip ftx-green">$3.55/mi</span></div>'
+ '<div class="ftx-row" style="margin-top:10px"><span class="ftx-chip ftx-blue">Decline &middot; with reason</span><span class="ftx-chip ftx-green">ACCEPT &mdash; books instantly &#x2713;</span></div>'
+ '<div class="lbx-timerbar"><i></i></div></div>'
+ '<div class="lbx-load" style="margin-bottom:0;opacity:.55"><div class="ftx-row"><b style="color:#cbd5e1">Same load &middot; 2 other carriers offered</b><span class="ftx-chip ftx-amber">auto-closes when anyone accepts</span></div></div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# Propose a rate
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Negotiation, built in</div><h2 class="ftx-h">Propose your rate &mdash; in the app, not on hold</h2>'
+ '<p class="ftx-p">Rate too low? Tap <b>Propose rate</b>, enter your all-in number and an optional note. The broker sees your counter next to their posting and approves or declines in-app. Nothing is committed until they approve — and an approved counter books the load at <b>your</b> number, printed on the rate confirmation.</p></div>'
+ '<div class="reveal"><div class="lbx-panel">'
+ '<div style="font-weight:800;color:#10223B;margin-bottom:10px">&#9998; Propose your rate</div>'
+ '<div style="display:flex;justify-content:space-between;font-size:.9rem;color:#475569;border-bottom:1px solid #eef2f7;padding-bottom:8px"><span>Posted rate</span><b>$1,940</b></div>'
+ '<div style="display:flex;justify-content:space-between;font-size:.95rem;padding:10px 0;border-bottom:1px solid #eef2f7"><span style="color:#475569">Your all-in rate</span><b style="color:#0883F7">$2,150</b></div>'
+ '<div style="font-size:.85rem;color:#64748b;padding:10px 0">&ldquo;Tarps + 210 mi deadhead to pickup — $2,150 all-in and I can be there by 06:00.&rdquo;</div>'
+ '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;font-size:.85rem;color:#166534">&#x2713; Broker approved &mdash; booked at $2,150. Rate con issued to your Documents.</div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# Accessorial rate card
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Protections in writing</div><h2>Every load carries a published accessorial rate card</h2></div>'
+ '<p class="ftx-p reveal" style="max-width:780px">On other boards, detention is a phone argument. On LoadBoot it&rsquo;s a table you see <b>before</b> booking — and because every stop is geofenced, arrive/depart times are recorded automatically, so accessorial claims file themselves with GPS proof.</p>'
+ '<div class="reveal" style="overflow-x:auto;margin-top:20px;max-width:820px"><table class="lbx-ratecard" style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e6ebf3;border-radius:14px">'
+ '<tr><th>Accessorial</th><th>LoadBoot standard</th><th>Policy</th></tr>'
+ '<tr><td>Detention</td><td><b>$60/hr</b> after <b>2 hours free</b> &middot; auto-tracked by GPS</td><td><a href="detention-pay-policy.html">Detention policy</a></td></tr>'
+ '<tr><td>Layover</td><td><b>$250/day</b></td><td><a href="layover-policy.html">Layover policy</a></td></tr>'
+ '<tr><td>TONU (truck ordered, not used)</td><td><b>$250</b></td><td><a href="tonu-policy.html">TONU policy</a></td></tr>'
+ '<tr><td>Lumper</td><td><b>Reimbursed with receipt</b></td><td><a href="lumper-policy.html">Lumper policy</a></td></tr>'
+ '<tr><td>Driver assist</td><td><b>$75/stop</b></td><td><a href="driver-assist-policy.html">Driver-assist policy</a></td></tr>'
+ '<tr><td>Extra stop</td><td><b>Paid per stop</b> &middot; shown on the card</td><td><a href="driver-assist-policy.html">Stop-off pay</a></td></tr>'
+ '<tr><td>Scheduling</td><td><b>FCFS or appointment</b> &mdash; declared up front</td><td><a href="fcfs-policy.html">FCFS policy</a></td></tr>'
+ '</table></div></div></section>')
+
+# Multi-stop + booking gates
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Multi-stop, done right</div><h2 class="ftx-h">Every extra stop has its own geofence, clock and pay</h2>'
+ '<p class="ftx-p">Multi-stop loads show each stop as <b>City, ST + purpose</b> on the board (exact addresses and GPS pins unlock when you book, and print on the rate con). Each stop gets its own 800-meter geofence, its own detention clock and its own stop-off fee. Posters can add up to 3 extra stops — and a lane-fit guard rejects stops that turn one lane into a milk run.</p>'
+ '<div class="ftx-kicker" style="margin-top:26px">The board that protects your record</div><h2 class="ftx-h" style="font-size:1.5rem">Gates before booking &mdash; so you never book a load that hurts you</h2>'
+ '<div style="margin-top:8px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Verified accounts only</b> &mdash; MC/DOT authority, insurance and W-9 checked once, then one-tap booking forever.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Equipment &amp; HAZMAT match</b> &mdash; you can&rsquo;t book a reefer load without a reefer on file, or hazmat without the cert.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Feasibility guard</b> &mdash; if HOS math says you&rsquo;d be late, the board blocks the booking and protects your on-time score (and suggests team if team can make it).</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Capacity aware</b> &mdash; when all your trucks are rolling, the board tells you instead of letting you double-commit.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><div class="lbx-board">'
+ '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#128230; Route &middot; 2 pickups &middot; 2 drops</div>'
+ '<div class="lbx-load"><span class="ftx-chip ftx-blue">1 &middot; PU</span> <b style="color:#fff">Benton, WI</b> <span style="color:#94a3b8;font-size:.8rem">&middot; live load</span></div>'
+ '<div class="lbx-load"><span class="ftx-chip ftx-purple">2 &middot; STOP</span> <b style="color:#fff">Rockford, IL</b> <span class="ftx-chip ftx-green">stop-off pay</span> <span style="color:#94a3b8;font-size:.8rem">own geofence &middot; own detention clock</span></div>'
+ '<div class="lbx-load" style="margin-bottom:0"><span class="ftx-chip ftx-amber">3 &middot; DEL</span> <b style="color:#fff">Atlanta, GA</b> <span style="color:#94a3b8;font-size:.8rem">&middot; exact address after booking</span></div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# After the tap
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">After the tap</div><h2>Booking is a workflow, not a phone call</h2></div>'
  '<div class="reveal" style="max-width:820px">' + steps_html([
-  ('Rate confirmation, e-signed', 'Booking is gated on the RC — it generates instantly, you e-sign in-app, and the signed PDF lives on the trip forever. No “send me the rate con” limbo. '),
-  ('Driver + truck assigned', 'Assign from your fleet roster; the dispatch sheet prints itself with stops, contacts and the rate card.'),
-  ('GPS proof from mile zero', 'The trip goes live with 800m geofence check-ins at every stop — detention evidence starts collecting automatically. <a href="gps-tracking.html">See tracking &amp; proof</a>.'),
-  ('Delivery flips the invoice', 'POD approved &rarr; a premium invoice is generated and emailed, DUE with a pay-by date. <a href="payments-settlements.html">See payments</a>.'),
+  ('Rate con + dispatch sheet, instantly', 'The immutable rate confirmation and a full dispatch sheet (stops, contacts, accessorial rates, documents to collect) are issued to your Documents automatically — acknowledge the RC in-app. Exact addresses, GPS pins and pickup/release numbers unlock now.'),
+  ('Assign driver + truck', 'Pick from your fleet roster; the trip stepper goes Booked &rarr; Dispatched &rarr; In transit &rarr; Delivered.'),
+  ('GPS proof from mile zero', '800-meter geofences auto-record arrive/depart at every stop, detention clocks run themselves, and tracking locks on until delivery. Breakdown? A 2-hour-response emergency engine reschedules verified emergencies with no TONU. <a href="gps-tracking.html">See tracking &amp; proof</a>.'),
+  ('Delivery flips the money', 'POD uploaded &rarr; invoice generated and emailed. Settlement shows gross &minus; flat 5% = net, with your per-mile. Factoring supported (NOA on file, per-broker routing) and books sync to QuickBooks. <a href="payments-settlements.html">See payments</a>.'),
+  ('Reload before you park', 'Suggested reloads near your destination appear on the delivered trip — keep the wheels earning.'),
  ]) + '</div></div></section>')
 
+# Posting side
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">For brokers &amp; shippers</div><h2 class="ftx-h">Post in minutes. Covered in minutes. Watched live.</h2>'
+ '<p class="ftx-p">The posting wizard autocompletes GPS-pinned facilities, calculates road miles through every stop, suggests a market rate, and requires the accessorial rate card up front — which is exactly why verified carriers book fast. Then target: put the load on the board, or fire direct offers at specific carriers with a countdown you control.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Offer race, managed</b> &mdash; see sent / awaiting / declined counts live; withdraw or extend windows; first acceptance books atomically.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Live tracking view</b> &mdash; milestone timeline, live GPS truck marker with ETA, and detention accruing per stop in real time — you see the $ building, with the same numbers the carrier sees.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Server-verified event log</b> &mdash; every arrive/depart/POD is timestamped evidence, so disputes end before they start.</div></div>'
+ '</div>'
+ '<div style="margin-top:16px"><a href="create-broker-account.html" class="btn btn-primary">Post your first load &rarr;</a> &nbsp; <a href="shipper-solutions.html" class="btn btn-secondary">Shipper solutions</a></div></div>'
+ '<div class="reveal"><div class="lbx-board">'
+ '<div style="font-weight:800;color:#fff;margin-bottom:10px">Your load &middot; Dallas &rarr; Atlanta</div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">Direct offers</span><span class="ftx-chip ftx-amber">3 sent &middot; 2 awaiting &middot; 09:12 left</span></div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">Status</span><span class="ftx-chip ftx-green">&#x2713; Carrier accepted &mdash; dispatched</span></div>'
+ '<div style="margin-top:8px;color:#94a3b8;font-size:.8rem"><span class="lbx-livedot"></span>Live GPS &middot; I-20 E near Shreveport &middot; ETA 17:40</div></div>'
+ '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><span style="color:#cbd5e1">Detention @ pickup</span><b style="color:#fbbf24">1h 38m in dock &middot; $0 (free 2h)</b></div></div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# 4 roles
 lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Every side wins</div><h2>A truthful board works for all four sides</h2></div>'
  '<div class="cards g4 reveal" style="margin-top:26px">'
- '<div class="card"><div class="icon">&#128666;</div><h3>Carriers</h3><p>Stop calling dead freight. Every card is bookable, graded, and paid on published accessorial rates. <a href="create-carrier-account.html">Create a carrier account &rarr;</a></p></div>'
- '<div class="card"><div class="icon">&#127970;</div><h3>Brokers</h3><p>Your load reaches verified, health-scored carriers in a 15-minute offer race — covered in minutes with proof, not 40 phone calls. <a href="create-broker-account.html">Create a broker account &rarr;</a></p></div>'
- '<div class="card"><div class="icon">&#127981;</div><h3>Shippers</h3><p>Post freight directly, watch it move on live GPS, and keep documents and payables in one place. <a href="create-shipper-account.html">Create a shipper account &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#128666;</div><h3>Carriers</h3><p>Stop calling dead freight. Every card is bookable, disclosed and protected by a written rate card. <a href="create-carrier-account.html">Create a carrier account &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#127970;</div><h3>Brokers</h3><p>Reach verified carriers in a countdown offer race — covered in minutes with GPS evidence, not 40 phone calls. <a href="create-broker-account.html">Create a broker account &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#127981;</div><h3>Shippers</h3><p>Post freight directly with pinned facilities, watch it move live, keep documents and payables in one place. <a href="create-shipper-account.html">Create a shipper account &rarr;</a></p></div>'
  '<div class="card"><div class="icon">&#129309;</div><h3>Agents</h3><p>Every load your referred clients book here pays you 1% of gross on delivery — recurring. <a href="create-agent-account.html">Become an agent &rarr;</a></p></div>'
  '</div></div></section>')
 
-lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>LoadBoot board vs classic load boards</h2></div>'
+# Comparison
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>LoadBoot vs classic load boards</h2></div>'
  '<div class="reveal" style="overflow-x:auto;margin-top:22px"><table class="ftx-cmp">'
  '<tr><th></th><th>LoadBoot</th><th>Classic load boards</th></tr>'
  '<tr><td>Ghost loads</td><td class="ftx-yes">&#x2713; impossible &mdash; booked loads auto-vanish</td><td class="ftx-no">&#10007; common &mdash; removal is manual</td></tr>'
- '<tr><td>Booking</td><td class="ftx-yes">&#x2713; one tap, on-platform, RC e-signed</td><td class="ftx-part">phone + email + fax</td></tr>'
- '<tr><td>Rate transparency</td><td class="ftx-yes">&#x2713; all-in rate, RPM, Load Score grade, accessorials up front</td><td class="ftx-part">“call for rate”</td></tr>'
- '<tr><td>Double-booking</td><td class="ftx-yes">&#x2713; impossible &mdash; first accept auto-closes the rest</td><td class="ftx-no">&#10007; happens weekly</td></tr>'
- '<tr><td>What happens after booking</td><td class="ftx-yes">&#x2713; GPS proof, POD, auto-invoice in the same system</td><td class="ftx-no">&#10007; you’re on your own</td></tr>'
+ '<tr><td>Booking</td><td class="ftx-yes">&#x2713; one tap, atomic, rate con issued instantly</td><td class="ftx-part">phone + email + fax</td></tr>'
+ '<tr><td>Rate transparency</td><td class="ftx-yes">&#x2713; all-in rate, true RPM, est. profit, accessorials up front</td><td class="ftx-part">&ldquo;call for rate&rdquo;</td></tr>'
+ '<tr><td>Deadhead</td><td class="ftx-yes">&#x2713; live road miles from your GPS</td><td class="ftx-no">&#10007; straight-line guess, if shown</td></tr>'
+ '<tr><td>Detention &amp; accessorials</td><td class="ftx-yes">&#x2713; published pre-book, geofence-proven claims</td><td class="ftx-no">&#10007; phone argument after the fact</td></tr>'
+ '<tr><td>Who you&rsquo;re working with</td><td class="ftx-yes">&#x2713; verified badge, trust score, rating, on-time %</td><td class="ftx-part">credit score, maybe</td></tr>'
+ '<tr><td>After booking</td><td class="ftx-yes">&#x2713; GPS proof, POD, invoice, 5% settlement — same system</td><td class="ftx-no">&#10007; you&rsquo;re on your own</td></tr>'
  '<tr><td>Cost to search</td><td class="ftx-yes">$0 &mdash; flat 5% only on dispatched loads</td><td class="ftx-part">$45&ndash;$150+/month subscription</td></tr>'
  '</table></div></div></section>')
 
-lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Load board FAQ</h2></div><div style="max-width:820px">'
+# SEO: owner-operator / new authority prose
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Built for the little guy</div><h2 class="ftx-h">A load board for owner-operators and new authorities</h2>'
+ '<p class="ftx-p">Big boards price small carriers out and bury them under broker spam. LoadBoot flips that: no monthly fee to search, no authority-age wall, and the platform&rsquo;s protections — written rate cards, geofence-proven detention, instant rate cons — matter most when you don&rsquo;t have a back office. Verify once (MC/DOT, insurance, W-9), set your minimum $/mi and lanes, and the board works for you: direct requests land in your inbox and Post-my-truck auto-matches while you drive.</p>'
+ '<p class="ftx-p">New authority? Read <a href="how-to-get-loads-with-new-authority.html">how to get loads with a new authority</a>, learn to <a href="how-to-read-a-rate-confirmation.html">read a rate confirmation</a>, and check <a href="market-rates.html">current market rates per mile</a> before you set your minimums.</p></div>'
+ '<div class="reveal"><div class="lbx-panel">'
+ '<div style="font-weight:800;color:#10223B;margin-bottom:12px">Set once &mdash; the board filters itself</div>'
+ '<div style="display:flex;flex-wrap:wrap;gap:8px">'
+ '<span class="ftx-chip ftx-blue">Min $2.40/mi</span><span class="ftx-chip ftx-blue">Dry Van &middot; Reefer</span><span class="ftx-chip ftx-blue">Lanes: TX &harr; Southeast</span><span class="ftx-chip ftx-blue">Max deadhead 150 mi</span><span class="ftx-chip ftx-blue">Avoid: NYC</span><span class="ftx-chip ftx-blue">Weekends: OK</span><span class="ftx-chip ftx-green">Home base: Dallas, TX</span>'
+ '</div>'
+ '<div style="margin-top:14px;background:#f8fafc;border-radius:10px;padding:10px 12px;font-size:.85rem;color:#475569">&#128276; 3 direct requests this week matched your prefs &mdash; countdown running on 1.</div>'
+ '</div></div>'
+ '</div></div></section>')
+
+# FAQ
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Load board FAQ</h2></div><div style="max-width:820px">'
  + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _LBX_FAQ)
  + '</div></div></section>')
 
+# CTA band
 lbx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:60px 0"><div class="wrap" style="text-align:center">'
  '<h2 style="color:#fff;font-size:2rem">See the real board with your own account</h2>'
  '<p style="color:#cbd5e1;max-width:620px;margin:12px auto 24px">Free to create, verified in minutes. The board you just saw is the board you get.</p>'
@@ -4415,9 +4560,9 @@ lbx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="features.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">All features</a>'
  '</div></div></section>')
 
-RELATED['load-board.html'] = [('features.html','All Features'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('load-score.html','Load Score'),('gps-tracking.html','GPS Tracking'),('market-rates.html','Market Rates'),('how-it-works.html','How It Works')]
-page('load-board.html', 'Live Load Board with Zero Ghost Loads — Book Freight in One Tap | LoadBoot',
-     'LoadBoot’s live load board has zero ghost loads: booked or expired freight vanishes instantly. Direct offers with a 15-minute first-accept-wins window, propose-a-rate, Load Score grades, multi-stop pay and one-tap booking with e-signed rate confirmations.',
+RELATED['load-board.html'] = [('features.html','All Features'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('how-to-get-loads-with-new-authority.html','Loads with New Authority'),('gps-tracking.html','GPS Tracking'),('market-rates.html','Market Rates'),('payments-settlements.html','Payments & Settlements')]
+page('load-board.html', 'Load Board for Truckers with Zero Ghost Loads — Find & Book Truck Loads Free | LoadBoot',
+     'Free-to-search truck load board with zero ghost loads: booked freight vanishes instantly. Direct offers with live countdowns, propose-a-rate, real GPS deadhead, published detention/TONU/layover pay, one-tap booking with instant rate confirmations. For carriers, owner-operators, brokers & shippers.',
      'load-board.html', lbx, _lbx_schema)
 
 # ---------------- ACCOUNT / ONBOARDING GUIDES (per role) ----------------
