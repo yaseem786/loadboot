@@ -3933,31 +3933,288 @@ def cta_row(pairs):
     return '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">' + ''.join(
         '<a href="' + h + '" class="btn ' + ('btn-primary' if i == 0 else 'btn-secondary') + '">' + t + '</a>' for i, (t, h) in enumerate(pairs)) + '</div>'
 
-# ---------------- FEATURES HUB ----------------
-feat = svc_hero('Every feature, publicly documented', 'LoadBoot is a complete trucking operating system — not a dispatch phone desk. This page maps everything that exists in the product today, with a guide for each piece.')
-_FEAT = [
- ('&#128230;','Live load board','Ghost-load-free board — booked or expired loads vanish instantly. Direct offers, propose-a-rate, multi-stop chips.','how-it-works.html'),
- ('&#128752;','GPS tracking &amp; geofence proof','Built-in live tracking, 800m geofence check-ins at EVERY stop, detention clock, background-proof handoff to Google Maps.','gps-tracking.html'),
- ('&#128176;','Payments &amp; settlements','Receipt-verified rails: DUE ledger with pay-by dates, one-receipt trip settlement, confirm loops, reminders and disputes.','payments-settlements.html'),
- ('&#127974;','Factoring &amp; NOA engine','Full Notice-of-Assignment support: factor remit-to on every pay panel, per-broker direct control, releases, UCC &sect;9-406 guardrails.','factoring-noa.html'),
- ('&#9888;','Detention / TONU / layover / lumper','Auto-filed claims with GPS evidence and rate-card amounts. Every accessorial has a public policy page.','detention-pay-policy.html'),
- ('&#128101;','Fleet management','Drivers, trucks, trailers, service records, driver payroll, safety desk, IFTA state miles and per-trip P&amp;L.','fleet-management.html'),
- ('&#129309;','Agent Program','Independent dispatchers earn 1% of gross on delivered loads, 5 levels of overrides, CRM-grade chain tracking and a payout center.','agents.html'),
- ('&#128279;','API &amp; integrations','Developer portal with API keys today; ELD, accounting and fuel-card integrations on the public roadmap.','integrations.html'),
+# ---------------- FEATURES HUB — flagship, DAT/Relay-grade rich page ----------------
+FTX_CSS = """<style>
+.ftx-nav{position:sticky;top:64px;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid #e6ebf3;padding:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ftx-nav .wrap{display:flex;gap:8px;flex-wrap:nowrap;white-space:nowrap}
+.ftx-nav a{flex:none;padding:7px 14px;border-radius:999px;border:1px solid #dbe4f0;font-size:.82rem;font-weight:700;color:#334155;background:#fff}
+.ftx-nav a:hover{border-color:#0883F7;color:#0883F7}
+.ftx-sec{padding:64px 0;scroll-margin-top:130px}
+.ftx-sec.alt{background:#f6f9fd}
+.ftx-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+@media(max-width:880px){.ftx-grid{grid-template-columns:1fr}}
+.ftx-kicker{color:#FC5305;font-weight:800;font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+.ftx-h{font-size:1.9rem;line-height:1.2;color:#10223B;margin:0 0 14px}
+.ftx-p{color:#475569;line-height:1.8;font-size:1.01rem}
+.ftx-li{display:flex;gap:10px;margin:9px 0;color:#334155;line-height:1.6}
+.ftx-li b{color:#10223B}
+.ftx-tick{flex:none;width:20px;height:20px;border-radius:7px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem;margin-top:2px}
+.ftx-mock{background:linear-gradient(160deg,#0e1c38,#0b1220 70%);border-radius:20px;padding:26px;box-shadow:0 30px 70px -30px rgba(11,18,32,.55);color:#e2e8f0;font-size:.9rem}
+.ftx-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.ftx-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.7rem;font-weight:800;margin:2px 4px 2px 0}
+.ftx-green{background:rgba(34,197,94,.16);color:#4ade80}.ftx-blue{background:rgba(8,131,247,.16);color:#7cc0ff}.ftx-amber{background:rgba(245,158,11,.16);color:#fbbf24}.ftx-purple{background:rgba(139,92,246,.18);color:#c4b5fd}.ftx-red{background:rgba(239,68,68,.15);color:#fca5a5}
+.ftx-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ftx-bar{height:7px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:8px}
+.ftx-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#4ade80)}
+.ftx-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px}
+@media(max-width:760px){.ftx-stats{grid-template-columns:1fr 1fr}}
+.ftx-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:18px 14px;text-align:center}
+.ftx-stat b{display:block;font-size:1.6rem;color:#fff}
+.ftx-stat span{font-size:.74rem;color:#94a3b8;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.ftx-cmp{width:100%;border-collapse:collapse;font-size:.92rem}
+.ftx-cmp th,.ftx-cmp td{padding:12px 14px;border-bottom:1px solid #e6ebf3;text-align:left;vertical-align:top}
+.ftx-cmp th{background:#10223B;color:#fff;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase}
+.ftx-cmp td:first-child{font-weight:700;color:#10223B}
+.ftx-yes{color:#16a34a;font-weight:800}.ftx-no{color:#dc2626;font-weight:800}.ftx-part{color:#b45309;font-weight:700}
+</style>"""
+
+def fsec(sid, kicker, h, body_html, mock_html, alt=False, flip=False):
+    cols = ('<div class="reveal">' + mock_html + '</div><div class="reveal">' + body_html + '</div>') if flip else ('<div class="reveal">' + body_html + '</div><div class="reveal">' + mock_html + '</div>')
+    return ('<section class="ftx-sec' + (' alt' if alt else '') + '" id="' + sid + '"><div class="wrap"><div class="ftx-grid">' + cols + '</div></div></section>')
+
+def fbody(kicker, h, p, items, guide=None):
+    out = '<div class="ftx-kicker">' + kicker + '</div><h2 class="ftx-h">' + h + '</h2><p class="ftx-p">' + p + '</p><div style="margin-top:16px">'
+    for it in items:
+        out += '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div>' + it + '</div></div>'
+    out += '</div>'
+    if guide: out += '<div style="margin-top:18px"><a href="' + guide[1] + '" class="btn btn-secondary">' + guide[0] + ' &rarr;</a></div>'
+    return out
+
+feat = FTX_CSS
+feat += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:88px 0 64px"><div class="wrap">'
+ '<div class="eyebrow" style="color:#FC5305">The complete platform</div>'
+ '<h1 style="color:#fff;font-size:2.7rem;line-height:1.12;max-width:820px;margin:10px 0 16px">Every LoadBoot feature. One page. <span style="color:#0883F7">All real.</span></h1>'
+ '<p style="color:#cbd5e1;font-size:1.12rem;max-width:700px;line-height:1.7">From a ghost-free load board to GPS-verified delivery, receipt-verified payments, factoring, fleet tools and live QuickBooks sync &mdash; this is everything in the product today. No vaporware: every section links to a deep guide.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:26px"><a href="get-started.html" class="btn btn-primary">Create an account &rarr;</a><a href="how-it-works.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">How it works</a></div>'
+ '<div class="ftx-stats reveal">'
+ '<div class="ftx-stat"><b>5%</b><span>flat dispatch fee</span></div>'
+ '<div class="ftx-stat"><b>$0</b><span>monthly &middot; no contracts</span></div>'
+ '<div class="ftx-stat"><b>800m</b><span>geofence proof at every stop</span></div>'
+ '<div class="ftx-stat"><b>2-way</b><span>QuickBooks sync &mdash; live</span></div>'
+ '</div></div></section>')
+
+feat += ('<nav class="ftx-nav"><div class="wrap">'
+ '<a href="#board">Load board</a><a href="#booking">Booking</a><a href="#tracking">Tracking &amp; proof</a><a href="#money">Payments</a><a href="#factoring">Factoring</a><a href="#accessorials">Accessorials</a><a href="#fleet">Fleet</a><a href="#docs">Compliance</a><a href="#accounting">Accounting</a><a href="#integrations">Integrations</a><a href="#partners">Brokers &amp; shippers</a><a href="#agents">Agents</a><a href="#security">Security</a>'
+ '</div></nav>')
+
+feat += fsec('board','Find freight','A load board with zero ghost loads',
+ fbody('Find freight','A load board with zero ghost loads',
+  'Booked or expired loads vanish the second they die &mdash; what you see is bookable right now. Brokers push direct offers to matched trucks; you can book in one tap or propose your own rate.',
+  ['<b>Direct offers</b> &mdash; brokers offer matched carriers first; a 15-minute window, first accept wins, everyone else auto-closes.',
+   '<b>Propose-a-rate</b> &mdash; counter any load; the broker accepts or declines in-app.',
+   '<b>Multi-stop chips</b> &mdash; extra pickups and drops shown per stop with stop-off pay on the rate card.',
+   '<b>Load Score</b> &mdash; every load graded on rate-per-mile vs live market benchmarks. <a href="load-score.html">See Load Score</a>.'],
+  ('Read the full guide','how-it-works.html')),
+ ('<div class="ftx-mock"><div class="ftx-card"><div class="ftx-row"><b style="color:#fff;font-size:1.05rem">Dallas, TX &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.15rem">$2,850</b></div>'
+  '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">781 mi</span><span class="ftx-chip ftx-green">$3.65/mi</span><span class="ftx-chip ftx-purple">&#128230; +1 stop</span></div>'
+  '<div class="ftx-row" style="margin-top:11px"><span class="ftx-chip ftx-amber">&#9203; Offer 12:44 left</span><span class="ftx-chip ftx-green">Book in one tap &rarr;</span></div></div>'
+  '<div class="ftx-card"><div class="ftx-row"><b style="color:#fff">Chicago, IL &rarr; Newark, NJ</b><b style="color:#4ade80">$3,120</b></div>'
+  '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Reefer</span><span class="ftx-chip ftx-green">$3.90/mi &middot; Grade A</span><span class="ftx-chip ftx-blue">Propose a rate</span></div></div>'
+  '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:6px">Booked loads disappear instantly &mdash; no ghost freight, ever</div></div>')
+ )
+
+feat += fsec('booking','Book &amp; roll','Booking with paperwork that enforces itself',
+ fbody('Book &amp; roll','Booking with paperwork that enforces itself',
+  'Booking is not a phone call &mdash; it is a gated workflow. The rate confirmation is e-signed before a wheel turns, the dispatch sheet prints itself, and every stop lands on the trip map with times.',
+  ['<b>Rate confirmation e-sign</b> &mdash; booking is blocked until the RC is signed; the signed PDF lives on the trip forever.',
+   '<b>Booking approvals</b> &mdash; brokers approve requests with the carrier&rsquo;s safety record and document status in view.',
+   '<b>Dispatch sheet</b> &mdash; one-click printable sheet with stops, contacts, PU/DEL numbers and rate card.',
+   '<b>Emergency rescheduling</b> &mdash; breakdowns and delays follow a published policy, not an argument. <a href="emergency-rescheduling-policy.html">Read the policy</a>.'],
+  ('See how booking works','how-it-works.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128666; Booking checklist</div>'
+  '<div class="ftx-card ftx-row"><span>Rate confirmation</span><span class="ftx-chip ftx-green">&#x2713; e-signed</span></div>'
+  '<div class="ftx-card ftx-row"><span>Driver + truck assigned</span><span class="ftx-chip ftx-green">&#x2713; Marcus &middot; #402</span></div>'
+  '<div class="ftx-card ftx-row"><span>Pickup number</span><span class="ftx-chip ftx-amber">broker adds before PU</span></div>'
+  '<div class="ftx-card ftx-row"><span>Dispatch sheet</span><span class="ftx-chip ftx-blue">&#128424; print</span></div></div>'), alt=True, flip=True)
+
+feat += fsec('tracking','Live proof','GPS tracking that pays you, not just watches you',
+ fbody('Live proof','GPS tracking that pays you, not just watches you',
+  'Every trip runs on live GPS with an 800-meter geofence at EVERY stop. Arrive and depart times are recorded as evidence &mdash; that is what turns detention from a fight into a payout.',
+  ['<b>Geofenced check-ins</b> &mdash; arrive/depart stamped automatically at pickup, every extra stop and delivery.',
+   '<b>Detention clock</b> &mdash; starts from the recorded arrival; claims file themselves with GPS evidence attached.',
+   '<b>Trip map + Google Maps handoff</b> &mdash; navigate in Maps while LoadBoot keeps recording proof.',
+   '<b>ELD or phone</b> &mdash; use built-in phone GPS or connect Samsara / Motive directly. <a href="gps-tracking.html">Full tracking guide</a>.'],
+  ('Read the tracking guide','gps-tracking.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128205; Trip timeline &mdash; live</div>'
+  '<div class="ftx-card"><div class="ftx-row"><span>&#128309; Pickup &middot; Dallas, TX</span><span class="ftx-chip ftx-green">arr 09:12 &middot; dep 10:03</span></div></div>'
+  '<div class="ftx-card"><div class="ftx-row"><span>&#128993; Stop 2 &middot; Ponce De Leon, FL</span><span class="ftx-chip ftx-amber">&#9203; detention 1:47 running</span></div><div class="ftx-bar"><i style="width:64%"></i></div></div>'
+  '<div class="ftx-card"><div class="ftx-row"><span>&#128994; Delivery &middot; Atlanta, GA</span><span class="ftx-chip ftx-blue">ETA 16:40 &middot; on time</span></div></div>'
+  '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:6px">Every timestamp is evidence &mdash; detention pays from real data</div></div>'))
+
+feat += fsec('money','Get paid','Payments with receipts, deadlines and zero guesswork',
+ fbody('Get paid','Payments with receipts, deadlines and zero guesswork',
+  'Delivery flips the invoice to DUE automatically. Brokers see PAY-BY deadlines, pay a whole trip with one receipt, and both sides confirm &mdash; a full audit trail instead of &ldquo;check is in the mail&rdquo;.',
+  ['<b>Auto-invoice on delivery</b> &mdash; premium branded invoice PDF generated and emailed the moment POD is approved.',
+   '<b>Receivables tracker</b> &mdash; every dollar owed with due-since ageing, payment route and status.',
+   '<b>One-receipt trip settlement</b> &mdash; freight + accessorials settle together; receipts attach to the record.',
+   '<b>Nudges built in</b> &mdash; &#128276; request-payment reminders and confirm-received nags so money never sleeps. <a href="payments-settlements.html">Payments guide</a>.'],
+  ('Read the payments guide','payments-settlements.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128176; Money in &mdash; receivables</div>'
+  '<div class="ftx-card"><div class="ftx-row"><span>Benton, WI &rarr; Atlanta, GA</span><b style="color:#4ade80">$2,909</b></div><div style="margin-top:6px"><span class="ftx-chip ftx-amber">PAY BY Jul 24 &middot; 6d left</span><span class="ftx-chip ftx-blue">&rarr; direct to carrier</span></div></div>'
+  '<div class="ftx-card"><div class="ftx-row"><span>Appomattox, VA &rarr; Milwaukee, WI</span><b style="color:#4ade80">$2,125</b></div><div style="margin-top:6px"><span class="ftx-chip ftx-green">&#x2713; PAID &middot; receipt attached</span><span class="ftx-chip ftx-green">&#x2713; received confirmed</span></div></div>'
+  '<div class="ftx-card ftx-row"><span>Detention &middot; GPS-verified 2:10</span><b style="color:#4ade80">$70.00</b></div></div>'), alt=True, flip=True)
+
+feat += fsec('factoring','Factoring built in','A real NOA engine — not a PDF in an email',
+ fbody('Factoring built in','A real NOA engine &mdash; not a PDF in an email',
+  'If you factor, LoadBoot carries your Notice of Assignment everywhere money moves. Brokers see the factor&rsquo;s remit-to on every pay panel with UCC &sect;9-406 language; your own bank stays hidden.',
+  ['<b>Org-level activation</b> &mdash; upload your factor&rsquo;s NOA once; every new booking notifies the broker automatically.',
+   '<b>Per-broker freedom</b> &mdash; choose factoring or direct pay broker-by-broker; switch anytime.',
+   '<b>Factoring packet</b> &mdash; one click gives your factor everything: RC, POD, invoice, NOA.',
+   '<b>Release flow</b> &mdash; leave your factor cleanly; remit-to flips back to you everywhere at once. <a href="factoring-noa.html">Factoring &amp; NOA guide</a>.'],
+  ('Read the factoring guide','factoring-noa.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#127974; Pay this trip</div>'
+  '<div class="ftx-card" style="border-color:rgba(139,92,246,.5);background:rgba(139,92,246,.1)"><b style="color:#c4b5fd">&#9888; PAY THE FACTOR &mdash; NOA on file</b><div style="margin-top:6px;color:#cbd5e1">Remit to: <b style="color:#fff">OTR Capital LLC</b><br>ACH &middot; ref #LB-2214 &middot; terms Net-21</div><div style="margin-top:7px;font-size:.74rem;color:#94a3b8">Payment to any other party does not discharge this debt (UCC &sect;9-406)</div></div>'
+  '<div class="ftx-card ftx-row"><span>Trip total (freight + detention)</span><b style="color:#4ade80">$2,979</b></div></div>'))
+
+feat += ('<section class="ftx-sec alt" id="accessorials"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Accessorial pay</div><h2>Every accessorial has a public policy &mdash; and files itself</h2></div>'
+ '<p class="ftx-p reveal" style="max-width:760px">Detention, layover, TONU, lumper and driver assist are not favors &mdash; they are rate-card items with GPS evidence and published rules. Claims are auto-drafted from trip data; the broker sees the evidence, not an argument.</p>'
+ '<div class="cards g3 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#9203;</div><h3>Detention</h3><p>Clock starts from geofenced arrival. <a href="detention-pay-policy.html">Policy &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#128716;</div><h3>Layover</h3><p>Overnight holds paid by published rates. <a href="layover-policy.html">Policy &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#128683;</div><h3>TONU</h3><p>Truck ordered, not used &mdash; still paid. <a href="tonu-policy.html">Policy &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#128230;</div><h3>Lumper</h3><p>Receipts reimbursed through the trip ledger. <a href="lumper-policy.html">Policy &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#128170;</div><h3>Driver assist</h3><p>Loading help is billable work. <a href="driver-assist-policy.html">Policy &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#9200;</div><h3>FCFS &amp; scheduling</h3><p>Appointment rules that protect your clock. <a href="fcfs-policy.html">Policy &rarr;</a></p></div>'
+ '</div></div></section>')
+
+feat += fsec('fleet','Run the fleet','Fleet tools that scale past one truck',
+ fbody('Run the fleet','Fleet tools that scale past one truck',
+  'Drivers, trucks and money in one place. Invite drivers with magic links, assign trips, watch per-trip profit and keep the whole operation compliant.',
+  ['<b>Drivers &amp; trucks</b> &mdash; roster, invites, assignments, capacity and availability.',
+   '<b>Per-trip P&amp;L</b> &mdash; revenue minus fuel, tolls and costs on every load; know your real cost per mile. <a href="cost-per-mile-calculator.html">CPM calculator</a>.',
+   '<b>Fuel import</b> &mdash; drop your fuel-card CSV in; expenses land on trips automatically.',
+   '<b>Fleet optimization</b> &mdash; deadhead and utilization insights from your actual trip history. <a href="fleet-management.html">Fleet guide</a>.'],
+  ('Read the fleet guide','fleet-management.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128101; Fleet &mdash; this week</div>'
+  '<div class="ftx-card ftx-row"><span>&#128100; Marcus &middot; #402</span><span class="ftx-chip ftx-green">on trip &middot; GPS live</span></div>'
+  '<div class="ftx-card ftx-row"><span>&#128100; Deshawn &middot; #417</span><span class="ftx-chip ftx-blue">available &middot; Dallas</span></div>'
+  '<div class="ftx-card"><div class="ftx-row"><span>Trip P&amp;L &middot; DAL&rarr;ATL</span><b style="color:#4ade80">+$1,918</b></div><div class="ftx-bar"><i style="width:78%"></i></div><div style="font-size:.74rem;color:#94a3b8;margin-top:5px">$2,850 revenue &minus; $932 fuel/tolls/costs</div></div></div>'), alt=True, flip=True)
+
+feat += fsec('docs','Stay compliant','Compliance that runs itself',
+ fbody('Stay compliant','Compliance that runs itself',
+  'FMCSA verification is built into onboarding, documents live on the account with expiry tracking, and everything signable is e-signed &mdash; W-9, dispatch agreement, rate confirmations.',
+  ['<b>FMCSA verify</b> &mdash; MC/DOT checked at signup; authority status on your profile.',
+   '<b>Document vault</b> &mdash; COI, W-9, authority letters with expiry reminders before anything lapses.',
+   '<b>E-signatures</b> &mdash; dispatch agreement and W-9 signed in-app (E-SIGN Act), PDFs generated instantly.',
+   '<b>Compliance gates</b> &mdash; booking requires valid documents, so problems surface before the load, not after.'],
+  ('Create a carrier account','create-carrier-account.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128737; Verification center</div>'
+  '<div class="ftx-card ftx-row"><span>FMCSA authority</span><span class="ftx-chip ftx-green">&#x2713; ACTIVE &middot; MC-114879</span></div>'
+  '<div class="ftx-card ftx-row"><span>Certificate of insurance</span><span class="ftx-chip ftx-green">&#x2713; valid &middot; exp Nov 2026</span></div>'
+  '<div class="ftx-card ftx-row"><span>W-9</span><span class="ftx-chip ftx-green">&#x2713; e-signed</span></div>'
+  '<div class="ftx-card ftx-row"><span>Dispatch agreement</span><span class="ftx-chip ftx-green">&#x2713; e-signed &middot; PDF</span></div></div>'))
+
+feat += fsec('accounting','Books done for you','QuickBooks two-way sync — live, not a roadmap',
+ fbody('Books done for you','QuickBooks two-way sync &mdash; live, not a roadmap',
+  'Connect your own QuickBooks Online in two minutes. Delivered-freight invoices and expenses push into YOUR books automatically, and paid status flows back. Zero manual bookkeeping.',
+  ['<b>Invoices push</b> &mdash; every delivered load becomes a QuickBooks invoice (customer + Freight Services item auto-created).',
+   '<b>Expenses push</b> &mdash; fuel, tolls and costs land as Purchases.',
+   '<b>Paid pulls back</b> &mdash; receive payment in QuickBooks; LoadBoot marks it paid.',
+   '<b>No QuickBooks?</b> &mdash; export clean CSVs for Wave, Xero or your accountant. <a href="integrations.html">Integrations guide</a>.'],
+  ('See all integrations','integrations.html')),
+ ('<div class="ftx-mock"><div class="ftx-row" style="margin-bottom:10px"><b style="color:#fff">&#128218; QuickBooks Online</b><span class="ftx-chip ftx-green">&#9679; connected</span></div>'
+  '<div class="ftx-card ftx-row"><span>&#128228; Invoices pushed</span><b style="color:#4ade80">+7</b></div>'
+  '<div class="ftx-card ftx-row"><span>&#128228; Expenses pushed</span><b style="color:#4ade80">+2</b></div>'
+  '<div class="ftx-card ftx-row"><span>&#128229; Marked paid in QBO</span><b style="color:#4ade80">1</b></div>'
+  '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:6px">Real two-way sync &mdash; verified in production</div></div>'), alt=True, flip=True)
+
+feat += fsec('integrations','Connect everything','ELD, API and the tools you already use',
+ fbody('Connect everything','ELD, API and the tools you already use',
+  'Your telematics can drive LoadBoot tracking directly &mdash; connect Samsara or Motive with your own token and vehicle locations flow onto active trips every five minutes.',
+  ['<b>Samsara &amp; Motive</b> &mdash; direct provider APIs, live today; phone GPS works with zero setup.',
+   '<b>Developer API</b> &mdash; keys, docs and webhooks in the developer portal. <a href="/app/developer/">Open developer portal</a>.',
+   '<b>QuickBooks Online</b> &mdash; production two-way sync (above).',
+   '<b>Fuel cards</b> &mdash; CSV import today; direct card APIs need partner agreements and are on the public roadmap &mdash; stated honestly. <a href="integrations.html">Full integration status</a>.'],
+  ('Integration status page','integrations.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128268; Connections</div>'
+  '<div class="ftx-card ftx-row"><span>&#128752; Samsara ELD</span><span class="ftx-chip ftx-green">&#9679; polling &middot; 5 min</span></div>'
+  '<div class="ftx-card ftx-row"><span>&#128241; Phone GPS</span><span class="ftx-chip ftx-green">&#9679; built in</span></div>'
+  '<div class="ftx-card ftx-row"><span>&#128218; QuickBooks</span><span class="ftx-chip ftx-green">&#9679; two-way live</span></div>'
+  '<div class="ftx-card ftx-row"><span>&#9968; Fuel card APIs</span><span class="ftx-chip ftx-amber">roadmap &middot; CSV today</span></div></div>'))
+
+feat += fsec('partners','For brokers &amp; shippers','Post once. Covered in minutes — with proof.',
+ fbody('For brokers &amp; shippers','Post once. Covered in minutes &mdash; with proof.',
+  'Brokers and shippers get the same engine: a full posting wizard, verified carriers racing a 15-minute offer window, live GPS on every shipment and documents that collect themselves.',
+  ['<b>Posting wizard</b> &mdash; multi-stop, scheduling, rate card with accessorial rates baked in.',
+   '<b>Vetted capacity</b> &mdash; carriers are FMCSA-verified and health-scored before they can book.',
+   '<b>Live visibility</b> &mdash; GPS timeline, arrive/depart stamps and POD on every load.',
+   '<b>Payables discipline</b> &mdash; pay-by dates, one-receipt trip payment, factor remit-to shown when an NOA exists. <a href="brokers.html">Broker overview</a> &middot; <a href="shipper-solutions.html">Shipper solutions</a>.'],
+  ('Create a broker account','create-broker-account.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#127970; Your load &mdash; offered</div>'
+  '<div class="ftx-card ftx-row"><span>&#128666; TRUCKING ENTERPRISE</span><span class="ftx-chip ftx-green">&#x2713; BOOKED 04:12</span></div>'
+  '<div class="ftx-card ftx-row"><span>&#128666; RIVERLINE FREIGHT</span><span class="ftx-chip ftx-blue">offer auto-closed</span></div>'
+  '<div class="ftx-card ftx-row"><span>&#128666; ALL CITIES TRANSPORT</span><span class="ftx-chip ftx-blue">offer auto-closed</span></div>'
+  '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:6px">First accept wins &mdash; zero double-booking</div></div>'), alt=True, flip=True)
+
+feat += fsec('agents','Earn with us','An agent program with a real back office',
+ fbody('Earn with us','An agent program with a real back office',
+  'Independent dispatchers and connectors bring clients to LoadBoot and earn 1% of gross on every delivered load their chain touches &mdash; tracked live, paid monthly, with overrides five levels deep.',
+  ['<b>1% of gross, recurring</b> &mdash; on every delivered load your referred clients run, for as long as they haul.',
+   '<b>5-level overrides</b> &mdash; recruit agents and earn 0.50% / 0.25% / 0.15% / 0.10% on their production.',
+   '<b>Live chain dashboard</b> &mdash; joins, postings, bookings and deliveries stream in real time.',
+   '<b>Payout center</b> &mdash; monthly payouts from $100 to bank or Payoneer, with signed agreement and tax forms handled in-app. <a href="agents.html">Full program</a>.'],
+  ('Become an agent','create-agent-account.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#129309; Your chain &mdash; live</div>'
+  '<div class="ftx-card ftx-row"><span>Referred</span><b style="color:#fff">12</b></div>'
+  '<div class="ftx-card ftx-row"><span>Delivered gross this month</span><b style="color:#fff">$83,850</b></div>'
+  '<div class="ftx-card ftx-row"><span>Your 1% + overrides</span><b style="color:#4ade80">$914.20</b></div>'
+  '<div class="ftx-bar"><i style="width:71%"></i></div><div style="font-size:.74rem;color:#94a3b8;margin-top:5px">$914 / $1,287 vs last month</div></div>'))
+
+feat += fsec('security','Trust the platform','Security and reliability by design',
+ fbody('Trust the platform','Security and reliability by design',
+  'Every carrier sees only their own data &mdash; enforced at the database layer, not the UI. Money data never touches the browser cache, and the app installs on any phone like a native app.',
+  ['<b>Self-scoping data</b> &mdash; server resolves your org from your session; cross-account access is structurally impossible.',
+   '<b>Encryption</b> &mdash; TLS 1.2+ in transit, AES-256 at rest; secrets live server-side only.',
+   '<b>Installable app</b> &mdash; PWA with push notifications and weak-signal resilience; native apps in preparation. <a href="apps.html">Get the app</a>.',
+   '<b>Audit trails</b> &mdash; bookings, payments, claims and document events are all timestamped records.'],
+  ('Get the app','apps.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128274; Your account, your data</div>'
+  '<div class="ftx-card ftx-row"><span>Row-level scoping</span><span class="ftx-chip ftx-green">&#x2713; enforced in DB</span></div>'
+  '<div class="ftx-card ftx-row"><span>TLS + AES-256</span><span class="ftx-chip ftx-green">&#x2713; everywhere</span></div>'
+  '<div class="ftx-card ftx-row"><span>Money data caching</span><span class="ftx-chip ftx-red">&#10007; never cached</span></div>'
+  '<div class="ftx-card ftx-row"><span>Install on phone</span><span class="ftx-chip ftx-blue">PWA &middot; stores coming</span></div></div>'), alt=True, flip=True)
+
+feat += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>LoadBoot vs load boards vs traditional dispatch</h2></div>'
+ '<div class="reveal" style="overflow-x:auto;margin-top:22px"><table class="ftx-cmp">'
+ '<tr><th></th><th>LoadBoot</th><th>Load boards (DAT / Truckstop)</th><th>Traditional dispatcher</th></tr>'
+ '<tr><td>Finding freight</td><td class="ftx-yes">&#x2713; board + direct offers</td><td class="ftx-yes">&#x2713; search listings</td><td class="ftx-part">dispatcher calls around</td></tr>'
+ '<tr><td>Ghost loads</td><td class="ftx-yes">&#x2713; impossible &mdash; booked loads vanish</td><td class="ftx-no">&#10007; common</td><td class="ftx-part">depends on dispatcher</td></tr>'
+ '<tr><td>GPS proof &amp; detention evidence</td><td class="ftx-yes">&#x2713; built in, every stop</td><td class="ftx-no">&#10007;</td><td class="ftx-no">&#10007;</td></tr>'
+ '<tr><td>Invoicing &amp; payments tracking</td><td class="ftx-yes">&#x2713; automatic + receipts</td><td class="ftx-no">&#10007;</td><td class="ftx-part">manual, varies</td></tr>'
+ '<tr><td>Factoring / NOA handling</td><td class="ftx-yes">&#x2713; full engine</td><td class="ftx-no">&#10007;</td><td class="ftx-part">emails PDFs</td></tr>'
+ '<tr><td>QuickBooks sync</td><td class="ftx-yes">&#x2713; two-way, live</td><td class="ftx-no">&#10007;</td><td class="ftx-no">&#10007;</td></tr>'
+ '<tr><td>Cost</td><td class="ftx-yes">flat 5% per dispatched load</td><td class="ftx-part">$45&ndash;$150+/month subscription</td><td class="ftx-part">5&ndash;10% + often lease-on terms</td></tr>'
+ '<tr><td>Contracts</td><td class="ftx-yes">none &mdash; leave anytime</td><td class="ftx-part">monthly plans</td><td class="ftx-no">often locked in</td></tr>'
+ '</table></div></div></section>')
+
+_FEAT_FAQ = [
+ ('Is every feature on this page actually live?', 'Yes. This page documents only what exists in the product today. Anything still in development (native mobile apps, direct fuel-card APIs) is explicitly labelled as roadmap on the integrations page.'),
+ ('What does LoadBoot cost?', 'Carriers pay a flat 5% of gross on loads dispatched through LoadBoot. No signup fee, no monthly subscription, no contracts. See the pricing page for full details.'),
+ ('Do I need an ELD to use GPS tracking?', 'No. Phone GPS works out of the box with geofenced arrive/depart proof. If you run Samsara or Motive, connect them directly and vehicle locations flow onto trips automatically.'),
+ ('How does the QuickBooks integration work?', 'You connect your own QuickBooks Online company via OAuth. LoadBoot pushes delivered-freight invoices and expenses into your books and pulls paid status back. You can disconnect anytime.'),
+ ('Can brokers and shippers use LoadBoot too?', 'Yes. Brokers and shippers post loads in the Partner Portal, get FMCSA-verified carriers in a 15-minute offer race, and track every shipment live with documents and payables handled in the same system.'),
 ]
-feat += '<section class="section"><div class="wrap"><div class="cards g4">' + ''.join(
- '<div class="card reveal"><div class="card-ico">' + i + '</div><h3>' + t + '</h3><p>' + d + '</p><a href="' + h + '">Read the full guide &rarr;</a></div>' for i,t,d,h in _FEAT) + '</div></div></section>'
-feat += docsec('Four portals, one system', 'Who uses what',
- '<p><b>Carrier Portal</b> — load board, trips, GPS, documents, finance, fleet, safety. <a href="create-carrier-account.html">How to create a carrier account &rarr;</a></p>'
- '<p><b>Broker portal</b> — full posting wizard (multi-stop, scheduling, rate card), booking approvals, claims review, payables with pay-by dates, carrier invoices. <a href="create-broker-account.html">How to create a broker account &rarr;</a></p>'
- '<p><b>Shipper portal</b> — the same broker-grade engine with a shipper onboarding packet (credit application, payment terms, facility rules). <a href="create-shipper-account.html">How to create a shipper account &rarr;</a></p>'
- '<p><b>Agent Portal</b> — referral chain, live earnings, payout center. <a href="create-agent-account.html">How to create an agent account &rarr;</a></p>'
- + shot('carrier-loadboard', 'The carrier load board — every load real and bookable in one tap')
- + cta_row([('Create an account','get-started.html'),('See pricing','pricing.html')]))
+_feat_schema = '<script type="application/ld+json">' + json.dumps({
+  '@context':'https://schema.org','@type':'FAQPage',
+  'mainEntity':[{'@type':'Question','name':q,'acceptedAnswer':{'@type':'Answer','text':a}} for q,a in _FEAT_FAQ]}) + '</script>'
+feat += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Features FAQ</h2></div><div style="max-width:820px">'
+ + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _FEAT_FAQ)
+ + '</div></div></section>')
+
+feat += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:64px 0"><div class="wrap" style="text-align:center">'
+ '<h2 style="color:#fff;font-size:2rem">Pick your side of the load</h2>'
+ '<p style="color:#cbd5e1;max-width:620px;margin:12px auto 26px">Every account is free to create. Verification takes minutes, not days.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
+ '<a href="create-carrier-account.html" class="btn btn-primary">&#128666; I&rsquo;m a carrier</a>'
+ '<a href="create-broker-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127970; I&rsquo;m a broker</a>'
+ '<a href="create-shipper-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127981; I&rsquo;m a shipper</a>'
+ '<a href="create-agent-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#129309; I&rsquo;m an agent</a>'
+ '</div></div></section>')
+
 RELATED['features.html'] = [('how-it-works.html','How It Works'),('gps-tracking.html','GPS Tracking'),('payments-settlements.html','Payments'),('factoring-noa.html','Factoring & NOA'),('fleet-management.html','Fleet Management'),('integrations.html','Integrations')]
-page('features.html', 'LoadBoot Features — Complete Trucking Software Platform, Documented',
-     'Every LoadBoot feature publicly documented: ghost-load-free load board, GPS geofence tracking, receipt-verified payments, factoring/NOA engine, detention & TONU automation, fleet management, agent program and API.',
-     'features.html', feat)
+page('features.html', 'LoadBoot Features — Load Board, GPS Tracking, Payments, Factoring & QuickBooks | Trucking Software',
+     'Explore every LoadBoot feature: ghost-free load board, one-tap booking with e-signed rate confirmations, GPS geofence tracking with detention proof, receipt-verified payments, a full factoring/NOA engine, fleet tools, compliance automation and live two-way QuickBooks sync.',
+     'features.html', feat, _feat_schema)
 
 # ---------------- ACCOUNT / ONBOARDING GUIDES (per role) ----------------
 def _acct_page(fname, role, emoji, hero_sub, steps, shots_list, docs_note, portal_url):
