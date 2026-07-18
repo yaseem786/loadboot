@@ -101,7 +101,18 @@ export function renderAgents(host) {
         card([el('h4', { class: 'cc-card-title' }, '👤 Application — everything submitted'),
           kv('Name', p.full_name), kv('Email', d.email), kv('Phone', p.phone),
           kv('Address', [p.street, p.city, p.state, p.zip, p.country].filter(Boolean).join(', ')),
-          kv('Agency', p.agency), kv('Experience', (p.years_exp ?? '—') + ' yrs'), kv('Network', JSON.stringify(p.network || {})),
+          kv('Agency', p.agency), kv('Experience', (p.years_exp ?? '—') + ' yrs'),
+          (() => { // Network — organized chips instead of raw JSON
+            const n9 = p.network || {};
+            const chip9 = (t9, on9) => el('span', { style: 'display:inline-block;padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:700;margin:2px 4px 2px 0;background:' + (on9 ? '#dcfce7' : '#f1f5f9') + ';color:' + (on9 ? '#166534' : '#94a3b8') }, (on9 ? '\u2713 ' : '\u2014 ') + t9);
+            const list9 = (v9) => String(v9 || '').split(',').map((x9) => x9.trim()).filter(Boolean);
+            return el('div', { style: 'padding:6px 0;border-bottom:1px solid #eef2f7' }, [
+              el('div', { style: 'font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px' }, 'Network'),
+              el('div', null, [chip9('Brokers', !!n9.has_brokers), chip9('Carriers', !!n9.has_carriers), chip9('Shippers', !!n9.has_shippers)]),
+              list9(n9.lanes).length ? el('div', { style: 'margin-top:5px' }, [el('b', { style: 'font-size:.74rem;color:#64748b;margin-right:6px' }, 'Lanes:'), ...list9(n9.lanes).map((l9) => el('span', { style: 'display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:600;margin:2px 4px 2px 0;background:#e0edff;color:#1d4ed8' }, l9))]) : null,
+              list9(n9.equipment).length ? el('div', { style: 'margin-top:4px' }, [el('b', { style: 'font-size:.74rem;color:#64748b;margin-right:6px' }, 'Equipment:'), ...list9(n9.equipment).map((e9) => el('span', { style: 'display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:600;margin:2px 4px 2px 0;background:#fff7ed;color:#c2410c' }, e9))]) : null,
+            ].filter(Boolean));
+          })(),
           kv('Status', p.status), kv('Agreement', p.agreement_signed_at ? '✓ ' + (p.agreement_name || '') + ' · ' + fmtDateTime(p.agreement_signed_at) : '✕ unsigned'),
           kv('Tax form', (p.tax_form || '—') + (p.tax_id_last4 ? ' · TIN •••' + p.tax_id_last4 : '')),
           kv('Payout', (p.payout_method || '—') + (pd.bank_name ? ' · ' + pd.bank_name : '') + (pd.account ? ' ···' + String(pd.account).slice(-4) : pd.iban ? ' ···' + String(pd.iban).slice(-4) : pd.email ? ' · ' + pd.email : '')),
