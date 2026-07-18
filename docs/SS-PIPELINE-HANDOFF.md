@@ -76,25 +76,25 @@ gps-tracking) — only update width/height attrs if aspect ratios changed.
 ## 7. Standards (why): capture big (2-3x), display small; tight close-up crops for
 dense regions; captions "The real …" stay. Never prod data; lb.test demo data only.
 
-## STATUS 2026-07-18 (executed by Claude in sandbox)
-DONE — 16 of 19 shots replaced with crisp 3x/2x captures and merged to main
-(commit d5a8e41 / merge ffd039a). build_site.py img width/height attrs updated.
-Test-account passwords were RESET on staging to: LbShots2026!  (carrier-owner@lb.test, broker@lb.test)
+## STATUS 2026-07-18 — COMPLETE (all 19/19)
+Morning run: 16 of 19 shots replaced at 3x/2x (commit d5a8e41 / merge ffd039a).
+Second session (map domains now allowed): captured the remaining 3 map shots —
+track-phone-map, track-phone-pickup, partner-live-tracking — processed to webp and
+wired in (img attrs updated: phone 420x909, partner 1100x969). Pipeline DONE.
+Test-account passwords (staging): LbShots2026!  (carrier-owner@lb.test, broker@lb.test)
 
-REMAINING — 3 map shots could NOT be captured: track-phone-pickup, track-phone-map,
-partner-live-tracking. The egress proxy blocks the map stack. For next session, owner
-must ADD these domains to Settings → Capabilities → allowed domains, then start a NEW session:
-  basemaps.cartocdn.com  *.basemaps.cartocdn.com  router.project-osrm.org
-  photon.komoot.io  server.arcgisonline.com  cdnjs.cloudflare.com
-Notes that made this run work (reuse them):
-- playwright install dies between bash calls → download chrome-linux64.zip direct from
-  storage.googleapis.com/chrome-for-testing-public/149.0.7827.55/linux64/ with curl -C - (3 calls),
-  unzip to /tmp; only missing lib = libXdamage1 (apt-get download + dpkg-deb -x to /tmp/libs,
-  LD_LIBRARY_PATH=/tmp/libs/usr/lib/x86_64-linux-gnu)
-- Chrome needs proxy={"server":"http://localhost:3128","bypass":"localhost"} in playwright launch
-- cdn.jsdelivr.net/esm.sh blocked → esbuild-bundle @supabase/supabase-js@2.45.4 from npm and
-  ctx.route() the CDN URLs to fulfill with the local bundle; same trick serves leaflet from npm
-- headless reports navigator.onLine=false → add_init_script override, else offline banner in shots
-- emoji boxes → apt-get download fonts-noto-color-emoji, extract NotoColorEmoji.ttf to ~/.fonts
-- dismiss lbToast host (position:fixed z-index:3000 div) before each shot
-- http.server + all background procs die between bash calls → re-spawn inside each python script
+Notes that made the map shots work (for future reruns):
+- Egress: bare domains allowed but {s}.basemaps.cartocdn.com subdomains 403 →
+  playwright ctx.route rewrites a/b/c/d.basemaps.cartocdn.com -> basemaps.cartocdn.com
+  (fetch via ctx.request, fulfill). fonts.googleapis.com blocked — fine, approved shots
+  use the same fallback font.
+- trip af8118e5 state machine: trips.status drives the map step (dispatched=at_pickup,
+  in_transit=to_delivery). Flip via SQL for the pickup shot, restore after.
+- At-pickup with GPS at the dock the map follow-zooms to z20 (blank tiles) — click the
+  map, press '-' ~14x to zoom out, then drag to frame; drags have Leaflet inertia
+  (small slow drags + 400ms pause before mouse.up).
+- Partner "Track live": multiple buttons — pick the one whose closest single-button
+  card ancestor contains $2,850 (booked trip), else you get the posted $2,897 load.
+- Freshen trips.last_lat/last_lng/last_loc_at via SQL right before the partner shot
+  for the LIVE badge; set trip status back to in_transit when done.
+- 45s bash limit: keep each playwright run under ~44s (nohup dies when the call ends).
