@@ -5160,11 +5160,25 @@ function tripStepper(status) {
       })();
       return host9;
     }
+    // Accounting = the BOOKS (QuickBooks sync + exports); Taxes = tax centre + IFTA.
+    // Promoted out of Taxes so carriers actually find it — zero manual bookkeeping is a headline feature.
+    const acctBenefits9 = h('div', { class: 'cp-card', style: 'background:linear-gradient(120deg,rgba(8,131,247,.12),rgba(34,197,94,.08));border:1.5px solid rgba(8,131,247,.35)' }, [
+      h('div', { style: 'font-weight:900;font-size:1.02rem;margin-bottom:6px' }, '📒 Your books, done for you'),
+      h('div', { class: 'cp-row-s', style: 'line-height:1.7' },
+        'Every delivered load becomes an invoice in YOUR QuickBooks automatically. Every expense lands as a Purchase. When the broker pays, paid-status flows back. Zero manual bookkeeping — your accountant gets ready books.'),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
+        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ Invoices auto-push'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ Expenses auto-push'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ Paid-status pull-back'),
+        h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#7cc0ff;font-weight:800' }, '⬇ CSV export for any accountant'),
+      ]),
+    ]);
     const SECS = [
       ['earn', '💰 Earnings', () => [earningsHub()]],
       ['in',   '📥 Money in', () => [payFlightCard, cashCard(rows), statusCard, stmtCard]],
       ['cost', '📤 Costs',    () => [fuelImportCard9, expCard, feesChart]],
-      ['tax',  '🧾 Taxes',    () => [qboCard9(), acctExportCard9, taxCenter(), iftaCard]],
+      ['acct', '📒 Accounting', () => [acctBenefits9, qboCard9(), acctExportCard9]],
+      ['tax',  '🧾 Taxes',    () => [taxCenter(), iftaCard]],
       ['pay',  '👥 Payroll',  () => [payrollCard]],
     ];
     let sec = 'earn';
