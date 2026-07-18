@@ -440,7 +440,7 @@ def footer():
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral &amp; Agent Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
 <div><div class="foot-h">Compliance</div><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
-<div><div class="foot-h">Company</div><a href="about.html">About</a><a href="features.html">All Features</a><a href="load-board.html">Live Load Board</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
+<div><div class="foot-h">Company</div><a href="index.html">Home</a><a href="about.html">About</a><a href="features.html">All Features</a><a href="load-board.html">Live Load Board</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
 <div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral &amp; Agent Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="create-carrier-account.html">Create Carrier Account</a><a href="create-broker-account.html">Create Broker Account</a><a href="create-shipper-account.html">Create Shipper Account</a><a href="create-agent-account.html">Create Agent Account</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="load-board.html">Live Load Board (Zero Ghost Loads)</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
@@ -5554,12 +5554,79 @@ def _acc_faq_schema(faq):
         ents.append({"@type": "Question", "name": qq, "acceptedAnswer": {"@type": "Answer", "text": aa}})
     return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": ents}) + '</script>'
 
+
+# ---------- ACCESSORIAL FLAGSHIP DATA (H1, real product shots, who-it-protects) ----------
+_ACC_H1 = {
+ 'detention-pay-policy': 'Truck Detention Pay &mdash; $60/hr After 2 Hours Free Time, GPS-Proven',
+ 'tonu-policy': 'TONU Fee &mdash; $250 When the Truck Is Ordered but Not Used',
+ 'layover-policy': 'Layover Pay for Truck Drivers &mdash; Overnight Holds, Paid by Rule',
+ 'lumper-policy': 'Lumper Fees &mdash; Receipts Reimbursed Through the Trip, Not Absorbed',
+ 'driver-assist-policy': 'Driver Assist Pay &mdash; Loading Help Is Billable Work',
+ 'fcfs-policy': 'FCFS &amp; Appointment Scheduling &mdash; Rules That Protect Your Clock',
+ 'emergency-rescheduling-policy': 'Emergency Rescheduling &mdash; Verified Emergencies, Zero Penalty',
+}
+def _accshot(f,w,h,alt,cap):
+    return dict(f=f,w=w,h=h,alt=alt,cap=cap)
+_ACC_SHOTS = {
+ 'detention-pay-policy': [
+  _accshot('track-phone-pickup.webp',420,909,'Trip map checked in at pickup — detention clock running from the geofenced arrival','The real trip map &mdash; checked in at the dock, detention clock already running.'),
+  _accshot('acc-broker-claims.webp',1100,769,'Broker claims review — GPS-stamped detention claims with approve, reject and pay actions','The broker&rsquo;s claims desk &mdash; GPS-stamped detention claims, approve &rarr; pay in two taps.')],
+ 'tonu-policy': [
+  _accshot('track-claim.webp',1100,774,'A claim filed automatically from trip data with server timestamps and evidence attached','A real claim &mdash; built from the trip record, server timestamps attached.'),
+  _accshot('acc-broker-claims.webp',1100,769,'Broker claims review queue with evidence links and one-tap payment','What the posting party sees &mdash; the claim, the evidence, and a pay button.')],
+ 'layover-policy': [
+  _accshot('pay-money-in-phone.webp',420,909,'Carrier money-in view — accessorial claims sit as DUE items with deadlines and memos','The carrier&rsquo;s money-in &mdash; approved claims sit as DUE with a deadline, not in an email thread.'),
+  _accshot('pay-broker-payables-main.webp',1100,891,'Broker payables — freight plus approved claims grouped per trip with PAY-BY deadlines','The payer&rsquo;s ledger &mdash; layover rides the same trip block as the freight, one receipt settles both.')],
+ 'lumper-policy': [
+  _accshot('track-phone-docs.webp',420,508,'In-app capture buttons for dock photo, signed BOL/POD and lumper receipt','Snap it where it happens &mdash; the lumper receipt attaches to the trip from the dock.'),
+  _accshot('fac-packet-phone.webp',420,909,'Factoring packet with invoice, signed POD and lumper receipt collected automatically','The same receipt lands in the funding packet &mdash; nothing re-typed, nothing lost.')],
+ 'driver-assist-policy': [
+  _accshot('track-phone-docs.webp',420,508,'In-app proof capture — dock photos and signed documents with timestamps','Proof captured at the dock &mdash; photos and signed docs, GPS-timestamped.'),
+  _accshot('pay-broker-payables-main.webp',1100,891,'Broker payables showing approved claims with deadlines beside the freight','Approved assist pay joins the trip&rsquo;s payable block &mdash; deadline attached.')],
+ 'fcfs-policy': [
+  _accshot('track-phone-pickup.webp',420,909,'Geofenced arrival stamp at the gate — the on-time record FCFS depends on','Your on-time proof &mdash; the 800 m geofence stamps the gate arrival for you.'),
+  _accshot('partner-live-tracking.webp',1100,969,'Broker live view — milestone timeline with arrival and departure records','Both sides see the same timeline &mdash; scheduling arguments die against the record.')],
+ 'emergency-rescheduling-policy': [
+  _accshot('track-phone-map.webp',420,909,'The live trip map — the emergency button and dispatch are one tap from the road','One tap from the road &mdash; report the emergency without leaving the trip map.'),
+  _accshot('partner-live-tracking.webp',1100,969,'Broker live tracking — the same trip, the same facts, on both screens','The poster watches the same trip &mdash; a verified emergency is a fact, not an excuse.')],
+}
+_ACC_PROTECT = {
+ 'detention-pay-policy': [
+  ('&#128666; The carrier','Every minute past free time is measured by the server, not remembered. The claim drafts itself with GPS stamps, rides the trip invoice, and ages in the open until paid.'),
+  ('&#127970; The broker &amp; shipper','No inflated hand-written times &mdash; you see the same arrive/depart record the carrier does. Facilities that hold trucks show up in your data, so you can fix the dock, not fight the driver.'),
+  ('&#129309; The marketplace','Published rates and symmetric evidence mean detention stops being a negotiation. Carriers stay, brokers keep capacity, and agents refer carriers into a board that pays what it promises.')],
+ 'tonu-policy': [
+  ('&#128666; The carrier','A cancelled load is not a free cancel &mdash; the rate confirmation is a commitment. TONU plus deadhead miles are pre-agreed on every posting, and your GPS position proves you rolled.'),
+  ('&#127970; The broker &amp; shipper','A published TONU standard keeps cancellations honest on BOTH sides &mdash; and protects you from phantom claims: no rate con or no movement, no TONU.'),
+  ('&#129309; The marketplace','Loads on the board are real because cancelling late costs money. That is why LoadBoot has zero ghost loads &mdash; the TONU rule is the enforcement.')],
+ 'layover-policy': [
+  ('&#128666; The carrier','A night lost to a dock that could not finish is a business day &mdash; the layover rate is on the rate card before you book, and the claim builds from the same GPS trail.'),
+  ('&#127970; The broker &amp; shipper','Layover is capped and rule-bound &mdash; you pay a published rate for a documented hold, never an invented number after the fact.'),
+  ('&#129309; The marketplace','When overnight risk is priced and published, carriers keep taking the tight-appointment freight everyone else refuses.')],
+ 'lumper-policy': [
+  ('&#128666; The carrier','You front the lumper, you photograph the receipt, it attaches to the trip &mdash; reimbursement rides the same invoice as the freight instead of dying in an inbox.'),
+  ('&#127970; The broker &amp; shipper','Receipt-verified reimbursement only &mdash; a photographed, GPS-attached receipt with the facility on it. No receipt, no charge.'),
+  ('&#129309; The marketplace','Clean lumper handling keeps drivers moving through grocery and retail docks the network depends on.')],
+ 'driver-assist-policy': [
+  ('&#128666; The carrier','Two hours on a pallet jack is labor, not a favor. Assist pay is pre-agreed on the posting, and dock photos prove the work happened.'),
+  ('&#127970; The broker &amp; shipper','You only pay for assist that was agreed up front or approved on evidence &mdash; and a driver who is paid to help gets your freight off the truck faster.'),
+  ('&#129309; The marketplace','Priced labor beats argued labor &mdash; postings that need driver assist say so, and carriers can book them with open eyes.')],
+ 'fcfs-policy': [
+  ('&#128666; The carrier','FCFS windows and appointment rules are printed on the posting, and your geofenced gate arrival is your on-time proof &mdash; the foundation under every detention claim.'),
+  ('&#127970; The broker &amp; shipper','Accurate scheduling data flows back to you live &mdash; you see arrivals the moment they stamp, not when someone answers a check call.'),
+  ('&#129309; The marketplace','When the clock rules are public, carriers plan honestly and facilities get measured &mdash; scheduling stops being a lottery.')],
+ 'emergency-rescheduling-policy': [
+  ('&#128666; The carrier','Breakdowns and genuine emergencies happen. Verified through the app within the window, they reschedule the load with zero penalty and no TONU against you.'),
+  ('&#127970; The broker &amp; shipper','Verification is the point &mdash; you get the real reason on record within 2 hours plus a recovery plan, instead of a dead phone and a mystery.'),
+  ('&#129309; The marketplace','Separating real emergencies from silent cancellations keeps account health scores honest for everyone.')],
+}
+
 for _p in _ACC_PAGES:
     _slug, _name = _p['slug'], _p['name']
     _pg = ('<section class="wrap" style="padding:14px 0 2px"><nav class="accx-crumbs" aria-label="Breadcrumb">'
            '<a href="/">Home</a><span>›</span><a href="/market-rates.html">Rates &amp; Driver Pay</a>'
            '<span>›</span>' + _name + '</nav></section>')
-    _pg += svc_hero(_name + ' — LoadBoot Policy', _p['defn'])
+    _pg += svc_hero(_ACC_H1.get(_slug, _name + ' — LoadBoot Policy'), _p['defn'])
     _art = _ACC_ART.get(_slug, _ACC_ART['default'])
     _pg += ('<section class="wrap" style="margin-top:-14px"><style>' + _ACC_CSS + '</style>'
       '<div class="accx-hero reveal"><div class="accx-art">' + _art['svg'] + '</div>'
@@ -5590,6 +5657,20 @@ for _p in _ACC_PAGES:
         '<article class="card"><div class="card-ic">&#128276;</div><h3>Deadline alerts</h3><p>The app warns before free time or notification windows expire.</p></article>'
         '<article class="card"><div class="card-ic">&#128196;</div><h3>Evidence pack</h3><p>Photos, receipts and times collected on the trip and attached to the invoice.</p></article>'
         '</div>'))
+    _shots9 = _ACC_SHOTS.get(_slug)
+    if _shots9:
+        _sh_html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;align-items:start">'
+        for _s9 in _shots9:
+            _wrap_style = 'max-width:340px;margin:0 auto' if _s9['w'] <= 460 else ''
+            _sh_html += ('<figure class="reveal" style="margin:0"><div style="' + _wrap_style + '">'
+              '<img src="/shots/' + _s9['f'] + '" alt="' + _s9['alt'] + '" width="' + str(_s9['w']) + '" height="' + str(_s9['h']) + '" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.35);box-shadow:0 24px 60px -30px rgba(11,18,32,.35)"></div>'
+              '<figcaption style="text-align:center;color:#64748b;font-size:.8rem;margin-top:9px">' + _s9['cap'] + '</figcaption></figure>')
+        _sh_html += ('</div><p class="src-disc" style="margin-top:16px;text-align:center;max-width:760px;margin-left:auto;margin-right:auto">These are real portal screens, not mockups &mdash; the same rail that runs <a href="/gps-tracking.html">GPS tracking &amp; proof</a> and <a href="/payments-settlements.html">payments &amp; settlements</a>. The claim this page describes is drafted from that trip data and paid through that ledger.</p>')
+        _pg += _sec('Inside the product', 'Real screens &mdash; how this policy actually runs', _sh_html)
+    _prot9 = _ACC_PROTECT.get(_slug)
+    if _prot9:
+        _pg += _sec('Who this protects', 'One policy, three winners — carrier, broker &amp; shipper, and the board itself', (
+            '<div class="cards g3">' + ''.join('<article class="card"><h3>' + k + '</h3><p>' + v + '</p></article>' for k, v in _prot9) + '</div>'))
     _pg += _sec('Frequently asked', 'Straight answers', (
         '<div class="cards g2">' + ''.join('<article class="card"><h3>' + q + '</h3><p>' + a + '</p></article>' for q, a in _p['faq']) + '</div>'))
     _pg += _sec('All accessorials at a glance', 'Every LoadBoot pay standard in one table', _acc_cmp_html(_slug))
