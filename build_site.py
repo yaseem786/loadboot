@@ -4850,19 +4850,39 @@ _acct_page('create-agent-account.html', 'agent', '&#129309;',
 # ---------------- DEEP FEATURE PAGES ----------------
 # ---- GPS TRACKING — flagship (the trip after booking: driver pocket app + broker/shipper live view) ----
 TRKX_CSS = """<style>
-.trkx-phone{width:min(320px,100%);margin:0 auto;border:10px solid #1e293b;border-radius:36px;background:#0b1220;overflow:hidden;box-shadow:0 30px 70px -30px rgba(11,18,32,.7)}
-.trkx-map{position:relative;height:330px;background:radial-gradient(circle at 78% 22%,rgba(8,131,247,.16),transparent 46%),radial-gradient(circle at 22% 80%,rgba(252,83,5,.12),transparent 40%),linear-gradient(160deg,#0e1c38,#0b1220)}
-.trkx-route{position:absolute;left:12%;top:18%;width:70%;height:60%;border-left:3px dashed rgba(125,211,252,.55);border-bottom:3px dashed rgba(125,211,252,.55);border-bottom-left-radius:60px}
-.trkx-geo{position:absolute;width:64px;height:64px;border-radius:50%;border:2px solid rgba(74,222,128,.5);background:rgba(74,222,128,.08)}
-.trkx-truck{position:absolute;font-size:1.3rem;animation:trkxGo 12s ease-in-out infinite}
-@keyframes trkxGo{0%{left:12%;top:16%}45%{left:12%;top:66%}100%{left:72%;top:70%}}
-.trkx-chips{display:flex;gap:7px;padding:10px 12px;flex-wrap:wrap}
-.trkx-chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#e2e8f0;font-size:.72rem;font-weight:700;padding:5px 11px}
-.trkx-toast{margin:0 12px 12px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.4);border-radius:12px;color:#4ade80;font-size:.78rem;font-weight:700;padding:9px 12px;animation:trkxToast 12s ease-in-out infinite}
-@keyframes trkxToast{0%,40%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
-.trkx-log{font-size:.84rem}
-.trkx-log>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);color:#cbd5e1}
-@media(prefers-reduced-motion:reduce){.trkx-truck,.trkx-toast{animation:none}.trkx-toast{opacity:1}}
+.trkx-phone{width:min(340px,100%);margin:0 auto;border:9px solid #0f172a;border-radius:38px;background:#0b1220;overflow:hidden;box-shadow:0 30px 70px -30px rgba(11,18,32,.75)}
+.trkx-status{display:flex;justify-content:space-between;align-items:center;background:#0b1220;color:#fff;font-size:.72rem;font-weight:800;padding:8px 18px 6px}
+.trkx-map2{position:relative;height:240px;background:linear-gradient(180deg,#f7f3ea,#f1ede2);overflow:hidden}
+.trkx-map2 .city{position:absolute;color:#9a917f;font-size:.6rem;font-weight:700;letter-spacing:.02em}
+.trkx-eta{position:absolute;left:50%;transform:translateX(-50%);top:12%;background:#10223B;color:#fff;font-size:.73rem;font-weight:800;padding:7px 13px;border-radius:12px;box-shadow:0 8px 20px rgba(16,34,59,.35);white-space:nowrap;z-index:3}
+.trkx-truckmk{position:absolute;width:42px;height:42px;border-radius:50%;background:#FC5305;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 0 0 6px rgba(252,83,5,.25);z-index:2;animation:trkxPulse 2.2s infinite}
+@keyframes trkxPulse{0%,100%{box-shadow:0 0 0 6px rgba(252,83,5,.25)}50%{box-shadow:0 0 0 12px rgba(252,83,5,.1)}}
+.trkx-bmk{position:absolute;background:#FC5305;color:#fff;font-weight:900;font-size:.72rem;padding:5px 9px;border-radius:10px;z-index:2;box-shadow:0 4px 10px rgba(252,83,5,.4)}
+.trkx-tools{position:absolute;top:8px;right:8px;display:flex;gap:5px;z-index:3}
+.trkx-tool{width:27px;height:27px;border-radius:8px;background:rgba(15,23,42,.85);color:#fff;font-size:.72rem;display:flex;align-items:center;justify-content:center}
+.trkx-sheet{background:#0e1726;color:#fff;padding:14px 14px 16px;border-radius:18px 18px 0 0;margin-top:-16px;position:relative;z-index:4}
+.trkx-grab{width:38px;height:4px;border-radius:99px;background:#2b3a54;margin:0 auto 10px}
+.trkx-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}
+.trkx-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:11px;text-align:center;padding:8px 4px}
+.trkx-stat b{font-size:.88rem}
+.trkx-stat span{display:block;color:#94a3b8;font-size:.55rem;font-weight:800;letter-spacing:.09em;margin-top:2px}
+.trkx-step{display:flex;justify-content:space-between;margin:12px 2px 4px;position:relative}
+.trkx-step:before{content:'';position:absolute;left:8%;right:8%;top:12px;height:2px;background:#233047}
+.trkx-node{position:relative;text-align:center;font-size:.55rem;font-weight:800;color:#94a3b8;letter-spacing:.05em;flex:1}
+.trkx-node i{display:flex;width:25px;height:25px;border-radius:50%;background:#233047;color:#94a3b8;align-items:center;justify-content:center;font-style:normal;font-size:.7rem;margin:0 auto 3px;position:relative;z-index:1}
+.trkx-node.done i{background:#16a34a;color:#fff}
+.trkx-node.on i{background:#FC5305;color:#fff;box-shadow:0 0 0 4px rgba(252,83,5,.25)}
+.trkx-cta{display:block;background:#FC5305;color:#fff;text-align:center;font-weight:900;border-radius:14px;padding:13px 10px;font-size:.92rem;margin:11px 0 9px;box-shadow:0 10px 24px -10px rgba(252,83,5,.6)}
+.trkx-apps{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.trkx-app{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:11px;text-align:center;font-size:.7rem;font-weight:700;color:#e2e8f0;padding:9px 4px}
+.trkx-cap{color:#7a8aa5;font-size:.63rem;text-align:center;margin:7px 2px 0;line-height:1.5}
+.trkx-panel{background:#fff;border:1px solid #e6ebf3;border-radius:18px;overflow:hidden;box-shadow:0 22px 60px -34px rgba(16,34,59,.4)}
+.trkx-panel-map{position:relative;height:150px;background:linear-gradient(180deg,#f7f3ea,#f1ede2)}
+.trkx-prow{display:flex;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid #eef2f7;font-size:.86rem;color:#334155;align-items:center}
+.trkx-prow b{color:#10223B}
+.trkx-meter{height:7px;border-radius:99px;background:#eef2f7;overflow:hidden;flex:1;margin:0 10px}
+.trkx-meter i{display:block;height:100%;width:72%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#fbbf24)}
+@media(prefers-reduced-motion:reduce){.trkx-truckmk{animation:none}}
 </style>"""
 
 _TRK_FAQ = [
@@ -4889,15 +4909,7 @@ trk += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60
  '<p style="color:#cbd5e1;font-size:1.08rem;line-height:1.7">You <a href="book-truck-loads.html" style="color:#7dd3fc">booked in one tap</a> &mdash; now the trip runs itself. The driver&rsquo;s phone becomes the tracker, an 800-meter geofence arms at every stop, arrive and depart stamp themselves as server-side evidence, and the broker or shipper watches the same live map you do. Every timestamp is money: detention, layover and on-time proof all hang off this one GPS trail.</p>'
  '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Track your first trip &rarr;</a><a href="app/partner/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Watch your freight live &mdash; broker / shipper</a></div>'
  '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; No ELD required</span><span>&#x2713; Auto check-ins, zero driver taps</span><span>&#x2713; Off at delivery &mdash; privacy by code</span></div></div>'
- '<div class="reveal" aria-hidden="true"><div class="trkx-phone">'
- '<div class="trkx-chips"><span class="trkx-chip">&#128664; Trip #4102</span><span class="trkx-chip">&#128266; Voice</span><span class="trkx-chip">&#128506; Google Maps</span><span class="trkx-chip">&#9888; Emergency</span></div>'
- '<div class="trkx-map"><div class="trkx-route"></div>'
- '<div class="trkx-geo" style="left:4%;top:8%"></div><div class="trkx-geo" style="left:64%;top:58%"></div>'
- '<span class="trkx-truck">&#128666;</span>'
- '<span style="position:absolute;left:6%;top:2%;color:#4ade80;font-size:.68rem;font-weight:800">PU &middot; Dallas</span>'
- '<span style="position:absolute;left:66%;top:52%;color:#fbbf24;font-size:.68rem;font-weight:800">DEL &middot; Atlanta</span></div>'
- '<div class="trkx-toast">&#x2713; Arrived &middot; Pickup &middot; 09:12 recorded &mdash; detention clock armed</div>'
- '</div></div></div></div></section>')
+ '<div class="reveal" aria-hidden="true"><div class="trkx-phone"><div class="trkx-status"><span>4:10</span><span>&#9679;&#9679;&#9679; &#128246; 32%</span></div><div class="trkx-map2"><svg viewBox="0 0 300 240" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true"><path d="M118 200 C 128 132, 176 100, 196 44" fill="none" stroke="#FC5305" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 0"/><path d="M118 200 C 128 132, 176 100, 196 44" fill="none" stroke="#10223B" stroke-width="5" stroke-linecap="round" stroke-dasharray="7 9" opacity=".55"/></svg><span class="city" style="left:8%;top:18%">Memphis&#8226;</span><span class="city" style="left:56%;top:14%;font-weight:900;color:#7d7563">ATLANTA</span><span class="city" style="left:10%;top:46%">Jackson&#8226;</span><span class="city" style="left:62%;top:80%">Tampa&#8226;</span><div class="trkx-eta">359 min &middot; 466.2 km</div><div class="trkx-tools"><span class="trkx-tool">&#128225;</span><span class="trkx-tool">&#127769;</span><span class="trkx-tool">&#9974;</span><span class="trkx-tool">&#128196;</span></div><span class="trkx-bmk" style="left:62%;top:12%">B</span><div class="trkx-truckmk" style="left:29%;top:66%">&#128666;</div></div><div class="trkx-sheet"><div class="trkx-grab"></div><div class="ftx-row"><b style="font-size:.92rem">&#128230; At pickup &middot; detention clock running</b><b style="color:#FC5305;font-size:1.05rem">$1,175</b></div><div class="trkx-stats"><div class="trkx-stat"><b>58 km/h</b><span>SPEED</span></div><div class="trkx-stat"><b>0 m</b><span>DIST LEFT</span></div><div class="trkx-stat"><b>12:07 PM</b><span>APPT TIME</span></div></div><div class="trkx-step"><div class="trkx-node done"><i>&#x2713;</i>START</div><div class="trkx-node on"><i>&#128205;</i>PICKUP</div><div class="trkx-node"><i>&#128739;</i>DRIVE</div><div class="trkx-node"><i>&#127937;</i>DELIVER</div><div class="trkx-node"><i>&#128176;</i>PAID</div></div><div class="trkx-cap" style="text-align:left;margin:6px 2px 0">Checked in at A &#x2713; (broker notified). Drive out of the zone and departure records automatically.</div><span class="trkx-cta">&#128666; Loaded &mdash; leaving pickup</span><div class="trkx-apps"><span class="trkx-app">&#129517; Google Maps</span><span class="trkx-app">&#128998; Waze</span><span class="trkx-app">&#128241; Other apps</span></div><div class="trkx-cap">Navigate with any app &mdash; check-ins and proof stay in LoadBoot automatically.</div></div></div></div></div></div></section>')
 
 # role router
 trk += ('<section style="background:#0b1220;padding:0 0 34px"><div class="wrap"><div class="cards g4" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
@@ -4918,16 +4930,7 @@ trk += ('<section class="ftx-sec" id="for-drivers"><div class="wrap"><div class=
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>ELD optional</b> &mdash; already run Samsara or Motive? Connect it and positions flow from your hardware instead of the phone.</div></div>'
  '</div>'
  '<div style="margin-top:16px"><a href="apps.html" class="btn btn-secondary">Get the app &rarr;</a></div></div>'
- '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
- '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#128241; On the phone, in order</div>'
- '<div class="trkx-log">'
- '<div><span>Trip opens on the A&rarr;B leg</span><span style="color:#4ade80">auto</span></div>'
- '<div><span>&#128266; &ldquo;In 2 miles, keep right onto I-20 E&rdquo;</span><span style="color:#4ade80">voice</span></div>'
- '<div><span>&#128506; Driver switches to Google Maps</span><span style="color:#4ade80">tracking continues</span></div>'
- '<div><span>Enters 800 m geofence &rarr; Arrive 09:12</span><span style="color:#4ade80">no taps</span></div>'
- '<div><span>&#128247; POD photo at delivery</span><span style="color:#4ade80">in-app</span></div>'
- '<div style="border-bottom:0"><span>Delivered &rarr; tracking shuts off</span><span style="color:#4ade80">privacy</span></div>'
- '</div></div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="trkx-phone"><div class="trkx-status"><span>4:10</span><span>&#9679;&#9679;&#9679; &#128246; 32%</span></div><div class="trkx-map2" style="height:210px"><svg viewBox="0 0 300 210" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true"><path d="M118 170 C 128 115, 176 88, 196 44" fill="none" stroke="#FC5305" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 0"/><path d="M118 170 C 128 115, 176 88, 196 44" fill="none" stroke="#10223B" stroke-width="5" stroke-linecap="round" stroke-dasharray="7 9" opacity=".55"/></svg><div class="trkx-eta" style="top:9%">0 min &middot; 0.3 km &middot; arrive 4:10 PM</div><span class="trkx-bmk" style="left:62%;top:10%">B</span><div class="trkx-truckmk" style="left:30%;top:60%">&#128666;</div><span style="position:absolute;left:6%;bottom:8%;background:rgba(15,23,42,.85);color:#fff;font-size:.68rem;font-weight:800;padding:6px 11px;border-radius:999px;z-index:3">&#128193; Trip details</span></div><div class="trkx-sheet"><div class="trkx-grab"></div><div class="ftx-row"><b style="color:#4ade80;font-size:.95rem">At delivery &middot; geofence armed</b><span style="background:#dc2626;color:#fff;font-weight:900;font-size:.72rem;padding:6px 13px;border-radius:999px">Exit</span></div><div class="trkx-apps" style="margin-top:10px"><span class="trkx-app">&#128247; Dock photo</span><span class="trkx-app">&#128221; Signed BOL/POD</span><span class="trkx-app">&#129534; Lumper receipt</span></div><div class="trkx-cap">While you wait: photo the dock, the facility-signed BOL/POD (with IN/OUT times) and any lumper receipt &mdash; they attach to this trip and land in any claim automatically.</div></div></div></div>'
  '</div></div></section>')
 
 # geofence engine
@@ -4948,15 +4951,14 @@ trk += ('<section class="ftx-sec" id="for-money"><div class="wrap"><div class="l
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Delivery flips the invoice</b> &mdash; POD approved means the invoice generates with every proven accessorial on it. <a href="payments-settlements.html">How payment works</a>.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Cancellations keep evidence</b> &mdash; if a load dies at the dock, the GPS trail survives for the TONU claim.</div></div>'
  '</div></div>'
- '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
- '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#129534; Server-verified event log &middot; Trip #4102</div>'
- '<div class="trkx-log">'
- '<div><span>09:12:04 &middot; ARRIVE &middot; Pickup, Dallas TX</span><span style="color:#4ade80">geofence</span></div>'
- '<div><span>11:12:04 &middot; FREE TIME ENDS</span><span style="color:#fbbf24">clock on</span></div>'
- '<div><span>13:47:31 &middot; DEPART &middot; Pickup</span><span style="color:#4ade80">geofence</span></div>'
- '<div><span>Detention 2h 35m &times; $60</span><b style="color:#4ade80">+$155.00</b></div>'
- '<div style="border-bottom:0"><span>&#128206; Attached to invoice &middot; with GPS log</span><span style="color:#4ade80">auto</span></div>'
- '</div></div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="trkx-panel">'
+ '<div style="background:#10223B;color:#fff;padding:13px 18px;display:flex;justify-content:space-between;align-items:center"><b style="font-size:.9rem">&#129534; Detention claim &middot; Trip #4102</b><span style="background:rgba(34,197,94,.18);color:#4ade80;border:1px solid rgba(34,197,94,.5);font-weight:900;font-size:.68rem;padding:4px 10px;border-radius:999px">&#x2713; EVIDENCE ATTACHED</span></div>'
+ '<div class="trkx-prow"><span>09:12:04 &middot; ARRIVE &middot; Pickup, Dallas TX</span><b style="color:#16a34a">geofence &middot; auto</b></div>'
+ '<div class="trkx-prow"><span>11:12:04 &middot; Free time ends (2h)</span><b style="color:#b45309">clock on</b></div>'
+ '<div class="trkx-prow"><span>13:47:31 &middot; DEPART &middot; Pickup</span><b style="color:#16a34a">geofence &middot; auto</b></div>'
+ '<div class="trkx-prow"><span><b>Detention 2h 35m &times; $60/hr</b></span><b style="color:#16a34a;font-size:1.05rem">+$155.00</b></div>'
+ '<div class="trkx-prow" style="border-bottom:0;background:#f8fafc"><span>&#128206; Filed to invoice with server GPS log</span><b style="color:#16a34a">automatic</b></div>'
+ '</div></div>'
  '</div></div></section>')
 
 # broker/shipper live view
@@ -4969,14 +4971,17 @@ trk += ('<section class="ftx-sec alt" id="for-watchers"><div class="wrap"><div c
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Evidence, not opinions</b> &mdash; every claim that reaches your invoice carries the server-verified event log behind it.</div></div>'
  '</div>'
  '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"><a href="app/partner/" class="btn btn-primary">Open the Partner Portal &rarr;</a><a href="load-board.html#for-posters" class="btn btn-secondary">How posting works</a></div></div>'
- '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
- '<div class="ftx-row" style="margin-bottom:10px"><b style="color:#fff">Dallas &rarr; Atlanta &middot; $2,850</b><span class="ftx-chip ftx-green"><span class="lbx-livedot"></span>LIVE</span></div>'
- '<div class="lbx-load"><div class="trkx-log">'
- '<div><span>&#x2713; Posted &middot; &#x2713; Booked &middot; &#x2713; Picked up</span><span style="color:#4ade80">done</span></div>'
- '<div style="border-bottom:0"><span>&#128666; In transit &middot; I-20 E near Birmingham</span><b style="color:#7dd3fc">ETA 16:40 &middot; on time</b></div>'
- '</div></div>'
- '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">Delivery dock timer</span><span class="ftx-chip ftx-amber">not arrived &middot; free 2h ready</span></div></div>'
- '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><span style="color:#cbd5e1">Pickup detention</span><b style="color:#fbbf24">+$155.00 &middot; evidence attached</b></div></div>'
+ '<div class="reveal" aria-hidden="true"><div class="trkx-panel">'
+ '<div style="background:#10223B;color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center"><b style="font-size:.9rem">Dallas, TX &rarr; Atlanta, GA &middot; $2,850</b><span style="background:rgba(34,197,94,.18);color:#4ade80;border:1px solid rgba(34,197,94,.5);font-weight:900;font-size:.68rem;padding:4px 10px;border-radius:999px"><span class="lbx-livedot"></span>LIVE &middot; 12s ago</span></div>'
+ '<div class="trkx-panel-map"><svg viewBox="0 0 420 150" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true"><path d="M60 118 C 150 108, 260 70, 356 34" fill="none" stroke="#FC5305" stroke-width="5" stroke-linecap="round"/></svg>'
+ '<span class="city" style="left:10%;top:22%">Birmingham&#8226;</span><span class="city" style="left:74%;top:12%;font-weight:900;color:#7d7563">ATLANTA</span>'
+ '<div class="trkx-truckmk" style="left:44%;top:42%;width:34px;height:34px;font-size:.9rem">&#128666;</div>'
+ '<div class="trkx-eta" style="top:60%;left:64%;transform:none;font-size:.68rem">ETA 16:40 &middot; on time</div>'
+ '</div>'
+ '<div class="trkx-prow"><span>&#x2713; Posted 08:02 &nbsp;&middot;&nbsp; &#x2713; Booked 08:41 &nbsp;&middot;&nbsp; &#x2713; Picked up 13:47</span><b style="color:#16a34a">on schedule</b></div>'
+ '<div class="trkx-prow"><span style="flex:none">Pickup dwell</span><span class="trkx-meter"><i></i></span><b style="color:#b45309">3h 35m &middot; +$155 detention</b></div>'
+ '<div class="trkx-prow"><span style="flex:none">Delivery dock</span><span class="trkx-meter"><i style="width:0"></i></span><b style="color:#64748b">not arrived &middot; free 2h ready</b></div>'
+ '<div class="trkx-prow" style="border-bottom:0;background:#f8fafc"><span>&#129534; Server-verified event log &middot; 14 events</span><b style="color:#0883F7">open &rarr;</b></div>'
  '</div></div>'
  '</div></div></section>')
 
