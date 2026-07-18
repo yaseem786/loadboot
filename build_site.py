@@ -98,6 +98,17 @@ header.scrolled{border-bottom-color:var(--border);box-shadow:0 4px 24px -16px rg
 .menu-btn{display:none;background:none;border:none;cursor:pointer}
 .nav-actions{display:flex;gap:12px;align-items:center}.hd-login{padding:11px 16px}.hd-login svg{vertical-align:-3px}
 .nav-mob{display:none}
+.nav-dd{position:relative;display:flex;align-items:center}
+.nav-dd-top{display:inline-flex;align-items:center;gap:5px}
+.nav-caret{opacity:.55;transition:transform .2s}
+.nav-dd:hover .nav-caret{transform:rotate(180deg)}
+.nav-dd::before{content:"";position:absolute;top:100%;left:-10px;right:-10px;height:16px}
+.nav-dd-menu{position:absolute;top:calc(100% + 14px);left:-14px;min-width:264px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 60px -22px rgba(16,34,59,.35);padding:8px;display:none;flex-direction:column;z-index:60}
+.nav-dd:hover .nav-dd-menu,.nav-dd:focus-within .nav-dd-menu{display:flex}
+.nav-dd-item{display:block;padding:9px 12px;border-radius:9px;font-size:.9rem;font-weight:600;color:#334155;white-space:nowrap}
+.nav-dd-item:hover{background:#f1f6fd;color:var(--blue)}
+.nav-dd-item.active{color:var(--blue)}
+.nav-dd-item::after{display:none}
 .hero{padding:108px 0 112px;position:relative;background:radial-gradient(130% 120% at 76% -10%,#243150 0%,#10223B 56%);overflow:hidden;color:#fff;border-bottom:1px solid #1e293b}
 .hero h1{color:#fff}
 .hero .lead{color:#cbd5e1}
@@ -274,8 +285,13 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .reveal.in{opacity:1;transform:none}
 .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
 @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.aurora span,.hv-float,.road .tk,.road .lane,.dasharw{animation:none}}
-@media(max-width:880px){.nav-links{position:fixed;inset:74px 0 auto 0;background:#fff;flex-direction:column;padding:18px 24px;gap:18px;border-bottom:1px solid var(--border);display:none}
+@media(max-width:880px){.nav-links{position:fixed;inset:74px 0 auto 0;background:#fff;flex-direction:column;padding:18px 24px;gap:14px;border-bottom:1px solid var(--border);display:none;max-height:calc(100vh - 74px);overflow:auto;align-items:stretch}
 .nav-links.open{display:flex}.menu-btn{display:block}
+.nav-dd{flex-direction:column;align-items:stretch}
+.nav-dd::before{display:none}
+.nav-dd .nav-dd-menu{display:flex;position:static;box-shadow:none;border:0;border-left:2px solid #e6ebf3;border-radius:0;padding:4px 0 4px 14px;margin:8px 0 0 4px;min-width:0}
+.nav-caret{display:none}
+.nav-dd-item{white-space:normal;padding:7px 8px}
 .nav-mob{display:block;font-weight:700}.nav-mob-login{color:var(--blue)}.nav-mob-go{color:var(--orange)}
 .hero-grid,.route-grid{grid-template-columns:1fr;gap:40px}
 .stats-grid{grid-template-columns:repeat(2,1fr);gap:32px 20px}
@@ -341,12 +357,54 @@ def deglyph(s):
         s = s.replace(k, _svg(v))
     return s
 
+# Mega-menu IA (big-company pattern): Features = WHAT the product does (SEO: "features"
+# out-searches "product"); Solutions = WHO it is for; Resources = learn/tools. Every parent
+# has a real landing page so mobile taps and crawlers always land somewhere.
+NAV_MENU = [
+  ('Features', 'features.html', [
+    ('features.html', 'All features'),
+    ('gps-tracking.html', 'GPS tracking &amp; proof'),
+    ('payments-settlements.html', 'Payments &amp; settlements'),
+    ('factoring-noa.html', 'Factoring &amp; NOA'),
+    ('fleet-management.html', 'Fleet management'),
+    ('integrations.html', 'Integrations &mdash; QuickBooks &amp; ELD'),
+  ]),
+  ('Solutions', 'services.html', [
+    ('carriers.html', 'For carriers'),
+    ('owner-operator-dispatch.html', 'For owner-operators'),
+    ('new-authority-dispatch.html', 'For new authorities'),
+    ('brokers.html', 'For brokers'),
+    ('shipper-solutions.html', 'For shippers'),
+    ('agents.html', 'Agent program &mdash; earn 1%'),
+  ]),
+  ('Pricing', 'pricing.html', None),
+  ('Resources', 'resources.html', [
+    ('how-it-works.html', 'How it works'),
+    ('market-rates.html', 'Market rates per mile'),
+    ('cost-per-mile-calculator.html', 'Cost-per-mile calculator'),
+    ('load-score.html', 'Load Score'),
+    ('blog.html', 'Blog'),
+    ('faq.html', 'FAQ'),
+  ]),
+  ('About', 'about.html', None),
+  ('Contact', 'contact.html', None),
+]
+# Legacy flat NAV kept for anything else that references it (e.g. drawers).
 NAV = [('index.html','Home'),('services.html','Services'),('how-it-works.html','How It Works'),
        ('pricing.html','Pricing'),('load-score.html','Load Score'),('blog.html','Blog'),
        ('about.html','About'),('contact.html','Contact')]
 
 def header(active):
-    links = ''.join('<a href="%s" class="%s">%s</a>' % (h, 'active' if h==active else '', t) for h,t in NAV)
+    links = ''
+    for label, href, subs in NAV_MENU:
+        child_active = bool(subs) and any(h == active for h, _t in subs)
+        is_act = (href == active) or child_active
+        if subs:
+            dd = ''.join('<a href="%s" class="nav-dd-item %s">%s</a>' % (h, 'active' if h==active else '', t) for h, t in subs)
+            links += ('<div class="nav-dd"><a href="%s" class="nav-dd-top %s">%s<svg class="nav-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></a>'
+                      '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
+        else:
+            links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
     mob = '<a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
     return '''<header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
