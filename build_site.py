@@ -4328,7 +4328,7 @@ lbx += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60
  '<div><div class="eyebrow" style="color:#FC5305">Live load board</div>'
  '<h1 style="color:#fff;font-size:2.55rem;line-height:1.12;margin:10px 0 16px">The truck load board where <span style="color:#4ade80">every load is real</span></h1>'
  '<p style="color:#cbd5e1;font-size:1.08rem;line-height:1.7">Find truck loads without the ghost freight, the &ldquo;already covered&rdquo; phone calls or week-old reposts. On LoadBoot the board and the booking are one system: booked loads vanish from every screen instantly, rates are all-in with accessorial pay published before you book, and deadhead is computed live from your GPS — not guessed.</p>'
- '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Find real loads &rarr;</a><a href="create-broker-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Post a load</a></div>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Find real loads &rarr;</a><a href="app/partner/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Post a load &mdash; broker / shipper</a></div>'
  '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Zero ghost loads</span><span>&#x2713; Direct offers with live countdown</span><span>&#x2713; Propose-a-rate</span><span>&#x2713; $0 to search &middot; flat 5% only when dispatched</span></div></div>'
  '<div class="lbx-board reveal" aria-hidden="true">'
  '<div class="lbx-filters"><span class="lbx-filter on">&#127760; Available loads</span><span class="lbx-filter">&#128232; Requests <b style="color:#fbbf24">2</b></span><span class="lbx-filter">&#9881; Filters &#9662;</span></div>'
@@ -4343,6 +4343,9 @@ lbx += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60
  '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer &minus;10&deg;F</span><span class="ftx-chip ftx-green">$3.90/mi</span><span class="ftx-chip ftx-purple">+1 stop &middot; stop-off pay</span></div></div>'
  '<div style="text-align:center;color:#64748b;font-size:.76rem;margin-top:4px"><span class="lbx-livedot"></span>Live board &mdash; a booked load dims out for everyone, instantly.</div>'
  '</div></div></div></section>')
+
+# role router — send each side to its sections
+lbx += ('<section style="background:#0b1220;padding:0 0 34px"><div class="wrap"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px" class="cards g4"><a href="#for-carriers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128666; I move freight</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Carriers &amp; owner-operators &mdash; search, book, get paid &darr;</div></a><a href="#for-posters" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127970; I&rsquo;m a broker</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Post, target carriers, run the offer race &darr;</div></a><a href="#for-posters" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127981; I&rsquo;m a shipper</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Post your own freight directly &mdash; no middleman &darr;</div></a><a href="#for-agents" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#129309; I refer people</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Agents earn 1% on every referred load &darr;</div></a></div></div></section>')
 
 # SEO prose strip
 lbx += ('<section class="ftx-sec" style="padding-top:48px;padding-bottom:8px"><div class="wrap"><div class="lbx-panel reveal" style="max-width:900px;margin:0 auto">'
@@ -4378,9 +4381,9 @@ lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head rev
  '</div></div></section>')
 
 # Search & filters
-lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
+lbx += ('<section class="ftx-sec" id="for-carriers"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div class="ftx-kicker">Find loads your way</div><h2 class="ftx-h">Two feeds, instant filters, real deadhead</h2>'
- '<p class="ftx-p">The board has two tabs: <b>&#128232; Requests</b> — loads brokers pushed directly to you, with live countdowns — and <b>&#127760; Available loads</b>, the open market. DAT-style instant filters narrow by origin, destination, equipment, minimum $/mi and minimum total rate.</p>'
+ '<p class="ftx-p">The board has two tabs: <b>&#128232; Requests</b> — loads brokers pushed directly to you, with live countdowns — and <b>&#127760; Available loads</b>, the open market. Instant filters narrow by origin, destination, equipment, minimum $/mi and minimum total rate.</p>'
  '<div style="margin-top:12px">'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Deadhead from your real position</b> &mdash; road miles from your live GPS or home base, not straight-line guesses.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Can-you-make-it chips</b> &mdash; every card computes hours to pickup and delivery against HOS (solo or team): green &ldquo;you&rsquo;ll make it&rdquo;, amber &ldquo;tight, roll now&rdquo;, red &ldquo;you&rsquo;d be late&rdquo;.</div></div>'
@@ -4460,6 +4463,26 @@ lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"
  '<tr><td>Scheduling</td><td><b>FCFS or appointment</b> &mdash; declared up front</td><td><a href="fcfs-policy.html">FCFS policy</a></td></tr>'
  '</table></div></div></section>')
 
+# Accessorial automation — the clocks run themselves
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">Zero paperwork accessorials</div><h2 class="ftx-h">Detention that files itself &mdash; with GPS proof</h2>'
+ '<p class="ftx-p">This is where the board stops being a listing site and becomes an operating system. Every stop has an 800-meter geofence: the moment the truck rolls inside, <b>Arrive</b> is recorded server-side; rolling out records <b>Depart</b>. The free-time clock (2 hours standard) and the detention meter run on those server timestamps &mdash; not on anyone&rsquo;s word.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Detention accrues live</b> &mdash; carrier and poster watch the same meter tick in real time; the $ amount builds into the invoice automatically.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Claims carry evidence</b> &mdash; every filed accessorial (detention, layover, lumper receipt, TONU) attaches the server-verified event log. Disputes end before they start.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Lumper &amp; issues in-app</b> &mdash; upload the lumper receipt from the dock; report breakdown, weather, missed appointment or accident from the trip screen.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Emergencies without TONU</b> &mdash; a verified emergency gets a 2-hour-response reschedule instead of a penalty. <a href="emergency-rescheduling-policy.html">Emergency policy</a>.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><div class="lbx-board">'
+ '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#128337; Pickup stop &middot; Benton, WI</div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">09:12 &middot; Arrived</span><span class="ftx-chip ftx-green">&#x2713; geofence &middot; auto</span></div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">11:12 &middot; Free time ends</span><span class="ftx-chip ftx-amber">detention clock starts</span></div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">13:47 &middot; Departed</span><span class="ftx-chip ftx-green">&#x2713; geofence &middot; auto</span></div></div>'
+ '<div class="lbx-load" style="margin-bottom:0;border-color:rgba(34,197,94,.45)"><div class="ftx-row"><b style="color:#fff">Detention: 2h 35m &times; $60/hr</b><b style="color:#4ade80">+$155.00</b></div>'
+ '<div style="color:#94a3b8;font-size:.78rem;margin-top:6px">Filed automatically with GPS event log &middot; added to the invoice</div></div>'
+ '</div></div>'
+ '</div></div></section>')
+
 # Multi-stop + booking gates
 lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div class="ftx-kicker">Multi-stop, done right</div><h2 class="ftx-h">Every extra stop has its own geofence, clock and pay</h2>'
@@ -4490,15 +4513,16 @@ lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"
  ]) + '</div></div></section>')
 
 # Posting side
-lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+lbx += ('<section class="ftx-sec alt" id="for-posters"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div class="ftx-kicker">For brokers &amp; shippers</div><h2 class="ftx-h">Post in minutes. Covered in minutes. Watched live.</h2>'
+ '<p class="ftx-p"><b>Shippers post directly</b> &mdash; you don&rsquo;t need a broker to use LoadBoot. Register as a shipper (or facility), pin your docks once, and your freight goes to the same verified carrier pool with the same live tracking, detention meters and document trail brokers get.</p>'
  '<p class="ftx-p">The posting wizard autocompletes GPS-pinned facilities, calculates road miles through every stop, suggests a market rate, and requires the accessorial rate card up front — which is exactly why verified carriers book fast. Then target: put the load on the board, or fire direct offers at specific carriers with a countdown you control.</p>'
  '<div style="margin-top:12px">'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Offer race, managed</b> &mdash; see sent / awaiting / declined counts live; withdraw or extend windows; first acceptance books atomically.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Live tracking view</b> &mdash; milestone timeline, live GPS truck marker with ETA, and detention accruing per stop in real time — you see the $ building, with the same numbers the carrier sees.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Server-verified event log</b> &mdash; every arrive/depart/POD is timestamped evidence, so disputes end before they start.</div></div>'
  '</div>'
- '<div style="margin-top:16px"><a href="create-broker-account.html" class="btn btn-primary">Post your first load &rarr;</a> &nbsp; <a href="shipper-solutions.html" class="btn btn-secondary">Shipper solutions</a></div></div>'
+ '<div style="margin-top:16px"><a href="app/partner/" class="btn btn-primary">Open the Partner Portal &rarr;</a> &nbsp; <a href="create-broker-account.html" class="btn btn-secondary">Broker account guide</a> &nbsp; <a href="create-shipper-account.html" class="btn btn-secondary">Shipper account guide</a></div></div>'
  '<div class="reveal"><div class="lbx-board">'
  '<div style="font-weight:800;color:#fff;margin-bottom:10px">Your load &middot; Dallas &rarr; Atlanta</div>'
  '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">Direct offers</span><span class="ftx-chip ftx-amber">3 sent &middot; 2 awaiting &middot; 09:12 left</span></div></div>'
@@ -4508,8 +4532,21 @@ lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
  '</div></div>'
  '</div></div></section>')
 
+# Under the hood — the tech that enforces board truth
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Under the hood</div><h2>The engineering that makes the board honest</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#9878;</div><h3>Atomic booking</h3><p>Book/accept is a single race-safe database transaction &mdash; two carriers can never win the same load, no matter how close the taps.</p></div>'
+ '<div class="card"><div class="icon">&#128506;</div><h3>Real road miles</h3><p>Deadhead and trip miles come from a live routing engine over the road network &mdash; straight-line guesses only as a marked fallback.</p></div>'
+ '<div class="card"><div class="icon">&#128225;</div><h3>Server-verified events</h3><p>Arrive, depart, POD &mdash; every trip event is timestamped server-side inside 800-meter geofences and kept as evidence, even on cancellations.</p></div>'
+ '<div class="card"><div class="icon">&#128276;</div><h3>Push, everywhere</h3><p>Direct requests and countdowns hit your phone by web push and in-app inbox; the whole portal installs as an app and works on any device.</p></div>'
+ '<div class="card"><div class="icon">&#128274;</div><h3>Broker packet on booking</h3><p>Booking unlocks the packet: exact addresses, GPS pins, pickup/release and confirmation numbers &mdash; redacted until the load is yours.</p></div>'
+ '<div class="card"><div class="icon">&#11088;</div><h3>Trip-verified ratings</h3><p>Only the two parties actually on a booking can rate each other &mdash; no fake reviews, and trust scores update with every delivery.</p></div>'
+ '<div class="card"><div class="icon">&#129504;</div><h3>Matching engine</h3><p>Eligibility + explainable ranking pairs each load with the right trucks; Post-my-truck scans for matches in the background while you drive.</p></div>'
+ '<div class="card"><div class="icon">&#128200;</div><h3>Account health</h3><p>An Amazon-style health score (starts at 100) rewards clean docs and on-time delivery &mdash; healthier accounts surface first for offers.</p></div>'
+ '</div></div></section>')
+
 # 4 roles
-lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Every side wins</div><h2>A truthful board works for all four sides</h2></div>'
+lbx += ('<section class="ftx-sec" id="for-agents"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Every side wins</div><h2>A truthful board works for all four sides</h2></div>'
  '<div class="cards g4 reveal" style="margin-top:26px">'
  '<div class="card"><div class="icon">&#128666;</div><h3>Carriers</h3><p>Stop calling dead freight. Every card is bookable, disclosed and protected by a written rate card. <a href="create-carrier-account.html">Create a carrier account &rarr;</a></p></div>'
  '<div class="card"><div class="icon">&#127970;</div><h3>Brokers</h3><p>Reach verified carriers in a countdown offer race — covered in minutes with GPS evidence, not 40 phone calls. <a href="create-broker-account.html">Create a broker account &rarr;</a></p></div>'
