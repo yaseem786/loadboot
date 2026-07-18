@@ -4062,7 +4062,7 @@ feat += fsec('board','Find freight','A load board with zero ghost loads',
    '<b>Propose-a-rate</b> &mdash; counter any load; the broker accepts or declines in-app.',
    '<b>Multi-stop chips</b> &mdash; extra pickups and drops shown per stop with stop-off pay on the rate card.',
    '<b>Load Score</b> &mdash; every load graded on rate-per-mile vs live market benchmarks. <a href="load-score.html">See Load Score</a>.'],
-  ('Read the full guide','how-it-works.html')),
+  ('Why ghost loads die here','ghost-loads-load-board-problems.html')),
  ('<div class="ftx-mock"><div class="ftx-card"><div class="ftx-row"><b style="color:#fff;font-size:1.05rem">Dallas, TX &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.15rem">$2,850</b></div>'
   '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">781 mi</span><span class="ftx-chip ftx-green">$3.65/mi</span><span class="ftx-chip ftx-purple">&#128230; +1 stop</span></div>'
   '<div class="ftx-row" style="margin-top:11px"><span class="ftx-chip ftx-amber">&#9203; Offer 12:44 left</span><span class="ftx-chip ftx-green">Book in one tap &rarr;</span></div></div>'
