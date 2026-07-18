@@ -3720,7 +3720,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '<div class="mrx-card b"><svg width="54" height="40" viewBox="0 0 54 40"><path d="M6 34 L18 20 L28 26 L48 6" stroke="#7c3aed" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="48" cy="6" r="4" fill="#7c3aed"/><rect x="4" y="34" width="46" height="3" rx="1.5" fill="#10223B"/></svg>'
 '<h3>For Freight Brokers</h3>'
 '<p>Buy-side and sell-side on one screen \u2014 benchmark spot rates, protect your margin, quote shippers with confidence.</p>'
-'<ul><li>BUY: what carriers accept on the lane (real bookings)</li><li>SELL: shipper-side guidance with a typical 12\u201318% brokerage margin</li><li>Rate suggestions inside load posting \u2014 under-market posts get flagged before they sit unbooked</li><li>Auto-generated, e-signed rate confirmations on every load</li></ul>'
+'<ul><li>BUY: what carriers accept on the lane (real bookings)</li><li>SELL: shipper-side guidance with a typical 12\u201318% brokerage margin</li><li>Rate suggestions inside load posting \u2014 under-market posts get flagged before they sit unbooked</li><li>Auto-generated, immutable rate confirmations on every load</li></ul>'
 '<a class="cta" href="/app/partner/">Unlock lane-level buy/sell rates \u2192</a></div>'
 
 '<div class="mrx-card s"><svg width="54" height="40" viewBox="0 0 54 40"><rect x="6" y="14" width="16" height="20" rx="2" fill="#16a34a"/><rect x="24" y="6" width="16" height="28" rx="2" fill="#10223B"/><rect x="42" y="20" width="8" height="14" rx="2" fill="#4ade80"/></svg>'
@@ -4074,14 +4074,14 @@ feat += fsec('board','Find freight','A load board with zero ghost loads',
 
 feat += fsec('booking','Book &amp; roll','Booking with paperwork that enforces itself',
  fbody('Book &amp; roll','Booking with paperwork that enforces itself',
-  'Booking is not a phone call &mdash; it is a gated workflow. The rate confirmation is e-signed before a wheel turns, the dispatch sheet prints itself, and every stop lands on the trip map with times.',
-  ['<b>Rate confirmation e-sign</b> &mdash; booking is blocked until the RC is signed; the signed PDF lives on the trip forever.',
+  'Booking is not a phone call &mdash; it is a gated workflow. The rate confirmation is issued the second you book, the dispatch sheet prints itself, and every stop lands on the trip map with times.',
+  ['<b>Instant, immutable rate confirmation</b> &mdash; issued to Documents automatically on booking; acknowledge in-app and the PDF lives on the trip forever. <a href="how-to-read-a-rate-confirmation.html">Learn to read a rate con</a>.',
    '<b>Booking approvals</b> &mdash; brokers approve requests with the carrier&rsquo;s safety record and document status in view.',
    '<b>Dispatch sheet</b> &mdash; one-click printable sheet with stops, contacts, PU/DEL numbers and rate card.',
    '<b>Emergency rescheduling</b> &mdash; breakdowns and delays follow a published policy, not an argument. <a href="emergency-rescheduling-policy.html">Read the policy</a>.'],
-  ('See how booking works','how-it-works.html')),
+  ('See the full booking flow, step by step','how-it-works.html')),
  ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128666; Booking checklist</div>'
-  '<div class="ftx-card ftx-row"><span>Rate confirmation</span><span class="ftx-chip ftx-green">&#x2713; e-signed</span></div>'
+  '<div class="ftx-card ftx-row"><span>Rate confirmation</span><span class="ftx-chip ftx-green">&#x2713; issued &middot; acknowledged</span></div>'
   '<div class="ftx-card ftx-row"><span>Driver + truck assigned</span><span class="ftx-chip ftx-green">&#x2713; Marcus &middot; #402</span></div>'
   '<div class="ftx-card ftx-row"><span>Pickup number</span><span class="ftx-chip ftx-amber">broker adds before PU</span></div>'
   '<div class="ftx-card ftx-row"><span>Dispatch sheet</span><span class="ftx-chip ftx-blue">&#128424; print</span></div></div>'), alt=True, flip=True)
@@ -4272,7 +4272,7 @@ feat += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);col
 
 RELATED['features.html'] = [('how-it-works.html','How It Works'),('gps-tracking.html','GPS Tracking'),('payments-settlements.html','Payments'),('factoring-noa.html','Factoring & NOA'),('fleet-management.html','Fleet Management'),('integrations.html','Integrations')]
 page('features.html', 'LoadBoot Features — Load Board, GPS Tracking, Payments, Factoring & QuickBooks | Trucking Software',
-     'Explore every LoadBoot feature: ghost-free load board, one-tap booking with e-signed rate confirmations, GPS geofence tracking with detention proof, receipt-verified payments, a full factoring/NOA engine, fleet tools, compliance automation and live two-way QuickBooks sync.',
+     'Explore every LoadBoot feature: ghost-free load board, one-tap booking with instant rate confirmations, GPS geofence tracking with detention proof, receipt-verified payments, a full factoring/NOA engine, fleet tools, compliance automation and live two-way QuickBooks sync.',
      'features.html', feat, _feat_schema)
 
 # ---------------- LIVE LOAD BOARD — flagship product page (code-verified features, zero invention) ----------------
