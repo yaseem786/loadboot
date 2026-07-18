@@ -363,6 +363,7 @@ def deglyph(s):
 NAV_MENU = [
   ('Features', 'features.html', [
     ('features.html', 'All features'),
+    ('load-board.html', 'Live load board'),
     ('gps-tracking.html', 'GPS tracking &amp; proof'),
     ('payments-settlements.html', 'Payments &amp; settlements'),
     ('factoring-noa.html', 'Factoring &amp; NOA'),
@@ -4062,7 +4063,7 @@ feat += fsec('board','Find freight','A load board with zero ghost loads',
    '<b>Propose-a-rate</b> &mdash; counter any load; the broker accepts or declines in-app.',
    '<b>Multi-stop chips</b> &mdash; extra pickups and drops shown per stop with stop-off pay on the rate card.',
    '<b>Load Score</b> &mdash; every load graded on rate-per-mile vs live market benchmarks. <a href="load-score.html">See Load Score</a>.'],
-  ('Why ghost loads die here','ghost-loads-load-board-problems.html')),
+  ('Explore the live load board','load-board.html')),
  ('<div class="ftx-mock"><div class="ftx-card"><div class="ftx-row"><b style="color:#fff;font-size:1.05rem">Dallas, TX &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.15rem">$2,850</b></div>'
   '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">781 mi</span><span class="ftx-chip ftx-green">$3.65/mi</span><span class="ftx-chip ftx-purple">&#128230; +1 stop</span></div>'
   '<div class="ftx-row" style="margin-top:11px"><span class="ftx-chip ftx-amber">&#9203; Offer 12:44 left</span><span class="ftx-chip ftx-green">Book in one tap &rarr;</span></div></div>'
@@ -4273,6 +4274,151 @@ RELATED['features.html'] = [('how-it-works.html','How It Works'),('gps-tracking.
 page('features.html', 'LoadBoot Features — Load Board, GPS Tracking, Payments, Factoring & QuickBooks | Trucking Software',
      'Explore every LoadBoot feature: ghost-free load board, one-tap booking with e-signed rate confirmations, GPS geofence tracking with detention proof, receipt-verified payments, a full factoring/NOA engine, fleet tools, compliance automation and live two-way QuickBooks sync.',
      'features.html', feat, _feat_schema)
+
+# ---------------- LIVE LOAD BOARD — flagship product page (ghost-free board, portal-real UI) ----------------
+LBX_CSS = """<style>
+.lbx-board{background:linear-gradient(160deg,#0e1c38,#0b1220 70%);border-radius:22px;padding:22px;box-shadow:0 34px 80px -32px rgba(11,18,32,.6);color:#e2e8f0;font-size:.9rem}
+.lbx-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.lbx-filter{padding:6px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.16);font-size:.74rem;font-weight:700;color:#cbd5e1}
+.lbx-filter.on{background:#0883F7;border-color:#0883F7;color:#fff}
+.lbx-load{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:15px;padding:15px 17px;margin-bottom:11px;position:relative}
+.lbx-load.hot{border-color:rgba(34,197,94,.45)}
+.lbx-timerbar{height:5px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:10px}
+.lbx-timerbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#fbbf24,#f97316);animation:lbxDrain 14s linear infinite}
+@keyframes lbxDrain{0%{width:86%}100%{width:4%}}
+.lbx-booked{animation:lbxGone 7s ease-in-out infinite}
+@keyframes lbxGone{0%,55%{opacity:1;transform:none;max-height:200px}70%{opacity:1}82%{opacity:0;transform:translateX(26px)}92%,100%{opacity:0;max-height:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0}}
+.lbx-bookstamp{position:absolute;top:12px;right:14px;background:rgba(34,197,94,.18);color:#4ade80;font-weight:900;font-size:.72rem;padding:4px 11px;border-radius:999px;border:1px solid rgba(34,197,94,.5);opacity:0;animation:lbxStamp 7s ease-in-out infinite}
+@keyframes lbxStamp{0%,52%{opacity:0;transform:scale(.7)}60%,80%{opacity:1;transform:scale(1)}92%,100%{opacity:0}}
+.lbx-anat{position:relative;max-width:660px;margin:34px auto 0}
+.lbx-callout{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
+.lbx-cnum{flex:none;width:24px;height:24px;border-radius:50%;background:#0883F7;color:#fff;font-weight:900;font-size:.74rem;display:flex;align-items:center;justify-content:center}
+.lbx-grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+@media(max-width:880px){.lbx-grid2{grid-template-columns:1fr}}
+.lbx-ghost{background:#fff;border:1.5px dashed #fca5a5;border-radius:15px;padding:15px 17px;color:#7f1d1d;position:relative}
+.lbx-ghost .tag{position:absolute;top:-11px;left:14px;background:#dc2626;color:#fff;font-size:.66rem;font-weight:900;letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+</style>"""
+
+_LBX_FAQ = [
+ ('What is a ghost load?', 'A ghost load is a load posted on a load board that is no longer actually available — it was already covered, expired, or posted only to fish for carrier rates. Carriers waste hours calling on freight that does not exist. Industry surveys consistently rank ghost/fake loads among the top complaints about traditional load boards.'),
+ ('How does LoadBoot guarantee zero ghost loads?', 'Because booking happens ON the platform, the board and the booking are the same system. The moment a load is booked or expires, it is removed from every carrier’s board automatically — in real time. A load you can see is a load you can book, always.'),
+ ('How do direct offers work?', 'Brokers can push a load to matched carriers as a direct offer with a 15-minute window. Every offered carrier sees a live countdown; the first to accept wins the load and all other offers auto-close instantly — zero double-booking.'),
+ ('Can I negotiate the rate?', 'Yes. Every load supports propose-a-rate: send your counter with one tap, the broker accepts or declines in-app, and an accepted counter converts straight into a booking with your rate on the rate confirmation.'),
+ ('Who posts the loads on LoadBoot?', 'FMCSA-verified brokers and direct shippers post loads through the Partner Portal, with rate cards that include accessorial pay (detention, layover, TONU, lumper) up front. Carriers see the posting party on every card.'),
+ ('Does it cost anything to use the load board?', 'Browsing and booking are free — carriers pay a flat 5% of gross only on loads dispatched through LoadBoot. No subscription, unlike load boards that charge $45–$150+ per month just to search.'),
+]
+_lbx_schema = '<script type="application/ld+json">' + json.dumps({
+  '@context':'https://schema.org','@type':'FAQPage',
+  'mainEntity':[{'@type':'Question','name':q,'acceptedAnswer':{'@type':'Answer','text':a}} for q,a in _LBX_FAQ]}) + '</script>'
+
+lbx = FTX_CSS + LBX_CSS
+
+lbx += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:84px 0 60px"><div class="wrap"><div class="lbx-grid2">'
+ '<div><div class="eyebrow" style="color:#FC5305">Live load board</div>'
+ '<h1 style="color:#fff;font-size:2.6rem;line-height:1.12;margin:10px 0 16px">The load board where <span style="color:#4ade80">every load is real</span></h1>'
+ '<p style="color:#cbd5e1;font-size:1.1rem;line-height:1.7">No ghost freight. No “already covered” phone calls. No week-old reposts. On LoadBoot the board and the booking are one system — the second a load is booked or expires it vanishes from every screen, automatically. What you see is bookable right now, in one tap.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Find real loads &rarr;</a><a href="create-broker-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Post a load</a></div>'
+ '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Booked loads vanish instantly</span><span>&#x2713; 15-min direct offers</span><span>&#x2713; Propose-a-rate</span><span>&#x2713; $0 to browse</span></div></div>'
+ '<div class="lbx-board reveal" aria-hidden="true">'
+ '<div class="lbx-filters"><span class="lbx-filter on">All loads</span><span class="lbx-filter">Dry Van</span><span class="lbx-filter">Reefer</span><span class="lbx-filter">Flatbed</span><span class="lbx-filter">Near me</span></div>'
+ '<div class="lbx-load hot"><div class="ftx-row"><b style="color:#fff;font-size:1.03rem">Dallas, TX &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.12rem">$2,850</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">781 mi</span><span class="ftx-chip ftx-green">$3.65/mi &middot; Grade A</span><span class="ftx-chip ftx-purple">+1 stop</span></div>'
+ '<div class="ftx-row" style="margin-top:9px"><span class="ftx-chip ftx-amber">&#9203; Direct offer &middot; 12:44 left</span><span class="ftx-chip ftx-green">Book in one tap &rarr;</span></div>'
+ '<div class="lbx-timerbar"><i></i></div></div>'
+ '<div class="lbx-load lbx-booked"><span class="lbx-bookstamp">&#x2713; BOOKED &mdash; removed from board</span><div class="ftx-row"><b style="color:#fff">Chicago, IL &rarr; Newark, NJ</b><b style="color:#4ade80">$3,120</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer</span><span class="ftx-chip ftx-green">$3.90/mi</span><span class="ftx-chip ftx-blue">Propose a rate</span></div></div>'
+ '<div class="lbx-load"><div class="ftx-row"><b style="color:#fff">Houston, TX &rarr; Memphis, TN</b><b style="color:#4ade80">$1,940</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Flatbed</span><span class="ftx-chip ftx-amber">$3.36/mi &middot; Grade B</span><span class="ftx-chip ftx-blue">FCFS 06:00&ndash;14:00</span></div></div>'
+ '<div style="text-align:center;color:#64748b;font-size:.76rem;margin-top:4px">Live view &mdash; watch the booked load disappear. That is the whole point.</div>'
+ '</div></div></div></section>')
+
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">The industry problem</div><h2 class="ftx-h">What is a ghost load &mdash; and why boards are full of them</h2>'
+ '<p class="ftx-p">A ghost load looks bookable but is not: it was covered hours ago, expired, got reposted by a second broker, or was never real — posted just to harvest carrier rate quotes. On classic boards the posting and the booking live in different worlds (the deal closes over phone and email), so nobody deletes the post. The result: drivers burn hours calling dead freight, and brokers drown in calls for loads they covered yesterday.</p>'
+ '<div style="margin-top:14px">'
+ '<div class="ftx-li"><span class="ftx-tick" style="background:#fee2e2;color:#dc2626">&#10007;</span><div><b>Stale posts</b> &mdash; covered loads stay listed for days because removal is manual.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick" style="background:#fee2e2;color:#dc2626">&#10007;</span><div><b>Double posting</b> &mdash; the same load on five boards under three brokers.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick" style="background:#fee2e2;color:#dc2626">&#10007;</span><div><b>Rate fishing</b> &mdash; fake posts used only to test what carriers will haul for.</div></div>'
+ '</div>'
+ '<div style="margin-top:16px"><a href="ghost-loads-load-board-problems.html" class="btn btn-secondary">Deep dive: the ghost-load problem &rarr;</a></div></div>'
+ '<div class="reveal"><div class="lbx-ghost" style="margin-bottom:14px"><span class="tag">GHOST LOAD</span><div style="display:flex;justify-content:space-between;font-weight:800"><span>Laredo, TX &rarr; Denver, CO</span><span>$2,400</span></div>'
+ '<div style="font-size:.85rem;color:#b91c1c;margin-top:6px">Posted 3 days ago &middot; still listed</div>'
+ '<div style="margin-top:10px;background:#fef2f2;border-radius:10px;padding:9px 12px;font-size:.85rem">&#128222; “Sorry, that one’s been covered since Tuesday…”</div></div>'
+ '<div style="text-align:center;font-weight:900;color:#64748b;margin:10px 0">vs</div>'
+ '<div class="lbx-board" style="padding:16px"><div class="lbx-load hot" style="margin-bottom:0"><div class="ftx-row"><b style="color:#fff">Laredo, TX &rarr; Denver, CO</b><b style="color:#4ade80">$2,400</b></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-green">&#9679; LIVE &mdash; bookable now</span><span class="ftx-chip ftx-blue">posted 14 min ago</span><span class="ftx-chip ftx-green">Book &rarr;</span></div></div></div></div>'
+ '</div></div></section>')
+
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">How LoadBoot kills them</div><h2>One system for the post AND the booking</h2></div>'
+ '<p class="ftx-p reveal" style="max-width:780px">Ghost loads survive when the board is just an ad and the deal happens elsewhere. LoadBoot closes that gap: posting, offering, negotiating, booking and paperwork all run in the same engine — so board truth is enforced by code, not by courtesy.</p>'
+ '<div class="cards g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#128228;</div><h3>1 &middot; Posted once</h3><p>A verified broker or shipper posts with a full rate card &mdash; accessorial pay included up front.</p></div>'
+ '<div class="card"><div class="icon">&#9889;</div><h3>2 &middot; Offered live</h3><p>Matched carriers get a direct offer with a 15-minute countdown; the board shows it to everyone else.</p></div>'
+ '<div class="card"><div class="icon">&#x2713;</div><h3>3 &middot; First accept wins</h3><p>One tap books it. Every other offer closes itself the same second &mdash; double-booking is impossible.</p></div>'
+ '<div class="card"><div class="icon">&#128171;</div><h3>4 &middot; Gone everywhere</h3><p>Booked or expired &rarr; removed from every board, every phone, instantly. No stale posts, ever.</p></div>'
+ '</div></div></section>')
+
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Anatomy of a load card</div><h2>Every pixel on the card earns its place</h2></div>'
+ '<div class="lbx-grid2" style="margin-top:26px"><div class="reveal">'
+ '<div class="lbx-board"><div class="lbx-load hot" style="margin-bottom:0"><div class="ftx-row"><b style="color:#fff;font-size:1.05rem">Benton, WI &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.2rem">$2,909</b></div>'
+ '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">858 mi</span><span class="ftx-chip ftx-green">$3.39/mi &middot; Grade A</span></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-purple">&#128230; +1 stop &middot; stop-off pay $75</span><span class="ftx-chip ftx-amber">PU Jul 21 &middot; FCFS</span></div>'
+ '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#127970; Persona Broker LLC &middot; &#9733; 4.8</span><span class="ftx-chip ftx-amber">&#9203; offer 09:12 left</span></div>'
+ '<div class="ftx-row" style="margin-top:10px"><span class="ftx-chip ftx-blue">&#9998; Propose a rate</span><span class="ftx-chip ftx-green" style="font-size:.8rem">BOOK IN ONE TAP &rarr;</span></div>'
+ '<div class="lbx-timerbar"><i></i></div></div></div></div>'
+ '<div class="reveal">'
+ '<div class="lbx-callout"><span class="lbx-cnum">1</span><div><b>All-in rate + true RPM</b> &mdash; rate-per-mile computed on road miles, not straight-line guesses. <a href="cost-per-mile-calculator.html">Know your cost per mile</a>.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">2</span><div><b>Load Score grade</b> &mdash; A–F grade against live market benchmarks, so a bad rate can’t hide. <a href="load-score.html">How Load Score works</a>.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">3</span><div><b>Multi-stop chips</b> &mdash; every extra pickup/drop shown per stop with its stop-off pay; the full route opens in one tap.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">4</span><div><b>Who posted it</b> &mdash; the broker/shipper name and rating on the card; both sides rate each other after delivery.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">5</span><div><b>Offer countdown</b> &mdash; a live 15-minute window when you’re directly offered; first accept wins.</div></div>'
+ '<div class="lbx-callout"><span class="lbx-cnum">6</span><div><b>One-tap book / propose-a-rate</b> &mdash; book instantly, or counter and let the broker accept in-app. An accepted counter becomes the booking automatically.</div></div>'
+ '</div></div></div></section>')
+
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">After the tap</div><h2>Booking is a workflow, not a phone call</h2></div>'
+ '<div class="reveal" style="max-width:820px">' + steps_html([
+  ('Rate confirmation, e-signed', 'Booking is gated on the RC — it generates instantly, you e-sign in-app, and the signed PDF lives on the trip forever. No “send me the rate con” limbo. '),
+  ('Driver + truck assigned', 'Assign from your fleet roster; the dispatch sheet prints itself with stops, contacts and the rate card.'),
+  ('GPS proof from mile zero', 'The trip goes live with 800m geofence check-ins at every stop — detention evidence starts collecting automatically. <a href="gps-tracking.html">See tracking &amp; proof</a>.'),
+  ('Delivery flips the invoice', 'POD approved &rarr; a premium invoice is generated and emailed, DUE with a pay-by date. <a href="payments-settlements.html">See payments</a>.'),
+ ]) + '</div></div></section>')
+
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Every side wins</div><h2>A truthful board works for all four sides</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#128666;</div><h3>Carriers</h3><p>Stop calling dead freight. Every card is bookable, graded, and paid on published accessorial rates. <a href="create-carrier-account.html">Create a carrier account &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#127970;</div><h3>Brokers</h3><p>Your load reaches verified, health-scored carriers in a 15-minute offer race — covered in minutes with proof, not 40 phone calls. <a href="create-broker-account.html">Create a broker account &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#127981;</div><h3>Shippers</h3><p>Post freight directly, watch it move on live GPS, and keep documents and payables in one place. <a href="create-shipper-account.html">Create a shipper account &rarr;</a></p></div>'
+ '<div class="card"><div class="icon">&#129309;</div><h3>Agents</h3><p>Every load your referred clients book here pays you 1% of gross on delivery — recurring. <a href="create-agent-account.html">Become an agent &rarr;</a></p></div>'
+ '</div></div></section>')
+
+lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>LoadBoot board vs classic load boards</h2></div>'
+ '<div class="reveal" style="overflow-x:auto;margin-top:22px"><table class="ftx-cmp">'
+ '<tr><th></th><th>LoadBoot</th><th>Classic load boards</th></tr>'
+ '<tr><td>Ghost loads</td><td class="ftx-yes">&#x2713; impossible &mdash; booked loads auto-vanish</td><td class="ftx-no">&#10007; common &mdash; removal is manual</td></tr>'
+ '<tr><td>Booking</td><td class="ftx-yes">&#x2713; one tap, on-platform, RC e-signed</td><td class="ftx-part">phone + email + fax</td></tr>'
+ '<tr><td>Rate transparency</td><td class="ftx-yes">&#x2713; all-in rate, RPM, Load Score grade, accessorials up front</td><td class="ftx-part">“call for rate”</td></tr>'
+ '<tr><td>Double-booking</td><td class="ftx-yes">&#x2713; impossible &mdash; first accept auto-closes the rest</td><td class="ftx-no">&#10007; happens weekly</td></tr>'
+ '<tr><td>What happens after booking</td><td class="ftx-yes">&#x2713; GPS proof, POD, auto-invoice in the same system</td><td class="ftx-no">&#10007; you’re on your own</td></tr>'
+ '<tr><td>Cost to search</td><td class="ftx-yes">$0 &mdash; flat 5% only on dispatched loads</td><td class="ftx-part">$45&ndash;$150+/month subscription</td></tr>'
+ '</table></div></div></section>')
+
+lbx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Load board FAQ</h2></div><div style="max-width:820px">'
+ + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _LBX_FAQ)
+ + '</div></div></section>')
+
+lbx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:60px 0"><div class="wrap" style="text-align:center">'
+ '<h2 style="color:#fff;font-size:2rem">See the real board with your own account</h2>'
+ '<p style="color:#cbd5e1;max-width:620px;margin:12px auto 24px">Free to create, verified in minutes. The board you just saw is the board you get.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
+ '<a href="create-carrier-account.html" class="btn btn-primary">&#128666; Find loads</a>'
+ '<a href="create-broker-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127970; Post loads</a>'
+ '<a href="features.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">All features</a>'
+ '</div></div></section>')
+
+RELATED['load-board.html'] = [('features.html','All Features'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('load-score.html','Load Score'),('gps-tracking.html','GPS Tracking'),('market-rates.html','Market Rates'),('how-it-works.html','How It Works')]
+page('load-board.html', 'Live Load Board with Zero Ghost Loads — Book Freight in One Tap | LoadBoot',
+     'LoadBoot’s live load board has zero ghost loads: booked or expired freight vanishes instantly. Direct offers with a 15-minute first-accept-wins window, propose-a-rate, Load Score grades, multi-stop pay and one-tap booking with e-signed rate confirmations.',
+     'load-board.html', lbx, _lbx_schema)
 
 # ---------------- ACCOUNT / ONBOARDING GUIDES (per role) ----------------
 def _acct_page(fname, role, emoji, hero_sub, steps, shots_list, docs_note, portal_url):
