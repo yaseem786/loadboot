@@ -4405,24 +4405,13 @@ lbx += ('<section class="ftx-sec" id="for-carriers"><div class="wrap"><div class
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Est. profit on the card</b> &mdash; set your cost per mile once and every load shows estimated profit next to the rate. <a href="cost-per-mile-calculator.html">Know your cost per mile</a>.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>&#128666; Post my truck</b> &mdash; post your truck&rsquo;s location, window and minimum $/mi, and auto-matching requests loads for you in the background.</div></div>'
  '</div></div>'
- '<div class="reveal"><div class="lbx-board">'
- '<div class="lbx-filters"><span class="lbx-filter on">Origin: Dallas, TX</span><span class="lbx-filter on">Dest: any</span><span class="lbx-filter on">Reefer</span><span class="lbx-filter on">Min $3.00/mi</span><span class="lbx-filter">Clear</span></div>'
- '<div class="lbx-load"><div class="ftx-row"><b style="color:#fff">Dallas, TX &rarr; Miami, FL</b><b style="color:#4ade80">$4,380</b></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer 34&deg;F</span><span class="ftx-chip ftx-green">$3.32/mi</span><span class="ftx-chip ftx-blue">&#128205; 12 mi deadhead</span><span class="ftx-chip ftx-green">&#9201; makes it</span></div></div>'
- '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><b style="color:#fff">Fort Worth, TX &rarr; Chicago, IL</b><b style="color:#4ade80">$3,150</b></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Reefer &minus;10&deg;F</span><span class="ftx-chip ftx-green">$3.28/mi</span><span class="ftx-chip ftx-amber">&#9201; tight &mdash; roll now</span></div></div>'
- '</div></div>'
+ '<div class="reveal"><img src="/shots/board-web-available.webp" alt="LoadBoot live load board — available truck loads with instant filters" width="1200" height="672" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real board &mdash; live loads, filters, net-after-fee math.</div></div>'
  '</div></div></section>')
 
 # Card anatomy
 lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Anatomy of a load card</div><h2>Every pixel on the card earns its place</h2></div>'
  '<div class="lbx-grid2" style="margin-top:26px"><div class="reveal">'
- '<div class="lbx-board"><div class="lbx-load hot" style="margin-bottom:0"><div class="ftx-row"><b style="color:#fff;font-size:1.05rem">Benton, WI &rarr; Atlanta, GA</b><b style="color:#4ade80;font-size:1.2rem">$2,909</b></div>'
- '<div style="margin-top:7px"><span class="ftx-chip ftx-blue">Dry Van 53&#8242;</span><span class="ftx-chip ftx-blue">858 mi &middot; $3.39/mi</span><span class="ftx-chip ftx-green">&asymp; est. profit +$1,180</span></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-purple">&#128230; +1 stop &middot; stop-off pay</span><span class="ftx-chip ftx-amber">PU Jul 21 &middot; FCFS 06:00&ndash;14:00</span><span class="ftx-chip ftx-blue">&#128100; Solo OK</span></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#127970; Verified broker &middot; trust 92/100 &middot; &#9733; 4.8</span></div>'
- '<div style="margin-top:6px;color:#94a3b8;font-size:.78rem">&#129534; Rate card: detention $60/hr after 2h &middot; layover $250/day &middot; TONU $250 &middot; lumper reimbursed</div>'
- '<div class="ftx-row" style="margin-top:10px"><span class="ftx-chip ftx-blue">&#9998; Propose rate</span><span class="ftx-chip ftx-blue">Details</span><span class="ftx-chip ftx-green" style="font-size:.8rem">REQUEST TO BOOK &rarr;</span></div></div></div></div>'
+ '<div style="max-width:340px;margin:0 auto"><img src="/shots/board-card-details.webp" alt="LoadBoot load card details — rate card, stops, dock hours, cargo value" width="360" height="1255" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">A real load card, fully disclosed.</div></div>'
  '<div class="reveal">'
  '<div class="lbx-callout"><span class="lbx-cnum">1</span><div><b>All-in rate + true RPM</b> &mdash; rate-per-mile on real road miles, plus estimated profit against your own cost model.</div></div>'
  '<div class="lbx-callout"><span class="lbx-cnum">2</span><div><b>Live deadhead &amp; feasibility</b> &mdash; miles from your GPS and HOS-aware &ldquo;can you make it&rdquo; chips protect your on-time record before you tap.</div></div>'
@@ -4441,27 +4430,14 @@ lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Expired &ne; dead</b> &mdash; if nobody accepts, the load simply stays on the open board, still bookable.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Declines carry a reason</b> &mdash; brokers learn why (rate, lane, timing) instead of silence.</div></div>'
  '</div></div>'
- '<div class="reveal"><div class="lbx-board">'
- '<div class="lbx-load hot"><div class="ftx-row"><b style="color:#fff">&#127919; Direct request &middot; reserved for you</b><b style="color:#f87171;font-variant-numeric:tabular-nums">04:52</b></div>'
- '<div class="ftx-row" style="margin-top:8px"><b style="color:#fff">Kansas City, MO &rarr; Columbus, OH</b><b style="color:#4ade80">$2,640</b></div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">Dry Van</span><span class="ftx-chip ftx-green">$3.55/mi</span></div>'
- '<div class="ftx-row" style="margin-top:10px"><span class="ftx-chip ftx-blue">Decline &middot; with reason</span><span class="ftx-chip ftx-green">ACCEPT &mdash; books instantly &#x2713;</span></div>'
- '<div class="lbx-timerbar"><i></i></div></div>'
- '<div class="lbx-load" style="margin-bottom:0;opacity:.55"><div class="ftx-row"><b style="color:#cbd5e1">Same load &middot; 2 other carriers offered</b><span class="ftx-chip ftx-amber">auto-closes when anyone accepts</span></div></div>'
- '</div></div>'
+ '<div class="reveal"><img src="/shots/board-request-countdown.webp" alt="Direct load offer with live countdown — accept books instantly on LoadBoot" width="1100" height="646" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">A real direct request &mdash; protections, feasibility warnings, live countdown, one-tap accept.</div></div>'
  '</div></div></section>')
 
 # Propose a rate
 lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div class="ftx-kicker">Negotiation, built in</div><h2 class="ftx-h">Propose your rate &mdash; in the app, not on hold</h2>'
  '<p class="ftx-p">Rate too low? Tap <b>Propose rate</b>, enter your all-in number and an optional note. The broker sees your counter next to their posting and approves or declines in-app. Nothing is committed until they approve — and an approved counter books the load at <b>your</b> number, printed on the rate confirmation.</p></div>'
- '<div class="reveal"><div class="lbx-panel">'
- '<div style="font-weight:800;color:#10223B;margin-bottom:10px">&#9998; Propose your rate</div>'
- '<div style="display:flex;justify-content:space-between;font-size:.9rem;color:#475569;border-bottom:1px solid #eef2f7;padding-bottom:8px"><span>Posted rate</span><b>$1,940</b></div>'
- '<div style="display:flex;justify-content:space-between;font-size:.95rem;padding:10px 0;border-bottom:1px solid #eef2f7"><span style="color:#475569">Your all-in rate</span><b style="color:#0883F7">$2,150</b></div>'
- '<div style="font-size:.85rem;color:#64748b;padding:10px 0">&ldquo;Tarps + 210 mi deadhead to pickup — $2,150 all-in and I can be there by 06:00.&rdquo;</div>'
- '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;font-size:.85rem;color:#166534">&#x2713; Broker approved &mdash; booked at $2,150. Rate con issued to your Documents.</div>'
- '</div></div>'
+ '<div class="reveal"><img src="/shots/board-propose-rate.webp" alt="Propose-a-rate on LoadBoot — send your all-in counter to the broker" width="777" height="532" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real propose-a-rate flow.</div></div>'
  '</div></div></section>')
 
 # Accessorial rate card
@@ -4509,12 +4485,7 @@ lbx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Feasibility guard</b> &mdash; if HOS math says you&rsquo;d be late, the board blocks the booking and protects your on-time score (and suggests team if team can make it).</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Capacity aware</b> &mdash; when all your trucks are rolling, the board tells you instead of letting you double-commit.</div></div>'
  '</div></div>'
- '<div class="reveal"><div class="lbx-board">'
- '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#128230; Route &middot; 2 pickups &middot; 2 drops</div>'
- '<div class="lbx-load"><span class="ftx-chip ftx-blue">1 &middot; PU</span> <b style="color:#fff">Benton, WI</b> <span style="color:#94a3b8;font-size:.8rem">&middot; live load</span></div>'
- '<div class="lbx-load"><span class="ftx-chip ftx-purple">2 &middot; STOP</span> <b style="color:#fff">Rockford, IL</b> <span class="ftx-chip ftx-green">stop-off pay</span> <span style="color:#94a3b8;font-size:.8rem">own geofence &middot; own detention clock</span></div>'
- '<div class="lbx-load" style="margin-bottom:0"><span class="ftx-chip ftx-amber">3 &middot; DEL</span> <b style="color:#fff">Atlanta, GA</b> <span style="color:#94a3b8;font-size:.8rem">&middot; exact address after booking</span></div>'
- '</div></div>'
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/board-stops-modal.webp" alt="Multi-stop route modal — city, state and purpose per stop before booking" width="420" height="462" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real multi-stop route &mdash; exact addresses unlock on booking.</div></div>'
  '</div></div></section>')
 
 # After the tap
@@ -4538,13 +4509,7 @@ lbx += ('<section class="ftx-sec alt" id="for-posters"><div class="wrap"><div cl
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Server-verified event log</b> &mdash; every arrive/depart/POD is timestamped evidence, so disputes end before they start.</div></div>'
  '</div>'
  '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"><a href="app/partner/" class="btn btn-primary">Open the Partner Portal &rarr;</a><a href="create-broker-account.html" class="btn btn-secondary">Broker account guide</a><a href="create-shipper-account.html" class="btn btn-secondary">Shipper account guide</a></div></div>'
- '<div class="reveal"><div class="lbx-board">'
- '<div style="font-weight:800;color:#fff;margin-bottom:10px">Your load &middot; Dallas &rarr; Atlanta</div>'
- '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">Direct offers</span><span class="ftx-chip ftx-amber">3 sent &middot; 2 awaiting &middot; 09:12 left</span></div></div>'
- '<div class="lbx-load"><div class="ftx-row"><span style="color:#cbd5e1">Status</span><span class="ftx-chip ftx-green">&#x2713; Carrier accepted &mdash; dispatched</span></div>'
- '<div style="margin-top:8px;color:#94a3b8;font-size:.8rem"><span class="lbx-livedot"></span>Live GPS &middot; I-20 E near Shreveport &middot; ETA 17:40</div></div>'
- '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><span style="color:#cbd5e1">Detention @ pickup</span><b style="color:#fbbf24">1h 38m in dock &middot; $0 (free 2h)</b></div></div>'
- '</div></div>'
+ '<div class="reveal"><img src="/shots/partner-wizard-route.webp" alt="LoadBoot load posting wizard — GPS-pinned route with extra stops" width="1100" height="718" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="height:12px"></div><img src="/shots/partner-offers.webp" alt="Broker offer panel — direct offers sent with live countdown" width="1100" height="299" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real posting wizard + the live offer race.</div></div>'
  '</div></div></section>')
 
 # Under the hood — the tech that enforces board truth
@@ -4588,13 +4553,7 @@ lbx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div class="ftx-kicker">Built for the little guy</div><h2 class="ftx-h">A load board for owner-operators and new authorities</h2>'
  '<p class="ftx-p">Big boards price small carriers out and bury them under broker spam. LoadBoot flips that: no monthly fee to search, no authority-age wall, and the platform&rsquo;s protections — written rate cards, geofence-proven detention, instant rate cons — matter most when you don&rsquo;t have a back office. Verify once (MC/DOT, insurance, W-9), set your minimum $/mi and lanes, and the board works for you: direct requests land in your inbox and Post-my-truck auto-matches while you drive.</p>'
  '<p class="ftx-p">New authority? Read <a href="how-to-get-loads-with-new-authority.html">how to get loads with a new authority</a>, learn to <a href="how-to-read-a-rate-confirmation.html">read a rate confirmation</a>, and check <a href="market-rates.html">current market rates per mile</a> before you set your minimums.</p></div>'
- '<div class="reveal"><div class="lbx-panel">'
- '<div style="font-weight:800;color:#10223B;margin-bottom:12px">Set once &mdash; the board filters itself</div>'
- '<div style="display:flex;flex-wrap:wrap;gap:8px">'
- '<span class="ftx-chip ftx-blue">Min $2.40/mi</span><span class="ftx-chip ftx-blue">Dry Van &middot; Reefer</span><span class="ftx-chip ftx-blue">Lanes: TX &harr; Southeast</span><span class="ftx-chip ftx-blue">Max deadhead 150 mi</span><span class="ftx-chip ftx-blue">Avoid: NYC</span><span class="ftx-chip ftx-blue">Weekends: OK</span><span class="ftx-chip ftx-green">Home base: Dallas, TX</span>'
- '</div>'
- '<div style="margin-top:14px;background:#f8fafc;border-radius:10px;padding:10px 12px;font-size:.85rem;color:#475569">&#128276; 3 direct requests this week matched your prefs &mdash; countdown running on 1.</div>'
- '</div></div>'
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/board-phone-available.webp" alt="LoadBoot load board on a phone — find truck loads anywhere" width="420" height="919" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The whole board in your pocket &mdash; installs as an app.</div></div>'
  '</div></div></section>')
 
 # FAQ
@@ -4711,13 +4670,7 @@ bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>The rate con is born immutable</b> &mdash; generated instantly, no edit path for anyone (including dispatch). Acknowledge in-app; the PDF lives on the trip forever. <a href="how-to-read-a-rate-confirmation.html">How to read a rate con</a>.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Both sides get notified</b> &mdash; push and in-app, carrier and poster, the same second.</div></div>'
  '</div></div>'
- '<div class="reveal" aria-hidden="true"><div class="lbx-board">'
- '<div style="font-weight:800;color:#fff;margin-bottom:10px">&#128275; Booking packet &middot; unlocked</div>'
- '<div class="lbx-load"><div style="color:#94a3b8;font-size:.76rem">BEFORE BOOKING</div><div class="bkx-lock" style="color:#cbd5e1;margin-top:4px">4281 Commerce Dr, Dallas TX &middot; PU# 88-4471</div></div>'
- '<div class="lbx-load" style="border-color:rgba(34,197,94,.45)"><div style="color:#4ade80;font-size:.76rem">AFTER BOOKING</div><div style="color:#fff;margin-top:4px;font-weight:700">4281 Commerce Dr, Dallas TX &middot; PU# 88-4471</div>'
- '<div style="margin-top:6px"><span class="ftx-chip ftx-blue">&#128205; GPS pin</span><span class="ftx-chip ftx-blue">Dock 06:00&ndash;14:00</span><span class="ftx-chip ftx-blue">Facility contact</span></div></div>'
- '<div class="lbx-load" style="margin-bottom:0"><div class="ftx-row"><span style="color:#cbd5e1">Delivery confirmation #</span><b style="color:#fff">DL-20991</b></div></div>'
- '</div></div>'
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/booking-packet.webp" alt="LoadBoot booking packet unlocked — exact addresses, PU number, appointment confirmation" width="420" height="913" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real packet &mdash; unlocked the second you book.</div></div>'
  '</div></div></section>')
 
 # Dispatch sheet anatomy
@@ -4728,17 +4681,7 @@ bkx += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Nothing to re-type</b> &mdash; addresses, numbers and rates flow straight from the booked load.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Documents to collect</b> &mdash; the sheet lists exactly what the driver must bring back (BOL, lumper receipts, seals), so the invoice never waits on missing paper.</div></div>'
  '</div></div>'
- '<div class="reveal" aria-hidden="true"><div class="bkx-doc">'
- '<div class="bkx-doc-head">&#128203; DISPATCH SHEET &middot; Trip #4102 &middot; Dallas &rarr; Atlanta</div>'
- '<div class="bkx-doc-row"><span>1 &middot; Pickup</span><b>4281 Commerce Dr &middot; PU# 88-4471 &middot; FCFS 06:00&ndash;14:00</b></div>'
- '<div class="bkx-doc-row"><span>2 &middot; Delivery</span><b>DL-20991 &middot; appointment Jul 22, 09:00</b></div>'
- '<div class="bkx-doc-row"><span>3 &middot; Freight</span><b>Paper goods &middot; 42,000 lb &middot; 24 pallets</b></div>'
- '<div class="bkx-doc-row"><span>4 &middot; Truck &amp; driver</span><b>#402 &middot; Marcus T &middot; Dry Van 53&#8242;</b></div>'
- '<div class="bkx-doc-row"><span>5 &middot; Accessorial rates</span><b>Det $60/hr after 2h &middot; TONU $250</b></div>'
- '<div class="bkx-doc-row"><span>6 &middot; Documents to collect</span><b>Signed BOL &middot; lumper receipt</b></div>'
- '<div class="bkx-doc-row"><span>7 &middot; Tracking &amp; POD</span><b>Geofence check-ins &middot; POD photo in-app</b></div>'
- '<div class="bkx-doc-row" style="border-bottom:0"><span>8 &middot; Special instructions</span><b>Check in at guard shack, gate 3</b></div>'
- '</div></div>'
+ '<div class="reveal"><img src="/shots/booking-dispatch-sheet.webp" alt="Auto-generated dispatch sheet — stops, rates, documents to collect" width="1000" height="611" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="height:12px"></div><div style="max-width:340px;margin:0 auto"><img src="/shots/booking-rate-con.webp" alt="Immutable rate confirmation issued instantly on booking" width="420" height="1198" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real dispatch sheet + the immutable rate con &mdash; both generated in seconds.</div></div>'
  '</div></div></section>')
 
 # Booked -> rolling
@@ -4749,7 +4692,7 @@ bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head rev
   ('Navigation and geofences arm themselves', 'Turn-by-turn routing to the exact pin, with an 800-meter geofence armed at every stop — arrival will be recorded automatically, and the detention clock with it. <a href="gps-tracking.html">How tracking works</a>.'),
   ('Share one link, answer zero calls', 'Tap Share location and the poster watches the same live map — which is why LoadBoot carriers don&rsquo;t get &ldquo;where&rsquo;s the truck?&rdquo; calls.'),
   ('A safety net is already standing by', 'Breakdown, weather, accident — report it in-app; a verified emergency gets a 2-hour-response reschedule with no TONU. <a href="emergency-rescheduling-policy.html">Emergency policy</a>.'),
- ]) + '<div style="margin-top:18px"><a href="gps-tracking.html" class="btn btn-primary">Next: the trip tracks itself &mdash; live GPS &amp; proof &rarr;</a></div></div></div></section>')
+ ]) + '<img src="/shots/booking-trip-card.webp" alt="Booked trip with live pickup countdown and trip stepper on LoadBoot" width="1200" height="683" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real booked trip &mdash; countdown to pickup, stepper, everything one tap away.</div><div style="height:12px"></div><div style="max-width:340px;margin:0 auto"><img src="/shots/booking-assign.webp" alt="Assign driver and truck to a booked load in two taps" width="420" height="913" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="margin-top:18px"><a href="gps-tracking.html" class="btn btn-primary">Next: the trip tracks itself &mdash; live GPS &amp; proof &rarr;</a></div></div></div></section>')
 
 # Brokers/shippers/agents strip (4-sided)
 bkx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The other side of the tap</div><h2>What booking looks like for posters</h2></div>'
@@ -4757,7 +4700,7 @@ bkx += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"
  '<div class="card"><div class="icon">&#127970;</div><h3>Brokers</h3><p>Approve requests with the carrier&rsquo;s verification, safety record and documents in one view — or skip approval entirely with direct offers. Every booking lands with the same instant paperwork. <a href="load-board.html#for-posters">Posting &amp; offers &rarr;</a></p></div>'
  '<div class="card"><div class="icon">&#127981;</div><h3>Shippers</h3><p>Your directly-posted freight books the same way — verified carriers, instant rate con, and a live trip you can watch from the same second. <a href="create-shipper-account.html">Shipper account guide &rarr;</a></p></div>'
  '<div class="card"><div class="icon">&#129309;</div><h3>Agents</h3><p>Every one-tap booking by a client you referred pays you 1% of gross on delivery. More bookings, more recurring income. <a href="agents.html">Agent program &rarr;</a></p></div>'
- '</div></div></section>')
+ '</div><div class="reveal" style="margin-top:22px"><img src="/shots/partner-wizard-schedule.webp" alt="Posting wizard schedule step — FCFS windows and fixed appointments" width="1100" height="676" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The posting side is just as real &mdash; schedule, windows and appointments declared up front.</div></div></div></section>')
 
 # Comparison — booking specifically
 bkx += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>One-tap booking vs phone-and-email booking</h2></div>'
@@ -4909,7 +4852,7 @@ trk += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60
  '<p style="color:#cbd5e1;font-size:1.08rem;line-height:1.7">You <a href="book-truck-loads.html" style="color:#7dd3fc">booked in one tap</a> &mdash; now the trip runs itself. The driver&rsquo;s phone becomes the tracker, an 800-meter geofence arms at every stop, arrive and depart stamp themselves as server-side evidence, and the broker or shipper watches the same live map you do. Every timestamp is money: detention, layover and on-time proof all hang off this one GPS trail.</p>'
  '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Track your first trip &rarr;</a><a href="app/partner/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Watch your freight live &mdash; broker / shipper</a></div>'
  '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; No ELD required</span><span>&#x2713; Auto check-ins, zero driver taps</span><span>&#x2713; Off at delivery &mdash; privacy by code</span></div></div>'
- '<div class="reveal" aria-hidden="true"><div class="trkx-phone"><div class="trkx-status"><span>4:10</span><span>&#9679;&#9679;&#9679; &#128246; 32%</span></div><div class="trkx-map2"><svg viewBox="0 0 300 240" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true"><path d="M118 200 C 128 132, 176 100, 196 44" fill="none" stroke="#FC5305" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 0"/><path d="M118 200 C 128 132, 176 100, 196 44" fill="none" stroke="#10223B" stroke-width="5" stroke-linecap="round" stroke-dasharray="7 9" opacity=".55"/></svg><span class="city" style="left:8%;top:18%">Memphis&#8226;</span><span class="city" style="left:56%;top:14%;font-weight:900;color:#7d7563">ATLANTA</span><span class="city" style="left:10%;top:46%">Jackson&#8226;</span><span class="city" style="left:62%;top:80%">Tampa&#8226;</span><div class="trkx-eta">359 min &middot; 466.2 km</div><div class="trkx-tools"><span class="trkx-tool">&#128225;</span><span class="trkx-tool">&#127769;</span><span class="trkx-tool">&#9974;</span><span class="trkx-tool">&#128196;</span></div><span class="trkx-bmk" style="left:62%;top:12%">B</span><div class="trkx-truckmk" style="left:29%;top:66%">&#128666;</div></div><div class="trkx-sheet"><div class="trkx-grab"></div><div class="ftx-row"><b style="font-size:.92rem">&#128230; At pickup &middot; detention clock running</b><b style="color:#FC5305;font-size:1.05rem">$1,175</b></div><div class="trkx-stats"><div class="trkx-stat"><b>58 km/h</b><span>SPEED</span></div><div class="trkx-stat"><b>0 m</b><span>DIST LEFT</span></div><div class="trkx-stat"><b>12:07 PM</b><span>APPT TIME</span></div></div><div class="trkx-step"><div class="trkx-node done"><i>&#x2713;</i>START</div><div class="trkx-node on"><i>&#128205;</i>PICKUP</div><div class="trkx-node"><i>&#128739;</i>DRIVE</div><div class="trkx-node"><i>&#127937;</i>DELIVER</div><div class="trkx-node"><i>&#128176;</i>PAID</div></div><div class="trkx-cap" style="text-align:left;margin:6px 2px 0">Checked in at A &#x2713; (broker notified). Drive out of the zone and departure records automatically.</div><span class="trkx-cta">&#128666; Loaded &mdash; leaving pickup</span><div class="trkx-apps"><span class="trkx-app">&#129517; Google Maps</span><span class="trkx-app">&#128998; Waze</span><span class="trkx-app">&#128241; Other apps</span></div><div class="trkx-cap">Navigate with any app &mdash; check-ins and proof stay in LoadBoot automatically.</div></div></div></div></div></div></section>')
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/track-phone-pickup.webp" alt="LoadBoot trip map at pickup — detention clock running, geofence checked in" width="420" height="916" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real trip map &mdash; at pickup, checked in automatically, detention clock running.</div></div></div></div></section>')
 
 # role router
 trk += ('<section style="background:#0b1220;padding:0 0 34px"><div class="wrap"><div class="cards g4" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
@@ -4930,7 +4873,7 @@ trk += ('<section class="ftx-sec" id="for-drivers"><div class="wrap"><div class=
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>ELD optional</b> &mdash; already run Samsara or Motive? Connect it and positions flow from your hardware instead of the phone.</div></div>'
  '</div>'
  '<div style="margin-top:16px"><a href="apps.html" class="btn btn-secondary">Get the app &rarr;</a></div></div>'
- '<div class="reveal" aria-hidden="true"><div class="trkx-phone"><div class="trkx-status"><span>4:10</span><span>&#9679;&#9679;&#9679; &#128246; 32%</span></div><div class="trkx-map2" style="height:210px"><svg viewBox="0 0 300 210" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true"><path d="M118 170 C 128 115, 176 88, 196 44" fill="none" stroke="#FC5305" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 0"/><path d="M118 170 C 128 115, 176 88, 196 44" fill="none" stroke="#10223B" stroke-width="5" stroke-linecap="round" stroke-dasharray="7 9" opacity=".55"/></svg><div class="trkx-eta" style="top:9%">0 min &middot; 0.3 km &middot; arrive 4:10 PM</div><span class="trkx-bmk" style="left:62%;top:10%">B</span><div class="trkx-truckmk" style="left:30%;top:60%">&#128666;</div><span style="position:absolute;left:6%;bottom:8%;background:rgba(15,23,42,.85);color:#fff;font-size:.68rem;font-weight:800;padding:6px 11px;border-radius:999px;z-index:3">&#128193; Trip details</span></div><div class="trkx-sheet"><div class="trkx-grab"></div><div class="ftx-row"><b style="color:#4ade80;font-size:.95rem">At delivery &middot; geofence armed</b><span style="background:#dc2626;color:#fff;font-weight:900;font-size:.72rem;padding:6px 13px;border-radius:999px">Exit</span></div><div class="trkx-apps" style="margin-top:10px"><span class="trkx-app">&#128247; Dock photo</span><span class="trkx-app">&#128221; Signed BOL/POD</span><span class="trkx-app">&#129534; Lumper receipt</span></div><div class="trkx-cap">While you wait: photo the dock, the facility-signed BOL/POD (with IN/OUT times) and any lumper receipt &mdash; they attach to this trip and land in any claim automatically.</div></div></div></div>'
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/track-phone-map.webp" alt="Live truck route with ETA on the LoadBoot trip map" width="420" height="919" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="height:12px"></div><div style="max-width:340px;margin:0 auto"><img src="/shots/track-phone-docs.webp" alt="Dock photo, signed BOL/POD and lumper receipt capture in-app" width="420" height="498" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real screens &mdash; navigation with ETA, and docs that file themselves.</div></div>'
  '</div></div></section>')
 
 # geofence engine
@@ -4951,14 +4894,7 @@ trk += ('<section class="ftx-sec" id="for-money"><div class="wrap"><div class="l
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Delivery flips the invoice</b> &mdash; POD approved means the invoice generates with every proven accessorial on it. <a href="payments-settlements.html">How payment works</a>.</div></div>'
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Cancellations keep evidence</b> &mdash; if a load dies at the dock, the GPS trail survives for the TONU claim.</div></div>'
  '</div></div>'
- '<div class="reveal" aria-hidden="true"><div class="trkx-panel">'
- '<div style="background:#10223B;color:#fff;padding:13px 18px;display:flex;justify-content:space-between;align-items:center"><b style="font-size:.9rem">&#129534; Detention claim &middot; Trip #4102</b><span style="background:rgba(34,197,94,.18);color:#4ade80;border:1px solid rgba(34,197,94,.5);font-weight:900;font-size:.68rem;padding:4px 10px;border-radius:999px">&#x2713; EVIDENCE ATTACHED</span></div>'
- '<div class="trkx-prow"><span>09:12:04 &middot; ARRIVE &middot; Pickup, Dallas TX</span><b style="color:#16a34a">geofence &middot; auto</b></div>'
- '<div class="trkx-prow"><span>11:12:04 &middot; Free time ends (2h)</span><b style="color:#b45309">clock on</b></div>'
- '<div class="trkx-prow"><span>13:47:31 &middot; DEPART &middot; Pickup</span><b style="color:#16a34a">geofence &middot; auto</b></div>'
- '<div class="trkx-prow"><span><b>Detention 2h 35m &times; $60/hr</b></span><b style="color:#16a34a;font-size:1.05rem">+$155.00</b></div>'
- '<div class="trkx-prow" style="border-bottom:0;background:#f8fafc"><span>&#128206; Filed to invoice with server GPS log</span><b style="color:#16a34a">automatic</b></div>'
- '</div></div>'
+ '<div class="reveal"><img src="/shots/track-claim.webp" alt="GPS-proven detention claim filed automatically to the invoice" width="1200" height="768" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">A real claim &mdash; server timestamps, evidence attached, filed automatically.</div></div>'
  '</div></div></section>')
 
 # broker/shipper live view
@@ -4971,18 +4907,7 @@ trk += ('<section class="ftx-sec alt" id="for-watchers"><div class="wrap"><div c
  '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Evidence, not opinions</b> &mdash; every claim that reaches your invoice carries the server-verified event log behind it.</div></div>'
  '</div>'
  '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"><a href="app/partner/" class="btn btn-primary">Open the Partner Portal &rarr;</a><a href="load-board.html#for-posters" class="btn btn-secondary">How posting works</a></div></div>'
- '<div class="reveal" aria-hidden="true"><div class="trkx-panel">'
- '<div style="background:#10223B;color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center"><b style="font-size:.9rem">Dallas, TX &rarr; Atlanta, GA &middot; $2,850</b><span style="background:rgba(34,197,94,.18);color:#4ade80;border:1px solid rgba(34,197,94,.5);font-weight:900;font-size:.68rem;padding:4px 10px;border-radius:999px"><span class="lbx-livedot"></span>LIVE &middot; 12s ago</span></div>'
- '<div class="trkx-panel-map"><svg viewBox="0 0 420 150" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true"><path d="M60 118 C 150 108, 260 70, 356 34" fill="none" stroke="#FC5305" stroke-width="5" stroke-linecap="round"/></svg>'
- '<span class="city" style="left:10%;top:22%">Birmingham&#8226;</span><span class="city" style="left:74%;top:12%;font-weight:900;color:#7d7563">ATLANTA</span>'
- '<div class="trkx-truckmk" style="left:44%;top:42%;width:34px;height:34px;font-size:.9rem">&#128666;</div>'
- '<div class="trkx-eta" style="top:60%;left:64%;transform:none;font-size:.68rem">ETA 16:40 &middot; on time</div>'
- '</div>'
- '<div class="trkx-prow"><span>&#x2713; Posted 08:02 &nbsp;&middot;&nbsp; &#x2713; Booked 08:41 &nbsp;&middot;&nbsp; &#x2713; Picked up 13:47</span><b style="color:#16a34a">on schedule</b></div>'
- '<div class="trkx-prow"><span style="flex:none">Pickup dwell</span><span class="trkx-meter"><i></i></span><b style="color:#b45309">3h 35m &middot; +$155 detention</b></div>'
- '<div class="trkx-prow"><span style="flex:none">Delivery dock</span><span class="trkx-meter"><i style="width:0"></i></span><b style="color:#64748b">not arrived &middot; free 2h ready</b></div>'
- '<div class="trkx-prow" style="border-bottom:0;background:#f8fafc"><span>&#129534; Server-verified event log &middot; 14 events</span><b style="color:#0883F7">open &rarr;</b></div>'
- '</div></div>'
+ '<div class="reveal"><img src="/shots/partner-live-tracking.webp" alt="Broker and shipper live tracking view — milestones, live map, detention meters" width="1100" height="876" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real partner view &mdash; live truck, milestones, dwell meters, event log.</div></div>'
  '</div></div></section>')
 
 # proof vault + why different
