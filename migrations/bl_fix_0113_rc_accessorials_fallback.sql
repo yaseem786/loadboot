@@ -1,0 +1,11 @@
+-- bl_fix_0113 — Rate confirmation builder: never issue a blank rate card.
+-- Problem: app_private.build_rate_confirmation() read accessorials only from
+--   partner_loads.accessorials or loads.field_meta->'accessorials'.
+--   Staff/API-entered loads store them in loads.accessorials -> RC showed
+--   "Detention policy: — · Layover: — · TONU: — · Lumper: —".
+-- Fix (additive): acc := coalesce(pl.accessorials,
+--                                 nullif(l.field_meta->'accessorials','{}'),
+--                                 nullif(l.accessorials,'{}'), '{}')
+--   plus pickup/delivery window fall back to loads.pickup_time / delivery_time.
+-- Applied to STAGING (snslhvmkjusozgjelghi) 2026-07-18 via MCP.
+-- PROD: apply the same CREATE OR REPLACE (see staging definition) after owner sign-off.
