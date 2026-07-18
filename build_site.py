@@ -1469,7 +1469,7 @@ pr_body += COMPARE
 pr_faq = [('Are there any setup or hidden fees?','No. There are no setup fees, monthly fees, or hidden charges. You pay a flat 5% only on the loads we book.'),
 ('What if I have a slow week?','You pay nothing on loads you don\'t run. We only earn when we book freight for you.'),
 ('Is there a contract?','No long-term contract &mdash; cancel anytime. We earn your business load by load.'),
-('How is the 5% calculated?','It\'s 5% of the gross (line-haul) on each load we book and you approve.'),
+('How is the 5% calculated?','It\'s 5% of the gross (line-haul) on each load we book and you approve. Every delivered load auto-invoices the fee with a branded PDF &mdash; see <a href="payments-settlements.html">how payments &amp; settlements work</a>.'),
 ('Do you work with new-authority carriers?','Yes &mdash; new authority carriers are a core part of who we help.')]
 pf_html, pf_sch = faq_block(pr_faq)
 pr_body += pf_html + final_cta()
@@ -3274,6 +3274,7 @@ _cfaq_html, _cfaq_sch = faq_block([
     ('Do you work with new-authority carriers?', 'Absolutely &mdash; new-authority carriers are a core part of who we serve. We help you land early loads and build credibility.'),
     ('What equipment do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power-only and box truck / expedited.'),
     ('How fast can I start?', 'Most carriers are set up the same day once we have your authority and insurance.'),
+    ('How do I get paid?', 'Delivery flips your invoice to DUE automatically &mdash; deadlines, receipt-verified transfers, factoring/NOA routing and QuickBooks sync are built in. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
 ])
 cp += _cfaq_html + final_cta()
 page('carriers.html', 'Truck Dispatch for Carriers &amp; Owner-Operators | Loadboot',
@@ -3338,6 +3339,7 @@ _bfaq_html, _bfaq_sch = faq_block([
     ('How are carriers vetted?', 'We actively track carrier authority, insurance and compliance, and only carriers who pass hard eligibility checks are offered your loads.'),
     ('Can I integrate with my TMS?', 'Yes &mdash; subscribe to load, trip, document and delivery events via webhooks and our API on approved endpoints.'),
     ('What visibility do I get?', 'Permitted live load and trip status, pickup and delivery progress, ETAs, document status and open exceptions &mdash; without exposing private carrier data.'),
+    ('How do I pay carriers?', 'Payables group per trip &mdash; freight plus every approved claim with one total and a PAY-BY deadline. Pay with one receipt, the carrier confirms, the trip settles green. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
 ])
 bp += _bfaq_html
 bp += m_gradcta('Already a broker partner?', 'Post loads, review documents and watch shipments move &mdash; live in your Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#0b1220 0%,#1e3a5f 60%,#312e81 100%)', btncolor='#60a5fa', btntext='#0b1220')
@@ -4727,6 +4729,7 @@ bkx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="create-carrier-account.html" class="btn btn-primary">&#128666; Create a carrier account</a>'
  '<a href="load-board.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Explore the live board</a>'
  '<a href="how-it-works.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Full platform flow</a>'
+ '<a href="payments-settlements.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Next: how you get paid</a>'
  '</div></div></section>')
 
 RELATED['book-truck-loads.html'] = [('load-board.html','Live Load Board'),('how-to-read-a-rate-confirmation.html','Read a Rate Confirmation'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('features.html','All Features')]
@@ -4962,18 +4965,95 @@ page('gps-tracking.html', 'Real-Time Truck Load Tracking — GPS Geofence Proof,
      'Live truck load tracking from the driver&rsquo;s phone: 800-meter geofences stamp arrive/depart automatically, detention claims file themselves with server-verified GPS evidence, brokers and shippers watch a live map with ETA and per-stop detention meters. ELD optional (Samsara/Motive), privacy-off at delivery.',
      'gps-tracking.html', trk, _trk_schema)
 
-pay = svc_hero('Payments &amp; settlements', 'Every dollar has a paper trail: who owes it, when it is due, when it moved, and proof it landed.')
-pay += docsec('The receipt-verified rail', 'No black boxes',
- steps_html([
-  ('It becomes DUE automatically','Delivered freight, approved claims and service-fee invoices appear in the payer&rsquo;s ledger the moment they are owed — grouped per trip, each with a PAY-BY deadline (net-30 or the carrier&rsquo;s factoring terms).'),
-  ('Pay with proof','The pay panel shows exactly where money goes — the carrier&rsquo;s verified bank or their factoring company under an NOA. Transfer, attach the receipt. One receipt can settle a whole trip.'),
-  ('The payee confirms','The receiver gets an instant notification with a landing ETA, can open the payer&rsquo;s receipt, and taps &ldquo;Received&rdquo; when it lands. Silence triggers daily nudges and staff escalation — nothing rots unconfirmed.'),
-  ('Disputes with teeth','Unpaid past due? One-tap payment request first, formal dispute at 3 days — with LoadBoot support in the loop.')])
- + shot('broker-payables', 'Payables — one trip, one block, one deadline')
- + shot('carrier-money-in', 'The carrier&rsquo;s money-in view — owed, on the way, received')
- + cta_row([('Factoring &amp; NOA','factoring-noa.html'),('All features','features.html')]))
-RELATED['payments-settlements.html'] = [('factoring-noa.html','Factoring & NOA'),('detention-pay-policy.html','Detention'),('tonu-policy.html','TONU'),('features.html','All Features'),('pricing.html','Pricing')]
-page('payments-settlements.html', 'Trucking Payments & Settlement Automation — LoadBoot', 'Receipt-verified payment rails for trucking: automatic DUE ledger with pay-by dates, one-receipt trip settlement, confirmation loops, reminders, disputes and full factoring support.', 'payments-settlements.html', pay)
+pay = FTX_CSS + LBX_CSS
+
+_PAY_FAQ = [('Does LoadBoot hold or move the money?', 'No. Payments move bank-to-bank (ACH or wire) between the payer and the payee — LoadBoot runs the ledger around them: what is owed, the PAY-BY deadline, where it goes (bank or factoring company), the attached receipt, and the payee’s confirmation that it landed.'), ('When does an invoice become due?', 'The moment it is earned. Delivered freight, approved claims and service-fee invoices flip to DUE automatically — grouped per trip with a deadline from your terms (net-30 standard, or the carrier’s factoring terms). Ageing runs from day one, not from when someone remembers to send an invoice.'), ('How does one receipt settle a whole trip?', 'A trip’s payable block holds the freight plus every approved claim — detention, lumper, TONU — with one trip total. The payer can transfer that total once, attach the receipt, and every item in the block settles together. Item-by-item payment works too.'), ('I use a factoring company — does this still work?', 'Yes. With your NOA on file the remit-to routes to your factor automatically, per broker. You keep full control: leave specific brokers on factor, take direct payment where your contract allows, and if you leave your factor, upload the release letter and the routing flips.'), ('What happens when a broker doesn’t pay?', 'The debt ages in the open — due-since counters on both sides. One tap sends a payment request; at three days past due it can become a formal dispute with LoadBoot support in the loop, and the GPS-stamped evidence is already attached.'), ('Do detention and lumper claims get paid separately?', 'They ride the same rail. Approved claims join the trip’s payable block with their own memo and deadline — backed by the server-verified GPS log — so the broker can pay each claim or clear the whole trip in one receipt.'), ('Can I get my numbers into QuickBooks?', 'Yes — connect QuickBooks from Finance → Taxes in the carrier portal and your invoices and expenses sync to your books automatically.')]
+
+_pay_schema = '<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does LoadBoot hold or move the money?", "acceptedAnswer": {"@type": "Answer", "text": "No. Payments move bank-to-bank (ACH or wire) between the payer and the payee \\u2014 LoadBoot runs the ledger around them: what is owed, the PAY-BY deadline, where it goes (bank or factoring company), the attached receipt, and the payee\\u2019s confirmation that it landed."}}, {"@type": "Question", "name": "When does an invoice become due?", "acceptedAnswer": {"@type": "Answer", "text": "The moment it is earned. Delivered freight, approved claims and service-fee invoices flip to DUE automatically \\u2014 grouped per trip with a deadline from your terms (net-30 standard, or the carrier\\u2019s factoring terms). Ageing runs from day one, not from when someone remembers to send an invoice."}}, {"@type": "Question", "name": "How does one receipt settle a whole trip?", "acceptedAnswer": {"@type": "Answer", "text": "A trip\\u2019s payable block holds the freight plus every approved claim \\u2014 detention, lumper, TONU \\u2014 with one trip total. The payer can transfer that total once, attach the receipt, and every item in the block settles together. Item-by-item payment works too."}}, {"@type": "Question", "name": "I use a factoring company \\u2014 does this still work?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. With your NOA on file the remit-to routes to your factor automatically, per broker. You keep full control: leave specific brokers on factor, take direct payment where your contract allows, and if you leave your factor, upload the release letter and the routing flips."}}, {"@type": "Question", "name": "What happens when a broker doesn\\u2019t pay?", "acceptedAnswer": {"@type": "Answer", "text": "The debt ages in the open \\u2014 due-since counters on both sides. One tap sends a payment request; at three days past due it can become a formal dispute with LoadBoot support in the loop, and the GPS-stamped evidence is already attached."}}, {"@type": "Question", "name": "Do detention and lumper claims get paid separately?", "acceptedAnswer": {"@type": "Answer", "text": "They ride the same rail. Approved claims join the trip\\u2019s payable block with their own memo and deadline \\u2014 backed by the server-verified GPS log \\u2014 so the broker can pay each claim or clear the whole trip in one receipt."}}, {"@type": "Question", "name": "Can I get my numbers into QuickBooks?", "acceptedAnswer": {"@type": "Answer", "text": "Yes \\u2014 connect QuickBooks from Finance \\u2192 Taxes in the carrier portal and your invoices and expenses sync to your books automatically."}}]}</script>'
+
+pay += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:84px 0 60px"><div class="wrap"><div class="lbx-grid2">'
+ '<div><div class="eyebrow" style="color:#FC5305">Payments &amp; settlements</div>'
+ '<h1 style="color:#fff;font-size:2.5rem;line-height:1.12;margin:10px 0 16px">Payments with receipts, deadlines and <span style="color:#4ade80">zero guesswork</span></h1>'
+ '<p style="color:#cbd5e1;font-size:1.08rem;line-height:1.7">The load was <a href="gps-tracking.html" style="color:#7dd3fc">tracked to the dock</a> &mdash; the money runs on the same rails. Delivery flips the invoice to DUE automatically, the payer sees a PAY-BY deadline and can settle a whole trip with one receipt, the payee confirms it landed, and every dollar keeps its paper trail: who owes it, when it is due, when it moved, and proof it arrived.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-carrier-account.html" class="btn btn-primary">Get paid like this &rarr;</a><a href="app/partner/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Pay with a paper trail &mdash; broker / shipper</a></div>'
+ '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Auto-invoice on delivery</span><span>&#x2713; One receipt settles a whole trip</span><span>&#x2713; Factoring &amp; QuickBooks built in</span></div></div>'
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/pay-money-in-phone.webp" alt="Carrier money-in view — every dollar owed with deadline, memo and payment route" width="420" height="909" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real money-in view &mdash; every dollar owed, its deadline, its memo, and where it pays to.</div></div></div></div></section>')
+
+pay += ('<section style="background:#0b1220;padding:0 0 34px"><div class="wrap"><div class="cards g4" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
+ '<a href="#for-carriers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128666; I&rsquo;m owed money</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Carriers &mdash; the money-in rail &amp; your real numbers &darr;</div></a>'
+ '<a href="#for-payers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127970; I owe carriers</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Brokers &amp; shippers &mdash; one receipt, whole trip &darr;</div></a>'
+ '<a href="#for-factoring" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127974; My factor gets paid</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">NOA routing, per-broker control, clean exits &darr;</div></a>'
+ '</div></div></section>')
+
+pay += ('<section class="ftx-sec" id="for-carriers"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">The carrier&rsquo;s money-in</div><h2 class="ftx-h">Watch your money move &mdash; owed, on the way, landed</h2>'
+ '<p class="ftx-p">Nothing on this screen was typed in. Delivered freight, approved claims and fees appear as DUE the moment they are earned, each with a deadline, a memo the bank transfer must carry, and the route it pays through. From there the receipt loop takes over.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>DUE with a real deadline</b> &mdash; net-30 or your factoring terms, with due-since ageing running in the open on both sides.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>&ldquo;Payment on the way&rdquo;</b> &mdash; the payer attaches the transfer receipt and you see a landing ETA, not silence. You can open their receipt yourself.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>You confirm it landed</b> &mdash; one tap on &ldquo;I received it&rdquo; closes the loop. Silence triggers daily nudges and staff escalation &mdash; nothing rots unconfirmed.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Disputes with teeth</b> &mdash; request payment in one tap; three days past due it becomes a formal dispute with LoadBoot support in the loop.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Claims ride the same rail</b> &mdash; <a href="detention-pay-policy.html">detention</a>, lumper and TONU join the trip&rsquo;s invoice as approved claims, GPS-stamped from the <a href="gps-tracking.html">tracking trail</a>.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/pay-money-loop-phone.webp" alt="The receipt loop — payment sent with receipt attached, landing ETA, confirmed received" width="420" height="909" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real receipt loop &mdash; sent with receipt and landing ETA, then confirmed received.</div></div>'
+ '</div></div></section>')
+
+pay += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal" style="order:2"><div class="ftx-kicker">Know your numbers</div><h2 class="ftx-h">Every trip, A to Z &mdash; profit per mile, not vibes</h2>'
+ '<p class="ftx-p">The same ledger that collects your money computes your business: revenue, cost and net per mile, margin per trip, net per hour &mdash; over 7, 30 or 90 days. Log fuel, tolls and parking against the trip and the cost model does the rest.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Tap any trip for its full profit statement</b> &mdash; linehaul, accessorials, costs, per-mile and margin, A to Z.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Cost-per-mile is the number that keeps you alive</b> &mdash; run yours in the <a href="cost-per-mile-calculator.html">free calculator</a>, then watch the portal track it for real.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Books that keep themselves</b> &mdash; connect QuickBooks from Finance &rarr; Taxes and invoices and expenses <a href="integrations.html">sync automatically</a>. Statements download as CSV or PDF any time.</div></div>'
+ '</div></div>'
+ '<div class="reveal" style="order:1"><div style="max-width:340px;margin:0 auto"><img src="/shots/pay-earnings-phone.webp" alt="Carrier earnings view — net profit, revenue, cost and net per mile, margin per trip" width="420" height="909" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real earnings view &mdash; net profit with cost-per-mile, margin and net-per-hour.</div></div>'
+ '</div></div></section>')
+
+pay += ('<section class="ftx-sec" id="for-payers"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">For brokers &amp; shippers</div><h2 class="ftx-h">Pay a whole trip with one receipt &mdash; and watch it turn green</h2>'
+ '<p class="ftx-p">Payables group per trip: one block holds the freight plus every approved claim, with one trip total and a PAY-BY deadline on each item. Transfer once, attach the receipt &mdash; the carrier (or their factor) confirms, and the block settles green.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>One receipt, all items</b> &mdash; freight, detention, lumper: the whole trip clears in a single payment if you want it to.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Deadlines you can see</b> &mdash; PAY-BY dates with days-left counters, so nothing surprises your accounting.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Claims arrive pre-proven</b> &mdash; every claim carries its server-verified GPS log, so you are approving evidence, not arguing memories.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Remit-to switches itself</b> &mdash; factored carrier &rarr; their factoring company under the NOA; direct carrier &rarr; their verified bank. You never have to know which is which.</div></div>'
+ '</div>'
+ '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"><a href="app/partner/" class="btn btn-primary">Open the Partner Portal &rarr;</a><a href="brokers.html" class="btn btn-secondary">Why brokers post here</a></div></div>'
+ '<div class="reveal"><img src="/shots/pay-broker-payables-main.webp" alt="Broker payables — per-trip blocks with PAY-BY deadlines, GPS-proven claims and one-receipt settlement" width="1100" height="891" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="height:12px"></div><img src="/shots/pay-broker-settled.webp" alt="A fully settled trip — paid and confirmed" width="1100" height="204" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real payables ledger &mdash; DUE, payment on the way, and a trip settled green.</div></div>'
+ '</div></div></section>')
+
+pay += ('<section class="ftx-sec alt" id="for-factoring"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Fees &amp; factoring</div><h2>One flat fee. Your factoring, your rules.</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#129534;</div><h3>The flat 5% &mdash; nothing else</h3><p>Every delivered load auto-invoices LoadBoot&rsquo;s flat 5% dispatch fee with a branded PDF &mdash; pay it, download it, or dispute it, right from the portal. <a href="pricing.html">See pricing</a>.</p></div>'
+ '<div class="card"><div class="icon">&#127974;</div><h3>NOA routing, automatic</h3><p>Notice of Assignment on file means brokers pay your factoring company without you chasing anyone &mdash; the remit-to switches by itself on every invoice.</p></div>'
+ '<div class="card"><div class="icon">&#127919;</div><h3>Per-broker control</h3><p>Non-exclusive contract? Keep some brokers paying your factor and take others direct &mdash; you choose per broker, and the routing follows.</p></div>'
+ '<div class="card"><div class="icon">&#128682;</div><h3>Leaving your factor</h3><p>Upload the signed release letter and the routing flips cleanly &mdash; until then, brokers keep paying the factor so nobody breaches an NOA. <a href="factoring-noa.html">Factoring &amp; NOA guide</a>.</p></div>'
+ '</div></div></section>')
+
+pay += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>Receipt-verified rails vs &ldquo;the check is in the mail&rdquo;</h2></div>'
+ '<div class="reveal" style="overflow-x:auto;margin-top:22px"><table class="ftx-cmp">'
+ '<tr><th></th><th>LoadBoot</th><th>Email invoices &amp; hope</th></tr>'
+ '<tr><td>When it becomes due</td><td class="ftx-yes">&#x2713; flips to DUE at delivery, deadline attached</td><td class="ftx-no">&#10007; due when someone sends the invoice</td></tr>'
+ '<tr><td>What is owed</td><td class="ftx-yes">&#x2713; per-trip total &mdash; freight + proven claims</td><td class="ftx-no">&#10007; invoice ping-pong over every accessorial</td></tr>'
+ '<tr><td>How it is paid</td><td class="ftx-yes">&#x2713; memo-matched transfer, receipt attached</td><td class="ftx-no">&#10007; mystery ACH nobody can reconcile</td></tr>'
+ '<tr><td>Confirmation</td><td class="ftx-yes">&#x2713; payee taps &ldquo;received&rdquo; &mdash; silence gets nudged</td><td class="ftx-no">&#10007; &ldquo;did that ever land?&rdquo;</td></tr>'
+ '<tr><td>Claims evidence</td><td class="ftx-yes">&#x2713; GPS-stamped, riding the same invoice</td><td class="ftx-no">&#10007; screenshots in an email thread</td></tr>'
+ '<tr><td>Your books</td><td class="ftx-yes">&#x2713; QuickBooks sync + CSV/PDF statements</td><td class="ftx-part">a spreadsheet, eventually</td></tr>'
+ '</table></div></div></section>')
+
+pay += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Payments &amp; settlement FAQ</h2></div><div style="max-width:820px">'
+ + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _PAY_FAQ)
+ + '</div></div></section>')
+pay += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:60px 0"><div class="wrap" style="text-align:center">'
+ '<h2 style="color:#fff;font-size:2rem">Every dollar proven. Every deadline visible.</h2>'
+ '<p style="color:#cbd5e1;max-width:640px;margin:12px auto 24px">Carriers: your receivables chase themselves. Brokers &amp; shippers: your payables reconcile themselves.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
+ '<a href="create-carrier-account.html" class="btn btn-primary">&#128666; Create a carrier account</a>'
+ '<a href="app/partner/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127970; Pay carriers the clean way</a>'
+ '<a href="factoring-noa.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Factoring &amp; NOA</a>'
+ '</div></div></section>')
+RELATED['payments-settlements.html'] = [('factoring-noa.html','Factoring & NOA'),('detention-pay-policy.html','Detention Pay'),('gps-tracking.html','GPS Tracking & Proof'),('integrations.html','QuickBooks & Integrations'),('pricing.html','Pricing'),('features.html','All Features')]
+page('payments-settlements.html', 'Trucking Payments & Settlements — Receipt-Verified Rails, One-Receipt Trip Settlement | LoadBoot', 'Delivery flips the invoice to DUE automatically. PAY-BY deadlines, one-receipt trip settlement, receipt-verified transfers with landing ETA, confirm-received loops, GPS-proven claims, factoring/NOA routing and QuickBooks sync — every dollar keeps its paper trail.', 'payments-settlements.html', pay, _pay_schema)
 
 fac = svc_hero('Factoring &amp; the NOA engine', 'Full Notice-of-Assignment support, built the way the law works (UCC &sect;9-406) — so nobody ever pays the same invoice twice.')
 fac += docsec('What LoadBoot automates', 'For factored carriers',
