@@ -1,0 +1,12 @@
+-- bl_cc_0121 — CREW GATE: a trip cannot advance to dispatched/in_transit without
+-- a driver (driver_name or driver_id) AND a truck (truck_no or truck_id).
+-- Trigger trg_trip_requires_crew BEFORE INSERT OR UPDATE on app_private.trips —
+-- enforced at the table so EVERY path (CC advance, carrier portal start, API, SQL)
+-- hits the same wall with a friendly message ("Assign a DRIVER before dispatching…").
+-- Design (owner-approved): booking stays crew-free (15-min offer race — carrier
+-- grabs the load first, assigns crew after); DISPATCH is the gate because the
+-- dispatch sheet, tracking, geofences and detention proof all run on the driver.
+-- Existing related gates kept: trg_bookreq_valid_driver (valid-license driver on
+-- roster required to REQUEST loads), trg_no_driver_booking (drivers can't book).
+-- Negative-tested on staging: planned->dispatched without crew = blocked.
+-- Applied to STAGING 2026-07-19 via MCP. PROD after owner test.
