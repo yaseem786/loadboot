@@ -131,7 +131,7 @@ export function renderWorkflowBuilder(host) {
 
   function simulate(w) {
     const ta = el('textarea', { class: 'cc-input', rows: '4' });
-    ta.value = '{"rate": "1500", "email": "test@example.com"}';
+    ta.value = '{"rate": "2850", "origin": "Dallas, TX", "destination": "Atlanta, GA", "equipment": "Reefer"}'; // sample event — edit freely
     const out = el('div');
     openDrawer('Simulate — ' + w.name, el('div', null, [
       el('p', { class: 'cc-sub' }, 'Runs the published graph against this sample event with ZERO side effects — every step reports what it WOULD do.'),

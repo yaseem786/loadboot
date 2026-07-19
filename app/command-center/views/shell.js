@@ -1,4 +1,4 @@
-// shell.js — persistent Command Center chrome: branded sidebar (grouped, icons),
+// shell.js — persistent Command Center chrome for the FULL ops suite (65+ screens):
 // premium topbar (title + breadcrumb + user), and the content host the router fills.
 // Nav items hide by permission (UI convenience only; routes are still guarded and
 // the server re-checks every action).
@@ -21,6 +21,7 @@ const NAV = [
     { path: '/bi', label: 'Business Intelligence', icon: 'trend', perm: 'any:analytics.view,reports.view' },
     { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics', children: [
       { path: '/analytics', label: 'Business Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
+      { path: '/google', label: 'Google Search & GA4', icon: 'trend', perm: 'analytics.view' },
     ] },
   ]},
   { group: 'Operations', items: [
@@ -41,7 +42,6 @@ const NAV = [
     { path: '/compliance', label: 'Onboarding & compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
     { path: '/verification', label: 'Verification Center', icon: 'shield', perm: 'compliance.view' },
     { path: '/pod-review', label: 'POD Review', icon: 'document', perm: 'dispatch.manage' },
-    { path: '/exceptions', label: 'Exceptions', icon: 'document', perm: 'dispatch.manage' },
     { path: '/load-intake', label: 'Load Intake', icon: 'trend', perm: 'dispatch.view', flag: 'load_marketplace' },
     { path: '/control-tower', label: 'Trip Control Tower', icon: 'refresh', perm: 'dispatch.view', flag: 'load_marketplace' },
     { path: '/exceptions', label: 'Exception Center', icon: 'alert', perm: 'dispatch.view', flag: 'load_marketplace' },

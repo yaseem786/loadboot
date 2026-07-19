@@ -173,9 +173,11 @@ export function renderCarrier360(host, orgId) {
           let t2 = x; try { t2 = Object.assign({}, x, await getTrip(x.id) || {}); } catch (_) {}
           const rows2 = Object.entries(t2).filter(([k2, v2]) => v2 != null && typeof v2 !== 'object').map(([k2, v2]) =>
             kv(k2.replace(/_/g, ' '), /(_at|pickup|delivery)$/.test(k2) && /\d{4}-\d{2}/.test(String(v2)) ? fmtDateTime(v2) : String(v2)));
+          const rowKV9 = (k9, v9) => el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #eef2f7;font-size:.78rem' }, [el('span', { style: 'color:#64748b' }, String(k9).replace(/_/g, ' ')), el('b', { style: 'text-align:right;word-break:break-word' }, String(v9))]);
+          const objBox9 = (v9) => { if (Array.isArray(v9)) return el('div', null, v9.length ? v9.map((it9, i9) => (typeof it9 === 'object' && it9) ? el('div', { style: 'border:1px solid #e8edf3;border-radius:8px;padding:6px 8px;margin:4px 0;background:#fff' }, Object.entries(it9).filter(([, vv9]) => vv9 != null && typeof vv9 !== 'object').map(([kk9, vv9]) => rowKV9(kk9, vv9))) : rowKV9('#' + (i9 + 1), it9)) : [el('div', { class: 'cc-sub' }, 'none')]); return el('div', null, Object.entries(v9).filter(([, vv9]) => vv9 != null).map(([kk9, vv9]) => (typeof vv9 === 'object') ? el('div', { style: 'margin:4px 0' }, [el('div', { style: 'font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em' }, String(kk9).replace(/_/g, ' ')), objBox9(vv9)]) : rowKV9(kk9, vv9))); };
           const objs = Object.entries(t2).filter(([k2, v2]) => v2 != null && typeof v2 === 'object').map(([k2, v2]) =>
             el('div', { style: 'margin-top:8px' }, [el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800' }, k2.replace(/_/g, ' ')),
-              el('pre', { style: 'font-size:.74rem;background:#f6f8fb;border:1px solid #e8edf3;border-radius:8px;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:180px;overflow:auto' }, JSON.stringify(v2, null, 1))]));
+              el('div', { style: 'font-size:.74rem;background:#f6f8fb;border:1px solid #e8edf3;border-radius:8px;padding:8px;max-height:220px;overflow:auto' }, objBox9(v2))]));
           const clHost = el('div', { style: 'margin-top:10px' }, el('div', { class: 'cc-sub' }, 'Loading claims…'));
           const loadCl = async () => {
             let cls = []; try { cls = await tripAccessorials(x.id) || []; } catch (_) { cls = []; }

@@ -288,9 +288,12 @@ export function renderBroker360(host, orgId) {
       claims.length ? el('div', null, claims.map((a) => el('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap;cursor:pointer', title: 'Open evidence bundle', onClick: async () => {
         let b = null; try { b = await claimBundle(a.id); } catch (e) { toast(humanizeError(e), 'error'); return; }
         const c = (b && b.claim) || {};
+        const rowKV9 = (k9, v9) => el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #eef2f7;font-size:.78rem' }, [el('span', { style: 'color:#64748b' }, String(k9).replace(/_/g, ' ')), el('b', { style: 'text-align:right;word-break:break-word' }, String(v9))]);
+        const objBox9 = (v9) => { if (Array.isArray(v9)) return el('div', null, v9.length ? v9.map((it9, i9) => (typeof it9 === 'object' && it9) ? el('div', { style: 'border:1px solid #e8edf3;border-radius:8px;padding:6px 8px;margin:4px 0;background:#fff' }, Object.entries(it9).filter(([, vv9]) => vv9 != null && typeof vv9 !== 'object').map(([kk9, vv9]) => rowKV9(kk9, vv9))) : rowKV9('#' + (i9 + 1), it9)) : [el('div', { class: 'cc-sub' }, 'none')]); return el('div', null, Object.entries(v9).filter(([, vv9]) => vv9 != null).map(([kk9, vv9]) => (typeof vv9 === 'object') ? el('div', { style: 'margin:4px 0' }, [el('div', { style: 'font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em' }, String(kk9).replace(/_/g, ' ')), objBox9(vv9)]) : rowKV9(kk9, vv9))); };
+        
         openDrawer('Claim ' + (c.ref || ''), [
           el('div', { class: 'cc-sub' }, (a.origin || '') + ' → ' + (a.destination || '') + ' · ' + String(a.kind || '').toUpperCase()),
-          el('pre', { style: 'font-size:.74rem;background:#f6f8fb;border:1px solid #e8edf3;border-radius:8px;padding:8px;white-space:pre-wrap;max-height:320px;overflow:auto;margin-top:8px' }, JSON.stringify({ timeline: b.timeline, gps_dwell: b.gps_dwell, stop_documents: b.stop_documents }, null, 1)),
+          el('div', { style: 'font-size:.74rem;background:#f6f8fb;border:1px solid #e8edf3;border-radius:8px;padding:8px;max-height:340px;overflow:auto;margin-top:8px' }, objBox9({ timeline: b.timeline, gps_dwell: b.gps_dwell, stop_documents: b.stop_documents })),
           el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Decide in Exception Center → Pay claims, or from the carrier’s 360 trip drawer.'),
         ]);
       } }, [

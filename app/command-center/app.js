@@ -2,8 +2,8 @@
 // Flow: validate env -> require session (else login) -> load staff context ->
 // deny if not staff -> render shell + guarded hash router. Every privileged action
 // is re-authorized server-side; the client only hides what it shows.
-// V1 scope: Overview, Carriers, Loads, Dispatch, Documents, Staff & Roles, Audit,
-// Feature Flags, Settings. Deferred modules are intentionally absent.
+// Scope: full ops suite (65+ screens across Overview/Operations/CRM/Support/SEO/
+// Reporting/Comms/Finance/Marketing/Admin) — see views/shell.js NAV for the map.
 import { el, mount } from '../shared/ui/dom.js';
 import ENV from '../shared/env.js';
 import { getSession, getUser, onAuthChange } from '../shared/session.js';
@@ -61,7 +61,6 @@ import { renderPartnerIntake } from './views/partnerIntake.js';
 import { renderMarketRatesCC } from './views/marketRates.js';
 import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
-import { renderExceptions } from './views/exceptions.js';
 import { renderLoadIntake } from './views/loadIntake.js';
 import { renderControlTower } from './views/controlTower.js';
 import { renderExceptionCenter } from './views/exceptionCenter.js';
@@ -258,7 +257,6 @@ async function boot() {
     '/market-rates': () => { setActive('/market-rates'); renderMarketRatesCC(content); },
     '/verification': () => { setActive('/verification'); if (can('compliance.view')) renderVerificationCenter(content); else denied(); },
     '/pod-review': () => { setActive('/pod-review'); if (can('dispatch.manage') || can('finance.manage') || can('compliance.manage')) renderPodReview(content); else denied(); },
-    '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.manage')) renderExceptions(content); else denied(); },
     '/load-intake': () => { setActive('/load-intake'); if (can('dispatch.view') || can('loads.create')) renderLoadIntake(content); else denied(); },
     '/control-tower': () => { setActive('/control-tower'); if (can('dispatch.view')) renderControlTower(content); else denied(); },
     '/exceptions': () => { setActive('/exceptions'); if (can('dispatch.view')) renderExceptionCenter(content); else denied(); },
@@ -267,10 +265,10 @@ async function boot() {
     '/bi': () => { setActive('/bi'); if (can('analytics.view') || can('reports.view')) renderBI(content); else denied(); },
     '/carrier-scorecards': () => { setActive('/carrier-scorecards'); if (can('carriers.view') || can('dispatch.view')) renderCarrierScorecards(content); else denied(); },
     '/broker-sla': () => { setActive('/broker-sla'); if (partnersEnabled && can('partners.view')) renderBrokerSla(content); else denied(); },
-    '/brand-kit': () => { setActive('/brand-kit'); renderBrandKit(content); },
-    '/plugins': () => { setActive('/plugins'); renderPluginMarketplace(content); },
-    '/form-builder': () => { setActive('/form-builder'); renderFormBuilder(content); },
-    '/email-builder': () => { setActive('/email-builder'); renderEmailBuilder(content); },
+    '/brand-kit': () => { setActive('/brand-kit'); if (can('content.view') || can('content.manage')) renderBrandKit(content); else denied(); },
+    '/plugins': () => { setActive('/plugins'); if (can('settings.manage')) renderPluginMarketplace(content); else denied(); },
+    '/form-builder': () => { setActive('/form-builder'); if (can('content.view') || can('content.manage')) renderFormBuilder(content); else denied(); },
+    '/email-builder': () => { setActive('/email-builder'); if (can('content.view') || can('content.manage')) renderEmailBuilder(content); else denied(); },
     '/support': () => { setActive('/support'); if (supportEnabled && can('support.view')) renderSupport(content); else denied(); },
     '/reports': () => { setActive('/reports'); if (reportsEnabled && can('reports.view')) renderReports(content); else denied(); },
     '/notifications': () => { setActive('/notifications'); if (notificationsCenterEnabled) renderNotifications(content); else denied(); },
