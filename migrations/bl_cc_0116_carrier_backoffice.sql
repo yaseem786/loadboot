@@ -1,0 +1,11 @@
+-- bl_cc_0116 — cc_carrier_backoffice(p_carrier, p_quarter default null)
+-- Staff read-only oversight of a carrier's self-serve back office in one call:
+-- payroll totals + recent entries (carrier_payroll), IFTA quarter summary
+-- (ifta_state_miles), cost model (carrier_dispatch_prefs), fleet service log
+-- (fleet_service_records, due_soon <=14d), expenses 90d (carrier_expenses.incurred_on),
+-- and QuickBooks link status (qbo_connections/qbo_synced).
+-- Gate: has_global_permission('carriers.view') OR ('finance.view').
+-- Surfaced in CC Carrier 360 as the "Back office" card.
+-- Applied to STAGING (snslhvmkjusozgjelghi) 2026-07-18 via MCP.
+-- PROD: apply the same CREATE OR REPLACE (copy definition from staging) after owner test.
+-- Note: carrier_expenses has incurred_on (NOT expense_date).

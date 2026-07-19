@@ -59,6 +59,7 @@ import { renderBroker360 } from './views/broker360.js';
 import { renderPartners } from './views/partners.js';
 import { renderPartnerIntake } from './views/partnerIntake.js';
 import { renderMarketRatesCC } from './views/marketRates.js';
+import { renderRateStandards } from './views/rateStandards.js';
 import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
 import { renderLoadIntake } from './views/loadIntake.js';
@@ -255,6 +256,7 @@ async function boot() {
     '/partners': () => { setActive('/partners'); if (partnersEnabled && can('partners.view')) renderPartners(content); else denied(); },
     '/partner-intake': () => { setActive('/partner-intake'); if (partnersEnabled && can('partners.view')) renderPartnerIntake(content); else denied(); },
     '/market-rates': () => { setActive('/market-rates'); renderMarketRatesCC(content); },
+    '/rate-standards': () => { setActive('/rate-standards'); if (can('dispatch.manage') || can('settings.manage')) renderRateStandards(content); else denied(); },
     '/verification': () => { setActive('/verification'); if (can('compliance.view')) renderVerificationCenter(content); else denied(); },
     '/pod-review': () => { setActive('/pod-review'); if (can('dispatch.manage') || can('finance.manage') || can('compliance.manage')) renderPodReview(content); else denied(); },
     '/load-intake': () => { setActive('/load-intake'); if (can('dispatch.view') || can('loads.create')) renderLoadIntake(content); else denied(); },

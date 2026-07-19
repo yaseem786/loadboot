@@ -7,7 +7,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 import { can } from '../../shared/permissions.js';
@@ -1080,6 +1080,30 @@ export function renderCarrier360(host, orgId) {
     }
     void claimsCard; void loadC3Claims; // merged into Recent trips (claims live with their trip)
 
+    const backCard = card([el('h4', { class: 'cc-card-title' }, '\u{1F9FE} Back office')]);
+    (async () => {
+      let bo; try { bo = await ccCarrierBackoffice(orgId); } catch (e) { mount(backCard, el('div', null, [el('h4', { class: 'cc-card-title' }, '\u{1F9FE} Back office'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, humanizeError(e))])); return; }
+      const pr = bo.payroll || {}; const ifta = bo.ifta || {}; const cm = bo.cost_model || {}; const qb = bo.qbo || {}; const svc = bo.fleet_service || []; const ex = bo.expenses || {};
+      const secT = (t) => el('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.09em;color:#64748b;text-transform:uppercase;margin:12px 0 4px' }, t);
+      mount(backCard, el('div', null, [
+        el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '\u{1F9FE} Back office — payroll · IFTA · cost model · service log · QuickBooks'), el('span', { class: 'cc-sub' }, 'read-only — the carrier’s own self-serve books')]),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [
+          el('span', { class: 'cc-pill cc-pill-' + (qb.connected ? 'green' : 'gray') }, qb.connected ? ('QuickBooks ✓ ' + (qb.company || '') + ' · ' + (qb.synced || 0) + ' synced · ' + (qb.paid_in_qbo || 0) + ' paid') : 'QuickBooks not connected'),
+          el('span', { class: 'cc-pill cc-pill-blue' }, 'Expenses 90d: ' + money(ex.total_90d || 0) + ' (' + (ex.count_90d || 0) + ')'),
+          cm.cost_per_mile != null ? el('span', { class: 'cc-pill cc-pill-blue' }, 'Cost/mi $' + cm.cost_per_mile) : null,
+          cm.truck_mpg != null ? el('span', { class: 'cc-pill cc-pill-blue' }, cm.truck_mpg + ' MPG · fuel $' + (cm.fuel_price || '—')) : null,
+        ].filter(Boolean)),
+        secT('Payroll — ' + ((pr.entries || []).length) + ' recent entries'),
+        (pr.entries || []).length ? el('div', { style: 'display:flex;gap:14px;flex-wrap:wrap' }, [kv('Total', money(pr.total || 0)), kv('Paid', money(pr.paid || 0)), kv('Unpaid', money(pr.unpaid || 0))]) : el('div', { class: 'cc-sub' }, 'No payroll entries — carrier hasn’t used Finance → Payroll yet.'),
+        secT('IFTA — ' + (ifta.quarter || 'current quarter')),
+        (ifta.rows || []).length ? el('div', { style: 'display:flex;gap:14px;flex-wrap:wrap' }, [kv('States', String((ifta.rows || []).length)), kv('Total miles', Number(ifta.total_miles || 0).toLocaleString()), kv('Gallons', String(ifta.total_gallons || 0))]) : el('div', { class: 'cc-sub' }, 'No state miles logged this quarter.'),
+        secT('Fleet service log — last ' + Math.min(svc.length, 5) + ' of ' + svc.length),
+        svc.length ? el('div', null, svc.slice(0, 5).map((r9) => el('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed #eef2f7;font-size:.82rem;flex-wrap:wrap' }, [
+          el('span', null, (r9.truck_unit || '—') + ' · ' + String(r9.kind || '').replace(/_/g, ' ') + ' · ' + (r9.service_date || '')),
+          r9.due_soon ? el('span', { class: 'cc-pill cc-pill-amber' }, 'due soon') : el('span', { class: 'cc-sub' }, r9.next_due_date ? ('next ' + r9.next_due_date) : ''),
+        ]))) : el('div', { class: 'cc-sub' }, 'No service records.'),
+      ]));
+    })();
     mount(body, el('div', null, [
       head, kpis,
       el('div', { style: 'margin-top:16px' }, compCard),
@@ -1114,6 +1138,7 @@ export function renderCarrier360(host, orgId) {
       el('div', { style: 'margin-top:16px' }, safetyCard),
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [driversCard, payoutCard]), // docsCard MERGED into Onboarding & compliance (view/verify/actions per doc live there)
       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [tripsCard, scCard]),
+      el('div', { style: 'margin-top:16px' }, backCard),
       el('div', { style: 'margin-top:16px' }, timelineCard),
     ]));
   }

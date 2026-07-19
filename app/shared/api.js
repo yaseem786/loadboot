@@ -220,6 +220,8 @@ export const myApprovedPartners = () => rpc('cc_my_approved_partners');
 export const marketingIntel = (days = 30) => rpc('cc_marketing_intel', { p_days: days });
 export const rateStandards = () => rpc('cc_rate_standards');
 export const setRateStandard = (k, v) => rpc('cc_set_rate_standard', { p_key: k, p_value: v });
+export const rateStandardsList = () => rpc('cc_rate_standards');
+export const ccCarrierBackoffice = (id, quarter) => rpc('cc_carrier_backoffice', { p_carrier: id, p_quarter: quarter ?? null });
 export const referralPayoutDecide = (id, action, note) => rpc('cc_referral_payout_decide', { p_id: id, p_action: action, p_note: note ?? null });
 // Inc 64 — Business Intelligence: staff-gated executive summary + trend series over real tables.
 export const biExecutiveSummary = (from, to) => rpc('cc_bi_executive_summary', { p_from: from ?? null, p_to: to ?? null });

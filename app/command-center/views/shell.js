@@ -75,6 +75,7 @@ const NAV = [
   { group: 'Finance', items: [
     { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },
     { path: '/finance-analytics', label: 'Finance analytics', icon: 'trend', perm: 'finance.view', flag: 'finance' },
+    { path: '/rate-standards', label: 'Rate standards', icon: 'grid', perm: 'any:dispatch.manage,settings.manage' },
     { path: '/referrals', label: 'Referral Program', icon: 'users', perm: 'finance.view', flag: 'referral_program' },
   ]},
   { group: 'Marketing', items: [
