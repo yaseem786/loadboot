@@ -77,10 +77,10 @@ export function renderAutomation(host) {
         const doneBtn = (t.status === 'open' || t.status === 'in_progress') ? el('button', { class: 'cc-chip-btn', onClick: async (ev) => {
           const b = ev.currentTarget; b.disabled = true; b.textContent = '…';
           try { await completeTask(t.id); toast('Task completed', 'success'); loadTasks(); loadHealth(); }
-          catch (e) { toast(humanizeError(e), 'error'); b.disabled = false; b.textContent = '✓ Complete'; }
-        } }, '✓ Complete') : null;
+          catch (e) { toast(humanizeError(e), 'error'); b.disabled = false; b.textContent = '✓ Done'; }
+        } }, '✓ Done') : null;
         return el('tr', { class: 'cc-row' }, [
-          el('td', { style: 'min-width:260px' }, [
+          el('td', { style: 'min-width:220px;max-width:340px' }, [
             el('b', null, t.title || t.task_type),
             t.requires_approval ? el('span', { class: 'cc-chip-warn', style: 'margin-left:8px' }, 'needs approval') : '',
             t.related_label ? el('div', { class: 'cc-sub', style: 'margin-top:2px' }, '📌 ' + t.related_label) : '',
@@ -94,7 +94,7 @@ export function renderAutomation(host) {
           ]),
           el('td', null, go ? el('a', { href: go, class: 'cc-link' }, (t.related_type || 'open') + ' →') : (t.related_type || '—')),
           el('td', null, statusPill(t.status)),
-          el('td', { style: 'white-space:nowrap' }, [startBtn, startBtn && doneBtn ? el('span', { style: 'display:inline-block;width:6px' }, ' ') : null, doneBtn].filter(Boolean)),
+          el('td', null, el('div', { style: 'display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:96px' }, [startBtn, doneBtn].filter(Boolean))),
         ]);
       })),
     ]);
