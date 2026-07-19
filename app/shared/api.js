@@ -363,6 +363,7 @@ export const setLoadStatus = (loadId, status) => rpc('cc_set_load_status', { p_l
 // ---- Automation Core (ac_v1) — tasks board + operational health (flag: automation_core_enabled) ----
 export const listTasks = (o = {}) => rpc('cc_list_tasks', { p_status: o.status ?? 'open', p_limit: o.limit ?? 100 });
 export const completeTask = (taskId) => rpc('cc_complete_task', { p_task: taskId });
+export const startTask = (taskId) => rpc('cc_task_start', { p_task: taskId });
 export const automationHealth = () => rpc('cc_automation_health');
 
 // ---- Wave 1 CRM (flag: crm_enabled) ----

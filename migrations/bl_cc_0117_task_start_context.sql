@@ -1,0 +1,12 @@
+-- bl_cc_0117 — Task queue: claim/start flow + human context.
+-- 1) automation_tasks + started_at column.
+-- 2) NEW cc_task_start(p_task): open → in_progress, assignee_user=auth.uid(),
+--    started_at=now(), audit-logged. (Complete already stamps completed_by/at.)
+-- 3) cc_list_tasks REPLACED (drop+create — return table extended): now also returns
+--    description, assignee_user, assignee_name (profiles), started_at, due_at,
+--    related_id (text!) and related_label — a human label resolved per related_type:
+--    trip/load → "origin → destination · $rate", carrier → org name,
+--    form_submission → name · email, support_ticket → subject,
+--    invoice/settlement → amount. NOTE related_id is TEXT; compare with id::text.
+-- Applied to STAGING (snslhvmkjusozgjelghi) 2026-07-18 via MCP.
+-- PROD: apply same statements (copy definitions from staging) after owner test.
