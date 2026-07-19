@@ -6,7 +6,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
-import { supportOverview, listTickets, getTicket, createTicket, setTicketStatus, aiAssist, sendEmail } from '../../shared/api.js';
+import { supportOverview, listTickets, getTicket, createTicket, setTicketStatus, aiAssist, sendEmail, invoiceLookup } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
@@ -110,6 +110,19 @@ export function renderSupport(host, focusId) {
       kv('Status', t.status), kv('Priority', t.priority), kv('Category', t.category),
       kv('Requester', t.requester_name), kv('Email', t.requester_email), kv('Opened', fmtDateTime(t.created_at)),
       t.related_type ? kv('Related', t.related_type + ' ' + (t.related_id || '')) : '',
+      (() => { // auto-link invoice references mentioned in the ticket (e.g. "Invoice #INV-204")
+        const mtxt = ((t.subject || '') + ' ' + (t.body || '')).match(/INV[-\s]?\d+/i);
+        if (!mtxt) return '';
+        const no = mtxt[0].replace(/\s+/g, '').toUpperCase();
+        const host9 = el('div', { style: 'margin-top:10px' });
+        (async () => {
+          let r; try { r = await invoiceLookup(no); } catch (_) { return; }
+          if (r && r.found) mount(host9, el('a', { class: 'lb-btn lb-btn-secondary lb-btn-sm', href: '#/finance?id=' + r.id, style: 'text-decoration:none' },
+            '🧾 Open ' + r.invoice_no + ' — $' + r.net + ' (' + r.status + ') →'));
+          else mount(host9, el('div', { class: 'cc-sub' }, '🧾 ' + no + ' — no matching invoice found in Finance.'));
+        })();
+        return host9;
+      })(),
       el('div', { class: 'cc-kv', style: 'align-items:flex-start' }, [el('span', { class: 'cc-kv-k' }, 'Detail'), el('span', { class: 'cc-kv-v', style: 'white-space:pre-wrap' }, t.body || '—')]),
       actions.childNodes.length ? el('div', { style: 'margin-top:12px' }, actions) : '',
       replySection,

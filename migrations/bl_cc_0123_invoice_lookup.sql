@@ -1,0 +1,7 @@
+-- bl_cc_0123 — cc_invoice_lookup(p_no): staff lookup of fin_invoices by invoice_no
+-- (returns id/net/status). Used by Support ticket drawer to auto-link invoice
+-- references ("Invoice #INV-204") straight to Finance ?id= deep link.
+-- Also seeded demo invoice INV-204 (sent, $2,850 gross / $2,707.50 net) on the
+-- Dallas→Atlanta demo trip for the TKT-1001 dispute walkthrough.
+-- NOTE fin_invoices.status check: draft|sent|paid|void.
+-- Applied to STAGING 2026-07-19 via MCP. PROD after owner test.

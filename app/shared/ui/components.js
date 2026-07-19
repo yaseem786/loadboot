@@ -122,7 +122,7 @@ export function segmented(options, current, onPick) {
   const wrap = el('div', { class: 'cc-seg' });
   options.forEach(o => {
     const b = el('button', { class: 'cc-seg-btn' + (o.value === current ? ' active' : ''),
-      onClick: () => onPick(o.value) }, o.label);
+      onClick: () => { wrap.querySelectorAll('.cc-seg-btn.active').forEach(x => x.classList.remove('active')); b.classList.add('active'); onPick(o.value); } }, o.label);
     wrap.appendChild(b);
   });
   return wrap;
