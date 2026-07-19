@@ -1150,7 +1150,15 @@ SVC_CAP = {
  'power-only':'Power-only freight &mdash; we keep your tractor earning.',
  'owner-operator':'A dedicated dispatcher in your corner.',
  'new-authority':'New authority? We get you loaded fast.'}
-def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs):
+
+def _real_screen(shot, w, hgt, alt, cap, kicker='Inside the product', h='This is the real screen, not a mockup'):
+    _wrap = 'max-width:340px;margin:0 auto' if w <= 460 else 'max-width:860px;margin:0 auto'
+    return ('<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">' + kicker + '</div><h2>' + h + '</h2></div>'
+        '<figure class="reveal" style="margin:22px 0 0"><div style="' + _wrap + '">'
+        '<img src="/shots/' + shot + '" alt="' + alt + '" width="' + str(w) + '" height="' + str(hgt) + '" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 24px 60px -30px rgba(16,34,59,.35)"></div>'
+        '<figcaption style="text-align:center;color:#64748b;font-size:.8rem;margin-top:9px">' + cap + '</figcaption></figure></div></section>')
+
+def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs,shots=None):
     nl = name.lower()
     CHK = '&#9989;'; BOX = '&#128230;'
     introp = ''.join('<p>%s</p>' % p for p in intro)
@@ -1169,6 +1177,7 @@ def svc_page(fname,name,title,desc,h1,lead,intro,included,why,faqs):
     body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">What you get</div><h2>Everything in our %s dispatch service</h2></div><div class="grid g3">%s</div></div></section>' % (nl, inc_cards)
     # Why -> navy highlight panel
     body += '<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Why Loadboot</div><h2>Why %s carriers choose us</h2><p>%s</p></div></div></section>' % (nl, why)
+    if shots: body += _real_screen(*shots)
     # EXTRA unique sections (bullets -> cards, else prose)
     for i,(st,sp,sb) in enumerate(EXTRA.get(name,[])):
         ps = ''.join('<p>%s</p>' % x for x in sp)
@@ -1250,27 +1259,29 @@ svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services |
   ('Can you keep my tractor consistently loaded?','Yes &mdash; we plan loads ahead and build broker relationships to keep your uptime high.'),
   ('What does power only dispatch cost?','A flat 5% of gross on loads we book, no contract.')])
 
-svc_page('owner-operator-dispatch.html','Owner-Operator','Truck Dispatch for Owner-Operators | Loadboot',
+svc_page('owner-operator-dispatch.html','Owner-Operator','Owner-Operator Dispatch Service — Keep Your Authority, Keep More of Every Mile | LoadBoot',
  'Dedicated truck dispatch for owner-operators. Keep your authority, book higher-paying loads, and offload the back office. Flat 5%, no contracts, cancel anytime.',
- 'Truck Dispatch for Owner-Operators','Keep your authority and your independence &mdash; we handle the loads, the brokers, and the paperwork so you can focus on driving and earning.',
+ 'Owner-Operator Dispatch That Answers to You','Keep your authority and your independence &mdash; every load and every rate is approved by YOU, in writing, before a wheel turns. We handle the boards, the brokers and the back office at a flat 5%.',
  ['As an owner-operator, your time is split between driving and running a business. The hours you spend on the phone with brokers are hours you\'re not earning. We give those hours back.',
   'You keep your own authority and stay fully in control &mdash; you approve every load and every rate. We just do the heavy lifting: finding freight, negotiating, and managing the back office.'],
  ['A dedicated dispatcher who knows your truck and lanes','Higher-paying load booking and rate negotiation','You keep your authority and approve every load','Broker setup, check calls, and paperwork handled','Factoring, IFTA, and compliance help when you need it','No long-term contract &mdash; cancel anytime'],
  'Owner-operators don\'t need a boss &mdash; they need a partner who removes the busywork and protects their rate. We do exactly that, at a flat 5% with no contract, so the relationship stays honest. You stay independent; we help you earn more from every mile.',
  [('Do I keep my own authority?','Yes &mdash; you keep your authority and stay in control. You approve every load and rate before anything is booked.'),
   ('Is there a contract?','No. Cancel anytime &mdash; we earn your business load by load.'),
-  ('What does dispatch cost for owner-operators?','A flat 5% of your gross on loads we book, with no hidden fees.')])
+  ('What does dispatch cost for owner-operators?','A flat 5% of your gross on loads we book, with no hidden fees.')],
+ shots=('booking-rate-con.webp',720,2078,'A real e-signed rate confirmation — the rate, the lane and every accessorial term in writing before the truck moves','Your approval, in writing &mdash; a real rate confirmation, e-signed in-app before anything rolls.'))
 
-svc_page('new-authority-dispatch.html','New Authority','Dispatch for New Authority Carriers | Loadboot',
+svc_page('new-authority-dispatch.html','New Authority','New Authority Truck Dispatch — Loads From Day One, No Minimum Authority Age | LoadBoot',
  'Dispatch for new-authority carriers. We help you get set up with brokers, book your first loads, and start earning. Flat 5%, no contracts, real guidance.',
- 'Dispatch for New Authority Carriers','Just got your MC number? We help you get set up with brokers, book your first loads, and avoid the rookie mistakes that cost new carriers money.',
+ 'New Authority Dispatch &mdash; Loads From Day One','Just got your MC? There is no minimum authority age here: same-day verification, broker packets handled, and direct offers start racing your truck &mdash; while we keep you off the cheap freight that sinks first-year carriers.',
  ['Getting your own authority is exciting &mdash; and overwhelming. Brokers want packets, setups, and paperwork before they\'ll give you a load, and the learning curve is steep. We guide you through all of it.',
   'We handle broker setup, find loads that fit your truck, negotiate your rates, and show you how the back office works &mdash; so your first weeks on your own authority actually make money.'],
  ['Broker packet setup and onboarding handled for you','Booking your first loads on lanes you want','Rate negotiation so you don\'t start out on cheap freight','Guidance on factoring, insurance, and compliance','Help avoiding common new-authority mistakes','Flat 5%, no contract &mdash; grow at your own pace'],
  'New-authority carriers are exactly who we love to help. Big dispatchers ignore you; we don\'t. We get you set up with brokers, keep you off cheap freight from day one, and walk you through the parts of trucking nobody explains. Start strong, with a dispatcher who actually answers.',
  [('I just got my MC number &mdash; can you help?','Yes &mdash; new-authority carriers are a core part of who we serve. We handle broker setup and get you booking loads.'),
   ('Do you help with broker setup and packets?','Absolutely. We manage broker onboarding and packets so you can start hauling sooner.'),
-  ('What does it cost to start?','A flat 5% of gross on loads we book, with no contract &mdash; you only pay when you earn.')])
+  ('What does it cost to start?','A flat 5% of gross on loads we book, with no contract &mdash; you only pay when you earn.')],
+ shots=('board-request-countdown.webp',1100,773,'Direct load offers racing a countdown on the phone — first acceptance wins','Offers come to YOU &mdash; direct loads with a countdown; first acceptance wins.'))
 
 # ---------- SERVICES HUB ----------
 serv_body = svc_hero('Truck Dispatch Services','Full-service dispatch for US carriers &mdash; from booking and rate negotiation to authority setup, compliance, and claims. One partner for the whole business.')
@@ -3243,8 +3254,8 @@ _cfaq_html, _cfaq_sch = faq_block([
     ('How fast can I start?', 'Most carriers are set up the same day once we have your authority and insurance.'),
     ('How do I get paid?', 'Delivery flips your invoice to DUE automatically &mdash; deadlines, receipt-verified transfers, factoring/NOA routing and QuickBooks sync are built in. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
 ])
-cp += _cfaq_html + final_cta()
-page('carriers.html', 'Truck Dispatch for Carriers &amp; Owner-Operators | Loadboot',
+cp += _real_screen('board-card-details.webp',420,909,'A real load card opened — full rate card with detention, TONU and layover terms printed before booking','A real load, opened &mdash; the FULL rate card printed before you ever book.','What you book from','Every load shows its whole hand') + _cfaq_html + final_cta()
+page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5%, Every Rate in Writing | LoadBoot',
      'Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, detention and invoicing. Flat 5%, no contracts, keep your authority.',
      'services.html', cp, _cfaq_sch)
 
@@ -3308,9 +3319,15 @@ _bfaq_html, _bfaq_sch = faq_block([
     ('What visibility do I get?', 'Permitted live load and trip status, pickup and delivery progress, ETAs, document status and open exceptions &mdash; without exposing private carrier data.'),
     ('How do I pay carriers?', 'Payables group per trip &mdash; freight plus every approved claim with one total and a PAY-BY deadline. Pay with one receipt, the carrier confirms, the trip settles green. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
 ])
-bp += _bfaq_html
+bp += ('<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">The numbers that matter</div><h2>What &ldquo;covered&rdquo; looks like here</h2></div>'
+ '<div class="grid g4 reveal" style="margin-top:22px">'
+ '<div class="card" style="text-align:center"><div style="font-weight:900;font-size:1.6rem;color:#0883F7">15 min</div><p>offer window &mdash; verified carriers race it; first acceptance wins, the rest auto-close.</p></div>'
+ '<div class="card" style="text-align:center"><div style="font-weight:900;font-size:1.6rem;color:#0883F7">0</div><p>double-bookings possible &mdash; one accept closes every other offer on the load, by design.</p></div>'
+ '<div class="card" style="text-align:center"><div style="font-weight:900;font-size:1.6rem;color:#0883F7">800 m</div><p>geofences at every stop &mdash; arrive/depart stamp server-side; your customer updates write themselves.</p></div>'
+ '<div class="card" style="text-align:center"><div style="font-weight:900;font-size:1.6rem;color:#0883F7">1</div><p>receipt can settle a whole trip &mdash; freight plus approved claims, confirmed by the carrier. <a href="payments-settlements.html">The payables rail</a>.</p></div>'
+ '</div></div></section>') + _bfaq_html
 bp += m_gradcta('Already a broker partner?', 'Post loads, review documents and watch shipments move &mdash; live in your Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#0b1220 0%,#1e3a5f 60%,#312e81 100%)', btncolor='#60a5fa', btntext='#0b1220')
-page('brokers.html', 'For Freight Brokers &mdash; A Reliable Carrier Network | Loadboot',
+page('brokers.html', 'Freight Broker Solutions — Verified Carrier Capacity, Covered in Minutes | LoadBoot',
      'Brokers post loads to a vetted Loadboot carrier network with explainable matching, live visibility, clean documentation and API/webhook integration. Broker partners only.',
      'partners.html', bp, _bfaq_sch)
 
@@ -3361,7 +3378,7 @@ sp += lead_form('shipper_inquiry', 'Discuss your shipping needs',
      ('notes','Anything else we should know?','textarea',False)],
     'Request Consultation', 'Thanks &mdash; our team will reach out to schedule your consultation.')
 sp += _sfaq_html
-page('shipper-solutions.html', 'Shipper Solutions &mdash; Consultation &amp; Freight Inquiry | Loadboot',
+page('shipper-solutions.html', 'Shipper Solutions — Freight Moved With Live GPS Proof, Vetted Carriers | LoadBoot',
      'Talk to LoadBoot about your lanes and freight. Consultation-first shipper solutions: dispatch expertise, vetted carriers, licensed broker partners.',
      'partners.html', sp, _sfaq_sch)
 
