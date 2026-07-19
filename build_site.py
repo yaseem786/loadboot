@@ -930,12 +930,12 @@ home_faqs=[('Do I need my own authority (MC/DOT)?','Yes &mdash; we dispatch for 
 home_faq_html, home_faq_schema = faq_block(home_faqs)
 HERO='''<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div>
 <div class="wrap hero-grid"><div>
-<span class="badge reveal"><span class="dot"></span> Helping Owner-Operators &amp; Fleets Grow</span>
-<h1 class="reveal d1">Professional Truck Dispatch <span class="gradtext">Across the USA</span></h1>
+<span class="badge reveal"><span class="dot"></span> Carriers &middot; Brokers &middot; Shippers &mdash; one platform</span>
+<h1 class="reveal d1">Professional Truck Dispatch <span class="gradtext">&amp; a Load Board With Zero Ghosts</span></h1>
 <p class="reveal d1" style="color:#94a3b8;font-weight:500;font-size:1.08rem;margin:12px 0 0;letter-spacing:.02em">The Operating System for Trucking</p>
-<p class="lead reveal d2">We help owner-operators, fleets, and trucking companies book higher-paying freight, cut empty miles, and keep their trucks moving &mdash; with a dedicated dispatcher, honest communication, and no long-term contracts.</p>
-<div class="hero-btns reveal d3"><a href="contact.html#create" class="btn btn-primary">Get Started %s</a><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="services.html" class="btn btn-ghost">Explore Services &rarr;</a></div>
-<div class="trust reveal d3"><div>%s No contracts</div><div>%s You keep 100%% of your rate</div><div>%s Flat 5%% &mdash; pay only when you earn</div></div></div>
+<p class="lead reveal d2">Carriers book higher-paying freight with every rate in writing. Brokers and shippers cover loads with verified capacity in minutes &mdash; and watch every mile on live GPS. One platform, honest by design: no ghost loads, no long-term contracts.</p>
+<div class="hero-btns reveal d3"><a href="get-started.html" class="btn btn-primary">Get Started %s</a><a href="/app/partner/" class="btn btn-secondary">Post freight &mdash; broker / shipper</a><a href="how-it-works.html" class="btn btn-ghost">How it works &rarr;</a></div>
+<div class="trust reveal d3"><div>%s Verified on both sides</div><div>%s Every rate in writing</div><div>%s Flat 5%% &mdash; only when carriers earn</div></div></div>
 <div class="hero-visual reveal d2"><div class="hv-card"><div class="glow"></div>
 <div class="hv-top"><div class="truck">&#128666;</div><span class="hv-live"><span class="dot"></span> Load booked</span></div>
 <div class="hv-row"><span>Lane</span><span>Dallas, TX &rarr; Atlanta, GA</span></div>
@@ -1048,10 +1048,16 @@ REFTEASER = ('<section style="background:linear-gradient(135deg,#0b1220 0%,#1230
  '<p class="reveal" style="text-align:center;color:#94a3b8;font-size:.82rem;margin:16px auto 0;max-width:720px">*Illustrative only, based on a referred carrier hauling roughly $20k/month. Commissions are paid entirely from LoadBoot&rsquo;s own 5% dispatch fee &mdash; your referrals never pay more, and you invest nothing. Exact tiers are confirmed in writing at signup.</p>'
  '</div></section>')
 
-home_body = HERO+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
+ROLEBAND = ('<section style="padding:26px 0 8px"><div class="wrap"><div class="grid g3">'
+ '<a class="linkcard reveal" href="carriers.html"><div class="icon">&#128666;</div><h3>I haul freight</h3><p>The board with the full rate card printed, one-tap booking, GPS-proven detention &mdash; and a dispatcher on your side.</p><span class="arw">For carriers &rarr;</span></a>'
+ '<a class="linkcard reveal" href="brokers.html"><div class="icon">&#127970;</div><h3>I post loads</h3><p>Verified, health-scored capacity racing a 15-minute window. First accept wins &mdash; zero double-booking, zero check calls.</p><span class="arw">For brokers &rarr;</span></a>'
+ '<a class="linkcard reveal" href="shipper-solutions.html"><div class="icon">&#127981;</div><h3>I own the freight</h3><p>Vetted carriers under licensed brokerage, live GPS on every shipment, dock-level proof at your own facilities.</p><span class="arw">For shippers &rarr;</span></a>'
+ '</div><div class="reveal" style="text-align:center;margin-top:12px;font-size:.86rem;color:#64748b">Bring the people instead? <a href="agents.html">The agent program pays 1% of every load &mdash; forever</a>.</div></div></section>')
+
+home_body = HERO+ROLEBAND+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
 home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'
-page('index.html','Truck Dispatch Services for Owner-Operators | Loadboot',
-     'Reliable US truck dispatch for owner-operators, fleets, and new-authority carriers. Higher-paying loads, less deadhead, flat 5%, no contracts. Get a free quote.',
+page('index.html','Truck Dispatch & Verified Load Board — Carriers, Brokers & Shippers | LoadBoot',
+     'US truck dispatch and a zero-ghost load board on one platform: carriers book higher-paying freight with the rate card in writing, brokers cover loads with verified capacity in minutes, shippers watch every mile on live GPS. Flat 5%, no contracts.',
      'index.html', home_body, home_faq_schema)
 
 # ---------- SERVICE PAGE BUILDER ----------
