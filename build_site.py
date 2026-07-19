@@ -4039,7 +4039,9 @@ def fbody(kicker, h, p, items, guide=None):
     for it in items:
         out += '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div>' + it + '</div></div>'
     out += '</div>'
-    if guide: out += '<div style="margin-top:18px"><a href="' + guide[1] + '" class="btn btn-secondary">' + guide[0] + ' &rarr;</a></div>'
+    if guide:
+        _gs = guide if isinstance(guide, list) else [guide]
+        out += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' + ''.join('<a href="' + g[1] + '" class="btn btn-secondary">' + g[0] + ' &rarr;</a>' for g in _gs) + '</div>'
     return out
 
 feat = FTX_CSS
@@ -4201,7 +4203,7 @@ feat += fsec('partners','For brokers &amp; shippers','Post once. Covered in minu
    '<b>Vetted capacity</b> &mdash; carriers are FMCSA-verified and health-scored before they can book.',
    '<b>Live visibility</b> &mdash; GPS timeline, arrive/depart stamps and POD on every load.',
    '<b>Payables discipline</b> &mdash; pay-by dates, one-receipt trip payment, factor remit-to shown when an NOA exists. <a href="brokers.html">Broker overview</a> &middot; <a href="shipper-solutions.html">Shipper solutions</a>.'],
-  ('Create a broker account','create-broker-account.html')),
+  [('Create a broker account','create-broker-account.html'),('Create a shipper account','create-shipper-account.html')]),
  ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#127970; Your load &mdash; offered</div>'
   '<div class="ftx-card ftx-row"><span>&#128666; TRUCKING ENTERPRISE</span><span class="ftx-chip ftx-green">&#x2713; BOOKED 04:12</span></div>'
   '<div class="ftx-card ftx-row"><span>&#128666; RIVERLINE FREIGHT</span><span class="ftx-chip ftx-blue">offer auto-closed</span></div>'
