@@ -71,7 +71,7 @@ export function renderAutomation(host) {
         const go = goFor(t);
         const startBtn = t.status === 'open' ? el('button', { class: 'cc-chip-btn', onClick: async (ev) => {
           const b = ev.currentTarget; b.disabled = true; b.textContent = '…';
-          try { await startTask(t.id); toast('Task started — assigned to you', 'success'); loadTasks(); loadHealth(); }
+          try { await startTask(t.id); toast('Task started — assigned to you · moved to In progress', 'success'); state.status = 'in_progress'; drawToolbar(); loadTasks(); loadHealth(); }
           catch (e) { toast(humanizeError(e), 'error'); b.disabled = false; b.textContent = '▶ Start'; }
         } }, '▶ Start') : null;
         const doneBtn = (t.status === 'open' || t.status === 'in_progress') ? el('button', { class: 'cc-chip-btn', onClick: async (ev) => {
@@ -101,15 +101,18 @@ export function renderAutomation(host) {
     mount(listHost, table);
   }
 
+  const tbHost = el('div');
+  function drawToolbar() { mount(tbHost, toolbar([segmented(STATUSES, state.status, (v) => { state.status = v; drawToolbar(); loadTasks(); })])); }
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Automation', 'Domain events → rules → tasks & notifications. High-risk actions wait for human approval.'),
     healthHost,
     card([
       el('h3', { class: 'cc-card-title' }, 'Task queue'),
-      toolbar([segmented(STATUSES, state.status, (v) => { state.status = v; loadTasks(); })]),
+      tbHost,
       listHost,
     ], 'cc-pad'),
   ]));
+  drawToolbar();
   loadHealth();
   loadTasks();
 }
