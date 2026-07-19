@@ -21,8 +21,8 @@ function linkFor(it) {
     case 'carrier': return '#/carrier?id=' + (it.related_id || '');
     case 'support_ticket': return '#/support';
     case 'form_submission': return '#/forms';
-    case 'trip': return '#/trips';
-    case 'load': return '#/loads';
+    case 'trip': return '#/trips' + (it.related_id ? '?id=' + it.related_id : '');
+    case 'load': return '#/loads' + (it.related_id ? '?id=' + it.related_id : '');
     case 'invoice': case 'settlement': return '#/finance';
     case 'document': return '#/documents';
     case 'lead': return '#/crm';

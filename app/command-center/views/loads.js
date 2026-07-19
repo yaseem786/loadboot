@@ -14,7 +14,7 @@ const STATUSES = [
   { value: 'delivered', label: 'Delivered' },
 ];
 
-export function renderLoads(host) {
+export function renderLoads(host, focusId) {
   let state = { search: '', status: '' };
   const listHost = el('div', { class: 'cc-table-wrap' });
 
@@ -159,6 +159,7 @@ export function renderLoads(host) {
 
   mount(host, el('div', { class: 'cc-view' }, [header(), listHost]));
   load();
+  if (focusId) setTimeout(() => openLoad(focusId), 350); // deep-link
 }
 
 export default renderLoads;

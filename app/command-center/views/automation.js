@@ -42,12 +42,14 @@ const PLAYBOOK = {
   driver_renewal: { do: 'Driver license/medical expiring — warn the carrier and track the renewal.', go: (t) => '#/fleet-expiry' },
   doc_renewal: { do: 'Compliance document expiring — request the renewal from the account.', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/compliance' },
 };
-const RELGO = { trip: '#/trips', load: '#/loads', carrier: (id) => '#/carrier?id=' + id, partner: '#/partners', agent: '#/agents', form_submission: '#/forms', support_ticket: '#/support', invoice: '#/finance', settlement: '#/finance', lead: '#/crm' };
+const RELGO = { trip: (id) => '#/trips?id=' + id, load: (id) => '#/loads?id=' + id, carrier: (id) => '#/carrier?id=' + id, partner: '#/partners', agent: '#/agents', form_submission: (id) => '#/forms?id=' + id, support_ticket: (id) => '#/support?id=' + id, invoice: (id) => '#/finance?id=' + id, settlement: '#/finance', lead: '#/crm' };
 function goFor(t) {
+  // EXACT record first (deep link), playbook screen as fallback
+  const g = t.related_id ? RELGO[t.related_type] : null;
+  const exact = typeof g === 'function' ? g(t.related_id) : g;
+  if (exact) return exact;
   const pb = PLAYBOOK[t.task_type];
-  if (pb && pb.go) return pb.go(t);
-  const g = RELGO[t.related_type];
-  return typeof g === 'function' ? g(t.related_id) : (g || null);
+  return (pb && pb.go) ? pb.go(t) : null;
 }
 
 

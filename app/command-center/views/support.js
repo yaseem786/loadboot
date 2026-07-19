@@ -16,9 +16,10 @@ const COLS = [
   { key: 'created_at', label: 'Opened', fmt: fmtDateTime },
 ];
 
-export function renderSupport(host) {
+export function renderSupport(host, focusId) {
   let status = null, search = null, rows = [];
   const manage = can('support.manage');
+  if (focusId) setTimeout(() => openTicket(focusId), 350); // deep-link
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Support', 'Customer and carrier support tickets — triage, assign and resolve. New tickets auto-create a follow-up task.',
       el('div', { class: 'cc-head-actions', id: 'sp-actions' })),

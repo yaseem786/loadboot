@@ -20,7 +20,7 @@ const TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', deliver
 const NEXT = { planned: 'dispatched', dispatched: 'in_transit', in_transit: 'delivered', delivered: 'invoiced' };
 const NEXT_LABEL = { dispatched: 'Dispatch', in_transit: 'Mark in transit', delivered: 'Mark delivered', invoiced: 'Mark invoiced' };
 
-export function renderTrips(host) {
+export function renderTrips(host, focusId) {
   let state = { status: '', search: '' };
   const kpiHost = el('div');
   const listHost = el('div', { class: 'cc-table-wrap' });
@@ -156,6 +156,7 @@ export function renderTrips(host) {
 
   mount(host, el('div', { class: 'cc-view' }, [header(), listHost]));
   loadKpis(); loadList();
+  if (focusId) setTimeout(() => openTrip(focusId), 350); // deep-link from task queue / action center
 }
 
 export default renderTrips;

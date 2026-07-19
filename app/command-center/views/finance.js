@@ -17,7 +17,7 @@ const INV_TONE = { draft: 'gray', sent: 'amber', paid: 'green', void: 'red' };
 const STL_TONE = { pending: 'amber', approved: 'blue', paid: 'green', void: 'red' };
 const TABS = [{ value: 'invoices', label: 'Invoices' }, { value: 'settlements', label: 'Settlements' }, { value: 'receivables', label: 'Receivables' }, { value: 'payables', label: 'Payables' }, { value: 'prep', label: 'Invoice prep' }, { value: 'reconcile', label: 'Reconcile' }];
 
-export function renderFinance(host) {
+export function renderFinance(host, focusId) {
   let tab = 'invoices';
   let invStatus = '';
   const kpiHost = el('div');
@@ -257,6 +257,7 @@ export function renderFinance(host) {
 
   mount(host, el('div', { class: 'cc-view' }, [header(), bodyHost]));
   loadKpis(); route();
+  if (focusId) setTimeout(() => openInvoice(focusId), 400); // deep-link (invoice)
 }
 
 export default renderFinance;

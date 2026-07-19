@@ -20,8 +20,9 @@ const COLS = [
   { key: 'status', label: 'Status' },
 ];
 
-export function renderForms(host) {
+export function renderForms(host, focusId) {
   let status = null, search = null, rows = [];
+  if (focusId) setTimeout(() => openForm(focusId), 350); // deep-link
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Forms inbox', 'Website enquiries and quote requests — triage, assign, and convert to CRM leads. Spam is auto-filtered.',
       el('div', { class: 'cc-head-actions', id: 'fm-export' })),
