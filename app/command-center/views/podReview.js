@@ -12,15 +12,20 @@ export function renderPodReview(host) {
   let status = 'pending';
   const listHost = el('div');
 
+  const tabsHost = el('div');
+  function drawTabs() {
+    mount(tabsHost, el('div', { class: 'cc-tabs', style: 'display:flex;gap:6px;margin-bottom:14px' },
+      ['pending', 'approved', 'rejected'].map(s2 => el('button', {
+        class: 'lb-btn lb-btn-sm' + (s2 === status ? ' lb-btn-primary' : ''),
+        onClick: () => { status = s2; drawTabs(); load(); }
+      }, s2[0].toUpperCase() + s2.slice(1)))));
+  }
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('POD Review Queue', 'Proof-of-delivery documents uploaded by carriers. Open a signed private preview, then approve or reject. A rejection needs a reason; an approval prepares the invoice exactly once.'),
-    el('div', { class: 'cc-tabs', style: 'display:flex;gap:6px;margin-bottom:14px' },
-      ['pending', 'approved', 'rejected'].map(s => el('button', {
-        class: 'lb-btn lb-btn-sm' + (s === status ? ' lb-btn-primary' : ''),
-        onClick: () => { status = s; load(); }
-      }, s[0].toUpperCase() + s.slice(1)))),
+    tabsHost,
     listHost,
   ]));
+  drawTabs();
 
   load();
 
@@ -58,23 +63,28 @@ export function renderPodReview(host) {
         el('div', { class: 'cc-sub', style: 'font-size:.8rem' }, 'Uploaded ' + fmtDateTime(r.created_at) + (r.delivery_date ? ' · delivered ' + r.delivery_date : '')),
         r.review_note ? el('div', { class: 'cc-sub', style: 'font-size:.82rem;color:#b45309' }, 'Note: ' + r.review_note) : null,
       ].filter(Boolean)),
-      el('div', { style: 'display:flex;gap:8px;align-items:center' }, [
+      el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
         statusPill(r.status),
-        el('button', { class: 'lb-btn lb-btn-sm ghost', onClick: () => preview(r) }, 'Preview'),
+        el('button', { class: 'lb-btn lb-btn-sm ghost', onClick: () => preview(r, false) }, 'Preview'),
+        el('button', { class: 'lb-btn lb-btn-sm ghost', onClick: () => preview(r, true) }, '⬇ Download'),
         r.status === 'pending' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => decide(r, 'approved') }, 'Approve') : null,
         r.status === 'pending' ? el('button', { class: 'lb-btn lb-btn-sm', onClick: () => decide(r, 'rejected') }, 'Reject') : null,
-      ]),
+      ].filter(Boolean)),
     ]));
   }
 
-  async function preview(r) {
+  async function preview(r, download) {
     try {
       const ref = await podSignedRef(r.id);
       const sb = await getClient();
-      const { data, error } = await sb.storage.from(ref.bucket).createSignedUrl(ref.path, 120); // 2-min signed URL
+      const { data, error } = await sb.storage.from(ref.bucket).createSignedUrl(ref.path, 120, download ? { download: r.file_name || 'POD.pdf' } : undefined); // 2-min signed URL
       if (error) throw error;
       window.open(data.signedUrl, '_blank', 'noopener');
-    } catch (e) { toast(humanizeError(e), 'error'); }
+    } catch (e) {
+      const msg = /not.?found|object/i.test((e && e.message) || '') ?
+        'File is missing from storage — this looks like a seeded demo record (real carrier uploads will preview fine).' : humanizeError(e);
+      toast(msg, 'error');
+    }
   }
 
   function decide(r, decision) {
