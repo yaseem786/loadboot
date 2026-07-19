@@ -4421,8 +4421,11 @@ function tripStepper(status) {
       paint9(false);
       return host9;
     })();
+    const assignCard9 = h('div', { class: 'cp-card' }, [cardHead('\ud83c\udfaf Best next load \u2014 per truck'), h('div', { class: 'cp-muted' }, 'Loading\u2026')]);
+    (async () => { try { const m9 = await import('./assign-optimizer.js'); await m9.renderAssignOptimizer(assignCard9, { goBoard: () => go('loads') }); } catch (_) { assignCard9.style.display = 'none'; } })();
     mount(content, h('div', null, [
       alertHost,
+      assignCard9,
       optCard9,
       eldCard9,
       h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7' }, [

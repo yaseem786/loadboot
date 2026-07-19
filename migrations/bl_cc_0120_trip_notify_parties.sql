@@ -1,0 +1,7 @@
+-- bl_cc_0120 — cc_trip_notify_parties(p_trip, p_target 'carrier'|'poster'|'both', p_note)
+-- One-tap dispatch alert from the CC trip drawer: in-app + email (sys_email premium shell)
+-- to up to 5 active users of the carrier org, in-app notify_partner to the posting
+-- broker/shipper org, a 📣 note auto-logged on the trip timeline, audit-logged.
+-- Gate: dispatch.manage. UI: Trips drawer "Contact & alerts" section
+-- (📞 tel: link to driver phone · 🔔 Alert carrier · 🏢 Warn poster · ⚠ Both + optional message).
+-- Applied to STAGING 2026-07-18 via MCP. PROD after owner test.

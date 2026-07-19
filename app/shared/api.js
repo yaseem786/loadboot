@@ -210,6 +210,7 @@ export const payRequestReminder = (kind, ref) => rpc('pay_request_reminder', { p
 export const carrierEldSetup = (provider, rotate, apiToken) => rpc('carrier_eld_setup', { p_provider: provider ?? 'generic', p_rotate: !!rotate, p_api_token: apiToken ?? null });
 export const carrierAccountingExport = (from, to) => rpc('carrier_accounting_export', { p_from: from ?? null, p_to: to ?? null });
 export const carrierFuelImport = (rows) => rpc('carrier_fuel_import', { p_rows: rows });
+export const carrierAssignSuggestions = () => rpc('carrier_assignment_suggestions', {});
 export const carrierFleetOptimization = (days) => rpc('carrier_fleet_optimization', { p_days: days ?? 90 });
 export const qboAuthUrl = (redirect) => rpc('qbo_auth_url', { p_redirect: redirect ?? null });
 export const qboStatus = () => rpc('qbo_status');
@@ -364,6 +365,7 @@ export const setLoadStatus = (loadId, status) => rpc('cc_set_load_status', { p_l
 export const listTasks = (o = {}) => rpc('cc_list_tasks', { p_status: o.status ?? 'open', p_limit: o.limit ?? 100 });
 export const completeTask = (taskId) => rpc('cc_complete_task', { p_task: taskId });
 export const startTask = (taskId) => rpc('cc_task_start', { p_task: taskId });
+export const tripNotifyParties = (tripId, target, note) => rpc('cc_trip_notify_parties', { p_trip: tripId, p_target: target ?? 'both', p_note: note ?? null });
 export const automationHealth = () => rpc('cc_automation_health');
 
 // ---- Wave 1 CRM (flag: crm_enabled) ----
