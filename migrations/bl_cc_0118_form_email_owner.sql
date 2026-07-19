@@ -1,0 +1,8 @@
+-- bl_cc_0118 — EVERY website form submission also emails hello@loadboot.com.
+-- Trigger trg_form_submission_email_owner on app_private.form_submissions (AFTER INSERT)
+-- -> app_private.sys_email('hello@loadboot.com','form.owner_alert', subject w/ form_key+name,
+--    premium body: name/email/phone/company/message/source/UTM + "Open Forms inbox" CTA,
+--    idempotency 'formmail:<id>'). Delivery via delivery-worker (Resend) using the v6 shell.
+-- Complements existing rule form_submitted_followup (task + in-app notify) — this adds the
+-- owner email channel the owner asked for.
+-- Applied to STAGING (snslhvmkjusozgjelghi) 2026-07-18 via MCP. PROD after owner test.
