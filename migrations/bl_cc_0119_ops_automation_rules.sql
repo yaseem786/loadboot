@@ -1,0 +1,16 @@
+-- bl_cc_0119 — 11 NEW automation rules + task types (owner-approved full set):
+-- partner_review (partner.submitted), agent_review (agent.submitted),
+-- load_post_review (partner.load_submitted), noa_verify (carrier.noa_submitted, approval-gated),
+-- pod_missing (trip.pod_missing), invoice_overdue (invoice.overdue),
+-- tracking_blackout (trip.tracking_blackout), emergency_sla (trip.emergency, 2h SLA),
+-- claim_decision_stale (claim.decision_stale), offers_all_expired (load.offers_expired),
+-- bank_details_verify (carrier.bank_submitted, approval-gated).
+-- All create_task with title/priority/sla_minutes/assignee_role in action_config.
+-- cc_list_tasks: related_label now also resolves related_type 'partner'/'agent' (organizations).
+-- DEMO: 11 seeded open tasks on staging (one per type, real related records; pod_missing overdue).
+-- NOTE: rules fire when their trigger_event is EMITTED — emitters for
+-- trip.pod_missing / invoice.overdue / trip.tracking_blackout / claim.decision_stale /
+-- load.offers_expired (time-based sweeps) + partner.submitted / agent.submitted /
+-- carrier.noa_submitted / carrier.bank_submitted / trip.emergency / partner.load_submitted
+-- (point events) must be wired next (sweep cron + emit_event calls at the source RPCs).
+-- Applied to STAGING 2026-07-18 via MCP. PROD after owner test.

@@ -27,11 +27,22 @@ const PLAYBOOK = {
   form_followup: { do: 'Reply to the website enquiry; convert to a lead if real.', go: (t) => '#/forms' },
   comm_followup: { do: 'Open the conversation and answer the waiting message.', go: (t) => '#/comms' },
   ticket_followup: { do: 'Open the new support ticket, triage priority, and send the first reply.', go: (t) => '#/support' },
+  partner_review: { do: 'Verify the broker’s authority + $75k bond (or shipper’s facility details), then activate in Partner Intake.', go: (t) => '#/partner-intake' },
+  agent_review: { do: 'Check government ID, payout-account proof and W-9/W-8BEN, then approve — activates the 1% chain.', go: (t) => '#/agents' },
+  load_post_review: { do: 'Sanity-check the rate card, pins and schedule, then post the load to the board.', go: (t) => '#/partner-intake' },
+  noa_verify: { do: 'Verify the factoring company + NOA letter and set the pay-to routing before the next settlement.', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/finance' },
+  pod_missing: { do: 'Delivered 24h ago, no POD — call/notify the carrier; the invoice packet is blocked until it lands.', go: (t) => '#/pod-review' },
+  invoice_overdue: { do: 'Pay-by date passed — send the reminder, check the pay rail, escalate per collections policy.', go: (t) => '#/finance' },
+  tracking_blackout: { do: 'No GPS ping 30+ min on an active trip — call the driver, verify the feed, log the reason.', go: (t) => '#/control-tower' },
+  emergency_sla: { do: 'Driver filed an EMERGENCY — verify it, decide the reschedule (no TONU if verified), respond within 2 hours.', go: (t) => '#/safety-desk' },
+  claim_decision_stale: { do: 'Claim has GPS evidence but no payer decision in 24h — nudge the payer or escalate.', go: (t) => '#/exceptions' },
+  offers_all_expired: { do: 'Every direct offer expired unaccepted — widen the carrier set or reprice, then re-offer.', go: (t) => '#/loads' },
+  bank_details_verify: { do: 'Carrier changed payout bank — verify ownership before the next settlement (fraud gate).', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/finance' },
   trip_overdue: { do: 'URGENT: trip is past its appointment — call the driver, warn the receiver, and log the reason.', go: (t) => '#/trips' },
   driver_renewal: { do: 'Driver license/medical expiring — warn the carrier and track the renewal.', go: (t) => '#/fleet-expiry' },
   doc_renewal: { do: 'Compliance document expiring — request the renewal from the account.', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/compliance' },
 };
-const RELGO = { trip: '#/trips', load: '#/loads', carrier: (id) => '#/carrier?id=' + id, form_submission: '#/forms', support_ticket: '#/support', invoice: '#/finance', settlement: '#/finance', lead: '#/crm' };
+const RELGO = { trip: '#/trips', load: '#/loads', carrier: (id) => '#/carrier?id=' + id, partner: '#/partners', agent: '#/agents', form_submission: '#/forms', support_ticket: '#/support', invoice: '#/finance', settlement: '#/finance', lead: '#/crm' };
 function goFor(t) {
   const pb = PLAYBOOK[t.task_type];
   if (pb && pb.go) return pb.go(t);
