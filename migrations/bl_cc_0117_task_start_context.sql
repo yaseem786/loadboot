@@ -10,3 +10,6 @@
 --    invoice/settlement → amount. NOTE related_id is TEXT; compare with id::text.
 -- Applied to STAGING (snslhvmkjusozgjelghi) 2026-07-18 via MCP.
 -- PROD: apply same statements (copy definitions from staging) after owner test.
+-- FIX (same day): fin_invoices/fin_settlements have gross/fee/net (+invoice_no/settlement_no),
+-- NOT amount/net_amount — labels use 'Invoice <no> · $net' / 'Settlement <no> · $net'.
+-- (First version failed planning -> Task queue showed "Something went wrong".)
