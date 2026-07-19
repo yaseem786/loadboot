@@ -2909,39 +2909,6 @@ def lead_form(form_key, heading, intro, fields, submit_label, success_msg):
             '</form></div></section><script>%s</script>') % (fid, heading, intro, rows, fid, submit_label, js)
 
 # ---- How It Works ----
-hiw = svc_hero('How Loadboot Works', 'From first call to steady miles &mdash; here is exactly how we get your truck loaded, keep it moving, and pay you faster. You keep your authority and approve every load.')
-hiw += m_rail('The process', 'Four steps to a loaded truck', '', [
- ('users', 'Tell us about your truck', 'Share your equipment, home base, preferred lanes and target rate. Setup takes about two minutes &mdash; no contract, no commitment.'),
- ('radar', 'We find &amp; negotiate loads', 'Your dispatcher works the boards and broker relationships to find higher-paying freight on your lanes, then negotiates the rate before you ever see it.'),
- ('doccheck', 'You approve &amp; roll', 'Every load comes to you first. You approve it, we handle the rate confirmation and paperwork, and you drive. We are on call while you are on the road.'),
- ('wallet', 'Get paid, then repeat', 'We prepare your invoice and documents, help with factoring, and line up your next load so you are never sitting empty.'),
-], accent='#0883F7')
-hiw += _sec('What you keep', 'You stay in control', _cards([
-    ('&#9989;', 'Your own authority', 'You keep your MC/DOT and your relationships. We work for you, not the other way around.'),
-    ('&#9989;', 'Approval on every load', 'Nothing books without your yes. No surprise freight, no forced dispatch.'),
-    ('&#9989;', 'No contracts', 'Flat 5% only when we book you. If we are not earning it, you can walk.'),
-]), )
-hiw += m_timeline('Carrier workflow', 'The carrier journey, end to end', [
- ('doccheck', 'Profile &amp; documents', 'Truck, trailer, lanes, authority and insurance &mdash; your document pack is built once and reused on every load.'),
- ('radar', 'Matched offers', 'Eligibility-checked, preference-aware offers arrive in your portal with rate, miles and RPM computed. Accept, decline or counter.'),
- ('truck', 'Dispatch &amp; drive', 'Rate con handled, appointments set, broker verified. Tap arrive/depart at each stop &mdash; detention protection from real timestamps.'),
- ('wallet', 'POD to payday', 'Upload the POD, invoice is prepared, settlement itemized &mdash; and your P&amp;L shows what the week actually made.'),
-], accent='#0d9488', soft=True)
-hiw += m_dark('Partner workflow', 'The broker partner journey', '', [
- ('shieldcheck', 'Verify once', 'Authority, documents and contacts verified at onboarding &mdash; then never re-asked.'),
- ('clipboard', 'Post in minutes', 'A guided wizard captures the load, terms and documents; duplicates are auto-caught.'),
- ('handshake', 'Matched &amp; booked', 'Hard eligibility + explainable ranking book one vetted carrier &mdash; transactionally, no double booking.'),
- ('radar', 'Watch it deliver', 'Status, tracking freshness, exceptions and POD &mdash; live in your portal, no phone chase.'),
-], accent='#60a5fa')
-hiw += m_zigzag('Behind the scenes', 'What LoadBoot runs between you both', [
- ('target', 'Matching engine', 'Every offer is explainable: equipment fit, real location, availability, history &mdash; no black box.'),
- ('siren', 'Exception desk', 'Breakdowns, weather, detention &mdash; logged, owned and resolved with an audit trail both sides can see.'),
- ('scale', 'Money rail', 'Invoices, settlements and disputes with maker/checker approval &mdash; nothing moves without a human sign-off.'),
-], accent='#ea580c', soft=True)
-hiw += final_cta()
-page('how-it-works.html', 'How Truck Dispatch Works with Loadboot | Step by Step',
-     'How Loadboot dispatch works: tell us about your truck, we find and negotiate loads, you approve every one, get paid faster. Flat 5%, no contracts.',
-     'how-it-works.html', hiw)
 
 # ---- FAQ ----
 _faq_items = [
@@ -5245,6 +5212,102 @@ flt += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '</div></div></section>')
 RELATED['fleet-management.html'] = [('payments-settlements.html','Payments & Settlements'),('gps-tracking.html','GPS Tracking & Proof'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('features.html','All Features')]
 page('fleet-management.html', 'Trucking Fleet Management Software — Drivers, Trucks, Maintenance & Per-Trip P&L | LoadBoot', 'Run the whole fleet back office in the carrier portal: magic-link driver invites, license & medical expiry alerts, maintenance logs with next-due dates, fuel-card CSV import, per-trip profit & cost per mile, payroll from trips, IFTA state miles and per-diem from the GPS trail.', 'fleet-management.html', flt, _flt_schema)
+
+hiw = FTX_CSS + LBX_CSS
+
+_HIW_FAQ = [('What actually happens when I book a load?', 'The moment you tap Request to book (or accept a direct offer), first acceptance wins and every other offer closes — no double-booking. The rate confirmation is issued and e-signed in-app, the dispatch pack (pickup numbers, contacts, directions) generates instantly, and an 800-meter geofence arms at every stop.'), ('How fast is verification for a new account?', 'Carriers: FMCSA details auto-fill from your DOT number and document review typically completes the same day. Brokers: authority and the federal bond are checked against the FMCSA record at signup. Shippers and agents: minutes.'), ('Who is on the other side of my load?', 'Always a verified party. Carriers pass authority, insurance and health checks before they see freight; posting requires licensed broker or verified shipper status. Both sides of every load are vetted — that is why the board has zero ghost loads.'), ('Where does the money actually move?', 'Bank to bank, between payer and payee — LoadBoot runs the ledger around it: automatic DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirm-received loops, and factoring/NOA routing when an NOA is on file.'), ('What does LoadBoot charge?', "One flat 5% dispatch fee on delivered loads, invoiced transparently to the carrier's account — never deducted from a factor's advance, never charged to brokers, shippers or agents for using the platform."), ('What if something goes wrong on the road?', 'The Emergency button verifies real breakdowns within a 2-hour window and reschedules with zero penalty. Detention, layover, TONU and lumper claims draft themselves from GPS trip data and ride the same invoice as the freight.')]
+
+_hiw_schema = '<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What actually happens when I book a load?", "acceptedAnswer": {"@type": "Answer", "text": "The moment you tap Request to book (or accept a direct offer), first acceptance wins and every other offer closes \\u2014 no double-booking. The rate confirmation is issued and e-signed in-app, the dispatch pack (pickup numbers, contacts, directions) generates instantly, and an 800-meter geofence arms at every stop."}}, {"@type": "Question", "name": "How fast is verification for a new account?", "acceptedAnswer": {"@type": "Answer", "text": "Carriers: FMCSA details auto-fill from your DOT number and document review typically completes the same day. Brokers: authority and the federal bond are checked against the FMCSA record at signup. Shippers and agents: minutes."}}, {"@type": "Question", "name": "Who is on the other side of my load?", "acceptedAnswer": {"@type": "Answer", "text": "Always a verified party. Carriers pass authority, insurance and health checks before they see freight; posting requires licensed broker or verified shipper status. Both sides of every load are vetted \\u2014 that is why the board has zero ghost loads."}}, {"@type": "Question", "name": "Where does the money actually move?", "acceptedAnswer": {"@type": "Answer", "text": "Bank to bank, between payer and payee \\u2014 LoadBoot runs the ledger around it: automatic DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirm-received loops, and factoring/NOA routing when an NOA is on file."}}, {"@type": "Question", "name": "What does LoadBoot charge?", "acceptedAnswer": {"@type": "Answer", "text": "One flat 5% dispatch fee on delivered loads, invoiced transparently to the carrier\'s account \\u2014 never deducted from a factor\'s advance, never charged to brokers, shippers or agents for using the platform."}}, {"@type": "Question", "name": "What if something goes wrong on the road?", "acceptedAnswer": {"@type": "Answer", "text": "The Emergency button verifies real breakdowns within a 2-hour window and reschedules with zero penalty. Detention, layover, TONU and lumper claims draft themselves from GPS trip data and ride the same invoice as the freight."}}]}</script>'
+
+hiw += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:80px 0 46px"><div class="wrap"><div class="lbx-grid2">'
+ '<div><div class="eyebrow" style="color:#FC5305">How it works</div>'
+ '<h1 style="color:#fff;font-size:2.4rem;line-height:1.13;margin:10px 0 16px">One load, four screens &mdash; <span style="color:#4ade80">how the whole loop runs</span></h1>'
+ '<p style="color:#cbd5e1;font-size:1.06rem;line-height:1.7">A load on LoadBoot is never a phone call and a prayer. It is posted with the rate card in writing, offered to verified carriers in a first-accept-wins window, booked in one tap, tracked by geofence, delivered with a signed POD, invoiced automatically and paid on a receipt-verified rail &mdash; while the broker, the shipper, the carrier and the agent each watch their own screen of the same truth.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="get-started.html" class="btn btn-primary">Get started &mdash; any role &rarr;</a><a href="compliance.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">How verification works</a></div>'
+ '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Verified on both sides</span><span>&#x2713; Rate card in writing</span><span>&#x2713; GPS proof end to end</span></div></div>'
+ '<div class="reveal"><img src="/shots/board-web-available.webp" alt="The live load board — verified loads with the full rate card, filters and real deadhead" width="1100" height="773" loading="eager" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Where it starts &mdash; the real board: verified loads, rate card printed, zero ghosts.</div></div>'
+ '</div></div></section>')
+hiw += ('<section style="background:#0b1220;padding:0 0 30px"><div class="wrap">'
+ '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">'
+ + ''.join('<span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:7px 14px;font-size:.78rem;font-weight:700;color:#cbd5e1">' + x + '</span><span style="color:#475569;align-self:center">&rarr;</span>' for x in ['&#128203; Posted','&#9889; Offered &middot; first accept wins','&#128666; Booked &middot; RC e-signed','&#128752; Tracked &middot; geofenced','&#127937; Delivered &middot; POD','&#129534; Invoiced &middot; auto-DUE','&#128181; Paid &middot; receipt-verified'])
+ + '<span style="background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);border-radius:99px;padding:7px 14px;font-size:.78rem;font-weight:800;color:#4ade80">&#128218; Settled &middot; books sync</span>'
+ '</div></div></section>')
+hiw += ('<section style="background:#0b1220;padding:0 0 40px"><div class="wrap"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">'
+ '<a href="#for-carriers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#128666; I haul the freight</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Carrier &mdash; board to booked to paid &darr;</div></a>'
+ '<a href="#for-brokers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127970; I post the loads</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Broker &mdash; posted to covered to settled &darr;</div></a>'
+ '<a href="#for-shippers" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#127981; I own the freight</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Shipper &mdash; requested to moved with proof &darr;</div></a>'
+ '<a href="#for-agents" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#129309; I bring the people</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Agent &mdash; link to chain to 1% forever &darr;</div></a>'
+ '</div></div></section>')
+
+hiw += ('<section class="ftx-sec" id="for-carriers"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">For carriers &amp; owner-operators</div><h2 class="ftx-h">Board &rarr; booked &rarr; rolling &rarr; paid</h2>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">1</span><div><b>Verified the same day</b> &mdash; your DOT auto-fills FMCSA records, documents review on a visible tracker, the VERIFIED badge opens the board. <a href="create-carrier-account.html">The exact checklist</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">2</span><div><b>A board with nothing fake on it</b> &mdash; every posting from a licensed broker, full rate card printed (detention, TONU, layover), real deadhead from YOUR position. <a href="load-board.html">The load board</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">3</span><div><b>One tap to booked</b> &mdash; first acceptance wins; the rate con e-signs in-app and the dispatch pack (PU numbers, contacts) generates instantly. <a href="book-truck-loads.html">Booking deep-dive</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">4</span><div><b>The trip runs itself</b> &mdash; 800 m geofences stamp arrive/depart, the detention clock runs at the dock, claims draft themselves. <a href="gps-tracking.html">Tracking &amp; proof</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">5</span><div><b>Fleet? It plans itself</b> &mdash; the optimized fleet plan assigns each board load to the truck it fits best, reload chained. <a href="fleet-management.html">Fleet tools</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">6</span><div><b>Delivery flips the money</b> &mdash; POD in, invoice DUE automatically, receipt-verified payment with your factor routed by NOA. <a href="payments-settlements.html">The money rail</a>.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/board-phone-available.webp" alt="The live board on the phone — verified loads with rate cards and deadhead from your GPS" width="420" height="909" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="height:12px"></div><div style="max-width:340px;margin:0 auto"><img src="/shots/pay-money-loop-phone.webp" alt="The receipt loop — payment sent with receipt and landing ETA, then confirmed received" width="420" height="909" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real screens &mdash; the board where it starts, the receipt loop where it ends.</div></div>'
+ '</div></div></section>')
+
+hiw += ('<section class="ftx-sec alt" id="for-brokers"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal" style="order:2"><div class="ftx-kicker">For freight brokers</div><h2 class="ftx-h">Posted &rarr; covered &rarr; watched &rarr; settled</h2>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">1</span><div><b>Verified brokerage</b> &mdash; authority + the $75K federal bond checked against FMCSA at signup. <a href="create-broker-account.html">Broker onboarding</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">2</span><div><b>Post once with the wizard</b> &mdash; exact pins (they arm the geofences), schedule, equipment and the full rate card with accessorial terms printed.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">3</span><div><b>Covered in minutes</b> &mdash; direct offers race verified, health-scored carriers in a 15-minute window; first accept wins, everything else auto-closes.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">4</span><div><b>Zero check calls</b> &mdash; live map, milestone timeline, geofenced arrive/depart stamps and document status, streaming to your screen (and your TMS via <a href="integrations.html">webhooks</a>).</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">5</span><div><b>Claims desk with evidence</b> &mdash; detention, TONU and layover claims arrive GPS-stamped; approve on facts, not phone arguments.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">6</span><div><b>One receipt settles the trip</b> &mdash; payables group per trip with PAY-BY deadlines; the carrier (or their factor) confirms and the block turns green. <a href="payments-settlements.html">Payables</a>.</div></div>'
+ '</div></div>'
+ '<div class="reveal" style="order:1"><img src="/shots/partner-wizard-route.webp" alt="The posting wizard — exact address pins that power geofences and real driving miles" width="1100" height="1006" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="height:12px"></div><img src="/shots/acc-broker-claims.webp" alt="The claims desk — GPS-stamped claims with approve, reject and one-tap pay" width="1100" height="769" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real screens &mdash; the wizard that posts it, the claims desk that settles it.</div></div>'
+ '</div></div></section>')
+
+hiw += ('<section class="ftx-sec" id="for-shippers"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">For shippers &amp; facilities</div><h2 class="ftx-h">Requested &rarr; moved &rarr; proven</h2>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">1</span><div><b>No authority needed</b> &mdash; choose Shipper (or Facility/Warehouse for dock scheduling); licensed brokerage handles carrier compliance. <a href="create-shipper-account.html">Shipper setup</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">2</span><div><b>Your facilities become pins</b> &mdash; exact addresses power geofenced arrive/depart proof at your own docks; dwell is measured the same way for every carrier.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">3</span><div><b>Request the freight</b> &mdash; route, windows, equipment, requirements; vetted carriers get it with the terms in writing.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">4</span><div><b>Watch it move</b> &mdash; the same live map the carrier sees: truck, ETA, milestones, stale-feed honesty. Your customer&rsquo;s &ldquo;where is it?&rdquo; answers itself. <a href="shipper-solutions.html">Shipper solutions</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">5</span><div><b>Delivered with a paper trail</b> &mdash; signed POD, GPS stamps and documents on the load; invoices ride the receipt-verified rail with confirmations.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><img src="/shots/partner-wizard-schedule.webp" alt="Freight scheduling — appointment windows and requirements printed on the load" width="1100" height="938" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="height:12px"></div><img src="/shots/partner-live-tracking.webp" alt="Live tracking — the truck on the map with milestone timeline and ETA" width="1100" height="969" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real screens &mdash; the windows you set, the truck you watch.</div></div>'
+ '</div></div></section>')
+
+hiw += ('<section class="ftx-sec alt" id="for-agents"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal" style="order:2"><div class="ftx-kicker">For referral &amp; sales agents</div><h2 class="ftx-h">Link &rarr; pair &rarr; 1% forever</h2>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">1</span><div><b>Your link is live at signup</b> &mdash; free account, referral code ready immediately. <a href="create-agent-account.html">Agent setup</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">2</span><div><b>Bring a pair</b> &mdash; a broker who posts and a carrier who hauls; when both sides of a load are yours, that is your chain: <i>your broker &middot; LoadBoot &middot; your carrier</i>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">3</span><div><b>Loads deliver, you earn</b> &mdash; 1% of every delivered load in your chain lands automatically after the POD verifies; 15-day clearing, monthly payouts to your verified account.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">4</span><div><b>It never costs your clients</b> &mdash; your slice comes from LoadBoot&rsquo;s own flat 5% fee; recruits add levels (0.50%, 0.25%) on top. <a href="agents.html">The agent program</a>.</div></div>'
+ '</div></div>'
+ '<div class="reveal" style="order:1"><img src="/shots/agent-dashboard.webp" alt="The agent dashboard — chain active, referral link, clearing balance and the 5-level commission math" width="1100" height="859" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real dashboard &mdash; chain ACTIVE, your link, your clearing balance.</div></div>'
+ '</div></div></section>')
+
+hiw += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Why the loop holds</div><h2>Four screens, one truth</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:24px">'
+ '<div class="card"><div class="icon">&#128737;</div><h3>Verified on both sides</h3><p>Carriers pass authority, insurance and health checks; posting requires a licensed broker or verified shipper. Nobody unvetted touches a load. <a href="compliance.html">Verification</a>.</p></div>'
+ '<div class="card"><div class="icon">&#128203;</div><h3>Terms printed, not implied</h3><p>The rate card &mdash; detention, TONU, layover, lumper &mdash; rides every posting. Disputes die young because everyone agreed in writing.</p></div>'
+ '<div class="card"><div class="icon">&#128752;</div><h3>Evidence, not memory</h3><p>Server-side GPS stamps at every stop; the same map and log on every screen. Symmetric information is the dispute killer.</p></div>'
+ '<div class="card"><div class="icon">&#128181;</div><h3>Money with receipts</h3><p>Auto-DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirmations, factoring routed by NOA &mdash; every dollar keeps its paper trail.</p></div>'
+ '</div></div></section>')
+hiw += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>How-it-works FAQ</h2></div><div style="max-width:820px">'
+ + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _HIW_FAQ)
+ + '</div></div></section>')
+hiw += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:56px 0"><div class="wrap" style="text-align:center">'
+ '<h2 style="color:#fff;font-size:1.9rem">Pick your screen. The loop is already running.</h2>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:22px">'
+ '<a href="create-carrier-account.html" class="btn btn-primary">&#128666; Carrier</a>'
+ '<a href="create-broker-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127970; Broker</a>'
+ '<a href="create-shipper-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#127981; Shipper</a>'
+ '<a href="create-agent-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#129309; Agent</a>'
+ '</div></div></section>')
+RELATED['how-it-works.html'] = [('load-board.html','Live Load Board'),('book-truck-loads.html','One-Tap Booking'),('gps-tracking.html','GPS Tracking & Proof'),('payments-settlements.html','Payments & Settlements'),('compliance.html','Compliance & Verification'),('features.html','All Features')]
+page('how-it-works.html', 'How LoadBoot Works — Load to Paid for Carriers, Brokers, Shippers & Agents', 'The whole loop, step by step: posting with the rate card in writing, first-accept-wins offers to verified carriers, one-tap booking with e-signed rate confirmations, geofenced GPS tracking, automatic invoicing and receipt-verified payment — explained for every role.', 'how-it-works.html', hiw, _hiw_schema)
 
 intg = FTX_CSS + LBX_CSS
 
