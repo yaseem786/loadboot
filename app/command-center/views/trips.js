@@ -7,7 +7,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { dispatchOverview, listTrips, getTrip, createTrip, advanceTrip, addTripNote, getLoadsList, getCarriersDirectory, rateconDocument } from '../../shared/api.js';
+import { dispatchOverview, listTrips, getTrip, createTrip, advanceTrip, addTripNote, getLoadsList, getCarriersDirectory, rateconDocument, tripNotifyParties } from '../../shared/api.js';
 import { printDocument } from '../../shared/ui/printDoc.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -140,6 +140,26 @@ export function renderTrips(host, focusId) {
         el('span', { class: 'cc-pill cc-pill-' + (TONE[t.status] || 'gray') }, (t.status || '').replace('_', ' '))]),
       card([ field('Carrier', t.carrier), field('Driver', t.driver_name), field('Phone', t.driver_phone),
         field('Truck', t.truck_no), field('Rate', t.rate != null ? money(t.rate) : '—'), field('Miles', t.miles != null ? String(t.miles) : '—') ], 'cc-fields'),
+      can('dispatch.manage') ? el('h4', { class: 'cc-card-title', style: 'margin-top:16px' }, '📣 Contact & alerts') : '',
+      can('dispatch.manage') ? (() => {
+        const noteIn = el('input', { class: 'cc-input', placeholder: 'Message (optional) — e.g. "Running late, appt passed — call dispatch"' });
+        const btn = (label, target) => el('button', { class: 'cc-chip-btn', onClick: async (ev) => {
+          const b = ev.currentTarget; b.disabled = true; const orig = b.textContent; b.textContent = '…';
+          try { const r = await tripNotifyParties(id, target, noteIn.value || null);
+            toast('Sent ✓ — carrier users: ' + (r.carrier_users_notified || 0) + (r.poster_notified ? ' · poster notified' : ''), 'success'); openTrip(id); }
+          catch (e) { toast(humanizeError(e), 'error'); b.disabled = false; b.textContent = orig; }
+        } }, label);
+        return el('div', null, [
+          el('div', { class: 'cc-sub', style: 'margin:2px 0 6px' }, 'In-app + push + email to the carrier’s users · in-app to the poster (broker/shipper). Every send logs on the timeline.'),
+          noteIn,
+          el('div', { class: 'cc-status-row', style: 'margin-top:8px' }, [
+            t.driver_phone ? el('a', { class: 'cc-chip-btn', href: 'tel:' + t.driver_phone, style: 'text-decoration:none' }, '📞 Call driver ' + t.driver_phone) : el('span', { class: 'cc-sub' }, '📞 No driver phone — assign a driver first'),
+            btn('🔔 Alert carrier', 'carrier'),
+            btn('🏢 Warn poster/receiver', 'poster'),
+            btn('⚠ Alert both', 'both'),
+          ]),
+        ]);
+      })() : '',
       can('dispatch.manage') ? el('h4', { class: 'cc-card-title', style: 'margin-top:16px' }, 'Advance status') : '',
       advanceRow,
       el('h4', { class: 'cc-card-title', style: 'margin-top:16px' }, 'Stops'),
