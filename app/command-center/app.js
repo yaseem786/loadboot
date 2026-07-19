@@ -12,7 +12,6 @@ import { loadStaffContext, isStaff, can, clearStaffContext } from '../shared/per
 import { mountOfflineBanner } from '../shared/connectivity.js';
 import { createRouter } from '../shared/router.js';
 import { renderShell } from './views/shell.js';
-import { renderOverview } from './views/overview.js';
 import { renderDispatch } from './views/dispatch.js';
 import { renderCarriers } from './views/carriers.js';
 import { renderLoads } from './views/loads.js';
@@ -188,8 +187,7 @@ async function boot() {
   try { automationsAdminEnabled = await isFlagEnabled('automations_admin_enabled'); } catch (_) { automationsAdminEnabled = false; }
   try { notificationsCenterEnabled = await isFlagEnabled('notifications_center_enabled'); } catch (_) { notificationsCenterEnabled = false; }
   try { teamChatEnabled = await isFlagEnabled('team_chat_enabled'); } catch (_) { teamChatEnabled = false; }
-  let actionCenterEnabled = false, opsMapEnabled = false;
-  try { actionCenterEnabled = await isFlagEnabled('action_center_enabled'); } catch (_) { actionCenterEnabled = false; }
+  let opsMapEnabled = false;
   try { opsMapEnabled = await isFlagEnabled('ops_map_enabled'); } catch (_) { opsMapEnabled = false; }
   let announcementsEnabled = false, campaignsEnabled = false;
   try { announcementsEnabled = await isFlagEnabled('announcements_enabled'); } catch (_) { announcementsEnabled = false; }
@@ -216,7 +214,7 @@ async function boot() {
   const guard = (perms, render) => () => (perms.some(p => can(p)) ? render() : denied());
 
   const router = createRouter({
-    '/': () => { setActive('/'); if (actionCenterEnabled) renderActionCenter(content, ctx, user); else renderOverview(content, ctx, shell); },
+    '/': () => { setActive('/'); renderActionCenter(content, ctx, user); }, // Action Center IS the dashboard (old counts-only overview retired)
     '/radar': () => { setActive('/radar'); renderRadar(content); },
     '/agents': () => { setActive('/agents'); guard(['carriers.approve', 'dispatch.manage'], () => renderAgents(content))(); },
     '/management': () => { setActive('/management'); renderManagement(content); },
@@ -287,7 +285,7 @@ async function boot() {
     '/flags': () => { setActive('/flags'); if (can('flags.manage')) renderFlags(content); else renderPlaceholder(content, 'Not available', 'You do not have permission to manage feature flags.'); },
     '/settings': () => { setActive('/settings'); guard(['settings.manage'], () => renderSettings(content))(); },
   }, {
-    notFound: () => { setActive('/'); renderOverview(content, ctx, shell); },
+    notFound: () => { setActive('/'); renderActionCenter(content, ctx, user); },
     onError: () => renderPlaceholder(content, 'Something went wrong', 'Please retry or pick another section.'),
   });
   router.start();
