@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice, invoiceDocument } from '../../shared/api.js';
+import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice, invoiceDocument, invoiceSendReminder } from '../../shared/api.js';
 import { printDocument } from '../../shared/ui/printDoc.js';
 import { can } from '../../shared/permissions.js';
 import { financeReceivables, financePayables, invoicePrepQueue, financeReconcile } from '../../shared/api.js';
@@ -198,13 +198,19 @@ export function renderFinance(host, focusId) {
     if (can('finance.manage')) {
       if (i.status === 'draft') actions.appendChild(chip('Send invoice', () => setStatus(id, 'sent')));
       if (i.status === 'sent') actions.appendChild(chip('Mark paid', () => setStatus(id, 'paid')));
+      if (i.status === 'sent') actions.appendChild(chip('📨 Send payment reminder', async () => {
+        const note = prompt('Optional message for the payer (leave blank for the standard reminder):') || null;
+        try { const r = await invoiceSendReminder(id, note);
+          toast('Reminder sent ✓ — payer emails: ' + (r.payer_emails || 0) + ' · carrier notified' + (r.days_overdue ? ' · ' + r.days_overdue + 'd overdue' : ''), 'success'); }
+        catch (e) { toast(humanizeError(e), 'error'); }
+      }));
       if (i.status !== 'paid' && i.status !== 'void') actions.appendChild(chip('Void', () => setStatus(id, 'void')));
     }
     mount(drawer.body, el('div', null, [
       el('div', { class: 'cc-drawer-title' }, [el('h3', null, i.invoice_no), el('span', { class: 'cc-pill cc-pill-' + (INV_TONE[i.status] || 'gray') }, i.status)]),
       card([ field('Carrier', i.carrier), field('Lane', (i.origin || '—') + ' → ' + (i.destination || '—')),
         field('Gross (rate)', money(i.gross)), field('Fee (' + (i.fee_pct || 5) + '%)', money(i.fee)),
-        field('Net to carrier', money(i.net)), field('Due', i.due_at ? fmtDate(i.due_at) : '—'),
+        field('Net to carrier', money(i.net)), field('Due', i.due_at ? (fmtDate(i.due_at) + (i.status === 'sent' && new Date(i.due_at) < new Date() ? ' · ⚠ OVERDUE' : '')) : '—'),
         field('Settlement', i.settlement_no) ], 'cc-fields'),
       actions,
     ]));

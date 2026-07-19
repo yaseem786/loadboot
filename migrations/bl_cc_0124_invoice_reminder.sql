@@ -1,0 +1,8 @@
+-- bl_cc_0124 — cc_invoice_send_reminder(p_invoice, p_note): collections action for
+-- SENT (unpaid) invoices. Sends: payer org (loads.broker_org) in-app notify_partner +
+-- premium email to up to 3 partner users (net, pay-by, days overdue, payables CTA);
+-- carrier org users get an in-app "we nudged the payer" note; audit-logged with
+-- days-overdue. Idempotency 1/day per invoice (invrem:<id>:<yyyymmdd>).
+-- UI: Finance invoice drawer -> "📨 Send payment reminder" chip (sent status only)
+-- + "⚠ OVERDUE" flag on the Due field. Gate: finance.view/manage.
+-- Applied to STAGING 2026-07-19 via MCP. PROD after owner test.
