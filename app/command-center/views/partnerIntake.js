@@ -22,7 +22,8 @@ const money = (v) => (v == null ? '—' : '$' + Number(v).toLocaleString(undefin
 const TONE = { submitted: 'amber', accepted: 'blue', declined: 'red', posted: 'green', covered: 'green', requested: 'amber', quoted: 'blue', booked: 'green', scheduled: 'blue', checked_in: 'amber', completed: 'green', no_show: 'red', cancelled: 'gray', inbound: 'blue', outbound: 'violet', sent: 'amber', payment_submitted: 'blue', paid: 'green', void: 'gray', draft: 'gray' };
 const pill = (s) => el('span', { class: 'cc-pill cc-pill-' + (TONE[s] || 'gray') }, [el('i', { class: 'cc-pill-dot' }), (s || '').replace(/_/g, ' ')]);
 
-export function renderPartnerIntake(host) {
+export function renderPartnerIntake(host, focusId) {
+  let focusOpened = false;
   const manage = can('partners.manage');
   let tab = 'broker';
   mount(host, el('div', { class: 'cc-view' }, [
@@ -72,10 +73,12 @@ export function renderPartnerIntake(host) {
     const table = rows.length ? el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Invoice', 'Partner', 'Type', 'Amount', 'Due', 'Status', ''].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(i => {
-        const act = el('td', null);
+        const act = el('td', { style: 'min-width:170px' });
+        const actW = el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center' });
+        act.appendChild(actW);
         if (manage && i.status !== 'paid' && i.status !== 'void') {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => setInv(i.id, 'paid', ev) }, 'Mark paid'));
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => setInv(i.id, 'void', ev) }, 'Void'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => setInv(i.id, 'paid', ev) }, 'Mark paid'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => setInv(i.id, 'void', ev) }, 'Void'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, i.number)), el('td', null, i.partner || '—'), el('td', null, i.kind || '—'),
@@ -193,21 +196,21 @@ export function renderPartnerIntake(host) {
       manage ? el('div', { class: 'cc-drawer-actions', style: 'margin-top:14px;display:flex;gap:8px;flex-wrap:wrap' }, [
         (l.status === 'submitted' || l.status === 'accepted') ? el('button', { class: 'lb-btn lb-btn-primary', style: 'flex:1', onClick: async (ev) => {
           if (fails.length && !confirm(fails.length + ' blocking issue(s):\n\n' + fails.map(f => '\u2715 ' + f.label).join('\n') + '\n\nPost to the board anyway?')) return;
-          ev.currentTarget.disabled = true;
+          const b9 = ev.currentTarget; b9.disabled = true;
           try { await decidePartnerLoad(l.id, 'post'); toast('Load posted to the board.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
-          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, (dTarget ? '\u2705 Post \u2014 offer ONLY to ' + dTarget : '\u2705 Post to board') + (fails.length ? ' (override)' : '')) : null,
         fails.length || warns.length ? el('button', { class: 'lb-btn', style: 'flex:1', onClick: async (ev) => {
           const msg = 'Before we can post this load, please fix:\n' + fails.concat(warns).map(f => '\u2022 ' + f.label + ' \u2014 ' + (f.detail || '')).join('\n');
-          ev.currentTarget.disabled = true;
+          const b9 = ev.currentTarget; b9.disabled = true;
           try { await requestUpdate('partner_load', l.id, l.broker_org, msg); toast('Update request sent \u2014 auto-drafted from the failed checks.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
-          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, '\u2709 Ask update (auto-drafted)') : null,
         l.status === 'submitted' ? el('button', { class: 'lb-btn', style: 'color:#b91c1c', onClick: async (ev) => {
           if (!confirm('Decline this load? The broker is notified.')) return;
-          ev.currentTarget.disabled = true;
+          const b9 = ev.currentTarget; b9.disabled = true;
           try { await decidePartnerLoad(l.id, 'decline'); toast('Declined.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
-          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, 'Decline') : null,
       ].filter(Boolean)) : null,
     ].filter(Boolean)));
@@ -217,6 +220,10 @@ export function renderPartnerIntake(host) {
     showLoading(body, 'Loading broker loads…');
     let rows; try { rows = await listPartnerLoads({ limit: 200 }); } catch (e) { showError(body, humanizeError(e), loadBroker); return; }
     rows = rows || [];
+    if (focusId && !focusOpened) {
+      const hit = rows.find(l => l.id === focusId || l.posted_load_id === focusId);
+      if (hit) { focusOpened = true; setTimeout(() => reviewDrawer(hit, loadBroker), 250); }
+    }
     // Inc 54 — open update requests to/from brokers (staff view)
     let reqs = []; try { reqs = (await updateRequests(null, 50)) || []; } catch (_) { reqs = []; }
     reqs = reqs.filter(r => r.status === 'open' || r.status === 'responded');
@@ -228,9 +235,9 @@ export function renderPartnerIntake(host) {
           r.response ? el('div', { class: 'cc-sub', style: 'color:#16a34a' }, '↳ ' + r.response) : el('div', { class: 'cc-sub' }, 'awaiting partner response'),
         ]),
         manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-          ev.currentTarget.disabled = true;
+          const b9 = ev.currentTarget; b9.disabled = true;
           try { await resolveUpdateRequest(r.id, 'resolve'); toast('Resolved', 'success'); loadBroker(); }
-          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, 'Resolve') : null,
       ].filter(Boolean)))),
     ]) : null;
@@ -238,25 +245,27 @@ export function renderPartnerIntake(host) {
     mount(body, el('div', null, [reqCard, card(el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Broker', 'Lane', 'Equip', 'Rate', 'Pickup', 'Status', ''].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(l => {
-        const act = el('td', null);
+        const act = el('td', { style: 'min-width:170px' });
+        const actW = el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center' });
+        act.appendChild(actW);
         const exp9 = !!(l.pickup_date && new Date(String(l.pickup_date).slice(0, 10) + 'T23:59:59') < new Date());
-        act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => reviewDrawer(l, loadBroker) }, '\ud83d\udd0d Review'));
-        act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: () => docsDrawer(l) }, 'Docs'));
+        actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => reviewDrawer(l, loadBroker) }, '\ud83d\udd0d Review'));
+        actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: () => docsDrawer(l) }, 'Docs'));
         if (manage && exp9 && ['submitted', 'accepted'].indexOf(String(l.status || '')) >= 0) {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px;background:#fef3c7;color:#92400e;border-color:#fcd34d;font-weight:800', onClick: async (ev) => {
-            ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending\u2026';
-            try { const { ccAskReschedule } = await import('../../shared/api.js'); await ccAskReschedule(l.id); ev.currentTarget.textContent = '\u2713 Broker notified'; toast('Broker emailed + notified to update the pickup schedule.', 'success'); }
-            catch (e9) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = '\u23f0 Ask reschedule'; toast((e9 && e9.message) || 'Failed', 'error'); }
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#fef3c7;color:#92400e;border-color:#fcd34d;font-weight:800', onClick: async (ev) => {
+            const b9 = ev.currentTarget; b9.disabled = true; b9.textContent = 'Sending\u2026';
+            try { const { ccAskReschedule } = await import('../../shared/api.js'); await ccAskReschedule(l.id); b9.textContent = '\u2713 Broker notified'; toast('Broker emailed + notified to update the pickup schedule.', 'success'); }
+            catch (e9) { b9.disabled = false; b9.textContent = '\u23f0 Ask reschedule'; toast((e9 && e9.message) || 'Failed', 'error'); }
           } }, '\u23f0 Ask reschedule'));
         }
-        if (manage) act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: () => askUpdateDrawer(l) }, 'Ask update'));
+        if (manage) actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: () => askUpdateDrawer(l) }, 'Ask update'));
         if (manage && l.status === 'submitted' && !exp9) {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Quick post'));
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Quick post'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
         } else if (manage && l.status === 'submitted' && exp9) {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
         } else if (manage && l.status === 'accepted' && !exp9) {
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:6px', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', , onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, l.broker || '—')),
@@ -266,7 +275,7 @@ export function renderPartnerIntake(host) {
           ].filter(Boolean)),
           el('td', null, l.equipment || '—'), el('td', null, money(l.rate)),
           el('td', null, [l.pickup_date ? fmtDateTime(l.pickup_date) : '—',
-            exp9 ? el('div', { style: 'margin-top:3px' }, el('span', { style: 'padding:2.5px 10px;border-radius:999px;font-size:.66rem;font-weight:800;background:#fee2e2;color:#b91c1c;border:1px solid #fecaca' }, '\u23f0 EXPIRED \u2014 cannot post')) : null,
+            (exp9 && ['submitted', 'accepted', 'quoted'].indexOf(String(l.status || '')) >= 0) ? el('div', { style: 'margin-top:3px' }, el('span', { style: 'padding:2.5px 10px;border-radius:999px;font-size:.66rem;font-weight:800;background:#fee2e2;color:#b91c1c;border:1px solid #fecaca' }, '\u23f0 EXPIRED \u2014 cannot post')) : null,
           ].filter(Boolean)), el('td', null, pill(l.status)), act,
         ]);
       })),
@@ -288,9 +297,9 @@ export function renderPartnerIntake(host) {
       it.review_reason ? el('div', { class: 'cc-sub', style: 'color:#dc2626' }, 'Rejected: ' + it.review_reason) : null,
       (manage && it.status === 'received') ? el('div', { style: 'margin-top:8px;display:flex;gap:6px;justify-content:flex-end' }, [
         el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => {
-          ev.currentTarget.disabled = true;
+          const b9 = ev.currentTarget; b9.disabled = true;
           try { await loadChecklistReview(it.id, 'verified'); toast('Verified', 'success'); docsDrawer(l); }
-          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, 'Verify'),
         el('button', { class: 'lb-btn lb-btn-sm', onClick: () => {
           const reason = prompt('Rejection reason (the broker will see this):');
@@ -323,11 +332,13 @@ export function renderPartnerIntake(host) {
     mount(body, card(el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Shipper', 'Lane', 'Equip', 'Ready', 'Commodity', 'Status', ''].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(s => {
-        const act = el('td', null);
+        const act = el('td', { style: 'min-width:170px' });
+        const actW = el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center' });
+        act.appendChild(actW);
         if (manage && (s.status === 'requested' || s.status === 'quoted')) {
-          if (s.status === 'requested') act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide2(s.id, 'quote', ev, loadShipper) }, 'Quote'));
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', style: 'margin-left:6px', onClick: (ev) => decide2(s.id, 'book', ev, loadShipper) }, 'Book'));
-          act.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-left:6px', onClick: (ev) => decide2(s.id, 'decline', ev, loadShipper) }, 'Decline'));
+          if (s.status === 'requested') actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide2(s.id, 'quote', ev, loadShipper) }, 'Quote'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', , onClick: (ev) => decide2(s.id, 'book', ev, loadShipper) }, 'Book'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide2(s.id, 'decline', ev, loadShipper) }, 'Decline'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, s.shipper || '—')),

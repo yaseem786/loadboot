@@ -29,7 +29,7 @@ const PLAYBOOK = {
   ticket_followup: { do: 'Open the new support ticket, triage priority, and send the first reply.', go: (t) => '#/support' },
   partner_review: { do: 'Verify the broker’s authority + $75k bond (or shipper’s facility details), then activate in Partner Intake.', go: (t) => '#/partner-intake' },
   agent_review: { do: 'Check government ID, payout-account proof and W-9/W-8BEN, then approve — activates the 1% chain.', go: (t) => '#/agents' },
-  load_post_review: { preferDesk: true, do: 'Sanity-check the rate card, pins and schedule, then post the load to the board.', go: (t) => '#/partner-intake' },
+  load_post_review: { preferDesk: true, do: 'Sanity-check the rate card, pins and schedule, then post the load to the board.', go: (t) => '#/partner-intake' + (t.related_id ? '?id=' + t.related_id : '') },
   noa_verify: { do: 'Verify the factoring company + NOA letter and set the pay-to routing before the next settlement.', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/finance' },
   pod_missing: { preferDesk: true, do: 'Delivered 24h ago, no POD — call/notify the carrier; the invoice packet is blocked until it lands.', go: (t) => '#/pod-review' },
   invoice_overdue: { do: 'Pay-by date passed — send the reminder, check the pay rail, escalate per collections policy.', go: (t) => '#/finance' },

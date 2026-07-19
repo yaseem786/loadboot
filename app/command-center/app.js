@@ -252,7 +252,7 @@ async function boot() {
     '/carrier': ({ query }) => { setActive('/carriers'); if (entity360Enabled && can('carriers.view')) renderCarrier360(content, query.get('id')); else denied(); },
     '/broker': ({ query }) => { setActive('/partners'); if (can('partners.view') || can('dispatch.manage')) renderBroker360(content, query.get('id')); else denied(); },
     '/partners': () => { setActive('/partners'); if (partnersEnabled && can('partners.view')) renderPartners(content); else denied(); },
-    '/partner-intake': () => { setActive('/partner-intake'); if (partnersEnabled && can('partners.view')) renderPartnerIntake(content); else denied(); },
+    '/partner-intake': ({ query }) => { setActive('/partner-intake'); if (partnersEnabled && can('partners.view')) renderPartnerIntake(content, query.get('id')); else denied(); },
     '/market-rates': () => { setActive('/market-rates'); renderMarketRatesCC(content); },
     '/rate-standards': () => { setActive('/rate-standards'); if (can('dispatch.manage') || can('settings.manage')) renderRateStandards(content); else denied(); },
     '/verification': () => { setActive('/verification'); if (can('compliance.view')) renderVerificationCenter(content); else denied(); },
