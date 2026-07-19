@@ -26,6 +26,8 @@ const PLAYBOOK = {
   sales_followup: { do: 'Call/email the lead within SLA; log the activity in CRM.', go: (t) => '#/crm' },
   form_followup: { do: 'Reply to the website enquiry; convert to a lead if real.', go: (t) => '#/forms' },
   comm_followup: { do: 'Open the conversation and answer the waiting message.', go: (t) => '#/comms' },
+  ticket_followup: { do: 'Open the new support ticket, triage priority, and send the first reply.', go: (t) => '#/support' },
+  trip_overdue: { do: 'URGENT: trip is past its appointment — call the driver, warn the receiver, and log the reason.', go: (t) => '#/trips' },
   driver_renewal: { do: 'Driver license/medical expiring — warn the carrier and track the renewal.', go: (t) => '#/fleet-expiry' },
   doc_renewal: { do: 'Compliance document expiring — request the renewal from the account.', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/compliance' },
 };
