@@ -78,7 +78,7 @@ export function renderPartnerIntake(host, focusId) {
         act.appendChild(actW);
         if (manage && i.status !== 'paid' && i.status !== 'void') {
           actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => setInv(i.id, 'paid', ev) }, 'Mark paid'));
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => setInv(i.id, 'void', ev) }, 'Void'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => setInv(i.id, 'void', ev) }, 'Void'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, i.number)), el('td', null, i.partner || '—'), el('td', null, i.kind || '—'),
@@ -250,7 +250,7 @@ export function renderPartnerIntake(host, focusId) {
         act.appendChild(actW);
         const exp9 = !!(l.pickup_date && new Date(String(l.pickup_date).slice(0, 10) + 'T23:59:59') < new Date());
         actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => reviewDrawer(l, loadBroker) }, '\ud83d\udd0d Review'));
-        actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: () => docsDrawer(l) }, 'Docs'));
+        actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => docsDrawer(l) }, 'Docs'));
         if (manage && exp9 && ['submitted', 'accepted'].indexOf(String(l.status || '')) >= 0) {
           actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#fef3c7;color:#92400e;border-color:#fcd34d;font-weight:800', onClick: async (ev) => {
             const b9 = ev.currentTarget; b9.disabled = true; b9.textContent = 'Sending\u2026';
@@ -258,14 +258,14 @@ export function renderPartnerIntake(host, focusId) {
             catch (e9) { b9.disabled = false; b9.textContent = '\u23f0 Ask reschedule'; toast((e9 && e9.message) || 'Failed', 'error'); }
           } }, '\u23f0 Ask reschedule'));
         }
-        if (manage) actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: () => askUpdateDrawer(l) }, 'Ask update'));
+        if (manage) actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: () => askUpdateDrawer(l) }, 'Ask update'));
         if (manage && l.status === 'submitted' && !exp9) {
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Quick post'));
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Quick post'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
         } else if (manage && l.status === 'submitted' && exp9) {
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide(l.id, 'decline', ev, loadBroker) }, 'Decline'));
         } else if (manage && l.status === 'accepted' && !exp9) {
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', , onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => decide(l.id, 'post', ev, loadBroker) }, 'Post to board'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, l.broker || '—')),
@@ -337,8 +337,8 @@ export function renderPartnerIntake(host, focusId) {
         act.appendChild(actW);
         if (manage && (s.status === 'requested' || s.status === 'quoted')) {
           if (s.status === 'requested') actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide2(s.id, 'quote', ev, loadShipper) }, 'Quote'));
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', , onClick: (ev) => decide2(s.id, 'book', ev, loadShipper) }, 'Book'));
-          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', , onClick: (ev) => decide2(s.id, 'decline', ev, loadShipper) }, 'Decline'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: (ev) => decide2(s.id, 'book', ev, loadShipper) }, 'Book'));
+          actW.appendChild(el('button', { class: 'lb-btn lb-btn-sm', onClick: (ev) => decide2(s.id, 'decline', ev, loadShipper) }, 'Decline'));
         }
         return el('tr', null, [
           el('td', null, el('b', null, s.shipper || '—')),
