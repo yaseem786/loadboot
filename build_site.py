@@ -5684,26 +5684,27 @@ def _accshot(f,w,h,alt,cap):
 _ACC_SHOTS = {
  'detention-pay-policy': [
   _accshot('track-phone-pickup.webp',420,909,'Trip map checked in at pickup — detention clock running from the geofenced arrival','The real trip map &mdash; checked in at the dock, detention clock already running.'),
-  _accshot('acc-broker-claims.webp',1100,769,'Broker claims review — GPS-stamped detention claims with approve, reject and pay actions','The broker&rsquo;s claims desk &mdash; GPS-stamped detention claims, approve &rarr; pay in two taps.')],
+  _accshot('acc-broker-claims.webp',1100,769,'Broker claims desk — GPS-stamped detention claims with approve, reject and pay actions','The broker&rsquo;s claims desk &mdash; GPS-stamped detention claims, approve &rarr; pay in two taps.')],
  'tonu-policy': [
-  _accshot('track-claim.webp',1100,774,'A claim filed automatically from trip data with server timestamps and evidence attached','A real claim &mdash; built from the trip record, server timestamps attached.'),
-  _accshot('acc-broker-claims.webp',1100,769,'Broker claims review queue with evidence links and one-tap payment','What the posting party sees &mdash; the claim, the evidence, and a pay button.')],
+  _accshot('acc-tonu-phone.webp',420,909,'A TONU claim as a DUE receivable — $250 with memo, deadline and payment route','The real TONU claim &mdash; $250 sitting as DUE with its memo and deadline, not an email argument.'),
+  _accshot('acc-broker-claims.webp',1100,769,'Broker claims desk — an approved $250 TONU claim with a one-tap pay button','The posting party&rsquo;s view &mdash; TONU approved, one tap to pay it.')],
  'layover-policy': [
-  _accshot('pay-money-in-phone.webp',420,909,'Carrier money-in view — accessorial claims sit as DUE items with deadlines and memos','The carrier&rsquo;s money-in &mdash; approved claims sit as DUE with a deadline, not in an email thread.'),
-  _accshot('pay-broker-payables-main.webp',1100,891,'Broker payables — freight plus approved claims grouped per trip with PAY-BY deadlines','The payer&rsquo;s ledger &mdash; layover rides the same trip block as the freight, one receipt settles both.')],
+  _accshot('acc-layover-phone.webp',420,909,'A layover claim as a DUE receivable — $150 with memo, deadline and factor routing','The real layover claim &mdash; $150 DUE with a deadline, riding the same rail as the freight.'),
+  _accshot('acc-broker-claims.webp',1100,769,'Broker claims desk — approved layover claim beside detention and TONU, each with evidence','The claims desk &mdash; layover approved beside detention and TONU, evidence attached.')],
  'lumper-policy': [
   _accshot('track-phone-docs.webp',420,508,'In-app capture buttons for dock photo, signed BOL/POD and lumper receipt','Snap it where it happens &mdash; the lumper receipt attaches to the trip from the dock.'),
   _accshot('fac-packet-phone.webp',420,909,'Factoring packet with invoice, signed POD and lumper receipt collected automatically','The same receipt lands in the funding packet &mdash; nothing re-typed, nothing lost.')],
  'driver-assist-policy': [
-  _accshot('track-phone-docs.webp',420,508,'In-app proof capture — dock photos and signed documents with timestamps','Proof captured at the dock &mdash; photos and signed docs, GPS-timestamped.'),
-  _accshot('pay-broker-payables-main.webp',1100,891,'Broker payables showing approved claims with deadlines beside the freight','Approved assist pay joins the trip&rsquo;s payable block &mdash; deadline attached.')],
+  _accshot('acc-assist-phone.webp',420,909,'A driver-assist claim as a DUE receivable — $75 for a two-hour hand-unload, dock photos attached','The real assist claim &mdash; $75 for the hand-unload, filed as an accessorial with dock-photo evidence.'),
+  _accshot('track-phone-docs.webp',420,508,'In-app proof capture — dock photos and signed documents with timestamps','The proof &mdash; dock photos and signed docs, captured where the work happened.')],
  'fcfs-policy': [
   _accshot('track-phone-pickup.webp',420,909,'Geofenced arrival stamp at the gate — the on-time record FCFS depends on','Your on-time proof &mdash; the 800 m geofence stamps the gate arrival for you.'),
   _accshot('partner-live-tracking.webp',1100,969,'Broker live view — milestone timeline with arrival and departure records','Both sides see the same timeline &mdash; scheduling arguments die against the record.')],
  'emergency-rescheduling-policy': [
-  _accshot('track-phone-map.webp',420,909,'The live trip map — the emergency button and dispatch are one tap from the road','One tap from the road &mdash; report the emergency without leaving the trip map.'),
+  _accshot('acc-emergency-card.webp',420,740,'The trip card — the red Emergency button lives beside pay claims and report issue','One tap from the trip &mdash; the Emergency button, right where the road problem happens.'),
   _accshot('partner-live-tracking.webp',1100,969,'Broker live tracking — the same trip, the same facts, on both screens','The poster watches the same trip &mdash; a verified emergency is a fact, not an excuse.')],
 }
+
 _ACC_PROTECT = {
  'detention-pay-policy': [
   ('&#128666; The carrier','Every minute past free time is measured by the server, not remembered. The claim drafts itself with GPS stamps, rides the trip invoice, and ages in the open until paid.'),
