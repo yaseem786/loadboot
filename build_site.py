@@ -4063,7 +4063,7 @@ feat += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 6
  '</div></div></section>')
 
 feat += ('<nav class="ftx-nav"><div class="wrap">'
- '<a href="#board">Load board</a><a href="#booking">Booking</a><a href="#tracking">Tracking &amp; proof</a><a href="#money">Payments</a><a href="#factoring">Factoring</a><a href="#accessorials">Accessorials</a><a href="#fleet">Fleet</a><a href="#docs">Compliance</a><a href="#accounting">Accounting</a><a href="#integrations">Integrations</a><a href="#partners">Brokers &amp; shippers</a><a href="#agents">Agents</a><a href="#security">Security</a>'
+ '<a href="#board">Load board</a><a href="#booking">Booking</a><a href="#tracking">Tracking &amp; proof</a><a href="#fairness">Fair detention</a><a href="#money">Payments</a><a href="#factoring">Factoring</a><a href="#accessorials">Accessorials</a><a href="#fleet">Fleet</a><a href="#docs">Compliance</a><a href="#accounting">Accounting</a><a href="#trust">Standards &amp; appeals</a><a href="#backoffice">Back office</a><a href="#integrations">Integrations</a><a href="#partners">Brokers &amp; shippers</a><a href="#agents">Agents</a><a href="#security">Security</a>'
  '</div></nav>')
 
 feat += fsec('board','Find freight','A load board with zero ghost loads',
@@ -4109,6 +4109,24 @@ feat += fsec('tracking','Live proof','GPS tracking that pays you, not just watch
   '<div class="ftx-card"><div class="ftx-row"><span>&#128993; Stop 2 &middot; Ponce De Leon, FL</span><span class="ftx-chip ftx-amber">&#9203; detention 1:47 running</span></div><div class="ftx-bar"><i style="width:64%"></i></div></div>'
   '<div class="ftx-card"><div class="ftx-row"><span>&#128994; Delivery &middot; Atlanta, GA</span><span class="ftx-chip ftx-blue">ETA 16:40 &middot; on time</span></div></div>'
   '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:6px">Every timestamp is evidence &mdash; detention pays from real data</div></div>'))
+
+# UNDERSOLD -> SOLD (audit 2026-07-21): the detention fairness engine, live in the claim engine
+# (10-min exit grace, 6-hour cap, automatic layover conversion past 24h) — nobody else publishes this.
+feat += fsec('fairness','Fair by design','Detention that is fair to BOTH sides &mdash; published, capped, converted',
+ fbody('Fair by design','Detention that is fair to BOTH sides — published, capped, converted',
+  'A detention engine that only ever bills more is just a different kind of dishonest. Ours has rules that protect the facility too — and every one of them is in the code, not in a sales promise.',
+  ['<b>10-minute exit grace, never billed</b> &mdash; the drive from dock to gate is not detention. The clock stops when the wheels roll, not when the geofence clears.',
+   '<b>6-hour cap per stop</b> &mdash; detention cannot run away. Past that it is a different problem, and it gets treated like one.',
+   '<b>Automatic layover conversion</b> &mdash; held 24h past free time? The claim converts itself from detention to layover days at the published $250/day, with the reason written on the claim.',
+   '<b>Late arrival voids it</b> &mdash; free time assumes an on-time arrival, measured by GPS. Facilities are not billed for a carrier&rsquo;s late start.',
+   '<b>Both sides read the same clock</b> &mdash; the arrive/depart stamps on the claim are the ones on the poster&rsquo;s live tracker. <a href="detention-pay-policy.html">Detention policy</a>.'],
+  ('See the accessorial standards','detention-pay-policy.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#129534; Claim &mdash; fairness rules applied</div>'
+  '<div class="ftx-card ftx-row"><span>In dock &middot; 09:12 &rarr; 13:47</span><b style="color:#fff">4h 35m</b></div>'
+  '<div class="ftx-card ftx-row"><span>Free time (published)</span><span class="ftx-chip ftx-blue">&minus; 2h 00m</span></div>'
+  '<div class="ftx-card ftx-row"><span>Exit grace &mdash; not billed</span><span class="ftx-chip ftx-blue">&minus; 10 min</span></div>'
+  '<div class="ftx-card ftx-row"><span>Billable detention &times; $60/hr</span><b style="color:#4ade80">$145.00</b></div>'
+  '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:6px">Capped at 6h &middot; past 24h it converts to layover automatically</div></div>'), alt=True)
 
 feat += fsec('money','Get paid','Payments with receipts, deadlines and zero guesswork',
  fbody('Get paid','Payments with receipts, deadlines and zero guesswork',
@@ -4255,6 +4273,39 @@ feat += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal
  '<tr><td>Cost</td><td class="ftx-yes">flat 5% per dispatched load</td><td class="ftx-part">$45&ndash;$150+/month subscription</td><td class="ftx-part">5&ndash;10% + often lease-on terms</td></tr>'
  '<tr><td>Contracts</td><td class="ftx-yes">none &mdash; leave anytime</td><td class="ftx-part">monthly plans</td><td class="ftx-no">often locked in</td></tr>'
  '</table></div></div></section>')
+
+# UNDERSOLD -> SOLD: Account Health v2 (grace period + self-healing), appeals, crew gate.
+feat += fsec('trust','Standards with due process','Scored fairly, warned early, and always able to appeal',
+ fbody('Standards with due process','Scored fairly, warned early, and always able to appeal',
+  'Every marketplace has standards. Most run them as a black box that can end your business without a hearing. Ours is itemized, forgiving by design, and appealable.',
+  ['<b>Your first loads cannot hurt you</b> &mdash; new carriers run in a Building grace period (under 5 delivered loads / 30 days): performance is observed, not deducted.',
+   '<b>Itemized, never mysterious</b> &mdash; the score is 100 minus named deductions across service, tracking, compliance, conduct and financial conduct &mdash; each with the reason and the exact fix.',
+   '<b>Strikes heal themselves</b> &mdash; warnings clear in 90 days, violations in 180, critical in 365, on a rolling 180-day window. Nothing follows you forever.',
+   '<b>Real appeals</b> &mdash; paused accounts file a reinstatement request or a written plan of action; staff must answer with a written reason, and approval restores booking immediately.',
+   '<b>No phantom trucks</b> &mdash; a trip cannot dispatch without a named driver and truck on it, enforced in the database on every path. That is what the load you posted is protected by.'],
+  ('How verification works','compliance.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128202; Account health &mdash; itemized</div>'
+  '<div class="ftx-card ftx-row"><span>Service reliability</span><span class="ftx-chip ftx-green">35 / 35</span></div>'
+  '<div class="ftx-card ftx-row"><span>Communication &amp; tracking</span><span class="ftx-chip ftx-green">20 / 20</span></div>'
+  '<div class="ftx-card ftx-row"><span>Compliance &amp; documents</span><span class="ftx-chip ftx-amber">17 / 20 &middot; COI expires in 12d</span></div>'
+  '<div class="ftx-card ftx-row"><span>Conduct &middot; Financial</span><span class="ftx-chip ftx-green">15 &middot; 10</span></div>'
+  '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:6px">Every deduction names its reason, its fix and its expiry date</div></div>'), alt=False)
+
+# UNDERSOLD -> SOLD: the back office carriers already have (payroll, IFTA, cost model, service log).
+feat += fsec('backoffice','Back office','Payroll, IFTA, cost-per-mile and maintenance &mdash; already inside',
+ fbody('Back office','Payroll, IFTA, cost-per-mile and maintenance — already inside',
+  'Most carriers pay for a TMS to do this and a dispatcher to do the rest. It is in the same portal as the load you just booked.',
+  ['<b>Payroll</b> &mdash; log driver pay periods, mark paid, keep totals per period without a spreadsheet.',
+   '<b>IFTA worksheet</b> &mdash; state miles and gallons per quarter with totals and average MPG, ready for filing. <a href="ifta-fuel-tax.html">IFTA guide</a>.',
+   '<b>Cost per mile that feeds the board</b> &mdash; set MPG, fuel, driver pay, maintenance and fixed cost once, and every load card shows estimated profit, not just gross. <a href="cost-per-mile-calculator.html">Calculator</a>.',
+   '<b>Maintenance &amp; service log</b> &mdash; per-truck service history with due-soon warnings, next to license and medical expiry tracking. <a href="fleet-management.html">Fleet tools</a>.',
+   '<b>Fuel-card import</b> &mdash; EFS, Comdata and WEX statements import straight onto the right trips.'],
+  ('See the fleet back office','fleet-management.html')),
+ ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#129534; Back office &mdash; one portal</div>'
+  '<div class="ftx-card ftx-row"><span>Payroll &middot; this period</span><b style="color:#fff">$4,180 &middot; 2 paid</b></div>'
+  '<div class="ftx-card ftx-row"><span>IFTA &middot; 2026-Q3</span><span class="ftx-chip ftx-blue">4 states &middot; 6.4 MPG</span></div>'
+  '<div class="ftx-card ftx-row"><span>Cost per mile</span><b style="color:#4ade80">$1.62</b></div>'
+  '<div class="ftx-card ftx-row"><span>T-202 &middot; PM service</span><span class="ftx-chip ftx-amber">due in 9 days</span></div></div>'), alt=True)
 
 _FEAT_FAQ = [
  ('Is every feature on this page actually live?', 'Yes. This page documents only what exists in the product today. Anything still in development (native mobile apps, direct fuel-card APIs) is explicitly labelled as roadmap on the integrations page.'),
