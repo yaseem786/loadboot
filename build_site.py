@@ -1084,11 +1084,11 @@ page('index.html','Truck Dispatch & Verified Load Board — Carriers, Brokers & 
      'index.html', home_body, home_faq_schema)
 
 # ---------- SERVICE PAGE BUILDER ----------
-def svc_hero(h1,lead):
+def svc_hero(h1,lead,tert_label='All Services',tert_href='services.html'):
     return '''<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div><div class="wrap" style="position:relative;z-index:1;max-width:820px">
 <span class="badge reveal"><span class="dot"></span> Loadboot Dispatch</span><h1 class="reveal d1">%s</h1>
 <p class="lead reveal d2" style="margin:22px 0 28px">%s</p>
-<div class="hero-btns reveal d3"><a href="contact.html#create" class="btn btn-primary">Get Started %s</a><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="services.html" class="btn btn-ghost">All Services &rarr;</a></div></div></section>''' % (h1,lead,ARW)
+<div class="hero-btns reveal d3"><a href="contact.html#create" class="btn btn-primary">Get Started %s</a><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="%s" class="btn btn-ghost">%s &rarr;</a></div></div></section>''' % (h1,lead,ARW,tert_href,tert_label)
 
 EXTRA = {
  "Reefer": [
@@ -2821,7 +2821,7 @@ PF_BODY=(
 '<li>&#9744; Live tracking enabled on the assigned truck</li>'
 '<li>&#9744; Clear BOL with condition noted at pickup</li>'
 '</ul>'
-'<p>Do all seven on every load and the odds of a bad outcome drop dramatically. Or use a platform that does the verification for you and puts the tracking and paperwork on rails &mdash; which is exactly what LoadBoot is built to do.</p>'
+'<p>Do all seven on every load and the odds of a bad outcome drop dramatically. Or use a platform that does the verification for you and puts the tracking and paperwork on rails &mdash; which is exactly what LoadBoot is built to do. You can <a href="ship-direct-to-carrier.html">ship direct to verified carriers</a>, <a href="create-shipper-account.html">create a shipper account</a> in minutes, or read the full <a href="shipper-solutions.html">shipper solution</a>. If you are weighing going direct, see <a href="how-to-ship-without-a-broker.html">how to ship without a broker</a>.</p>'
 +svc_banner('Freight moved with proof, not promises',
   'Post your freight to carriers vetted for authority and insurance, watch every mile on live GPS, and settle clean with the record on your side.',
   'See shipper solutions &rarr;','shipper-solutions.html'))
@@ -2880,6 +2880,7 @@ LB_BODY=(
 '<h2 id="switch">How to switch without losing coverage</h2>'
 '<p>You do not have to rip out what works on day one. The low-risk path: keep your existing board while you add a free verified board alongside it, post your loads to both, and watch where they cover faster and cleaner. Over a couple of billing cycles the honest comparison makes the decision for you &mdash; and if the free board is covering your freight, the renewal notice becomes a lot easier to decline.</p>'
 '<div class="pull">The cheapest load board is not the one with the lowest sticker. It is the one that covers your freight without charging you to post it.</div>'
+'<p>See how a genuinely free board works on <a href="free-load-board-for-brokers.html">the free load board for brokers</a>, <a href="create-broker-account.html">create a broker account</a> to try it, or read <a href="brokers.html">the full broker program</a>. Shipping your own freight too? <a href="ship-direct-to-carrier.html">Ship direct to verified carriers</a>.</p>'
 +svc_banner('Post your first load free',
   'Set your brokerage up on a genuinely free, verified load board &mdash; no card, no subscription, no per-post fee.',
   'Start posting free &rarr;','free-load-board-for-brokers.html'))
@@ -2943,6 +2944,7 @@ SW_BODY=(
 '<h2 id="both">How to get both</h2>'
 '<p>The best of both worlds is a marketplace that gives you direct pricing <em>and</em> broker-grade protection: carriers are verified for you, the assigned truck is GPS-tracked, the paperwork and payments run on rails &mdash; and where broker authority is legally required, a licensed partner handles it, transparently. You keep the margin on your known lanes without inheriting the risk that makes going direct dangerous.</p>'
 '<div class="pull">Skipping the broker only saves money if you cover the job the broker was doing. A verified marketplace covers it for you.</div>'
+'<p>Ready to try it? <a href="ship-direct-to-carrier.html">Ship direct to verified carriers</a>, <a href="create-shipper-account.html">create a shipper account</a>, or see the full <a href="shipper-solutions.html">shipper solution</a>. Worried about theft or double-brokering? Read <a href="protect-freight-from-loss-damage-and-fraud.html">how to protect your freight from loss and fraud</a>.</p>'
 +svc_banner('Post your freight free',
   'Get direct-to-carrier pricing with the vetting, tracking and clean payments handled &mdash; free for shippers.',
   'See how it works &rarr;','ship-direct-to-carrier.html'))
@@ -5704,7 +5706,8 @@ page('shipper-solutions.html', 'Shipper Solutions — Vetted Carrier Capacity Wi
 # ghost loads + paid-software stack. Funnels to create-broker-account. Unique vs brokers.html
 # (that page is the product pitch; this one is the switch-from-a-paid-board pitch).
 flb = svc_hero('A Free Load Board for Brokers &mdash; Post Loads at $0, Covered in Minutes',
-    'No subscription. No per-post fee. No renewal hike. Post your freight to a network of FMCSA-verified carriers &mdash; with live GPS tracking, clean documents and one-receipt payables built in, at no cost to your brokerage.')
+    'No subscription. No per-post fee. No renewal hike. Post your freight to a network of FMCSA-verified carriers &mdash; with live GPS tracking, clean documents and one-receipt payables built in, at no cost to your brokerage.',
+    tert_label='All Features', tert_href='features.html')
 flb += _sec('The problem', 'You are paying a premium just to post a load', _cards([
     ('&#128176;', 'Boards are expensive &mdash; and getting more so', 'The largest load boards run well into the hundreds of dollars a month, and renewals routinely jump 25&ndash;45% at billing time. You pay the subscription whether or not it covered your freight this month.'),
     ('&#128123;', 'Ghost loads poison the well', 'Fake and stale postings flood the big boards &mdash; in one 2025 incident thousands of fake loads were posted under a single brokerage&rsquo;s name. When the board is full of ghosts, carriers stop trusting real postings too, including yours.'),
@@ -5723,6 +5726,9 @@ flb += _sec('Why the board is clean', 'Verified carriers only &mdash; double-bro
     ('&#128203;', 'Insurance &amp; health tracked continuously', 'Certificates of insurance and account health are monitored over time, so a carrier that lapses tomorrow does not quietly stay eligible.'),
     ('&#128064;', 'The real truck, on the map', 'GPS on the assigned truck is your defense against double-brokering &mdash; the load moves on the carrier you booked, and the record proves it.'),
 ]))
+flb += ('<section><div class="wrap"><div class="reveal" style="max-width:820px;margin:0 auto;font-size:1.06rem;line-height:1.85;color:var(--muted)">'
+ '<p>Ready to post? <a href="create-broker-account.html">Create a broker account</a> &mdash; verification checks your authority and bond, then your first load reaches vetted carriers in minutes. Want the full picture first? See <a href="brokers.html">the broker program</a>, and if you also move your own freight, <a href="ship-direct-to-carrier.html">ship direct to verified carriers</a>. Curious what a subscription really costs you? Read <a href="load-board-subscription-cost.html">the real cost of load board subscriptions</a>, or browse everything the platform does on <a href="features.html">features</a>.</p>'
+ '</div></div></section>')
 flb += lead_form('partner_inquiry', 'Post your first load free', 'Tell us your lanes and freight type and we will set your brokerage up on the free board &mdash; no card, no subscription.',
     [('name', 'Your name', 'text', True), ('company', 'Brokerage', 'text', True), ('email', 'Email', 'email', True),
      ('phone', 'Phone', 'tel', False), ('mc', 'Broker MC number', 'text', False),
@@ -5752,7 +5758,8 @@ page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post L
 # carrier", "cheapest way to ship truckload", "how to vet a carrier". Problem-first: broker
 # margin + fraud fear + no visibility. Honesty guard: moves under licensed brokerage where required.
 sdc = svc_hero('Ship Direct to Verified Carriers &mdash; Post Your Freight Free',
-    'Skip the broker markup without taking on the fraud risk. Post your load to carriers whose authority and insurance are verified for you, watch every mile on live GPS, and settle with the carrier directly &mdash; free for shippers.')
+    'Skip the broker markup without taking on the fraud risk. Post your load to carriers whose authority and insurance are verified for you, watch every mile on live GPS, and settle with the carrier directly &mdash; free for shippers.',
+    tert_label='All Features', tert_href='features.html')
 sdc += _sec('The problem', 'Going direct sounds cheaper &mdash; until it goes wrong', _cards([
     ('&#128181;', 'The broker margin adds up', 'A broker sits between you and the truck and takes a cut on every load &mdash; often 15&ndash;20%. Over a year of freight that is real money leaving your business.'),
     ('&#9888;&#65039;', 'But vetting carriers is hard', 'Post to an open board yourself and you inherit the broker&rsquo;s hardest job: proving the carrier is real, insured and not double-brokering your freight. FMCSA records alone are outdated and easy to game.'),
@@ -5770,6 +5777,9 @@ sdc += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center 
  '<div class="card reveal" style="max-width:760px;margin:22px auto 0;text-align:center">'
  '<p style="margin:0;line-height:1.7">You post the freight and pick the verified carrier; where a broker license is legally required, the load moves through a licensed brokerage partner &mdash; and we are always transparent about who is doing what on your shipment. You are never guessing whether your freight is legal, insured or tracked. '
  '<a href="shipper-solutions.html">See the full shipper solution &rarr;</a></p></div></div></section>')
+sdc += ('<section><div class="wrap"><div class="reveal" style="max-width:820px;margin:0 auto;font-size:1.06rem;line-height:1.85;color:var(--muted)">'
+ '<p>Ready to post your freight? <a href="create-shipper-account.html">Create a shipper account</a> &mdash; no authority or license needed on your side. See the complete <a href="shipper-solutions.html">shipper solution</a> for how vetting, tracking and dock scheduling fit together, and if you want the step-by-step, read <a href="how-to-ship-without-a-broker.html">how to ship without a broker</a> and <a href="protect-freight-from-loss-damage-and-fraud.html">how to protect your freight from loss and fraud</a>. Brokers posting freight can use <a href="free-load-board-for-brokers.html">the free load board</a>; everything the platform does is on <a href="features.html">features</a>.</p>'
+ '</div></div></section>')
 sdc += lead_form('partner_inquiry', 'Post your freight free', 'Tell us your lanes and freight and we will set you up to post direct to verified carriers &mdash; no subscription.',
     [('name', 'Your name', 'text', True), ('company', 'Company', 'text', True), ('email', 'Email', 'email', True),
      ('phone', 'Phone', 'tel', False),
