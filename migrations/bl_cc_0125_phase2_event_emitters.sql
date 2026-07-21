@@ -1,0 +1,19 @@
+-- bl_cc_0125 — PHASE 2: automation event emitters (all 11 new rules now fire themselves).
+-- POINT EVENTS (AFTER-INSERT/UPDATE triggers, emit_event only — rules engine does the rest):
+--  * organizations(kind broker/shipper/facility)  -> partner.submitted   (agg partner)
+--  * agent_profiles                               -> agent.submitted     (agg agent, user_id)
+--  * partner_loads(status submitted)              -> partner.load_submitted (agg load = partner_load id; intake deep-link matches)
+--  * org_payment_profiles factoring/noa change    -> carrier.noa_submitted   (1/day dedupe)
+--  * org_payment_profiles bank fields change      -> carrier.bank_submitted  (1/day dedupe)
+--  * trip_emergency_requests                      -> trip.emergency
+-- SWEEP app_private.cron_ops_task_sweep() (cron 'lb-ops-task-sweep' */30):
+--  * trip.pod_missing   — delivered 24h..7d, no pending/approved document_files kind='pod' (owner_id=trip::text)
+--  * invoice.overdue    — fin_invoices sent past due (re-emit max every 3 days)
+--  * claim.decision_stale — trip_accessorials broker_status pending >24h (per-claim dedupe)
+--  * load.offers_expired — available load, offers exist, none active, none accepted
+-- cron_tracking_blackout(): now ALSO emits trip.tracking_blackout (1/hour dedupe) alongside its notifications.
+-- ENGINE: run_rules_for_event() gained a dedupe guard — no second task while an identical
+--   (task_type, related_id) task is still open/in_progress.
+-- cc_list_tasks: 'load' label falls back to partner_loads; 'agent' label falls back to agent_profiles.full_name.
+-- VERIFIED on staging: sweep emitted 19 events -> outbox -> 19 auto tasks (11 stale claims,
+-- 4 overdue invoices, 3 expired-offer loads, 1 pod-missing). Applied 2026-07-21 via MCP. PROD after owner test.
