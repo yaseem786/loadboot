@@ -1,0 +1,15 @@
+-- bl_cc_0126 — LIFECYCLE COMMUNICATION GAPS CLOSED (audit 2026-07-21).
+-- Audit found 6 moments that changed a counterparty's world while telling them NOTHING.
+-- NEW helper app_private.notify_org(org, template, title, body, url, tone, idem):
+--   in-app row (status sent) + premium sys_email to up to 5 active org users; every failure
+--   RAISEs WARNING instead of the old silent `exception when others then null`.
+-- Each gap fixed by WRAPPING the existing RPC (original renamed to *_core, logic untouched):
+--   cc_review_pod            -> carrier told approved ("invoice on the way") / rejected (+ reason, re-upload CTA)
+--   cc_create_invoice        -> carrier told invoice no + net + pay-by date
+--   cc_decide_settlement     -> carrier told approved / PAID (mentions factor routing when NOA on file)
+--   cc_assign_load           -> carrier told dispatch assigned them a load (rate + pickup + My Trips CTA)
+--   cc_set_carrier_status    -> carrier told status change (+ staff note), warning tone on suspend/pause
+--   cc_record_carrier_verification -> carrier told FMCSA pass/fail with next step
+-- Idempotency keys per event so re-runs never double-send.
+-- Verified on staging: notify_org smoke = 2 users reached; wrappers compile and return the core result.
+-- Applied to STAGING 2026-07-21 via MCP. PROD after owner test (apply with bl_cc_0116..0125).
