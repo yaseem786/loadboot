@@ -13,15 +13,20 @@ export function renderExceptions(host) {
   let status = 'open';
   const listHost = el('div');
 
+  const tabsHost = el('div');
+  function drawTabs() {
+    mount(tabsHost, el('div', { class: 'cc-tabs', style: 'display:flex;gap:6px;margin-bottom:14px' },
+      ['open', 'resolved'].map(s2 => el('button', {
+        class: 'lb-btn lb-btn-sm' + (s2 === status ? ' lb-btn-primary' : ''),
+        onClick: () => { status = s2; drawTabs(); load(); }
+      }, s2[0].toUpperCase() + s2.slice(1)))));
+  }
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Trip Exceptions', 'Issues carriers and drivers report from the road — detention, TONU, accident, breakdown and more. Resolve each once dispatch has handled it.'),
-    el('div', { class: 'cc-tabs', style: 'display:flex;gap:6px;margin-bottom:14px' },
-      ['open', 'resolved'].map(s => el('button', {
-        class: 'lb-btn lb-btn-sm' + (s === status ? ' lb-btn-primary' : ''),
-        onClick: () => { status = s; load(); }
-      }, s[0].toUpperCase() + s.slice(1)))),
+    tabsHost,
     listHost,
   ]));
+  drawTabs();
 
   load();
 

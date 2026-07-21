@@ -21,7 +21,8 @@ export function renderReferrals(host) {
   const body = el('div', { class: 'cc-table-wrap' });
 
   const accrueBtn = canAccrue ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-    ev.currentTarget.disabled = true;
+    const _btn9 = ev.currentTarget;
+    _btn9.disabled = true;
     try {
       const r = await referralAccrue();
       const added = (r && r.new_commissions) ?? 0;
@@ -29,7 +30,7 @@ export function renderReferrals(host) {
       toast('Accrual run complete — ' + added + ' new commission row(s), ' + promoted + ' promoted to payable', 'success');
       load();
     } catch (e) { toast(humanizeError(e), 'error'); }
-    if (ev.currentTarget) ev.currentTarget.disabled = false;
+    if (_btn9) _btn9.disabled = false;
   } }, 'Run accrual') : null;
 
   mount(host, el('div', null, [
@@ -54,10 +55,11 @@ export function renderReferrals(host) {
     const items = rows.map((p) => {
       const d = p.payout_details || {};
       const act = (label, action, cls) => el('button', { class: 'lb-btn lb-btn-sm ' + (cls || ''), style: 'margin-left:6px', onClick: async (ev) => {
+        const _btn9 = ev.currentTarget;
         if (action === 'paid' && !confirm('Record this payout as PAID? This marks the referrer\'s payable commissions paid. Money must be transferred through the normal payment rail — nothing is sent from here.')) return;
-        ev.currentTarget.disabled = true;
+        _btn9.disabled = true;
         try { await referralPayoutDecide(p.id, action, null); toast('Payout ' + action + ' recorded', 'success'); loadPayouts(); load(); }
-        catch (e) { toast(humanizeError(e), 'error'); ev.currentTarget.disabled = false; }
+        catch (e) { toast(humanizeError(e), 'error'); _btn9.disabled = false; }
       } }, label);
       const actions = !canPay ? el('span', { class: 'cc-sub' }, 'finance.approve required')
         : p.status === 'requested' ? el('span', null, [act('Approve', 'approve'), act('Reject', 'reject', 'lb-btn-ghost')])
@@ -107,13 +109,14 @@ export function renderReferrals(host) {
       el('div', { class: 'lb-card', style: 'background:#fffbeb;margin-bottom:10px' },
         el('div', { class: 'cc-sub' }, 'This records that PAYABLE commissions for ' + (r.code || 'this referrer') + ' have been paid. Only rows past their hold window are affected — accrued (still-on-hold) rows are never touched. This does not move money; complete the transfer through your normal payment rail.')),
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:10px' }, el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
-        ev.currentTarget.disabled = true;
+        const _btn9 = ev.currentTarget;
+        _btn9.disabled = true;
         try {
           const res = await referralMarkPaid(r.code);
           toast('Recorded: ' + (res.rows_paid || 0) + ' commission(s) marked paid (' + money(res.amount) + ')', 'success');
           document.getElementById('cc-drawer-root')?.remove();
           load();
-        } catch (e) { toast(humanizeError(e), 'error'); if (ev.currentTarget) ev.currentTarget.disabled = false; }
+        } catch (e) { toast(humanizeError(e), 'error'); if (_btn9) _btn9.disabled = false; }
       } }, 'Confirm — mark payable paid')),
     ]);
     openDrawer('Mark paid — ' + (r.code || 'referrer'), form, { subtitle: (KIND_LABEL[r.kind] || r.kind || '') + ' · ' + money(r.earned) + ' earned' });

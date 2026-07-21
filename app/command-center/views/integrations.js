@@ -43,6 +43,7 @@ export function renderIntegrations(host) {
   async function loadCatalog() {
     showLoading(bodyHost, 'Loading integrations…');
     let rows; try { rows = await listIntegrations(); } catch (e) { showError(bodyHost, humanizeError(e), loadCatalog); return; }
+    if (!rows || !rows.length) { mount(bodyHost, card(el('div', { class: 'cc-sub' }, 'No integrations available yet.'))); return; }
     mount(bodyHost, el('div', { class: 'cc-kpi-grid' }, (rows || []).map(i => card([
       el('div', { class: 'cc-card-head' }, [el('b', null, i.name), el('span', { class: 'cc-pill cc-pill-' + (KIND_TONE[i.kind] || 'gray') }, i.kind)]),
       el('div', { class: 'cc-status-row', style: 'margin-top:8px' }, [statusPill(i.status)]),

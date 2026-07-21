@@ -118,9 +118,10 @@ export function renderFinance(host, focusId) {
         el('td', null, el('span', { class: 'cc-pill cc-pill-' + (q.days_since_delivery > 3 ? 'red' : 'amber') }, q.days_since_delivery + 'd')),
         el('td', null, el('span', { class: 'cc-pill cc-pill-' + (q.pod_status === 'approved' ? 'green' : q.pod_status === 'no POD uploaded' ? 'red' : 'amber') }, q.pod_status)),
         el('td', null, can('finance.manage') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => {
-          ev.currentTarget.disabled = true;
+          const _btn9 = ev.currentTarget;
+          _btn9.disabled = true;
           try { await createInvoice(q.trip_id); toast('Invoice created (draft)', 'success'); loadPrep(); }
-          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, 'Create invoice') : null),
       ]))),
     ]));

@@ -18,10 +18,11 @@ export function renderExceptionCenter(host) {
   const stSel = el('select', { class: 'cc-input', style: 'max-width:160px' }, [['open', 'Open'], ['resolved', 'Resolved'], ['', 'All']].map(([v, l]) => el('option', { value: v }, l)));
   stSel.onchange = () => { filterStatus = stSel.value; load(); };
   const scanBtn = manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-    ev.currentTarget.disabled = true;
+    const _btn9 = ev.currentTarget;
+    _btn9.disabled = true;
     try { const r = await detentionScan(); toast(r.detected ? r.detected + ' detention case(s) detected — drafts created for review' : 'No new detention — all stops within free time', r.detected ? 'success' : 'info'); load(); }
     catch (e) { toast(humanizeError(e), 'error'); }
-    ev.currentTarget.disabled = false;
+    _btn9.disabled = false;
   } }, 'Run detention scan') : null;
   const emCard = el('div', { class: 'lb-card', style: 'margin:10px 0' });
   const claimsCard = el('div', { class: 'lb-card', style: 'margin:10px 0' });
@@ -155,9 +156,10 @@ export function renderExceptionCenter(host) {
     const items = rows.map((r) => {
       const note = el('input', { class: 'cc-input', placeholder: 'Decision note (visible to the carrier)', style: 'max-width:260px' });
       const act = (label, approve, primary) => el('button', { class: 'lb-btn lb-btn-sm' + (primary ? ' lb-btn-primary' : ''), style: 'margin-left:6px', onClick: async (ev) => {
-        ev.currentTarget.disabled = true;
+        const _btn9 = ev.currentTarget;
+        _btn9.disabled = true;
         try { await emergencyReview(r.id, approve, note.value.trim() || null); toast('Request ' + (approve ? 'approved' : 'denied'), 'success'); loadEmergencies(); }
-        catch (e) { toast(humanizeError(e), 'error'); ev.currentTarget.disabled = false; }
+        catch (e) { toast(humanizeError(e), 'error'); _btn9.disabled = false; }
       } }, label);
       return el('div', { style: 'padding:10px 0;border-bottom:1px solid var(--lb-border,#e2e8f0)' }, [
         el('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [

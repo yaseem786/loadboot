@@ -47,9 +47,10 @@ export function renderWorkflowBuilder(host) {
           el('button', { class: 'lb-btn lb-btn-sm', onClick: () => simulate(w) }, 'Simulate'),
           manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: () => editor(w) }, 'Edit') : null,
           manage && w.status !== 'published' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => {
-            ev.currentTarget.disabled = true;
+            const _btn9 = ev.currentTarget;
+            _btn9.disabled = true;
             try { await workflowSetStatus(w.id, 'publish'); toast('Published', 'success'); load(); }
-            catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+            catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, 'Publish') : null,
           manage && w.status === 'published' ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => {
             try { await workflowSetStatus(w.id, 'pause'); toast('Paused', 'success'); load(); } catch (e) { toast(humanizeError(e), 'error'); }
@@ -137,8 +138,9 @@ export function renderWorkflowBuilder(host) {
       el('p', { class: 'cc-sub' }, 'Runs the published graph against this sample event with ZERO side effects — every step reports what it WOULD do.'),
       el('label', { class: 'cc-field' }, [el('span', null, 'Sample event (JSON)'), ta]),
       el('div', { class: 'cc-drawer-actions', style: 'margin:10px 0' }, el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
+        const _btn9 = ev.currentTarget;
         let evt; try { evt = JSON.parse(ta.value); } catch (_) { alert('Invalid JSON'); return; }
-        ev.currentTarget.disabled = true;
+        _btn9.disabled = true;
         try {
           const r = await workflowRun(w.id, evt, 'simulation');
           mount(out, el('div', null, (r.steps || []).map((s, i) => el('div', { style: 'display:flex;gap:8px;padding:4px 0;border-bottom:1px dashed #e2e8f0' }, [
@@ -147,7 +149,7 @@ export function renderWorkflowBuilder(host) {
             el('span', { class: 'cc-sub' }, s.detail || ''),
           ]))));
         } catch (e) { mount(out, el('div', { class: 'cc-sub', style: 'color:#dc2626' }, humanizeError(e))); }
-        ev.currentTarget.disabled = false;
+        _btn9.disabled = false;
       } }, 'Run simulation')),
       out,
     ]), { subtitle: 'No side effects' });

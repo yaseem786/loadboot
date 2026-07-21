@@ -22,15 +22,17 @@ export function renderSafetyDesk(host) {
       const winIn = el('input', { class: 'cc-input', placeholder: 'New delivery window — e.g. Jul 6, 08:00-12:00', style: 'flex:1;min-width:220px' });
       const noteIn = el('input', { class: 'cc-input', placeholder: 'Verification note (optional)', style: 'flex:1;min-width:180px' });
       const ackBtn = open ? el('button', { class: 'cc-btn', onClick: async (ev) => {
-        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Acknowledging…';
+        const _btn9 = ev.currentTarget;
+        _btn9.disabled = true; _btn9.textContent = 'Acknowledging…';
         try { await ackIncident(r.id); toast('Carrier notified: Dispatch is responding.'); load(); }
-        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Acknowledge & respond'; toast(humanizeError(e), true); }
+        catch (e) { _btn9.disabled = false; _btn9.textContent = 'Acknowledge & respond'; toast(humanizeError(e), true); }
       } }, 'Acknowledge & respond') : null;
       const apprBtn = (open || acked) ? el('button', { class: 'cc-btn primary', onClick: async (ev) => {
+        const _btn9 = ev.currentTarget;
         if (!winIn.value.trim()) { toast('Set the new delivery window first (driver downtime + remaining transit).', true); return; }
-        ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Approving…';
+        _btn9.disabled = true; _btn9.textContent = 'Approving…';
         try { await approveIncidentReschedule(r.id, winIn.value.trim(), noteIn.value || null); toast('Verified — carrier and broker notified (bell + email).'); load(); }
-        catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Verify genuine — approve reschedule'; toast(humanizeError(e), true); }
+        catch (e) { _btn9.disabled = false; _btn9.textContent = 'Verify genuine — approve reschedule'; toast(humanizeError(e), true); }
       } }, 'Verify genuine — approve reschedule') : null;
       return card([
         el('div', { style: 'display:flex;align-items:center;gap:9px;flex-wrap:wrap' }, [

@@ -162,9 +162,10 @@ export function renderBI(host) {
           el('td', null, el('span', { class: 'cc-sub' }, r.last_run ? new Date(r.last_run).toLocaleString() : '—')),
           el('td', null, el('div', { style: 'display:flex;gap:6px' }, [
             el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-              ev.currentTarget.disabled = true;
+              const _btn9 = ev.currentTarget;
+              _btn9.disabled = true;
               try { await reportRun(r.id); toast('Snapshot captured', 'success'); refresh(); }
-              catch (e) { toast(humanizeError(e), 'error'); if (ev.currentTarget) ev.currentTarget.disabled = false; }
+              catch (e) { toast(humanizeError(e), 'error'); if (_btn9) _btn9.disabled = false; }
             } }, 'Run'),
             el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async () => {
               if (!confirm('Delete report "' + r.name + '" and its snapshots?')) return;

@@ -75,10 +75,11 @@ export function renderAccountHealth(host) {
       const kindSel = el('select', { class: 'cc-input', style: 'max-width:120px' }, ['policy', 'safety', 'document', 'service', 'conduct', 'legal'].map(k => el('option', { value: k, selected: sug && sug.kind === k ? 'selected' : null }, k)));
       const sevSel = el('select', { class: 'cc-input', style: 'max-width:120px' }, [['warning', 'Warning ' + M + '5'], ['violation', 'Violation ' + M + '15'], ['critical', 'Critical ' + M + '40']].map(function (o) { return el('option', { value: o[0], selected: sug && sug.sev === o[0] ? 'selected' : null }, o[1]); }));
       const issueBtn = manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
+        const _btn9 = ev.currentTarget;
         if (!note.value.trim()) { toast('Written reason is required', 'error'); return; }
-        ev.currentTarget.disabled = true;
+        _btn9.disabled = true;
         try { await issueViolation(r.org, kindSel.value, sevSel.value, note.value.trim()); toast('Issued - account notified', 'success'); load(); }
-        catch (e) { toast(humanizeError(e), 'error'); ev.currentTarget.disabled = false; }
+        catch (e) { toast(humanizeError(e), 'error'); _btn9.disabled = false; }
       } }, 'Issue') : null;
 
       const detail = el('div', { hidden: true, style: 'margin-top:10px;border-top:1px dashed var(--lb-border,#e2e8f0);padding-top:10px' }, [

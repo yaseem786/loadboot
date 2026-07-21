@@ -35,6 +35,7 @@ export function renderWebhooks(host) {
     showLoading(catHost, 'Loading events…');
     let rows; try { rows = await eventCatalog(); } catch (e) { showError(catHost, humanizeError(e), loadCatalog); return; }
     rows = rows || [];
+    if (!rows.length) { mount(catHost, el('div', { class: 'cc-sub' }, 'No event types published yet.')); return; }
     mount(catHost, el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, ['Event', 'Category', 'Description'].map(h => el('th', null, h)))),
       el('tbody', null, rows.map(e => el('tr', null, [
@@ -84,9 +85,10 @@ export function renderWebhooks(host) {
           el('td', null, String(d.attempts ?? 0)),
           el('td', null, el('span', { class: 'cc-sub' }, d.note || '—')),
           el('td', null, retryable ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-            ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Retrying…';
+            const _btn9 = ev.currentTarget;
+            _btn9.disabled = true; _btn9.textContent = 'Retrying…';
             try { await retryWebhookDelivery(d.id); toast('Delivery re-queued', 'success'); loadDeliveries(); loadEndpoints(); }
-            catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Retry'; toast(humanizeError(e), 'error'); }
+            catch (e) { _btn9.disabled = false; _btn9.textContent = 'Retry'; toast(humanizeError(e), 'error'); }
           } }, 'Retry') : ''),
         ]);
       })),

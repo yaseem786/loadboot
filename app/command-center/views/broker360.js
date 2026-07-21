@@ -140,18 +140,21 @@ export function renderBroker360(host, orgId) {
                 el('div', { class: 'cc-sub' }, '[' + String(it.tag || '').toUpperCase() + '] · status: ' + st + (it.submitted_at ? ' · submitted ' + fmtDateTime(it.submitted_at) : '')),
                 HINTS[it.key] ? el('div', { style: 'background:#eef6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px;font-size:.83rem;color:#1e40af;margin-top:8px' }, '🎛 Review hint: ' + HINTS[it.key]) : null,
                 el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [
-                  st !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { ev.currentTarget.disabled = true;
-                    try { await onboardingReviewItem(orgId, it.key, 'verify', null); toast('Verified — partner notified', 'success'); dA.close(); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+                  st !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { _btn9.disabled = true;
+                    const _btn9 = ev.currentTarget;
+                    try { await onboardingReviewItem(orgId, it.key, 'verify', null); toast('Verified — partner notified', 'success'); dA.close(); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
                   } }, '✓ Verify') : null,
                   el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => {
+                    const _btn9 = ev.currentTarget;
                     const why = prompt('Waive "' + it.label + '" — reason (audited; item counts as satisfied):'); if (!why) return;
-                    ev.currentTarget.disabled = true;
-                    try { await onboardingReviewItem(orgId, it.key, 'waive', why); toast('Waived', 'info'); dA.close(); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+                    _btn9.disabled = true;
+                    try { await onboardingReviewItem(orgId, it.key, 'waive', why); toast('Waived', 'info'); dA.close(); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
                   } }, 'Waive'),
                   el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev) => {
+                    const _btn9 = ev.currentTarget;
                     const why = prompt('⚠ Reject + WARN — reason (rejects the item AND issues a −5 pt document strike):'); if (!why) return;
-                    ev.currentTarget.disabled = true;
-                    try { await onboardingReviewItem(orgId, it.key, 'reject', why); await issueViolation(orgId, 'document', 'warning', '[' + it.label + '] ' + why); toast('Rejected + strike issued', 'info'); dA.close(); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+                    _btn9.disabled = true;
+                    try { await onboardingReviewItem(orgId, it.key, 'reject', why); await issueViolation(orgId, 'document', 'warning', '[' + it.label + '] ' + why); toast('Rejected + strike issued', 'info'); dA.close(); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
                   } }, '⚠ Reject + warn'),
                 ].filter(Boolean)),
               ].filter(Boolean));
@@ -190,15 +193,17 @@ export function renderBroker360(host, orgId) {
       o.status === 'active'
         ? el('button', { class: 'lb-btn lb-btn-primary', disabled: 'disabled', style: 'opacity:.75', title: 'Account is active — posting live' }, '✓ Account approved')
         : el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
+            const _btn9 = ev.currentTarget;
             if (!confirm('Approve this partner account? Posting goes live and they are notified.')) return;
-            ev.currentTarget.disabled = true;
-            try { await partnerSetStatus(orgId, 'approve', null); toast('Approved — partner notified 🎉', 'success'); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+            _btn9.disabled = true;
+            try { await partnerSetStatus(orgId, 'approve', null); toast('Approved — partner notified 🎉', 'success'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✓ Approve account'),
       el('span', { class: 'cc-pill', style: 'background:' + (o.status === 'active' ? '#e7f9ee;color:#12a150' : '#fef3c7;color:#b45309') }, 'status: ' + o.status),
       el('button', { style: 'margin-left:auto;border:1px solid #fecaca;background:#fff;color:#b91c1c;font-weight:800;border-radius:10px;padding:10px 18px;cursor:pointer', onClick: async (ev) => {
+        const _btn9 = ev.currentTarget;
         const why = prompt((o.status === 'active' ? 'Revoke approval / park account' : 'Park account') + ' — reason (partner sees this):'); if (!why || !why.trim()) return;
-        ev.currentTarget.disabled = true;
-        try { await partnerSetStatus(orgId, 'park', why.trim()); toast('Account parked — posting paused, partner notified', 'info'); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+        _btn9.disabled = true;
+        try { await partnerSetStatus(orgId, 'park', why.trim()); toast('Account parked — posting paused, partner notified', 'info'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
       } }, '✕ Revoke approval'),
     ]) : null;
 
@@ -213,9 +218,10 @@ export function renderBroker360(host, orgId) {
         el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Health engine — live score'), el('span', { class: 'cc-pill', style: 'background:' + tc2 + '1a;color:' + tc2 + ';font-weight:800' }, String(ah2.score) + ' · ' + t2.replace('_', ' ').toUpperCase())]),
         ded2.length ? el('div', null, ded2.map((d2) => el('div', { style: 'font-size:.83rem;color:#334155;padding:3px 0' }, '− ' + d2.deducted + ' — ' + d2.label + (d2.basis ? ' (' + d2.basis + ')' : '')))) : el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'No deductions — clean account.'),
         manage ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', style: 'margin-top:10px', onClick: async (ev) => {
+          const _btn9 = ev.currentTarget;
           const why = prompt('⚠ Warn this partner — reason (they see this; points deducted):'); if (!why) return;
-          ev.currentTarget.disabled = true;
-          try { await issueViolation(orgId, 'conduct', 'warning', why); ev.currentTarget.textContent = 'Warned ✓'; toast('Warning issued', 'success'); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          _btn9.disabled = true;
+          try { await issueViolation(orgId, 'conduct', 'warning', why); _btn9.textContent = 'Warned ✓'; toast('Warning issued', 'success'); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, '⚠ Warn account') : null,
       ].filter(Boolean)));
     })();
@@ -238,13 +244,15 @@ export function renderBroker360(host, orgId) {
           fpath9 ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
             try { const u = await signedDocumentUrl(fpath9, 300); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.disabled = false;
           } }, '👁 Voided check / bank letter') : el('span', { class: 'cc-sub' }, '⚠ no voided check on file'),
-          (manage && st9 !== 'verified') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { ev.currentTarget.disabled = true;
-            try { await onboardingReviewItem(orgId, 'bank_instructions', 'verify', null); toast('Bank details verified — partner notified', 'success'); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          (manage && st9 !== 'verified') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { _btn9.disabled = true;
+            const _btn9 = ev.currentTarget;
+            try { await onboardingReviewItem(orgId, 'bank_instructions', 'verify', null); toast('Bank details verified — partner notified', 'success'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✓ Verify bank details') : null,
           (manage && st9 !== 'rejected') ? el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev) => {
+            const _btn9 = ev.currentTarget;
             const why = prompt('Reject bank details — reason (partner notified + emailed):'); if (!why) return;
-            ev.currentTarget.disabled = true;
-            try { await onboardingReviewItem(orgId, 'bank_instructions', 'reject', why); toast('Rejected — partner notified', 'info'); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+            _btn9.disabled = true;
+            try { await onboardingReviewItem(orgId, 'bank_instructions', 'reject', why); toast('Rejected — partner notified', 'info'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✕ Reject with reason') : null,
         ].filter(Boolean)),
       ]);

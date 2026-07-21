@@ -53,12 +53,12 @@ export function renderFormBuilder(host) {
     const fieldsHost = el('div');
     function renderFields() {
       mount(fieldsHost, fields.map((fld, i) => el('div', { class: 'lb-card', style: 'padding:10px;margin-bottom:8px' }, [
-        el('div', { style: 'display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end' }, [
+        el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;align-items:end' }, [
           el('label', { class: 'cc-field' }, [el('span', null, 'Label'), textIn(fld, 'label')]),
           el('label', { class: 'cc-field' }, [el('span', null, 'Type'), typeSel(fld)]),
           el('button', { class: 'lb-btn lb-btn-sm ghost', onClick: () => { fields.splice(i, 1); renderFields(); } }, '✕'),
         ]),
-        el('div', { style: 'display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:6px' }, [
+        el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;align-items:center;margin-top:6px' }, [
           el('label', { class: 'cc-field' }, [el('span', null, 'Field key'), textIn(fld, 'key')]),
           el('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem' }, [reqChk(fld), el('span', null, 'Required')]),
         ]),

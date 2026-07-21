@@ -47,7 +47,7 @@ export function renderBrandKit(host) {
         ]),
       ]));
     }
-    const grid = el('div', { class: 'cc-form-2col', style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' }, [
+    const grid = el('div', { class: 'cc-form-2col', style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px' }, [
       field('company_name', 'Company name'), field('tagline', 'Tagline'),
       field('primary_color', 'Primary color', 'color'), field('accent_color', 'Accent color', 'color'),
       field('ink_color', 'Text color', 'color'), field('font_heading', 'Heading font'),
@@ -65,7 +65,7 @@ export function renderBrandKit(host) {
     } }, 'Save brand kit');
     if (!manage) Object.values(f).forEach(i => i.disabled = true);
     sync();
-    mount(body, el('div', { style: 'display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:16px;align-items:start' }, [
+    mount(body, el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start' }, [
       card(el('div', null, [grid, footers, el('div', { style: 'margin-top:14px' }, manage ? saveBtn : el('div', { class: 'cc-sub' }, 'Read-only — content.manage required to edit.'))])),
       card(el('div', null, [el('div', { class: 'cc-sub', style: 'font-weight:700;margin-bottom:10px' }, 'Live preview'), preview])),
     ]));

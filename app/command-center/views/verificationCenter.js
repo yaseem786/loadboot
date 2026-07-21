@@ -21,7 +21,7 @@ export function renderVerificationCenter(host) {
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Verification Center', 'Verify carriers against the official FMCSA QCMobile API. Official data is compared to what the carrier submitted; discrepancies and out-of-service / inactive-authority risks are flagged for human review. Verification never auto-activates a carrier.'),
     el('div', { id: 'vc-kpis' }),
-    el('div', { class: 'cc-grid2', style: 'display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:16px;align-items:start' }, [
+    el('div', { class: 'cc-grid2', style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start' }, [
       el('div', { id: 'vc-verify' }),
       el('div', { id: 'vc-queue' }, el('div', { class: 'lb-state lb-loading' }, 'Loading…')),
     ]),
@@ -103,9 +103,10 @@ export function renderVerificationCenter(host) {
   }
   function openVer(r) {
     const reBtn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
-      ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Re-verifying\u2026';
+      const _btn9 = ev.currentTarget;
+      _btn9.disabled = true; _btn9.textContent = 'Re-verifying\u2026';
       try { await fmcsaVerify({ carrierOrg: r.carrier_org }); const d = document.getElementById('cc-drawer-root'); if (d) d.remove(); loadQueue(); loadRecent(); }
-      catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Re-verify against FMCSA'; alert(humanizeError(e)); }
+      catch (e) { _btn9.disabled = false; _btn9.textContent = 'Re-verify against FMCSA'; alert(humanizeError(e)); }
     } }, 'Re-verify against FMCSA');
     const body = el('div', null, [
       kvv('Carrier', r.carrier), kvv('Status', r.status), kvv('Match score', (r.match_score != null ? r.match_score + '%' : '\u2014')),

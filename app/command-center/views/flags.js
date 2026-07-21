@@ -37,7 +37,8 @@ export async function renderFlags(host) {
     showLoading(body, 'Loading flags…');
     try {
       const flags = await getFeatureFlags();
-      mount(body, (flags || []).map(f => flagRow(f, load)));
+      if (!flags || !flags.length) { mount(body, el('div', { class: 'cc-sub' }, 'No feature flags defined yet.')); return; }
+    mount(body, (flags || []).map(f => flagRow(f, load)));
     } catch (e) { showError(body, humanizeError(e), load); }
   }
   await load();
