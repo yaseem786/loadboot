@@ -31,7 +31,25 @@ export const getAuditLogs = (opts = {}) => rpc('get_audit_logs', {
 });
 
 // ---- feature flags ----
-export const isFlagEnabled = (key) => rpc('is_flag_enabled', { p_key: key });
+// The Command Center checks ~28 flags while booting. Done one-by-one that is 28 serial
+// round-trips and the splash screen sits there looking frozen. all_flags() returns the
+// whole map in ONE call; the first isFlagEnabled() primes it and every later check is
+// answered from memory. Falls back to the single-key RPC if all_flags is unavailable.
+let _flagMap = null, _flagPromise = null;
+export const primeFlags = () => {
+  if (_flagMap) return Promise.resolve(_flagMap);
+  if (!_flagPromise) {
+    _flagPromise = rpc('all_flags')
+      .then((m) => { _flagMap = (m && typeof m === 'object') ? m : {}; return _flagMap; })
+      .catch(() => { _flagPromise = null; return null; });
+  }
+  return _flagPromise;
+};
+export const isFlagEnabled = async (key) => {
+  const m = await primeFlags();
+  if (m) return m[key] === true;
+  return rpc('is_flag_enabled', { p_key: key });
+};
 export const getFeatureFlags = () => rpc('get_feature_flags');
 export const setFeatureFlag = (key, enabled, opts = {}) =>
   rpc('set_feature_flag', {

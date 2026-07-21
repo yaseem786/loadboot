@@ -376,7 +376,9 @@ NAV_MENU = [
     ('owner-operator-dispatch.html', 'For owner-operators'),
     ('new-authority-dispatch.html', 'For new authorities'),
     ('brokers.html', 'For brokers'),
+    ('free-load-board-for-brokers.html', 'Free load board for brokers'),
     ('shipper-solutions.html', 'For shippers'),
+    ('ship-direct-to-carrier.html', 'Ship direct to carriers'),
     ('agents.html', 'Agent program &mdash; earn 1%'),
   ]),
   ('Pricing', 'pricing.html', None),
@@ -438,7 +440,7 @@ def footer():
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
-<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral &amp; Agent Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
+<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral &amp; Agent Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
 <div><div class="foot-h">Compliance</div><a href="compliance.html">Compliance &amp; Verification</a><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="index.html">Home</a><a href="about.html">About</a><a href="command-center.html">Operations Command Center</a><a href="features.html">All Features</a><a href="load-board.html">Live Load Board</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
 <div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral &amp; Agent Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="create-carrier-account.html">Create Carrier Account</a><a href="create-broker-account.html">Create Broker Account</a><a href="create-shipper-account.html">Create Shipper Account</a><a href="create-agent-account.html">Create Agent Account</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="load-board.html">Live Load Board (Zero Ghost Loads)</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
@@ -1642,7 +1644,20 @@ BLOGPOSTS = [
   'What a dispatch service does for a one-truck operation, what it costs, whether new authority needs one, and how to choose a good one.',
   ['For a single-truck owner-operator, a dispatch service is your back office &mdash; it finds, negotiates and books your freight so you can focus on driving, while you keep your authority and approve every load.']),
 ]
-PREMIUM_ARTICLES={'how-much-does-a-truck-dispatcher-cost.html','truck-dispatcher-vs-freight-broker.html','owner-operator-dispatch-service-guide.html','truck-dispatcher-in-texas.html','do-new-authority-carriers-need-a-dispatcher.html','how-to-read-a-rate-confirmation.html','truck-dispatcher-in-california.html','how-to-avoid-cheap-freight.html','truck-dispatcher-in-georgia.html'}
+PREMIUM_ARTICLES={'how-much-does-a-truck-dispatcher-cost.html','truck-dispatcher-vs-freight-broker.html','owner-operator-dispatch-service-guide.html','truck-dispatcher-in-texas.html','do-new-authority-carriers-need-a-dispatcher.html','how-to-read-a-rate-confirmation.html','truck-dispatcher-in-california.html','how-to-avoid-cheap-freight.html','truck-dispatcher-in-georgia.html','protect-freight-from-loss-damage-and-fraud.html','load-board-subscription-cost.html','how-to-ship-without-a-broker.html'}
+# Demand-side long-form guides (shipper + broker); pages generated by rich_article() below,
+# listed on the blog with empty blocks so blog_post() skips them.
+BLOGPOSTS += [
+ ('protect-freight-from-loss-damage-and-fraud.html', 'How to Protect Your Freight From Loss, Damage &amp; Fraud: A Shipper&rsquo;s Guide | LoadBoot',
+  'A shipper&rsquo;s complete guide to protecting freight: vetting carriers, cargo insurance, double-brokering red flags, chain-of-custody proof and what to do when a claim happens.',
+  'Freight gets stolen, damaged and double-brokered every day &mdash; almost always because the carrier was never really vetted. Here is how shippers protect a load from booking to delivery.', ''),
+ ('load-board-subscription-cost.html', 'The Real Cost of Load Board Subscriptions in 2026 (and How Brokers Cut It to Zero) | LoadBoot',
+  'What load boards actually cost freight brokers in 2026 &mdash; subscriptions, renewal hikes, add-ons and the fake-load tax &mdash; and how a free verified board changes the math.',
+  'The sticker price is the smallest part of what a load board costs you. Here is the real 2026 math &mdash; renewal hikes, add-ons, the fake-load tax &mdash; and how brokers cut it to zero.', ''),
+ ('how-to-ship-without-a-broker.html', 'How to Ship Freight Without a Broker: A Step-by-Step Guide for Businesses | LoadBoot',
+  'How to ship freight direct to carriers without a broker: what a broker really does, the risks of going direct, a step-by-step process, and how to keep the savings without the fraud risk.',
+  'Cutting out the broker can save 15&ndash;20% &mdash; or cost you a stolen load if you skip the part brokers actually do. Here is how to ship direct safely, step by step.', ''),
+]
 for fn,t,d,ex,bl in BLOGPOSTS:
     if fn in PREMIUM_ARTICLES:
         continue
@@ -2751,6 +2766,201 @@ rich_article('truck-driver-per-diem-2026.html',
 
 THUMBS['truck-driver-per-diem-2026.html'] = PD_FEAT
 READTIME['truck-driver-per-diem-2026.html'] = 9
+# ===== DEMAND-SIDE GUIDE #1 : Protecting freight (shipper) =====
+PF_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="pfg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#14532d"/></linearGradient></defs><rect width="400" height="200" fill="url(#pfg)"/><path d="M200 34 L250 54 V104 C250 138 226 158 200 168 C174 158 150 138 150 104 V54 Z" fill="none" stroke="#34d399" stroke-width="6"/><path d="M180 100 l14 14 l28 -32" fill="none" stroke="#34d399" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><text x="24" y="188" font-family="Manrope,Arial" font-weight="800" font-size="22" fill="#fff">Freight, protected</text></svg>')
+PF_TOC=[('three-ways','The three ways freight goes wrong'),('vet','Vet the carrier &mdash; properly'),('insurance','Cargo insurance vs liability'),('double','Double-brokering red flags'),('proof','Chain of custody &amp; GPS proof'),('claim','When a claim happens'),('checklist','The pre-booking checklist')]
+PF_BODY=(
+'<p>Every day in the US, freight is stolen, damaged or quietly handed to a carrier you never approved. It almost never happens because the shipper was careless with the cargo itself &mdash; it happens because <b>the carrier was never really vetted</b>. This guide walks a load from the moment you post it to the moment it is signed for, and shows exactly where the risk lives and how to close it.</p>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>The single highest-leverage thing a shipper can do is verify the carrier <em>before</em> the freight moves &mdash; and keep verifying, because a carrier that is clean today can lapse next week.</div></div>'
+'<h2 id="three-ways">The three ways freight goes wrong</h2>'
+'<p>Almost every bad outcome falls into one of three buckets. Knowing which is which tells you where to spend your attention.</p>'
+'<table class="cmp"><thead><tr><th>Failure</th><th>What it looks like</th><th>Root cause</th></tr></thead><tbody>'
+'<tr><td>Loss / theft</td><td>Freight vanishes; the &ldquo;carrier&rdquo; is unreachable after pickup</td><td>Identity fraud &mdash; the truck was never who it claimed to be</td></tr>'
+'<tr><td>Damage</td><td>Product arrives broken, wet, or out of temperature</td><td>Wrong equipment, no securement, or a slow dock nobody documented</td></tr>'
+'<tr><td>Double-brokering</td><td>A different carrier than you booked shows up &mdash; or no one pays them</td><td>Your load was secretly re-posted to a stranger for a markup</td></tr>'
+'</tbody></table>'
+'<h2 id="vet">Vet the carrier &mdash; properly</h2>'
+'<p>&ldquo;I checked their MC number&rdquo; is not vetting. FMCSA records are a starting point, not a verdict &mdash; the registration system is widely acknowledged to be outdated and easy to game. Real vetting covers five things, on every load:</p>'
+'<ul>'
+'<li><b>Active operating authority</b> &mdash; confirm the MC/DOT is active for interstate freight, not inactive, pending or revoked.</li>'
+'<li><b>Insurance that is current and adequate</b> &mdash; a certificate of insurance with live dates, matching names, and cargo coverage that covers your load value.</li>'
+'<li><b>Identity match</b> &mdash; the company name, the driver name and the truck all agree with what was booked. Mismatches are the classic fraud tell.</li>'
+'<li><b>Safety history</b> &mdash; inspection and crash data in the FMCSA record.</li>'
+'<li><b>Continuous monitoring</b> &mdash; a carrier that passes today can have a lapsed policy or revoked authority next month. One-time checks miss exactly the cases that hurt.</li>'
+'</ul>'
+'<div class="callout cl-warn"><span class="ic">&#9888;</span><div>Watch for a request to &ldquo;check in under a different name,&rdquo; a load that appears on several boards at very different prices, or a carrier name on the BOL that does not match who you booked. These are double-brokering red flags, full stop.</div></div>'
++svc_banner('Don&rsquo;t vet carriers by hand',
+  'On LoadBoot every carrier&rsquo;s authority and insurance is verified for you and monitored continuously &mdash; before your freight is ever offered to them.',
+  'Ship direct to verified carriers &rarr;','ship-direct-to-carrier.html')+
+'<h2 id="insurance">Cargo insurance vs liability &mdash; know the difference</h2>'
+'<p>Two different policies protect two different things, and shippers lose money by confusing them:</p>'
+'<ul>'
+'<li><b>Cargo insurance</b> covers the freight itself &mdash; the value of the goods if they are lost or damaged in transit. Check the limit against the real value of your load; a $100k policy does not protect a $180k shipment.</li>'
+'<li><b>Auto liability</b> covers damage the truck does to other people and property &mdash; not your cargo.</li>'
+'</ul>'
+'<p>Request the certificate of insurance from the provider, confirm the limits and expiration, and make sure the coverage type actually matches what you are shipping (reefer breakdown, for example, is often a separate endorsement).</p>'
+'<h2 id="double">Double-brokering: the fastest-growing risk</h2>'
+'<p>Double-brokering is when the party you booked quietly re-posts your load to a different carrier for a markup &mdash; without your consent. Best case, a stranger hauls your freight. Worst case, the real carrier never gets paid, files a lien, and you pay twice. Protect against it by:</p>'
+'<ul>'
+'<li>Using a written agreement that <b>prohibits re-brokering without your written consent</b>.</li>'
+'<li>Requiring driver and truck confirmation <em>after</em> booking, and checking it against who shows up.</li>'
+'<li>Insisting on <b>live tracking of the assigned truck</b> &mdash; if the load is moving on a truck you can see, it cannot quietly be handed to someone else.</li>'
+'</ul>'
+'<h2 id="proof">Chain of custody &amp; GPS proof</h2>'
+'<p>When something goes wrong, the shipper with a record wins and the shipper with a story loses. A clean chain of custody means every handoff is documented: who picked up, when, where, and what condition the freight was in. Live GPS with geofenced arrive/depart stamps turns &ldquo;the driver says he was on time&rdquo; into server-side evidence &mdash; which settles dock disputes, detention claims and delivery-window arguments against the record instead of against the loudest voice.</p>'
+'<div class="pull">The shipper with GPS-stamped proof does not argue about what happened. The record already knows.</div>'
+'<h2 id="claim">When a claim happens anyway</h2>'
+'<p>Even with good vetting, freight occasionally gets damaged. Move fast and document everything: note the damage on the delivery receipt/POD before signing, photograph it, keep the BOL and rate confirmation, and file the cargo claim with the carrier&rsquo;s insurer promptly &mdash; most policies have tight filing windows. A complete paper trail is the difference between a paid claim and a denied one.</p>'
+'<h2 id="checklist">The pre-booking checklist</h2>'
+'<ul>'
+'<li>&#9744; Operating authority active for interstate freight</li>'
+'<li>&#9744; Cargo insurance current, adequate for the load value, right coverage type</li>'
+'<li>&#9744; Company / driver / truck identity all match the booking</li>'
+'<li>&#9744; Written no-re-brokering agreement in place</li>'
+'<li>&#9744; Driver + truck confirmed after booking</li>'
+'<li>&#9744; Live tracking enabled on the assigned truck</li>'
+'<li>&#9744; Clear BOL with condition noted at pickup</li>'
+'</ul>'
+'<p>Do all seven on every load and the odds of a bad outcome drop dramatically. Or use a platform that does the verification for you and puts the tracking and paperwork on rails &mdash; which is exactly what LoadBoot is built to do.</p>'
++svc_banner('Freight moved with proof, not promises',
+  'Post your freight to carriers vetted for authority and insurance, watch every mile on live GPS, and settle clean with the record on your side.',
+  'See shipper solutions &rarr;','shipper-solutions.html'))
+PF_FAQ=[
+ ('How do I verify a carrier is legitimate before booking?', 'Confirm active operating authority (MC/DOT) for interstate freight, request a current certificate of insurance with adequate cargo coverage, and match the company, driver and truck to what you booked. FMCSA records are a starting point but are outdated on their own, so combine them with continuous monitoring &mdash; a carrier that is clean today can lapse next month.'),
+ ('What is double-brokering and how do I prevent it?', 'Double-brokering is when the party you booked secretly re-posts your load to a different carrier for a markup. Prevent it with a written no-re-brokering agreement, driver-and-truck confirmation after booking, and live GPS tracking of the assigned truck so the load cannot quietly change hands.'),
+ ('Does the carrier&rsquo;s cargo insurance cover the full value of my freight?', 'Only up to the policy limit and only for the covered peril. Check the cargo insurance limit against your actual load value, confirm the dates are current, and make sure the coverage type fits &mdash; reefer breakdown, for example, is often a separate endorsement.'),
+ ('What should I do the moment freight arrives damaged?', 'Note the damage on the POD before signing, photograph it, keep the BOL and rate confirmation, and file the cargo claim with the carrier&rsquo;s insurer promptly &mdash; filing windows are short. A complete record is what gets a claim paid.'),
+ ('Can I get this protection without hiring a broker?', 'Yes. A verified marketplace like LoadBoot vets carrier authority and insurance for you and tracks the assigned truck by GPS, so you get broker-grade protection while shipping direct. See <a href="ship-direct-to-carrier.html">ship direct to carriers</a>.'),
+]
+rich_article('protect-freight-from-loss-damage-and-fraud.html',
+ 'How to Protect Your Freight From Loss, Damage &amp; Fraud: A Shipper&rsquo;s Guide | LoadBoot',
+ 'A shipper&rsquo;s complete guide to protecting freight: how to vet carriers, cargo insurance vs liability, double-brokering red flags, chain-of-custody GPS proof and what to do when a claim happens.',
+ 'Shipper Freight Protection','How to Protect Your Freight From Loss, Damage &amp; Fraud',
+ 'Freight is stolen, damaged and double-brokered every day &mdash; almost always because the carrier was never really vetted. Here is how a shipper protects a load from booking to delivery, step by step.',
+ 10,'reefer.webp','Shipper protecting freight with verified carriers and GPS proof',
+ PF_TOC, PF_BODY, PF_FAQ, feat_svg=PF_FEAT)
+THUMBS['protect-freight-from-loss-damage-and-fraud.html']=PF_FEAT
+READTIME['protect-freight-from-loss-damage-and-fraud.html']=10
+
+# ===== DEMAND-SIDE GUIDE #2 : Load board subscription cost (broker) =====
+LB_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="lbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0b1220"/></linearGradient></defs><rect width="400" height="200" fill="url(#lbg)"/><rect x="60" y="120" width="34" height="56" rx="4" fill="#64748b"/><rect x="110" y="96" width="34" height="80" rx="4" fill="#94a3b8"/><rect x="160" y="66" width="34" height="110" rx="4" fill="#f97316"/><path d="M230 150 L360 150" stroke="#34d399" stroke-width="7" stroke-linecap="round"/><text x="250" y="140" font-family="Manrope,Arial" font-weight="800" font-size="30" fill="#34d399">$0</text><text x="24" y="52" font-family="Manrope,Arial" font-weight="800" font-size="24" fill="#fff">What are you really paying?</text></svg>')
+LB_TOC=[('sticker','The sticker price is the small part'),('hidden','The four hidden costs'),('ghost','The fake-load tax'),('roi','Does the subscription pay for itself?'),('zero','Cutting it to zero'),('switch','How to switch without losing coverage')]
+LB_BODY=(
+'<p>Ask a freight broker what their load board costs and they will quote the monthly subscription. That number is real &mdash; and it is the smallest part of the bill. The true cost of a load board in 2026 is the subscription <em>plus</em> the renewal hikes, the add-ons, the per-seat fees, and the time your team burns on freight that was never real. This guide breaks down the whole number, then shows how brokers get it to zero.</p>'
+'<h2 id="sticker">The sticker price is the small part</h2>'
+'<p>The largest load boards run roughly <b>$195&ndash;$345 per month</b> at the tier a working broker actually needs, and the entry tiers that look cheap are usually too limited to run a desk on. That alone is $2,300&ndash;$4,100 a year, per seat. But the sticker is only where it starts.</p>'
+'<div class="statrow"><div class="statcard"><div class="n">$195&ndash;$345</div><div class="l">Typical monthly board subscription</div></div>'
+'<div class="statcard"><div class="n">25&ndash;45%</div><div class="l">Reported renewal increases</div></div>'
+'<div class="statcard"><div class="n">$0</div><div class="l">What a verified free board charges to post</div></div></div>'
+'<p style="font-size:.86rem;color:var(--muted)">Competitor pricing changes constantly &mdash; confirm current numbers directly before you quote them. The pattern, not the exact figure, is the point.</p>'
+'<h2 id="hidden">The four hidden costs</h2>'
+'<ol>'
+'<li><b>Renewal hikes.</b> Brokers routinely report renewal increases of 25&ndash;45% &mdash; the price you sign up at is not the price you keep paying.</li>'
+'<li><b>Add-ons.</b> Rate analytics, carrier monitoring, extra seats and premium data are often separate line items stacked on top of the base subscription.</li>'
+'<li><b>Per-seat pricing.</b> Every person on your desk who needs to post or search is another subscription &mdash; the cost scales with your team, not your freight.</li>'
+'<li><b>The software gap.</b> Tracking, document handling and payables usually live in other paid tools, so &ldquo;the load board&rdquo; is really three subscriptions wearing a trench coat.</li>'
+'</ol>'
+'<div class="callout cl-warn"><span class="ic">&#9888;</span><div>Add it up honestly: base + renewal creep + add-ons + seats + the tracking/TMS you bolt on. The real annual number is usually multiples of the sticker price.</div></div>'
+'<h2 id="ghost">The fake-load tax</h2>'
+'<p>There is a cost that never appears on an invoice: the time your team wastes on freight that does not exist. Fake and stale postings flood the big boards &mdash; in one 2025 incident, thousands of fake loads were posted under a single brokerage&rsquo;s name. Every call your carrier reps make on a ghost load is paid labor spent on nothing, and every fake posting under your name erodes the trust carriers place in your real ones.</p>'
++svc_banner('A board where posting costs nothing',
+  'Post loads free to FMCSA-verified carriers &mdash; with GPS tracking, documents and payables included, and stale postings auto-closed.',
+  'See the free broker board &rarr;','free-load-board-for-brokers.html')+
+'<h2 id="roi">Does the subscription pay for itself?</h2>'
+'<p>For a busy brokerage covering serious volume, a paid board can absolutely earn its cost back in rate data and reach &mdash; nobody sensible argues otherwise. The question is not whether a board <em>can</em> pay for itself; it is whether <b>you should be paying a premium subscription to do the one thing (posting a load) that a verified free board does at no cost</b>. If posting is free and includes the tracking and payables you were paying extra for, the ROI math on the paid piece changes.</p>'
+'<h2 id="zero">Cutting it to zero</h2>'
+'<p>The reason the big boards charge shippers, brokers and carriers is that <em>everyone</em> pays to be there. LoadBoot flips the model: the fee sits on the carrier-side dispatch service, so <b>posting is free for brokers</b> &mdash; and posting comes bundled with:</p>'
+'<ul>'
+'<li>FMCSA-verified carriers, monitored continuously &mdash; no ghost carriers, no double-brokering</li>'
+'<li>First-accept-wins offers &mdash; no double-booked trucks, no round of check calls</li>'
+'<li>Live GPS, document handling and one-receipt payables, included rather than billed separately</li>'
+'<li>Auto-closing stale postings, so the board stays real</li>'
+'</ul>'
+'<h2 id="switch">How to switch without losing coverage</h2>'
+'<p>You do not have to rip out what works on day one. The low-risk path: keep your existing board while you add a free verified board alongside it, post your loads to both, and watch where they cover faster and cleaner. Over a couple of billing cycles the honest comparison makes the decision for you &mdash; and if the free board is covering your freight, the renewal notice becomes a lot easier to decline.</p>'
+'<div class="pull">The cheapest load board is not the one with the lowest sticker. It is the one that covers your freight without charging you to post it.</div>'
++svc_banner('Post your first load free',
+  'Set your brokerage up on a genuinely free, verified load board &mdash; no card, no subscription, no per-post fee.',
+  'Start posting free &rarr;','free-load-board-for-brokers.html'))
+LB_FAQ=[
+ ('How much does a load board cost a freight broker in 2026?', 'At the tier a working broker actually needs, the largest boards typically run about $195&ndash;$345 per month per seat, and renewals are widely reported to jump 25&ndash;45%. Add-ons, per-seat pricing and separate tracking/TMS tools push the real annual cost well above the sticker. Always confirm current pricing directly &mdash; it changes often.'),
+ ('Is there a genuinely free load board for brokers?', 'Yes. LoadBoot lets licensed brokers post loads free &mdash; no subscription, no per-post fee &mdash; because the fee sits on the carrier-side dispatch service. Posting includes GPS tracking, documents and payables. See <a href="free-load-board-for-brokers.html">the free broker board</a>.'),
+ ('Why are fake loads a cost even when the board is &ldquo;free&rdquo; to browse?', 'Because your team&rsquo;s time is not free. Every call on a ghost load is paid labor spent on nothing, and fake postings under your name erode carrier trust in your real freight. A verified board that auto-closes stale postings removes that tax.'),
+ ('Do I have to cancel my current board to try a free one?', 'No. Run them side by side, post to both, and compare coverage speed and quality over a billing cycle or two. Let the honest comparison make the decision before you drop anything.'),
+ ('How can posting be free &mdash; what&rsquo;s the catch?', 'The revenue comes from the carrier-side dispatch fee, not from broker subscriptions. Load posting is gated to licensed brokers, which is what keeps the board real; the cost simply lives on a different side of the marketplace.'),
+]
+rich_article('load-board-subscription-cost.html',
+ 'The Real Cost of Load Board Subscriptions in 2026 (and How Brokers Cut It to Zero) | LoadBoot',
+ 'What a load board actually costs freight brokers in 2026: subscription tiers, 25&ndash;45% renewal hikes, add-ons, per-seat fees and the fake-load tax &mdash; and how a free verified board cuts the bill to zero.',
+ 'Freight Broker Costs','The Real Cost of Load Board Subscriptions in 2026',
+ 'The sticker price is the smallest part of what a load board costs you. Here is the full 2026 math &mdash; renewal hikes, add-ons, per-seat fees, the fake-load tax &mdash; and how brokers cut it to zero.',
+ 9,'','Freight broker comparing load board subscription costs',
+ LB_TOC, LB_BODY, LB_FAQ, feat_svg=LB_FEAT)
+THUMBS['load-board-subscription-cost.html']=LB_FEAT
+READTIME['load-board-subscription-cost.html']=9
+
+# ===== DEMAND-SIDE GUIDE #3 : Ship without a broker (shipper) =====
+SW_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="swg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#134e4a"/></linearGradient></defs><rect width="400" height="200" fill="url(#swg)"/><circle cx="90" cy="100" r="22" fill="#0883F7"/><text x="78" y="106" font-family="Manrope,Arial" font-weight="800" font-size="18" fill="#fff">S</text><circle cx="310" cy="100" r="22" fill="#FC5305"/><text x="299" y="106" font-family="Manrope,Arial" font-weight="800" font-size="18" fill="#fff">C</text><path d="M116 100 H284" stroke="#34d399" stroke-width="7" stroke-linecap="round"/><path d="M284 88 L306 100 L284 112 Z" fill="#34d399"/><text x="150" y="150" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#94a3b8">no middleman</text></svg>')
+SW_TOC=[('what','What a broker actually does'),('should','Should you skip one?'),('risks','The risks of going direct'),('steps','Ship direct: step by step'),('still','When you still want a broker'),('both','How to get both')]
+SW_BODY=(
+'<p>Cutting the broker out of a shipment can save real money &mdash; shippers who pay carriers directly often save <b>15&ndash;20%</b> versus a brokered move. But a broker is not just a markup; they do a job, and if you skip them without covering that job, the savings can vanish the first time a load is stolen or double-brokered. This guide explains what you are actually removing, then shows how to ship direct safely.</p>'
+'<h2 id="what">What a broker actually does</h2>'
+'<p>Before you decide to skip one, be clear about the work a good broker performs:</p>'
+'<ul>'
+'<li><b>Finds capacity</b> &mdash; a truck for your lane, on your timeline.</li>'
+'<li><b>Vets the carrier</b> &mdash; authority, insurance, identity, safety history.</li>'
+'<li><b>Carries risk</b> &mdash; stands between you and a fraud, a claim, or a no-show.</li>'
+'<li><b>Handles the paperwork and the money</b> &mdash; rate confirmation, BOL, and paying the carrier.</li>'
+'</ul>'
+'<p>The markup pays for that. Going direct means <em>you</em> take on the vetting and the risk &mdash; unless you use a platform that does it for you.</p>'
+'<h2 id="should">Should you skip one?</h2>'
+'<p>Going direct makes the most sense when you ship regularly, know your lanes, and want to keep the margin a broker would take. It makes less sense for one-off, oddball, or high-value freight where the broker&rsquo;s risk-absorption is worth paying for. The deciding question is not &ldquo;can I save 15%&rdquo; &mdash; it is <b>&ldquo;can I cover the vetting and the risk the broker was handling?&rdquo;</b></p>'
+'<div class="callout cl-warn"><span class="ic">&#9888;</span><div>The most expensive way to ship direct is to post on an open board, skip the vetting, and hand your freight to whoever calls first. That is exactly how loads get double-brokered and stolen.</div></div>'
+'<h2 id="risks">The risks of going direct &mdash; and how to cover each</h2>'
+'<table class="cmp"><thead><tr><th>Risk</th><th>How to cover it</th></tr></thead><tbody>'
+'<tr><td>Unverified carrier / fraud</td><td>Confirm active authority + current cargo insurance + identity match, on every load</td></tr>'
+'<tr><td>Double-brokering</td><td>No-re-brokering agreement, driver/truck confirmation, live GPS on the assigned truck</td></tr>'
+'<tr><td>No visibility</td><td>Live tracking + geofenced arrive/depart stamps instead of phone check calls</td></tr>'
+'<tr><td>Payment / claim disputes</td><td>Written rate confirmation, clean BOL/POD, receipt-verified payment trail</td></tr>'
+'</tbody></table>'
++svc_banner('Direct pricing, with the vetting done for you',
+  'Post your freight free to carriers whose authority and insurance are verified for you, and track every mile &mdash; the broker&rsquo;s hardest job, handled.',
+  'Ship direct to verified carriers &rarr;','ship-direct-to-carrier.html')+
+'<h2 id="steps">Ship direct: step by step</h2>'
+'<ol>'
+'<li><b>Define the load</b> &mdash; lane, weight, equipment, pickup/delivery windows, special requirements.</li>'
+'<li><b>Find capacity</b> &mdash; post to a direct-shipper board or marketplace where carriers can see and accept it.</li>'
+'<li><b>Vet the carrier</b> &mdash; active authority, current cargo insurance for the load value, identity match. Do not skip this.</li>'
+'<li><b>Put terms in writing</b> &mdash; a rate confirmation with the price, accessorial terms and a no-re-brokering clause.</li>'
+'<li><b>Confirm the truck and driver</b> after booking, and enable live tracking.</li>'
+'<li><b>Document pickup</b> &mdash; a clean BOL noting condition and count.</li>'
+'<li><b>Track to delivery</b> &mdash; watch the milestones, capture POD, then pay on a receipt-verified trail.</li>'
+'</ol>'
+'<h2 id="still">When you still want a broker</h2>'
+'<p>Going direct is not all-or-nothing. For unusual, oversized, hazmat, or one-off freight where you have no relationship and no time to vet, a licensed broker&rsquo;s risk absorption is genuinely worth the markup. The smart shipper goes direct on their steady, known lanes and leans on brokerage for the edge cases.</p>'
+'<h2 id="both">How to get both</h2>'
+'<p>The best of both worlds is a marketplace that gives you direct pricing <em>and</em> broker-grade protection: carriers are verified for you, the assigned truck is GPS-tracked, the paperwork and payments run on rails &mdash; and where broker authority is legally required, a licensed partner handles it, transparently. You keep the margin on your known lanes without inheriting the risk that makes going direct dangerous.</p>'
+'<div class="pull">Skipping the broker only saves money if you cover the job the broker was doing. A verified marketplace covers it for you.</div>'
++svc_banner('Post your freight free',
+  'Get direct-to-carrier pricing with the vetting, tracking and clean payments handled &mdash; free for shippers.',
+  'See how it works &rarr;','ship-direct-to-carrier.html'))
+SW_FAQ=[
+ ('How much can I save by shipping without a broker?', 'Shippers who pay carriers directly often save about 15&ndash;20% versus a brokered move, because the broker markup comes off the top. The saving is only real if you also cover the vetting and risk the broker was handling &mdash; otherwise one fraud or double-brokered load can wipe it out.'),
+ ('Is it legal to ship freight without a broker?', 'Yes &mdash; a shipper can contract directly with a carrier that holds its own operating authority. Where broker authority is legally required for a given arrangement, a licensed broker must be involved; a transparent marketplace tells you which is which on each shipment.'),
+ ('What is the biggest risk of shipping direct?', 'Handing freight to an unvetted carrier &mdash; which leads to theft, double-brokering, or a denied claim. Cover it by verifying authority and cargo insurance on every load, using a no-re-brokering agreement, and tracking the assigned truck by GPS.'),
+ ('How do I find carriers without a broker?', 'Post to a direct-shipper load board or a verified marketplace where carriers see and accept your freight. On LoadBoot, posting is free and every carrier is verified for you &mdash; see <a href="ship-direct-to-carrier.html">ship direct to carriers</a>.'),
+ ('Can I ship direct on some lanes and use a broker on others?', 'Absolutely, and most smart shippers do. Go direct on your steady, known lanes to keep the margin, and lean on a licensed broker for unusual, oversized or one-off freight where risk absorption is worth the markup.'),
+]
+rich_article('how-to-ship-without-a-broker.html',
+ 'How to Ship Freight Without a Broker: A Step-by-Step Guide for Businesses | LoadBoot',
+ 'How to ship freight directly to carriers without a broker: what a broker really does, the risks of going direct, a step-by-step process to do it safely, and how to keep the 15&ndash;20% savings without the fraud risk.',
+ 'Direct Freight Shipping','How to Ship Freight Without a Broker',
+ 'Cutting out the broker can save 15&ndash;20% &mdash; or cost you a stolen load if you skip the part brokers actually do. Here is how to ship direct safely, step by step.',
+ 9,'dry-van.webp','Business shipping freight direct to carriers without a broker',
+ SW_TOC, SW_BODY, SW_FAQ, feat_svg=SW_FEAT)
+THUMBS['how-to-ship-without-a-broker.html']=SW_FEAT
+READTIME['how-to-ship-without-a-broker.html']=9
+
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
 blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
 blog_body += '<section class="bg-soft"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Guides &amp; resources</div><h2>Latest from Loadboot</h2></div><div class="bloggrid">%s</div></div></section>' % bcards
@@ -3316,10 +3526,71 @@ _cfaq_html, _cfaq_sch = faq_block([
     ('How fast can I start?', 'Most carriers are set up the same day once we have your authority and insurance.'),
     ('How do I get paid?', 'Delivery flips your invoice to DUE automatically &mdash; deadlines, receipt-verified transfers, factoring/NOA routing and QuickBooks sync are built in. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
 ])
+# Featured-lane advertisement (recruitment, first-come). Honest framing: a shipper has
+# requested recurring reefer capacity on this lane and we are onboarding carriers to run it
+# — NOT a bookable ghost load. Swap/retire when the lane is covered.
+cp += ('<section><div class="wrap"><div class="reveal" style="background:linear-gradient(135deg,#10223B 0%,#0883F7 100%);border-radius:22px;padding:34px 30px;color:#fff;position:relative;overflow:hidden">'
+ '<span style="display:inline-block;background:rgba(252,83,5,.9);color:#fff;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:999px">First come, first served</span>'
+ '<h2 style="color:#fff;font-size:1.7rem;margin:14px 0 6px;max-width:640px">Reefer carriers wanted: Phoenix &rarr; Dallas, ~6 loads a week</h2>'
+ '<p style="color:#dbeafe;max-width:640px;margin:0 0 18px">A shipper has requested <b style="color:#fff">recurring weekly reefer capacity</b> on this lane and we&rsquo;re onboarding carriers to run it. Run reefer in the Southwest? The first verified carrier gets the lane. Flat 5%, no contract, accessorials 100% yours.</p>'
+ '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">'
+ '<a href="reefer-loads-phoenix-to-dallas.html" class="btn btn-primary" style="background:#FC5305">Claim this lane &rarr;</a>'
+ '<a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas" class="btn btn-secondary" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3)">Email hello@loadboot.com</a>'
+ '</div></div></div></section>')
 cp += _real_screen('board-card-details.webp',420,909,'A real load card opened — full rate card with detention, TONU and layover terms printed before booking','A real load, opened &mdash; the FULL rate card printed before you ever book.','What you book from','Every load shows its whole hand') + _cfaq_html + final_cta()
 page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5%, Every Rate in Writing | LoadBoot',
      'Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, detention and invoicing. Flat 5%, no contracts, keep your authority.',
      'services.html', cp, _cfaq_sch)
+
+# ---- Featured-lane recruitment page (SEO: "reefer loads phoenix to dallas") ----
+# Honesty guard: a shipper has REQUESTED weekly reefer capacity here; this page recruits
+# carriers to run it (first-come). It never claims a specific bookable load is posted now.
+rl = ('<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div>'
+ '<div class="wrap" style="position:relative;z-index:1;max-width:840px">'
+ '<span class="badge reveal" style="background:rgba(252,83,5,.14);color:#fdba74;border-color:rgba(252,83,5,.35)"><span class="dot" style="background:#FC5305"></span> First come, first served</span>'
+ '<h1 class="reveal d1">Reefer Loads: Phoenix &rarr; Dallas &mdash; Recurring Weekly Lane, Carriers Wanted</h1>'
+ '<p class="lead reveal d2" style="margin:22px 0 26px">A shipper has requested <b>~6 reefer loads every week</b> from Phoenix, AZ to Dallas, TX, and we&rsquo;re onboarding carriers to run it. If you haul reefer in the Southwest, this is steady, predictable freight &mdash; and the first verified carrier gets the lane.</p>'
+ '<div class="hero-btns reveal d3"><a href="/app/carrier/" class="btn btn-primary">Claim this lane &rarr;</a>'
+ '<a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas" class="btn btn-secondary">Email hello@loadboot.com</a>'
+ '<a href="carriers.html" class="btn btn-ghost">How dispatch works &rarr;</a></div></div></section>')
+rl += _sec('The lane', 'What&rsquo;s on offer', _cards([
+    ('&#128666;', 'Phoenix &rarr; Dallas', 'A steady Southwest reefer lane on the I-10/I-20 corridor &mdash; roughly 1,065 miles, a strong regional run.'),
+    ('&#128197;', '~6 loads every week', 'Recurring weekly capacity requested by the shipper &mdash; predictable freight you can plan your month around.'),
+    ('&#10052;&#65039;', 'Reefer equipment', 'Temperature-controlled freight. Bring a clean, well-maintained reefer and the ability to hold temp and hit appointment windows.'),
+]))
+rl += _sec('Why run it with LoadBoot', 'The freight pays for the skill', _cards([
+    ('&#128176;', 'Flat 5%, no contract', 'Five percent of linehaul, nothing else. No sign-up fee, no monthly minimum, cancel any time. You only pay when we put money on your truck.'),
+    ('&#128203;', 'Every rate in writing', 'A rate confirmation with the number, the appointments and the accessorial terms &mdash; before you roll. No verbal deals that shrink at settlement.'),
+    ('&#128205;', 'Live GPS from your phone', 'No ELD hardware to buy. Your shipper sees the truck moving, which is exactly what keeps the lane yours week after week.'),
+    ('&#127974;', 'Accessorials 100% yours', 'Detention, layover and TONU are paid to you in full &mdash; we never take a cut of your waiting time.'),
+    ('&#127974;', 'You keep your authority', 'Your MC/DOT, your insurance, your relationships. Brokers and the shipper pay you (or your factor) directly.'),
+    ('&#9989;', 'Verified &amp; real', 'No ghost loads. When freight is on your truck, the rate card is printed and the record is on your side.'),
+]))
+rl += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How to claim it</div><h2>Three steps to the lane</h2></div>'
+ '<div class="grid g3 reveal" style="margin-top:22px">'
+ '<div class="card"><div class="icon">1</div><h3>Say you want it</h3><p>Email <a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas">hello@loadboot.com</a> or <a href="/app/carrier/">create your carrier account</a> &mdash; tell us you run reefer on the Southwest.</p></div>'
+ '<div class="card"><div class="icon">2</div><h3>Verify fast</h3><p>Send your authority, insurance and a bank letter. Verification is usually same-day &mdash; the sooner you clear it, the sooner the lane is yours.</p></div>'
+ '<div class="card"><div class="icon">3</div><h3>Start running</h3><p>First verified reefer carrier on the lane starts hauling. Deliver, get your rate confirmation on file, and settle clean.</p></div>'
+ '</div></div></section>')
+rl += ('<section><div class="wrap"><div class="reveal" style="background:linear-gradient(135deg,#10223B,#0883F7);border-radius:22px;padding:34px 30px;color:#fff;text-align:center">'
+ '<h2 style="color:#fff;margin:0 0 8px">Run reefer in the Southwest? This lane is first come, first served.</h2>'
+ '<p style="color:#dbeafe;max-width:600px;margin:0 auto 18px">Tell us you can cover Phoenix&rarr;Dallas and clear verification &mdash; the first carrier through gets recurring weekly freight.</p>'
+ '<a href="/app/carrier/" class="btn btn-primary" style="background:#FC5305">Claim this lane &rarr;</a> '
+ '<a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas" class="btn btn-secondary" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3)">Email us</a>'
+ '</div></div></section>')
+_rl_faq_html, _rl_faq_sch = faq_block([
+    ('Is this a real, bookable load right now?', 'It is a recurring lane a shipper has requested &mdash; about 6 reefer loads a week from Phoenix to Dallas &mdash; and we are onboarding carriers to run it. Once you are verified and the freight is tendered, every load comes with a written rate confirmation. We do not post ghost loads.'),
+    ('Who gets the lane?', 'The first verified reefer carrier who can consistently cover Phoenix to Dallas. Because it is recurring capacity, we want a carrier who can run it reliably every week, not a one-off.'),
+    ('What does it pay?', 'Market rate, negotiated per load, with the number in writing before you roll. Detention, layover and TONU are paid to you in full on top of the linehaul.'),
+    ('What do I need to start?', 'Your own operating authority, current insurance with reefer coverage, a bank verification, and a clean reefer. Verification is usually same-day.'),
+    ('What does LoadBoot charge?', 'A flat 5% of the linehaul, no contract and no monthly fee. You keep your authority and get paid directly (or through your factor). See <a href="pricing.html">pricing</a>.'),
+    ('I run reefer but not this lane &mdash; still worth signing up?', 'Yes. We dispatch reefer across the lower 48 and new lanes open constantly. Create your <a href="/app/carrier/">carrier account</a> and tell us your lanes.'),
+])
+rl += _rl_faq_html
+RELATED['reefer-loads-phoenix-to-dallas.html'] = [('carriers.html','For Carriers'),('reefer-dispatch.html','Reefer Dispatch'),('market-rates.html','Reefer Market Rates'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('load-board.html','Live Load Board')]
+page('reefer-loads-phoenix-to-dallas.html', 'Reefer Loads Phoenix to Dallas — Recurring Weekly Lane, Carriers Wanted | LoadBoot',
+     'Reefer loads Phoenix, AZ to Dallas, TX: a shipper needs ~6 recurring reefer loads a week and LoadBoot is onboarding carriers to run it. Flat 5%, no contract, every rate in writing, accessorials 100% yours. First verified reefer carrier gets the lane.',
+     'carriers.html', rl, _rl_faq_sch)
 
 # ---- Dedicated Broker page (~15 sections; brokers only) ----
 bp = svc_hero('A Reliable Carrier Network for Brokers',
@@ -5485,6 +5756,102 @@ sp += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color
 RELATED['shipper-solutions.html'] = [('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('compliance.html','Carrier Verification'),('detention-pay-policy.html','Accessorial Standards'),('contact.html','Contact')]
 page('shipper-solutions.html', 'Shipper Solutions — Vetted Carrier Capacity With Dock-Level GPS Proof | LoadBoot', 'Move freight with carriers vetted for authority, insurance and account health under licensed brokerage: live map and ETA on every shipment, geofenced arrive/depart proof at your own docks, POD captured at delivery, published accessorial standards with GPS evidence — free for shippers and facilities.', 'shipper-solutions.html', sp, _ship_schema)
 
+# ---- DEMAND-SIDE SEO #1: Free load board for brokers ----
+# Search-intent page (NOT a product page). Targets "free load board for brokers",
+# "DAT alternative free", "post loads free no subscription". Problem-first: board cost +
+# ghost loads + paid-software stack. Funnels to create-broker-account. Unique vs brokers.html
+# (that page is the product pitch; this one is the switch-from-a-paid-board pitch).
+flb = svc_hero('A Free Load Board for Brokers &mdash; Post Loads at $0, Covered in Minutes',
+    'No subscription. No per-post fee. No renewal hike. Post your freight to a network of FMCSA-verified carriers &mdash; with live GPS tracking, clean documents and one-receipt payables built in, at no cost to your brokerage.')
+flb += _sec('The problem', 'You are paying a premium just to post a load', _cards([
+    ('&#128176;', 'Boards are expensive &mdash; and getting more so', 'The largest load boards run well into the hundreds of dollars a month, and renewals routinely jump 25&ndash;45% at billing time. You pay the subscription whether or not it covered your freight this month.'),
+    ('&#128123;', 'Ghost loads poison the well', 'Fake and stale postings flood the big boards &mdash; in one 2025 incident thousands of fake loads were posted under a single brokerage&rsquo;s name. When the board is full of ghosts, carriers stop trusting real postings too, including yours.'),
+    ('&#129513;', 'The software is a second bill', 'Tracking, document capture and payables are usually separate paid tools. You end up stitching three subscriptions together just to move one load.'),
+]))
+flb += _sec('The answer', 'Post free &mdash; and the software comes with it', _cards([
+    ('&#127991;', 'Posting is free, forever', 'Create a broker account, post your load, reach verified carriers &mdash; no card, no tier, no per-post charge. LoadBoot earns from the carrier-side dispatch fee, never from you.'),
+    ('&#128225;', 'First-accept-wins offers', 'Your load reaches carriers that fit the lane and equipment. First acceptance wins and every other offer auto-closes &mdash; no double-booked trucks, no round of check calls.'),
+    ('&#128205;', 'Live GPS on every load', 'Geofenced arrive/depart stamps and a live map replace the &ldquo;where&rsquo;s my truck&rdquo; calls &mdash; the visibility other boards charge extra for, included.'),
+    ('&#128196;', 'Documents &amp; payables built in', 'Rate confirmation, BOL and POD ride the load; delivery flips it into a one-receipt payable with a PAY-BY deadline. No bolt-on TMS required.'),
+    ('&#9989;', 'Zero ghost loads', 'Stale postings auto-close and cancellations carry TONU exposure, so the board stays real &mdash; your postings are believed because fakes cost money here.'),
+    ('&#128274;', 'Your data stays yours', 'Carrier financials and your internal notes stay private; you see load and trip status, ETAs and document state &mdash; nothing more, nothing less.'),
+]))
+flb += _sec('Why the board is clean', 'Verified carriers only &mdash; double-brokering has nowhere to hide', _cards([
+    ('&#128737;', 'FMCSA-checked on every load', 'Carrier authority and MC/DOT are verified against the federal record, not photocopied once at signup. Inactive or revoked authority never gets your load.'),
+    ('&#128203;', 'Insurance &amp; health tracked continuously', 'Certificates of insurance and account health are monitored over time, so a carrier that lapses tomorrow does not quietly stay eligible.'),
+    ('&#128064;', 'The real truck, on the map', 'GPS on the assigned truck is your defense against double-brokering &mdash; the load moves on the carrier you booked, and the record proves it.'),
+]))
+flb += lead_form('partner_inquiry', 'Post your first load free', 'Tell us your lanes and freight type and we will set your brokerage up on the free board &mdash; no card, no subscription.',
+    [('name', 'Your name', 'text', True), ('company', 'Brokerage', 'text', True), ('email', 'Email', 'email', True),
+     ('phone', 'Phone', 'tel', False), ('mc', 'Broker MC number', 'text', False),
+     ('message', 'Lanes, freight type and typical volume', 'textarea', False)],
+    'Start posting free', 'Thanks — our partner team will set you up.')
+_flb_faq_html, _flb_faq_sch = faq_block([
+    ('Is the load board really free for brokers?', 'Yes. Posting loads, sending offers, tracking, document handling and payables are all free for licensed broker partners. LoadBoot earns from the carrier-side dispatch fee, not from a broker subscription.'),
+    ('How is this different from DAT or Truckstop?', 'Those boards charge a monthly subscription (often $195&ndash;$345/month, with renewal increases) to post and search. LoadBoot posting is free, and it includes GPS tracking, documents and payables that paid boards treat as separate tools. Always confirm current competitor pricing yourself &mdash; it changes.'),
+    ('Who is allowed to post loads?', 'Approved broker partners with active FMCSA broker authority and the federal surety bond. Moving shipper freight requires a broker license in the US, so posting is gated on it &mdash; that gate is exactly why carriers treat LoadBoot postings as real.'),
+    ('How do you stop ghost and double-brokered loads?', 'Carriers are FMCSA-verified with insurance and account-health monitored continuously, offers are first-accept-wins so a load cannot be double-booked, and GPS on the assigned truck proves the real carrier is hauling. Stale postings auto-close.'),
+    ('How do I pay carriers?', 'Freight plus every approved accessorial groups into one per-trip payable with a PAY-BY deadline. Pay with one receipt; the carrier or their factor confirms. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
+    ('Can I integrate my TMS?', 'Yes &mdash; subscribe to load, trip, document and delivery events via webhooks and the API on approved endpoints.'),
+])
+flb += _flb_faq_html
+flb += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Keep reading</div><h2>Before you post</h2></div><div class="grid g3 reveal" style="margin-top:22px">'
+ + linkcard('brokers.html', '&#127970;', 'The full broker program', 'Explainable carrier matching, exception handling and API &mdash; how covering freight works end to end.')
+ + linkcard('create-broker-account.html', '&#128221;', 'Create a broker account', 'Authority and bond verification, then your first posting reaches verified carriers in minutes.')
+ + linkcard('ghost-loads-load-board-problems.html', '&#128123;', 'The ghost-load problem', 'Why fake freight exists on the big boards and how a verified board eliminates it.')
+ + '</div></div></section>')
+RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('load-board.html','Live Load Board'),('ghost-loads-load-board-problems.html','Ghost Loads &amp; Fake Freight'),('payments-settlements.html','Payments &amp; Settlements'),('shipper-solutions.html','Shipper Solutions')]
+page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post Loads at $0 (DAT Alternative) | LoadBoot',
+     'A genuinely free load board for freight brokers: post loads with no subscription and no per-post fee, reach FMCSA-verified carriers, and get live GPS tracking, document handling and one-receipt payables built in. A no-cost alternative to paid load boards, for licensed brokers.',
+     'partners.html', flb, _flb_faq_sch)
+
+# ---- DEMAND-SIDE SEO #2: Ship direct to carrier (shipper money-keyword page) ----
+# Targets "ship without a broker", "direct shipper load board", "post a load direct to
+# carrier", "cheapest way to ship truckload", "how to vet a carrier". Problem-first: broker
+# margin + fraud fear + no visibility. Honesty guard: moves under licensed brokerage where required.
+sdc = svc_hero('Ship Direct to Verified Carriers &mdash; Post Your Freight Free',
+    'Skip the broker markup without taking on the fraud risk. Post your load to carriers whose authority and insurance are verified for you, watch every mile on live GPS, and settle with the carrier directly &mdash; free for shippers.')
+sdc += _sec('The problem', 'Going direct sounds cheaper &mdash; until it goes wrong', _cards([
+    ('&#128181;', 'The broker margin adds up', 'A broker sits between you and the truck and takes a cut on every load &mdash; often 15&ndash;20%. Over a year of freight that is real money leaving your business.'),
+    ('&#9888;&#65039;', 'But vetting carriers is hard', 'Post to an open board yourself and you inherit the broker&rsquo;s hardest job: proving the carrier is real, insured and not double-brokering your freight. FMCSA records alone are outdated and easy to game.'),
+    ('&#128269;', 'And you lose visibility', 'Direct often means calling for updates and hoping. No live location, no arrival proof, no clean record when a dock dispute lands on your desk.'),
+]))
+sdc += _sec('The answer', 'Direct pricing, with the vetting done for you', _cards([
+    ('&#127991;', 'Post your freight free', 'Create a shipper account, post your lane, and verified carriers see it &mdash; no subscription, no posting fee. You pay the carrier for the haul, not a broker for the introduction.'),
+    ('&#128737;', 'Every carrier is verified', 'Authority, insurance and account health are checked before a carrier is ever offered your load &mdash; and monitored continuously, not photocopied once. The hardest part of going direct is handled for you.'),
+    ('&#128205;', 'Live GPS on every shipment', 'A live map, ETA and geofenced arrive/depart stamps answer &ldquo;where is my freight&rdquo; before anyone calls &mdash; and stand as server-side proof in any dock dispute.'),
+    ('&#128179;', 'Clean, receipt-verified payments', 'Invoices ride a receipt-verified rail with PAY-BY deadlines and confirmations, so paying the carrier direct is as clean as paying a broker &mdash; with the paperwork trail to match.'),
+    ('&#128064;', 'Double-brokering protection', 'Because the assigned carrier is verified and GPS-tracked, your freight moves on the truck you booked &mdash; the single biggest defense against the double-brokering scams that hit direct shippers.'),
+    ('&#127981;', 'Dock scheduling for facilities', 'Run appointments and geofenced check-ins at your own docks, measured the same way for every carrier &mdash; data to fix slow docks and defend against inflated detention claims.'),
+]))
+sdc += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Straight about it</div><h2>How the freight actually moves</h2></div>'
+ '<div class="card reveal" style="max-width:760px;margin:22px auto 0;text-align:center">'
+ '<p style="margin:0;line-height:1.7">You post the freight and pick the verified carrier; where a broker license is legally required, the load moves through a licensed brokerage partner &mdash; and we are always transparent about who is doing what on your shipment. You are never guessing whether your freight is legal, insured or tracked. '
+ '<a href="shipper-solutions.html">See the full shipper solution &rarr;</a></p></div></div></section>')
+sdc += lead_form('partner_inquiry', 'Post your freight free', 'Tell us your lanes and freight and we will set you up to post direct to verified carriers &mdash; no subscription.',
+    [('name', 'Your name', 'text', True), ('company', 'Company', 'text', True), ('email', 'Email', 'email', True),
+     ('phone', 'Phone', 'tel', False),
+     ('message', 'Lanes, freight type, weight and monthly volume', 'textarea', False)],
+    'Get set up free', 'Thanks — our team will reach out to set up your freight.')
+_sdc_faq_html, _sdc_faq_sch = faq_block([
+    ('Can I really post freight without a broker taking a cut?', 'Yes. You post your load free and pay the carrier for the haul rather than a broker for the introduction. Where broker authority is legally required, the load moves through a licensed brokerage partner, and we are transparent about it &mdash; but there is no broker margin layered onto your rate for the sake of it.'),
+    ('How do I know the carrier is legitimate?', 'LoadBoot verifies carrier authority and insurance and monitors account health continuously before any carrier is offered your load. Going direct normally means doing this yourself; here it is done for you on every load.'),
+    ('How does this protect me from freight fraud and double-brokering?', 'Only verified carriers are offered your freight, and the assigned truck is GPS-tracked &mdash; so your load moves on the carrier you booked. That live, server-side record is the strongest defense against double-brokering, which is one of the biggest risks of shipping direct.'),
+    ('Is it really free for shippers?', 'Yes &mdash; posting freight, tracking shipments and running dock appointments are free for shippers and facilities. The dispatch fee is on the carrier side.'),
+    ('What visibility do I get?', 'A live map and ETA on every shipment, geofenced arrive/depart stamps at each stop, POD at delivery and document status &mdash; see <a href="gps-tracking.html">GPS tracking &amp; proof</a>.'),
+    ('Do I need any license or authority?', 'No. Operating authority is the carrier&rsquo;s job and broker authority is handled by licensed partners where required. Your side is the freight, the facts and the docks.'),
+])
+sdc += _sdc_faq_html
+sdc += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Keep reading</div><h2>Before you post your freight</h2></div><div class="grid g3 reveal" style="margin-top:22px">'
+ + linkcard('shipper-solutions.html', '&#127981;', 'Full shipper solution', 'Vetted capacity, dock-level GPS proof and published accessorial standards &mdash; the complete picture.')
+ + linkcard('create-shipper-account.html', '&#128221;', 'Create a shipper account', 'What to have ready and how your freight goes from posted to moving with proof.')
+ + linkcard('gps-tracking.html', '&#128205;', 'GPS tracking &amp; proof', 'How live tracking and geofenced arrive/depart stamps protect your freight and settle disputes.')
+ + '</div></div></section>')
+RELATED['ship-direct-to-carrier.html'] = [('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking &amp; Proof'),('compliance.html','Carrier Verification'),('payments-settlements.html','Payments &amp; Settlements'),('free-load-board-for-brokers.html','Free Load Board for Brokers')]
+page('ship-direct-to-carrier.html', 'Ship Direct to Carriers — Post Freight Free, Skip the Broker Markup | LoadBoot',
+     'Post your freight directly to verified carriers and skip the broker markup without the fraud risk: carrier authority and insurance verified for you, live GPS on every shipment, double-brokering protection and receipt-verified payments. Free for shippers; moves under licensed brokerage where required.',
+     'shipper-solutions.html', sdc, _sdc_faq_sch)
+
 intg = FTX_CSS + LBX_CSS
 
 _INTG_FAQ = [('Is the QuickBooks sync really live?', 'Yes — native OAuth two-way sync with QuickBooks Online is in production. Connect from Finance → Accounting in the carrier portal: invoices and expenses push into YOUR QuickBooks, and payments received there flow back as paid status.'), ('What if I use Wave, Xero or an accountant?', "One click exports clean CSVs — revenue (gross/fee/net per invoice), every expense, and confirmed payments — ready for File → Import in QuickBooks, Wave, Xero or your accountant's workflow."), ('Do I need an ELD for tracking?', "No — the driver's phone is the tracker. But if you already run Samsara or Motive, paste your API token and LoadBoot polls your trucks every 5 minutes, feeding the active trip even with the app closed. Any other device can POST positions to a secure webhook."), ('Which fuel cards work with the import?', 'EFS, Comdata and WEX statement CSVs import directly — each purchase lands as a fuel expense on the right trip by date, amount and location.'), ('Can my TMS talk to LoadBoot?', 'Yes — the developer portal issues API keys and self-serve webhook endpoints — load, trip, document and delivery events POST to your URL automatically, with retries.'), ('What is still on the roadmap?', 'Fuel-card provider APIs (beyond statement import) — multi-fleet optimization has shipped and lives in the Fleet tab. When something new ships it is documented here first — nothing on this page is vaporware.')]
@@ -6570,6 +6937,8 @@ _LLMS = """# LoadBoot — The Operating System for Trucking
 ## Audiences
 - [Carriers](https://loadboot.com/carriers) · [Owner-operators](https://loadboot.com/owner-operator-dispatch) · [New authorities](https://loadboot.com/new-authority-dispatch)
 - [Freight brokers](https://loadboot.com/brokers) · [Shippers](https://loadboot.com/shipper-solutions) · [Agents — 1% per load](https://loadboot.com/agents)
+- [Free load board for brokers](https://loadboot.com/free-load-board-for-brokers): post loads at $0, no subscription — a free alternative to paid load boards, for licensed brokers, with GPS/documents/payables included.
+- [Ship direct to carriers](https://loadboot.com/ship-direct-to-carrier): shippers post freight free to verified carriers, skip the broker markup, keep fraud protection + live GPS; moves under licensed brokerage where required.
 - Account setup guides: [carrier](https://loadboot.com/create-carrier-account) · [broker](https://loadboot.com/create-broker-account) · [shipper](https://loadboot.com/create-shipper-account) · [agent](https://loadboot.com/create-agent-account)
 
 ## Pricing
