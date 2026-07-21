@@ -1533,7 +1533,7 @@ pr_faq = [('Are there any setup or hidden fees?','No. There are no setup fees, m
 ('What do brokers, shippers and agents pay?','Nothing to use the platform. The Partner Portal (posting, tracking, documents) and the Agent Portal are included free &mdash; LoadBoot&rsquo;s only revenue is the flat 5% dispatch fee on the carrier side, and agents are paid out of that same fee.')]
 pf_html, pf_sch = faq_block(pr_faq)
 pr_body += pf_html + final_cta()
-page('pricing.html','Dispatch Pricing &mdash; Flat 5%, No Contracts | Loadboot',
+page('pricing.html','Pricing — Flat 5% for Carriers, Free for Brokers, Shippers & Agents | LoadBoot',
      'Loadboot truck dispatch pricing: a flat 5% of gross, no setup fees, no monthly fees, no long-term contract. You only pay when we book your load.',
      'pricing.html', pr_body, pf_sch)
 
@@ -3402,47 +3402,6 @@ _sfaq_html, _sfaq_sch = faq_block([
     ('What information should I prepare?', 'Lanes (origin/destination), freight type, weight, equipment needs, monthly volume and any appointment or facility requirements. The more detail, the faster the consultation.'),
     ('How do facilities and appointments work?', 'We coordinate pickup and delivery appointments, capture facility instructions, and track arrive/depart times so detention is documented from real timestamps.'),
 ])
-sp = svc_hero('Shipper Solutions &mdash; Talk to a Logistics Team That Answers',
-    'Tell us about your lanes and freight. We will walk you through a compliant, transparent path to reliable capacity &mdash; consultation first, no obligations.')
-sp += _sec('Scenarios', 'Where we help shippers', _cards([
-    ('&#128230;', 'Recurring lanes', 'Weekly or monthly moves on the same lanes that deserve consistent equipment, consistent drivers and predictable pricing conversations.'),
-    ('&#9889;', 'Coverage gaps', 'When your usual capacity falls through and you need a professionally coordinated plan instead of a scramble.'),
-    ('&#128203;', 'Process cleanup', 'Late PODs, surprise accessorials and untracked detention &mdash; we bring documentation discipline to every shipment conversation.'),
-]))
-sp += _sec('Straight answer', 'What LoadBoot is &mdash; and is not', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p><strong>Shippers work directly on LoadBoot.</strong> You create your own shipper account, post freight, and track every shipment live &mdash; our dispatch pairs each load with verified, health-scored carriers and manages documents, appointments, detention proof and claims end to end. Where U.S. broker authority is required, licensed partners are involved and we tell you exactly who is doing what on your shipment &mdash; no blurred lines, no implied authority.</p></div>', soft=True)
-sp += _sec('Visibility', 'See your shipment, not a mystery', _cards([
-    ('&#128205;', 'Tracking with consent', 'Trips are tracked via driver app GPS, ELD/telematics or structured check-ins &mdash; source and freshness are always labeled, never invented.'),
-    ('&#9200;', 'Appointment awareness', 'Pickup and delivery windows, countdowns and late-risk flags &mdash; surprises surface early, while there is still time to act.'),
-    ('&#128276;', 'Exception updates', 'Breakdowns, weather, facility delays &mdash; logged as structured exceptions with owners and resolution notes, visible to you.'),
-]))
-sp += _sec('Facilities', 'Facilities and appointments, handled properly', _cards([
-    ('&#127970;', 'Facility instructions', 'Dock hours, check-in rules, parking and loading notes are captured once and travel with every shipment.'),
-    ('&#128337;', 'Real dwell times', 'Arrive and depart timestamps are recorded at each stop &mdash; detention conversations start from measured minutes, not guesses.'),
-    ('&#128221;', 'Clean paperwork', 'BOL and POD collection with review status &mdash; missing documents are chased automatically, not discovered at invoice time.'),
-]))
-sp += _sec('Network', 'The carrier network concept', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p>Behind every shipment is a vetted carrier network: authority, insurance and compliance are actively tracked, and only carriers who pass hard eligibility checks are matched to freight. Matching is explainable &mdash; equipment fit, real location, availability and history &mdash; not a black box.</p></div>', soft=True)
-sp += _sec('Money', 'Billing without surprises', _cards([
-    ('&#129534;', 'Documented accessorials', 'Detention, lumper and layover items reference recorded evidence and agreed terms &mdash; reviewed by a person before they ever reach an invoice.'),
-    ('&#128200;', 'Clear invoices', 'Line-item invoices tied to the shipment record, with payment status you can see.'),
-    ('&#9878;', 'Disputes with process', 'A structured dispute lane with owners, SLAs and an audit trail &mdash; not an email thread that goes quiet.'),
-]))
-sp += _sec('Support', 'Claims and support', '<div class="prose reveal" style="max-width:820px;margin:0 auto"><p>Damaged, short or rejected freight becomes a structured claim with evidence, photos and timestamps attached. Support requests get owners and SLAs. You always know who is handling your issue and what happens next.</p></div>')
-sp += _sec('Reporting', 'Reporting and integrations', _cards([
-    ('&#128202;', 'Shipment reports', 'On-time performance, exception history and lane summaries &mdash; counted from real records.'),
-    ('&#128279;', 'API &amp; webhooks', 'Shipment, document and delivery events can flow into your systems via approved API endpoints.'),
-    ('&#128274;', 'Security first', 'Tenant-isolated data, role-based access and audited actions &mdash; your data is never another company&rsquo;s dashboard.'),
-]))
-sp += lead_form('shipper_inquiry', 'Discuss your shipping needs',
-    'Tell us about your lanes and volumes &mdash; a logistics specialist will reply with a straight, compliant plan (usually within one business day).',
-    [('company','Company name','text',True),('name','Your name','text',True),('email','Work email','email',True),
-     ('phone','Phone','tel',False),('lanes','Main lanes (e.g. Dallas, TX to Atlanta, GA)','text',True),
-     ('freight','Freight type / equipment needed','text',False),('volume','Approx. loads per month','text',False),
-     ('notes','Anything else we should know?','textarea',False)],
-    'Request Consultation', 'Thanks &mdash; our team will reach out to schedule your consultation.')
-sp += _sfaq_html
-page('shipper-solutions.html', 'Shipper Solutions — Freight Moved With Live GPS Proof, Vetted Carriers | LoadBoot',
-     'Talk to LoadBoot about your lanes and freight. Consultation-first shipper solutions: dispatch expertise, vetted carriers, licensed broker partners.',
-     'partners.html', sp, _sfaq_sch)
 
 # ---- Referral Program ----
 # Unique-link attribution: ?ref=CODE is captured (and remembered) so every lead form on these
@@ -5420,6 +5379,60 @@ ccpub += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head r
  + '</div></div></section>')
 RELATED['command-center.html'] = [('how-it-works.html','How It Works'),('compliance.html','Compliance & Verification'),('security.html','Security'),('about.html','About LoadBoot'),('features.html','All Features'),('contact.html','Contact')]
 page('command-center.html', 'The LoadBoot Command Center — How Our Operations Desk Works', 'Transparency about LoadBoot&rsquo;s back office: the staff Command Center where verifications are approved same-day, claims are checked against server-side GPS evidence, payment receipts are verified by humans, and every action is audited — maker and checker never the same account.', 'command-center.html', ccpub, _cc_schema)
+
+sp = FTX_CSS + LBX_CSS
+
+_SHIP_FAQ = [('Do I need a broker authority or contracts to ship with LoadBoot?', "No. You bring the freight and the facilities; movement runs under licensed brokerage and LoadBoot's verified carrier network. No authority, no bond, no long-term contract on your side."), ('How do I know the carrier on my load is legitimate?', 'Every carrier passes authority, insurance and account-health checks before freight is ever offered to them, and credentials are tracked continuously — not photocopied once at setup. See how verification works.'), ('What visibility do I get without check calls?', 'A live map with ETA, a milestone timeline, and geofenced arrive/depart stamps recorded server-side at your own docks — the same record your carrier sees. Stale feeds flag themselves instead of showing you a comforting old dot.'), ('Who controls accessorial charges like detention and lumper?', 'Published standards ride every posting, and claims arrive with their GPS evidence attached — so you approve documented time, never an invented number after the fact. Dwell at your docks is measured identically for every carrier.'), ('Can my warehouse use LoadBoot without booking freight?', 'Yes — the Facility / Warehouse role handles dock appointments and geofenced check-ins so your gate has an accurate arrival record, even when someone else books the truck.'), ('What does it cost a shipper?', "Nothing to use the platform — posting, tracking, documents and the payables view are free. LoadBoot's only revenue is the flat 5% dispatch fee on the carrier side.")]
+
+_ship_schema = '<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Do I need a broker authority or contracts to ship with LoadBoot?", "acceptedAnswer": {"@type": "Answer", "text": "No. You bring the freight and the facilities; movement runs under licensed brokerage and LoadBoot\'s verified carrier network. No authority, no bond, no long-term contract on your side."}}, {"@type": "Question", "name": "How do I know the carrier on my load is legitimate?", "acceptedAnswer": {"@type": "Answer", "text": "Every carrier passes authority, insurance and account-health checks before freight is ever offered to them, and credentials are tracked continuously \\u2014 not photocopied once at setup. See how verification works."}}, {"@type": "Question", "name": "What visibility do I get without check calls?", "acceptedAnswer": {"@type": "Answer", "text": "A live map with ETA, a milestone timeline, and geofenced arrive/depart stamps recorded server-side at your own docks \\u2014 the same record your carrier sees. Stale feeds flag themselves instead of showing you a comforting old dot."}}, {"@type": "Question", "name": "Who controls accessorial charges like detention and lumper?", "acceptedAnswer": {"@type": "Answer", "text": "Published standards ride every posting, and claims arrive with their GPS evidence attached \\u2014 so you approve documented time, never an invented number after the fact. Dwell at your docks is measured identically for every carrier."}}, {"@type": "Question", "name": "Can my warehouse use LoadBoot without booking freight?", "acceptedAnswer": {"@type": "Answer", "text": "Yes \\u2014 the Facility / Warehouse role handles dock appointments and geofenced check-ins so your gate has an accurate arrival record, even when someone else books the truck."}}, {"@type": "Question", "name": "What does it cost a shipper?", "acceptedAnswer": {"@type": "Answer", "text": "Nothing to use the platform \\u2014 posting, tracking, documents and the payables view are free. LoadBoot\'s only revenue is the flat 5% dispatch fee on the carrier side."}}]}</script>'
+
+sp += ('<section style="background:linear-gradient(165deg,#0e1c38 0%,#0b1220 60%,#0d1830 100%);color:#fff;padding:80px 0 56px"><div class="wrap"><div class="lbx-grid2">'
+ '<div><div class="eyebrow" style="color:#FC5305">For shippers &amp; facilities</div>'
+ '<h1 style="color:#fff;font-size:2.35rem;line-height:1.14;margin:10px 0 16px">Freight moved by vetted carriers &mdash; <span style="color:#4ade80">with proof at every dock</span></h1>'
+ '<p style="color:#cbd5e1;font-size:1.06rem;line-height:1.7">Post a lane or request coverage, and it goes to carriers who passed authority, insurance and health checks &mdash; under licensed brokerage. Then watch it: live map, ETA, and geofenced arrive/depart stamps recorded at your own docks. On-time performance stops being a debate because both sides read the same record.</p>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px"><a href="create-shipper-account.html" class="btn btn-primary">Create a shipper account &rarr;</a><a href="contact.html#quote" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Talk about your lanes</a></div>'
+ '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;color:#94a3b8;font-size:.82rem;font-weight:700"><span>&#x2713; Free for shippers</span><span>&#x2713; Vetted capacity only</span><span>&#x2713; Dock-level GPS proof</span></div></div>'
+ '<div class="reveal"><img src="/shots/partner-live-tracking.webp" alt="Live shipment tracking for shippers — truck on the map, milestone timeline, ETA and dwell meters" width="1100" height="969" loading="eager" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real shipper view &mdash; your freight, the truck, the ETA, the evidence.</div></div>'
+ '</div></div></section>')
+
+sp += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">What shippers actually get asked</div><h2>The four questions your customers ask &mdash; answered by the record</h2></div>'
+ '<div class="cards g4 reveal" style="margin-top:24px">'
+ '<div class="card"><div class="icon">&#128205;</div><h3>&ldquo;Where is my freight?&rdquo;</h3><p>Live map and ETA on every shipment, updating from the truck itself &mdash; and the feed marks itself stale after 30 minutes of silence instead of lying to you.</p></div>'
+ '<div class="card"><div class="icon">&#9200;</div><h3>&ldquo;Did it arrive on time?&rdquo;</h3><p>800-meter geofences stamp arrive and depart at your dock, server-side. OTIF reporting built from facts, not from a driver&rsquo;s memory or a dispatcher&rsquo;s guess.</p></div>'
+ '<div class="card"><div class="icon">&#128220;</div><h3>&ldquo;Where is the POD?&rdquo;</h3><p>Signed POD, BOL and dock photos captured at delivery and attached to the load &mdash; not chased by email three days later.</p></div>'
+ '<div class="card"><div class="icon">&#128176;</div><h3>&ldquo;Why this accessorial?&rdquo;</h3><p>Detention, lumper and layover follow <a href="detention-pay-policy.html">published standards</a> with GPS evidence attached &mdash; you approve documented time, never a surprise line item.</p></div>'
+ '</div></div></section>')
+
+sp += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal" style="order:2"><div class="ftx-kicker">Facilities &amp; docks</div><h2 class="ftx-h">Your dock, measured fairly &mdash; and defended</h2>'
+ '<p class="ftx-p">Facility teams get their own role: schedule appointments, set FCFS windows and receive geofenced check-ins. The same clock that protects a carrier&rsquo;s detention claim protects you from an inflated one.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Appointment &amp; FCFS control</b> &mdash; windows and rules print on the posting, so drivers arrive knowing your gate&rsquo;s process. <a href="fcfs-policy.html">Scheduling rules</a>.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Dwell data you can act on</b> &mdash; see which shifts and doors hold trucks longest, measured the same way for every carrier.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Defense against false claims</b> &mdash; no GPS stamp, no detention. Evidence cuts both ways, and that is the point.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Better carriers, repeatedly</b> &mdash; facilities that unload fast get preferred by carriers on the board; the data makes that visible.</div></div>'
+ '</div></div>'
+ '<div class="reveal" style="order:1"><img src="/shots/partner-wizard-schedule.webp" alt="Scheduling a shipment — appointment windows, requirements and dock rules printed on the load" width="1100" height="938" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real scheduler &mdash; windows and requirements, on the load itself.</div></div>'
+ '</div></div></section>')
+
+sp += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Straight answer</div><h2>What LoadBoot is &mdash; and is not</h2></div>'
+ '<div class="cards g3 reveal" style="margin-top:24px">'
+ '<div class="card"><h3>&#9989; What we are</h3><p>A dispatch marketplace and operations platform. Shipper freight moves through <b>licensed broker partners</b>; LoadBoot coordinates capacity, tracking, documents and the money trail around it.</p></div>'
+ '<div class="card"><h3>&#10060; What we are not</h3><p>We are not your freight broker of record and we do not hold your funds. Where broker authority is legally required, a licensed partner carries it &mdash; stated plainly, in writing.</p></div>'
+ '<div class="card"><h3>&#128179; What it costs you</h3><p>Nothing. Posting, tracking, documents and reporting are free for shippers and facilities &mdash; LoadBoot earns the flat 5% dispatch fee on the carrier side. <a href="pricing.html">See pricing</a>.</p></div>'
+ '</div></div></section>')
+sp += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Shipper FAQ</h2></div><div style="max-width:820px">'
+ + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _SHIP_FAQ)
+ + '</div></div></section>')
+sp += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff;padding:56px 0"><div class="wrap" style="text-align:center">'
+ '<h2 style="color:#fff;font-size:1.9rem">Your freight, on the record &mdash; from dock to dock.</h2>'
+ '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:22px">'
+ '<a href="create-shipper-account.html" class="btn btn-primary">&#127981; Create a shipper account</a>'
+ '<a href="how-it-works.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">How the loop works</a>'
+ '<a href="contact.html#quote" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Talk about your lanes</a>'
+ '</div></div></section>')
+RELATED['shipper-solutions.html'] = [('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('compliance.html','Carrier Verification'),('detention-pay-policy.html','Accessorial Standards'),('contact.html','Contact')]
+page('shipper-solutions.html', 'Shipper Solutions — Vetted Carrier Capacity With Dock-Level GPS Proof | LoadBoot', 'Move freight with carriers vetted for authority, insurance and account health under licensed brokerage: live map and ETA on every shipment, geofenced arrive/depart proof at your own docks, POD captured at delivery, published accessorial standards with GPS evidence — free for shippers and facilities.', 'shipper-solutions.html', sp, _ship_schema)
 
 intg = FTX_CSS + LBX_CSS
 
