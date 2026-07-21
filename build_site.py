@@ -1500,6 +1500,20 @@ _pr_receipt = ('<div style="background:#fff;border:1px solid #e2e8f0;border-radi
  '<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f1f5f9;font-size:.95rem"><span style="color:#64748b">LoadBoot fee (flat 5%)</span><b style="color:#dc2626">&minus;$132</b></div>'
  '<div style="display:flex;justify-content:space-between;padding:13px 0;font-size:1.02rem"><span style="font-weight:700">You keep</span><b style="color:#16a34a;font-size:1.2rem">$2,508</b></div>'
  '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:.85rem;color:#166534;margin-top:6px">No monthly fee &middot; no setup fee &middot; $0 on weeks you don&rsquo;t run</div></div>')
+pr_body += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Every side, priced in the open</div><h2>What each side of a load pays</h2>'
+ '<p class="lead center" style="margin:14px auto 0;max-width:760px">One revenue line funds the whole platform: the flat 5% dispatch fee on the carrier side. Nobody else is billed for using LoadBoot.</p></div>'
+ '<div class="grid g4 reveal" style="margin-top:26px">'
+ '<div class="card"><div class="icon">&#128666;</div><h3>Carriers</h3><p><b>5% of gross linehaul</b> on loads LoadBoot books &mdash; invoiced to your account after delivery. No setup fee, no monthly minimum, no contract. Accessorials you earn (detention, TONU, layover, lumper) are <b>100% yours</b> &mdash; we take nothing from them.</p></div>'
+ '<div class="card"><div class="icon">&#127970;</div><h3>Freight brokers</h3><p><b>Free.</b> Posting loads, verified carrier matching, live tracking, document collection, the claims desk and the payables ledger are included &mdash; no posting fee, no subscription, no per-load charge.</p></div>'
+ '<div class="card"><div class="icon">&#127981;</div><h3>Shippers &amp; facilities</h3><p><b>Free.</b> Request freight, schedule docks, watch live GPS and pull documents at no platform cost. Freight moves under licensed brokerage; the linehaul you agree to is the linehaul.</p></div>'
+ '<div class="card"><div class="icon">&#129309;</div><h3>Agents</h3><p><b>Free to join &mdash; you get paid.</b> 1% of gross on every delivered load in your chain, plus 0.50% / 0.25% / 0.15% / 0.10% overrides five levels deep. Paid out of LoadBoot&rsquo;s own 5% &mdash; never added to anyone&rsquo;s cost.</p></div>'
+ '</div></div></section>')
+pr_body += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Payment terms, stated plainly</div><h2>When the money actually moves</h2></div>'
+ '<div class="grid g3 reveal" style="margin-top:24px">'
+ '<div class="card"><h3>&#128197; Standard terms</h3><p><b>Net-30 from delivery</b> unless the posting or your factoring agreement says otherwise &mdash; and the clock starts the moment the load delivers, not when someone remembers to invoice. Every payable shows its PAY-BY date to both sides.</p></div>'
+ '<div class="card"><h3>&#127974; If you factor</h3><p>Your factoring terms govern instead (often 21 days to the broker). With your NOA on file the remit-to routes to your factor automatically on every invoice. <a href="factoring-noa.html">Factoring &amp; NOA</a>.</p></div>'
+ '<div class="card"><h3>&#9888;&#65039; LoadBoot does not advance funds</h3><p>We are not a factor and not a bank &mdash; money moves bank-to-bank between payer and payee. LoadBoot runs the ledger, the deadlines, the receipts and the confirmations around it. <a href="payments-settlements.html">How payment works</a>.</p></div>'
+ '</div></div></section>')
 pr_body += m_split('All included', 'Everything is included in your 5%',
  ['One number covers the whole dispatch back office. If it is on this list, it is never an upsell.'],
  _pr_receipt, soft=True, accent='#ea580c', bullets=pr_inc)
@@ -2951,6 +2965,10 @@ def lead_form(form_key, heading, intro, fields, submit_label, success_msg):
 
 # ---- FAQ ----
 _faq_items = [
+ ('What equipment and freight types do you dispatch?', 'Dry van, reefer, flatbed, step deck, hotshot, power-only and box truck / expedited &mdash; plus <b>hazmat</b> freight for carriers with PHMSA registration, a CDL hazmat (H) endorsement and hazmat-rated insurance on file (the portal tracks all three). Tanker, heavy-haul and oversize are handled case by case with permit and routing coordination &mdash; <a href="contact.html">ask us about your setup</a>.'),
+ ('Where do you operate — do you cover Alaska, Hawaii or Canada?', 'The 48 contiguous states. Alaska, Hawaii and cross-border Canada/Mexico freight are outside the current network &mdash; we would rather say so than take a load we cannot cover properly.'),
+ ('When do I actually get paid, and does LoadBoot advance money?', 'Net-30 from delivery is the standard, or your factoring terms if you factor (often 21 days). Delivery flips the invoice to DUE automatically with a PAY-BY date visible to both sides. LoadBoot does not advance funds and is not a factor &mdash; money moves bank-to-bank while LoadBoot runs the ledger, receipts and confirmations. See <a href="payments-settlements.html">payments &amp; settlements</a> and <a href="pricing.html">pricing</a>.'),
+ ('What reporting do I get?', 'Per-trip profit statements (revenue, costs, cost per mile, margin), earnings over 7/30/90 days, fleet utilization and best-paying lanes from delivered trips, document and compliance status, and CSV/PDF statements you can hand to an accountant &mdash; plus QuickBooks sync. See <a href="fleet-management.html">fleet management</a>.'),
  ('Does LoadBoot integrate with QuickBooks?', 'Yes &mdash; native two-way QuickBooks Online sync is live in production: delivered-load invoices and expenses push into your books and paid status flows back. CSV exports cover Wave, Xero or your accountant. See <a href="integrations.html">integrations</a>.'),
  ('Does LoadBoot support ELD tracking (Samsara, Motive)?', 'Yes. Paste your Samsara or Motive API token and vehicle positions feed active trips every 5 minutes &mdash; tracking runs even with the app closed. Any device can also POST to a secure webhook. Phone GPS works with zero setup. See <a href="integrations.html">integrations</a>.'),
  ('Is there a TONU policy and workflow?', 'Yes &mdash; a published standard ($250 typical) with a documented claim workflow: report from the trip, GPS position and the rate confirmation attach automatically, and the claim rides the trip invoice. Full details on the <a href="tonu-policy.html">TONU policy page</a>, alongside <a href="detention-pay-policy.html">detention</a>, <a href="layover-policy.html">layover</a> and <a href="lumper-policy.html">lumper</a>.'),
@@ -6483,6 +6501,14 @@ _LLMS = """# LoadBoot — The Operating System for Trucking
 
 ## Pricing
 - [Pricing](https://loadboot.com/pricing): flat 5% of linehaul on booked loads (carrier side only); no setup fee, no monthly fee, no contract. Broker/shipper/agent portals free.
+
+## Terms, coverage and scope (stated plainly)
+- Payment terms: net-30 from delivery standard, or the carrier's factoring terms (often 21 days). LoadBoot does NOT advance funds and is not a factor — money moves bank-to-bank; LoadBoot runs the ledger, deadlines, receipts and confirmations.
+- Accessorials belong to the carrier in full — LoadBoot's 5% applies to linehaul only.
+- Equipment: dry van, reefer, flatbed, step deck, hotshot, power-only, box truck/expedited, plus hazmat for carriers with PHMSA registration + CDL (H) endorsement + hazmat-rated insurance. Tanker, heavy-haul and oversize are case-by-case with permit coordination.
+- Coverage: the 48 contiguous US states. Alaska, Hawaii and cross-border Canada/Mexico are outside the current network.
+- LoadBoot is not a freight broker: carriers keep their own MC/DOT authority; where broker authority is legally required, freight moves through licensed broker partners.
+- No guaranteed volume or rates — market conditions vary; every load is carrier-approved before booking.
 """
 open(os.path.join(OUT,'llms.txt'),'w',encoding='utf-8').write(_LLMS)
 print('llms.txt written')
