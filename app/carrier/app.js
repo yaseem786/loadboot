@@ -804,7 +804,7 @@ async function agentPortal(user) {
           h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap' }, [nfld9('Lanes you know', 'lanes', 'e.g. TX → Southeast, Midwest reefer'), nfld9('Equipment', 'equipment', 'e.g. dry van, reefer, flatbed')]),
         ]);
       } else {
-        const sel9 = h('select', { class: 'cp-in' }, [['', 'Choose payout method *'], ['payoneer', 'Payoneer (email + receiving account)'], ['ach', 'US bank (ACH)'], ['intl', 'International bank (IBAN/SWIFT)'], ['other', 'Other (describe)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+        const sel9 = h('select', { class: 'cp-in' }, [['', 'Choose payout method *'], ['payoneer', '\u2b50 Payoneer account \u2014 fastest, recommended'], ['local_bank', '\U0001f3e6 My local bank \u2014 paid via Payoneer'], ['ach', '\U0001f3e6 US bank account (ACH) \u2014 US agents'], ['crypto', 'USDT (TRC-20) \u2014 network fee applies'], ['other', 'Request another method \u2014 reviewed by our team']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
         sel9.value = d.payout_method || ''; sel9.onchange = () => { d.payout_method = sel9.value; render(); };
         const tax9 = h('select', { class: 'cp-in' }, [['', 'Tax form *'], ['w9', 'W-9 (US person)'], ['w8ben', 'W-8BEN (non-US)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
         tax9.value = d.tax_form || ''; tax9.onchange = () => { d.tax_form = tax9.value; render(); };
@@ -812,18 +812,33 @@ async function agentPortal(user) {
         body9 = h('div', null, [
           h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap' }, [
             h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Payout method *'), sel9]),
-            d.payout_method ? fld('Account title (must match your legal name) *', 'payout_title', 'exact name on the account') : null,
-            d.payout_method === 'payoneer' ? fld('Payoneer email *', 'payout_email', 'you@payoneer.com') : null,
-            (d.payout_method === 'payoneer' || d.payout_method === 'ach' || d.payout_method === 'intl') ? fld('Bank name *', 'payout_bank', d.payout_method === 'payoneer' ? 'e.g. First Century Bank (Payoneer → Global Payment Service)' : '') : null,
-            (d.payout_method === 'payoneer' || d.payout_method === 'ach') ? fld('Routing # *', 'payout_routing', '9 digits') : null,
-            (d.payout_method === 'payoneer' || d.payout_method === 'ach') ? fld('Account # *', 'payout_account', '') : null,
-            (d.payout_method === 'payoneer' || d.payout_method === 'ach' || d.payout_method === 'intl') ? fld('Bank address', 'payout_bank_addr2', 'city, state, country') : null,
-            d.payout_method === 'other' ? fld('Describe your payout method *', 'payout_other', 'e.g. Wise account — details…') : null,
-            d.payout_method === 'intl' ? fld('IBAN / account # *', 'payout_iban', '') : null,
-            d.payout_method === 'intl' ? fld('SWIFT / BIC (optional — leave blank if you don\u2019t know it; we\u2019ll look it up from your bank name)', 'payout_swift', 'e.g. HABBPKKA') : null,
-            d.payout_method === 'intl' ? fld('Bank address', 'payout_bank_addr', 'city, country') : null,
+            d.payout_method ? fld('Account title \u2014 must match your legal name & ID *', 'payout_title', 'exact name on the account') : null,
+            // PAYONEER (default for non-US): we pay the Payoneer account; the agent withdraws to their own
+            // local bank INSIDE Payoneer. We never hold a foreign IBAN — that is what fails on US wires.
+            d.payout_method === 'payoneer' ? fld('Payoneer account email *', 'payout_email', 'the email your Payoneer account is registered with') : null,
+            d.payout_method === 'payoneer' ? fld('Payoneer customer ID (optional)', 'payout_account', 'from Payoneer \u2192 Settings') : null,
+            // LOCAL BANK — allowed, because Payoneer delivers a local bank transfer in 190+ countries.
+            d.payout_method === 'local_bank' ? fld('Bank name *', 'payout_bank', 'e.g. Bank Alfalah, HBL, Meezan') : null,
+            d.payout_method === 'local_bank' ? fld('IBAN / account number *', 'payout_iban', 'as printed on your statement') : null,
+            d.payout_method === 'local_bank' ? fld('SWIFT / BIC (optional)', 'payout_swift', 'we look it up from the bank name if you leave it blank') : null,
+            d.payout_method === 'local_bank' ? fld('Bank branch address *', 'payout_bank_addr', 'city, country') : null,
+            d.payout_method === 'ach' ? fld('Bank name *', 'payout_bank', 'e.g. Chase') : null,
+            d.payout_method === 'ach' ? fld('Routing # *', 'payout_routing', '9 digits') : null,
+            d.payout_method === 'ach' ? fld('Account # *', 'payout_account', '') : null,
+            d.payout_method === 'crypto' ? fld('USDT TRC-20 wallet address *', 'payout_wallet', 'starts with T\u2026 (Tron network only)') : null,
+            d.payout_method === 'other' ? fld('Which method, and why? *', 'payout_other', 'e.g. Wise account in my legal name \u2014 Payoneer is unavailable in my country') : null,
             h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Tax form *'), tax9]),
           ].filter(Boolean)),
+          // PAYOUT GUIDANCE — honest about what actually works cross-border, and what it costs.
+          d.payout_method ? h('div', { style: 'margin-top:10px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.28);border-radius:12px;padding:11px 14px;font-size:.84rem;line-height:1.65;color:#cbd5e1' },
+            d.payout_method === 'payoneer' ? [h('b', null, '\u2b50 Why Payoneer'), ' \u2014 we send USD to your Payoneer account, then you withdraw to your own local bank in your own currency. Payoneer\u2019s standard withdrawal fee is a small fixed amount (about US$1.50 per withdrawal on USD accounts; currency conversion is charged separately by Payoneer). ', h('b', null, 'LoadBoot adds no fee.'), ' Open a free account at payoneer.com first, then paste that email here \u2014 it must be in the same legal name as your ID.']
+            : d.payout_method === 'local_bank' ? [h('b', null, '\U0001f3e6 Your own local bank, paid through Payoneer'), ' \u2014 we send the payout through Payoneer\u2019s local transfer rail, so it lands in your normal bank account in your own currency, usually in 1\u20133 business days. Payoneer\u2019s standard fee applies (about US$1.50 fixed on USD withdrawals; currency conversion charged separately). ', h('b', null, 'The account must be a real bank account in your own legal name'), ' \u2014 mobile wallets are not banks and cannot receive it.']
+            : d.payout_method === 'ach' ? [h('b', null, 'US bank (ACH)'), ' \u2014 free, arrives in 1\u20133 business days. Only for accounts held at a US bank in your legal name.']
+            : d.payout_method === 'crypto' ? [h('b', null, 'USDT on the Tron (TRC-20) network only'), ' \u2014 the network fee (typically US$1\u20133) is deducted from your payout, and the exact amount is shown on the payout receipt. Send-to-wrong-network losses cannot be recovered, so the address is verified with a small test transfer before your first full payout.']
+            : [h('b', null, 'Requesting another method'), ' \u2014 tell us the method and the reason. Our team reviews it and enables it only if it can legally and reliably receive an international USD payment in your name.']) : null,
+          // What we cannot pay to — stated plainly so nobody wastes a payout cycle.
+          d.payout_method ? h('div', { style: 'margin-top:8px;background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:11px 14px;font-size:.83rem;line-height:1.6;color:#fcd9a2' },
+            [h('b', null, '\u26a0 We cannot pay to mobile wallets.'), ' JazzCash, EasyPaisa, bKash, M-Pesa, GCash and similar local wallets cannot receive an international USD payment directly \u2014 a payout sent there is rejected or lost. Use Payoneer (it pays into your local bank for you), a US bank account, or ask us about another method. The receiving account must be in ', h('b', null, 'your own legal name'), ' \u2014 third-party accounts are refused for anti-fraud reasons.']) : null,
           // ---- substitute tax-form fields (signed by the same e-signature below) ----
           d.tax_form === 'w9' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
             h('div', { style: 'font-weight:800;font-size:.88rem' }, '🧾 W-9 (substitute) — US person'),
@@ -884,14 +899,25 @@ async function agentPortal(user) {
         if (!String(d.payout_title || '').trim()) { err9.textContent = 'Account title is required (must match your legal name).'; return; }
         if (!d.id_doc || !d.bank_doc) { err9.textContent = 'Upload both documents — government ID and bank proof.'; return; }
         if (d.payout_method === 'ach' && (!String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name, routing and account number are required.'; return; }
-        if (d.payout_method === 'intl' && (!String(d.payout_iban || '').trim() || !String(d.payout_bank || '').trim())) { err9.textContent = 'Bank name and IBAN / account # are required.'; return; }
-        if (d.payout_method === 'payoneer' && (!/.+@.+\..+/.test(d.payout_email || '') || !String(d.payout_bank || '').trim() || !String(d.payout_routing || '').trim() || !String(d.payout_account || '').trim())) { err9.textContent = 'Payoneer: email + receiving bank name, routing and account number are all required (Payoneer app → Global Payment Service).'; return; }
+        if (d.payout_method === 'payoneer' && !/.+@.+\..+/.test(String(d.payout_email || '').trim())) { err9.textContent = 'Enter the email address your Payoneer account is registered with.'; return; }
+        if (d.payout_method === 'local_bank' && (!String(d.payout_bank || '').trim() || !String(d.payout_iban || '').trim() || !String(d.payout_bank_addr || '').trim())) { err9.textContent = 'Bank name, IBAN / account number and branch address are required.'; return; }
+        if (d.payout_method === 'crypto') {
+          const w9x = String(d.payout_wallet || '').trim();
+          if (!/^T[1-9A-HJ-NP-Za-km-z]{25,40}$/.test(w9x)) { err9.textContent = 'Enter a valid USDT TRC-20 (Tron) address — it starts with T. Other networks cannot be paid.'; return; }
+        }
+        // Local mobile wallets cannot receive an international USD payment — catch it before it costs someone a payout cycle.
+        {
+          const blob9 = [d.payout_title, d.payout_bank, d.payout_other, d.payout_email].join(' ').toLowerCase();
+          if (/(jazz ?cash|easy ?paisa|easypaisa|bkash|nagad|m-?pesa|mpesa|gcash|paymaya|upaisa|sadapay|nayapay|telebirr|vodafone cash)/.test(blob9)) {
+            err9.textContent = 'Mobile wallets (JazzCash, EasyPaisa, bKash, M-Pesa, GCash…) cannot receive international USD payouts. Use Payoneer — it deposits into your own local bank for you.'; return;
+          }
+        }
         if (d.payout_method === 'other' && !String(d.payout_other || '').trim()) { err9.textContent = 'Describe your payout method.'; return; }
         if (d.tax_form === 'w9' && (!d.tax_class || !String(d.tax_tin || '').trim())) { err9.textContent = 'W-9: tax classification and SSN/EIN are required.'; return; }
         if (d.tax_form === 'w8ben' && (!String(d.tax_citizen || '').trim() || !String(d.tax_dob || '').trim())) { err9.textContent = 'W-8BEN: country of citizenship and date of birth are required.'; return; }
         const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Submitting…';
         try {
-          d.payout_details = { account_title: d.payout_title || null, bank_name: d.payout_bank || null, email: d.payout_email || null, routing: d.payout_routing || null, account: d.payout_account || null, iban: d.payout_iban || null, swift: d.payout_swift || null, bank_address: d.payout_bank_addr2 || d.payout_bank_addr || null, other: d.payout_other || null, id_doc: d.id_doc || null, id_doc_name: d.id_doc_name || null, bank_doc: d.bank_doc || null, bank_doc_name: d.bank_doc_name || null, tax: { form: d.tax_form || null, classification: d.tax_class || null, tin: d.tax_tin || null, business_name: d.tax_biz || null, citizenship: d.tax_citizen || null, dob: d.tax_dob || null } };
+          d.payout_details = { account_title: d.payout_title || null, bank_name: d.payout_bank || null, email: d.payout_email || null, routing: d.payout_routing || null, account: d.payout_account || null, wallet: d.payout_wallet || null, wallet_network: d.payout_method === 'crypto' ? 'TRC-20' : null, iban: d.payout_iban || null, swift: d.payout_swift || null, bank_address: d.payout_bank_addr2 || d.payout_bank_addr || null, other: d.payout_other || null, id_doc: d.id_doc || null, id_doc_name: d.id_doc_name || null, bank_doc: d.bank_doc || null, bank_doc_name: d.bank_doc_name || null, tax: { form: d.tax_form || null, classification: d.tax_class || null, tin: d.tax_tin || null, business_name: d.tax_biz || null, citizenship: d.tax_citizen || null, dob: d.tax_dob || null } };
           d.tax_id_last4 = String(d.tax_tin || '').replace(/\D/g, '').slice(-4) || null;
           await agentSaveOnboarding(d, true);
           location.reload();

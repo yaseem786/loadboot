@@ -115,7 +115,48 @@ export function renderAgents(host) {
           })(),
           kv('Status', p.status), kv('Agreement', p.agreement_signed_at ? '✓ ' + (p.agreement_name || '') + ' · ' + fmtDateTime(p.agreement_signed_at) : '✕ unsigned'),
           kv('Tax form', (p.tax_form || '—') + (p.tax_id_last4 ? ' · TIN •••' + p.tax_id_last4 : '')),
-          kv('Payout', (p.payout_method || '—') + (pd.bank_name ? ' · ' + pd.bank_name : '') + (pd.account ? ' ···' + String(pd.account).slice(-4) : pd.iban ? ' ···' + String(pd.iban).slice(-4) : pd.email ? ' · ' + pd.email : '')),
+          // FULL PAYOUT PANEL — parity with Carrier 360's payout card. Staff must be able to read
+          // exactly where the money is going before approving a payout, without opening the DB.
+          (() => {
+            const M9 = { payoneer: '⭐ Payoneer', local_bank: '🏦 Local bank · paid via Payoneer', ach: '🏦 US bank (ACH)', crypto: '₿ USDT · TRC-20', intl: '🏦 International bank', other: '❓ Other (requested)' };
+            const mask9 = (v9, keep) => { const t9 = String(v9 || ''); return t9 ? '•••' + t9.slice(-(keep || 4)) : null; };
+            const row9 = (k9, v9, warn) => v9 ? el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed #eef2f7;font-size:.85rem' }, [
+              el('span', { style: 'color:#64748b' }, k9),
+              el('b', { style: 'text-align:right;word-break:break-word;color:' + (warn ? '#b45309' : '#0f172a') }, v9)]) : null;
+            const m9 = String(p.payout_method || '');
+            const rows9 = [
+              row9('Method', M9[m9] || m9 || '— not set —', !m9),
+              row9('Account title', pd.account_title),
+              row9('Name match', (pd.account_title && p.full_name) ? (String(pd.account_title).trim().toLowerCase() === String(p.full_name).trim().toLowerCase() ? '✓ matches legal name' : '⚠ differs from application name — verify before paying') : null,
+                   !!(pd.account_title && p.full_name && String(pd.account_title).trim().toLowerCase() !== String(p.full_name).trim().toLowerCase())),
+              m9 === 'payoneer' ? row9('Payoneer email', pd.email) : null,
+              m9 === 'payoneer' ? row9('Payoneer customer ID', pd.account) : null,
+              m9 === 'ach' ? row9('Bank', pd.bank_name) : null,
+              m9 === 'ach' ? row9('Routing', mask9(pd.routing, 4)) : null,
+              m9 === 'ach' ? row9('Account #', mask9(pd.account, 4)) : null,
+              m9 === 'crypto' ? row9('Network', pd.wallet_network || 'TRC-20') : null,
+              m9 === 'crypto' ? row9('Wallet', pd.wallet ? String(pd.wallet).slice(0, 6) + '…' + String(pd.wallet).slice(-6) : null) : null,
+              (m9 === 'intl' || m9 === 'local_bank') ? row9('Bank', pd.bank_name) : null,
+              (m9 === 'intl' || m9 === 'local_bank') ? row9('IBAN / account', mask9(pd.iban, 4)) : null,
+              (m9 === 'intl' || m9 === 'local_bank') ? row9('SWIFT / BIC', pd.swift) : null,
+              row9('Bank address', pd.bank_address),
+              m9 === 'other' ? row9('Requested method', pd.other, true) : null,
+              row9('Country', p.country),
+              row9('Tax form', (p.tax_form || '—') + (p.tax_id_last4 ? ' · TIN •••' + p.tax_id_last4 : '')),
+            ].filter(Boolean);
+            const note9 = m9 === 'intl'
+              ? '⚠ Legacy direct-IBAN payout. New agents are onboarded on Payoneer — a US-sourced USD wire to a foreign IBAN is slow and expensive. Ask this agent to switch to Payoneer before the next run.'
+              : m9 === 'other' ? '⚠ Unapproved method — do NOT pay until a reviewer confirms it can receive an international USD payment in the agent’s own name.'
+              : m9 === 'crypto' ? 'Send a small test transfer before the first full payout. The network fee is deducted from the payout and printed on the receipt.'
+              : m9 === 'local_bank' ? 'Pay via Payoneer’s local bank transfer to this account — lands in local currency, usually 1–3 business days. Verify the account title matches the ID.'
+              : m9 === 'payoneer' ? 'Pay the Payoneer account; the agent withdraws to their own local bank inside Payoneer. LoadBoot adds no fee.'
+              : null;
+            return el('div', { style: 'padding:8px 0' }, [
+              el('div', { style: 'font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px' }, '💳 Payout destination'),
+              ...rows9,
+              note9 ? el('div', { style: 'margin-top:8px;background:#f8fafc;border:1px solid #e6ebf3;border-radius:10px;padding:9px 12px;font-size:.8rem;line-height:1.55;color:#475569' }, note9) : null,
+            ].filter(Boolean));
+          })(),
           el('div', { style: 'margin-top:10px' }, [docRow('🪪 Government photo ID', pd.id_doc, 'id'), docRow('🏦 Bank proof', pd.bank_doc, 'bank')]),
           el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [act('✓ Approve', 'approve'), act('？ More info', 'info', 'lb-btn-secondary'), act('✕ Reject', 'reject', 'lb-btn-secondary'),
             // SUSPEND / REINSTATE (audit gap): staff could approve + pay an agent but never stop one.

@@ -548,7 +548,7 @@ def page(fname, title, desc, active, body, schema=''):
     body = body + photo_band(fname) + related_block(fname)
     doc = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
-<meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png"><meta name="theme-color" content="#10223B">
+<meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="LoadBoot — the load board with zero ghost loads, plus dispatch, GPS proof and payments"><meta property="og:image" content="https://loadboot.com/og-image-square.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png"><meta name="twitter:image:alt" content="LoadBoot — the load board with zero ghost loads"><meta name="theme-color" content="#10223B">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -6156,7 +6156,7 @@ _APP_CSP = (
   "default-src 'self'; "
   "base-uri 'self'; "
   "object-src 'none'; "
-  "frame-ancestors 'none'; "
+  "frame-ancestors 'self'; "   # same-origin only — the agent workspace frames the partner wizard
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://%s.supabase.co; "
   "frame-src 'self' https://%s.supabase.co; "
   "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
@@ -6168,7 +6168,7 @@ _APP_CSP = (
 ) % (_CSP_REF, _CSP_REF, _CSP_REF, _CSP_REF)
 APP_HEADERS = (
   "\n/app/*\n"
-  "  X-Frame-Options: DENY\n"
+  "  X-Frame-Options: SAMEORIGIN\n"   # agent portal embeds /app/partner/#post in an iframe
   "  X-Content-Type-Options: nosniff\n"
   "  Referrer-Policy: no-referrer\n"
   "  X-Robots-Tag: noindex, nofollow\n"
