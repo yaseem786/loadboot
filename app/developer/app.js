@@ -4,7 +4,7 @@
 import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
-import { createApiKey, listApiKeys, revokeApiKey } from '../shared/api.js';
+import { createApiKey, listApiKeys, revokeApiKey, myWebhooks, myWebhookCreate, myWebhookDelete } from '../shared/api.js';
 
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
@@ -130,9 +130,48 @@ function appView(user) {
           h('li', null, [h('code', null, '?resource=loads&limit=25'), document.createTextNode(' — public load opportunities (read scope)')]),
         ]),
       ]),
+      (() => {
+        // SELF-SERVE WEBHOOKS — register your own https endpoint, no ticket required.
+        const listHost = h('div', { style: 'margin-top:10px' }, h('div', { class: 'dev-p' }, 'Loading endpoints…'));
+        const nameIn = h('input', { class: 'cp-in', placeholder: 'Name (e.g. My TMS)' });
+        const urlIn = h('input', { class: 'cp-in', placeholder: 'https://your-server.com/loadboot-webhook' });
+        const evIn = h('input', { class: 'cp-in', placeholder: 'Events (comma-separated, blank = all)' });
+        const msg = h('div', { class: 'dev-p', style: 'min-height:20px' });
+        const draw = async () => {
+          let rows = [];
+          try { rows = await myWebhooks(); } catch (e) { mount(listHost, h('div', { class: 'dev-p' }, (e && e.message) || 'Could not load.')); return; }
+          if (!rows.length) { mount(listHost, h('div', { class: 'dev-p' }, 'No endpoints yet — add one above and events start flowing within ~2 minutes.')); return; }
+          mount(listHost, h('div', null, rows.map((r) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;align-items:center' }, [
+            h('div', { style: 'min-width:220px' }, [
+              h('b', null, r.name || 'endpoint'),
+              h('div', { class: 'dev-p', style: 'margin:2px 0 0' }, r.url),
+              h('div', { class: 'dev-p', style: 'margin:2px 0 0;font-size:.8rem' }, ((r.event_types && r.event_types.length) ? r.event_types.join(', ') : 'all events') + ' · ' + (r.delivered || 0) + ' delivered · ' + (r.failed || 0) + ' failed'),
+            ]),
+            r.active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+              const b = ev.currentTarget; b.disabled = true; b.textContent = '…';
+              try { await myWebhookDelete(r.id); draw(); } catch (e) { b.disabled = false; b.textContent = 'Remove'; msg.textContent = (e && e.message) || 'Failed.'; }
+            } }, 'Remove') : h('span', { class: 'cp-pill' }, 'removed'),
+          ]))));
+        };
+        const addBtn = h('button', { class: 'cp-btn cp-btn-primary', onClick: async (ev) => {
+          const b = ev.currentTarget; b.disabled = true; const t = b.textContent; b.textContent = 'Adding…'; msg.textContent = '';
+          try {
+            await myWebhookCreate(nameIn.value.trim(), urlIn.value.trim(), evIn.value.trim() ? evIn.value.split(',').map((x) => x.trim()).filter(Boolean) : []);
+            nameIn.value = ''; urlIn.value = ''; evIn.value = ''; msg.textContent = '✓ Endpoint registered — deliveries start within ~2 minutes.'; draw();
+          } catch (e) { msg.textContent = (e && e.message) || 'Could not register that endpoint.'; }
+          b.disabled = false; b.textContent = t;
+        } }, '+ Add webhook endpoint');
+        draw();
+        return h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
+          h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Webhooks — self-serve')]),
+          h('p', { class: 'dev-p' }, 'Register an https endpoint and LoadBoot POSTs every matching event to it automatically, with retries. Up to 5 endpoints per account.'),
+          h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px' }, [nameIn, urlIn, evIn]),
+          h('div', { style: 'margin-top:10px' }, addBtn), msg, listHost,
+        ]);
+      })(),
       h('div', { class: 'cp-card', style: 'margin-top:16px' }, [
         h('div', { class: 'cp-cardhead' }, [h('h3', null, 'Event catalog')]),
-        h('p', { class: 'dev-p' }, 'The platform emits these domain events. Webhook subscriptions (coming soon) will deliver them to your endpoint; each is already recorded on the internal event stream today.'),
+        h('p', { class: 'dev-p' }, 'The platform emits these domain events. Register an https endpoint below and every matching event is delivered to it automatically (retried on failure) — the same stream powers the internal event log.'),
         h('table', { class: 'cp-table' }, [
           h('thead', null, h('tr', null, ['Event', 'When it fires'].map(t => h('th', null, t)))),
           h('tbody', null, [

@@ -507,6 +507,10 @@ export const upsertPage = (key, title, body) => rpc('cc_upsert_page', { p_key: k
 export const integrationsOverview = () => rpc('cc_integrations_overview');
 export const listIntegrations = () => rpc('cc_list_integrations');
 export const listEndpoints = () => rpc('cc_list_endpoints');
+// Self-serve webhooks (any signed-in account owner — carrier, broker, shipper, agent)
+export const myWebhooks = () => rpc('my_webhooks');
+export const myWebhookCreate = (name, url, eventTypes) => rpc('my_webhook_create', { p_name: name, p_url: url, p_event_types: eventTypes ?? [] });
+export const myWebhookDelete = (id) => rpc('my_webhook_delete', { p_id: id });
 export const createEndpoint = (o = {}) => rpc('cc_create_endpoint', { p_name: o.name, p_url: o.url, p_event_types: o.eventTypes ?? [] });
 export const setEndpointActive = (id, active) => rpc('cc_set_endpoint_active', { p_id: id, p_active: active });
 export const testEndpoint = (id) => rpc('cc_test_endpoint', { p_id: id });

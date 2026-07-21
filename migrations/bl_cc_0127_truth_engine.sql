@@ -1,0 +1,18 @@
+-- bl_cc_0127 — "MAKE THE PRODUCT TRUE" pass (owner rule: never weaken a marketing claim —
+-- build the capability instead). Closes the 2 real false claims found in the truth audit.
+-- 1) SELF-SERVE WEBHOOKS (site claimed customers get webhooks; only staff could add endpoints):
+--    webhook_endpoints + owner_org/owner_user columns; NEW public RPCs
+--    my_webhook_create(name,url,event_types[]) — https-only, max 5 active per user, audited
+--    my_webhooks() — list with delivered/failed counts · my_webhook_delete(id) — soft delete
+--    Developer portal (app/developer/app.js) now has a real "Webhooks — self-serve" card,
+--    and its "coming soon" line is gone.
+--    NEW cron 'lb-webhook-fanout' (*/2) -> app_private.fanout_domain_events(500) so delivery
+--    is automatic instead of a manual staff flush.
+-- 2) AUTOMATIC FMCSA AT SIGNUP (site claimed automatic; it was carrier-initiated):
+--    trigger trg_auto_fmcsa_at_signup on public.profiles (role=carrier, after insert/update of
+--    dot|mc) calls the fmcsa-verify edge function via pg_net and audit-logs the queue.
+-- Verified against PROD reality first: QuickBooks env='production' (claim TRUE), lb-eld-poll
+-- cron exists (5-min ELD polling claim TRUE) — those claims were left as-is.
+-- Copy corrections where the product was simply named wrong: Finance → Accounting (not Taxes),
+-- "weekly-refreshed market benchmarks", emergency wording = "reviewed inside a 2-hour window".
+-- Applied to STAGING 2026-07-21 via MCP. PROD after owner test.
