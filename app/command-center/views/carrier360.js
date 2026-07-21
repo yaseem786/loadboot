@@ -5,7 +5,7 @@
 // via cc_carrier_360 (keyed on the carrier organization id), RBAC-gated on carriers.view.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
-import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
+import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
@@ -103,7 +103,7 @@ export function renderCarrier360(host, orgId) {
     const fmcsaBtn = el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-top:8px', onClick: async (ev) => {
       const _btn9 = ev.currentTarget;
       if (fmcsaOpen) { fmcsaOpen = false; safetyHost.innerHTML = ''; _btn9.textContent = '\ud83d\udcc2 Full FMCSA profile (7 tabs)'; return; }
-      const dot2 = (d.profile && (d.profile.dot_number || d.profile.dot)) || (d.onboarding && d.onboarding.dot) || prompt('DOT number:');
+      const dot2 = (d.profile && (d.profile.dot_number || d.profile.dot)) || (d.onboarding && d.onboarding.dot) || await askReason('DOT number:');
       if (!dot2) return;
       fmcsaOpen = true; _btn9.textContent = '\u25b4 Hide FMCSA profile';
       safetyHost.innerHTML = ''; safetyHost.appendChild(el('div', { class: 'cc-sub' }, 'Loading government record\u2026'));
@@ -307,11 +307,11 @@ export function renderCarrier360(host, orgId) {
       const verifyBtn = el('button', { class: 'cc-btn-sm ' + (pp.verified ? '' : 'cc-btn-green'), style: 'padding:7px 14px;border-radius:8px;font-weight:700;cursor:pointer;border:1px solid #cbd5e1;background:' + (pp.verified ? '#fff' : '#16a34a') + ';color:' + (pp.verified ? '#334155' : '#fff'), onClick: async (ev) => {
         const _btn9 = ev.currentTarget;
         _btn9.disabled = true; _btn9.textContent = pp.verified ? 'Revoking…' : 'Verifying…';
-        try { await verifyPaymentProfile(orgId, !pp.verified, pp.verified ? (prompt('Reason for revoking (carrier sees this):') || null) : null); load(); } catch (e) { _btn9.disabled = false; alert(humanizeError(e)); }
+        try { await verifyPaymentProfile(orgId, !pp.verified, pp.verified ? (await askReason('Reason for revoking (carrier sees this):') || null) : null); load(); } catch (e) { _btn9.disabled = false; alert(humanizeError(e)); }
       } }, pp.verified ? 'Revoke verification' : 'Verify bank details');
       const bankRejectBtn = !pp.verified ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', style: 'margin-left:8px', onClick: async (ev) => {
         const _btn9 = ev.currentTarget;
-        const why = prompt('Reject bank details \u2014 reason (carrier will be notified):'); if (!why) return;
+        const why = await askReason('Reject bank details \u2014 reason (carrier will be notified):'); if (!why) return;
         _btn9.disabled = true;
         try { await verifyPaymentProfile(orgId, false, why); load(); } catch (e) { _btn9.disabled = false; alert(humanizeError(e)); }
       } }, '\u2715 Reject with reason') : null;
@@ -511,10 +511,10 @@ export function renderCarrier360(host, orgId) {
             return el('div', { style: 'display:flex;gap:9px;margin-top:14px;align-items:center;justify-content:flex-start;flex-wrap:wrap;border-top:1px solid #eef2f7;padding-top:12px' }, [
               _isApproved
                 ? el('button', { class: 'lb-btn lb-btn-primary', disabled: 'disabled', style: 'opacity:.75', title: 'Account is approved \u2014 booking unlocked' }, '\u2713 Account approved')
-                : el('button', { class: 'lb-btn lb-btn-primary', disabled: allOk ? null : 'disabled', title: allOk ? '' : 'All mandatory documents must be valid first', onClick: async (ev) => { if (!confirm('Approve this carrier account? Booking unlocks. (Publishing to broker portals is the separate button.)')) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'approve', null); alert('Approved \ud83c\udf89 Carrier notified \u00b7 booking unlocked. Use \u201cPublish to brokers\u201d when ready.'); loadComp(); } catch (e) { alert(humanizeError(e)); _btn9.disabled = false; } } }, '\u2713 Approve account'),
+                : el('button', { class: 'lb-btn lb-btn-primary', disabled: allOk ? null : 'disabled', title: allOk ? '' : 'All mandatory documents must be valid first', onClick: async (ev) => { if (!await askConfirm('Please confirm', { body: 'Approve this carrier account? Booking unlocks. (Publishing to broker portals is the separate button.)', danger: true })) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'approve', null); alert('Approved \ud83c\udf89 Carrier notified \u00b7 booking unlocked. Use \u201cPublish to brokers\u201d when ready.'); loadComp(); } catch (e) { alert(humanizeError(e)); _btn9.disabled = false; } } }, '\u2713 Approve account'),
               const _btn9 = ev.currentTarget;
               pubBtn,
-              el('button', { style: 'margin-left:auto;border:1px solid #fecaca;background:#fff;color:#b91c1c;font-weight:800;border-radius:10px;padding:10px 18px;cursor:pointer', onClick: async (ev) => { const why = prompt((_isApproved ? 'Revoke approval' : 'Rejection reason') + ' \u2014 reason (carrier sees this):'); if (!why || !why.trim()) return; if (_isApproved && !confirm('Revoke approval? Booking locks again, the account goes back to review, and the carrier is notified with your reason.')) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'reject', why.trim()); loadComp(); } catch (e) { alert(humanizeError(e)); _btn9.disabled = false; } } }, _isApproved ? '\u2715 Revoke approval' : '\u2715 Reject application'),
+              el('button', { style: 'margin-left:auto;border:1px solid #fecaca;background:#fff;color:#b91c1c;font-weight:800;border-radius:10px;padding:10px 18px;cursor:pointer', onClick: async (ev) => { const why = prompt((_isApproved ? 'Revoke approval' : 'Rejection reason') + ' \u2014 reason (carrier sees this):'); if (!why || !why.trim()) return; if (_isApproved && !await askConfirm('Please confirm', { body: 'Revoke approval? Booking locks again, the account goes back to review, and the carrier is notified with your reason.', danger: true })) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'reject', why.trim()); loadComp(); } catch (e) { alert(humanizeError(e)); _btn9.disabled = false; } } }, _isApproved ? '\u2715 Revoke approval' : '\u2715 Reject application'),
             const _btn9 = ev.currentTarget;
             ]);
           })()
@@ -749,8 +749,8 @@ export function renderCarrier360(host, orgId) {
                   ]);
                 } }, '\u267b Reset factor'),
                 el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev9) => { const _b_ = ev9.currentTarget;
-                  const why = prompt('\u23f8 Pause BOOKING over \u201c' + g.label + '\u201d \u2014 reason (carrier sees this):'); if (!why) return;
-                  if (!confirm('Pause booking now? Carrier gets urgent notification + email, and must request reinstatement.')) return;
+                  const why = await askReason('\u23f8 Pause BOOKING over \u201c' + g.label + '\u201d \u2014 reason (carrier sees this):'); if (!why) return;
+                  if (!await askConfirm('Please confirm', { body: 'Pause booking now? Carrier gets urgent notification + email, and must request reinstatement.', danger: true })) return;
                   _b_.disabled = true;
                   try { await pauseCarrier(orgId, 'pause', 'booking', '[' + g.label + '] ' + why); _b_.textContent = 'Booking paused \u2713'; } catch (e9) { _b_.disabled = false; alert(humanizeError(e9)); }
                 } }, '\u23f8 Pause booking'),
@@ -1127,7 +1127,7 @@ export function renderCarrier360(host, orgId) {
                   try { await reviewDocument(x8.id, 'approved', null); x8.status = 'approved'; drawX(); } catch (e8) { _b8.disabled = false; alert(humanizeError(e8)); }
                 } }, '\u2713 Approve') : null,
                 st8 !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev8) => { const _b8 = ev8.currentTarget;
-                  const nt8 = prompt('Reject \u2014 reason (carrier sees this):'); if (!nt8) return; _b8.disabled = true;
+                  const nt8 = await askReason('Reject \u2014 reason (carrier sees this):'); if (!nt8) return; _b8.disabled = true;
                   try { await reviewDocument(x8.id, 'rejected', nt8); x8.status = 'rejected'; x8.review_note = nt8; drawX(); } catch (e8) { _b8.disabled = false; alert(humanizeError(e8)); }
                 } }, '\u2715 Reject') : null,
               ].filter(Boolean)),

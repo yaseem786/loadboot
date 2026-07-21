@@ -1,7 +1,7 @@
 // broker360.js — one-stop Broker/Partner 360 (Carrier-360 parity for the broker side):
 // packet review with file previews + verify/reject, FMCSA lookup, loads, claims, health, timeline.
 import { el, mount } from '../../shared/ui/dom.js';
-import { card, statCard, statusPill, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
+import { card, statCard, statusPill, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { partner360, onboardingReviewItem, claimBundle, partnerSetStatus, accountHealth, issueViolation } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -146,13 +146,13 @@ export function renderBroker360(host, orgId) {
                   } }, '✓ Verify') : null,
                   el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => {
                     const _btn9 = ev.currentTarget;
-                    const why = prompt('Waive "' + it.label + '" — reason (audited; item counts as satisfied):'); if (!why) return;
+                    const why = await askReason('Waive "' + it.label + '" — reason (audited; item counts as satisfied):'); if (!why) return;
                     _btn9.disabled = true;
                     try { await onboardingReviewItem(orgId, it.key, 'waive', why); toast('Waived', 'info'); dA.close(); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
                   } }, 'Waive'),
                   el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev) => {
                     const _btn9 = ev.currentTarget;
-                    const why = prompt('⚠ Reject + WARN — reason (rejects the item AND issues a −5 pt document strike):'); if (!why) return;
+                    const why = await askReason('⚠ Reject + WARN — reason (rejects the item AND issues a −5 pt document strike):'); if (!why) return;
                     _btn9.disabled = true;
                     try { await onboardingReviewItem(orgId, it.key, 'reject', why); await issueViolation(orgId, 'document', 'warning', '[' + it.label + '] ' + why); toast('Rejected + strike issued', 'info'); dA.close(); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
                   } }, '⚠ Reject + warn'),
@@ -194,7 +194,7 @@ export function renderBroker360(host, orgId) {
         ? el('button', { class: 'lb-btn lb-btn-primary', disabled: 'disabled', style: 'opacity:.75', title: 'Account is active — posting live' }, '✓ Account approved')
         : el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
             const _btn9 = ev.currentTarget;
-            if (!confirm('Approve this partner account? Posting goes live and they are notified.')) return;
+            if (!await askConfirm('Please confirm', { body: 'Approve this partner account? Posting goes live and they are notified.', danger: true })) return;
             _btn9.disabled = true;
             try { await partnerSetStatus(orgId, 'approve', null); toast('Approved — partner notified 🎉', 'success'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✓ Approve account'),
@@ -219,7 +219,7 @@ export function renderBroker360(host, orgId) {
         ded2.length ? el('div', null, ded2.map((d2) => el('div', { style: 'font-size:.83rem;color:#334155;padding:3px 0' }, '− ' + d2.deducted + ' — ' + d2.label + (d2.basis ? ' (' + d2.basis + ')' : '')))) : el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'No deductions — clean account.'),
         manage ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', style: 'margin-top:10px', onClick: async (ev) => {
           const _btn9 = ev.currentTarget;
-          const why = prompt('⚠ Warn this partner — reason (they see this; points deducted):'); if (!why) return;
+          const why = await askReason('⚠ Warn this partner — reason (they see this; points deducted):'); if (!why) return;
           _btn9.disabled = true;
           try { await issueViolation(orgId, 'conduct', 'warning', why); _btn9.textContent = 'Warned ✓'; toast('Warning issued', 'success'); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, '⚠ Warn account') : null,
@@ -250,7 +250,7 @@ export function renderBroker360(host, orgId) {
           } }, '✓ Verify bank details') : null,
           (manage && st9 !== 'rejected') ? el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev) => {
             const _btn9 = ev.currentTarget;
-            const why = prompt('Reject bank details — reason (partner notified + emailed):'); if (!why) return;
+            const why = await askReason('Reject bank details — reason (partner notified + emailed):'); if (!why) return;
             _btn9.disabled = true;
             try { await onboardingReviewItem(orgId, 'bank_instructions', 'reject', why); toast('Rejected — partner notified', 'info'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✕ Reject with reason') : null,

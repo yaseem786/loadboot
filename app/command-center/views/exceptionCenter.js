@@ -3,7 +3,7 @@
 // missed appointments. Detention drafts are visible but stay NON-billable until a dispatcher reviews them.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
+import { sectionHead, statCard, openDrawer, fmtDateTime, askReason, askConfirm } from '../../shared/ui/components.js';
 import { exceptionCenter, resolveException, detentionScan, emergencyQueue, emergencyReview, accessorialQueue, reviewAccessorial, reinstatementQueue, reviewReinstatement, supportDecideClaim } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -74,13 +74,15 @@ export function renderExceptionCenter(host) {
               if (!confirm(r.kind === 'health_poa' ? 'Accept this plan of action?' : 'Approve \u2014 this reinstates the carrier immediately (booking unblocks, welcome-back email goes out). Continue?')) return;
               act(r.id, 'approve', null, ev.currentTarget);
             } }, r.kind === 'health_poa' ? '\u2713 Accept plan' : '\u2713 Approve & reinstate'),
-            el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: (ev) => {
-              const note = prompt('\u21a9 Ask for MORE information \u2014 what is missing? (carrier notified + emailed, can submit again):'); if (!note) return;
-              act(r.id, 'more_info', note, ev.currentTarget);
+            el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => {
+              const _t9 = ev.currentTarget;
+              const note = await askReason('\u21a9 Ask for MORE information \u2014 what is missing? (carrier notified + emailed, can submit again):'); if (!note) return;
+              act(r.id, 'more_info', note, _t9);
             } }, '\u21a9 Need more info'),
-            el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: (ev) => {
-              const note = prompt('Decline \u2014 reviewer note (carrier sees this + gets email):'); if (!note) return;
-              act(r.id, 'reject', note, ev.currentTarget);
+            el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev) => {
+              const _t9 = ev.currentTarget;
+              const note = await askReason('Decline \u2014 reviewer note (carrier sees this + gets email):'); if (!note) return;
+              act(r.id, 'reject', note, _t9);
             } }, '\u2715 Decline'),
           ].filter(Boolean)),
         ].filter(Boolean));
@@ -118,27 +120,27 @@ export function renderExceptionCenter(host) {
         ]),
         manage ? el('div', { style: 'display:flex;gap:8px;flex:none' }, [
           el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev2) => {
-            const amt = prompt('Approve ' + r.kind + ' — billable amount (USD):'); if (amt == null) return;
+            const amt = await askReason('Approve ' + r.kind + ' — billable amount (USD):'); if (amt == null) return;
             const n2 = Number(amt); if (!(n2 >= 0)) { toast('Enter a valid amount', 'error'); return; }
             ev2.target.disabled = true;
             try { await reviewAccessorial(r.id, 'approve', n2, null); toast(r.kind + ' approved — $' + n2 + ' billable', 'success'); loadClaims(); }
             catch (e) { ev2.target.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '\u2713 Approve'),
           el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev2) => {
-            const why = prompt('Reject ' + r.kind + ' — reason (carrier will see this):'); if (!why) return;
+            const why = await askReason('Reject ' + r.kind + ' — reason (carrier will see this):'); if (!why) return;
             ev2.target.disabled = true;
             try { await reviewAccessorial(r.id, 'reject', null, why); toast(r.kind + ' rejected', 'info'); loadClaims(); }
             catch (e) { ev2.target.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '\u2715 Reject'),
           r.support_status === 'open' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev2) => {
-            const side = prompt('\u2696 VERDICT \u2014 who is right? Type carrier or broker:'); if (!side) return;
+            const side = await askReason('\u2696 VERDICT \u2014 who is right? Type carrier or broker:'); if (!side) return;
             const v9 = side.trim().toLowerCase(); if (v9 !== 'carrier' && v9 !== 'broker') { toast('Type exactly: carrier or broker', 'error'); return; }
             let amt9 = null;
-            if (v9 === 'carrier') { const a9 = prompt('Amount owed to the carrier (USD):'); if (a9 == null) return; amt9 = Number(a9); if (!(amt9 > 0)) { toast('Enter a positive amount', 'error'); return; } }
-            const nt9 = prompt('Verdict note \u2014 BOTH sides read this (cite the GPS evidence):'); if (!nt9) return;
-            ev2.currentTarget.disabled = true;
+            if (v9 === 'carrier') { const a9 = await askReason('Amount owed to the carrier (USD):'); if (a9 == null) return; amt9 = Number(a9); if (!(amt9 > 0)) { toast('Enter a positive amount', 'error'); return; } }
+            const nt9 = await askReason('Verdict note \u2014 BOTH sides read this (cite the GPS evidence):'); if (!nt9) return;
+            const _v9btn = ev2.currentTarget; if (_v9btn) _v9btn.disabled = true;
             try { await supportDecideClaim(r.id, v9, amt9, nt9); toast('\u2696 Verdict recorded \u2014 both sides notified. Refusal to honour it = strike/pause via Carrier 360.', 'success'); loadClaims(); }
-            catch (e) { ev2.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+            catch (e) { if (_v9btn) _v9btn.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '\u2696 Support verdict') : null,
         ].filter(Boolean)) : el('span', { class: 'cc-sub' }, 'view only'),
       ]))) : el('div', { class: 'cc-sub' }, 'No claims waiting — auto-detention and TONU land here the moment they are detected.'),

@@ -193,3 +193,41 @@ export default {
   money, fmtDate, fmtDateTime, ago, initials, sectionHead, statusPill, statCard,
   barChart, breakdownBars, toolbar, searchBox, segmented, avatar, openDrawer, card,
 };
+
+// ---- askReason / askConfirm: premium drawer-based replacements for prompt()/confirm().
+// The reason text is stored AND shown to the counterparty, so a one-line browser prompt is
+// the wrong control. Returns a Promise<string|null> (askReason) / Promise<boolean> (askConfirm).
+export function askReason(title, opts = {}) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const ta = el('textarea', { class: 'cc-input', rows: String(opts.rows || 4), placeholder: opts.placeholder || 'Type the reason…' });
+    if (opts.value) ta.value = opts.value;
+    const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px;margin-top:4px' });
+    const done = (v) => { if (settled) return; settled = true; resolve(v); try { drawer.close(); } catch (_) {} };
+    const submit = el('button', { class: 'lb-btn lb-btn-primary', onClick: () => {
+      const v = ta.value.trim();
+      if (!v && !opts.optional) { err.textContent = 'A reason is required — the other side sees this.'; return; }
+      done(v || null);
+    } }, opts.submitLabel || 'Confirm');
+    const cancel = el('button', { class: 'lb-btn', onClick: () => done(null) }, 'Cancel');
+    const drawer = openDrawer(title, el('div', { class: 'cc-form' }, [
+      opts.note ? el('div', { class: 'cc-sub', style: 'margin-bottom:8px' }, opts.note) : '',
+      ta, err,
+      el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [submit, cancel]),
+    ]), { subtitle: opts.subtitle || 'This is recorded and shared with the counterparty' });
+    setTimeout(() => { try { ta.focus(); } catch (_) {} }, 60);
+  });
+}
+
+export function askConfirm(title, opts = {}) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (v) => { if (settled) return; settled = true; resolve(v); try { drawer.close(); } catch (_) {} };
+    const yes = el('button', { class: 'lb-btn lb-btn-primary', style: opts.danger ? 'background:#dc2626;border-color:#dc2626' : '', onClick: () => done(true) }, opts.confirmLabel || 'Yes, continue');
+    const no = el('button', { class: 'lb-btn', onClick: () => done(false) }, 'Cancel');
+    const drawer = openDrawer(title, el('div', null, [
+      el('p', { style: 'margin:0 0 12px;line-height:1.6' }, opts.body || 'Are you sure?'),
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [yes, no]),
+    ]), { subtitle: opts.subtitle || 'Confirm action' });
+  });
+}

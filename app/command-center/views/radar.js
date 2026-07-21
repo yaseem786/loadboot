@@ -3,7 +3,7 @@
 // into the module that resolves it. Auto-refreshes so the operator always sees the current state.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
-import { sectionHead, statCard, card, money, fmtDate, fmtDateTime } from '../../shared/ui/components.js';
+import { sectionHead, statCard, card, money, fmtDate, fmtDateTime, askReason, askConfirm } from '../../shared/ui/components.js';
 import { opsRadar, ccPayPendingFees, payConfirmReceived, ccAgentsQueue, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError } from '../../shared/errors.js';
@@ -31,13 +31,13 @@ export function renderRadar(host) {
         el('div', { style: 'font-weight:700' }, (x.name || '(no name)') + (x.agency ? ' — ' + x.agency : '') + ' · ' + (x.email || '')),
         el('div', { class: 'cc-sub' }, (x.city ? x.city + ', ' + (x.state || '') + ' · ' : '') + (x.years_exp != null ? x.years_exp + 'y exp · ' : '') + 'code ' + (x.code || '—') + ' · payout ' + (x.payout_method || '—') + ' · ' + (x.tax_form || 'no tax form') + ' · agreement ' + (x.agreement_signed ? '✓ ' + (x.signed_name || '') : '✕ UNSIGNED')),
         el('div', { style: 'display:flex;gap:6px;margin-top:6px' }, [
-          el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget; if (!confirm('Approve this agent? Their chain starts earning immediately.')) return; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'approve', null); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✓ Approve'),
-          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const nt9 = prompt('What info is needed? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'info', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '？ More info'),
-          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const nt9 = prompt('Reject — why? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'reject', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✕ Reject'),
+          el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget; if (!await askConfirm('Please confirm', { body: 'Approve this agent? Their chain starts earning immediately.', danger: true })) return; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'approve', null); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✓ Approve'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const nt9 = await askReason('What info is needed? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'info', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '？ More info'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const nt9 = await askReason('Reject — why? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'reject', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✕ Reject'),
           el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async () => {
             let th9 = []; try { th9 = (await ccAgentMsgs(x.user_id)) || []; } catch (_) {}
             const hist9 = th9.length ? th9.map((m9) => (m9.sender === 'staff' ? 'CC' : 'Agent') + ' (' + new Date(m9.at).toLocaleString() + '): ' + m9.body).join('\n') : '(no messages yet)';
-            const rep9 = prompt('💬 Thread with ' + (x.name || 'agent') + ':\n\n' + hist9 + '\n\nReply (agent gets a notification):');
+            const rep9 = await askReason('💬 Thread with ' + (x.name || 'agent') + ':\n\n' + hist9 + '\n\nReply (agent gets a notification):');
             if (rep9 && rep9.trim()) { try { await ccAgentMsgSend(x.user_id, rep9.trim()); alert('Sent ✓'); } catch (e9) { alert((e9 && e9.message) || 'Failed.'); } }
           } }, '💬 Message'),
         ]),
@@ -55,7 +55,7 @@ export function renderRadar(host) {
             try { const u9 = await signedDocumentUrl(x.receipt_path, 600); window.open(u9, '_blank', 'noopener'); } catch (e9) { alert((e9 && e9.message) || 'Could not open receipt.'); }
             b9.textContent = w9; } }, '🧾 Receipt') : '',
           el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget;
-            if (!confirm('Confirm this fee payment landed in the LoadBoot account? The carrier invoice flips to PAID.')) return;
+            if (!await askConfirm('Please confirm', { body: 'Confirm this fee payment landed in the LoadBoot account? The carrier invoice flips to PAID.', danger: true })) return;
             b9.disabled = true; try { await payConfirmReceived(x.id); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); }
           } }, '✓ Money received'),
         ]),
