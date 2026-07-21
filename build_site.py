@@ -926,7 +926,10 @@ home_faqs=[('Do I need my own authority (MC/DOT)?','Yes &mdash; we dispatch for 
 ('What kind of freight do you dispatch?','Dry van, reefer, flatbed, step deck, hotshot, power-only, and box truck/expedited.'),
 ('How soon can you start?','Usually within a day or two of completing your carrier setup.'),
 ('Do you work with new-authority carriers?','Absolutely &mdash; new carriers are a core part of who we help.'),
-('Will I know the rate before I accept a load?','Always. Nothing is booked without your approval.')]
+('Will I know the rate before I accept a load?','Always. Nothing is booked without your approval.'),
+('Does LoadBoot sync with QuickBooks or my ELD?','Yes — native two-way QuickBooks Online sync is live, and Samsara/Motive ELDs connect with a pasted token. Fuel-card CSVs (EFS, Comdata, WEX) import straight onto trips. See <a href="integrations.html">integrations</a>.'),
+('What happens with detention, TONU or layover?','Published standards ride every posting ($60/hr detention after 2 hours free, $250 TONU) and claims draft themselves from GPS trip data — evidence attached, riding the same invoice as the freight. See the <a href="detention-pay-policy.html">accessorial policies</a>.'),
+('Can it run a multi-truck fleet?','Yes — roster with driver credential alerts, maintenance logs, per-trip P&L, and an optimized fleet plan that assigns each board load to the truck it fits best. See <a href="fleet-management.html">fleet management</a>.')]
 home_faq_html, home_faq_schema = faq_block(home_faqs)
 HERO='''<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div>
 <div class="wrap hero-grid"><div>
@@ -1487,7 +1490,8 @@ pr_faq = [('Are there any setup or hidden fees?','No. There are no setup fees, m
 ('What if I have a slow week?','You pay nothing on loads you don\'t run. We only earn when we book freight for you.'),
 ('Is there a contract?','No long-term contract &mdash; cancel anytime. We earn your business load by load.'),
 ('How is the 5% calculated?','It\'s 5% of the gross (line-haul) on each load we book and you approve. Every delivered load auto-invoices the fee with a branded PDF &mdash; see <a href="payments-settlements.html">how payments &amp; settlements work</a>.'),
-('Do you work with new-authority carriers?','Yes &mdash; new authority carriers are a core part of who we help.')]
+('Do you work with new-authority carriers?','Yes &mdash; new authority carriers are a core part of who we help.'),
+('What do brokers, shippers and agents pay?','Nothing to use the platform. The Partner Portal (posting, tracking, documents) and the Agent Portal are included free &mdash; LoadBoot&rsquo;s only revenue is the flat 5% dispatch fee on the carrier side, and agents are paid out of that same fee.')]
 pf_html, pf_sch = faq_block(pr_faq)
 pr_body += pf_html + final_cta()
 page('pricing.html','Dispatch Pricing &mdash; Flat 5%, No Contracts | Loadboot',
@@ -2929,6 +2933,13 @@ def lead_form(form_key, heading, intro, fields, submit_label, success_msg):
 
 # ---- FAQ ----
 _faq_items = [
+ ('Does LoadBoot integrate with QuickBooks?', 'Yes &mdash; native two-way QuickBooks Online sync is live in production: delivered-load invoices and expenses push into your books and paid status flows back. CSV exports cover Wave, Xero or your accountant. See <a href="integrations.html">integrations</a>.'),
+ ('Does LoadBoot support ELD tracking (Samsara, Motive)?', 'Yes. Paste your Samsara or Motive API token and vehicle positions feed active trips every 5 minutes &mdash; tracking runs even with the app closed. Any device can also POST to a secure webhook. Phone GPS works with zero setup. See <a href="integrations.html">integrations</a>.'),
+ ('Is there a TONU policy and workflow?', 'Yes &mdash; a published standard ($250 typical) with a documented claim workflow: report from the trip, GPS position and the rate confirmation attach automatically, and the claim rides the trip invoice. Full details on the <a href="tonu-policy.html">TONU policy page</a>, alongside <a href="detention-pay-policy.html">detention</a>, <a href="layover-policy.html">layover</a> and <a href="lumper-policy.html">lumper</a>.'),
+ ('Can I assign drivers and trucks to loads?', 'Yes &mdash; the fleet roster invites drivers by magic link, tracks license and medical expiry, holds trucks and trailers with plates and equipment, and assigns them per trip. The <a href="fleet-management.html">optimized fleet plan</a> even suggests the best next load per truck, reload chained.'),
+ ('Does LoadBoot handle maintenance, payroll, fuel cards and IFTA?', 'The fleet back office includes service logs with next-due dates, payroll entries built from delivered trips, EFS/Comdata/WEX fuel-card CSV import, per-trip P&amp;L with cost per mile, IFTA state miles from the GPS trail and per-diem tracking. See <a href="fleet-management.html">fleet management</a>.'),
+ ('Is there an API for TMS integration?', 'Yes &mdash; the <a href="/app/developer/">developer portal</a> issues API keys, and webhooks deliver load, trip, document and delivery events to approved endpoints. Details on <a href="integrations.html">integrations</a>.'),
+ ('Who runs LoadBoot&rsquo;s operations behind the scenes?', 'A staffed operations desk we document publicly: verifications approved same-day, claims checked against server-side GPS evidence, payment receipts verified by humans &mdash; maker and checker never the same account. See the <a href="command-center.html">Command Center page</a>.'),
  ('How much does Loadboot dispatch cost?', 'A flat 5% of the linehaul on loads we book for you &mdash; no sign-up fee, no monthly minimum, and no long-term contract. You only pay when we actually put money on your truck.'),
  ('Do I keep my own authority?', 'Yes. You keep your MC/DOT authority, your insurance and your broker relationships. Loadboot works on your behalf; we never take over your authority.'),
  ('Is there a contract or cancellation fee?', 'No contract and no cancellation fee. You can pause or stop any time. We keep your business by earning it, not by locking you in.'),
@@ -6420,6 +6431,43 @@ if _errors:
     print('BUILD FAILED — %d problem(s):' % len(_errors))
     for e in _errors: print('  - '+e)
     sys.exit(1)
+
+
+# ---------- llms.txt — AI-crawler map of the site (emerging standard) ----------
+_LLMS = """# LoadBoot — The Operating System for Trucking
+> US truck dispatch + verified load board platform for carriers, freight brokers, shippers and referral agents. Flat 5% dispatch fee on the carrier side; portals are free. Not a freight broker — carriers keep their own authority.
+
+## Core
+- [How it works — all four roles](https://loadboot.com/how-it-works): the full loop: posted → offered (first accept wins) → booked (e-signed RC) → geofence-tracked → delivered (POD) → auto-invoiced → receipt-verified payment.
+- [Live load board — zero ghost loads](https://loadboot.com/load-board): verified postings with the full rate card printed.
+- [One-tap booking](https://loadboot.com/book-truck-loads): instant rate confirmation and dispatch pack.
+- [GPS tracking & proof](https://loadboot.com/gps-tracking): phone GPS or ELD, 800 m geofences, server-side arrive/depart stamps, detention clocks.
+- [Payments & settlements](https://loadboot.com/payments-settlements): auto-DUE on delivery, PAY-BY deadlines, one-receipt trip settlement, confirm-received loop.
+- [Factoring & NOA engine](https://loadboot.com/factoring-noa): UCC §9-406 on every pay panel, per-broker routing, self-assembling funding packet.
+- [Fleet management](https://loadboot.com/fleet-management): driver roster & credential alerts, maintenance logs, fuel-card CSV import (EFS/Comdata/WEX), payroll from trips, IFTA from GPS, multi-fleet optimized plan (best next load per truck, reload chained).
+- [Integrations](https://loadboot.com/integrations): QuickBooks Online two-way sync (LIVE), Samsara/Motive ELD, API keys & webhooks for TMS.
+- [Compliance & verification hub](https://loadboot.com/compliance): FMCSA checks, expiry-tracked document vault, e-sign, gates — per role.
+- [Operations Command Center](https://loadboot.com/command-center): the staffed ops desk — same-day verification, evidence-checked claims, human-verified receipts.
+
+## Accessorial pay standards (published, GPS-evidenced workflows)
+- [Detention — $60/hr after 2h free](https://loadboot.com/detention-pay-policy)
+- [TONU — $250](https://loadboot.com/tonu-policy)
+- [Layover](https://loadboot.com/layover-policy)
+- [Lumper](https://loadboot.com/lumper-policy)
+- [Driver assist](https://loadboot.com/driver-assist-policy)
+- [FCFS & scheduling](https://loadboot.com/fcfs-policy)
+- [Emergency rescheduling](https://loadboot.com/emergency-rescheduling-policy)
+
+## Audiences
+- [Carriers](https://loadboot.com/carriers) · [Owner-operators](https://loadboot.com/owner-operator-dispatch) · [New authorities](https://loadboot.com/new-authority-dispatch)
+- [Freight brokers](https://loadboot.com/brokers) · [Shippers](https://loadboot.com/shipper-solutions) · [Agents — 1% per load](https://loadboot.com/agents)
+- Account setup guides: [carrier](https://loadboot.com/create-carrier-account) · [broker](https://loadboot.com/create-broker-account) · [shipper](https://loadboot.com/create-shipper-account) · [agent](https://loadboot.com/create-agent-account)
+
+## Pricing
+- [Pricing](https://loadboot.com/pricing): flat 5% of linehaul on booked loads (carrier side only); no setup fee, no monthly fee, no contract. Broker/shipper/agent portals free.
+"""
+open(os.path.join(OUT,'llms.txt'),'w',encoding='utf-8').write(_LLMS)
+print('llms.txt written')
 
 print("BUILD OK — publish dir:", OUT)
 print("BUILT:", sorted(os.listdir(OUT)))
