@@ -1,0 +1,64 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" font-family="Arial, 'Segoe UI', sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1729"/>
+      <stop offset="0.6" stop-color="#10223B"/>
+      <stop offset="1" stop-color="#0b2f5e"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0883F7"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+  <!-- decorative corner accents (solid, kept clear of text) -->
+  <circle cx="1030" cy="70" r="240" fill="#0883F7" opacity="0.18"/>
+  <circle cx="1010" cy="90" r="120" fill="#0883F7" opacity="0.28"/>
+
+  <!-- brand: real logo composited after render -->
+
+
+  <!-- URGENT badge -->
+  <g transform="translate(80,168)">
+    <rect x="0" y="0" width="264" height="50" rx="25" fill="#FC5305"/>
+    <circle cx="30" cy="25" r="7" fill="#ffffff"/>
+    <text x="52" y="34" font-size="23" font-weight="800" letter-spacing="3" fill="#ffffff">URGENT</text>
+  </g>
+
+  <!-- headline -->
+  <text x="80" y="322" font-size="86" font-weight="800" fill="#ffffff">REEFER</text>
+  <text x="80" y="410" font-size="86" font-weight="800" fill="#ffffff">CARRIERS</text>
+  <text x="80" y="498" font-size="86" font-weight="800" fill="url(#blue)">WANTED</text>
+
+  <!-- lane panel (dark, readable) -->
+  <g transform="translate(80,556)">
+    <rect x="0" y="0" width="920" height="130" rx="18" fill="#14294d" stroke="#2a4a7a" stroke-width="2"/>
+    <text x="34" y="56" font-size="40" font-weight="800" fill="#ffffff">Phoenix, AZ</text>
+    <g transform="translate(408,40)">
+      <line x1="0" y1="4" x2="72" y2="4" stroke="#FC5305" stroke-width="8" stroke-linecap="round"/>
+      <path d="M68 -10 L96 4 L68 18 Z" fill="#FC5305"/>
+    </g>
+    <text x="540" y="56" font-size="40" font-weight="800" fill="#ffffff">Dallas, TX</text>
+    <text x="34" y="102" font-size="26" font-weight="700" fill="#9fd0ff">~6 reefer loads / week &#183; recurring &#183; first verified carrier gets the lane</text>
+  </g>
+
+  <!-- value bullets -->
+  <g transform="translate(80,730)" font-size="27" font-weight="700" fill="#e6eef8">
+    <g transform="translate(0,0)"><circle cx="12" cy="12" r="12" fill="#0883F7"/><path d="M6 12 l4 4 l8 -9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="38" y="20">Flat 5% &#183; no contract</text></g>
+    <g transform="translate(480,0)"><circle cx="12" cy="12" r="12" fill="#0883F7"/><path d="M6 12 l4 4 l8 -9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="38" y="20">Every rate in writing</text></g>
+    <g transform="translate(0,54)"><circle cx="12" cy="12" r="12" fill="#0883F7"/><path d="M6 12 l4 4 l8 -9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="38" y="20">Live GPS &#183; no ELD to buy</text></g>
+    <g transform="translate(480,54)"><circle cx="12" cy="12" r="12" fill="#0883F7"/><path d="M6 12 l4 4 l8 -9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="38" y="20">Detention &amp; TONU 100% yours</text></g>
+  </g>
+
+  <!-- first come strip -->
+  <text x="80" y="898" font-size="27" font-weight="800" letter-spacing="3" fill="#fdba74">FIRST COME, FIRST SERVED</text>
+
+  <!-- CTA -->
+  <g transform="translate(80,928)">
+    <rect x="0" y="0" width="920" height="90" rx="16" fill="#FC5305"/>
+    <text x="460" y="40" font-size="30" font-weight="800" fill="#ffffff" text-anchor="middle">Run reefer in the Southwest?</text>
+    <text x="460" y="72" font-size="25" font-weight="700" fill="#ffffff" text-anchor="middle">Email hello@loadboot.com &#183; loadboot.com</text>
+  </g>
+</svg>

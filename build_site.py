@@ -2832,6 +2832,7 @@ PF_FAQ=[
  ('What should I do the moment freight arrives damaged?', 'Note the damage on the POD before signing, photograph it, keep the BOL and rate confirmation, and file the cargo claim with the carrier&rsquo;s insurer promptly &mdash; filing windows are short. A complete record is what gets a claim paid.'),
  ('Can I get this protection without hiring a broker?', 'Yes. A verified marketplace like LoadBoot vets carrier authority and insurance for you and tracks the assigned truck by GPS, so you get broker-grade protection while shipping direct. See <a href="ship-direct-to-carrier.html">ship direct to carriers</a>.'),
 ]
+RELATED['protect-freight-from-loss-damage-and-fraud.html'] = [('ship-direct-to-carrier.html','Ship Direct to Carriers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking &amp; Proof'),('compliance.html','Carrier Verification'),('features.html','All Features')]
 rich_article('protect-freight-from-loss-damage-and-fraud.html',
  'How to Protect Your Freight From Loss, Damage &amp; Fraud: A Shipper&rsquo;s Guide | LoadBoot',
  'A shipper&rsquo;s complete guide to protecting freight: how to vet carriers, cargo insurance vs liability, double-brokering red flags, chain-of-custody GPS proof and what to do when a claim happens.',
@@ -2889,6 +2890,7 @@ LB_FAQ=[
  ('Do I have to cancel my current board to try a free one?', 'No. Run them side by side, post to both, and compare coverage speed and quality over a billing cycle or two. Let the honest comparison make the decision before you drop anything.'),
  ('How can posting be free &mdash; what&rsquo;s the catch?', 'The revenue comes from the carrier-side dispatch fee, not from broker subscriptions. Load posting is gated to licensed brokers, which is what keeps the board real; the cost simply lives on a different side of the marketplace.'),
 ]
+RELATED['load-board-subscription-cost.html'] = [('free-load-board-for-brokers.html','Free Load Board for Brokers'),('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('ghost-loads-load-board-problems.html','Ghost Loads &amp; Fake Freight'),('features.html','All Features'),('payments-settlements.html','Payments &amp; Settlements')]
 rich_article('load-board-subscription-cost.html',
  'The Real Cost of Load Board Subscriptions in 2026 (and How Brokers Cut It to Zero) | LoadBoot',
  'What a load board actually costs freight brokers in 2026: subscription tiers, 25&ndash;45% renewal hikes, add-ons, per-seat fees and the fake-load tax &mdash; and how a free verified board cuts the bill to zero.',
@@ -2951,6 +2953,7 @@ SW_FAQ=[
  ('How do I find carriers without a broker?', 'Post to a direct-shipper load board or a verified marketplace where carriers see and accept your freight. On LoadBoot, posting is free and every carrier is verified for you &mdash; see <a href="ship-direct-to-carrier.html">ship direct to carriers</a>.'),
  ('Can I ship direct on some lanes and use a broker on others?', 'Absolutely, and most smart shippers do. Go direct on your steady, known lanes to keep the margin, and lean on a licensed broker for unusual, oversized or one-off freight where risk absorption is worth the markup.'),
 ]
+RELATED['how-to-ship-without-a-broker.html'] = [('ship-direct-to-carrier.html','Ship Direct to Carriers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('brokers.html','For Brokers'),('features.html','All Features'),('gps-tracking.html','GPS Tracking &amp; Proof')]
 rich_article('how-to-ship-without-a-broker.html',
  'How to Ship Freight Without a Broker: A Step-by-Step Guide for Businesses | LoadBoot',
  'How to ship freight directly to carriers without a broker: what a broker really does, the risks of going direct, a step-by-step process to do it safely, and how to keep the 15&ndash;20% savings without the fraud risk.',
@@ -5800,7 +5803,7 @@ flb += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center 
  + linkcard('create-broker-account.html', '&#128221;', 'Create a broker account', 'Authority and bond verification, then your first posting reaches verified carriers in minutes.')
  + linkcard('ghost-loads-load-board-problems.html', '&#128123;', 'The ghost-load problem', 'Why fake freight exists on the big boards and how a verified board eliminates it.')
  + '</div></div></section>')
-RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('load-board.html','Live Load Board'),('ghost-loads-load-board-problems.html','Ghost Loads &amp; Fake Freight'),('payments-settlements.html','Payments &amp; Settlements'),('shipper-solutions.html','Shipper Solutions')]
+RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('ship-direct-to-carrier.html','Ship Direct to Carriers'),('load-board-subscription-cost.html','Load Board Cost Guide'),('features.html','All Features'),('load-board.html','Live Load Board')]
 page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post Loads at $0 (DAT Alternative) | LoadBoot',
      'A genuinely free load board for freight brokers: post loads with no subscription and no per-post fee, reach FMCSA-verified carriers, and get live GPS tracking, document handling and one-receipt payables built in. A no-cost alternative to paid load boards, for licensed brokers.',
      'partners.html', flb, _flb_faq_sch)
@@ -5847,7 +5850,7 @@ sdc += ('<section><div class="wrap"><div class="sec-head center reveal"><div cla
  + linkcard('create-shipper-account.html', '&#128221;', 'Create a shipper account', 'What to have ready and how your freight goes from posted to moving with proof.')
  + linkcard('gps-tracking.html', '&#128205;', 'GPS tracking &amp; proof', 'How live tracking and geofenced arrive/depart stamps protect your freight and settle disputes.')
  + '</div></div></section>')
-RELATED['ship-direct-to-carrier.html'] = [('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking &amp; Proof'),('compliance.html','Carrier Verification'),('payments-settlements.html','Payments &amp; Settlements'),('free-load-board-for-brokers.html','Free Load Board for Brokers')]
+RELATED['ship-direct-to-carrier.html'] = [('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('how-to-ship-without-a-broker.html','Ship Without a Broker (Guide)'),('protect-freight-from-loss-damage-and-fraud.html','Protect Your Freight (Guide)'),('features.html','All Features'),('free-load-board-for-brokers.html','Free Load Board for Brokers')]
 page('ship-direct-to-carrier.html', 'Ship Direct to Carriers — Post Freight Free, Skip the Broker Markup | LoadBoot',
      'Post your freight directly to verified carriers and skip the broker markup without the fraud risk: carrier authority and insurance verified for you, live GPS on every shipment, double-brokering protection and receipt-verified payments. Free for shippers; moves under licensed brokerage where required.',
      'shipper-solutions.html', sdc, _sdc_faq_sch)
