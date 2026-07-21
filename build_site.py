@@ -799,8 +799,26 @@ def _networks():
         chips=''.join('<span class="src-chip">'+n+'</span>' for n in PLATFORM_NAMES)
         body='<div class="src-row reveal">'+chips+'</div><p class="src-disc reveal">'+_PLAT_DISC+'</p>'
     else:
-        body='<p class="lead center" style="margin:6px auto 0;color:var(--muted)">Available sources depend on your authority, equipment and eligibility.</p>'
-    return '<section class="bg-soft"><div class="wrap">'+head+body+'</div></section>'
+        body=''
+    cards=[('&#127970;','Licensed broker partners','Loads posted straight into LoadBoot by verified brokerages &mdash; full rate card, exact pins, terms in writing before you look at it.','load-board.html','The verified board'),
+           ('&#127981;','Direct shipper &amp; facility freight','Shippers who post their own lanes and run their docks here &mdash; moved under licensed brokerage, tracked end to end.','shipper-solutions.html','Shipper side'),
+           ('&#128269;','Authorized load boards','Public sources your authority and equipment qualify for &mdash; worked by a dispatcher who negotiates before the load ever reaches you.','how-it-works.html','How dispatch works'),
+           ('&#128260;','Reloads off your own trail','Delivered where? The fleet plan scans the board from your actual drop point and chains the next load with the least deadhead.','fleet-management.html','Fleet plan'),
+           ('&#128266;','Post your truck','Tell the board when and where a truck frees up &mdash; matching loads alert you instead of you watching a screen all day.','book-truck-loads.html','One-tap booking'),
+           ('&#9889;','Direct offers to you','Verified carriers get loads offered directly with a countdown &mdash; first acceptance wins, no double-booking, no bidding war.','load-board.html','See the board')]
+    grid=('<div class="grid g3 reveal" style="margin-top:26px">'
+      + ''.join('<a class="linkcard" href="'+u+'"><div class="icon">'+ic+'</div><h3>'+t+'</h3><p>'+d+'</p><span class="arw">'+lk+' &rarr;</span></a>' for ic,t,d,u,lk in cards)
+      + '</div>')
+    band=('<div class="reveal" style="margin-top:24px;background:#10223B;border-radius:18px;padding:22px 24px;color:#e2e8f0">'
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;text-align:center">'
+      '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Rate card first</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Detention, TONU and layover terms printed on every posting &mdash; before you accept.</div></div>'
+      '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Zero ghost loads</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Stale postings auto-close and late cancels carry TONU exposure &mdash; fakes cost money here.</div></div>'
+      '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Real deadhead</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Miles measured from where your truck actually is, not from the city center.</div></div>'
+      '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">You approve</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Nothing books without your tap, and the rate confirmation e-signs in-app.</div></div>'
+      '</div></div>')
+    foot=('<p class="src-disc reveal" style="text-align:center;margin-top:16px">Available sources depend on your authority, equipment and eligibility. '
+      'LoadBoot is an independent dispatch service and marketplace &mdash; not a freight broker; when broker authority is legally required, freight moves through licensed broker partners.</p>')
+    return '<section class="bg-soft"><div class="wrap">'+head+body+grid+band+foot+'</div></section>'
 NETWORKS = _networks()
 
 # ---- Real public load board (admin-published) via the narrow secured RPC ----
@@ -1018,7 +1036,7 @@ PARTNER_FLOW = ('<section style="background:#0b1220"><div class="wrap"><div clas
      ('We match &amp; book a vetted carrier','Hard eligibility + explainable ranking find the right truck. One valid acceptance wins &mdash; no double booking.'),
      ('Watch it move','Live status, appointment countdowns, exception alerts and documents &mdash; without calling anyone.'),
      ('Delivered, documented, done','POD collected and reviewed, invoicing clean, every step on the record.')])) +
- '</div><div class="plb-cta reveal" style="margin-top:26px;text-align:center"><a href="brokers.html" class="btn btn-primary">See the broker program &rarr;</a> <a href="partners.html" class="btn btn-secondary" style="border-color:#334155;color:#e2e8f0">Open Partner Portal</a></div></div></section>')
+ '</div><div class="plb-cta reveal" style="margin-top:26px;text-align:center"><a href="brokers.html" class="btn btn-primary">See the broker program &rarr;</a> <a href="partners.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.28)">Open Partner Portal</a></div></div></section>')
 
 # BRIDGE — literal three-column bridge diagram: Brokers -> LoadBoot -> Carriers (a visual, not a text block).
 BRIDGE = ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">The bridge</div>'
