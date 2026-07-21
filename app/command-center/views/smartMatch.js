@@ -55,10 +55,11 @@ export function renderSmartMatch(host) {
           el('td', null, (m.active_trips || 0) + ' / ' + (m.delivered || 0)),
           el('td', null, el('span', { class: 'cc-sub' }, m.reason || '—')),
           el('td', null, (canAssign && m.compliant) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => {
+            const _btn9 = ev.currentTarget;
             if (!confirm('Assign this load to ' + m.carrier + '?')) return;
-            ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Assigning…';
+            _btn9.disabled = true; _btn9.textContent = 'Assigning…';
             try { await assignLoad(l.id, m.carrier_id); toast('Load assigned to ' + m.carrier, 'success'); loadLoads(); mount(panel, el('div', { class: 'cc-sub' }, 'Assigned. Select another load to match.')); }
-            catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Assign'; toast(humanizeError(e), 'error'); }
+            catch (e) { _btn9.disabled = false; _btn9.textContent = 'Assign'; toast(humanizeError(e), 'error'); }
           } }, 'Assign') : ''),
         ]))),
       ]),

@@ -39,19 +39,21 @@ export function renderAudiences(host) {
     const nameIn = el('input', { class: 'cc-input', placeholder: 'Save as… e.g. Active carriers — TX' });
     const result = el('div', { class: 'cc-sub', style: 'margin-top:6px' });
     const estimate = el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-      ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Estimating…';
+      const _btn9 = ev.currentTarget;
+      _btn9.disabled = true; _btn9.textContent = 'Estimating…';
       try { const r = await audienceEstimate(typeSel.value); const sample = (r.sample || []).filter(Boolean); result.innerHTML = ''; result.append(el('b', null, String(r.count || 0) + ' recipients'), document.createTextNode(sample.length ? ' — e.g. ' + sample.slice(0, 4).join(', ') : '')); }
       catch (e) { result.textContent = humanizeError(e); }
-      ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Estimate';
+      _btn9.disabled = false; _btn9.textContent = 'Estimate';
     } }, 'Estimate');
     const saveBtn = manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async (ev) => {
+      const _btn9 = ev.currentTarget;
       if (!nameIn.value.trim()) { alert('Give the audience a name.'); return; }
-      ev.currentTarget.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value }); toast('Audience saved', 'success'); nameIn.value = ''; loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
-      ev.currentTarget.disabled = false;
+      _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value }); toast('Audience saved', 'success'); nameIn.value = ''; loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
+      _btn9.disabled = false;
     } }, 'Save audience') : null;
     mount(builder, [
       el('div', { class: 'cc-cardhead', style: 'margin-bottom:10px' }, el('h3', { style: 'margin:0' }, 'Build an audience')),
-      el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' }, [
+      el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px' }, [
         el('label', { class: 'cc-field' }, [el('span', null, 'Segment'), typeSel]),
         el('label', { class: 'cc-field' }, [el('span', null, 'Name'), nameIn]),
       ]),

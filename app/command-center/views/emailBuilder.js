@@ -28,9 +28,9 @@ export function renderEmailBuilder(host) {
 
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Visual Email Builder', 'Compose brand-styled emails from blocks — no HTML needed. Saves into your Template Studio so campaigns can send it. Use {{first_name}}, {{company_name}}, {{carrier_name}} and other allowed variables.'),
-    el('div', { style: 'display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:16px;align-items:start' }, [
+    el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start' }, [
       card(el('div', null, [
-        el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px' }, [
+        el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:12px' }, [
           el('label', { class: 'cc-field' }, [el('span', null, 'Template key'), key]),
           el('label', { class: 'cc-field' }, [el('span', null, 'Name'), name]),
         ]),
@@ -76,7 +76,7 @@ export function renderEmailBuilder(host) {
   function blockEditor(b) {
     const inp = (k, ph) => { const i = el('input', { class: 'cc-input', value: b[k] || '', placeholder: ph || '' }); i.addEventListener('input', () => { b[k] = i.value; renderPreview(); }); return i; };
     if (b.type === 'heading' || b.type === 'text') { const ta = el('textarea', { class: 'cc-input', rows: b.type === 'text' ? '3' : '1' }); ta.value = b.text || ''; ta.addEventListener('input', () => { b.text = ta.value; renderPreview(); }); return ta; }
-    if (b.type === 'button') return el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:8px' }, [inp('label', 'Button text'), inp('url', 'https://…')]);
+    if (b.type === 'button') return el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px' }, [inp('label', 'Button text'), inp('url', 'https://…')]);
     if (b.type === 'image') return inp('url', 'Image URL');
     return el('div', { class: 'cc-sub', style: 'font-size:.8rem' }, b.type === 'divider' ? 'A horizontal divider.' : 'Vertical spacing.');
   }

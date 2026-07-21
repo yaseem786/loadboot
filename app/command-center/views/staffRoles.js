@@ -118,12 +118,14 @@ function inviteForm(reload) {
     mount(listHost, [el('div', { style: 'font-weight:700;font-size:.85rem;margin-bottom:4px' }, 'Pending invites')].concat(
       rows.map(r => el('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--lb-border,#e2e8f0)' }, [
         el('div', null, [el('b', null, r.email), el('div', { class: 'cc-sub' }, r.role + ' \u00b7 expires ' + new Date(r.expires_at).toLocaleDateString())]),
-        el('button', { class: 'lb-btn lb-btn-secondary', onClick: async (ev) => { ev.currentTarget.disabled = true; try { await revokeStaffInvite(r.id); loadInvites(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Revoke'),
+        el('button', { class: 'lb-btn lb-btn-secondary', onClick: async (ev) => { _btn9.disabled = true; try { await revokeStaffInvite(r.id); loadInvites(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Revoke'),
+      const _btn9 = ev.currentTarget;
       ]))));
   };
   const btn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
+    const _btn9 = ev.currentTarget;
     if (!email.value.trim() || !roleSel.value) { toast('Enter an email and pick a role.', 'error'); return; }
-    ev.currentTarget.disabled = true;
+    _btn9.disabled = true;
     try {
       const r = await inviteStaff(email.value.trim(), roleSel.value);
       const link = (r && r.link) || '';
@@ -140,7 +142,7 @@ function inviteForm(reload) {
       ]);
       email.value = ''; roleSel.value = ''; loadInvites();
     } catch (e) { toast(humanizeError(e), 'error'); }
-    ev.currentTarget.disabled = false;
+    _btn9.disabled = false;
   } }, 'Create invite');
   loadInvites();
   return el('div', { class: 'lb-card', style: 'margin-bottom:18px' }, [

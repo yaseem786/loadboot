@@ -2,7 +2,7 @@
 // downline (levels 2–5), earnings, payouts, message thread, notify/email. Built for
 // hundreds of agents: search + status filter + sortable summary table.
 import { el, mount } from '../../shared/ui/dom.js';
-import { money, fmtDate, fmtDateTime, card, sectionHead } from '../../shared/ui/components.js';
+import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
 import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError } from '../../shared/errors.js';
@@ -72,13 +72,13 @@ export function renderAgents(host) {
         path ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const b = ev.currentTarget; const w = b.textContent; b.textContent = '…';
           try { const u = await signedDocumentUrl(path, 600); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.textContent = w; } }, '👁 View') : '',
         path && st !== 'accepted' ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { try { await ccAgentDocReview(x.user_id, docKey, 'accept', null); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✓ Accept') : '',
-        path && st !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async () => { const r = prompt('Reject ' + label + ' — reason (agent sees this + gets an email):'); if (!r) return; try { await ccAgentDocReview(x.user_id, docKey, 'reject', r); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✕ Reject') : '',
+        path && st !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async () => { const r = await askReason('Reject ' + label + ' — reason (agent sees this + gets an email):'); if (!r) return; try { await ccAgentDocReview(x.user_id, docKey, 'reject', r); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✕ Reject') : '',
         reason && st === 'rejected' ? el('div', { class: 'cc-sub', style: 'width:100%' }, 'reason: ' + reason) : '',
       ]);
     };
     const act = (lbl, action, cls) => el('button', { class: 'lb-btn lb-btn-sm ' + (cls || ''), onClick: async () => {
       const note = action === 'approve' ? null : prompt(lbl + ' — note (agent sees this):'); if (action !== 'approve' && !note) return;
-      if (action === 'approve' && !confirm('Approve this agent? Chain starts earning immediately.')) return;
+      if (action === 'approve' && !await askConfirm('Please confirm', { body: 'Approve this agent? Chain starts earning immediately.', danger: true })) return;
       try { await ccAgentDecide(x.user_id, action, note); open360(x); } catch (e) { alert(humanizeError(e)); }
     } }, lbl);
     // message thread
@@ -127,7 +127,7 @@ export function renderAgents(host) {
           ...(d.payouts || []).map((q) => el('div', { style: 'display:flex;gap:8px;align-items:center;padding:3px 0' }, [
             el('span', { class: 'cc-sub', style: 'flex:1' }, money(q.amount) + ' · ' + q.status + ' · ' + fmtDate(q.requested_at)),
             ['requested'].includes(q.status) ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { try { await referralPayoutDecide(q.id, 'approve', null); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✓ Approve') : '',
-            ['requested'].includes(q.status) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async () => { const n = prompt('Reject — why?'); if (!n) return; try { await referralPayoutDecide(q.id, 'reject', n); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✕') : '',
+            ['requested'].includes(q.status) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async () => { const n = await askReason('Reject — why?'); if (!n) return; try { await referralPayoutDecide(q.id, 'reject', n); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✕') : '',
           ])),
         ]),
       ]),

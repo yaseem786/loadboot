@@ -61,7 +61,7 @@ export function renderControlTower(host) {
       el('div', { class: 'cc-sub', style: 'margin-bottom:8px' }, 'Load status: ' + b.status + ' · checklist ' + (b.checklist_complete ? 'complete ✓' : 'incomplete')),
       el('table', { class: 'cc-table' }, [
         el('thead', null, el('tr', null, ['Document / action', 'From', 'Status'].map(h => el('th', null, h)))),
-        el('tbody', null, (b.checklist || []).map(c => el('tr', null, [
+        (!b.checklist || !b.checklist.length) ? el('tbody', null, el('tr', null, el('td', { colspan: '4' }, el('div', { class: 'cc-sub' }, 'No checklist items — nothing outstanding for this booking.')))) : el('tbody', null, b.checklist.map(c => el('tr', null, [
           el('td', null, c.label), el('td', null, c.required_from),
           el('td', null, el('span', { class: 'cc-pill cc-pill-' + (c.status === 'received' || c.status === 'verified' ? 'green' : c.status === 'rejected' ? 'red' : 'amber') }, c.status)),
         ]))),

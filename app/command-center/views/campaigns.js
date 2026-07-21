@@ -4,7 +4,7 @@
 // Reads/writes via cc_*campaign* RPCs (campaigns.view / campaigns.manage), RBAC-gated.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
-import { sectionHead, statCard, statusPill, card, openDrawer } from '../../shared/ui/components.js';
+import { sectionHead, statCard, statusPill, card, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
 import { listCampaigns, createCampaign, setCampaignActive } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';

@@ -16,6 +16,9 @@ export function el(tag, attrs, children) {
 }
 
 function appendChildren(node, children) {
+  // null / undefined / false / '' are skipped (matches el()'s attribute handling) so conditional
+  // children like `cond ? el(...) : null` never print the literal text "null".
+  if (children == null || children === false || children === '') return;
   if (Array.isArray(children)) children.forEach(c => appendChildren(node, c));
   else if (children instanceof Node) node.appendChild(children);
   else node.appendChild(document.createTextNode(String(children)));

@@ -5,7 +5,7 @@
 // Staff-gated by cc_delivery_* RPCs (content.manage OR settings.manage).
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, fmtDateTime } from '../../shared/ui/components.js';
+import { sectionHead, statCard, fmtDateTime, askReason, askConfirm } from '../../shared/ui/components.js';
 import { deliveryHealth, deliveryList, suppressionsList, suppress, deliveryReleaseDue, commTriggers, setCommTrigger, studioListTemplates, pipelineHealth } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -135,7 +135,7 @@ export function renderDeliveryHealth(host) {
   }
 
   async function addSuppression() {
-    const addr = prompt('Email address to suppress (excluded from all future sends):');
+    const addr = await askReason('Email address to suppress (excluded from all future sends):');
     if (!addr || !addr.trim()) return;
     try { await suppress('email', addr.trim(), 'manual'); toast('Address suppressed', 'success'); loadSupp(); loadHealth(); }
     catch (e) { toast(humanizeError(e), 'error'); }

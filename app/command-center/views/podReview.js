@@ -3,7 +3,7 @@
 // Approve or Reject (rejection requires a reason). Approval triggers invoice-prep exactly once
 // (server-side). RBAC: dispatch.manage / finance.manage / compliance.manage (server-enforced).
 import { el, mount } from '../../shared/ui/dom.js';
-import { sectionHead, card, statusPill, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
+import { sectionHead, card, statusPill, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { podReviewQueue, podSignedRef, reviewPod } from '../../shared/api.js';
 import { getClient } from '../../shared/supabaseClient.js';
 import { humanizeError, toast } from '../../shared/errors.js';

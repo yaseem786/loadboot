@@ -29,9 +29,10 @@ export function renderFleetExpiry(host) {
       const overdue = r.days_left < 0;
       const c = overdue ? '#dc2626' : (r.days_left <= 14 ? '#d97706' : '#0883F7');
       const warnBtn = manage ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
-        ev.currentTarget.disabled = true;
+        const _btn9 = ev.currentTarget;
+        _btn9.disabled = true;
         try { await warnDriverExpiry(r.driver_id, r.kind); toast('Warning sent to carrier', 'success'); }
-        catch (e) { toast(humanizeError(e), 'error'); ev.currentTarget.disabled = false; }
+        catch (e) { toast(humanizeError(e), 'error'); _btn9.disabled = false; }
       } }, 'Warn carrier') : null;
       return el('div', { class: 'lb-card', style: 'margin:8px 0;border-left:5px solid ' + c + ';display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
         el('div', null, [

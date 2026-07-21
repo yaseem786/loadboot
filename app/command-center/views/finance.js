@@ -5,7 +5,7 @@
 // approve), all RBAC-gated + audited server-side.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
+import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card, askReason, askConfirm } from '../../shared/ui/components.js';
 import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice, invoiceDocument, invoiceSendReminder } from '../../shared/api.js';
 import { printDocument } from '../../shared/ui/printDoc.js';
 import { can } from '../../shared/permissions.js';
@@ -118,9 +118,10 @@ export function renderFinance(host, focusId) {
         el('td', null, el('span', { class: 'cc-pill cc-pill-' + (q.days_since_delivery > 3 ? 'red' : 'amber') }, q.days_since_delivery + 'd')),
         el('td', null, el('span', { class: 'cc-pill cc-pill-' + (q.pod_status === 'approved' ? 'green' : q.pod_status === 'no POD uploaded' ? 'red' : 'amber') }, q.pod_status)),
         el('td', null, can('finance.manage') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => {
-          ev.currentTarget.disabled = true;
+          const _btn9 = ev.currentTarget;
+          _btn9.disabled = true;
           try { await createInvoice(q.trip_id); toast('Invoice created (draft)', 'success'); loadPrep(); }
-          catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+          catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, 'Create invoice') : null),
       ]))),
     ]));
@@ -200,7 +201,7 @@ export function renderFinance(host, focusId) {
       if (i.status === 'draft') actions.appendChild(chip('Send invoice', () => setStatus(id, 'sent')));
       if (i.status === 'sent') actions.appendChild(chip('Mark paid', () => setStatus(id, 'paid')));
       if (i.status === 'sent') actions.appendChild(chip('📨 Send payment reminder', async () => {
-        const note = prompt('Optional message for the payer (leave blank for the standard reminder):') || null;
+        const note = await askReason('Optional message for the payer (leave blank for the standard reminder):') || null;
         try { const r = await invoiceSendReminder(id, note);
           toast('Reminder sent ✓ — payer emails: ' + (r.payer_emails || 0) + ' · carrier notified' + (r.days_overdue ? ' · ' + r.days_overdue + 'd overdue' : ''), 'success'); }
         catch (e) { toast(humanizeError(e), 'error'); }

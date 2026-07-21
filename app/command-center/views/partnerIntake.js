@@ -6,7 +6,7 @@
 // All reads gate on partners.view; all actions gate on partners.manage (server-side).
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, card, statusPill, fmtDateTime } from '../../shared/ui/components.js';
+import { sectionHead, statCard, card, statusPill, fmtDateTime, askReason, askConfirm } from '../../shared/ui/components.js';
 import {
   partnerIntakeOverview, listPartnerLoads, decidePartnerLoad,
   listPartnerShipments, decidePartnerShipment, listPartnerAppointmentsAll,
@@ -207,7 +207,7 @@ export function renderPartnerIntake(host, focusId) {
           catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, '\u2709 Ask update (auto-drafted)') : null,
         l.status === 'submitted' ? el('button', { class: 'lb-btn', style: 'color:#b91c1c', onClick: async (ev) => {
-          if (!confirm('Decline this load? The broker is notified.')) return;
+          if (!await askConfirm('Please confirm', { body: 'Decline this load? The broker is notified.', danger: true })) return;
           const b9 = ev.currentTarget; b9.disabled = true;
           try { await decidePartnerLoad(l.id, 'decline'); toast('Declined.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
           catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
@@ -301,8 +301,8 @@ export function renderPartnerIntake(host, focusId) {
           try { await loadChecklistReview(it.id, 'verified'); toast('Verified', 'success'); docsDrawer(l); }
           catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, 'Verify'),
-        el('button', { class: 'lb-btn lb-btn-sm', onClick: () => {
-          const reason = prompt('Rejection reason (the broker will see this):');
+        el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => {
+          const reason = await askReason('Rejection reason (the broker will see this):');
           if (!reason || !reason.trim()) return;
           loadChecklistReview(it.id, 'rejected', reason.trim()).then(() => { toast('Rejected with reason', 'success'); docsDrawer(l); }).catch(e => toast(humanizeError(e), 'error'));
         } }, 'Reject'),

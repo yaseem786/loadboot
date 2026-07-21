@@ -4,7 +4,7 @@
 // presented as offerable. Rendered as a drawer opened from Load Intake (openMatch) or standalone.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading } from '../../shared/loading.js';
-import { openDrawer } from '../../shared/ui/components.js';
+import { openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { matchRank, matchEligibility, offerSend, loadOffers } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -26,7 +26,7 @@ export async function openMatch(load) {
   const offerFor = (cid) => offers.find(o => o.carrier_id === cid);
 
   async function sendOffer(c, all) {
-    const rate = prompt('Offer rate (USD) for ' + c.carrier + ':', c.loaded_rpm && load.miles ? String(Math.round(c.loaded_rpm * load.miles)) : (load.rate || ''));
+    const rate = await askReason('Offer rate (USD) for ' + c.carrier + ':', c.loaded_rpm && load.miles ? String(Math.round(c.loaded_rpm * load.miles)) : (load.rate || ''));
     if (rate === null) return;
     const mins = prompt('Expiry window in minutes:', '60');
     if (mins === null) return;

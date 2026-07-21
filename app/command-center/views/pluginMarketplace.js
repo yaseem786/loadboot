@@ -49,8 +49,9 @@ export function renderPluginMarketplace(host) {
             el('td', null, el('span', { class: 'cc-sub' }, (i.accepted_permissions || []).join(', ') || '—')),
             el('td', null, fmtDateTime(i.installed_at)),
             el('td', null, manage ? el('button', { class: 'cc-toggle' + (i.enabled ? ' on' : ''), onClick: async (ev) => {
-              ev.currentTarget.disabled = true;
-              try { await setPluginEnabled(i.id, !i.enabled); load(); } catch (e) { ev.currentTarget.disabled = false; toast(humanizeError(e), 'error'); }
+              const _btn9 = ev.currentTarget;
+              _btn9.disabled = true;
+              try { await setPluginEnabled(i.id, !i.enabled); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
             } }, i.enabled ? 'On' : 'Off') : (i.enabled ? 'On' : 'Off')),
             el('td', null, manage ? el('button', { class: 'lb-btn lb-btn-sm ghost', onClick: async () => {
               if (!confirm('Uninstall ' + i.name + '? It stops immediately; config is retained for audit.')) return;
