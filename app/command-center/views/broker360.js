@@ -140,8 +140,7 @@ export function renderBroker360(host, orgId) {
                 el('div', { class: 'cc-sub' }, '[' + String(it.tag || '').toUpperCase() + '] · status: ' + st + (it.submitted_at ? ' · submitted ' + fmtDateTime(it.submitted_at) : '')),
                 HINTS[it.key] ? el('div', { style: 'background:#eef6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px;font-size:.83rem;color:#1e40af;margin-top:8px' }, '🎛 Review hint: ' + HINTS[it.key]) : null,
                 el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [
-                  st !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { _btn9.disabled = true;
-                    const _btn9 = ev.currentTarget;
+                  st !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { const _btn9 = ev.currentTarget; _btn9.disabled = true;
                     try { await onboardingReviewItem(orgId, it.key, 'verify', null); toast('Verified — partner notified', 'success'); dA.close(); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
                   } }, '✓ Verify') : null,
                   el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => {
@@ -244,8 +243,7 @@ export function renderBroker360(host, orgId) {
           fpath9 ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
             try { const u = await signedDocumentUrl(fpath9, 300); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.disabled = false;
           } }, '👁 Voided check / bank letter') : el('span', { class: 'cc-sub' }, '⚠ no voided check on file'),
-          (manage && st9 !== 'verified') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { _btn9.disabled = true;
-            const _btn9 = ev.currentTarget;
+          (manage && st9 !== 'verified') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { const _btn9 = ev.currentTarget; _btn9.disabled = true;
             try { await onboardingReviewItem(orgId, 'bank_instructions', 'verify', null); toast('Bank details verified — partner notified', 'success'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✓ Verify bank details') : null,
           (manage && st9 !== 'rejected') ? el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev) => {

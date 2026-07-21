@@ -118,8 +118,7 @@ function inviteForm(reload) {
     mount(listHost, [el('div', { style: 'font-weight:700;font-size:.85rem;margin-bottom:4px' }, 'Pending invites')].concat(
       rows.map(r => el('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--lb-border,#e2e8f0)' }, [
         el('div', null, [el('b', null, r.email), el('div', { class: 'cc-sub' }, r.role + ' \u00b7 expires ' + new Date(r.expires_at).toLocaleDateString())]),
-        el('button', { class: 'lb-btn lb-btn-secondary', onClick: async (ev) => { _btn9.disabled = true; try { await revokeStaffInvite(r.id); loadInvites(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Revoke'),
-      const _btn9 = ev.currentTarget;
+        el('button', { class: 'lb-btn lb-btn-secondary', onClick: async (ev) => { const _btn9 = ev.currentTarget; _btn9.disabled = true; try { await revokeStaffInvite(r.id); loadInvites(); } catch (e) { toast(humanizeError(e), 'error'); } } }, 'Revoke'),
       ]))));
   };
   const btn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
