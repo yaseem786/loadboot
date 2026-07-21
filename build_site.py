@@ -3529,71 +3529,10 @@ _cfaq_html, _cfaq_sch = faq_block([
     ('How fast can I start?', 'Most carriers are set up the same day once we have your authority and insurance.'),
     ('How do I get paid?', 'Delivery flips your invoice to DUE automatically &mdash; deadlines, receipt-verified transfers, factoring/NOA routing and QuickBooks sync are built in. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
 ])
-# Featured-lane advertisement (recruitment, first-come). Honest framing: a shipper has
-# requested recurring reefer capacity on this lane and we are onboarding carriers to run it
-# — NOT a bookable ghost load. Swap/retire when the lane is covered.
-cp += ('<section><div class="wrap"><div class="reveal" style="background:linear-gradient(135deg,#10223B 0%,#0883F7 100%);border-radius:22px;padding:34px 30px;color:#fff;position:relative;overflow:hidden">'
- '<span style="display:inline-block;background:rgba(252,83,5,.9);color:#fff;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:999px">First come, first served</span>'
- '<h2 style="color:#fff;font-size:1.7rem;margin:14px 0 6px;max-width:640px">Reefer carriers wanted: Phoenix &rarr; Dallas, ~6 loads a week</h2>'
- '<p style="color:#dbeafe;max-width:640px;margin:0 0 18px">A shipper has requested <b style="color:#fff">recurring weekly reefer capacity</b> on this lane and we&rsquo;re onboarding carriers to run it. Run reefer in the Southwest? The first verified carrier gets the lane. Flat 5%, no contract, accessorials 100% yours.</p>'
- '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">'
- '<a href="reefer-loads-phoenix-to-dallas.html" class="btn btn-primary" style="background:#FC5305">Claim this lane &rarr;</a>'
- '<a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas" class="btn btn-secondary" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3)">Email hello@loadboot.com</a>'
- '</div></div></div></section>')
 cp += _real_screen('board-card-details.webp',420,909,'A real load card opened — full rate card with detention, TONU and layover terms printed before booking','A real load, opened &mdash; the FULL rate card printed before you ever book.','What you book from','Every load shows its whole hand') + _cfaq_html + final_cta()
 page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5%, Every Rate in Writing | LoadBoot',
      'Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, detention and invoicing. Flat 5%, no contracts, keep your authority.',
      'services.html', cp, _cfaq_sch)
-
-# ---- Featured-lane recruitment page (SEO: "reefer loads phoenix to dallas") ----
-# Honesty guard: a shipper has REQUESTED weekly reefer capacity here; this page recruits
-# carriers to run it (first-come). It never claims a specific bookable load is posted now.
-rl = ('<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div>'
- '<div class="wrap" style="position:relative;z-index:1;max-width:840px">'
- '<span class="badge reveal" style="background:rgba(252,83,5,.14);color:#fdba74;border-color:rgba(252,83,5,.35)"><span class="dot" style="background:#FC5305"></span> First come, first served</span>'
- '<h1 class="reveal d1">Reefer Loads: Phoenix &rarr; Dallas &mdash; Recurring Weekly Lane, Carriers Wanted</h1>'
- '<p class="lead reveal d2" style="margin:22px 0 26px">A shipper has requested <b>~6 reefer loads every week</b> from Phoenix, AZ to Dallas, TX, and we&rsquo;re onboarding carriers to run it. If you haul reefer in the Southwest, this is steady, predictable freight &mdash; and the first verified carrier gets the lane.</p>'
- '<div class="hero-btns reveal d3"><a href="/app/carrier/" class="btn btn-primary">Claim this lane &rarr;</a>'
- '<a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas" class="btn btn-secondary">Email hello@loadboot.com</a>'
- '<a href="carriers.html" class="btn btn-ghost">How dispatch works &rarr;</a></div></div></section>')
-rl += _sec('The lane', 'What&rsquo;s on offer', _cards([
-    ('&#128666;', 'Phoenix &rarr; Dallas', 'A steady Southwest reefer lane on the I-10/I-20 corridor &mdash; roughly 1,065 miles, a strong regional run.'),
-    ('&#128197;', '~6 loads every week', 'Recurring weekly capacity requested by the shipper &mdash; predictable freight you can plan your month around.'),
-    ('&#10052;&#65039;', 'Reefer equipment', 'Temperature-controlled freight. Bring a clean, well-maintained reefer and the ability to hold temp and hit appointment windows.'),
-]))
-rl += _sec('Why run it with LoadBoot', 'The freight pays for the skill', _cards([
-    ('&#128176;', 'Flat 5%, no contract', 'Five percent of linehaul, nothing else. No sign-up fee, no monthly minimum, cancel any time. You only pay when we put money on your truck.'),
-    ('&#128203;', 'Every rate in writing', 'A rate confirmation with the number, the appointments and the accessorial terms &mdash; before you roll. No verbal deals that shrink at settlement.'),
-    ('&#128205;', 'Live GPS from your phone', 'No ELD hardware to buy. Your shipper sees the truck moving, which is exactly what keeps the lane yours week after week.'),
-    ('&#127974;', 'Accessorials 100% yours', 'Detention, layover and TONU are paid to you in full &mdash; we never take a cut of your waiting time.'),
-    ('&#127974;', 'You keep your authority', 'Your MC/DOT, your insurance, your relationships. Brokers and the shipper pay you (or your factor) directly.'),
-    ('&#9989;', 'Verified &amp; real', 'No ghost loads. When freight is on your truck, the rate card is printed and the record is on your side.'),
-]))
-rl += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How to claim it</div><h2>Three steps to the lane</h2></div>'
- '<div class="grid g3 reveal" style="margin-top:22px">'
- '<div class="card"><div class="icon">1</div><h3>Say you want it</h3><p>Email <a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas">hello@loadboot.com</a> or <a href="/app/carrier/">create your carrier account</a> &mdash; tell us you run reefer on the Southwest.</p></div>'
- '<div class="card"><div class="icon">2</div><h3>Verify fast</h3><p>Send your authority, insurance and a bank letter. Verification is usually same-day &mdash; the sooner you clear it, the sooner the lane is yours.</p></div>'
- '<div class="card"><div class="icon">3</div><h3>Start running</h3><p>First verified reefer carrier on the lane starts hauling. Deliver, get your rate confirmation on file, and settle clean.</p></div>'
- '</div></div></section>')
-rl += ('<section><div class="wrap"><div class="reveal" style="background:linear-gradient(135deg,#10223B,#0883F7);border-radius:22px;padding:34px 30px;color:#fff;text-align:center">'
- '<h2 style="color:#fff;margin:0 0 8px">Run reefer in the Southwest? This lane is first come, first served.</h2>'
- '<p style="color:#dbeafe;max-width:600px;margin:0 auto 18px">Tell us you can cover Phoenix&rarr;Dallas and clear verification &mdash; the first carrier through gets recurring weekly freight.</p>'
- '<a href="/app/carrier/" class="btn btn-primary" style="background:#FC5305">Claim this lane &rarr;</a> '
- '<a href="mailto:hello@loadboot.com?subject=Reefer%20lane%20Phoenix%20to%20Dallas" class="btn btn-secondary" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3)">Email us</a>'
- '</div></div></section>')
-_rl_faq_html, _rl_faq_sch = faq_block([
-    ('Is this a real, bookable load right now?', 'It is a recurring lane a shipper has requested &mdash; about 6 reefer loads a week from Phoenix to Dallas &mdash; and we are onboarding carriers to run it. Once you are verified and the freight is tendered, every load comes with a written rate confirmation. We do not post ghost loads.'),
-    ('Who gets the lane?', 'The first verified reefer carrier who can consistently cover Phoenix to Dallas. Because it is recurring capacity, we want a carrier who can run it reliably every week, not a one-off.'),
-    ('What does it pay?', 'Market rate, negotiated per load, with the number in writing before you roll. Detention, layover and TONU are paid to you in full on top of the linehaul.'),
-    ('What do I need to start?', 'Your own operating authority, current insurance with reefer coverage, a bank verification, and a clean reefer. Verification is usually same-day.'),
-    ('What does LoadBoot charge?', 'A flat 5% of the linehaul, no contract and no monthly fee. You keep your authority and get paid directly (or through your factor). See <a href="pricing.html">pricing</a>.'),
-    ('I run reefer but not this lane &mdash; still worth signing up?', 'Yes. We dispatch reefer across the lower 48 and new lanes open constantly. Create your <a href="/app/carrier/">carrier account</a> and tell us your lanes.'),
-])
-rl += _rl_faq_html
-RELATED['reefer-loads-phoenix-to-dallas.html'] = [('carriers.html','For Carriers'),('reefer-dispatch.html','Reefer Dispatch'),('market-rates.html','Reefer Market Rates'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('load-board.html','Live Load Board')]
-page('reefer-loads-phoenix-to-dallas.html', 'Reefer Loads Phoenix to Dallas — Recurring Weekly Lane, Carriers Wanted | LoadBoot',
-     'Reefer loads Phoenix, AZ to Dallas, TX: a shipper needs ~6 recurring reefer loads a week and LoadBoot is onboarding carriers to run it. Flat 5%, no contract, every rate in writing, accessorials 100% yours. First verified reefer carrier gets the lane.',
-     'carriers.html', rl, _rl_faq_sch)
 
 # ---- Dedicated Broker page (~15 sections; brokers only) ----
 bp = svc_hero('A Reliable Carrier Network for Brokers',
