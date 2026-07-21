@@ -217,7 +217,7 @@ async function boot() {
     '/': () => { setActive('/'); renderActionCenter(content, ctx, user); }, // Action Center IS the dashboard (old counts-only overview retired)
     '/radar': () => { setActive('/radar'); renderRadar(content); },
     '/agents': () => { setActive('/agents'); guard(['carriers.approve', 'dispatch.manage'], () => renderAgents(content))(); },
-    '/management': () => { setActive('/management'); renderManagement(content); },
+    '/management': () => { setActive('/bi'); if (can('analytics.view') || can('reports.view')) renderBI(content); else denied(); }, // retired duplicate — alias to BI
     '/fleet': () => { setActive('/fleet'); if (fleetEnabled && can('fleet.view')) renderFleet(content); else denied(); },
     '/fleet-expiry': () => { setActive('/fleet-expiry'); if (can('fleet.view') || can('carriers.view')) renderFleetExpiry(content); else denied(); },
     '/contacts': () => { setActive('/contacts'); if (can('carriers.view') || can('partners.view')) renderContactsDirectory(content); else denied(); },
