@@ -3,9 +3,9 @@
 // hundreds of agents: search + status filter + sortable summary table.
 import { el, mount } from '../../shared/ui/dom.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
-import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue } from '../../shared/api.js';
+import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue, agentSuspend } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 
 export function renderAgents(host) {
   const state = { q: '', st: 'all', rows: [] };
@@ -117,7 +117,18 @@ export function renderAgents(host) {
           kv('Tax form', (p.tax_form || '—') + (p.tax_id_last4 ? ' · TIN •••' + p.tax_id_last4 : '')),
           kv('Payout', (p.payout_method || '—') + (pd.bank_name ? ' · ' + pd.bank_name : '') + (pd.account ? ' ···' + String(pd.account).slice(-4) : pd.iban ? ' ···' + String(pd.iban).slice(-4) : pd.email ? ' · ' + pd.email : '')),
           el('div', { style: 'margin-top:10px' }, [docRow('🪪 Government photo ID', pd.id_doc, 'id'), docRow('🏦 Bank proof', pd.bank_doc, 'bank')]),
-          el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [act('✓ Approve', 'approve'), act('？ More info', 'info', 'lb-btn-secondary'), act('✕ Reject', 'reject', 'lb-btn-secondary')]),
+          el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [act('✓ Approve', 'approve'), act('？ More info', 'info', 'lb-btn-secondary'), act('✕ Reject', 'reject', 'lb-btn-secondary'),
+            // SUSPEND / REINSTATE (audit gap): staff could approve + pay an agent but never stop one.
+            (String(x.status || '') === 'suspended')
+              ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
+                  try { await agentSuspend(x.user_id, false, null); toast('Agent reinstated — accruals resume', 'success'); open360(x); }
+                  catch (e) { b.disabled = false; toast(humanizeError(e), 'error'); } } }, '↻ Reinstate agent')
+              : el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async () => {
+                  const why = await askReason('Suspend this agent — reason', { note: 'The agent is notified. Cleared commissions are untouched; new accruals pause until reinstated. Audit-logged.', submitLabel: 'Suspend agent' });
+                  if (!why) return;
+                  try { await agentSuspend(x.user_id, true, why); toast('Agent suspended — notified', 'success'); open360(x); }
+                  catch (e) { toast(humanizeError(e), 'error'); } } }, '⏸ Suspend agent'),
+          ]),
         ]),
         card([el('h4', { class: 'cc-card-title' }, '💰 Earnings & payouts'),
           kv('Clearing', money(e9.accrued || 0)), kv('Available to settle', money(e9.payable || 0)), kv('Paid out', money(e9.paid || 0)),

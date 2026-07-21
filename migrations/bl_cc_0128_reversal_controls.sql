@@ -1,0 +1,10 @@
+-- bl_cc_0128 — MISSING OPERATOR CONTROLS (audit 2026-07-21). Every one is reason-gated,
+-- audit-logged and notifies the affected party via notify_org.
+--   cc_invoice_void(invoice, reason)            — blocks voiding a PAID invoice (credit note instead)
+--   cc_invoice_credit(invoice, amount, reason)  — issues a negative CR-<no> invoice, capped at net
+--   cc_trip_revert(trip, to_status, reason)     — undo a mis-advance (planned/dispatched/in_transit),
+--                                                 clears delivered_at, writes a ↩ timeline event
+--   cc_agent_suspend(user, suspend, reason)     — pauses/resumes agent + referrer row, notifies agent
+-- UI: Finance invoice drawer (Void + ↩ Credit note), Trips drawer (Cancel now REQUIRES a reason +
+--     ↩ Revert status), Agents 360 (⏸ Suspend / ↻ Reinstate).
+-- Applied to STAGING and PRODUCTION 2026-07-21 via MCP.

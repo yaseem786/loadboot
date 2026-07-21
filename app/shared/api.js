@@ -366,6 +366,11 @@ export const setLoadStatus = (loadId, status) => rpc('cc_set_load_status', { p_l
 export const listTasks = (o = {}) => rpc('cc_list_tasks', { p_status: o.status ?? 'open', p_limit: o.limit ?? 100 });
 export const completeTask = (taskId) => rpc('cc_complete_task', { p_task: taskId });
 export const startTask = (taskId) => rpc('cc_task_start', { p_task: taskId });
+// Reversal + recovery controls (audit 2026-07-21)
+export const invoiceVoid = (id, reason) => rpc('cc_invoice_void', { p_invoice: id, p_reason: reason });
+export const invoiceCredit = (id, amount, reason) => rpc('cc_invoice_credit', { p_invoice: id, p_amount: amount, p_reason: reason });
+export const tripRevert = (id, toStatus, reason) => rpc('cc_trip_revert', { p_trip: id, p_to_status: toStatus, p_reason: reason });
+export const agentSuspend = (userId, suspend, reason) => rpc('cc_agent_suspend', { p_user: userId, p_suspend: suspend, p_reason: reason });
 export const invoiceSendReminder = (id, note) => rpc('cc_invoice_send_reminder', { p_invoice: id, p_note: note ?? null });
 export const invoiceLookup = (no) => rpc('cc_invoice_lookup', { p_no: no });
 export const tripNotifyParties = (tripId, target, note) => rpc('cc_trip_notify_parties', { p_trip: tripId, p_target: target ?? 'both', p_note: note ?? null });

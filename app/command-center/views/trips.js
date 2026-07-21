@@ -6,8 +6,8 @@
 // check-call, invoice-ready tasks).
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
-import { dispatchOverview, listTrips, getTrip, createTrip, advanceTrip, addTripNote, getLoadsList, getCarriersDirectory, rateconDocument, tripNotifyParties } from '../../shared/api.js';
+import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card, askReason } from '../../shared/ui/components.js';
+import { dispatchOverview, listTrips, getTrip, createTrip, advanceTrip, addTripNote, getLoadsList, getCarriersDirectory, rateconDocument, tripNotifyParties, tripRevert } from '../../shared/api.js';
 import { printDocument } from '../../shared/ui/printDoc.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
@@ -110,7 +110,20 @@ export function renderTrips(host, focusId) {
       const nxt = NEXT[t.status];
       if (nxt) advanceRow.appendChild(el('button', { class: 'cc-chip-btn', onClick: () => advance(id, nxt) }, NEXT_LABEL[nxt]));
       if (['planned', 'dispatched', 'in_transit'].includes(t.status))
-        advanceRow.appendChild(el('button', { class: 'cc-chip-btn', onClick: () => advance(id, 'canceled') }, 'Cancel trip'));
+        advanceRow.appendChild(el('button', { class: 'cc-chip-btn', onClick: async () => {
+          const why = await askReason('Cancel trip — reason', { note: 'Cancellation drives the carrier’s cancellation-rate score, so the reason is mandatory and audit-logged. Both sides are notified.', submitLabel: 'Cancel trip' });
+          if (!why) return;
+          try { await addTripNote(id, 'Cancelled by dispatch: ' + why); } catch (_) {}
+          advance(id, 'canceled');
+        } }, 'Cancel trip'));
+      if (['dispatched', 'in_transit', 'delivered'].includes(t.status))
+        advanceRow.appendChild(el('button', { class: 'cc-chip-btn', onClick: async () => {
+          const target = t.status === 'delivered' ? 'in_transit' : (t.status === 'in_transit' ? 'dispatched' : 'planned');
+          const why = await askReason('↩ Revert status to ' + target.replace('_', ' '), { note: 'Use this to undo a mis-advance. The carrier is notified and the correction is written to the trip timeline + audit log.', submitLabel: 'Revert status' });
+          if (!why) return;
+          try { await tripRevert(id, target, why); toast('Trip reverted to ' + target.replace('_', ' '), 'success'); openTrip(id); loadList(); loadKpis(); }
+          catch (e) { toast(humanizeError(e), 'error'); }
+        } }, '↩ Revert status'));
     }
 
     const stops = (t.stops || []);

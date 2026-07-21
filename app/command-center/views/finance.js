@@ -6,7 +6,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card, askReason, askConfirm } from '../../shared/ui/components.js';
-import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice, invoiceDocument, invoiceSendReminder } from '../../shared/api.js';
+import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice, invoiceDocument, invoiceSendReminder, invoiceVoid, invoiceCredit } from '../../shared/api.js';
 import { printDocument } from '../../shared/ui/printDoc.js';
 import { can } from '../../shared/permissions.js';
 import { financeReceivables, financePayables, invoicePrepQueue, financeReconcile } from '../../shared/api.js';
@@ -206,7 +206,20 @@ export function renderFinance(host, focusId) {
           toast('Reminder sent ✓ — payer emails: ' + (r.payer_emails || 0) + ' · carrier notified' + (r.days_overdue ? ' · ' + r.days_overdue + 'd overdue' : ''), 'success'); }
         catch (e) { toast(humanizeError(e), 'error'); }
       }));
-      if (i.status !== 'paid' && i.status !== 'void') actions.appendChild(chip('Void', () => setStatus(id, 'void')));
+      if (i.status !== 'paid' && i.status !== 'void') actions.appendChild(chip('Void', async () => {
+        const why = await askReason('Void invoice ' + (i.invoice_no || ''), { note: 'The carrier is notified with this reason and it is written to the audit log. A PAID invoice cannot be voided — use a credit note.', submitLabel: 'Void invoice' });
+        if (!why) return;
+        try { await invoiceVoid(id, why); toast('Invoice voided — carrier notified', 'success'); openInvoice(id); loadInvoices(); loadKpis(); }
+        catch (e) { toast(humanizeError(e), 'error'); }
+      }));
+      if (i.status !== 'void') actions.appendChild(chip('↩ Credit note', async () => {
+        const amt = await askReason('Credit note against ' + (i.invoice_no || ''), { rows: 1, placeholder: 'Amount in USD (e.g. 150)', submitLabel: 'Next', note: 'Issues a negative invoice (CR-…) against this one. Max: $' + (i.net || 0) + '.' });
+        if (!amt) return;
+        const why = await askReason('Why is this credit being issued?', { note: 'The carrier sees this reason on the credit note.', submitLabel: 'Issue credit note' });
+        if (!why) return;
+        try { const r = await invoiceCredit(id, Number(String(amt).replace(/[^0-9.]/g, '')), why); toast('Credit note ' + (r.credit_no || '') + ' issued', 'success'); loadInvoices(); loadKpis(); }
+        catch (e) { toast(humanizeError(e), 'error'); }
+      }));
     }
     mount(drawer.body, el('div', null, [
       el('div', { class: 'cc-drawer-title' }, [el('h3', null, i.invoice_no), el('span', { class: 'cc-pill cc-pill-' + (INV_TONE[i.status] || 'gray') }, i.status)]),
