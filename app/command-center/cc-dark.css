@@ -57,7 +57,7 @@ body{background:var(--lb-bg);color:#eaf1fb}
 .cc-btn-red{background:rgba(239,68,68,.14);color:#f87171;border-color:rgba(239,68,68,.35)}
 
 /* tables */
-.cc-tablewrap{background:#111c31;border-color:rgba(255,255,255,.1)}
+.cc-table-wrap,.cc-tablewrap{background:#111c31;border-color:rgba(255,255,255,.1)}
 .cc-table th{background:rgba(255,255,255,.04);color:#8ea2c3;border-bottom-color:rgba(255,255,255,.1)}
 .cc-table td{border-bottom-color:rgba(255,255,255,.06);color:#eaf1fb}
 

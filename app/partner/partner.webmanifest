@@ -1,6 +1,6 @@
 {
   "name": "LoadBoot Partner",
-  "short_name": "LoadBoot",
+  "short_name": "LB Partner",
   "description": "Post loads, track shipments, and manage documents with LoadBoot.",
   "start_url": "./",
   "scope": "./",

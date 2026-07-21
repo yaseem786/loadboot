@@ -1,6 +1,6 @@
 {
   "name": "LoadBoot Carrier",
-  "short_name": "LoadBoot",
+  "short_name": "LB Carrier",
   "description": "Manage your loads, documents, and payments on the go.",
   "start_url": "./",
   "scope": "./",

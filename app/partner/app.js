@@ -639,6 +639,7 @@ function notifBell() {
 function shell(user, kind, company, kpis, content) {
   const label = KIND_LABEL[kind] || 'Partner';
   return h('div', { class: 'cp-shell cp-shell-1col' }, [
+    bTabbar,
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
         h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('div', null, [
@@ -4089,6 +4090,14 @@ function packetAgreementCards(skipPacket) {
   const bLinks = {};
   const bNavEl = h('nav', { class: 'cp-nav' }, BNAV.map(([id, label, ic9]) => {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => bgo(id) }, [icon(ic9, 20), h('span', null, label)]);
+    (bLinks[id] = bLinks[id] || []).push(a); return a;
+  }));
+  // MOBILE NAV (audit 2026-07-21): .cp-side is hidden <=900px, so the broker/shipper shell
+  // had no navigation on phones. Bottom tab bar mirrors the carrier pattern (5 primary tabs).
+  const BTABS = ['dashboard', 'loads', 'claims', 'invoices', 'account'];
+  const bTabbar = h('nav', { class: 'cp-tabbar' }, BTABS.map((id) => {
+    const it = BNAV.find((n) => n[0] === id) || [id, id, 'dash'];
+    const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => bgo(id) }, [icon(it[2], 20), h('span', null, it[1])]);
     (bLinks[id] = bLinks[id] || []).push(a); return a;
   }));
   const bTitle = h('h1', { class: 'cp-top-title' }, 'Dashboard');

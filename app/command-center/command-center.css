@@ -226,7 +226,7 @@
 .cc-count{color:var(--lb-muted);font-size:.82rem;margin-left:auto}
 
 /* ---------- premium table ---------- */
-.cc-tablewrap{background:#fff;border:1px solid var(--lb-border);border-radius:16px;overflow:hidden;box-shadow:var(--cc-shadow-sm)}
+.cc-table-wrap,.cc-tablewrap{background:#fff;border:1px solid var(--lb-border);border-radius:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--cc-shadow-sm)}
 .cc-table{width:100%;border-collapse:collapse;font-size:.88rem}
 .cc-table th{text-align:left;padding:12px 16px;background:#f8fafc;color:var(--lb-muted);font-family:var(--lb-head);
   font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--lb-border)}
@@ -544,3 +544,15 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 .cc-table{border-radius:12px;overflow:hidden}
 .cc-input:focus{outline:none;border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
 .cc-section-head h2{letter-spacing:-.01em}
+
+
+/* === MOBILE HARDENING (audit 2026-07-21): one place, one scale === */
+@media (max-width: 640px) {
+  .cc-facts, .cc-fields, .cc-form-2 { grid-template-columns: 1fr !important; }
+  .cc-table th, .cc-table td { padding: 10px 12px; }
+}
+@media (max-width: 900px) {
+  .lb-btn, .cc-btn-sm, .lb-btn-sm, .cc-chip-btn, .cc-seg-btn, .cc-mini, .cc-toggle,
+  .cc-iconbtn, .cc-drawer-x { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .cc-side, .cc-content { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+}
