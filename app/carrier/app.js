@@ -705,6 +705,45 @@ async function agentPortal(user) {
     const inp = (ph, type) => h('input', { class: 'cp-in', placeholder: ph, type: type || 'text' });
     const sel = (opts) => h('select', { class: 'cp-in' }, opts.map(([v9, l9]) => h('option', { value: v9 }, l9)));
     const checks = (arr) => { const map = {}; const box = h('div', { style: 'display:flex;gap:9px;flex-wrap:wrap;margin:4px 0 8px' }, arr.map((b9) => { const c9 = h('input', { type: 'checkbox' }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
+    // ---- premium / educational blocks (keep the dispatcher engaged) ----
+    const dHero = () => h('div', { style: 'border-radius:18px;padding:22px 22px;margin-bottom:14px;background:linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%);border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden' }, [
+      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#7cc0ff' }, 'LOADBOOT DISPATCH ACADEMY'),
+      h('div', { style: 'font-size:1.5rem;font-weight:900;color:#fff;margin:6px 0 4px;line-height:1.15' }, 'Your salaried dispatch career starts here'),
+      h('div', { class: 'cp-row-s', style: 'max-width:640px;line-height:1.6' }, 'Dispatch for US carriers on a real salary — base + per-truck + performance bonus. Learn the craft below while your application is reviewed.'),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [['💵 Salary + bonus'], ['🚚 Dedicated carrier'], ['🌍 Remote worldwide'], ['📈 Grows with your book']].map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(255,255,255,.07);color:#cbd5e1;font-weight:700' }, c9[0]))),
+    ]);
+    const stepPill = (n9, t9, s9, done9) => h('div', { style: 'flex:1;min-width:150px;border-radius:12px;padding:12px;border:1px solid ' + (done9 ? 'rgba(34,197,94,.4)' : 'rgba(148,163,184,.18)') + ';background:' + (done9 ? 'rgba(34,197,94,.07)' : 'rgba(255,255,255,.02)') }, [
+      h('div', { style: 'font-weight:900;color:' + (done9 ? '#4ade80' : '#7cc0ff') }, (done9 ? '✓ ' : n9 + '. ') + t9), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, s9)]);
+    const dSteps = (status) => { const order = ['screening', 'skills_test', 'trial', 'verified', 'active']; const idx = order.indexOf(status); return agCard('🧭 Your path to a salaried seat', [
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+        stepPill(1, 'Apply', 'Submit your detailed application + CV.', idx >= 0),
+        stepPill(2, 'Screening', 'We review experience, English and load-board skill.', idx >= 1),
+        stepPill(3, 'Skills test', 'A short test + mock broker call.', idx >= 2),
+        stepPill(4, 'Paid trial', 'Real loads, real coaching.', idx >= 3),
+        stepPill(5, 'Hired & assigned', 'Get your carrier + SOP — salary starts.', idx >= 4),
+      ])]); };
+    const dSalary = () => agCard('💵 Your salary package', [
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+        ['Base salary', 'A fixed monthly base that starts the day a carrier is assigned to you.'],
+        ['Per-active-truck', 'Extra for every truck you keep loaded — your pay grows as your book grows (5–8 → 10–15 trucks).'],
+        ['Performance bonus', 'Paid monthly on your KPIs: utilization, on-time, gross/truck, retention.'],
+      ].map((c9) => h('div', { style: 'flex:1;min-width:180px;border-radius:12px;padding:12px;background:rgba(8,131,247,.06);border:1px solid rgba(8,131,247,.2)' }, [
+        h('div', { style: 'font-weight:800;color:#7cc0ff' }, c9[0]), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, c9[1])]))),
+      h('div', { class: 'cp-row-s', style: 'margin-top:8px;opacity:.85' }, 'Exact figures for your tier are in your written offer and scale with your book and results.'),
+    ]);
+    const det = (ic9, t9, body9) => h('details', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:11px;margin-top:8px;background:rgba(255,255,255,.03);overflow:hidden' }, [
+      h('summary', { style: 'cursor:pointer;padding:11px 13px;font-weight:800;font-size:.9rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, ic9), h('span', { style: 'flex:1' }, t9), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
+      h('div', { style: 'padding:0 13px 12px;color:#b9c6da;font-size:.85rem;line-height:1.75' }, body9)]);
+    const dAcademy = () => agCard('🎓 Dispatcher Academy — learn the craft', [
+      h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, 'Tap each lesson. Knowing these cold is what separates a hired dispatcher from an applicant.'),
+      det('🔎', 'Load boards 101 (DAT & Truckstop)', 'You book on the CARRIER’s own DAT/Truckstop seat under their MC. Learn to filter by lane, equipment and rate-per-mile, spot ghost/duplicate postings, verify the broker’s MC and authority, and read a rate confirmation before you commit a truck.'),
+      det('⚖️', 'FMCSA & Hours-of-Service (HOS)', 'A driver has 11 driving / 14 on-duty hours and a 70-hour/8-day limit. Never book a load the driver legally can’t finish on time. Know the 30-minute break and the 34-hour reset — it protects the carrier and your on-time score.'),
+      det('💬', 'Rate negotiation', 'Know the carrier’s cost per mile and minimum. Anchor high, cite the lane’s market rate, bundle detention/TONU terms in writing, and never haul below cost. A confident, informed dispatcher wins better rates.'),
+      det('🗺️', 'US geography & lanes', 'Learn the strong outbound markets, backhaul-poor regions and produce seasons. Plan reloads off the drop point to cut deadhead — high utilization is the metric that pays you and the carrier.'),
+      det('🛡️', 'Compliance — you are the carrier’s agent', 'You dispatch as a bona fide agent (FMCSA 88 FR 39368): book under the carrier’s authority, source each load for one assigned carrier (no allocation), never touch freight money, never re-broker. This keeps you — and LoadBoot — legal.'),
+      det('📄', 'Paperwork that pays', 'Rate confirmation → BOL → POD. Capture detention and TONU with timestamps. Clean, on-time documents are how the carrier gets paid fast — and how you keep the account.'),
+    ]);
+    const dWhat = () => agCard('📋 What the job actually is', [h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, 'Hunt and book loads for your assigned carriers · negotiate rates to their minimum · keep every truck loaded with low deadhead · manage pickups, docs, HOS and detention · communicate daily with your carrier and the Command Center · hit your KPIs. One carrier at a time, booked under their authority.')]);
 
     if (!prof || prof.status === 'applied') {
       // ===== DETAILED APPLICATION (max hiring detail) =====
@@ -757,6 +796,7 @@ async function agentPortal(user) {
         go('dashboard');
       } }, 'Submit application');
       mount(host, h('div', null, [
+        dHero(),
         agCard('🧑‍✈️ Apply to become a LoadBoot Dispatcher', [
           h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:8px' }, 'This is a SALARIED role. You dispatch for assigned US carriers — hunt loads, negotiate rates, keep trucks loaded. You should be comfortable operating load boards (DAT / Truckstop) — you dispatch on the carrier’s own seat. Salary package = base + per-active-truck + performance bonus; it starts when a carrier is assigned and scales with your book (exact figures in your written offer). We screen strictly (skills test + paid trial) before hiring, so give us your real detail below.'),
           grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
@@ -776,6 +816,10 @@ async function agentPortal(user) {
           grp('Government ID (optional — speeds up hiring)', idUp),
           msg, submit,
         ]),
+        dSteps(null),
+        dSalary(),
+        dWhat(),
+        dAcademy(),
       ]));
       return;
     }
@@ -817,6 +861,8 @@ async function agentPortal(user) {
       h('div', null, '✕ Never accept a load first and then hunt for a truck.'),
       h('div', { class: 'cp-muted', style: 'margin-top:4px' }, 'These keep you a bona fide agent of the carrier (FMCSA 88 FR 39368), not an unlicensed broker. Questions: hello@loadboot.com'),
     ])]));
+    if (['screening', 'skills_test', 'trial', 'verified'].includes(prof.status)) cards.splice(1, 0, dSteps(prof.status));
+    cards.push(dAcademy());
     mount(host, h('div', null, cards));
   }
 
