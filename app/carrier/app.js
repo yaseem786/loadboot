@@ -1355,12 +1355,13 @@ async function agentPortal(user) {
             return h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)' }, [
               h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:#fff' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:#4ade80' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
               h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, [
+                s9.scope_value ? h('div', { style: 'color:#7cc0ff' }, '⚖️ Your scope for this carrier: ' + s9.scope_value + ' — only source loads that fit this scope (keeps loads from overlapping your other carriers).') : '',
                 s9.lanes ? h('div', null, 'Lanes: ' + s9.lanes) : '',
                 s9.min_rate ? h('div', null, 'Min rate/mile: ' + s9.min_rate) : '',
                 s9.equipment ? h('div', null, 'Equipment: ' + s9.equipment) : '',
                 s9.home_time ? h('div', null, 'Home-time: ' + s9.home_time) : '',
                 s9.rules ? h('div', null, 'Rules: ' + s9.rules) : '',
-                !s9.lanes && !s9.rules ? h('div', { class: 'cp-muted' }, 'SOP will appear here once the Command Center sets it.') : '',
+                !s9.lanes && !s9.rules && !s9.scope_value ? h('div', { class: 'cp-muted' }, 'SOP will appear here once the Command Center sets it.') : '',
               ]),
             ]);
           })));
@@ -1368,7 +1369,16 @@ async function agentPortal(user) {
         } else if (prof.status === 'active' || prof.status === 'verified') {
           cards.push(agCard('🚚 Assigned carriers', [h('div', { class: 'cp-muted' }, 'No carrier assigned yet — you’ll be notified the moment the Command Center assigns one.')]));
         }
-        cards.push(agCard('📋 Your responsibilities', [h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, 'Keep every assigned truck loaded · negotiate the best rate/mile · book only with verified brokers · manage pickups, docs and HOS · never touch freight money · never re-broker · one carrier at a time. Questions: hello@loadboot.com')]));
+        cards.push(agCard('📋 Your responsibilities', [h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, 'Keep every assigned truck loaded · negotiate the best rate/mile · book only with verified brokers · manage pickups, docs and HOS. Questions: hello@loadboot.com')]));
+        cards.push(agCard('⚖️ Compliance rules — never break these', [h('div', { class: 'cp-row-s', style: 'line-height:1.9' }, [
+          h('div', null, '✓ Book every load under the CARRIER’s own authority (rate con names the carrier, not you or LoadBoot).'),
+          h('div', null, '✓ Source loads only within your assigned SCOPE for each carrier — never take a load two of your carriers could both haul.'),
+          h('div', null, '✓ Go through a broker for freight — never solicit shippers directly.'),
+          h('div', null, '✕ Never touch or route freight money — the broker pays the carrier/factor; LoadBoot bills its fee to the carrier.'),
+          h('div', null, '✕ Never re-broker or re-assign a booked load to another carrier.'),
+          h('div', null, '✕ Never accept a load first and then hunt for a truck.'),
+          h('div', { class: 'cp-muted', style: 'margin-top:4px' }, 'These keep you a bona fide agent of the carrier (FMCSA 88 FR 39368), not an unlicensed broker.'),
+        ])]));
         mount(host, h('div', null, cards));
       })();
     }

@@ -151,21 +151,38 @@ export function renderDispatchers(host) {
         if (sel) state.carriers.forEach((c) => sel.appendChild(el('option', { value: c.id }, c.name || c.id)));
       } catch (e) { /* leave empty */ }
     }
-    async function editSop(a) {
+    function editSop(a) {
       const s = a.sop || {};
-      const f = {
-        lanes: el('input', { class: 'lb-input', value: s.lanes || '', placeholder: 'Preferred lanes (e.g. TX↔CA)' }),
-        min_rate: el('input', { class: 'lb-input', value: s.min_rate || '', placeholder: 'Min rate/mile (e.g. 2.20)' }),
-        equipment: el('input', { class: 'lb-input', value: s.equipment || '', placeholder: 'Equipment (van/reefer/flatbed)' }),
-        home_time: el('input', { class: 'lb-input', value: s.home_time || '', placeholder: 'Home-time rule' }),
-        rules: el('textarea', { class: 'lb-input', style: 'min-height:70px', placeholder: 'Do’s / don’ts, compliance notes' }, s.rules || ''),
-      };
-      if (!(await askConfirm('Edit SOP for ' + (a.carrier || 'carrier') + '?'))) return;
-      // simple prompt-less inline: reuse a modal-ish confirm is overkill; save current field values
-      const sop = { lanes: f.lanes.value, min_rate: f.min_rate.value, equipment: f.equipment.value, home_time: f.home_time.value, rules: f.rules.value };
-      const r = await ccDispatcherSop(a.id, sop).catch((e) => ({ error: humanizeError(e) }));
-      if (r && r.error) { toast(r.error); return; }
-      toast('✓ SOP saved'); rerender();
+      // Compliance-critical: scope basis prevents "allocation of traffic" (88 FR 39371).
+      const scopeType = el('select', { class: 'lb-input', style: 'max-width:220px' },
+        [['geography', 'Geography (origin region)'], ['equipment', 'Equipment type'], ['commodity', 'Commodity / hazmat'], ['single', 'Single-carrier (no others)']]
+          .map(([v9, l9]) => el('option', { value: v9, selected: (s.scope_type || 'geography') === v9 ? '' : undefined }, l9)));
+      const scopeVal = el('input', { class: 'lb-input', value: s.scope_value || '', placeholder: 'e.g. "Origins in TX/OK/LA" or "Reefer only"' });
+      const lanes = el('input', { class: 'lb-input', value: s.lanes || '', placeholder: 'Preferred lanes (e.g. TX↔CA)' });
+      const minRate = el('input', { class: 'lb-input', value: s.min_rate || '', placeholder: 'Min rate/mile (e.g. 2.20)' });
+      const equipment = el('input', { class: 'lb-input', value: s.equipment || '', placeholder: 'Equipment (van/reefer/flatbed)' });
+      const homeTime = el('input', { class: 'lb-input', value: s.home_time || '', placeholder: 'Home-time rule' });
+      const rules = el('textarea', { class: 'lb-input', style: 'min-height:70px' }, s.rules || '');
+      const save = el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
+        const sop = { scope_type: scopeType.value, scope_value: scopeVal.value, lanes: lanes.value, min_rate: minRate.value, equipment: equipment.value, home_time: homeTime.value, rules: rules.value };
+        const r = await ccDispatcherSop(a.id, sop).catch((e) => ({ error: humanizeError(e) }));
+        if (r && r.error) { toast(r.error); return; }
+        m.remove(); toast('✓ SOP saved'); rerender();
+      } }, 'Save SOP');
+      const m = el('div', { style: 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:70;display:flex;align-items:center;justify-content:center', onClick: (e) => { if (e.target === m) m.remove(); } }, [
+        el('div', { style: 'background:#fff;border-radius:12px;max-width:520px;width:92%;max-height:90vh;overflow:auto;padding:20px', onClick: (e) => e.stopPropagation() }, [
+          el('div', { style: 'font-weight:800;margin-bottom:4px' }, 'SOP — ' + (a.carrier || 'carrier')),
+          el('div', { class: 'cc-sub', style: 'margin-bottom:10px;line-height:1.5' }, '⚖️ Scope basis keeps this carrier’s loads NON-overlapping with your other carriers — so no load is ever "allocated" between carriers (FMCSA 88 FR 39371). Pick how this carrier’s freight is uniquely scoped.'),
+          el('label', { class: 'cc-sub' }, 'Scope basis (required for compliance)'), scopeType, scopeVal,
+          el('label', { class: 'cc-sub', style: 'margin-top:8px;display:block' }, 'Lanes'), lanes,
+          el('label', { class: 'cc-sub' }, 'Min rate/mile'), minRate,
+          el('label', { class: 'cc-sub' }, 'Equipment'), equipment,
+          el('label', { class: 'cc-sub' }, 'Home-time'), homeTime,
+          el('label', { class: 'cc-sub' }, 'Do’s / don’ts'), rules,
+          el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [save, el('button', { class: 'lb-btn', onClick: () => m.remove() }, 'Cancel')]),
+        ]),
+      ]);
+      document.body.appendChild(m);
     }
 
     function salarySection(dd) {
