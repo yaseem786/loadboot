@@ -1,0 +1,4 @@
+-- bl_cc_0138 — factoring/NOA approval also sets factoring_noa=true so the broker pay panel
+-- (pay_instructions) routes payments to the factor remit-to. Verify previously set only
+-- noa_status='verified', leaving factoring_noa=false -> brokers saw the carrier's own bank
+-- despite an active NOA (UCC 9-406 double-pay risk). See prod for full body; staging applied.

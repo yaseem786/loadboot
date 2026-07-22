@@ -9,7 +9,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 import { can } from '../../shared/permissions.js';
@@ -342,6 +342,10 @@ export function renderCarrier360(host, orgId) {
             fd.terms_days_broker ? kv('Broker terms', fd.terms_days_broker + ' days') : '',
             (fd.advance_pct || fd.fee_pct) ? kv('Advance / fee', (fd.advance_pct?fd.advance_pct+'% advance':'') + (fd.fee_pct?' · '+fd.fee_pct+'% fee':'')) : '',
             el('div', { class: 'cc-sub', style: 'margin-top:6px;line-height:1.5' }, 'When factoring is active + NOA verified, broker pay panels route to THIS remit-to — never the carrier bank.'),
+            can('finance.approve') ? el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [
+              pp.noa_status !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#7c3aed;border-color:#7c3aed', onClick: async (ev) => { const b = ev.currentTarget; if (!await askConfirm('Verify factoring NOA', { body: 'Verify this factoring NOA? Brokers will be routed to the factor remit-to (not the carrier bank) on every payment.' })) return; b.disabled = true; try { await ccFactoringVerify(orgId, true, null); alert('Factoring verified — broker payments now route to the factor.'); load(); } catch (e) { b.disabled = false; alert(humanizeError(e)); } } }, [icon('check',15),' Verify factoring / NOA']) : null,
+              pp.noa_status !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const why = prompt('Reject factoring NOA — reason (carrier sees this + gets an email):'); if (!why || !why.trim()) return; const b = ev.currentTarget; b.disabled = true; try { await ccFactoringVerify(orgId, false, why.trim()); load(); } catch (e) { b.disabled = false; alert(humanizeError(e)); } } }, [icon('x',15),' Reject NOA']) : null,
+            ].filter(Boolean)) : null,
           ].filter(Boolean));
         })() : '',
         kv('Updated', fmtDateTime(pp.updated_at)),
