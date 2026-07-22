@@ -107,3 +107,16 @@ A dedicated **human** dispatcher costs **5–10% of gross by itself**. LoadBoot'
 - **Drop (for now):** LoadBoot providing/paying dedicated dispatchers inside the 5% — economically impossible and legally heavier.
 - **Optional later:** a premium dispatcher-marketplace with its own pricing + lawyer-blessed agreements.
 - The agent-portal code is already aligned: agents refer (they don't post/offer freight), and the carrier network is a read-only directory.
+
+---
+
+# ✅ LOCKED — OFFICIAL MODEL (owner decision)
+
+**Simple, no dedicated-dispatcher complication.**
+
+- **LoadBoot = self-dispatch SOFTWARE / operating system + marketplace.** Carriers self-dispatch using LoadBoot (verified board, smart matching, market rates, GPS tracking, docs, settlement, factoring rails, compliance). Not a broker; never holds freight money.
+- **Revenue = flat 5% billed to the CARRIER** on delivered loads (organic carrier = full 5%; agent-referred = 5% minus the agent 1% + downline; dispatcher-managed carrier still pays LoadBoot 5%, the dispatcher bills their own carrier separately off-platform).
+- **Referral Agent program stays:** bring carriers/brokers/shippers -> 1% of gross on delivered loads their chain touches + multi-level downline overrides, paid out of LoadBoot fee. Total agent commissions (1% + downline) MUST stay capped well under 5% so LoadBoot keeps margin.
+- **Agents do NOT post/offer freight** (that is licensed-broker activity). Agents refer; verified brokers/shippers post their own loads.
+- **NO LoadBoot-provided/paid dedicated dispatchers** (economically impossible inside 5%; adds broker/labor risk). Independent dispatchers may use LoadBoot as a tool for their own carriers and bill those carriers themselves.
+- **Optional, LATER (only if demand):** a separate premium "Dispatcher Marketplace" tier with its own pricing + attorney-reviewed agreements.
