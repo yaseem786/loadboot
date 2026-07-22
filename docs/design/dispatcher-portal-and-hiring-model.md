@@ -123,3 +123,40 @@ Pakistan market for US-trucking dispatchers (2026): beginners **PKR 25k–40k/mo
 **Apply:** apply in-portal → CC verification/skills test → hired → assigned carrier(s) + SOP + salary.
 
 > Same portal, same login/signup for both. A referral partner can also apply to become a salaried dispatcher (the two can stack: salary + 1% on their own referrals).
+
+---
+
+## Non-performance & accountability (dispatcher can't just draw salary without working)
+
+**Core principle: most of the pay is EARNED, not guaranteed.** The structure itself makes "take salary, do nothing" impossible — a non-working dispatcher's pay shrinks automatically and the carrier gets moved.
+
+### Pay split that self-protects
+- **Base (~40–50% of target pay):** small floor. Starts ONLY on carrier assignment; **stops if the book is pulled**.
+- **Per-active-truck (~25–30%):** paid **only for trucks that are actually being kept loaded**. A truck that sits idle under the dispatcher's watch stops earning its per-truck amount — so neglect directly cuts pay.
+- **Performance bonus (~25–30%):** **paid monthly in arrears on realized KPIs** (utilization, on-time, gross/truck, retention). No results in the month = no bonus that month. Nothing to "keep taking."
+
+So a dispatcher who stops working keeps only the thin base for a short window — until the escalation ladder pulls the carrier and even the base ends.
+
+### KPI floors (minimums, not just targets)
+Must maintain: **utilization ≥ 80%**, **on-time ≥ 95%**, **deadhead < 15%**, book gross/truck within range, **low cancels**. Below floor for a sustained period triggers the ladder below. CC sees this live on a dispatcher dashboard — data-driven, not guesswork.
+
+### Escalation ladder (fair but firm)
+1. **1 week below floor** → automated flag + CC coaching note.
+2. **2–3 weeks below floor** → **formal written warning + PIP** (Performance Improvement Plan, ~2 weeks, clear numbers to hit).
+3. **PIP fails** → **CC reassigns the carrier(s) to a stronger dispatcher.** Book shrinks → base + per-truck shrink **automatically**. (Carrier is guaranteed a dedicated dispatcher, so it never suffers.)
+4. **No book left / repeated failure** → **probation → termination** per the contractor agreement.
+
+### Carrier voice = built-in check
+- Carrier **rates its dispatcher** and can request a switch. A complaint or low rating triggers CC review immediately.
+- Because LoadBoot guarantees a dedicated dispatcher, an unhappy carrier is **swapped, not lost** — and the failing dispatcher loses that truck's pay.
+
+### Probation for new hires (first 30–60 days)
+- Lower base, at-will exit, must hit **ramp targets** (e.g., keep first assigned trucks ≥ X% utilized, book N trucks by day 45). Miss ramp → part ways cleanly before a full book is entrusted.
+
+### Serious breach = immediate termination (+ clawback)
+Touching freight money, re-brokering/allocating, soliciting the open carrier market, falsifying records, or going around LoadBoot with a carrier → **instant termination, bonus clawback, and referral of the compliance breach.** These are spelled out in the **independent-contractor agreement** the dispatcher signs before hire — pay is a deliverables-based agreement, not an entitlement.
+
+### Net effect for LoadBoot
+- Idle dispatcher earns almost nothing (base only, briefly) and loses the carrier fast.
+- Active, performing dispatcher earns full base + per-truck + bonus — and grows LoadBoot's 5% at the same time.
+- The carrier is always covered (dedicated-dispatcher guarantee) regardless of any one dispatcher's performance.
