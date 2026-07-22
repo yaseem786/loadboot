@@ -4,6 +4,8 @@
 // timeline — each section linking back into the module it came from. Read-only aggregate
 // via cc_carrier_360 (keyed on the carrier organization id), RBAC-gated on carriers.view.
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
@@ -431,7 +433,7 @@ export function renderCarrier360(host, orgId) {
             ]);
           } catch (e) { alert(humanizeError(e)); }
           b0.disabled = false;
-        } }, '📄 View') : '';
+        } }, [icon('doc',15),' View']) : '';
         const verifyBtn = can('compliance.verify') ? el('button', { class: 'cc-chip-btn', onClick: () => {
           const st = el('select', { class: 'cc-input' }, ['valid', 'pending', 'rejected', 'expired', 'waived'].map((x) => el('option', { value: x, selected: x === r.status ? 'selected' : null }, x)));
           const ex = el('input', { class: 'cc-input', type: 'date', value: r.expiry_date || '' });
@@ -489,7 +491,7 @@ export function renderCarrier360(host, orgId) {
           el('div', { style: 'display:flex;gap:6px;align-items:center;flex:none' }, [el('span', { class: 'cc-pill cc-pill-' + tone }, r.status),
             (r.status !== 'valid') ? el('button', { class: 'cc-chip-btn', title: 'Email + in-app reminder for THIS document (6h cooldown)', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
               try { const r9 = await ccOnboardingRemind(orgId, r.name || r.key); b9.textContent = '✓ Sent'; alert('Reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email + in-app, for: ' + (r.name || r.key)); }
-              catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, '✉ Remind') : null,
+              catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, [icon('mail',15),' Remind']) : null,
             execBtn, viewBtn, verifyBtn, warnBtn].filter(Boolean)),
         ]);
       });
@@ -533,7 +535,7 @@ export function renderCarrier360(host, orgId) {
         mount(remindWrap9, el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%' }, [
           allOk ? null : el('button', { class: 'lb-btn', style: 'border:1px solid #0883F7;color:#0883F7;background:#fff;font-weight:800;border-radius:10px;padding:8px 16px;cursor:pointer', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
             try { const r9 = await ccOnboardingRemind(orgId, null); b9.textContent = '✓ Reminder sent'; alert('Overall onboarding reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email listing every missing item + in-app. Auto-nags keep running on their own schedule.'); }
-            catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, '✉ Send onboarding reminder (all missing)'),
+            catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, [icon('mail',15),' Send onboarding reminder (all missing)']),
           el('span', { class: 'cc-sub', style: 'font-size:.76rem' }, st9 ? ('Last manual reminder: ' + f9(st9.last_manual) + (st9.last_auto ? ' · last auto: ' + f9(st9.last_auto) : '') + ' · auto engine runs on cron — these buttons are the extra human push') : ''),
         ].filter(Boolean)));
       })();

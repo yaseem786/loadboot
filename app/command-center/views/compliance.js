@@ -5,6 +5,8 @@
 // Starting onboarding and verifying docs emit domain events into the Automation Core
 // (review task, expiry renewal task, and an approval-gate task that requires_approval).
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, fmtDate, fmtDateTime, card } from '../../shared/ui/components.js';
 import { complianceOverview, listOnboarding, getCarrierCompliance, startOnboarding, setCompliance, decideOnboarding, getCarriersDirectory, issueViolation, runComplianceExpirySweep, documentFile } from '../../shared/api.js';
@@ -55,7 +57,7 @@ export function renderCompliance(host) {
       try { const r = await runComplianceExpirySweep(30); toast('Automation: warned ' + (r.warned || 0) + ' of ' + (r.scanned || 0) + ' lapsing (' + (r.skipped || 0) + ' recently warned)', 'success'); loadKpis(); loadList(); }
       catch (e) { toast(humanizeError(e), 'error'); }
       b.disabled = false; b.textContent = '⚡ Run auto-expiry sweep';
-    } }, '⚡ Run auto-expiry sweep') : null;
+    } }, [icon('zap',15),' Run auto-expiry sweep']) : null;
     const actions = [ (can('compliance.verify') ? el('button', { class: 'lb-btn lb-btn-primary', onClick: openStart }, '+ Start onboarding') : null), sweepBtn ].filter(Boolean);
     return el('div', null, [
       sectionHead('Carrier Onboarding & Compliance', 'Onboarding queue, document verification and live expiry tracking. Click a KPI to filter; warn carriers whose documents lapse, or run the auto-expiry sweep. New onboardings auto-create a review task.', actions.length ? actions : null),
@@ -102,7 +104,7 @@ export function renderCompliance(host) {
           el('td', null, (c.expiring || 0) > 0 ? el('span', { class: 'cc-pill cc-pill-violet' }, c.expiring + ' soon') : '—'),
           el('td', null, fmtDate(c.submitted_at)),
           el('td', null, el('div', { class: 'cc-status-row', style: 'justify-content:flex-end;gap:6px' }, [
-            needsWarn ? el('button', { class: 'cc-chip-btn', style: 'color:#b45309;border-color:#f59e0b', onClick: (ev) => warnCarrier(c, ev) }, '⚠ Warn') : '',
+            needsWarn ? el('button', { class: 'cc-chip-btn', style: 'color:#b45309;border-color:#f59e0b', onClick: (ev) => warnCarrier(c, ev) }, [icon('alert',15),' Warn']) : '',
             el('span', { class: 'cc-row-go' }, '›'),
           ])),
         ]);
@@ -145,7 +147,7 @@ export function renderCompliance(host) {
         try { const f = await documentFile(r.document_id); const url = await signedDocumentUrl(f.file_path); window.open(url, '_blank'); }
         catch (e) { alert((e && e.message) || 'Could not open the file.'); }
         b0.disabled = false; b0.textContent = '📄 View file';
-      } }, '📄 View file') : '';
+      } }, [icon('doc',15),' View file']) : '';
       return el('div', { class: 'cc-doc-item' }, [
         el('div', null, [
           el('b', null, [r.name, r.mandatory ? '' : el('span', { class: 'cc-sub', style: 'margin-left:6px' }, '(optional)')]),

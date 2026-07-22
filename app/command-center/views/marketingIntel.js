@@ -4,6 +4,8 @@
 // daily lead trend, and the reachable audience base per segment (email/portal marketing universe).
 // Google keyword/click data appears via the GSC integration once the owner connects the service account.
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard } from '../../shared/ui/components.js';
 import { marketingIntel } from '../../shared/api.js';
@@ -22,7 +24,7 @@ export function renderMarketingIntel(host) {
     sectionHead('Marketing Intelligence', 'First-party numbers to base ad spend on: pages that pull, UTM sources/campaigns that CONVERT, leads per audience and the reachable base per segment. Keyword-level Google data arrives via the GSC card once the Google service account is connected.', sel),
     el('div', { class: 'lb-card', style: 'margin:10px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center' }, [
       el('b', null, 'Push to an audience:'),
-      el('a', { class: 'lb-btn lb-btn-sm lb-btn-primary', href: '#/campaign-manager' }, '📧 Email campaign (consent-enforced)'),
+      el('a', { class: 'lb-btn lb-btn-sm lb-btn-primary', href: '#/campaign-manager' }, [icon('mail',15),' Email campaign (consent-enforced)']),
       el('a', { class: 'lb-btn lb-btn-sm', href: '#/delivery' }, '⚙️ Delivery health & automations'),
       el('span', { class: 'cc-sub' }, 'In-app portal push: Notify broadcast by role (carriers / brokers / drivers / referral partners) — audience bases below are your reachable universe.'),
     ]),

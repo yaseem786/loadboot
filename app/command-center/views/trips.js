@@ -5,6 +5,8 @@
 // sync the parent load and emit domain events into the Automation Core (driver-notify,
 // check-call, invoice-ready tasks).
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card, askReason } from '../../shared/ui/components.js';
 import { dispatchOverview, listTrips, getTrip, createTrip, advanceTrip, addTripNote, getLoadsList, getCarriersDirectory, rateconDocument, tripNotifyParties, tripRevert } from '../../shared/api.js';
@@ -166,7 +168,7 @@ export function renderTrips(host, focusId) {
           el('div', { class: 'cc-sub', style: 'margin:2px 0 6px' }, 'In-app + push + email to the carrier’s users · in-app to the poster (broker/shipper). Every send logs on the timeline.'),
           noteIn,
           el('div', { class: 'cc-status-row', style: 'margin-top:8px' }, [
-            t.driver_phone ? el('a', { class: 'cc-chip-btn', href: 'tel:' + t.driver_phone, style: 'text-decoration:none' }, '📞 Call driver ' + t.driver_phone) : el('span', { class: 'cc-sub' }, '📞 No driver phone — assign a driver first'),
+            t.driver_phone ? el('a', { class: 'cc-chip-btn', href: 'tel:' + t.driver_phone, style: 'text-decoration:none' }, '📞 Call driver ' + t.driver_phone) : el('span', { class: 'cc-sub' }, [icon('phone',15),' No driver phone — assign a driver first']),
             btn('🔔 Alert carrier', 'carrier'),
             btn('🏢 Warn poster/receiver', 'poster'),
             btn('⚠ Alert both', 'both'),

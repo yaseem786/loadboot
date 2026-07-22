@@ -2,6 +2,8 @@
 // downline (levels 2–5), earnings, payouts, message thread, notify/email. Built for
 // hundreds of agents: search + status filter + sortable summary table.
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
 import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue, agentSuspend } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
@@ -50,7 +52,7 @@ export function renderAgents(host) {
       ]),
       el('b', { style: 'color:#12a150' }, money(x.earned || 0)),
       Number(x.payable) ? el('span', { class: 'cc-pill cc-pill-green' }, money(x.payable) + ' payable') : '',
-      x.open_payout ? el('span', { class: 'cc-pill cc-pill-amber' }, '💸 payout pending') : '',
+      x.open_payout ? el('span', { class: 'cc-pill cc-pill-amber' }, [icon('dollar',15),' payout pending']) : '',
       (() => { const m = { approved: ['approved', 'green'], under_review: ['UNDER REVIEW', 'amber'], info_needed: ['info needed', 'amber'], rejected: ['rejected', 'red'] }[x.status] || [x.status, 'violet']; return el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0]); })(),
     ]);
   }
@@ -70,7 +72,7 @@ export function renderAgents(host) {
       return el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:5px 0;border-bottom:1px dashed #eef2f7' }, [
         el('span', { style: 'font-size:.85rem;font-weight:700;flex:1;min-width:150px' }, label), chip,
         path ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const b = ev.currentTarget; const w = b.textContent; b.textContent = '…';
-          try { const u = await signedDocumentUrl(path, 600); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.textContent = w; } }, '👁 View') : '',
+          try { const u = await signedDocumentUrl(path, 600); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.textContent = w; } }, [icon('eye',15),' View']) : '',
         path && st !== 'accepted' ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { try { await ccAgentDocReview(x.user_id, docKey, 'accept', null); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✓ Accept') : '',
         path && st !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async () => { const r = await askReason('Reject ' + label + ' — reason (agent sees this + gets an email):'); if (!r) return; try { await ccAgentDocReview(x.user_id, docKey, 'reject', r); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✕ Reject') : '',
         reason && st === 'rejected' ? el('div', { class: 'cc-sub', style: 'width:100%' }, 'reason: ' + reason) : '',
@@ -98,7 +100,7 @@ export function renderAgents(host) {
     mount(body, el('div', null, [
       el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'margin-bottom:12px', onClick: load }, '← All agents'),
       el('div', { class: 'cc-grid-2' }, [
-        card([el('h4', { class: 'cc-card-title' }, '👤 Application — everything submitted'),
+        card([el('h4', { class: 'cc-card-title' }, [icon('users',15),' Application — everything submitted']),
           kv('Name', p.full_name), kv('Email', d.email), kv('Phone', p.phone),
           kv('Address', [p.street, p.city, p.state, p.zip, p.country].filter(Boolean).join(', ')),
           kv('Agency', p.agency), kv('Experience', (p.years_exp ?? '—') + ' yrs'),
@@ -152,7 +154,7 @@ export function renderAgents(host) {
               : m9 === 'payoneer' ? 'Pay the Payoneer account; the agent withdraws to their own local bank inside Payoneer. LoadBoot adds no fee.'
               : null;
             return el('div', { style: 'padding:8px 0' }, [
-              el('div', { style: 'font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px' }, '💳 Payout destination'),
+              el('div', { style: 'font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px' }, [icon('card',15),' Payout destination']),
               ...rows9,
               note9 ? el('div', { style: 'margin-top:8px;background:#f8fafc;border:1px solid #e6ebf3;border-radius:10px;padding:9px 12px;font-size:.8rem;line-height:1.55;color:#475569' }, note9) : null,
             ].filter(Boolean));
@@ -171,7 +173,7 @@ export function renderAgents(host) {
                   catch (e) { toast(humanizeError(e), 'error'); } } }, '⏸ Suspend agent'),
           ]),
         ]),
-        card([el('h4', { class: 'cc-card-title' }, '💰 Earnings & payouts'),
+        card([el('h4', { class: 'cc-card-title' }, [icon('dollar',15),' Earnings & payouts']),
           kv('Clearing', money(e9.accrued || 0)), kv('Available to settle', money(e9.payable || 0)), kv('Paid out', money(e9.paid || 0)),
           el('div', { class: 'cc-sub', style: 'margin:8px 0 4px;font-weight:700' }, 'Recent commissions'),
           ...(e9.recent || []).slice(0, 8).map((c) => el('div', { class: 'cc-sub' }, money(c.amount) + ' · L' + c.level + ' · ' + c.status + ' · ' + fmtDate(c.at))),

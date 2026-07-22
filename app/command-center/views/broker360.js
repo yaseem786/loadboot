@@ -1,6 +1,8 @@
 // broker360.js — one-stop Broker/Partner 360 (Carrier-360 parity for the broker side):
 // packet review with file previews + verify/reject, FMCSA lookup, loads, claims, health, timeline.
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { card, statCard, statusPill, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { partner360, onboardingReviewItem, claimBundle, partnerSetStatus, accountHealth, issueViolation } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
@@ -115,7 +117,7 @@ export function renderBroker360(host, orgId) {
             fpath ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
               try { const u = await signedDocumentUrl(fpath, 300); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); }
               b.disabled = false;
-            } }, '👁 View file') : null,
+            } }, [icon('eye',15),' View file']) : null,
             (() => {
               let sd = null; try { sd = it.note && it.note.trim().startsWith('{') ? JSON.parse(it.note) : null; } catch (_) {}
               if (!sd) return null;
@@ -154,7 +156,7 @@ export function renderBroker360(host, orgId) {
                     const why = await askReason('⚠ Reject + WARN — reason (rejects the item AND issues a −5 pt document strike):'); if (!why) return;
                     _btn9.disabled = true;
                     try { await onboardingReviewItem(orgId, it.key, 'reject', why); await issueViolation(orgId, 'document', 'warning', '[' + it.label + '] ' + why); toast('Rejected + strike issued', 'info'); dA.close(); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
-                  } }, '⚠ Reject + warn'),
+                  } }, [icon('alert',15),' Reject + warn']),
                 ].filter(Boolean)),
               ].filter(Boolean));
             } }, '⚙ Actions') : null,
@@ -221,7 +223,7 @@ export function renderBroker360(host, orgId) {
           const why = await askReason('⚠ Warn this partner — reason (they see this; points deducted):'); if (!why) return;
           _btn9.disabled = true;
           try { await issueViolation(orgId, 'conduct', 'warning', why); _btn9.textContent = 'Warned ✓'; toast('Warning issued', 'success'); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
-        } }, '⚠ Warn account') : null,
+        } }, [icon('alert',15),' Warn account']) : null,
       ].filter(Boolean)));
     })();
 
@@ -242,7 +244,7 @@ export function renderBroker360(host, orgId) {
         el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [
           fpath9 ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
             try { const u = await signedDocumentUrl(fpath9, 300); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.disabled = false;
-          } }, '👁 Voided check / bank letter') : el('span', { class: 'cc-sub' }, '⚠ no voided check on file'),
+          } }, [icon('eye',15),' Voided check / bank letter']) : el('span', { class: 'cc-sub' }, [icon('alert',15),' no voided check on file']),
           (manage && st9 !== 'verified') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { const _btn9 = ev.currentTarget; _btn9.disabled = true;
             try { await onboardingReviewItem(orgId, 'bank_instructions', 'verify', null); toast('Bank details verified — partner notified', 'success'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
           } }, '✓ Verify bank details') : null,
@@ -290,7 +292,7 @@ export function renderBroker360(host, orgId) {
 
     // ---- claims on their loads ----
     const claimsCard = card([
-      el('h4', { class: 'cc-card-title' }, '💰 Claims on their loads'),
+      el('h4', { class: 'cc-card-title' }, [icon('dollar',15),' Claims on their loads']),
       claims.length ? el('div', null, claims.map((a) => el('div', { style: 'display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap;cursor:pointer', title: 'Open evidence bundle', onClick: async () => {
         let b = null; try { b = await claimBundle(a.id); } catch (e) { toast(humanizeError(e), 'error'); return; }
         const c = (b && b.claim) || {};

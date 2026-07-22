@@ -2,6 +2,8 @@
 // load for the requesting carrier (creates the trip); decline notifies them. Staff see the
 // real carrier name plus the anonymized-style trust profile (verified badge, rating, score).
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, card, money } from '../../shared/ui/components.js';
 import { bookRequestsQueue, decideBookRequest, runStaleBookreqSweep, prebookCheck } from '../../shared/api.js';
@@ -73,7 +75,7 @@ export function renderBookingRequests(host) {
     try { const r = await runStaleBookreqSweep(5); toast('Auto-expired ' + (r.expired || 0) + ' of ' + (r.scanned || 0) + ' stale requests', 'success'); load(); }
     catch (e) { toast(humanizeError(e), 'error'); }
     b.disabled = false; b.textContent = '⚡ Auto-expire stale (>5d)';
-  } }, '⚡ Auto-expire stale (>5d)');
+  } }, [icon('zap',15),' Auto-expire stale (>5d)']);
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Booking requests', 'Carriers requesting to book loads — approve or decline after reviewing their verified trust profile. Use the sweep to auto-expire stale requests.', [sweepBtn]),
     listHost,

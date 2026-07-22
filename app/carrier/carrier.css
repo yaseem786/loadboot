@@ -34,7 +34,7 @@ body { background: var(--lb-bg, #f4f6fb); margin: 0; font-family: var(--lb-font,
 .cp-navlink { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 11px; color: #aab6cf; font-weight: 600; font-size: .92rem; text-decoration: none; cursor: pointer; transition: background .15s, color .15s; }
 .cp-navlink:hover { background: rgba(255,255,255,.06); color: #fff; }
 .cp-navlink.active { background: linear-gradient(135deg, #0883F7, #1d4ed8); color: #fff; box-shadow: 0 10px 24px -12px rgba(37,99,235,.8); }
-.cp-ic { display: inline-flex; }
+.cp-ic { display: inline-flex; vertical-align: -.15em; }
 .cp-side-foot { margin-top: auto; border-top: 1px solid rgba(255,255,255,.08); padding-top: 14px; }
 .cp-carrier-name { color: #fff; font-weight: 700; font-size: .9rem; }
 .cp-carrier-mail { color: #8295b5; font-size: .76rem; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -139,7 +139,9 @@ body { background: var(--lb-bg, #f4f6fb); margin: 0; font-family: var(--lb-font,
 /* trips / inline forms */
 .cp-trip { padding: 13px 0; border-bottom: 1px solid #f1f5f9; } .cp-trip:last-child { border-bottom: 0; }
 .cp-trip-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.cp-trip-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.cp-trip-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; align-items: stretch; }
+.cp-trip-actions > * { width: 100%; margin: 0; white-space: normal; }
+@media (max-width:400px){ .cp-trip-actions { grid-template-columns: 1fr 1fr; } }
 .cp-inlineform { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 12px; background: #f8fafc; border-radius: 11px; }
 
 /* inputs & buttons */
@@ -626,4 +628,23 @@ html[data-lbtheme="dark"] .cpx-adv-grid .cell { background: #111c33; border-colo
 @media (max-width: 900px) {
   .cp-btn, .cp-btn-sm, .cp-chip2, .cpx-tabpick, .cpx-seg button, .cpx-avail, .cp-iconbtn {
     min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* Premium native file inputs (NOA / factoring / doc uploads) — replaces beheda "Choose File" look */
+input[type="file"]:not([hidden]){color:#475569;font-size:.85rem;max-width:100%;vertical-align:middle}
+input[type="file"]:not([hidden])::file-selector-button{margin-right:10px;padding:9px 14px;border-radius:10px;border:1px solid #d7e0ec;background:#eef2f7;color:#0b1220;font-weight:700;font-size:.84rem;cursor:pointer;transition:background .15s}
+input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
+@media(max-width:560px){input[type="file"]:not([hidden]){width:100%}}
+
+/* Finance sub-tab strip — wrap neatly so no tab (Accounting/Taxes/Payroll) is clipped */
+.finnav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.finnav > .cp-btn{margin:0}
+
+/* Money-in claim actions — tidy stack (mobile: full-width buttons, left-aligned chips) */
+.cp-inflight-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.cp-inflight-actions .cp-ic{display:inline-flex;vertical-align:-2px;margin-right:2px}
+@media(max-width:560px){
+  .cp-inflight-actions{align-items:stretch;width:100%;min-width:100%}
+  .cp-inflight-actions .cp-btn{width:100%;margin:0}
+  .cp-inflight-actions .cp-pill{align-self:flex-start}
 }

@@ -277,3 +277,8 @@ h1, h2, h3, h4 { color: #eaf1fb; }
 .cp-card .cp-row .cp-btn{flex:none}
 .cp-row-t{overflow-wrap:anywhere}
 @media(max-width:640px){.cp-card .cp-row{gap:8px}.cp-card .cp-row .cp-btn{flex:1 1 auto;text-align:center}}
+
+/* Premium native file inputs — dark theme */
+html[data-lbtheme="dark"] input[type="file"]:not([hidden]){color:#9fb2cc}
+html[data-lbtheme="dark"] input[type="file"]:not([hidden])::file-selector-button{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#eaf1fb}
+html[data-lbtheme="dark"] input[type="file"]:not([hidden])::file-selector-button:hover{background:rgba(255,255,255,.14)}

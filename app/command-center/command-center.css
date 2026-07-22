@@ -564,3 +564,5 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
   .cc-iconbtn, .cc-drawer-x { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
   .cc-side, .cc-content { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
 }
+
+.cc-ico{display:inline-flex;vertical-align:-.15em}

@@ -235,6 +235,27 @@ const ic = (name) => ({
   menu: 'M3 6h18M3 12h18M3 18h18',
   sos: 'M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01',
   cog: 'M12 15a3 3 0 100-6 3 3 0 000 6zM12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1', pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
+  inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 6h13l3.5 6M2 12l3.5-6',
+  clock: 'M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2',
+  alert: 'M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01',
+  bank: 'M3 21h18M5 10h14M5 10l7-5 7 5M6 10v9M18 10v9M10 10v9M14 10v9',
+  upload: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v13',
+  building: 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01',
+  send: 'M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z',
+  mail: 'M4 4h16v16H4zM4 6l8 6 8-6',
+  receipt: 'M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6M9 15h4',
+  clipboard: 'M9 3h6v3H9zM7 4H5v18h14V4h-2M9 12h6M9 16h6',
+  gps: 'M12 12a3 3 0 100-6 3 3 0 000 6zM5 5a9 9 0 000 14M19 5a9 9 0 010 14M8 8a5 5 0 000 8M16 8a5 5 0 010 8',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 018 0v4',
+  users: 'M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8M22 21v-2a4 4 0 00-3-3.9M17 3.1a4 4 0 010 7.8',
+  refresh: 'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0114.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0020.5 15',
+  eye: 'M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7zM12 15a3 3 0 100-6 3 3 0 000 6',
+  check: 'M20 6L9 17l-5-5',
+  card: 'M2 5h20v14H2zM2 10h20',
+  phone: 'M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6A19.8 19.8 0 012 4.2 2 2 0 014 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.5 2.1L8 9.6a16 16 0 006 6l1.2-1.2a2 2 0 012.1-.5c.8.3 1.7.5 2.6.6A2 2 0 0122 16.9z',
+  zap: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
+  tools: 'M14.7 6.3a4 4 0 01-5 5L3 18l3 3 6.7-6.7a4 4 0 005-5l-2.1 2.1-2.9-.8-.8-2.9 2.1-2.1z',
+  chart: 'M3 3v18h18M7 15l3-4 3 2 4-6',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 // Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.
@@ -587,7 +608,7 @@ async function agentPortal(user) {
     h('div', null, feed.pair_active
       ? '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.'
       : '⏳ CHAIN PENDING — bring the missing side of your pair (carrier + broker/shipper, or post a load yourself) to switch earnings on.'),
-    h('div', { style: 'font-size:.72rem;font-weight:700;opacity:.75;margin-top:3px' }, '📖 Tap to read the program rules & policies'),
+    h('div', { style: 'font-size:.72rem;font-weight:700;opacity:.75;margin-top:3px' }, [icon('docs',15),' Tap to read the program rules & policies']),
   ]);
   const inviteModal9 = () => {
     const sideSel = h('select', { class: 'cp-in' }, [['broker', '🏢 Broker'], ['shipper', '🏭 Shipper'], ['carrier', '🚛 Carrier']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
@@ -606,7 +627,7 @@ async function agentPortal(user) {
         try { const r9 = await agentSendInvite(sideSel.value, emailIn.value.trim(), nameIn.value.trim() || null);
           close(); lbToast((r9 && r9.note) || 'Invite sent.', 'success', '✉ Invite sent');
         } catch (e9) { b9.disabled = false; b9.textContent = '🚀 Send invite'; err9.textContent = (e9 && e9.message) || 'Failed.'; }
-      } }, '🚀 Send invite'),
+      } }, [icon('send',15),' Send invite']),
       h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: async (ev9) => {
         const nm9 = nameIn.value.trim(); const hi9 = nm9 ? nm9 + '! ' : '';
         const MSG9 = {
@@ -616,14 +637,14 @@ async function agentPortal(user) {
         };
         const t9 = (MSG9[sideSel.value] || '') + feed.link;
         try { const _ct617 = ev9.currentTarget; await navigator.clipboard.writeText(t9); _ct617.textContent = 'Copied ✓ — paste in WhatsApp/SMS'; setTimeout(() => { _ct617.textContent = '📋 Copy as message instead (WhatsApp/SMS)'; }, 1800); } catch (_) { alert(t9); }
-      } }, '📋 Copy as message instead (WhatsApp/SMS)'),
+      } }, [icon('clipboard',15),' Copy as message instead (WhatsApp/SMS)']),
     ]);
   };
   const linkCard = () => agCard('🔗 Your referral link', [
     h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Code'), h('b', null, feed.code)]),
     h('div', { class: 'cp-row-s', style: 'word-break:break-all;margin:4px 0 8px' }, feed.link),
     h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
-      h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#FC5305', onClick: inviteModal9 }, '✉ Invite by email'),
+      h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#FC5305', onClick: inviteModal9 }, [icon('mail',15),' Invite by email']),
       h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { try { const _ct626 = ev.currentTarget; await navigator.clipboard.writeText(feed.link); _ct626.textContent = 'Copied ✓'; } catch (_) { alert(feed.link); } } }, 'Copy link'),
 
     ]),
@@ -643,8 +664,8 @@ async function agentPortal(user) {
         h('div', { class: 'cp-row-s' }, 'broker: ' + (x.broker || '—') + (x.broker_yours ? ' ★yours' : '') + (x.booked_by ? ' · carrier: ' + x.booked_by + (x.booked_by_yours ? ' ★YOURS — double chain ✓' : '') : '') + (Number(x.your_commission) ? ' · your cut ' + money9(x.your_commission) : '')),
       ]),
       x.delivered_at ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '✓ DELIVERED')
-        : x.trip_status ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff' }, '🚛 BOOKED')
-        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, '📦 POSTED'),
+        : x.trip_status ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff' }, [icon('truck',15),' BOOKED'])
+        : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, [icon('loads',15),' POSTED']),
     ]));
   };
   async function render() {
@@ -661,12 +682,12 @@ async function agentPortal(user) {
       const obCount = Object.values(obDone).filter(Boolean).length;
       const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? '#4ade80' : '#94a3b8') }, (ok9 ? '✓ ' : '○ ') + lbl9);
       const verifyCard =
-        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, '🛡 Verified agent — payouts unlocked.')
+        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, [icon('shield',15),' Verified agent — payouts unlocked.'])
         : obStatus === 'under_review' ? h('div', { style: 'background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
             h('div', { style: 'font-weight:800;color:#7cc0ff' }, '⏳ Verification UNDER REVIEW'),
             h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot dispatch is reviewing your application — usually under 24 hours. Your link works; earnings switch on at approval.')])
         : obStatus === 'info_needed' ? h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
-            h('div', { style: 'font-weight:800;color:#fbbf24' }, '⚠ Verification — more info needed'),
+            h('div', { style: 'font-weight:800;color:#fbbf24' }, [icon('alert',15),' Verification — more info needed']),
             h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, (obProfile && obProfile.review_note) || ''),
             h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('verify') }, 'Update & resubmit →')])
         : obStatus === 'rejected' ? h('div', { style: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fca5a5;font-weight:700' }, '✕ Application not approved — ' + ((obProfile && obProfile.review_note) || 'contact support.'))
@@ -841,7 +862,7 @@ async function agentPortal(user) {
             [h('b', null, '\u26a0 We cannot pay to mobile wallets.'), ' JazzCash, EasyPaisa, bKash, M-Pesa, GCash and similar local wallets cannot receive an international USD payment directly \u2014 a payout sent there is rejected or lost. Use Payoneer (it pays into your local bank for you), a US bank account, or ask us about another method. The receiving account must be in ', h('b', null, 'your own legal name'), ' \u2014 third-party accounts are refused for anti-fraud reasons.']) : null,
           // ---- substitute tax-form fields (signed by the same e-signature below) ----
           d.tax_form === 'w9' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
-            h('div', { style: 'font-weight:800;font-size:.88rem' }, '🧾 W-9 (substitute) — US person'),
+            h('div', { style: 'font-weight:800;font-size:.88rem' }, [icon('receipt',15),' W-9 (substitute) — US person']),
             h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;margin-top:8px' }, [
               (() => { const c9 = h('select', { class: 'cp-in' }, [['', 'Federal tax classification *'], ['individual', 'Individual / sole proprietor'], ['single_llc', 'Single-member LLC'], ['c_corp', 'C corporation'], ['s_corp', 'S corporation'], ['partnership', 'Partnership'], ['llc', 'LLC (C/S/P)']].map(([v9, l9]) => h('option', { value: v9 }, l9))); c9.value = d.tax_class || ''; c9.onchange = () => { d.tax_class = c9.value; }; return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Tax classification *'), c9]); })(),
               fld('SSN or EIN *', 'tax_tin', 'XXX-XX-XXXX / XX-XXXXXXX'),
@@ -850,7 +871,7 @@ async function agentPortal(user) {
             h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Your Step-1 address is used on the form. Your e-signature below also signs this W-9 (substitute) — certification included (backup withholding & TIN correctness).'),
           ]) : null,
           d.tax_form === 'w8ben' ? h('div', { style: 'margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px' }, [
-            h('div', { style: 'font-weight:800;font-size:.88rem' }, '🧾 W-8BEN (substitute) — non-US person'),
+            h('div', { style: 'font-weight:800;font-size:.88rem' }, [icon('receipt',15),' W-8BEN (substitute) — non-US person']),
             h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;margin-top:8px' }, [
               fld('Country of citizenship *', 'tax_citizen', 'e.g. Pakistan'),
               fld('Foreign tax ID (CNIC/NTN etc.)', 'tax_tin', ''),
@@ -941,8 +962,8 @@ async function agentPortal(user) {
         ]));
       } else {
         mount(content, agCard('📦 Post a load', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '🔒 Unlocks after verification: once LoadBoot approves your agent application (Get Verified tab), you get your own posting workspace — the same wizard brokers use, with direct-carrier targeting for your referred carriers. A load you post counts as the DEMAND side of your pair.'),
-          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, '🛡 Go to Get Verified →'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application (Get Verified tab), you get your own posting workspace — the same wizard brokers use, with direct-carrier targeting for your referred carriers. A load you post counts as the DEMAND side of your pair.']),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified →']),
         ]));
       }
     } else if (tab === 'chain') {
@@ -986,7 +1007,7 @@ async function agentPortal(user) {
           h('span', { class: 'cp-row-s' }, '📦 ' + (x9.loads_posted || 0) + ' posted'),
           h('span', { class: 'cp-row-s' }, '✓ ' + (x9.trips_delivered || 0) + ' delivered'),
           h('span', { style: 'flex:1' }),
-          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { window.__agLoadFilter = x9.org; go('loads'); } }, '📦 View loads'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { window.__agLoadFilter = x9.org; go('loads'); } }, [icon('loads',15),' View loads']),
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { const _ct989 = ev9.currentTarget; await navigator.clipboard.writeText(nudge9(x9)); _ct989.textContent = 'Copied ✓'; setTimeout(() => { _ct989.textContent = '👋 Nudge'; }, 1400); } catch (_) { alert(nudge9(x9)); } } }, '👋 Nudge'),
         ]),
       ]); };
@@ -1039,8 +1060,8 @@ async function agentPortal(user) {
               ].join('')),
             ]),
             st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' }, '✓ DELIVERED')
-              : st9 === 'booked' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff;font-weight:800' }, '🚛 MOVING')
-              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, '📦 ON BOARD'),
+              : st9 === 'booked' ? h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.15);color:#3b9dff;font-weight:800' }, [icon('truck',15),' MOVING'])
+              : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, [icon('loads',15),' ON BOARD']),
           ]),
           h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:.74rem;color:#8fa3bf;font-weight:700' }, [
             h('span', null, '📦 posted ' + fmtD9(x9.posted_at)),
@@ -1073,11 +1094,11 @@ async function agentPortal(user) {
         hostE]));
       try {
         const rows = (await myReferralEarnings(100)) || [];
-        mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💰 Commission ledger')]),
+        mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, [icon('finance',15),' Commission ledger'])]),
           rows.length ? h('div', null, rows.map((x) => h('div', { class: 'cp-row' }, [
             h('div', null, [h('div', { class: 'cp-row-t' }, money9(x.amount) + ' · ' + ((x.level || 1) === 1 ? 'direct client (1%)' : 'level ' + x.level + ' override — recruited agent\u2019s chain')), h('div', { class: 'cp-row-s' }, (x.source || x.source_org || '') + ' · ' + (x.accrued_at ? new Date(x.accrued_at).toLocaleDateString() : ''))]),
             pill(x.status)]))) : h('div', { class: 'cp-muted' }, 'Commissions appear here per delivered load — 1% of gross, 15-day clearing, then payable.')]);
-      } catch (_) { mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💰 Commission ledger')]), h('div', { class: 'cp-muted' }, 'Could not load.')]); }
+      } catch (_) { mount(hostE, [h('div', { class: 'cp-cardhead' }, [h('h3', null, [icon('finance',15),' Commission ledger'])]), h('div', { class: 'cp-muted' }, 'Could not load.')]); }
     } else if (tab === 'payouts') {
       const hostP = h('div');
       mount(content, hostP);
@@ -1111,7 +1132,7 @@ async function agentPortal(user) {
             pc.next_clearing ? tile9('Next release', new Date(pc.next_clearing).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) : null].filter(Boolean)),
           pc.eligible
             ? h('div', { style: 'background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.45);border-radius:14px;padding:16px 18px;margin-bottom:12px;text-align:center' }, [
-                h('div', { style: 'font-weight:900;font-size:1.05rem;color:#4ade80;margin-bottom:10px' }, '✅ You are ELIGIBLE — money is ready to move'), reqBtn,
+                h('div', { style: 'font-weight:900;font-size:1.05rem;color:#4ade80;margin-bottom:10px' }, [icon('check',15),' You are ELIGIBLE — money is ready to move']), reqBtn,
                 h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Goes to your verified account on file · reviewed by a person · bank transfers land in 3–5 business days after SENT.')])
             : h('div', { style: 'background:rgba(245,158,11,.09);border:1.5px solid rgba(245,158,11,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
                 h('div', { style: 'font-weight:900;color:#fbbf24' }, '⏳ Not eligible yet — here is exactly why:'),
@@ -1129,8 +1150,8 @@ async function agentPortal(user) {
               pc.bank.docs_ok ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80' }, '📎 ID + bank proof on file') : h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.15);color:#f87171' }, '📎 documents missing'),
               h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('verify') }, '✎ Update account'),
             ].filter(Boolean)),
-            h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, '🔒 Payouts only ever go to this verified account — nobody can redirect your money.'),
-          ].filter(Boolean)) : agCard('🏦 Payout account', [h('div', { class: 'cp-row-s' }, 'No account on file yet — add it in Get Verified step 3.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, '🛡 Add payout account →')]),
+            h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, [icon('lock',15),' Payouts only ever go to this verified account — nobody can redirect your money.']),
+          ].filter(Boolean)) : agCard('🏦 Payout account', [h('div', { class: 'cp-row-s' }, 'No account on file yet — add it in Get Verified step 3.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Add payout account →'])]),
           agCard('📜 Payout history & tracking', reqRows9.length ? reqRows9 : [h('div', { class: 'cp-muted' }, 'No payouts yet. Flow: REQUESTED → APPROVED → 💸 SENT (3–5 business days) → ✓ you confirm RECEIVED.')]),
         ]));
       })();
@@ -1166,7 +1187,7 @@ async function agentPortal(user) {
           h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
             h('button', { class: 'cp-btn-ghost', onClick: agreementPdf9 }, '⬇ Agent Agreement (signed PDF)'),
             h('button', { class: 'cp-btn-ghost', onClick: taxPdf9 }, '⬇ Tax form (signed PDF)'),
-            h('button', { class: 'cp-btn-ghost', onClick: rulesModal9 }, '📖 Program rules & policies'),
+            h('button', { class: 'cp-btn-ghost', onClick: rulesModal9 }, [icon('docs',15),' Program rules & policies']),
           ]),
         ]),
         agCard('🔒 Security', [
@@ -1193,7 +1214,7 @@ async function agentPortal(user) {
   const agBellList = h('div', { style: 'max-height:380px;overflow:auto' });
   const agBellPanel = h('div', { hidden: true, style: 'position:absolute;top:44px;right:0;width:min(360px,86vw);background:#0f1b30;border:1px solid rgba(255,255,255,.14);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);z-index:60;overflow:hidden;text-align:left' }, [
     h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.09)' }, [
-      h('b', { style: 'font-size:.85rem' }, '🔔 Notifications'),
+      h('b', { style: 'font-size:.85rem' }, [icon('bell',15),' Notifications']),
       h('button', { class: 'cp-btn-ghost', style: 'font-size:.72rem;padding:4px 8px', onClick: async () => { try { await pocketMarkAllNotificationsRead(); } catch (_) {} agLoadBell(); } }, 'Mark all read'),
     ]),
     agBellList,
@@ -1249,7 +1270,7 @@ async function agentPortal(user) {
       h('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [
         h('button', { class: 'cp-btn', onClick: () => { try { navigator.clipboard.writeText((cs9 && cs9.link) || ('https://loadboot.com/?ref=' + (feed.code || ''))); } catch (_) {} } }, '🔗 Copy my link — one link for every side'),
         h('button', { class: 'cp-btn-ghost', onClick: () => { if (close9) close9(); go('chain'); } }, 'Open My Chain'),
-        h('button', { class: 'cp-btn-ghost', onClick: rulesModal9 }, '📖 Full rules'),
+        h('button', { class: 'cp-btn-ghost', onClick: rulesModal9 }, [icon('docs',15),' Full rules']),
       ]),
     ]);
   }
@@ -1339,7 +1360,7 @@ function lbStopsModal9(l9) {
       (s9.purpose ? s9.purpose + ' · ' : '') + 'address unlocks on booking', true)),
     row9('🟢', (st9.length + 2) + ' · DELIVERY — ' + (l9.destination || ''), l9.delivery_date ? 'DEL ' + l9.delivery_date : null, false),
     h('div', { style: 'margin-top:10px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:11px;padding:9px 12px' },
-      h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, '💰 Every extra stop carries stop-off pay on the rate card, and each stop gets its own GPS check-in — detention protection applies at EVERY stop, not just pickup and delivery.')),
+      h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, [icon('finance',15),' Every extra stop carries stop-off pay on the rate card, and each stop gets its own GPS check-in — detention protection applies at EVERY stop, not just pickup and delivery.'])),
   ]);
 }
 function notCarrier() {
@@ -1380,7 +1401,7 @@ function notCarrier() {
         tile('Referred', String(k.referred || 0)), tile('Brokers', String(k.brokers || 0)), tile('Carriers', String(k.carriers || 0)),
         tile('Clearing', money9(tt.accrued)), tile('Payable', money9(tt.payable), true), tile('Paid', money9(tt.paid), true)]);
       const banner = cs.pair_active
-        ? h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.')
+        ? h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, [icon('check',15),' CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.'])
         : h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:10px 14px;font-weight:700;color:#fbbf24' },
             (k.referred || 0) === 0 ? '⏳ CHAIN PENDING — share your link and bring your first PAIR (a broker + a carrier).'
             : ('⏳ CHAIN PENDING — bring the other side (' + ((k.carriers || 0) ? 'a broker or shipper' : 'a carrier') + ') and every load starts paying you.'));
@@ -1419,9 +1440,9 @@ function notCarrier() {
             h('div', { class: 'cp-row-s' }, x.side + ' · joined ' + (x.joined_at ? new Date(x.joined_at).toLocaleDateString() : '') + ' · ' + (x.loads_posted || 0) + ' posted · ' + (x.trips_delivered || 0) + ' delivered'),
           ]), h('b', { style: 'color:#4ade80' }, money9(x.your_earnings)),
         ]))) : h('div', { class: 'cp-row-s' }, 'Nobody yet — copy an invite above and send it to that broker or carrier you already know.'),
-        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '📦 Chain loads — live'),
+        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, [icon('loads',15),' Chain loads — live']),
         loadRows.length ? h('div', null, loadRows) : h('div', { class: 'cp-row-s' }, 'Loads your clients post or haul appear here the moment they happen: POSTED → BOOKED → DELIVERED (+ your cut).'),
-        noticeRows.length ? h('div', null, [h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '🔔 Latest activity'), ...noticeRows]) : null,
+        noticeRows.length ? h('div', null, [h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, [icon('bell',15),' Latest activity']), ...noticeRows]) : null,
       ].filter(Boolean)));
     })();
     const pw = h('div'); panel.appendChild(pw); referralPayoutUI(pw, r);
@@ -2189,7 +2210,7 @@ async function appView(user) {
       pushCard = h('div', { class: 'cp-card' }, [
         h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Notifications'),
         h('div', { class: 'cpx-set-row' }, [
-          h('div', null, [h('div', { class: 'cpx-set-t' }, '🔔 Push notifications'), h('div', { class: 'cpx-set-s' }, 'Trips, payments and announcements on this device')]),
+          h('div', null, [h('div', { class: 'cpx-set-t' }, [icon('bell',15),' Push notifications']), h('div', { class: 'cpx-set-s' }, 'Trips, payments and announcements on this device')]),
           h('div', { style: 'margin-left:auto;display:flex;gap:8px;align-items:center' }, [st, btn]),
         ]),
       ]);
@@ -2198,7 +2219,7 @@ async function appView(user) {
     const availCard = h('div', { class: 'cp-card' }, [
       h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Availability'),
       h('div', { class: 'cpx-set-row' }, [
-        h('div', null, [h('div', { class: 'cpx-set-t' }, '🚛 Available for loads'), h('div', { class: 'cpx-set-s' }, 'Offline = dispatch pauses new load matches for you')]),
+        h('div', null, [h('div', { class: 'cpx-set-t' }, [icon('truck',15),' Available for loads']), h('div', { class: 'cpx-set-s' }, 'Offline = dispatch pauses new load matches for you')]),
         availBtn,
       ]),
     ]);
@@ -2217,7 +2238,7 @@ async function appView(user) {
     const cpmCard = h('div', { class: 'cp-card' }, [
       h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Profit engine'),
       h('div', { class: 'cpx-set-row' }, [
-        h('div', null, [h('div', { class: 'cpx-set-t' }, '💰 My all-in cost per mile'), h('div', { class: 'cpx-set-s' }, 'Fuel + truck + insurance + fees per mile. Every load card then shows your estimated profit.')]),
+        h('div', null, [h('div', { class: 'cpx-set-t' }, [icon('finance',15),' My all-in cost per mile']), h('div', { class: 'cpx-set-s' }, 'Fuel + truck + insurance + fees per mile. Every load card then shows your estimated profit.')]),
         h('div', { style: 'margin-left:auto;display:flex;gap:8px;align-items:center' }, [cpmIn, cpmSave]),
       ]),
     ]);
@@ -2573,7 +2594,7 @@ async function appView(user) {
         const bIn9 = h('input', { type: 'file', accept: '.pdf', style: 'font-size:.85rem' });
         const bSt9 = h('span', { style: 'font-size:.8rem;color:#f87171;font-weight:700' });
         mount(noaDash9, h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(139,92,246,.5);background:rgba(139,92,246,.08)' }, [
-          h('div', { style: 'font-weight:900' }, '🏦 One step left on factoring — upload your NOA letter'),
+          h('div', { style: 'font-weight:900' }, [icon('bank',15),' One step left on factoring — upload your NOA letter']),
           h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px;line-height:1.6' }, 'You activated factoring with ' + (pp9.factoring_company || 'your factor') + ' but the Notice of Assignment letter (PDF from your factor) is not on file. Upload it right here — LoadBoot verifies it and brokers see “verified” on every pay panel.'),
           h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
             bIn9,
@@ -2809,7 +2830,7 @@ async function appView(user) {
     const hazVerified = hazItems9.length > 0 && hazItems9.every(x => ['verified', 'valid', 'approved'].indexOf(String(x.status || '').toLowerCase()) >= 0);
     const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
-        h('div', null, [h('div', { class: 'cp-row-t' }, '🚚 Post my truck'), h('div', { class: 'cp-row-s' }, 'Tell us where your truck frees up — matching loads alert you automatically.')]),
+        h('div', null, [h('div', { class: 'cp-row-t' }, [icon('truck',15),' Post my truck']), h('div', { class: 'cp-row-s' }, 'Tell us where your truck frees up — matching loads alert you automatically.')]),
         h('button', { class: 'cp-btn cp-btn-sm', onClick: () => {
           const org = h('input', { class: 'cp-in', placeholder: 'Truck location — City, ST *', value: (_dp && _dp.home_base) || '' });
           const from = h('input', { class: 'cp-in', type: 'date', value: new Date().toISOString().slice(0, 10) });
@@ -3269,10 +3290,10 @@ async function appView(user) {
             h('div', { style: 'margin-top:10px;border-radius:11px;padding:9px 12px;background:rgba(8,131,247,.07);font-size:12px;font-weight:700;color:#1e3a8a' },
               '⛽ Deadhead fuel: ' + (st.dh || 0) + ' mi ÷ ' + st.mpg + ' mpg × $' + st.fuel + ' = $' + fuelDead.toLocaleString() + ' just to reach pickup · Loaded-leg fuel: $' + fuelLoaded.toLocaleString()),
             h('div', { class: 'cpx-adv-grid' }, [
-              h('div', { class: 'cell' }, [h('label', null, '📍 DEADHEAD (MI)'), numIn(st.dh, 1, (v) => { st.dh = v; st.dhKnown = true; st.dhBasis = 'entered by you'; render(); }), h('span', { style: 'font-size:9.5px;color:#94a3b8;font-weight:600' }, st.dhBasis)]),
+              h('div', { class: 'cell' }, [h('label', null, [icon('pin',15),' DEADHEAD (MI)']), numIn(st.dh, 1, (v) => { st.dh = v; st.dhKnown = true; st.dhBasis = 'entered by you'; render(); }), h('span', { style: 'font-size:9.5px;color:#94a3b8;font-weight:600' }, st.dhBasis)]),
               h('div', { class: 'cell' }, [h('label', null, '⛽ FUEL $/GAL (auto-saved)'), numIn(st.fuel, 0.05, (v) => { st.fuel = v; persistCpm(); render(); })]),
-              h('div', { class: 'cell' }, [h('label', null, '🚛 TRUCK MPG (auto-saved)'), numIn(st.mpg, 0.1, (v) => { st.mpg = v; persistCpm(); render(); })]),
-              h('div', { class: 'cell' }, [h('label', null, '🔧 OTHER COST/MI (maint+ins)'), numIn(st.cpm, 0.05, (v) => { st.cpm = v; persistCpm(); render(); })]),
+              h('div', { class: 'cell' }, [h('label', null, [icon('truck',15),' TRUCK MPG (auto-saved)']), numIn(st.mpg, 0.1, (v) => { st.mpg = v; persistCpm(); render(); })]),
+              h('div', { class: 'cell' }, [h('label', null, [icon('tools',15),' OTHER COST/MI (maint+ins)']), numIn(st.cpm, 0.05, (v) => { st.cpm = v; persistCpm(); render(); })]),
               h('div', { class: 'cell' }, [h('label', null, '🛣 TOLLS (auto-estimated)'), numIn(Math.round(st.tolls), 1, (v) => { st.tolls = v; render(); }), h('span', { style: 'font-size:9.5px;color:#94a3b8;font-weight:600' }, tollAuto.parts.length ? tollAuto.parts.map(p2 => p2[1]).join(' + ') : tollAuto.basis)]),
               h('div', { class: 'cell' }, [h('label', null, 'LOADED MI' + (st.useVerified ? ' (CORRECTED)' : '') + ' · ALL-IN'), h('b', null, loadedMi.toLocaleString() + ' mi · $' + allInRpm.toFixed(2) + '/mi')]),
             ]),
@@ -3484,7 +3505,7 @@ async function appView(user) {
           ...rows,
         ]);
       })(),
-      h('div', { class: 'cp-payinfo', style: 'margin-top:10px' }, [h('div', { class: 'cp-payinfo-h' }, '📍 Tracking'), h('div', { class: 'cp-payinfo-b' }, t.tracking_note || 'Location tracking is on from booking until delivery.')]),
+      h('div', { class: 'cp-payinfo', style: 'margin-top:10px' }, [h('div', { class: 'cp-payinfo-h' }, [icon('pin',15),' Tracking']), h('div', { class: 'cp-payinfo-b' }, t.tracking_note || 'Location tracking is on from booking until delivery.')]),
     ].filter(Boolean)));
   }
 
@@ -3515,7 +3536,7 @@ function tripStepper(status) {
     mount(content, h('div', { class: 'cp-card' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
       const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { const _ct3516 = ev.currentTarget; await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.textContent = 'Error'; } } }, 'Confirm') : null;
-      const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, '📍 Share location') : null;
+      const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, [icon('pin',15),' Share location']) : null;
       const nav = (active && t.destination) ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.destination), '_blank', 'noopener') }, '🧭 Navigate') : null;
       const _locked = active && /dispatched|in_transit/.test(String(t.status || ''));
       const live = active ? (
@@ -3533,7 +3554,7 @@ function tripStepper(status) {
         const note = h('input', { class: 'cp-in', placeholder: 'Details (optional)' });
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { const _ct3533 = ev.currentTarget; await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { _ct3533.disabled = false; _ct3533.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
-      } }, '⚠ Report issue') : null;
+      } }, [icon('alert',15),' Report issue']) : null;
       const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'border-color:#dc2626;color:#dc2626', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
       const podW = h('div');
       const canPod = t.status === 'delivered' || t.status === 'invoiced';
@@ -3559,7 +3580,7 @@ function tripStepper(status) {
             catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request'; alert((e && e.message) || 'Could not request.'); }
           } }, 'Request'),
         ])));
-      } }, '🔁 Reloads') : null;
+      } }, [icon('refresh',15),' Reloads']) : null;
       const rateW = h('div');
       const rateBtn = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (rateW.firstChild) { rateW.innerHTML = ''; return; }
@@ -3578,8 +3599,8 @@ function tripStepper(status) {
       const pod = canPod ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
         if (podW.firstChild) { podW.innerHTML = ''; return; }
         showCarrierPod(t, podW);
-      } }, '📄 Proof of delivery') : null;
-      const assign = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => assignTrip(t) }, '👤 Assign driver/truck') : null;
+      } }, [icon('docs',15),' Proof of delivery']) : null;
+      const assign = active ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => assignTrip(t) }, [icon('user',15),' Assign driver/truck']) : null;
       const advBtn = (label, next) => h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
         try { await pocketAdvanceTrip(t.id, next); loadTrips(); }
@@ -3656,7 +3677,7 @@ function tripStepper(status) {
           mk('Left delivery', () => tripDepart(t.id, 'delivery')),
         ]));
         dwellW.appendChild(h('div', { class: 'cp-row-s' }, 'Times are recorded when you tap — this is what protects your detention pay.'));
-      } }, '⏱ Arrive / depart') : null;
+      } }, [icon('clock',15),' Arrive / depart']) : null;
       // Pay claims — detention / layover / TONU / lumper with automatic GPS+time evidence
       const accW = h('div');
       const KLBL = { detention: 'Detention', layover: 'Layover', tonu: 'TONU', lumper: 'Lumper', driver_assist: 'Driver assist', stop_off: 'Extra stop', other: 'Other' };
@@ -3774,7 +3795,7 @@ function tripStepper(status) {
           packHost, proofRow, sel, amtIn, note, send, rateHint,
           h('div', { class: 'cp-row-s' }, 'Detention is auto-detected when you leave a stop past free time. TONU is auto-filed if a load is cancelled after your truck was committed.'),
         ]));
-      } }, '💰 Pay claims');
+      } }, [icon('finance',15),' Pay claims']);
       // D-screens — generic renderer: any jsonb payload -> readable rows (objects/arrays flattened one level)
       const jr = (v) => {
         if (v === null || v === undefined || v === '') return '—';
@@ -3812,7 +3833,7 @@ function tripStepper(status) {
       const sheetBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         const host = h('div', { class: 'cp-muted' }, 'Loading…'); openModal('Dispatch sheet', [host]);
         try { const d0 = await dispatchSheet(t.id); mount(host, h('div', null, [h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:10px;background:#0883F7', onClick: () => printDispatchSheet(d0) }, '⬇ Download PDF'), dispatchSheetCard(d0)])); } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); }
-      } }, '📋 Dispatch sheet');
+      } }, [icon('clipboard',15),' Dispatch sheet']);
       const rcBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         const host = h('div', { class: 'cp-muted' }, 'Loading…'); openModal('Rate confirmation (immutable)', [host]);
         try {
@@ -3823,7 +3844,7 @@ function tripStepper(status) {
           } }, 'Acknowledge RC');
           mount(host, h('div', null, [h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:10px;background:#0883F7', onClick: () => openPrintable('Rate Confirmation', 'RATE CONFIRMATION', [{ rows: Object.entries(d0.rc || {}).map(([k, v]) => [k.replace(/_/g, ' '), jr(v)]) }, { note: d0.note || '' }]) }, '⬇ Download PDF'), jsonCard(d0.rc, []), h('div', { style: 'margin-top:10px' }, ackB), h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, d0.note || '')]));
         } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); }
-      } }, '🧾 Rate con');
+      } }, [icon('receipt',15),' Rate con']);
       const packBtn = (t.status === 'delivered' || t.status === 'invoiced') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         const host = h('div', { class: 'cp-muted' }, 'Loading…'); openModal('Delivery document pack', [host]);
         try {
@@ -3836,7 +3857,7 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, d0.retention_note || ''),
           ]));
         } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); }
-      } }, '📦 Delivery docs') : null;
+      } }, [icon('loads',15),' Delivery docs']) : null;
       const history = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
         const host = h('div', { class: 'cp-muted' }, 'Loading…');
         openModal('Trip history', [host]);
@@ -3973,7 +3994,7 @@ function tripStepper(status) {
             h('div', { style: 'font-weight:800;color:#fca5a5;font-size:.9rem' }, '⛔ No TONU — you cannot claim this load'),
             h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'It was cancelled because your truck did not move toward pickup in time. Under the signed rate confirmation, a late / no-show carrier does NOT qualify for TONU — this is decided from your GPS, not opinion.'),
             h('div', { style: 'margin-top:8px;padding:9px 11px;border-radius:9px;background:rgba(0,0,0,.25)' }, [
-              h('div', { style: 'font-weight:700;font-size:.78rem;color:#e5edf8;margin-bottom:3px' }, '📍 GPS evidence recorded at cancellation'),
+              h('div', { style: 'font-weight:700;font-size:.78rem;color:#e5edf8;margin-bottom:3px' }, [icon('pin',15),' GPS evidence recorded at cancellation']),
               _ev.distance_mi != null ? h('div', { class: 'cp-row-s' }, '• Truck was ~' + _ev.distance_mi + ' mi from pickup and ' + (_ev.moving ? 'moving' : 'NOT moving toward it')) : null,
               _ev.must_depart_by ? h('div', { class: 'cp-row-s' }, '• You had to depart by ' + _fmtEv(_ev.must_depart_by) + ' to make the appointment') : null,
               (_ev.hours_to_pickup != null) ? h('div', { class: 'cp-row-s' }, '• Pickup was ' + (Number(_ev.hours_to_pickup) < 0 ? Math.abs(Math.round(_ev.hours_to_pickup)) + 'h overdue' : 'in ' + Math.round(_ev.hours_to_pickup) + 'h') + ' when the load was cancelled') : null,
@@ -4176,7 +4197,7 @@ function tripStepper(status) {
         const meta = h('div', { class: 'cp-row-s' }, f.name + ' · ' + podBytes(f.size));
         const rm = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { file = null; up.disabled = true; clearPrev(); } }, 'Remove');
         if (f.type.startsWith('image/')) { url = URL.createObjectURL(f); mount(prev, h('div', null, [h('img', { src: url, alt: 'POD preview', style: 'max-width:100%;max-height:240px;border-radius:8px;display:block' }), meta, rm])); }
-        else mount(prev, h('div', null, [h('div', { class: 'cp-podpdf' }, '📄 PDF ready to upload'), meta, rm]));
+        else mount(prev, h('div', null, [h('div', { class: 'cp-podpdf' }, [icon('docs',15),' PDF ready to upload']), meta, rm]));
         up.disabled = false;
       }
       const zone = h('div', { class: 'cp-podzone', onClick: () => input.click() }, [
@@ -4394,12 +4415,12 @@ function tripStepper(status) {
     }
     // 📈 FLEET OPTIMIZATION — real per-truck utilization + top lanes from delivered trips
     const optCard9 = (() => {
-      const host9 = h('div', { class: 'cp-card' }, [cardHead('📈 Fleet optimization', 'last 90 days'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+      const host9 = h('div', { class: 'cp-card' }, [cardHead([icon('chart',15),' Fleet optimization'], 'last 90 days'), h('div', { class: 'cp-muted' }, 'Loading…')]);
       (async () => {
         let d9; try { d9 = await carrierFleetOptimization(90); } catch (_) { mount(host9, h('span')); return; }
         const tr9 = (d9 && d9.trucks) || []; const ln9 = (d9 && d9.top_lanes) || [];
-        if (!tr9.length) { mount(host9, [cardHead('📈 Fleet optimization', 'last 90 days'), h('div', { class: 'cp-muted' }, 'Analytics appear after your first delivered trips — per-truck utilization, $/mile and your best lanes.')]); return; }
-        mount(host9, [cardHead('📈 Fleet optimization', 'last ' + (d9.window_days || 90) + ' days — real delivered trips'),
+        if (!tr9.length) { mount(host9, [cardHead([icon('chart',15),' Fleet optimization'], 'last 90 days'), h('div', { class: 'cp-muted' }, 'Analytics appear after your first delivered trips — per-truck utilization, $/mile and your best lanes.')]); return; }
+        mount(host9, [cardHead([icon('chart',15),' Fleet optimization'], 'last ' + (d9.window_days || 90) + ' days — real delivered trips'),
           h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Which trucks earn and which sit — and the lanes that pay you best. Assign trucks on every trip to sharpen this.'),
           ...tr9.map((t9) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
             h('div', { style: 'flex:1;min-width:180px' }, [h('div', { class: 'cp-row-t' }, '🚛 ' + t9.truck), h('div', { class: 'cp-row-s' }, (t9.trips || 0) + ' trips · ' + Number(t9.miles || 0).toLocaleString() + ' mi · ' + (t9.active_days || 0) + ' active days')]),
@@ -4413,16 +4434,16 @@ function tripStepper(status) {
     })();
     // 🛰 ELD / TELEMATICS — live webhook ingest (Motive, Samsara, any device that can POST)
     const eldCard9 = (() => {
-      const host9 = h('div', { class: 'cp-card' }, [cardHead('🛰 ELD & telematics', 'device GPS feeds your trips'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+      const host9 = h('div', { class: 'cp-card' }, [cardHead([icon('gps',15),' ELD & telematics'], 'device GPS feeds your trips'), h('div', { class: 'cp-muted' }, 'Loading…')]);
       let prov9 = 'generic';
       const paint9 = async (rotate9, apiTok9) => {
         let d9 = null; try { d9 = await carrierEldSetup(prov9, !!rotate9, apiTok9 || null); } catch (_) { mount(host9, h('span')); return; }
-        mount(host9, [cardHead('🛰 ELD & telematics', 'device GPS feeds your trips'),
+        mount(host9, [cardHead([icon('gps',15),' ELD & telematics'], 'device GPS feeds your trips'),
           h('div', { class: 'cp-row-s', style: 'line-height:1.65;margin-bottom:8px' }, 'Point your ELD / telematics webhook (Motive, Samsara, Garmin — anything that can POST a position) at LoadBoot and your trucks track themselves even with the app closed. Positions route to the active trip automatically.'),
           h('div', { class: 'cp-row-s' }, 'Status: ' + (d9.last_ping_at ? '🟢 last ping ' + new Date(d9.last_ping_at).toLocaleString() : '⚪ no pings yet')),
           h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;margin:8px 0;font-family:ui-monospace,Menlo,monospace;font-size:.72rem;line-height:1.8;user-select:all;word-break:break-all' }, d9.webhook || ''),
           h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
-            h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { try { navigator.clipboard.writeText(String(d9.token || '')); lbToast('Ingest token copied.', 'ok', '🛰 Copied'); } catch (_) {} } }, '📋 Copy token'),
+            h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { try { navigator.clipboard.writeText(String(d9.token || '')); lbToast('Ingest token copied.', 'ok', '🛰 Copied'); } catch (_) {} } }, [icon('clipboard',15),' Copy token']),
             h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { if (confirm('Rotate the token? The old one stops working immediately.')) paint9(true); } }, '♻ Rotate token'),
           ]),
           (() => {
@@ -4542,7 +4563,7 @@ function tripStepper(status) {
         ]),
         h('div', { class: 'cp-row-s', style: 'font-weight:800;margin:10px 0 2px' }, '📅 Deadlines'),
         ...DL.map(([dt, what], i) => row(dt, i === nextI ? 'NEXT UP' : '', what, i === nextI ? '#fbbf24' : '#7f92b3')),
-        h('div', { class: 'cp-row-s', style: 'font-weight:800;margin:12px 0 2px' }, '📊 Schedule C — deductible expenses logged'),
+        h('div', { class: 'cp-row-s', style: 'font-weight:800;margin:12px 0 2px' }, [icon('chart',15),' Schedule C — deductible expenses logged']),
         cats.length ? h('div', null, [...cats.map(c => row(c, '$' + Math.round(byCat[c]).toLocaleString())), row('TOTAL LOGGED', '$' + Math.round(exTotal).toLocaleString(), null, '#4ade80')])
           : h('div', { class: 'cp-muted', style: 'padding:6px 0' }, 'No expenses logged yet — log fuel, tolls, scales, repairs under Costs and they roll up here for Schedule C.'),
         h('div', { class: 'cp-row-s', style: 'margin-top:10px;color:#7f92b3' }, 'Deduct: fuel · per diem · truck payment interest · insurance · maintenance · tolls · scales · parking · permits. Principal on the truck loan is NOT deductible. This is a worksheet, not tax advice.'),
@@ -4565,7 +4586,7 @@ function tripStepper(status) {
       sub ? h('div', { class: 'cp-row-s' }, sub) : null,
     ].filter(Boolean));
     return h('div', { class: 'cp-card' }, [
-      cardHead('📥 Cash position', 'trucking pays in 30–45 days — watch the gap'),
+      cardHead([icon('inbox',15),' Cash position'], 'trucking pays in 30–45 days — watch the gap'),
       h('div', { style: 'display:flex;gap:9px;flex-wrap:wrap' }, [
         t('AWAITING PAYMENT', awaiting, '#fbbf24', sent.length + ' invoice(s) out'),
         t('OVERDUE 30+ DAYS', overdueAmt, overdueAmt > 0 ? '#f87171' : '#4ade80', overdue.length + ' invoice(s)'),
@@ -4682,7 +4703,7 @@ function tripStepper(status) {
       mount(card, h('div', { class: 'cp-muted' }, 'Loading earnings…'));
       const from = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
       let d; try { d = await carrierEarnings(from, null); }
-      catch (e) { mount(card, [cardHead('💰 Earnings'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      catch (e) { mount(card, [cardHead([icon('finance',15),' Earnings']), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
       const t = d.totals || {}, trips = d.trips || [];
       const chip = (n, lbl) => h('button', { class: 'cp-btn cp-btn-sm ' + (days === n ? '' : 'ghost'), style: 'padding:5px 12px', onClick: () => { days = n; render(); } }, lbl);
       const big = h('div', { style: 'text-align:center;padding:6px 0 12px' }, [
@@ -4696,7 +4717,7 @@ function tripStepper(status) {
       ]);
       mount(card, h('div', null, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' }, [
-          h('div', { class: 'cp-row-t', style: 'font-size:1.05rem' }, '💰 Earnings — every trip, A to Z'),
+          h('div', { class: 'cp-row-t', style: 'font-size:1.05rem' }, [icon('finance',15),' Earnings — every trip, A to Z']),
           h('div', { style: 'display:flex;gap:6px;align-items:center' }, [chip(7, '7d'), chip(30, '30d'), chip(90, '90d'), costModelBox()]),
         ]),
         big,
@@ -4733,7 +4754,7 @@ function tripStepper(status) {
     // ---- 🏦 FACTORING (NOA) — org-level by design: an NOA legally binds ALL your invoices (UCC 9-406);
     // there is no per-load bank/factor toggle. Switching back needs the factor's signed RELEASE letter.
     const factoringCard9 = (() => {
-      const host9 = h('div', { class: 'cp-card', style: 'margin-top:14px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🏦 Factoring — how brokers pay you')]), h('div', { class: 'cp-muted' }, 'Loading…')]);
+      const host9 = h('div', { class: 'cp-card', style: 'margin-top:14px' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('bank',15),' Factoring — how brokers pay you'])]), h('div', { class: 'cp-muted' }, 'Loading…')]);
       (async () => {
         let pp9 = null; try { pp9 = await myPaymentProfile(); } catch (_) {}
         const st9 = (pp9 && pp9.noa_status) || 'none';
@@ -4795,7 +4816,7 @@ function tripStepper(status) {
           return w9;
         })() : null;
         mount(host9, h('div', null, [
-          h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🏦 Factoring — how brokers pay you')]),
+          h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('bank',15),' Factoring — how brokers pay you'])]),
           h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
             h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + chip9[0] }, (on9 ? ((pp9 && pp9.factoring_company) || 'Factoring') + ' · ' : '') + st9.toUpperCase()),
           ]),
@@ -5033,9 +5054,9 @@ function tripStepper(status) {
     const feesChart = h('div', { class: 'cp-card' }, [cardHead('Dispatch fees over time'), series.length ? miniBars(series, { height: 84 }) : h('div', { class: 'cp-muted' }, 'No data yet.')]);
     const statusCard = h('div', { class: 'cp-card' }, [cardHead('Invoice status'), h('div', { class: 'cp-donut-wrap' }, [donut(statusParts), h('div', { class: 'cp-donut-leg' }, statusParts.map(p => h('div', null, [h('i', { style: 'background:' + p.color }), p.label + ' · ' + p.value])))])]);
     // ---- 💸 payments in flight: claim/freight money coming in, fee payments going out ----
-    const payFlightCard = h('div', { class: 'cp-card' }, [cardHead('💸 Payments in flight'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    const payFlightCard = h('div', { class: 'cp-card' }, [cardHead([icon('finance',15),' Payments in flight']), h('div', { class: 'cp-muted' }, 'Loading…')]);
     (async () => {
-      let trs; try { trs = await payMyTransfers(); } catch (e) { mount(payFlightCard, [cardHead('💸 Payments in flight'), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
+      let trs; try { trs = await payMyTransfers(); } catch (e) { mount(payFlightCard, [cardHead([icon('finance',15),' Payments in flight']), h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load.')]); return; }
       // 🏦 vs 🏛 — where each payment lands: factor (NOA) or your own bank, per-broker aware
       let fb9 = null; try { fb9 = await carrierFactoringBrokers(); } catch (_) {}
       const dirMap9 = {}; ((fb9 && fb9.brokers) || []).forEach((b9) => { dirMap9[b9.name] = b9.mode; });
@@ -5044,7 +5065,7 @@ function tripStepper(status) {
         const factOn9 = !!(fb9 && fb9.factoring_on);
         const direct9 = !factOn9 || dirMap9[x9.counterparty] === 'direct';
         return direct9
-          ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.13);color:#4ade80;font-weight:800' }, '🏛 lands in YOUR bank (direct)')
+          ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.13);color:#4ade80;font-weight:800' }, [icon('bank',15),' lands in YOUR bank (direct)'])
           : h('span', { class: 'cp-pill', style: 'background:rgba(139,92,246,.18);color:#c4b5fd;font-weight:800' }, '🏦 goes to ' + ((fb9 && fb9.factoring_company) || 'your factor') + ' (NOA)');
       };
       trs = Array.isArray(trs) ? trs : [];
@@ -5056,20 +5077,20 @@ function tripStepper(status) {
         const age9 = x9.due_since ? Math.max(0, Math.round((Date.now() - new Date(x9.due_since).getTime()) / 86400000)) : null;
         return h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
           h('div', { style: 'flex:1;min-width:200px' }, [
-            h('div', { class: 'cp-row-t' }, '📥 ' + (x9.label || x9.kind) + ' · ' + money(x9.amount)),
+            h('div', { class: 'cp-row-t' }, [icon('inbox',15),' ' + (x9.label || x9.kind) + ' · ' + money(x9.amount)]),
             h('div', { class: 'cp-row-s' }, 'From ' + (x9.counterparty || 'broker') + (x9.due_since ? ' · due since ' + new Date(x9.due_since).toLocaleDateString() + (age9 != null ? ' (' + age9 + 'd)' : '') : '') + ' · memo ' + (x9.memo || '')),
           ]),
-          h('div', { style: 'display:flex;flex-direction:column;gap:6px;align-items:flex-end' }, [
-            h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, '⏰ awaiting broker payment'),
+          h('div', { class: 'cp-inflight-actions' }, [
+            h('span', { class: 'cp-pill', style: 'background:rgba(239,68,68,.14);color:#f87171' }, [icon('clock',13),' awaiting broker payment']),
             routeChip9(x9),
             (x9.kind === 'claim' || x9.kind === 'freight') ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
               try { await payRequestReminder(x9.kind, x9.ref_id); b9.textContent = '✓ Requested'; lbToast('Payment request sent — the broker got a 🔔 + email with the pay panel link.', 'success', '🔔 Requested'); }
               catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent', 'Request'); }
-            } }, '🔔 Request payment') : null,
+            } }, [icon('bell',16),' Request payment']) : null,
             (age9 != null && age9 >= 3 && (x9.kind === 'claim' || x9.kind === 'freight')) ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget;
               const nt9 = prompt('Dispute non-payment — what happened? (goes to the broker AND LoadBoot support):'); if (!nt9) return;
               b9.disabled = true; try { const r9 = await payDispute(x9.kind, x9.ref_id, nt9); lbToast((r9 && r9.note) || 'Dispute filed.', 'success', 'Dispute filed'); } catch (e9) { b9.disabled = false; lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
-            } }, '⚠ Dispute non-payment') : null,
+            } }, [icon('alert',16),' Dispute non-payment']) : null,
           ].filter(Boolean)),
         ]);
       };
@@ -5094,7 +5115,7 @@ function tripStepper(status) {
         : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.16);color:#fbbf24' }, x.kind === 'platform_fee' ? '⏳ LoadBoot verifying' : '⏳ awaiting their ✓'),
       ]); };
       const owedTotal9 = owed9.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
-      mount(payFlightCard, [cardHead('💸 Your money — owed & in flight'),
+      mount(payFlightCard, [cardHead([icon('finance',15),' Your money — owed & in flight']),
         owedTotal9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, money(owedTotal9) + ' owed to you — brokers see these as DUE with your bank details and pay through the same receipt procedure.') : null,
         (owed9.length || open9.length || done9.length) ? h('div', null, [...owed9.map(owedRow9), ...open9.map(row9), ...done9.map(row9)])
           : h('div', { class: 'cp-muted' }, 'Nothing owed or in flight. Delivered loads and approved claims appear here the moment money is due — then: on the way → ✓ received.')]);
@@ -5108,7 +5129,7 @@ function tripStepper(status) {
         const csv9 = [header9.join(',')].concat(rows9.map((r9) => header9.map((h9) => '"' + String(r9[h9.toLowerCase().replace(/ /g, '_')] ?? '').replace(/"/g, '""') + '"').join(','))).join('\n');
         const a9 = document.createElement('a'); a9.href = URL.createObjectURL(new Blob([csv9], { type: 'text/csv' })); a9.download = name9; a9.click();
       };
-      return h('div', { class: 'cp-card' }, [cardHead('📤 Accounting export', 'QuickBooks-compatible CSVs — invoices, expenses, payments'),
+      return h('div', { class: 'cp-card' }, [cardHead([icon('upload',15),' Accounting export'], 'QuickBooks-compatible CSVs — invoices, expenses, payments'),
         h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;line-height:1.6' }, 'Download your books as clean CSVs: revenue (invoices with gross/fee/net), every expense, and confirmed payments. Import directly into QuickBooks (File → Import), Wave, Xero or hand to your accountant.'),
         h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [h('span', { class: 'cp-row-s' }, 'From'), from9, h('span', { class: 'cp-row-s' }, 'to'), to9,
           h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
@@ -5168,7 +5189,7 @@ function tripStepper(status) {
             if (!j9.ok) throw new Error(j9.error || 'Sync failed');
             lbToast('✓ Synced — ' + (j9.note || (j9.invoices + ' invoices, ' + j9.expenses + ' expenses')), 'success', '🟢 QuickBooks'); loadFinance();
           } catch (e9) { lbToast((e9 && e9.message) || 'Sync failed.', 'urgent', 'QuickBooks'); b9.disabled = false; b9.textContent = '🔄 Sync now'; }
-        } }, '🔄 Sync now');
+        } }, [icon('refresh',15),' Sync now']);
         if (st9 && st9.connected) {
           mount(host9, [cardHead('🟢 QuickBooks Online', 'connected'),
             h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
@@ -5224,7 +5245,7 @@ function tripStepper(status) {
       nav,
       secHost,
       factoringCard9,
-      h('div', { class: 'cp-card' }, [cardHead('🧾 LoadBoot fee invoices', 'the flat 5% dispatch fee — nothing else'),
+      h('div', { class: 'cp-card' }, [cardHead([icon('receipt',15),' LoadBoot fee invoices'], 'the flat 5% dispatch fee — nothing else'),
         h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;margin-bottom:10px' }, [
           h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'What these are: every time a load DELIVERS, LoadBoot auto-issues an invoice for its flat 5% service fee (e.g. $1,175 gross → $59). This is the ONLY thing you ever pay LoadBoot — broker freight money is separate and tracked under 📥 Money in. DUE = pay within 15 days (💳 Pay now → transfer to the details shown → attach receipt → LoadBoot verifies → PAID). Factored carriers: this fee comes from YOUR account, not your factor.'),
         ]),
@@ -5239,7 +5260,7 @@ function tripStepper(status) {
               li9('Send the bundle to: ' + (pk9.factor.remittance_email || 'your factor') + (pk9.factor.advance_pct ? ' · advance ~' + pk9.factor.advance_pct + '%' : '') + ' · broker pays them in ' + (pk9.factor.terms_days_broker || '30') + ' days'),
             ]) : h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'No factoring on file — this packet works for direct billing too.'),
             (pk9.missing && pk9.missing.length) ? h('div', { style: 'background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:10px 13px;margin-bottom:10px' },
-              [h('b', { style: 'color:#fbbf24' }, '⚠ Still needed for funding'), ...pk9.missing.map((m9) => li9('• ' + m9))]) : h('div', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800;margin-bottom:10px' }, '✅ Packet complete — fund-ready'),
+              [h('b', { style: 'color:#fbbf24' }, [icon('alert',15),' Still needed for funding']), ...pk9.missing.map((m9) => li9('• ' + m9))]) : h('div', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800;margin-bottom:10px' }, [icon('check',15),' Packet complete — fund-ready']),
             h('b', null, 'In this packet (collected automatically during the trip):'),
             li9('🧾 Invoice ' + ((pk9.invoice && pk9.invoice.invoice_no) || '—') + (pk9.invoice ? ' · $' + Number(pk9.invoice.gross || 0).toLocaleString() : '')),
             li9('✍ Executed rate confirmation: ' + (pk9.rate_confirmation ? 'on file (signed by the broker' + (pk9.rate_confirmation.submitted_at ? ' ' + new Date(pk9.rate_confirmation.submitted_at).toLocaleDateString() : '') + ')' : 'not yet')),
@@ -5247,7 +5268,7 @@ function tripStepper(status) {
             li9('🛰 GPS proof: ' + ((pk9.gps_proof && pk9.gps_proof.note) || '')),
             h('div', { class: 'cp-row-s', style: 'margin-top:10px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:10px;padding:9px 12px;line-height:1.65' }, pk9.how_to_fund || ''),
           ]);
-        } }, '📦 Factoring packet') : null;
+        } }, [icon('loads',15),' Factoring packet']) : null;
         const dispute = (i.status === 'sent' || i.status === 'paid') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
           if (dw.firstChild) { dw.innerHTML = ''; return; }
           const reason = h('input', { class: 'cp-in', placeholder: 'Reason for dispute' });
@@ -5284,12 +5305,12 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-s', style: 'margin-top:2px;line-height:1.5' }, s9)]);
           dw.appendChild(h('div', { style: 'margin-top:8px;border:1px solid rgba(255,255,255,.14);border-radius:16px;overflow:hidden' }, [
             h('div', { style: 'background:linear-gradient(120deg,#10223B,#0d2f56);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
-              h('div', null, [h('div', { style: 'font-weight:900;color:#fff' }, '💳 Pay LoadBoot'), h('div', { style: 'font-size:.72rem;color:#9fb0cc' }, 'flat 5% dispatch fee · net 15')]),
+              h('div', null, [h('div', { style: 'font-weight:900;color:#fff' }, [icon('card',15),' Pay LoadBoot']), h('div', { style: 'font-size:.72rem;color:#9fb0cc' }, 'flat 5% dispatch fee · net 15')]),
               h('div', { style: 'font-size:1.5rem;font-weight:900;color:#fff' }, money(pi.amount || i.fee || 0)),
             ]),
             h('div', { style: 'padding:12px 16px' }, [
               h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:12px;padding:10px 13px' }, [
-                h('div', { style: 'font-weight:800;font-size:.78rem;letter-spacing:.06em;color:#93c5fd;margin-bottom:4px' }, '🏛 REMIT-TO'),
+                h('div', { style: 'font-weight:800;font-size:.78rem;letter-spacing:.06em;color:#93c5fd;margin-bottom:4px' }, [icon('bank',15),' REMIT-TO']),
                 h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;line-height:1.8;font-family:ui-monospace,Menlo,monospace;font-size:.8rem;user-select:all' }, remit9 || 'Payment instructions are being finalised — contact billing@loadboot.com.'),
               ]),
               h('div', { style: 'display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap' }, [
@@ -5300,11 +5321,11 @@ function tripStepper(status) {
                 step9('2', 'Receipt', 'attach the screenshot/PDF below'),
                 step9('3', 'PAID', 'LoadBoot verifies — usually same business day'),
               ]),
-              rules9 ? h('details', { style: 'margin-bottom:8px' }, [h('summary', { class: 'cp-row-s', style: 'cursor:pointer;font-weight:700' }, '📖 Payment rules'), h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;line-height:1.7;margin-top:4px' }, rules9)]) : null,
+              rules9 ? h('details', { style: 'margin-bottom:8px' }, [h('summary', { class: 'cp-row-s', style: 'cursor:pointer;font-weight:700' }, [icon('docs',15),' Payment rules']), h('div', { class: 'cp-row-s', style: 'white-space:pre-wrap;line-height:1.7;margin-top:4px' }, rules9)]) : null,
               h('div', { class: 'cp-inlineform' }, [refIn]), fIn, sendB, msg9,
             ].filter(Boolean)),
           ]));
-        } }, '💳 Pay now') : null;
+        } }, [icon('card',15),' Pay now']) : null;
         return h('div', { class: 'cp-trip' }, [h('div', { class: 'cp-trip-head' }, [h('div', null, [h('div', { class: 'cp-row-t' }, i.invoice_no), h('div', { class: 'cp-row-s' }, 'Fee ' + money(i.fee) + ' · gross ' + money(i.gross))]), pill(i.status)]), h('div', { class: 'cp-trip-actions' }, [invPdf, packetBtn9, payFee, dispute].filter(Boolean)), dw].filter(Boolean));
       })) : h('div', { class: 'cp-muted' }, 'No invoices yet.')]),
     ]));
@@ -5346,7 +5367,7 @@ function tripStepper(status) {
       const pp9 = await myPaymentProfile();
       if (pp9 && pp9.factoring_noa && !latestDoc('noa')) {
         noaBanner9 = h('div', { class: 'cp-card', style: 'border:1.5px solid rgba(139,92,246,.5);background:rgba(139,92,246,.08);margin-bottom:12px' }, [
-          h('div', { style: 'font-weight:900' }, '🏦 Upload your factor\u2019s NOA letter'),
+          h('div', { style: 'font-weight:900' }, [icon('bank',15),' Upload your factor\u2019s NOA letter']),
           h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.65' }, 'You activated factoring with ' + (pp9.factoring_company || 'your factor') + ' but the Notice of Assignment letter is not on file yet. Get the PDF from your factoring company, then upload it below with type \u201C🏦 Factoring NOA\u201D \u2014 LoadBoot verifies it against your remit-to details and brokers see \u201Cverified\u201D on every pay panel.'),
         ]);
       }
@@ -5810,7 +5831,7 @@ function tripStepper(status) {
       else if (st === 1) { const eq = h('div', { class: 'cp-eqgrid' }, EQUIP.map(e => { const on = (f.equipment_types || []).includes(e); const b = h('button', { class: 'cp-chip2' + (on ? ' on' : ''), onClick: () => { const s = new Set(f.equipment_types || []); if (s.has(e)) s.delete(e); else s.add(e); f.equipment_types = [...s]; b.classList.toggle('on'); } }, e); return b; })); body = h('div', { class: 'cp-wiz-grid' }, [field('Home base (city, ST)', 'home_base', 'Dallas, TX'), field('Search radius (miles)', 'radius_miles', '300', 'number'), field('Number of trucks', 'truck_count', '1'), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Equipment types'), eq]), toggle('Haul hazmat', 'hazmat'), toggle('Available weekends', 'weekend_ok')]); }
       else if (st === 2) body = h('div', null, [h('p', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'We don\u2019t manage your factoring \u2014 we only need to know where money flows: after delivery we route your invoice/BOL paperwork to the right place, and your dispatch fee is collected the right way.'), (String(f.factoring_status || '') === 'interested' ? h('div', { class: 'cp-ann', style: 'margin-bottom:10px' }, [h('div', { class: 'cp-ann-t' }, 'We\u2019ll connect you \u2713'), h('div', { class: 'cp-ann-b' }, 'After you submit, our team reaches out with 2\u20133 recommended factoring partners \u2014 you sign with them directly. Until your factoring is live, add your bank below so settlements can reach you.')]) : null), h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring \u2014 pay me direct'], ['interested', 'Recommend me a factoring partner']]), field(String(f.factoring_status || '') === 'interested' ? 'Pick a recommended factoring partner' : 'Factoring company', 'factoring_company', String(f.factoring_status || '') === 'interested' ? 'Tap to see our recommended list' : 'Your factoring company\u2019s name'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp'), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Bank account for settlement payouts'), h('span', { class: 'cp-row-s' }, 'Encrypted & tokenized. Factoring carriers: optional but RECOMMENDED \u2014 direct-pay / quick-pay brokers and your dispatch fee can settle here while factored loads pay via your factor. No factoring: required. The account title MUST match your legal company name (sole proprietors: the owner\u2019s name on the W-9) \u2014 mismatched titles fail verification.')]), field('Bank name', 'bank_name', 'e.g. Chase'), field('Account holder / title \u2014 must match your LEGAL company name', 'account_title', 'Exactly as on your W-9 / authority'), field('Account number', 'account_number'), field('Routing number (ABA)', 'routing_number', '9 digits')]),
         (String(f.factoring_status || '') === 'yes' ? h('div', { style: 'margin-top:12px;border:1.5px solid rgba(139,92,246,.4);background:rgba(139,92,246,.07);border-radius:14px;padding:12px 14px' }, [
-          h('div', { class: 'cp-row-t', style: 'margin-bottom:2px' }, '🏦 Your factor\u2019s REMIT-TO — exactly what brokers need to pay them'),
+          h('div', { class: 'cp-row-t', style: 'margin-bottom:2px' }, [icon('bank',15),' Your factor\u2019s REMIT-TO — exactly what brokers need to pay them']),
           h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;line-height:1.6' }, 'Copy these from your factoring company\u2019s NOA / remittance sheet. Once verified, every broker automatically sees THESE details (never your bank) on the pay panel of every load, with the NOA warning. Upload the NOA letter itself at the Documents step (type: Notice of assignment).'),
           h('div', { class: 'cp-wiz-grid' }, [
             field('Remit-to payee name *', 'fr_title', 'exactly as the factor wrote it'),
@@ -5832,7 +5853,7 @@ function tripStepper(status) {
               catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#f87171'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }
             } }, 'Upload NOA');
             return h('div', { style: 'margin-top:10px' }, [
-              h('div', { class: 'cp-row-t' }, '📄 The NOA letter itself (PDF from your factoring company)'),
+              h('div', { class: 'cp-row-t' }, [icon('docs',15),' The NOA letter itself (PDF from your factoring company)']),
               h('div', { class: 'cp-row-s', style: 'margin:3px 0 6px' }, 'Your factor emails you this letter when you sign with them — attach it here (or later under Documents).'),
               h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [fIn9, up9]), st9,
             ]);
@@ -5962,7 +5983,7 @@ function tripStepper(status) {
       reschedule_approved: ['✓ Rescheduled — no penalty', '#15803d', 'rgba(22,163,74,.12)'],
       resolved: ['✓ Resolved', '#475569', 'rgba(100,116,139,.12)'] };
     const callRow = h('div', { style: 'display:flex;gap:8px;margin-bottom:12px' }, [
-      h('a', { class: 'cp-btn', href: 'tel:911', style: 'flex:1;text-align:center;background:#dc2626;text-decoration:none' }, '📞 Call 911'),
+      h('a', { class: 'cp-btn', href: 'tel:911', style: 'flex:1;text-align:center;background:#dc2626;text-decoration:none' }, [icon('phone',15),' Call 911']),
       h('a', { class: 'cp-btn ghost', href: '/contact.html', style: 'flex:1;text-align:center;text-decoration:none' }, '24/7 Dispatch support'),
     ]);
     const trip = active[0] || null;

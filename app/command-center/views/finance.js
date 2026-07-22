@@ -4,6 +4,8 @@
 // Reads/writes via cc_finance_* / cc_*_invoice / cc_*_settlement RPCs (finance.view/manage/
 // approve), all RBAC-gated + audited server-side.
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openDrawer, money, fmtDate, fmtDateTime, card, askReason, askConfirm } from '../../shared/ui/components.js';
 import { financeOverview, listInvoices, getInvoice, setInvoiceStatus, listSettlements, createSettlement, decideSettlement, listTrips, getCarriersDirectory, createInvoice, invoiceDocument, invoiceSendReminder, invoiceVoid, invoiceCredit } from '../../shared/api.js';
@@ -196,7 +198,7 @@ export function renderFinance(host, focusId) {
     const field = (k, v) => el('div', { class: 'cc-field' }, [el('span', null, k), el('b', null, v || '—')]);
     const actions = el('div', { class: 'cc-status-row', style: 'margin-top:12px' });
     actions.appendChild(chip('Print / PDF', async () => { try { printDocument(await invoiceDocument(id)); } catch (e) { toast(humanizeError(e), 'error'); } }));
-    if (i.trip_id) actions.appendChild((() => { const a = el('a', { class: 'cc-chip-btn', href: '#/trips?id=' + i.trip_id, style: 'text-decoration:none' }, '🚛 Open trip →'); return a; })());
+    if (i.trip_id) actions.appendChild((() => { const a = el('a', { class: 'cc-chip-btn', href: '#/trips?id=' + i.trip_id, style: 'text-decoration:none' }, [icon('truck',15),' Open trip →']); return a; })());
     if (can('finance.manage')) {
       if (i.status === 'draft') actions.appendChild(chip('Send invoice', () => setStatus(id, 'sent')));
       if (i.status === 'sent') actions.appendChild(chip('Mark paid', () => setStatus(id, 'paid')));

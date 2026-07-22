@@ -117,6 +117,30 @@ const ic = (name) => ({
   user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
   plus: 'M12 5v14M5 12h14', clock: 'M12 7v5l3 3M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
+  bank: 'M3 21h18M5 10h14M5 10l7-5 7 5M6 10v9M18 10v9M10 10v9M14 10v9',
+  building: 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01',
+  truck: 'M3 7h13v10H3zM16 10h3l2 3v4h-5M6 20a2 2 0 100-4 2 2 0 000 4zM18 20a2 2 0 100-4 2 2 0 000 4z',
+  send: 'M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z',
+  mail: 'M4 4h16v16H4zM4 6l8 6 8-6',
+  receipt: 'M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6M9 15h4',
+  clipboard: 'M9 3h6v3H9zM7 4H5v18h14V4h-2M9 12h6M9 16h6',
+  inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 6h13l3.5 6M2 12l3.5-6',
+  upload: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v13',
+  gps: 'M12 12a3 3 0 100-6 3 3 0 000 6zM5 5a9 9 0 000 14M19 5a9 9 0 010 14M8 8a5 5 0 000 8M16 8a5 5 0 010 8',
+  docs: 'M6 2h9l5 5v15H6zM14 2v6h6',
+  shield: 'M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z',
+  pin: 'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z',
+  alert: 'M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 018 0v4',
+  users: 'M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8M22 21v-2a4 4 0 00-3-3.9M17 3.1a4 4 0 010 7.8',
+  refresh: 'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0114.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0020.5 15',
+  eye: 'M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7zM12 15a3 3 0 100-6 3 3 0 000 6',
+  check: 'M20 6L9 17l-5-5',
+  card: 'M2 5h20v14H2zM2 10h20',
+  phone: 'M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6A19.8 19.8 0 012 4.2 2 2 0 014 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.5 2.1L8 9.6a16 16 0 006 6l1.2-1.2a2 2 0 012.1-.5c.8.3 1.7.5 2.6.6A2 2 0 0122 16.9z',
+  zap: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
+  tools: 'M14.7 6.3a4 4 0 01-5 5L3 18l3 3 6.7-6.7a4 4 0 005-5l-2.1 2.1-2.9-.8-.8-2.9 2.1-2.1z',
+  chart: 'M3 3v18h18M7 15l3-4 3 2 4-6',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
@@ -284,7 +308,7 @@ function openCancelLoadModal(l, committed, onDone) {
     assessBox,
     committed
       ? h('div', { style: 'margin-top:10px;padding:11px 12px;border-radius:11px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.86rem;line-height:1.5' }, [
-          h('b', null, '⚠ A truck is committed.'),
+          h('b', null, [icon('alert',15),' A truck is committed.']),
           h('div', { style: 'margin-top:3px' }, 'If the driver was ON TRACK to pickup, this becomes a TONU claim (carrier is paid, GPS evidence attached). If the driver NEVER MOVED toward pickup, NO TONU is owed — the system decides from the GPS.'),
         ])
       : null,
@@ -680,14 +704,14 @@ const inp = (ph, type) => h('input', { class: 'cp-in', type: type || 'text', pla
 // 🚛 CARRIER INVOICES — what the broker actually owes per trip, routing-aware:
 // factored carrier → "REMIT TO <factor> per NOA"; direct → carrier's own bank. Premium printable.
 function carrierInvoicesCard() {
-  const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+  const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('truck',15),' Carrier invoices — per trip'])]), h('div', { class: 'cp-sub' }, 'Loading…')]);
   (async () => {
-    let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
+    let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('truck',15),' Carrier invoices — per trip'])]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
     const items9 = ((d9 && d9.payables) || []).filter((x9) => x9.kind !== 'platform_fee');
     const groups9 = {};
     items9.forEach((x9) => { const k9 = x9.trip_id || x9.ref_id; (groups9[k9] = groups9[k9] || { lane: x9.lane, carrier: x9.counterparty, items: [] }).items.push(x9); });
     const gs9 = Object.values(groups9);
-    if (!gs9.length) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]), h('div', { class: 'cp-sub' }, 'No carrier invoices yet — they appear automatically the moment a load delivers or a claim is approved.')]); return; }
+    if (!gs9.length) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('truck',15),' Carrier invoices — per trip'])]), h('div', { class: 'cp-sub' }, 'No carrier invoices yet — they appear automatically the moment a load delivers or a claim is approved.')]); return; }
     const pdf9 = async (g9) => {
       const it9 = g9.items.find((z9) => z9.kind === 'freight') || g9.items[0];
       let pi9 = null; try { pi9 = await payInstructions(it9.kind, it9.ref_id); } catch (_) {}
@@ -723,7 +747,7 @@ function carrierInvoicesCard() {
       const w9 = window.open('', '_blank'); if (w9) { w9.document.write(html9); w9.document.close(); }
     };
     mount(host9, [
-      h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '🚛 Carrier invoices — per trip')]),
+      h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('truck',15),' Carrier invoices — per trip'])]),
       h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'One invoice per trip — freight + its approved claims. The REMIT-TO switches automatically: factored carrier → their factoring company (NOA), direct carrier → their own bank. Pay from Dashboard → Payables.'),
       ...gs9.map((g9) => {
         const tot9 = g9.items.reduce((a9, x9) => a9 + (Number(x9.amount) || 0), 0);
@@ -1410,7 +1434,7 @@ function bookRequestsCard() {
               ...(pk.packet || []).map(it => h('div', { style: 'display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12.5px' }, [h('span', { style: 'font-weight:600' }, it.label), stPill(it.status)])),
               h('div', { class: 'cp-sub', style: 'margin-top:6px' }, pk.note || ''),
             ]));
-          } }, '📋 Carrier packet');
+          } }, [icon('clipboard',15),' Carrier packet']);
           return h('div', null, [pbtn, pw]);
         })(),
         note,
@@ -1555,7 +1579,7 @@ async function brokerDash(user, ov) {
                   h('button', { type: 'button', title: 'move later in the run', style: 'border:1px solid #dbe3ee;background:#fff;border-radius:6px;font-size:.6rem;padding:1px 6px;cursor:pointer;opacity:' + (i9 === w.stops.length - 1 ? '.3' : '1'), onClick: () => { if (i9 === w.stops.length - 1) return; const tmp9 = w.stops[i9 + 1]; w.stops[i9 + 1] = w.stops[i9]; w.stops[i9] = tmp9; w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); paintStops(); recalc(); } }, '▼'),
                 ]), st9, ci9, sa9, zp9,
                 (sp.lat && (sp.city || '').trim()) ? h('span', { title: 'pinned — exact GPS geofence set', style: 'flex:none;color:#16a34a;font-weight:800' }, '✓ pinned')
-                : sp.lat ? h('span', { title: 'pin set but the city is missing — type it (the board shows City, ST to carriers)', style: 'flex:none;color:#f59e0b;font-size:.78rem;font-weight:700' }, '⚠ add city')
+                : sp.lat ? h('span', { title: 'pin set but the city is missing — type it (the board shows City, ST to carriers)', style: 'flex:none;color:#f59e0b;font-size:.78rem;font-weight:700' }, [icon('alert',15),' add city'])
                 : h('span', { title: 'pick a suggestion, or fill street+city+ST and click away — the pin sets itself', style: 'flex:none;color:#f59e0b;font-size:.78rem;font-weight:700' }, '… pin pending'), del9]),
               h('div', { style: 'display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap' }, [kind9, purp9]),
               h('div', { class: 'cp-sub', style: 'margin-top:3px' }, 'THIS order is the driver\u2019s run: Main pickup \u2192 stop 1 \u2192 stop 2 \u2192 stop 3 \u2192 Final delivery. Use \u25b2\u25bc to set the real sequence \u2014 the route, miles, ETA and the driver\u2019s turn-by-turn all follow it. (Main pickup is ALWAYS first and final delivery ALWAYS last \u2014 if a pickup must happen before the main one, make THAT the main pickup.)'),
@@ -1643,7 +1667,7 @@ async function brokerDash(user, ov) {
           const syncSrc9 = () => { w.src_type = srcSel.value; try { srcMcWrap9.style.display = srcSel.value === 'shipper_direct' ? 'none' : ''; } catch (_) {} srcHint9.textContent = SRC_HINTS9[srcSel.value] || ''; };
           srcSel.value = w.src_type || ''; srcSel.onchange = syncSrc9;
           body.appendChild(h('div', { style: 'grid-column:1/-1;margin-top:12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:12px 14px' }, [
-            h('div', { style: 'font-weight:800;color:#c2410c' }, '🧾 LOAD SOURCE — required for agent-posted loads'),
+            h('div', { style: 'font-weight:800;color:#c2410c' }, [icon('receipt',15),' LOAD SOURCE — required for agent-posted loads']),
             h('div', { class: 'cp-sub', style: 'margin:3px 0 8px' }, 'You are posting as an AGENT: name the real broker/shipper who pays this load. Dispatch verifies it, and their rate confirmation + billing contact are due within 2 HOURS of posting (overdue pauses your postings). Wrong/fake source = program termination.'),
             h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
               h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Source type *'), srcSel]),
@@ -1955,7 +1979,7 @@ async function brokerDash(user, ov) {
           if (!svcs.length) { w.svc_rates_ok = false; return null; }
           const cb = h('input', { type: 'checkbox' }); cb.checked = !!w.svc_rates_ok; cb.onchange = () => { w.svc_rates_ok = cb.checked; };
           return h('div', { style: 'margin-top:10px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:12px 14px' }, [
-            h('div', { style: 'font-weight:800;font-size:.85rem;color:#9a3412;margin-bottom:6px' }, '🧾 Extra services you selected — industry-standard rates apply'),
+            h('div', { style: 'font-weight:800;font-size:.85rem;color:#9a3412;margin-bottom:6px' }, [icon('receipt',15),' Extra services you selected — industry-standard rates apply']),
             ...svcs.map(([t9, d9]) => h('div', { style: 'display:flex;gap:8px;padding:5px 0;border-bottom:1px dashed #fed7aa;font-size:.8rem;color:#7c2d12' }, [h('b', { style: 'flex:0 0 auto' }, '• ' + t9 + ':'), h('span', null, d9)])),
             h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:9px;cursor:pointer;font-size:.8rem;color:#7c2d12;line-height:1.5' }, [cb,
               h('span', null, ['I agree these services are payable at the ', h('b', null, 'LoadBoot industry-standard rates'), ' (or higher if I set more in the Rate card step) — they appear on the rate confirmation and the carrier can claim them with proof. ',
@@ -2034,14 +2058,14 @@ async function brokerDash(user, ov) {
         if (w.svc_extra_stop) { const nst9 = (Array.isArray(w.stops) ? w.stops.filter((z9) => z9 && z9.lat) : []).length; const rt9 = Number(w.acc_extra_stop) || sv('acc_extra_stop'); items.push(li('Extra stop' + (nst9 ? 's ×' + nst9 : ''), '$' + rt9 + '/stop' + (nst9 ? ' = $' + (nst9 * rt9) + ' total' : ''), null)); }
         if (w.team_required) items.push(li('Team drivers', 'priced in linehaul (+20–30%)', null));
         const agree = h('div', { style: 'margin-top:14px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:14px;padding:14px 16px' }, [
-          h('div', { style: 'font-weight:800;color:#065f46;font-size:.92rem;margin-bottom:3px' }, '📋 Standard marketplace terms — please review before continuing'),
+          h('div', { style: 'font-weight:800;color:#065f46;font-size:.92rem;margin-bottom:3px' }, [icon('clipboard',15),' Standard marketplace terms — please review before continuing']),
           h('div', { class: 'cp-sub', style: 'color:#047857;margin-bottom:9px;line-height:1.55' }, 'These are industry-standard protections agreed between YOU and the carrier — LoadBoot does not charge, add, or take any of them. They only apply IF the situation happens, and the carrier must prove it. Showing them upfront keeps every load transparent and dispute-proof.'),
           h('div', null, items),
           h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin-top:11px;cursor:pointer;font-size:12.5px;line-height:1.6;color:#065f46' }, [agCb,
             h('span', null, ['I have reviewed the above and ', h('b', null, 'agree these standard rates & policies apply'), ' to this load’s rate confirmation, claimable by the carrier with proof.'])]),
         ]);
         return h('div', null, [
-          h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:2px 0 8px' }, '🛡️ Carrier protections — standard on every load'),
+          h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:2px 0 8px' }, [icon('shield',15),' Carrier protections — standard on every load']),
           h('div', { class: 'cp-sub', style: 'margin:-4px 0 8px' }, 'These apply at EVERY stop — pickup, delivery and any stop in between.'),
           protections,
           h('div', { style: 'font-weight:800;font-size:.85rem;color:#10223B;margin:14px 0 4px' }, 'Optional services for this load'),
@@ -2623,7 +2647,7 @@ async function brokerDash(user, ov) {
           h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
             lbExpiredP(l) ? null : h('button', { class: 'cp-btn cp-btn-sm', onClick: () => openLoadTracker(l) }, '\ud83d\udef0 Track live'),
             lbExpiredP(l) ? h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#f59e0b;color:#fff', onClick: () => openReschedule(l, loadList) }, '\u23f0 Update pickup time') : null,
-            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => brokerDocs(l) }, '📄 Docs'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => brokerDocs(l) }, [icon('docs',15),' Docs']),
             (() => {
               const booked9 = /book|transit|deliver|complete|invoiced/.test((String(l.status || '') + ' ' + String(l.board_status || '')).toLowerCase());
               if (!(idx < 2 || booked9)) return null;
@@ -3621,7 +3645,7 @@ async function brokerDash(user, ov) {
                   await brokerTenderShipment(r.id, rate, { detention_per_hr: m.detention_per_hr || '60', detention_free_hours: m.detention_free_hours || '2', layover_per_day: m.layover_per_day || '250', tonu: m.tonu || '250', lumper_policy: m.lumper_policy || 'Reimbursed with receipt', fcfs: r.appointment_required ? 'false' : 'true' });
                   ev.currentTarget.textContent = 'Tendered ✓'; loadInbox && loadInbox(); loadList();
                 } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not tender.'); }
-              } }, '🚀 Tender to dispatch') : null,
+              } }, [icon('send',15),' Tender to dispatch']) : null,
             ].filter(Boolean)),
           ]),
         ]);
@@ -3962,9 +3986,9 @@ function packetAgreementCards(skipPacket) {
   // ---- 💰 Payables: every dollar this broker owes right now (freight + approved claims),
   //      each with the same procedure: bank details → pay → receipt → carrier ✓ Received ----
   function payablesCard() {
-    const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '💰 Payables — money you owe carriers')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+    const host9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('finance',15),' Payables — money you owe carriers'])]), h('div', { class: 'cp-sub' }, 'Loading…')]);
     (async () => {
-      let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '💰 Payables — money you owe carriers')]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
+      let d9; try { d9 = await payDueItems(); } catch (e9) { mount(host9, [h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('finance',15),' Payables — money you owe carriers'])]), h('div', { class: 'cp-sub' }, (e9 && e9.message) || 'Could not load.')]); return; }
       const items9 = (d9 && Array.isArray(d9.payables)) ? d9.payables : [];
       const openIt = items9.filter((x9) => x9.transfer_status !== 'received');
       const doneIt = items9.filter((x9) => x9.transfer_status === 'received').slice(0, 5);
@@ -3984,8 +4008,8 @@ function packetAgreementCards(skipPacket) {
               })() : null,
             ].filter(Boolean)),
             x9.transfer_status === 'received' ? h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150' }, '✓ Paid & confirmed')
-            : x9.transfer_status === 'sent' ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, '💸 On the way · awaiting carrier ✓')
-            : h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, '⏰ DUE'),
+            : x9.transfer_status === 'sent' ? h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, [icon('finance',15),' On the way · awaiting carrier ✓'])
+            : h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, [icon('clock',15),' DUE']),
           ]),
           x9.transfer_status ? null : payRailBlock(x9.kind, x9.ref_id, x9.memo || '', x9.kind === 'claim' ? 'Pay this claim' : 'Pay freight'),
         ].filter(Boolean));
@@ -4013,7 +4037,7 @@ function packetAgreementCards(skipPacket) {
               h('div', { style: 'font-weight:900;font-size:1.05rem;color:#10223B' }, 'Trip total ' + money(sub9)),
               allPaid9 ? h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150' }, '✓ Trip fully settled')
                 : due9 > 0 ? h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c' }, money(due9) + ' still DUE')
-                : h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, '💸 payments on the way'),
+                : h('span', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309' }, [icon('finance',15),' payments on the way']),
             ]),
           ]),
           (due9 > 0 && g9.items[0] && g9.items[0].trip_id) ? (() => {
@@ -4063,7 +4087,7 @@ function packetAgreementCards(skipPacket) {
         ]);
       };
       mount(host9, [
-        h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, '💰 Payables — money you owe carriers'),
+        h('div', { class: 'cp-cardhead' }, [icon('finance', 18), h('h3', null, [icon('finance',15),' Payables — money you owe carriers']),
           totalDue ? h('span', { class: 'cp-pill', style: 'background:#fee2e2;color:#b91c1c;margin-left:8px' }, money(totalDue) + ' due') : h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-left:8px' }, 'all settled')]),
         h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Grouped per trip: each block is ONE load — its freight plus every approved claim (detention, lumper, TONU…) with the trip\u2019s own total. Pay each item, attach the receipt — the carrier (or their factor) confirms and the row turns green.'),
         gArr9.length ? h('div', null, gArr9.map(gBlock9)) : h('div', { class: 'cp-muted' }, 'Nothing owed right now — delivered loads and approved claims appear here automatically.'),

@@ -5,6 +5,8 @@
 // action is audited. Plugins map to reviewed server-side integrations — no arbitrary
 // code runs here. RBAC: staff view; settings.manage to install/enable/uninstall.
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { listPlugins, listInstalledPlugins, installPlugin, setPluginEnabled, uninstallPlugin } from '../../shared/api.js';
@@ -96,7 +98,7 @@ export function renderPluginMarketplace(host) {
       list('Scopes', p.scopes, 'none'),
       list('Outbound domains', p.outbound_domains, 'no outbound network calls'),
       list('Secrets required (you set these in Supabase)', p.secrets_required, 'none'),
-      (p.secrets_required && p.secrets_required.length) ? el('p', { class: 'cc-sub', style: 'color:#b45309' }, '⚠ This plugin needs the secret(s) above set in Supabase → Edge Functions → Secrets to actually run.') : null,
+      (p.secrets_required && p.secrets_required.length) ? el('p', { class: 'cc-sub', style: 'color:#b45309' }, [icon('alert',15),' This plugin needs the secret(s) above set in Supabase → Edge Functions → Secrets to actually run.']) : null,
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
         try { await installPlugin(p.id); } catch (e) { toast(humanizeError(e), 'error'); return; }
         document.getElementById('cc-drawer-root')?.remove(); toast(p.name + ' installed.', 'success'); load();
