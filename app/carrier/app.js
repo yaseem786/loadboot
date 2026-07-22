@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -531,7 +531,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Bring Demand', 'loads'], ['carriers', 'Carrier Network', 'truck'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Bring Demand', 'loads'], ['carriers', 'Carrier Network', 'truck'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['dispatch', 'Dispatch (salaried)', 'truck'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
   let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -1290,6 +1290,87 @@ async function agentPortal(user) {
           h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Program or account questions: hello@loadboot.com — or message the review team any time from the Verification Center thread. Full program details: loadboot.com/agents.html'),
         ]),
       ]));
+    } else if (tab === 'dispatch') {
+      // ---- Salaried Dispatcher console: apply → status → assigned carriers + SOP ----
+      const host = h('div');
+      mount(content, host);
+      mount(host, h('div', { class: 'cp-muted' }, 'Loading…'));
+      (async () => {
+        let d = null; try { d = await dispatcherMyStatus(); } catch (_) {}
+        const prof = d && d.profile;
+        const stMsg = {
+          applied: ['#94a3b8', '📝 Draft — submit to start screening'],
+          screening: ['#fbbf24', '⏳ In screening — we’re reviewing your application'],
+          skills_test: ['#fbbf24', '📝 Skills test — check your email / messages'],
+          trial: ['#fbbf24', '🚀 Paid working trial in progress'],
+          verified: ['#4ade80', '✅ Verified — you’ll be assigned a carrier soon'],
+          active: ['#4ade80', '✅ Active dispatcher'],
+          suspended: ['#f87171', '⏸ Suspended — contact the team'],
+          rejected: ['#f87171', '✕ Not approved at this time'],
+        };
+        if (!prof) {
+          // Application form
+          const f = {
+            full_name: h('input', { class: 'cp-in', placeholder: 'Full name', value: feed.name || '' }),
+            phone: h('input', { class: 'cp-in', placeholder: 'WhatsApp / phone' }),
+            country: h('input', { class: 'cp-in', placeholder: 'Country' }),
+            city: h('input', { class: 'cp-in', placeholder: 'City' }),
+            english: h('select', { class: 'cp-in' }, [['', 'English level *'], ['fluent', 'Fluent'], ['professional', 'Professional'], ['conversational', 'Conversational'], ['basic', 'Basic']].map(([v9, l9]) => h('option', { value: v9 }, l9))),
+            years: h('input', { class: 'cp-in', type: 'number', placeholder: 'Years of US dispatch experience' }),
+          };
+          const boards = ['DAT', 'Truckstop', 'Amazon Relay', 'Newtrul', 'Other'];
+          const bsel = {};
+          const boardBox = h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin:6px 0' }, boards.map((b9) => { const c9 = h('input', { type: 'checkbox' }); bsel[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); }));
+          const msg = h('div', { class: 'cp-err' });
+          const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
+            const b9 = ev.currentTarget;
+            if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim()) { msg.textContent = 'Name, country and English level are required.'; return; }
+            b9.disabled = true; b9.textContent = 'Submitting…';
+            const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.filter((x9) => bsel[x9].checked) };
+            const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
+            if (r && r.error) { msg.textContent = r.error; b9.disabled = false; b9.textContent = 'Submit application'; return; }
+            go('dispatch');
+          } }, 'Submit application');
+          mount(host, h('div', null, [
+            agCard('🧑‍✈️ Become a salaried LoadBoot Dispatcher', [
+              h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:10px' }, 'This is the SALARIED role (separate from your 1% referral earnings). You’ll dispatch for assigned US carriers — hunt loads, negotiate rates, keep trucks loaded. Base salary + per-truck + performance bonus; salary starts when a carrier is assigned. Strict screening + a paid trial before hire.'),
+              f.full_name, h('div', { style: 'display:flex;gap:8px' }, [f.country, f.city]), f.phone, f.english, f.years,
+              h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Load boards you can operate:'), boardBox,
+              msg, submit,
+            ]),
+          ]));
+          return;
+        }
+        // Status + assignments
+        const st9 = stMsg[prof.status] || stMsg.applied;
+        const cards = [agCard('🧑‍✈️ Dispatcher status', [
+          h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1])]),
+          prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
+          (prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : ''),
+        ])];
+        const asg = (d.assignments || []).filter((a9) => a9.status !== 'ended');
+        if (asg.length) {
+          cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
+            const s9 = a9.sop || {};
+            return h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)' }, [
+              h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:#fff' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:#4ade80' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
+              h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, [
+                s9.lanes ? h('div', null, 'Lanes: ' + s9.lanes) : '',
+                s9.min_rate ? h('div', null, 'Min rate/mile: ' + s9.min_rate) : '',
+                s9.equipment ? h('div', null, 'Equipment: ' + s9.equipment) : '',
+                s9.home_time ? h('div', null, 'Home-time: ' + s9.home_time) : '',
+                s9.rules ? h('div', null, 'Rules: ' + s9.rules) : '',
+                !s9.lanes && !s9.rules ? h('div', { class: 'cp-muted' }, 'SOP will appear here once the Command Center sets it.') : '',
+              ]),
+            ]);
+          })));
+          if (d.salary) cards.push(agCard('💵 Latest salary', [h('div', { class: 'cp-row-s' }, (d.salary.currency || 'PKR') + ' ' + Number(d.salary.total || 0).toLocaleString() + ' · ' + (d.salary.active_trucks || 0) + ' trucks · ' + d.salary.status)]));
+        } else if (prof.status === 'active' || prof.status === 'verified') {
+          cards.push(agCard('🚚 Assigned carriers', [h('div', { class: 'cp-muted' }, 'No carrier assigned yet — you’ll be notified the moment the Command Center assigns one.')]));
+        }
+        cards.push(agCard('📋 Your responsibilities', [h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, 'Keep every assigned truck loaded · negotiate the best rate/mile · book only with verified brokers · manage pickups, docs and HOS · never touch freight money · never re-broker · one carrier at a time. Questions: hello@loadboot.com')]));
+        mount(host, h('div', null, cards));
+      })();
     }
   }
   function go(id) { tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);

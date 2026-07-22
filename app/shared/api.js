@@ -358,6 +358,18 @@ export const ccAgent360 = (user) => rpc('cc_agent_360', { p_user: user });
 export const ccAgentNotifySend = (user, title, body, email) => rpc('cc_agent_notify_send', { p_user: user, p_title: title, p_body: body, p_email: !!email });
 export const ccAgentDocReview = (user, doc, action, reason) => rpc('cc_agent_doc_review', { p_user: user, p_doc: doc, p_action: action, p_reason: reason ?? null });
 export const ccAgentPayoutVerify = (user, ok, note) => rpc('cc_agent_payout_verify', { p_user: user, p_ok: ok, p_reason: note ?? null });
+// ---- Dispatcher (salaried) operational system ----
+export const dispatcherApply = (p, submit) => rpc('dispatcher_apply', { p, p_submit: !!submit });
+export const dispatcherMyStatus = () => rpc('dispatcher_my_status', {});
+export const ccDispatchersList = () => rpc('cc_dispatchers_list', {});
+export const ccDispatcher360 = (user) => rpc('cc_dispatcher_360', { p_user: user });
+export const ccDispatcherDecide = (user, action, note) => rpc('cc_dispatcher_decide', { p_user: user, p_action: action, p_note: note ?? null });
+export const ccDispatcherAssign = (dispatcher, carrierOrg, sop) => rpc('cc_dispatcher_assign', { p_dispatcher: dispatcher, p_carrier_org: carrierOrg, p_sop: sop ?? {} });
+export const ccDispatcherSop = (assignment, sop) => rpc('cc_dispatcher_sop', { p_assignment: assignment, p_sop: sop ?? {} });
+export const ccDispatcherUnassign = (assignment, reason, pause) => rpc('cc_dispatcher_unassign', { p_assignment: assignment, p_reason: reason ?? null, p_pause: !!pause });
+export const ccDispatcherSalarySet = (user, base, perTruck, currency) => rpc('cc_dispatcher_salary_set', { p_user: user, p_base: base, p_per_truck: perTruck, p_currency: currency ?? 'PKR' });
+export const ccDispatcherSalaryRun = (user, period, bonus, kpi, note) => rpc('cc_dispatcher_salary_run', { p_user: user, p_period: period, p_bonus: bonus ?? 0, p_kpi: kpi ?? {}, p_note: note ?? null });
+export const ccDispatcherSalaryStatus = (id, status) => rpc('cc_dispatcher_salary_status', { p_id: id, p_status: status });
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });

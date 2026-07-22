@@ -46,6 +46,7 @@ import { renderContent } from './views/content.js';
 import { renderIntegrations } from './views/integrations.js';
 import { renderRadar } from './views/radar.js';
 import { renderAgents } from './views/agents.js';
+import { renderDispatchers } from './views/dispatchers.js';
 import { renderFleet } from './views/fleet.js';
 import { renderFleetExpiry } from './views/fleetExpiry.js';
 import { renderContactsDirectory } from './views/contactsDirectory.js';
@@ -217,6 +218,7 @@ async function boot() {
     '/': () => { setActive('/'); renderActionCenter(content, ctx, user); }, // Action Center IS the dashboard (old counts-only overview retired)
     '/radar': () => { setActive('/radar'); renderRadar(content); },
     '/agents': () => { setActive('/agents'); guard(['carriers.approve', 'dispatch.manage'], () => renderAgents(content))(); },
+    '/dispatchers': () => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage'], () => renderDispatchers(content))(); },
     '/management': () => { setActive('/bi'); if (can('analytics.view') || can('reports.view')) renderBI(content); else denied(); }, // retired duplicate — alias to BI
     '/fleet': () => { setActive('/fleet'); if (fleetEnabled && can('fleet.view')) renderFleet(content); else denied(); },
     '/fleet-expiry': () => { setActive('/fleet-expiry'); if (can('fleet.view') || can('carriers.view')) renderFleetExpiry(content); else denied(); },
