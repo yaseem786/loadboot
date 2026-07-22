@@ -80,3 +80,30 @@ Carrier on **managed dispatch pays LoadBoot the flat 5%** dispatch fee on delive
 3. **Self-serve vs managed** pricing tiers.
 4. Is a Dedicated Dispatcher a **1099 contractor of LoadBoot**, or the **carrier's** contractor with LoadBoot as the platform? (Affects who signs what; attorney call — research shows the carrier-agent structure is the safe one.)
 5. Whether externally-sourced broker loads are allowed at launch, or start with **LoadBoot-board loads only** (simpler/safer) and add external-broker load-source later.
+
+---
+
+# PART 2 — Economics + FINAL recommendation (does the 5% cover a dedicated dispatcher?)
+
+## The market rate for a dedicated (human) dispatcher — ALONE
+- **5–10% of gross** is the standard dispatch-service cut (avg **5–8%**): budget 4–5%, mid 5–7%, premium/specialized 7–10%. By equipment: dry van 5–7%, reefer 6–8%, flatbed/specialized 7–10%. Alternatives: flat **$50–150/load**, **$150–400/week**, or **$500–1,500/month per truck**. [Truck Dispatch Experts](https://truckdispatchexperts.com/resources/truck-dispatch-rates/) · [FleetCollect](https://fleetcollect.net/blog/truck-dispatcher-cost-percentage-vs-flat-fee) · [TruckLeap pricing](https://truckleap.com/dispatch/pricing) · [OTrucking](https://otrucking.com/resources/guides/how-much-do-dispatchers-charge/)
+
+## The math — the 5% CANNOT cover a human dispatcher + the platform
+A dedicated **human** dispatcher costs **5–10% of gross by itself**. LoadBoot's total fee is **5%**. So **one human dispatcher eats the entire 5% (or more) — leaving nothing for the platform.** LoadBoot cannot "provide a dedicated dispatcher inside the 5%." Trying to would either lose money or force the price up to 10–15% (dispatcher % + platform %), which the market won't accept.
+
+## What carriers actually want (demand)
+- Many owner-operators (esp. **1–5 trucks**) **self-dispatch** — it's the most cost-effective option and avoids the 5–10% dispatcher cut. A dedicated dispatcher is **not universally demanded**. [TenTrucks self-dispatch](https://tentrucks.com/blog/self-dispatch-small-fleets) · [Getloaded](https://www.getloaded.com/guides/how-to-choose-a-dispatch-service-for-owner-operators/)
+- Two industry models: **dispatch SERVICE** (% cut, human books loads) vs **dispatch SOFTWARE** (flat subscription, carrier self-dispatches). Software is a fixed cost that gets cheaper as a % as you grow; the service % scales with revenue. Software fits multi-truck / self-dispatch; a human service fits solos who won't touch load boards. [FleetCollect service-vs-software](https://fleetcollect.net/blog/truck-dispatcher-cost-percentage-vs-flat-fee) · [Numeo](https://numeo.ai/blog/dispatch-service-vs-dispatch-software-which-is-better-for-small-fleets)
+
+## FINAL RECOMMENDATION — drop "LoadBoot-provided dedicated dispatchers"; be the software/self-dispatch operating system + referral
+1. **Position LoadBoot as the dispatch SOFTWARE + marketplace / operating system** — the carrier **self-dispatches USING LoadBoot** (verified load board, smart matching, market rates, GPS tracking, docs, settlement, factoring rails, compliance). The **5% is the platform/operating-system fee**, not a human dispatcher's wage. This fits the 5% economics (software margin, no human-dispatcher cost), matches demand (self-dispatch is common), and is the **safest legal posture** (pure software/marketplace = not a broker, no dispatcher-employment or allocation issues).
+2. **Referral Agent program stays** — bring carriers/brokers/shippers, earn **1% + downline** out of LoadBoot's 5%. Unchanged. Zero legal exposure.
+3. **Do NOT have LoadBoot hire/employ dispatchers or bundle a human dispatcher into the 5%** — the economics don't work and it adds broker/allocation + labor-law risk.
+4. **Independent dispatchers are WELCOME as users, not as a LoadBoot-paid service:** a dispatcher who already has carrier clients can bring them onto LoadBoot and use the platform to run them; **that dispatcher charges their own carrier their own fee** (off LoadBoot's books), while LoadBoot earns its 5% from the carrier for the software. LoadBoot never pays or employs the dispatcher.
+5. **Optional future tier (only if real demand shows up): a "Dispatcher Marketplace"** — connect carriers who WANT a human dispatcher with independent dispatchers, at **premium pricing** (the dispatcher's 5–10% is charged on top / separately, never squeezed into the base 5%). Build later, separate pricing, attorney-reviewed agreements.
+
+## Net
+- **Keep:** software/self-dispatch operating system (5%) + Referral Agent (1% + downline). Safe, profitable, demand-fit.
+- **Drop (for now):** LoadBoot providing/paying dedicated dispatchers inside the 5% — economically impossible and legally heavier.
+- **Optional later:** a premium dispatcher-marketplace with its own pricing + lawyer-blessed agreements.
+- The agent-portal code is already aligned: agents refer (they don't post/offer freight), and the carrier network is a read-only directory.
