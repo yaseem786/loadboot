@@ -1669,6 +1669,31 @@ def svc_banner(t,s,btn,href):
     return ('<div class="svc-banner"><div><div class="sb-t">'+t+'</div><div class="sb-s">'+s
             +'</div></div><a class="sb-btn" href="'+href+'">'+btn+'</a></div>')
 
+
+def carrier_network_section(aud='broker'):
+    """Reusable SEO section advertising the LoadBoot Carrier Network — the live, searchable
+    directory of FMCSA-verified carriers that brokers & shippers can post loads to directly
+    (a 'reverse load board'). Real, live feature (Partner portal -> Carriers). Build-safe:
+    no external image reference, styled purely with brand tokens."""
+    h2 = {'broker':'Find and book verified carriers &mdash; post a load, get direct offers',
+          'shipper':'Source vetted carriers direct &mdash; post freight to a live carrier network',
+          'general':'A verified carrier network you can post loads to &mdash; direct'}[aud]
+    lead = ('Stop chasing a load board hoping the right truck calls back. The <b>LoadBoot Carrier Network</b> '
+            'flips it: search a live directory of <b>FMCSA-verified carriers</b> by lane, equipment, DOT or MC '
+            'number and home base, read each carrier&rsquo;s authority, insurance, on-time record and health '
+            'score, then <b>post a load directly to the carriers you choose</b> and let their offers come to you '
+            '&mdash; first to accept wins. It is the reverse of a load board: trusted capacity, sourced in minutes.')
+    cards = [
+      ('&#128269;','Search real capacity','Filter verified carriers by lane, equipment (dry van, reefer, flatbed, step deck, power-only, hazmat, box truck), team status and home base &mdash; find the truck that fits before you ever post.'),
+      ('&#128737;','Verified &amp; monitored live','Every carrier passed FMCSA authority, insurance, W-9 and a signed agreement, and is watched live by our health engine &mdash; so double-brokering and freight fraud have nowhere to hide.'),
+      ('&#11088;','Trip-verified ratings','Only a broker or shipper who actually booked and delivered with a carrier can rate it &mdash; real reviews you can trust, not anonymous noise.'),
+      ('&#128228;','Post direct, first-accept-wins','Send a load straight to the carriers you picked; the first to accept books it. No blast to the whole board, no double-booked trucks, no endless check calls.'),
+    ]
+    cards_html = ''.join('<div class="card reveal"><div class="icon">%s</div><h3>%s</h3><p>%s</p></div>'%(i,t,d) for i,t,d in cards)
+    cta_href = {'broker':'create-broker-account.html','shipper':'create-shipper-account.html','general':'brokers.html'}[aud]
+    return ("<section style=\"background:radial-gradient(900px 380px at 12% -20%,rgba(8,131,247,.35),transparent 60%),""radial-gradient(680px 320px at 96% 130%,rgba(252,83,5,.18),transparent 55%),linear-gradient(140deg,#0b1830 0%,#10223B 55%,#132c4e 100%);color:#fff;padding:74px 0\">""<div class=\"wrap\"><div class=\"sec-head reveal\" style=\"text-align:center\"><div class=\"eyebrow\" style=\"color:#7cc0ff\">LoadBoot Carrier Network</div>"f'<h2 style="color:#fff;max-width:900px;margin:8px auto 0">{h2}</h2>'f'<p style="color:#cbd7e6;max-width:820px;margin:16px auto 0;font-size:1.05rem;line-height:1.75">{lead}</p></div>'f'<div class="grid g4 reveal" style="margin-top:34px">{cards_html}</div>'"<div class=\"ctarow\" style=\"justify-content:center;margin-top:30px\">"f'<a href="{cta_href}" class="btn btn-primary">Browse the carrier network &rarr;</a>'"<a href=\"carriers.html\" class=\"btn btn-secondary\" style=\"background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)\">How carriers get verified</a></div>""</div></section>")
+
+
 def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,body_html,faqs,feat_svg=''):
     e=lambda s:s.replace('"',"'")
     crumb='<div class="wrap"><nav class="crumbs"><a href="index.html">Home</a> &rsaquo; <a href="blog.html">Blog</a> &rsaquo; '+h1+'</nav></div>'
@@ -3585,6 +3610,7 @@ bp += _sec('Integrations &amp; security', 'Fits how you already work', _cards([
     ('&#128274;', 'Permissioned data', 'You see what you are entitled to and nothing more &mdash; carrier financials and internal notes stay private.'),
     ('&#128737;', 'Audit &amp; consent', 'Actions are audited and communications respect consent and suppression rules.'),
 ]))
+bp += carrier_network_section('broker')
 bp += lead_form('partner_inquiry', 'Become a broker partner', 'Tell us about your freight and lanes and we will get you set up with the carrier network.',
     [('name', 'Your name', 'text', True), ('company', 'Brokerage', 'text', True), ('email', 'Email', 'email', True),
      ('phone', 'Phone', 'tel', False), ('mc', 'MC number', 'text', False),
@@ -4477,6 +4503,7 @@ feat += fsec('security','Trust the platform','Security and reliability by design
   '<div class="ftx-card ftx-row"><span>Money data caching</span><span class="ftx-chip ftx-red">&#10007; never cached</span></div>'
   '<div class="ftx-card ftx-row"><span>Install on phone</span><span class="ftx-chip ftx-blue">PWA &middot; stores coming</span></div></div>'), alt=True, flip=True)
 
+feat += carrier_network_section('general')
 feat += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Honest comparison</div><h2>LoadBoot vs load boards vs traditional dispatch</h2></div>'
  '<div class="reveal" style="overflow-x:auto;margin-top:22px"><table class="ftx-cmp">'
  '<tr><th></th><th>LoadBoot</th><th>Load boards (DAT / Truckstop)</th><th>Traditional dispatcher</th></tr>'
@@ -5688,6 +5715,7 @@ sp += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal">
  '<div class="card"><h3>&#10060; What we are not</h3><p>We are not your freight broker of record and we do not hold your funds. Where broker authority is legally required, a licensed partner carries it &mdash; stated plainly, in writing.</p></div>'
  '<div class="card"><h3>&#128179; What it costs you</h3><p>Nothing. Posting, tracking, documents and reporting are free for shippers and facilities &mdash; LoadBoot earns the flat 5% dispatch fee on the carrier side. <a href="pricing.html">See pricing</a>.</p></div>'
  '</div></div></section>')
+sp += carrier_network_section('shipper')
 sp += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Shipper FAQ</h2></div><div style="max-width:820px">'
  + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _SHIP_FAQ)
  + '</div></div></section>')
@@ -5758,6 +5786,7 @@ _flb_faq_html, _flb_faq_sch = faq_block([
     ('How do I pay carriers?', 'Freight plus every approved accessorial groups into one per-trip payable with a PAY-BY deadline. Pay with one receipt; the carrier or their factor confirms. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
     ('Can I integrate my TMS?', 'Yes &mdash; subscribe to load, trip, document and delivery events via webhooks and the API on approved endpoints.'),
 ])
+flb += carrier_network_section('broker')
 flb += _flb_faq_html
 flb += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Keep reading</div><h2>Before you post</h2></div><div class="grid g3 reveal" style="margin-top:22px">'
  + linkcard('brokers.html', '&#127970;', 'The full broker program', 'Explainable carrier matching, exception handling and API &mdash; how covering freight works end to end.')
@@ -5823,6 +5852,7 @@ _sdc_faq_html, _sdc_faq_sch = faq_block([
     ('What visibility do I get?', 'A live map and ETA on every shipment, geofenced arrive/depart stamps at each stop, POD at delivery and document status &mdash; see <a href="gps-tracking.html">GPS tracking &amp; proof</a>.'),
     ('Do I need any license or authority?', 'No. Operating authority is the carrier&rsquo;s job and broker authority is handled by licensed partners where required. Your side is the freight, the facts and the docks.'),
 ])
+sdc += carrier_network_section('shipper')
 sdc += _sdc_faq_html
 sdc += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Keep reading</div><h2>Before you post your freight</h2></div><div class="grid g3 reveal" style="margin-top:22px">'
  + linkcard('shipper-solutions.html', '&#127981;', 'Full shipper solution', 'Vetted capacity, dock-level GPS proof and published accessorial standards &mdash; the complete picture.')
