@@ -531,7 +531,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Post a Load', 'loads'], ['carriers', 'Carriers', 'truck'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Bring Demand', 'loads'], ['carriers', 'Carrier Network', 'truck'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
   let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -951,60 +951,20 @@ async function agentPortal(user) {
         h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [backB, nextB].filter(Boolean)),
       ].filter(Boolean)), trackerCard9(), threadCard9()]));
     } else if (tab === 'post') {
-      if (isVerified && feed.own_broker_org) {
-        const tgt9 = (function(){ try { return window.__lbAgentPostCarrier || null; } catch(_) { return null; } })();
-        const pf9 = { equipment: 'Dry Van', pumode: 'appt', demode: 'appt' };
-        const inp9 = (key, ph, ty) => h('input', { class: 'cp-input', type: ty || 'text', placeholder: ph || '', style: 'width:100%', onInput: (e) => { pf9[key] = e.currentTarget.value; } });
-        const fld9 = (lbl, node) => h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, lbl), node]);
-        const sel9 = (key, opts) => h('select', { class: 'cp-input', style: 'width:100%', onChange: (e) => { pf9[key] = e.currentTarget.value; } }, opts.map(([v, l]) => h('option', { value: v }, l)));
-        const eqSel9 = sel9('equipment', [['Dry Van','Dry Van'],['Reefer','Reefer'],['Flatbed','Flatbed'],['Step Deck','Step Deck'],['Power Only','Power Only'],['Box Truck','Box Truck'],['Hotshot','Hotshot'],['Container (Drayage)','Container (Drayage)']]);
-        const schedRow9 = (who) => h('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px' }, [
-          sel9(who + 'mode', [['appt', 'Appointment'], ['fcfs', 'FCFS window']]),
-          inp9(who + 'date', '', 'date'),
-          inp9(who + 'time', '', 'time'),
-        ]);
-        const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:8px' });
-        const submit9 = h('button', { class: 'cp-btn', style: 'margin-top:14px', onClick: async (ev) => { const b = ev.currentTarget;
-          if (!(pf9.origin && pf9.destination)) { msg9.style.color = '#f87171'; msg9.textContent = 'Origin and destination are required.'; return; }
-          if (!pf9.pudate) { msg9.style.color = '#f87171'; msg9.textContent = 'Pickup date is required (the driver needs a schedule).'; return; }
-          b.disabled = true; b.textContent = 'Posting…';
-          try {
-            const note9 = [pf9.notes || '', pf9.reference ? ('Ref: ' + pf9.reference) : ''].filter(Boolean).join(' · ');
-            const r9 = await partnerPostLoad({ origin: pf9.origin, destination: pf9.destination, equipment: pf9.equipment, rate: pf9.rate ? Number(pf9.rate) : null, weight: pf9.weight ? Number(pf9.weight) : null, commodity: pf9.commodity || null, pickup: pf9.pudate || null, notes: note9 || null, idempotencyKey: 'agpost:' + Date.now() });
-            const lid9 = r9 && (r9.id || r9.load_id || (r9.load && r9.load.id));
-            if (lid9 && pf9.pudate) { try { await partnerUpdatePickup(lid9, pf9.pudate, pf9.putime || null, pf9.dedate || null, pf9.detime || null, pf9.pumode, pf9.demode, false); } catch (_) {} }
-            if (tgt9 && lid9) { try { await offerSend(lid9, [tgt9.id], pf9.rate ? Number(pf9.rate) : null, 60); } catch (_) {} }
-            try { window.__lbAgentPostCarrier = null; } catch (_) {}
-            lbToast('Load posted' + (tgt9 ? (' — direct offer sent to ' + tgt9.name) : '') + '. Pickup/delivery scheduling saved. Track it in Chain Loads.', 'success', '📦 Posted');
-            go('loads');
-          } catch (e9) { b.disabled = false; b.textContent = 'Post load'; msg9.style.color = '#f87171'; msg9.textContent = (e9 && e9.message) || 'Post failed — try again.'; }
-        } }, 'Post load');
-        mount(content, h('div', null, [
-          tgt9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' Direct offer to: ' + tgt9.name + ' — first to accept wins.']) : null,
-          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.3);border-radius:11px;padding:9px 12px;font-weight:700' }, [icon('loads',15),' Post a load — collected to industry standard (equipment, weight, commodity, scheduling, refs). Carries your LOAD SOURCE; reviewed by dispatch. On delivery, your 1% lands.']),
-          h('div', { class: 'cp-card' }, [
-            h('div', { class: 'cp-row-t', style: 'font-size:1.05rem;margin-bottom:12px' }, [icon('loads',15),' Post a load']),
-            h('div', { class: 'cp-wiz-grid' }, [
-              fld9('Origin (city, ST) *', inp9('origin', 'Dallas, TX')),
-              fld9('Destination (city, ST) *', inp9('destination', 'Atlanta, GA')),
-              fld9('Equipment', eqSel9),
-              fld9('Rate ($ all-in)', inp9('rate', '2850', 'number')),
-              fld9('Weight (lbs)', inp9('weight', '42000', 'number')),
-              fld9('Commodity', inp9('commodity', 'General freight')),
-              h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Pickup — mode · date · time'), schedRow9('pu')]),
-              h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Delivery — mode · date · time'), schedRow9('de')]),
-              fld9('Reference # (optional)', inp9('reference', 'PO / shipment #')),
-              fld9('Special instructions for the carrier', inp9('notes', 'Lumper, driver-assist, pallet exchange, etc.')),
-            ]),
-            submit9, msg9,
+      mount(content, h('div', null, [
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('user',15),' Bring demand the compliant way \u2014 refer a broker or shipper.']),
+        agCard('\ud83d\udcc8 How agents bring demand (and earn 1%)', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, 'As a LoadBoot agent you earn 1% of gross on every delivered load your chain touches \u2014 plus overrides on agents you recruit. But agents do NOT post or offer freight themselves: posting/offering freight to carriers is licensed-broker activity (FMCSA broker authority + a $75,000 bond), and doing it without a license carries penalties.'),
+          h('div', { class: 'cp-row-t', style: 'margin-top:12px' }, 'The compliant way to bring demand:'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.85;margin-top:4px' }, [icon('check',14),' Refer a freight BROKER or SHIPPER with your link \u2014 they post their OWN loads on LoadBoot (they are the licensed broker / freight owner).']),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, [icon('check',14),' Every delivered load your chain touches pays you 1% automatically \u2014 recurring, uncapped, plus downline overrides.']),
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:14px' }, [
+            h('button', { class: 'cp-btn', onClick: () => go('chain') }, [icon('user',15),' Refer a broker or shipper \u2192']),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('earnings') }, 'View earnings'),
           ]),
-        ].filter(Boolean)));
-      } else {
-        mount(content, agCard('📦 Post a load', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application (Get Verified tab), you get your own posting workspace — the same wizard brokers use, with direct-carrier targeting for your referred carriers. A load you post counts as the DEMAND side of your pair.']),
-          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified →']),
-        ]));
-      }
+          h('div', { class: 'cp-row-s', style: 'margin-top:14px;color:#8ea2c3;line-height:1.75' }, 'Want to actively dispatch for a specific carrier (managed dispatch)? That is a separate Dedicated Dispatcher role \u2014 you work for ONE carrier and find loads FOR them (never offering freight to the open market). Contact LoadBoot to set it up.'),
+        ]),
+      ]));
     } else if (tab === 'carriers') {
       if (isVerified && feed.own_broker_org) {
         
@@ -1066,15 +1026,14 @@ async function agentPortal(user) {
         const statusStrip9 = (c) => { const authOk = String(c.authority || '').toLowerCase() === 'active'; const dotEl = (ok, txt, warnTxt) => h('span', { style: 'display:inline-flex;align-items:center;gap:5px;font-weight:700;color:' + (ok ? '#166534' : '#92400e') }, [ h('span', { style: 'width:8px;height:8px;border-radius:99px;background:' + (ok ? '#22c55e' : '#f59e0b') }), ok ? txt : warnTxt ]); return h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:.74rem;color:#475569;background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:7px 11px;margin:7px 0 2px' }, [ dotClean9(c) ? h('span', { style: 'font-weight:700' }, 'DOT ' + dotClean9(c)) : null, mcClean9(c) ? h('span', { style: 'font-weight:700' }, 'MC ' + mcClean9(c)) : null, c.authority ? dotEl(authOk, 'Authority ACTIVE', 'Authority ' + String(c.authority).toUpperCase()) : null, insured9(c) ? dotEl(true, '🛡 Insured ✓') : null ].filter(Boolean)); };
         const capacityLine9 = (c) => { const kids = fleetChips9(c).slice(0, 3); if (c.hazmat) kids.push(chip9('☢', 'amber')); if (c.team_drivers) kids.push(chip9('👥', 'green')); return kids; };
         const clamp9 = (arr, n) => arr.length > n ? arr.slice(0, n).concat(h('span', { class: 'cn-chip more' }, '+' + (arr.length - n) + ' more')) : arr;
-        const postTo9 = (c) => { try { window.__lbAgentPostCarrier = { id: c.id, name: c.name }; } catch (_) {} lbToast('Opening Post a Load — direct offer to ' + (c.name || 'this carrier') + '.', 'success', '🎯 Post to carrier'); go('post'); };
         const openReviews9 = async (c) => { const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading reviews…')); openModal('⭐ ' + (c.name || 'Carrier') + ' — trip-verified reviews', [bodyEl]); let rows; try { rows = (await partnerCarrierReviews(c.id)) || []; } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load reviews.')); return; } const avg = c.stars || (rows.length ? (rows.reduce((a, r) => a + (r.stars || 0), 0) / rows.length) : 0); const dist = [5,4,3,2,1].map(n => ({ n, c: rows.filter(r => Math.round(r.stars) === n).length })); mount(bodyEl, h('div', null, [ h('div', { style: 'display:flex;gap:18px;align-items:center;margin-bottom:12px;flex-wrap:wrap' }, [ h('div', { style: 'text-align:center' }, [ h('div', { style: 'font-size:2.2rem;font-weight:800;color:#10223B;line-height:1' }, rows.length ? Number(avg).toFixed(1) : '—'), h('div', { style: 'color:#f59e0b;letter-spacing:2px' }, starsTxt9(avg)), h('div', { class: 'cp-muted' }, rows.length + ' review' + (rows.length === 1 ? '' : 's')) ]), h('div', { style: 'flex:1;min-width:220px' }, dist.map(d => h('div', { class: 'cn-dist' }, [ h('span', { style: 'width:22px;font-weight:700' }, d.n + '★'), h('div', { class: 'bar' }, h('i', { style: 'width:' + (rows.length ? Math.round(100 * d.c / rows.length) : 0) + '%' })), h('span', { style: 'width:18px;text-align:right' }, String(d.c)) ]))) ]), h('div', { style: 'background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#1e40af;margin-bottom:12px' }, '🔒 Every review is trip-verified — only a broker who completed a booking with this carrier can rate it.'), rows.length ? h('div', null, rows.map(r => h('div', { style: 'border:1px solid #eef2f7;border-radius:14px;padding:12px 14px;margin-bottom:9px' }, [ h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap' }, [ h('span', { style: 'color:#f59e0b;letter-spacing:1.5px;font-weight:700' }, starsTxt9(r.stars)), h('span', { class: 'cp-muted' }, r.date || '') ]), r.comment ? h('div', { style: 'margin:6px 0 4px;color:#334155;font-size:.88rem;line-height:1.55' }, '“' + r.comment + '”') : null ].filter(Boolean)))) : h('div', { style: 'text-align:center;padding:26px;color:#64748b' }, [ h('div', { style: 'font-size:34px' }, '✨'), h('div', { style: 'font-weight:700;color:#10223B;margin:6px 0 3px' }, 'New carrier on LoadBoot'), h('div', { class: 'cp-muted' }, 'Ratings appear after brokers finish loads with them — trip-verified.') ]) ])); };
         const openFmcsa9 = (c) => { const host = h('div', { style: 'width:100%' }, h('div', { class: 'cp-muted' }, 'Loading live FMCSA profile…')); openModal('🛡 ' + (c.name || 'Carrier') + ' — live FMCSA profile', [host]); import('./profile-view.js').then((m) => { try { m.renderFmcsaOnly(host, String(c.dot).replace(/\D/g, ''), { light: true }); } catch (e) { mount(host, h('div', { class: 'cp-err' }, 'Could not load FMCSA data.')); } }).catch(() => mount(host, h('div', { class: 'cp-err' }, 'Could not load FMCSA data.'))); };
-        const openProfile9 = (c) => { openModal('Carrier profile', [h('div', null, [ h('div', { style: 'display:flex;gap:14px;align-items:center;margin-bottom:4px' }, [ avaEl9(c, true), h('div', { style: 'min-width:0' }, [ h('div', { style: 'font-weight:800;font-size:1.15rem;color:#10223B' }, c.name || 'Carrier'), h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:5px' }, [ pill9('✓ LOADBOOT VERIFIED', '#dcfce7', '#166534'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', '#ede9fe', '#6d28d9') : null, c.out_of_service ? pill9('⛔ OUT OF SERVICE', '#fee2e2', '#991b1b') : null, c.available === false ? pill9('⏸ NOT ACCEPTING LOADS', '#fef3c7', '#92400e') : null, pill9('MEMBER SINCE ' + String(c.member_since || '—').toUpperCase(), '#f1f5f9', '#334155') ].filter(Boolean)) ]) ]), rateLine9(c), kpiBand9(c), sec9('FMCSA · authority', fmcsaChips9(c)), sec9('Fleet — what they run', fleetChips9(c)), sec9('Coverage', covChips9(c)), (c.compliance || []).length ? sec9('Compliance on file', c.compliance.map(x => chip9('✓ ' + x, 'green'))) : null, sec9('Capabilities', capChips9(c)), h('div', { style: 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap' }, [ h('button', { class: 'cn-ghost', onClick: () => openReviews9(c) }, '⭐ Reviews'), c.dot ? h('button', { class: 'cn-ghost', onClick: () => openFmcsa9(c) }, '🛡 Live FMCSA profile') : null, h('button', { class: 'cn-cta', onClick: () => postTo9(c) }, '🎯 Post a load to this carrier') ].filter(Boolean)) ].filter(Boolean))]); };
+        const openProfile9 = (c) => { openModal('Carrier profile', [h('div', null, [ h('div', { style: 'display:flex;gap:14px;align-items:center;margin-bottom:4px' }, [ avaEl9(c, true), h('div', { style: 'min-width:0' }, [ h('div', { style: 'font-weight:800;font-size:1.15rem;color:#10223B' }, c.name || 'Carrier'), h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:5px' }, [ pill9('✓ LOADBOOT VERIFIED', '#dcfce7', '#166534'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', '#ede9fe', '#6d28d9') : null, c.out_of_service ? pill9('⛔ OUT OF SERVICE', '#fee2e2', '#991b1b') : null, c.available === false ? pill9('⏸ NOT ACCEPTING LOADS', '#fef3c7', '#92400e') : null, pill9('MEMBER SINCE ' + String(c.member_since || '—').toUpperCase(), '#f1f5f9', '#334155') ].filter(Boolean)) ]) ]), rateLine9(c), kpiBand9(c), sec9('FMCSA · authority', fmcsaChips9(c)), sec9('Fleet — what they run', fleetChips9(c)), sec9('Coverage', covChips9(c)), (c.compliance || []).length ? sec9('Compliance on file', c.compliance.map(x => chip9('✓ ' + x, 'green'))) : null, sec9('Capabilities', capChips9(c)), h('div', { style: 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap' }, [ h('button', { class: 'cn-ghost', onClick: () => openReviews9(c) }, '⭐ Reviews'), c.dot ? h('button', { class: 'cn-ghost', onClick: () => openFmcsa9(c) }, '🛡 Live FMCSA profile') : null ].filter(Boolean)) ].filter(Boolean))]); };
         const post9 = (c) => h('div', { class: 'cn-card' }, [
           h('div', { class: 'cn-top' }, [h('div', { class: 'cn-idrow' }, [ h('span', { class: 'cn-since' }, 'MEMBER SINCE ' + String(c.member_since || '—').toUpperCase()), h('div', { style: 'display:flex;gap:6px;position:relative;z-index:1' }, [ pill9('✓ VERIFIED', 'rgba(34,197,94,.18)', '#4ade80'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', 'rgba(139,92,246,.2)', '#c4b5fd') : null, c.out_of_service ? pill9('⛔ OOS', 'rgba(239,68,68,.2)', '#fca5a5') : null ].filter(Boolean)) ])]),
           avaEl9(c),
           h('div', { class: 'cn-body' }, [ h('div', { class: 'cn-name', title: c.name || '' }, c.name || 'Carrier'), rateLine9(c), kpiBand9(c), statusStrip9(c), sec9('Capacity', clamp9(capacityLine9(c), 5)), sec9('Coverage', clamp9(covChips9(c), 2)), h('div', { style: 'flex:1' }) ].filter(Boolean)),
-          h('div', { class: 'cn-foot' }, [ h('button', { class: 'cn-ghost', onClick: () => openProfile9(c) }, 'View full profile'), h('button', { class: 'cn-cta', onClick: () => postTo9(c) }, '🎯 Post a load to this carrier') ]),
+          h('div', { class: 'cn-foot' }, [ h('button', { class: 'cn-ghost', style: 'flex:1', onClick: () => openProfile9(c) }, 'View full profile') ]),
         ]);
         const banner9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' The LoadBoot Carrier Network — search FMCSA-verified carriers, then 🎯 Post a load to any carrier. When it DELIVERS, your 1% lands automatically.']);
         const search9 = h('input', { class: 'cp-input', placeholder: 'Search by name, DOT, MC, equipment, lane or home base…', style: 'width:100%;margin-bottom:12px' });
