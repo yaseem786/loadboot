@@ -531,7 +531,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Post a Load', 'loads'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Post a Load', 'loads'], ['carriers', 'Carriers', 'truck'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
   let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -964,6 +964,20 @@ async function agentPortal(user) {
         mount(content, agCard('📦 Post a load', [
           h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application (Get Verified tab), you get your own posting workspace — the same wizard brokers use, with direct-carrier targeting for your referred carriers. A load you post counts as the DEMAND side of your pair.']),
           h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified →']),
+        ]));
+      }
+    } else if (tab === 'carriers') {
+      if (isVerified && feed.own_broker_org) {
+        mount(content, h('div', null, [
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:9px 12px;font-weight:700' },
+            [icon('truck',15),' The LoadBoot Carrier Network \u2014 search FMCSA-verified carriers by lane, equipment and rating, then \ud83c\udfaf Post a load to any carrier. When it DELIVERS, your 1% lands automatically.']),
+          h('iframe', { src: '/app/partner/#carriers', style: 'width:100%;height:calc(100vh - 210px);min-height:640px;border:0;border-radius:16px;background:#0d1526' }),
+          h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, ['Prefer a full tab? ', h('a', { href: '/app/partner/#carriers', target: '_blank', rel: 'noopener', style: 'color:#7cc0ff;font-weight:700' }, 'Open the carrier network in a new tab \u2192')]),
+        ]));
+      } else {
+        mount(content, agCard('\ud83d\ude9a Carrier Network', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application, you can browse the verified carrier network and post loads directly to carriers \u2014 the same tools brokers use.']),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified \u2192']),
         ]));
       }
     } else if (tab === 'chain') {
