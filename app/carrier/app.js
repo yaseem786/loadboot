@@ -531,7 +531,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'user'], ['post', 'Bring Demand', 'loads'], ['carriers', 'Carrier Network', 'truck'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['verify', 'Verification', 'shield'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'user'], ['chain', 'My Referrals', 'user'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['verify', 'Verification', 'shield'], ['settings', 'Settings', 'cog']];
   let tab = (location.hash || '').replace('#', '') || 'dashboard';
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -544,7 +544,7 @@ async function agentPortal(user) {
   // Mobile bottom tab bar — same pattern as the carrier shell (.cp-tabbar shows <=900px,
   // sidebar hides). Without this the agent portal had NO navigation on phones.
   const tabLinks = {};
-  const MOBTABS = [['dashboard', 'Home', 'dash'], ['verify', 'Verify', 'shield'], ['post', 'Post', 'loads'], ['chain', 'Chain', 'user'], ['earnings', 'Earnings', 'finance']];
+  const MOBTABS = [['dashboard', 'Home', 'dash'], ['chain', 'Referrals', 'user'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['verify', 'Verify', 'shield']];
   const tabbar = h('nav', { class: 'cp-tabbar' }, MOBTABS.map(([id, label, ic]) => {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
     tabLinks[id] = a; return a;
@@ -908,7 +908,7 @@ async function agentPortal(user) {
       const d = W.d;
       const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:#e6edf8' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
       if (obStatus === 'under_review') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('⏳ UNDER REVIEW', 'LoadBoot dispatch is reviewing your application — usually under 24 hours. You will get an in-app + email decision. Your link works meanwhile; earnings switch on at approval.', 'warn'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
-      if (obStatus === 'approved') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✅ VERIFIED AGENT', 'Your chain earns on every delivered load.', 'ok'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
+      if (obStatus === 'approved') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✅ VERIFIED', 'You earn 1% on every delivered load your referred clients move.', 'ok'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
       if (obStatus === 'rejected') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')]), threadCard9()])); return; }
       const fld = (lbl9, key9, ph9, type9) => { const i9 = h('input', { class: 'cp-in', type: type9 || 'text', placeholder: ph9 || '' }); i9.value = d[key9] || ''; i9.oninput = () => { d[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
       const steps9 = ['Identity', 'Your network', 'Payout & agreement'];
@@ -1359,7 +1359,7 @@ async function agentPortal(user) {
       mount(content, h('div', null, [
         linkCard(),
         agCard('📚 How the program works', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '1% of gross on every GPS-verified DELIVERED load your chain touches · pair (broker + carrier) activates earnings · 15-day clearing window · monthly payouts from $100 · your cut comes out of LoadBoot’s own fee — your clients never pay extra · full program details: loadboot.com/agents.html'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '1% of gross on every GPS-verified DELIVERED load your referred clients move · 15-day clearing window · monthly payouts from $100 · your cut comes out of LoadBoot’s own fee — your clients never pay extra · full program details: loadboot.com/agents.html'),
         ]),
       ]));
     } else if (tab === 'settings') {
@@ -1670,7 +1670,7 @@ function notCarrier() {
     let r; try { r = await myReferral(); } catch (_) { return; }
     if (!r || !r.code) return;
     card.querySelector('h1').textContent = '🤝 Referral Partner dashboard';
-    card.querySelector('.cp-auth-sub').textContent = 'You are a LoadBoot AGENT — bring clients in pairs, earn 1% of every delivered load your chain touches. Everything below is live.';
+    card.querySelector('.cp-auth-sub').textContent = 'You are a LoadBoot Referral Partner — refer brokers, shippers and carriers, and earn 1% of every delivered load they move. Everything below is live.';
     const panel = h('div', { class: 'cp-auth-card', style: 'margin-top:14px;text-align:left' }, [
       h('h2', { style: 'margin:0 0 4px' }, 'Your referral program'),
       h('p', { class: 'cp-auth-sub', style: 'margin-bottom:10px' }, 'Share your link — every broker, carrier or shipper who joins through it is yours, permanently. Your 1% comes out of LoadBoot’s own fee: your clients never pay extra.'),
@@ -1719,7 +1719,7 @@ function notCarrier() {
         (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : '')));
       mount(chainW, h('div', null, [
         kpis, banner, inviteRow,
-        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '🔗 Your chain'),
+        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '🔗 Your referrals'),
         (Array.isArray(cs.chain) && cs.chain.length) ? h('div', null, cs.chain.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
           h('div', { style: 'flex:1;min-width:190px' }, [
             h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
