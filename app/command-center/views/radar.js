@@ -123,11 +123,11 @@ export function renderRadar(host) {
       el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Documents & submissions to review'), el('span', { class: 'cc-pill cc-pill-' + (docItems.length ? 'amber' : 'green') }, String(docItems.length))]),
       docItems.length ? el('div', { class: 'cc-doclist' }, docItems.slice(0, 10).map(x => x.kind === 'file'
         ? el('div', { class: 'cc-doc-item cc-row', onClick: () => go('/documents') }, [
-            el('div', null, [el('b', null, '📄 ' + (x.d.file || x.d.type || 'document')), el('div', { class: 'cc-sub' }, (x.d.carrier || '') + ' · file upload — review in Documents')]),
+            el('div', null, [el('b', null, [icon('doc',15), ' ' + (x.d.file || x.d.type || 'document')]), el('div', { class: 'cc-sub' }, (x.d.carrier || '') + ' · file upload — review in Documents')]),
             el('span', { class: 'cc-pill cc-pill-amber' }, 'review'),
           ])
         : el('div', { class: 'cc-doc-item cc-row', onClick: () => go('/partner-intake') }, [
-            el('div', null, [el('b', null, '📋 ' + (x.d.label || 'submission')), el('div', { class: 'cc-sub' }, (x.d.broker || '') + ' · ' + (x.d.origin || '?') + ' → ' + (x.d.destination || '?') + ' — verify in Partner intake → Docs')]),
+            el('div', null, [el('b', null, [icon('clipboard',15), ' ' + (x.d.label || 'submission')]), el('div', { class: 'cc-sub' }, (x.d.broker || '') + ' · ' + (x.d.origin || '?') + ' → ' + (x.d.destination || '?') + ' — verify in Partner intake → Docs')]),
             el('span', { class: 'cc-pill cc-pill-blue' }, 'verify'),
           ]))) : el('div', { class: 'cc-sub' }, 'No documents or submissions awaiting review.'),
       el('div', { style: 'display:flex;gap:8px;margin-top:10px' }, [

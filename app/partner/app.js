@@ -90,7 +90,7 @@ function payRailBlock(kind9, ref9, memo9, label9) {
       h('div', { style: 'font-size:1.3rem;font-weight:900;margin:4px 0' }, money(pi.amount || 0)),
       pi.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi.noa_warning) : null,
       bank.instructions ? h('div', { class: 'cp-sub', style: 'white-space:pre-wrap' }, bank.instructions) : h('div', null, [
-        bank.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, '🏦 PAY THE FACTORING COMPANY — ' + (bank.factoring_company || '') + (bank.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')) : null,
+        bank.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, [icon('bank',15), ' PAY THE FACTORING COMPANY — ' + (bank.factoring_company || '') + (bank.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')]) : null,
         bank.pay_to ? row9('Factoring company', bank.factoring_company) : null,
         row9('Payee', bank.account_title), row9('Bank', bank.bank_name), row9('Account #', bank.account_number),
         row9('Routing (ACH)', bank.routing_number), row9('Account type', bank.account_type), row9('SWIFT/BIC', bank.swift_bic),
@@ -755,7 +755,7 @@ function carrierInvoicesCard() {
         const payBy9 = g9.items.map((x9) => x9.pay_by).filter(Boolean).sort()[0];
         return h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #eef2f7' }, [
           h('div', null, [
-            h('div', { class: 'cp-row-t' }, '🚛 ' + (g9.lane || '') + ' · ' + money(tot9)),
+            h('div', { class: 'cp-row-t' }, [icon('truck',15), ' ' + (g9.lane || '') + ' · ' + money(tot9)]),
             h('div', { class: 'cp-row-s' }, (g9.carrier || '') + ' · ' + g9.items.length + ' item' + (g9.items.length > 1 ? 's' : '') + (payBy9 ? ' · pay by ' + new Date(payBy9).toLocaleDateString() : '')),
           ]),
           h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
@@ -1573,7 +1573,7 @@ async function brokerDash(user, ov) {
             purp9.value = sp.purpose || ''; purp9.oninput = () => { sp.purpose = purp9.value; }; purp9.addEventListener('blur', () => paintStops());
             return h('div', { style: 'margin-top:8px;padding:8px;border:1px dashed #dbe3ee;border-radius:10px' }, [
               h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
-                h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, '📍 ' + (i9 + 1)),
+                h('span', { style: 'flex:none;font-weight:800;font-size:.8rem;color:#0883F7' }, [icon('pin',15), ' ' + (i9 + 1)]),
                 h('span', { style: 'flex:none;display:flex;flex-direction:column;gap:2px' }, [
                   h('button', { type: 'button', title: 'move earlier in the run', style: 'border:1px solid #dbe3ee;background:#fff;border-radius:6px;font-size:.6rem;padding:1px 6px;cursor:pointer;opacity:' + (i9 === 0 ? '.3' : '1'), onClick: () => { if (i9 === 0) return; const tmp9 = w.stops[i9 - 1]; w.stops[i9 - 1] = w.stops[i9]; w.stops[i9] = tmp9; w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); paintStops(); recalc(); } }, '▲'),
                   h('button', { type: 'button', title: 'move later in the run', style: 'border:1px solid #dbe3ee;background:#fff;border-radius:6px;font-size:.6rem;padding:1px 6px;cursor:pointer;opacity:' + (i9 === w.stops.length - 1 ? '.3' : '1'), onClick: () => { if (i9 === w.stops.length - 1) return; const tmp9 = w.stops[i9 + 1]; w.stops[i9 + 1] = w.stops[i9]; w.stops[i9] = tmp9; w.stops.forEach((z9, k9) => { z9.seq = k9 + 1; }); paintStops(); recalc(); } }, '▼'),
@@ -3572,7 +3572,7 @@ async function brokerDash(user, ov) {
               h('div', { style: 'font-size:1.3rem;font-weight:900;margin:4px 0' }, money(pi.amount || 0)),
               pi.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi.noa_warning) : null,
               bank.instructions ? h('div', { class: 'cp-sub', style: 'white-space:pre-wrap' }, bank.instructions) : h('div', null, [
-                bank.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, '🏦 PAY THE FACTORING COMPANY — ' + (bank.factoring_company || '') + (bank.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')) : null,
+                bank.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, [icon('bank',15), ' PAY THE FACTORING COMPANY — ' + (bank.factoring_company || '') + (bank.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')]) : null,
         bank.pay_to ? row9('Factoring company', bank.factoring_company) : null,
         row9('Payee', bank.account_title), row9('Bank', bank.bank_name), row9('Account #', bank.account_number),
                 row9('Routing (ACH)', bank.routing_number), row9('Account type', bank.account_type), row9('SWIFT/BIC', bank.swift_bic),
@@ -4030,7 +4030,7 @@ function packetAgreementCards(skipPacket) {
         return h('div', { style: 'border:1.5px solid ' + (allPaid9 ? '#bbf7d0' : due9 > 0 ? '#fecaca' : '#fde68a') + ';border-radius:14px;padding:12px 14px;margin-bottom:12px;background:' + (allPaid9 ? '#f0fdf4' : '#fff') }, [
           h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:4px' }, [
             h('div', null, [
-              h('div', { style: 'font-weight:900;color:#10223B' }, '🚛 ' + (g9.lane || g9.items[0].label || 'Other')),
+              h('div', { style: 'font-weight:900;color:#10223B' }, [icon('truck',15), ' ' + (g9.lane || g9.items[0].label || 'Other')]),
               h('div', { class: 'cp-sub' }, (g9.carrier ? 'Carrier: ' + g9.carrier + ' · ' : '') + g9.items.length + ' item' + (g9.items.length > 1 ? 's' : '') + ' — freight + claims of THIS trip only'),
             ]),
             h('div', { style: 'text-align:right' }, [
@@ -4054,7 +4054,7 @@ function packetAgreementCards(skipPacket) {
                 const rr9 = (k9, v9) => v9 ? h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #e2e8f0;font-size:.85rem' }, [h('span', { style: 'color:#64748b' }, k9), h('b', { style: 'user-select:all' }, String(v9))]) : null;
                 mount(remitHost9, h('div', null, [
                   pi9.noa_warning ? h('div', { style: 'background:#fee2e2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:.83rem;font-weight:700;margin:6px 0' }, '\u26a0 ' + pi9.noa_warning) : null,
-                  bk9.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, '🏦 PAY THE FACTORING COMPANY — ' + (bk9.factoring_company || '') + (bk9.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')) : null,
+                  bk9.pay_to ? h('div', { style: 'background:#4c1d95;color:#fff;border-radius:9px;padding:8px 12px;font-weight:900;font-size:.85rem;margin:4px 0' }, [icon('bank',15), ' PAY THE FACTORING COMPANY — ' + (bk9.factoring_company || '') + (bk9.verified ? ' · NOA verified by LoadBoot ✓' : ' · NOA verification pending ⏳')]) : null,
                   rr9('Payee', bk9.account_title), rr9('Bank', bk9.bank_name), rr9('Account #', bk9.account_number),
                   rr9('Routing (ACH)', bk9.routing_number), rr9('Remittance email', bk9.remittance_email),
                   bk9.pay_to ? null : (bk9.verified ? h('div', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;margin-top:6px' }, '\u2713 Bank details verified by LoadBoot') : h('div', { class: 'cp-pill', style: 'background:#fef3c7;color:#b45309;margin-top:6px' }, '\u26a0 Details not yet verified — confirm with the carrier before a large transfer')),
@@ -4421,7 +4421,7 @@ function packetAgreementCards(skipPacket) {
     ]);
     agFormBox9.hidden = true;
     const agFoldBar9 = h('div', { style: 'cursor:pointer;border-radius:16px;background:linear-gradient(120deg,#101d36,#0e2246);border:1px solid rgba(8,131,247,.35);padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap', onClick: () => { agFoldBar9.hidden = true; agFormBox9.hidden = false; try { agFormBox9.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} } }, [
-      h('div', { style: 'font-size:1.6rem' }, '⚡'),
+      h('div', { style: 'font-size:1.6rem' }, [icon('zap',15), '']),
       h('div', { style: 'flex:1;min-width:220px' }, [
         h('div', { style: 'font-weight:900;color:#fff;font-size:1.02rem' }, 'Post a load'),
         h('div', { style: 'color:#8ea1bf;font-size:.8rem;margin-top:2px' }, 'Full broker wizard — lane, multi-stop, schedule, rate card, LOAD SOURCE. Tap to open.'),

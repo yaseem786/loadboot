@@ -308,7 +308,7 @@ function authScreen() {
   let signup = false;
   const email = h('input', { class: 'cp-in', type: 'email', placeholder: 'you@company.com', autocomplete: 'username' });
   const pass = h('input', { class: 'cp-in', type: 'password', placeholder: 'Password', autocomplete: 'current-password', style: 'margin:0;padding-right:46px' });
-  const eye = h('button', { type: 'button', 'aria-label': 'Show password', style: 'position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:0;cursor:pointer;font-size:18px;opacity:.6', onClick: () => { pass.type = pass.type === 'password' ? 'text' : 'password'; eye.textContent = pass.type === 'password' ? '👁' : '🙈'; } }, '👁');
+  const eye = h('button', { type: 'button', 'aria-label': 'Show password', style: 'position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:0;cursor:pointer;font-size:18px;opacity:.6', onClick: () => { pass.type = pass.type === 'password' ? 'text' : 'password'; eye.textContent = pass.type === 'password' ? '👁' : '🙈'; } }, [icon('eye',15), '']);
   const passWrap = h('div', { style: 'position:relative' }, [pass, eye]);
   const company = h('input', { class: 'cp-in', type: 'text', placeholder: 'Company / carrier name', autocomplete: 'organization' });
   const name = h('input', { class: 'cp-in', type: 'text', placeholder: 'Your full name', autocomplete: 'name' });
@@ -694,7 +694,7 @@ async function agentPortal(user) {
         : h('div', { style: 'background:linear-gradient(120deg,rgba(252,83,5,.14),rgba(8,131,247,.1));border:1.5px solid rgba(252,83,5,.5);border-radius:14px;padding:16px 18px;margin-bottom:12px' }, [
             h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center' }, [
               h('div', null, [
-                h('div', { style: 'font-weight:900;font-size:1.02rem;color:#fff' }, '🛡 Complete your verification — ' + obCount + ' of 4 steps done'),
+                h('div', { style: 'font-weight:900;font-size:1.02rem;color:#fff' }, [icon('shield',15), ' Complete your verification — ' + obCount + ' of 4 steps done']),
                 h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
                   obStep('Identity', obDone.identity), obStep('Network', obDone.network), obStep('Payout & tax', obDone.payout), obStep('Agreement signed', obDone.signed)]),
                 h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Earnings stay locked until LoadBoot approves you. Your link works meanwhile — joins are recorded.'),
@@ -1004,7 +1004,7 @@ async function agentPortal(user) {
           h('b', { style: 'color:#4ade80;font-size:1.02rem' }, money9(x9.your_earnings)),
         ]),
         h('div', { style: 'display:flex;gap:14px;flex-wrap:wrap;margin-top:8px' }, [
-          h('span', { class: 'cp-row-s' }, '📦 ' + (x9.loads_posted || 0) + ' posted'),
+          h('span', { class: 'cp-row-s' }, [icon('loads',15), ' ' + (x9.loads_posted || 0) + ' posted']),
           h('span', { class: 'cp-row-s' }, '✓ ' + (x9.trips_delivered || 0) + ' delivered'),
           h('span', { style: 'flex:1' }),
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { window.__agLoadFilter = x9.org; go('loads'); } }, [icon('loads',15),' View loads']),
@@ -1064,11 +1064,11 @@ async function agentPortal(user) {
               : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800' }, [icon('loads',15),' ON BOARD']),
           ]),
           h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:.74rem;color:#8fa3bf;font-weight:700' }, [
-            h('span', null, '📦 posted ' + fmtD9(x9.posted_at)),
+            h('span', null, [icon('loads',15), ' posted ' + fmtD9(x9.posted_at)]),
             x9.booked_at ? h('span', null, '→ 🚛 booked ' + fmtD9(x9.booked_at)) : null,
             x9.delivered_at ? h('span', null, '→ ✓ delivered ' + fmtD9(x9.delivered_at)) : null,
             h('span', { style: 'flex:1' }),
-            Number(x9.your_commission) ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80;font-weight:800' }, '💰 your 1% = ' + money9(x9.your_commission) + (clearBy9 && clearBy9 > new Date() ? ' · clears ~' + fmtD9(clearBy9) : ' · cleared'))
+            Number(x9.your_commission) ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80;font-weight:800' }, [icon('finance',15), ' your 1% = ' + money9(x9.your_commission) + (clearBy9 && clearBy9 > new Date() ? ' · clears ~' + fmtD9(clearBy9) : ' · cleared')])
               : st9 === 'delivered' ? h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.14);color:#fbbf24' }, '⏳ 1% crediting…') : null,
           ].filter(Boolean)),
         ]);
@@ -1111,7 +1111,7 @@ async function agentPortal(user) {
           const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Requesting…';
           try { const r9 = await agentRequestPayout(); lbToast((r9 && r9.note) || 'Requested.', 'success', '💸 Payout requested'); render(); }
           catch (e9) { b9.disabled = false; b9.textContent = '💸 Request payout — ' + money9(pc.payable); lbToast((e9 && e9.message) || 'Failed.', 'urgent'); }
-        } }, '💸 Request payout — ' + money9(pc.payable)) : null;
+        } }, [icon('finance',15), ' Request payout — ' + money9(pc.payable)]) : null;
         const stMap9 = { requested: ['🕐 REQUESTED — under review', 'rgba(245,158,11,.15)', '#fbbf24'], approved: ['✅ APPROVED — transfer being prepared', 'rgba(8,131,247,.15)', '#3b9dff'], sent: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], paid: ['💸 SENT — 3–5 business days to your bank', 'rgba(8,131,247,.18)', '#7cc0ff'], received: ['✓ RECEIVED', 'rgba(34,197,94,.15)', '#4ade80'], rejected: ['✕ REJECTED', 'rgba(239,68,68,.15)', '#f87171'] };
         const reqRows9 = (Array.isArray(pc.requests) ? pc.requests : []).map((r9) => { const m9 = stMap9[r9.status] || [r9.status, 'rgba(148,163,184,.15)', '#94a3b8'];
           return h('div', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 13px;margin-top:8px;background:rgba(255,255,255,.03)' }, [
@@ -2478,7 +2478,7 @@ async function appView(user) {
     } catch (_) { _obRing.firstChild.textContent = '0%'; } })();
     const _dueAmt = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const topBanners = [
-      (_obDone && comp && comp.mandatory_ok === false) ? h('button', { class: 'cpx-banner red', onClick: () => go('documents') }, [h('span', null, '⚠'), h('span', null, 'Please verify your compliance documents'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
+      (_obDone && comp && comp.mandatory_ok === false) ? h('button', { class: 'cpx-banner red', onClick: () => go('documents') }, [h('span', null, [icon('alert',15), '']), h('span', null, 'Please verify your compliance documents'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
       _dueAmt > 0 ? h('button', { class: 'cpx-banner amber', onClick: () => go('finance') }, [h('span', null, 'ℹ'), h('span', null, money(_dueAmt) + ' in dispatch fees due — pays off in Finance, clears when LoadBoot confirms your receipt'), h('span', { class: 'cpx-b-go' }, '›')]) : null,
     ].filter(Boolean);
     // 📥 money OWED TO YOU by brokers (direct-pay) — live banner, disappears once everything is confirmed received
@@ -2492,7 +2492,7 @@ async function appView(user) {
         if (amt9 <= 0 && fly9 <= 0) return;
         const host9 = document.getElementById('lb-recv-banner'); if (!host9) return;
         host9.appendChild(h('button', { class: 'cpx-banner', style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#4ade80', onClick: () => { window.__finSec9 = 'in'; go('finance'); } }, [
-          h('span', null, '📥'),
+          h('span', null, [icon('inbox',15), '']),
           h('span', null, (amt9 > 0 ? money(amt9) + ' owed to you by brokers' : '') + (amt9 > 0 && fly9 > 0 ? ' · ' : '') + (fly9 > 0 ? money(fly9) + ' on the way — tap ✓ Received when it lands' : '')),
           h('span', { class: 'cpx-b-go' }, '›'),
         ]));
@@ -2970,7 +2970,7 @@ async function appView(user) {
         if (!ov.compliance_ok) {
           const closeV = openModal('Verify your account first', [
             h('div', { style: 'text-align:center;padding:6px 0' }, [
-              h('div', { style: 'font-size:44px;line-height:1' }, '🛡️'),
+              h('div', { style: 'font-size:44px;line-height:1' }, [icon('shield',15), '']),
               h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'One step before you can book'),
               h('div', { class: 'cp-row-s', style: 'max-width:340px;margin:0 auto' }, 'Brokers only see booking requests from verified carriers. Upload your MC/DOT authority, insurance (COI) and W-9 — our team verifies fast.'),
               h('button', { class: 'cp-btn', style: 'margin-top:16px', onClick: () => { closeV(); go('onboarding'); } }, 'Finish onboarding →'),
@@ -3172,7 +3172,7 @@ async function appView(user) {
           const stars = br ? '★'.repeat(Math.round(br)) + '☆'.repeat(5 - Math.round(br)) : '';
           mount(brokerHost, h('div', { style: 'margin-top:10px;border:1px solid var(--lb-border,#e6ebf3);border-radius:12px;padding:11px;background:#fff' }, [
             h('div', { style: 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px' }, [
-              h('b', { style: 'font-size:13px' }, '🏢 ' + (ps.posted_by || 'Posting party')),
+              h('b', { style: 'font-size:13px' }, [icon('building',15), ' ' + (ps.posted_by || 'Posting party')]),
               h('span', null, [
                 ps.broker_verified != null ? h('span', { class: 'cp-pill ' + (ps.broker_verified ? 'green' : 'amber'), style: 'margin-right:6px' }, ps.broker_verified ? '✓ Verified (bond + authority on file)' : 'Unverified') : null,
                 stars ? h('span', { style: 'color:#f59e0b;font-weight:800' }, stars + ' ' + br.toFixed(1)) : null,
@@ -3268,7 +3268,7 @@ async function appView(user) {
                   h('span', { style: 'min-width:0;flex:1' }, [h('div', { style: 'font-weight:800;font-size:13px;color:#fff' }, t2[0]), h('div', { style: 'font-size:11.5px;color:#94a3b8;margin-top:1px;line-height:1.45' }, t2[3]), h('div', { class: 'mh-bar' }, h('i', { style: 'width:' + pc2 + '%' }))]),
                   h('b', { style: 'color:#4ade80;font-size:12px;flex:none' }, t2[1] + '/' + t2[2]),
                 ]); }),
-                (worst && (worst[1] / worst[2]) < 0.6) ? h('div', { class: 'mh-watch' }, '⚠ Watch — ' + worst[0] + ': ' + worst[3]) : null,
+                (worst && (worst[1] / worst[2]) < 0.6) ? h('div', { class: 'mh-watch' }, [icon('alert',15), ' Watch — ' + worst[0] + ': ' + worst[3]]) : null,
               ].filter(Boolean));
             })(),
             ...flags.map(f => h('div', { style: 'margin-top:8px;border-radius:11px;padding:9px 12px;font-size:12px;font-weight:700;' + (f[0] === 'red' ? 'background:rgba(220,38,38,.1);color:#b91c1c' : 'background:rgba(217,119,6,.12);color:#92400e') }, f[1])),
@@ -3341,7 +3341,7 @@ async function appView(user) {
       return h('article', { class: 'cp-load cpx-req' }, [
         h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null, profitEl].filter(Boolean)),
         h('div', { class: 'cpx-req-chips' }, [
-          h('span', { class: 'cpx-chip eq' }, '🚛 ' + (l.equipment || 'Van')),
+          h('span', { class: 'cpx-chip eq' }, [icon('truck',15), ' ' + (l.equipment || 'Van')]),
           l.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(220,38,38,.14);color:#b91c1c;font-weight:800' }, '☣ HAZMAT') : null,
           l.pickup_date ? h('span', { class: 'cpx-chip' }, '🕐 Pickup: ' + l.pickup_date) : null,
           l.direct_to_you ? (l.direct_offer_expired
@@ -4365,9 +4365,9 @@ function tripStepper(status) {
       let mt; try { mt = await fleetMaintenance(); } catch (_) { return; }
       (mt || []).forEach(x => {
         if (x.service_due) alertHost.appendChild(h('button', { class: 'cpx-banner amber', onClick: () => truckForm(trucks.find(tt => tt.id === x.id) || null) },
-          [h('span', null, '🔧'), h('span', null, 'Unit ' + (x.unit_no || '?') + ' — service due ' + String(x.next_service_date)), h('span', { class: 'cpx-b-go' }, '›')]));
+          [h('span', null, [icon('tools',15), '']), h('span', null, 'Unit ' + (x.unit_no || '?') + ' — service due ' + String(x.next_service_date)), h('span', { class: 'cpx-b-go' }, '›')]));
         if (x.inspection_due) alertHost.appendChild(h('button', { class: 'cpx-banner red', onClick: () => truckForm(trucks.find(tt => tt.id === x.id) || null) },
-          [h('span', null, '⚠'), h('span', null, 'Unit ' + (x.unit_no || '?') + ' — annual inspection expires ' + String(x.inspection_exp)), h('span', { class: 'cpx-b-go' }, '›')]));
+          [h('span', null, [icon('alert',15), '']), h('span', null, 'Unit ' + (x.unit_no || '?') + ' — annual inspection expires ' + String(x.inspection_exp)), h('span', { class: 'cpx-b-go' }, '›')]));
       });
     })();
     (async () => {
@@ -4423,7 +4423,7 @@ function tripStepper(status) {
         mount(host9, [cardHead([icon('chart',15),' Fleet optimization'], 'last ' + (d9.window_days || 90) + ' days — real delivered trips'),
           h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Which trucks earn and which sit — and the lanes that pay you best. Assign trucks on every trip to sharpen this.'),
           ...tr9.map((t9) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
-            h('div', { style: 'flex:1;min-width:180px' }, [h('div', { class: 'cp-row-t' }, '🚛 ' + t9.truck), h('div', { class: 'cp-row-s' }, (t9.trips || 0) + ' trips · ' + Number(t9.miles || 0).toLocaleString() + ' mi · ' + (t9.active_days || 0) + ' active days')]),
+            h('div', { style: 'flex:1;min-width:180px' }, [h('div', { class: 'cp-row-t' }, [icon('truck',15), ' ' + t9.truck]), h('div', { class: 'cp-row-s' }, (t9.trips || 0) + ' trips · ' + Number(t9.miles || 0).toLocaleString() + ' mi · ' + (t9.active_days || 0) + ' active days')]),
             h('div', { style: 'text-align:right' }, [h('div', { class: 'cp-row-t', style: 'color:#4ade80' }, money(t9.revenue || 0)), t9.rpm != null ? h('div', { class: 'cp-row-s' }, '$' + t9.rpm + '/mi') : null]),
           ])),
           ln9.length ? h('div', { style: 'margin-top:10px' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, '🗺 Your best lanes'),
@@ -4555,7 +4555,7 @@ function tripStepper(status) {
         h('div', { style: 'font-weight:800;flex:none;color:' + (col || '#dbe6f5') }, v),
       ]);
       mount(card, h('div', null, [
-        cardHead('🧾 Tax centre — ' + yr, 'estimates only · not tax advice'),
+        cardHead([icon('receipt',15), ' Tax centre — ' + yr], 'estimates only · not tax advice'),
         h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:12px 14px;margin-bottom:10px' }, [
           h('div', { style: 'font-weight:800;color:#4ade80' }, '🛏 Per diem — ' + nights + ' nights away'),
           h('div', { style: 'font-size:1.6rem;font-weight:900;color:#4ade80;margin:2px 0' }, '$' + pdDeduct.toLocaleString()),
@@ -4593,7 +4593,7 @@ function tripStepper(status) {
         t('PAID', paidAmt, '#4ade80', 'received'),
       ]),
       overdueAmt > 0 ? h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3)' },
-        h('div', { class: 'cp-row-s', style: 'color:#fca5a5' }, '⚠ $' + Math.round(overdueAmt).toLocaleString() + ' is past 30 days. Chase it, or factor it to free the cash.')) : null,
+        h('div', { class: 'cp-row-s', style: 'color:#fca5a5' }, [icon('alert',15), ' $' + Math.round(overdueAmt).toLocaleString() + ' is past 30 days. Chase it, or factor it to free the cash.'])) : null,
     ].filter(Boolean));
   }
 
@@ -4991,7 +4991,7 @@ function tripStepper(status) {
         CATS.filter(([v]) => byCat[v]).map(([v, l]) => h('span', { class: 'cpx-chip' }, l + ' ' + money(byCat[v])))) : null;
       mount(expCard, [
         h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
-          h('div', null, [h('div', { class: 'cp-row-t' }, '💳 Expenses — ' + (d.month || '')), h('div', { class: 'cp-row-s' }, 'Log fuel, tolls & costs on the go. Month total feeds your real cost per mile.')]),
+          h('div', null, [h('div', { class: 'cp-row-t' }, [icon('card',15), ' Expenses — ' + (d.month || '')]), h('div', { class: 'cp-row-s' }, 'Log fuel, tolls & costs on the go. Month total feeds your real cost per mile.')]),
           h('div', { style: 'display:flex;gap:8px;align-items:center' }, [expMonth, h('b', { style: 'font-size:1.2rem' }, money(d.total || 0))]),
         ]),
         catChips,
@@ -5066,7 +5066,7 @@ function tripStepper(status) {
         const direct9 = !factOn9 || dirMap9[x9.counterparty] === 'direct';
         return direct9
           ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.13);color:#4ade80;font-weight:800' }, [icon('bank',15),' lands in YOUR bank (direct)'])
-          : h('span', { class: 'cp-pill', style: 'background:rgba(139,92,246,.18);color:#c4b5fd;font-weight:800' }, '🏦 goes to ' + ((fb9 && fb9.factoring_company) || 'your factor') + ' (NOA)');
+          : h('span', { class: 'cp-pill', style: 'background:rgba(139,92,246,.18);color:#c4b5fd;font-weight:800' }, [icon('bank',15), ' goes to ' + ((fb9 && fb9.factoring_company) || 'your factor') + ' (NOA)']);
       };
       trs = Array.isArray(trs) ? trs : [];
       // money OWED to you that the broker has not even sent yet (no transfer row)
@@ -5256,7 +5256,7 @@ function tripStepper(status) {
           const li9 = (t9) => h('div', { class: 'cp-row-s', style: 'padding:3px 0;line-height:1.6' }, t9);
           openModal('📦 Factoring packet — ' + ((pk9.trip && pk9.trip.origin) || '') + ' → ' + ((pk9.trip && pk9.trip.destination) || ''), [
             pk9.factor ? h('div', { style: 'background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.35);border-radius:11px;padding:10px 13px;margin-bottom:10px' }, [
-              h('b', null, '🏦 ' + (pk9.factor.company || 'Your factor') + (pk9.factor.noa_status === 'verified' ? ' · NOA verified ✓' : ' · NOA ' + (pk9.factor.noa_status || ''))),
+              h('b', null, [icon('bank',15), ' ' + (pk9.factor.company || 'Your factor') + (pk9.factor.noa_status === 'verified' ? ' · NOA verified ✓' : ' · NOA ' + (pk9.factor.noa_status || ''))]),
               li9('Send the bundle to: ' + (pk9.factor.remittance_email || 'your factor') + (pk9.factor.advance_pct ? ' · advance ~' + pk9.factor.advance_pct + '%' : '') + ' · broker pays them in ' + (pk9.factor.terms_days_broker || '30') + ' days'),
             ]) : h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'No factoring on file — this packet works for direct billing too.'),
             (pk9.missing && pk9.missing.length) ? h('div', { style: 'background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:10px 13px;margin-bottom:10px' },

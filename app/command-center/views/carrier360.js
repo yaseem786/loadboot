@@ -185,7 +185,7 @@ export function renderCarrier360(host, orgId) {
           const loadCl = async () => {
             let cls = []; try { cls = await tripAccessorials(x.id) || []; } catch (_) { cls = []; }
             mount(clHost, el('div', null, [
-              el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800;margin-bottom:4px' }, '💰 Pay claims on this trip (' + cls.length + ')'),
+              el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800;margin-bottom:4px' }, [icon('dollar',15), ' Pay claims on this trip (' + cls.length + ')']),
               !cls.length ? el('div', { class: 'cc-sub' }, 'None filed.') : el('div', null, cls.map((a9) => el('div', { style: 'border:1px solid #e8edf3;border-radius:10px;padding:8px 11px;margin-bottom:6px' }, [
                 el('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [
                   el('b', { style: 'font-size:.85rem' }, String(a9.kind || '').toUpperCase() + (a9.amount != null && Number(a9.amount) > 0 ? ' · $' + a9.amount : '')),

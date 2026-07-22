@@ -3,6 +3,8 @@
 // RBAC-gated server-side. Gated behind the automation_core_enabled flag (nav hidden
 // when off, so production without the engine never calls these RPCs).
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showLoading, showEmpty, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, toolbar, card, fmtDateTime, ago } from '../../shared/ui/components.js';
 import { automationHealth, listTasks, completeTask, startTask } from '../../shared/api.js';
@@ -106,7 +108,7 @@ export function renderAutomation(host) {
           el('td', null, el('span', { class: 'cc-pill cc-pill-' + (PRIO[t.priority] || 'gray') }, t.priority)),
           el('td', null, [
             el('div', null, t.assignee_role || '—'),
-            t.assignee_name ? el('div', { class: 'cc-sub' }, '👤 ' + t.assignee_name + (t.started_at ? ' · started ' + ago(t.started_at) : '')) : '',
+            t.assignee_name ? el('div', { class: 'cc-sub' }, [icon('users',15), ' ' + t.assignee_name + (t.started_at ? ' · started ' + ago(t.started_at) : '')]) : '',
           ]),
           el('td', null, go ? el('a', { href: go, class: 'cc-link' }, (t.related_type || 'open') + ' →') : (t.related_type || '—')),
           el('td', null, statusPill(t.status)),

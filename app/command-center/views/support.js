@@ -3,6 +3,8 @@
 // Creating a ticket fires the support follow-up automation. Reads/writes via cc_*ticket*
 // RPCs (support.view / support.manage), RBAC-gated + audited.
 import { el, mount } from '../../shared/ui/dom.js';
+import { icon } from '../../shared/ui/icons.js';
+
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
@@ -119,7 +121,7 @@ export function renderSupport(host, focusId) {
           let r; try { r = await invoiceLookup(no); } catch (_) { return; }
           if (r && r.found) mount(host9, el('a', { class: 'lb-btn lb-btn-secondary lb-btn-sm', href: '#/finance?id=' + r.id, style: 'text-decoration:none' },
             '🧾 Open ' + r.invoice_no + ' — $' + r.net + ' (' + r.status + ') →'));
-          else mount(host9, el('div', { class: 'cc-sub' }, '🧾 ' + no + ' — no matching invoice found in Finance.'));
+          else mount(host9, el('div', { class: 'cc-sub' }, [icon('receipt',15), ' ' + no + ' — no matching invoice found in Finance.']));
         })();
         return host9;
       })(),
