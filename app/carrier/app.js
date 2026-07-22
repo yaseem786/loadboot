@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -952,14 +952,42 @@ async function agentPortal(user) {
       ].filter(Boolean)), trackerCard9(), threadCard9()]));
     } else if (tab === 'post') {
       if (isVerified && feed.own_broker_org) {
+        const tgt9 = (function(){ try { return window.__lbAgentPostCarrier || null; } catch(_) { return null; } })();
+        const pf9 = { equipment: 'Dry Van' };
+        const inp9 = (key, ph, ty) => h('input', { class: 'cp-input', type: ty || 'text', placeholder: ph || '', style: 'width:100%', onInput: (e) => { pf9[key] = e.currentTarget.value; } });
+        const fld9 = (lbl, node) => h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, lbl), node]);
+        const eqSel9 = h('select', { class: 'cp-input', style: 'width:100%', onChange: (e) => { pf9.equipment = e.currentTarget.value; } }, ['Dry Van','Reefer','Flatbed','Step Deck','Power Only','Box Truck','Hotshot','Container (Drayage)'].map((x) => h('option', { value: x }, x)));
+        const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:8px' });
+        const submit9 = h('button', { class: 'cp-btn', style: 'margin-top:14px', onClick: async (ev) => { const b = ev.currentTarget;
+          if (!(pf9.origin && pf9.destination)) { msg9.style.color = '#f87171'; msg9.textContent = 'Origin and destination are required.'; return; }
+          b.disabled = true; b.textContent = 'Posting…';
+          try {
+            const r9 = await partnerPostLoad({ origin: pf9.origin, destination: pf9.destination, equipment: pf9.equipment, rate: pf9.rate ? Number(pf9.rate) : null, weight: pf9.weight ? Number(pf9.weight) : null, commodity: pf9.commodity || null, pickup: pf9.pickup || null, notes: pf9.notes || null, idempotencyKey: 'agpost:' + Date.now() });
+            const lid9 = r9 && (r9.id || r9.load_id || (r9.load && r9.load.id));
+            if (tgt9 && lid9) { try { await offerSend(lid9, [tgt9.id], pf9.rate ? Number(pf9.rate) : null, 60); } catch (_) {} }
+            try { window.__lbAgentPostCarrier = null; } catch (_) {}
+            lbToast('Load posted' + (tgt9 ? (' — direct offer sent to ' + tgt9.name) : '') + '. Track it in Chain Loads. Your 1% lands on delivery.', 'success', '📦 Posted');
+            go('loads');
+          } catch (e9) { b.disabled = false; b.textContent = 'Post load'; msg9.style.color = '#f87171'; msg9.textContent = (e9 && e9.message) || 'Post failed — try again.'; }
+        } }, 'Post load');
         mount(content, h('div', null, [
-          h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.3);border-radius:11px;padding:9px 12px;font-weight:700' },
-            '📦 The FULL broker wizard, right here in your workspace (“' + (feed.name || 'Agent') + ' (Agent)”) — multi-stop, schedule, rate card, 🎯 direct-carrier targeting. Every post carries your LOAD SOURCE details and is reviewed by dispatch. When it DELIVERS, your 1% lands automatically. ' ),
-          h('iframe', { src: '/app/partner/#post', style: 'width:100%;height:calc(100vh - 210px);min-height:640px;border:0;border-radius:16px;background:#0d1526' }),
-          h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, [
-            'Prefer a full tab? ', h('a', { href: '/app/partner/#post', target: '_blank', rel: 'noopener', style: 'color:#7cc0ff;font-weight:700' }, 'Open the workspace in a new tab →'),
+          tgt9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' Posting a direct offer to: ' + tgt9.name + ' — first to accept wins.']) : null,
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.3);border-radius:11px;padding:9px 12px;font-weight:700' }, [icon('loads',15),' Post a load to the LoadBoot network — it carries your LOAD SOURCE and is reviewed by dispatch. When it DELIVERS, your 1% lands automatically.']),
+          h('div', { class: 'cp-card' }, [
+            h('div', { class: 'cp-row-t', style: 'font-size:1.05rem;margin-bottom:12px' }, [icon('loads',15),' Post a load']),
+            h('div', { class: 'cp-wiz-grid' }, [
+              fld9('Origin (city, ST) *', inp9('origin', 'Dallas, TX')),
+              fld9('Destination (city, ST) *', inp9('destination', 'Atlanta, GA')),
+              fld9('Equipment', eqSel9),
+              fld9('Rate ($ all-in)', inp9('rate', '2850', 'number')),
+              fld9('Weight (lbs)', inp9('weight', '42000', 'number')),
+              fld9('Pickup date', inp9('pickup', '', 'date')),
+              fld9('Commodity', inp9('commodity', 'General freight')),
+              fld9('Notes for the carrier', inp9('notes', 'Appointment, reference #s, etc.')),
+            ]),
+            submit9, msg9,
           ]),
-        ]));
+        ].filter(Boolean)));
       } else {
         mount(content, agCard('📦 Post a load', [
           h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application (Get Verified tab), you get your own posting workspace — the same wizard brokers use, with direct-carrier targeting for your referred carriers. A load you post counts as the DEMAND side of your pair.']),
