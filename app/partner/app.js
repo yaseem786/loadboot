@@ -908,12 +908,12 @@ function referralCard() {
       return;
     }
     const copyBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
-      try { await navigator.clipboard.writeText(r.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
+      try { const _ct910 = ev.currentTarget; await navigator.clipboard.writeText(r.link); _ct910.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
     } }, 'Copy my link');
     const claimIn = h('input', { class: 'cp-in', placeholder: 'Were you referred? Enter their code once' });
     const claimBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => {
       if (!claimIn.value.trim()) return; ev.currentTarget.disabled = true;
-      try { await claimReferral(claimIn.value.trim()); ev.currentTarget.textContent = 'Linked ✓'; }
+      try { const _ct915 = ev.currentTarget; await claimReferral(claimIn.value.trim()); _ct915.textContent = 'Linked ✓'; }
       catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not link.'); }
     } }, 'Link referrer');
     mount(card, [
@@ -1332,7 +1332,7 @@ function bookRequestsCard() {
       const stars = rate ? '\u2605'.repeat(Math.round(rate)) + '\u2606'.repeat(5 - Math.round(rate)) : '';
       const badge = h('span', { style: 'padding:3px 9px;border-radius:20px;font-weight:800;font-size:.72rem;' + (t.verified ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e') }, t.verified ? '\u2713 ' + (t.verified_label || 'Verified') : 'Unverified');
       const note = h('input', { class: 'cp-in', placeholder: 'Optional note to the carrier\u2026' });
-      const decide = async (action, ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '\u2026'; try { await decideBookRequest(r.id, action, note.value || null); render(); } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); } };
+      const decide = async (action, ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '\u2026'; try { const _ct1334 = ev.currentTarget; await decideBookRequest(r.id, action, note.value || null); render(); } catch (e) { _ct1334.disabled = false; alert((e && e.message) || 'Failed'); } };
       const openApproveBook = async (ev) => {
         const btn = ev.currentTarget; btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Loading\u2026';
         let items = [], fl = null;
@@ -3588,7 +3588,7 @@ async function brokerDash(user, ov) {
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
           if (!amt.value || Number(amt.value) <= 0) { alert('Enter a positive quote amount.'); return; }
           ev.currentTarget.disabled = true;
-          try { await brokerQuoteShipment(r.id, Number(amt.value), note.value.trim() || null); ev.currentTarget.textContent = 'Quoted ✓'; }
+          try { const _ct3590 = ev.currentTarget; await brokerQuoteShipment(r.id, Number(amt.value), note.value.trim() || null); _ct3590.textContent = 'Quoted ✓'; }
           catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not quote.'); }
         } }, r.status === 'quoted' ? 'Re-quote' : 'Send quote');
         return h('div', { style: 'padding:10px 0;border-bottom:1px solid #e2e8f0' }, [
@@ -3605,7 +3605,7 @@ async function brokerDash(user, ov) {
               r.open_pool ? h('span', { class: 'cp-pill blue' }, 'OPEN POOL') : pill(r.status),
               r.open_pool ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
                 ev.currentTarget.disabled = true;
-                try { await brokerClaimShipment(r.id); ev.currentTarget.textContent = 'Claimed ✓'; loadInbox && loadInbox(); }
+                try { const _ct3607 = ev.currentTarget; await brokerClaimShipment(r.id); _ct3607.textContent = 'Claimed ✓'; loadInbox && loadInbox(); }
                 catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Already claimed.'); }
               } }, 'Claim this freight') : null,
               !r.open_pool && r.status !== 'tendered' ? amt : null,

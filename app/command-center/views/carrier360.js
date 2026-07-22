@@ -1056,9 +1056,9 @@ export function renderCarrier360(host, orgId) {
               el('label', { class: 'cc-sub', style: 'font-weight:700;margin-top:8px;display:block' }, 'Decision note'), noteIn,
               el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [
                 el('button', { class: 'lb-btn lb-btn-primary', onClick: async (e3) => { const n3 = Number(amtIn.value); if (!(n3 >= 0)) { alert('Enter a valid amount.'); return; } e3.currentTarget.disabled = true;
-                  try { await reviewAccessorial(r.id, 'approve', n3, noteIn.value.trim() || null); dr3.close(); (after9 || function () {})(); } catch (e4) { alert(humanizeError(e4)); e3.currentTarget.disabled = false; } } }, '\u2713 Approve $' ),
+                  try { const _ct1058 = e3.currentTarget; await reviewAccessorial(r.id, 'approve', n3, noteIn.value.trim() || null); dr3.close(); (after9 || function () {})(); } catch (e4) { alert(humanizeError(e4)); _ct1058.disabled = false; } } }, '\u2713 Approve $' ),
                 el('button', { class: 'lb-btn lb-btn-ghost', onClick: async (e3) => { if (!noteIn.value.trim()) { alert('Rejection needs a written reason \u2014 the carrier sees it.'); return; } e3.currentTarget.disabled = true;
-                  try { await reviewAccessorial(r.id, 'reject', null, noteIn.value.trim()); dr3.close(); (after9 || function () {})(); } catch (e4) { alert(humanizeError(e4)); e3.currentTarget.disabled = false; } } }, '\u2715 Reject'),
+                  try { const _ct1060 = e3.currentTarget; await reviewAccessorial(r.id, 'reject', null, noteIn.value.trim()); dr3.close(); (after9 || function () {})(); } catch (e4) { alert(humanizeError(e4)); _ct1060.disabled = false; } } }, '\u2715 Reject'),
               ]),
             ].filter(Boolean));
           };

@@ -425,7 +425,7 @@ function authScreen() {
 function buildReferralStats(r) {
   const money2 = (v) => '$' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
   const copyBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
-    try { await navigator.clipboard.writeText(r.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
+    try { const _ct427 = ev.currentTarget; await navigator.clipboard.writeText(r.link); _ct427.textContent = 'Copied ✓'; } catch (_) { alert(r.link); }
   } }, 'Copy my link');
   return h('div', null, [
     h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, 'Your code'), h('b', null, r.code)]),
@@ -615,7 +615,7 @@ async function agentPortal(user) {
           carrier: hi9 + 'Real loads, zero ghost posts — booked loads vanish from the board instantly, GPS proof gets your detention PAID. Free verified account: ',
         };
         const t9 = (MSG9[sideSel.value] || '') + feed.link;
-        try { await navigator.clipboard.writeText(t9); ev9.currentTarget.textContent = 'Copied ✓ — paste in WhatsApp/SMS'; setTimeout(() => { ev9.currentTarget.textContent = '📋 Copy as message instead (WhatsApp/SMS)'; }, 1800); } catch (_) { alert(t9); }
+        try { const _ct617 = ev9.currentTarget; await navigator.clipboard.writeText(t9); _ct617.textContent = 'Copied ✓ — paste in WhatsApp/SMS'; setTimeout(() => { _ct617.textContent = '📋 Copy as message instead (WhatsApp/SMS)'; }, 1800); } catch (_) { alert(t9); }
       } }, '📋 Copy as message instead (WhatsApp/SMS)'),
     ]);
   };
@@ -624,7 +624,7 @@ async function agentPortal(user) {
     h('div', { class: 'cp-row-s', style: 'word-break:break-all;margin:4px 0 8px' }, feed.link),
     h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
       h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#FC5305', onClick: inviteModal9 }, '✉ Invite by email'),
-      h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { try { await navigator.clipboard.writeText(feed.link); ev.currentTarget.textContent = 'Copied ✓'; } catch (_) { alert(feed.link); } } }, 'Copy link'),
+      h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { try { const _ct626 = ev.currentTarget; await navigator.clipboard.writeText(feed.link); _ct626.textContent = 'Copied ✓'; } catch (_) { alert(feed.link); } } }, 'Copy link'),
 
     ]),
   ]);
@@ -987,7 +987,7 @@ async function agentPortal(user) {
           h('span', { class: 'cp-row-s' }, '✓ ' + (x9.trips_delivered || 0) + ' delivered'),
           h('span', { style: 'flex:1' }),
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { window.__agLoadFilter = x9.org; go('loads'); } }, '📦 View loads'),
-          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { await navigator.clipboard.writeText(nudge9(x9)); ev9.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev9.currentTarget.textContent = '👋 Nudge'; }, 1400); } catch (_) { alert(nudge9(x9)); } } }, '👋 Nudge'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { const _ct989 = ev9.currentTarget; await navigator.clipboard.writeText(nudge9(x9)); _ct989.textContent = 'Copied ✓'; setTimeout(() => { _ct989.textContent = '👋 Nudge'; }, 1400); } catch (_) { alert(nudge9(x9)); } } }, '👋 Nudge'),
         ]),
       ]); };
       mount(content, h('div', null, [
@@ -1385,7 +1385,7 @@ function notCarrier() {
             (k.referred || 0) === 0 ? '⏳ CHAIN PENDING — share your link and bring your first PAIR (a broker + a carrier).'
             : ('⏳ CHAIN PENDING — bring the other side (' + ((k.carriers || 0) ? 'a broker or shipper' : 'a carrier') + ') and every load starts paying you.'));
       // invite templates — one-tap copy
-      const invite = (label9, txt9) => h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { await navigator.clipboard.writeText(txt9); ev9.currentTarget.textContent = 'Copied ✓'; setTimeout(() => { ev9.currentTarget.textContent = label9; }, 1500); } catch (_) { alert(txt9); } } }, label9);
+      const invite = (label9, txt9) => h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { const _ct1387 = ev9.currentTarget; await navigator.clipboard.writeText(txt9); _ct1387.textContent = 'Copied ✓'; setTimeout(() => { _ct1387.textContent = label9; }, 1500); } catch (_) { alert(txt9); } } }, label9);
       const inviteRow = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
         invite('📋 Broker invite', 'I moved my freight ops to LoadBoot — post a load and verified carriers book it in one tap, GPS-tracked with automatic paperwork. Join free with my link: ' + cs.link),
         invite('📋 Carrier invite', 'Real loads, zero ghost posts — booked loads vanish from the board instantly. GPS proof gets your detention PAID. Free verified account, join with my link: ' + cs.link),
@@ -1636,7 +1636,7 @@ async function appView(user) {
         const card = h('div', { class: 'cp-prompt' }, [
           icon('bell', 22),
           h('div', { class: 'cp-prompt-txt' }, [h('b', null, 'Turn on notifications'), h('span', null, 'Get alerts for new loads, payments and dispatcher messages.')]),
-          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…'; try { await enablePush('Carrier portal'); card.remove(); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Enable'; alert((e && e.message) || 'Could not enable.'); } } }, 'Enable'),
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…'; try { const _ct1638 = ev.currentTarget; await enablePush('Carrier portal'); card.remove(); } catch (e) { _ct1638.disabled = false; _ct1638.textContent = 'Enable'; alert((e && e.message) || 'Could not enable.'); } } }, 'Enable'),
           h('button', { class: 'cp-prompt-x', onClick: () => card.remove() }, '×'),
         ]);
         promptHost.appendChild(card);
@@ -2182,7 +2182,7 @@ async function appView(user) {
       const st = h('span', { class: 'cp-pill gray' }, 'checking…');
       const btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Enabling…';
-        try { await enablePush('Carrier portal'); st.textContent = 'on'; st.className = 'cp-pill green'; ev.currentTarget.textContent = 'On ✓'; }
+        try { const _ct2184 = ev.currentTarget; await enablePush('Carrier portal'); st.textContent = 'on'; st.className = 'cp-pill green'; _ct2184.textContent = 'On ✓'; }
         catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Turn on'; alert((e && e.message) || 'Could not enable notifications.'); }
       } }, 'Turn on');
       isPushEnabled().then(on => { st.textContent = on ? 'on' : 'off'; st.className = 'cp-pill ' + (on ? 'green' : 'gray'); if (on) { btn.textContent = 'On ✓'; btn.disabled = true; } }).catch(() => {});
@@ -2850,7 +2850,7 @@ async function appView(user) {
                   h('div', { class: 'cp-row-s' }, money(m.rate) + (m.miles ? ' · ' + m.miles + ' mi' : '') + (m.pickup_date ? ' · PU ' + m.pickup_date : '') + (m.still_available ? '' : ' · no longer available'))]),
                 m.requested ? h('span', { class: 'cp-pill amber' }, 'requested') : (m.still_available ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
                   ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…';
-                  try { await requestBookLoad(m.load_id); ev.currentTarget.replaceWith(h('span', { class: 'cp-pill amber' }, 'requested')); }
+                  try { const _ct2852 = ev.currentTarget; await requestBookLoad(m.load_id); _ct2852.replaceWith(h('span', { class: 'cp-pill amber' }, 'requested')); }
                   catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request'; alert((e && e.message) || 'Could not request.'); }
                 } }, 'Request') : h('span', { class: 'cp-pill gray' }, 'gone')),
               ])));
@@ -3514,7 +3514,7 @@ function tripStepper(status) {
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No trips yet. Booked loads will appear here.'))); return; }
     mount(content, h('div', { class: 'cp-card' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
-      const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { await pocketConfirmTrip(t.id); ev.currentTarget.textContent = 'Confirmed ✓'; } catch (x) { ev.currentTarget.textContent = 'Error'; } } }, 'Confirm') : null;
+      const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { const _ct3516 = ev.currentTarget; await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.textContent = 'Error'; } } }, 'Confirm') : null;
       const share = active ? h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => shareLoc(ev, t.id) }, '📍 Share location') : null;
       const nav = (active && t.destination) ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.destination), '_blank', 'noopener') }, '🧭 Navigate') : null;
       const _locked = active && /dispatched|in_transit/.test(String(t.status || ''));
@@ -3531,7 +3531,7 @@ function tripStepper(status) {
         if (fw.firstChild) { fw.innerHTML = ''; return; }
         const kind = h('select', { class: 'cp-in' }, ['detention', 'layover', 'lumper', 'tonu', 'breakdown', 'accident', 'weather', 'missed_appointment', 'other'].map(k => h('option', { value: k }, k === 'tonu' ? 'TONU' : k.replace('_', ' '))));
         const note = h('input', { class: 'cp-in', placeholder: 'Details (optional)' });
-        const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
+        const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { const _ct3533 = ev.currentTarget; await pocketReportIssue(t.id, kind.value, note.value.trim()); fw.innerHTML = ''; fw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Reported to dispatch')); } catch (e) { _ct3533.disabled = false; _ct3533.textContent = 'Send'; alert((e && e.message) || 'Could not report.'); } } }, 'Send');
         fw.appendChild(h('div', { class: 'cp-inlineform' }, [kind, note, send]));
       } }, '⚠ Report issue') : null;
       const emergency = active ? h('button', { class: 'cp-btn cp-btn-sm', style: 'border-color:#dc2626;color:#dc2626', onClick: () => openEmergency(t) }, '🚨 Emergency') : null;
@@ -3555,7 +3555,7 @@ function tripStepper(status) {
             h('div', { class: 'cp-row-s' }, money(l.rate) + (l.miles ? ' · ' + l.miles + ' mi' : '') + (l.rate && Number(l.miles) > 0 ? ' · $' + (Number(l.rate) / Number(l.miles)).toFixed(2) + '/mi' : '') + (l.pickup_date ? ' · PU ' + l.pickup_date : ''))]),
           h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
             ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…';
-            try { await requestBookLoad(l.id); ev.currentTarget.replaceWith(h('span', { class: 'cp-pill amber' }, 'requested')); }
+            try { const _ct3557 = ev.currentTarget; await requestBookLoad(l.id); _ct3557.replaceWith(h('span', { class: 'cp-pill amber' }, 'requested')); }
             catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Request'; alert((e && e.message) || 'Could not request.'); }
           } }, 'Request'),
         ])));
@@ -3639,7 +3639,7 @@ function tripStepper(status) {
         if (dwellW.firstChild) { dwellW.innerHTML = ''; return; }
         const mk = (label, fn) => h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
           ev.currentTarget.disabled = true;
-          try { const r = await fn(); ev.currentTarget.textContent = '✓'; if (r && r.detention_minutes > 0) alert('Detention recorded: ' + r.detention_minutes + ' min past free time. Dispatch has been notified.'); }
+          try { const _ct3641 = ev.currentTarget; const r = await fn(); _ct3641.textContent = '✓'; if (r && r.detention_minutes > 0) alert('Detention recorded: ' + r.detention_minutes + ' min past free time. Dispatch has been notified.'); }
           catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Could not record.'); }
         } }, label);
         const gpsArrive = (stop) => new Promise((res, rej) => {
@@ -3819,7 +3819,7 @@ function tripStepper(status) {
           const d0 = await myRateConfirmation(t.id);
           const ackB = d0.acknowledged ? h('span', { class: 'cp-pill green' }, 'Acknowledged ✓') : h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
             ev.currentTarget.disabled = true;
-            try { await acknowledgeRC(t.id); ev.currentTarget.textContent = 'Acknowledged ✓'; } catch (e) { ev.currentTarget.disabled = false; alert((e && e.message) || 'Failed'); }
+            try { const _ct3821 = ev.currentTarget; await acknowledgeRC(t.id); _ct3821.textContent = 'Acknowledged ✓'; } catch (e) { _ct3821.disabled = false; alert((e && e.message) || 'Failed'); }
           } }, 'Acknowledge RC');
           mount(host, h('div', null, [h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:10px;background:#0883F7', onClick: () => openPrintable('Rate Confirmation', 'RATE CONFIRMATION', [{ rows: Object.entries(d0.rc || {}).map(([k, v]) => [k.replace(/_/g, ' '), jr(v)]) }, { note: d0.note || '' }]) }, '⬇ Download PDF'), jsonCard(d0.rc, []), h('div', { style: 'margin-top:10px' }, ackB), h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, d0.note || '')]));
         } catch (e) { mount(host, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load.')); }
@@ -5251,7 +5251,7 @@ function tripStepper(status) {
         const dispute = (i.status === 'sent' || i.status === 'paid') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
           if (dw.firstChild) { dw.innerHTML = ''; return; }
           const reason = h('input', { class: 'cp-in', placeholder: 'Reason for dispute' });
-          const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { if (!reason.value.trim()) { alert('Enter a reason.'); return; } ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { await pocketDisputeInvoice(i.id, reason.value.trim()); dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Dispute opened')); } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send'; alert((e && e.message) || 'Could not dispute.'); } } }, 'Send');
+          const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { if (!reason.value.trim()) { alert('Enter a reason.'); return; } ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…'; try { const _ct5253 = ev.currentTarget; await pocketDisputeInvoice(i.id, reason.value.trim()); dw.innerHTML = ''; dw.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green)' }, '✓ Dispute opened')); } catch (e) { _ct5253.disabled = false; _ct5253.textContent = 'Send'; alert((e && e.message) || 'Could not dispute.'); } } }, 'Send');
           dw.appendChild(h('div', { class: 'cp-inlineform' }, [reason, send]));
         } }, 'Dispute') : null;
         const invPdf = h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7', onClick: () => openInvoicePdf(Object.assign({}, i, { __carrier: window.__lbOrgName || 'Your company', __email: (typeof user !== 'undefined' && user && user.email) || '' })) }, '⬇ PDF');
