@@ -386,23 +386,23 @@ function authScreen() {
     + '<circle cx="30" cy="37" r="15" fill="rgba(8,131,247,.15)" stroke="#0883F7" stroke-width="2.5"/><text x="30" y="42" font-size="13" text-anchor="middle">🏢</text>'
     + '<circle cx="150" cy="37" r="17" fill="rgba(252,83,5,.15)" stroke="#FC5305" stroke-width="2.5"/><text x="150" y="42" font-size="13" text-anchor="middle">⚡</text>'
     + '<circle cx="270" cy="37" r="15" fill="rgba(34,197,94,.12)" stroke="#16a34a" stroke-width="2.5"/><text x="270" y="42" font-size="13" text-anchor="middle">🚛</text>'
-    + '<text x="150" y="70" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">your broker · LoadBoot · your carrier — one chain</text></svg>'
-    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Bring the people.<br>The software does the work.<br><span style="color:#4ade80">You earn 1% — forever.</span></div>'
+    + '<text x="150" y="70" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">your carrier · LoadBoot dispatcher · verified brokers</text></svg>'
+    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Dispatch for US carriers.<br>The software does the ops.<br><span style="color:#4ade80">Earn a salary + bonus.</span></div>'
     + '<div class="cpx-mockstack">'
-    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🏢 Apex Logistics <span style="font-weight:600;color:#64748b;font-size:12px">— your broker</span></b><span class="cpx-mockchip green">joined ✓</span></div>'
-    +     '<div class="cpx-mockroute"><span class="d o"></span>posted: Dallas, TX → Atlanta, GA · $2,850</div></div>'
-    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🚛 Ironhide Freight <span style="font-weight:600;color:#64748b;font-size:12px">— your carrier</span></b><span class="cpx-mockchip green">booked ★</span></div>'
+    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🚛 Ironhide Freight <span style="font-weight:600;color:#64748b;font-size:12px">— your carrier</span></b><span class="cpx-mockchip green">assigned ✓</span></div>'
+    +     '<div class="cpx-mockroute"><span class="d o"></span>booked: Dallas, TX → Atlanta, GA · $2,850</div></div>'
+    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">📦 6 trucks loaded <span style="font-weight:600;color:#64748b;font-size:12px">— on-time 98%</span></b><span class="cpx-mockchip green">booked ★</span></div>'
     +     '<div class="cpx-mockroute"><span class="d g"></span>delivered · GPS-verified POD</div></div>'
-    +   '<div class="cpx-mocktoast ok">💰 +$28.50 — your 1% landed automatically</div>'
+    +   '<div class="cpx-mocktoast ok">💰 salary + per-truck + performance bonus</div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap">'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Get your link</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Create your account</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Bring a pair</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Apply as a dispatcher</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:#34d399;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Earn 1% on every load</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:#34d399;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Get hired &amp; assigned</span>'
     + '</div>'
-    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">Recurring &nbsp;·&nbsp; No cap &nbsp;·&nbsp; Costs your clients nothing</div>'
+    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">Salaried &nbsp;·&nbsp; per-truck &nbsp;·&nbsp; performance bonus &nbsp;·&nbsp; or refer &amp; earn 1%</div>'
     + '<div style="margin-top:20px;color:#94a3b8;font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>';
   const brandPanel = window.__LB_AGENT ? h('div', { class: 'cpx-auth-brand', html: AGENT_BRAND }) : h('div', { class: 'cpx-auth-brand', html:
     '<svg viewBox="0 0 300 90" style="width:100%;max-width:300px;overflow:visible" aria-hidden="true">'
@@ -584,18 +584,44 @@ async function agentPortal(user) {
       { note: 'Generated by LoadBoot from the executed onboarding record. Full program details: loadboot.com/agents.html · Questions: hello@loadboot.com' },
     ]);
   };
-  const rulesModal9 = () => openModal('📖 Agent Program — rules & policies', [
-    h('div', { style: 'font-size:.88rem;line-height:1.75;color:#cbd5e1' }, [
-      h('b', { style: 'color:#fff' }, 'Earning (1% rule)'), h('br'),
-      '• 1% of gross ONLY on GPS-verified DELIVERED loads — a completed transaction is mandatory. Booked-but-not-delivered pays nothing.', h('br'),
-      '• Counts when ANY side of the transaction is yours: your broker\u2019s load delivered by any carrier ✓ · your carrier delivering any load ✓ · your own posted load delivered ✓.', h('br'),
-      '• 15-day clearing window, then payable · payouts monthly from $100 · paid from LoadBoot\u2019s own fee — your clients never pay extra.', h('br'), h('br'),
-      h('b', { style: 'color:#fff' }, 'Conduct'), h('br'),
-      '• No self-referrals, fake companies or circumvention — instant termination + forfeiture.', h('br'),
-      '• No spam (CAN-SPAM/TCPA) · truthful claims only · you are an independent agent, not a LoadBoot employee or broker.', h('br'), h('br'),
-      h('span', { class: 'cp-row-s' }, 'Full agreement: the one you e-signed in Get Verified · program page: loadboot.com/agents.html'),
-    ]),
-  ]);
+  const rulesModal9 = () => {
+    const P9 = (t9) => [document.createTextNode(t9), h('br')];
+    const H9 = (t9) => h('b', { style: 'color:#fff;display:block;margin:13px 0 3px' }, t9);
+    return openModal('\ud83d\udcd6 Referral Partner Program \u2014 Rules, Policies & Terms', [
+      h('div', { style: 'font-size:.86rem;line-height:1.7;color:#cbd5e1' }, [
+        H9('1. Eligibility & your referral link'),
+        ...P9('\u2022 Open to individuals 18+ who complete verification (identity, payout method and tax form). One account per person; duplicate or fake accounts are removed.'),
+        ...P9('\u2022 Anyone \u2014 a broker, shipper or carrier \u2014 who signs up through your link is tied to you permanently and automatically. There is NO pairing or \u201cactive chain\u201d requirement.'),
+        H9('2. How you earn (the 1% rule)'),
+        ...P9('\u2022 You earn 1% of the GROSS load value on GPS-verified DELIVERED loads only. A completed, delivered transaction is mandatory \u2014 booked-but-not-delivered, cancelled or disputed loads pay nothing.'),
+        ...P9('\u2022 A load counts whenever a client you referred is on it (broker, shipper or carrier).'),
+        ...P9('\u2022 Multi-level overrides on partners you recruit: Level 2 = 0.50%, Level 3 = 0.25%, Level 4 = 0.15%, Level 5 = 0.10%.'),
+        H9('3. Clearing & payouts'),
+        ...P9('\u2022 Commissions accrue on delivery, then pass a 15-day clearing window (protecting against reversals, claims and disputes) before becoming payable.'),
+        ...P9('\u2022 Payouts run monthly once your payable balance reaches $100, to your verified payout account. Your commission is paid out of LoadBoot\u2019s own service fee \u2014 your referred clients never pay anything extra.'),
+        H9('4. Taxes'),
+        ...P9('\u2022 You are an independent contractor and are solely responsible for your own taxes. A W-9 (US persons) or W-8BEN (non-US) is required before payout; a 1099 is issued to US persons where required.'),
+        H9('5. Your status \u2014 what you are NOT'),
+        ...P9('\u2022 You are an independent Referral Partner. You are NOT a LoadBoot employee, dispatcher, freight broker, or an agent with authority to bind LoadBoot.'),
+        ...P9('\u2022 You do NOT post or offer freight, negotiate rates, dispatch trucks, or handle any freight payment. You introduce people; LoadBoot\u2019s platform does the rest.'),
+        H9('6. Prohibited conduct'),
+        ...P9('\u2022 No self-referrals, fake or duplicate companies, or any circumvention or gaming of the program.'),
+        ...P9('\u2022 No spam or unlawful outreach (CAN-SPAM, TCPA and applicable privacy laws). Truthful claims only \u2014 never misrepresent LoadBoot, its fees, or your role.'),
+        ...P9('\u2022 Any fraud, misrepresentation or circumvention results in immediate termination, forfeiture of unpaid commissions, and possible legal action.'),
+        H9('7. Termination & forfeiture'),
+        ...P9('\u2022 Either you or LoadBoot may end your participation at any time. On termination for cause (fraud, abuse or circumvention), all unpaid and un-cleared commissions are forfeited.'),
+        ...P9('\u2022 Commissions already cleared and payable are paid on the normal schedule unless fraud is involved.'),
+        H9('8. Confidentiality & data'),
+        ...P9('\u2022 Handle any client or LoadBoot information lawfully and confidentially. Do not share, sell or misuse data. Comply with all applicable privacy laws.'),
+        H9('9. Changes to the program \u2014 subject to change without notice'),
+        ...P9('\u2022 LoadBoot may change, pause or discontinue the program, commission rates, clearing windows, payout thresholds, eligibility rules or these terms AT ANY TIME, with or without prior notice.'),
+        ...P9('\u2022 Commissions are not guaranteed and create no ownership, equity or vested right. Continued participation after any change means you accept the updated terms.'),
+        H9('10. Governing terms'),
+        ...P9('\u2022 These rules supplement the Referral Partner Agreement you e-sign. If they conflict, the signed agreement controls. Questions: hello@loadboot.com \u00b7 program page: loadboot.com/agents.html.'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:13px;opacity:.85' }, 'These terms are subject to change without notice.'),
+      ]),
+    ]);
+  };
   const banner9 = () => h('div', {
     style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#4ade80;font-weight:800;border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
   }, [
