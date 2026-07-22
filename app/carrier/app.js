@@ -297,7 +297,7 @@ function recoveryScreen() {
     catch (e) { err.textContent = (e && e.message) || 'Could not update password.'; btn.disabled = false; btn.textContent = 'Set new password'; }
   } }, 'Set new password');
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
-    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : 'Carrier')]),
+    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Referral Partner' : 'Carrier')]),
     h('h1', null, 'Set a new password'),
     h('p', { class: 'cp-auth-sub' }, 'You followed a reset link — choose a new password for your account.'),
     p1, p2, err, btn,
@@ -326,7 +326,7 @@ function authScreen() {
   const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, window.__LB_AGENT ? 'Agency / company (optional)' : 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
   const err = h('div', { class: 'cp-err' });
   const title = h('h1', null, 'Welcome back');
-  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your AGENT dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
+  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your Referral Partner dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
   const forgot = h('p', { class: 'cp-auth-toggle', style: 'margin-top:8px' },
@@ -341,14 +341,14 @@ function authScreen() {
   const setMode = (s) => {
     signup = s;
     const AG = !!window.__LB_AGENT;
-    title.textContent = s ? (AG ? 'Become a LoadBoot Agent' : 'Create your account') : 'Welcome back';
-    sub.textContent = s ? (AG ? 'Free agent account — your referral link is ready the moment you sign up. Bring a pair, earn 1% on every delivered load.' : 'Set up your carrier profile — it’s free.')
-                        : (AG ? 'Sign in to your AGENT dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
+    title.textContent = s ? (AG ? 'Become a LoadBoot Referral Partner' : 'Create your account') : 'Welcome back';
+    sub.textContent = s ? (AG ? 'Free referral account — your referral link is ready the moment you sign up. Bring a pair, earn 1% on every delivered load.' : 'Set up your carrier profile — it’s free.')
+                        : (AG ? 'Sign in to your Referral Partner dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
     extra.style.display = s ? 'block' : 'none';
     btn.textContent = s ? 'Create account' : 'Sign in';
     err.textContent = ''; err.className = 'cp-err';
     mount(toggle, s ? [document.createTextNode('Already have an account? '), h('a', { onClick: () => setMode(false) }, 'Sign in')]
-      : [document.createTextNode(AG ? 'New agent? ' : 'New carrier? '), h('a', { onClick: () => setMode(true) }, AG ? 'Create your agent account' : 'Create an account')]);
+      : [document.createTextNode(AG ? 'New partner? ' : 'New carrier? '), h('a', { onClick: () => setMode(true) }, AG ? 'Create your referral account' : 'Create an account')]);
   };
   btn.onclick = async () => {
     err.textContent = ''; err.className = 'cp-err';
@@ -682,7 +682,7 @@ async function agentPortal(user) {
       const obCount = Object.values(obDone).filter(Boolean).length;
       const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? '#4ade80' : '#94a3b8') }, (ok9 ? '✓ ' : '○ ') + lbl9);
       const verifyCard =
-        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, [icon('shield',15),' Verified agent — payouts unlocked.'])
+        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, [icon('shield',15),' Verified partner — payouts unlocked.'])
         : obStatus === 'under_review' ? h('div', { style: 'background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
             h('div', { style: 'font-weight:800;color:#7cc0ff' }, '⏳ Verification UNDER REVIEW'),
             h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot dispatch is reviewing your application — usually under 24 hours. Your link works; earnings switch on at approval.')])
@@ -1375,8 +1375,8 @@ async function agentPortal(user) {
       h('div', { class: 'cpx-d-head', onClick: () => { close9(); go('settings'); } }, [
         h('div', { class: 'cpx-d-ava' }, (feed.name || 'A').trim().charAt(0).toUpperCase()),
         h('div', { style: 'min-width:0;flex:1' }, [
-          h('div', { class: 'cpx-d-name' }, feed.name || 'Agent'),
-          h('div', { class: 'cpx-d-rating' }, isVerified ? '\u2713 Verified agent' : 'Verification pending'),
+          h('div', { class: 'cpx-d-name' }, feed.name || 'Referral Partner'),
+          h('div', { class: 'cpx-d-rating' }, isVerified ? '\u2713 Verified partner' : 'Verification pending'),
           h('div', { class: 'cpx-d-sub', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, (user && user.email) || ''),
         ]),
         h('div', { class: 'cpx-d-chev' }, '\u203a'),
@@ -1400,10 +1400,10 @@ async function agentPortal(user) {
 
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Agent' })),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Referral Partner' })),
       nav,
       h('div', { class: 'cp-side-foot' }, [
-        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || 'Agent'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
+        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || 'Referral Partner'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
         h('button', { class: 'cp-side-out', onClick: async (ev) => { ev.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
       ]),
     ]),
@@ -1468,10 +1468,10 @@ function notCarrier() {
     if (!on) return;
     let r; try { r = await myReferral(); } catch (_) { return; }
     if (!r || !r.code) return;
-    card.querySelector('h1').textContent = '🤝 Agent dashboard';
+    card.querySelector('h1').textContent = '🤝 Referral Partner dashboard';
     card.querySelector('.cp-auth-sub').textContent = 'You are a LoadBoot AGENT — bring clients in pairs, earn 1% of every delivered load your chain touches. Everything below is live.';
     const panel = h('div', { class: 'cp-auth-card', style: 'margin-top:14px;text-align:left' }, [
-      h('h2', { style: 'margin:0 0 4px' }, 'Your agent program'),
+      h('h2', { style: 'margin:0 0 4px' }, 'Your referral program'),
       h('p', { class: 'cp-auth-sub', style: 'margin-bottom:10px' }, 'Share your link — every broker, carrier or shipper who joins through it is yours, permanently. Your 1% comes out of LoadBoot’s own fee: your clients never pay extra.'),
     ]);
     panel.appendChild(buildReferralStats(r));
