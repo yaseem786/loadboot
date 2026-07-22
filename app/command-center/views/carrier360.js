@@ -498,7 +498,7 @@ export function renderCarrier360(host, orgId) {
       const allOk = reqs.filter((r) => r.mandatory).every((r) => r.status === 'valid');
       const _stg = String(stage).toLowerCase();
       const _isApproved = ['approved', 'active', 'completed'].indexOf(_stg) >= 0;
-      const gate = (can('compliance.approve') && (['submitted', 'in_review', 'review', 'compliance_check', 'changes_requested', 'docs_review', 'rejected'].indexOf(_stg) >= 0 || _isApproved))
+      const gate = can('compliance.approve')  // show controls at every stage; Approve self-guards on allOk
         ? (() => {
             const pubBtn = el('button', { class: 'lb-btn lb-btn-secondary' }, '\ud83d\udce2 Publish to brokers');
             (async () => { try { const v9 = await getBrokerVisibility(orgId); pubBtn.dataset.vis = v9 ? '1' : '0'; pubBtn.textContent = v9 ? '\ud83d\ude48 Unpublish from brokers' : '\ud83d\udce2 Publish to brokers'; } catch (_) {} })();
