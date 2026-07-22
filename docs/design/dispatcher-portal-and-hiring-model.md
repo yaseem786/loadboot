@@ -64,3 +64,39 @@ Collect (in the portal application) + CC verifies before hiring:
 - **Instructions/SOP** delivery per carrier.
 - **Payroll ledger** for monthly salaries (internal), separate from 5% carrier billing + agent 1%.
 - Keep **no freight-money custody** everywhere.
+
+---
+
+## Targets, capacity & salary (concrete — owner sets final figures)
+
+### How many trucks a dispatcher manages (capacity)
+- **Start 5–8 trucks**, ramp to **10–15** as they prove out; simple/repeat lanes can go **20–30** at scale. [ProfitableVenture](https://www.profitableventure.com/how-many-truck-per-dispatcher/)
+- Tell each dispatcher their **current book + target book** (e.g., "you hold 6 trucks, target 10 in 60 days").
+
+### Monthly performance targets (KPIs the dispatcher must hit) [FreightWaves KPIs](https://www.freightwaves.com/news/the-kpi-breakdown-every-dispatcher-should-know) · [Sage trucking KPIs](https://www.sage.com/en-us/blog/trucking-kpis/)
+- **Weekly gross per truck:** keep each truck at target (OTR owner-ops gross **$4,000–8,000/week** — aim mid/high).
+- **Truck utilization ≥ 85%** (best-in-class 80–85%).
+- **Deadhead < 10–12%** of miles.
+- **On-time delivery ≥ 98%**.
+- **Loads/week per truck:** OTR **2–3** long-haul, regional **3–5**.
+- **Book/quality:** ramp book to target, **low cancels**, **carrier retention** (renew month over month).
+- These KPIs feed the dispatcher's **performance bonus** AND the carrier's health score.
+
+### Salary — market-based (Pakistan/offshore dispatchers for US carriers)
+Pakistan market for US-trucking dispatchers (2026): beginners **PKR 25k–40k/mo**; experienced **PKR 60k+**; US-campaign packages **PKR 60k–75k + commission**, some **PKR 100k base + commission**; remote-for-US-clients effective **$800–$3,000+/mo** depending on trucks + commission. [Glassdoor Lahore](https://www.glassdoor.com/Salaries/lahore-truck-dispatcher-salary-SRCH_IL.0,6_IM1625_KO7,23.htm) · [IDT Pakistan earnings](https://idtpakistan.pk/blog/truck-dispatcher-salary-2026-earnings-guide/)
+
+**Recommended structure (base + per-truck + performance) — starts only on carrier assignment:**
+- **Base:** modest fixed (e.g., **PKR 50k–80k/mo** ≈ $180–290, by experience) — begins when CC assigns the first carrier.
+- **Per-truck increment:** small amount **per active assigned truck** (tracks the 5% revenue each truck brings). More trucks in the book → more pay.
+- **Performance bonus:** tied to the KPIs above (utilization, on-time, gross/truck, retention) — motivates keeping trucks EARNING, which also grows LoadBoot's 5%.
+- **Effective total:** ~**PKR 60k–150k+ ($220–540+)/mo** for a productive dispatcher with a full book; more for top performers with big books.
+
+**The margin rule (must hold):** total dispatcher pay (base + per-truck + bonus) stays **below the 5% revenue** from that dispatcher's carriers.
+- *Illustration:* dispatcher holds **8 trucks**, each grossing ~**$25k/mo** → $200k/mo gross → **LoadBoot 5% = $10,000/mo**; dispatcher pay ~**$400–700/mo** → LoadBoot keeps **~$9,300+/mo** from that pod. Strong margin at a full book.
+- **Early (1–3 trucks):** base > the thin 5%, so margin is **negative-to-thin at first** — accepted growth cost; it flips positive as the book fills. Pace hiring to carrier inflow so dispatchers reach a full book quickly.
+
+### What CC tells each dispatcher (monthly)
+- Your **book** (assigned carriers/trucks) + **target book**.
+- Your **KPI targets** (gross/truck, utilization, deadhead, on-time, cancels).
+- Per-carrier **SOP** (lanes, minimum rate, home-time, do's/don'ts, compliance rules).
+- Your **salary = base + per-truck + performance bonus**; how the bonus is earned.
