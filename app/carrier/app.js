@@ -1205,7 +1205,7 @@ async function agentPortal(user) {
         })();
       } else {
         mount(content, agCard('\ud83d\ude9a Carrier Network', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application, you can browse the verified carrier network and post loads directly to carriers \u2014 the same tools brokers use.']),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your referral application, your commissions start clearing and paying out to your verified account.']),
           h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified \u2192']),
         ]));
       }
@@ -1593,7 +1593,7 @@ async function agentPortal(user) {
           ? 'You have ' + car9.length + ': ' + car9.map((r9) => r9.org).slice(0, 3).join(', ') + (car9.length > 3 ? '…' : '')
           : 'No carrier yet — share your link with any trucking company. The moment one signs up through it, this box turns green.'),
         sideBox9(demandOk9, '🏢', 'Side 2 — DEMAND (the freight)', demandOk9
-          ? (dem9.length ? 'You have ' + dem9.length + ' broker/shipper: ' + dem9.map((r9) => r9.org).slice(0, 3).join(', ') + (dem9.length > 3 ? '…' : '') : 'You post loads yourself — that counts as your demand side.')
+          ? (dem9.length ? 'You have ' + dem9.length + ' broker/shipper: ' + dem9.map((r9) => r9.org).slice(0, 3).join(', ') + (dem9.length > 3 ? '…' : '') : 'Every delivered load your referred clients move earns you 1%.')
           : 'No freight side yet — refer a broker or shipper with your link, OR post a load yourself from the Post a Load tab. Either one turns this green.'),
       ]),
       h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3)' }, [
