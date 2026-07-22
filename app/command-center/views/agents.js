@@ -5,7 +5,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
-import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue, agentSuspend } from '../../shared/api.js';
+import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue, agentSuspend, ccAgentPayoutVerify } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -154,9 +154,10 @@ export function renderAgents(host) {
               : m9 === 'payoneer' ? 'Pay the Payoneer account; the agent withdraws to their own local bank inside Payoneer. LoadBoot adds no fee.'
               : null;
             return el('div', { style: 'padding:8px 0' }, [
-              el('div', { style: 'font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px' }, [icon('card',15),' Payout destination']),
+              el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px' }, [el('div', { style: 'font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em' }, [icon('card',15),' Payout & bank details']), el('span', { class: 'cc-pill cc-pill-' + (pd.payout_status==='verified'?'green':pd.payout_status==='rejected'?'red':'amber') }, pd.payout_status==='verified'?'✓ Verified':pd.payout_status==='rejected'?'✕ Rejected':'Pending review')]),
               ...rows9,
               note9 ? el('div', { style: 'margin-top:8px;background:#f8fafc;border:1px solid #e6ebf3;border-radius:10px;padding:9px 12px;font-size:.8rem;line-height:1.55;color:#475569' }, note9) : null,
+              el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [pd.payout_status!=='verified' ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#16a34a;border-color:#16a34a', onClick: async (ev) => { const b=ev.currentTarget; if(!await askConfirm('Verify payout',{ body:'Mark this payout method as verified? Payouts can be sent here.' })) return; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,true,null); toast('Payout verified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('check',15),' Verify bank details']) : null,pd.payout_status!=='rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const r=await askReason('Reject payout details — reason (agent sees this + gets an email):'); if(!r) return; const b=ev.currentTarget; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,false,r); toast('Payout rejected — agent notified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('x',15),' Reject with reason']) : null,].filter(Boolean)),
             ].filter(Boolean));
           })(),
           el('div', { style: 'margin-top:10px' }, [docRow('🪪 Government photo ID', pd.id_doc, 'id'), docRow('🏦 Bank proof', pd.bank_doc, 'bank')]),
