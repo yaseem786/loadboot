@@ -81,3 +81,49 @@ FMCSA final guidance (June 16, 2023) — the controlling authority: [Federal Reg
 - **Posting = first-accept-wins** (already the model) so the agent isn't "allocating."
 - **Payment routing (already partly built):** factored → broker pays factor (NOA remit-to); not factored → broker pays carrier's own bank; LoadBoot only runs the ledger + collects 5% from the carrier + pays the agent 1%.
 - **Agent has no broker authority/bond requirement** — correct, because the *verified broker* behind each load is the licensed, bonded party.
+
+---
+
+# PART 2 — The legally-correct structure for an agent's EXTERNALLY-sourced load (deep-dive)
+
+**Question answered:** an independent dispatcher (agent) sources a load from an external broker who is NOT on LoadBoot; only the agent is in contact with that broker. How is this built legally, and how does broker↔carrier payment (direct or factor) work?
+
+## The exact tripwire (verified, primary FMCSA source)
+FMCSA final guidance **88 FR 39368 (June 16, 2023)** states a dispatch service that **"solicits a shipment without a carrier in mind and then finds a carrier to transport the shipment" is acting as a BROKER** and needs authority + a $75,000 bond. "Allocating traffic" = "any exercise of discretion when assigning a load to a motor carrier." [Federal Register 2023-13080](https://www.federalregister.gov/documents/2023/06/16/2023-13080/definitions-of-broker-and-bona-fide-agents) · [Scopelitis](https://scopelitis.com/law-alerts/fmcsa-announces-final-guidance-on-definition-of-broker-and-bona-fide-agent-as-well-as-on-role-of-dispatch-services/)
+
+➡️ **So: an agent who takes an external broker's load and "posts it to the open LoadBoot carrier network for any carrier to accept" is soliciting the open carrier market = brokering (needs authority + $75k bond).** That is the risky model — and it is exactly the "first-accept-wins, any carrier" flow.
+
+## The ONLY compliant non-broker path (bona fide agent of a SPECIFIC carrier)
+To bring an external broker's load onto LoadBoot **without** anyone becoming a broker, the agent must act as the **dispatcher of a specific, already-identified carrier** (their client) — NOT shop the load to the open market. Verified requirements: [Benesch](https://www.beneschlaw.com/insight/lions-and-tigers-and-bears-oh-my-new-fmcsa-guidance-on-the-definition-of-dispatch-services-bona-fide-agents-and-brokers/) · [TruckLeap](https://truckleap.com/blog/how-does-a-truck-dispatcher-get-paid) · [DispatchRepublic](https://dispatchrepublic.com/the-role-of-a-dispatcher-in-managing-carrier-setup-and-broker-compliance/)
+
+1. **Written dispatch-service agreement + limited power of attorney** — the carrier appoints the agent as its attorney-in-fact/agent to negotiate and sign rate cons on the carrier's behalf. (FMCSA's #1 bona-fide-agent factor.)
+2. **The agent finds the external broker's load FOR that carrier** — the load is *assigned/tendered to the agent's own carrier client*, not broadcast to whatever carrier bids. No "discretion in choosing among carriers" = no allocation = no brokering.
+3. **The CARRIER is set up in the broker's system** (carrier packet: the *carrier's* MC authority, COI, W-9). The **rate confirmation is broker → that carrier**, broker-of-record = the external broker; the agent is **not a named party** on it (the agent may sign only as the carrier's disclosed agent).
+4. **The broker pays the CARRIER directly** — carrier's own bank (net 30–45) or the carrier's **factor via NOA**. The agent **never touches the money**. The agent's fee is billed to and paid by the **carrier** separately (or deducted by the carrier's factor as an itemized third-party line the carrier authorized).
+5. **Disclosure:** the agent discloses it is "a dispatch service operating under an agreement with a specific motor carrier, and the shipment is arranged for that carrier only."
+
+**Money-handling is the single strongest broker red flag** — being "involved in any part of the monetary transaction" or "taking a spread/compensation from the broker or factor" pushes you into broker status. Keep freight money entirely off LoadBoot's and the agent's books. [CarrierAssure/FMCSA](https://www.carrierassure.com/blog/fmcsa-guidelines-to-differentiate-dispatchers-from-brokers)
+
+## What this means for LoadBoot's "Post a Load" (important design change)
+- **Risky (avoid):** agent posts an external-broker load to the OPEN LoadBoot carrier network, any carrier accepts (first-accept-wins). This = soliciting the open market for that external load = **brokering** for the agent (and edges LoadBoot toward broker status too).
+- **Compliant (build this):** the agent's posted load is **assigned/tendered to the agent's OWN carrier client(s)** — the carrier(s) the agent dispatches under a written agreement. LoadBoot is then the **operating system for that carrier** (verify the external broker, track delivery/POD, run the settlement ledger), not an open load-matching broker for external freight.
+- If LoadBoot genuinely wants the **open-marketplace** model for external-broker loads, then **LoadBoot (or the agent) must obtain broker authority + a $75k BMC-84 bond** and operate co-brokerage under disclosed written agreements — a fundamentally different, heavier legal posture. [Benesch co-broker rules](https://www.beneschlaw.com/insight/transportation-brokering-double-brokering-co-brokering-interchange-and-interlining-legal-rules-in-the-era-of-fraud/)
+
+## Verifying the external broker (no LoadBoot account needed)
+The agent (who IS in contact with the broker) submits the broker's **MC/USDOT + the rate confirmation**. LoadBoot then:
+- Checks the broker on the **public FMCSA record (SAFER/L&I):** authority ACTIVE + **$75k BMC-84 bond on file** + insurance. [usdotwatch](https://usdotwatch.com/mc-number-lookup) · [awcollects on bond claims](https://awcollects.com/how-to-file-on-a-brokers-bond/)
+- Layers **broker credit / days-to-pay** (Carrier411 / Highway / DAT-Ansonia) — FMCSA status alone doesn't show if/when a broker pays. [OTrucking tools](https://otrucking.com/resources/guides/best-broker-credit-check-tools/)
+- **Surfaces this to the carrier BEFORE booking** so the carrier knows the real paying party and can decline if authority/bond/credit is bad. Rate-con entity must **match SAFER**; mismatch = top double-brokering red flag. [OTR Solutions](https://otrsolutions.com/blog/preventing-double-brokering-and-trucking-fraud)
+
+## Payment mechanics recap for this scenario
+- **Direct (no factor):** external broker → carrier's own bank (ACH), net-30/45 per the broker↔carrier rate con; carrier claims the broker's $75k bond if unpaid. LoadBoot = ledger + delivery/POD proof + collects 5% from the carrier + pays agent 1%.
+- **Factor:** external broker → the carrier's factor (NOA remit-to, UCC §9-406); LoadBoot surfaces the factor remit-to. Same LoadBoot fee/agent-commission handling.
+- **LoadBoot never holds freight funds** — only its own 5% service fee touches LoadBoot; agent's 1% is paid out of that 5%.
+
+## Enforcement / risk notes (2026)
+- Unauthorized brokering (49 U.S.C. §14916): civil penalties + private suits; liability can reach **principals personally**. [Benesch](https://www.beneschlaw.com/insight/lions-and-tigers-and-bears-oh-my-new-fmcsa-guidance-on-the-definition-of-dispatch-services-bona-fide-agents-and-brokers/)
+- From **Jan 2026**, a broker whose bond drops below $75k even one day faces **immediate authority suspension** — so re-checking the external broker's bond at post time matters. (Industry source — verify against primary FMCSA text.) [iDispatchHub](https://idispatchhub.com/how-fmcsas-new-broker-rule-puts-brokers-and-dispatchers-on-notice/)
+- FMCSA's guidance is **interpretive, not binding law**, and this exact flow is fact-specific and thinly litigated — **get a transportation attorney (e.g., Scopelitis/Benesch-type) to bless the agent-posting flow before scaling.**
+
+## Bottom line
+An independent dispatcher can legally bring an external broker's load onto LoadBoot **only if the agent is dispatching for a specific carrier client** (bona fide agent), the load is **tendered to that carrier** (not shopped to the open market), the **rate con is broker→that carrier**, the **broker pays that carrier/its factor directly**, and **neither the agent nor LoadBoot touches the freight money**. LoadBoot verifies the external broker off the public FMCSA record + credit and shows the carrier. Anything that has the agent/LoadBoot picking among carriers on the open market for an external load, or handling the freight money, requires broker authority + a $75k bond.
