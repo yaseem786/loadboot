@@ -161,6 +161,18 @@ export function renderAgents(host) {
           })(),
           el('div', { style: 'margin-top:10px' }, [docRow('🪪 Government photo ID', pd.id_doc, 'id'), docRow('🏦 Bank proof', pd.bank_doc, 'bank')]),
           el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [act('✓ Approve', 'approve'), act('？ More info', 'info', 'lb-btn-secondary'), act('✕ Reject', 'reject', 'lb-btn-secondary'),
+            el('button', { class: 'lb-btn lb-btn-sm', title: 'Email + in-app reminder listing what this agent still needs to finish onboarding', onClick: async (ev) => {
+              const b = ev.currentTarget; const w = b.textContent; b.disabled = true;
+              const miss = [];
+              if (!p.agreement_signed_at) miss.push('sign the agent agreement');
+              if (!p.payout_method) miss.push('add your payout method');
+              if (!pd.id_doc) miss.push('upload a government photo ID');
+              if (!pd.bank_doc) miss.push('upload bank proof');
+              if (!miss.length) { b.disabled = false; alert('Nothing outstanding — this agent has completed every onboarding step.'); return; }
+              const bodyTxt = 'Welcome to LoadBoot! To finish activating your agent account and start earning, please complete: ' + miss.map((m, i) => (i + 1) + ') ' + m).join('   ') + '. Open your Agent portal and go to onboarding to wrap it up. Reply here if you need any help.';
+              try { await ccAgentNotifySend(x.user_id, 'Finish your LoadBoot agent onboarding', bodyTxt, true); b.textContent = '✓ Reminder sent'; alert('Onboarding reminder sent to ' + (d.email || 'the agent') + ' — premium email + in-app, listing: ' + miss.join(', ') + '.'); }
+              catch (e) { b.disabled = false; b.textContent = w; alert(humanizeError(e)); }
+            } }, [icon('bell',15),' Send reminder']),
             // SUSPEND / REINSTATE (audit gap): staff could approve + pay an agent but never stop one.
             (String(x.status || '') === 'suspended')
               ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
