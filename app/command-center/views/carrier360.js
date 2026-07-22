@@ -328,6 +328,22 @@ export function renderCarrier360(host, orgId) {
         pp.bank_phone ? kv('Bank phone', pp.bank_phone) : '',
         pp.tax_id ? kv('Tax ID / EIN', pp.tax_id) : '',
         pp.factoring_company ? kv('Factoring', pp.factoring_company + (pp.factoring_noa ? ' · NOA on file' : '')) : '',
+        (pp.factor_details && (pp.factor_details.account_title || pp.factor_details.bank_name)) ? (() => {
+          const fd = pp.factor_details;
+          const noaLbl = pp.noa_status === 'verified' ? '✓ NOA verified' : pp.noa_status === 'rejected' ? '✕ NOA rejected' : (pp.noa_doc || pp.factoring_noa) ? 'NOA uploaded — pending review' : 'NOA not on file';
+          return el('div', { style: 'margin-top:10px;border:1px solid rgba(139,92,246,.35);background:rgba(139,92,246,.07);border-radius:12px;padding:12px 14px' }, [
+            el('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px' }, [
+              el('div', { style: 'font-weight:800;color:#7c3aed' }, [icon('bank',15),' Factoring — remit-to ' + (fd.account_title || 'factor')]),
+              el('span', { class: 'cc-pill cc-pill-' + (pp.noa_status==='verified'?'green':pp.noa_status==='rejected'?'red':'amber') }, noaLbl) ]),
+            fd.bank_name ? kv('Factor bank', fd.bank_name) : '',
+            fd.account_number ? kv('Account #', fd.account_number) : '',
+            fd.routing_number ? kv('Routing (ACH)', fd.routing_number) : '',
+            fd.remittance_email ? kv('Remittance email', fd.remittance_email) : '',
+            fd.terms_days_broker ? kv('Broker terms', fd.terms_days_broker + ' days') : '',
+            (fd.advance_pct || fd.fee_pct) ? kv('Advance / fee', (fd.advance_pct?fd.advance_pct+'% advance':'') + (fd.fee_pct?' · '+fd.fee_pct+'% fee':'')) : '',
+            el('div', { class: 'cc-sub', style: 'margin-top:6px;line-height:1.5' }, 'When factoring is active + NOA verified, broker pay panels route to THIS remit-to — never the carrier bank.'),
+          ].filter(Boolean));
+        })() : '',
         kv('Updated', fmtDateTime(pp.updated_at)),
         can('finance.approve') ? el('div', { style: 'margin-top:10px;display:flex;align-items:center;flex-wrap:wrap;gap:4px' }, [verifyBtn, bankRejectBtn].filter(Boolean)) : el('div', { class: 'cc-sub', style: 'margin-top:8px' }, 'Verification requires finance approver role.'),
       ].filter(Boolean));
