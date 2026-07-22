@@ -160,7 +160,7 @@ export function renderAgents(host) {
             ].filter(Boolean));
           })(),
           el('div', { style: 'margin-top:10px' }, [docRow('🪪 Government photo ID', pd.id_doc, 'id'), docRow('🏦 Bank proof', pd.bank_doc, 'bank')]),
-          el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [act('✓ Approve', 'approve'), act('？ More info', 'info', 'lb-btn-secondary'), act('✕ Reject', 'reject', 'lb-btn-secondary'),
+          el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [...((['approved','active'].includes(String(p.status || ''))) ? [el('span', { class: 'cc-pill cc-pill-green', style: 'align-self:center;font-weight:800;padding:8px 12px' }, '✓ Approved — chain earning live')] : [act('✓ Approve', 'approve'), act('？ More info', 'info', 'lb-btn-secondary'), act('✕ Reject', 'reject', 'lb-btn-secondary')]),
             el('button', { class: 'lb-btn lb-btn-sm', title: 'Email + in-app reminder listing what this agent still needs to finish onboarding', onClick: async (ev) => {
               const b = ev.currentTarget; const w = b.textContent; b.disabled = true;
               const miss = [];
