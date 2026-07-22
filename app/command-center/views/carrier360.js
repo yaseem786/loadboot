@@ -359,7 +359,7 @@ export function renderCarrier360(host, orgId) {
         mount(fmcsaXCard, [
           el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'FMCSA cross-check'), el('span', { class: 'cc-pill cc-pill-' + (active && nameOk && mcOk && hazOk ? 'green' : 'red') }, active && nameOk && mcOk && hazOk ? 'record matches' : 'MISMATCH \u2014 review')]),
           el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;font-size:.68rem;font-weight:800;letter-spacing:.06em;color:#94a3b8;text-transform:uppercase;padding:6px 0;border-bottom:2px solid #e6edf6;margin-top:6px' }, [el('span', null, 'Field'), el('span', null, 'Submitted'), el('span', null, 'FMCSA says'), el('span', null, '')]),
-          XR('Operating status', '\u2014', active ? 'ACTIVE' : 'NOT ACTIVE', active, false),
+          XR('Operating status', 'n/a', active ? 'ACTIVE' : 'NOT ACTIVE', active, false),  // carriers don't self-report operating status; FMCSA is authoritative
           XR('Legal name', p.company, c0.legal_name, nameOk, false),
           XR('MC number', p.mc, c0.docket1 ? (c0.docket1prefix || 'MC') + c0.docket1 : null, mcOk, false),
           XR('Trucks', claimed || null, pu || null, truckOk, true),
