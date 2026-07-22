@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -968,12 +968,35 @@ async function agentPortal(user) {
       }
     } else if (tab === 'carriers') {
       if (isVerified && feed.own_broker_org) {
-        mount(content, h('div', null, [
-          h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:9px 12px;font-weight:700' },
-            [icon('truck',15),' The LoadBoot Carrier Network \u2014 search FMCSA-verified carriers by lane, equipment and rating, then \ud83c\udfaf Post a load to any carrier. When it DELIVERS, your 1% lands automatically.']),
-          h('iframe', { src: '/app/partner/#carriers', style: 'width:100%;height:calc(100vh - 210px);min-height:640px;border:0;border-radius:16px;background:#0d1526' }),
-          h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, ['Prefer a full tab? ', h('a', { href: '/app/partner/#carriers', target: '_blank', rel: 'noopener', style: 'color:#7cc0ff;font-weight:700' }, 'Open the carrier network in a new tab \u2192')]),
-        ]));
+        const banner9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;font-weight:700' },
+          [icon('truck',15),' The LoadBoot Carrier Network \u2014 search FMCSA-verified carriers, then \ud83c\udfaf Post a load to any carrier. When it DELIVERS, your 1% lands automatically.']);
+        const search9 = h('input', { class: 'cp-input', placeholder: 'Search by name, DOT, MC, equipment, lane or home base\u2026', style: 'width:100%;margin-bottom:12px' });
+        const grid9 = h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px' });
+        const host9 = h('div', null, [banner9, h('div', { class: 'cp-muted' }, 'Loading verified carriers\u2026')]);
+        mount(content, host9);
+        const kpi9 = (v, l) => h('div', { style: 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:7px 3px;text-align:center' }, [h('b', { style: 'display:block;font-weight:800;font-size:.98rem' }, String(v)), h('span', { style: 'font-size:.56rem;text-transform:uppercase;letter-spacing:.06em;color:#8ea2c3;font-weight:800' }, l)]);
+        const card9 = (c) => h('div', { class: 'cp-card', style: 'padding:0;overflow:hidden' }, [
+          h('div', { style: 'padding:14px 16px 8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px' }, [
+            h('div', { style: 'min-width:0' }, [ h('div', { style: 'font-weight:800;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }, c.name || 'Carrier'), h('div', { class: 'cp-row-s' }, [c.dot ? 'DOT ' + c.dot : null, c.mc ? 'MC ' + c.mc : null, c.authority ? String(c.authority).toUpperCase() : null].filter(Boolean).join(' \u00b7 ')) ]),
+            c.verified ? h('span', { class: 'cp-pill', style: 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800;flex:none' }, '\u2713 Verified') : null,
+          ]),
+          (c.stars ? h('div', { class: 'cp-row-s', style: 'padding:0 16px 4px;color:#fbbf24;font-weight:700' }, '\u2605 ' + c.stars + (c.ratings_count ? ' (' + c.ratings_count + ')' : '')) : h('div', { class: 'cp-row-s', style: 'padding:0 16px 4px;color:#8ea2c3' }, 'New \u2014 not rated yet')),
+          h('div', { style: 'display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 16px 10px' }, [ kpi9(c.on_time_pct != null ? c.on_time_pct + '%' : '\u2014', 'On-time'), kpi9(c.delivered || 0, 'Delivered'), kpi9(c.trucks || c.power_units || '\u2014', 'Trucks'), kpi9(c.health || '\u2014', 'Health') ]),
+          ((c.preferred_equipment || []).length ? h('div', { style: 'padding:0 16px 10px;display:flex;gap:6px;flex-wrap:wrap' }, (c.preferred_equipment || []).slice(0, 4).map((e9) => h('span', { class: 'cp-pill', style: 'background:rgba(8,131,247,.14);color:#7cc0ff' }, e9))) : null),
+          (c.home_base ? h('div', { class: 'cp-row-s', style: 'padding:0 16px 10px' }, [icon('pin',13),' ' + c.home_base]) : null),
+          h('div', { style: 'padding:11px 16px;border-top:1px solid rgba(255,255,255,.08)' }, [
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'width:100%', onClick: () => { try { window.__lbAgentPostCarrier = { id: c.id, name: c.name }; } catch (_) {} lbToast('Opening Post a Load \u2014 target this carrier (' + (c.name || '') + ') in the wizard.', 'success', '\ud83c\udfaf Post to carrier'); go('post'); } }, '\ud83c\udfaf Post a load to this carrier'),
+          ]),
+        ].filter(Boolean));
+        (async () => {
+          let list9 = [];
+          try { list9 = await agentCarrierDirectory(); } catch (e9) { mount(host9, [banner9, h('div', { class: 'cp-card' }, (e9 && e9.message) || 'Could not load carriers.')]); return; }
+          list9 = Array.isArray(list9) ? list9 : [];
+          const draw9 = (items) => mount(grid9, items.length ? items.map(card9) : h('div', { class: 'cp-muted' }, 'No carriers match your search.'));
+          search9.oninput = () => { const qq = search9.value.toLowerCase().trim(); draw9(!qq ? list9 : list9.filter((c) => JSON.stringify(c).toLowerCase().includes(qq))); };
+          const strip9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, list9.length + ' verified carrier' + (list9.length === 1 ? '' : 's') + ' in the network');
+          mount(host9, [banner9, search9, strip9, grid9]); draw9(list9);
+        })();
       } else {
         mount(content, agCard('\ud83d\ude9a Carrier Network', [
           h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application, you can browse the verified carrier network and post loads directly to carriers \u2014 the same tools brokers use.']),

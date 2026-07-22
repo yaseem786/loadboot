@@ -336,6 +336,7 @@ export const payDueItems = () => rpc('pay_due_items', {});
 export const payDispute = (kind, ref, note) => rpc('pay_dispute', { p_kind: kind, p_ref: ref, p_note: note ?? null });
 export const ccLoadStops = (load) => rpc('cc_load_stops', { p_load: load });
 export const tripStopsProgress = (trip) => rpc('cc_trip_stops_progress', { p_trip: trip });
+export const agentCarrierDirectory = () => rpc('cc_agent_carrier_directory');
 export const agentChainStatus = () => rpc('agent_chain_status', {});
 export const agentFeed = () => rpc('agent_feed', {});
 export const agentOnboardingStatus = () => rpc('agent_onboarding_status', {});
