@@ -758,7 +758,7 @@ async function agentPortal(user) {
       } }, 'Submit application');
       mount(host, h('div', null, [
         agCard('🧑‍✈️ Apply to become a LoadBoot Dispatcher', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:8px' }, 'This is a SALARIED role. You dispatch for assigned US carriers — hunt loads, negotiate rates, keep trucks loaded. Base salary + per-truck + performance bonus; salary starts when a carrier is assigned. We screen strictly (skills test + paid trial) before hiring, so give us your real detail below.'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:8px' }, 'This is a SALARIED role. You dispatch for assigned US carriers — hunt loads, negotiate rates, keep trucks loaded. You should be comfortable operating load boards (DAT / Truckstop) — you dispatch on the carrier’s own seat. Salary package = base + per-active-truck + performance bonus; it starts when a carrier is assigned and scales with your book (exact figures in your written offer). We screen strictly (skills test + paid trial) before hiring, so give us your real detail below.'),
           grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
           grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
           h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:#cbd5e1;margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
