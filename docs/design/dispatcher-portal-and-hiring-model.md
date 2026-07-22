@@ -100,3 +100,26 @@ Pakistan market for US-trucking dispatchers (2026): beginners **PKR 25k–40k/mo
 - Your **KPI targets** (gross/truck, utilization, deadhead, on-time, cancels).
 - Per-carrier **SOP** (lanes, minimum rate, home-time, do's/don'ts, compliance rules).
 - Your **salary = base + per-truck + performance bonus**; how the bonus is earned.
+
+---
+
+## Careers — TWO job listings (hire dispatchers to match carrier truck capacity)
+
+**Hiring trigger:** hire salaried dispatchers to **match the trucks that need dispatch** (carrier inflow / total assigned-truck demand ÷ ~10–15 trucks per dispatcher). No idle hires — salary starts on assignment.
+
+### JOB 1 — Freight Referral Partner (Remote · Commission, no salary)
+**Who:** anyone with a freight/trucking network (open signup, light KYC).
+**What you do:** refer carriers, brokers and shippers to LoadBoot with your link.
+**Earn:** **1% of gross on every delivered load your chain touches**, recurring + **multi-level downline overrides**. Uncapped. Paid out of LoadBoot's fee — your clients never pay extra.
+**Requirements:** none to start; a network helps. **Performance-based (no salary).**
+**Apply:** sign up → get your link → start referring.
+
+### JOB 2 — US Truck Dispatcher (Remote · Salary + performance)
+**Who:** experienced dispatchers (hired by LoadBoot's Command Center after strict screening).
+**What you do:** dispatch for your **assigned US carriers** — hunt loads (LoadBoot board + carrier's DAT/Truckstop seat), negotiate rates, keep trucks loaded, book with verified brokers, manage trips/docs/HOS. **Never touch freight money; never re-broker; one carrier at a time.**
+**Pay:** **base salary (starts when a carrier is assigned) + per-truck + performance bonus** (utilization, on-time, gross/truck, retention). Market: effective ~**PKR 60k–150k+ ($220–540+)/mo** with a full book; more for top performers.
+**Manage:** **5–8 trucks to start, ramp to 10–15.**
+**Requirements (strictly screened before hire):** ~**1–2 yrs US-trucking dispatch** experience, strong **English communication**, **load-board proficiency** (DAT/Truckstop), **FMCSA/HOS + US-geography** knowledge, **rate negotiation**, organized/multitasking. **Screening = skills test + mock broker call + references + background + paid trial**, then CC approval.
+**Apply:** apply in-portal → CC verification/skills test → hired → assigned carrier(s) + SOP + salary.
+
+> Same portal, same login/signup for both. A referral partner can also apply to become a salaried dispatcher (the two can stack: salary + 1% on their own referrals).
