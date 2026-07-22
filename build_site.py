@@ -380,7 +380,7 @@ NAV_MENU = [
     ('free-load-board-for-brokers.html', 'Free load board for brokers'),
     ('shipper-solutions.html', 'For shippers'),
     ('ship-direct-to-carrier.html', 'Ship direct to carriers'),
-    ('agents.html', 'Agent program &mdash; earn 1%'),
+    ('agents.html', 'Referral program &mdash; earn 1%'),
   ]),
   ('Pricing', 'pricing.html', None),
   ('Resources', 'resources.html', [
@@ -441,10 +441,10 @@ def footer():
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
-<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral &amp; Agent Program</a><a href="agents.html">Agent Program (Earn 1%)</a></div>
+<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
 <div><div class="foot-h">Compliance</div><a href="compliance.html">Compliance &amp; Verification</a><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="index.html">Home</a><a href="about.html">About</a><a href="command-center.html">Operations Command Center</a><a href="features.html">All Features</a><a href="load-board.html">Live Load Board</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
-<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral &amp; Agent Program</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="create-carrier-account.html">Create Carrier Account</a><a href="create-broker-account.html">Create Broker Account</a><a href="create-shipper-account.html">Create Shipper Account</a><a href="create-agent-account.html">Create Agent Account</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="load-board.html">Live Load Board (Zero Ghost Loads)</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
+<div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral Partner Program (1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="create-carrier-account.html">Create Carrier Account</a><a href="create-broker-account.html">Create Broker Account</a><a href="create-shipper-account.html">Create Shipper Account</a><a href="create-agent-account.html">Create Agent Account</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="load-board.html">Live Load Board (Zero Ghost Loads)</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div style="margin-bottom:20px"><a href="https://www.capterra.com/p/10050953/LoadBoot/" rel="noopener" target="_blank" aria-label="LoadBoot reviews on Capterra" style="display:inline-flex;align-items:center;gap:10px;background:#0d1b30;border:1px solid #1e3a5f;border-radius:12px;padding:10px 16px;text-decoration:none;margin:0">
@@ -507,7 +507,7 @@ RELATED = {
  'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools')],
  'pricing.html':            [('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('carriers.html','For Carriers')],
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
- 'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Agent Program')],
+ 'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
  'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('load-score.html','Load Score'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
@@ -1076,7 +1076,7 @@ ROLEBAND = ('<section style="padding:26px 0 8px"><div class="wrap"><div class="g
  '<a class="linkcard reveal" href="carriers.html"><div class="icon">&#128666;</div><h3>I haul freight</h3><p>The board with the full rate card printed, one-tap booking, GPS-proven detention &mdash; and a dispatcher on your side.</p><span class="arw">For carriers &rarr;</span></a>'
  '<a class="linkcard reveal" href="brokers.html"><div class="icon">&#127970;</div><h3>I post loads</h3><p>Verified, health-scored capacity racing a 15-minute window. First accept wins &mdash; zero double-booking, zero check calls.</p><span class="arw">For brokers &rarr;</span></a>'
  '<a class="linkcard reveal" href="shipper-solutions.html"><div class="icon">&#127981;</div><h3>I own the freight</h3><p>Vetted carriers under licensed brokerage, live GPS on every shipment, dock-level proof at your own facilities.</p><span class="arw">For shippers &rarr;</span></a>'
- '</div><div class="reveal" style="text-align:center;margin-top:12px;font-size:.86rem;color:#64748b">Bring the people instead? <a href="agents.html">The agent program pays 1% of every load &mdash; forever</a>.</div></div></section>')
+ '</div><div class="reveal" style="text-align:center;margin-top:12px;font-size:.86rem;color:#64748b">Bring the people instead? <a href="agents.html">The referral program pays 1% of every load &mdash; forever</a>.</div></div></section>')
 
 home_body = HERO+ROLEBAND+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
 home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'
@@ -3437,21 +3437,22 @@ _ag_job_schema = '<script type="application/ld+json">{"@context":"https://schema
 car = svc_hero('Careers at Loadboot', 'We are building an honest dispatch company for the people who keep America moving. If that sounds like you, we would love to talk.')
 car += '<section><div class="wrap prose reveal"><h2>Why work here</h2><p>Loadboot exists to give carriers a dispatcher who actually has their back. We hire people who take that seriously &mdash; dispatchers, carrier-success reps, and builders who care about doing right by the driver on the other end of the phone.</p></div></section>'
 # ---- OPEN ROLES — the Agent role is live and featured ----
-car += ('<section class="bg-soft" id="roles"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Open roles</div><h2>We&rsquo;re hiring right now</h2></div>'
+car += ('<section class="bg-soft" id="roles"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Open roles</div><h2>Two ways to join &mdash; we&rsquo;re hiring right now</h2></div>'
  '<div class="grid g2 reveal" style="max-width:980px;margin:0 auto">'
- '<a class="card reveal" href="agents.html" style="display:block;text-decoration:none;border:2px solid #FC5305;position:relative;background:linear-gradient(160deg,#10223B,#0d2a4d);color:#fff">'
+ '<a class="card reveal" href="create-agent-account.html" style="display:block;text-decoration:none;border:2px solid #FC5305;position:relative;background:linear-gradient(160deg,#10223B,#0d2a4d);color:#fff">'
  '<span style="position:absolute;top:14px;right:14px;background:#FC5305;color:#fff;font-size:.65rem;font-weight:900;padding:5px 11px;border-radius:999px;letter-spacing:.06em">&#9889; OPEN NOW &middot; REMOTE</span>'
- '<div class="icon">&#129309;</div><h3 style="color:#fff">Independent Agent &mdash; commission, uncapped</h3>'
- '<p style="color:#b9c6da">Bring brokers, carriers and shippers to the marketplace in pairs and earn <b style="color:#4ade80">1% of every delivered load your chain touches &mdash; recurring, forever</b>. The software does the dispatch; you own the relationships. No license needed.</p>'
- '<p style="color:#7cc0ff;font-weight:800;margin-top:10px">See the full program + earnings calculator &rarr;</p></a>'
- '<div class="card reveal"><div class="icon">&#128222;</div><h3>Dispatcher &amp; carrier success</h3><p>Load hunting, rate negotiation, onboarding carriers, keeping accounts healthy. Trucking experience wins; hustle and honesty are non-negotiable. Apply below with your story.</p><p style="color:#64748B;font-size:.85rem;margin-top:8px">Full-time / contract &middot; remote-friendly</p></div>'
+ '<div class="icon">&#128222;</div><h3 style="color:#fff">US Truck Dispatcher &mdash; salary + performance</h3>'
+ '<p style="color:#b9c6da">Dispatch for <b style="color:#7cc0ff">assigned US carriers</b> &mdash; hunt loads, negotiate rates, keep trucks loaded, manage trips and docs. <b style="color:#4ade80">Base salary + per-truck + performance bonus</b>; salary starts the day a carrier is assigned to you. Manage 5&ndash;8 trucks to start, ramp to 10&ndash;15.</p>'
+ '<p style="color:#b9c6da;font-size:.9rem;margin-top:8px">Needs ~1&ndash;2 yrs US-trucking dispatch, strong English, DAT/Truckstop, FMCSA/HOS. Strict screening + paid trial before hire.</p>'
+ '<p style="color:#7cc0ff;font-weight:800;margin-top:10px">Apply as a dispatcher &rarr;</p></a>'
+ '<a class="card reveal" href="agents.html" style="display:block;text-decoration:none"><div class="icon">&#129309;</div><h3>Freight Referral Partner &mdash; 1% recurring</h3><p>No experience needed. Refer carriers, brokers and shippers to LoadBoot with your link and earn <b style="color:#16a34a">1% of every delivered load your chain touches &mdash; recurring, uncapped</b>, plus multi-level overrides. Commission only, paid from our fee &mdash; your clients never pay extra.</p><p style="color:#64748B;font-size:.85rem;margin-top:8px">Open signup &middot; remote &middot; commission (no salary)</p><p style="color:#0883F7;font-weight:800;margin-top:8px">See the program + earnings calculator &rarr;</p></a>'
  '</div></div></section>')
 # ---- how hiring works ----
 car += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How it works</div><h2>From application to your first day</h2></div>'
  '<div class="grid g3 reveal">'
  '<div class="card reveal"><div class="icon">1</div><h3>Apply (5 minutes)</h3><p>The form below &mdash; a real person reads every message, usually within 48 hours. A LinkedIn or CV link beats a formal cover letter.</p></div>'
  '<div class="card reveal"><div class="icon">2</div><h3>One honest conversation</h3><p>15&ndash;30 minutes about what you&rsquo;ve actually done &mdash; lanes you&rsquo;ve run, brokers you know, systems you&rsquo;ve used. No trick questions.</p></div>'
- '<div class="card reveal"><div class="icon">3</div><h3>Start doing the work</h3><p>Agents get their account + referral link the same week. Dispatch roles start with a paid working trial on real loads.</p></div>'
+ '<div class="card reveal"><div class="icon">3</div><h3>Start doing the work</h3><p>Referral partners get their account + link the same week. Dispatchers go through verification and a paid working trial, then get assigned their first carrier &mdash; salary starts on assignment.</p></div>'
  '</div></div></section>')
 car += '<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Life at LoadBoot</div><h2>What the work is actually like</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#127919;</div><h3>Real stakes, real people</h3><p>Every shift you keep a driver earning and a shipper informed. The feedback loop is measured in hours, not quarters.</p></div><div class="card reveal"><div class="icon">&#128200;</div><h3>Modern tooling</h3><p>Our Command Center automates the busywork — matching, documents, reminders — so your judgment goes where software cannot.</p></div><div class="card reveal"><div class="icon">&#127758;</div><h3>Remote-friendly</h3><p>Dispatch runs on outcomes, not seat time. Reliable coverage matters; your zip code does not.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Teams we hire for</div><h2>Where you could fit</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128222;</div><h3>Dispatch &amp; operations</h3><p>Load hunting, rate negotiation, trip babysitting, exception handling. Trucking experience wins; hustle and honesty are non-negotiable.</p></div><div class="card reveal"><div class="icon">&#129309;</div><h3>Carrier &amp; partner success</h3><p>Onboarding carriers, verifying brokers, keeping accounts healthy and honest.</p></div><div class="card reveal"><div class="icon">&#128187;</div><h3>Product &amp; engineering</h3><p>The platform behind it all — dispatch tooling, portals, automation and analytics.</p></div></div></div></section>'
 car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and what you would want to own here.',
@@ -3459,9 +3460,10 @@ car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and wha
      ('company', 'Current / most recent role', 'text', False),
      ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
     'Send application', 'Thanks — we&rsquo;ll be in touch.')
-page('careers.html', 'Careers at Loadboot — Independent Agents (1% Commission) & Dispatch Roles',
-     'LoadBoot is hiring: independent agents earning 1% of every delivered load (recurring, remote, uncapped) plus dispatch and carrier-success roles. Apply in 5 minutes.',
-     'careers.html', car, _ag_job_schema)
+_disp_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"US Truck Dispatcher (Remote, Salary + Performance)","description":"Dispatch for assigned US carriers on the LoadBoot platform: hunt loads, negotiate rates, keep trucks loaded, manage trips and documents. Base salary plus per-truck and performance bonus; salary starts when a carrier is assigned. Manage 5-15 trucks. Requires ~1-2 years US-trucking dispatch experience, strong English, load-board (DAT/Truckstop) proficiency and FMCSA/HOS knowledge. Strict screening and a paid working trial before hire.","datePosted":"2026-07-22","validThrough":"2027-07-22T23:59:59-05:00","employmentType":["CONTRACTOR","FULL_TIME"],"hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"directApply":true}</script>'
+page('careers.html', 'Careers at Loadboot — US Truck Dispatcher (Salary) & Referral Partner (1%)',
+     'LoadBoot is hiring US truck dispatchers (salary + per-truck + performance bonus, remote) and freight referral partners earning 1% of every delivered load (recurring, uncapped). Apply in 5 minutes.',
+     'careers.html', car, _disp_job_schema + _ag_job_schema)
 
 # ---- Partner Program ----
 pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.')
@@ -3767,10 +3769,10 @@ AGENT_CSS = '''<style>
 
 AGENT_BODY = AGENT_CSS + '''
 <section class="ag-hero"><div class="ag-wrap" style="text-align:center">
-<span class="ag-eyebrow">Agent Program &middot; Independent Dispatchers</span>
+<span class="ag-eyebrow">Referral Partner Program &middot; Earn 1% forever</span>
 <h1 class="ag-h1">Bring the people.<br>The software does the work.<br><b>You earn 1% of every load &mdash; forever.</b></h1>
-<p class="ag-sub" style="margin:0 auto">LoadBoot runs the dispatch: live board, one-tap booking, GPS proof, automatic invoicing and payments. Your job is the one thing software can&rsquo;t do &mdash; bring a broker and a carrier together. Every load your chain delivers pays you 1% of the gross. Recurring. No cap.</p>
-<a class="ag-cta" href="contact.html">Apply as an Agent &rarr;</a><a class="ag-cta ghost" href="#calc">See the money &darr;</a>
+<p class="ag-sub" style="margin:0 auto">LoadBoot runs the dispatch: live board, one-tap booking, GPS proof, automatic invoicing and payments. Your job is the one thing software can&rsquo;t do &mdash; bring a broker and a carrier together. Every load your chain delivers pays you 1% of the gross. Recurring. No cap. <b style="color:#7cc0ff">Want a salaried seat instead? See our <a href="careers.html" style="color:#7cc0ff">US Dispatcher role</a>.</b></p>
+<a class="ag-cta" href="create-agent-account.html">Become a Referral Partner &rarr;</a><a class="ag-cta ghost" href="#calc">See the money &darr;</a>
 <div class="ag-chain">
  <div class="ag-node"><div class="ic">&#127970;</div><b>Your Broker</b><span>posts loads</span><span class="ag-badge">YOURS</span></div>
  <div class="ag-link"></div>
@@ -3783,7 +3785,7 @@ AGENT_BODY = AGENT_CSS + '''
 
 <section class="ag-sec"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">How it works</div><h2>Four steps. Then it compounds.</h2></div>
 <div class="ag-grid">
-<div class="ag-card reveal"><div class="n">1</div><h3>Get your agent account</h3><p>Log in to your dashboard and grab your personal referral link. Every client who joins through it is tied to you &mdash; permanently and automatically.</p></div>
+<div class="ag-card reveal"><div class="n">1</div><h3>Get your referral account</h3><p>Log in to your dashboard and grab your personal referral link. Every client who joins through it is tied to you &mdash; permanently and automatically.</p></div>
 <div class="ag-card reveal"><div class="n">2</div><h3>Bring a PAIR</h3><p>A broker + a carrier, or a shipper + a broker. One side alone stays pending &mdash; a pair makes a living marketplace, and that activates your chain.</p></div>
 <div class="ag-card reveal"><div class="n">3</div><h3>Watch it live</h3><p>Your dashboard shows everything in real time: who joined, loads posted, trucks moving on GPS, deliveries confirmed &mdash; and your commission landing on each one.</p></div>
 <div class="ag-card reveal"><div class="n">4</div><h3>Get paid monthly</h3><p>1% of gross on every GPS-verified delivered load your chain touches. Payable after a 15-day clearing window, paid out monthly from $100. No invoices, no chasing.</p></div>
@@ -3791,7 +3793,7 @@ AGENT_BODY = AGENT_CSS + '''
 
 <section class="ag-sec soft" id="calc"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">The money</div><h2>Move the sliders &mdash; this is YOUR math</h2></div>
 <div class="agc reveal">
-<h3>&#128176; Agent earnings calculator</h3>
+<h3>&#128176; Referral earnings calculator</h3>
 <div class="row"><label for="agChains">Active chains (pairs you brought)</label><output id="agChainsOut">3</output></div>
 <input type="range" id="agChains" min="1" max="15" value="3">
 <div class="row"><label for="agLoads">Loads per chain / month</label><output id="agLoadsOut">15</output></div>
@@ -3819,25 +3821,25 @@ function u(){var g=(+c.value)*(+l.value)*(+r.value);document.getElementById("agC
 <div class="ag-card reveal"><h3>&#128101; 5 levels deep</h3><p>Recruit other agents: you earn overrides on their chains too &mdash; 1% / 0.5% / 0.25% / 0.15% / 0.10% down five levels.</p></div>
 </div>
 <div class="reveal" style="text-align:center;margin-top:36px">
-<a class="ag-cta" href="contact.html" style="background:#0883F7">Apply now &mdash; reply &ldquo;I&rsquo;M IN&rdquo; &rarr;</a>
-<div style="color:#64748B;font-size:.85rem;margin-top:12px">Or email <b>hello@loadboot.com</b> with subject &ldquo;Agent Program&rdquo; &mdash; we set up your account and walk you through the dashboard in 15 minutes.</div>
+<a class="ag-cta" href="create-agent-account.html" style="background:#0883F7">Become a Referral Partner &rarr;</a>
+<div style="color:#64748B;font-size:.85rem;margin-top:12px">Or email <b>hello@loadboot.com</b> with subject &ldquo;Referral Program&rdquo; &mdash; we set up your account and walk you through the dashboard in 15 minutes.</div>
 </div>
 </div></section>'''
 
 _ag_faq_html, _ag_faq_sch = faq_block([
- ('How do I get my referral link?', 'Apply, and we create your agent account. Your dashboard shows your personal link (loadboot.com/?ref=YOURCODE). Anyone who joins LoadBoot through that link is permanently credited to you - the system records it automatically at signup.'),
+ ('How do I get my referral link?', 'Sign up, and we create your referral account. Your dashboard shows your personal link (loadboot.com/?ref=YOURCODE). Anyone who joins LoadBoot through that link is permanently credited to you - the system records it automatically at signup.'),
  ('When do I start earning?', 'The moment your chain is ACTIVE - meaning you have referred at least one pair (a broker + a carrier, or a shipper + a broker). From then on, every GPS-verified delivered load involving your referred clients credits 1% of the gross load value to your account.'),
  ('Is it really recurring - every load, forever?', 'Yes. This is not a one-time signup bonus. As long as your referred clients keep moving freight on LoadBoot, every delivered load pays your commission. Your book of clients is your asset.'),
  ('Who pays my commission - do my clients pay extra?', 'No. Your commission comes out of LoadBoot&rsquo;s own service fee. Your broker and carrier pay exactly what they would pay anyway.'),
  ('How and when am I paid?', 'Commissions become payable after a 15-day clearing window (protects against cancelled or disputed loads), and payouts run monthly from a $100 minimum balance - bank transfer or Payoneer.'),
- ('Do I need a dispatch license or MC authority?', 'No. You are an independent agent, not a broker of record. You connect people; LoadBoot&rsquo;s licensed marketplace handles the freight, documents and payments.'),
+ ('Do I need a dispatch license or MC authority?', 'No. You are a referral partner, not a broker of record. You connect people; LoadBoot&rsquo;s platform handles the freight, documents and payments. (Prefer to actually dispatch trucks for a salary? That is our separate, verified US Dispatcher role - see Careers.)'),
 ])
 
 
-page('agents.html', 'Become a LoadBoot Agent — Earn 1% of Every Load, Recurring | Independent Dispatchers',
- 'Commission role for independent dispatchers: bring a broker + carrier pair to LoadBoot and earn 1% of every GPS-verified delivered load — recurring, no cap, paid monthly. The software does the dispatch; you own the relationships.',
+page('agents.html', 'LoadBoot Referral Partner Program — Earn 1% of Every Load, Recurring',
+ 'Commission referral program: bring a broker + carrier pair to LoadBoot and earn 1% of every GPS-verified delivered load — recurring, no cap, paid monthly. No license needed. Prefer a salaried seat? See our US Dispatcher role.',
  'partners.html', AGENT_BODY + _ag_faq_html + final_cta(), _ag_job_schema + _ag_faq_sch)
-RELATED['agents.html'] = [('agents.html','Agent Program'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
+RELATED['agents.html'] = [('careers.html','US Dispatcher role'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
 
 
 # ---- Resources ----
@@ -4147,7 +4149,7 @@ _HUB_ROLES = [
     'Get a personal referral link and ready-to-share materials',
     'Commissions unlock after a short hold; payouts reviewed by a person',
     'Perfect for trucking creators, coaches and industry networks'],
-   'agents.html', 'See how the agent program works &rarr;',
+   'agents.html', 'See how the referral program works &rarr;',
    'referral_signup', 'Become a referral partner',
    'Tell us about your audience and we&rsquo;ll get you a referral link and materials.',
    [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True),
@@ -4164,7 +4166,7 @@ _HUB_ROLES = [
     'Post loads yourself with a broker-grade wizard (source-verified)',
     'CRM-grade chain tracking, live earnings, Amazon-style payout center',
     'Free to join &mdash; verification takes about a day, worldwide remote'],
-   'agents.html', 'See how the agent program works &rarr;',
+   'agents.html', 'See how the referral program works &rarr;',
    'agent_signup', 'Become a LoadBoot agent',
    'The full program runs in the Agent Portal &mdash; create your account there in 2 minutes.',
    [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True),
