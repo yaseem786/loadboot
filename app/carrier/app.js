@@ -702,13 +702,28 @@ async function agentPortal(user) {
       };
       const boards = checks(['DAT', 'Truckstop', 'Amazon Relay', 'Newtrul', '123Loadboard', 'Other']);
       const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck']);
+      // ---- CV / résumé + optional ID document upload ----
+      const docState = { cv: null, cvName: null, idd: null, iddName: null };
+      const mkUpload = (type9, key9, nameKey9) => {
+        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:#94a3b8' }, 'PDF, DOC or image · up to 25 MB');
+        const inp9 = h('input', { type: 'file', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
+          const file9 = e9.target.files && e9.target.files[0]; if (!file9) return;
+          st9.style.color = '#94a3b8'; st9.textContent = 'Uploading…';
+          try { const m9 = await uploadDocument(file9, type9); docState[key9] = m9.path; docState[nameKey9] = m9.fileName; st9.style.color = '#4ade80'; st9.textContent = '✓ ' + m9.fileName; }
+          catch (e10) { st9.style.color = '#f87171'; st9.textContent = 'Upload failed — try again'; }
+        } });
+        return h('div', null, [inp9, st9]);
+      };
+      const cvUp = mkUpload('dispatcher_cv', 'cv', 'cvName');
+      const idUp = mkUpload('dispatcher_id', 'idd', 'iddName');
       const msg = h('div', { class: 'cp-err' });
       const grp = (label, node) => h('div', { style: 'margin-bottom:2px' }, [h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 2px' }, label), node]);
       const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
         const b9 = ev.currentTarget;
         if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, payout.'; return; }
+        if (!docState.cv) { msg.textContent = 'Please upload your CV / résumé before submitting.'; return; }
         b9.disabled = true; b9.textContent = 'Submitting…';
-        const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim() };
+        const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
         const refs = f.refs.value.split('\n').map((x9) => x9.trim()).filter(Boolean);
         const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.values(), skills: skills, refs: refs };
         const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
@@ -731,6 +746,8 @@ async function agentPortal(user) {
           grp('How should we pay your salary? *', f.payout),
           grp('Why should we hire you?', f.note),
           grp('LinkedIn / résumé link', f.linkedin),
+          grp('Upload your CV / résumé *', cvUp),
+          grp('Government ID (optional — speeds up hiring)', idUp),
           msg, submit,
         ]),
       ]));

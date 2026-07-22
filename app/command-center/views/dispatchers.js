@@ -9,6 +9,7 @@ import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAss
          ccDispatcherUnassign, ccDispatcherSalarySet, ccDispatcherSalaryRun, ccDispatcherSalaryStatus,
          getCarriersDirectory } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
+import { signedDocumentUrl } from '../../shared/storage.js';
 
 const PIPE = ['applied', 'screening', 'skills_test', 'trial', 'verified', 'active', 'suspended', 'rejected'];
 const STPILL = {
@@ -79,13 +80,23 @@ export function renderDispatchers(host) {
         ]),
         el('div', { class: 'cc-sub', style: 'margin-bottom:14px' }, (dd.email || '') + ' · ' + (pp.country || '—') + ' · ' + (pp.city || '') + ' · ' + (pp.years_exp || 0) + ' yrs'),
         // ---- application detail ----
-        card([
+        (() => { const s = pp.skills || {}; return card([
           el('div', { style: 'font-weight:700;margin-bottom:6px' }, 'Application & screening'),
-          kv('English', pp.english_level), kv('Load boards', (pp.load_boards || []).join(', ')),
-          kv('Skills tests', JSON.stringify(pp.skills || {})), kv('References', JSON.stringify(pp.refs || [])),
-          kv('Background', pp.background), kv('Trial', JSON.stringify(pp.trial || {})),
+          kv('English', pp.english_level),
+          kv('Experience', (pp.years_exp || 0) + ' yrs · trucks handled: ' + (s.trucks_handled || '—')),
+          kv('Availability', (s.availability_hours || '—') + ' hrs/wk · ' + (s.timezone || '') + (s.us_hours_overlap ? ' · US-hours overlap' : '')),
+          kv('Load boards', (pp.load_boards || []).join(', ')),
+          kv('Equipment', (s.equipment || []).join(', ')),
+          kv('Skills', 'negotiation ' + (s.negotiation || '—') + ' · FMCSA/HOS ' + (s.fmcsa_hos || '—') + ' · geography ' + (s.us_geography || '—')),
+          kv('Tools', s.tools), kv('Payout pref', s.payout_pref), kv('LinkedIn', s.linkedin),
+          kv('References', (pp.refs || []).join('  |  ')),
+          s.note ? kv('Why hire', s.note) : '',
+          el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [
+            s.cv_doc ? docBtn('📄 CV / résumé' + (s.cv_name ? ' (' + s.cv_name + ')' : ''), s.cv_doc) : el('span', { class: 'cc-sub' }, 'No CV uploaded'),
+            s.id_doc ? docBtn('🪪 Government ID', s.id_doc) : '',
+          ]),
           pp.review_note ? kv('Last note', pp.review_note) : '',
-        ]),
+        ]); })(),
         // ---- pipeline actions ----
         pipeline(pp),
         // ---- assignments ----
@@ -95,6 +106,7 @@ export function renderDispatchers(host) {
       ]);
     }
     function kv(k, v) { return el('div', { style: 'display:flex;gap:8px;padding:3px 0;font-size:.9rem' }, [el('span', { class: 'cc-sub', style: 'min-width:120px' }, k), el('span', null, v == null || v === '' ? '—' : String(v))]); }
+    function docBtn(label, path) { return el('button', { class: 'lb-btn lb-btn-ghost', onClick: async () => { try { const u = await signedDocumentUrl(path, 600); window.open(u, '_blank', 'noopener'); } catch (e) { toast(humanizeError(e)); } } }, label); }
 
     function actBtn(label, action, tone, confirmMsg) {
       return el('button', { class: 'lb-btn ' + (tone || 'lb-btn-ghost'), style: 'margin:4px 6px 0 0', onClick: async () => {
