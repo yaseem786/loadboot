@@ -160,3 +160,38 @@ Touching freight money, re-brokering/allocating, soliciting the open carrier mar
 - Idle dispatcher earns almost nothing (base only, briefly) and loses the carrier fast.
 - Active, performing dispatcher earns full base + per-truck + bonus — and grows LoadBoot's 5% at the same time.
 - The carrier is always covered (dedicated-dispatcher guarantee) regardless of any one dispatcher's performance.
+
+---
+
+## Open operational decisions — resolved (deep thinking)
+
+### A) Exact salary numbers (offshore / Pakistan baseline — the model LoadBoot uses)
+Tiered, all in PKR/month; effective = base + per-active-truck + performance bonus:
+
+| Tier | Book (active trucks) | Base | Per active truck | Perf. bonus (max) | Effective / mo |
+|---|---|---|---|---|---|
+| Probation (0–60d) | 1–3 | 40,000 | 6,000 | — | ~55–60k |
+| Dispatcher | 4–8 | 60,000 | 8,000 | 20,000 | ~90–130k |
+| Senior | 9–15 | 70,000 | 8,000 | 30,000 | ~140–200k |
+
+Approx USD: probation ~$200 · dispatcher ~$320–460 · senior ~$500–700.
+**Margin check (must always hold):** dispatcher with 8 trucks each grossing ~$25k/mo = $200k/mo → **LoadBoot 5% = $10,000/mo (~PKR 2.8M)**; dispatcher effective pay ~PKR 110k (~$400) → **LoadBoot keeps ~$9,600/mo** from that pod. Even a senior with a 15-truck book (5% ≈ $18k/mo) costs ~$650 pay → margin stays wide.
+*(If ever hiring US-remote instead of offshore: market is ~$44–55k/yr — reserve for team leads, not line dispatchers, or the margin math changes.)*
+
+### B) How CC and the dispatcher stay connected / communicate
+Built into the portal — no outside tools needed:
+- **Per-carrier SOP card** (CC writes it on assignment): lanes, minimum rate/mile, home-time, equipment, do's/don'ts, compliance rules. The dispatcher's playbook.
+- **In-app message threads:** CC ↔ dispatcher (instructions, questions) and dispatcher ↔ carrier (trip coordination). All logged.
+- **Live status board:** every assigned truck shows current load / next load / status (empty, booked, in-transit, delivered) so CC sees the whole pod at a glance.
+- **Notifications:** new assignment, new SOP/instruction, document needed, KPI flag, carrier message.
+- **Weekly performance review:** auto-computed KPI dashboard (utilization, on-time, gross/truck, cancels) — the number CC coaches from, not guesswork.
+- **Escalate-to-CC button:** dispatcher flags a problem (rate dispute, detention, carrier issue) straight to staff.
+
+### C) Should the dispatcher have their own load-board account? — compliance-critical
+The whole legal safety of the model depends on this. Ranked:
+1. **BEST — carrier's own DAT/Truckstop seat.** The carrier subscribes; the dispatcher logs in *on the carrier's behalf* and books loads under the **carrier's own MC/authority**. This makes the dispatcher unambiguously the carrier's *agent*, not a broker. No allocation, no re-brokering.
+2. **OK — a LoadBoot "dispatch-service" DAT account.** DAT explicitly offers dispatch-service accounts. Acceptable **only if** each load is worked **strictly for one assigned carrier**, booked under **that carrier's authority**, with **no allocation of one load among several carriers** and **no money custody**. Loads are tied per-carrier in the console.
+3. **AVOID — a dispatcher's personal independent load-board account used across many carriers.** Sourcing from one seat and deciding which of several carriers gets each load = looks like **brokering/allocation** → the exact thing that needs a broker authority + $75k bond. Do not do this.
+
+**LoadBoot's stance:** primary demand = **LoadBoot Carrier Network** (our own board — free, per-carrier). For external loads, the dispatcher uses **the assigned carrier's DAT seat** (option 1); a LoadBoot dispatch-service account (option 2) only as a controlled fallback with per-carrier tagging. **Never** option 3. Load-board access is provisioned/recorded per carrier in the portal so there's an audit trail proving per-carrier sourcing.
+> Attorney sign-off still required before scaling — options 1/2 are the defensible structure to take to counsel.
