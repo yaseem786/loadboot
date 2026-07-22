@@ -783,6 +783,9 @@ async function agentPortal(user) {
       const idUp = mkUpload('dispatcher_id', 'idd', 'iddName');
       const msg = h('div', { class: 'cp-err' });
       const grp = (label, node) => h('div', { style: 'margin-bottom:2px' }, [h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 2px' }, label), node]);
+      const fsec = (title, open, kids) => h('details', Object.assign({ style: 'border:1px solid rgba(130,165,225,.16);border-radius:13px;margin-top:10px;background:rgba(255,255,255,.02);overflow:hidden' }, open ? { open: '' } : {}), [
+        h('summary', { style: 'cursor:pointer;padding:13px 15px;font-weight:800;font-size:.95rem;color:#fff;list-style:none;display:flex;align-items:center;gap:9px' }, [h('span', { style: 'flex:1' }, title), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
+        h('div', { style: 'padding:2px 15px 15px' }, kids)]);
       const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
         const b9 = ev.currentTarget;
         if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, payout.'; return; }
@@ -798,22 +801,28 @@ async function agentPortal(user) {
       mount(host, h('div', null, [
         dHero(),
         agCard('🧑‍✈️ Apply to become a LoadBoot Dispatcher', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:8px' }, 'This is a SALARIED role. You dispatch for assigned US carriers — hunt loads, negotiate rates, keep trucks loaded. You should be comfortable operating load boards (DAT / Truckstop) — you dispatch on the carrier’s own seat. Salary package = base + per-active-truck + performance bonus; it starts when a carrier is assigned and scales with your book (exact figures in your written offer). We screen strictly (skills test + paid trial) before hiring, so give us your real detail below.'),
-          grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
-          grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
-          h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:#cbd5e1;margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
-          grp('Years of US dispatch experience', f.years), grp('Most trucks managed at once', f.trucks),
-          grp('Load boards you can operate', boards.box),
-          grp('Equipment you know', equip.box),
-          grp('English level *', f.english),
-          grp('Rate negotiation', f.negotiation), grp('FMCSA / HOS knowledge', f.fmcsa), grp('US geography / lanes', f.geography),
-          grp('Tools you know', f.tools),
-          grp('References', f.refs),
-          grp('How should we pay your salary? *', f.payout),
-          grp('Why should we hire you?', f.note),
-          grp('LinkedIn / résumé link', f.linkedin),
-          grp('Upload your CV / résumé *', cvUp),
-          grp('Government ID (optional — speeds up hiring)', idUp),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:4px' }, 'This is a SALARIED role dispatching for assigned US carriers — base + per-active-truck + performance bonus, starting when a carrier is assigned. Strict screening (skills test + paid trial) before hiring. Fill each section below.'),
+          fsec('1 · About you', true, [
+            grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
+            grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
+            h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:#cbd5e1;margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
+          ]),
+          fsec('2 · Experience & skills', false, [
+            grp('Years of US dispatch experience', f.years), grp('Most trucks managed at once', f.trucks),
+            grp('Load boards you can operate', boards.box),
+            grp('Equipment you know', equip.box),
+            grp('English level *', f.english),
+            grp('Rate negotiation', f.negotiation), grp('FMCSA / HOS knowledge', f.fmcsa), grp('US geography / lanes', f.geography),
+            grp('Tools you know', f.tools),
+          ]),
+          fsec('3 · References, pay & documents', false, [
+            grp('References', f.refs),
+            grp('How should we pay your salary? *', f.payout),
+            grp('Why should we hire you?', f.note),
+            grp('LinkedIn / résumé link', f.linkedin),
+            grp('Upload your CV / résumé *', cvUp),
+            grp('Government ID (optional — speeds up hiring)', idUp),
+          ]),
           msg, submit,
         ]),
         dSteps(null),
