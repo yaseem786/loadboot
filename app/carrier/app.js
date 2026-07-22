@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -953,26 +953,35 @@ async function agentPortal(user) {
     } else if (tab === 'post') {
       if (isVerified && feed.own_broker_org) {
         const tgt9 = (function(){ try { return window.__lbAgentPostCarrier || null; } catch(_) { return null; } })();
-        const pf9 = { equipment: 'Dry Van' };
+        const pf9 = { equipment: 'Dry Van', pumode: 'appt', demode: 'appt' };
         const inp9 = (key, ph, ty) => h('input', { class: 'cp-input', type: ty || 'text', placeholder: ph || '', style: 'width:100%', onInput: (e) => { pf9[key] = e.currentTarget.value; } });
         const fld9 = (lbl, node) => h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, lbl), node]);
-        const eqSel9 = h('select', { class: 'cp-input', style: 'width:100%', onChange: (e) => { pf9.equipment = e.currentTarget.value; } }, ['Dry Van','Reefer','Flatbed','Step Deck','Power Only','Box Truck','Hotshot','Container (Drayage)'].map((x) => h('option', { value: x }, x)));
+        const sel9 = (key, opts) => h('select', { class: 'cp-input', style: 'width:100%', onChange: (e) => { pf9[key] = e.currentTarget.value; } }, opts.map(([v, l]) => h('option', { value: v }, l)));
+        const eqSel9 = sel9('equipment', [['Dry Van','Dry Van'],['Reefer','Reefer'],['Flatbed','Flatbed'],['Step Deck','Step Deck'],['Power Only','Power Only'],['Box Truck','Box Truck'],['Hotshot','Hotshot'],['Container (Drayage)','Container (Drayage)']]);
+        const schedRow9 = (who) => h('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px' }, [
+          sel9(who + 'mode', [['appt', 'Appointment'], ['fcfs', 'FCFS window']]),
+          inp9(who + 'date', '', 'date'),
+          inp9(who + 'time', '', 'time'),
+        ]);
         const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:8px' });
         const submit9 = h('button', { class: 'cp-btn', style: 'margin-top:14px', onClick: async (ev) => { const b = ev.currentTarget;
           if (!(pf9.origin && pf9.destination)) { msg9.style.color = '#f87171'; msg9.textContent = 'Origin and destination are required.'; return; }
+          if (!pf9.pudate) { msg9.style.color = '#f87171'; msg9.textContent = 'Pickup date is required (the driver needs a schedule).'; return; }
           b.disabled = true; b.textContent = 'Posting…';
           try {
-            const r9 = await partnerPostLoad({ origin: pf9.origin, destination: pf9.destination, equipment: pf9.equipment, rate: pf9.rate ? Number(pf9.rate) : null, weight: pf9.weight ? Number(pf9.weight) : null, commodity: pf9.commodity || null, pickup: pf9.pickup || null, notes: pf9.notes || null, idempotencyKey: 'agpost:' + Date.now() });
+            const note9 = [pf9.notes || '', pf9.reference ? ('Ref: ' + pf9.reference) : ''].filter(Boolean).join(' · ');
+            const r9 = await partnerPostLoad({ origin: pf9.origin, destination: pf9.destination, equipment: pf9.equipment, rate: pf9.rate ? Number(pf9.rate) : null, weight: pf9.weight ? Number(pf9.weight) : null, commodity: pf9.commodity || null, pickup: pf9.pudate || null, notes: note9 || null, idempotencyKey: 'agpost:' + Date.now() });
             const lid9 = r9 && (r9.id || r9.load_id || (r9.load && r9.load.id));
+            if (lid9 && pf9.pudate) { try { await partnerUpdatePickup(lid9, pf9.pudate, pf9.putime || null, pf9.dedate || null, pf9.detime || null, pf9.pumode, pf9.demode, false); } catch (_) {} }
             if (tgt9 && lid9) { try { await offerSend(lid9, [tgt9.id], pf9.rate ? Number(pf9.rate) : null, 60); } catch (_) {} }
             try { window.__lbAgentPostCarrier = null; } catch (_) {}
-            lbToast('Load posted' + (tgt9 ? (' — direct offer sent to ' + tgt9.name) : '') + '. Track it in Chain Loads. Your 1% lands on delivery.', 'success', '📦 Posted');
+            lbToast('Load posted' + (tgt9 ? (' — direct offer sent to ' + tgt9.name) : '') + '. Pickup/delivery scheduling saved. Track it in Chain Loads.', 'success', '📦 Posted');
             go('loads');
           } catch (e9) { b.disabled = false; b.textContent = 'Post load'; msg9.style.color = '#f87171'; msg9.textContent = (e9 && e9.message) || 'Post failed — try again.'; }
         } }, 'Post load');
         mount(content, h('div', null, [
-          tgt9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' Posting a direct offer to: ' + tgt9.name + ' — first to accept wins.']) : null,
-          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.3);border-radius:11px;padding:9px 12px;font-weight:700' }, [icon('loads',15),' Post a load to the LoadBoot network — it carries your LOAD SOURCE and is reviewed by dispatch. When it DELIVERS, your 1% lands automatically.']),
+          tgt9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' Direct offer to: ' + tgt9.name + ' — first to accept wins.']) : null,
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.3);border-radius:11px;padding:9px 12px;font-weight:700' }, [icon('loads',15),' Post a load — collected to industry standard (equipment, weight, commodity, scheduling, refs). Carries your LOAD SOURCE; reviewed by dispatch. On delivery, your 1% lands.']),
           h('div', { class: 'cp-card' }, [
             h('div', { class: 'cp-row-t', style: 'font-size:1.05rem;margin-bottom:12px' }, [icon('loads',15),' Post a load']),
             h('div', { class: 'cp-wiz-grid' }, [
@@ -981,9 +990,11 @@ async function agentPortal(user) {
               fld9('Equipment', eqSel9),
               fld9('Rate ($ all-in)', inp9('rate', '2850', 'number')),
               fld9('Weight (lbs)', inp9('weight', '42000', 'number')),
-              fld9('Pickup date', inp9('pickup', '', 'date')),
               fld9('Commodity', inp9('commodity', 'General freight')),
-              fld9('Notes for the carrier', inp9('notes', 'Appointment, reference #s, etc.')),
+              h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Pickup — mode · date · time'), schedRow9('pu')]),
+              h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Delivery — mode · date · time'), schedRow9('de')]),
+              fld9('Reference # (optional)', inp9('reference', 'PO / shipment #')),
+              fld9('Special instructions for the carrier', inp9('notes', 'Lumper, driver-assist, pallet exchange, etc.')),
             ]),
             submit9, msg9,
           ]),
