@@ -9,7 +9,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice, ccCarrierPrefs } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 import { can } from '../../shared/permissions.js';
@@ -68,6 +68,37 @@ export function renderCarrier360(host, orgId) {
         F('Factoring', p.factoring_status === 'yes' ? ('Yes \u00b7 ' + (p.factoring_company || '?')) : p.factoring_status === 'interested' ? 'Wants a recommendation' : p.factoring_status === 'no' ? 'No \u2014 direct pay' : null),
       ]),
     ]);
+
+    // ---- Carrier dispatch preferences (what the carrier set in their own account) ----
+    const LB = (t) => el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#94a3b8;text-transform:uppercase' }, t);
+    const Fc = (l, arr) => el('div', null, [LB(l), chips(arr)]);
+    const prefsCard = card([el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences'), el('span', { class: 'cc-sub' }, 'what the carrier set in their account')]), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Loading\u2026')]);
+    (async () => {
+      let pr; try { pr = await ccCarrierPrefs(orgId); } catch (e) { mount(prefsCard, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, humanizeError(e))]); return; }
+      if (pr && pr.error) { mount(prefsCard, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, pr.error)]); return; }
+      if (!pr || pr.none) { mount(prefsCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences')]), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'The carrier has not set dispatch preferences yet.')]); return; }
+      const rpm = (v) => v != null ? ('$' + Number(v).toFixed(2) + '/mi') : null;
+      const yn = (v) => v ? 'Yes' : 'No';
+      mount(prefsCard, el('div', null, [
+        el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '\ud83c\udfaf Carrier dispatch preferences'),
+          el('span', { class: 'cc-pill cc-pill-' + (pr.available ? 'green' : 'amber') }, pr.available ? 'available for loads' : 'paused')]),
+        el('div', { class: 'cc-sub', style: 'margin:2px 0 8px' }, pr.updated_at ? 'set by the carrier \u00b7 ' + fmtDate(pr.updated_at) : 'set by the carrier'),
+        el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 18px' }, [
+          Fc('Preferred equipment', pr.preferred_equipment),
+          Fc('Preferred lanes', pr.preferred_lanes),
+          F('Home base', pr.home_base),
+          F('Min rate/mile', rpm(pr.min_rpm)), F('Target rate/mile', rpm(pr.target_rpm)),
+          F('Max deadhead', pr.max_deadhead_miles ? pr.max_deadhead_miles + ' mi' : null),
+          F('Trip length', (pr.min_trip_miles || pr.max_trip_miles) ? ((pr.min_trip_miles || '0') + '\u2013' + (pr.max_trip_miles || '\u221e') + ' mi') : null),
+          F('Max weight', pr.max_weight_lbs ? pr.max_weight_lbs + ' lbs' : null),
+          F('Hazmat', yn(pr.hazmat)), F('Team drivers', yn(pr.team_drivers)), F('Weekends', pr.weekend_ok ? 'Available' : 'No'),
+          F('Min notice', pr.min_notice_hours ? pr.min_notice_hours + ' h' : null),
+          Fc('Avoid states', pr.avoid_states),
+          F('Cost/mile', rpm(pr.cost_per_mile)),
+          F('Notes', pr.notes),
+        ]),
+      ]));
+    })();
 
     const jumpTo = (elGetter) => () => { try { const e2 = elGetter(); e2 && e2.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} };
     const clickable = (node, on) => { const w = el('div', { style: 'cursor:pointer', onClick: on }); w.appendChild(node); return w; };
@@ -1131,6 +1162,7 @@ export function renderCarrier360(host, orgId) {
     })();
     mount(body, el('div', null, [
       head, kpis,
+      el('div', { style: 'margin-top:16px' }, prefsCard),
       el('div', { style: 'margin-top:16px' }, compCard),
       el('div', { style: 'margin-top:16px' }, (() => {
         const xc = card([el('h4', { class: 'cc-card-title' }, 'Extra documents \u2014 outside the checklist')]);
