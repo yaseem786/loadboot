@@ -44,8 +44,9 @@ const NAV = [
     { path: '/partners', label: 'Partner directory', icon: 'users', perm: 'partners.view', flag: 'partners' },
     { path: '/broker-sla', label: 'Broker SLA', icon: 'trend', perm: 'partners.view', flag: 'partners' },
   ]},
-  { group: 'Agents', items: [
-    { path: '/agents', label: 'Agents & payouts', icon: 'user', perm: 'carriers.approve' },
+  { group: 'Dispatch team', items: [
+    { path: '/dispatchers', label: 'Dispatchers', icon: 'truck', perm: 'carriers.approve' },
+    { path: '/agents', label: 'Referral partners & payouts', icon: 'user', perm: 'carriers.approve' },
     { path: '/referrals', label: 'Referral Program', icon: 'users', perm: 'finance.view', flag: 'referral_program' },
   ]},
   { group: 'Loads & Board', items: [

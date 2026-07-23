@@ -158,7 +158,7 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div class="field"><label>Avoid states</label><input id="acx-avoid" placeholder="e.g. NY, CA" value="' + esc((dp.avoid_states || []).join(', ')) + '"></div>'
     +   '<div class="acx-sub">💰 Money & load limits</div>'
     +   '<div class="grid2"><div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Target rate ($/mi)</label><input id="acx-target" value="' + esc(dp.target_rpm || '') + '"></div>'
-    +   '<div class="field"><label>Max weight (lbs)</label><input id="acx-weight" value="' + esc(dp.max_weight_lbs || '') + '"></div><div class="field"><label>Min notice (hrs)</label><input id="acx-notice" value="' + esc(dp.min_notice_hours || '') + '"></div></div>'
+    +   '<div class="field"><label>Max weight capacity (lbs)</label><input id="acx-weight" type="number" placeholder="e.g. 12000" value="' + esc(dp.max_weight_lbs || '') + '"></div><div class="field"><label>Min notice (hrs)</label><input id="acx-notice" value="' + esc(dp.min_notice_hours || '') + '"></div></div>'
     +   '<div class="acx-sub">⚙ Operations</div>'
     +   '<div class="row"><div><div class="rt">Haul hazmat</div><div class="rs">Requires endorsement on file</div></div><div class="tg' + (dp.hazmat ? ' on' : '') + '" id="acx-haz"></div></div>'
     +   '<div class="row"><div><div class="rt">Team drivers</div><div class="rs">Two drivers, longer runs</div></div><div class="tg' + (dp.team_drivers ? ' on' : '') + '" id="acx-team"></div></div>'

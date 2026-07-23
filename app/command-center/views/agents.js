@@ -13,7 +13,7 @@ export function renderAgents(host) {
   const state = { q: '', st: 'all', rows: [] };
   const body = el('div');
   mount(host, el('div', { class: 'cc-view' }, [
-    sectionHead('Agents', 'The referral sales force — applications, chains, downlines, earnings, payouts and direct comms.'),
+    sectionHead('Referral Partners', 'The referral sales force — applications, chains, downlines, earnings, payouts and direct comms. (Salaried dispatchers are managed under Dispatchers.)'),
     body,
   ]));
   load();

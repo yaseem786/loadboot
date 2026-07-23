@@ -17,7 +17,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -297,7 +297,7 @@ function recoveryScreen() {
     catch (e) { err.textContent = (e && e.message) || 'Could not update password.'; btn.disabled = false; btn.textContent = 'Set new password'; }
   } }, 'Set new password');
   mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
-    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : 'Carrier')]),
+    h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Dispatcher' : 'Carrier')]),
     h('h1', null, 'Set a new password'),
     h('p', { class: 'cp-auth-sub' }, 'You followed a reset link — choose a new password for your account.'),
     p1, p2, err, btn,
@@ -326,7 +326,7 @@ function authScreen() {
   const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, window.__LB_AGENT ? 'Agency / company (optional)' : 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
   const err = h('div', { class: 'cp-err' });
   const title = h('h1', null, 'Welcome back');
-  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your AGENT dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
+  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : 'Sign in to your carrier portal.');
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
   const forgot = h('p', { class: 'cp-auth-toggle', style: 'margin-top:8px' },
@@ -341,14 +341,14 @@ function authScreen() {
   const setMode = (s) => {
     signup = s;
     const AG = !!window.__LB_AGENT;
-    title.textContent = s ? (AG ? 'Become a LoadBoot Agent' : 'Create your account') : 'Welcome back';
-    sub.textContent = s ? (AG ? 'Free agent account — your referral link is ready the moment you sign up. Bring a pair, earn 1% on every delivered load.' : 'Set up your carrier profile — it’s free.')
-                        : (AG ? 'Sign in to your AGENT dashboard — your link, your chain, your 1% on every delivered load.' : 'Sign in to your carrier portal.');
+    title.textContent = s ? (AG ? 'Apply as a LoadBoot Dispatcher' : 'Create your account') : 'Welcome back';
+    sub.textContent = s ? (AG ? 'Create your account, then apply to dispatch for US carriers — salaried, base + per-truck + performance.' : 'Set up your carrier profile — it’s free.')
+                        : (AG ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : 'Sign in to your carrier portal.');
     extra.style.display = s ? 'block' : 'none';
     btn.textContent = s ? 'Create account' : 'Sign in';
     err.textContent = ''; err.className = 'cp-err';
     mount(toggle, s ? [document.createTextNode('Already have an account? '), h('a', { onClick: () => setMode(false) }, 'Sign in')]
-      : [document.createTextNode(AG ? 'New agent? ' : 'New carrier? '), h('a', { onClick: () => setMode(true) }, AG ? 'Create your agent account' : 'Create an account')]);
+      : [document.createTextNode(AG ? 'New here? ' : 'New carrier? '), h('a', { onClick: () => setMode(true) }, AG ? 'Create your account' : 'Create an account')]);
   };
   btn.onclick = async () => {
     err.textContent = ''; err.className = 'cp-err';
@@ -386,23 +386,23 @@ function authScreen() {
     + '<circle cx="30" cy="37" r="15" fill="rgba(8,131,247,.15)" stroke="#0883F7" stroke-width="2.5"/><text x="30" y="42" font-size="13" text-anchor="middle">🏢</text>'
     + '<circle cx="150" cy="37" r="17" fill="rgba(252,83,5,.15)" stroke="#FC5305" stroke-width="2.5"/><text x="150" y="42" font-size="13" text-anchor="middle">⚡</text>'
     + '<circle cx="270" cy="37" r="15" fill="rgba(34,197,94,.12)" stroke="#16a34a" stroke-width="2.5"/><text x="270" y="42" font-size="13" text-anchor="middle">🚛</text>'
-    + '<text x="150" y="70" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">your broker · LoadBoot · your carrier — one chain</text></svg>'
-    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Bring the people.<br>The software does the work.<br><span style="color:#4ade80">You earn 1% — forever.</span></div>'
+    + '<text x="150" y="70" font-size="11" font-weight="700" fill="#64748B" text-anchor="middle" font-family="Manrope,sans-serif">your carrier · LoadBoot dispatcher · verified brokers</text></svg>'
+    + '<div style="margin-top:18px;font-size:25px;font-weight:800;color:#fff;line-height:1.22;letter-spacing:-.02em">Dispatch for US carriers.<br>The software does the ops.<br><span style="color:#4ade80">Earn a salary + bonus.</span></div>'
     + '<div class="cpx-mockstack">'
-    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🏢 Apex Logistics <span style="font-weight:600;color:#64748b;font-size:12px">— your broker</span></b><span class="cpx-mockchip green">joined ✓</span></div>'
-    +     '<div class="cpx-mockroute"><span class="d o"></span>posted: Dallas, TX → Atlanta, GA · $2,850</div></div>'
-    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🚛 Ironhide Freight <span style="font-weight:600;color:#64748b;font-size:12px">— your carrier</span></b><span class="cpx-mockchip green">booked ★</span></div>'
+    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">🚛 Ironhide Freight <span style="font-weight:600;color:#64748b;font-size:12px">— your carrier</span></b><span class="cpx-mockchip green">assigned ✓</span></div>'
+    +     '<div class="cpx-mockroute"><span class="d o"></span>booked: Dallas, TX → Atlanta, GA · $2,850</div></div>'
+    +   '<div class="cpx-mockcard"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">📦 6 trucks loaded <span style="font-weight:600;color:#64748b;font-size:12px">— on-time 98%</span></b><span class="cpx-mockchip green">booked ★</span></div>'
     +     '<div class="cpx-mockroute"><span class="d g"></span>delivered · GPS-verified POD</div></div>'
-    +   '<div class="cpx-mocktoast ok">💰 +$28.50 — your 1% landed automatically</div>'
+    +   '<div class="cpx-mocktoast ok">💰 salary + per-truck + performance bonus</div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap">'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Get your link</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">1</i>Create your account</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Bring a pair</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(8,131,247,.18);color:#3b9dff;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">2</i>Apply as a dispatcher</span>'
     +   '<span style="color:#3b4f75;font-weight:800">›</span>'
-    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:#34d399;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Earn 1% on every load</span>'
+    +   '<span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cdd7ea"><i style="width:20px;height:20px;border-radius:50%;background:rgba(52,211,153,.16);color:#34d399;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800">3</i>Get hired &amp; assigned</span>'
     + '</div>'
-    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">Recurring &nbsp;·&nbsp; No cap &nbsp;·&nbsp; Costs your clients nothing</div>'
+    + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">Salaried &nbsp;·&nbsp; per-truck &nbsp;·&nbsp; performance bonus &nbsp;·&nbsp; or refer &amp; earn 1%</div>'
     + '<div style="margin-top:20px;color:#94a3b8;font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>';
   const brandPanel = window.__LB_AGENT ? h('div', { class: 'cpx-auth-brand', html: AGENT_BRAND }) : h('div', { class: 'cpx-auth-brand', html:
     '<svg viewBox="0 0 300 90" style="width:100%;max-width:300px;overflow:visible" aria-hidden="true">'
@@ -531,8 +531,8 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['verify', isVerified ? 'Verification Center ✓' : 'Verification Center', 'shield'], ['post', 'Post a Load', 'loads'], ['carriers', 'Carriers', 'truck'], ['chain', 'My Chain', 'user'], ['loads', 'Chain Loads', 'loads'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['resources', 'Resources', 'docs'], ['settings', 'Settings', 'cog']];
-  let tab = (location.hash || '').replace('#', '') || (isVerified ? 'dashboard' : 'verify');
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'user'], ['chain', 'My Referrals', 'user'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['verify', 'Verification', 'shield'], ['settings', 'Settings', 'cog']];
+  let tab = (location.hash || '').replace('#', '') || 'dashboard';
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
   const content = h('div', { class: 'cp-content' });
@@ -544,7 +544,7 @@ async function agentPortal(user) {
   // Mobile bottom tab bar — same pattern as the carrier shell (.cp-tabbar shows <=900px,
   // sidebar hides). Without this the agent portal had NO navigation on phones.
   const tabLinks = {};
-  const MOBTABS = [['dashboard', 'Home', 'dash'], ['verify', 'Verify', 'shield'], ['post', 'Post', 'loads'], ['chain', 'Chain', 'user'], ['earnings', 'Earnings', 'finance']];
+  const MOBTABS = [['dashboard', 'Home', 'dash'], ['chain', 'Referrals', 'user'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['verify', 'Verify', 'shield']];
   const tabbar = h('nav', { class: 'cp-tabbar' }, MOBTABS.map(([id, label, ic]) => {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
     tabLinks[id] = a; return a;
@@ -577,37 +577,55 @@ async function agentPortal(user) {
     openPrintable('LoadBoot Agent Agreement — ' + nm9, 'AGENT AGREEMENT', [
       { rows: [['Agent (independent contractor)', nm9], ['Agent code', feed.code || ''], ['Company', 'LoadBoot — The Operating System for Trucking (loadboot.com)'], ['Effective date', dt9]] },
       { h: '1. Relationship', rows: [['', 'The Agent is an INDEPENDENT CONTRACTOR, not an employee, partner or franchisee of LoadBoot. The Agent is solely responsible for their own taxes (Form 1099 will be issued to US persons where required).']] },
-      { h: '2. Commission', rows: [['Rate', '1% of gross load value, level-1 (direct clients); overrides on recruited agents: L2 0.50%, L3 0.25%, L4 0.15%, L5 0.10%'], ['Trigger', 'GPS-verified DELIVERED loads only — a completed transaction is mandatory; nothing accrues on cancelled or disputed loads'], ['Activation', 'Chain pair required: one carrier + demand (referred broker/shipper or agent-posted load)'], ['Clearing', '15 days from accrual, then payable'], ['Payout', 'Monthly, minimum balance $100, to the verified payout account'], ['Funding', 'Commissions are paid from LoadBoot\u2019s own service fee — the Agent\u2019s clients never pay extra']] },
+      { h: '2. Commission', rows: [['Rate', '1% of gross load value, level-1 (direct clients); overrides on recruited agents: L2 0.50%, L3 0.25%, L4 0.15%, L5 0.10%'], ['Trigger', 'GPS-verified DELIVERED loads only — a completed transaction is mandatory; nothing accrues on cancelled or disputed loads'], ['Activation', 'No pairing requirement — you earn on every delivered load your referred clients move'], ['Clearing', '15 days from accrual, then payable'], ['Payout', 'Monthly, minimum balance $100, to the verified payout account'], ['Funding', 'Commissions are paid from LoadBoot\u2019s own service fee — the Agent\u2019s clients never pay extra']] },
       { h: '3. Conduct', rows: [['Anti-fraud', 'Self-referrals, fake companies, incentive-splitting or circumvention cause immediate termination and forfeiture of unpaid balances'], ['Non-circumvention', 'The Agent will not move chain clients off-platform'], ['Authority', 'The Agent has NO authority to bind LoadBoot and may describe themselves only as an independent LoadBoot agent'], ['Marketing', 'No spam (CAN-SPAM/TCPA); truthful claims only; brand guidelines apply'], ['Confidentiality', 'Chain data is confidential and may be used only for program activity'], ['Agent-posted loads', 'Every load the Agent posts must carry accurate SOURCE documentation (real paying party, their rate confirmation, billing contact) within the required timelines']] },
       { h: '4. Term', rows: [['Termination', 'Either side may terminate with 15-day notice; fraud terminates immediately'], ['Balance', 'On clean exit, the earned payable balance is paid out'], ['Policies', 'LoadBoot Terms of Service, Privacy Policy and Referral Program Terms are incorporated by reference']] },
       { h: 'Electronic signature', rows: [['Signed (typed full legal name)', nm9], ['Signed at', dt9], ['Method', 'E-signature captured in the LoadBoot Agent portal (equivalent to a handwritten signature under the U.S. E-SIGN Act)']] },
       { note: 'Generated by LoadBoot from the executed onboarding record. Full program details: loadboot.com/agents.html · Questions: hello@loadboot.com' },
     ]);
   };
-  const rulesModal9 = () => openModal('📖 Agent Program — rules & policies', [
-    h('div', { style: 'font-size:.88rem;line-height:1.75;color:#cbd5e1' }, [
-      h('b', { style: 'color:#fff' }, 'Chain activation (pair rule)'), h('br'),
-      '• Your chain goes ACTIVE only when you have BOTH sides: a CARRIER + demand (a broker/shipper you referred, OR loads you post yourself).', h('br'),
-      '• One side alone = PENDING: joins are recorded, your link keeps working, but no commissions accrue yet.', h('br'), h('br'),
-      h('b', { style: 'color:#fff' }, 'Earning (1% rule)'), h('br'),
-      '• 1% of gross ONLY on GPS-verified DELIVERED loads — a completed transaction is mandatory. Booked-but-not-delivered pays nothing.', h('br'),
-      '• Counts when ANY side of the transaction is yours: your broker\u2019s load delivered by any carrier ✓ · your carrier delivering any load ✓ · your own posted load delivered ✓.', h('br'),
-      '• 15-day clearing window, then payable · payouts monthly from $100 · paid from LoadBoot\u2019s own fee — your clients never pay extra.', h('br'), h('br'),
-      h('b', { style: 'color:#fff' }, 'Conduct'), h('br'),
-      '• No self-referrals, fake companies or circumvention — instant termination + forfeiture.', h('br'),
-      '• No spam (CAN-SPAM/TCPA) · truthful claims only · you are an independent agent, not a LoadBoot employee or broker.', h('br'), h('br'),
-      h('span', { class: 'cp-row-s' }, 'Full agreement: the one you e-signed in Get Verified · program page: loadboot.com/agents.html'),
-    ]),
-  ]);
+  const rulesModal9 = () => {
+    const P9 = (t9) => [document.createTextNode(t9), h('br')];
+    const H9 = (t9) => h('b', { style: 'color:#fff;display:block;margin:13px 0 3px' }, t9);
+    return openModal('\ud83d\udcd6 Referral Partner Program \u2014 Rules, Policies & Terms', [
+      h('div', { style: 'font-size:.86rem;line-height:1.7;color:#cbd5e1' }, [
+        H9('1. Eligibility & your referral link'),
+        ...P9('\u2022 Open to individuals 18+ who complete verification (identity, payout method and tax form). One account per person; duplicate or fake accounts are removed.'),
+        ...P9('\u2022 Anyone \u2014 a broker, shipper or carrier \u2014 who signs up through your link is tied to you permanently and automatically. There is NO pairing or \u201cactive chain\u201d requirement.'),
+        H9('2. How you earn (the 1% rule)'),
+        ...P9('\u2022 You earn 1% of the GROSS load value on GPS-verified DELIVERED loads only. A completed, delivered transaction is mandatory \u2014 booked-but-not-delivered, cancelled or disputed loads pay nothing.'),
+        ...P9('\u2022 A load counts whenever a client you referred is on it (broker, shipper or carrier).'),
+        ...P9('\u2022 Multi-level overrides on partners you recruit: Level 2 = 0.50%, Level 3 = 0.25%, Level 4 = 0.15%, Level 5 = 0.10%.'),
+        H9('3. Clearing & payouts'),
+        ...P9('\u2022 Commissions accrue on delivery, then pass a 15-day clearing window (protecting against reversals, claims and disputes) before becoming payable.'),
+        ...P9('\u2022 Payouts run monthly once your payable balance reaches $100, to your verified payout account. Your commission is paid out of LoadBoot\u2019s own service fee \u2014 your referred clients never pay anything extra.'),
+        H9('4. Taxes'),
+        ...P9('\u2022 You are an independent contractor and are solely responsible for your own taxes. A W-9 (US persons) or W-8BEN (non-US) is required before payout; a 1099 is issued to US persons where required.'),
+        H9('5. Your status \u2014 what you are NOT'),
+        ...P9('\u2022 You are an independent Referral Partner. You are NOT a LoadBoot employee, dispatcher, freight broker, or an agent with authority to bind LoadBoot.'),
+        ...P9('\u2022 You do NOT post or offer freight, negotiate rates, dispatch trucks, or handle any freight payment. You introduce people; LoadBoot\u2019s platform does the rest.'),
+        H9('6. Prohibited conduct'),
+        ...P9('\u2022 No self-referrals, fake or duplicate companies, or any circumvention or gaming of the program.'),
+        ...P9('\u2022 No spam or unlawful outreach (CAN-SPAM, TCPA and applicable privacy laws). Truthful claims only \u2014 never misrepresent LoadBoot, its fees, or your role.'),
+        ...P9('\u2022 Any fraud, misrepresentation or circumvention results in immediate termination, forfeiture of unpaid commissions, and possible legal action.'),
+        H9('7. Termination & forfeiture'),
+        ...P9('\u2022 Either you or LoadBoot may end your participation at any time. On termination for cause (fraud, abuse or circumvention), all unpaid and un-cleared commissions are forfeited.'),
+        ...P9('\u2022 Commissions already cleared and payable are paid on the normal schedule unless fraud is involved.'),
+        H9('8. Confidentiality & data'),
+        ...P9('\u2022 Handle any client or LoadBoot information lawfully and confidentially. Do not share, sell or misuse data. Comply with all applicable privacy laws.'),
+        H9('9. Changes to the program \u2014 subject to change without notice'),
+        ...P9('\u2022 LoadBoot may change, pause or discontinue the program, commission rates, clearing windows, payout thresholds, eligibility rules or these terms AT ANY TIME, with or without prior notice.'),
+        ...P9('\u2022 Commissions are not guaranteed and create no ownership, equity or vested right. Continued participation after any change means you accept the updated terms.'),
+        H9('10. Governing terms'),
+        ...P9('\u2022 These rules supplement the Referral Partner Agreement you e-sign. If they conflict, the signed agreement controls. Questions: hello@loadboot.com \u00b7 program page: loadboot.com/agents.html.'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:13px;opacity:.85' }, 'These terms are subject to change without notice.'),
+      ]),
+    ]);
+  };
   const banner9 = () => h('div', {
-    style: (feed.pair_active
-      ? 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#4ade80;font-weight:800'
-      : 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#fbbf24;font-weight:700')
-      + ';border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
+    style: 'background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#4ade80;font-weight:800;border-radius:12px;padding:11px 14px;cursor:pointer', onClick: rulesModal9,
   }, [
-    h('div', null, feed.pair_active
-      ? '✅ CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.'
-      : '⏳ CHAIN PENDING — bring the missing side of your pair (carrier + broker/shipper, or post a load yourself) to switch earnings on.'),
+    h('div', null, '✅ You earn 1% on every GPS-verified delivered load your referred clients move.'),
     h('div', { style: 'font-size:.72rem;font-weight:700;opacity:.75;margin-top:3px' }, [icon('docs',15),' Tap to read the program rules & policies']),
   ]);
   const inviteModal9 = () => {
@@ -668,9 +686,200 @@ async function agentPortal(user) {
         : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, [icon('loads',15),' POSTED']),
     ]));
   };
+  // ---- DISPATCHER HOME: detailed application → status → hired console. The portal is
+  //      100% dispatcher; referral/chain code remains in the file but is unwired. ----
+  async function renderDispatcherHome(host) {
+    mount(host, h('div', { class: 'cp-muted' }, 'Loading…'));
+    let d = null; try { d = await dispatcherMyStatus(); } catch (_) {}
+    const prof = d && d.profile;
+    const stMsg = {
+      applied: ['#94a3b8', '📝 Draft — finish and submit to apply'],
+      screening: ['#fbbf24', '⏳ In screening — the team is reviewing your application'],
+      skills_test: ['#fbbf24', '📝 Skills test — check your email / messages'],
+      trial: ['#fbbf24', '🚀 Paid working trial in progress'],
+      verified: ['#4ade80', '✅ Verified — you’ll be assigned a carrier soon'],
+      active: ['#4ade80', '✅ Active dispatcher'],
+      suspended: ['#f87171', '⏸ Suspended — contact the team'],
+      rejected: ['#f87171', '✕ Not approved at this time'],
+    };
+    const inp = (ph, type) => h('input', { class: 'cp-in', placeholder: ph, type: type || 'text' });
+    const sel = (opts) => h('select', { class: 'cp-in' }, opts.map(([v9, l9]) => h('option', { value: v9 }, l9)));
+    const checks = (arr) => { const map = {}; const box = h('div', { style: 'display:flex;gap:9px;flex-wrap:wrap;margin:4px 0 8px' }, arr.map((b9) => { const c9 = h('input', { type: 'checkbox' }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
+    // ---- premium / educational blocks (keep the dispatcher engaged) ----
+    const dHero = () => h('div', { style: 'border-radius:18px;padding:22px 22px;margin-bottom:14px;background:linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%);border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden' }, [
+      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#7cc0ff' }, 'LOADBOOT DISPATCH ACADEMY'),
+      h('div', { style: 'font-size:1.5rem;font-weight:900;color:#fff;margin:6px 0 4px;line-height:1.15' }, 'Your salaried dispatch career starts here'),
+      h('div', { class: 'cp-row-s', style: 'max-width:640px;line-height:1.6' }, 'Dispatch for US carriers on a real salary — base + per-truck + performance bonus. Learn the craft below while your application is reviewed.'),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [['💵 Salary + bonus'], ['🚚 Dedicated carrier'], ['🌍 Remote worldwide'], ['📈 Grows with your book']].map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(255,255,255,.07);color:#cbd5e1;font-weight:700' }, c9[0]))),
+    ]);
+    const stepPill = (n9, t9, s9, done9) => h('div', { style: 'flex:1;min-width:150px;border-radius:12px;padding:12px;border:1px solid ' + (done9 ? 'rgba(34,197,94,.4)' : 'rgba(148,163,184,.18)') + ';background:' + (done9 ? 'rgba(34,197,94,.07)' : 'rgba(255,255,255,.02)') }, [
+      h('div', { style: 'font-weight:900;color:' + (done9 ? '#4ade80' : '#7cc0ff') }, (done9 ? '✓ ' : n9 + '. ') + t9), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, s9)]);
+    const dSteps = (status) => { const order = ['screening', 'skills_test', 'trial', 'verified', 'active']; const idx = order.indexOf(status); return agCard('🧭 Your path to a salaried seat', [
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+        stepPill(1, 'Apply', 'Submit your detailed application + CV.', idx >= 0),
+        stepPill(2, 'Screening', 'We review experience, English and load-board skill.', idx >= 1),
+        stepPill(3, 'Skills test', 'A short test + mock broker call.', idx >= 2),
+        stepPill(4, 'Paid trial', 'Real loads, real coaching.', idx >= 3),
+        stepPill(5, 'Hired & assigned', 'Get your carrier + SOP — salary starts.', idx >= 4),
+      ])]); };
+    const dSalary = () => agCard('💵 Your salary package', [
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+        ['Base salary', 'A fixed monthly base that starts the day a carrier is assigned to you.'],
+        ['Per-active-truck', 'Extra for every truck you keep loaded — your pay grows as your book grows (5–8 → 10–15 trucks).'],
+        ['Performance bonus', 'Paid monthly on your KPIs: utilization, on-time, gross/truck, retention.'],
+      ].map((c9) => h('div', { style: 'flex:1;min-width:180px;border-radius:12px;padding:12px;background:rgba(8,131,247,.06);border:1px solid rgba(8,131,247,.2)' }, [
+        h('div', { style: 'font-weight:800;color:#7cc0ff' }, c9[0]), h('div', { class: 'cp-row-s', style: 'margin-top:3px;line-height:1.5' }, c9[1])]))),
+      h('div', { class: 'cp-row-s', style: 'margin-top:8px;opacity:.85' }, 'Exact figures for your tier are in your written offer and scale with your book and results.'),
+    ]);
+    const det = (ic9, t9, body9) => h('details', { style: 'border:1px solid rgba(255,255,255,.1);border-radius:11px;margin-top:8px;background:rgba(255,255,255,.03);overflow:hidden' }, [
+      h('summary', { style: 'cursor:pointer;padding:11px 13px;font-weight:800;font-size:.9rem;list-style:none;display:flex;gap:9px;align-items:center' }, [h('span', null, ic9), h('span', { style: 'flex:1' }, t9), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
+      h('div', { style: 'padding:0 13px 12px;color:#b9c6da;font-size:.85rem;line-height:1.75' }, body9)]);
+    const dAcademy = () => agCard('🎓 Dispatcher Academy — learn the craft', [
+      h('div', { class: 'cp-row-s', style: 'margin-bottom:4px' }, 'Tap each lesson. Knowing these cold is what separates a hired dispatcher from an applicant.'),
+      det('🔎', 'Load boards 101 (DAT & Truckstop)', 'You book on the CARRIER’s own DAT/Truckstop seat under their MC. Learn to filter by lane, equipment and rate-per-mile, spot ghost/duplicate postings, verify the broker’s MC and authority, and read a rate confirmation before you commit a truck.'),
+      det('⚖️', 'FMCSA & Hours-of-Service (HOS)', 'A driver has 11 driving / 14 on-duty hours and a 70-hour/8-day limit. Never book a load the driver legally can’t finish on time. Know the 30-minute break and the 34-hour reset — it protects the carrier and your on-time score.'),
+      det('💬', 'Rate negotiation', 'Know the carrier’s cost per mile and minimum. Anchor high, cite the lane’s market rate, bundle detention/TONU terms in writing, and never haul below cost. A confident, informed dispatcher wins better rates.'),
+      det('🗺️', 'US geography & lanes', 'Learn the strong outbound markets, backhaul-poor regions and produce seasons. Plan reloads off the drop point to cut deadhead — high utilization is the metric that pays you and the carrier.'),
+      det('🛡️', 'Compliance — you are the carrier’s agent', 'You dispatch as a bona fide agent (FMCSA 88 FR 39368): book under the carrier’s authority, source each load for one assigned carrier (no allocation), never touch freight money, never re-broker. This keeps you — and LoadBoot — legal.'),
+      det('📄', 'Paperwork that pays', 'Rate confirmation → BOL → POD. Capture detention and TONU with timestamps. Clean, on-time documents are how the carrier gets paid fast — and how you keep the account.'),
+    ]);
+    const dWhat = () => agCard('📋 What the job actually is', [h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, 'Hunt and book loads for your assigned carriers · negotiate rates to their minimum · keep every truck loaded with low deadhead · manage pickups, docs, HOS and detention · communicate daily with your carrier and the Command Center · hit your KPIs. One carrier at a time, booked under their authority.')]);
+
+    if (!prof || prof.status === 'applied') {
+      // ===== DETAILED APPLICATION (max hiring detail) =====
+      const p = (prof && prof) || {};
+      const f = {
+        full_name: inp('Full name'), phone: inp('WhatsApp / phone'), country: inp('Country'), city: inp('City'),
+        timezone: inp('Your timezone (e.g. PKT / GMT+5)'),
+        hours: sel([['', 'Hours available / week *'], ['20-30', '20–30'], ['30-40', '30–40'], ['40-50', '40–50'], ['50+', '50+']]),
+        us_overlap: h('input', { type: 'checkbox' }),
+        years: inp('Years of US dispatch experience', 'number'),
+        trucks: inp('Trucks you’ve managed (most at once)', 'number'),
+        english: sel([['', 'English level *'], ['fluent', 'Fluent'], ['professional', 'Professional'], ['conversational', 'Conversational'], ['basic', 'Basic']]),
+        negotiation: sel([['', 'Rate negotiation'], ['expert', 'Expert'], ['good', 'Good'], ['basic', 'Basic']]),
+        fmcsa: sel([['', 'FMCSA / HOS rules'], ['expert', 'Expert'], ['good', 'Good'], ['basic', 'Basic']]),
+        geography: sel([['', 'US geography / lanes'], ['expert', 'Expert'], ['good', 'Good'], ['basic', 'Basic']]),
+        tools: inp('Tools you know (TMS, ELD, etc.)'),
+        payout: sel([['', 'How to pay your salary *'], ['payoneer', 'Payoneer'], ['wise', 'Wise'], ['bank', 'Local bank'], ['other', 'Other']]),
+        refs: h('textarea', { class: 'cp-in', style: 'min-height:60px', placeholder: 'References — name + contact (one per line)' }),
+        note: h('textarea', { class: 'cp-in', style: 'min-height:80px', placeholder: 'Why should we hire you? Carriers/lanes you’ve run, brokers you know, results.' }),
+        linkedin: inp('LinkedIn or résumé link'),
+      };
+      const boards = checks(['DAT', 'Truckstop', 'Amazon Relay', 'Newtrul', '123Loadboard', 'Other']);
+      const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck']);
+      // ---- CV / résumé + optional ID document upload ----
+      const docState = { cv: null, cvName: null, idd: null, iddName: null };
+      const mkUpload = (type9, key9, nameKey9) => {
+        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:#94a3b8' }, 'PDF, DOC or image · up to 25 MB');
+        const inp9 = h('input', { type: 'file', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
+          const file9 = e9.target.files && e9.target.files[0]; if (!file9) return;
+          st9.style.color = '#94a3b8'; st9.textContent = 'Uploading…';
+          try { const m9 = await uploadDocument(file9, type9); docState[key9] = m9.path; docState[nameKey9] = m9.fileName; st9.style.color = '#4ade80'; st9.textContent = '✓ ' + m9.fileName; }
+          catch (e10) { st9.style.color = '#f87171'; st9.textContent = 'Upload failed — try again'; }
+        } });
+        return h('div', null, [inp9, st9]);
+      };
+      const cvUp = mkUpload('dispatcher_cv', 'cv', 'cvName');
+      const idUp = mkUpload('dispatcher_id', 'idd', 'iddName');
+      const msg = h('div', { class: 'cp-err' });
+      const grp = (label, node) => h('div', { style: 'margin-bottom:2px' }, [h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 2px' }, label), node]);
+      const fsec = (title, open, kids) => h('details', Object.assign({ style: 'border:1px solid rgba(130,165,225,.16);border-radius:13px;margin-top:10px;background:rgba(255,255,255,.02);overflow:hidden' }, open ? { open: '' } : {}), [
+        h('summary', { style: 'cursor:pointer;padding:13px 15px;font-weight:800;font-size:.95rem;color:#fff;list-style:none;display:flex;align-items:center;gap:9px' }, [h('span', { style: 'flex:1' }, title), h('span', { style: 'color:#7f92b3;font-weight:900' }, '▾')]),
+        h('div', { style: 'padding:2px 15px 15px' }, kids)]);
+      const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
+        const b9 = ev.currentTarget;
+        if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, payout.'; return; }
+        if (!docState.cv) { msg.textContent = 'Please upload your CV / résumé before submitting.'; return; }
+        b9.disabled = true; b9.textContent = 'Submitting…';
+        const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
+        const refs = f.refs.value.split('\n').map((x9) => x9.trim()).filter(Boolean);
+        const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.values(), skills: skills, refs: refs };
+        const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
+        if (r && r.error) { msg.textContent = r.error; b9.disabled = false; b9.textContent = 'Submit application'; return; }
+        go('dashboard');
+      } }, 'Submit application');
+      mount(host, h('div', null, [
+        dHero(),
+        agCard('🧑‍✈️ Apply to become a LoadBoot Dispatcher', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:4px' }, 'This is a SALARIED role dispatching for assigned US carriers — base + per-active-truck + performance bonus, starting when a carrier is assigned. Strict screening (skills test + paid trial) before hiring. Fill each section below.'),
+          fsec('1 · About you', true, [
+            grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
+            grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
+            h('label', { style: 'display:flex;gap:6px;align-items:center;font-size:.85rem;color:#cbd5e1;margin:6px 0' }, [f.us_overlap, 'I can overlap with US business hours']),
+          ]),
+          fsec('2 · Experience & skills', false, [
+            grp('Years of US dispatch experience', f.years), grp('Most trucks managed at once', f.trucks),
+            grp('Load boards you can operate', boards.box),
+            grp('Equipment you know', equip.box),
+            grp('English level *', f.english),
+            grp('Rate negotiation', f.negotiation), grp('FMCSA / HOS knowledge', f.fmcsa), grp('US geography / lanes', f.geography),
+            grp('Tools you know', f.tools),
+          ]),
+          fsec('3 · References, pay & documents', false, [
+            grp('References', f.refs),
+            grp('How should we pay your salary? *', f.payout),
+            grp('Why should we hire you?', f.note),
+            grp('LinkedIn / résumé link', f.linkedin),
+            grp('Upload your CV / résumé *', cvUp),
+            grp('Government ID (optional — speeds up hiring)', idUp),
+          ]),
+          msg, submit,
+        ]),
+        dSteps(null),
+        dSalary(),
+        dWhat(),
+        dAcademy(),
+      ]));
+      return;
+    }
+
+    // ===== STATUS + HIRED CONSOLE =====
+    const st9 = stMsg[prof.status] || stMsg.applied;
+    const cards = [agCard('🧑‍✈️ Your dispatcher status', [
+      h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1])]),
+      prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
+      prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : '',
+    ])];
+    const asg = (d.assignments || []).filter((a9) => a9.status !== 'ended');
+    if (asg.length) {
+      cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
+        const s9 = a9.sop || {};
+        return h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:#fff' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:#4ade80' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
+          h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, [
+            s9.scope_value ? h('div', { style: 'color:#7cc0ff' }, '⚖️ Your scope: ' + s9.scope_value + ' — only source loads that fit this scope.') : '',
+            s9.lanes ? h('div', null, 'Lanes: ' + s9.lanes) : '',
+            s9.min_rate ? h('div', null, 'Min rate/mile: ' + s9.min_rate) : '',
+            s9.equipment ? h('div', null, 'Equipment: ' + s9.equipment) : '',
+            s9.home_time ? h('div', null, 'Home-time: ' + s9.home_time) : '',
+            s9.rules ? h('div', null, 'Rules: ' + s9.rules) : '',
+            !s9.lanes && !s9.rules && !s9.scope_value ? h('div', { class: 'cp-muted' }, 'SOP will appear here once the Command Center sets it.') : '',
+          ]),
+        ]);
+      })));
+      if (d.salary) cards.push(agCard('💵 Latest salary', [h('div', { class: 'cp-row-s' }, (d.salary.currency || 'PKR') + ' ' + Number(d.salary.total || 0).toLocaleString() + ' · ' + (d.salary.active_trucks || 0) + ' trucks · ' + d.salary.status)]));
+    } else if (prof.status === 'active' || prof.status === 'verified') {
+      cards.push(agCard('🚚 Assigned carriers', [h('div', { class: 'cp-muted' }, 'No carrier assigned yet — you’ll be notified the moment the Command Center assigns one.')]));
+    }
+    cards.push(agCard('⚖️ Compliance rules — never break these', [h('div', { class: 'cp-row-s', style: 'line-height:1.9' }, [
+      h('div', null, '✓ Book every load under the CARRIER’s own authority (rate con names the carrier, not you or LoadBoot).'),
+      h('div', null, '✓ Source loads only within your assigned SCOPE for each carrier — never take a load two of your carriers could both haul.'),
+      h('div', null, '✓ Go through a broker for freight — never solicit shippers directly.'),
+      h('div', null, '✕ Never touch or route freight money — the broker pays the carrier/factor; LoadBoot bills its fee to the carrier.'),
+      h('div', null, '✕ Never re-broker or re-assign a booked load to another carrier.'),
+      h('div', null, '✕ Never accept a load first and then hunt for a truck.'),
+      h('div', { class: 'cp-muted', style: 'margin-top:4px' }, 'These keep you a bona fide agent of the carrier (FMCSA 88 FR 39368), not an unlicensed broker. Questions: hello@loadboot.com'),
+    ])]));
+    if (['screening', 'skills_test', 'trial', 'verified'].includes(prof.status)) cards.splice(1, 0, dSteps(prof.status));
+    cards.push(dAcademy());
+    mount(host, h('div', null, cards));
+  }
+
   async function render() {
     const k = feed.kpis || {}; const tt = feed.totals || {};
     if (tab === 'dashboard') {
+      await renderDispatcherHome(content);
+    } else if (tab === 'referral') {
       const notices = (Array.isArray(feed.notices) ? feed.notices : []).slice(0, 8);
       // ---- verification status card — front and centre until fully approved ----
       const obDone = {
@@ -682,7 +891,7 @@ async function agentPortal(user) {
       const obCount = Object.values(obDone).filter(Boolean).length;
       const obStep = (lbl9, ok9) => h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:' + (ok9 ? '#4ade80' : '#94a3b8') }, (ok9 ? '✓ ' : '○ ') + lbl9);
       const verifyCard =
-        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, [icon('shield',15),' Verified agent — payouts unlocked.'])
+        obStatus === 'approved' ? h('div', { style: 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80;margin-bottom:12px' }, [icon('shield',15),' Verified partner — payouts unlocked.'])
         : obStatus === 'under_review' ? h('div', { style: 'background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.4);border-radius:14px;padding:14px 16px;margin-bottom:12px' }, [
             h('div', { style: 'font-weight:800;color:#7cc0ff' }, '⏳ Verification UNDER REVIEW'),
             h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, 'LoadBoot dispatch is reviewing your application — usually under 24 hours. Your link works; earnings switch on at approval.')])
@@ -724,8 +933,8 @@ async function agentPortal(user) {
             return h('div', null, [
               det9('🔗', 'STEP 1 — Share your link (client becomes YOURS, permanently)',
                 'Your link (loadboot.com/?ref=' + (feed.code || 'YOURCODE') + ') is your ownership record. The moment a broker, shipper or carrier signs up through it, the system ties them to you FOREVER — no paperwork, no claims later. They cannot be "taken" by another agent, and it costs them nothing.'),
-              det9('🤝', 'STEP 2 — Complete the PAIR → chain goes ACTIVE',
-                'A marketplace needs both sides. Your chain activates when you have: a CARRIER + demand. Demand = a broker/shipper you referred, OR a load you post yourself from Post a Load. Until then your status shows PENDING — joins still count, they just wait for the switch to flip.'),
+              det9('🤝', 'STEP 2 — Your clients start moving freight',
+                'As soon as a client you referred moves freight on LoadBoot, you’re earning — carrier, broker or shipper, any side you brought counts. No pairing to complete, no switch to flip.'),
               det9('🚚', 'STEP 3 — A load DELIVERS → commission is born',
                 'Only a COMPLETED transaction pays: GPS-verified delivery with POD. Booked-but-cancelled = $0. It counts when ANY side is yours — your broker\u2019s load delivered by any carrier ✓, your carrier delivering anyone\u2019s load ✓, your own posted load ✓. The instant delivery is verified, your 1% is calculated on the GROSS load value and appears in Earnings with an in-app alert + email.'),
               det9('⏳', 'STEP 4 — 15-day clearing (why the wait?)',
@@ -797,7 +1006,7 @@ async function agentPortal(user) {
       const d = W.d;
       const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:#e6edf8' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
       if (obStatus === 'under_review') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('⏳ UNDER REVIEW', 'LoadBoot dispatch is reviewing your application — usually under 24 hours. You will get an in-app + email decision. Your link works meanwhile; earnings switch on at approval.', 'warn'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
-      if (obStatus === 'approved') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✅ VERIFIED AGENT', 'Your chain earns on every delivered load.', 'ok'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
+      if (obStatus === 'approved') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✅ VERIFIED', 'You earn 1% on every delivered load your referred clients move.', 'ok'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
       if (obStatus === 'rejected') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')]), threadCard9()])); return; }
       const fld = (lbl9, key9, ph9, type9) => { const i9 = h('input', { class: 'cp-in', type: type9 || 'text', placeholder: ph9 || '' }); i9.value = d[key9] || ''; i9.oninput = () => { d[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
       const steps9 = ['Identity', 'Your network', 'Payout & agreement'];
@@ -951,60 +1160,20 @@ async function agentPortal(user) {
         h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [backB, nextB].filter(Boolean)),
       ].filter(Boolean)), trackerCard9(), threadCard9()]));
     } else if (tab === 'post') {
-      if (isVerified && feed.own_broker_org) {
-        const tgt9 = (function(){ try { return window.__lbAgentPostCarrier || null; } catch(_) { return null; } })();
-        const pf9 = { equipment: 'Dry Van', pumode: 'appt', demode: 'appt' };
-        const inp9 = (key, ph, ty) => h('input', { class: 'cp-input', type: ty || 'text', placeholder: ph || '', style: 'width:100%', onInput: (e) => { pf9[key] = e.currentTarget.value; } });
-        const fld9 = (lbl, node) => h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, lbl), node]);
-        const sel9 = (key, opts) => h('select', { class: 'cp-input', style: 'width:100%', onChange: (e) => { pf9[key] = e.currentTarget.value; } }, opts.map(([v, l]) => h('option', { value: v }, l)));
-        const eqSel9 = sel9('equipment', [['Dry Van','Dry Van'],['Reefer','Reefer'],['Flatbed','Flatbed'],['Step Deck','Step Deck'],['Power Only','Power Only'],['Box Truck','Box Truck'],['Hotshot','Hotshot'],['Container (Drayage)','Container (Drayage)']]);
-        const schedRow9 = (who) => h('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px' }, [
-          sel9(who + 'mode', [['appt', 'Appointment'], ['fcfs', 'FCFS window']]),
-          inp9(who + 'date', '', 'date'),
-          inp9(who + 'time', '', 'time'),
-        ]);
-        const msg9 = h('div', { class: 'cp-row-s', style: 'margin-top:8px' });
-        const submit9 = h('button', { class: 'cp-btn', style: 'margin-top:14px', onClick: async (ev) => { const b = ev.currentTarget;
-          if (!(pf9.origin && pf9.destination)) { msg9.style.color = '#f87171'; msg9.textContent = 'Origin and destination are required.'; return; }
-          if (!pf9.pudate) { msg9.style.color = '#f87171'; msg9.textContent = 'Pickup date is required (the driver needs a schedule).'; return; }
-          b.disabled = true; b.textContent = 'Posting…';
-          try {
-            const note9 = [pf9.notes || '', pf9.reference ? ('Ref: ' + pf9.reference) : ''].filter(Boolean).join(' · ');
-            const r9 = await partnerPostLoad({ origin: pf9.origin, destination: pf9.destination, equipment: pf9.equipment, rate: pf9.rate ? Number(pf9.rate) : null, weight: pf9.weight ? Number(pf9.weight) : null, commodity: pf9.commodity || null, pickup: pf9.pudate || null, notes: note9 || null, idempotencyKey: 'agpost:' + Date.now() });
-            const lid9 = r9 && (r9.id || r9.load_id || (r9.load && r9.load.id));
-            if (lid9 && pf9.pudate) { try { await partnerUpdatePickup(lid9, pf9.pudate, pf9.putime || null, pf9.dedate || null, pf9.detime || null, pf9.pumode, pf9.demode, false); } catch (_) {} }
-            if (tgt9 && lid9) { try { await offerSend(lid9, [tgt9.id], pf9.rate ? Number(pf9.rate) : null, 60); } catch (_) {} }
-            try { window.__lbAgentPostCarrier = null; } catch (_) {}
-            lbToast('Load posted' + (tgt9 ? (' — direct offer sent to ' + tgt9.name) : '') + '. Pickup/delivery scheduling saved. Track it in Chain Loads.', 'success', '📦 Posted');
-            go('loads');
-          } catch (e9) { b.disabled = false; b.textContent = 'Post load'; msg9.style.color = '#f87171'; msg9.textContent = (e9 && e9.message) || 'Post failed — try again.'; }
-        } }, 'Post load');
-        mount(content, h('div', null, [
-          tgt9 ? h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;background:rgba(8,131,247,.1);border:1px solid rgba(8,131,247,.35);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' Direct offer to: ' + tgt9.name + ' — first to accept wins.']) : null,
-          h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.3);border-radius:11px;padding:9px 12px;font-weight:700' }, [icon('loads',15),' Post a load — collected to industry standard (equipment, weight, commodity, scheduling, refs). Carries your LOAD SOURCE; reviewed by dispatch. On delivery, your 1% lands.']),
-          h('div', { class: 'cp-card' }, [
-            h('div', { class: 'cp-row-t', style: 'font-size:1.05rem;margin-bottom:12px' }, [icon('loads',15),' Post a load']),
-            h('div', { class: 'cp-wiz-grid' }, [
-              fld9('Origin (city, ST) *', inp9('origin', 'Dallas, TX')),
-              fld9('Destination (city, ST) *', inp9('destination', 'Atlanta, GA')),
-              fld9('Equipment', eqSel9),
-              fld9('Rate ($ all-in)', inp9('rate', '2850', 'number')),
-              fld9('Weight (lbs)', inp9('weight', '42000', 'number')),
-              fld9('Commodity', inp9('commodity', 'General freight')),
-              h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Pickup — mode · date · time'), schedRow9('pu')]),
-              h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Delivery — mode · date · time'), schedRow9('de')]),
-              fld9('Reference # (optional)', inp9('reference', 'PO / shipment #')),
-              fld9('Special instructions for the carrier', inp9('notes', 'Lumper, driver-assist, pallet exchange, etc.')),
-            ]),
-            submit9, msg9,
+      mount(content, h('div', null, [
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('user',15),' Bring demand the compliant way \u2014 refer a broker or shipper.']),
+        agCard('\ud83d\udcc8 How agents bring demand (and earn 1%)', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, 'As a LoadBoot agent you earn 1% of gross on every delivered load your chain touches \u2014 plus overrides on agents you recruit. But agents do NOT post or offer freight themselves: posting/offering freight to carriers is licensed-broker activity (FMCSA broker authority + a $75,000 bond), and doing it without a license carries penalties.'),
+          h('div', { class: 'cp-row-t', style: 'margin-top:12px' }, 'The compliant way to bring demand:'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.85;margin-top:4px' }, [icon('check',14),' Refer a freight BROKER or SHIPPER with your link \u2014 they post their OWN loads on LoadBoot (they are the licensed broker / freight owner).']),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, [icon('check',14),' Every delivered load your chain touches pays you 1% automatically \u2014 recurring, uncapped, plus downline overrides.']),
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:14px' }, [
+            h('button', { class: 'cp-btn', onClick: () => go('chain') }, [icon('user',15),' Refer a broker or shipper \u2192']),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('earnings') }, 'View earnings'),
           ]),
-        ].filter(Boolean)));
-      } else {
-        mount(content, agCard('📦 Post a load', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application (Get Verified tab), you get your own posting workspace — the same wizard brokers use, with direct-carrier targeting for your referred carriers. A load you post counts as the DEMAND side of your pair.']),
-          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified →']),
-        ]));
-      }
+          h('div', { class: 'cp-row-s', style: 'margin-top:14px;color:#8ea2c3;line-height:1.75' }, 'Want to actively dispatch for a specific carrier (managed dispatch)? That is a separate Dedicated Dispatcher role \u2014 you work for ONE carrier and find loads FOR them (never offering freight to the open market). Contact LoadBoot to set it up.'),
+        ]),
+      ]));
     } else if (tab === 'carriers') {
       if (isVerified && feed.own_broker_org) {
         
@@ -1066,15 +1235,14 @@ async function agentPortal(user) {
         const statusStrip9 = (c) => { const authOk = String(c.authority || '').toLowerCase() === 'active'; const dotEl = (ok, txt, warnTxt) => h('span', { style: 'display:inline-flex;align-items:center;gap:5px;font-weight:700;color:' + (ok ? '#166534' : '#92400e') }, [ h('span', { style: 'width:8px;height:8px;border-radius:99px;background:' + (ok ? '#22c55e' : '#f59e0b') }), ok ? txt : warnTxt ]); return h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:.74rem;color:#475569;background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:7px 11px;margin:7px 0 2px' }, [ dotClean9(c) ? h('span', { style: 'font-weight:700' }, 'DOT ' + dotClean9(c)) : null, mcClean9(c) ? h('span', { style: 'font-weight:700' }, 'MC ' + mcClean9(c)) : null, c.authority ? dotEl(authOk, 'Authority ACTIVE', 'Authority ' + String(c.authority).toUpperCase()) : null, insured9(c) ? dotEl(true, '🛡 Insured ✓') : null ].filter(Boolean)); };
         const capacityLine9 = (c) => { const kids = fleetChips9(c).slice(0, 3); if (c.hazmat) kids.push(chip9('☢', 'amber')); if (c.team_drivers) kids.push(chip9('👥', 'green')); return kids; };
         const clamp9 = (arr, n) => arr.length > n ? arr.slice(0, n).concat(h('span', { class: 'cn-chip more' }, '+' + (arr.length - n) + ' more')) : arr;
-        const postTo9 = (c) => { try { window.__lbAgentPostCarrier = { id: c.id, name: c.name }; } catch (_) {} lbToast('Opening Post a Load — direct offer to ' + (c.name || 'this carrier') + '.', 'success', '🎯 Post to carrier'); go('post'); };
         const openReviews9 = async (c) => { const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading reviews…')); openModal('⭐ ' + (c.name || 'Carrier') + ' — trip-verified reviews', [bodyEl]); let rows; try { rows = (await partnerCarrierReviews(c.id)) || []; } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load reviews.')); return; } const avg = c.stars || (rows.length ? (rows.reduce((a, r) => a + (r.stars || 0), 0) / rows.length) : 0); const dist = [5,4,3,2,1].map(n => ({ n, c: rows.filter(r => Math.round(r.stars) === n).length })); mount(bodyEl, h('div', null, [ h('div', { style: 'display:flex;gap:18px;align-items:center;margin-bottom:12px;flex-wrap:wrap' }, [ h('div', { style: 'text-align:center' }, [ h('div', { style: 'font-size:2.2rem;font-weight:800;color:#10223B;line-height:1' }, rows.length ? Number(avg).toFixed(1) : '—'), h('div', { style: 'color:#f59e0b;letter-spacing:2px' }, starsTxt9(avg)), h('div', { class: 'cp-muted' }, rows.length + ' review' + (rows.length === 1 ? '' : 's')) ]), h('div', { style: 'flex:1;min-width:220px' }, dist.map(d => h('div', { class: 'cn-dist' }, [ h('span', { style: 'width:22px;font-weight:700' }, d.n + '★'), h('div', { class: 'bar' }, h('i', { style: 'width:' + (rows.length ? Math.round(100 * d.c / rows.length) : 0) + '%' })), h('span', { style: 'width:18px;text-align:right' }, String(d.c)) ]))) ]), h('div', { style: 'background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#1e40af;margin-bottom:12px' }, '🔒 Every review is trip-verified — only a broker who completed a booking with this carrier can rate it.'), rows.length ? h('div', null, rows.map(r => h('div', { style: 'border:1px solid #eef2f7;border-radius:14px;padding:12px 14px;margin-bottom:9px' }, [ h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap' }, [ h('span', { style: 'color:#f59e0b;letter-spacing:1.5px;font-weight:700' }, starsTxt9(r.stars)), h('span', { class: 'cp-muted' }, r.date || '') ]), r.comment ? h('div', { style: 'margin:6px 0 4px;color:#334155;font-size:.88rem;line-height:1.55' }, '“' + r.comment + '”') : null ].filter(Boolean)))) : h('div', { style: 'text-align:center;padding:26px;color:#64748b' }, [ h('div', { style: 'font-size:34px' }, '✨'), h('div', { style: 'font-weight:700;color:#10223B;margin:6px 0 3px' }, 'New carrier on LoadBoot'), h('div', { class: 'cp-muted' }, 'Ratings appear after brokers finish loads with them — trip-verified.') ]) ])); };
         const openFmcsa9 = (c) => { const host = h('div', { style: 'width:100%' }, h('div', { class: 'cp-muted' }, 'Loading live FMCSA profile…')); openModal('🛡 ' + (c.name || 'Carrier') + ' — live FMCSA profile', [host]); import('./profile-view.js').then((m) => { try { m.renderFmcsaOnly(host, String(c.dot).replace(/\D/g, ''), { light: true }); } catch (e) { mount(host, h('div', { class: 'cp-err' }, 'Could not load FMCSA data.')); } }).catch(() => mount(host, h('div', { class: 'cp-err' }, 'Could not load FMCSA data.'))); };
-        const openProfile9 = (c) => { openModal('Carrier profile', [h('div', null, [ h('div', { style: 'display:flex;gap:14px;align-items:center;margin-bottom:4px' }, [ avaEl9(c, true), h('div', { style: 'min-width:0' }, [ h('div', { style: 'font-weight:800;font-size:1.15rem;color:#10223B' }, c.name || 'Carrier'), h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:5px' }, [ pill9('✓ LOADBOOT VERIFIED', '#dcfce7', '#166534'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', '#ede9fe', '#6d28d9') : null, c.out_of_service ? pill9('⛔ OUT OF SERVICE', '#fee2e2', '#991b1b') : null, c.available === false ? pill9('⏸ NOT ACCEPTING LOADS', '#fef3c7', '#92400e') : null, pill9('MEMBER SINCE ' + String(c.member_since || '—').toUpperCase(), '#f1f5f9', '#334155') ].filter(Boolean)) ]) ]), rateLine9(c), kpiBand9(c), sec9('FMCSA · authority', fmcsaChips9(c)), sec9('Fleet — what they run', fleetChips9(c)), sec9('Coverage', covChips9(c)), (c.compliance || []).length ? sec9('Compliance on file', c.compliance.map(x => chip9('✓ ' + x, 'green'))) : null, sec9('Capabilities', capChips9(c)), h('div', { style: 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap' }, [ h('button', { class: 'cn-ghost', onClick: () => openReviews9(c) }, '⭐ Reviews'), c.dot ? h('button', { class: 'cn-ghost', onClick: () => openFmcsa9(c) }, '🛡 Live FMCSA profile') : null, h('button', { class: 'cn-cta', onClick: () => postTo9(c) }, '🎯 Post a load to this carrier') ].filter(Boolean)) ].filter(Boolean))]); };
+        const openProfile9 = (c) => { openModal('Carrier profile', [h('div', null, [ h('div', { style: 'display:flex;gap:14px;align-items:center;margin-bottom:4px' }, [ avaEl9(c, true), h('div', { style: 'min-width:0' }, [ h('div', { style: 'font-weight:800;font-size:1.15rem;color:#10223B' }, c.name || 'Carrier'), h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:5px' }, [ pill9('✓ LOADBOOT VERIFIED', '#dcfce7', '#166534'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', '#ede9fe', '#6d28d9') : null, c.out_of_service ? pill9('⛔ OUT OF SERVICE', '#fee2e2', '#991b1b') : null, c.available === false ? pill9('⏸ NOT ACCEPTING LOADS', '#fef3c7', '#92400e') : null, pill9('MEMBER SINCE ' + String(c.member_since || '—').toUpperCase(), '#f1f5f9', '#334155') ].filter(Boolean)) ]) ]), rateLine9(c), kpiBand9(c), sec9('FMCSA · authority', fmcsaChips9(c)), sec9('Fleet — what they run', fleetChips9(c)), sec9('Coverage', covChips9(c)), (c.compliance || []).length ? sec9('Compliance on file', c.compliance.map(x => chip9('✓ ' + x, 'green'))) : null, sec9('Capabilities', capChips9(c)), h('div', { style: 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap' }, [ h('button', { class: 'cn-ghost', onClick: () => openReviews9(c) }, '⭐ Reviews'), c.dot ? h('button', { class: 'cn-ghost', onClick: () => openFmcsa9(c) }, '🛡 Live FMCSA profile') : null ].filter(Boolean)) ].filter(Boolean))]); };
         const post9 = (c) => h('div', { class: 'cn-card' }, [
           h('div', { class: 'cn-top' }, [h('div', { class: 'cn-idrow' }, [ h('span', { class: 'cn-since' }, 'MEMBER SINCE ' + String(c.member_since || '—').toUpperCase()), h('div', { style: 'display:flex;gap:6px;position:relative;z-index:1' }, [ pill9('✓ VERIFIED', 'rgba(34,197,94,.18)', '#4ade80'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', 'rgba(139,92,246,.2)', '#c4b5fd') : null, c.out_of_service ? pill9('⛔ OOS', 'rgba(239,68,68,.2)', '#fca5a5') : null ].filter(Boolean)) ])]),
           avaEl9(c),
           h('div', { class: 'cn-body' }, [ h('div', { class: 'cn-name', title: c.name || '' }, c.name || 'Carrier'), rateLine9(c), kpiBand9(c), statusStrip9(c), sec9('Capacity', clamp9(capacityLine9(c), 5)), sec9('Coverage', clamp9(covChips9(c), 2)), h('div', { style: 'flex:1' }) ].filter(Boolean)),
-          h('div', { class: 'cn-foot' }, [ h('button', { class: 'cn-ghost', onClick: () => openProfile9(c) }, 'View full profile'), h('button', { class: 'cn-cta', onClick: () => postTo9(c) }, '🎯 Post a load to this carrier') ]),
+          h('div', { class: 'cn-foot' }, [ h('button', { class: 'cn-ghost', style: 'flex:1', onClick: () => openProfile9(c) }, 'View full profile') ]),
         ]);
         const banner9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' The LoadBoot Carrier Network — search FMCSA-verified carriers, then 🎯 Post a load to any carrier. When it DELIVERS, your 1% lands automatically.']);
         const search9 = h('input', { class: 'cp-input', placeholder: 'Search by name, DOT, MC, equipment, lane or home base…', style: 'width:100%;margin-bottom:12px' });
@@ -1092,7 +1260,7 @@ async function agentPortal(user) {
         })();
       } else {
         mount(content, agCard('\ud83d\ude9a Carrier Network', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your agent application, you can browse the verified carrier network and post loads directly to carriers \u2014 the same tools brokers use.']),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your referral application, your commissions start clearing and paying out to your verified account.']),
           h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified \u2192']),
         ]));
       }
@@ -1289,7 +1457,7 @@ async function agentPortal(user) {
       mount(content, h('div', null, [
         linkCard(),
         agCard('📚 How the program works', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '1% of gross on every GPS-verified DELIVERED load your chain touches · pair (broker + carrier) activates earnings · 15-day clearing window · monthly payouts from $100 · your cut comes out of LoadBoot’s own fee — your clients never pay extra · full program details: loadboot.com/agents.html'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '1% of gross on every GPS-verified DELIVERED load your referred clients move · 15-day clearing window · monthly payouts from $100 · your cut comes out of LoadBoot’s own fee — your clients never pay extra · full program details: loadboot.com/agents.html'),
         ]),
       ]));
     } else if (tab === 'settings') {
@@ -1331,6 +1499,97 @@ async function agentPortal(user) {
           h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Program or account questions: hello@loadboot.com — or message the review team any time from the Verification Center thread. Full program details: loadboot.com/agents.html'),
         ]),
       ]));
+    } else if (tab === 'dispatch') {
+      // ---- Salaried Dispatcher console: apply → status → assigned carriers + SOP ----
+      const host = h('div');
+      mount(content, host);
+      mount(host, h('div', { class: 'cp-muted' }, 'Loading…'));
+      (async () => {
+        let d = null; try { d = await dispatcherMyStatus(); } catch (_) {}
+        const prof = d && d.profile;
+        const stMsg = {
+          applied: ['#94a3b8', '📝 Draft — submit to start screening'],
+          screening: ['#fbbf24', '⏳ In screening — we’re reviewing your application'],
+          skills_test: ['#fbbf24', '📝 Skills test — check your email / messages'],
+          trial: ['#fbbf24', '🚀 Paid working trial in progress'],
+          verified: ['#4ade80', '✅ Verified — you’ll be assigned a carrier soon'],
+          active: ['#4ade80', '✅ Active dispatcher'],
+          suspended: ['#f87171', '⏸ Suspended — contact the team'],
+          rejected: ['#f87171', '✕ Not approved at this time'],
+        };
+        if (!prof) {
+          // Application form
+          const f = {
+            full_name: h('input', { class: 'cp-in', placeholder: 'Full name', value: feed.name || '' }),
+            phone: h('input', { class: 'cp-in', placeholder: 'WhatsApp / phone' }),
+            country: h('input', { class: 'cp-in', placeholder: 'Country' }),
+            city: h('input', { class: 'cp-in', placeholder: 'City' }),
+            english: h('select', { class: 'cp-in' }, [['', 'English level *'], ['fluent', 'Fluent'], ['professional', 'Professional'], ['conversational', 'Conversational'], ['basic', 'Basic']].map(([v9, l9]) => h('option', { value: v9 }, l9))),
+            years: h('input', { class: 'cp-in', type: 'number', placeholder: 'Years of US dispatch experience' }),
+          };
+          const boards = ['DAT', 'Truckstop', 'Amazon Relay', 'Newtrul', 'Other'];
+          const bsel = {};
+          const boardBox = h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin:6px 0' }, boards.map((b9) => { const c9 = h('input', { type: 'checkbox' }); bsel[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); }));
+          const msg = h('div', { class: 'cp-err' });
+          const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
+            const b9 = ev.currentTarget;
+            if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim()) { msg.textContent = 'Name, country and English level are required.'; return; }
+            b9.disabled = true; b9.textContent = 'Submitting…';
+            const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.filter((x9) => bsel[x9].checked) };
+            const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
+            if (r && r.error) { msg.textContent = r.error; b9.disabled = false; b9.textContent = 'Submit application'; return; }
+            go('dispatch');
+          } }, 'Submit application');
+          mount(host, h('div', null, [
+            agCard('🧑‍✈️ Become a salaried LoadBoot Dispatcher', [
+              h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:10px' }, 'This is the SALARIED role (separate from your 1% referral earnings). You’ll dispatch for assigned US carriers — hunt loads, negotiate rates, keep trucks loaded. Base salary + per-truck + performance bonus; salary starts when a carrier is assigned. Strict screening + a paid trial before hire.'),
+              f.full_name, h('div', { style: 'display:flex;gap:8px' }, [f.country, f.city]), f.phone, f.english, f.years,
+              h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Load boards you can operate:'), boardBox,
+              msg, submit,
+            ]),
+          ]));
+          return;
+        }
+        // Status + assignments
+        const st9 = stMsg[prof.status] || stMsg.applied;
+        const cards = [agCard('🧑‍✈️ Dispatcher status', [
+          h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1])]),
+          prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
+          (prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : ''),
+        ])];
+        const asg = (d.assignments || []).filter((a9) => a9.status !== 'ended');
+        if (asg.length) {
+          cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
+            const s9 = a9.sop || {};
+            return h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)' }, [
+              h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:#fff' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:#4ade80' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
+              h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, [
+                s9.scope_value ? h('div', { style: 'color:#7cc0ff' }, '⚖️ Your scope for this carrier: ' + s9.scope_value + ' — only source loads that fit this scope (keeps loads from overlapping your other carriers).') : '',
+                s9.lanes ? h('div', null, 'Lanes: ' + s9.lanes) : '',
+                s9.min_rate ? h('div', null, 'Min rate/mile: ' + s9.min_rate) : '',
+                s9.equipment ? h('div', null, 'Equipment: ' + s9.equipment) : '',
+                s9.home_time ? h('div', null, 'Home-time: ' + s9.home_time) : '',
+                s9.rules ? h('div', null, 'Rules: ' + s9.rules) : '',
+                !s9.lanes && !s9.rules && !s9.scope_value ? h('div', { class: 'cp-muted' }, 'SOP will appear here once the Command Center sets it.') : '',
+              ]),
+            ]);
+          })));
+          if (d.salary) cards.push(agCard('💵 Latest salary', [h('div', { class: 'cp-row-s' }, (d.salary.currency || 'PKR') + ' ' + Number(d.salary.total || 0).toLocaleString() + ' · ' + (d.salary.active_trucks || 0) + ' trucks · ' + d.salary.status)]));
+        } else if (prof.status === 'active' || prof.status === 'verified') {
+          cards.push(agCard('🚚 Assigned carriers', [h('div', { class: 'cp-muted' }, 'No carrier assigned yet — you’ll be notified the moment the Command Center assigns one.')]));
+        }
+        cards.push(agCard('📋 Your responsibilities', [h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, 'Keep every assigned truck loaded · negotiate the best rate/mile · book only with verified brokers · manage pickups, docs and HOS. Questions: hello@loadboot.com')]));
+        cards.push(agCard('⚖️ Compliance rules — never break these', [h('div', { class: 'cp-row-s', style: 'line-height:1.9' }, [
+          h('div', null, '✓ Book every load under the CARRIER’s own authority (rate con names the carrier, not you or LoadBoot).'),
+          h('div', null, '✓ Source loads only within your assigned SCOPE for each carrier — never take a load two of your carriers could both haul.'),
+          h('div', null, '✓ Go through a broker for freight — never solicit shippers directly.'),
+          h('div', null, '✕ Never touch or route freight money — the broker pays the carrier/factor; LoadBoot bills its fee to the carrier.'),
+          h('div', null, '✕ Never re-broker or re-assign a booked load to another carrier.'),
+          h('div', null, '✕ Never accept a load first and then hunt for a truck.'),
+          h('div', { class: 'cp-muted', style: 'margin-top:4px' }, 'These keep you a bona fide agent of the carrier (FMCSA 88 FR 39368), not an unlicensed broker.'),
+        ])]));
+        mount(host, h('div', null, cards));
+      })();
     }
   }
   function go(id) { tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
@@ -1389,7 +1648,7 @@ async function agentPortal(user) {
           ? 'You have ' + car9.length + ': ' + car9.map((r9) => r9.org).slice(0, 3).join(', ') + (car9.length > 3 ? '…' : '')
           : 'No carrier yet — share your link with any trucking company. The moment one signs up through it, this box turns green.'),
         sideBox9(demandOk9, '🏢', 'Side 2 — DEMAND (the freight)', demandOk9
-          ? (dem9.length ? 'You have ' + dem9.length + ' broker/shipper: ' + dem9.map((r9) => r9.org).slice(0, 3).join(', ') + (dem9.length > 3 ? '…' : '') : 'You post loads yourself — that counts as your demand side.')
+          ? (dem9.length ? 'You have ' + dem9.length + ' broker/shipper: ' + dem9.map((r9) => r9.org).slice(0, 3).join(', ') + (dem9.length > 3 ? '…' : '') : 'Every delivered load your referred clients move earns you 1%.')
           : 'No freight side yet — refer a broker or shipper with your link, OR post a load yourself from the Post a Load tab. Either one turns this green.'),
       ]),
       h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3)' }, [
@@ -1416,8 +1675,8 @@ async function agentPortal(user) {
       h('div', { class: 'cpx-d-head', onClick: () => { close9(); go('settings'); } }, [
         h('div', { class: 'cpx-d-ava' }, (feed.name || 'A').trim().charAt(0).toUpperCase()),
         h('div', { style: 'min-width:0;flex:1' }, [
-          h('div', { class: 'cpx-d-name' }, feed.name || 'Agent'),
-          h('div', { class: 'cpx-d-rating' }, isVerified ? '\u2713 Verified agent' : 'Verification pending'),
+          h('div', { class: 'cpx-d-name' }, feed.name || 'Dispatcher'),
+          h('div', { class: 'cpx-d-rating' }, isVerified ? '\u2713 Dispatcher' : 'Application pending'),
           h('div', { class: 'cpx-d-sub', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, (user && user.email) || ''),
         ]),
         h('div', { class: 'cpx-d-chev' }, '\u203a'),
@@ -1441,10 +1700,10 @@ async function agentPortal(user) {
 
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Agent' })),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: 'Dispatcher' })),
       nav,
       h('div', { class: 'cp-side-foot' }, [
-        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || 'Agent'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
+        h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, feed.name || 'Dispatcher'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
         h('button', { class: 'cp-side-out', onClick: async (ev) => { ev.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 16), h('span', null, 'Sign out')]),
       ]),
     ]),
@@ -1456,7 +1715,6 @@ async function agentPortal(user) {
         ]),
         h('div', { class: 'cp-top-right' }, [
           agBellWrap,
-          h('button', { class: 'cp-pill', title: 'Tap to see exactly what the pair is and how earning switches ON', style: 'cursor:pointer;border:0;font:inherit;' + (feed.pair_active ? 'background:rgba(34,197,94,.15);color:#4ade80;font-weight:800' : 'background:rgba(245,158,11,.15);color:#fbbf24;font-weight:800'), onClick: () => pairModal9() }, feed.pair_active ? '✅ Chain active' : '⏳ Pair pending'),
         ]),
       ]),
       content,
@@ -1509,10 +1767,10 @@ function notCarrier() {
     if (!on) return;
     let r; try { r = await myReferral(); } catch (_) { return; }
     if (!r || !r.code) return;
-    card.querySelector('h1').textContent = '🤝 Agent dashboard';
-    card.querySelector('.cp-auth-sub').textContent = 'You are a LoadBoot AGENT — bring clients in pairs, earn 1% of every delivered load your chain touches. Everything below is live.';
+    card.querySelector('h1').textContent = '🤝 Referral Partner dashboard';
+    card.querySelector('.cp-auth-sub').textContent = 'You are a LoadBoot Referral Partner — refer brokers, shippers and carriers, and earn 1% of every delivered load they move. Everything below is live.';
     const panel = h('div', { class: 'cp-auth-card', style: 'margin-top:14px;text-align:left' }, [
-      h('h2', { style: 'margin:0 0 4px' }, 'Your agent program'),
+      h('h2', { style: 'margin:0 0 4px' }, 'Your referral program'),
       h('p', { class: 'cp-auth-sub', style: 'margin-bottom:10px' }, 'Share your link — every broker, carrier or shipper who joins through it is yours, permanently. Your 1% comes out of LoadBoot’s own fee: your clients never pay extra.'),
     ]);
     panel.appendChild(buildReferralStats(r));
@@ -1530,11 +1788,7 @@ function notCarrier() {
       const kpis = h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
         tile('Referred', String(k.referred || 0)), tile('Brokers', String(k.brokers || 0)), tile('Carriers', String(k.carriers || 0)),
         tile('Clearing', money9(tt.accrued)), tile('Payable', money9(tt.payable), true), tile('Paid', money9(tt.paid), true)]);
-      const banner = cs.pair_active
-        ? h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, [icon('check',15),' CHAIN ACTIVE — you earn 1% on every delivered load your clients touch.'])
-        : h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:10px 14px;font-weight:700;color:#fbbf24' },
-            (k.referred || 0) === 0 ? '⏳ CHAIN PENDING — share your link and bring your first PAIR (a broker + a carrier).'
-            : ('⏳ CHAIN PENDING — bring the other side (' + ((k.carriers || 0) ? 'a broker or shipper' : 'a carrier') + ') and every load starts paying you.'));
+      const banner = h('div', { style: 'margin-top:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:10px 14px;font-weight:800;color:#4ade80' }, [icon('check',15),' You earn 1% on every GPS-verified delivered load your referred clients move.']);
       // invite templates — one-tap copy
       const invite = (label9, txt9) => h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { try { const _ct1387 = ev9.currentTarget; await navigator.clipboard.writeText(txt9); _ct1387.textContent = 'Copied ✓'; setTimeout(() => { _ct1387.textContent = label9; }, 1500); } catch (_) { alert(txt9); } } }, label9);
       const inviteRow = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
@@ -1563,7 +1817,7 @@ function notCarrier() {
         (n.at ? new Date(n.at).toLocaleString() + ' — ' : '') + (n.title || '') + (n.body ? ' · ' + n.body : '')));
       mount(chainW, h('div', null, [
         kpis, banner, inviteRow,
-        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '🔗 Your chain'),
+        h('div', { class: 'cp-row-t', style: 'margin:14px 0 4px' }, '🔗 Your referrals'),
         (Array.isArray(cs.chain) && cs.chain.length) ? h('div', null, cs.chain.map((x) => h('div', { class: 'cp-row', style: 'flex-wrap:wrap' }, [
           h('div', { style: 'flex:1;min-width:190px' }, [
             h('div', { class: 'cp-row-t' }, (x.side === 'carrier' ? '🚛 ' : '🏢 ') + (x.org || '')),
