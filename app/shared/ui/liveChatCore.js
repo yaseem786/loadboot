@@ -42,6 +42,10 @@
     '.lbc-td:nth-child(2){animation-delay:.18s}.lbc-td:nth-child(3){animation-delay:.36s}',
     '@keyframes lbcBl{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}',
     '#lbc-foot{padding:10px 12px 8px;background:#fff;border-top:1px solid #eef2f7}',
+    '#lbc-sug{display:flex;gap:7px;overflow-x:auto;padding:9px 12px 2px;background:#fff;border-top:1px solid #eef2f7;scrollbar-width:none}',
+    '#lbc-sug::-webkit-scrollbar{display:none}',
+    '.lbc-sug{flex:none;background:#f4f8fd;border:1.5px solid #dbe9fb;color:#0b62b8;font:700 12px Inter,Arial;padding:8px 13px;border-radius:999px;cursor:pointer;transition:all .15s;white-space:nowrap}',
+    '.lbc-sug:hover{background:#0883F7;border-color:#0883F7;color:#fff;transform:translateY(-1px)}',
     '#lbc-form{display:flex;gap:8px;align-items:flex-end}',
     '#lbc-in{flex:1;border:1.5px solid #dbe4ef;border-radius:14px;padding:10px 13px;font:400 13.5px Inter,Arial;resize:none;max-height:90px;outline:none;color:#0f172a;background:#fff}',
     '#lbc-in:focus{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.12)}',
@@ -245,6 +249,7 @@
       '</div>' +
       '<div id="lbc-body"><div id="lbc-typing"><div class="lbc-tb"><div class="lbc-td"></div><div class="lbc-td"></div><div class="lbc-td"></div></div></div></div>' +
       '<div id="lbc-closedbar">This conversation was closed. <button id="lbc-new">Start a new chat</button></div>' +
+      '<div id="lbc-sug"></div>' +
       '<div id="lbc-foot"><div id="lbc-form">' +
         '<textarea id="lbc-in" rows="1" placeholder="Type your message…"></textarea>' +
         '<button id="lbc-send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11.5 21 3l-8.5 18-2.6-7.4L3 11.5Z" fill="currentColor"/></svg></button>' +
@@ -285,6 +290,21 @@
       var place = function () { fab.style.bottom = mq.matches && document.querySelector('.lb-tabbar,.cp-tabbar,#bTabbar') ? 'calc(84px + env(safe-area-inset-bottom))' : '18px'; };
       place(); mq.addEventListener('change', place); setTimeout(place, 1500);
     } catch (e) {}
+
+    // premium quick-option bar (always visible above the input)
+    var sug = panel.querySelector('#lbc-sug');
+    [['💰 Pricing', 'What does LoadBoot cost?'],
+     ['✅ Get verified', 'How do I get verified and what documents do I need?'],
+     ['🚚 Find loads', 'How do I find loads for my truck?'],
+     ['📦 Post a load', 'How do I post a load?'],
+     ['💳 Payments', 'How and when do I get paid?'],
+     ['📈 Live rates', 'What are the market rates right now?'],
+     ['🙋 Talk to a person', 'I want to talk to a real person']].forEach(function (c) {
+      var b = document.createElement('button');
+      b.className = 'lbc-sug'; b.type = 'button'; b.textContent = c[0];
+      b.onclick = function () { sendText(c[1]); };
+      sug.appendChild(b);
+    });
 
     restore();
     teaser();

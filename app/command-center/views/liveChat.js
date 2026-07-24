@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, segmented, fmtDateTime } from '../../shared/ui/components.js';
-import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats } from '../../shared/api.js';
+import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
@@ -41,16 +41,47 @@ export function renderLiveChat(host) {
     ]),
     threadHost,
   ]);
+  const trainHost = el('div', { style: 'margin-top:16px' });
   mount(host, el('div', null, [
     sectionHead('Live chat', 'Every website & portal conversation. The AI assistant answers instantly; reply here to take over as a human — the visitor sees it in the same window.'),
-    kpis, wrap,
+    kpis, wrap, trainHost,
   ]));
+  loadTraining();
   mount(threadHost, el('div', { class: 'lb-state' }, 'Pick a conversation on the left.'));
   loadStats(); loadList();
   timer = setInterval(() => { loadStats(); loadList(true); if (activeId) openThread(activeId, true); }, 6000);
   // Stop polling when the view is unmounted.
   const obs = new MutationObserver(() => { if (!document.body.contains(kpis)) { clearInterval(timer); obs.disconnect(); } });
   obs.observe(document.body, { childList: true, subtree: true });
+
+  async function loadTraining() {
+    let rows; try { rows = await ccLcMisses(); } catch (e) { mount(trainHost, ''); return; }
+    if (!rows || rows.error) { mount(trainHost, ''); return; }
+    mount(trainHost, el('div', { class: 'lb-card' }, [
+      el('div', { class: 'fa-cardhead' }, [el('h3', null, '🧠 Bot training — questions the AI could not answer'),
+        el('span', null, rows.length + ' waiting · teach an answer and the bot learns it instantly')]),
+      rows.length ? el('div', null, rows.map(m => {
+        const kw = el('input', { class: 'cc-input', placeholder: 'Keywords, comma separated (e.g. insurance cost, monthly insurance)', style: 'flex:2;min-width:200px' });
+        const ans = el('input', { class: 'cc-input', placeholder: 'The answer the bot should give (links allowed)', style: 'flex:3;min-width:260px' });
+        return el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--lb-line,#1e293b)' }, [
+          el('div', { style: 'flex-basis:100%;display:flex;gap:8px;align-items:center' }, [
+            el('b', null, '“' + m.question + '”'),
+            el('span', { class: 'cc-pill cc-pill-' + (m.n > 2 ? 'red' : 'amber') }, m.n + '×'),
+            el('span', { class: 'cc-sub', style: 'font-size:11px' }, fmtDateTime(m.last_seen)),
+          ]),
+          kw, ans,
+          el('button', { class: 'lb-btn lb-btn-primary', onclick: async (ev) => {
+            const b = ev.currentTarget; b.disabled = true;
+            try { const r = await ccLcTeach(m.id, kw.value, ans.value); if (r && r.error) throw new Error(r.error);
+              toast('Bot learned it ✓'); loadTraining();
+            } catch (e2) { toast(humanizeError(e2), 'error'); b.disabled = false; }
+          } }, 'Teach'),
+          el('button', { class: 'lb-btn lb-btn-ghost', onclick: async () => { await ccLcMissDismiss(m.id); loadTraining(); } }, 'Dismiss'),
+        ]);
+      })) : el('div', { class: 'lb-state' }, 'Nothing waiting — the AI answered everything it was asked. 🎉'),
+      el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'How it works: every unanswered question lands here with a counter. Add keywords + an answer → saved into the bot\'s knowledge base immediately. Check daily; the bot gets smarter from real user queries.'),
+    ]));
+  }
 
   async function loadStats() {
     let s; try { s = await ccLcStats(); } catch (e) { return; }
