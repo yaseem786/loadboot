@@ -5,7 +5,7 @@
 // so a partner can only ever see and touch its own records. Admin/staff use the
 // Command Center; carriers use the Carrier portal.
 import ENV from '../shared/env.js';
-import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
+import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updateEmail } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
 import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
@@ -17,7 +17,7 @@ import {
   partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
   partnerRequestShipment, partnerMyShipments, partnerCarrierDirectory, partnerCarrierCapacity, partnerCarrierReviews, loadPickupStatus, partnerLoadCancellations, partnerUpdatePickup, setOrgLogo, partnerLoadFull, partnerTrackLoad, marketRpm, laneRate, partnerExtendOffer, partnerOfferWithdraw, partnerCarrierPacket, partnerEligibleDetail, requestPacketCopies, shipperPostLoad,
   partnerClaims, partnerReviewClaim, claimEscalate, partnerCancelLoad, partnerEligibleCarriers, partnerOfferSend,
-  myRating, rateCounterparty, partnerRateableTrips,
+  myRating, rateCounterparty, partnerRateableTrips, partnerUpdateLoad, partnerLoadChangeRequest,
   bookRequestCarrierPacket,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   bookRequestsQueue, decideBookRequest, myApprovedPartners,
@@ -844,6 +844,27 @@ function invoicesCard() {
 }
 
 /* account & company settings */
+function securityCard() {
+  const em9 = h('input', { class: 'cp-in', type: 'email', placeholder: 'New login email' });
+  const st9 = h('div', { class: 'cp-err' });
+  return h('div', { class: 'cp-card' }, [
+    h('div', { class: 'cp-cardhead' }, [icon('lock', 18), h('h3', null, 'Security — email & password')]),
+    h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Change your login email (confirmation links go to both addresses) or reset your password.'),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [em9,
+      h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { st9.className = 'cp-err'; st9.textContent = '';
+        const v9 = em9.value.trim(); if (!v9 || v9.indexOf('@') < 1) { st9.textContent = 'Enter a valid email.'; return; }
+        ev9.currentTarget.disabled = true;
+        try { const r9 = await updateEmail(v9); if (r9 && r9.error) throw r9.error;
+          st9.className = 'cp-err ok'; st9.textContent = '\u2713 Confirmation links sent to your old AND new email — confirm both to switch.'; }
+        catch (e9) { st9.textContent = (e9 && e9.message) || 'Could not update email.'; }
+        ev9.target.disabled = false; } }, 'Change email')]),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
+      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+        try { const u9 = await getUser(); const r9 = await resetPassword((u9 && u9.email) || ''); if (r9 && r9.error) throw r9.error; b9.textContent = '\u2713 Reset link sent to your email'; }
+        catch (_) { b9.textContent = 'Could not send — try later'; b9.disabled = false; } } }, 'Send password-reset email'),
+    ]), st9,
+  ]);
+}
 function accountCard() {
   const company = inp('Company name'), contact = inp('Contact name'), phone = inp('Phone', 'tel'), email = inp('Billing email', 'email'), address = inp('Address');
   const msg = h('div', { class: 'cp-err' });
@@ -2513,6 +2534,42 @@ async function brokerDash(user, ov) {
           stepper,
           h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center' }, [
             (() => {
+              // Edit (unbooked) / Request change (booked) — the rate con is a contract.
+              const booked9 = !!l.carrier || !['available', 'open', 'posted'].includes(String(l.status || '').toLowerCase());
+              if (!booked9) return h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+                const f9 = {
+                  rate: h('input', { class: 'cp-in', type: 'number', placeholder: 'Rate ($)', value: l.rate || '' }),
+                  pu: h('input', { class: 'cp-in', type: 'date', value: l.pickup_date || '' }),
+                  del: h('input', { class: 'cp-in', type: 'date', value: l.delivery_date || '' }),
+                  weight: h('input', { class: 'cp-in', placeholder: 'Weight (lbs)', value: l.weight || '' }),
+                  notes: h('textarea', { class: 'cp-in', style: 'min-height:60px', placeholder: 'Notes' }, l.notes || ''),
+                };
+                const err9 = h('div', { class: 'cp-err' });
+                const close9 = openModal('✎ Edit load — ' + (l.origin || '') + ' → ' + (l.destination || ''), [
+                  h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Unbooked loads can be edited freely — the posting version bumps so carriers always see the latest terms. Once booked, changes need a change request.'),
+                  f9.rate, h('div', { style: 'display:flex;gap:8px' }, [f9.pu, f9.del]), f9.weight, f9.notes, err9,
+                  h('button', { class: 'cp-btn', onClick: async (ev9) => { ev9.currentTarget.disabled = true;
+                    const r9 = await partnerUpdateLoad(l.id, { rate: f9.rate.value, pickup_date: f9.pu.value, delivery_date: f9.del.value, weight: f9.weight.value, notes: f9.notes.value }).catch(e9 => ({ error: (e9 && e9.message) || 'error' }));
+                    if (r9 && r9.error) { err9.textContent = r9.error; ev9.target.disabled = false; return; }
+                    close9(); loadList();
+                  } }, 'Save changes'),
+                ]);
+              } }, '✎ Edit');
+              return h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+                const ta9 = h('textarea', { class: 'cp-in', style: 'min-height:80px', placeholder: 'What needs to change? (rate, dates, address…)' });
+                const err9 = h('div', { class: 'cp-err' });
+                const close9 = openModal('✎ Request a change — booked load', [
+                  h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'This load is booked — the rate confirmation is a contract, so changes are confirmed with the carrier first and a REVISED rate confirmation is issued. Describe the change:'),
+                  ta9, err9,
+                  h('button', { class: 'cp-btn', onClick: async (ev9) => { ev9.currentTarget.disabled = true;
+                    const r9 = await partnerLoadChangeRequest(l.id, ta9.value).catch(e9 => ({ error: (e9 && e9.message) || 'error' }));
+                    if (r9 && r9.error) { err9.textContent = r9.error; ev9.target.disabled = false; return; }
+                    close9(); alert('Change request sent — dispatch will confirm with the carrier and re-issue the rate confirmation.');
+                  } }, 'Send change request'),
+                ]);
+              } }, '✎ Request change');
+            })(),
+            (() => {
               const rqs9 = __bq9[[l.origin, l.destination, l.equipment].join('|')] || [];
               if (!rqs9.length || /book|deliver|cancel/.test(String(l.status || '') + String(l.board_status || ''))) return null;
               const openReqs9 = () => {
@@ -4104,7 +4161,7 @@ function packetAgreementCards(skipPacket) {
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     onboarding: [brokerOnboardingWizard()],
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
-    account: [accountCard()],
+    account: [accountCard(), securityCard()],
   };
   let btab = (location.hash || '').replace('#', '') || 'dashboard';
   let __openPostOnBoot = false;

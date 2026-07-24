@@ -71,6 +71,11 @@ export async function updatePassword(newPassword) {
   return sb.auth.updateUser({ password: newPassword });
 }
 
+export async function updateEmail(newEmail) {
+  const sb = await getClient();
+  return sb.auth.updateUser({ email: newEmail }); // confirmation links go to BOTH addresses
+}
+
 export async function signOut() {
   const sb = await getClient();
   // Never let a slow/failed server call keep the user "stuck signed in": race a 3s timeout,

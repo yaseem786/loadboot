@@ -371,6 +371,8 @@ export const ccDispatcherSalarySet = (user, base, perTruck, currency) => rpc('cc
 export const ccDispatcherSalaryRun = (user, period, bonus, kpi, note) => rpc('cc_dispatcher_salary_run', { p_user: user, p_period: period, p_bonus: bonus ?? 0, p_kpi: kpi ?? {}, p_note: note ?? null });
 export const ccDispatcherSalaryStatus = (id, status) => rpc('cc_dispatcher_salary_status', { p_id: id, p_status: status });
 export const ccCarrierPrefs = (carrier) => rpc('cc_carrier_prefs', { p_carrier: carrier });
+export const partnerUpdateLoad = (load, p) => rpc('partner_update_load', { p_load: load, p });
+export const partnerLoadChangeRequest = (load, request) => rpc('partner_load_change_request', { p_load: load, p_request: request });
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });
