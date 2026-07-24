@@ -570,7 +570,8 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 %s
 <script>%s</script>
-<script src="app.js?v=6"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
+<script src="app.js?v=6"></script>
+<script defer src="/app/shared/ui/liveChatCore.js?v=1"></script><script defer src="/lc-init.js?v=1"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -6891,6 +6892,14 @@ if not IS_PRODUCTION_CTX:
                     pass
 
 # ---------- BUILD-FAILING VALIDATIONS ----------
+# ---------- LIVE CHAT bootstrap for the marketing site ----------
+# Same widget code as the portals (app/shared/ui/liveChatCore.js); this config file
+# points it at the environment's Supabase project as an anonymous website visitor.
+# Written BEFORE output verification so the asset checker sees it.
+with open(os.path.join(OUT,'lc-init.js'),'w',encoding='utf-8') as f:
+    f.write('window.LBChat&&window.LBChat.mount({url:"https://%s.supabase.co",anon:"%s",origin:"website"});' % (APP_REF, APP_ANON or ''))
+print('lc-init.js written')
+
 _errors=[]
 if os.path.isdir(APP_SRC) and _APP_FATAL:
     _errors.append('APP ENV ASSERTION FAILED: ' + _APP_FATAL)

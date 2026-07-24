@@ -381,6 +381,12 @@ export const ccOutreachTemplates = () => rpc('cc_outreach_templates', {});
 export const ccOutreachTemplatePreview = (id) => rpc('cc_outreach_template_preview', { p_id: id });
 export const ccOutreachTemplateSave = (o) => rpc('cc_outreach_template_save', { p_audience: o.audience, p_day: o.day, p_subject: o.subject, p_html: o.html ?? null, p_active: o.active ?? true });
 export const ccOutreachLog = (filter, limit) => rpc('cc_outreach_log', { p_filter: filter || 'all', p_limit: limit ?? 100 });
+// ---- Live chat (CC inbox; bl_chat_0157/0158) ----
+export const ccLcList = (status) => rpc('cc_lc_list', { p_status: status || 'open' });
+export const ccLcGet = (id) => rpc('cc_lc_get', { p_id: id });
+export const ccLcReply = (id, body) => rpc('cc_lc_reply', { p_id: id, p_body: body });
+export const ccLcSetStatus = (id, status) => rpc('cc_lc_set_status', { p_id: id, p_status: status });
+export const ccLcStats = () => rpc('cc_lc_stats', {});
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });

@@ -1,0 +1,13 @@
+-- bl_chat_0157 + bl_chat_0158 (applied STAGING + PROD 2026-07-24): self-hosted live chat.
+-- Tables: app_private.lc_conversations (visitor_key/user_id/origin/page/status/mode bot|human/
+--   unread counters), lc_messages (sender visitor|staff|bot), lc_kb (AI knowledge base ~34 intents).
+-- Visitor RPCs (anon+auth): lc_start / lc_send / lc_poll — visitor_key OR auth.uid() gate,
+--   rate limits (5 convos/day, 30 msgs/5min, 2000 chars).
+-- AI: lc_bot_step -> lc_bot_answer (keyword-scored KB match) answers instantly; unknown question
+--   or "talk to a person" -> mode=human + staff notification (livechat.handoff).
+-- Staff RPCs: cc_lc_list/get/reply/set_status/stats (comm.view|support.view|dispatch.manage).
+--   cc_lc_reply flips conversation to human mode.
+-- Frontend: app/shared/ui/liveChatCore.js (window.LBChat, shared widget) + chatWidget.js (portals
+--   auto-mount, CC skipped) + /lc-init.js emitted by build_site.py (marketing site, anon visitor)
+--   + CC view views/liveChat.js at /live-chat.
+-- Canonical SQL in Supabase migrations bl_chat_0157/0158 in both projects.
