@@ -53,7 +53,7 @@
     '@media (max-width:520px){#lbc-panel{right:0;bottom:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0}}'
   ].join('');
 
-  var cfg = null, open = false, convId = null, vKey = null, lastId = 0, pollT = null, unread = 0, started = false;
+  var cfg = null, open = false, convId = null, vKey = null, lastId = 0, pollT = null, unread = 0, started = false, mode = 'bot', typingT = null;
   var els = {};
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -92,16 +92,24 @@
     els.body.scrollTop = els.body.scrollHeight;
   }
 
-  function typing(on) { els.typing.style.display = on ? 'block' : 'none'; if (on) els.body.scrollTop = els.body.scrollHeight; }
+  function typing(on) {
+    els.typing.style.display = on ? 'block' : 'none';
+    if (on) els.body.scrollTop = els.body.scrollHeight;
+    clearTimeout(typingT);
+    if (on) typingT = setTimeout(function () { typing(false); }, 8000);
+  }
 
   function welcome() {
     if (started) return; started = true;
-    addMsg('bot', "Hi! I'm the LoadBoot assistant. I can answer questions about pricing, finding loads, posting freight, dispatch, payments and more — instantly. How can I help?");
+    addMsg('bot', "Hi! 👋 I'm the LoadBoot assistant — I answer instantly, 24/7. To point you right: which one are you?");
     var chips = document.createElement('div');
     chips.className = 'lbc-chips';
-    [['💰 Pricing', 'What does LoadBoot cost?'],
-     ['🚚 Find loads', 'How do I find loads for my truck?'],
-     ['📦 Post a load', 'How do I post a load as a broker?'],
+    [['🚚 I\'m a carrier', "I'm a carrier"],
+     ['🏢 I\'m a broker', "I'm a broker"],
+     ['📦 I\'m a shipper', "I'm a shipper"],
+     ['🧑\u200d✈️ Dispatcher', "I'm a dispatcher"],
+     ['📣 Referral partner', "I'm interested in the referral program"],
+     ['💰 Just show pricing', 'What does LoadBoot cost?'],
      ['🙋 Talk to a person', 'I want to talk to a real person']].forEach(function (c) {
       var b = document.createElement('button');
       b.className = 'lbc-chip'; b.textContent = c[0];
@@ -117,7 +125,8 @@
     if (!text) return;
     addMsg('visitor', text);
     els.input.value = ''; autoGrow();
-    typing(true);
+    if (mode === 'bot') { typing(true); }
+    else { deliveredNote(); }
     try {
       var r;
       if (!convId) {
@@ -136,6 +145,7 @@
     try {
       var r = await api('lc_poll', { p_id: convId, p_visitor_key: vKey, p_after: lastId });
       if (!r || r.error) return;
+      if (r.mode) mode = r.mode;
       var msgs = r.messages || [];
       var news = false;
       msgs.forEach(function (m) {
@@ -155,9 +165,42 @@
     try {
       var r = await api('lc_poll', { p_id: convId, p_visitor_key: vKey, p_after: 0 });
       if (!r || r.error || !(r.messages || []).length) { convId = null; return; }
+      if (r.mode) mode = r.mode;
       started = true;
       r.messages.forEach(function (m) { addMsg(m.sender === 'visitor' ? 'visitor' : m.sender, m.body); lastId = m.id; });
       if (r.status === 'closed') els.closedbar.style.display = 'block';
+    } catch (e) {}
+  }
+
+  var notedOnce = false;
+  function deliveredNote() {
+    if (notedOnce) return; notedOnce = true;
+    var d = document.createElement('div');
+    d.className = 'lbc-who';
+    d.style.cssText = 'text-align:center;margin:4px 0;color:#94a3b8';
+    d.textContent = '✓ Delivered — our team replies right here (you can close this window, your chat is saved)';
+    els.body.insertBefore(d, els.typing);
+    els.body.scrollTop = els.body.scrollHeight;
+  }
+
+  function teaser() {
+    try {
+      if (sessionStorage.getItem('lb_lc_teased')) return;
+      setTimeout(function () {
+        if (open || sessionStorage.getItem('lb_lc_teased')) return;
+        sessionStorage.setItem('lb_lc_teased', '1');
+        var t = document.createElement('div');
+        t.id = 'lbc-teaser';
+        t.style.cssText = 'position:fixed;right:18px;bottom:86px;max-width:260px;background:#fff;border:1px solid #e6edf5;border-radius:16px;border-bottom-right-radius:6px;box-shadow:0 16px 50px rgba(2,6,23,.25);padding:13px 15px;z-index:2147483645;font-family:Inter,system-ui,Arial;font-size:13px;color:#0f172a;line-height:1.5;cursor:pointer;animation:lbcUp .3s ease';
+        t.innerHTML = '<b>👋 Need a hand?</b><br>I answer instantly — pricing, loads, setup, anything trucking.' +
+          '<span style="position:absolute;top:6px;right:9px;color:#94a3b8;font-size:14px" data-x>✕</span>';
+        t.onclick = function (e) {
+          t.remove();
+          if (!(e.target && e.target.hasAttribute && e.target.hasAttribute('data-x'))) togglePanel(true);
+        };
+        document.body.appendChild(t);
+        setTimeout(function () { if (t.parentNode) t.remove(); }, 25000);
+      }, 5000);
     } catch (e) {}
   }
 
@@ -244,6 +287,7 @@
     } catch (e) {}
 
     restore();
+    teaser();
     pollT = setInterval(poll, 30000);
   }
 

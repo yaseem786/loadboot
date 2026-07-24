@@ -10,7 +10,10 @@ import { humanizeError, toast } from '../../shared/errors.js';
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
 
 function identity(c) {
-  if (!c.user_id) return { label: (c.name || 'Anonymous visitor'), pill: '🌐 Visitor', tone: 'gray' };
+  if (!c.user_id) {
+    const vr = c.visitor_role ? (' · ' + c.visitor_role + ' lead') : '';
+    return { label: (c.name || 'Anonymous visitor'), pill: '🌐 Visitor' + vr, tone: c.visitor_role ? 'blue' : 'gray' };
+  }
   const role = (c.role || 'user');
   const ver = (c.profile_status || '').toLowerCase();
   const verified = ['verified', 'approved', 'active'].indexOf(ver) >= 0;
