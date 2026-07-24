@@ -3550,8 +3550,11 @@ dsp += _sec('Why LoadBoot dispatch', 'Honest, compliant, flat 5%', _cards([
 ]))
 dsp += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Work with us</div><h2>Want to BE a dispatcher?</h2></div>'
  '<div class="reveal" style="max-width:760px;margin:0 auto;text-align:center;color:#475569;line-height:1.8">'
- 'LoadBoot hires salaried US truck dispatchers (remote): base salary + per-truck + performance bonus, with strict screening and a paid trial. If you know DAT/Truckstop, FMCSA/HOS and how to negotiate a rate, read the '
- '<a href="careers.html#dispatcher-job">full dispatcher job description</a> and apply.</div></div></section>')
+ 'LoadBoot hires salaried US truck dispatchers (remote): base salary + per-truck + performance bonus, with strict screening and a paid trial. If you know DAT/Truckstop, FMCSA/HOS and how to negotiate a rate, this seat is for you.'
+ '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px">'
+ '<a href="careers.html#dispatcher-job" class="btn btn-primary">Read the full job description ' + ARW + '</a>'
+ '<a href="/app/agent/" class="btn btn-secondary">Apply as a dispatcher</a>'
+ '</div></div></div></section>')
 _dsp_faq_html, _dsp_faq_sch = faq_block([
  ('How much does a truck dispatcher cost?', 'LoadBoot charges a flat 5% of the linehaul on booked, delivered and paid loads - with no monthly retainer and nothing charged when the truck is not earning. Independent dispatchers typically charge 5-10% or a flat per-load or monthly fee.'),
  ('Is a dispatcher the same as a freight broker?', 'No. A freight broker arranges freight as a principal and needs FMCSA broker authority plus a $75,000 bond. A dispatcher works as the carrier\\u2019s agent - booking loads under the carrier\\u2019s own authority, taking no freight-money custody, and never allocating a load among competing carriers. LoadBoot operates on the dispatcher side of that line.'),
@@ -3566,6 +3569,36 @@ page('us-truck-dispatcher.html', 'US Truck Dispatcher &mdash; Dedicated Dispatch
  'LoadBoot is a US truck dispatch service for owner-operators and small fleets: a dedicated dispatcher finds loads, negotiates rates and keeps your trucks loaded, booked under your own authority for a flat 5% - only when you get paid. Van, reefer, flatbed, hotshot, power-only.',
  'services.html', dsp, _dsp_schema + _dsp_faq_sch)
 RELATED['us-truck-dispatcher.html'] = [('owner-operator-dispatch.html','Owner-Operator Dispatch'),('new-authority-dispatch.html','New-Authority Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker'),('careers.html','Become a Dispatcher'),('carriers.html','For Carriers')]
+
+# ---- FTL vs LTL / Partial (SEO guide) ----
+ftl = svc_hero('Full Truckload (FTL) vs LTL vs Partial &mdash; What Pays Your Truck Best',
+  'FTL, LTL and partial freight explained for carriers, brokers and shippers: what each one is, when it pays better, and how LoadBoot posts and matches both full loads and partials to the right truck size.')
+ftl += _sec('The three ways freight moves', 'FTL, LTL and partials — plain English', _cards([
+ ('&#128666;','Full truckload (FTL)','One shipper&rsquo;s freight fills the whole trailer. One pickup, one delivery, fastest transit &mdash; the classic 53&prime; van, reefer or flatbed load.'),
+ ('&#128230;','LTL (less-than-truckload)','Small shipments (1&ndash;6 pallets) share a trailer through carrier terminals. Cheapest for shippers, slower, more handling.'),
+ ('&#127358;','Partial truckload','The middle: 6&ndash;18 pallets, no terminals &mdash; freight rides direct with one or two other partials. Ideal for box trucks, hotshots and filling unused deck space.'),
+]))
+ftl += _sec('Who wins with partials', 'Small trucks and smart carriers', _cards([
+ ('&#128667;','Box trucks &amp; hotshots','A 16&ndash;26 ft box truck cannot take a 38,000-lb FTL &mdash; partials sized to your real weight capacity are your paying freight. See <a href="box-truck-dispatch.html">box truck dispatch</a> and <a href="hotshot-dispatch.html">hotshot dispatch</a>.'),
+ ('&#128176;','Filling empty space','Half-full trailer on a lane you are running anyway? A partial on top of your existing load is nearly pure margin.'),
+ ('&#127970;','Brokers &amp; shippers','Post a partial with pallets, weight and dims and pay for the space you use &mdash; instead of buying a whole truck.'),
+]))
+ftl += _sec('How LoadBoot handles both', 'One board, sized to the truck', _cards([
+ ('&#128203;','Load size on every posting','Every load is posted as FULL (FTL) or PARTIAL (LTL) with pallets and weight &mdash; required at posting, printed on the rate confirmation.'),
+ ('&#128269;','Size filter on the board','Carriers filter the live board by Full / Partial, so a box truck only hunts freight it can legally haul.'),
+ ('&#9878;','Matched to capacity','Carrier profiles carry equipment and max weight capacity &mdash; offers go to trucks that actually fit the load.'),
+]))
+_ftl_faq_html, _ftl_faq_sch = faq_block([
+ ('What is the difference between FTL, LTL and partial truckload?', 'FTL fills a whole trailer for one shipper. LTL moves small shipments (1-6 pallets) through carrier terminals with more handling. Partial truckload is in between - roughly 6-18 pallets riding direct without terminals, often sharing the trailer with one other partial.'),
+ ('Do box trucks get loads on LoadBoot?', 'Yes. Partial and LTL-style freight sized for 16-26 ft box trucks is posted with pallets and weight, and the board filters by load size so you only see freight your truck can haul.'),
+ ('Does partial freight pay less than FTL?', 'Per load, usually yes - but per foot of trailer and per mile it often pays MORE, because the shipper pays a premium over LTL for direct transit. Two partials on one trailer can out-earn one FTL.'),
+ ('How do I post a partial load as a broker or shipper?', 'The posting wizard requires a load size (Full or Partial). For partials you add pallets, weight and dims, and the rate card (detention, TONU, layover) prints on the posting like every LoadBoot load.'),
+])
+ftl += _ftl_faq_html + final_cta()
+page('full-truckload-vs-ltl.html', 'FTL vs LTL vs Partial Truckload — Differences, Rates & Which Pays Best | LoadBoot',
+ 'Full truckload (FTL), LTL and partial freight explained: what each is, when partials pay better, box-truck and hotshot fit, and how LoadBoot posts and matches both full loads and partials by truck size and weight capacity.',
+ 'resources.html', ftl, _ftl_faq_sch)
+RELATED['full-truckload-vs-ltl.html'] = [('box-truck-dispatch.html','Box Truck Dispatch'),('hotshot-dispatch.html','Hotshot Dispatch'),('load-board.html','Live Load Board'),('us-truck-dispatcher.html','US Truck Dispatch'),('market-rates.html','Market Rates'),('carriers.html','For Carriers')]
 
 # ---- Partner Program ----
 pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.')
