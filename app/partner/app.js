@@ -663,7 +663,6 @@ function notifBell() {
 function shell(user, kind, company, kpis, content) {
   const label = KIND_LABEL[kind] || 'Partner';
   return h('div', { class: 'cp-shell cp-shell-1col' }, [
-    bTabbar,
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
         h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('div', null, [
@@ -4126,6 +4125,33 @@ function packetAgreementCards(skipPacket) {
   }));
   const bTitle = h('h1', { class: 'cp-top-title' }, 'Dashboard');
   const bContent = h('div', { class: 'cp-content' });
+  // ---- MOBILE DRAWER (carrier-style: scrim + cpx-drawer, full nav + sign out) ----
+  if (!document.getElementById('bk-mob-css')) {
+    const st9 = document.createElement('style'); st9.id = 'bk-mob-css';
+    st9.textContent = '.bk-burger{display:none}@media(max-width:900px){.bk-burger{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--lb-border,#e6ebf3);background:#fff;color:#334155;cursor:pointer;flex:none}}';
+    document.head.appendChild(st9);
+  }
+  const bScrim = h('div', { class: 'cpx-scrim', hidden: true, onClick: () => bDrawerClose() });
+  const bDrawerItems = h('div', { class: 'cpx-d-items' });
+  const bDrawer = h('div', { class: 'cpx-drawer' }, [
+    h('div', { class: 'cpx-d-head' }, [
+      h('div', { class: 'cpx-d-ava' }, (((user && user.email) || '?').trim().charAt(0).toUpperCase())),
+      h('div', { style: 'flex:1;min-width:0' }, [
+        h('div', { class: 'cpx-d-name' }, ov.company || (KIND_LABEL[ov.kind] || 'Broker')),
+        h('div', { class: 'cpx-d-sub' }, (user && user.email) || ''),
+      ]),
+    ]),
+    bDrawerItems,
+    h('div', { class: 'cpx-d-foot' }, [
+      h('button', { class: 'cpx-d-item', onClick: async (ev9) => { ev9.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 20), h('span', null, 'Sign out')]),
+    ]),
+  ]);
+  function bDrawerClose() { bDrawer.classList.remove('show'); bScrim.classList.remove('show'); setTimeout(() => { bScrim.hidden = true; }, 200); }
+  function bDrawerOpen() {
+    mount(bDrawerItems, BNAV.map(([id9, label9, ic9]) => h('button', { class: 'cpx-d-item' + (btab === id9 ? ' active' : ''), onClick: () => { bDrawerClose(); bgo(id9); } }, [icon(ic9, 20), h('span', null, label9)])));
+    bScrim.hidden = false; requestAnimationFrame(() => { bScrim.classList.add('show'); bDrawer.classList.add('show'); });
+  }
+  const bBurger = h('button', { class: 'bk-burger', 'aria-label': 'Menu', onClick: bDrawerOpen, html: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>' });
   // ---- premium dashboard sections (rebuilt fresh on every dashboard visit) ----
   if (!document.getElementById('bd-css')) {
     const st = document.createElement('style'); st.id = 'bd-css';
@@ -4365,7 +4391,7 @@ function packetAgreementCards(skipPacket) {
     ]),
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
-        h('div', { class: 'cp-top-left' }, bTitle),
+        h('div', { class: 'cp-top-left', style: 'display:flex;align-items:center;gap:10px' }, [bBurger, bTitle]),
         h('div', { class: 'cp-top-right' }, [h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;font-weight:800' }, KIND_LABEL[ov.kind] || 'Broker'), notifBell(), (() => {
           const menu = h('div', { class: 'cp-menu', hidden: true, style: 'position:absolute;right:0;top:46px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 18px 44px -14px rgba(15,23,42,.28);min-width:230px;z-index:90;padding:10px 0' }, [
             h('div', { style: 'padding:6px 16px 10px;border-bottom:1px solid #f1f5f9' }, [h('div', { style: 'font-weight:800' }, ov.company || 'Broker'), h('div', { class: 'cp-sub' }, (user && user.email) || '')]),
@@ -4381,6 +4407,9 @@ function packetAgreementCards(skipPacket) {
       ]),
       bContent,
     ]),
+    bTabbar,
+    bScrim,
+    bDrawer,
   ]);
   mount(root, bShell);
   bgo(btab);
