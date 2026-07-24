@@ -1,0 +1,1 @@
+-- bl_out_0153 — outreach kill-switch: >10% bounce/fail over 2 days (min 50 sends) auto-disables engine + staff notify + hello@ email. run_daily checks health first. Canonical SQL = supabase migration (PROD applied 2026-07-24; staging parity pending).
