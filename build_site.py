@@ -273,15 +273,13 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .foot-bottom{border-top:1px solid #1e293b;padding-top:24px;font-size:.88rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .mcta{display:none;position:fixed;bottom:0;left:0;right:0;z-index:70;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:12px 16px;gap:10px}
 .mcta a{flex:1;justify-content:center}
-.wa-btn{position:fixed;bottom:20px;right:20px;z-index:80;width:58px;height:58px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 30px -8px rgba(37,211,102,.6);transition:.2s}
-.wa-btn:hover{transform:scale(1.08)}
 .scroll-road-sec{position:relative;color:#fff;padding:88px 0 70px;overflow:hidden;background:linear-gradient(135deg,#10223B,#1e293b)}
 .scroll-road-sec h2{color:#fff}.scroll-road-sec .eyebrow{color:#93c5fd}
 .scroll-road{position:relative;z-index:2;height:150px;margin-top:30px}
 .sr-line{position:absolute;top:50%;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,#fbbf24 0 30px,transparent 30px 64px);transform:translateY(-50%)}
 .sr-truck{position:absolute;top:50%;left:0;transform:translate(0,-60%);color:#fff;will-change:transform}
 .sr-truck svg{width:188px;height:auto;display:block;filter:drop-shadow(0 10px 16px rgba(0,0,0,.55))}
-@media(max-width:880px){.wa-btn{bottom:84px;width:52px;height:52px}.sr-truck svg{width:120px}}
+@media(max-width:880px){.sr-truck svg{width:120px}}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
 .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
@@ -456,7 +454,7 @@ def footer():
 <span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html#create" class="btn btn-primary">Get Started</a></div>
-<a class="wa-btn" href="contact.html" rel="noopener" aria-label="Contact Loadboot dispatch"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.2-1.2l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1112 20zm4.4-5.6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 00-.7.3A2.9 2.9 0 006 9.9c0 1.7 1.3 3.4 1.4 3.6.2.2 2.5 3.9 6.1 5.2 2.2.8 2.5.6 3 .6s1.4-.6 1.6-1.1.2-1 .2-1.1-.2-.2-.5-.3z"/></svg><span class="sr-only">Contact Loadboot dispatch</span></a>'''
+'''
 
 GA_ID = 'G-C2ELQ7H8EM'  # GA4 Measurement ID — injected on every page.
 LOCALBIZ = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Loadboot","image":"https://loadboot.com/icon-512.png","url":"https://loadboot.com/","email":"hello@loadboot.com","description":"Professional truck dispatch services for owner-operators, fleets, and new-authority carriers — flat 5%, no contracts.","areaServed":{"@type":"Country","name":"United States"},"serviceType":"Truck dispatching","priceRange":"5%","contactPoint":[{"@type":"ContactPoint","email":"hello@loadboot.com","contactType":"customer support","areaServed":"US","availableLanguage":["English"]},{"@type":"ContactPoint","email":"dispatch@loadboot.com","contactType":"dispatch"},{"@type":"ContactPoint","email":"billing@loadboot.com","contactType":"billing"}]}</script>'
@@ -1437,7 +1435,7 @@ page('about.html','About LoadBoot | Honest Truck Dispatch for Carriers',
      'about.html', about_body, schema=_about_org_schema + _about_faq_schema)
 
 # ---------- CONTACT ----------
-contact_body = svc_hero('Get Started with Loadboot','Create your carrier profile in 2 minutes, request a rate quote, or just send us a message &mdash; flat 5%, no contracts, cancel anytime.')
+contact_body = svc_hero('Get Started with Loadboot','Create your account in 2 minutes (carrier, broker, shipper or agent), request a rate quote, or just send us a message &mdash; flat 5%, no contracts, cancel anytime.')
 contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:820px">
 <form class="quote-wrap reveal" id="qfForm" name="quote" method="POST" data-netlify="true" data-netlify-honeypot="bot-field">
 <input type="hidden" name="form-name" value="quote"><p hidden><label>Skip: <input name="bot-field"></label></p>
@@ -1450,41 +1448,26 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 </div>
 <div id="acctFields">
 <div class="acct-personas">
-<div class="ap-lead">What kind of account are you creating?</div>
+<div class="ap-lead">Accounts are created in the portal &mdash; a couple of fields, 2 minutes, then guided onboarding inside. Pick your role:</div>
 <div class="ap-tabs">
-<span class="ap-tab active"><span class="ap-i">&#128666;</span><span>Carrier / Owner-operator<small>You&rsquo;re on this one &mdash; fill it below</small></span></span>
-<a class="ap-tab" href="/app/partner/"><span class="ap-i">&#127970;</span><span>Broker (licensed)<small>Post loads &amp; manage carriers</small></span></a>
-<a class="ap-tab" href="/app/partner/"><span class="ap-i">&#128230;</span><span>Shipper<small>Post your freight &amp; track it live</small></span></a>
-<a class="ap-tab" href="/agents.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
-<a class="ap-tab" href="/app/agent/"><span class="ap-i">&#129309;</span><span>Agent (independent dispatcher)<small>Bring clients, earn 1% of every delivered load</small></span></a>
+<a class="ap-tab" href="create-carrier-account.html"><span class="ap-i">&#128666;</span><span>Carrier / Owner-operator<small>Free account &rarr; verify &rarr; get loads</small></span></a>
+<a class="ap-tab" href="create-broker-account.html"><span class="ap-i">&#127970;</span><span>Broker (licensed)<small>Post loads free to verified carriers</small></span></a>
+<a class="ap-tab" href="create-shipper-account.html"><span class="ap-i">&#128230;</span><span>Shipper<small>Post your freight &amp; track it live</small></span></a>
+<a class="ap-tab" href="create-agent-account.html"><span class="ap-i">&#129309;</span><span>Agent (independent dispatcher)<small>Bring clients, earn 1% of every delivered load</small></span></a>
+<a class="ap-tab" href="create-agent-account.html"><span class="ap-i">&#127919;</span><span>Referral / Influencer<small>Earn from every load you refer</small></span></a>
 </div>
-<div class="ap-note">You&rsquo;re creating a <b>Carrier</b> account below. Broker, shipper, referral and agent each have their own quick flow &mdash; pick one above.</div>
-</div>
-<h3 style="margin:26px 0 16px">Your business</h3>
-<div class="form-grid">
-<div class="field full"><label for="f_company">Company / business name</label><input type="text" id="f_company" name="company" placeholder="Your trucking company"></div>
-<div class="field"><label for="f_mc">MC number</label><input type="text" id="f_mc" name="mc" placeholder="MC-123456"></div>
-<div class="field"><label for="f_dot">DOT number</label><input type="text" id="f_dot" name="dot" placeholder="DOT-1234567"></div>
-<div class="field full"><label for="f_authority">Authority status</label><select id="f_authority" name="authority"><option value="">Select&hellip;</option><option>Active / established authority</option><option>New authority</option><option>No authority yet</option></select></div>
-</div>
-<h3 style="margin:26px 0 16px">Equipment &amp; lanes</h3>
-<div class="form-grid">
-<div class="field"><label for="f_equipment">Equipment type</label><select id="f_equipment" name="equipment"><option value="">Select&hellip;</option><option>Dry Van</option><option>Reefer</option><option>Flatbed</option><option>Step Deck</option><option>Hotshot</option><option>Power Only</option><option>Box Truck / Expedited</option></select></div>
-<div class="field"><label for="f_trucks">Number of trucks</label><select id="f_trucks" name="trucks"><option value="">Select&hellip;</option><option>1</option><option>2-5</option><option>6-20</option><option>20+</option></select></div>
-<div class="field full"><label for="f_lanes">Preferred lanes / home base</label><input type="text" id="f_lanes" name="lanes" placeholder="e.g. Dallas, TX &mdash; Southeast lanes"></div>
-<div class="field"><label for="f_insurance">Insurance in place?</label><select id="f_insurance" name="insurance"><option value="">Select&hellip;</option><option>Yes</option><option>Not yet &mdash; need help</option></select></div>
-<div class="field"><label for="f_factoring">Factoring?</label><select id="f_factoring" name="factoring"><option value="">Select&hellip;</option><option>Yes, already factoring</option><option>No &mdash; need help</option><option>Not sure</option></select></div>
+<div class="ap-note">Signup takes ~2 minutes with just the basics &mdash; the rest of onboarding (verification, documents, W-9) happens inside your portal, step by step.</div>
 </div>
 </div>
-<h3 style="margin:26px 0 16px">Your details</h3>
+<div id="detailsWrap"><h3 style="margin:26px 0 16px">Your details</h3>
 <div class="form-grid">
 <div class="field"><label for="f_name">Your name</label><input type="text" id="f_name" name="name" required placeholder="Full name"></div>
 <div class="field"><label for="f_phone">Phone</label><input type="tel" id="f_phone" name="phone" placeholder="(555) 555-5555"></div>
 <div class="field full"><label for="f_email">Email</label><input type="email" id="f_email" name="email" required placeholder="you@email.com"></div>
 <div class="field full"><label id="msgLabel">Anything else? <span style="color:var(--muted);font-weight:500">(optional)</span></label><textarea name="message" placeholder="Tell us about a specific load, lane, or question &mdash; or anything you'd like us to know."></textarea></div>
 </div>
-<button class="btn btn-primary" id="submitBtn" style="width:100%;justify-content:center;margin-top:24px">Create My Carrier Account &rarr;</button>
-<p style="text-align:center;margin-top:14px;font-size:.9rem">Free to start. No contracts. A dispatcher responds within 15 minutes during business hours.</p></form>
+<button class="btn btn-primary" id="submitBtn" style="width:100%;justify-content:center;margin-top:24px">Get My Rate Quote &rarr;</button>
+<p style="text-align:center;margin-top:14px;font-size:.9rem">Free to start. No contracts. A dispatcher responds within 15 minutes during business hours.</p></div></form>
 <div class="cinfo reveal">
 <div class="ci"><div class="icon">&#128236;</div><div><b>Email us</b><span>General &mdash; hello@loadboot.com<br>Dispatch &mdash; dispatch@loadboot.com<br>Billing &mdash; billing@loadboot.com</span></div></div>
 <div class="ci"><div class="icon">&#128336;</div><div><b>Hours</b><span>Mon&ndash;Fri 7am&ndash;9pm CT &middot; Sat 9&ndash;5</span></div></div>
@@ -1494,11 +1477,12 @@ contact_body += """<section class="bg-soft"><div class="wrap" style="max-width:8
 <script>
 function qfIntent(){var sel=document.querySelector('input[name=intent]:checked');if(!sel)return;var v=sel.value;var isAcct=v.indexOf('account')>-1;var isQuote=v.indexOf('quote')>-1;
 var acct=document.getElementById('acctFields');if(acct)acct.style.display=isAcct?'':'none';
-['company','authority','equipment'].forEach(function(n){var el=document.querySelector('[name='+n+']');if(el)el.required=isAcct;});
+var dw=document.getElementById('detailsWrap');if(dw)dw.style.display=isAcct?'none':'';
+var nm=document.querySelector('[name=name]');if(nm)nm.required=!isAcct;var em=document.querySelector('[name=email]');if(em)em.required=!isAcct;
 var msg=document.querySelector('[name=message]');var ml=document.getElementById('msgLabel');
 if(msg){msg.required=(!isAcct&&!isQuote);}
-if(ml){ml.innerHTML=(!isAcct&&!isQuote)?'Your message':((isQuote?'Load / lane details ':'Anything else? ')+'<span style=\\'color:var(--muted);font-weight:500\\'>(optional)</span>');}
-var b=document.getElementById('submitBtn');if(b)b.innerHTML=(isAcct?'Create My Carrier Account':(isQuote?'Get My Rate Quote':'Send Message'))+' &rarr;';
+if(ml){ml.innerHTML=(!isAcct&&!isQuote)?'Your message':((isQuote?'Load / lane details ':'Anything else? ')+'<span style=\'color:var(--muted);font-weight:500\'>(optional)</span>');}
+var b=document.getElementById('submitBtn');if(b){b.style.display=isAcct?'none':'';b.innerHTML=(isQuote?'Get My Rate Quote':'Send Message')+' &rarr;';}
 var t=document.getElementById('formIntro');if(t)t.textContent=isAcct?'Tell us about your operation and a dispatcher gets you set up.':(isQuote?'Tell us about a load or lane and we will send you a rate.':'Send us a message and we will get right back to you.');}
 (function(){var h=location.hash;var map={'#quote':'iQuote','#ask':'iAsk','#question':'iAsk','#create':'iAcct','#account':'iAcct','#form':null};if(h in map){var id=map[h];if(id){var r=document.getElementById(id);if(r)r.checked=true;}setTimeout(function(){var f=document.getElementById('qfForm');if(f)f.scrollIntoView({behavior:'smooth',block:'start'});},150);}qfIntent();
 var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A Loadboot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
@@ -4234,7 +4218,7 @@ _HUB_ROLES = [
     'One dashboard for invoices, settlements, per-trip P&amp;L and your team&rsquo;s payroll',
     'Flat 5% dispatch fee &mdash; cancel anytime',
     'Real people on call while you&rsquo;re on the road'],
-   '/app/carrier/', 'Open the Carrier Portal &rarr;',
+   'create-carrier-account.html', 'Create your carrier account &rarr;',
    'carrier_application', 'Carrier application',
    'Tell us about your operation and a dispatcher gets you set up. A real person follows up fast.',
    [('company', 'Company / business name', 'text', True), ('name', 'Your name', 'text', True),
@@ -4255,7 +4239,7 @@ _HUB_ROLES = [
     'Mutual vetting: you see a carrier&rsquo;s trust profile before you approve a booking',
     'Onboarding and compliance gates keep your capacity clean',
     'A partner console built for broker operations, not a spreadsheet'],
-   '/app/partner/', 'Open the Partner Portal &rarr;',
+   'create-broker-account.html', 'Create your broker account &rarr;',
    'broker_signup', 'Broker account request',
    'Tell us about your brokerage and we&rsquo;ll set you up with vetted, tracked capacity.',
    [('company', 'Brokerage / company name', 'text', True), ('name', 'Your name', 'text', True),
@@ -4275,7 +4259,7 @@ _HUB_ROLES = [
     'Consistent service standards and vetted carriers on every load',
     'One point of contact instead of chasing multiple carriers',
     'Transparent, no games on rate or service'],
-   '/app/partner/', 'Open the Partner Portal &rarr;',
+   'create-shipper-account.html', 'Create your shipper account &rarr;',
    'shipper_signup', 'Shipper inquiry',
    'Tell us what you ship and we&rsquo;ll connect you with compliant capacity through our broker partners.',
    [('company', 'Company name', 'text', True), ('name', 'Your name', 'text', True),
@@ -4294,7 +4278,7 @@ _HUB_ROLES = [
     'Get a personal referral link and ready-to-share materials',
     'Commissions unlock after a short hold; payouts reviewed by a person',
     'Perfect for trucking creators, coaches and industry networks'],
-   'agents.html', 'See how the referral program works &rarr;',
+   'create-agent-account.html', 'Create your referral account &rarr;',
    'referral_signup', 'Become a referral partner',
    'Tell us about your audience and we&rsquo;ll get you a referral link and materials.',
    [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True),
@@ -4310,7 +4294,7 @@ _HUB_ROLES = [
     'Recruit other agents and earn level 2&ndash;5 overrides on their referrals',
     'CRM-grade referral tracking, live earnings, Amazon-style payout center',
     'Free to join &mdash; verification takes about a day, worldwide remote'],
-   'agents.html', 'See how the referral program works &rarr;',
+   'create-agent-account.html', 'Create your agent account &rarr;',
    'agent_signup', 'Become a LoadBoot agent',
    'The full program runs in the Agent Portal &mdash; create your account there in 2 minutes.',
    [('name', 'Your name', 'text', True), ('email', 'Email', 'email', True),
