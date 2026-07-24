@@ -125,8 +125,8 @@
     if (!text) return;
     addMsg('visitor', text);
     els.input.value = ''; autoGrow();
-    if (mode === 'bot') { typing(true); }
-    else { deliveredNote(); }
+    typing(true);
+    if (mode !== 'bot') deliveredNote();
     try {
       var r;
       if (!convId) {

@@ -11,3 +11,7 @@
 --   auto-mount, CC skipped) + /lc-init.js emitted by build_site.py (marketing site, anon visitor)
 --   + CC view views/liveChat.js at /live-chat.
 -- Canonical SQL in Supabase migrations bl_chat_0157/0158 in both projects.
+-- bl_chat_0159 (AI v2): greetings/thanks regex, role->name->email lead funnel -> crm_leads
+--   (pipeline sales/new, source live-chat) + staff alerts, 29 extra KB intents, 2-strike fallback.
+-- bl_chat_0160: bot never silent — keeps helping in human-wait mode until a staff member
+--   actually replies in the thread; broader human-request regex (bare "human", "customer support").
