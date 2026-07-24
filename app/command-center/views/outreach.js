@@ -4,13 +4,13 @@
 // Backend: cc_outreach_crm / cc_outreach_control / cc_outreach_stats (bl_out_0150-0153).
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
-import { ccOutreachCrm, ccOutreachControl, ccOutreachStats, ccOutreachToday, ccOutreachTemplates, ccOutreachTemplatePreview, ccOutreachTemplateSave } from '../../shared/api.js';
+import { sectionHead, statCard, fmtDateTime, openDrawer, segmented } from '../../shared/ui/components.js';
+import { ccOutreachCrm, ccOutreachControl, ccOutreachStats, ccOutreachToday, ccOutreachTemplates, ccOutreachTemplatePreview, ccOutreachTemplateSave, ccOutreachLog } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const TPL_LABEL = (k) => {
   // template_key = outreach.<audience>.d<N>
-  const m = /^outreach\.(\w+)\.d(\d+)$/.exec(k || '');
+  const m = /^outreach\.(\w+)[.-]d(\d+)$/.exec(k || '');
   return m ? (m[1].charAt(0).toUpperCase() + m[1].slice(1) + ' — Day ' + m[2]) : (k || '—');
 };
 const ST_TONE = { sent: 'green', queued: 'blue', failed: 'red', bounced: 'red', skipped: 'gray' };
@@ -20,13 +20,15 @@ export function renderOutreach(host) {
   const todayHost = el('div', { style: 'margin-top:16px' });
   const grid = el('div', { class: 'fa-grid', style: 'margin-top:16px' });
   const tplHost = el('div', { style: 'margin-top:16px' });
+  const logHost = el('div', { style: 'margin-top:16px' });
   mount(host, el('div', null, [
     sectionHead('Outreach CRM', 'Automated daily email engine — FMCSA carriers, brokers and shippers get a 7-part value drip from hello@loadboot.com. Caps auto-ramp weekly; bounces auto-block; kill-switch pauses on high failure.'),
-    kpis, todayHost, grid, tplHost,
+    kpis, todayHost, grid, tplHost, logHost,
   ]));
   load();
   loadToday();
   loadTemplates();
+  loadLog('sent');
 
   async function control(action, value) {
     try {
@@ -218,6 +220,52 @@ export function renderOutreach(host) {
       el('p', { class: 'cc-sub' }, 'Placeholders: {NAME} = company name · {UNSUB} = unsubscribe URL (must stay). Saving custom HTML replaces the designed body for that day.'),
       err, save,
     ]), { subtitle: (t ? 'Overwrites ' : 'Creates ') + 'the email for that audience + day' });
+  }
+
+  async function loadLog(filter) {
+    const FILTERS = [
+      { value: 'sent', label: '✅ Sent' }, { value: 'failed', label: '⚠️ Failed / bounced' },
+      { value: 'removed', label: '🚫 Removed from list' }, { value: 'all', label: 'All activity' },
+    ];
+    const tblHost = el('div', { style: 'margin-top:10px' }, el('div', { class: 'lb-state lb-loading' }, 'Loading…'));
+    mount(logHost, el('div', { class: 'lb-card' }, [
+      el('div', { class: 'fa-cardhead' }, [el('h3', null, 'Delivery log — every email, one by one'),
+        el('span', null, 'last 500 max')]),
+      segmented(FILTERS, filter, (v) => loadLog(v)),
+      tblHost,
+    ]));
+    let rows; try { rows = await ccOutreachLog(filter, 200); } catch (e) { mount(tblHost, el('div', { class: 'lb-state lb-error' }, humanizeError(e))); return; }
+    if (!rows || rows.error) { mount(tblHost, el('div', { class: 'lb-state lb-error' }, (rows && rows.error) || 'Failed')); return; }
+    if (!rows.length) {
+      mount(tblHost, el('div', { class: 'lb-state' }, filter === 'removed'
+        ? 'Nothing removed yet — list is clean. Bounced/dead addresses will appear here automatically.'
+        : 'No emails in this view yet — first batch goes at the daily run.'));
+      return;
+    }
+    if (filter === 'removed') {
+      mount(tblHost, el('table', { class: 'cc-table' }, [
+        el('thead', null, el('tr', null, ['Email', 'Company', 'Audience', 'Why removed', 'Emails got', 'Last activity'].map(h => el('th', null, h)))),
+        el('tbody', null, rows.map(r => el('tr', { class: 'cc-row' }, [
+          el('td', null, r.email),
+          el('td', null, r.company || '—'),
+          el('td', { style: 'text-transform:capitalize' }, r.audience || '—'),
+          el('td', null, el('span', { class: 'cc-pill cc-pill-' + (r.status === 'bounced' ? 'red' : 'amber') }, r.status === 'bounced' ? 'email dead (bounced)' : r.status)),
+          el('td', null, String(r.emails_sent || 0)),
+          el('td', null, r['when'] ? fmtDateTime(r['when']) : '—'),
+        ]))),
+      ]));
+    } else {
+      mount(tblHost, el('table', { class: 'cc-table' }, [
+        el('thead', null, el('tr', null, ['Email', 'Company', 'Which email', 'Status', 'Time'].map(h => el('th', null, h)))),
+        el('tbody', null, rows.map(r => el('tr', { class: 'cc-row' }, [
+          el('td', null, r.email),
+          el('td', null, r.company || '—'),
+          el('td', null, TPL_LABEL(r.tpl)),
+          el('td', null, el('span', { class: 'cc-pill cc-pill-' + (ST_TONE[r.status] || 'gray') }, r.status + (r.reason ? '' : ''))),
+          el('td', null, r['when'] ? fmtDateTime(r['when']) : '—'),
+        ].concat(r.reason ? [el('td', { class: 'cc-sub' }, r.reason)] : [])))),
+      ]));
+    }
   }
 
   function capRow(label, cur, onSave) {
