@@ -75,6 +75,7 @@ const NAV = [
     { path: '/seo', label: 'SEO & redirects', icon: 'trend', perm: 'seo.view', flag: 'seo' },
     { path: '/marketing-analytics', label: 'Marketing analytics', icon: 'trend', perm: 'content.view' },
     { path: '/marketing-intel', label: 'Marketing Intelligence', icon: 'trend', perm: 'analytics.view' },
+    { path: '/outreach', label: 'Outreach CRM', icon: 'bell', perm: 'any:marketing.view,carriers.approve,dispatch.manage' },
   ]},
   { group: 'Insights', items: [
     { path: '/bi', label: 'Business Intelligence', icon: 'trend', perm: 'any:analytics.view,reports.view' },

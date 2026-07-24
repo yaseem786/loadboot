@@ -760,12 +760,15 @@ async function agentPortal(user) {
         fmcsa: sel([['', 'FMCSA / HOS rules'], ['expert', 'Expert'], ['good', 'Good'], ['basic', 'Basic']]),
         geography: sel([['', 'US geography / lanes'], ['expert', 'Expert'], ['good', 'Good'], ['basic', 'Basic']]),
         tools: inp('Tools you know (TMS, ELD, etc.)'),
+        can_source: sel([['', 'Can you find loads for a carrier yourself? *'], ['yes_independent', 'Yes — I source loads independently'], ['yes_with_board', 'Yes — if given load-board access'], ['learning', 'Not yet — still learning']]),
+        network: h('textarea', { class: 'cp-in', style: 'min-height:56px', placeholder: 'Existing freight network — brokers/shippers you already work with (names or "none")' }),
         payout: sel([['', 'How to pay your salary *'], ['payoneer', 'Payoneer'], ['wise', 'Wise'], ['bank', 'Local bank'], ['other', 'Other']]),
         refs: h('textarea', { class: 'cp-in', style: 'min-height:60px', placeholder: 'References — name + contact (one per line)' }),
         note: h('textarea', { class: 'cp-in', style: 'min-height:80px', placeholder: 'Why should we hire you? Carriers/lanes you’ve run, brokers you know, results.' }),
         linkedin: inp('LinkedIn or résumé link'),
       };
       const boards = checks(['DAT', 'Truckstop', 'Amazon Relay', 'Newtrul', '123Loadboard', 'Other']);
+      const ownBoards = checks(['DAT (own login)', 'Truckstop (own login)', 'Other board (own login)', 'No own access']);
       const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck']);
       // ---- CV / résumé + optional ID document upload ----
       const docState = { cv: null, cvName: null, idd: null, iddName: null };
@@ -788,10 +791,10 @@ async function agentPortal(user) {
         h('div', { style: 'padding:2px 15px 15px' }, kids)]);
       const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
         const b9 = ev.currentTarget;
-        if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, payout.'; return; }
+        if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value || !f.can_source.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, load-sourcing ability, payout.'; return; }
         if (!docState.cv) { msg.textContent = 'Please upload your CV / résumé before submitting.'; return; }
         b9.disabled = true; b9.textContent = 'Submitting…';
-        const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
+        const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), can_source_loads: f.can_source.value, own_board_access: ownBoards.values(), network_desc: f.network.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
         const refs = f.refs.value.split('\n').map((x9) => x9.trim()).filter(Boolean);
         const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.values(), skills: skills, refs: refs };
         const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
@@ -809,7 +812,10 @@ async function agentPortal(user) {
           ]),
           fsec('2 · Experience & skills', false, [
             grp('Years of US dispatch experience', f.years), grp('Most trucks managed at once', f.trucks),
+            grp('Can you find loads yourself? *', f.can_source),
             grp('Load boards you can operate', boards.box),
+            grp('Do you have your OWN load-board access right now?', ownBoards.box),
+            grp('Existing freight network (brokers/shippers)', f.network),
             grp('Equipment you know', equip.box),
             grp('English level *', f.english),
             grp('Rate negotiation', f.negotiation), grp('FMCSA / HOS knowledge', f.fmcsa), grp('US geography / lanes', f.geography),
@@ -3295,21 +3301,24 @@ async function appView(user) {
     const fEq = h('input', { class: 'cp-in', placeholder: 'Equipment', style: 'margin:0' });
     const fRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi', style: 'margin:0;max-width:110px' });
     const fRate = h('input', { class: 'cp-in', type: 'number', placeholder: 'Min $', style: 'margin:0;max-width:110px' });
+    const fSize = h('select', { class: 'cp-in', style: 'margin:0;max-width:150px' }, [['', 'Size: all'], ['full', 'Full (FTL)'], ['partial', 'Partial (LTL)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
     const applyFilters = (list) => (list || []).filter(l => {
       const okO = !fOrigin.value.trim() || String(l.origin || '').toLowerCase().includes(fOrigin.value.trim().toLowerCase());
       const okD = !fDest.value.trim() || String(l.destination || '').toLowerCase().includes(fDest.value.trim().toLowerCase());
       const okE = !fEq.value.trim() || String(l.equipment || '').toLowerCase().includes(fEq.value.trim().toLowerCase());
       const okR = !fRpm.value || (l.rate && Number(l.miles) > 0 && (Number(l.rate) / Number(l.miles)) >= Number(fRpm.value));
       const okM = !fRate.value || Number(l.rate || 0) >= Number(fRate.value);
-      return okO && okD && okE && okR && okM;
+      const sz = String(((l.details || {}).load_size) || '').toLowerCase();
+      const okS = !fSize.value || (fSize.value === 'partial' ? /partial|ltl/.test(sz) : (!!sz && !/partial|ltl/.test(sz)));
+      return okO && okD && okE && okR && okM && okS;
     });
     // Collapsed by default — tap "Filters" to open (inDrive pattern)
     const fBody = h('div', { style: 'display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px' },
-      [fOrigin, fDest, fEq, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
-       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; renderList(); fCount(); } }, 'Clear')]);
+      [fOrigin, fDest, fEq, fSize, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
+       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; fSize.value = ''; renderList(); fCount(); } }, 'Clear')]);
     const fChip = h('span', { class: 'cpx-chip', style: 'display:none' }, '');
-    const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate].filter(x => x.value.trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
-    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount));
+    const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate, fSize].filter(x => (x.value || '').trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
+    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); fSize.addEventListener('change', () => { fCount(); renderList(); });
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
     const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px' }, [
       h('div', { style: 'display:flex;align-items:center;gap:8px' }, [fToggle]),
@@ -3454,7 +3463,7 @@ async function appView(user) {
       if (l.weight) meta.push('Weight: ' + l.weight);
       if (l.deadhead) meta.push(l.deadhead + ' mi deadhead');
       const dx = l.details || {};
-      if (dx.load_size) meta.push(dx.load_size);
+      if (dx.load_size) meta.unshift(/partial|ltl/i.test(dx.load_size) ? '🟨 PARTIAL (LTL)' : '🟦 FULL (FTL)');
       if (dx.pallets) meta.push(dx.pallets + ' plt');
       if (dx.temperature) meta.push('Reefer ' + dx.temperature + '\u00b0F');
       if (dx.tarps) meta.push(dx.tarps);

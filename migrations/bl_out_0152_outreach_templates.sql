@@ -1,0 +1,1 @@
+-- bl_out_0152 — 15 outreach templates (carrier d1-7, broker d1-7, shipper d1) as JSON parts. Canonical SQL = supabase migration. Applied staging+prod 2026-07-24.

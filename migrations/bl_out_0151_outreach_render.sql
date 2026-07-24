@@ -1,0 +1,1 @@
+-- bl_out_0151 — outreach_render(parts jsonb)->premium html + run_daily uses parts. Canonical SQL = supabase migration. Applied staging+prod 2026-07-24.

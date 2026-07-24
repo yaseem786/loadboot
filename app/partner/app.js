@@ -5,7 +5,7 @@
 // so a partner can only ever see and touch its own records. Admin/staff use the
 // Command Center; carriers use the Carrier portal.
 import ENV from '../shared/env.js';
-import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
+import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updateEmail } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
 import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
@@ -17,7 +17,7 @@ import {
   partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
   partnerRequestShipment, partnerMyShipments, partnerCarrierDirectory, partnerCarrierCapacity, partnerCarrierReviews, loadPickupStatus, partnerLoadCancellations, partnerUpdatePickup, setOrgLogo, partnerLoadFull, partnerTrackLoad, marketRpm, laneRate, partnerExtendOffer, partnerOfferWithdraw, partnerCarrierPacket, partnerEligibleDetail, requestPacketCopies, shipperPostLoad,
   partnerClaims, partnerReviewClaim, claimEscalate, partnerCancelLoad, partnerEligibleCarriers, partnerOfferSend,
-  myRating, rateCounterparty, partnerRateableTrips,
+  myRating, rateCounterparty, partnerRateableTrips, partnerUpdateLoad, partnerLoadChangeRequest,
   bookRequestCarrierPacket,
   partnerCreateAppointment, partnerAppointments, partnerSetAppointmentStatus,
   bookRequestsQueue, decideBookRequest, myApprovedPartners,
@@ -663,7 +663,6 @@ function notifBell() {
 function shell(user, kind, company, kpis, content) {
   const label = KIND_LABEL[kind] || 'Partner';
   return h('div', { class: 'cp-shell cp-shell-1col' }, [
-    bTabbar,
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
         h('div', { class: 'cp-brandrow', style: 'gap:10px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:29px;width:auto;display:block' }), h('div', null, [
@@ -845,6 +844,27 @@ function invoicesCard() {
 }
 
 /* account & company settings */
+function securityCard() {
+  const em9 = h('input', { class: 'cp-in', type: 'email', placeholder: 'New login email' });
+  const st9 = h('div', { class: 'cp-err' });
+  return h('div', { class: 'cp-card' }, [
+    h('div', { class: 'cp-cardhead' }, [icon('lock', 18), h('h3', null, 'Security — email & password')]),
+    h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Change your login email (confirmation links go to both addresses) or reset your password.'),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [em9,
+      h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { st9.className = 'cp-err'; st9.textContent = '';
+        const v9 = em9.value.trim(); if (!v9 || v9.indexOf('@') < 1) { st9.textContent = 'Enter a valid email.'; return; }
+        ev9.currentTarget.disabled = true;
+        try { const r9 = await updateEmail(v9); if (r9 && r9.error) throw r9.error;
+          st9.className = 'cp-err ok'; st9.textContent = '\u2713 Confirmation links sent to your old AND new email — confirm both to switch.'; }
+        catch (e9) { st9.textContent = (e9 && e9.message) || 'Could not update email.'; }
+        ev9.target.disabled = false; } }, 'Change email')]),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px' }, [
+      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
+        try { const u9 = await getUser(); const r9 = await resetPassword((u9 && u9.email) || ''); if (r9 && r9.error) throw r9.error; b9.textContent = '\u2713 Reset link sent to your email'; }
+        catch (_) { b9.textContent = 'Could not send — try later'; b9.disabled = false; } } }, 'Send password-reset email'),
+    ]), st9,
+  ]);
+}
 function accountCard() {
   const company = inp('Company name'), contact = inp('Contact name'), phone = inp('Phone', 'tel'), email = inp('Billing email', 'email'), address = inp('Address');
   const msg = h('div', { class: 'cp-err' });
@@ -2514,6 +2534,42 @@ async function brokerDash(user, ov) {
           stepper,
           h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center' }, [
             (() => {
+              // Edit (unbooked) / Request change (booked) — the rate con is a contract.
+              const booked9 = !!l.carrier || !['available', 'open', 'posted'].includes(String(l.status || '').toLowerCase());
+              if (!booked9) return h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+                const f9 = {
+                  rate: h('input', { class: 'cp-in', type: 'number', placeholder: 'Rate ($)', value: l.rate || '' }),
+                  pu: h('input', { class: 'cp-in', type: 'date', value: l.pickup_date || '' }),
+                  del: h('input', { class: 'cp-in', type: 'date', value: l.delivery_date || '' }),
+                  weight: h('input', { class: 'cp-in', placeholder: 'Weight (lbs)', value: l.weight || '' }),
+                  notes: h('textarea', { class: 'cp-in', style: 'min-height:60px', placeholder: 'Notes' }, l.notes || ''),
+                };
+                const err9 = h('div', { class: 'cp-err' });
+                const close9 = openModal('✎ Edit load — ' + (l.origin || '') + ' → ' + (l.destination || ''), [
+                  h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Unbooked loads can be edited freely — the posting version bumps so carriers always see the latest terms. Once booked, changes need a change request.'),
+                  f9.rate, h('div', { style: 'display:flex;gap:8px' }, [f9.pu, f9.del]), f9.weight, f9.notes, err9,
+                  h('button', { class: 'cp-btn', onClick: async (ev9) => { ev9.currentTarget.disabled = true;
+                    const r9 = await partnerUpdateLoad(l.id, { rate: f9.rate.value, pickup_date: f9.pu.value, delivery_date: f9.del.value, weight: f9.weight.value, notes: f9.notes.value }).catch(e9 => ({ error: (e9 && e9.message) || 'error' }));
+                    if (r9 && r9.error) { err9.textContent = r9.error; ev9.target.disabled = false; return; }
+                    close9(); loadList();
+                  } }, 'Save changes'),
+                ]);
+              } }, '✎ Edit');
+              return h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+                const ta9 = h('textarea', { class: 'cp-in', style: 'min-height:80px', placeholder: 'What needs to change? (rate, dates, address…)' });
+                const err9 = h('div', { class: 'cp-err' });
+                const close9 = openModal('✎ Request a change — booked load', [
+                  h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'This load is booked — the rate confirmation is a contract, so changes are confirmed with the carrier first and a REVISED rate confirmation is issued. Describe the change:'),
+                  ta9, err9,
+                  h('button', { class: 'cp-btn', onClick: async (ev9) => { ev9.currentTarget.disabled = true;
+                    const r9 = await partnerLoadChangeRequest(l.id, ta9.value).catch(e9 => ({ error: (e9 && e9.message) || 'error' }));
+                    if (r9 && r9.error) { err9.textContent = r9.error; ev9.target.disabled = false; return; }
+                    close9(); alert('Change request sent — dispatch will confirm with the carrier and re-issue the rate confirmation.');
+                  } }, 'Send change request'),
+                ]);
+              } }, '✎ Request change');
+            })(),
+            (() => {
               const rqs9 = __bq9[[l.origin, l.destination, l.equipment].join('|')] || [];
               if (!rqs9.length || /book|deliver|cancel/.test(String(l.status || '') + String(l.board_status || ''))) return null;
               const openReqs9 = () => {
@@ -4105,7 +4161,7 @@ function packetAgreementCards(skipPacket) {
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     onboarding: [brokerOnboardingWizard()],
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
-    account: [accountCard()],
+    account: [accountCard(), securityCard()],
   };
   let btab = (location.hash || '').replace('#', '') || 'dashboard';
   let __openPostOnBoot = false;
@@ -4126,6 +4182,44 @@ function packetAgreementCards(skipPacket) {
   }));
   const bTitle = h('h1', { class: 'cp-top-title' }, 'Dashboard');
   const bContent = h('div', { class: 'cp-content' });
+  // ---- MOBILE DRAWER (carrier-style: scrim + cpx-drawer, full nav + sign out) ----
+  if (!document.getElementById('bk-mob-css')) {
+    const st9 = document.createElement('style'); st9.id = 'bk-mob-css';
+    st9.textContent = '.bk-burger{display:none}@media(max-width:900px){.bk-burger{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--lb-border,#e6ebf3);background:#fff;color:#334155;cursor:pointer;flex:none}}';
+    document.head.appendChild(st9);
+  }
+  const bScrim = h('div', { class: 'cpx-scrim', hidden: true, onClick: () => bDrawerClose() });
+  const bDrawerItems = h('div', { class: 'cpx-d-items' });
+  // premium head — carrier-style: rating, availability dot, chevron, click -> Account
+  const bStars = h('div', { class: 'cpx-d-rating' }, 'New — no ratings yet');
+  (async () => { try { const r9 = await myRating(); if (r9 && r9.avg != null) bStars.textContent = '★ ' + r9.avg + ' (' + (r9.count || 0) + ')'; } catch (_) {} })();
+  const bStat = (label9, goto9) => h('button', { class: 'cpx-d-stat', onClick: () => { bDrawerClose(); bgo(goto9); } }, [h('b', null, '—'), h('span', null, label9)]);
+  const bS1 = bStat('Live on board', 'loads'), bS2 = bStat('Open loads', 'loads'), bS3 = bStat('Total posted', 'loads');
+  const bDrawer = h('div', { class: 'cpx-drawer' }, [
+    h('div', { class: 'cpx-d-head', onClick: () => { bDrawerClose(); bgo('account'); } }, [
+      h('div', { class: 'cpx-d-ava', style: 'position:relative' }, [document.createTextNode((((ov.company || user && user.email) || '?').trim().charAt(0).toUpperCase())), h('span', { class: 'cpx-d-avadot' })]),
+      h('div', { style: 'flex:1;min-width:0' }, [
+        h('div', { class: 'cpx-d-name' }, ov.company || (KIND_LABEL[ov.kind] || 'Broker')),
+        bStars,
+        h('div', { class: 'cpx-d-sub', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, (user && user.email) || ''),
+      ]),
+      h('div', { class: 'cpx-d-chev' }, '›'),
+    ]),
+    h('div', { class: 'cpx-d-stats' }, [bS1, bS2, bS3]),
+    bDrawerItems,
+    h('div', { class: 'cpx-d-foot' }, [
+      h('button', { class: 'cpx-d-item', onClick: async (ev9) => { ev9.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 20), h('span', null, 'Sign out')]),
+    ]),
+  ]);
+  function bDrawerClose() { bDrawer.classList.remove('show'); bScrim.classList.remove('show'); setTimeout(() => { bScrim.hidden = true; }, 200); }
+  function bDrawerOpen() {
+    mount(bDrawerItems, BNAV.map(([id9, label9, ic9]) => h('button', { class: 'cpx-d-item' + (btab === id9 ? ' active' : ''), onClick: () => { bDrawerClose(); bgo(id9); } }, [icon(ic9, 20), h('span', null, label9)])));
+    bS1.firstChild.textContent = String(ov.loads_posted ?? 0);
+    bS2.firstChild.textContent = String(ov.loads_open ?? 0);
+    bS3.firstChild.textContent = String(ov.loads_submitted ?? 0);
+    bScrim.hidden = false; requestAnimationFrame(() => { bScrim.classList.add('show'); bDrawer.classList.add('show'); });
+  }
+  const bBurger = h('button', { class: 'bk-burger', 'aria-label': 'Menu', onClick: bDrawerOpen, html: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>' });
   // ---- premium dashboard sections (rebuilt fresh on every dashboard visit) ----
   if (!document.getElementById('bd-css')) {
     const st = document.createElement('style'); st.id = 'bd-css';
@@ -4365,7 +4459,7 @@ function packetAgreementCards(skipPacket) {
     ]),
     h('main', { class: 'cp-main' }, [
       h('header', { class: 'cp-top' }, [
-        h('div', { class: 'cp-top-left' }, bTitle),
+        h('div', { class: 'cp-top-left', style: 'display:flex;align-items:center;gap:10px' }, [bBurger, bTitle]),
         h('div', { class: 'cp-top-right' }, [h('span', { class: 'cp-pill', style: 'background:#e7f9ee;color:#12a150;font-weight:800' }, KIND_LABEL[ov.kind] || 'Broker'), notifBell(), (() => {
           const menu = h('div', { class: 'cp-menu', hidden: true, style: 'position:absolute;right:0;top:46px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 18px 44px -14px rgba(15,23,42,.28);min-width:230px;z-index:90;padding:10px 0' }, [
             h('div', { style: 'padding:6px 16px 10px;border-bottom:1px solid #f1f5f9' }, [h('div', { style: 'font-weight:800' }, ov.company || 'Broker'), h('div', { class: 'cp-sub' }, (user && user.email) || '')]),
@@ -4381,6 +4475,9 @@ function packetAgreementCards(skipPacket) {
       ]),
       bContent,
     ]),
+    bTabbar,
+    bScrim,
+    bDrawer,
   ]);
   mount(root, bShell);
   bgo(btab);

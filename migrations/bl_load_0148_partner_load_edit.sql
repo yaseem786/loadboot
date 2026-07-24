@@ -1,0 +1,5 @@
+-- bl_load_0148 — Broker/shipper load editing. (Applied staging+prod 2026-07-24.)
+-- (1) partner_update_load: full edit while UNBOOKED (available/unassigned), version bump.
+-- (2) partner_load_change_request: booked loads = contract; files a change request
+--     (urgent staff task + notification) -> dispatch confirms with carrier -> revised RC.
+-- Canonical SQL = supabase migration of the same name.
