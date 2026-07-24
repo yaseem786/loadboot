@@ -42,6 +42,14 @@
     '.lbc-td:nth-child(2){animation-delay:.18s}.lbc-td:nth-child(3){animation-delay:.36s}',
     '@keyframes lbcBl{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}',
     '#lbc-foot{padding:10px 12px 8px;background:#fff;border-top:1px solid #eef2f7}',
+    '.lbc-form{margin:2px 0 0 36px;max-width:82%;background:linear-gradient(180deg,#ffffff,#f7faff);border:1.5px solid #dbe9fb;border-radius:16px;border-bottom-left-radius:6px;padding:14px;box-shadow:0 6px 22px rgba(8,131,247,.10);display:flex;flex-direction:column;gap:8px;animation:lbcUp .25s ease}',
+    '.lbc-form label{font:700 10.5px Inter,Arial;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:-4px}',
+    '.lbc-form input{border:1.5px solid #dbe4ef;border-radius:11px;padding:10px 12px;font:400 13.5px Inter,Arial;outline:none;color:#0f172a;background:#fff;width:100%;box-sizing:border-box}',
+    '.lbc-form input:focus{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.12)}',
+    '.lbc-form button{margin-top:2px;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:11px;padding:11px;font:800 13.5px Inter,Arial;cursor:pointer;transition:transform .15s;box-shadow:0 8px 20px rgba(252,83,5,.35)}',
+    '.lbc-form button:hover{transform:translateY(-1px)}.lbc-form button:disabled{opacity:.5}',
+    '.lbc-form .lbc-ferr{color:#dc2626;font-size:12px;display:none}',
+    '.lbc-form .lbc-fnote{color:#94a3b8;font-size:10.5px;text-align:center}',
     '#lbc-sug{display:flex;gap:7px;overflow-x:auto;padding:9px 12px 2px;background:#fff;border-top:1px solid #eef2f7;scrollbar-width:none}',
     '#lbc-sug::-webkit-scrollbar{display:none}',
     '.lbc-sug{flex:none;background:#f4f8fd;border:1.5px solid #dbe9fb;color:#0b62b8;font:700 12px Inter,Arial;padding:8px 13px;border-radius:999px;cursor:pointer;transition:all .15s;white-space:nowrap}',
@@ -84,9 +92,12 @@
 
   function addMsg(sender, body) {
     var me = sender === 'visitor';
-    var chipDef = null;
+    var chipDef = null, formDef = null;
     var cm = String(body).match(/\[\[chips:([\s\S]*?)\]\]/);
-    if (cm) { chipDef = cm[1]; body = String(body).replace(cm[0], '').replace(/\s+$/, ''); }
+    if (cm) { chipDef = cm[1]; body = String(body).replace(cm[0], ''); }
+    var fm = String(body).match(/\[\[form(?::([a-z, ]*))?\]\]/);
+    if (fm) { formDef = (fm[1] || 'name,email'); body = String(body).replace(fm[0], ''); }
+    body = String(body).replace(/\s+$/, '');
     var who = sender === 'bot' ? 'LoadBoot AI ⚡' : sender === 'staff' ? 'LoadBoot Team' : '';
     var html = '';
     if (!me && who) html += '<div class="lbc-who">' + who + '</div>';
@@ -96,6 +107,46 @@
     var w = document.createElement('div');
     w.innerHTML = html;
     while (w.firstChild) els.body.insertBefore(w.firstChild, els.typing);
+    if (formDef && !me) {
+      els.body.querySelectorAll('.lbc-form-dyn').forEach(function (n) { n.remove(); });
+      var card = document.createElement('div');
+      card.className = 'lbc-form lbc-form-dyn';
+      var wantName = formDef.indexOf('name') >= 0;
+      var wantEmail = formDef.indexOf('email') >= 0;
+      var nameIn = null, emailIn = null;
+      if (wantName) {
+        var l1 = document.createElement('label'); l1.textContent = 'Your name';
+        nameIn = document.createElement('input'); nameIn.placeholder = 'e.g. John Carter'; nameIn.autocomplete = 'name';
+        card.appendChild(l1); card.appendChild(nameIn);
+      }
+      if (wantEmail) {
+        var l2 = document.createElement('label'); l2.textContent = 'Email';
+        emailIn = document.createElement('input'); emailIn.type = 'email'; emailIn.placeholder = 'you@company.com'; emailIn.autocomplete = 'email';
+        card.appendChild(l2); card.appendChild(emailIn);
+      }
+      var ferr = document.createElement('div'); ferr.className = 'lbc-ferr';
+      var sub = document.createElement('button'); sub.type = 'button'; sub.textContent = '✓ Send to LoadBoot team';
+      var note = document.createElement('div'); note.className = 'lbc-fnote'; note.textContent = '🔒 Private — only our team sees this';
+      card.appendChild(ferr); card.appendChild(sub); card.appendChild(note);
+      sub.onclick = async function () {
+        ferr.style.display = 'none';
+        var nv = nameIn ? nameIn.value.trim() : '';
+        var ev = emailIn ? emailIn.value.trim() : '';
+        if (!nv && !ev) { ferr.textContent = wantEmail ? 'Please enter your email' : 'Please enter your name'; ferr.style.display = 'block'; return; }
+        if (ev && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(ev)) { ferr.textContent = 'That email doesn\'t look right'; ferr.style.display = 'block'; return; }
+        sub.disabled = true; sub.textContent = 'Sending…';
+        try {
+          var r = await api('lc_identify', { p_id: convId, p_visitor_key: vKey, p_name: nv || null, p_email: ev || null });
+          if (r && r.error) { ferr.textContent = r.error; ferr.style.display = 'block'; sub.disabled = false; sub.textContent = '✓ Send to LoadBoot team'; return; }
+          card.remove();
+          setTimeout(poll, 300);
+        } catch (e) { ferr.textContent = 'Connection hiccup — try again'; ferr.style.display = 'block'; sub.disabled = false; sub.textContent = '✓ Send to LoadBoot team'; }
+      };
+      var enter = function (e) { if (e.key === 'Enter') { e.preventDefault(); sub.click(); } };
+      if (nameIn) nameIn.addEventListener('keydown', enter);
+      if (emailIn) emailIn.addEventListener('keydown', enter);
+      els.body.insertBefore(card, els.typing);
+    }
     if (chipDef && !me) {
       // only the newest message shows action buttons
       els.body.querySelectorAll('.lbc-chips-dyn').forEach(function (n) { n.remove(); });
