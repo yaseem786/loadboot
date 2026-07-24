@@ -2453,7 +2453,7 @@ def blog_card(fn,title,excerpt,read):
     # Optional real photo: only referenced if thumb-<slug>.jpg is actually present in SRC,
     # otherwise the branded SVG thumbnail is used (no broken/missing image reference).
     img=('<img src="thumb-'+slug+'.jpg" alt="'+title.replace('"','')+'" loading="lazy" decoding="async">') if asset_exists('thumb-'+slug+'.jpg') else ''
-    ov='<div class="bc-ov"></div><span class="bc-brand"><span class="bc-l">L</span>oadboot</span>'
+    ov='<div class="bc-ov"></div><span class="bc-brand" style="padding:6px 10px"><img src="logo-full-dark.png" alt="LoadBoot" style="height:15px;width:auto;display:block" loading="lazy" decoding="async"></span>'
     return ('<a class="blogcard" href="'+fn+'"><div class="bc-thumb">'+thumb+img+ov+'</div><div class="bc-body">'
             '<div class="bc-meta">Guide &middot; '+str(read)+' min read</div><h3>'+title+'</h3><p>'+excerpt
             +'</p><span class="bc-link">Read guide &rarr;</span></div></a>')
