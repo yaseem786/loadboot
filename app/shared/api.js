@@ -374,6 +374,8 @@ export const ccCarrierPrefs = (carrier) => rpc('cc_carrier_prefs', { p_carrier: 
 export const partnerUpdateLoad = (load, p) => rpc('partner_update_load', { p_load: load, p });
 export const partnerLoadChangeRequest = (load, request) => rpc('partner_load_change_request', { p_load: load, p_request: request });
 export const ccOutreachStats = (days) => rpc('cc_outreach_stats', { p_days: days ?? 30 });
+export const ccOutreachCrm = (days) => rpc('cc_outreach_crm', { p_days: days ?? 30 });
+export const ccOutreachControl = (action, value) => rpc('cc_outreach_control', { p_action: action, p_value: value ?? null });
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });
