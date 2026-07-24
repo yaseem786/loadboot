@@ -8,7 +8,7 @@ import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, barChart, card, segmented, statusPill, fmtDateTime, ago } from '../../shared/ui/components.js';
 import { openDrawer } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
-import { webLive, webOverview, webPages, webReferrers, webAiReferrals, integrationStatus } from '../../shared/api.js';
+import { webLive, webOverview, webPages, webReferrers, webAiReferrals, integrationStatus, ccOutreachStats } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { renderGoogleData } from './googleData.js';
 
@@ -21,6 +21,7 @@ export function renderAnalyticsWeb(host) {
     sectionHead('Analytics Control Center', 'First-party, cookie-light web analytics — live visitors, traffic sources, AI referrals and top pages. Every figure is clickable.',
       el('div', { class: 'cc-head-actions', id: 'aw-range' })),
     el('div', { id: 'aw-live' }),
+    el('div', { id: 'aw-outreach' }),
     el('div', { id: 'aw-body' }, el('div', { class: 'lb-state lb-loading' }, 'Loading analytics…')),
   ]));
   const rangeHost = host.querySelector('#aw-range');
@@ -31,6 +32,20 @@ export function renderAnalyticsWeb(host) {
     { value: 1, label: '24h' }, { value: 7, label: '7d' }, { value: 30, label: '30d' }, { value: 90, label: '90d' },
   ], days, (v) => { days = v; load(); }));
 
+  (async () => {
+    const oHost = host.querySelector('#aw-outreach'); if (!oHost) return;
+    let r; try { r = await ccOutreachStats(30); } catch (_) { return; }
+    if (!Array.isArray(r)) return;
+    mount(oHost, card([
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, '📧 Outreach emails — last 30 days'), el('span', { class: 'cc-sub' }, 'clicks → site visits → signups, by email campaign (UTM). Sends/opens live in Brevo.')]),
+      r.length ? el('div', null, r.map((x) => el('div', { style: 'display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
+        el('b', { style: 'min-width:130px' }, x.campaign || '—'),
+        el('span', { class: 'cc-pill cc-pill-blue' }, (x.clicks || 0) + ' clicks'),
+        el('span', { class: 'cc-sub' }, (x.pageviews || 0) + ' pageviews'),
+        el('span', { class: 'cc-pill cc-pill-' + (Number(x.signups) ? 'green' : 'violet') }, (x.signups || 0) + ' signups'),
+      ]))) : el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'No outreach clicks yet — numbers appear as soon as the first emails go out.'),
+    ], ''));
+  })();
   loadLive();
   load();
   liveTimer = setInterval(loadLive, 15000);
