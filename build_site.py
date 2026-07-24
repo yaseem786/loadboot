@@ -4187,13 +4187,38 @@ page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Di
 
 # ---- Unified account-creation hub (#44): carrier / broker / shipper / referral, tabbed ----
 def _hub_value(bullets, portal_href, portal_label):
-    lis = ''.join('<li>' + b + '</li>' for b in bullets)
-    return ('<section><div class="wrap" style="max-width:900px">'
-            '<ul class="hub-checks reveal">' + lis + '</ul>'
-            '<p style="text-align:center;margin-top:6px"><a href="' + portal_href + '" class="btn btn-secondary">' + portal_label + '</a></p>'
+    # Premium "what you get" overview: benefit cards + a hero create-account CTA.
+    _ic = ['&#9989;', '&#128176;', '&#128225;', '&#128737;&#65039;', '&#9889;', '&#128200;', '&#129309;', '&#128230;']
+    cards = ''.join(
+        '<div class="hub-benefit reveal"><div class="hb-i">' + _ic[i % len(_ic)] + '</div><p>' + b + '</p></div>'
+        for i, b in enumerate(bullets))
+    return ('<section style="padding-top:10px"><div class="wrap" style="max-width:980px">'
+            '<div class="sec-head center reveal" style="margin-bottom:18px"><div class="eyebrow">What you get</div>'
+            '<h2>After your account is created</h2></div>'
+            '<div class="hub-benefits">' + cards + '</div>'
+            '<div class="hub-cta reveal">'
+            '<div class="hub-cta-t"><h3>Create your free account</h3>'
+            '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
+            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div></div>'
+            '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
+            '</div>'
             '</div></section>')
 
 _HUB_STYLE = ('<style>'
+    '.hub-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}'
+    '@media(max-width:880px){.hub-benefits{grid-template-columns:1fr 1fr}}'
+    '@media(max-width:560px){.hub-benefits{grid-template-columns:1fr}}'
+    '.hub-benefit{background:#fff;border:1px solid var(--line,#e2e8f0);border-radius:16px;padding:18px 16px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 3px rgba(2,6,23,.05);transition:all .18s}'
+    '.hub-benefit:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(2,6,23,.10);border-color:#cfe3fb}'
+    '.hub-benefit .hb-i{font-size:1.35rem;line-height:1.2}'
+    '.hub-benefit p{margin:0;font-size:.94rem;line-height:1.55;color:var(--ink,#10223B)}'
+    '.hub-cta{background:linear-gradient(135deg,#10223B,#0B1830);border-radius:22px;padding:28px;display:flex;align-items:center;gap:22px;flex-wrap:wrap;box-shadow:0 24px 60px rgba(16,34,59,.35)}'
+    '.hub-cta-t{flex:1;min-width:260px}'
+    '.hub-cta h3{color:#fff;margin:0 0 6px;font-size:1.35rem}'
+    '.hub-cta p{color:#9fb3cc;margin:0 0 12px;font-size:.95rem;line-height:1.6}'
+    '.hub-cta-pills{display:flex;gap:8px;flex-wrap:wrap}'
+    '.hub-cta-pills span{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dbe7f5;font-size:.8rem;font-weight:700;padding:6px 12px;border-radius:999px}'
+    '.hub-cta-btn{font-size:1.05rem;padding:16px 30px;border-radius:14px;white-space:nowrap;box-shadow:0 12px 30px rgba(252,83,5,.45)}'
     '.hub-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:820px;margin:0 auto 6px;padding:0 16px}'
     '.hub-tab{flex:1 1 160px;min-width:150px;display:flex;align-items:center;justify-content:center;gap:8px;'
     'padding:14px 16px;border:1px solid var(--line,#e2e8f0);background:#fff;border-radius:14px;cursor:pointer;'
@@ -4319,6 +4344,8 @@ for i, r in enumerate(_HUB_ROLES):
     panel = '<div class="hub-panel" id="hp-%s"%s>' % (rid, '' if i == 0 else ' hidden')
     panel += _sec('Create your account', longname, '<p class="lead center" style="max-width:640px;margin:0 auto">' + blurb + '</p>')
     panel += _hub_value(bullets, phref, plabel)
+    panel += ('<section style="padding-top:0"><div class="wrap" style="max-width:900px"><div class="sec-head center reveal">'
+              '<div class="eyebrow">Prefer we reach out?</div><h2 style="font-size:1.3rem">Leave your details &mdash; our team contacts you</h2></div></div></section>')
     panel += lead_form(fkey, fhead, fintro, ffields, fsubmit, fsuccess)
     panel += '</div>'
     hub += panel
