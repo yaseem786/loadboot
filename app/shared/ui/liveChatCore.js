@@ -84,6 +84,9 @@
 
   function addMsg(sender, body) {
     var me = sender === 'visitor';
+    var chipDef = null;
+    var cm = String(body).match(/\[\[chips:([\s\S]*?)\]\]/);
+    if (cm) { chipDef = cm[1]; body = String(body).replace(cm[0], '').replace(/\s+$/, ''); }
     var who = sender === 'bot' ? 'LoadBoot AI ⚡' : sender === 'staff' ? 'LoadBoot Team' : '';
     var html = '';
     if (!me && who) html += '<div class="lbc-who">' + who + '</div>';
@@ -93,6 +96,23 @@
     var w = document.createElement('div');
     w.innerHTML = html;
     while (w.firstChild) els.body.insertBefore(w.firstChild, els.typing);
+    if (chipDef && !me) {
+      // only the newest message shows action buttons
+      els.body.querySelectorAll('.lbc-chips-dyn').forEach(function (n) { n.remove(); });
+      var row = document.createElement('div');
+      row.className = 'lbc-chips lbc-chips-dyn';
+      chipDef.split('|').forEach(function (c) {
+        var i = c.indexOf('=');
+        var label = i > 0 ? c.slice(0, i) : c;
+        var send = i > 0 ? c.slice(i + 1) : c;
+        if (!label.trim()) return;
+        var b = document.createElement('button');
+        b.className = 'lbc-chip'; b.type = 'button'; b.textContent = label.trim();
+        b.onclick = function () { row.remove(); sendText(send.trim()); };
+        row.appendChild(b);
+      });
+      els.body.insertBefore(row, els.typing);
+    }
     els.body.scrollTop = els.body.scrollHeight;
   }
 
@@ -249,7 +269,6 @@
       '</div>' +
       '<div id="lbc-body"><div id="lbc-typing"><div class="lbc-tb"><div class="lbc-td"></div><div class="lbc-td"></div><div class="lbc-td"></div></div></div></div>' +
       '<div id="lbc-closedbar">This conversation was closed. <button id="lbc-new">Start a new chat</button></div>' +
-      '<div id="lbc-sug"></div>' +
       '<div id="lbc-foot"><div id="lbc-form">' +
         '<textarea id="lbc-in" rows="1" placeholder="Type your message…"></textarea>' +
         '<button id="lbc-send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11.5 21 3l-8.5 18-2.6-7.4L3 11.5Z" fill="currentColor"/></svg></button>' +
@@ -290,21 +309,6 @@
       var place = function () { fab.style.bottom = mq.matches && document.querySelector('.lb-tabbar,.cp-tabbar,#bTabbar') ? 'calc(84px + env(safe-area-inset-bottom))' : '18px'; };
       place(); mq.addEventListener('change', place); setTimeout(place, 1500);
     } catch (e) {}
-
-    // premium quick-option bar (always visible above the input)
-    var sug = panel.querySelector('#lbc-sug');
-    [['💰 Pricing', 'What does LoadBoot cost?'],
-     ['✅ Get verified', 'How do I get verified and what documents do I need?'],
-     ['🚚 Find loads', 'How do I find loads for my truck?'],
-     ['📦 Post a load', 'How do I post a load?'],
-     ['💳 Payments', 'How and when do I get paid?'],
-     ['📈 Live rates', 'What are the market rates right now?'],
-     ['🙋 Talk to a person', 'I want to talk to a real person']].forEach(function (c) {
-      var b = document.createElement('button');
-      b.className = 'lbc-sug'; b.type = 'button'; b.textContent = c[0];
-      b.onclick = function () { sendText(c[1]); };
-      sug.appendChild(b);
-    });
 
     restore();
     teaser();
