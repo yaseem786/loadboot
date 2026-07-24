@@ -3600,6 +3600,15 @@ page('full-truckload-vs-ltl.html', 'FTL vs LTL vs Partial Truckload — Differen
  'resources.html', ftl, _ftl_faq_sch)
 RELATED['full-truckload-vs-ltl.html'] = [('box-truck-dispatch.html','Box Truck Dispatch'),('hotshot-dispatch.html','Hotshot Dispatch'),('load-board.html','Live Load Board'),('us-truck-dispatcher.html','US Truck Dispatch'),('market-rates.html','Market Rates'),('carriers.html','For Carriers')]
 
+# ---- Unsubscribe (outreach emails one-click) ----
+_unsub_js = ('<script>(function(){var q=new URLSearchParams(location.search);var e=q.get("e"),t=q.get("t");var el=document.getElementById("unsubMsg");'
+ 'if(!e||!t){el.textContent="Invalid unsubscribe link.";return;}'
+ 'fetch("https://%s.supabase.co/rest/v1/rpc/outreach_unsubscribe",{method:"POST",headers:{"apikey":"%s","Authorization":"Bearer %s","Content-Type":"application/json"},body:JSON.stringify({p_email:e,p_token:t})})'
+ '.then(function(r){return r.json()}).then(function(d){el.textContent=(d&&d.ok)?("You are unsubscribed. "+e+" will not receive outreach emails from us again."):"Invalid or expired link.";})'
+ '.catch(function(){el.textContent="Something went wrong - email hello@loadboot.com and we will remove you manually.";});})();</script>') % (APP_REF, APP_ANON or '', APP_ANON or '')
+page('unsub.html', 'Unsubscribe | LoadBoot', 'Unsubscribe from LoadBoot outreach emails - one click, no questions asked.',
+ 'contact.html', '<section><div class="wrap" style="max-width:640px;text-align:center;padding:90px 24px"><h1>Unsubscribe</h1><p class="lead center" id="unsubMsg" style="margin-top:16px">Working&hellip;</p><p style="margin-top:26px;color:#64748B;font-size:.9rem">Changed your mind? You can always find our free tools at <a href="market-rates.html" style="color:#0883F7">loadboot.com/market-rates</a>.</p></div></section>' + _unsub_js, '')
+
 # ---- Partner Program ----
 pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.')
 pp += m_zigzag('Partner with Loadboot', 'A network you can rely on', [
