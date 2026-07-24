@@ -61,3 +61,5 @@ Ye design standard FINAL hai. Bina owner approval ke tabdeeli mana hai.
    → tagline "The Operating System for Trucking" (#94a3b8).
 3. **Mobile auth:** full-screen (no floating card), same lockup treatment.
 Reference implementation: app/carrier/app.js authScreen + carrier.css (cpx-auth-*).
+
+> OWNER CORRECTION 2026-07-24: The official tagline is "THE OPERATING SYSTEM FOR TRUCKING" (not "Keep Your Wheels Earning"). Use it as the brand descriptor everywhere.
