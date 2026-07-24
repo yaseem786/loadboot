@@ -1,13 +1,18 @@
-// liveChat.js — CC Live chat inbox. Staff see every website/portal conversation with
-// full identity (anonymous visitor vs logged-in user, role, company, verification
-// status), watch the AI assistant's answers, and can jump in as a human at any time.
+// liveChat.js — CC Live chat: a scale-ready agent inbox (built for ~1000 concurrent chats).
+// Human queue first (SLA timers), staff assignment, search across messages, canned replies,
+// sound + tab-title alerts on new handoffs, AI-resolution stats, bot training panel.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, segmented, fmtDateTime } from '../../shared/ui/components.js';
-import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss } from '../../shared/api.js';
+import { sectionHead, statCard, segmented, searchBox, fmtDateTime } from '../../shared/ui/components.js';
+import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
+const FILTERS = [
+  { value: 'open', label: 'Open' }, { value: 'human', label: '🙋 Needs human' },
+  { value: 'unread', label: 'Unread' }, { value: 'mine', label: 'Mine' },
+  { value: 'leads', label: '🎯 Leads' }, { value: 'closed', label: 'Closed' }, { value: 'all', label: 'All' },
+];
 
 function identity(c) {
   if (!c.user_id) {
@@ -24,35 +29,174 @@ function identity(c) {
   };
 }
 
+function waitBadge(secs) {
+  if (secs == null) return null;
+  const m = Math.floor(secs / 60);
+  const label = m < 1 ? 'now' : m < 60 ? m + 'm waiting' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm waiting';
+  const tone = m >= 10 ? 'red' : m >= 3 ? 'amber' : 'green';
+  return el('span', { class: 'cc-pill cc-pill-' + tone, style: 'font-size:10.5px' }, '⏱ ' + label);
+}
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880; g.gain.value = 0.06;
+    o.start(); o.frequency.setValueAtTime(660, ctx.currentTime + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+    o.stop(ctx.currentTime + 0.4);
+  } catch (e) { /* sound optional */ }
+}
+
 export function renderLiveChat(host) {
   let filter = 'open';
+  let search = '';
   let activeId = null;
   let lastCount = 0;
+  let lastNeedsHuman = null;
+  let canned = [];
   let timer = null;
 
   const kpis = el('div', { class: 'cc-kpi-grid' });
-  const listHost = el('div', { style: 'overflow-y:auto;max-height:calc(100vh - 320px)' });
-  const threadHost = el('div', { class: 'lb-card', style: 'display:flex;flex-direction:column;min-height:420px' });
+  const listHost = el('div', { style: 'overflow-y:auto;max-height:calc(100vh - 360px)' });
+  const threadHost = el('div', { class: 'lb-card', style: 'display:flex;flex-direction:column;min-height:460px' });
+  const trainHost = el('div', { style: 'margin-top:16px' });
 
   const wrap = el('div', { class: 'fa-grid', style: 'margin-top:16px' }, [
     el('div', { class: 'lb-card' }, [
-      segmented([{ value: 'open', label: 'Open' }, { value: 'closed', label: 'Closed' }, { value: 'all', label: 'All' }], filter, (v) => { filter = v; loadList(); }),
+      searchBox('Search name, email, message text…', (v) => { search = v; loadList(); }),
+      el('div', { style: 'margin:8px 0' }, segmented(FILTERS, filter, (v) => { filter = v; loadList(); })),
       listHost,
     ]),
     threadHost,
   ]);
-  const trainHost = el('div', { style: 'margin-top:16px' });
   mount(host, el('div', null, [
-    sectionHead('Live chat', 'Every website & portal conversation. The AI assistant answers instantly; reply here to take over as a human — the visitor sees it in the same window.'),
+    sectionHead('Live chat', 'Scale-ready inbox: the human queue floats to the top with waiting timers, AI handles the rest. Reply to take over — the visitor sees it instantly.'),
     kpis, wrap, trainHost,
   ]));
-  loadTraining();
-  mount(threadHost, el('div', { class: 'lb-state' }, 'Pick a conversation on the left.'));
-  loadStats(); loadList();
+  mount(threadHost, el('div', { class: 'lb-state' }, 'Pick a conversation on the left. 🙋 Needs-human chats always sort first, longest wait on top.'));
+  loadStats(); loadList(); loadTraining(); loadCanned();
   timer = setInterval(() => { loadStats(); loadList(true); if (activeId) openThread(activeId, true); }, 6000);
-  // Stop polling when the view is unmounted.
-  const obs = new MutationObserver(() => { if (!document.body.contains(kpis)) { clearInterval(timer); obs.disconnect(); } });
+  const obs = new MutationObserver(() => { if (!document.body.contains(kpis)) { clearInterval(timer); obs.disconnect(); document.title = document.title.replace(/^\(\d+\) /, ''); } });
   obs.observe(document.body, { childList: true, subtree: true });
+
+  async function loadCanned() {
+    try { const r = await ccLcCannedList(); if (Array.isArray(r)) canned = r; } catch (e) { /* optional */ }
+  }
+
+  async function loadStats() {
+    let s; try { s = await ccLcStats(); } catch (e) { return; }
+    if (!s || s.error) return;
+    // sound + tab title alert when the human queue grows
+    const nh = Number(s.needs_human || 0);
+    if (lastNeedsHuman != null && nh > lastNeedsHuman) { beep(); toast('🙋 New chat needs a human (' + nh + ' waiting)'); }
+    lastNeedsHuman = nh;
+    document.title = (nh > 0 ? '(' + nh + ') ' : '') + document.title.replace(/^\(\d+\) /, '');
+    const om = Math.floor((s.oldest_wait_secs || 0) / 60);
+    mount(kpis, [
+      statCard({ icon: 'alert', label: 'Needs human NOW', value: String(nh), sub: nh > 0 ? ('oldest waiting ' + (om < 60 ? om + 'm' : Math.floor(om / 60) + 'h')) : 'queue clear 🎉', accent: nh > 0 ? 'red' : 'green' }),
+      statCard({ icon: 'bell', label: 'Open chats', value: String(s.open || 0), sub: (s.unread || 0) + ' unread messages', accent: 'blue' }),
+      statCard({ icon: 'check', label: 'AI resolved today', value: String(s.ai_resolved_today || 0), sub: 'of ' + (s.today || 0) + ' new chats', accent: 'violet' }),
+      statCard({ icon: 'users', label: 'Leads captured today', value: String(s.leads_today || 0), sub: 'name + email → CRM', accent: 'amber' }),
+    ]);
+  }
+
+  async function loadList(silent) {
+    if (!silent) showLoading(listHost, 'Loading chats…');
+    let rows; try { rows = await ccLcList(filter, search || null); } catch (e) { if (!silent) showError(listHost, humanizeError(e), loadList); return; }
+    if (!rows || rows.error) { if (!silent) showError(listHost, (rows && rows.error) || 'Failed', loadList); return; }
+    if (!rows.length) { mount(listHost, el('div', { class: 'lb-state' }, search ? 'No chats match that search.' : 'Nothing here — when someone chats on the website or a portal, it appears instantly.')); return; }
+    mount(listHost, el('div', null, rows.map(c => {
+      const idn = identity(c);
+      return el('div', {
+        class: 'cc-row', style: 'padding:10px 12px;border-bottom:1px solid var(--lb-line,#1e293b);cursor:pointer;border-radius:10px' + (c.id === activeId ? ';background:rgba(8,131,247,.08)' : ''),
+        onclick: () => { activeId = c.id; openThread(c.id); loadList(true); },
+      }, [
+        el('div', { style: 'display:flex;align-items:center;gap:8px' }, [
+          el('span', null, ORIGIN_ICON[c.origin] || '💬'),
+          el('b', { style: 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, idn.label),
+          (c.staff_unread > 0) ? el('span', { class: 'cc-pill cc-pill-red' }, String(c.staff_unread)) : null,
+          el('span', { class: 'cc-sub', style: 'font-size:11px' }, fmtDateTime(c.last_msg_at)),
+        ]),
+        el('div', { style: 'display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap' }, [
+          el('span', { class: 'cc-pill cc-pill-' + idn.tone, style: 'font-size:10.5px' }, idn.pill),
+          el('span', { class: 'cc-pill cc-pill-' + (c.mode === 'bot' ? 'blue' : 'violet'), style: 'font-size:10.5px' }, c.mode === 'bot' ? '⚡ AI' : '🧑 Human'),
+          waitBadge(c.waiting_secs),
+          c.assigned_email ? el('span', { class: 'cc-pill cc-pill-' + (c.assigned_me ? 'green' : 'gray'), style: 'font-size:10.5px' }, '👤 ' + (c.assigned_me ? 'you' : c.assigned_email.split('@')[0])) : null,
+          c.email ? el('span', { class: 'cc-pill cc-pill-amber', style: 'font-size:10.5px' }, '🎯 lead') : null,
+        ]),
+        el('div', { class: 'cc-sub', style: 'margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, c.last_msg || ''),
+      ]);
+    })));
+  }
+
+  async function openThread(id, silent) {
+    if (!silent) mount(threadHost, el('div', { class: 'lb-state lb-loading' }, 'Loading conversation…'));
+    let c; try { c = await ccLcGet(id); } catch (e) { if (!silent) mount(threadHost, el('div', { class: 'lb-state lb-error' }, humanizeError(e))); return; }
+    if (!c || c.error) { if (!silent) mount(threadHost, el('div', { class: 'lb-state lb-error' }, (c && c.error) || 'Not found')); return; }
+    if (silent && c.messages && c.messages.length === lastCount && c.id === activeId) return;
+    lastCount = (c.messages || []).length;
+    const idn = identity(c);
+    const msgs = el('div', { style: 'flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 2px;max-height:calc(100vh - 500px)' },
+      (c.messages || []).map(m => {
+        const mine = m.sender !== 'visitor';
+        const clean = String(m.body).replace(/\[\[(chips|form)[^\]]*\]\]/g, '').trim();
+        return el('div', { style: 'display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') }, [
+          el('span', { class: 'cc-sub', style: 'font-size:10px;margin:0 4px 1px' },
+            (m.sender === 'bot' ? '⚡ AI assistant' : m.sender === 'staff' ? '🧑 Staff' : idn.label) + ' · ' + fmtDateTime(m.at)),
+          el('div', { style: 'max-width:80%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;' +
+            (m.sender === 'visitor' ? 'background:rgba(148,163,184,.15)' : m.sender === 'bot' ? 'background:rgba(8,131,247,.15)' : 'background:rgba(252,83,5,.18)') }, clean),
+        ]);
+      }));
+    const inp = el('textarea', { class: 'cc-input', rows: '2', placeholder: 'Reply as LoadBoot team… (Enter to send · ⚡ for saved replies)' });
+    const reply = async () => {
+      const t = inp.value.trim(); if (!t) return;
+      inp.value = '';
+      try { const r = await ccLcReply(id, t); if (r && r.error) throw new Error(r.error); openThread(id); loadList(true); }
+      catch (e2) { toast(humanizeError(e2), 'error'); }
+    };
+    inp.addEventListener('keydown', async (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); await reply(); } });
+
+    // canned replies palette
+    const cannedHost = el('div', { style: 'display:none;flex-wrap:wrap;gap:6px;margin-top:6px' });
+    const renderCanned = () => mount(cannedHost, (canned || []).map(cr =>
+      el('button', { class: 'lb-btn lb-btn-ghost', style: 'font-size:12px', title: cr.body, onclick: () => { inp.value = cr.body; inp.focus(); cannedHost.style.display = 'none'; } }, cr.title))
+      .concat([el('button', { class: 'lb-btn lb-btn-ghost', style: 'font-size:12px;opacity:.7', onclick: async () => {
+        const t = prompt('Saved reply title:'); if (!t) return;
+        const b = prompt('Saved reply text:'); if (!b) return;
+        const r = await ccLcCannedSave(t, b); if (r && r.error) { toast(r.error, 'error'); return; }
+        await loadCanned(); renderCanned(); toast('Saved reply added ✓');
+      } }, '+ New saved reply')]));
+    renderCanned();
+
+    mount(threadHost, el('div', { style: 'display:flex;flex-direction:column;height:100%' }, [
+      el('div', { class: 'fa-cardhead' }, [
+        el('h3', null, idn.label),
+        el('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [
+          el('span', { class: 'cc-pill cc-pill-' + idn.tone }, idn.pill),
+          el('span', { class: 'cc-pill cc-pill-gray' }, (ORIGIN_ICON[c.origin] || '') + ' ' + c.origin + (c.page ? ' · ' + c.page : '')),
+          c.mc ? el('span', { class: 'cc-pill cc-pill-blue' }, 'MC ' + c.mc) : null,
+          c.dot ? el('span', { class: 'cc-pill cc-pill-blue' }, 'DOT ' + c.dot) : null,
+          c.email ? el('span', { class: 'cc-sub' }, c.email) : null,
+          el('button', { class: 'lb-btn lb-btn-ghost', onclick: async () => { await ccLcAssign(id, true); toast('Assigned to you ✓'); openThread(id); loadList(true); } }, '👤 Take it'),
+          el('button', { class: 'lb-btn lb-btn-ghost', onclick: async () => {
+            await ccLcSetStatus(id, c.status === 'open' ? 'closed' : 'open'); openThread(id); loadList(true);
+          } }, c.status === 'open' ? 'Close' : 'Reopen'),
+        ]),
+      ]),
+      msgs,
+      el('div', { style: 'margin-top:8px' }, [
+        el('div', { style: 'display:flex;gap:8px' }, [
+          el('button', { class: 'lb-btn lb-btn-ghost', title: 'Saved replies', onclick: () => { cannedHost.style.display = cannedHost.style.display === 'none' ? 'flex' : 'none'; } }, '⚡'),
+          inp,
+          el('button', { class: 'lb-btn lb-btn-primary', onclick: reply }, 'Send'),
+        ]),
+        cannedHost,
+      ]),
+    ]));
+    msgs.scrollTop = msgs.scrollHeight;
+  }
 
   async function loadTraining() {
     let rows; try { rows = await ccLcMisses(); } catch (e) { mount(trainHost, ''); return; }
@@ -79,93 +223,7 @@ export function renderLiveChat(host) {
           el('button', { class: 'lb-btn lb-btn-ghost', onclick: async () => { await ccLcMissDismiss(m.id); loadTraining(); } }, 'Dismiss'),
         ]);
       })) : el('div', { class: 'lb-state' }, 'Nothing waiting — the AI answered everything it was asked. 🎉'),
-      el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'How it works: every unanswered question lands here with a counter. Add keywords + an answer → saved into the bot\'s knowledge base immediately. Check daily; the bot gets smarter from real user queries.'),
+      el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'Every unanswered question lands here with a counter. Add keywords + an answer → saved into the bot\'s knowledge base immediately. Check daily; the bot gets smarter from real user queries.'),
     ]));
-  }
-
-  async function loadStats() {
-    let s; try { s = await ccLcStats(); } catch (e) { return; }
-    if (!s || s.error) return;
-    mount(kpis, [
-      statCard({ icon: 'bell', label: 'Open chats', value: String(s.open || 0), sub: 'conversations', accent: 'blue' }),
-      statCard({ icon: 'alert', label: 'Unread', value: String(s.unread || 0), sub: 'messages waiting', accent: (s.unread || 0) > 0 ? 'amber' : 'green' }),
-      statCard({ icon: 'users', label: 'Today', value: String(s.today || 0), sub: 'new conversations', accent: 'violet' }),
-    ]);
-  }
-
-  async function loadList(silent) {
-    if (!silent) showLoading(listHost, 'Loading chats…');
-    let rows; try { rows = await ccLcList(filter); } catch (e) { if (!silent) showError(listHost, humanizeError(e), loadList); return; }
-    if (!rows || rows.error) { if (!silent) showError(listHost, (rows && rows.error) || 'Failed', loadList); return; }
-    if (!rows.length) { mount(listHost, el('div', { class: 'lb-state' }, 'No conversations here yet. When someone chats on the website or a portal, it appears instantly.')); return; }
-    mount(listHost, el('div', null, rows.map(c => {
-      const idn = identity(c);
-      return el('div', {
-        class: 'cc-row', style: 'padding:10px 12px;border-bottom:1px solid var(--lb-line,#1e293b);cursor:pointer;border-radius:10px' + (c.id === activeId ? ';background:rgba(8,131,247,.08)' : ''),
-        onclick: () => { activeId = c.id; openThread(c.id); loadList(true); },
-      }, [
-        el('div', { style: 'display:flex;align-items:center;gap:8px' }, [
-          el('span', null, ORIGIN_ICON[c.origin] || '💬'),
-          el('b', { style: 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, idn.label),
-          (c.staff_unread > 0) ? el('span', { class: 'cc-pill cc-pill-red' }, String(c.staff_unread)) : null,
-          el('span', { class: 'cc-sub', style: 'font-size:11px' }, fmtDateTime(c.last_msg_at)),
-        ]),
-        el('div', { style: 'display:flex;align-items:center;gap:6px;margin-top:3px' }, [
-          el('span', { class: 'cc-pill cc-pill-' + idn.tone, style: 'font-size:10.5px' }, idn.pill),
-          el('span', { class: 'cc-pill cc-pill-' + (c.mode === 'bot' ? 'blue' : 'violet'), style: 'font-size:10.5px' }, c.mode === 'bot' ? '⚡ AI answering' : '🧑 Human mode'),
-        ]),
-        el('div', { class: 'cc-sub', style: 'margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, c.last_msg || ''),
-      ]);
-    })));
-  }
-
-  async function openThread(id, silent) {
-    if (!silent) mount(threadHost, el('div', { class: 'lb-state lb-loading' }, 'Loading conversation…'));
-    let c; try { c = await ccLcGet(id); } catch (e) { if (!silent) mount(threadHost, el('div', { class: 'lb-state lb-error' }, humanizeError(e))); return; }
-    if (!c || c.error) { if (!silent) mount(threadHost, el('div', { class: 'lb-state lb-error' }, (c && c.error) || 'Not found')); return; }
-    if (silent && c.messages && c.messages.length === lastCount && c.id === activeId) return;
-    lastCount = (c.messages || []).length;
-    const idn = identity(c);
-    const msgs = el('div', { style: 'flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 2px;max-height:calc(100vh - 460px)' },
-      (c.messages || []).map(m => {
-        const mine = m.sender !== 'visitor';
-        return el('div', { style: 'display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') }, [
-          el('span', { class: 'cc-sub', style: 'font-size:10px;margin:0 4px 1px' },
-            (m.sender === 'bot' ? '⚡ AI assistant' : m.sender === 'staff' ? '🧑 Staff' : idn.label) + ' · ' + fmtDateTime(m.at)),
-          el('div', { style: 'max-width:80%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;' +
-            (m.sender === 'visitor' ? 'background:rgba(148,163,184,.15)' : m.sender === 'bot' ? 'background:rgba(8,131,247,.15)' : 'background:rgba(252,83,5,.18)') }, m.body),
-        ]);
-      }));
-    const inp = el('textarea', { class: 'cc-input', rows: '2', placeholder: 'Reply as LoadBoot team… (Enter to send)' });
-    inp.addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); await reply(); }
-    });
-    const reply = async () => {
-      const t = inp.value.trim(); if (!t) return;
-      inp.value = '';
-      try { const r = await ccLcReply(id, t); if (r && r.error) throw new Error(r.error); openThread(id); loadList(true); }
-      catch (e2) { toast(humanizeError(e2), 'error'); }
-    };
-    mount(threadHost, el('div', { style: 'display:flex;flex-direction:column;height:100%' }, [
-      el('div', { class: 'fa-cardhead' }, [
-        el('h3', null, idn.label),
-        el('div', { style: 'display:flex;gap:6px;align-items:center' }, [
-          el('span', { class: 'cc-pill cc-pill-' + idn.tone }, idn.pill),
-          el('span', { class: 'cc-pill cc-pill-gray' }, (ORIGIN_ICON[c.origin] || '') + ' ' + c.origin + (c.page ? ' · ' + c.page : '')),
-          c.mc ? el('span', { class: 'cc-pill cc-pill-blue' }, 'MC ' + c.mc) : null,
-          c.dot ? el('span', { class: 'cc-pill cc-pill-blue' }, 'DOT ' + c.dot) : null,
-          c.email ? el('span', { class: 'cc-sub' }, c.email) : null,
-          el('button', { class: 'lb-btn lb-btn-ghost', onclick: async () => {
-            await ccLcSetStatus(id, c.status === 'open' ? 'closed' : 'open'); openThread(id); loadList(true);
-          } }, c.status === 'open' ? 'Close' : 'Reopen'),
-        ]),
-      ]),
-      msgs,
-      el('div', { style: 'display:flex;gap:8px;margin-top:8px' }, [
-        inp,
-        el('button', { class: 'lb-btn lb-btn-primary', onclick: reply }, 'Send'),
-      ]),
-    ]));
-    msgs.scrollTop = msgs.scrollHeight;
   }
 }
