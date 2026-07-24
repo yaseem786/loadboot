@@ -1,0 +1,12 @@
+-- bl_out_0154: CC template manager + today's send plan (applied to STAGING + PROD 2026-07-24).
+-- Staff can list/preview/edit/upload outreach templates from CC (CRM & leads -> Email outreach)
+-- and see exactly what the next run will send and to whom.
+-- RPCs (all gated on marketing.view | carriers.approve | dispatch.manage):
+--   cc_outreach_templates()                    -> list (id, audience, day, subject, active, has_parts)
+--   cc_outreach_template_preview(p_id uuid)    -> rendered html of one template
+--   cc_outreach_template_save(p_audience, p_day, p_subject, p_html default null, p_active default true)
+--       upsert on (audience,day); raw p_html replaces JSON parts (parts -> null);
+--       p_html null = keep existing body, update subject/active only.
+--   cc_outreach_today()                        -> next-run plan: enabled, cap_remaining, total_due,
+--       batch (audience/day/subject/count within cap), sample (first 10 recipients).
+-- Canonical SQL lives in Supabase (see migration bl_out_0154 in both projects).
