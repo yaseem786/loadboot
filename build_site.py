@@ -693,6 +693,7 @@ ART_CSS = '''
 .bc-thumb img{z-index:2}
 .bc-ov{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(155deg,rgba(11,18,32,.22),transparent 38%,transparent 66%,rgba(11,18,32,.5))}
 .bc-brand{position:absolute;top:12px;left:12px;z-index:4;display:inline-flex;align-items:center;gap:7px;font-family:'Manrope',sans-serif;font-weight:800;font-size:.74rem;letter-spacing:.01em;color:#fff;background:rgba(11,18,32,.4);backdrop-filter:blur(5px);padding:5px 11px 5px 5px;border-radius:9px}
+.bc-brand img{position:static;inset:auto;width:auto;height:15px;object-fit:contain;display:block;z-index:auto}
 .bc-l{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:6px;background:linear-gradient(135deg,#0883F7,#1e3a8a);color:#fff;font-size:.72rem;position:relative}
 .bc-l::after{content:'';position:absolute;right:3px;bottom:4px;width:0;height:0;border-left:5px solid #FC5305;border-top:3px solid transparent;border-bottom:3px solid transparent}
 .blogcard:hover .bc-thumb img,.blogcard:hover .bc-thumb svg{transform:scale(1.05)}
