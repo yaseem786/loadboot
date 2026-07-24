@@ -4133,14 +4133,22 @@ function packetAgreementCards(skipPacket) {
   }
   const bScrim = h('div', { class: 'cpx-scrim', hidden: true, onClick: () => bDrawerClose() });
   const bDrawerItems = h('div', { class: 'cpx-d-items' });
+  // premium head — carrier-style: rating, availability dot, chevron, click -> Account
+  const bStars = h('div', { class: 'cpx-d-rating' }, 'New — no ratings yet');
+  (async () => { try { const r9 = await myRating(); if (r9 && r9.avg != null) bStars.textContent = '★ ' + r9.avg + ' (' + (r9.count || 0) + ')'; } catch (_) {} })();
+  const bStat = (label9, goto9) => h('button', { class: 'cpx-d-stat', onClick: () => { bDrawerClose(); bgo(goto9); } }, [h('b', null, '—'), h('span', null, label9)]);
+  const bS1 = bStat('Live on board', 'loads'), bS2 = bStat('Open loads', 'loads'), bS3 = bStat('Total posted', 'loads');
   const bDrawer = h('div', { class: 'cpx-drawer' }, [
-    h('div', { class: 'cpx-d-head' }, [
-      h('div', { class: 'cpx-d-ava' }, (((user && user.email) || '?').trim().charAt(0).toUpperCase())),
+    h('div', { class: 'cpx-d-head', onClick: () => { bDrawerClose(); bgo('account'); } }, [
+      h('div', { class: 'cpx-d-ava', style: 'position:relative' }, [document.createTextNode((((ov.company || user && user.email) || '?').trim().charAt(0).toUpperCase())), h('span', { class: 'cpx-d-avadot' })]),
       h('div', { style: 'flex:1;min-width:0' }, [
         h('div', { class: 'cpx-d-name' }, ov.company || (KIND_LABEL[ov.kind] || 'Broker')),
-        h('div', { class: 'cpx-d-sub' }, (user && user.email) || ''),
+        bStars,
+        h('div', { class: 'cpx-d-sub', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, (user && user.email) || ''),
       ]),
+      h('div', { class: 'cpx-d-chev' }, '›'),
     ]),
+    h('div', { class: 'cpx-d-stats' }, [bS1, bS2, bS3]),
     bDrawerItems,
     h('div', { class: 'cpx-d-foot' }, [
       h('button', { class: 'cpx-d-item', onClick: async (ev9) => { ev9.currentTarget.disabled = true; await signOut(); location.reload(); } }, [icon('logout', 20), h('span', null, 'Sign out')]),
@@ -4149,6 +4157,9 @@ function packetAgreementCards(skipPacket) {
   function bDrawerClose() { bDrawer.classList.remove('show'); bScrim.classList.remove('show'); setTimeout(() => { bScrim.hidden = true; }, 200); }
   function bDrawerOpen() {
     mount(bDrawerItems, BNAV.map(([id9, label9, ic9]) => h('button', { class: 'cpx-d-item' + (btab === id9 ? ' active' : ''), onClick: () => { bDrawerClose(); bgo(id9); } }, [icon(ic9, 20), h('span', null, label9)])));
+    bS1.firstChild.textContent = String(ov.loads_posted ?? 0);
+    bS2.firstChild.textContent = String(ov.loads_open ?? 0);
+    bS3.firstChild.textContent = String(ov.loads_submitted ?? 0);
     bScrim.hidden = false; requestAnimationFrame(() => { bScrim.classList.add('show'); bDrawer.classList.add('show'); });
   }
   const bBurger = h('button', { class: 'bk-burger', 'aria-label': 'Menu', onClick: bDrawerOpen, html: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>' });
