@@ -15,3 +15,11 @@
 --   (pipeline sales/new, source live-chat) + staff alerts, 29 extra KB intents, 2-strike fallback.
 -- bl_chat_0160: bot never silent — keeps helping in human-wait mode until a staff member
 --   actually replies in the thread; broader human-request regex (bare "human", "customer support").
+-- bl_chat_0161: lc_misses training loop -> CC Bot training panel (cc_lc_misses/teach/dismiss).
+-- bl_chat_0162/0163: [[chips:..]] + [[form:name,email]] message markers; lc_identify RPC.
+-- bl_chat_0164: scale inbox — poll write fix, cc_lc_list(status,search) filters+SLA+assignment,
+--   lc_canned replies, cc_lc_stats v2 (needs_human/ai_resolved/leads), lb-lc-housekeep cron.
+-- bl_chat_0165 (a+b+c): fuzzy brain — pg_trgm word-level typo matching (stopwords ignored,
+--   multi-word patterns 0.45/avg 0.6, single word 0.65), onboarding/requirements KB for all
+--   roles, role-capture guard skips real questions. Tested: typo'd broker/carrier/shipper
+--   onboarding queries all answered.
