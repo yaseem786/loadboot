@@ -369,7 +369,7 @@
       '<div id="lbc-foot"><div id="lbc-form">' +
         '<textarea id="lbc-in" rows="1" placeholder="Type your message…"></textarea>' +
         '<button id="lbc-send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11.5 21 3l-8.5 18-2.6-7.4L3 11.5Z" fill="currentColor"/></svg></button>' +
-      '</div><div id="lbc-pow">LoadBoot · The Operating System for Trucking</div></div>';
+      '</div><div id="lbc-pow"><a href="tel:+17373061175" style="color:#64748b;text-decoration:none;font-weight:800">📞 +1 (737) 306-1175</a> · 24/7 · LoadBoot</div></div>';
 
     var fab = document.createElement('button'); fab.id = 'lbc-fab';
     fab.setAttribute('aria-label', 'Chat with LoadBoot');

@@ -64,7 +64,13 @@ export function renderLiveChat(host) {
   const trainHost = el('div', { style: 'margin-top:16px' });
   const callsHost = el('div', { style: 'margin-top:16px' });
 
-  const wrap = el('div', { class: 'fa-grid', style: 'margin-top:16px' }, [
+  if (!document.getElementById('lc-grid-css')) {
+    const st = document.createElement('style');
+    st.id = 'lc-grid-css';
+    st.textContent = '.lc-grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start}.lc-grid>*{min-width:0}@media(max-width:1100px){.lc-grid{grid-template-columns:1fr}}';
+    document.head.appendChild(st);
+  }
+  const wrap = el('div', { class: 'lc-grid', style: 'margin-top:16px' }, [
     el('div', { class: 'lb-card' }, [
       searchBox('Search name, email, message text…', (v) => { search = v; loadList(); }),
       el('div', { style: 'margin:8px 0' }, segmented(FILTERS, filter, (v) => { filter = v; loadList(); })),
@@ -173,8 +179,8 @@ export function renderLiveChat(host) {
     renderCanned();
 
     mount(threadHost, el('div', { style: 'display:flex;flex-direction:column;height:100%' }, [
-      el('div', { class: 'fa-cardhead' }, [
-        el('h3', null, idn.label),
+      el('div', { class: 'fa-cardhead', style: 'flex-wrap:wrap;gap:8px' }, [
+        el('h3', { style: 'margin-right:auto' }, idn.label),
         el('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [
           el('span', { class: 'cc-pill cc-pill-' + idn.tone }, idn.pill),
           el('span', { class: 'cc-pill cc-pill-gray' }, (ORIGIN_ICON[c.origin] || '') + ' ' + c.origin + (c.page ? ' · ' + c.page : '')),
@@ -189,9 +195,9 @@ export function renderLiveChat(host) {
       ]),
       msgs,
       el('div', { style: 'margin-top:8px' }, [
-        el('div', { style: 'display:flex;gap:8px' }, [
+        el('div', { style: 'display:flex;gap:8px;align-items:flex-end' }, [
           el('button', { class: 'lb-btn lb-btn-ghost', title: 'Saved replies', onclick: () => { cannedHost.style.display = cannedHost.style.display === 'none' ? 'flex' : 'none'; } }, '⚡'),
-          inp,
+          el('div', { style: 'flex:1;min-width:0' }, inp),
           el('button', { class: 'lb-btn lb-btn-primary', onclick: reply }, 'Send'),
         ]),
         cannedHost,

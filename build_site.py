@@ -279,7 +279,7 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .sr-line{position:absolute;top:50%;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,#fbbf24 0 30px,transparent 30px 64px);transform:translateY(-50%)}
 .sr-truck{position:absolute;top:50%;left:0;transform:translate(0,-60%);color:#fff;will-change:transform}
 .sr-truck svg{width:188px;height:auto;display:block;filter:drop-shadow(0 10px 16px rgba(0,0,0,.55))}
-@media(max-width:880px){.sr-truck svg{width:120px}}
+@media(max-width:880px){.sr-truck svg{width:120px}}.hd-phone{display:inline-flex;align-items:center;gap:4px;font-weight:800;color:var(--ink,#10223B);text-decoration:none;font-size:.9rem;white-space:nowrap;margin-right:4px}.hd-phone:hover{color:#0883F7}@media(max-width:1280px){.hd-phone{display:none}}.call-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px 18px;margin:0 auto;max-width:760px;font-weight:600;font-size:.95rem;text-align:center;color:#0f172a}.call-strip a{color:#0883F7;font-weight:800;text-decoration:none}.call-strip a:hover{text-decoration:underline}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
 .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
@@ -399,6 +399,15 @@ NAV = [('index.html','Home'),('services.html','Services'),('how-it-works.html','
        ('pricing.html','Pricing'),('load-score.html','Load Score'),('blog.html','Blog'),
        ('about.html','About'),('contact.html','Contact')]
 
+PHONE_DISP = '+1 (737) 306-1175'
+PHONE_TEL = '+17373061175'
+# One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
+PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
+ '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '">' + PHONE_DISP + '</a>'
+ '<span style="color:#94a3b8">&middot;</span>'
+ '<a href="contact.html#call">or we call you &mdash; right now or scheduled &rarr;</a>'
+ '</div></div></section>')
+
 def header(active):
     links = ''
     for label, href, subs in NAV_MENU:
@@ -410,11 +419,11 @@ def header(active):
                       '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
-    mob = '<a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
+    mob = '<a href="tel:+17373061175" class="nav-mob">&#128222; Call us 24/7 &mdash; +1 (737) 306-1175</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
     return '''<header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
-<div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
+<div class="nav-actions"><a href="tel:+17373061175" class="hd-phone" aria-label="Call LoadBoot 24/7">&#128222; +1 (737) 306-1175</a><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
 <button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
 </div></header>''' % (links, mob, ARW)
 
@@ -430,7 +439,7 @@ def footer():
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
 <p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p>
-<div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
+<div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">&#128222; Call 24/7:</b> <a href="tel:+17373061175" style="color:#e2e8f0;font-weight:700">+1 (737) 306-1175</a> &middot; <a href="contact.html#call" style="color:#7dd3fc">or we call you &rarr;</a></div><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
 <a href="https://www.linkedin.com/company/135138228/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 9H3v9h3V9zM4.5 3a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM18 9c-1.6 0-2.5.8-3 1.5V9H12v9h3v-5c0-1 .7-1.7 1.6-1.7s1.4.7 1.4 1.7v5h3v-5.4C21 10 19.7 9 18 9z"/></svg></a></div></div>
@@ -1589,7 +1598,7 @@ pf_html, pf_sch = faq_block(pr_faq)
 pr_body += pf_html + final_cta()
 page('pricing.html','Pricing — Flat 5% for Carriers, Free for Brokers, Shippers & Agents | LoadBoot',
      'Loadboot truck dispatch pricing: a flat 5% of gross, no setup fees, no monthly fees, no long-term contract. You only pay when we book your load.',
-     'pricing.html', pr_body, pf_sch)
+     'pricing.html', PHONE_STRIP + pr_body, pf_sch)
 
 # ---------- BLOG ----------
 def blog_post(fname,title,desc,excerpt,blocks):
@@ -3293,7 +3302,7 @@ faq_body = svc_hero('Frequently Asked Questions', 'Straight answers about pricin
 faq_body += _faq_html + final_cta()
 page('faq.html', 'Truck Dispatch FAQ &mdash; Pricing, Authority &amp; Getting Started | Loadboot',
      'Answers to the most common questions about Loadboot truck dispatch: cost, authority, contracts, equipment types, getting started, factoring and compliance.',
-     'faq.html', faq_body, _faq_sch)
+     'faq.html', PHONE_STRIP + faq_body, _faq_sch)
 
 # ---- Box Truck Dispatch (service page) ----
 _btfaq_html, _btfaq_sch = faq_block([
@@ -4254,7 +4263,8 @@ def _hub_value(bullets, portal_href, portal_label):
             '<div class="hub-cta reveal">'
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
-            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div></div>'
+            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#7dd3fc">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div>'
             '</div></section>')
@@ -5312,6 +5322,8 @@ def _acct_flagship(cfg):
         + ''.join('<a href="' + u + '" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">' + t + '</a>' for t,u in cfg['cta2'])
         + '</div></div></section>')
     RELATED[cfg['fname']] = cfg['related']
+    if cfg['fname'] != 'create-agent-account.html':
+        b = PHONE_STRIP + b
     page(cfg['fname'], cfg['title'], cfg['desc'], cfg['fname'], b, faq_schema + howto_schema)
 
 _ACCT_CARRIER = {'fname': 'create-carrier-account.html', 'title': 'Create a Carrier Account — Verified & Booking the Same Day | LoadBoot', 'desc': 'How to create a LoadBoot carrier account: FMCSA auto-verification from your DOT number, the exact documents to have in hand (COI, W-9, authority letter, factoring NOA), same-day review, and what unlocks when the VERIFIED badge lands.', 'kicker': 'For carriers &amp; owner-operators', 'h1': 'Create your carrier account &mdash; <span style="color:#4ade80">verified and booking the same day</span>', 'intro': 'About 5 minutes of your time: your DOT number pulls company details straight from FMCSA, the wizard walks equipment, lanes and payment (direct or <a href="factoring-noa.html" style="color:#7dd3fc">factoring with full NOA support</a>), documents verify the same day, and the VERIFIED badge opens the <a href="load-board.html" style="color:#7dd3fc">live board</a>.', 'ticks': ['FMCSA auto-verify from your DOT', 'Same-day document review', 'Free account &mdash; 5% only when we book you'], 'cta': ('Create your carrier account &rarr;', '/app/carrier/'), 'hero_shot': ('acct-carrier-profile.webp', 420, 909, 'Verified carrier account — MC and DOT on the profile, booking open, 10/10 documents', 'The real account &mdash; VERIFIED, booking open, 10/10 documents in.'), 'steps_h': 'Signup to first load in five steps', 'steps': [('Sign up with your company email', 'Create your login in the Carrier Portal. Type your DOT number and your legal name, entity type and authority details auto-fill from FMCSA &mdash; no re-typing federal records.'), ('Run the 5-step onboarding wizard', 'Company &rarr; equipment &amp; preferred lanes &rarr; dispatch preferences &rarr; payment (verified bank for direct pay, or your factoring company with the NOA) &rarr; e-sign the dispatch agreement and W-9 in-app (E-SIGN Act).'), ('Upload your documents', 'COI straight from your insurance agent, operating authority letter, and anything else on your checklist. Phone photos work &mdash; the built-in Scan-to-PDF turns pages into one clean file.'), ('Same-day review', 'LoadBoot checks your authority status against FMCSA, the insured name against your legal entity, and every expiry date. Each document runs Uploaded &rarr; In review &rarr; Approved on a visible tracker.'), ('VERIFIED &mdash; booking open', 'The badge lands on your profile, compliance gates open, and the board shows loads with the full rate card in writing. Book in one tap; the <a href="gps-tracking.html">trip runs itself</a>.')], 'docs_h': 'The documents to have in hand', 'docs': [('&#128737;', 'Active MC / USDOT authority', '&ldquo;Authorized for Property&rdquo; and for-hire. New authority is welcome &mdash; no minimum age on your MC. See <a href="authority-dot-setup.html">authority &amp; DOT setup</a>.'), ('&#128196;', 'Certificate of Insurance', 'From your agent: $1M auto liability and $100K cargo is the standard brokers expect. The insured name must match your authority exactly &mdash; the #1 rejection reason industry-wide.'), ('&#9997;&#65039;', 'W-9', 'Have yours ready &mdash; or skip the paperwork and e-sign one in-app; the PDF generates instantly.'), ('&#127974;', 'Factoring NOA letter', 'Only if you factor: the Notice of Assignment from your factoring company. LoadBoot verifies it and routes broker payments to your factor automatically.'), ('&#127974;', 'Bank verification', 'Direct pay: a voided check or bank letter so your remit-to is verified before the first settlement.'), ('&#128667;', 'Driver credentials', 'Fleet? CDL and medical card per driver &mdash; expiry tracking watches them so a lapse never surfaces at a roadside inspection.')], 'docs_note': 'Everything lives in the document vault with expiry reminders &mdash; you upload once and get warned before anything lapses.', 'shots_h': 'Real screens &mdash; verification you can watch', 'shots': [('acct-verification.webp', 420, 909, 'Compliance packet 10/10 verified with business profile from approved authority and W-9', 'The compliance packet &mdash; 10/10 verified, legal identity locked from your authority.'), ('acct-documents.webp', 420, 909, 'Document vault — MC/DOT authority and COI approved with visible review trackers', 'The vault &mdash; every document on a visible Uploaded &rarr; In review &rarr; Approved tracker.')], 'notes_k': 'Pass review the first time', 'notes_h': 'Why applications bounce &mdash; and how not to', 'notes': [('Expired or misnamed COI', 'Certificates that lapsed, or an insured name that does not match the authority. Ask your agent for a current COI in your exact legal name before you upload.'), ('Authority details that do not match FMCSA', 'LoadBoot reads the federal record; if your entity changed, update FMCSA first so the records agree.'), ('Factoring set up without the NOA', 'If you told us you factor, brokers pay your factor &mdash; but only once the NOA letter is on file and verified. Upload it with the packet.'), ('Blurry phone photos', 'Use the built-in Scan-to-PDF &mdash; it crops, straightens and bundles pages so reviewers can actually read them.')], 'faq_h': 'Carrier account FAQ', 'faq': [('How long does approval take?', 'Most carriers are verified the same day once documents are in. The tracker on each document shows exactly where it is.'), ('I have brand-new authority — can I join?', 'Yes. New-authority carriers are a core part of who LoadBoot serves; there is no minimum authority age. Start with the <a href="authority-dot-setup.html">authority setup guide</a> if you are still filing.'), ('What does it cost?', 'The account is free. LoadBoot earns a flat 5% only on loads it books for you — <a href="pricing.html">see pricing</a>.'), ('Do my drivers need their own accounts?', 'They get magic-link invites from your <a href="fleet-management.html">fleet roster</a> — one tap on their phone and their trips, navigation and document capture are ready.'), ('What happens when my COI expires?', 'The vault warns you before expiry. If a required document lapses, booking gates pause until the fresh one is approved — problems surface before a load, never during one.'), ('I use a factoring company — anything extra?', 'Just the NOA letter. Remit-to routing, per-broker control and the funding packet are built in — see <a href="factoring-noa.html">factoring &amp; NOA</a>.')], 'cta_h': 'Five minutes of your time. Verified today.', 'cta2': [('For carriers — the full pitch', 'carriers.html'), ('How you get paid', 'payments-settlements.html')], 'related': [('carriers.html', 'For Carriers'), ('authority-dot-setup.html', 'Authority & DOT Setup'), ('factoring-noa.html', 'Factoring & NOA'), ('payments-settlements.html', 'Payments & Settlements'), ('fleet-management.html', 'Fleet Management'), ('compliance.html', 'Compliance & Verification')]}
