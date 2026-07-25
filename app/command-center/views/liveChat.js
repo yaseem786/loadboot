@@ -272,12 +272,16 @@ export function renderLiveChat(host) {
           el('td', null, c.duration_sec != null ? (Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's') : '—'),
           el('td', { style: 'max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' },
             (c.source === 'website' ? '🌐 ' : '') + (c.status === 'scheduled' && c.scheduled_at ? '📅 ' + fmtDateTime(c.scheduled_at) + ' · ' : '') + (c.summary || c.topic || '—')),
-          el('td', null, c.transcript ? el('button', { class: 'lb-btn lb-btn-ghost', onclick: () => {
-            const dr = openDrawer('Call transcript', el('div', null, [
-              el('p', { class: 'cc-sub' }, (c.name || c.to_number || '') + (c.summary ? ' — ' + c.summary : '')),
-              el('pre', { style: 'white-space:pre-wrap;font-size:12.5px;line-height:1.6' }, c.transcript),
-            ]), { subtitle: 'Recording is in the Retell dashboard → Calls' });
-          } }, '📄 Transcript') : null),
+          el('td', null, (c.transcript || c.recording_url) ? el('button', { class: 'lb-btn lb-btn-ghost', onclick: () => {
+            const kids = [el('p', { class: 'cc-sub' }, (c.name || c.to_number || '') + (c.summary ? ' — ' + c.summary : ''))];
+            if (c.recording_url) {
+              const au = el('audio', { controls: 'controls', style: 'width:100%;margin:8px 0' });
+              au.src = c.recording_url;
+              kids.push(el('div', null, [el('b', { style: 'font-size:12px' }, '🔊 Call audio'), au]));
+            }
+            if (c.transcript) kids.push(el('pre', { style: 'white-space:pre-wrap;font-size:12.5px;line-height:1.6' }, c.transcript));
+            openDrawer('Call — audio & transcript', el('div', null, kids), { subtitle: (c.duration_sec != null ? Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's · ' : '') + (c.sentiment || '') });
+          } }, c.recording_url ? '🔊 Listen' : '📄 Transcript') : null),
         ]))),
       ]) : el('div', { class: 'lb-state' }, 'No calls yet. Inbound calls and Riley callbacks will appear here automatically with transcripts.'),
     ]));
