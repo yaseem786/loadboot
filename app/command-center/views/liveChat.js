@@ -3,8 +3,8 @@
 // sound + tab-title alerts on new handoffs, AI-resolution stats, bot training panel.
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
-import { sectionHead, statCard, segmented, searchBox, fmtDateTime } from '../../shared/ui/components.js';
-import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave } from '../../shared/api.js';
+import { sectionHead, statCard, segmented, searchBox, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
+import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave, ccRetellCallback, ccLcCalls } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
@@ -62,6 +62,7 @@ export function renderLiveChat(host) {
   const listHost = el('div', { style: 'overflow-y:auto;max-height:calc(100vh - 360px)' });
   const threadHost = el('div', { class: 'lb-card', style: 'display:flex;flex-direction:column;min-height:460px' });
   const trainHost = el('div', { style: 'margin-top:16px' });
+  const callsHost = el('div', { style: 'margin-top:16px' });
 
   const wrap = el('div', { class: 'fa-grid', style: 'margin-top:16px' }, [
     el('div', { class: 'lb-card' }, [
@@ -73,11 +74,12 @@ export function renderLiveChat(host) {
   ]);
   mount(host, el('div', null, [
     sectionHead('Live chat', 'Scale-ready inbox: the human queue floats to the top with waiting timers, AI handles the rest. Reply to take over — the visitor sees it instantly.'),
-    kpis, wrap, trainHost,
+    kpis, wrap, callsHost, trainHost,
   ]));
   mount(threadHost, el('div', { class: 'lb-state' }, 'Pick a conversation on the left. 🙋 Needs-human chats always sort first, longest wait on top.'));
-  loadStats(); loadList(); loadTraining(); loadCanned();
-  timer = setInterval(() => { loadStats(); loadList(true); if (activeId) openThread(activeId, true); }, 6000);
+  loadStats(); loadList(); loadTraining(); loadCanned(); loadCalls();
+  let callsTick = 0;
+  timer = setInterval(() => { loadStats(); loadList(true); if (activeId) openThread(activeId, true); if (++callsTick % 5 === 0) loadCalls(); }, 6000);
   const obs = new MutationObserver(() => { if (!document.body.contains(kpis)) { clearInterval(timer); obs.disconnect(); document.title = document.title.replace(/^\(\d+\) /, ''); } });
   obs.observe(document.body, { childList: true, subtree: true });
 
@@ -196,6 +198,50 @@ export function renderLiveChat(host) {
       ]),
     ]));
     msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  async function loadCalls() {
+    let rows; try { rows = await ccLcCalls(); } catch (e) { mount(callsHost, ''); return; }
+    if (!rows || rows.error) { mount(callsHost, ''); return; }
+    const phone = el('input', { class: 'cc-input', placeholder: 'US phone e.g. +15551234567', style: 'min-width:170px' });
+    const nm = el('input', { class: 'cc-input', placeholder: 'Their name (Riley uses it)', style: 'min-width:150px' });
+    const tp = el('input', { class: 'cc-input', placeholder: 'Topic they asked about (e.g. detention pay)', style: 'flex:1;min-width:200px' });
+    const rl = el('select', { class: 'cc-input', style: 'width:130px' }, ['carrier', 'broker', 'shipper', 'dispatcher', 'other'].map(r => el('option', { value: r }, r)));
+    mount(callsHost, el('div', { class: 'lb-card' }, [
+      el('div', { class: 'fa-cardhead' }, [el('h3', null, '📞 Riley phone calls'),
+        el('span', null, 'Callback ONLY for people who asked for a call (email/chat) — never cold lists')]),
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px' }, [
+        phone, nm, tp, rl,
+        el('button', { class: 'lb-btn lb-btn-primary', onclick: async (ev) => {
+          const b = ev.currentTarget; b.disabled = true; b.textContent = 'Dialing…';
+          try {
+            const r = await ccRetellCallback({ to: phone.value, name: nm.value, topic: tp.value, role: rl.value });
+            if (r && r.error) throw new Error(r.error);
+            toast('📞 Riley is calling them now ✓'); phone.value = ''; nm.value = ''; tp.value = '';
+            setTimeout(loadCalls, 1500);
+          } catch (e2) { toast(humanizeError(e2), 'error'); }
+          b.disabled = false; b.textContent = '📞 Riley calls them';
+        } }, '📞 Riley calls them'),
+      ]),
+      rows.length ? el('table', { class: 'cc-table' }, [
+        el('thead', null, el('tr', null, ['When', 'Number', 'Name', 'Dir', 'Status', 'Length', 'Summary', ''].map(h => el('th', null, h)))),
+        el('tbody', null, rows.map(c => el('tr', { class: 'cc-row' }, [
+          el('td', null, fmtDateTime(c.at)),
+          el('td', null, c.direction === 'outbound' ? (c.to_number || '—') : (c.from_number || '—')),
+          el('td', null, c.name || '—'),
+          el('td', null, c.direction === 'outbound' ? '↗ out' : '↘ in'),
+          el('td', null, el('span', { class: 'cc-pill cc-pill-' + (c.status === 'ended' || c.status === 'analyzed' ? 'green' : c.status === 'in-progress' ? 'blue' : 'amber') }, c.status)),
+          el('td', null, c.duration_sec != null ? (Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's') : '—'),
+          el('td', { style: 'max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, c.summary || '—'),
+          el('td', null, c.transcript ? el('button', { class: 'lb-btn lb-btn-ghost', onclick: () => {
+            const dr = openDrawer('Call transcript', el('div', null, [
+              el('p', { class: 'cc-sub' }, (c.name || c.to_number || '') + (c.summary ? ' — ' + c.summary : '')),
+              el('pre', { style: 'white-space:pre-wrap;font-size:12.5px;line-height:1.6' }, c.transcript),
+            ]), { subtitle: 'Recording is in the Retell dashboard → Calls' });
+          } }, '📄 Transcript') : null),
+        ]))),
+      ]) : el('div', { class: 'lb-state' }, 'No calls yet. Inbound calls and Riley callbacks will appear here automatically with transcripts.'),
+    ]));
   }
 
   async function loadTraining() {

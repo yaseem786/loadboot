@@ -1,0 +1,14 @@
+-- bl_voice_0166 (applied STAGING + PROD 2026-07-25): Retell <-> CC integration.
+-- app_private.retell_config (id=1: api_key + from_number '+17373061175') — owner pastes
+--   Retell API key via Claude (execute_sql update), NEVER in frontend.
+-- app_private.lc_calls: every phone call (direction/status/duration/summary/transcript/
+--   sentiment + context name/topic/role + requested_by).
+-- RPCs: cc_retell_callback(to,name,topic,role) staff-gated -> net.http_post to Retell
+--   v2/create-phone-call with retell_llm_dynamic_variables {name,topic,role} (Riley
+--   Outbound greets with context); retell_webhook(event,call) anon -> validates our
+--   number in call, upserts lc_calls by call_id, attaches to recent 'dialing' row,
+--   staff notification on call_ended; cc_lc_calls() staff list (50).
+-- Webhook URL (set in BOTH Retell agents -> Webhook Settings):
+--   https://rwscphuhpjoudvljvmdk.supabase.co/rest/v1/rpc/retell_webhook?apikey=<PROD_ANON_KEY>
+-- CC UI: Live chat page '📞 Riley phone calls' card — callback form + calls table w/
+--   transcript drawer. Canonical SQL in Supabase migration bl_voice_0166 both projects.
