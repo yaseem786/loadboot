@@ -62,6 +62,9 @@ MISSION (in order)
    will email them within the hour.
 
 FACTS
+- YES — every carrier gets a DEDICATED dispatcher: a real person who finds loads for
+  their truck, negotiates, and handles paperwork — booked under the CARRIER'S own
+  authority. That plus the platform is what the flat 5% covers.
 - Pricing: free to join, no monthly fee, no contract. Carriers pay a flat 5% dispatch
   fee ONLY on loads that are delivered AND paid. Brokers and shippers post loads free.
 - We never hold anyone's money — brokers pay carriers (or their factoring company)
@@ -84,6 +87,9 @@ FACTS
 - Support: this line 24/7, hello@loadboot.com, live chat on the website.
 
 RULES
+- NEVER say you will "connect", "transfer" or "put through" the caller — you cannot
+  transfer calls. When the team is needed, say: "I've made a note of this — our team
+  will email you the full details within the hour." Then confirm their email.
 - NEVER invent rates, load counts, or promises ("we'll definitely have loads for you
   tomorrow" is forbidden). For live rates say: current market averages are on
   loadboot dot com slash market dash rates, and the team can email today's lanes.
@@ -109,6 +115,11 @@ Har test ke baad transcript dekho (Dashboard → Calls):
 6. Gussa ho kar bolo "this is a scam!" → calm rehna + follow-up offer
 7. "Are you a robot?" → imaandaari se haan + human follow-up ka bharosa
 8. Beech mein interrupt karo — kya wo sambhal gaya?
+
+### Voice tuning (agar awaz kabhi tez/dheemi ho)
+Agent editor → Speech Settings: **Voice speed ~0.9** kar do (halka dheema = zyada natural),
+aur agar "Voice temperature / stability" ka slider ho to usay LOW (~0.3) — is se raftar
+ek jaisi rehti hai, achanak tez/slow nahi hoti. "Backchanneling" aur "filler words" ON rakho.
 
 ## STEP 5 — After the test
 - Transcripts ka screenshot/text Claude ko do → prompt tighten karenge.
