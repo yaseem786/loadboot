@@ -179,6 +179,16 @@ ek jaisi rehti hai, achanak tez/slow nahi hoti. "Backchanneling" aur "filler wor
   "Call us" + email footers mein → Retell webhook se lead CC/CRM mein (Claude banayega).
 
 ## Outbound callbacks — "Riley Outbound" (second agent)
+
+### v3 SOURCE-AWARE (2026-07-25, final): Begin = "Hey, is this {{name}}? This is Riley from
+LoadBoot!" Prompt = inbound prompt + top block: dynamic vars {{name}}/{{role}}/{{topic}}/
+{{context}}/{{source}}; source-based second sentence (website = "you just asked on our
+site", chat = "we were just chatting on the site", cc = "you've been emailing with our
+team"); context brief between --- markers — USE never RECITE, never re-ask answered
+questions ("one company that remembers them"); flow: confirm→good time→topic→ONE next
+step; edge cases (wrong person/deny/suspicious/voicemail one-line-once/5 min cap).
+Context sources: CC = staff-pasted email thread (4000 chars) · chat = auto last-40-message
+transcript · website = none (name+role only).
 Number's Inbound agent = Riley (receptionist). Outbound agent = SEPARATE "Riley Outbound"
 (same voice/model, inbound prompt + deep OUTBOUND CALLBACK CONTEXT prepended — v2 "million
 scenarios" playbook, 2026-07-25): permission-based opener, 15-sec recap; scenario coverage:
