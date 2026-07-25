@@ -7,6 +7,7 @@ import { sectionHead, statCard, statusPill, segmented, toolbar, searchBox, openD
 import { crmOverview, crmListLeads, crmGetLead, crmCreateLead, crmSetLeadStage, crmAddActivity } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
+import { renderOutreach } from './outreach.js';
 
 const STAGES = [
   { value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'contacted', label: 'Contacted' },
@@ -115,8 +116,18 @@ export function renderCRM(host) {
     ]));
   }
 
-  mount(host, el('div', { class: 'cc-view' }, [header(), listHost]));
-  loadKpis(); loadLeads();
+  const body = el('div');
+  const TABS = [{ value: 'leads', label: 'Leads & pipeline' }, { value: 'outreach', label: 'Email outreach' }];
+  function show(v) {
+    if (v === 'outreach') { renderOutreach(body); return; }
+    mount(body, el('div', { class: 'cc-view' }, [header(), listHost]));
+    loadKpis(); loadLeads();
+  }
+  mount(host, el('div', null, [
+    el('div', { style: 'margin-bottom:12px' }, segmented(TABS, 'leads', show)),
+    body,
+  ]));
+  show('leads');
 }
 
 export default renderCRM;

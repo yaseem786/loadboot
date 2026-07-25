@@ -376,6 +376,24 @@ export const partnerLoadChangeRequest = (load, request) => rpc('partner_load_cha
 export const ccOutreachStats = (days) => rpc('cc_outreach_stats', { p_days: days ?? 30 });
 export const ccOutreachCrm = (days) => rpc('cc_outreach_crm', { p_days: days ?? 30 });
 export const ccOutreachControl = (action, value) => rpc('cc_outreach_control', { p_action: action, p_value: value ?? null });
+export const ccOutreachToday = () => rpc('cc_outreach_today', {});
+export const ccOutreachTemplates = () => rpc('cc_outreach_templates', {});
+export const ccOutreachTemplatePreview = (id) => rpc('cc_outreach_template_preview', { p_id: id });
+export const ccOutreachTemplateSave = (o) => rpc('cc_outreach_template_save', { p_audience: o.audience, p_day: o.day, p_subject: o.subject, p_html: o.html ?? null, p_active: o.active ?? true });
+export const ccOutreachLog = (filter, limit) => rpc('cc_outreach_log', { p_filter: filter || 'all', p_limit: limit ?? 100 });
+// ---- Live chat (CC inbox; bl_chat_0157/0158) ----
+export const ccLcList = (status, search) => rpc('cc_lc_list', { p_status: status || 'open', p_search: search ?? null });
+export const ccLcGet = (id) => rpc('cc_lc_get', { p_id: id });
+export const ccLcReply = (id, body) => rpc('cc_lc_reply', { p_id: id, p_body: body });
+export const ccLcSetStatus = (id, status) => rpc('cc_lc_set_status', { p_id: id, p_status: status });
+export const ccLcStats = () => rpc('cc_lc_stats', {});
+export const ccLcMisses = () => rpc('cc_lc_misses', {});
+export const ccLcTeach = (missId, patterns, answer) => rpc('cc_lc_teach', { p_miss_id: missId ?? null, p_patterns: patterns, p_answer: answer });
+export const ccLcMissDismiss = (missId) => rpc('cc_lc_miss_dismiss', { p_miss_id: missId });
+export const ccLcAssign = (id, take) => rpc('cc_lc_assign', { p_id: id, p_take: take !== false });
+export const ccLcCannedList = () => rpc('cc_lc_canned_list', {});
+export const ccLcCannedSave = (title, body) => rpc('cc_lc_canned_save', { p_title: title, p_body: body });
+export const ccLcCannedDelete = (id) => rpc('cc_lc_canned_delete', { p_id: id });
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });

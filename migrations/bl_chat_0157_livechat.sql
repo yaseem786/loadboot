@@ -1,0 +1,25 @@
+-- bl_chat_0157 + bl_chat_0158 (applied STAGING + PROD 2026-07-24): self-hosted live chat.
+-- Tables: app_private.lc_conversations (visitor_key/user_id/origin/page/status/mode bot|human/
+--   unread counters), lc_messages (sender visitor|staff|bot), lc_kb (AI knowledge base ~34 intents).
+-- Visitor RPCs (anon+auth): lc_start / lc_send / lc_poll — visitor_key OR auth.uid() gate,
+--   rate limits (5 convos/day, 30 msgs/5min, 2000 chars).
+-- AI: lc_bot_step -> lc_bot_answer (keyword-scored KB match) answers instantly; unknown question
+--   or "talk to a person" -> mode=human + staff notification (livechat.handoff).
+-- Staff RPCs: cc_lc_list/get/reply/set_status/stats (comm.view|support.view|dispatch.manage).
+--   cc_lc_reply flips conversation to human mode.
+-- Frontend: app/shared/ui/liveChatCore.js (window.LBChat, shared widget) + chatWidget.js (portals
+--   auto-mount, CC skipped) + /lc-init.js emitted by build_site.py (marketing site, anon visitor)
+--   + CC view views/liveChat.js at /live-chat.
+-- Canonical SQL in Supabase migrations bl_chat_0157/0158 in both projects.
+-- bl_chat_0159 (AI v2): greetings/thanks regex, role->name->email lead funnel -> crm_leads
+--   (pipeline sales/new, source live-chat) + staff alerts, 29 extra KB intents, 2-strike fallback.
+-- bl_chat_0160: bot never silent — keeps helping in human-wait mode until a staff member
+--   actually replies in the thread; broader human-request regex (bare "human", "customer support").
+-- bl_chat_0161: lc_misses training loop -> CC Bot training panel (cc_lc_misses/teach/dismiss).
+-- bl_chat_0162/0163: [[chips:..]] + [[form:name,email]] message markers; lc_identify RPC.
+-- bl_chat_0164: scale inbox — poll write fix, cc_lc_list(status,search) filters+SLA+assignment,
+--   lc_canned replies, cc_lc_stats v2 (needs_human/ai_resolved/leads), lb-lc-housekeep cron.
+-- bl_chat_0165 (a+b+c): fuzzy brain — pg_trgm word-level typo matching (stopwords ignored,
+--   multi-word patterns 0.45/avg 0.6, single word 0.65), onboarding/requirements KB for all
+--   roles, role-capture guard skips real questions. Tested: typo'd broker/carrier/shipper
+--   onboarding queries all answered.

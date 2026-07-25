@@ -1,0 +1,8 @@
+-- bl_out_0156: drip priority (applied STAGING + PROD 2026-07-24).
+-- outreach_run_daily + cc_outreach_today queue order changed:
+--   OLD: emails_sent ASC  -> with a 140k list nobody would ever get Day 2.
+--   NEW: emails_sent DESC, last_sent_at ASC NULLS LAST, created_at ASC
+--        = due follow-ups send FIRST (deepest drip first, longest-waiting first),
+--          remaining daily cap fills with brand-new Day-1 contacts.
+-- Also: outreach_health_check() applied to STAGING (bl_out_0153 parity closed).
+-- Canonical SQL lives in Supabase migration bl_out_0156 in both projects.

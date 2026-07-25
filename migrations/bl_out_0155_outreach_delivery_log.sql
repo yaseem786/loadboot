@@ -1,0 +1,7 @@
+-- bl_out_0155: CC delivery log (applied STAGING + PROD 2026-07-24).
+-- cc_outreach_log(p_filter, p_limit): per-email visibility in CC -> CRM & leads -> Email outreach.
+--   p_filter 'sent'    -> every delivered outreach email (recipient, template day, time)
+--   p_filter 'failed'  -> failed + bounced sends with failure_reason
+--   p_filter 'removed' -> contacts auto-removed from the list (bounced/unsubscribed/suppressed)
+--   p_filter 'all'     -> full outreach delivery stream (default), limit <= 500
+-- Gate: marketing.view | carriers.approve | dispatch.manage. Canonical SQL in Supabase both projects.
