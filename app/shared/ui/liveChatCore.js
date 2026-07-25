@@ -97,6 +97,8 @@
     if (cm) { chipDef = cm[1]; body = String(body).replace(cm[0], ''); }
     var fm = String(body).match(/\[\[form(?::([a-z, ]*))?\]\]/);
     if (fm) { formDef = (fm[1] || 'name,email'); body = String(body).replace(fm[0], ''); }
+    var callForm = false;
+    if (String(body).indexOf('[[callform]]') >= 0) { callForm = true; body = String(body).replace('[[callform]]', ''); }
     body = String(body).replace(/\s+$/, '');
     var who = sender === 'bot' ? 'LoadBoot AI ⚡' : sender === 'staff' ? 'LoadBoot Team' : '';
     var html = '';
@@ -146,6 +148,50 @@
       if (nameIn) nameIn.addEventListener('keydown', enter);
       if (emailIn) emailIn.addEventListener('keydown', enter);
       els.body.insertBefore(card, els.typing);
+    }
+    if (callForm && !me) {
+      els.body.querySelectorAll('.lbc-callform-dyn').forEach(function (n) { n.remove(); });
+      var cc = document.createElement('div');
+      cc.className = 'lbc-form lbc-callform-dyn';
+      var lp = document.createElement('label'); lp.textContent = 'Your US phone number';
+      var pin = document.createElement('input'); pin.type = 'tel'; pin.placeholder = '(555) 555-5555'; pin.autocomplete = 'tel';
+      var lr = document.createElement('label'); lr.textContent = 'You are a…';
+      var rsel = document.createElement('select');
+      rsel.style.cssText = 'border:1.5px solid #dbe4ef;border-radius:11px;padding:10px 12px;font:400 13.5px Inter,Arial;background:#fff;color:#0f172a;width:100%';
+      [['carrier', '🚚 Carrier / Owner-operator'], ['broker', '🏢 Broker'], ['shipper', '📦 Shipper']].forEach(function (o) {
+        var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; rsel.appendChild(op);
+      });
+      var lw = document.createElement('label'); lw.textContent = 'When?';
+      var wsel = document.createElement('select');
+      wsel.style.cssText = rsel.style.cssText;
+      [['now', '📞 Call me right now'], ['later', '📅 Pick a date & time']].forEach(function (o) {
+        var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; wsel.appendChild(op);
+      });
+      var dt = document.createElement('input'); dt.type = 'datetime-local'; dt.style.display = 'none';
+      dt.style.cssText += ';border:1.5px solid #dbe4ef;border-radius:11px;padding:10px 12px;font:400 13.5px Inter,Arial;width:100%;box-sizing:border-box';
+      wsel.onchange = function () { dt.style.display = wsel.value === 'later' ? 'block' : 'none'; };
+      var cerr = document.createElement('div'); cerr.className = 'lbc-ferr';
+      var csub = document.createElement('button'); csub.type = 'button'; csub.textContent = '📞 Call me';
+      var cnote = document.createElement('div'); cnote.className = 'lbc-fnote'; cnote.textContent = 'By requesting a call you agree to receive one call at this number';
+      [lp, pin, lr, rsel, lw, wsel, dt, cerr, csub, cnote].forEach(function (n) { cc.appendChild(n); });
+      csub.onclick = async function () {
+        cerr.style.display = 'none';
+        var pv = pin.value.replace(/[^0-9+]/g, '');
+        if (pv.length < 10) { cerr.textContent = 'Please enter a valid US phone number'; cerr.style.display = 'block'; return; }
+        var whenIso = null;
+        if (wsel.value === 'later') {
+          if (!dt.value) { cerr.textContent = 'Pick a date & time, or choose right now'; cerr.style.display = 'block'; return; }
+          whenIso = new Date(dt.value).toISOString();
+        }
+        csub.disabled = true; csub.textContent = 'Requesting…';
+        try {
+          var r = await api('lc_chat_request_call', { p_id: convId, p_visitor_key: vKey, p_phone: pv, p_role: rsel.value, p_name: null, p_email: null, p_when: whenIso });
+          if (r && r.error) { cerr.textContent = r.error; cerr.style.display = 'block'; csub.disabled = false; csub.textContent = '📞 Call me'; return; }
+          cc.remove();
+          setTimeout(poll, 400);
+        } catch (e) { cerr.textContent = 'Connection hiccup — try again'; cerr.style.display = 'block'; csub.disabled = false; csub.textContent = '📞 Call me'; }
+      };
+      els.body.insertBefore(cc, els.typing);
     }
     if (chipDef && !me) {
       // only the newest message shows action buttons
