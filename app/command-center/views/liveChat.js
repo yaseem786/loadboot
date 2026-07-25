@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, segmented, searchBox, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
-import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave, ccRetellCallback, ccLcCalls } from '../../shared/api.js';
+import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave, ccRetellCallback, ccLcCalls, ccLcPresenceGet, ccLcPresenceSet } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
@@ -58,6 +58,7 @@ export function renderLiveChat(host) {
   let canned = [];
   let timer = null;
 
+  const presenceHost = el('div', { style: 'margin-bottom:12px' });
   const kpis = el('div', { class: 'cc-kpi-grid' });
   const listHost = el('div', { style: 'overflow-y:auto;max-height:calc(100vh - 360px)' });
   const threadHost = el('div', { class: 'lb-card', style: 'display:flex;flex-direction:column;min-height:460px' });
@@ -80,8 +81,9 @@ export function renderLiveChat(host) {
   ]);
   mount(host, el('div', null, [
     sectionHead('Live chat', 'Scale-ready inbox: the human queue floats to the top with waiting timers, AI handles the rest. Reply to take over — the visitor sees it instantly.'),
-    kpis, wrap, callsHost, trainHost,
+    presenceHost, kpis, wrap, callsHost, trainHost,
   ]));
+  loadPresence();
   mount(threadHost, el('div', { class: 'lb-state' }, 'Pick a conversation on the left. 🙋 Needs-human chats always sort first, longest wait on top.'));
   loadStats(); loadList(); loadTraining(); loadCanned(); loadCalls();
   let callsTick = 0;
@@ -204,6 +206,32 @@ export function renderLiveChat(host) {
       ]),
     ]));
     msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  async function loadPresence() {
+    let pr; try { pr = await ccLcPresenceGet(); } catch (e) { mount(presenceHost, ''); return; }
+    if (!pr || pr.error) { mount(presenceHost, ''); return; }
+    const nameIn = el('input', { class: 'cc-input', placeholder: 'Your name (visitor will see it)', value: pr.staff_name || '', style: 'width:210px' });
+    const desigIn = el('input', { class: 'cc-input', placeholder: 'Designation (e.g. Carrier Success Manager)', value: pr.designation || 'Carrier Success Manager', style: 'width:260px' });
+    mount(presenceHost, el('div', { class: 'lb-card', style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border:1.5px solid ' + (pr.available ? 'rgba(34,197,94,.5)' : 'var(--lb-line,#1e293b)') }, [
+      el('span', { style: 'font-size:1.3rem' }, pr.available ? '🟢' : '⚪'),
+      el('div', { style: 'min-width:180px' }, [
+        el('b', null, pr.available ? ('LIVE — ' + (pr.staff_name || '')) : 'Team offline'),
+        el('div', { class: 'cc-sub', style: 'font-size:11.5px' }, pr.available
+          ? 'AI is telling visitors: "Connecting you with ' + (pr.staff_name || '') + ', our ' + (pr.designation || '') + '" — reply fast!'
+          : 'AI collects the full question + preferred contact, promises an email follow-up'),
+      ]),
+      nameIn, desigIn,
+      el('button', { class: 'lb-btn ' + (pr.available ? 'lb-btn-ghost' : 'lb-btn-primary'), onclick: async (ev) => {
+        const b = ev.currentTarget; b.disabled = true;
+        try {
+          const r = await ccLcPresenceSet(!pr.available, nameIn.value, desigIn.value);
+          if (r && r.error) throw new Error(r.error);
+          toast(pr.available ? 'Ab offline — AI emails ka wada karegi' : '🟢 Tum LIVE ho — naye handoffs tumhare naam ke saath aayenge');
+          loadPresence();
+        } catch (e2) { toast(humanizeError(e2), 'error'); b.disabled = false; }
+      } }, pr.available ? '⏸ Go offline' : '🟢 I\'m available'),
+    ]));
   }
 
   async function loadCalls() {

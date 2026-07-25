@@ -23,3 +23,11 @@
 --   multi-word patterns 0.45/avg 0.6, single word 0.65), onboarding/requirements KB for all
 --   roles, role-capture guard skips real questions. Tested: typo'd broker/carrier/shipper
 --   onboarding queries all answered.
+-- bl_chat_0172 (STAGING+PROD 2026-07-25): staff PRESENCE. lc_presence singleton
+--   (available/staff_name/designation) + cc_lc_presence_get/set; conversations.pending_human.
+--   Human-request flow v2: AI first captures name+email ([[form]]), THEN app_private.lc_do_handoff:
+--   presence ON -> "Connecting you with {name}, our {designation} — online right now";
+--   OFF -> query saved + email promise + preferred-contact chips (call chip ONLY for
+--   carrier/broker/shipper; "Can you call me?" chip routes into existing [[callform]]).
+--   lc_identify triggers handoff when pending_human completes. Strike-2 handoff same flow.
+--   CC: presence toggle card on Live chat page (green LIVE bar, name+designation inputs).
