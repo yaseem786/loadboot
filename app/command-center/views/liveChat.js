@@ -207,6 +207,8 @@ export function renderLiveChat(host) {
     const nm = el('input', { class: 'cc-input', placeholder: 'Their name (Riley uses it)', style: 'min-width:150px' });
     const tp = el('input', { class: 'cc-input', placeholder: 'Topic they asked about (e.g. detention pay)', style: 'flex:1;min-width:200px' });
     const rl = el('select', { class: 'cc-input', style: 'width:130px' }, ['carrier', 'broker', 'shipper', 'dispatcher', 'other'].map(r => el('option', { value: r }, r)));
+    const ctx = el('textarea', { class: 'cc-input', rows: '2', placeholder: 'Context for Riley (e.g. email summary: "asked about factoring, has 3 trucks, factor charges 4%") — she uses it naturally on the call', style: 'flex-basis:100%' });
+    const when = el('input', { class: 'cc-input', type: 'datetime-local', style: 'width:200px' });
     mount(callsHost, el('div', { class: 'lb-card' }, [
       el('div', { class: 'fa-cardhead' }, [el('h3', null, '📞 Riley phone calls'),
         el('span', null, 'Callback ONLY for people who asked for a call (email/chat) — never cold lists')]),
@@ -215,13 +217,15 @@ export function renderLiveChat(host) {
         el('button', { class: 'lb-btn lb-btn-primary', onclick: async (ev) => {
           const b = ev.currentTarget; b.disabled = true; b.textContent = 'Dialing…';
           try {
-            const r = await ccRetellCallback({ to: phone.value, name: nm.value, topic: tp.value, role: rl.value });
+            const r = await ccRetellCallback({ to: phone.value, name: nm.value, topic: tp.value, role: rl.value, context: ctx.value, when: when.value ? new Date(when.value).toISOString() : null });
             if (r && r.error) throw new Error(r.error);
-            toast('📞 Riley is calling them now ✓'); phone.value = ''; nm.value = ''; tp.value = '';
+            toast(r.scheduled ? '📅 Call scheduled ✓' : '📞 Riley is calling them now ✓'); phone.value = ''; nm.value = ''; tp.value = ''; ctx.value = ''; when.value = '';
             setTimeout(loadCalls, 1500);
           } catch (e2) { toast(humanizeError(e2), 'error'); }
           b.disabled = false; b.textContent = '📞 Riley calls them';
         } }, '📞 Riley calls them'),
+        ctx,
+        el('span', { class: 'cc-sub', style: 'font-size:11px' }, 'Schedule (optional — empty = call right now):'), when,
       ]),
       rows.length ? el('table', { class: 'cc-table' }, [
         el('thead', null, el('tr', null, ['When', 'Number', 'Name', 'Dir', 'Status', 'Length', 'Summary', ''].map(h => el('th', null, h)))),
@@ -232,7 +236,8 @@ export function renderLiveChat(host) {
           el('td', null, c.direction === 'outbound' ? '↗ out' : '↘ in'),
           el('td', null, el('span', { class: 'cc-pill cc-pill-' + (c.status === 'ended' || c.status === 'analyzed' ? 'green' : c.status === 'in-progress' ? 'blue' : 'amber') }, c.status)),
           el('td', null, c.duration_sec != null ? (Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's') : '—'),
-          el('td', { style: 'max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, c.summary || '—'),
+          el('td', { style: 'max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' },
+            (c.source === 'website' ? '🌐 ' : '') + (c.status === 'scheduled' && c.scheduled_at ? '📅 ' + fmtDateTime(c.scheduled_at) + ' · ' : '') + (c.summary || c.topic || '—')),
           el('td', null, c.transcript ? el('button', { class: 'lb-btn lb-btn-ghost', onclick: () => {
             const dr = openDrawer('Call transcript', el('div', null, [
               el('p', { class: 'cc-sub' }, (c.name || c.to_number || '') + (c.summary ? ' — ' + c.summary : '')),

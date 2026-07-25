@@ -1487,7 +1487,62 @@ var t=document.getElementById('formIntro');if(t)t.textContent=isAcct?'Tell us ab
 (function(){var h=location.hash;var map={'#quote':'iQuote','#ask':'iAsk','#question':'iAsk','#create':'iAcct','#account':'iAcct','#form':null};if(h in map){var id=map[h];if(id){var r=document.getElementById(id);if(r)r.checked=true;}setTimeout(function(){var f=document.getElementById('qfForm');if(f)f.scrollIntoView({behavior:'smooth',block:'start'});},150);}qfIntent();
 var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A Loadboot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
 </script>"""
-page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section>')
+
+# ---------- "Get a call" section (contact page): role-gated number + call-me-now/schedule ----------
+VOICE_NUMBER_DISPLAY = '+1 (737) 306-1175'
+VOICE_NUMBER_TEL = '+17373061175'
+call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="max-width:820px">
+<div class="sec-head center reveal"><div class="eyebrow">Prefer to talk?</div><h2>Get a call from LoadBoot</h2>
+<p class="lead center" style="max-width:600px;margin:0 auto">Riley, our 24/7 front desk, answers instantly &mdash; or calls you the moment you ask, or at a time you pick.</p></div>
+<div class="quote-wrap reveal" id="lbCallCard">
+<h3 style="margin-bottom:6px">Who are you?</h3>
+<p style="color:var(--muted);margin-bottom:14px">So we point you to the right person.</p>
+<div class="intent-row" id="lbcwRoles">
+<input type="radio" id="cwCar" name="cwrole" value="carrier"><label for="cwCar"><span class="d"></span> Carrier</label>
+<input type="radio" id="cwBro" name="cwrole" value="broker"><label for="cwBro"><span class="d"></span> Broker</label>
+<input type="radio" id="cwShi" name="cwrole" value="shipper"><label for="cwShi"><span class="d"></span> Shipper</label>
+<input type="radio" id="cwDis" name="cwrole" value="dispatcher"><label for="cwDis"><span class="d"></span> Dispatcher / Referral</label>
+</div>
+<div id="cwGate" hidden style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px;margin-top:14px">
+<b>Dispatcher &amp; referral questions are handled by email and live chat</b> &mdash; you will get faster, written answers.
+<div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="careers.html">Dispatcher jobs &rarr;</a>
+<a class="btn btn-secondary" href="create-agent-account.html">Referral / agent account &rarr;</a></div></div>
+<div id="cwMain" hidden style="margin-top:14px">
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+&#128222; Call us anytime, 24/7 &mdash; answered on the first ring:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
+<h3 style="margin:0 0 12px">&hellip;or we call you</h3>
+<div class="form-grid">
+<div class="field"><label for="cwName">Your name</label><input type="text" id="cwName" placeholder="Full name"></div>
+<div class="field"><label for="cwPhone">US phone number</label><input type="tel" id="cwPhone" placeholder="(555) 555-5555"></div>
+<div class="field full"><label for="cwTopic">What is it about? <span style="color:var(--muted);font-weight:500">(optional)</span></label><input type="text" id="cwTopic" placeholder="e.g. rates for my dry van, getting verified, posting loads"></div>
+<div class="field"><label for="cwWhenSel">When?</label><select id="cwWhenSel"><option value="now">Call me right now</option><option value="later">Pick a time</option></select></div>
+<div class="field" id="cwWhenWrap" hidden><label for="cwWhen">Date &amp; time (your local time)</label><input type="datetime-local" id="cwWhen"></div>
+</div>
+<button class="btn btn-primary" id="cwBtn" style="width:100%%;justify-content:center;margin-top:18px">&#128222; Call me</button>
+<p id="cwMsg" style="text-align:center;margin-top:12px;font-size:.92rem;color:var(--muted)">By requesting a call you agree to receive one call from LoadBoot at this number.</p>
+</div></div></div></section>
+<script>(function(){
+function vkey(){try{var k=localStorage.getItem('lb_lc_key');if(!k){k='v'+Date.now().toString(36)+Math.random().toString(36).slice(2,14)+Math.random().toString(36).slice(2,10);localStorage.setItem('lb_lc_key',k);}return k;}catch(e){return 'novkey'+Date.now().toString(36)+'xxxxxxxx';}}
+var roles=document.querySelectorAll('input[name=cwrole]');var gate=document.getElementById('cwGate');var main=document.getElementById('cwMain');
+roles.forEach(function(r){r.addEventListener('change',function(){var v=document.querySelector('input[name=cwrole]:checked').value;var dis=(v==='dispatcher');gate.hidden=!dis;main.hidden=dis;});});
+var sel=document.getElementById('cwWhenSel');var ww=document.getElementById('cwWhenWrap');sel.addEventListener('change',function(){ww.hidden=sel.value!=='later';});
+var btn=document.getElementById('cwBtn');var msg=document.getElementById('cwMsg');
+btn.addEventListener('click',function(){
+var role=(document.querySelector('input[name=cwrole]:checked')||{}).value;if(!role||role==='dispatcher')return;
+var name=document.getElementById('cwName').value.trim();var phone=document.getElementById('cwPhone').value.trim();
+if(!name||!phone){msg.textContent='Please enter your name and US phone number.';msg.style.color='#dc2626';return;}
+var when=null;if(sel.value==='later'){var wv=document.getElementById('cwWhen').value;if(!wv){msg.textContent='Pick a date and time, or choose Call me right now.';msg.style.color='#dc2626';return;}when=new Date(wv).toISOString();}
+btn.disabled=true;btn.textContent='Requesting…';
+fetch('https://""" + APP_REF + """.supabase.co/rest/v1/rpc/lc_request_call',{method:'POST',headers:{'Content-Type':'application/json','apikey':'""" + (APP_ANON or '') + """','Authorization':'Bearer """ + (APP_ANON or '') + """'},body:JSON.stringify({p_visitor_key:vkey(),p_name:name,p_phone:phone,p_role:role,p_topic:document.getElementById('cwTopic').value.trim()||null,p_when:when})})
+.then(function(r){return r.json();}).then(function(d){
+if(d&&d.error){msg.textContent=d.error;msg.style.color='#dc2626';btn.disabled=false;btn.textContent='📞 Call me';return;}
+btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.scheduled?'Scheduled! Riley will call you at your picked time.':'Riley is calling you right now — your phone should ring in ~30 seconds!';
+}).catch(function(){msg.textContent='Something went wrong — call us directly or use live chat.';msg.style.color='#dc2626';btn.disabled=false;btn.textContent='📞 Call me';});
+});})();</script>"""
+)
+
+
+page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section>')
 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
