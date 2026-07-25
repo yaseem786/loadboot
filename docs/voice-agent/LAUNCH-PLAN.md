@@ -178,6 +178,16 @@ ek jaisi rehti hai, achanak tez/slow nahi hoti. "Backchanneling" aur "filler wor
 - Launch (jab budget ho): $10 top-up → Buy Number ($2/mo) → number website pe
   "Call us" + email footers mein → Retell webhook se lead CC/CRM mein (Claude banayega).
 
+## Outbound callbacks — "Riley Outbound" (second agent)
+Number's Inbound agent = Riley (receptionist). Outbound agent = SEPARATE "Riley Outbound"
+(same voice/model/prompt) with an OUTBOUND CALLBACK CONTEXT section prepended:
+- She is calling THEM because they REQUESTED it (email/chat/website) — never "thanks for calling".
+- Confirm good time first; busy → reschedule or offer email, wrap fast.
+- Confused caller → "you reached out and asked for a call"; denies → apologize, offer email, end.
+- Voicemail/silence → one short line + end. Under 5 minutes. Requested call ≠ sales call.
+- OUTBOUND ONLY to people who explicitly asked (consent) — never cold lists (TCPA).
+Team flow for "call me" requests: Retell dashboard → Make an outbound call → their number.
+
 ## Later upgrades (Claude will build when asked)
 - Webhook → Supabase: call transcript + captured lead auto-insert into CRM & leads.
 - Repeat-caller recognition: phone number lookup → "Welcome back, John from ABC!"
