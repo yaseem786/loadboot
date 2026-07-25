@@ -4,7 +4,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, segmented, searchBox, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
-import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave, ccRetellCallback, ccLcCalls } from '../../shared/api.js';
+import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave, ccRetellCallback, ccLcCalls, ccLcPresenceGet, ccLcPresenceSet } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
@@ -58,6 +58,7 @@ export function renderLiveChat(host) {
   let canned = [];
   let timer = null;
 
+  const presenceHost = el('div', { style: 'margin-bottom:12px' });
   const kpis = el('div', { class: 'cc-kpi-grid' });
   const listHost = el('div', { style: 'overflow-y:auto;max-height:calc(100vh - 360px)' });
   const threadHost = el('div', { class: 'lb-card', style: 'display:flex;flex-direction:column;min-height:460px' });
@@ -80,8 +81,9 @@ export function renderLiveChat(host) {
   ]);
   mount(host, el('div', null, [
     sectionHead('Live chat', 'Scale-ready inbox: the human queue floats to the top with waiting timers, AI handles the rest. Reply to take over — the visitor sees it instantly.'),
-    kpis, wrap, callsHost, trainHost,
+    presenceHost, kpis, wrap, callsHost, trainHost,
   ]));
+  loadPresence();
   mount(threadHost, el('div', { class: 'lb-state' }, 'Pick a conversation on the left. 🙋 Needs-human chats always sort first, longest wait on top.'));
   loadStats(); loadList(); loadTraining(); loadCanned(); loadCalls();
   let callsTick = 0;
@@ -206,6 +208,32 @@ export function renderLiveChat(host) {
     msgs.scrollTop = msgs.scrollHeight;
   }
 
+  async function loadPresence() {
+    let pr; try { pr = await ccLcPresenceGet(); } catch (e) { mount(presenceHost, ''); return; }
+    if (!pr || pr.error) { mount(presenceHost, ''); return; }
+    const nameIn = el('input', { class: 'cc-input', placeholder: 'Your name (visitor will see it)', value: pr.staff_name || '', style: 'width:210px' });
+    const desigIn = el('input', { class: 'cc-input', placeholder: 'Designation (e.g. Carrier Success Manager)', value: pr.designation || 'Carrier Success Manager', style: 'width:260px' });
+    mount(presenceHost, el('div', { class: 'lb-card', style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border:1.5px solid ' + (pr.available ? 'rgba(34,197,94,.5)' : 'var(--lb-line,#1e293b)') }, [
+      el('span', { style: 'font-size:1.3rem' }, pr.available ? '🟢' : '⚪'),
+      el('div', { style: 'min-width:180px' }, [
+        el('b', null, pr.available ? ('LIVE — ' + (pr.staff_name || '')) : 'Team offline'),
+        el('div', { class: 'cc-sub', style: 'font-size:11.5px' }, pr.available
+          ? 'AI is telling visitors: "Connecting you with ' + (pr.staff_name || '') + ', our ' + (pr.designation || '') + '" — reply fast!'
+          : 'AI collects the full question + preferred contact, promises an email follow-up'),
+      ]),
+      nameIn, desigIn,
+      el('button', { class: 'lb-btn ' + (pr.available ? 'lb-btn-ghost' : 'lb-btn-primary'), onclick: async (ev) => {
+        const b = ev.currentTarget; b.disabled = true;
+        try {
+          const r = await ccLcPresenceSet(!pr.available, nameIn.value, desigIn.value);
+          if (r && r.error) throw new Error(r.error);
+          toast(pr.available ? 'Ab offline — AI emails ka wada karegi' : '🟢 Tum LIVE ho — naye handoffs tumhare naam ke saath aayenge');
+          loadPresence();
+        } catch (e2) { toast(humanizeError(e2), 'error'); b.disabled = false; }
+      } }, pr.available ? '⏸ Go offline' : '🟢 I\'m available'),
+    ]));
+  }
+
   async function loadCalls() {
     let rows; try { rows = await ccLcCalls(); } catch (e) { mount(callsHost, ''); return; }
     if (!rows || rows.error) { mount(callsHost, ''); return; }
@@ -244,12 +272,16 @@ export function renderLiveChat(host) {
           el('td', null, c.duration_sec != null ? (Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's') : '—'),
           el('td', { style: 'max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' },
             (c.source === 'website' ? '🌐 ' : '') + (c.status === 'scheduled' && c.scheduled_at ? '📅 ' + fmtDateTime(c.scheduled_at) + ' · ' : '') + (c.summary || c.topic || '—')),
-          el('td', null, c.transcript ? el('button', { class: 'lb-btn lb-btn-ghost', onclick: () => {
-            const dr = openDrawer('Call transcript', el('div', null, [
-              el('p', { class: 'cc-sub' }, (c.name || c.to_number || '') + (c.summary ? ' — ' + c.summary : '')),
-              el('pre', { style: 'white-space:pre-wrap;font-size:12.5px;line-height:1.6' }, c.transcript),
-            ]), { subtitle: 'Recording is in the Retell dashboard → Calls' });
-          } }, '📄 Transcript') : null),
+          el('td', null, (c.transcript || c.recording_url) ? el('button', { class: 'lb-btn lb-btn-ghost', onclick: () => {
+            const kids = [el('p', { class: 'cc-sub' }, (c.name || c.to_number || '') + (c.summary ? ' — ' + c.summary : ''))];
+            if (c.recording_url) {
+              const au = el('audio', { controls: 'controls', style: 'width:100%;margin:8px 0' });
+              au.src = c.recording_url;
+              kids.push(el('div', null, [el('b', { style: 'font-size:12px' }, '🔊 Call audio'), au]));
+            }
+            if (c.transcript) kids.push(el('pre', { style: 'white-space:pre-wrap;font-size:12.5px;line-height:1.6' }, c.transcript));
+            openDrawer('Call — audio & transcript', el('div', null, kids), { subtitle: (c.duration_sec != null ? Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's · ' : '') + (c.sentiment || '') });
+          } }, c.recording_url ? '🔊 Listen' : '📄 Transcript') : null),
         ]))),
       ]) : el('div', { class: 'lb-state' }, 'No calls yet. Inbound calls and Riley callbacks will appear here automatically with transcripts.'),
     ]));

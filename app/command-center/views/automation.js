@@ -44,7 +44,7 @@ const PLAYBOOK = {
   driver_renewal: { do: 'Driver license/medical expiring — warn the carrier and track the renewal.', go: (t) => '#/fleet-expiry' },
   doc_renewal: { do: 'Compliance document expiring — request the renewal from the account.', go: (t) => t.related_type === 'carrier' ? '#/carrier?id=' + t.related_id : '#/compliance' },
 };
-const RELGO = { trip: (id) => '#/trips?id=' + id, load: (id) => '#/loads?id=' + id, carrier: (id) => '#/carrier?id=' + id, partner: '#/partners', agent: '#/agents', form_submission: (id) => '#/forms?id=' + id, support_ticket: (id) => '#/support?id=' + id, invoice: (id) => '#/finance?id=' + id, settlement: '#/finance', lead: '#/crm' };
+const RELGO = { trip: (id) => '#/trips?id=' + id, load: (id) => '#/loads?id=' + id, carrier: (id) => '#/carrier?id=' + id, partner: '#/partners', agent: '#/agents', form_submission: (id) => '#/forms?id=' + id, support_ticket: (id) => '#/support?id=' + id, invoice: (id) => '#/finance?id=' + id, settlement: '#/finance', lead: '#/crm', dispatcher: '#/dispatchers', referrer: '#/referrals' };
 function goFor(t) {
   const pb = PLAYBOOK[t.task_type];
   if (pb && pb.preferDesk && pb.go) return pb.go(t); // work happens on a dedicated desk (safety/pod/claims/intake)
