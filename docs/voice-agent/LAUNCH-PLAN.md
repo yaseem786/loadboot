@@ -180,11 +180,17 @@ ek jaisi rehti hai, achanak tez/slow nahi hoti. "Backchanneling" aur "filler wor
 
 ## Outbound callbacks — "Riley Outbound" (second agent)
 Number's Inbound agent = Riley (receptionist). Outbound agent = SEPARATE "Riley Outbound"
-(same voice/model/prompt) with an OUTBOUND CALLBACK CONTEXT section prepended:
-- She is calling THEM because they REQUESTED it (email/chat/website) — never "thanks for calling".
-- Confirm good time first; busy → reschedule or offer email, wrap fast.
-- Confused caller → "you reached out and asked for a call"; denies → apologize, offer email, end.
-- Voicemail/silence → one short line + end. Under 5 minutes. Requested call ≠ sales call.
+(same voice/model, inbound prompt + deep OUTBOUND CALLBACK CONTEXT prepended — v2 "million
+scenarios" playbook, 2026-07-25): permission-based opener, 15-sec recap; scenario coverage:
+busy/dock/driving/noisy (slow+confirm twice) · doesn't-remember · wrong person & family
+(never discuss business with anyone but requester) · suspicious ("one word and I'm gone") ·
+angry (end fast with dignity) · instant-price (straight answer, then pause) · comparing
+(never trash, contrast values) · already-signed-up (service mode) · job-seeker (30s
+careers redirect) · wants-human (within the hour, note it) · limited English (slow,
+offer email) · chatty (one story beat, then work) · skeptical one-worders (drop energy,
+concrete) · interrupted (hold, "where were we") · voicemail (one line, never twice/day) ·
+dropped call (no instant redial). Micro-rules: name in first 10s + at close; ONE next
+step only; promise only "email within the hour"; every call ends with respect.
 - OUTBOUND ONLY to people who explicitly asked (consent) — never cold lists (TCPA).
 Team flow for "call me" requests: Retell dashboard → Make an outbound call → their number.
 
