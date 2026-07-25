@@ -62,7 +62,7 @@
     '#lbc-pow{text-align:center;color:#b6c2d4;font-size:10px;margin-top:6px}',
     '#lbc-closedbar{display:none;background:#fff7ed;border-top:1px solid #fed7aa;color:#9a3412;font-size:12px;padding:9px 14px;text-align:center}',
     '#lbc-closedbar button{background:none;border:none;color:#FC5305;font-weight:800;cursor:pointer;font-size:12px}',
-    '@media (max-width:520px){#lbc-panel{right:0;bottom:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0}}'
+    '@media (max-width:520px){#lbc-panel{right:0;bottom:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0}#lbc-in,.lbc-form input,.lbc-form select{font-size:16px!important}}'
   ].join('');
 
   var cfg = null, open = false, convId = null, vKey = null, lastId = 0, pollT = null, unread = 0, started = false, mode = 'bot', typingT = null;
@@ -169,7 +169,16 @@
       });
       var dt = document.createElement('input'); dt.type = 'datetime-local'; dt.style.display = 'none';
       dt.style.cssText += ';border:1.5px solid #dbe4ef;border-radius:11px;padding:10px 12px;font:400 13.5px Inter,Arial;width:100%;box-sizing:border-box';
-      wsel.onchange = function () { dt.style.display = wsel.value === 'later' ? 'block' : 'none'; };
+      wsel.onchange = function () {
+        dt.style.display = wsel.value === 'later' ? 'block' : 'none';
+        if (wsel.value === 'later' && !dt.value) {
+          var d = new Date(Date.now() + 30 * 60000);
+          var p = function (n) { return ('0' + n).slice(-2); };
+          var v = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+          dt.value = v;
+          dt.min = v;
+        }
+      };
       var cerr = document.createElement('div'); cerr.className = 'lbc-ferr';
       var csub = document.createElement('button'); csub.type = 'button'; csub.textContent = '📞 Call me';
       var cnote = document.createElement('div'); cnote.className = 'lbc-fnote'; cnote.textContent = 'By requesting a call you agree to receive one call at this number';

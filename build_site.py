@@ -279,7 +279,7 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .sr-line{position:absolute;top:50%;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,#fbbf24 0 30px,transparent 30px 64px);transform:translateY(-50%)}
 .sr-truck{position:absolute;top:50%;left:0;transform:translate(0,-60%);color:#fff;will-change:transform}
 .sr-truck svg{width:188px;height:auto;display:block;filter:drop-shadow(0 10px 16px rgba(0,0,0,.55))}
-@media(max-width:880px){.sr-truck svg{width:120px}}.topbar{background:linear-gradient(90deg,#0B1830,#10223B);color:#9fb3cc;font-size:.82rem;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 22px;flex-wrap:wrap}.topbar .tb-tag{letter-spacing:.04em;font-weight:600}.topbar .tb-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.topbar .tb-call{color:#fff;font-weight:800;text-decoration:none;white-space:nowrap;letter-spacing:.02em}.topbar .tb-call:hover{color:#7dd3fc}.topbar .tb-cb{color:#FC8B57;font-weight:700;text-decoration:none;white-space:nowrap}.topbar .tb-cb:hover{color:#FC5305}@media(max-width:700px){.topbar{justify-content:center;padding:7px 10px}.topbar .tb-tag{display:none}}.foot-call-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.foot-call{display:inline-flex;align-items:center;gap:7px;background:#12304f;border:1px solid #1e4976;color:#fff;border-radius:12px;padding:10px 16px;font-weight:800;font-size:.92rem;text-decoration:none;transition:all .15s}.foot-call:hover{background:#0883F7;border-color:#0883F7}.foot-cb{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid #33517a;color:#cbd5e1;border-radius:12px;padding:10px 16px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .15s}.foot-cb:hover{border-color:#FC5305;color:#FC8B57}.call-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px 18px;margin:0 auto;max-width:760px;font-weight:600;font-size:.95rem;text-align:center;color:#0f172a}.call-strip a{color:#0883F7;font-weight:800;text-decoration:none}.call-strip a:hover{text-decoration:underline}
+@media(max-width:880px){.sr-truck svg{width:120px}}.topbar{background:linear-gradient(90deg,#0B1830,#10223B);color:#9fb3cc;font-size:.82rem;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 22px;flex-wrap:wrap}.topbar .tb-tag{letter-spacing:.04em;font-weight:600}.topbar .tb-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.topbar .tb-call{color:#fff;font-weight:800;text-decoration:none;white-space:nowrap;letter-spacing:.02em}.topbar .tb-call:hover{color:#7dd3fc}.topbar .tb-cb{color:#FC8B57;font-weight:700;text-decoration:none;white-space:nowrap}.topbar .tb-cb:hover{color:#FC5305}@media(max-width:700px){.topbar{justify-content:center;padding:7px 10px}.topbar .tb-tag{display:none}}.foot-call-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.foot-call{display:inline-flex;align-items:center;gap:7px;background:#12304f;border:1px solid #1e4976;color:#fff;border-radius:12px;padding:10px 16px;font-weight:800;font-size:.92rem;text-decoration:none;transition:all .15s}.foot-call:hover{background:#0883F7;border-color:#0883F7}.foot-cb{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid #33517a;color:#cbd5e1;border-radius:12px;padding:10px 16px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .15s}.foot-cb:hover{border-color:#FC5305;color:#FC8B57}.call-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px 18px;margin:0 auto;max-width:760px;font-weight:600;font-size:.95rem;text-align:center;color:#0f172a}.call-strip a{color:#0883F7;font-weight:800;text-decoration:none}.call-strip a:hover{text-decoration:underline}@media(max-width:640px){input,select,textarea{font-size:16px!important}}body{overflow-x:hidden}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
 .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
@@ -1534,7 +1534,7 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 function vkey(){try{var k=localStorage.getItem('lb_lc_key');if(!k){k='v'+Date.now().toString(36)+Math.random().toString(36).slice(2,14)+Math.random().toString(36).slice(2,10);localStorage.setItem('lb_lc_key',k);}return k;}catch(e){return 'novkey'+Date.now().toString(36)+'xxxxxxxx';}}
 var roles=document.querySelectorAll('input[name=cwrole]');var gate=document.getElementById('cwGate');var main=document.getElementById('cwMain');
 roles.forEach(function(r){r.addEventListener('change',function(){var v=document.querySelector('input[name=cwrole]:checked').value;var dis=(v==='dispatcher');gate.hidden=!dis;main.hidden=dis;});});
-var sel=document.getElementById('cwWhenSel');var ww=document.getElementById('cwWhenWrap');sel.addEventListener('change',function(){ww.hidden=sel.value!=='later';});
+var sel=document.getElementById('cwWhenSel');var ww=document.getElementById('cwWhenWrap');function lDT(d){function p(n){return('0'+n).slice(-2)}return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());}sel.addEventListener('change',function(){ww.hidden=sel.value!=='later';if(sel.value==='later'){var w=document.getElementById('cwWhen');if(!w.value){w.value=lDT(new Date(Date.now()+30*60000));}w.min=lDT(new Date(Date.now()+3*60000));}});
 var btn=document.getElementById('cwBtn');var msg=document.getElementById('cwMsg');
 btn.addEventListener('click',function(){
 var role=(document.querySelector('input[name=cwrole]:checked')||{}).value;if(!role||role==='dispatcher')return;
@@ -3073,16 +3073,69 @@ priv += '''<section><div class="wrap prose reveal" style="max-width:800px">
 priv += final_cta()
 page('privacy.html','Privacy Policy | Loadboot','How Loadboot collects, uses, and protects the information you share through our website.','privacy.html',priv)
 
-terms = svc_hero('Terms of Service','The terms that govern your use of the Loadboot website and services.')
-terms += '''<section><div class="wrap prose reveal" style="max-width:800px">
-<p><em>Last updated: 2026.</em> By using this website or our dispatch services, you agree to these terms.</p>
-<h2>Our services</h2><p>Loadboot provides truck dispatch services to carriers who hold their own operating authority. We represent the carrier, not the shipper, and we are not a freight broker.</p>
-<h2>Dispatch agreement</h2><p>Dispatch services are provided under a separate written dispatch agreement signed by you and Loadboot, which governs fees, responsibilities, and termination. Our standard fee is a flat percentage of gross on loads we book, with no long-term contract.</p>
-<h2>Your responsibilities</h2><p>You are responsible for maintaining valid authority, insurance, and compliance, for operating safely and legally, and for approving every load before it is booked.</p>
-<h2>No guarantee</h2><p>We work hard to find quality, well-paying freight, but we do not guarantee specific rates, load volume, or income. Market conditions vary.</p>
-<h2>Limitation of liability</h2><p>To the fullest extent permitted by law, Loadboot is not liable for indirect or consequential damages arising from the use of our website or services.</p>
-<h2>Changes</h2><p>We may update these terms from time to time. Continued use of the site means you accept the current terms.</p></div></section>'''
-terms += final_cta()
+terms = svc_hero('Terms of Service','The agreement that governs your use of the LoadBoot platform &mdash; written to be read, not just scrolled past.')
+terms += """<section><div class="wrap prose reveal" style="max-width:840px">
+<p><em>Last updated: July 2026.</em> These Terms of Service (&ldquo;Terms&rdquo;) are a binding agreement between you and LoadBoot (&ldquo;LoadBoot,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) governing your access to and use of loadboot.com, the LoadBoot portals and applications, and the services described below (together, the &ldquo;Platform&rdquo;). By creating an account, clicking &ldquo;I agree,&rdquo; or using the Platform, you accept these Terms on behalf of yourself and the company you represent.</p>
+
+<h2>1. What LoadBoot is</h2>
+<p>LoadBoot is an operating system for trucking: a technology platform that connects verified motor carriers, licensed freight brokers, and shippers, and provides dispatch support services to carriers. The Platform includes a verified load board, dispatch services, GPS-based shipment visibility, digital document workflows (rate confirmations, BOLs, PODs, W-9s, dispatch agreements), settlement records, and communication tools.</p>
+<p>LoadBoot acts as a <strong>dispatch service and technology provider</strong>. Unless expressly stated otherwise in writing: we are not a motor carrier, we do not take possession of freight, and when providing dispatch services we act as the carrier&rsquo;s authorized agent under 49 CFR Part 371, arranging freight <em>on behalf of the carrier and under the carrier&rsquo;s own operating authority</em>. We do not allocate traffic among carriers.</p>
+
+<h2>2. Accounts &amp; eligibility</h2>
+<p>You must be at least 18, able to form a binding contract, and authorized to act for the business you register. You are responsible for the accuracy of your information, for safeguarding your login, and for all activity under your account. One company may operate multiple authorized users; you remain responsible for each of them.</p>
+
+<h2>3. Verification</h2>
+<p>Access to core features requires verification appropriate to your role: carriers &mdash; active MC/USDOT operating authority, insurance meeting the levels stated on your account (typically $1M auto liability and $100K cargo), and a completed W-9 and dispatch agreement; brokers &mdash; active brokerage authority and the federal surety bond or trust (BMC-84/85); shippers &mdash; verified business identity. We verify against public federal records (including FMCSA data) and the documents you upload. If a required document lapses, the related features pause until it is current &mdash; that protection is a feature of the network, not a penalty.</p>
+
+<h2>4. Carrier terms</h2>
+<p>Every load is booked under the carrier&rsquo;s own authority. You approve every load before it is booked &mdash; there is no forced dispatch. You are solely responsible for safe and lawful operations, including hours of service, equipment condition, permits, and insurance. Written load terms (rate confirmation, and where applicable detention, TONU, layover, and lumper provisions) govern each shipment.</p>
+
+<h2>5. Broker &amp; shipper terms</h2>
+<p>Posting is free. You represent that every posted load is genuine, lawful, and yours to tender; that rate and load details are accurate; and that you will honor the written terms of every confirmed booking, including published accessorial policies. Ghost loads, bait-and-switch postings, re-brokering a LoadBoot-covered load without disclosure, and payment default are grounds for immediate removal and may be reported within the network.</p>
+
+<h2>6. Fees &amp; payment</h2>
+<p>Joining the Platform is free. Carriers pay a flat 5% dispatch fee, charged only on loads that are <strong>delivered and paid</strong> &mdash; if a load doesn&rsquo;t pay, no fee is due. Brokers and shippers post at no charge. LoadBoot never takes custody of freight payments: brokers and shippers pay carriers (or their factoring company) directly, and LoadBoot invoices its own fee separately. Fees are stated before you book and may change prospectively with notice; changes never apply retroactively.</p>
+
+<h2>7. Independent businesses</h2>
+<p>Carriers, brokers, shippers, and referral agents are independent businesses. Nothing in these Terms creates an employment, joint venture, or partnership relationship with LoadBoot, and no party may bind another except as expressly authorized in a signed dispatch agreement.</p>
+
+<h2>8. What you can expect from us &mdash; and what the market decides</h2>
+<p>We put real work behind every account: dispatchers who hunt and negotiate on your lanes, written protection on accessorials, GPS-verified records that make claims stick, and paperwork handled end to end. We commit to that standard of effort, tooling, and transparency on every load we touch.</p>
+<p>What no honest platform can promise is the freight market itself. Rates, load volume, and lane availability move with fuel, seasonality, capacity, and the broader economy &mdash; the same market every carrier, broker, and load board in America operates in. Specific rates, volumes, or income levels therefore aren&rsquo;t guaranteed by LoadBoot, just as they aren&rsquo;t by any reputable competitor. Our answer to a soft market is effort and information &mdash; live market rates, cost-per-mile tooling, and dispatchers who say &ldquo;no&rdquo; to freight that doesn&rsquo;t pay &mdash; never inflated promises.</p>
+
+<h2>9. Acceptable use</h2>
+<p>You agree not to: misrepresent your identity, authority, insurance, or documents; post false or misleading loads; harvest data, scrape, reverse engineer, or probe the Platform; interfere with other users or with Platform operation; use the Platform for any unlawful purpose; or circumvent verification, fees, or safety controls. We may suspend or remove accounts that put the network at risk, with notice where practicable.</p>
+
+<h2>10. Your content &amp; our platform</h2>
+<p>You retain ownership of documents and data you upload and grant LoadBoot a limited license to store, process, and display them as needed to operate the Platform. The Platform, its software, design, brand, and content are LoadBoot&rsquo;s property or its licensors&rsquo; and are protected by law; no rights are granted except as stated here.</p>
+
+<h2>11. Privacy</h2>
+<p>Our <a href="privacy.html">Privacy Policy</a> explains what we collect and how we use it, and forms part of these Terms. Summary: we use your data to run the Platform, we don&rsquo;t sell it, and communications preferences are always in your control.</p>
+
+<h2>12. Third-party services</h2>
+<p>The Platform interoperates with third-party services (for example FMCSA data, mapping, payment, factoring, and accounting integrations such as QuickBooks). Those services are governed by their own terms, and LoadBoot is not responsible for them.</p>
+
+<h2>13. Term &amp; termination</h2>
+<p>There is no minimum term and no cancellation fee &mdash; you may close your account at any time from your portal or by writing to hello@loadboot.com. Obligations already accrued (including fees on delivered-and-paid loads and the terms of confirmed bookings) survive termination, as do Sections 8&ndash;18. We may suspend or terminate accounts for material breach, fraud, safety risk, or extended inactivity.</p>
+
+<h2>14. Disclaimers</h2>
+<p>The Platform is provided &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; To the fullest extent permitted by law, LoadBoot disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. We verify counterparties diligently, but each user remains responsible for its own commercial decisions and counterparties&rsquo; performance.</p>
+
+<h2>15. Limitation of liability</h2>
+<p>To the fullest extent permitted by law: LoadBoot is not liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, revenue, cargo, or data; and LoadBoot&rsquo;s total aggregate liability arising out of the Platform is limited to the greater of (a) the dispatch fees you paid to LoadBoot in the six (6) months before the claim arose, or (b) one hundred U.S. dollars ($100). Some jurisdictions do not allow certain limitations, so parts of this section may not apply to you.</p>
+
+<h2>16. Indemnification</h2>
+<p>You will defend and hold harmless LoadBoot and its team from claims arising out of your freight operations, your breach of these Terms, your content, or your violation of law or third-party rights.</p>
+
+<h2>17. Governing law &amp; disputes</h2>
+<p>These Terms are governed by the laws of the State of Texas, without regard to conflict-of-law rules. Before filing any claim, you agree to contact us at hello@loadboot.com and give us thirty (30) days to work it out &mdash; most issues are resolved this way. Courts located in Texas will have exclusive jurisdiction over disputes not resolved informally, and each party waives trial by jury to the extent permitted.</p>
+
+<h2>18. Changes to these Terms</h2>
+<p>We may update these Terms as the Platform evolves. For material changes we will give notice (portal notice or email) before they take effect; continued use after the effective date constitutes acceptance. The &ldquo;Last updated&rdquo; date above always reflects the current version.</p>
+
+<h2>19. Contact</h2>
+<p>Questions about these Terms: <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>. Live chat and our 24/7 phone line are on the <a href="contact.html">contact page</a>.</p>
+</div></section>"""
 page('terms.html','Terms of Service | Loadboot','The terms governing your use of the Loadboot website and truck dispatch services.','terms.html',terms)
 
 # ---------- FLAGSHIP: LOAD SCORE ("Should You Take This Load?") ----------
