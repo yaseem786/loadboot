@@ -1,0 +1,16 @@
+-- bl_voice_0167 (applied STAGING + PROD 2026-07-25): web call requests + scheduler.
+-- lc_calls += scheduled_at/context/source/visitor_key. app_private.retell_dial(id) shared
+-- dialer (dynamic vars name/topic/role/context). cc_retell_callback v2 (+p_context brief
+-- Riley reads naturally, +p_when schedule 2min-14d). PUBLIC lc_request_call (anon): website
+-- "call me now / pick a time" — role gate (carrier/broker/shipper only; dispatcher/referral
+-- refused with chat/email pointer), US number, consent line, limits 2/visitor/day + 25
+-- website calls/day, schedule window 10min-7d, staff notification. Cron lb-voice-scheduled
+-- (*/5) dials due scheduled calls. cc_lc_calls returns new fields. Frontend: contact.html
+-- #call section (role-gated number reveal + form, visitor key shared with live chat) and
+-- CC card context textarea + datetime picker. Canonical SQL in Supabase both projects.
+-- bl_voice_0168 (STAGING + PROD 2026-07-25): chat call requests — lc_chat_request_call
+--   (anon; conv-gated; role gate; limits shared w/ website; saves name/email/role to conv +
+--   CRM lead; context = last 40 chat messages auto-transcript; bot confirm message in chat;
+--   dial now or scheduled). retell_dial adds {{source}} dynamic var (cc|chat|website).
+--   cc_retell_callback context 1200→4000. lc_bot_step: "call me/phone" regex → number +
+--   [[callform]] marker → widget in-chat call card (phone + role + now/schedule).

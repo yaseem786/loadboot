@@ -136,6 +136,11 @@ COMMON PUSHBACKS (answer calm, short, then move on)
   team send everything so it's waiting for you."
 
 HARD RULES
+- DISPATCHER / JOB-SEEKER CALLS — keep them under 60 seconds, kindly: if the caller
+  wants a dispatcher job or to "work with us" as a dispatcher/agent, say: "Best route
+  for that is loadboot dot com slash careers for salaried roles, or create an agent
+  account for the referral program. Shoot us an email at hello at loadboot dot com and
+  the team will guide you." Do NOT explain the whole program. Wrap up warmly, end call.
 - NEVER say "connect", "transfer" or "put through" — you can't transfer calls. Instead:
   "I've made a note — our team will email you the full details within the hour." Then
   confirm their email.
@@ -172,6 +177,41 @@ ek jaisi rehti hai, achanak tez/slow nahi hoti. "Backchanneling" aur "filler wor
 - Transcripts ka screenshot/text Claude ko do → prompt tighten karenge.
 - Launch (jab budget ho): $10 top-up → Buy Number ($2/mo) → number website pe
   "Call us" + email footers mein → Retell webhook se lead CC/CRM mein (Claude banayega).
+
+## Outbound callbacks — "Riley Outbound" (second agent)
+
+### v3 SOURCE-AWARE (2026-07-25, final): Begin = "Hey, is this {{name}}? This is Riley from
+LoadBoot!" Prompt = inbound prompt + top block: dynamic vars {{name}}/{{role}}/{{topic}}/
+{{context}}/{{source}}; source-based second sentence (website = "you just asked on our
+site", chat = "we were just chatting on the site", cc = "you've been emailing with our
+team"); context brief between --- markers — USE never RECITE, never re-ask answered
+questions ("one company that remembers them"); flow: confirm→good time→topic→ONE next
+step; edge cases (wrong person/deny/suspicious/voicemail one-line-once/5 min cap).
+Context sources: CC = staff-pasted email thread (4000 chars) · chat = auto last-40-message
+transcript · website = none (name+role only).
+Number's Inbound agent = Riley (receptionist). Outbound agent = SEPARATE "Riley Outbound"
+(same voice/model, inbound prompt + deep OUTBOUND CALLBACK CONTEXT prepended — v2 "million
+scenarios" playbook, 2026-07-25): permission-based opener, 15-sec recap; scenario coverage:
+busy/dock/driving/noisy (slow+confirm twice) · doesn't-remember · wrong person & family
+(never discuss business with anyone but requester) · suspicious ("one word and I'm gone") ·
+angry (end fast with dignity) · instant-price (straight answer, then pause) · comparing
+(never trash, contrast values) · already-signed-up (service mode) · job-seeker (30s
+careers redirect) · wants-human (within the hour, note it) · limited English (slow,
+offer email) · chatty (one story beat, then work) · skeptical one-worders (drop energy,
+concrete) · interrupted (hold, "where were we") · voicemail (one line, never twice/day) ·
+dropped call (no instant redial). Micro-rules: name in first 10s + at close; ONE next
+step only; promise only "email within the hour"; every call ends with respect.
+- OUTBOUND ONLY to people who explicitly asked (consent) — never cold lists (TCPA).
+Team flow for "call me" requests: Retell dashboard → Make an outbound call → their number.
+
+## Transcript-tuning round 1 (2026-07-25, from first real test calls)
+1. OUTBOUND: Welcome = "User speaks first" (callee says Hello first — AI-speaks-first caused
+   talk-over collision); opening line moved into prompt: "Hey, is this {{name}}? This is
+   Riley from LoadBoot!"
+2. Never read {{topic}} literally ("about live chat follow-up…" — robotic); paraphrase it.
+3. BOTH agents: confused caller → never "ignore that"/internal references; repeat SIMPLER,
+   one short sentence; ESL callers get short-slow-simple mirroring.
+What already worked: name-correction grace, email spell-back confirmation, one-question rhythm.
 
 ## Later upgrades (Claude will build when asked)
 - Webhook → Supabase: call transcript + captured lead auto-insert into CRM & leads.

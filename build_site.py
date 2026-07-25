@@ -279,7 +279,7 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .sr-line{position:absolute;top:50%;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,#fbbf24 0 30px,transparent 30px 64px);transform:translateY(-50%)}
 .sr-truck{position:absolute;top:50%;left:0;transform:translate(0,-60%);color:#fff;will-change:transform}
 .sr-truck svg{width:188px;height:auto;display:block;filter:drop-shadow(0 10px 16px rgba(0,0,0,.55))}
-@media(max-width:880px){.sr-truck svg{width:120px}}
+@media(max-width:880px){.sr-truck svg{width:120px}}.topbar{background:linear-gradient(90deg,#0B1830,#10223B);color:#9fb3cc;font-size:.82rem;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 22px;flex-wrap:wrap}.topbar .tb-tag{letter-spacing:.04em;font-weight:600}.topbar .tb-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.topbar .tb-call{color:#fff;font-weight:800;text-decoration:none;white-space:nowrap;letter-spacing:.02em}.topbar .tb-call:hover{color:#7dd3fc}.topbar .tb-cb{color:#FC8B57;font-weight:700;text-decoration:none;white-space:nowrap}.topbar .tb-cb:hover{color:#FC5305}@media(max-width:700px){.topbar{justify-content:center;padding:7px 10px}.topbar .tb-tag{display:none}}.foot-call-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.foot-call{display:inline-flex;align-items:center;gap:7px;background:#12304f;border:1px solid #1e4976;color:#fff;border-radius:12px;padding:10px 16px;font-weight:800;font-size:.92rem;text-decoration:none;transition:all .15s}.foot-call:hover{background:#0883F7;border-color:#0883F7}.foot-cb{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid #33517a;color:#cbd5e1;border-radius:12px;padding:10px 16px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .15s}.foot-cb:hover{border-color:#FC5305;color:#FC8B57}.call-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px 18px;margin:0 auto;max-width:760px;font-weight:600;font-size:.95rem;text-align:center;color:#0f172a}.call-strip a{color:#0883F7;font-weight:800;text-decoration:none}.call-strip a:hover{text-decoration:underline}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
 .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
@@ -399,6 +399,15 @@ NAV = [('index.html','Home'),('services.html','Services'),('how-it-works.html','
        ('pricing.html','Pricing'),('load-score.html','Load Score'),('blog.html','Blog'),
        ('about.html','About'),('contact.html','Contact')]
 
+PHONE_DISP = '+1 (737) 306-1175'
+PHONE_TEL = '+17373061175'
+# One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
+PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
+ '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '">' + PHONE_DISP + '</a>'
+ '<span style="color:#94a3b8">&middot;</span>'
+ '<a href="contact.html#call">or we call you &mdash; right now or scheduled &rarr;</a>'
+ '</div></div></section>')
+
 def header(active):
     links = ''
     for label, href, subs in NAV_MENU:
@@ -410,8 +419,8 @@ def header(active):
                       '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
-    mob = '<a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
-    return '''<header id="hdr"><div class="wrap nav">
+    mob = '<a href="tel:+17373061175" class="nav-mob">&#128222; Call us 24/7 &mdash; +1 (737) 306-1175</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
+    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+17373061175" class="tb-call">&#128222; 24/7&nbsp; +1 (737) 306-1175</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
@@ -429,7 +438,7 @@ def footer():
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
-<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+17373061175">&#128222; +1 (737) 306-1175 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
@@ -1487,7 +1496,62 @@ var t=document.getElementById('formIntro');if(t)t.textContent=isAcct?'Tell us ab
 (function(){var h=location.hash;var map={'#quote':'iQuote','#ask':'iAsk','#question':'iAsk','#create':'iAcct','#account':'iAcct','#form':null};if(h in map){var id=map[h];if(id){var r=document.getElementById(id);if(r)r.checked=true;}setTimeout(function(){var f=document.getElementById('qfForm');if(f)f.scrollIntoView({behavior:'smooth',block:'start'});},150);}qfIntent();
 var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();var fd=new FormData(f);var d=new URLSearchParams(fd).toString();try{if(window.lbSubmitLead){var o={};fd.forEach(function(v,k){if(k!=='bot-field'&&k!=='form-name'&&String(v).trim())o[k]=String(v);});o.form_key='quote';window.lbSubmitLead(o.intent==='Create carrier account'?'quote-account':(o.intent==='Get a rate quote'?'quote-rate':'quote-question'),o);}}catch(_){}fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(function(){f.innerHTML='<div style=\\'text-align:center;padding:40px\\'><div style=\\'font-size:2.6rem;color:#16a34a\\'>&#10003;</div><h3 style=\\'margin:12px 0\\'>Got it &mdash; thanks!</h3><p>A Loadboot dispatcher will reach out within 15 minutes during business hours.</p></div>';}).catch(function(){f.innerHTML='<p style=\\'text-align:center\\'>Something went wrong &mdash; please email hello@loadboot.com and we will get right back to you.</p>';});});})();
 </script>"""
-page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section>')
+
+# ---------- "Get a call" section (contact page): role-gated number + call-me-now/schedule ----------
+VOICE_NUMBER_DISPLAY = '+1 (737) 306-1175'
+VOICE_NUMBER_TEL = '+17373061175'
+call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="max-width:820px">
+<div class="sec-head center reveal"><div class="eyebrow">Prefer to talk?</div><h2>Get a call from LoadBoot</h2>
+<p class="lead center" style="max-width:600px;margin:0 auto">Riley, our 24/7 front desk, answers instantly &mdash; or calls you the moment you ask, or at a time you pick.</p></div>
+<div class="quote-wrap reveal" id="lbCallCard">
+<h3 style="margin-bottom:6px">Who are you?</h3>
+<p style="color:var(--muted);margin-bottom:14px">So we point you to the right person.</p>
+<div class="intent-row" id="lbcwRoles">
+<input type="radio" id="cwCar" name="cwrole" value="carrier"><label for="cwCar"><span class="d"></span> Carrier</label>
+<input type="radio" id="cwBro" name="cwrole" value="broker"><label for="cwBro"><span class="d"></span> Broker</label>
+<input type="radio" id="cwShi" name="cwrole" value="shipper"><label for="cwShi"><span class="d"></span> Shipper</label>
+<input type="radio" id="cwDis" name="cwrole" value="dispatcher"><label for="cwDis"><span class="d"></span> Dispatcher / Referral</label>
+</div>
+<div id="cwGate" hidden style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px;margin-top:14px">
+<b>Dispatcher &amp; referral questions are handled by email and live chat</b> &mdash; you will get faster, written answers.
+<div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="careers.html">Dispatcher jobs &rarr;</a>
+<a class="btn btn-secondary" href="create-agent-account.html">Referral / agent account &rarr;</a></div></div>
+<div id="cwMain" hidden style="margin-top:14px">
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+&#128222; Call us anytime, 24/7 &mdash; answered on the first ring:&nbsp;<a href="tel:""" + VOICE_NUMBER_TEL + """" style="font-weight:800;font-size:1.15rem;color:#0883F7;text-decoration:none">""" + VOICE_NUMBER_DISPLAY + """</a></div>
+<h3 style="margin:0 0 12px">&hellip;or we call you</h3>
+<div class="form-grid">
+<div class="field"><label for="cwName">Your name</label><input type="text" id="cwName" placeholder="Full name"></div>
+<div class="field"><label for="cwPhone">US phone number</label><input type="tel" id="cwPhone" placeholder="(555) 555-5555"></div>
+<div class="field full"><label for="cwTopic">What is it about? <span style="color:var(--muted);font-weight:500">(optional)</span></label><input type="text" id="cwTopic" placeholder="e.g. rates for my dry van, getting verified, posting loads"></div>
+<div class="field"><label for="cwWhenSel">When?</label><select id="cwWhenSel"><option value="now">Call me right now</option><option value="later">Pick a time</option></select></div>
+<div class="field" id="cwWhenWrap" hidden><label for="cwWhen">Date &amp; time (your local time)</label><input type="datetime-local" id="cwWhen"></div>
+</div>
+<button class="btn btn-primary" id="cwBtn" style="width:100%%;justify-content:center;margin-top:18px">&#128222; Call me</button>
+<p id="cwMsg" style="text-align:center;margin-top:12px;font-size:.92rem;color:var(--muted)">By requesting a call you agree to receive one call from LoadBoot at this number.</p>
+</div></div></div></section>
+<script>(function(){
+function vkey(){try{var k=localStorage.getItem('lb_lc_key');if(!k){k='v'+Date.now().toString(36)+Math.random().toString(36).slice(2,14)+Math.random().toString(36).slice(2,10);localStorage.setItem('lb_lc_key',k);}return k;}catch(e){return 'novkey'+Date.now().toString(36)+'xxxxxxxx';}}
+var roles=document.querySelectorAll('input[name=cwrole]');var gate=document.getElementById('cwGate');var main=document.getElementById('cwMain');
+roles.forEach(function(r){r.addEventListener('change',function(){var v=document.querySelector('input[name=cwrole]:checked').value;var dis=(v==='dispatcher');gate.hidden=!dis;main.hidden=dis;});});
+var sel=document.getElementById('cwWhenSel');var ww=document.getElementById('cwWhenWrap');sel.addEventListener('change',function(){ww.hidden=sel.value!=='later';});
+var btn=document.getElementById('cwBtn');var msg=document.getElementById('cwMsg');
+btn.addEventListener('click',function(){
+var role=(document.querySelector('input[name=cwrole]:checked')||{}).value;if(!role||role==='dispatcher')return;
+var name=document.getElementById('cwName').value.trim();var phone=document.getElementById('cwPhone').value.trim();
+if(!name||!phone){msg.textContent='Please enter your name and US phone number.';msg.style.color='#dc2626';return;}
+var when=null;if(sel.value==='later'){var wv=document.getElementById('cwWhen').value;if(!wv){msg.textContent='Pick a date and time, or choose Call me right now.';msg.style.color='#dc2626';return;}when=new Date(wv).toISOString();}
+btn.disabled=true;btn.textContent='Requesting…';
+fetch('https://""" + APP_REF + """.supabase.co/rest/v1/rpc/lc_request_call',{method:'POST',headers:{'Content-Type':'application/json','apikey':'""" + (APP_ANON or '') + """','Authorization':'Bearer """ + (APP_ANON or '') + """'},body:JSON.stringify({p_visitor_key:vkey(),p_name:name,p_phone:phone,p_role:role,p_topic:document.getElementById('cwTopic').value.trim()||null,p_when:when})})
+.then(function(r){return r.json();}).then(function(d){
+if(d&&d.error){msg.textContent=d.error;msg.style.color='#dc2626';btn.disabled=false;btn.textContent='📞 Call me';return;}
+btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.scheduled?'Scheduled! Riley will call you at your picked time.':'Riley is calling you right now — your phone should ring in ~30 seconds!';
+}).catch(function(){msg.textContent='Something went wrong — call us directly or use live chat.';msg.style.color='#dc2626';btn.disabled=false;btn.textContent='📞 Call me';});
+});})();</script>"""
+)
+
+
+page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section>')
 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
@@ -1534,7 +1598,7 @@ pf_html, pf_sch = faq_block(pr_faq)
 pr_body += pf_html + final_cta()
 page('pricing.html','Pricing — Flat 5% for Carriers, Free for Brokers, Shippers & Agents | LoadBoot',
      'Loadboot truck dispatch pricing: a flat 5% of gross, no setup fees, no monthly fees, no long-term contract. You only pay when we book your load.',
-     'pricing.html', pr_body, pf_sch)
+     'pricing.html', PHONE_STRIP + pr_body, pf_sch)
 
 # ---------- BLOG ----------
 def blog_post(fname,title,desc,excerpt,blocks):
@@ -3238,7 +3302,7 @@ faq_body = svc_hero('Frequently Asked Questions', 'Straight answers about pricin
 faq_body += _faq_html + final_cta()
 page('faq.html', 'Truck Dispatch FAQ &mdash; Pricing, Authority &amp; Getting Started | Loadboot',
      'Answers to the most common questions about Loadboot truck dispatch: cost, authority, contracts, equipment types, getting started, factoring and compliance.',
-     'faq.html', faq_body, _faq_sch)
+     'faq.html', PHONE_STRIP + faq_body, _faq_sch)
 
 # ---- Box Truck Dispatch (service page) ----
 _btfaq_html, _btfaq_sch = faq_block([
@@ -4199,7 +4263,8 @@ def _hub_value(bullets, portal_href, portal_label):
             '<div class="hub-cta reveal">'
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
-            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div></div>'
+            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#7dd3fc">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div>'
             '</div></section>')
@@ -5257,6 +5322,8 @@ def _acct_flagship(cfg):
         + ''.join('<a href="' + u + '" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">' + t + '</a>' for t,u in cfg['cta2'])
         + '</div></div></section>')
     RELATED[cfg['fname']] = cfg['related']
+    if cfg['fname'] != 'create-agent-account.html':
+        b = PHONE_STRIP + b
     page(cfg['fname'], cfg['title'], cfg['desc'], cfg['fname'], b, faq_schema + howto_schema)
 
 _ACCT_CARRIER = {'fname': 'create-carrier-account.html', 'title': 'Create a Carrier Account — Verified & Booking the Same Day | LoadBoot', 'desc': 'How to create a LoadBoot carrier account: FMCSA auto-verification from your DOT number, the exact documents to have in hand (COI, W-9, authority letter, factoring NOA), same-day review, and what unlocks when the VERIFIED badge lands.', 'kicker': 'For carriers &amp; owner-operators', 'h1': 'Create your carrier account &mdash; <span style="color:#4ade80">verified and booking the same day</span>', 'intro': 'About 5 minutes of your time: your DOT number pulls company details straight from FMCSA, the wizard walks equipment, lanes and payment (direct or <a href="factoring-noa.html" style="color:#7dd3fc">factoring with full NOA support</a>), documents verify the same day, and the VERIFIED badge opens the <a href="load-board.html" style="color:#7dd3fc">live board</a>.', 'ticks': ['FMCSA auto-verify from your DOT', 'Same-day document review', 'Free account &mdash; 5% only when we book you'], 'cta': ('Create your carrier account &rarr;', '/app/carrier/'), 'hero_shot': ('acct-carrier-profile.webp', 420, 909, 'Verified carrier account — MC and DOT on the profile, booking open, 10/10 documents', 'The real account &mdash; VERIFIED, booking open, 10/10 documents in.'), 'steps_h': 'Signup to first load in five steps', 'steps': [('Sign up with your company email', 'Create your login in the Carrier Portal. Type your DOT number and your legal name, entity type and authority details auto-fill from FMCSA &mdash; no re-typing federal records.'), ('Run the 5-step onboarding wizard', 'Company &rarr; equipment &amp; preferred lanes &rarr; dispatch preferences &rarr; payment (verified bank for direct pay, or your factoring company with the NOA) &rarr; e-sign the dispatch agreement and W-9 in-app (E-SIGN Act).'), ('Upload your documents', 'COI straight from your insurance agent, operating authority letter, and anything else on your checklist. Phone photos work &mdash; the built-in Scan-to-PDF turns pages into one clean file.'), ('Same-day review', 'LoadBoot checks your authority status against FMCSA, the insured name against your legal entity, and every expiry date. Each document runs Uploaded &rarr; In review &rarr; Approved on a visible tracker.'), ('VERIFIED &mdash; booking open', 'The badge lands on your profile, compliance gates open, and the board shows loads with the full rate card in writing. Book in one tap; the <a href="gps-tracking.html">trip runs itself</a>.')], 'docs_h': 'The documents to have in hand', 'docs': [('&#128737;', 'Active MC / USDOT authority', '&ldquo;Authorized for Property&rdquo; and for-hire. New authority is welcome &mdash; no minimum age on your MC. See <a href="authority-dot-setup.html">authority &amp; DOT setup</a>.'), ('&#128196;', 'Certificate of Insurance', 'From your agent: $1M auto liability and $100K cargo is the standard brokers expect. The insured name must match your authority exactly &mdash; the #1 rejection reason industry-wide.'), ('&#9997;&#65039;', 'W-9', 'Have yours ready &mdash; or skip the paperwork and e-sign one in-app; the PDF generates instantly.'), ('&#127974;', 'Factoring NOA letter', 'Only if you factor: the Notice of Assignment from your factoring company. LoadBoot verifies it and routes broker payments to your factor automatically.'), ('&#127974;', 'Bank verification', 'Direct pay: a voided check or bank letter so your remit-to is verified before the first settlement.'), ('&#128667;', 'Driver credentials', 'Fleet? CDL and medical card per driver &mdash; expiry tracking watches them so a lapse never surfaces at a roadside inspection.')], 'docs_note': 'Everything lives in the document vault with expiry reminders &mdash; you upload once and get warned before anything lapses.', 'shots_h': 'Real screens &mdash; verification you can watch', 'shots': [('acct-verification.webp', 420, 909, 'Compliance packet 10/10 verified with business profile from approved authority and W-9', 'The compliance packet &mdash; 10/10 verified, legal identity locked from your authority.'), ('acct-documents.webp', 420, 909, 'Document vault — MC/DOT authority and COI approved with visible review trackers', 'The vault &mdash; every document on a visible Uploaded &rarr; In review &rarr; Approved tracker.')], 'notes_k': 'Pass review the first time', 'notes_h': 'Why applications bounce &mdash; and how not to', 'notes': [('Expired or misnamed COI', 'Certificates that lapsed, or an insured name that does not match the authority. Ask your agent for a current COI in your exact legal name before you upload.'), ('Authority details that do not match FMCSA', 'LoadBoot reads the federal record; if your entity changed, update FMCSA first so the records agree.'), ('Factoring set up without the NOA', 'If you told us you factor, brokers pay your factor &mdash; but only once the NOA letter is on file and verified. Upload it with the packet.'), ('Blurry phone photos', 'Use the built-in Scan-to-PDF &mdash; it crops, straightens and bundles pages so reviewers can actually read them.')], 'faq_h': 'Carrier account FAQ', 'faq': [('How long does approval take?', 'Most carriers are verified the same day once documents are in. The tracker on each document shows exactly where it is.'), ('I have brand-new authority — can I join?', 'Yes. New-authority carriers are a core part of who LoadBoot serves; there is no minimum authority age. Start with the <a href="authority-dot-setup.html">authority setup guide</a> if you are still filing.'), ('What does it cost?', 'The account is free. LoadBoot earns a flat 5% only on loads it books for you — <a href="pricing.html">see pricing</a>.'), ('Do my drivers need their own accounts?', 'They get magic-link invites from your <a href="fleet-management.html">fleet roster</a> — one tap on their phone and their trips, navigation and document capture are ready.'), ('What happens when my COI expires?', 'The vault warns you before expiry. If a required document lapses, booking gates pause until the fresh one is approved — problems surface before a load, never during one.'), ('I use a factoring company — anything extra?', 'Just the NOA letter. Remit-to routing, per-broker control and the funding packet are built in — see <a href="factoring-noa.html">factoring &amp; NOA</a>.')], 'cta_h': 'Five minutes of your time. Verified today.', 'cta2': [('For carriers — the full pitch', 'carriers.html'), ('How you get paid', 'payments-settlements.html')], 'related': [('carriers.html', 'For Carriers'), ('authority-dot-setup.html', 'Authority & DOT Setup'), ('factoring-noa.html', 'Factoring & NOA'), ('payments-settlements.html', 'Payments & Settlements'), ('fleet-management.html', 'Fleet Management'), ('compliance.html', 'Compliance & Verification')]}
