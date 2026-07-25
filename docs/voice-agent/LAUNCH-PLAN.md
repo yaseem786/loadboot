@@ -204,6 +204,15 @@ step only; promise only "email within the hour"; every call ends with respect.
 - OUTBOUND ONLY to people who explicitly asked (consent) — never cold lists (TCPA).
 Team flow for "call me" requests: Retell dashboard → Make an outbound call → their number.
 
+## Transcript-tuning round 1 (2026-07-25, from first real test calls)
+1. OUTBOUND: Welcome = "User speaks first" (callee says Hello first — AI-speaks-first caused
+   talk-over collision); opening line moved into prompt: "Hey, is this {{name}}? This is
+   Riley from LoadBoot!"
+2. Never read {{topic}} literally ("about live chat follow-up…" — robotic); paraphrase it.
+3. BOTH agents: confused caller → never "ignore that"/internal references; repeat SIMPLER,
+   one short sentence; ESL callers get short-slow-simple mirroring.
+What already worked: name-correction grace, email spell-back confirmation, one-question rhythm.
+
 ## Later upgrades (Claude will build when asked)
 - Webhook → Supabase: call transcript + captured lead auto-insert into CRM & leads.
 - Repeat-caller recognition: phone number lookup → "Welcome back, John from ABC!"
