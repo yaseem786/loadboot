@@ -3385,48 +3385,75 @@ page('faq.html', 'LoadBoot Help Center &mdash; FAQ for Carriers, Brokers, Shippe
      'Every answer in one place: dispatch pricing (flat 5%), free broker posting, shipper tracking, detention pay, documents, W-9, QuickBooks, ELD and getting started — searchable, by role.',
      'faq.html', PHONE_STRIP + faq_body, _faq_sch)
 
-# ---- Broker claim page (email load ingestion): token link from the claim email ----
-_bc_body = ('<meta name="robots" content="noindex,nofollow"><section><div class="wrap" style="max-width:720px">'
- '<div id="bcCard" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:22px;padding:34px;color:#fff">'
- '<div class="eyebrow" style="color:#7cc0ff">LoadBoot for Brokers</div>'
- '<h1 style="color:#fff;font-size:1.7rem;margin:8px 0 10px">Claim your loads &amp; go live</h1>'
- '<div id="bcState" style="color:#c7d5ea">Loading your details&hellip;</div>'
- '<div id="bcForm" style="display:none;margin-top:18px">'
- '<div id="bcCo" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:16px;margin-bottom:14px"></div>'
- '<div id="bcLoads" style="margin-bottom:16px"></div>'
- '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:16px;font-size:.86rem;color:#c7d5ea;line-height:1.6;margin-bottom:14px">'
- '<b style="color:#fff">Posting standards (one-time acceptance)</b><br>'
- 'My email-posted loads carry LoadBoot&rsquo;s published accessorial standards &mdash; detention, TONU and layover at the platform&rsquo;s published rates &mdash; printed on every posting. Payment terms net-30 from delivery documents; 15-day dispute window; exact pickup/delivery addresses confirmed at booking; e-signature below has full legal effect (ESIGN/UETA).</div>'
- '<label style="display:block;font:700 11px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Your name</label>'
- '<input id="bcName" style="width:100%;box-sizing:border-box;border:none;border-radius:11px;padding:12px;font:500 15px Inter,Arial;margin-bottom:10px" placeholder="Full name">'
- '<label style="display:block;font:700 11px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Work email</label>'
- '<input id="bcEmail" type="email" style="width:100%;box-sizing:border-box;border:none;border-radius:11px;padding:12px;font:500 15px Inter,Arial;margin-bottom:10px" placeholder="you@brokerage.com">'
- '<label style="display:block;font:700 11px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Type your full name to e-sign</label>'
- '<input id="bcSig" style="width:100%;box-sizing:border-box;border:none;border-radius:11px;padding:12px;font:500 17px cursive;margin-bottom:12px" placeholder="Signature">'
+# ---- Broker claim page (email load ingestion) — premium v2: steps, policy links, portal signup ----
+_bc_body = ('<meta name="robots" content="noindex,nofollow">'
+ '<style>'
+ '.bc-step{display:flex;gap:10px;align-items:center;margin-bottom:6px}'
+ '.bc-dot{width:26px;height:26px;border-radius:9px;background:rgba(124,192,255,.15);border:1px solid rgba(124,192,255,.35);color:#7cc0ff;font:800 12px Inter,Arial;display:flex;align-items:center;justify-content:center;flex:none}'
+ '.bc-in{width:100%;box-sizing:border-box;border:none;border-radius:12px;padding:13px 14px;font:500 15px Inter,Arial;margin-bottom:10px;background:#fff}'
+ '.bc-lbl{display:block;font:700 10.5px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}'
+ '.bc-pol{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(124,192,255,.3);color:#7cc0ff;font:700 12px Inter,Arial;padding:7px 12px;border-radius:999px;text-decoration:none;margin:4px 6px 0 0;transition:all .15s}'
+ '.bc-pol:hover{background:#0883F7;color:#fff}'
+ '.bc-load{display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 14px;margin-bottom:7px;font-size:.9rem;color:#e2e8f0}'
+ '.bc-load b{color:#7cc0ff}'
+ '@keyframes bcUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'
+ '.bc-anim{animation:bcUp .35s ease}'
+ '</style>'
+ '<section><div class="wrap" style="max-width:760px">'
+ '<div id="bcCard" class="bc-anim" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:24px;padding:36px;color:#fff;box-shadow:0 30px 80px -30px rgba(2,12,30,.6)">'
+ '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="background:rgba(252,83,5,.18);color:#ff9c66;font:800 11px Inter,Arial;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:999px">LoadBoot for Brokers</span><span style="background:rgba(34,197,94,.14);color:#4ade80;font:700 11px Inter,Arial;padding:6px 12px;border-radius:999px">Posting is free — forever</span></div>'
+ '<h1 style="color:#fff;font-size:1.85rem;margin:10px 0 6px;letter-spacing:-.01em">Claim your loads &amp; go live</h1>'
+ '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 4px">'
+ '<div class="bc-step"><div class="bc-dot">1</div><span style="color:#c7d5ea;font-size:.86rem">Confirm company</span></div>'
+ '<div class="bc-step"><div class="bc-dot">2</div><span style="color:#c7d5ea;font-size:.86rem">Read &amp; e-sign standards</span></div>'
+ '<div class="bc-step"><div class="bc-dot">3</div><span style="color:#c7d5ea;font-size:.86rem">Loads go live + portal login</span></div></div>'
+ '<div id="bcState" style="color:#c7d5ea;padding:10px 0">Loading your details&hellip;</div>'
+ '<div id="bcForm" style="display:none;margin-top:12px">'
+ '<div id="bcCo" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-bottom:12px"></div>'
+ '<div id="bcLoads" style="margin-bottom:14px"></div>'
+ '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-bottom:16px">'
+ '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:1.1rem">📜</span><b style="color:#fff">Posting standards — one-time acceptance</b></div>'
+ '<p style="color:#c7d5ea;font-size:.88rem;line-height:1.65;margin:0 0 6px">My email-posted loads carry LoadBoot&rsquo;s <b style="color:#fff">published accessorial standards</b> — detention, TONU and layover at the platform&rsquo;s published rates, printed on every posting. Payment terms <b style="color:#fff">net-30</b> from delivery documents &middot; <b style="color:#fff">15-day</b> dispute window &middot; exact addresses confirmed at booking &middot; e-signature has full legal effect (ESIGN/UETA).</p>'
+ '<div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.14)">'
+ '<span style="color:#9fb3cc;font:700 11px Inter,Arial;text-transform:uppercase;letter-spacing:.08em">Read every policy in full — know exactly what you sign:</span><br>'
+ '<a class="bc-pol" href="detention-pay-policy.html" target="_blank">💰 Detention rates</a>'
+ '<a class="bc-pol" href="tonu-policy.html" target="_blank">🚫 TONU</a>'
+ '<a class="bc-pol" href="layover-policy.html" target="_blank">🛏️ Layover</a>'
+ '<a class="bc-pol" href="lumper-policy.html" target="_blank">📦 Lumper</a>'
+ '<a class="bc-pol" href="market-rates.html" target="_blank">📈 Current rates</a>'
+ '<a class="bc-pol" href="terms.html" target="_blank">📄 Terms of Service</a>'
+ '</div></div>'
+ '<label class="bc-lbl">Your full name</label><input id="bcName" class="bc-in" placeholder="Full name">'
+ '<label class="bc-lbl">Work email</label><input id="bcEmail" type="email" class="bc-in" placeholder="you@brokerage.com">'
+ '<label class="bc-lbl">Type your full name to e-sign</label><input id="bcSig" class="bc-in" style="font-family:cursive;font-size:18px" placeholder="Signature">'
  '<div id="bcErr" style="color:#fca5a5;font-size:.85rem;display:none;margin-bottom:8px"></div>'
- '<button id="bcGo" style="width:100%;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:12px;padding:14px;font:800 15px Inter,Arial;cursor:pointer">&#9997;&#65039; Accept &amp; activate my loads</button>'
- '<p style="color:#9fb3cc;font-size:.78rem;text-align:center;margin-top:10px">Posting is free forever. Our team gives every new brokerage a quick human review before loads go live.</p>'
+ '<button id="bcGo" style="width:100%;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:13px;padding:15px;font:800 15.5px Inter,Arial;cursor:pointer;box-shadow:0 14px 34px rgba(252,83,5,.4)">&#9997;&#65039; Accept standards &amp; activate my loads</button>'
+ '<p style="color:#9fb3cc;font-size:.78rem;text-align:center;margin-top:10px">🔒 Signature recorded with timestamp &middot; posting free forever &middot; quick human review for every new brokerage</p>'
  '</div></div></div></section>')
 _bc_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest/v1/rpc/',key='" + (APP_ANON or '') + "';"
- "var t=new URLSearchParams(location.search).get('t');var st=document.getElementById('bcState');"
+ "var t=new URLSearchParams(location.search).get('t');var st=document.getElementById('bcState');var n='',em='';"
  "function call(fn,body){return fetch(api+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+key},body:JSON.stringify(body)}).then(function(r){return r.json()});}"
  "if(!t){st.textContent='This link is missing its token — use the link from your email.';return;}"
  "call('lb_email_claim_get',{p_token:t}).then(function(d){"
  "if(!d||d.error){st.textContent='This link looks expired or invalid — reply to our email and we will send a fresh one.';return;}"
  "st.style.display='none';document.getElementById('bcForm').style.display='block';"
- "document.getElementById('bcCo').innerHTML='<b>'+(d.company||d.domain)+'</b><br><span style=\"color:#9fb3cc;font-size:.85rem\">MC '+(d.mc||'—')+' · '+d.domain+' · status: '+d.status+'</span>';"
- "var L=d.loads||[];document.getElementById('bcLoads').innerHTML=L.map(function(x){return '<div style=\"display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.04);border-radius:10px;padding:9px 12px;margin-bottom:6px;font-size:.88rem\"><span>'+(x.origin||'?')+' → '+(x.destination||'?')+' · '+(x.equipment||'')+'</span><b>'+(x.rate||'')+'</b></div>';}).join('');"
+ "document.getElementById('bcCo').innerHTML='<div style=\"display:flex;align-items:center;gap:12px\"><div style=\"width:44px;height:44px;border-radius:13px;background:rgba(124,192,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem\">🏢</div><div><b style=\"font-size:1.05rem\">'+(d.company||d.domain)+'</b><br><span style=\"color:#9fb3cc;font-size:.84rem\">MC '+(d.mc||'—')+' · '+d.domain+' · '+(d.status==='verified'?'<span style=\"color:#4ade80\">✓ verified</span>':'pending review')+'</span></div></div>';"
+ "var L=d.loads||[];document.getElementById('bcLoads').innerHTML=(L.length?'<div class=\"bc-lbl\" style=\"margin-bottom:7px\">Your parsed loads ('+L.length+')</div>':'')+L.map(function(x){return '<div class=\"bc-load\"><span>'+(x.origin||'?')+' → '+(x.destination||'?')+' · '+(x.equipment||'')+'</span><b>'+(x.rate||'rate pending')+'</b></div>';}).join('');"
  "}).catch(function(){st.textContent='Connection hiccup — refresh to try again.';});"
  "document.getElementById('bcGo').onclick=function(){var e=document.getElementById('bcErr');e.style.display='none';"
- "var n=document.getElementById('bcName').value.trim(),em=document.getElementById('bcEmail').value.trim(),sg=document.getElementById('bcSig').value.trim();"
+ "n=document.getElementById('bcName').value.trim();em=document.getElementById('bcEmail').value.trim();var sg=document.getElementById('bcSig').value.trim();"
  "if(n.length<2||!/@/.test(em)){e.textContent='Name and a valid email are required';e.style.display='block';return;}"
- "if(sg.toLowerCase()!==n.toLowerCase()){e.textContent='Signature must match your name exactly';e.style.display='block';return;}"
+ "if(sg.toLowerCase()!==n.toLowerCase()){e.textContent='Signature must match your name exactly: '+n;e.style.display='block';return;}"
  "this.disabled=true;this.textContent='Recording…';var b=this;"
  "call('lb_email_claim_sign',{p_token:t,p_name:n,p_email:em,p_signature:sg}).then(function(r){"
- "if(r&&r.ok){document.getElementById('bcForm').innerHTML='<div style=\"text-align:center;padding:20px 0\"><div style=\"font-size:2.2rem\">🎉</div><h2 style=\"color:#fff\">You&rsquo;re set!</h2><p style=\"color:#c7d5ea\">Terms recorded. '+(r.pending_review?'Our team finishes a quick review — your loads go live right after (we email you).':'Your complete loads are publishing now.')+'</p><p style=\"color:#9fb3cc;font-size:.85rem\">From now on: every load you email to loads@loadboot.com goes live automatically.</p></div>';}"
- "else{e.textContent=(r&&r.error)||'Something went wrong — try again';e.style.display='block';b.disabled=false;b.textContent='✍️ Accept & activate my loads';}});};})();</script>")
+ "if(r&&r.ok){document.getElementById('bcForm').innerHTML='<div class=\"bc-anim\" style=\"text-align:center;padding:14px 0\"><div style=\"font-size:2.4rem\">🎉</div><h2 style=\"color:#fff;margin:8px 0 6px\">You&rsquo;re set'+(n?', '+n.split(' ')[0]:'')+'!</h2><p style=\"color:#c7d5ea\">Standards e-signed &amp; recorded'+(r.published?' — <b style=\"color:#4ade80\">'+r.published+' load(s) publishing now</b>':'')+'. '+(r.pending_review?'Our team finishes a quick review — your loads go live right after (we email you).':'')+'</p><p style=\"color:#9fb3cc;font-size:.85rem\">From now on: every load you email to <b style=\"color:#fff\">loads@loadboot.com</b> goes live automatically.</p>'+"
+ "'<div style=\"background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-top:14px;text-align:left\"><b style=\"color:#fff\">🔐 Get your Broker Portal (free)</b><p style=\"color:#9fb3cc;font-size:.85rem;margin:6px 0 10px\">Live GPS on your loads, documents in one place, full-detail posting. No password — we email a secure sign-in link.</p><button id=\"bcPortal\" style=\"width:100%;background:linear-gradient(135deg,#0883F7,#065fb8);color:#fff;border:none;border-radius:12px;padding:13px;font:800 14px Inter,Arial;cursor:pointer\">✉️ Create my portal login</button><div id=\"bcPortalMsg\" style=\"color:#9fb3cc;font-size:.8rem;text-align:center;margin-top:8px\"></div></div></div>';"
+ "var pb=document.getElementById('bcPortal');if(pb){pb.onclick=function(){pb.disabled=true;pb.textContent='Sending…';"
+ "fetch('https://" + APP_REF + ".supabase.co/auth/v1/otp',{method:'POST',headers:{'Content-Type':'application/json',apikey:key},body:JSON.stringify({email:em,create_user:true,data:{role:'broker',full_name:n,lb_source:'email_loads_claim'}})}).then(function(x){return x.json().catch(function(){return {}})}).then(function(dd){var m=document.getElementById('bcPortalMsg');"
+ "if(dd&&(dd.msg||dd.error_description)){m.textContent=dd.msg||dd.error_description;pb.disabled=false;pb.textContent='✉️ Create my portal login';}else{m.innerHTML='✓ Check your inbox — secure sign-in link sent to <b>'+em+'</b>';pb.style.display='none';}});};}}"
+ "else{e.textContent=(r&&r.error)||'Something went wrong — try again';e.style.display='block';b.disabled=false;b.textContent='✍️ Accept standards & activate my loads';}});};})();</script>")
 page('broker-claim.html', 'Claim Your Loads — LoadBoot for Brokers',
-     'One-time confirmation for brokers posting loads by email: verify your company, accept LoadBoot posting standards, and your emailed loads go live to verified carriers automatically.',
+     'One-time confirmation for brokers posting loads by email: verify your company, read and accept LoadBoot posting standards, get your portal login — and your emailed loads go live automatically.',
      'brokers.html', _bc_body + _bc_js)
 
 
