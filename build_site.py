@@ -1669,8 +1669,8 @@ BLOGPOSTS = [
    'H:The bottom line',
    'Expect to pay around 5% of gross for quality truck dispatch, with no contract and no hidden fees. The right dispatcher should make you more than they cost &mdash; if they do not, you should be able to walk away anytime.']),
  ('truck-dispatcher-vs-freight-broker.html',
-  'Truck Dispatcher vs Freight Broker vs Factoring',
-  'Dispatcher, broker or factoring? Who each represents, what they legally can and cannot do, how the money flows, and which a carrier needs.',
+  'Truck Dispatcher vs Freight Broker: The Difference, Costs & Who You Need (2026)',
+  'Dispatcher vs broker vs factoring, explained in plain English: who works for the carrier, who legally moves the freight, how each gets paid (5% vs 15–25% margin), and which you actually need in 2026.',
   'Three roles, three different jobs. Who represents whom, how the money actually flows, and which ones you really need as a carrier.',
   ['New carriers often confuse dispatchers and freight brokers. They play very different roles, and understanding the difference protects you.',
    'H:Who they represent',
@@ -1905,8 +1905,8 @@ A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMid
  '<rect x="864" y="120" width="34" height="170" rx="6" fill="#FC5305" opacity=".85"/>'
  '</svg>')
 rich_article('how-much-does-a-truck-dispatcher-cost.html',
- 'Truck Dispatcher Cost 2026: Dispatch Fees & Pricing (% vs Flat) — What 5% Gets You',
- 'Truck dispatcher pricing explained: percentage vs flat fee, what 5% really gets you, red flags, and how the right dispatcher pays for itself.',
+ 'Truck Dispatcher Cost 2026: 5\u201310% of Gross or $200\u2013$500/Month \u2014 Full Fee Breakdown',
+ 'Real 2026 dispatcher pricing: percentage deals run 5\u201310% of gross, flat fees $200\u2013$500 per truck per month. What each model gets you, the hidden fees and red flags to avoid, and when a dispatcher pays for itself.',
  'Dispatch Pricing','How Much Does a Truck Dispatcher Cost in 2026?',
  'Percentage vs flat fee, what 5% should cover, the red flags that mean you are overpaying, and the simple math on whether a dispatcher pays for itself.',
  8,'dispatcher-cost-hero.avif','Semi-truck on a US highway — what a truck dispatcher costs',
@@ -2080,8 +2080,8 @@ A2_FAQ=[
  ('Is factoring worth the fee?','It depends on your cash flow. Paying 1&ndash;3% to get paid in a day or two is often worth it in your first months, when a slow-paying broker can sink you. Once you have a cash cushion, many carriers drop it to keep the fee.'),
  ('Who gets me a better rate, a dispatcher or a broker?','A broker is paid to move the shipper&rsquo;s freight for as little as the market allows, so their incentive is a lower rate. A dispatcher works for you and is motivated to negotiate the rate up, since on a percentage model they only earn more when you do.')]
 rich_article('truck-dispatcher-vs-freight-broker.html',
- 'Truck Dispatcher vs Freight Broker vs Factoring (2026)',
- 'Dispatcher, broker or factoring? Who each represents, what they can legally do, how the money flows, and which ones a carrier actually needs.',
+ 'Truck Dispatcher vs Freight Broker: The Difference, Costs & Who You Need (2026)',
+ 'Dispatcher vs broker vs factoring in plain English: who works for the carrier, who legally controls the freight, how each gets paid (5% flat vs 15\u201325% margin vs 1\u20133% factoring), and which you actually need.',
  'Carrier Basics','Truck Dispatcher vs Freight Broker vs Factoring',
  'Three roles every carrier deals with &mdash; but they do completely different jobs. Who represents whom, what each can legally do, how the money flows, and which ones you actually need.',
  9,'dispatcher-vs-broker-hero.jpg','Freight broker and truck dispatcher negotiating a load rate for a carrier',
@@ -2739,7 +2739,7 @@ PD_CALC = ('<div class="pdcalc">'
 PD_TOC = [('the-money','The money you are losing'),('what-is-per-diem','What per diem actually is (2026)'),
  ('the-math','The math: what it is really worth'),('who-can-claim','Who can claim it &mdash; and who cannot'),
  ('why-missed','Why most drivers lose it: the proof problem'),('loadboot','How Loadboot proves it for you'),
- ('beyond','Beyond per diem: the rest of the money'),('mistakes','Five mistakes that cost you'),('bottom-line','The bottom line')]
+ ('by-year','Per diem rates by year (2018–2026)'),('beyond','Beyond per diem: the rest of the money'),('mistakes','Five mistakes that cost you'),('bottom-line','The bottom line')]
 
 PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<p>If you are an owner-operator who sleeps in the truck, there is a deduction sitting in front of you that costs nothing to earn, requires no purchase, and needs <b>not one meal receipt</b>. It is the transportation-industry <b>per diem</b>. And a large share of drivers either never claim it, or claim a fraction of what they are owed.</p>'
@@ -2800,6 +2800,20 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<p>Every load carries its own profit statement. Detention and accessorials land on it <b>automatically</b> from the same GPS stamps, so the income side is as complete as the deduction side. At tax time you are not hunting &mdash; you are exporting.</p>'
  + svc_banner('Stop reconstructing your year in April','Run your loads on Loadboot and the tax record writes itself &mdash; nights away, per-load profit, detention, Schedule C. Flat 5%, no contract, cancel anytime.','Get started','get-started.html') +
 
+ '<h2 id="by-year">Per diem rates by year (2018&ndash;2026)</h2>'
+ '<p>Searching for an older year because you are amending a return or catching up on back taxes? Here is the IRS special transportation-industry M&amp;IE rate for every year, and how much of it was deductible. Amended returns can generally be filed up to three years back &mdash; if you never claimed per diem, those years may still be worth real money.</p>'
+ '<div style="overflow-x:auto"><table><thead><tr><th>Tax year</th><th>Rate per full day (CONUS)</th><th>Deductible share</th><th>200 nights is worth</th></tr></thead><tbody>'
+ '<tr><td>2018</td><td>$63</td><td>80%</td><td>$10,080</td></tr>'
+ '<tr><td>2019</td><td>$66</td><td>80%</td><td>$10,560</td></tr>'
+ '<tr><td>2020</td><td>$66</td><td>80%</td><td>$10,560</td></tr>'
+ '<tr><td>2021</td><td>$66&ndash;$69</td><td>100% (COVID relief)</td><td>$13,200+</td></tr>'
+ '<tr><td>2022</td><td>$69</td><td>100% (COVID relief)</td><td>$13,800</td></tr>'
+ '<tr><td>2023</td><td>$69</td><td>80%</td><td>$11,040</td></tr>'
+ '<tr><td>2024</td><td>$69&ndash;$80</td><td>80%</td><td>$11,040+</td></tr>'
+ '<tr><td>2025</td><td>$80</td><td>80%</td><td>$12,800</td></tr>'
+ '<tr><td><b>2026</b></td><td><b>$80</b></td><td><b>80%</b></td><td><b>$12,800</b></td></tr>'
+ '</tbody></table></div>'
+ '<p>Rates change each October 1 with the federal fiscal year, so a calendar tax year can straddle two rates &mdash; the IRS lets you use the rate in effect for each night, or apply a consistent method. Partial travel days count as &frac34; of a day. When in doubt, your nights-away log decides everything, which is exactly the record most drivers never kept &mdash; and the one Loadboot builds automatically.</p>'
  '<h2 id="beyond">Beyond per diem: the rest of the money</h2>'
  '<p>Per diem is the biggest one drivers miss, but it is not the only one. The same records feed the rest of your return:</p>'
  '<ul>'
