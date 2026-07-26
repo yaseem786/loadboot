@@ -91,6 +91,8 @@
   }
 
   function addMsg(sender, body) {
+    // [[note]] messages are internal staff-inbox notes (onboarding milestones, doc verdicts) — never render for visitors
+    if (String(body).indexOf('[[note]]') === 0) return;
     var me = sender === 'visitor';
     var chipDef = null, formDef = null;
     var cm = String(body).match(/\[\[chips:([\s\S]*?)\]\]/);
@@ -220,6 +222,7 @@
       els.body.insertBefore(row, els.typing);
     }
     els.body.scrollTop = els.body.scrollHeight;
+    try { if (window.LBChatOnboard && window.LBChatOnboard.onMsg) window.LBChatOnboard.onMsg(sender, body); } catch (e) {}
   }
 
   function typing(on) {
@@ -234,7 +237,8 @@
     addMsg('bot', "Hi! 👋 I'm the LoadBoot assistant — I answer instantly, 24/7. To point you right: which one are you?");
     var chips = document.createElement('div');
     chips.className = 'lbc-chips';
-    [['🚚 I\'m a carrier', "I'm a carrier"],
+    [['🚀 Get set up in 5 min', 'Start my 5-minute setup'],
+     ['🚚 I\'m a carrier', "I'm a carrier"],
      ['🏢 I\'m a broker', "I'm a broker"],
      ['📦 I\'m a shipper', "I'm a shipper"],
      ['🧑\u200d✈️ Dispatcher', "I'm a dispatcher"],
@@ -322,7 +326,15 @@
         var t = document.createElement('div');
         t.id = 'lbc-teaser';
         t.style.cssText = 'position:fixed;right:18px;bottom:86px;max-width:260px;background:#fff;border:1px solid #e6edf5;border-radius:16px;border-bottom-right-radius:6px;box-shadow:0 16px 50px rgba(2,6,23,.25);padding:13px 15px;z-index:2147483645;font-family:Inter,system-ui,Arial;font-size:13px;color:#0f172a;line-height:1.5;cursor:pointer;animation:lbcUp .3s ease';
-        t.innerHTML = '<b>👋 Need a hand?</b><br>I answer instantly — pricing, loads, setup, anything trucking.' +
+        var openers = [
+          '<b>👋 Need a hand?</b><br>I answer instantly — pricing, loads, setup, anything trucking.',
+          '<b>🚀 New here?</b><br>I can set up your whole account right in this chat — about 5 minutes, done.',
+          '<b>📄 Document questions?</b><br>Upload your COI here — I read it on the spot and tell you if anything\'s wrong.',
+          '<b>💰 Curious what loads pay?</b><br>Ask me for live rates per mile — real numbers, no login needed.'
+        ];
+        var oi = 0;
+        try { oi = (parseInt(localStorage.getItem('lb_lc_opener') || '0', 10) || 0) % openers.length; localStorage.setItem('lb_lc_opener', String(oi + 1)); } catch (e) {}
+        t.innerHTML = openers[oi] +
           '<span style="position:absolute;top:6px;right:9px;color:#94a3b8;font-size:14px" data-x>✕</span>';
         t.onclick = function (e) {
           t.remove();
@@ -420,7 +432,18 @@
       place(); mq.addEventListener('change', place); setTimeout(place, 1500);
     } catch (e) {}
 
-    restore();
+    // Extension hooks for the onboarding concierge (lcOnboard.js — marketing site only).
+    window.LBChat._ob = {
+      addMsg: addMsg,
+      sendText: sendText,
+      typing: typing,
+      insertNode: function (n) { els.body.insertBefore(n, els.typing); els.body.scrollTop = els.body.scrollHeight; },
+      setConv: function (id) { convId = id; lsSet('lb_lc_conv', id); },
+      ctx: function () { return { vKey: vKey, convId: convId, cfg: cfg }; }
+    };
+    restore().then(function () {
+      try { if (window.LBChatOnboard && window.LBChatOnboard.checkResume) window.LBChatOnboard.checkResume(); } catch (e) {}
+    });
     teaser();
     pollT = setInterval(poll, 30000);
   }

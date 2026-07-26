@@ -578,7 +578,7 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 <script>%s</script>
 <script src="app.js?v=6"></script>
-<script defer src="/app/shared/ui/liveChatCore.js?v=1"></script><script defer src="/lc-init.js?v=1"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
+<script defer src="/app/shared/ui/liveChatCore.js?v=2"></script><script defer src="/app/shared/ui/lcOnboard.js?v=1"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -1653,8 +1653,8 @@ BLOGPOSTS = [
   'Texas is the biggest trucking market in the country — and one of the easiest places to haul cheap if nobody is watching your rates. The lanes, the seasons, and how dispatch works here.',
   []),
  ('how-much-does-a-truck-dispatcher-cost.html',
-  'How Much Does a Truck Dispatcher Cost in 2026?',
-  'Truck dispatcher pricing explained: percentage vs flat fee, what 5% really gets you, and how the right dispatcher pays for itself.',
+  'How Much Does a Truck Dispatcher Cost? 5–10% or $200–500/mo (2026 Rates)',
+  'Real 2026 truck dispatcher pricing: percentage deals run 5–10% of gross, flat fees $200–500/truck/month. What each model really gets you, the hidden fees to avoid, and when a dispatcher pays for itself.',
   'A clear breakdown of what truck dispatchers charge, the two common pricing models, and how to tell if a dispatcher is worth the cost.',
   ['If you are an owner-operator thinking about hiring a dispatcher, the first question is always the same: what does it cost, and is it worth it? Here is a straight answer.',
    'H:The two common pricing models',
@@ -1669,8 +1669,8 @@ BLOGPOSTS = [
    'H:The bottom line',
    'Expect to pay around 5% of gross for quality truck dispatch, with no contract and no hidden fees. The right dispatcher should make you more than they cost &mdash; if they do not, you should be able to walk away anytime.']),
  ('truck-dispatcher-vs-freight-broker.html',
-  'Truck Dispatcher vs Freight Broker vs Factoring',
-  'Dispatcher, broker or factoring? Who each represents, what they legally can and cannot do, how the money flows, and which a carrier needs.',
+  'Truck Dispatcher vs Freight Broker: The Difference, Costs & Who You Need (2026)',
+  'Dispatcher vs broker vs factoring, explained in plain English: who works for the carrier, who legally moves the freight, how each gets paid (5% vs 15–25% margin), and which you actually need in 2026.',
   'Three roles, three different jobs. Who represents whom, how the money actually flows, and which ones you really need as a carrier.',
   ['New carriers often confuse dispatchers and freight brokers. They play very different roles, and understanding the difference protects you.',
    'H:Who they represent',
@@ -1905,8 +1905,8 @@ A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMid
  '<rect x="864" y="120" width="34" height="170" rx="6" fill="#FC5305" opacity=".85"/>'
  '</svg>')
 rich_article('how-much-does-a-truck-dispatcher-cost.html',
- 'Truck Dispatcher Cost 2026: Dispatch Fees & Pricing (% vs Flat) — What 5% Gets You',
- 'Truck dispatcher pricing explained: percentage vs flat fee, what 5% really gets you, red flags, and how the right dispatcher pays for itself.',
+ 'Truck Dispatcher Cost 2026: 5\u201310% of Gross or $200\u2013$500/Month \u2014 Full Fee Breakdown',
+ 'Real 2026 dispatcher pricing: percentage deals run 5\u201310% of gross, flat fees $200\u2013$500 per truck per month. What each model gets you, the hidden fees and red flags to avoid, and when a dispatcher pays for itself.',
  'Dispatch Pricing','How Much Does a Truck Dispatcher Cost in 2026?',
  'Percentage vs flat fee, what 5% should cover, the red flags that mean you are overpaying, and the simple math on whether a dispatcher pays for itself.',
  8,'dispatcher-cost-hero.avif','Semi-truck on a US highway — what a truck dispatcher costs',
@@ -2080,8 +2080,8 @@ A2_FAQ=[
  ('Is factoring worth the fee?','It depends on your cash flow. Paying 1&ndash;3% to get paid in a day or two is often worth it in your first months, when a slow-paying broker can sink you. Once you have a cash cushion, many carriers drop it to keep the fee.'),
  ('Who gets me a better rate, a dispatcher or a broker?','A broker is paid to move the shipper&rsquo;s freight for as little as the market allows, so their incentive is a lower rate. A dispatcher works for you and is motivated to negotiate the rate up, since on a percentage model they only earn more when you do.')]
 rich_article('truck-dispatcher-vs-freight-broker.html',
- 'Truck Dispatcher vs Freight Broker vs Factoring (2026)',
- 'Dispatcher, broker or factoring? Who each represents, what they can legally do, how the money flows, and which ones a carrier actually needs.',
+ 'Truck Dispatcher vs Freight Broker: The Difference, Costs & Who You Need (2026)',
+ 'Dispatcher vs broker vs factoring in plain English: who works for the carrier, who legally controls the freight, how each gets paid (5% flat vs 15\u201325% margin vs 1\u20133% factoring), and which you actually need.',
  'Carrier Basics','Truck Dispatcher vs Freight Broker vs Factoring',
  'Three roles every carrier deals with &mdash; but they do completely different jobs. Who represents whom, what each can legally do, how the money flows, and which ones you actually need.',
  9,'dispatcher-vs-broker-hero.jpg','Freight broker and truck dispatcher negotiating a load rate for a carrier',
@@ -2739,7 +2739,7 @@ PD_CALC = ('<div class="pdcalc">'
 PD_TOC = [('the-money','The money you are losing'),('what-is-per-diem','What per diem actually is (2026)'),
  ('the-math','The math: what it is really worth'),('who-can-claim','Who can claim it &mdash; and who cannot'),
  ('why-missed','Why most drivers lose it: the proof problem'),('loadboot','How Loadboot proves it for you'),
- ('beyond','Beyond per diem: the rest of the money'),('mistakes','Five mistakes that cost you'),('bottom-line','The bottom line')]
+ ('by-year','Per diem rates by year (2018–2026)'),('beyond','Beyond per diem: the rest of the money'),('mistakes','Five mistakes that cost you'),('bottom-line','The bottom line')]
 
 PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<p>If you are an owner-operator who sleeps in the truck, there is a deduction sitting in front of you that costs nothing to earn, requires no purchase, and needs <b>not one meal receipt</b>. It is the transportation-industry <b>per diem</b>. And a large share of drivers either never claim it, or claim a fraction of what they are owed.</p>'
@@ -2800,6 +2800,20 @@ PD_BODY = ('<h2 id="the-money">The money you are losing</h2>'
  '<p>Every load carries its own profit statement. Detention and accessorials land on it <b>automatically</b> from the same GPS stamps, so the income side is as complete as the deduction side. At tax time you are not hunting &mdash; you are exporting.</p>'
  + svc_banner('Stop reconstructing your year in April','Run your loads on Loadboot and the tax record writes itself &mdash; nights away, per-load profit, detention, Schedule C. Flat 5%, no contract, cancel anytime.','Get started','get-started.html') +
 
+ '<h2 id="by-year">Per diem rates by year (2018&ndash;2026)</h2>'
+ '<p>Searching for an older year because you are amending a return or catching up on back taxes? Here is the IRS special transportation-industry M&amp;IE rate for every year, and how much of it was deductible. Amended returns can generally be filed up to three years back &mdash; if you never claimed per diem, those years may still be worth real money.</p>'
+ '<div style="overflow-x:auto"><table><thead><tr><th>Tax year</th><th>Rate per full day (CONUS)</th><th>Deductible share</th><th>200 nights is worth</th></tr></thead><tbody>'
+ '<tr><td>2018</td><td>$63</td><td>80%</td><td>$10,080</td></tr>'
+ '<tr><td>2019</td><td>$66</td><td>80%</td><td>$10,560</td></tr>'
+ '<tr><td>2020</td><td>$66</td><td>80%</td><td>$10,560</td></tr>'
+ '<tr><td>2021</td><td>$66&ndash;$69</td><td>100% (COVID relief)</td><td>$13,200+</td></tr>'
+ '<tr><td>2022</td><td>$69</td><td>100% (COVID relief)</td><td>$13,800</td></tr>'
+ '<tr><td>2023</td><td>$69</td><td>80%</td><td>$11,040</td></tr>'
+ '<tr><td>2024</td><td>$69&ndash;$80</td><td>80%</td><td>$11,040+</td></tr>'
+ '<tr><td>2025</td><td>$80</td><td>80%</td><td>$12,800</td></tr>'
+ '<tr><td><b>2026</b></td><td><b>$80</b></td><td><b>80%</b></td><td><b>$12,800</b></td></tr>'
+ '</tbody></table></div>'
+ '<p>Rates change each October 1 with the federal fiscal year, so a calendar tax year can straddle two rates &mdash; the IRS lets you use the rate in effect for each night, or apply a consistent method. Partial travel days count as &frac34; of a day. When in doubt, your nights-away log decides everything, which is exactly the record most drivers never kept &mdash; and the one Loadboot builds automatically.</p>'
  '<h2 id="beyond">Beyond per diem: the rest of the money</h2>'
  '<p>Per diem is the biggest one drivers miss, but it is not the only one. The same records feed the rest of your return:</p>'
  '<ul>'
@@ -4266,8 +4280,8 @@ _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org",
   '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
   '<script>' + _MR_JS + '</script>')
 
-page('market-rates.html', 'Truckload Market Rates Per Mile — Live Carrier, Broker & Shipper Rates',
-     'Live national truckload rates per mile, updated weekly: what carriers get paid, what brokers buy/sell at, and what shippers pay. Dry van, reefer, flatbed, power only, hotshot.',
+page('market-rates.html', 'Truckload Rates Per Mile 2026 (Updated Weekly): Van $3.00 · Flatbed $3.72 | LoadBoot',
+     'Live 2026 truckload rates per mile, updated weekly — dry van ~$3.00, flatbed ~$3.72, hotshot ~$2.40 all-in. What carriers get paid, what brokers pay, free trucking rate calculator included. No login.',
      'market-rates.html', _mr_body + _mr_faq)
 
 
@@ -4310,16 +4324,16 @@ def _hub_value(bullets, portal_href, portal_label):
         '<div class="hub-benefit reveal"><div class="hb-i">' + _ic[i % len(_ic)] + '</div><p>' + b + '</p></div>'
         for i, b in enumerate(bullets))
     return ('<section style="padding-top:10px"><div class="wrap" style="max-width:980px">'
-            '<div class="sec-head center reveal" style="margin-bottom:18px"><div class="eyebrow">What you get</div>'
-            '<h2>After your account is created</h2></div>'
-            '<div class="hub-benefits">' + cards + '</div>'
-            '<div class="hub-cta reveal">'
+            '<div class="hub-cta reveal" style="margin-bottom:26px">'
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
             '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#7dd3fc">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div>'
+            '<div class="sec-head center reveal" style="margin-bottom:18px"><div class="eyebrow">What you get</div>'
+            '<h2>After your account is created</h2></div>'
+            '<div class="hub-benefits">' + cards + '</div>'
             '</div></section>')
 
 _HUB_STYLE = ('<style>'
@@ -4448,7 +4462,7 @@ _HUB_ROLES = [
 ]
 
 hub = svc_hero('Create your Loadboot account',
-    'One front door for everyone in the freight chain. Pick your role &mdash; carrier, broker, shipper, or referral partner &mdash; and get set up in minutes. Flat, transparent, no contracts.')
+    'One front door for everyone in the freight chain. Pick your role &mdash; carrier, broker, shipper, or referral partner &mdash; and get set up in minutes. Flat, transparent, no contracts.', 'See all features', 'features.html')
 hub += _HUB_STYLE
 _tabbar = '<section style="padding-top:6px"><div class="wrap"><div class="hub-tabs reveal">'
 for i, r in enumerate(_HUB_ROLES):
@@ -6845,7 +6859,13 @@ with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADE
 # ---------- _redirects ----------
 # Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files
 # are ever copied here, so nothing sensitive can be fetched. This file is intentionally minimal.
-REDIRECTS = "# Loadboot — no custom redirects. Source files are not in the publish directory.\n"
+REDIRECTS = "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
+REDIRECTS += "# /page.html (impressions split across 29 duplicates in GSC). 301 the extensionless\n"
+REDIRECTS += "# form to the canonical .html form so link equity consolidates. Generated per build.\n"
+_rd_exclude = {'index.html', '404.html', 'dashboard.html'}
+for _f in sorted(os.listdir(OUT)):
+    if _f.endswith('.html') and _f not in _rd_exclude:
+        REDIRECTS += "/%s /%s 301!\n" % (_f[:-5], _f)
 with open(os.path.join(OUT,'_redirects'),'w',encoding='utf-8') as f: f.write(REDIRECTS)
 
 # ---------- BRANDED 404 (noindex; Netlify serves automatically) ----------
