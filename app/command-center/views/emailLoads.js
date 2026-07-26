@@ -78,8 +78,8 @@ export function renderEmailLoads(host) {
         el('button', { class: 'lb-btn lb-btn-ghost', onclick: load }, '↻ Refresh'),
       ]),
       el('div', { class: 'cc-stats', style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:10px 0 14px' }, [
-        statCard('Total parsed', rows.length), statCard('Published', by('published')),
-        statCard('Ready', by('ready')), statCard('Needs info', by('needs_info')), statCard('New (draft)', by('draft')),
+        statCard({ label: 'Total parsed', value: String(rows.length) }), statCard({ label: 'Published', value: String(by('published')), accent: 'green' }),
+        statCard({ label: 'Ready', value: String(by('ready')) }), statCard({ label: 'Needs info', value: String(by('needs_info')), accent: 'amber' }), statCard({ label: 'New (draft)', value: String(by('draft')) }),
       ]),
       segmented([
         { value: 'all', label: 'All' }, { value: 'draft', label: 'New' }, { value: 'needs_info', label: 'Needs info' },
