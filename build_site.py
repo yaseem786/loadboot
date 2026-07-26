@@ -578,7 +578,7 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 <script>%s</script>
 <script src="app.js?v=6"></script>
-<script defer src="/app/shared/ui/liveChatCore.js?v=1"></script><script defer src="/lc-init.js?v=1"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
+<script defer src="/app/shared/ui/liveChatCore.js?v=2"></script><script defer src="/app/shared/ui/lcOnboard.js?v=1"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 

@@ -1,0 +1,22 @@
+-- bl_lc_ob_0173 + 0174 (applied STAGING + PROD 2026-07-25): live-chat onboarding concierge.
+-- Table: app_private.lc_onboarding (visitor_key UNIQUE, conversation_id, role, step_key,
+--   data jsonb merge-patched, docs jsonb array, account_email/account_created, completed_at).
+-- RPCs:
+--   lc_ob_get(p_visitor_key)  anon+auth — resume state for a visitor.
+--   lc_ob_save(p_visitor_key, p_conversation_id, p_role, p_step_key, p_patch, p_note,
+--              p_account_email, p_account_created, p_completed) anon+auth — upsert+merge;
+--              p_note writes a bot message into the conversation so CC staff see progress.
+--   lc_ob_doc_log(...) SERVICE-ROLE ONLY — appends doc verdicts (called by lc-doc-check edge fn).
+-- Marketing KB pack: 7 high-converting lc_kb intents (setup trigger, DAT/Truckstop comparison,
+--   5% ROI objection, shipper pitch, broker pitch, trust/legit, COI explainer) with
+--   [[chips:...]] cross-sells into 'Start my 5-minute setup'.
+-- Edge fn lc-doc-check (prod v5 + staging): Gemini vision (model fallback chain 2.5-flash →
+--   2.0-flash → lite → latest, continues on 404/429) reads COI/W-9/authority uploads, returns
+--   {verdict: pass|warning|reject|queued, issues[{problem,fix}], fields, summary}; stores the
+--   original in the private 'documents' bucket under lc-onboarding/<visitor>/; degrades to
+--   'queued' (manual review) when AI is unavailable — UX never errors.
+--   NOTE: edge env SUPABASE_SERVICE_ROLE_KEY is a new sb_secret_ key — storage/REST need it
+--   in the `apikey` header (Authorization: Bearer rejects it with "Invalid Compact JWS").
+-- ⚠️ Staging is missing the GEMINI_API_KEY edge secret — doc checks return 'queued' there
+--   until the owner adds it (Supabase staging → Edge Functions → Secrets).
+-- Canonical SQL lives in the Supabase migration history of both projects (same name).
