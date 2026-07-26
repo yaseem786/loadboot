@@ -297,3 +297,6 @@ plus the D-SCREENS UI batch (packet/agreement/RC cards in all portals + CC onboa
   red Fix-now hero (doc names + reasons) & setup-gap/urgent rows jump straight to wizard
   Documents step (sessionStorage lb:onb:jump); stages compliance_check/changes_requested
   now count as "under review" on dashboard + account.
+
+## 2026-07-27 — Owner ne manga: FULL DEEP AUDIT (marketing site + 4 portals, Amazon/Uber bar, har minor bug)
+Next session: crawl every page + portal click-through → bug register + gap list. Pending wires: booking-ping email (address confirm), needs-info REPLY-MERGE (thread→load), email-load lat/lng for deadhead, staging/test-row cleanup, backlinks EXECUTION, FMCSA CSVs → outreach ON. Push abhi bhi pending tha is waqt.
