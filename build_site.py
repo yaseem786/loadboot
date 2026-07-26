@@ -3341,11 +3341,48 @@ _faq_items = [
  ('Do you help with factoring, IFTA and compliance?', 'Yes. We can connect you with factoring, help keep your filings and permits current, and support you on IFTA, 2290, UCR and BOC-3.'),
  ('What hours is dispatch available?', 'A dispatcher is reachable during business hours and on call for active loads. If your truck is moving, we are reachable.'),
 ]
-_faq_html, _faq_sch = faq_block(_faq_items)
-faq_body = svc_hero('Frequently Asked Questions', 'Straight answers about pricing, authority, equipment, getting started and how dispatch actually works. Do not see your question? Contact us any time.')
-faq_body += _faq_html + final_cta()
-page('faq.html', 'Truck Dispatch FAQ &mdash; Pricing, Authority &amp; Getting Started | Loadboot',
-     'Answers to the most common questions about Loadboot truck dispatch: cost, authority, contracts, equipment types, getting started, factoring and compliance.',
+# ---- Help-center FAQ (Amazon/Uber pattern): search + role tabs + categorized accordions ----
+from faq_module import faq_page as _fq_page
+
+# Categorize the existing answers (indices into _faq_items) and add role packs.
+_fq_carrier_extra = [
+ ('How do I actually get loads with LoadBoot?', 'Two ways, same login: browse the verified load board yourself (every posting is a real load with written detention/TONU terms), or let your dispatcher work your lanes &mdash; we find, negotiate and book freight that clears YOUR floor price, and you approve every load.'),
+ ('What documents do I need to sign up?', 'A COI (ACORD 25) with $1M auto liability + $100K cargo, LoadBoot as certificate holder and every truck listed with its VIN; your MC authority letter; and a W-9 + dispatch agreement &mdash; both can be filled and e-signed right in our chat. The AI checks each document instantly and tells you exactly what to fix.'),
+ ('Does detention actually get paid?', 'Yes &mdash; because it is pre-agreed in writing on every posting before you book, and your GPS trail builds the claim automatically: geofenced arrival stamps, notification before free time expires, and the claim filed the moment you tap submit. See the <a href="detention-pay-policy.html">detention policy</a>.'),
+]
+_fq_broker = [
+ ('Is posting loads really free?', 'Yes &mdash; free forever. No subscription, no per-post fee, no carrier-search fee. We earn on the carrier dispatch side, so free verified capacity for brokers makes the whole network stronger.'),
+ ('How do I know a carrier is who they say they are?', 'Every carrier is checked live against FMCSA (authority, insurance, safety) before they can book, identity is verified at booking, and documents are collected automatically. Double-brokering is blocked by design &mdash; the carrier who books is the carrier who hauls.'),
+ ('Can I track loads without check calls?', 'Yes. Every load gets live GPS with geofenced arrive/depart stamps at pickup and delivery, plus photo proof of delivery &mdash; watch it move in your Partner Portal instead of calling drivers all day.'),
+ ('How does paperwork work on a load?', 'Rate confirmations are e-signed in the platform, BOLs and PODs are uploaded by the driver with timestamps, and everything lives on the load record &mdash; one link, full paper trail, no chasing.'),
+ ('What if a carrier cancels or falls off a load?', 'Cancellations, TONU and rescheduling follow published written policies, every event is recorded with timestamps, and our team helps you re-cover fast from verified capacity &mdash; with the full history on record if a dispute comes up.'),
+ ('What does carrier verification cost me as a broker?', 'Nothing. FMCSA authority, insurance and safety checks run automatically on the platform &mdash; both directions. You see a verified profile before you ever assign a load.'),
+]
+_fq_shipper = [
+ ('How is LoadBoot different from using a freight broker?', 'Traditional freight passes through layers that each take 15&ndash;25% you never see. LoadBoot is direct-to-carrier: one transparent rate, FMCSA-verified carriers, and a platform record of everything &mdash; you know what the truck got paid and what you paid.'),
+ ('Can I see where my freight is right now?', 'Always. Live GPS on every shipment, geofenced arrival/departure stamps at your dock and the destination, and photo proof of delivery the moment it happens &mdash; 24/7, from any device.'),
+ ('Are the carriers insured? Who is responsible if something goes wrong?', 'Only FMCSA-verified carriers with active authority, $1,000,000 auto liability and cargo coverage on file can touch your freight &mdash; the COI is verified before they can book. Every shipment has a full document trail (rate confirmation, BOL, POD), so responsibility is never a mystery.'),
+ ('Do I need to commit to volume?', 'No commitments. Ship one load or run program freight &mdash; the rate, tracking and paperwork work the same. As volume grows, dedicated capacity and lane pricing grow with it.'),
+ ('How do I get a rate?', 'Create a free <a href="create-shipper-account.html">shipper account</a> and post your shipment, check the <a href="market-rates.html">live market rates</a> page, or just open the chat and tell us the lane &mdash; a real quote, not a teaser.'),
+]
+_fq_partner = [
+ ('Can I work as a dispatcher with LoadBoot?', 'Yes &mdash; we hire US-based dispatchers and give them real tooling: verified freight, matching, rate confirmations, live tracking and settlements, with compliance workflows built in. See <a href="careers.html">careers</a> for open seats.'),
+ ('How does the 1% referral program work?', 'Refer a carrier or broker; when they run loads on LoadBoot you earn 1% of gross on every load they move &mdash; for as long as they keep running. Transparent statements in your Agent Portal, no caps, and the people you refer never pay extra.'),
+ ('Who can become a referral partner and what does it cost?', 'Anyone with a trucking network &mdash; drivers, fleet owners, factoring reps, insurance agents, creators. It costs nothing: <a href="create-agent-account.html">create a referral account</a>, share your link, and build monthly income.'),
+]
+_fq_ci = [1, 2, 3, 4, 8, 13, 14, 15, 17, 18, 19, 21, 22]      # carrier questions from _faq_items
+_fq_pi = [0, 5, 6, 7, 9, 10, 11, 12]                          # platform & billing questions
+_FQ_CATS = [
+ ('carrier', '🚚', 'Carriers & Owner-Operators', _fq_carrier_extra + [_faq_items[i] for i in _fq_ci]),
+ ('broker', '🏢', 'Freight Brokers', _fq_broker),
+ ('shipper', '📦', 'Shippers', _fq_shipper),
+ ('partner', '🧑‍✈️', 'Dispatchers & Referral Partners', _fq_partner),
+ ('platform', '⚙️', 'Platform, Tools & Billing', [_faq_items[i] for i in _fq_pi]),
+]
+_faq_body_hc, _faq_sch = _fq_page(_FQ_CATS)
+faq_body = _faq_body_hc + final_cta()
+page('faq.html', 'LoadBoot Help Center &mdash; FAQ for Carriers, Brokers, Shippers &amp; Dispatchers',
+     'Every answer in one place: dispatch pricing (flat 5%), free broker posting, shipper tracking, detention pay, documents, W-9, QuickBooks, ELD and getting started — searchable, by role.',
      'faq.html', PHONE_STRIP + faq_body, _faq_sch)
 
 # ---- Box Truck Dispatch (service page) ----
