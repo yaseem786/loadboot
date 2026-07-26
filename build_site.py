@@ -3386,7 +3386,7 @@ page('faq.html', 'LoadBoot Help Center &mdash; FAQ for Carriers, Brokers, Shippe
      'faq.html', PHONE_STRIP + faq_body, _faq_sch)
 
 # ---- Broker claim page (email load ingestion): token link from the claim email ----
-_bc_body = ('<section><div class="wrap" style="max-width:720px">'
+_bc_body = ('<meta name="robots" content="noindex,nofollow"><section><div class="wrap" style="max-width:720px">'
  '<div id="bcCard" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:22px;padding:34px;color:#fff">'
  '<div class="eyebrow" style="color:#7cc0ff">LoadBoot for Brokers</div>'
  '<h1 style="color:#fff;font-size:1.7rem;margin:8px 0 10px">Claim your loads &amp; go live</h1>'
@@ -6862,7 +6862,7 @@ page('sitemap.html', 'Sitemap | Loadboot', 'Every page on the Loadboot website â
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
 # PROD_REF/STAGING_REF/context targets are defined once near the top of this file.
-_SITEMAP_EXCLUDE = {'dashboard.html', '404.html'}
+_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'unsub.html'}
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
 urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls
