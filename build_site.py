@@ -1653,8 +1653,8 @@ BLOGPOSTS = [
   'Texas is the biggest trucking market in the country — and one of the easiest places to haul cheap if nobody is watching your rates. The lanes, the seasons, and how dispatch works here.',
   []),
  ('how-much-does-a-truck-dispatcher-cost.html',
-  'How Much Does a Truck Dispatcher Cost in 2026?',
-  'Truck dispatcher pricing explained: percentage vs flat fee, what 5% really gets you, and how the right dispatcher pays for itself.',
+  'How Much Does a Truck Dispatcher Cost? 5–10% or $200–500/mo (2026 Rates)',
+  'Real 2026 truck dispatcher pricing: percentage deals run 5–10% of gross, flat fees $200–500/truck/month. What each model really gets you, the hidden fees to avoid, and when a dispatcher pays for itself.',
   'A clear breakdown of what truck dispatchers charge, the two common pricing models, and how to tell if a dispatcher is worth the cost.',
   ['If you are an owner-operator thinking about hiring a dispatcher, the first question is always the same: what does it cost, and is it worth it? Here is a straight answer.',
    'H:The two common pricing models',
@@ -4266,8 +4266,8 @@ _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org",
   '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
   '<script>' + _MR_JS + '</script>')
 
-page('market-rates.html', 'Truckload Market Rates Per Mile — Live Carrier, Broker & Shipper Rates',
-     'Live national truckload rates per mile, updated weekly: what carriers get paid, what brokers buy/sell at, and what shippers pay. Dry van, reefer, flatbed, power only, hotshot.',
+page('market-rates.html', 'Truckload Rates Per Mile 2026 (Updated Weekly): Van $3.00 · Flatbed $3.72 | LoadBoot',
+     'Live 2026 truckload rates per mile, updated weekly — dry van ~$3.00, flatbed ~$3.72, hotshot ~$2.40 all-in. What carriers get paid, what brokers pay, free trucking rate calculator included. No login.',
      'market-rates.html', _mr_body + _mr_faq)
 
 
