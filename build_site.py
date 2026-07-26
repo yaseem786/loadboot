@@ -5855,7 +5855,8 @@ flt += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
 RELATED['fleet-management.html'] = [('payments-settlements.html','Payments & Settlements'),('gps-tracking.html','GPS Tracking & Proof'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('features.html','All Features')]
 page('fleet-management.html', 'Trucking Fleet Management Software — Drivers, Trucks, Maintenance & Per-Trip P&L | LoadBoot', 'Run the whole fleet back office in the carrier portal: magic-link driver invites, license & medical expiry alerts, maintenance logs with next-due dates, fuel-card CSV import, per-trip profit & cost per mile, payroll from trips, IFTA state miles and per-diem from the GPS trail.', 'fleet-management.html', flt, _flt_schema)
 
-hiw = FTX_CSS + LBX_CSS
+from how_module import HIW2_CSS, hiw_journey, hiw_chat5, hiw_band, hiw_engine
+hiw = FTX_CSS + LBX_CSS + HIW2_CSS
 
 _HIW_FAQ = [('What actually happens when I book a load?', 'The moment you tap Request to book (or accept a direct offer), first acceptance wins and every other offer closes — no double-booking. The rate confirmation is issued and e-signed in-app, the dispatch pack (pickup numbers, contacts, directions) generates instantly, and an 800-meter geofence arms at every stop.'), ('How fast is verification for a new account?', 'Carriers: FMCSA details auto-fill from your DOT number and document review typically completes the same day. Brokers: authority and the federal bond are checked against the FMCSA record at signup. Shippers and agents: minutes.'), ('Who is on the other side of my load?', 'Always a verified party. Carriers pass authority, insurance and health checks before they see freight; posting requires licensed broker or verified shipper status. Both sides of every load are vetted — that is why the board has zero ghost loads.'), ('Where does the money actually move?', 'Bank to bank, between payer and payee — LoadBoot runs the ledger around it: automatic DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirm-received loops, and factoring/NOA routing when an NOA is on file.'), ('How does matching decide which carriers see my load?', "Explainably: equipment and services fit, verified eligibility, distance from the pickup, the carrier's delivered history on similar lanes and their account-health score. Every match can be traced to those factors — if we cannot explain a ranking, we do not show it."), ('What does LoadBoot charge?', "One flat 5% dispatch fee on delivered loads, invoiced transparently to the carrier's account — never deducted from a factor's advance, never charged to brokers, shippers or agents for using the platform."), ('What if something goes wrong on the road?', 'The Emergency button verifies real breakdowns within a 2-hour window and reschedules with zero penalty. Detention, layover, TONU and lumper claims draft themselves from GPS trip data and ride the same invoice as the freight.')]
 
@@ -5881,6 +5882,8 @@ hiw += ('<section style="background:#0b1220;padding:0 0 40px"><div class="wrap">
  '<a href="#for-agents" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#129309; I bring the people</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Agent &mdash; link to chain to 1% forever &darr;</div></a>'
  '</div></div></section>')
 
+hiw += hiw_journey()
+hiw += hiw_chat5()
 hiw += ('<section class="ftx-sec" id="for-carriers"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div class="ftx-kicker">For carriers &amp; owner-operators</div><h2 class="ftx-h">Board &rarr; booked &rarr; rolling &rarr; paid</h2>'
  '<div style="margin-top:12px">'
@@ -5919,6 +5922,7 @@ hiw += ('<section class="ftx-sec" id="for-shippers"><div class="wrap"><div class
  '<div class="reveal"><img src="/shots/partner-wizard-schedule.webp" alt="Freight scheduling — appointment windows and requirements printed on the load" width="1100" height="938" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="height:12px"></div><img src="/shots/partner-live-tracking.webp" alt="Live tracking — the truck on the map with milestone timeline and ETA" width="1100" height="969" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real screens &mdash; the windows you set, the truck you watch.</div></div>'
  '</div></div></section>')
 
+hiw += hiw_band()
 hiw += ('<section class="ftx-sec alt" id="for-agents"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal" style="order:2"><div class="ftx-kicker">For referral partners</div><h2 class="ftx-h">Link &rarr; refer &rarr; 1% forever</h2>'
  '<div style="margin-top:12px">'
@@ -5930,6 +5934,7 @@ hiw += ('<section class="ftx-sec alt" id="for-agents"><div class="wrap"><div cla
  '<div class="reveal" style="order:1"><img src="/shots/agent-dashboard.webp" alt="The referral partner dashboard — referral link, clearing balance and the 5-level commission math" width="1100" height="859" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real dashboard &mdash; your link, your clearing balance.</div></div>'
  '</div></div></section>')
 
+hiw += hiw_engine()
 hiw += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Why the loop holds</div><h2>Four screens, one truth</h2></div>'
  '<div class="cards g4 reveal" style="margin-top:24px">'
  '<div class="card"><div class="icon">&#128737;</div><h3>Verified on both sides</h3><p>Carriers pass authority, insurance and health checks; posting requires a licensed broker or verified shipper. Nobody unvetted touches a load. <a href="compliance.html">Verification</a>.</p></div>'
