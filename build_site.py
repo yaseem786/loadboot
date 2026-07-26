@@ -6859,7 +6859,13 @@ with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADE
 # ---------- _redirects ----------
 # Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files
 # are ever copied here, so nothing sensitive can be fetched. This file is intentionally minimal.
-REDIRECTS = "# Loadboot — no custom redirects. Source files are not in the publish directory.\n"
+REDIRECTS = "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
+REDIRECTS += "# /page.html (impressions split across 29 duplicates in GSC). 301 the extensionless\n"
+REDIRECTS += "# form to the canonical .html form so link equity consolidates. Generated per build.\n"
+_rd_exclude = {'index.html', '404.html', 'dashboard.html'}
+for _f in sorted(os.listdir(OUT)):
+    if _f.endswith('.html') and _f not in _rd_exclude:
+        REDIRECTS += "/%s /%s 301!\n" % (_f[:-5], _f)
 with open(os.path.join(OUT,'_redirects'),'w',encoding='utf-8') as f: f.write(REDIRECTS)
 
 # ---------- BRANDED 404 (noindex; Netlify serves automatically) ----------
