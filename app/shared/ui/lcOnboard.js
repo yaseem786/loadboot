@@ -109,7 +109,7 @@
     w.appendChild(el('div', 'lbo-prog-t', txt));
     n.appendChild(w);
   }
-  function steps(role) { return role === 'carrier' ? ['role', 'mc', 'contact', 'account', 'docs', 'done'] : ['role', 'contact', 'account', 'done']; }
+  function steps(role) { return role === 'carrier' ? ['role', 'mc', 'contact', 'account', 'docs', 'w9', 'sign', 'done'] : ['role', 'contact', 'account', 'done']; }
   function pctFor(role, step) {
     var ss = steps(role || 'carrier'); var i = ss.indexOf(step); if (i < 0) i = 0;
     return Math.round((i / (ss.length - 1)) * 100);
@@ -289,12 +289,11 @@
   // ---------- STEP: docs (carrier) ----------
   var DOCS = [
     { key: 'coi', label: 'Certificate of Insurance (COI)', hint: 'ACORD 25 from your insurance agent — $1M auto liability, $100K cargo' },
-    { key: 'authority', label: 'MC Authority letter', hint: 'Your FMCSA operating authority document' },
-    { key: 'w9', label: 'Form W-9', hint: 'Signed & dated — needed before your first settlement' }
+    { key: 'authority', label: 'MC Authority letter', hint: 'Your FMCSA operating authority document' }
   ];
   function stepDocs(idx) {
     var s = state(); s.step = 'docs'; if (idx == null) idx = 0; save(null, null);
-    if (idx >= DOCS.length) return stepDone();
+    if (idx >= DOCS.length) return stepW9();
     var doc = DOCS[idx];
     var n = card();
     prog(n, pctFor(s.role, 'docs') + idx * 4, 'Step ' + stepNum(s.role, 'docs'));
@@ -366,10 +365,122 @@
       sk.onclick = function () { stepDocs(idx + 1); };
       n.appendChild(sk);
     } else {
-      var go = el('button', 'lbo-btn', idx + 1 >= DOCS.length ? 'Finish up →' : 'Next document →'); go.type = 'button';
+      var go = el('button', 'lbo-btn', idx + 1 >= DOCS.length ? 'Next: W-9 (2-min form) →' : 'Next document →'); go.type = 'button';
       go.onclick = function () { stepDocs(idx + 1); };
       n.appendChild(go);
     }
+  }
+
+  // ---------- STEP: W-9 guided form (no upload — same interview as the carrier portal) ----------
+  var W9_CLASSES = ['Individual / sole proprietor', 'C Corporation', 'S Corporation', 'Partnership', 'Trust / estate', 'Limited liability company (LLC)'];
+  function stepW9() {
+    var s = state(); s.step = 'w9'; save(null, null);
+    var n = card();
+    prog(n, pctFor(s.role, 'w9'), 'Step ' + stepNum(s.role, 'w9'));
+    n.appendChild(el('div', 'lbo-h', '🧾 Form W-9 — fill it right here'));
+    n.appendChild(el('div', 'lbo-s', "No printing, no scanning. Answer these and I'll prepare your W-9 exactly like the IRS form — needed before your first settlement."));
+    var f = {};
+    n.appendChild(el('label', null, '1 · Name (as on your tax return)'));
+    f.name = document.createElement('input'); f.name.value = s.data.contact_name || ''; n.appendChild(f.name);
+    n.appendChild(el('label', null, '2 · Business name (if different)'));
+    f.business = document.createElement('input'); f.business.placeholder = 'Optional';
+    if (s.data.fmcsa && s.data.fmcsa.legal_name) f.business.value = s.data.fmcsa.legal_name;
+    n.appendChild(f.business);
+    n.appendChild(el('label', null, '3 · Federal tax classification'));
+    f.cls = document.createElement('select');
+    W9_CLASSES.forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; f.cls.appendChild(o); });
+    n.appendChild(f.cls);
+    n.appendChild(el('label', null, '5 · Street address'));
+    f.addr = document.createElement('input'); f.addr.placeholder = '123 Main St'; n.appendChild(f.addr);
+    n.appendChild(el('label', null, '6 · City, State, ZIP'));
+    f.csz = document.createElement('input'); f.csz.placeholder = 'Dallas, TX 75201'; n.appendChild(f.csz);
+    n.appendChild(el('label', null, 'Part I · EIN or SSN'));
+    f.tin = document.createElement('input'); f.tin.placeholder = 'XX-XXXXXXX'; f.tin.inputMode = 'numeric'; n.appendChild(f.tin);
+    var err = el('div', 'lbo-err'); n.appendChild(err);
+    var b = el('button', 'lbo-btn', 'Continue to signature →'); b.type = 'button'; n.appendChild(b);
+    var skip = el('button', 'lbo-btn ghost', "Skip — I'll do it in my portal"); skip.type = 'button'; n.appendChild(skip);
+    n.appendChild(el('div', 'lbo-note', '🔒 Your TIN is stored encrypted server-side and masked everywhere it is shown'));
+    b.onclick = function () {
+      var tin = f.tin.value.replace(/[^0-9]/g, '');
+      if (f.name.value.trim().length < 2) { err.textContent = 'Name is required'; err.style.display = 'block'; return; }
+      if (f.addr.value.trim().length < 4 || f.csz.value.trim().length < 4) { err.textContent = 'Address and City/State/ZIP are required'; err.style.display = 'block'; return; }
+      if (tin.length !== 9) { err.textContent = 'EIN/SSN must be 9 digits'; err.style.display = 'block'; return; }
+      s.data.w9 = { name: f.name.value.trim(), business_name: f.business.value.trim() || null, classification: f.cls.value, address: f.addr.value.trim(), city_state_zip: f.csz.value.trim(), tin: tin };
+      w9Sign();
+    };
+    skip.onclick = function () { save({ w9_skipped: true }, '🧾 W-9 skipped in chat — will complete in portal'); stepAgreement(); };
+  }
+  function w9Sign() {
+    var s = state();
+    var n = card();
+    prog(n, pctFor(s.role, 'w9') + 5, 'Sign W-9');
+    n.appendChild(el('div', 'lbo-h', '✍️ Certify & sign your W-9'));
+    var cert = el('div', 'lbo-s', '<b>Part II — Certification.</b> Under penalties of perjury, I certify that: (1) the number shown on this form is my correct taxpayer identification number; (2) I am not subject to backup withholding; (3) I am a U.S. person. I consent to sign electronically (ESIGN/UETA).');
+    cert.style.cssText = 'background:#f8fafc;border:1px solid #e6edf5;border-radius:11px;padding:10px;font-size:11.5px';
+    n.appendChild(cert);
+    n.appendChild(el('label', null, 'Type your full legal name to sign'));
+    var sig = document.createElement('input'); sig.placeholder = s.data.w9.name; sig.style.fontFamily = 'cursive'; sig.style.fontSize = '17px'; n.appendChild(sig);
+    var err = el('div', 'lbo-err'); n.appendChild(err);
+    var b = el('button', 'lbo-btn', '✍️ Sign my W-9'); b.type = 'button'; n.appendChild(b);
+    b.onclick = function () {
+      var v = sig.value.trim();
+      if (v.toLowerCase() !== s.data.w9.name.toLowerCase()) { err.textContent = 'Signature must match the name exactly: ' + s.data.w9.name; err.style.display = 'block'; return; }
+      b.disabled = true; b.textContent = 'Recording signature…';
+      var w9 = s.data.w9; w9.signer_name = v; w9.signed_at = new Date().toISOString(); w9.esign_consent = true; w9.ua = navigator.userAgent.slice(0, 120);
+      save({ w9: w9 }, '🧾 W-9 e-signed in chat — ' + v + ' · ' + w9.classification + ' · TIN **-***' + w9.tin.slice(-4) + ' (full TIN in secure onboarding record)');
+      var ok = card();
+      ok.appendChild(el('div', 'lbo-verdict pass', '<div class="lbo-vh">✅ W-9 signed & on file</div>Recorded with timestamp and e-sign consent. Our team countersigns and it appears in your portal under Taxes.'));
+      var go = el('button', 'lbo-btn', 'Last step: Dispatch Agreement →'); go.type = 'button'; ok.appendChild(go);
+      go.onclick = function () { stepAgreement(); };
+    };
+  }
+
+  // ---------- STEP: Dispatch Service Agreement e-sign (same terms as the carrier portal) ----------
+  var DSA_POINTS = [
+    ['1 · Services', 'LoadBoot sources freight, presents options, negotiates rates and handles broker communication for you.'],
+    ['2 · Independent contractor', 'LoadBoot is your dispatcher — not a broker, forwarder or motor carrier. You stay in control.'],
+    ['3 · Your authority', 'You hold active USDOT/MC authority and DOT-compliant drivers.'],
+    ['4 · Insurance', 'You keep $1,000,000 auto liability + $100,000 cargo in force.'],
+    ['5 · Limited authorization', 'You authorize LoadBoot to talk to brokers and book loads that match YOUR stated preferences.'],
+    ['6 · Communications', 'Operational communication runs through the platform, protecting your data.'],
+    ['7 · Dispatch fee', '5% of gross line-haul per load booked AND delivered (e.g. $2,000 → $100). No monthly fee, no booking = no fee.'],
+    ['8 · Statements & disputes', 'Itemized statements in the platform; 15-day dispute window.'],
+    ['9 · TONU & accessorials', 'Cancellations, TONU, detention, layover follow the published policies you can read on the site.'],
+    ['10-13 · Records, license, confidentiality, non-circumvention', 'Platform is the system of record; both sides keep data confidential; no bypassing booked broker relationships for 180 days.'],
+    ['14 · Term', 'Effective on your e-signature. Either side may end it with 30 days notice.'],
+    ['15-17 · Liability & general', 'Standard indemnity, force majeure and notices terms.'],
+    ['18 · Electronic signature', 'Your typed signature below has the same force as a handwritten one (ESIGN/UETA).']
+  ];
+  function stepAgreement() {
+    var s = state(); s.step = 'sign'; save(null, null);
+    var n = card();
+    prog(n, pctFor(s.role, 'sign'), 'Step ' + stepNum(s.role, 'sign'));
+    n.appendChild(el('div', 'lbo-h', '📜 Dispatch Service Agreement'));
+    n.appendChild(el('div', 'lbo-s', 'The exact agreement from the carrier portal — here are all 18 sections in plain English. The full legal text is always available in your portal and counts as the authoritative copy.'));
+    var box = el('div', null);
+    box.style.cssText = 'max-height:190px;overflow-y:auto;border:1px solid #e6edf5;border-radius:11px;padding:11px;background:#f8fafc';
+    DSA_POINTS.forEach(function (c) {
+      var it = el('div', null, '<div style="font:800 11px Inter,Arial;color:#10223B">' + c[0] + '</div><div style="font:400 11.5px/1.5 Inter,Arial;color:#475569;margin:1px 0 8px">' + c[1] + '</div>');
+      box.appendChild(it);
+    });
+    n.appendChild(box);
+    n.appendChild(el('label', null, 'Type your full legal name to sign'));
+    var sig = document.createElement('input'); sig.placeholder = s.data.contact_name || 'Full legal name'; sig.style.fontFamily = 'cursive'; sig.style.fontSize = '17px'; n.appendChild(sig);
+    var err = el('div', 'lbo-err'); n.appendChild(err);
+    var b = el('button', 'lbo-btn', '✍️ Sign the agreement'); b.type = 'button'; n.appendChild(b);
+    var skip = el('button', 'lbo-btn ghost', "Skip — I'll sign in my portal"); skip.type = 'button'; n.appendChild(skip);
+    n.appendChild(el('div', 'lbo-note', 'Scroll the summary above before signing · e-signature recorded with timestamp'));
+    b.onclick = function () {
+      var v = sig.value.trim();
+      if (v.length < 3) { err.textContent = 'Type your full legal name'; err.style.display = 'block'; return; }
+      b.disabled = true; b.textContent = 'Recording signature…';
+      save({ dsa: { signer_name: v, signed_at: new Date().toISOString(), esign_consent: true, ua: navigator.userAgent.slice(0, 120), version: 'LB-DSA' } }, '📜 Dispatch Agreement e-signed in chat — ' + v);
+      var ok = card();
+      ok.appendChild(el('div', 'lbo-verdict pass', '<div class="lbo-vh">✅ Agreement signed</div>Timestamped and on file. LoadBoot countersigns and the executed copy appears in your portal.'));
+      var go = el('button', 'lbo-btn', 'Finish 🎉'); go.type = 'button'; ok.appendChild(go);
+      go.onclick = function () { stepDone(); };
+    };
+    skip.onclick = function () { save({ dsa_skipped: true }, '📜 Dispatch Agreement skipped in chat — will sign in portal'); stepDone(); };
   }
 
   // ---------- STEP: done ----------
@@ -401,6 +512,8 @@
       case 'contact': return stepContact;
       case 'account': return stepAccount;
       case 'docs': return function () { stepDocs(0); };
+      case 'w9': return stepW9;
+      case 'sign': return stepAgreement;
       case 'done': return stepDone;
       default: return stepRole;
     }

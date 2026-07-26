@@ -91,6 +91,8 @@
   }
 
   function addMsg(sender, body) {
+    // [[note]] messages are internal staff-inbox notes (onboarding milestones, doc verdicts) — never render for visitors
+    if (String(body).indexOf('[[note]]') === 0) return;
     var me = sender === 'visitor';
     var chipDef = null, formDef = null;
     var cm = String(body).match(/\[\[chips:([\s\S]*?)\]\]/);
