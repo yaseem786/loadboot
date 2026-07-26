@@ -268,7 +268,18 @@ export function renderLiveChat(host) {
           el('td', null, c.direction === 'outbound' ? (c.to_number || '—') : (c.from_number || '—')),
           el('td', null, c.name || '—'),
           el('td', null, c.direction === 'outbound' ? '↗ out' : '↘ in'),
-          el('td', null, el('span', { class: 'cc-pill cc-pill-' + (c.status === 'ended' || c.status === 'analyzed' ? 'green' : c.status === 'in-progress' ? 'blue' : 'amber') }, c.status)),
+          el('td', null, (() => {
+            const answered = (c.status === 'ended' || c.status === 'analyzed') && (c.duration_sec || 0) > 0;
+            const label = answered ? '✅ Answered'
+              : c.status === 'in-progress' ? '🟢 On call'
+              : c.status === 'dialing' ? '📞 Ringing…'
+              : c.status === 'scheduled' ? '📅 Scheduled'
+              : c.status === 'no-answer' ? '☎ No answer'
+              : c.status === 'cancelled' ? '— Cancelled'
+              : c.status;
+            const tone = answered ? 'green' : c.status === 'in-progress' ? 'blue' : c.status === 'no-answer' ? 'red' : c.status === 'cancelled' ? 'gray' : 'amber';
+            return el('span', { class: 'cc-pill cc-pill-' + tone }, label);
+          })()),
           el('td', null, c.duration_sec != null ? (Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's') : '—'),
           el('td', { style: 'max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' },
             (c.source === 'website' ? '🌐 ' : '') + (c.status === 'scheduled' && c.scheduled_at ? '📅 ' + fmtDateTime(c.scheduled_at) + ' · ' : '') + (c.summary || c.topic || '—')),
