@@ -1373,74 +1373,51 @@ page('services.html','Truck Dispatch Services (Full List) | Loadboot',
      'services.html', serv_body, serv_hub_faq_schema)
 
 # ---------- ABOUT ----------
-about_body = svc_hero('About LoadBoot','We built LoadBoot to give carriers what most dispatchers don&rsquo;t: honesty, real attention, and a partner who actually picks up the phone.')
-
-# Why we exist — problem/solution split with a navy pull-quote visual.
-_about_visual = ('<div style="background:linear-gradient(135deg,#0b1220,#12304f 55%,#0e3b33);color:#fff;border-radius:22px;padding:34px;box-shadow:0 24px 60px -30px rgba(8,131,247,.55)">'
-    '<div style="font-size:2.8rem;font-weight:800;letter-spacing:-.02em;line-height:1">5%</div>'
-    '<div style="color:#93c5fd;font-weight:600;margin-bottom:20px">flat dispatch fee &mdash; that&rsquo;s the entire pricing page</div>'
-    '<p style="color:#e2e8f0;margin:0;font-size:1.06rem;line-height:1.65;font-style:italic">&ldquo;We only win when your truck wins. No contracts means we have to earn your business every single week.&rdquo;</p>'
-    '<div style="margin-top:18px;color:#94a3b8;font-size:.86rem">&mdash; the LoadBoot promise</div></div>')
-about_body += m_split('Why we exist', 'The freight game is stacked against the small carrier',
-    ['Too many owner-operators and new-authority carriers get locked into long contracts, handed the cheapest freight on the board, and left on hold when a load goes sideways. The margin gets squeezed at every turn &mdash; and the people doing the actual driving keep the least.',
-     'LoadBoot flips that. You keep your own operating authority and approve every load. We work the load boards and our broker relationships to find better-paying freight on your lanes, negotiate the rate before you ever see it, and handle the paperwork and back office so you can focus on driving.'],
-    _about_visual, flip=True, accent='#0883F7',
-    bullets=['Flat 5% dispatch fee &mdash; no contracts, cancel anytime',
-             'You approve every load and keep your authority',
-             'A real dispatcher on call, not a ticket queue'])
-
-about_body += m_zigzag('What we stand for', 'A dispatcher that treats your truck like a business', [
- ('scale', 'Honesty over everything', 'We negotiate hard on your rates, tell you the truth even when it&rsquo;s not what you want to hear, and never lock you into a contract. If we&rsquo;re not adding value, you can walk &mdash; and that keeps us honest.'),
- ('route', 'One partner, the whole business', 'You keep your own authority and approve every load. We handle the rest &mdash; finding freight, negotiating rates, talking to brokers, managing paperwork, and the back office: factoring, IFTA, compliance and claims.'),
- ('users', 'Built for where you are', 'Owner-operators, small and growing fleets, independent carriers, and especially new-authority carriers who need a guide through their first months. Wherever you are in your journey, we meet you there.'),
-], accent='#0d9488')
-
-about_body += m_timeline('Our story', 'How LoadBoot came to be', [
- ('phone', 'It started with a phone that rang', 'People who lived the carrier side got tired of dispatchers who vanished the moment a load went wrong. LoadBoot began as a simple promise: always pick up.'),
- ('route', 'Built around the load, not the contract', 'We designed every workflow &mdash; matching, rate confirmation, tracking, POD and settlement &mdash; around getting the carrier paid fairly and fast, with no lock-in.'),
- ('shieldcheck', 'Trust turned into a system', 'Verification, mutual vetting between carriers and brokers, and live account health turned &ldquo;just trust us&rdquo; into records anyone on the load can actually see.'),
- ('bolt', 'One platform for the whole chain', 'Carriers, drivers, brokers and shippers now run on the same rails &mdash; with a real person in the loop wherever money moves.'),
-], accent='#7c3aed')
-
-about_body += m_dark('How we operate', 'The rules we run the company by',
-    'A few non-negotiables that shape every feature and every decision.',
-    [('target', 'Explainable, always', 'Every match score, every detention minute, every settlement line traces to real records. If we cannot explain a number, we do not show it.'),
-     ('key', 'Your data is yours', 'Tenant-isolated accounts, role-based access and audited actions. Drivers never see company finances; brokers never see carrier internals.'),
-     ('scale', 'Humans control money', 'Software prepares invoices and settlements; a person approves every payout. The maker and the checker are never the same account.')],
-    numbered=False, accent='#60a5fa',
-    cta='<a href="security.html" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800">See our security &amp; trust practices &rarr;</a>')
-
-about_body += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who we serve</div><h2>One platform, every seat in the freight chain</h2></div><div class="grid g3 reveal">'
- '<div class="card reveal"><div class="icon">&#128667;</div><h3>Owner-operators &amp; fleets</h3><p>Independent carriers and growing fleets who want higher-paying freight on their lanes and one place to run the business. <a href="carriers.html">For carriers &rarr;</a></p></div>'
- '<div class="card reveal"><div class="icon">&#128295;</div><h3>New-authority carriers</h3><p>Brand-new MC holders who need a guide through their first months &mdash; paperwork, compliance and steady first lanes. <a href="new-authority-dispatch.html">New authority &rarr;</a></p></div>'
- '<div class="card reveal"><div class="icon">&#129309;</div><h3>Brokers &amp; shippers</h3><p>Freight brokers posting to vetted, tracked capacity, and shippers posting freight directly on LoadBoot with verified carriers and live tracking. <a href="partners.html">Partner with us &rarr;</a></p></div>'
- '</div></div></section>')
-
-about_body += m_statband([('5%', 'flat dispatch fee'), ('0', 'long-term contracts'), ('100%', 'loads you approve'), ('1 day', 'typical reply time')],
-    note='These are policy facts, not marketing metrics &mdash; they define how LoadBoot works.')
-
-about_body += '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Contact us</div><h2>One company, three front doors</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>General &amp; support</h3><p><a href="mailto:hello@loadboot.com">hello@loadboot.com</a> &mdash; onboarding, questions, compliance and anything else.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>Dispatch &amp; loads</h3><p><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a> &mdash; active loads, trips, appointments and PODs.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>Billing &amp; settlements</h3><p><a href="mailto:billing@loadboot.com">billing@loadboot.com</a> &mdash; invoices, settlements and payment questions.</p></div></div></div></section>'
+# World-class About page (Uber/Amazon pattern) — sections live in about_module.py
+from about_module import ABOUT_CSS, about_sections
+about_body = ABOUT_CSS + about_sections()
 
 _about_faq_html, _about_faq_schema = faq_block([
- ('Is LoadBoot a dispatcher or a freight broker?', 'LoadBoot is a truck dispatch service. Carriers keep their own operating authority while we find, negotiate and coordinate loads on their behalf. Shippers post freight directly in their own LoadBoot portal and our dispatch coordinates verified carriers end to end.'),
- ('How much does LoadBoot cost?', 'A flat 5% dispatch fee on booked loads. There is no sign-up fee, no monthly minimum and no long-term contract &mdash; you can cancel anytime.'),
- ('Do you work with new-authority carriers?', 'Yes. New-authority and owner-operator carriers are a core focus. We help guide you through your first months, from paperwork and compliance to your first steady lanes.'),
- ('Who owns my data?', 'You do. Accounts are tenant-isolated with role-based access and audited actions. Drivers never see company finances, and brokers never see carrier internals.'),
- ('Who does LoadBoot serve, and where?', 'We serve owner-operators, carrier fleets, freight brokers and shippers across the United States, all on one connected platform.'),
+ # ---- General ----
+ ('What exactly is LoadBoot?', 'LoadBoot is the operating system for US trucking: a verified load board with zero ghost loads, a flat-5% dispatch service, live GPS tracking with photo proof, document and compliance workflows, and payments/settlements — one platform serving carriers, freight brokers, shippers and dispatchers.'),
+ ('How much does LoadBoot cost?', 'Carriers pay a flat 5% dispatch fee only on loads we book — no sign-up fee, no monthly minimum, no long-term contract. Brokers post loads completely free. Shippers get one transparent direct-to-carrier rate with no margin stacking. Referral partners earn instead of paying.'),
+ ('How is LoadBoot different from DAT or Truckstop?', 'Load boards are paid search engines where 30–50% of postings are reposted or fake. LoadBoot verifies every load as real before it posts, pre-agrees detention/TONU/layover in writing on every posting, and adds dispatch, GPS proof and payments on top — carriers pay nothing monthly.'),
+ ('How fast can I get started?', 'About 5 minutes. Open the chat bubble on any page and say &ldquo;set me up&rdquo; — our assistant verifies your FMCSA authority live, creates your account with a secure email link, checks your documents on the spot, and even signs your W-9 and dispatch agreement in chat. A human compliance review completes it, usually within a few business hours.'),
+ # ---- Carriers ----
+ ('🚚 Carrier — How do I actually get loads?', 'Two ways, same login: browse the verified load board yourself (every posting is a real load with written detention/TONU terms), or let your LoadBoot dispatcher work your lanes — we find, negotiate and book freight that clears YOUR floor price, and you approve every load. You never lose your authority or your say.'),
+ ('🚚 Carrier — What documents do I need to sign up?', 'Three things: a COI (ACORD 25) with $1M auto liability + $100K cargo, LoadBoot as certificate holder and every truck listed with its VIN; your MC authority letter; and a W-9 + dispatch agreement — both of which you can fill and e-sign right in our chat, no printing. Our AI checks each document instantly and tells you exactly what to fix before it wastes your time.'),
+ ('🚚 Carrier — I just got my MC. Will anyone give me loads?', 'New-authority carriers are a core focus, not a problem. We verify your authority live on FMCSA, get your paperwork right the first time, guide you through the first 90 days, and put you on freight from brokers who accept new authority — without the predatory contracts new carriers usually get trapped in.'),
+ ('🚚 Carrier — Does detention actually get paid here?', 'Yes — because it is pre-agreed in writing on every posting before you book, and your GPS trail builds the claim automatically: geofenced arrival stamps, notification sent before free time expires, and the claim filed the moment you tap submit. Industry-wide fewer than half of detention invoices get paid; written terms + GPS proof is how we fix that.'),
+ ('🚚 Carrier — When and how do I get paid?', 'Every load gets an itemized settlement in your portal — line-haul, accessorials, fees, nothing hidden. Payouts are prepared by software and approved by a human, factoring is supported (NOA workflows built in), and your numbers sync to QuickBooks if you connect it. You always see exactly what you earned and why.'),
+ ('🚚 Carrier — Do I have to sign an exclusive contract?', 'No. There is no long-term contract, no exclusivity, and no cancellation fee — you can leave any week. Our 5% only gets charged when we book you a load you approved, so we have to keep earning your truck.'),
+ ('🚚 Carrier — What equipment do you work with?', 'Dry van, reefer, flatbed, step deck, hotshot, power only and box truck/expedited — solo drivers, owner-operators and multi-truck fleets, including fleet tools like driver assignment, maintenance logs, fuel-card imports, IFTA state miles and per-trip P&amp;L.'),
+ # ---- Brokers ----
+ ('🏢 Broker — Is posting loads really free?', 'Yes — free forever. No subscription, no per-post fee, no carrier-search fee. We make our money on the carrier dispatch side, so giving brokers free verified capacity makes the whole network stronger.'),
+ ('🏢 Broker — How do I know a carrier is who they say they are?', 'Every carrier is checked live against FMCSA (authority status, insurance, safety) before they can book, identity is verified at booking, and documents are collected automatically. Double-brokering is blocked by design — the carrier who books is the carrier who hauls.'),
+ ('🏢 Broker — Can I track my loads without check calls?', 'Yes. Every load gets live GPS with geofenced arrive/depart stamps at pickup and delivery, plus photo proof of delivery. You watch the truck move in your Partner Portal instead of calling drivers all day.'),
+ ('🏢 Broker — How does paperwork work on a load?', 'Rate confirmations are e-signed in the platform, BOLs and PODs are uploaded by the driver with timestamps, and everything lives on the load record — one link, full paper trail, no fax machines and no chasing.'),
+ ('🏢 Broker — What if a carrier cancels or falls off a load?', 'Cancellations, TONU and rescheduling follow published written policies, the platform records every event with timestamps, and our team helps you re-cover fast from verified capacity — with the full history on the record if a dispute ever comes up.'),
+ # ---- Shippers ----
+ ('📦 Shipper — How is this different from using a freight broker?', 'Traditional freight passes through layers that each take 15–25% you never see. LoadBoot is direct-to-carrier: one transparent rate, FMCSA-verified carriers, and a platform record of everything. You know what the truck gets paid and what you paid — no dark margin in the middle.'),
+ ('📦 Shipper — Can I see where my freight is right now?', 'Always. Live GPS on every shipment, geofenced arrival/departure stamps at your dock and the destination, and photo proof of delivery the moment it happens — 24/7, from any device, no phone calls needed.'),
+ ('📦 Shipper — Are the carriers insured? Who is responsible if something goes wrong?', 'Only FMCSA-verified carriers with active authority, $1,000,000 auto liability and cargo coverage on file can touch your freight — we verify the COI before they ever book. Every shipment has a full document trail (rate confirmation, BOL, POD), so responsibility is never a mystery.'),
+ ('📦 Shipper — Do I need to commit to volume?', 'No commitments. Ship one load or run program freight — the rate, tracking and paperwork work the same. As your volume grows, dedicated capacity and lane pricing grow with it.'),
+ ('📦 Shipper — How do I get a rate?', 'Create a free shipper account and post your shipment, check the live market-rates page for current per-mile pricing, or just open the chat and tell us the lane — a real quote, not a teaser.'),
+ # ---- Dispatchers & Referral Partners ----
+ ('🧑‍✈️ Dispatcher — Can I dispatch with LoadBoot?', 'Yes — we hire US-based dispatchers and give them real tooling: verified freight, matching, rate confirmations, live tracking and settlements, with compliance workflows built in. See the careers page for open seats.'),
+ ('📣 Referral partner — How does the 1% program work?', 'Refer a carrier or broker; when they run loads on LoadBoot, you earn 1% of gross on every load they move — for as long as they keep running. Transparent statements in your Agent Portal, no caps, no clawback games, and the people you refer never pay extra.'),
+ ('📣 Referral partner — Who can join and what does it cost?', 'Anyone with a trucking network — drivers, fleet owners, factoring reps, insurance agents, influencers. It costs nothing: create a referral account, share your link, and watch your book build monthly income.'),
 ])
 about_body += _about_faq_html
-about_body += m_gradcta('Ready for a dispatcher who actually picks up?',
-    'Create your account in minutes &mdash; carrier, broker, shipper or referral partner. Flat 5%, no contracts, cancel anytime.',
-    'Create your account &rarr;', 'get-started.html',
-    grad='linear-gradient(135deg,#0b1220 0%,#12304f 55%,#0e3b33 100%)', btncolor='#34d399', btntext='#052e2b')
 
 _about_org_schema = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About LoadBoot",'
     '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
-    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","areaServed":"US",'
-    '"description":"LoadBoot is a U.S. truck dispatch service for owner-operators, fleets and new-authority carriers, with a partner platform for freight brokers and shippers. Flat 5%, no contracts.",'
-    '"knowsAbout":["truck dispatch","freight dispatching","owner-operator dispatch","new authority carriers","load matching","freight brokerage"]}}</script>')
-page('about.html','About LoadBoot | Honest Truck Dispatch for Carriers',
-     'Honest US truck dispatch for owner-operators, new-authority carriers, brokers and shippers. Flat 5%, no contracts, cancel anytime.',
+    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-737-306-1175","areaServed":"US",'
+    '"slogan":"The Operating System for Trucking",'
+    '"description":"LoadBoot is the operating system for US trucking: a verified zero-ghost-load board, flat 5% dispatch, live GPS proof, documents, compliance and payments on one platform for carriers, freight brokers, shippers and dispatchers.",'
+    '"knowsAbout":["truck dispatch","verified load board","freight brokerage software","shipper freight tracking","owner-operator dispatch","new authority carriers","detention pay","freight payments"]}}</script>')
+page('about.html','About LoadBoot — The Operating System for Trucking | Carriers, Brokers & Shippers',
+     'What LoadBoot is and why it exists: a verified load board with zero ghost loads, flat 5% dispatch, live GPS proof, written detention on every load, and one platform for carriers, brokers, shippers and dispatchers.',
      'about.html', about_body, schema=_about_org_schema + _about_faq_schema)
 
 # ---------- CONTACT ----------
@@ -3364,12 +3341,121 @@ _faq_items = [
  ('Do you help with factoring, IFTA and compliance?', 'Yes. We can connect you with factoring, help keep your filings and permits current, and support you on IFTA, 2290, UCR and BOC-3.'),
  ('What hours is dispatch available?', 'A dispatcher is reachable during business hours and on call for active loads. If your truck is moving, we are reachable.'),
 ]
-_faq_html, _faq_sch = faq_block(_faq_items)
-faq_body = svc_hero('Frequently Asked Questions', 'Straight answers about pricing, authority, equipment, getting started and how dispatch actually works. Do not see your question? Contact us any time.')
-faq_body += _faq_html + final_cta()
-page('faq.html', 'Truck Dispatch FAQ &mdash; Pricing, Authority &amp; Getting Started | Loadboot',
-     'Answers to the most common questions about Loadboot truck dispatch: cost, authority, contracts, equipment types, getting started, factoring and compliance.',
+# ---- Help-center FAQ (Amazon/Uber pattern): search + role tabs + categorized accordions ----
+from faq_module import faq_page as _fq_page
+
+# Categorize the existing answers (indices into _faq_items) and add role packs.
+_fq_carrier_extra = [
+ ('How do I actually get loads with LoadBoot?', 'Two ways, same login: browse the verified load board yourself (every posting is a real load with written detention/TONU terms), or let your dispatcher work your lanes &mdash; we find, negotiate and book freight that clears YOUR floor price, and you approve every load.'),
+ ('What documents do I need to sign up?', 'A COI (ACORD 25) with $1M auto liability + $100K cargo, LoadBoot as certificate holder and every truck listed with its VIN; your MC authority letter; and a W-9 + dispatch agreement &mdash; both can be filled and e-signed right in our chat. The AI checks each document instantly and tells you exactly what to fix.'),
+ ('Does detention actually get paid?', 'Yes &mdash; because it is pre-agreed in writing on every posting before you book, and your GPS trail builds the claim automatically: geofenced arrival stamps, notification before free time expires, and the claim filed the moment you tap submit. See the <a href="detention-pay-policy.html">detention policy</a>.'),
+]
+_fq_broker = [
+ ('Is posting loads really free?', 'Yes &mdash; free forever. No subscription, no per-post fee, no carrier-search fee. We earn on the carrier dispatch side, so free verified capacity for brokers makes the whole network stronger.'),
+ ('How do I know a carrier is who they say they are?', 'Every carrier is checked live against FMCSA (authority, insurance, safety) before they can book, identity is verified at booking, and documents are collected automatically. Double-brokering is blocked by design &mdash; the carrier who books is the carrier who hauls.'),
+ ('Can I track loads without check calls?', 'Yes. Every load gets live GPS with geofenced arrive/depart stamps at pickup and delivery, plus photo proof of delivery &mdash; watch it move in your Partner Portal instead of calling drivers all day.'),
+ ('How does paperwork work on a load?', 'Rate confirmations are e-signed in the platform, BOLs and PODs are uploaded by the driver with timestamps, and everything lives on the load record &mdash; one link, full paper trail, no chasing.'),
+ ('What if a carrier cancels or falls off a load?', 'Cancellations, TONU and rescheduling follow published written policies, every event is recorded with timestamps, and our team helps you re-cover fast from verified capacity &mdash; with the full history on record if a dispute comes up.'),
+ ('What does carrier verification cost me as a broker?', 'Nothing. FMCSA authority, insurance and safety checks run automatically on the platform &mdash; both directions. You see a verified profile before you ever assign a load.'),
+]
+_fq_shipper = [
+ ('How is LoadBoot different from using a freight broker?', 'Traditional freight passes through layers that each take 15&ndash;25% you never see. LoadBoot is direct-to-carrier: one transparent rate, FMCSA-verified carriers, and a platform record of everything &mdash; you know what the truck got paid and what you paid.'),
+ ('Can I see where my freight is right now?', 'Always. Live GPS on every shipment, geofenced arrival/departure stamps at your dock and the destination, and photo proof of delivery the moment it happens &mdash; 24/7, from any device.'),
+ ('Are the carriers insured? Who is responsible if something goes wrong?', 'Only FMCSA-verified carriers with active authority, $1,000,000 auto liability and cargo coverage on file can touch your freight &mdash; the COI is verified before they can book. Every shipment has a full document trail (rate confirmation, BOL, POD), so responsibility is never a mystery.'),
+ ('Do I need to commit to volume?', 'No commitments. Ship one load or run program freight &mdash; the rate, tracking and paperwork work the same. As volume grows, dedicated capacity and lane pricing grow with it.'),
+ ('How do I get a rate?', 'Create a free <a href="create-shipper-account.html">shipper account</a> and post your shipment, check the <a href="market-rates.html">live market rates</a> page, or just open the chat and tell us the lane &mdash; a real quote, not a teaser.'),
+]
+_fq_partner = [
+ ('Can I work as a dispatcher with LoadBoot?', 'Yes &mdash; we hire US-based dispatchers and give them real tooling: verified freight, matching, rate confirmations, live tracking and settlements, with compliance workflows built in. See <a href="careers.html">careers</a> for open seats.'),
+ ('How does the 1% referral program work?', 'Refer a carrier or broker; when they run loads on LoadBoot you earn 1% of gross on every load they move &mdash; for as long as they keep running. Transparent statements in your Agent Portal, no caps, and the people you refer never pay extra.'),
+ ('Who can become a referral partner and what does it cost?', 'Anyone with a trucking network &mdash; drivers, fleet owners, factoring reps, insurance agents, creators. It costs nothing: <a href="create-agent-account.html">create a referral account</a>, share your link, and build monthly income.'),
+]
+_fq_ci = [1, 2, 3, 4, 8, 13, 14, 15, 17, 18, 19, 21, 22]      # carrier questions from _faq_items
+_fq_pi = [0, 5, 6, 7, 9, 10, 11, 12]                          # platform & billing questions
+_FQ_CATS = [
+ ('carrier', '🚚', 'Carriers & Owner-Operators', _fq_carrier_extra + [_faq_items[i] for i in _fq_ci]),
+ ('broker', '🏢', 'Freight Brokers', _fq_broker),
+ ('shipper', '📦', 'Shippers', _fq_shipper),
+ ('partner', '🧑‍✈️', 'Dispatchers & Referral Partners', _fq_partner),
+ ('platform', '⚙️', 'Platform, Tools & Billing', [_faq_items[i] for i in _fq_pi]),
+]
+_faq_body_hc, _faq_sch = _fq_page(_FQ_CATS)
+faq_body = _faq_body_hc + final_cta()
+page('faq.html', 'LoadBoot Help Center &mdash; FAQ for Carriers, Brokers, Shippers &amp; Dispatchers',
+     'Every answer in one place: dispatch pricing (flat 5%), free broker posting, shipper tracking, detention pay, documents, W-9, QuickBooks, ELD and getting started — searchable, by role.',
      'faq.html', PHONE_STRIP + faq_body, _faq_sch)
+
+# ---- Broker claim page (email load ingestion) — premium v2: steps, policy links, portal signup ----
+_bc_body = ('<meta name="robots" content="noindex,nofollow">'
+ '<style>'
+ '.bc-step{display:flex;gap:10px;align-items:center;margin-bottom:6px}'
+ '.bc-dot{width:26px;height:26px;border-radius:9px;background:rgba(124,192,255,.15);border:1px solid rgba(124,192,255,.35);color:#7cc0ff;font:800 12px Inter,Arial;display:flex;align-items:center;justify-content:center;flex:none}'
+ '.bc-in{width:100%;box-sizing:border-box;border:none;border-radius:12px;padding:13px 14px;font:500 15px Inter,Arial;margin-bottom:10px;background:#fff}'
+ '.bc-lbl{display:block;font:700 10.5px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}'
+ '.bc-pol{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(124,192,255,.3);color:#7cc0ff;font:700 12px Inter,Arial;padding:7px 12px;border-radius:999px;text-decoration:none;margin:4px 6px 0 0;transition:all .15s}'
+ '.bc-pol:hover{background:#0883F7;color:#fff}'
+ '.bc-load{display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 14px;margin-bottom:7px;font-size:.9rem;color:#e2e8f0}'
+ '.bc-load b{color:#7cc0ff}'
+ '@keyframes bcUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'
+ '.bc-anim{animation:bcUp .35s ease}'
+ '</style>'
+ '<section><div class="wrap" style="max-width:760px">'
+ '<div id="bcCard" class="bc-anim" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:24px;padding:36px;color:#fff;box-shadow:0 30px 80px -30px rgba(2,12,30,.6)">'
+ '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="background:rgba(252,83,5,.18);color:#ff9c66;font:800 11px Inter,Arial;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:999px">LoadBoot for Brokers</span><span style="background:rgba(34,197,94,.14);color:#4ade80;font:700 11px Inter,Arial;padding:6px 12px;border-radius:999px">Posting is free — forever</span></div>'
+ '<h1 style="color:#fff;font-size:1.85rem;margin:10px 0 6px;letter-spacing:-.01em">Claim your loads &amp; go live</h1>'
+ '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 4px">'
+ '<div class="bc-step"><div class="bc-dot">1</div><span style="color:#c7d5ea;font-size:.86rem">Confirm company</span></div>'
+ '<div class="bc-step"><div class="bc-dot">2</div><span style="color:#c7d5ea;font-size:.86rem">Read &amp; e-sign standards</span></div>'
+ '<div class="bc-step"><div class="bc-dot">3</div><span style="color:#c7d5ea;font-size:.86rem">Loads go live + portal login</span></div></div>'
+ '<div id="bcState" style="color:#c7d5ea;padding:10px 0">Loading your details&hellip;</div>'
+ '<div id="bcForm" style="display:none;margin-top:12px">'
+ '<div id="bcCo" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-bottom:12px"></div>'
+ '<div id="bcLoads" style="margin-bottom:14px"></div>'
+ '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-bottom:16px">'
+ '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:1.1rem">📜</span><b style="color:#fff">Posting standards — one-time acceptance</b></div>'
+ '<p style="color:#c7d5ea;font-size:.88rem;line-height:1.65;margin:0 0 6px">My email-posted loads carry LoadBoot&rsquo;s <b style="color:#fff">published accessorial standards</b> — detention, TONU and layover at the platform&rsquo;s published rates, printed on every posting. Payment terms <b style="color:#fff">net-30</b> from delivery documents &middot; <b style="color:#fff">15-day</b> dispute window &middot; exact addresses confirmed at booking &middot; e-signature has full legal effect (ESIGN/UETA).</p>'
+ '<div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.14)">'
+ '<span style="color:#9fb3cc;font:700 11px Inter,Arial;text-transform:uppercase;letter-spacing:.08em">Read every policy in full — know exactly what you sign:</span><br>'
+ '<a class="bc-pol" href="detention-pay-policy.html" target="_blank">💰 Detention rates</a>'
+ '<a class="bc-pol" href="tonu-policy.html" target="_blank">🚫 TONU</a>'
+ '<a class="bc-pol" href="layover-policy.html" target="_blank">🛏️ Layover</a>'
+ '<a class="bc-pol" href="lumper-policy.html" target="_blank">📦 Lumper</a>'
+ '<a class="bc-pol" href="market-rates.html" target="_blank">📈 Current rates</a>'
+ '<a class="bc-pol" href="terms.html" target="_blank">📄 Terms of Service</a>'
+ '</div></div>'
+ '<label class="bc-lbl">Your full name</label><input id="bcName" class="bc-in" placeholder="Full name">'
+ '<label class="bc-lbl">Work email</label><input id="bcEmail" type="email" class="bc-in" placeholder="you@brokerage.com">'
+ '<label class="bc-lbl">Type your full name to e-sign</label><input id="bcSig" class="bc-in" style="font-family:cursive;font-size:18px" placeholder="Signature">'
+ '<div id="bcErr" style="color:#fca5a5;font-size:.85rem;display:none;margin-bottom:8px"></div>'
+ '<button id="bcGo" style="width:100%;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:13px;padding:15px;font:800 15.5px Inter,Arial;cursor:pointer;box-shadow:0 14px 34px rgba(252,83,5,.4)">&#9997;&#65039; Accept standards &amp; activate my loads</button>'
+ '<p style="color:#9fb3cc;font-size:.78rem;text-align:center;margin-top:10px">🔒 Signature recorded with timestamp &middot; posting free forever &middot; quick human review for every new brokerage</p>'
+ '</div></div></div></section>')
+_bc_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest/v1/rpc/',key='" + (APP_ANON or '') + "';"
+ "var t=new URLSearchParams(location.search).get('t');var st=document.getElementById('bcState');var n='',em='';"
+ "function call(fn,body){return fetch(api+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+key},body:JSON.stringify(body)}).then(function(r){return r.json()});}"
+ "if(!t){st.textContent='This link is missing its token — use the link from your email.';return;}"
+ "call('lb_email_claim_get',{p_token:t}).then(function(d){"
+ "if(!d||d.error){st.textContent='This link looks expired or invalid — reply to our email and we will send a fresh one.';return;}"
+ "st.style.display='none';document.getElementById('bcForm').style.display='block';"
+ "document.getElementById('bcCo').innerHTML='<div style=\"display:flex;align-items:center;gap:12px\"><div style=\"width:44px;height:44px;border-radius:13px;background:rgba(124,192,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem\">🏢</div><div><b style=\"font-size:1.05rem\">'+(d.company||d.domain)+'</b><br><span style=\"color:#9fb3cc;font-size:.84rem\">MC '+(d.mc||'—')+' · '+d.domain+' · '+(d.status==='verified'?'<span style=\"color:#4ade80\">✓ verified</span>':'pending review')+'</span></div></div>';"
+ "var L=d.loads||[];document.getElementById('bcLoads').innerHTML=(L.length?'<div class=\"bc-lbl\" style=\"margin-bottom:7px\">Your parsed loads ('+L.length+')</div>':'')+L.map(function(x){return '<div class=\"bc-load\"><span>'+(x.origin||'?')+' → '+(x.destination||'?')+' · '+(x.equipment||'')+'</span><b>'+(x.rate||'rate pending')+'</b></div>';}).join('');"
+ "}).catch(function(){st.textContent='Connection hiccup — refresh to try again.';});"
+ "document.getElementById('bcGo').onclick=function(){var e=document.getElementById('bcErr');e.style.display='none';"
+ "n=document.getElementById('bcName').value.trim();em=document.getElementById('bcEmail').value.trim();var sg=document.getElementById('bcSig').value.trim();"
+ "if(n.length<2||!/@/.test(em)){e.textContent='Name and a valid email are required';e.style.display='block';return;}"
+ "if(sg.toLowerCase()!==n.toLowerCase()){e.textContent='Signature must match your name exactly: '+n;e.style.display='block';return;}"
+ "this.disabled=true;this.textContent='Recording…';var b=this;"
+ "call('lb_email_claim_sign',{p_token:t,p_name:n,p_email:em,p_signature:sg}).then(function(r){"
+ "if(r&&r.ok){document.getElementById('bcForm').innerHTML='<div class=\"bc-anim\" style=\"text-align:center;padding:14px 0\"><div style=\"font-size:2.4rem\">🎉</div><h2 style=\"color:#fff;margin:8px 0 6px\">You&rsquo;re set'+(n?', '+n.split(' ')[0]:'')+'!</h2><p style=\"color:#c7d5ea\">Standards e-signed &amp; recorded'+(r.published?' — <b style=\"color:#4ade80\">'+r.published+' load(s) publishing now</b>':'')+'. '+(r.pending_review?'Our team finishes a quick review — your loads go live right after (we email you).':'')+'</p><p style=\"color:#9fb3cc;font-size:.85rem\">From now on: every load you email to <b style=\"color:#fff\">loads@loadboot.com</b> goes live automatically.</p>'+"
+ "'<div style=\"background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-top:14px;text-align:left\"><b style=\"color:#fff\">🔐 Get your Broker Portal (free)</b><p style=\"color:#9fb3cc;font-size:.85rem;margin:6px 0 10px\">Live GPS on your loads, documents in one place, full-detail posting. No password — we email a secure sign-in link.</p><button id=\"bcPortal\" style=\"width:100%;background:linear-gradient(135deg,#0883F7,#065fb8);color:#fff;border:none;border-radius:12px;padding:13px;font:800 14px Inter,Arial;cursor:pointer\">✉️ Create my portal login</button><div id=\"bcPortalMsg\" style=\"color:#9fb3cc;font-size:.8rem;text-align:center;margin-top:8px\"></div></div></div>';"
+ "var pb=document.getElementById('bcPortal');if(pb){pb.onclick=function(){pb.disabled=true;pb.textContent='Sending…';"
+ "fetch('https://" + APP_REF + ".supabase.co/auth/v1/otp',{method:'POST',headers:{'Content-Type':'application/json',apikey:key},body:JSON.stringify({email:em,create_user:true,data:{role:'broker',full_name:n,lb_source:'email_loads_claim'}})}).then(function(x){return x.json().catch(function(){return {}})}).then(function(dd){var m=document.getElementById('bcPortalMsg');"
+ "if(dd&&(dd.msg||dd.error_description)){m.textContent=dd.msg||dd.error_description;pb.disabled=false;pb.textContent='✉️ Create my portal login';}else{m.innerHTML='✓ Check your inbox — secure sign-in link sent to <b>'+em+'</b>';pb.style.display='none';}});};}}"
+ "else{e.textContent=(r&&r.error)||'Something went wrong — try again';e.style.display='block';b.disabled=false;b.textContent='✍️ Accept standards & activate my loads';}});};})();</script>")
+page('broker-claim.html', 'Claim Your Loads — LoadBoot for Brokers',
+     'One-time confirmation for brokers posting loads by email: verify your company, read and accept LoadBoot posting standards, get your portal login — and your emailed loads go live automatically.',
+     'brokers.html', _bc_body + _bc_js)
+
 
 # ---- Box Truck Dispatch (service page) ----
 _btfaq_html, _btfaq_sch = faq_block([
@@ -4317,20 +4403,24 @@ page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Di
      'contact.html', capp)
 
 # ---- Unified account-creation hub (#44): carrier / broker / shipper / referral, tabbed ----
+def _hub_cta(portal_href, portal_label):
+    # Hero create-account CTA — rendered FIRST in each role panel (directly under the tab bar).
+    return ('<section style="padding-top:10px;padding-bottom:0"><div class="wrap" style="max-width:980px">'
+            '<div class="hub-cta reveal">'
+            '<div class="hub-cta-t"><h3>Create your free account</h3>'
+            '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
+            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
+            '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
+            '</div></div></section>')
+
 def _hub_value(bullets, portal_href, portal_label):
-    # Premium "what you get" overview: benefit cards + a hero create-account CTA.
+    # "What you get" benefit cards (CTA card is emitted separately by _hub_cta, above the intro).
     _ic = ['&#9989;', '&#128176;', '&#128225;', '&#128737;&#65039;', '&#9889;', '&#128200;', '&#129309;', '&#128230;']
     cards = ''.join(
         '<div class="hub-benefit reveal"><div class="hb-i">' + _ic[i % len(_ic)] + '</div><p>' + b + '</p></div>'
         for i, b in enumerate(bullets))
     return ('<section style="padding-top:10px"><div class="wrap" style="max-width:980px">'
-            '<div class="hub-cta reveal" style="margin-bottom:26px">'
-            '<div class="hub-cta-t"><h3>Create your free account</h3>'
-            '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
-            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#7dd3fc">we call you &rarr;</a></p></div>'
-            '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
-            '</div>'
             '<div class="sec-head center reveal" style="margin-bottom:18px"><div class="eyebrow">What you get</div>'
             '<h2>After your account is created</h2></div>'
             '<div class="hub-benefits">' + cards + '</div>'
@@ -4474,6 +4564,7 @@ hub += _tabbar
 for i, r in enumerate(_HUB_ROLES):
     rid, ic, short, longname, blurb, bullets, phref, plabel, fkey, fhead, fintro, ffields, fsubmit, fsuccess = r
     panel = '<div class="hub-panel" id="hp-%s"%s>' % (rid, '' if i == 0 else ' hidden')
+    panel += _hub_cta(phref, plabel)
     panel += _sec('Create your account', longname, '<p class="lead center" style="max-width:640px;margin:0 auto">' + blurb + '</p>')
     panel += _hub_value(bullets, phref, plabel)
     panel += ('<section style="padding-top:0"><div class="wrap" style="max-width:900px"><div class="sec-head center reveal">'
@@ -5836,7 +5927,8 @@ flt += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
 RELATED['fleet-management.html'] = [('payments-settlements.html','Payments & Settlements'),('gps-tracking.html','GPS Tracking & Proof'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('features.html','All Features')]
 page('fleet-management.html', 'Trucking Fleet Management Software — Drivers, Trucks, Maintenance & Per-Trip P&L | LoadBoot', 'Run the whole fleet back office in the carrier portal: magic-link driver invites, license & medical expiry alerts, maintenance logs with next-due dates, fuel-card CSV import, per-trip profit & cost per mile, payroll from trips, IFTA state miles and per-diem from the GPS trail.', 'fleet-management.html', flt, _flt_schema)
 
-hiw = FTX_CSS + LBX_CSS
+from how_module import HIW2_CSS, hiw_journey, hiw_chat5, hiw_band, hiw_engine
+hiw = FTX_CSS + LBX_CSS + HIW2_CSS
 
 _HIW_FAQ = [('What actually happens when I book a load?', 'The moment you tap Request to book (or accept a direct offer), first acceptance wins and every other offer closes — no double-booking. The rate confirmation is issued and e-signed in-app, the dispatch pack (pickup numbers, contacts, directions) generates instantly, and an 800-meter geofence arms at every stop.'), ('How fast is verification for a new account?', 'Carriers: FMCSA details auto-fill from your DOT number and document review typically completes the same day. Brokers: authority and the federal bond are checked against the FMCSA record at signup. Shippers and agents: minutes.'), ('Who is on the other side of my load?', 'Always a verified party. Carriers pass authority, insurance and health checks before they see freight; posting requires licensed broker or verified shipper status. Both sides of every load are vetted — that is why the board has zero ghost loads.'), ('Where does the money actually move?', 'Bank to bank, between payer and payee — LoadBoot runs the ledger around it: automatic DUE on delivery, PAY-BY deadlines, receipt-verified transfers, confirm-received loops, and factoring/NOA routing when an NOA is on file.'), ('How does matching decide which carriers see my load?', "Explainably: equipment and services fit, verified eligibility, distance from the pickup, the carrier's delivered history on similar lanes and their account-health score. Every match can be traced to those factors — if we cannot explain a ranking, we do not show it."), ('What does LoadBoot charge?', "One flat 5% dispatch fee on delivered loads, invoiced transparently to the carrier's account — never deducted from a factor's advance, never charged to brokers, shippers or agents for using the platform."), ('What if something goes wrong on the road?', 'The Emergency button verifies real breakdowns within a 2-hour window and reschedules with zero penalty. Detention, layover, TONU and lumper claims draft themselves from GPS trip data and ride the same invoice as the freight.')]
 
@@ -5862,6 +5954,8 @@ hiw += ('<section style="background:#0b1220;padding:0 0 40px"><div class="wrap">
  '<a href="#for-agents" style="text-decoration:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:15px 17px;display:block"><b style="color:#fff">&#129309; I bring the people</b><div style="color:#94a3b8;font-size:.82rem;margin-top:5px">Agent &mdash; link to chain to 1% forever &darr;</div></a>'
  '</div></div></section>')
 
+hiw += hiw_journey()
+hiw += hiw_chat5()
 hiw += ('<section class="ftx-sec" id="for-carriers"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div class="ftx-kicker">For carriers &amp; owner-operators</div><h2 class="ftx-h">Board &rarr; booked &rarr; rolling &rarr; paid</h2>'
  '<div style="margin-top:12px">'
@@ -5900,6 +5994,7 @@ hiw += ('<section class="ftx-sec" id="for-shippers"><div class="wrap"><div class
  '<div class="reveal"><img src="/shots/partner-wizard-schedule.webp" alt="Freight scheduling — appointment windows and requirements printed on the load" width="1100" height="938" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="height:12px"></div><img src="/shots/partner-live-tracking.webp" alt="Live tracking — the truck on the map with milestone timeline and ETA" width="1100" height="969" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Real screens &mdash; the windows you set, the truck you watch.</div></div>'
  '</div></div></section>')
 
+hiw += hiw_band()
 hiw += ('<section class="ftx-sec alt" id="for-agents"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal" style="order:2"><div class="ftx-kicker">For referral partners</div><h2 class="ftx-h">Link &rarr; refer &rarr; 1% forever</h2>'
  '<div style="margin-top:12px">'
@@ -5911,6 +6006,7 @@ hiw += ('<section class="ftx-sec alt" id="for-agents"><div class="wrap"><div cla
  '<div class="reveal" style="order:1"><img src="/shots/agent-dashboard.webp" alt="The referral partner dashboard — referral link, clearing balance and the 5-level commission math" width="1100" height="859" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The real dashboard &mdash; your link, your clearing balance.</div></div>'
  '</div></div></section>')
 
+hiw += hiw_engine()
 hiw += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Why the loop holds</div><h2>Four screens, one truth</h2></div>'
  '<div class="cards g4 reveal" style="margin-top:24px">'
  '<div class="card"><div class="icon">&#128737;</div><h3>Verified on both sides</h3><p>Carriers pass authority, insurance and health checks; posting requires a licensed broker or verified shipper. Nobody unvetted touches a load. <a href="compliance.html">Verification</a>.</p></div>'
@@ -6793,7 +6889,7 @@ page('sitemap.html', 'Sitemap | Loadboot', 'Every page on the Loadboot website �
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
 # PROD_REF/STAGING_REF/context targets are defined once near the top of this file.
-_SITEMAP_EXCLUDE = {'dashboard.html', '404.html'}
+_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'unsub.html'}
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
 urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls
@@ -6834,6 +6930,7 @@ _APP_CSP = (
   "script-src 'self' https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
   "worker-src 'self'; "
   "manifest-src 'self'; "
+  "media-src 'self' blob: https://*.cloudfront.net https://*.retellai.com; "   # Riley call recordings (Retell serves via CloudFront)
   "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://photon.komoot.io https://data.transportation.gov https://router.project-osrm.org https://vpic.nhtsa.dot.gov"
 ) % (_CSP_REF, _CSP_REF, _CSP_REF, _CSP_REF)
 APP_HEADERS = (

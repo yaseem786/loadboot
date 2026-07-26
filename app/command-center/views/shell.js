@@ -86,6 +86,7 @@ const NAV = [
   ]},
   { group: 'Comms & Support', items: [
     { path: '/live-chat', label: 'Live chat', icon: 'bell', perm: 'any:comm.view,support.view,dispatch.manage' },
+    { path: '/email-loads', label: 'Email loads', icon: 'bell', perm: 'any:comm.view,support.view,dispatch.manage' },
     { path: '/support', label: 'Support tickets', icon: 'bell', perm: 'support.view', flag: 'support' },
     { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },
     { path: '/announcements', label: 'Announcements', icon: 'bell', perm: 'announce.view', flag: 'announcements' },

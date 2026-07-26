@@ -817,6 +817,10 @@ export const gscInsights = async (days = 28) => {
   return data;
 };
 
+// ---- Email load ingestion (CC review) ----
+export const ccEmailLoads = (status = null) => rpc('cc_email_loads', { p_status: status });
+export const ccEmailBrokerVerify = (id, approve) => rpc('cc_email_broker_verify', { p_broker_id: id, p_approve: approve });
+
 // ---- Wave L: Announcements & Broadcast (flag: announcements_enabled) ----
 export const createAnnouncement = (o = {}) => rpc('cc_create_announcement', { p_title: o.title, p_body: o.body ?? null, p_kind: o.kind ?? 'info', p_audience: o.audience ?? 'all_carriers', p_target_org: o.targetOrg ?? null, p_expires_at: o.expiresAt ?? null });
 export const listAnnouncements = (limit = 100) => rpc('cc_list_announcements', { p_limit: limit });
