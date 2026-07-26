@@ -3385,6 +3385,51 @@ page('faq.html', 'LoadBoot Help Center &mdash; FAQ for Carriers, Brokers, Shippe
      'Every answer in one place: dispatch pricing (flat 5%), free broker posting, shipper tracking, detention pay, documents, W-9, QuickBooks, ELD and getting started — searchable, by role.',
      'faq.html', PHONE_STRIP + faq_body, _faq_sch)
 
+# ---- Broker claim page (email load ingestion): token link from the claim email ----
+_bc_body = ('<section><div class="wrap" style="max-width:720px">'
+ '<div id="bcCard" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:22px;padding:34px;color:#fff">'
+ '<div class="eyebrow" style="color:#7cc0ff">LoadBoot for Brokers</div>'
+ '<h1 style="color:#fff;font-size:1.7rem;margin:8px 0 10px">Claim your loads &amp; go live</h1>'
+ '<div id="bcState" style="color:#c7d5ea">Loading your details&hellip;</div>'
+ '<div id="bcForm" style="display:none;margin-top:18px">'
+ '<div id="bcCo" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:16px;margin-bottom:14px"></div>'
+ '<div id="bcLoads" style="margin-bottom:16px"></div>'
+ '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:16px;font-size:.86rem;color:#c7d5ea;line-height:1.6;margin-bottom:14px">'
+ '<b style="color:#fff">Posting standards (one-time acceptance)</b><br>'
+ 'My email-posted loads carry LoadBoot&rsquo;s published accessorial standards &mdash; detention, TONU and layover at the platform&rsquo;s published rates &mdash; printed on every posting. Payment terms net-30 from delivery documents; 15-day dispute window; exact pickup/delivery addresses confirmed at booking; e-signature below has full legal effect (ESIGN/UETA).</div>'
+ '<label style="display:block;font:700 11px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Your name</label>'
+ '<input id="bcName" style="width:100%;box-sizing:border-box;border:none;border-radius:11px;padding:12px;font:500 15px Inter,Arial;margin-bottom:10px" placeholder="Full name">'
+ '<label style="display:block;font:700 11px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Work email</label>'
+ '<input id="bcEmail" type="email" style="width:100%;box-sizing:border-box;border:none;border-radius:11px;padding:12px;font:500 15px Inter,Arial;margin-bottom:10px" placeholder="you@brokerage.com">'
+ '<label style="display:block;font:700 11px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Type your full name to e-sign</label>'
+ '<input id="bcSig" style="width:100%;box-sizing:border-box;border:none;border-radius:11px;padding:12px;font:500 17px cursive;margin-bottom:12px" placeholder="Signature">'
+ '<div id="bcErr" style="color:#fca5a5;font-size:.85rem;display:none;margin-bottom:8px"></div>'
+ '<button id="bcGo" style="width:100%;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:12px;padding:14px;font:800 15px Inter,Arial;cursor:pointer">&#9997;&#65039; Accept &amp; activate my loads</button>'
+ '<p style="color:#9fb3cc;font-size:.78rem;text-align:center;margin-top:10px">Posting is free forever. Our team gives every new brokerage a quick human review before loads go live.</p>'
+ '</div></div></div></section>')
+_bc_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest/v1/rpc/',key='" + (APP_ANON or '') + "';"
+ "var t=new URLSearchParams(location.search).get('t');var st=document.getElementById('bcState');"
+ "function call(fn,body){return fetch(api+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+key},body:JSON.stringify(body)}).then(function(r){return r.json()});}"
+ "if(!t){st.textContent='This link is missing its token — use the link from your email.';return;}"
+ "call('lb_email_claim_get',{p_token:t}).then(function(d){"
+ "if(!d||d.error){st.textContent='This link looks expired or invalid — reply to our email and we will send a fresh one.';return;}"
+ "st.style.display='none';document.getElementById('bcForm').style.display='block';"
+ "document.getElementById('bcCo').innerHTML='<b>'+(d.company||d.domain)+'</b><br><span style=\"color:#9fb3cc;font-size:.85rem\">MC '+(d.mc||'—')+' · '+d.domain+' · status: '+d.status+'</span>';"
+ "var L=d.loads||[];document.getElementById('bcLoads').innerHTML=L.map(function(x){return '<div style=\"display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.04);border-radius:10px;padding:9px 12px;margin-bottom:6px;font-size:.88rem\"><span>'+(x.origin||'?')+' → '+(x.destination||'?')+' · '+(x.equipment||'')+'</span><b>'+(x.rate||'')+'</b></div>';}).join('');"
+ "}).catch(function(){st.textContent='Connection hiccup — refresh to try again.';});"
+ "document.getElementById('bcGo').onclick=function(){var e=document.getElementById('bcErr');e.style.display='none';"
+ "var n=document.getElementById('bcName').value.trim(),em=document.getElementById('bcEmail').value.trim(),sg=document.getElementById('bcSig').value.trim();"
+ "if(n.length<2||!/@/.test(em)){e.textContent='Name and a valid email are required';e.style.display='block';return;}"
+ "if(sg.toLowerCase()!==n.toLowerCase()){e.textContent='Signature must match your name exactly';e.style.display='block';return;}"
+ "this.disabled=true;this.textContent='Recording…';var b=this;"
+ "call('lb_email_claim_sign',{p_token:t,p_name:n,p_email:em,p_signature:sg}).then(function(r){"
+ "if(r&&r.ok){document.getElementById('bcForm').innerHTML='<div style=\"text-align:center;padding:20px 0\"><div style=\"font-size:2.2rem\">🎉</div><h2 style=\"color:#fff\">You&rsquo;re set!</h2><p style=\"color:#c7d5ea\">Terms recorded. '+(r.pending_review?'Our team finishes a quick review — your loads go live right after (we email you).':'Your complete loads are publishing now.')+'</p><p style=\"color:#9fb3cc;font-size:.85rem\">From now on: every load you email to loads@loadboot.com goes live automatically.</p></div>';}"
+ "else{e.textContent=(r&&r.error)||'Something went wrong — try again';e.style.display='block';b.disabled=false;b.textContent='✍️ Accept & activate my loads';}});};})();</script>")
+page('broker-claim.html', 'Claim Your Loads — LoadBoot for Brokers',
+     'One-time confirmation for brokers posting loads by email: verify your company, accept LoadBoot posting standards, and your emailed loads go live to verified carriers automatically.',
+     'brokers.html', _bc_body + _bc_js)
+
+
 # ---- Box Truck Dispatch (service page) ----
 _btfaq_html, _btfaq_sch = faq_block([
     ('Do box trucks need their own MC authority?', 'If your box truck is over 10,001 lbs GVWR and hauls interstate freight for hire, yes &mdash; you generally need operating authority and insurance just like a semi. We can point you to the right compliance steps before you start.'),

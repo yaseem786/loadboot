@@ -1,0 +1,11 @@
+-- bl_mail_loads_0176 + 0177 + 0178 (STAGING ONLY as of 2026-07-26 — apply to PROD at launch):
+-- Email load ingestion V1. Tables: app_private.email_brokers (domain registry, claim_token,
+-- terms_accepted_at/signature, status pending|verified|blocked) + email_loads (parsed jsonb,
+-- missing[], status draft|needs_info|ready|published|rejected, auto_reply).
+-- RPCs: lb_email_load_ingest (service role; upsert broker + insert load, status machine),
+-- lb_email_claim_get/lb_email_claim_sign (anon by claim_token — broker-claim.html),
+-- cc_email_loads / cc_email_broker_verify (staff via is_active_staff; approve auto-publishes),
+-- app_private.lb_email_load_publish → INSERT public.loads (source_type 'email' — 0178 widened
+-- the loads_source_type_check constraint; verified, 3-day expiry, standard-terms note).
+-- Edge fn: load-mail v3 (Gemini parse; thinkingBudget:0 REQUIRED for 2.5 models).
+-- Canonical SQL in staging Supabase migration history under these names.
