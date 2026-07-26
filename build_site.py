@@ -1373,74 +1373,28 @@ page('services.html','Truck Dispatch Services (Full List) | Loadboot',
      'services.html', serv_body, serv_hub_faq_schema)
 
 # ---------- ABOUT ----------
-about_body = svc_hero('About LoadBoot','We built LoadBoot to give carriers what most dispatchers don&rsquo;t: honesty, real attention, and a partner who actually picks up the phone.')
-
-# Why we exist — problem/solution split with a navy pull-quote visual.
-_about_visual = ('<div style="background:linear-gradient(135deg,#0b1220,#12304f 55%,#0e3b33);color:#fff;border-radius:22px;padding:34px;box-shadow:0 24px 60px -30px rgba(8,131,247,.55)">'
-    '<div style="font-size:2.8rem;font-weight:800;letter-spacing:-.02em;line-height:1">5%</div>'
-    '<div style="color:#93c5fd;font-weight:600;margin-bottom:20px">flat dispatch fee &mdash; that&rsquo;s the entire pricing page</div>'
-    '<p style="color:#e2e8f0;margin:0;font-size:1.06rem;line-height:1.65;font-style:italic">&ldquo;We only win when your truck wins. No contracts means we have to earn your business every single week.&rdquo;</p>'
-    '<div style="margin-top:18px;color:#94a3b8;font-size:.86rem">&mdash; the LoadBoot promise</div></div>')
-about_body += m_split('Why we exist', 'The freight game is stacked against the small carrier',
-    ['Too many owner-operators and new-authority carriers get locked into long contracts, handed the cheapest freight on the board, and left on hold when a load goes sideways. The margin gets squeezed at every turn &mdash; and the people doing the actual driving keep the least.',
-     'LoadBoot flips that. You keep your own operating authority and approve every load. We work the load boards and our broker relationships to find better-paying freight on your lanes, negotiate the rate before you ever see it, and handle the paperwork and back office so you can focus on driving.'],
-    _about_visual, flip=True, accent='#0883F7',
-    bullets=['Flat 5% dispatch fee &mdash; no contracts, cancel anytime',
-             'You approve every load and keep your authority',
-             'A real dispatcher on call, not a ticket queue'])
-
-about_body += m_zigzag('What we stand for', 'A dispatcher that treats your truck like a business', [
- ('scale', 'Honesty over everything', 'We negotiate hard on your rates, tell you the truth even when it&rsquo;s not what you want to hear, and never lock you into a contract. If we&rsquo;re not adding value, you can walk &mdash; and that keeps us honest.'),
- ('route', 'One partner, the whole business', 'You keep your own authority and approve every load. We handle the rest &mdash; finding freight, negotiating rates, talking to brokers, managing paperwork, and the back office: factoring, IFTA, compliance and claims.'),
- ('users', 'Built for where you are', 'Owner-operators, small and growing fleets, independent carriers, and especially new-authority carriers who need a guide through their first months. Wherever you are in your journey, we meet you there.'),
-], accent='#0d9488')
-
-about_body += m_timeline('Our story', 'How LoadBoot came to be', [
- ('phone', 'It started with a phone that rang', 'People who lived the carrier side got tired of dispatchers who vanished the moment a load went wrong. LoadBoot began as a simple promise: always pick up.'),
- ('route', 'Built around the load, not the contract', 'We designed every workflow &mdash; matching, rate confirmation, tracking, POD and settlement &mdash; around getting the carrier paid fairly and fast, with no lock-in.'),
- ('shieldcheck', 'Trust turned into a system', 'Verification, mutual vetting between carriers and brokers, and live account health turned &ldquo;just trust us&rdquo; into records anyone on the load can actually see.'),
- ('bolt', 'One platform for the whole chain', 'Carriers, drivers, brokers and shippers now run on the same rails &mdash; with a real person in the loop wherever money moves.'),
-], accent='#7c3aed')
-
-about_body += m_dark('How we operate', 'The rules we run the company by',
-    'A few non-negotiables that shape every feature and every decision.',
-    [('target', 'Explainable, always', 'Every match score, every detention minute, every settlement line traces to real records. If we cannot explain a number, we do not show it.'),
-     ('key', 'Your data is yours', 'Tenant-isolated accounts, role-based access and audited actions. Drivers never see company finances; brokers never see carrier internals.'),
-     ('scale', 'Humans control money', 'Software prepares invoices and settlements; a person approves every payout. The maker and the checker are never the same account.')],
-    numbered=False, accent='#60a5fa',
-    cta='<a href="security.html" class="btn btn-primary" style="background:#34d399;color:#052e2b;border:none;font-weight:800">See our security &amp; trust practices &rarr;</a>')
-
-about_body += ('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who we serve</div><h2>One platform, every seat in the freight chain</h2></div><div class="grid g3 reveal">'
- '<div class="card reveal"><div class="icon">&#128667;</div><h3>Owner-operators &amp; fleets</h3><p>Independent carriers and growing fleets who want higher-paying freight on their lanes and one place to run the business. <a href="carriers.html">For carriers &rarr;</a></p></div>'
- '<div class="card reveal"><div class="icon">&#128295;</div><h3>New-authority carriers</h3><p>Brand-new MC holders who need a guide through their first months &mdash; paperwork, compliance and steady first lanes. <a href="new-authority-dispatch.html">New authority &rarr;</a></p></div>'
- '<div class="card reveal"><div class="icon">&#129309;</div><h3>Brokers &amp; shippers</h3><p>Freight brokers posting to vetted, tracked capacity, and shippers posting freight directly on LoadBoot with verified carriers and live tracking. <a href="partners.html">Partner with us &rarr;</a></p></div>'
- '</div></div></section>')
-
-about_body += m_statband([('5%', 'flat dispatch fee'), ('0', 'long-term contracts'), ('100%', 'loads you approve'), ('1 day', 'typical reply time')],
-    note='These are policy facts, not marketing metrics &mdash; they define how LoadBoot works.')
-
-about_body += '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Contact us</div><h2>One company, three front doors</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>General &amp; support</h3><p><a href="mailto:hello@loadboot.com">hello@loadboot.com</a> &mdash; onboarding, questions, compliance and anything else.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>Dispatch &amp; loads</h3><p><a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a> &mdash; active loads, trips, appointments and PODs.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>Billing &amp; settlements</h3><p><a href="mailto:billing@loadboot.com">billing@loadboot.com</a> &mdash; invoices, settlements and payment questions.</p></div></div></div></section>'
+# World-class About page (Uber/Amazon pattern) — sections live in about_module.py
+from about_module import ABOUT_CSS, about_sections
+about_body = ABOUT_CSS + about_sections()
 
 _about_faq_html, _about_faq_schema = faq_block([
- ('Is LoadBoot a dispatcher or a freight broker?', 'LoadBoot is a truck dispatch service. Carriers keep their own operating authority while we find, negotiate and coordinate loads on their behalf. Shippers post freight directly in their own LoadBoot portal and our dispatch coordinates verified carriers end to end.'),
- ('How much does LoadBoot cost?', 'A flat 5% dispatch fee on booked loads. There is no sign-up fee, no monthly minimum and no long-term contract &mdash; you can cancel anytime.'),
- ('Do you work with new-authority carriers?', 'Yes. New-authority and owner-operator carriers are a core focus. We help guide you through your first months, from paperwork and compliance to your first steady lanes.'),
- ('Who owns my data?', 'You do. Accounts are tenant-isolated with role-based access and audited actions. Drivers never see company finances, and brokers never see carrier internals.'),
- ('Who does LoadBoot serve, and where?', 'We serve owner-operators, carrier fleets, freight brokers and shippers across the United States, all on one connected platform.'),
+ ('What exactly is LoadBoot?', 'LoadBoot is the operating system for US trucking: a verified load board with zero ghost loads, a flat-5% dispatch service, live GPS tracking with photo proof, document and compliance workflows, and payments/settlements — one platform serving carriers, freight brokers, shippers and dispatchers.'),
+ ('How much does LoadBoot cost?', 'Carriers pay a flat 5% dispatch fee only on loads we book — no sign-up fee, no monthly minimum, no long-term contract. Brokers post loads completely free. Shippers get one transparent direct-to-carrier rate with no margin stacking.'),
+ ('How is LoadBoot different from DAT or Truckstop?', 'Load boards are paid search engines where 30–50% of postings are reposted or fake. LoadBoot verifies every load as real before it posts, pre-agrees detention/TONU/layover in writing on every posting, and adds dispatch, GPS proof and payments on top — carriers pay nothing monthly.'),
+ ('Is LoadBoot a freight broker?', 'No. LoadBoot is a licensed dispatch service and platform — we work FOR carriers under written per-carrier agreements while brokers and shippers use the same rails to post and track their freight. Carriers always keep their own operating authority.'),
+ ('Do you work with brand-new authority carriers?', 'Yes — new-authority carriers are a core focus. We verify your MC live on FMCSA, guide your documents (COI, W-9, agreement) with instant AI checks in our chat, and get you loaded without predatory contracts.'),
+ ('How fast can I get started?', 'About 5 minutes. Open the chat bubble on any page and say "set me up" — our assistant verifies your FMCSA authority, creates your account with a secure email link, and checks your documents on the spot. A human compliance review completes it, usually within a few business hours.'),
 ])
 about_body += _about_faq_html
-about_body += m_gradcta('Ready for a dispatcher who actually picks up?',
-    'Create your account in minutes &mdash; carrier, broker, shipper or referral partner. Flat 5%, no contracts, cancel anytime.',
-    'Create your account &rarr;', 'get-started.html',
-    grad='linear-gradient(135deg,#0b1220 0%,#12304f 55%,#0e3b33 100%)', btncolor='#34d399', btntext='#052e2b')
 
 _about_org_schema = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About LoadBoot",'
     '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
-    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","areaServed":"US",'
-    '"description":"LoadBoot is a U.S. truck dispatch service for owner-operators, fleets and new-authority carriers, with a partner platform for freight brokers and shippers. Flat 5%, no contracts.",'
-    '"knowsAbout":["truck dispatch","freight dispatching","owner-operator dispatch","new authority carriers","load matching","freight brokerage"]}}</script>')
-page('about.html','About LoadBoot | Honest Truck Dispatch for Carriers',
-     'Honest US truck dispatch for owner-operators, new-authority carriers, brokers and shippers. Flat 5%, no contracts, cancel anytime.',
+    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-737-306-1175","areaServed":"US",'
+    '"slogan":"The Operating System for Trucking",'
+    '"description":"LoadBoot is the operating system for US trucking: a verified zero-ghost-load board, flat 5% dispatch, live GPS proof, documents, compliance and payments on one platform for carriers, freight brokers, shippers and dispatchers.",'
+    '"knowsAbout":["truck dispatch","verified load board","freight brokerage software","shipper freight tracking","owner-operator dispatch","new authority carriers","detention pay","freight payments"]}}</script>')
+page('about.html','About LoadBoot — The Operating System for Trucking | Carriers, Brokers & Shippers',
+     'What LoadBoot is and why it exists: a verified load board with zero ghost loads, flat 5% dispatch, live GPS proof, written detention on every load, and one platform for carriers, brokers, shippers and dispatchers.',
      'about.html', about_body, schema=_about_org_schema + _about_faq_schema)
 
 # ---------- CONTACT ----------
@@ -4317,20 +4271,24 @@ page('carrier-application.html', 'Carrier Application &mdash; Apply for Truck Di
      'contact.html', capp)
 
 # ---- Unified account-creation hub (#44): carrier / broker / shipper / referral, tabbed ----
+def _hub_cta(portal_href, portal_label):
+    # Hero create-account CTA — rendered FIRST in each role panel (directly under the tab bar).
+    return ('<section style="padding-top:10px;padding-bottom:0"><div class="wrap" style="max-width:980px">'
+            '<div class="hub-cta reveal">'
+            '<div class="hub-cta-t"><h3>Create your free account</h3>'
+            '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
+            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
+            '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
+            '</div></div></section>')
+
 def _hub_value(bullets, portal_href, portal_label):
-    # Premium "what you get" overview: benefit cards + a hero create-account CTA.
+    # "What you get" benefit cards (CTA card is emitted separately by _hub_cta, above the intro).
     _ic = ['&#9989;', '&#128176;', '&#128225;', '&#128737;&#65039;', '&#9889;', '&#128200;', '&#129309;', '&#128230;']
     cards = ''.join(
         '<div class="hub-benefit reveal"><div class="hb-i">' + _ic[i % len(_ic)] + '</div><p>' + b + '</p></div>'
         for i, b in enumerate(bullets))
     return ('<section style="padding-top:10px"><div class="wrap" style="max-width:980px">'
-            '<div class="hub-cta reveal" style="margin-bottom:26px">'
-            '<div class="hub-cta-t"><h3>Create your free account</h3>'
-            '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
-            '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#7dd3fc">we call you &rarr;</a></p></div>'
-            '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
-            '</div>'
             '<div class="sec-head center reveal" style="margin-bottom:18px"><div class="eyebrow">What you get</div>'
             '<h2>After your account is created</h2></div>'
             '<div class="hub-benefits">' + cards + '</div>'
@@ -4474,6 +4432,7 @@ hub += _tabbar
 for i, r in enumerate(_HUB_ROLES):
     rid, ic, short, longname, blurb, bullets, phref, plabel, fkey, fhead, fintro, ffields, fsubmit, fsuccess = r
     panel = '<div class="hub-panel" id="hp-%s"%s>' % (rid, '' if i == 0 else ' hidden')
+    panel += _hub_cta(phref, plabel)
     panel += _sec('Create your account', longname, '<p class="lead center" style="max-width:640px;margin:0 auto">' + blurb + '</p>')
     panel += _hub_value(bullets, phref, plabel)
     panel += ('<section style="padding-top:0"><div class="wrap" style="max-width:900px"><div class="sec-head center reveal">'
@@ -6834,6 +6793,7 @@ _APP_CSP = (
   "script-src 'self' https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
   "worker-src 'self'; "
   "manifest-src 'self'; "
+  "media-src 'self' blob: https://*.cloudfront.net https://*.retellai.com; "   # Riley call recordings (Retell serves via CloudFront)
   "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://photon.komoot.io https://data.transportation.gov https://router.project-osrm.org https://vpic.nhtsa.dot.gov"
 ) % (_CSP_REF, _CSP_REF, _CSP_REF, _CSP_REF)
 APP_HEADERS = (
