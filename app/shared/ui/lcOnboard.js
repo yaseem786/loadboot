@@ -240,7 +240,6 @@
       if (f.company) s.data.company = f.company.value.trim();
       H().addMsg('visitor', '👤 ' + nm + ' · ' + em);
       save({ contact_name: nm, email: em, phone: ph, company: s.data.company || null }, '👤 Onboarding contact: ' + nm + ' · ' + em + ' · ' + ph);
-      try { rpc('lc_identify', { p_id: H().ctx().convId, p_visitor_key: H().ctx().vKey, p_name: nm, p_email: em }); } catch (e) {}
       stepAccount();
     };
   }
@@ -327,7 +326,7 @@
           var r = await fetch(c.cfg.url + '/functions/v1/lc-doc-check', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon, Authorization: 'Bearer ' + c.cfg.anon },
-            body: JSON.stringify({ visitor_key: c.vKey, conv_id: c.convId || null, doc_type: doc.key, filename: f.name, mime: mime, data_b64: b64, context: s.data.fmcsa ? { legal_name: s.data.fmcsa.legal_name, mc: s.data.fmcsa.mc, dot: s.data.fmcsa.dot } : {} })
+            body: JSON.stringify({ visitor_key: c.vKey, conv_id: c.convId || null, doc_type: doc.key, filename: f.name, mime: mime, data_b64: b64, context: s.data.fmcsa ? { legal_name: s.data.fmcsa.legal_name, mc: s.data.fmcsa.mc, dot: s.data.fmcsa.dot, power_units: s.data.fmcsa.trucks } : {} })
           });
           var d = await r.json();
           if (!r.ok || d.error) throw new Error(d.detail || d.error || 'check failed');
@@ -487,6 +486,11 @@
   function stepDone() {
     var s = state(); s.step = 'done'; s.active = false;
     var c = H().ctx();
+    // Identify at the END (CRM lead + CC identity pill) — not mid-flow, because the bot
+    // acknowledges lc_identify with a chat message that would interrupt the step cards.
+    if (s.data.contact_name || s.data.email) {
+      try { rpc('lc_identify', { p_id: c.convId, p_visitor_key: c.vKey, p_name: s.data.contact_name || null, p_email: s.data.email || null }); } catch (e) {}
+    }
     try { rpc('lc_ob_save', { p_visitor_key: c.vKey, p_conversation_id: c.convId || null, p_role: s.role, p_step_key: 'done', p_patch: null, p_note: '🎉 Onboarding COMPLETED in chat — ' + (s.data.contact_name || '') + ' (' + (s.role || '') + '). Review docs & follow up.', p_account_email: null, p_account_created: null, p_completed: true }); } catch (e) {}
     var n = card();
     prog(n, 100, 'Complete 🎉');
