@@ -4310,16 +4310,16 @@ def _hub_value(bullets, portal_href, portal_label):
         '<div class="hub-benefit reveal"><div class="hb-i">' + _ic[i % len(_ic)] + '</div><p>' + b + '</p></div>'
         for i, b in enumerate(bullets))
     return ('<section style="padding-top:10px"><div class="wrap" style="max-width:980px">'
-            '<div class="sec-head center reveal" style="margin-bottom:18px"><div class="eyebrow">What you get</div>'
-            '<h2>After your account is created</h2></div>'
-            '<div class="hub-benefits">' + cards + '</div>'
-            '<div class="hub-cta reveal">'
+            '<div class="hub-cta reveal" style="margin-bottom:26px">'
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
             '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+17373061175" style="color:#fff;font-weight:800;text-decoration:none">+1 (737) 306-1175</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#7dd3fc">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div>'
+            '<div class="sec-head center reveal" style="margin-bottom:18px"><div class="eyebrow">What you get</div>'
+            '<h2>After your account is created</h2></div>'
+            '<div class="hub-benefits">' + cards + '</div>'
             '</div></section>')
 
 _HUB_STYLE = ('<style>'
@@ -4448,7 +4448,7 @@ _HUB_ROLES = [
 ]
 
 hub = svc_hero('Create your Loadboot account',
-    'One front door for everyone in the freight chain. Pick your role &mdash; carrier, broker, shipper, or referral partner &mdash; and get set up in minutes. Flat, transparent, no contracts.')
+    'One front door for everyone in the freight chain. Pick your role &mdash; carrier, broker, shipper, or referral partner &mdash; and get set up in minutes. Flat, transparent, no contracts.', 'See all features', 'features.html')
 hub += _HUB_STYLE
 _tabbar = '<section style="padding-top:6px"><div class="wrap"><div class="hub-tabs reveal">'
 for i, r in enumerate(_HUB_ROLES):
