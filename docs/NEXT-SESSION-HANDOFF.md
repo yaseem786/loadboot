@@ -300,3 +300,6 @@ plus the D-SCREENS UI batch (packet/agreement/RC cards in all portals + CC onboa
 
 ## 2026-07-27 — Owner ne manga: FULL DEEP AUDIT (marketing site + 4 portals, Amazon/Uber bar, har minor bug)
 Next session: crawl every page + portal click-through → bug register + gap list. Pending wires: booking-ping email (address confirm), needs-info REPLY-MERGE (thread→load), email-load lat/lng for deadhead, staging/test-row cleanup, backlinks EXECUTION, FMCSA CSVs → outreach ON. Push abhi bhi pending tha is waqt.
+
+## NEXT BUILD (owner approved 2026-07-28): Carrier Preferences Completion System (premium)
+Profile Strength ring on carrier dashboard + one-section-at-a-time micro-ask popups (chips UI, reward framing "better matches") collecting: lanes/home base+radius, equipment detail, min rate floor, home-time, weekends, load size, facility likes/dislikes, DAT/Truckstop access (optional — surfaces in CC + dispatcher SOP). Feed into matching/assign-optimizer scoring. Also: TONU/SEO rule clarified = winners locked while winning, eligible again only if decayed (guardrails apply). Dispatcher applicants now get auto candidate-list email (bl_disp_0187 PROD trigger, 5 backfilled) — apply same to staging for parity.
