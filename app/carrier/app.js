@@ -841,11 +841,28 @@ async function agentPortal(user) {
 
     // ===== STATUS + HIRED CONSOLE =====
     const st9 = stMsg[prof.status] || stMsg.applied;
+    // Post-application premium banner: candidate-list assurance (owner request) — the applicant
+    // knows exactly where they stand, and is cross-sold into the Referral (1%) program while waiting.
+    const waitBanner = ['screening', 'skills_test'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,rgba(34,197,94,.14),rgba(8,131,247,.10));border:1.5px solid rgba(74,222,128,.45)' }, [
+      h('div', { style: 'font-weight:900;color:#4ade80;font-size:1.05rem' }, '✅ Application received — you\u2019re on the candidate list'),
+      h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, 'Your dispatcher application is submitted and saved on LoadBoot\u2019s dispatcher candidate list. Whenever LoadBoot hires, we select directly from this list \u2014 you don\u2019t need to do anything else. If you\u2019re shortlisted, we\u2019ll reach out by email or phone for the next step (skills test \u2192 paid trial). Keep your phone reachable.'),
+    ]) : null;
+    const referralUpsell = ['screening', 'skills_test', 'trial'].includes(prof.status) ? h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,#0d1f3a,#153055);border:1.5px solid rgba(252,83,5,.5)' }, [
+      h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#ff9c66' }, 'WHILE YOU WAIT \u2014 START EARNING TODAY'),
+      h('div', { style: 'font-size:1.25rem;font-weight:900;color:#fff;margin:6px 0 4px' }, 'Your trucking network is worth 1% of every load \u2014 forever'),
+      h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'You clearly know trucking \u2014 that network is money. Refer carriers or brokers with your personal link: every load they run on LoadBoot pays you 1% of gross, for as long as they keep running. No cap, no cost to them, paid monthly. Many of our dispatcher candidates earn from referrals before their first shift.'),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
+        h('button', { class: 'cp-btn', onClick: () => go('referral') }, '\ud83d\ude80 Activate my referral link \u2192'),
+        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('earnings') }, 'See how earnings work'),
+      ]),
+    ]) : null;
     const cards = [agCard('🧑‍✈️ Your dispatcher status', [
       h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1])]),
       prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
       prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : '',
     ])];
+    if (referralUpsell) cards.unshift(referralUpsell);
+    if (waitBanner) cards.unshift(waitBanner);
     const asg = (d.assignments || []).filter((a9) => a9.status !== 'ended');
     if (asg.length) {
       cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
