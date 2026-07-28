@@ -504,7 +504,7 @@ def _breadcrumb(fname, title):
 RELATED = {
  'dry-van-dispatch.html':   [('reefer-dispatch.html','Reefer Dispatch'),('power-only-dispatch.html','Power Only'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'reefer-dispatch.html':    [('dry-van-dispatch.html','Dry Van Dispatch'),('flatbed-dispatch.html','Flatbed Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('load-score.html','Load Score Tool'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
- 'flatbed-dispatch.html':   [('hotshot-dispatch.html','Hotshot Dispatch'),('reefer-dispatch.html','Reefer Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
+ 'flatbed-dispatch.html':   [('hotshot-dispatch.html','Hotshot Dispatch'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('reefer-dispatch.html','Reefer Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'hotshot-dispatch.html':   [('flatbed-dispatch.html','Flatbed Dispatch'),('box-truck-dispatch.html','Box Truck Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('new-authority-dispatch.html','New Authority'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'power-only-dispatch.html':[('dry-van-dispatch.html','Dry Van Dispatch'),('owner-operator-dispatch.html','Owner-Operators'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'box-truck-dispatch.html': [('hotshot-dispatch.html','Hotshot Dispatch'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
@@ -518,7 +518,7 @@ RELATED = {
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
  'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
- 'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('load-score.html','Load Score'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
+ 'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
  'case-studies.html':       [('carriers.html','For Carriers'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('pricing.html','Pricing')],
  'authority-dot-setup.html':[('new-authority-dispatch.html','New Authority Dispatch'),('boc3-ucr.html','BOC-3 / UCR Guide'),('form-2290-hvut.html','Form 2290 (HVUT)'),('ifta-fuel-tax.html','IFTA Guide'),('carrier-application.html','Apply as Carrier')],
@@ -3042,6 +3042,98 @@ rich_article('how-to-ship-without-a-broker.html',
  SW_TOC, SW_BODY, SW_FAQ, feat_svg=SW_FEAT)
 THUMBS['how-to-ship-without-a-broker.html']=SW_FEAT
 READTIME['how-to-ship-without-a-broker.html']=9
+
+
+# ===== PREMIUM ARTICLE : Oversize load rates per mile (carrier + broker + shipper + agent) =====
+OS_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="osg" x1="0" y1="0" x2="1" y2="1">'
+ '<stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#7c2d12"/></linearGradient></defs>'
+ '<rect width="400" height="200" fill="url(#osg)"/>'
+ '<text x="200" y="56" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#fbbf24">$4&#8211;$10+ per mile</text>'
+ '<rect x="58" y="76" width="284" height="46" rx="6" fill="#f59e0b"/>'
+ '<text x="200" y="107" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="900" fill="#111827">OVERSIZE LOAD</text>'
+ '<text x="200" y="152" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8">Permits &#183; Pilot cars &#183; Daylight-only &#183; 2026</text></svg>')
+OS_TOC=[('what-counts','What counts as an oversize load'),('rates','Oversize rates per mile in 2026'),
+ ('why-premium','Why oversize pays a premium'),('permits','Permit costs, state by state'),
+ ('escorts','Pilot cars &amp; escort costs'),('pricing','How to price an oversize move'),
+ ('brokers','For brokers &amp; shippers'),('paid','Getting every extra paid in writing')]
+OS_BODY=(
+'<p>Ask ten carriers how much oversize loads pay per mile and you will get ten answers &mdash; because &ldquo;oversize&rdquo; covers everything from a 9-foot-wide excavator that needs one permit to a 200,000-lb transformer that needs a police escort and a bridge engineer. This guide puts real 2026 numbers on the whole range: what counts as oversize, what each tier actually pays per mile, what permits and pilot cars cost, and how to price a move so the extras land in your pocket instead of coming out of it.</p>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: in 2026, permit-only oversize loads typically pay <b>$4.00&ndash;$5.50 per mile</b>, escorted loads <b>$5.00&ndash;$8.00</b>, and superloads <b>$8.00&ndash;$15.00+</b> &mdash; against a legal flatbed spot average around <b>$3.72 all-in</b>. The premium is not a gift: it pays for permits, escorts, daylight-only clocks and empty return miles.</div></div>'
+'<h2 id="what-counts">What counts as an oversize load</h2>'
+'<p>A load is oversize the moment it exceeds any standard legal limit on the route. The federal baseline most states follow: <b>8&rsquo;6&rdquo; (102&rdquo;) wide</b>, <b>13&rsquo;6&rdquo; tall</b> (14&rsquo; in much of the West), legal trailer length, and <b>80,000 lbs gross</b> vehicle weight. Cross one line &mdash; a 10-foot-wide combine header, a 14&rsquo;2&rdquo; press brake, a 90,000-lb gross move &mdash; and every state you touch wants a permit and sets its own rules for escorts, travel hours and routing.</p>'
+'<p>Two facts drive everything else in this guide. First, <b>oversize is a per-state game</b>: a load that runs clean in Texas may need a pilot car in Louisiana. Second, <b>dimensions decide cost tiers</b>: each foot of width or height past the threshold can add an escort, a curfew, or a routing survey &mdash; and the rate has to absorb all of it.</p>'
+'<h2 id="rates">Oversize rates per mile in 2026</h2>'
+'<p>Anchor on the legal market first: the <a href="market-rates.html">live flatbed spot average</a> is about <b>$3.72 per loaded mile all-in</b> in July 2026. Oversize prices off that baseline in tiers:</p>'
+'<table class="cmp"><thead><tr><th>Tier</th><th>Typical 2026 rate</th><th>What it looks like</th></tr></thead><tbody>'
+'<tr><td>Legal flatbed / step deck</td><td><b>$3.00&ndash;$4.50/mi</b> (avg ~$3.72)</td><td>Within all legal limits &mdash; no permits</td></tr>'
+'<tr><td>Permit-only oversize</td><td><b>$4.00&ndash;$5.50/mi</b></td><td>Modest width/height over legal; permits, no escorts</td></tr>'
+'<tr><td>Escorted oversize</td><td><b>$5.00&ndash;$8.00/mi</b></td><td>Wide/tall enough to require 1&ndash;2 pilot cars, daylight-only</td></tr>'
+'<tr><td>Superload / heavy haul</td><td><b>$8.00&ndash;$15.00+/mi</b></td><td>Multi-axle trailers, engineering reviews, police escorts &mdash; short moves can price far higher</td></tr>'
+'</tbody></table>'
+'<p>Treat these as planning ranges, not quotes. Lane, season, equipment scarcity and how many carriers can legally haul the piece move real numbers &mdash; a 12-foot-wide load on a rural interstate lane and the same load through the Northeast metros are different products. What should never change: <b>the oversize premium is on top of, never instead of, a healthy linehaul</b>.</p>'
++svc_banner('Flatbed &amp; oversize dispatch that prices the WHOLE move',
+  'LoadBoot dispatchers price permits, escorts and curfew days into the rate before you commit &mdash; flat 5%, no contracts, every accessorial in writing.',
+  'See flatbed dispatch','flatbed-dispatch.html')+
+'<h2 id="why-premium">Why oversize pays a premium</h2>'
+'<p>Brokers do not pay $6 a mile out of generosity. The premium exists because oversize destroys the two things a truck earns with: <b>utilization</b> and <b>flexibility</b>.</p>'
+'<ul>'
+'<li><b>Daylight-only clocks.</b> Most states restrict oversize travel to sunrise&ndash;sunset, ban weekends and holidays, and add metro curfews. A truck that runs 2,500 legal miles a week may manage 1,200&ndash;1,500 on wide loads &mdash; the per-mile rate has to make up the difference.</li>'
+'<li><b>Empty miles home.</b> Oversize backhauls are rare. If 500 loaded miles come with 400 empty ones, your <a href="cost-per-mile-calculator.html">all-in cost per mile</a> is spread over far fewer paid miles.</li>'
+'<li><b>Specialized equipment and skill.</b> RGNs, multi-axle configurations, securement for irregular machinery, route surveys &mdash; fewer carriers can do it, and scarcity prices like scarcity.</li>'
+'<li><b>Risk and liability.</b> One low bridge or missed curfew is a five-figure problem. Insurance, escrowed permits and re-routing risk all live inside the rate.</li>'
+'</ul>'
+'<h2 id="permits">Permit costs, state by state</h2>'
+'<p>Every state on the route sells its own permit, priced by dimensions, weight and mileage. Routine single-trip oversize permits typically run <b>$15&ndash;$70 per state</b>; heavier or wider moves climb into the low hundreds; superload permits with engineering or bridge reviews can run <b>$100&ndash;$500+</b> and take days or weeks to issue. A five-state permit-only move might carry $150&ndash;$300 in permit fees &mdash; a rounding error <em>if it was priced in</em>, and pure margin leakage if it was not.</p>'
+'<div class="callout cl-warn"><span class="ic">&#9888;</span><div>Permits are route-specific. The permit authorizes ONE approved routing &mdash; deviate and you are running illegal with a permit in the cab. Confirm the routing works for fuel, parking and your equipment BEFORE the permit is bought.</div></div>'
+'<h2 id="escorts">Pilot cars &amp; escort costs</h2>'
+'<p>Once width or height crosses each state&rsquo;s escort threshold (commonly around 12&rsquo; wide, varying by state and road class), pilot cars enter the budget. Typical 2026 escort pricing: <b>$1.75&ndash;$3.00 per loaded mile per car</b>, with day minimums around <b>$350&ndash;$600</b>, plus lodging on multi-day moves. Very wide or very tall loads need two cars (lead with a height pole, chase behind); some states require <b>police escorts</b> at hourly rates on specific segments. On a 500-mile escorted move, escort spend alone can exceed $1,000 &mdash; which is why an escorted load quoted at permit-only rates is a loss wearing a high number.</p>'
+'<h2 id="pricing">How to price an oversize move</h2>'
+'<p>Price it like a project, not a lane. The math on a sample 500-mile, 11-foot-wide machinery move through two states with one pilot car:</p>'
+'<ul>'
+'<li>Linehaul: 500 mi &times; $5.50 = <b>$2,750</b></li>'
+'<li>Permits (2 states): <b>~$120</b></li>'
+'<li>Pilot car: 500 mi &times; $2.00 = <b>$1,000</b></li>'
+'<li>All-in to the customer: <b>~$3,870</b> &mdash; roughly $7.75 per loaded mile, of which about $1,120 is pass-through cost, not rate</li>'
+'</ul>'
+'<p>Then stress-test it: how many empty miles to get there and home? Does daylight-only turn a one-day move into two (and does the rate cover the second day)? What happens if the receiver is not ready &mdash; are <a href="detention-pay-policy.html">detention</a> and <a href="layover-policy.html">layover</a> written in? Never let a &ldquo;big&rdquo; headline number hide a thin per-working-day reality &mdash; run your own numbers in the <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a> first.</p>'
+'<h2 id="brokers">For brokers &amp; shippers</h2>'
+'<p>If you are buying oversize capacity, the cheapest quote is usually the most expensive load. A quote materially below the tiers above means the carrier either has not priced the permits and escorts (and will discover that mid-move, on your freight) or does not know the rules (worse). What professional buyers do instead:</p>'
+'<ul>'
+'<li><b>Put exact dimensions and weight in the posting</b> &mdash; length, width, height, weight, plus loading method. Every serious oversize carrier prices from dims, and vague postings attract guessers.</li>'
+'<li><b>Settle who buys permits and books escorts in writing</b> before dispatch &mdash; line items on the rate confirmation, not phone promises.</li>'
+'<li><b>Build the calendar around daylight rules</b> &mdash; an oversize load picked up Friday afternoon may legally sit until Monday. Plan it, or pay <a href="layover-policy.html">layover</a> for it.</li>'
+'<li><b>Vet the carrier&rsquo;s authority, insurance and equipment</b> for the actual piece &mdash; cargo coverage that matches the machine&rsquo;s value, and a trailer that matches its shape.</li>'
+'</ul>'
++svc_banner('Post oversize freight to verified capacity',
+  'Brokers and shippers post to FMCSA-verified carriers with the full rate card &mdash; permits, escorts, detention and TONU terms printed before booking.',
+  'Post a load','create-broker-account.html')+
+'<h2 id="paid">Getting every extra paid in writing</h2>'
+'<p>Oversize moves fail on paperwork more than on pavement. Before the truck moves, the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> should name, in numbers: the linehaul, who purchases permits, who arranges and pays escorts, <a href="detention-pay-policy.html">detention</a> after free time, <a href="layover-policy.html">layover</a> for curfew and weekend holds, and a <a href="tonu-policy.html">TONU</a> for late cancellations &mdash; because a cancelled superload has often already paid for permits and scheduled escorts. On LoadBoot, a load cannot even post without its accessorial rate card, and heavy-haul or oversize moves are coordinated case by case with permit and routing support &mdash; <a href="contact.html">ask about your setup</a>. Referral partners who know equipment dealers and machinery movers can <a href="agents.html">earn 1% introducing them</a>.</p>'
+'<p>The oversize market pays professionals well precisely because amateurs get hurt in it. Know your tier, price the whole move, and get every dollar of it in writing.</p>')
+OS_FAQ=[
+ ('How much do oversize loads pay per mile in 2026?','Permit-only oversize typically pays $4.00&ndash;$5.50 per mile, escorted loads $5.00&ndash;$8.00, and superloads $8.00&ndash;$15.00 or more &mdash; against a legal flatbed spot average of roughly $3.72 all-in. Short superload moves can price far above these ranges because fixed costs dominate.'),
+ ('What makes a load oversize?','Exceeding any legal limit on the route &mdash; the common baseline is 8&rsquo;6&rdquo; (102&rdquo;) wide, 13&rsquo;6&rdquo; tall (14&rsquo; in much of the West), legal trailer length, or 80,000 lbs gross weight. Each state on the route then requires its own permit and sets its own escort and travel-hour rules.'),
+ ('Who pays for permits and pilot cars?','Whoever the rate confirmation says &mdash; which is why it must be settled in writing before dispatch. The professional standard is that permits and escorts are priced as line items on top of the linehaul, so they are pass-through costs to the shipper rather than deductions from the carrier&rsquo;s rate.'),
+ ('Why are oversize rates so much higher than regular flatbed?','Daylight-only travel, weekend and metro curfews, rare backhauls, specialized trailers and securement skill, and real routing risk. A truck on wide loads may run half the weekly miles of a legal flatbed, so each mile has to earn roughly twice as much.'),
+ ('What is a superload?','A load so large or heavy it exceeds even standard permit thresholds (varies by state &mdash; often 16&rsquo;+ wide or 200,000+ lbs). Superloads need engineering or bridge reviews, custom routing, multiple escorts and sometimes police, with permits that can take weeks &mdash; and rates priced per project, not per lane.'),
+ ('Does LoadBoot handle oversize and heavy haul?','Flatbed and step deck are dispatched every day; tanker, heavy-haul and oversize are handled case by case with permit and routing coordination. Every LoadBoot posting carries its full accessorial rate card &mdash; detention, layover, TONU &mdash; in writing before booking.')]
+PREMIUM_ARTICLES.add('oversize-load-rates-per-mile.html')
+BLOGPOSTS += [
+ ('oversize-load-rates-per-mile.html',
+  'How Much Do Oversize Loads Pay Per Mile? 2026 Oversize &amp; Heavy Haul Rates',
+  'Oversize load rates 2026: $4&ndash;$5.50/mi permit-only, $5&ndash;$8 escorted, $8&ndash;$15+ superloads. Permit and pilot-car costs, why the premium exists, and how to price the whole move.',
+  'Oversize pays $4 to $15+ per mile in 2026 &mdash; but permits, pilot cars and daylight-only clocks eat amateurs alive. The real tiers, the real costs, and the pricing math for the whole move.', ''),
+]
+RELATED['oversize-load-rates-per-mile.html'] = [('flatbed-dispatch.html','Flatbed Dispatch'),('market-rates.html','Market Rates Per Mile'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('detention-pay-policy.html','Detention Pay'),('carrier-application.html','Apply as Carrier')]
+rich_article('oversize-load-rates-per-mile.html',
+ 'Oversize Load Rates 2026: How Much Do Oversize Loads Pay Per Mile? ($4–$15+) | LoadBoot',
+ 'How much do oversize loads pay per mile? 2026 rates: $4–$5.50 permit-only, $5–$8 escorted, $8–$15+ superloads vs ~$3.72 legal flatbed. Permit fees, pilot car costs, and how to price the whole move.',
+ 'Freight Rates &amp; Heavy Haul','How Much Do Oversize Loads Pay Per Mile? 2026 Oversize &amp; Heavy Haul Rates',
+ 'Oversize pays $4 to $15+ per mile in 2026 &mdash; but permits, pilot cars and daylight-only clocks eat amateurs alive. Here are the real rate tiers, the real costs underneath them, and the math for pricing the whole move.',
+ 10,'oversize-load-hero.jpg','Oversize load on a multi-axle trailer with pilot car escort and OVERSIZE LOAD banner',
+ OS_TOC, OS_BODY, OS_FAQ, feat_svg=OS_FEAT)
+THUMBS['oversize-load-rates-per-mile.html']=OS_FEAT
+READTIME['oversize-load-rates-per-mile.html']=10
 
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
 blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
@@ -6461,8 +6553,8 @@ _ACC_SEO = {
         ('\u201cYou hadn\u2019t left yet\u201d','TONU eligibility timing must be in the clause. LoadBoot\u2019s standard: a committed, dispatched load that dies late owes the posted TONU \u2014 measured from the trip record, not memory.'),
         ('Broker simply ghosts the invoice','Escalation path: written demand \u2192 BMC-84 bond claim \u2192 small claims. On LoadBoot you skip all three: settlement runs through the platform.')]),
  'layover-policy': dict(
-   title='Layover Pay in Trucking 2026: Rates, Rules &amp; How to Claim | LoadBoot',
-   desc='Layover pay for truck drivers: typical $150\u2013$350/day 2026 rates, when a delay becomes a layover vs detention, the documentation that gets it paid, and how LoadBoot pre-agrees layover on every load.',
+   title='Layover Pay in Trucking 2026: How Much Truck Drivers &amp; Owner Operators Get \u2014 $150\u2013$350/Day Rates &amp; How to Claim | LoadBoot',
+   desc='How much is layover pay? Truck drivers and owner operators typically get $150\u2013$350/day (LoadBoot standard: $250/day) when a hold crosses overnight. 2026 rates, layover vs detention, the documentation that gets it paid, and how LoadBoot pre-agrees layover on every load.',
    ev=['Detention record for the same stop \u2014 layover usually begins where detention maxes out',
        'GPS trail proving the truck stayed at/near the facility overnight',
        'Written instruction (or refusal to release) from the facility or broker \u2014 screenshot everything',
