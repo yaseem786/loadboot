@@ -440,7 +440,7 @@ def footer():
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
 <p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+17373061175">&#128222; +1 (737) 306-1175 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
-<div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
+<div class="social"><a href="https://www.facebook.com/loadboot" target="_blank" rel="noopener" aria-label="LoadBoot on Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
 <a href="https://www.linkedin.com/company/135138228/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 9H3v9h3V9zM4.5 3a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM18 9c-1.6 0-2.5.8-3 1.5V9H12v9h3v-5c0-1 .7-1.7 1.6-1.7s1.4.7 1.4 1.7v5h3v-5.4C21 10 19.7 9 18 9z"/></svg></a></div></div>
 <div><div class="foot-h">Get carrier tips &amp; better loads</div><p style="font-size:.92rem">Rate trends, compliance reminders, and dispatch tips.</p>
@@ -3547,6 +3547,66 @@ _bc_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest
 page('broker-claim.html', 'Claim Your Loads — LoadBoot for Brokers',
      'One-time confirmation for brokers posting loads by email: verify your company, read and accept LoadBoot posting standards, get your portal login — and your emailed loads go live automatically.',
      'brokers.html', _bc_body + _bc_js)
+
+# ---- Broker booking-ping page (email load ingestion) — carrier requested to book; broker confirms availability + pickup address ----
+_bp_body = ('<meta name="robots" content="noindex,nofollow">'
+ '<style>'
+ '.bp-in{width:100%;box-sizing:border-box;border:none;border-radius:12px;padding:13px 14px;font:500 15px Inter,Arial;margin-bottom:10px;background:#fff}'
+ '.bp-lbl{display:block;font:700 10.5px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}'
+ '.bp-row{display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 14px;margin-bottom:7px;font-size:.9rem;color:#e2e8f0}'
+ '@keyframes bpUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'
+ '.bp-anim{animation:bpUp .35s ease}'
+ '</style>'
+ '<section><div class="wrap" style="max-width:680px">'
+ '<div class="bp-anim" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:24px;padding:36px;color:#fff;box-shadow:0 30px 80px -30px rgba(2,12,30,.6)">'
+ '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="background:rgba(252,83,5,.18);color:#ff9c66;font:800 11px Inter,Arial;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:999px">Booking request</span><span id="bpTimer" style="background:rgba(34,197,94,.14);color:#4ade80;font:700 11px Inter,Arial;padding:6px 12px;border-radius:999px;display:none"></span></div>'
+ '<h1 style="color:#fff;font-size:1.75rem;margin:10px 0 6px;letter-spacing:-.01em">A verified carrier wants this load</h1>'
+ '<p style="color:#c7d5ea;font-size:.92rem;margin:0 0 12px">Confirm it&rsquo;s still available and give the exact pickup address &mdash; the load books instantly and the rate confirmation follows.</p>'
+ '<div id="bpState" style="color:#c7d5ea;padding:10px 0">Loading the request&hellip;</div>'
+ '<div id="bpForm" style="display:none;margin-top:6px">'
+ '<div id="bpLoad" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-bottom:12px"></div>'
+ '<label class="bp-lbl">Exact pickup address (required)</label><input id="bpPick" class="bp-in" placeholder="Street, City, ST ZIP">'
+ '<label class="bp-lbl">Delivery address (if you have it)</label><input id="bpDel" class="bp-in" placeholder="Street, City, ST ZIP">'
+ '<div style="display:flex;gap:10px"><div style="flex:1"><label class="bp-lbl">Reference / PO #</label><input id="bpRef" class="bp-in" placeholder="Optional"></div>'
+ '<div style="flex:1"><label class="bp-lbl">Dispatch phone</label><input id="bpPhone" class="bp-in" placeholder="Optional"></div></div>'
+ '<label class="bp-lbl">Note for the carrier</label><input id="bpNote" class="bp-in" placeholder="Appointment time, dock door, check-in instructions&hellip;">'
+ '<div id="bpErr" style="color:#fca5a5;font-size:.85rem;display:none;margin-bottom:8px"></div>'
+ '<button id="bpGo" style="width:100%;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:13px;padding:15px;font:800 15.5px Inter,Arial;cursor:pointer;box-shadow:0 14px 34px rgba(252,83,5,.4)">&#9989; Confirm &amp; book this carrier</button>'
+ '<button id="bpNo" style="width:100%;background:none;border:1px solid rgba(255,255,255,.22);color:#9fb3cc;border-radius:13px;padding:12px;font:700 13.5px Inter,Arial;cursor:pointer;margin-top:10px">This load is no longer available</button>'
+ '<p style="color:#9fb3cc;font-size:.78rem;text-align:center;margin-top:10px">&#128274; Carrier packet on file (authority &middot; insurance &middot; W-9) &middot; LoadBoot published accessorials apply per your signed standards &middot; you can also just reply to our email</p>'
+ '</div></div></div></section>')
+_bp_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest/v1/rpc/',key='" + (APP_ANON or '') + "';"
+ "var t=new URLSearchParams(location.search).get('t');var st=document.getElementById('bpState');"
+ "function call(fn,body){return fetch(api+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+key},body:JSON.stringify(body)}).then(function(r){return r.json()});}"
+ "function done(icon,head,sub){document.querySelector('.bp-anim').innerHTML='<div class=\"bp-anim\" style=\"text-align:center;padding:26px 6px\"><div style=\"font-size:2.6rem\">'+icon+'</div><h2 style=\"color:#fff;margin:10px 0 6px\">'+head+'</h2><p style=\"color:#c7d5ea;max-width:440px;margin:0 auto\">'+sub+'</p></div>';}"
+ "if(!t){st.textContent='This link is missing its token — use the button in your email.';return;}"
+ "call('lb_email_ping_get',{p_token:t}).then(function(d){"
+ "if(!d||d.error){st.textContent='This link looks invalid — reply to our email instead and we will take care of it.';return;}"
+ "if(d.status==='approved'){done('🎉','Already booked','You confirmed this one — the carrier is locked in and the rate confirmation is on its way.');return;}"
+ "if(d.status==='rejected'||d.status==='cancelled_auto'){done('🗂️','This request is closed','Either you marked the load unavailable or the carrier took another load. Email more loads to loads@loadboot.com any time.');return;}"
+ "if(d.status==='expired'){done('⌛','This hold expired','The 4-hour hold has passed. If the load is still open, just reply to our email — the next interested carrier gets a fresh hold.');return;}"
+ "st.style.display='none';document.getElementById('bpForm').style.display='block';"
+ "var L=d.load||{};var C=d.carrier||{};"
+ "document.getElementById('bpLoad').innerHTML='<div style=\"font-size:1.05rem;font-weight:800;margin-bottom:4px\">'+(L.origin||'—')+' → '+(L.destination||'—')+'</div>'"
+ "+'<div style=\"color:#9fb3cc;font-size:.86rem\">'+(L.rate?'$'+L.rate:'rate TBD')+(L.miles?' · '+L.miles+' mi':'')+(L.equipment?' · '+L.equipment:'')+(L.pickup_date?' · Pickup '+L.pickup_date:'')+(L.reference?' · Ref '+L.reference:'')+'</div>'"
+ "+'<div style=\"margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.14);color:#c7d5ea;font-size:.88rem\">Carrier: <b style=\"color:#fff\">'+(C.name||'Verified LoadBoot carrier')+'</b>'+(d.note?' · <span style=\"color:#9fb3cc\">&ldquo;'+d.note+'&rdquo;</span>':'')+'</div>';"
+ "if(d.expires_at){var tm=document.getElementById('bpTimer');tm.style.display='inline-block';var f=function(){var ms=new Date(d.expires_at)-new Date();if(ms<=0){tm.textContent='Hold expired';return;}var m=Math.floor(ms/60000);tm.textContent='⏱ Hold: '+(m>=60?Math.floor(m/60)+'h '+(m%60)+'m':m+'m')+' left';setTimeout(f,30000);};f();}"
+ "}).catch(function(){st.textContent='Connection hiccup — refresh to try again.';});"
+ "document.getElementById('bpGo').onclick=function(){var e=document.getElementById('bpErr');e.style.display='none';"
+ "var pk=document.getElementById('bpPick').value.trim();"
+ "if(pk.length<8){e.textContent='Please give the full pickup address — the driver navigates straight to it.';e.style.display='block';return;}"
+ "this.disabled=true;this.textContent='Booking…';var b=this;"
+ "call('lb_email_ping_confirm',{p_token:t,p:{pickup_address:pk,delivery_address:document.getElementById('bpDel').value.trim(),reference:document.getElementById('bpRef').value.trim(),contact_phone:document.getElementById('bpPhone').value.trim(),note:document.getElementById('bpNote').value.trim()}}).then(function(r){"
+ "if(r&&r.ok){done('🎉','Booked — carrier locked in','The carrier just got your pickup address and is rolling. Rate confirmation follows by email. Every load you email to <b style=\\'color:#fff\\'>loads@loadboot.com</b> gets this same treatment.');}"
+ "else{e.textContent=(r&&(r.detail||r.error))||'Something went wrong — try again';e.style.display='block';b.disabled=false;b.textContent='✅ Confirm & book this carrier';}});};"
+ "document.getElementById('bpNo').onclick=function(){if(!confirm('Mark this load as no longer available? The carrier will be released.'))return;"
+ "var b=this;b.disabled=true;b.textContent='Updating…';"
+ "call('lb_email_ping_confirm',{p_token:t,p:{action:'decline',note:'Broker marked load unavailable'}}).then(function(r){"
+ "if(r&&r.ok){done('👌','No problem — carrier released','We told the carrier this one is gone. Email your next loads to loads@loadboot.com and they go straight to verified carriers.');}"
+ "else{b.disabled=false;b.textContent='This load is no longer available';}});};})();</script>")
+page('broker-ping.html', 'Confirm Booking — LoadBoot for Brokers',
+     'A verified LoadBoot carrier requested your emailed load. Confirm availability and the exact pickup address — the load books instantly and the rate confirmation follows.',
+     'brokers.html', _bp_body + _bp_js)
 
 
 # ---- Box Truck Dispatch (service page) ----
@@ -6981,7 +7041,7 @@ page('sitemap.html', 'Sitemap | Loadboot', 'Every page on the Loadboot website �
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
 # PROD_REF/STAGING_REF/context targets are defined once near the top of this file.
-_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'unsub.html'}
+_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'broker-ping.html', 'unsub.html'}
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
 urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls

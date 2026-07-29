@@ -303,3 +303,10 @@ Next session: crawl every page + portal click-through → bug register + gap lis
 
 ## NEXT BUILD (owner approved 2026-07-28): Carrier Preferences Completion System (premium)
 Profile Strength ring on carrier dashboard + one-section-at-a-time micro-ask popups (chips UI, reward framing "better matches") collecting: lanes/home base+radius, equipment detail, min rate floor, home-time, weekends, load size, facility likes/dislikes, DAT/Truckstop access (optional — surfaces in CC + dispatcher SOP). Feed into matching/assign-optimizer scoring. Also: TONU/SEO rule clarified = winners locked while winning, eligible again only if decayed (guardrails apply). Dispatcher applicants now get auto candidate-list email (bl_disp_0187 PROD trigger, 5 backfilled) — apply same to staging for parity.
+
+
+## 2026-07-28 — BUILT: Preferences Completion System + Booking-ping (this session)
+Backend BOTH DBs (0188-0192 + bl_sec_0190 anon restore — anon surface check number is now **26**, not 5).
+Frontend committed: prefs-strength.js (ring + micro-asks), app.js/api.js wiring, carrier360 + dispatchers SOP
+DAT surfacing, broker-ping.html in build_site.py. BUILD OK + ESM PASS. Owner: local test → commit → push →
+remind PWA cache clear. NEXT: full deep audit (crawl every page/portal — register at docs/AUDIT-2026-07-28.md).
