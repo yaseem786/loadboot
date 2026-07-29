@@ -42,6 +42,7 @@ import { printDispatchSheet, openPrintable, openInvoicePdf } from '../shared/ui/
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { registerAppSW } from '../shared/sw-register.js';
+import { mountStrengthCard, maybeShowMicroAsk } from './prefs-strength.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
@@ -3023,7 +3024,9 @@ async function appView(user) {
         ]));
       } catch (_) {}
     })();
-    mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, acctStrip, setupCard, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    const prefsHost = h('div', null);
+    mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    try { mountStrengthCard(prefsHost); setTimeout(function () { try { maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {}
     openPrompts();
   }
 

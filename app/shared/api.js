@@ -124,6 +124,8 @@ export const partnerLoadStatus = (partnerLoadId) => rpc('cc_partner_load_status'
 export const loadAdvisor = (loadId, overrides) => rpc('cc_load_advisor', { p_load: loadId, p_overrides: overrides ?? {} });
 export const setDispatchPrefs = (o) => rpc('cc_set_dispatch_prefs', { p: o ?? {} });
 export const getDispatchPrefs = () => rpc('cc_get_dispatch_prefs');
+export const prefsProfileStrength = () => rpc('cc_prefs_profile_strength');
+export const prefsSaveSection = (section, payload) => rpc('cc_prefs_save_section', { p_section: section, p: payload ?? {} });
 // AI Load Pilot — fleet level: reverse advisor (best open loads for one carrier) + one-click greedy dispatch plan.
 export const carrierBestLoads = (carrierId, limit) => rpc('cc_carrier_best_loads', { p_carrier: carrierId ?? null, p_limit: limit ?? 10 });
 export const dispatchPlan = (maxLoads) => rpc('cc_dispatch_plan', { p_max_loads: maxLoads ?? 20 });

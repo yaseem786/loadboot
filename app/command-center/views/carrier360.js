@@ -96,7 +96,20 @@ export function renderCarrier360(host, orgId) {
           Fc('Avoid states', pr.avoid_states),
           F('Cost/mile', rpm(pr.cost_per_mile)),
           F('Notes', pr.notes),
+          F('Operating radius', pr.operating_radius_miles ? pr.operating_radius_miles + ' mi from home' : null),
+          F('Home time', pr.home_time || null),
+          F('Load size', pr.load_size || null),
+          F('Min total rate', pr.min_total_rate != null ? ('$' + Number(pr.min_total_rate).toLocaleString()) : null),
+          Fc('Facility likes', pr.facility_likes),
+          Fc('Facility dislikes', pr.facility_dislikes),
+          F('DAT access', pr.external_boards && pr.external_boards.dat ? pr.external_boards.dat : null),
+          F('Truckstop access', pr.external_boards && pr.external_boards.truckstop ? pr.external_boards.truckstop : null),
         ]),
+        (pr.external_boards && (pr.external_boards.dat === 'active' || pr.external_boards.truckstop === 'active'))
+          ? el('div', { style: 'margin-top:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;color:#1d4ed8;font-weight:700;font-size:.86rem' },
+              '\ud83d\udda5 Carrier has ' + [pr.external_boards.dat === 'active' ? 'DAT' : null, pr.external_boards.truckstop === 'active' ? 'Truckstop' : null].filter(Boolean).join(' + ')
+              + ' access \u2014 their dedicated dispatcher can work those boards for them (note it in the SOP).')
+          : null,
       ]));
     })();
 

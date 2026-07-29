@@ -7,7 +7,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
 import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop,
          ccDispatcherUnassign, ccDispatcherSalarySet, ccDispatcherSalaryRun, ccDispatcherSalaryStatus,
-         getCarriersDirectory } from '../../shared/api.js';
+         getCarriersDirectory, ccCarrierPrefs } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 
@@ -168,6 +168,21 @@ export function renderDispatchers(host) {
     }
     function editSop(a) {
       const s = a.sop || {};
+      const prefsHint = el('div', { class: 'cc-sub', style: 'display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 10px;margin-bottom:10px;color:#1d4ed8;font-weight:600' });
+      (async () => { try {
+        const pr = await ccCarrierPrefs(a.carrier_org_id);
+        if (!pr || pr.error || pr.none) return;
+        const eb = pr.external_boards || {};
+        const bits = [];
+        if (eb.dat === 'active' || eb.truckstop === 'active') bits.push('\ud83d\udda5 Has ' + [eb.dat === 'active' ? 'DAT' : null, eb.truckstop === 'active' ? 'Truckstop' : null].filter(Boolean).join(' + ') + ' access \u2014 work their boards for them');
+        if (!lanes.value && Array.isArray(pr.preferred_lanes) && pr.preferred_lanes.length) lanes.value = pr.preferred_lanes.join(', ');
+        if (!minRate.value && pr.min_rpm != null) minRate.value = String(pr.min_rpm);
+        if (!equipment.value && Array.isArray(pr.preferred_equipment) && pr.preferred_equipment.length) equipment.value = pr.preferred_equipment.join('/');
+        if (!homeTime.value && pr.home_time) homeTime.value = pr.home_time;
+        if (pr.weekend_ok === false) bits.push('\ud83d\udcc5 No weekends');
+        if (pr.load_size) bits.push('\ud83d\udce6 ' + pr.load_size + ' loads');
+        if (bits.length) { prefsHint.textContent = bits.join('  \u00b7  '); prefsHint.style.display = 'block'; }
+      } catch (_) {} })();
       // Compliance-critical: scope basis prevents "allocation of traffic" (88 FR 39371).
       const scopeType = el('select', { class: 'lb-input', style: 'max-width:220px' },
         [['geography', 'Geography (origin region)'], ['equipment', 'Equipment type'], ['commodity', 'Commodity / hazmat'], ['single', 'Single-carrier (no others)']]
@@ -188,6 +203,7 @@ export function renderDispatchers(host) {
         el('div', { style: 'background:#fff;border-radius:12px;max-width:520px;width:92%;max-height:90vh;overflow:auto;padding:20px', onClick: (e) => e.stopPropagation() }, [
           el('div', { style: 'font-weight:800;margin-bottom:4px' }, 'SOP — ' + (a.carrier || 'carrier')),
           el('div', { class: 'cc-sub', style: 'margin-bottom:10px;line-height:1.5' }, '⚖️ Scope basis keeps this carrier’s loads NON-overlapping with your other carriers — so no load is ever "allocated" between carriers (FMCSA 88 FR 39371). Pick how this carrier’s freight is uniquely scoped.'),
+          prefsHint,
           el('label', { class: 'cc-sub' }, 'Scope basis (required for compliance)'), scopeType, scopeVal,
           el('label', { class: 'cc-sub', style: 'margin-top:8px;display:block' }, 'Lanes'), lanes,
           el('label', { class: 'cc-sub' }, 'Min rate/mile'), minRate,
