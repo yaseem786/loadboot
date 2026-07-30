@@ -6879,6 +6879,118 @@ def _acc_faq_schema(faq):
     return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": ents}) + '</script>'
 
 
+# ---------- LOADBOOT VIDEO (lazy facade + VideoObject schema) ----------
+# yt: paste the YouTube ID after upload and the embed swaps to YouTube automatically.
+# Until then the self-hosted MP4 plays inline (poster loads, video only on click).
+LB_VIDEOS = {
+ 'detention-pay-policy': dict(
+   yt='zNJAyL6hLTo',
+   mp4='/video/loadboot-detention-explainer.mp4',
+   poster='/video/loadboot-detention-explainer.jpg',
+   vtt='/video/loadboot-detention-explainer.vtt',
+   title='Detention Pay: The 5 Rules That Get It Paid (Every Time)',
+   desc='Detention costs US trucking $15.1B a year and fewer than half of billed detention is ever paid. '
+        'This is the five-rule system that gets it paid: written terms before you book, the clock starting at '
+        'your on-time arrival, notifying before free time ends, the five pieces of evidence, and invoicing '
+        'immediately with the load.',
+   dur='PT5M19S', seconds=319, upload='2026-07-30',
+   chapters=[(0,'Why 17% of truckers never get paid'),(13,'$15.1B a year &mdash; the real scale'),
+             (43,'It is not only money &mdash; the safety cost'),(63,'You are not the exception'),
+             (83,'The part nobody says out loud'),(108,'The five rules'),
+             (117,'Rule 1 &mdash; get it in writing before you book'),(154,'Rule 2 &mdash; the clock starts at your on-time arrival'),
+             (177,'Rule 3 &mdash; notify before free time ends'),(199,'Rule 4 &mdash; five pieces of evidence'),
+             (215,'Rule 5 &mdash; invoice immediately, with the load'),(239,'What a corporate channel will not tell you'),
+             (273,'How LoadBoot builds the five rules into the load'),(299,'What it costs')]),
+}
+_LBV_CSS = ('<style>.lbv{max-width:1000px;margin:0 auto}.lbv-fr{position:relative;border-radius:18px;overflow:hidden;'
+ 'border:1px solid rgba(148,163,184,.35);box-shadow:0 30px 80px -34px rgba(11,18,32,.45);background:#0b1220;aspect-ratio:16/9}'
+ '.lbv-fr>iframe,.lbv-fr>video{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#0b1220}'
+ '.lbv-p{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;cursor:pointer;background:#0b1220;display:block}'
+ '.lbv-p img{width:100%;height:100%;object-fit:cover;display:block}'
+ '.lbv-p .pb{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:96px;height:96px;border-radius:50%;'
+ 'background:#ff5c1a;display:grid;place-items:center;box-shadow:0 18px 44px -12px rgba(255,92,26,.7);transition:transform .18s}'
+ '.lbv-p:hover .pb{transform:translate(-50%,-50%) scale(1.07)}'
+ '.lbv-p .du{position:absolute;right:14px;bottom:12px;background:rgba(6,10,20,.86);color:#fff;font-weight:800;'
+ 'font-size:.82rem;padding:5px 10px;border-radius:8px;letter-spacing:.02em}'
+ '.lbv-ch{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:6px 20px;margin:18px auto 0;max-width:1000px}'
+ '.lbv-ch a{display:flex;gap:10px;align-items:baseline;padding:6px 2px;text-decoration:none;font-size:.92rem;color:inherit;border-bottom:1px solid rgba(148,163,184,.16)}'
+ '.lbv-ch a:hover{color:#ff5c1a}.lbv-ch b{color:#2f6df6;font-variant-numeric:tabular-nums;font-weight:800;min-width:44px}'
+ '.lbv-lead{max-width:680px;margin:-6px auto 22px;text-align:center;font-size:1.06rem;line-height:1.65;color:var(--muted,#64748b)}'
+ '.lbv-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:0 auto 26px}'
+ '.lbv-who{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;align-items:baseline;margin:-12px auto 26px;font-size:.9rem}'
+ '.lbv-who span{color:var(--muted,#64748b);font-weight:700}'
+ '.lbv-who a{font-weight:800;color:#2f6df6;text-decoration:none;border-bottom:1px solid rgba(47,109,246,.35)}'
+ '.lbv-who a:hover{color:#ff5c1a;border-bottom-color:rgba(255,92,26,.5)}'
+ '.lbv-dt{max-width:1000px;margin:16px auto 0}'
+ '.lbv-dt>summary{cursor:pointer;list-style:none;text-align:center;font-size:.9rem;font-weight:700;color:#2f6df6;padding:8px 0}'
+ '.lbv-dt>summary::-webkit-details-marker{display:none}'
+ '.lbv-src{margin-top:14px;text-align:center;max-width:720px;margin-left:auto;margin-right:auto;font-size:.82rem}'
+ '@media(max-width:620px){.lbv-p .pb{width:70px;height:70px}.lbv-lead{font-size:.98rem}.lbv-ch{grid-template-columns:1fr}}'
+ '</style>')
+def _lbv_ts(x):
+    return '%d:%02d' % (x//60, x%60)
+def _lb_video_section(_slug):
+    v = LB_VIDEOS.get(_slug)
+    if not v: return ''
+    _pl = ('<span class="pb" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff">'
+           '<path d="M8 5v14l11-7z"/></svg></span>')
+    _fac = ('<button class="lbv-p" type="button" id="lbvP" aria-label="Play video: ' + v['title'] + '">'
+            '<img src="' + v['poster'] + '" alt="' + v['title'] + '" width="1920" height="1080" loading="lazy" decoding="async">'
+            + _pl + '<span class="du">' + _lbv_ts(v['seconds']) + '</span></button>')
+    _ch = ''.join('<a href="#lbv" data-t="%d"><b>%s</b><span>%s</span></a>' % (t, _lbv_ts(t), lbl) for t, lbl in v['chapters'])
+    _js = ("<script>(function(){var b=document.getElementById('lbvP');if(!b)return;var f=b.parentNode;"
+      "var YT=" + repr(v['yt']) + ",MP=" + repr(v['mp4']) + ",VT=" + repr(v['vtt']) + ";var el=null;"
+      "function load(t){if(el){if(el.tagName==='VIDEO'){el.currentTime=t;el.play();}return;}"
+      "if(YT){el=document.createElement('iframe');el.src='https://www.youtube-nocookie.com/embed/'+YT+"
+      "'?autoplay=1&rel=0&modestbranding=1&start='+Math.floor(t);el.setAttribute('title'," + repr(v['title']) + ");"
+      "el.setAttribute('allow','accelerometer;autoplay;encrypted-media;picture-in-picture');el.setAttribute('allowfullscreen','');}"
+      "else{el=document.createElement('video');el.src=MP;el.controls=true;el.playsInline=true;el.preload='metadata';"
+      "el.setAttribute('poster'," + repr(v['poster']) + ");if(VT){var tr=document.createElement('track');tr.kind='captions';"
+      "tr.srclang='en';tr.label='English';tr.src=VT;tr.default=true;el.appendChild(tr);}"
+      "el.addEventListener('loadedmetadata',function(){if(t){el.currentTime=t;}el.play();});}"
+      "b.remove();f.appendChild(el);try{if(window.lbTrack)window.lbTrack('video_play',{video:" + repr(_slug) + ",start:t});}catch(e){}}"
+      "b.addEventListener('click',function(){load(0);});"
+      "Array.prototype.forEach.call(document.querySelectorAll('.lbv-ch a[data-t]'),function(a){"
+      "a.addEventListener('click',function(e){e.preventDefault();load(parseInt(a.getAttribute('data-t'),10));"
+      "var d=a.closest('details');if(d){d.open=false;}});});"
+      "})();</script>")
+    _inner = (_LBV_CSS
+      + '<p class="lbv-lead">Fewer than half of billed detention is ever paid. Not because drivers did not wait '
+        '&mdash; because they could not prove it.</p>'
+      + '<div class="lbv-cta">'
+        '<a class="btn btn-primary" href="/get-started.html">Start free &mdash; pick your role &rarr;</a>'
+        '<a class="btn lbv-b2" href="/gps-tracking.html">See how the proof works</a>'
+        '</div>'
+      + '<div class="lbv-who"><span>Whichever side of the load you are on:</span>'
+        '<a href="/carriers.html">Carriers</a>'
+        '<a href="/us-truck-dispatcher.html">Dispatchers</a>'
+        '<a href="/brokers.html">Brokers</a>'
+        '<a href="/shipper-solutions.html">Shippers</a>'
+        '</div>'
+      + '<div class="lbv reveal" id="lbv"><div class="lbv-fr">' + _fac + '</div>'
+      + '<details class="lbv-dt"><summary>' + str(len(v['chapters'])) + ' chapters &mdash; jump straight to any rule</summary>'
+        '<div class="lbv-ch">' + _ch + '</div></details>'
+      + '<p class="src-disc lbv-src">Figures on screen: ATRI &middot; DOT Office of Inspector General &middot; DAT '
+        '&middot; OOIDA. English captions included. Runtime ' + _lbv_ts(v['seconds']) + '.</p>'
+      + '</div>' + _js)
+    return _sec('The five-rule system', 'Detention pay that actually gets paid', _inner)
+
+def _lb_video_schema(_slug):
+    v = LB_VIDEOS.get(_slug)
+    if not v: return ''
+    import json as _j
+    o = {"@context":"https://schema.org","@type":"VideoObject","name":v['title'],
+         "description":v['desc'],"thumbnailUrl":["https://loadboot.com"+v['poster']],
+         "uploadDate":v['upload'],"duration":v['dur'],
+         "contentUrl":"https://loadboot.com"+v['mp4'],
+         "publisher":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com"},
+         "isFamilyFriendly":True,"inLanguage":"en-US",
+         "hasPart":[{"@type":"Clip","name":re.sub('&mdash;','-',l),"startOffset":t,
+                     "url":"https://loadboot.com/"+_slug+".html#lbv"} for t,l in v['chapters']]}
+    if v['yt']: o["embedUrl"] = "https://www.youtube.com/embed/"+v['yt']
+    return '<script type="application/ld+json">' + _j.dumps(o) + '</script>'
+
+
 # ---------- ACCESSORIAL FLAGSHIP DATA (H1, real product shots, who-it-protects) ----------
 _ACC_H1 = {
  'detention-pay-policy': 'Truck Detention Pay &mdash; $60/hr After 2 Hours Free Time, GPS-Proven',
@@ -6962,6 +7074,7 @@ for _p in _ACC_PAGES:
     _calc = _ACC_CALC.get(_slug)
     if _calc:
         _pg += _acc_calc_html(_calc)
+    _pg += _lb_video_section(_slug)
     _pg += _sec('The standard', 'What applies on every LoadBoot load unless the posting says otherwise', (
         '<div class="cards g1"><article class="card"><div class="card-ic">&#128176;</div><h3>' + _p['std'] + '</h3><p>' + _p['ctx'] + '</p></article></div>'))
     _pg += _sec('What it looks like on the road', 'A real-world scenario', (
@@ -7020,7 +7133,7 @@ for _p in _ACC_PAGES:
          (_seo['title'] if _seo else _name + ' Policy | LoadBoot'),
          (_seo['desc'] if _seo else (_p['defn'][:150])[:168]),
          _slug + '.html', _pg,
-         schema=(_acc_faq_schema(_p.get('faq') or []) + _acc_howto_schema(_name, _p.get('steps') or []) + _acc_fresh_schema(_name)))
+         schema=(_acc_faq_schema(_p.get('faq') or []) + _acc_howto_schema(_name, _p.get('steps') or []) + _acc_fresh_schema(_name) + _lb_video_schema(_slug)))
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
@@ -7267,6 +7380,19 @@ try:
         print('SHOTS copied:', len(os.listdir(_shots_dst)))
 except Exception as _e:
     print('SHOTS copy skipped:', _e)
+
+# ---------- VIDEO: explainer assets for the public pages ----------
+try:
+    _vid_src = os.path.join(SRC, 'video')
+    if os.path.isdir(_vid_src):
+        _vid_dst = os.path.join(OUT, 'video')
+        os.makedirs(_vid_dst, exist_ok=True)
+        for _f in os.listdir(_vid_src):
+            if _f.lower().endswith(('.mp4', '.webm', '.jpg', '.jpeg', '.png', '.webp', '.vtt', '.srt')):
+                shutil.copy2(os.path.join(_vid_src, _f), os.path.join(_vid_dst, _f))
+        print('VIDEO copied:', len(os.listdir(_vid_dst)))
+except Exception as _e:
+    print('VIDEO copy skipped:', _e)
 
 # ---------- PREVIEW REBIND (item 8: ENTIRE preview is staging-bound) ----------
 # The legacy dashboard.html (and any other copied artifact) hardcodes the PRODUCTION
