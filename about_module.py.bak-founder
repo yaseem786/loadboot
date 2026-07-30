@@ -185,7 +185,7 @@ def about_sections():
     S.append('<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Our story</div>'
       '<h2>Built by people who lived the problem</h2>'
       '<p style="max-width:74ch;margin:0 auto">LoadBoot started with a phone that wouldn\'t stop ringing — carriers stranded by dispatchers who vanished the moment a load went wrong. We rebuilt the workflow around the load instead of the contract: verification first, written terms on everything, GPS proof by default, and money that moves on records instead of arguments. Then we opened the same rails to brokers, shippers and dispatchers — because a fair market needs every seat at the same table.</p>'
-      '<p style="max-width:74ch;margin:20px auto 0;color:var(--muted);font-size:.95rem">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Questions about the company, our policies or anything on this site reach him directly at <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>.</p></div></div></section>')
+      '<p style="max-width:74ch;margin:20px auto 0;color:#9fb3cc;font-size:.95rem">LoadBoot is founded and run by <b style="color:#fff">Muhammad Yaseen</b>. Questions about the company, our policies or anything on this site reach him directly at <a href="mailto:hello@loadboot.com" style="color:#7dd3fc;font-weight:700">hello@loadboot.com</a>.</p></div></div></section>')
     # 12 — FINAL DOORS + CTA
     S.append('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Take your seat</div>'
       '<h2>This is what you were searching for. Pick your door.</h2>'
