@@ -17,3 +17,6 @@ VAPID_PRIVATE_KEY.local.txt
 ga-service-account.json
 *service-account*.json
 *.ga-key.json
+
+# Cowork device-bridge workaround: git lock files moved here (bridge cannot unlink)
+_to_delete/

@@ -310,3 +310,51 @@ Backend BOTH DBs (0188-0192 + bl_sec_0190 anon restore — anon surface check nu
 Frontend committed: prefs-strength.js (ring + micro-asks), app.js/api.js wiring, carrier360 + dispatchers SOP
 DAT surfacing, broker-ping.html in build_site.py. BUILD OK + ESM PASS. Owner: local test → commit → push →
 remind PWA cache clear. NEXT: full deep audit (crawl every page/portal — register at docs/AUDIT-2026-07-28.md).
+
+---
+
+## 2026-07-30 — Video 1 shipped (detention explainer)
+
+**Voice**: found at `C:\Users\HP\Downloads\voice-kit\voice.mp3` (edge-tts en-US-AndrewNeural,
+rate -4%, 314.5 s). The .bat only wrote media, so there was **no VTT** — timings were recovered by
+`ffmpeg silencedetect` segmentation (118 speech runs) mapped onto the script's 89 sentences by
+char-length share. Result lives in `align.json`; sentence table is accurate to roughly ±0.3 s.
+
+**Video**: `render4.py` is a full re-author of the timeline against those real timings (render3 was
+built for a shorter assumed narration and is now superseded). 319 s / 9,570 frames, ~12 min render
+on 2 cores via `encode4.py`.
+
+- `clips4.py` — Ken Burns clips from real portal screenshots. Screenshots are **edge-replicated by
+  64 px on left/right/top** so the push-in eats margin instead of trimming real UI; the bottom is
+  NOT padded (that row is truncated card content and replicating it smears streaks).
+- `widgets.py` — three purpose-built animated product visuals (live detention clock, 30-minute
+  alert, claim assembling to $64.00 → invoice #10241). These exist because two screenshots were
+  unusable: the **documents page shows a red "Urgent · not on file" doc directly under "All
+  required documents are in ✓"** (a real UI contradiction worth fixing), and the load board carried
+  a "Complete your setup" nag (painted out into `shots/loadboard_final.png`).
+
+**Audio**: `mix4.sh` — voice loudnormed to −16 LUFS, corporate underscore looped and ducked by a
+sidechain compressor keyed off the narration. Final integrated loudness −15.9 LUFS.
+
+**Website**: `build_site.py` gained `LB_VIDEOS` + `_lb_video_section()` + `_lb_video_schema()` and a
+`video/` → `site/video/` copy step. The detention page now has a framed click-to-play player,
+14 seekable chapters in a `<details>`, VTT captions and `VideoObject` + 14 `Clip` entries.
+Design follows mimecast.com/products/our-platform: short declarative H2, one hard stat line,
+two CTAs above the player, chapters tucked away.
+
+### OWNER ACTIONS
+1. `git add build_site.py video/ docs/youtube/ && git commit && git push origin feat/dispatcher-model`
+   — **git cannot stage from the Cowork device bridge** (unlink is denied on the mount, so the
+   index lock never finalises; ~57 stray `.git/objects/**/tmp_obj_*` files are harmless, `git gc`
+   clears them). NOTE: `d2482e6` from the prior session **is already on origin** — verified with
+   `git branch -r --contains`. Only the working-tree changes below are outstanding.
+2. Upload to YouTube, then paste the ID into `LB_VIDEOS['detention-pay-policy']['yt']` and rebuild.
+   The player swaps to the privacy-mode YouTube embed and the schema gains `embedUrl` — that is
+   what makes the video eligible for the video-rich result.
+3. Follow `docs/youtube/VIDEO-1-DISTRIBUTION.md` for the publish sequence.
+
+### STILL OPEN
+- `broker-ping.html` 404s on prod until the push lands.
+- Audit round 2 remainder: Partner + Agent portal click-through, marketing-site mobile pass.
+- Chrome extension screenshot API is broken in this environment
+  (`Failed to deserialize params.clip.scale`) — live re-capture of portal screens was not possible.
