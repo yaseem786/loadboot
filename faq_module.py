@@ -62,7 +62,7 @@ def faq_page(cats):
     body += ('<div class="fq-none" id="fqNone">&#129301; Nothing matched — try a different word, or just ask in the chat bubble (bottom right). It answers instantly.</div>'
              '<div class="fq-help reveal">'
              '<a href="#" onclick="var f=document.getElementById(\'lbc-fab\');if(f){f.click();}return false;"><span class="ic">&#128172;</span><b>Chat — instant, 24/7</b><p>AI answers in seconds and can even set up your account right in the chat. Humans on standby.</p></a>'
-             '<a href="tel:+17373061175"><span class="ic">&#128222;</span><b>Call +1 (737) 306-1175</b><p>24/7 line. Prefer we call you? Ask in chat and pick a time.</p></a>'
+             '<a href="tel:+13073036279"><span class="ic">&#128222;</span><b>Call +1 (307) 303-6279</b><p>24/7 line. Prefer we call you? Ask in chat and pick a time.</p></a>'
              '<a href="mailto:hello@loadboot.com"><span class="ic">&#9993;&#65039;</span><b>hello@loadboot.com</b><p>We reply within one business day — usually much faster.</p></a>'
              '</div></div></section>')
     body += ('<script>(function(){var s=document.getElementById("fqSearch"),tabs=document.querySelectorAll(".fq-tab"),items=document.querySelectorAll(".fq-item"),wraps=document.querySelectorAll("[data-catwrap]"),none=document.getElementById("fqNone");var cat="all";'

@@ -399,8 +399,8 @@ NAV = [('index.html','Home'),('services.html','Services'),('how-it-works.html','
        ('pricing.html','Pricing'),('load-score.html','Load Score'),('blog.html','Blog'),
        ('about.html','About'),('contact.html','Contact')]
 
-PHONE_DISP = '+1 (307) 303-6279'
-PHONE_TEL = '+13073036279'
+PHONE_DISP = '+1 (928) 393-6198'
+PHONE_TEL = '+19283936198'
 # One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
 PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
  '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '">' + PHONE_DISP + '</a>'
@@ -419,8 +419,8 @@ def header(active):
                       '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
-    mob = '<a href="tel:+13073036279" class="nav-mob">&#128222; Call us 24/7 &mdash; +1 (307) 303-6279</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
-    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+13073036279" class="tb-call">&#128222; 24/7&nbsp; +1 (307) 303-6279</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
+    mob = '<a href="tel:+19283936198" class="nav-mob">&#128222; Call us 24/7 &mdash; +1 (928) 393-6198</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
+    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+19283936198" class="tb-call">&#128222; 24/7&nbsp; +1 (928) 393-6198</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
@@ -438,9 +438,9 @@ def footer():
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
-<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+13073036279">&#128222; +1 (307) 303-6279 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+19283936198">&#128222; +1 (928) 393-6198 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
-<div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
+<div class="social"><a href="https://www.facebook.com/loadboot" target="_blank" rel="noopener" aria-label="LoadBoot on Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
 <a href="https://www.linkedin.com/company/135138228/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 9H3v9h3V9zM4.5 3a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM18 9c-1.6 0-2.5.8-3 1.5V9H12v9h3v-5c0-1 .7-1.7 1.6-1.7s1.4.7 1.4 1.7v5h3v-5.4C21 10 19.7 9 18 9z"/></svg></a></div></div>
 <div><div class="foot-h">Get carrier tips &amp; better loads</div><p style="font-size:.92rem">Rate trends, compliance reminders, and dispatch tips.</p>
@@ -1412,7 +1412,7 @@ about_body += _about_faq_html
 
 _about_org_schema = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About LoadBoot",'
     '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
-    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-307-303-6279","areaServed":"US",'
+    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-928-393-6198","areaServed":"US",'
     '"founder":{"@type":"Person","name":"Muhammad Yaseen"},'
     '"slogan":"The Operating System for Trucking",'
     '"description":"LoadBoot is the operating system for US trucking: a verified zero-ghost-load board, flat 5% dispatch, live GPS proof, documents, compliance and payments on one platform for carriers, freight brokers, shippers and dispatchers.",'
@@ -1476,8 +1476,8 @@ var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit'
 </script>"""
 
 # ---------- "Get a call" section (contact page): role-gated number + call-me-now/schedule ----------
-VOICE_NUMBER_DISPLAY = '+1 (307) 303-6279'
-VOICE_NUMBER_TEL = '+13073036279'
+VOICE_NUMBER_DISPLAY = '+1 (928) 393-6198'
+VOICE_NUMBER_TEL = '+19283936198'
 call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="max-width:820px">
 <div class="sec-head center reveal"><div class="eyebrow">Prefer to talk?</div><h2>Get a call from LoadBoot</h2>
 <p class="lead center" style="max-width:600px;margin:0 auto">Riley, our 24/7 front desk, answers instantly &mdash; or calls you the moment you ask, or at a time you pick.</p></div>
@@ -1529,7 +1529,7 @@ btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.sched
 )
 
 
-page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who you are dealing with</div><h2>There is a person behind this</h2><p style="max-width:66ch;margin:0 auto">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Not a call centre and not a faceless brand &mdash; if you email <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>, it reaches him.</p></div></div></section>')
+page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section>')
 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
@@ -3549,6 +3549,66 @@ page('broker-claim.html', 'Claim Your Loads — LoadBoot for Brokers',
      'One-time confirmation for brokers posting loads by email: verify your company, read and accept LoadBoot posting standards, get your portal login — and your emailed loads go live automatically.',
      'brokers.html', _bc_body + _bc_js)
 
+# ---- Broker booking-ping page (email load ingestion) — carrier requested to book; broker confirms availability + pickup address ----
+_bp_body = ('<meta name="robots" content="noindex,nofollow">'
+ '<style>'
+ '.bp-in{width:100%;box-sizing:border-box;border:none;border-radius:12px;padding:13px 14px;font:500 15px Inter,Arial;margin-bottom:10px;background:#fff}'
+ '.bp-lbl{display:block;font:700 10.5px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}'
+ '.bp-row{display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 14px;margin-bottom:7px;font-size:.9rem;color:#e2e8f0}'
+ '@keyframes bpUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'
+ '.bp-anim{animation:bpUp .35s ease}'
+ '</style>'
+ '<section><div class="wrap" style="max-width:680px">'
+ '<div class="bp-anim" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:24px;padding:36px;color:#fff;box-shadow:0 30px 80px -30px rgba(2,12,30,.6)">'
+ '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="background:rgba(252,83,5,.18);color:#ff9c66;font:800 11px Inter,Arial;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:999px">Booking request</span><span id="bpTimer" style="background:rgba(34,197,94,.14);color:#4ade80;font:700 11px Inter,Arial;padding:6px 12px;border-radius:999px;display:none"></span></div>'
+ '<h1 style="color:#fff;font-size:1.75rem;margin:10px 0 6px;letter-spacing:-.01em">A verified carrier wants this load</h1>'
+ '<p style="color:#c7d5ea;font-size:.92rem;margin:0 0 12px">Confirm it&rsquo;s still available and give the exact pickup address &mdash; the load books instantly and the rate confirmation follows.</p>'
+ '<div id="bpState" style="color:#c7d5ea;padding:10px 0">Loading the request&hellip;</div>'
+ '<div id="bpForm" style="display:none;margin-top:6px">'
+ '<div id="bpLoad" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:18px;margin-bottom:12px"></div>'
+ '<label class="bp-lbl">Exact pickup address (required)</label><input id="bpPick" class="bp-in" placeholder="Street, City, ST ZIP">'
+ '<label class="bp-lbl">Delivery address (if you have it)</label><input id="bpDel" class="bp-in" placeholder="Street, City, ST ZIP">'
+ '<div style="display:flex;gap:10px"><div style="flex:1"><label class="bp-lbl">Reference / PO #</label><input id="bpRef" class="bp-in" placeholder="Optional"></div>'
+ '<div style="flex:1"><label class="bp-lbl">Dispatch phone</label><input id="bpPhone" class="bp-in" placeholder="Optional"></div></div>'
+ '<label class="bp-lbl">Note for the carrier</label><input id="bpNote" class="bp-in" placeholder="Appointment time, dock door, check-in instructions&hellip;">'
+ '<div id="bpErr" style="color:#fca5a5;font-size:.85rem;display:none;margin-bottom:8px"></div>'
+ '<button id="bpGo" style="width:100%;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:13px;padding:15px;font:800 15.5px Inter,Arial;cursor:pointer;box-shadow:0 14px 34px rgba(252,83,5,.4)">&#9989; Confirm &amp; book this carrier</button>'
+ '<button id="bpNo" style="width:100%;background:none;border:1px solid rgba(255,255,255,.22);color:#9fb3cc;border-radius:13px;padding:12px;font:700 13.5px Inter,Arial;cursor:pointer;margin-top:10px">This load is no longer available</button>'
+ '<p style="color:#9fb3cc;font-size:.78rem;text-align:center;margin-top:10px">&#128274; Carrier packet on file (authority &middot; insurance &middot; W-9) &middot; LoadBoot published accessorials apply per your signed standards &middot; you can also just reply to our email</p>'
+ '</div></div></div></section>')
+_bp_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest/v1/rpc/',key='" + (APP_ANON or '') + "';"
+ "var t=new URLSearchParams(location.search).get('t');var st=document.getElementById('bpState');"
+ "function call(fn,body){return fetch(api+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+key},body:JSON.stringify(body)}).then(function(r){return r.json()});}"
+ "function done(icon,head,sub){document.querySelector('.bp-anim').innerHTML='<div class=\"bp-anim\" style=\"text-align:center;padding:26px 6px\"><div style=\"font-size:2.6rem\">'+icon+'</div><h2 style=\"color:#fff;margin:10px 0 6px\">'+head+'</h2><p style=\"color:#c7d5ea;max-width:440px;margin:0 auto\">'+sub+'</p></div>';}"
+ "if(!t){st.textContent='This link is missing its token — use the button in your email.';return;}"
+ "call('lb_email_ping_get',{p_token:t}).then(function(d){"
+ "if(!d||d.error){st.textContent='This link looks invalid — reply to our email instead and we will take care of it.';return;}"
+ "if(d.status==='approved'){done('🎉','Already booked','You confirmed this one — the carrier is locked in and the rate confirmation is on its way.');return;}"
+ "if(d.status==='rejected'||d.status==='cancelled_auto'){done('🗂️','This request is closed','Either you marked the load unavailable or the carrier took another load. Email more loads to loads@loadboot.com any time.');return;}"
+ "if(d.status==='expired'){done('⌛','This hold expired','The 4-hour hold has passed. If the load is still open, just reply to our email — the next interested carrier gets a fresh hold.');return;}"
+ "st.style.display='none';document.getElementById('bpForm').style.display='block';"
+ "var L=d.load||{};var C=d.carrier||{};"
+ "document.getElementById('bpLoad').innerHTML='<div style=\"font-size:1.05rem;font-weight:800;margin-bottom:4px\">'+(L.origin||'—')+' → '+(L.destination||'—')+'</div>'"
+ "+'<div style=\"color:#9fb3cc;font-size:.86rem\">'+(L.rate?'$'+L.rate:'rate TBD')+(L.miles?' · '+L.miles+' mi':'')+(L.equipment?' · '+L.equipment:'')+(L.pickup_date?' · Pickup '+L.pickup_date:'')+(L.reference?' · Ref '+L.reference:'')+'</div>'"
+ "+'<div style=\"margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.14);color:#c7d5ea;font-size:.88rem\">Carrier: <b style=\"color:#fff\">'+(C.name||'Verified LoadBoot carrier')+'</b>'+(d.note?' · <span style=\"color:#9fb3cc\">&ldquo;'+d.note+'&rdquo;</span>':'')+'</div>';"
+ "if(d.expires_at){var tm=document.getElementById('bpTimer');tm.style.display='inline-block';var f=function(){var ms=new Date(d.expires_at)-new Date();if(ms<=0){tm.textContent='Hold expired';return;}var m=Math.floor(ms/60000);tm.textContent='⏱ Hold: '+(m>=60?Math.floor(m/60)+'h '+(m%60)+'m':m+'m')+' left';setTimeout(f,30000);};f();}"
+ "}).catch(function(){st.textContent='Connection hiccup — refresh to try again.';});"
+ "document.getElementById('bpGo').onclick=function(){var e=document.getElementById('bpErr');e.style.display='none';"
+ "var pk=document.getElementById('bpPick').value.trim();"
+ "if(pk.length<8){e.textContent='Please give the full pickup address — the driver navigates straight to it.';e.style.display='block';return;}"
+ "this.disabled=true;this.textContent='Booking…';var b=this;"
+ "call('lb_email_ping_confirm',{p_token:t,p:{pickup_address:pk,delivery_address:document.getElementById('bpDel').value.trim(),reference:document.getElementById('bpRef').value.trim(),contact_phone:document.getElementById('bpPhone').value.trim(),note:document.getElementById('bpNote').value.trim()}}).then(function(r){"
+ "if(r&&r.ok){done('🎉','Booked — carrier locked in','The carrier just got your pickup address and is rolling. Rate confirmation follows by email. Every load you email to <b style=\\'color:#fff\\'>loads@loadboot.com</b> gets this same treatment.');}"
+ "else{e.textContent=(r&&(r.detail||r.error))||'Something went wrong — try again';e.style.display='block';b.disabled=false;b.textContent='✅ Confirm & book this carrier';}});};"
+ "document.getElementById('bpNo').onclick=function(){if(!confirm('Mark this load as no longer available? The carrier will be released.'))return;"
+ "var b=this;b.disabled=true;b.textContent='Updating…';"
+ "call('lb_email_ping_confirm',{p_token:t,p:{action:'decline',note:'Broker marked load unavailable'}}).then(function(r){"
+ "if(r&&r.ok){done('👌','No problem — carrier released','We told the carrier this one is gone. Email your next loads to loads@loadboot.com and they go straight to verified carriers.');}"
+ "else{b.disabled=false;b.textContent='This load is no longer available';}});};})();</script>")
+page('broker-ping.html', 'Confirm Booking — LoadBoot for Brokers',
+     'A verified LoadBoot carrier requested your emailed load. Confirm availability and the exact pickup address — the load books instantly and the rate confirmation follows.',
+     'brokers.html', _bp_body + _bp_js)
+
 
 # ---- Box Truck Dispatch (service page) ----
 _btfaq_html, _btfaq_sch = faq_block([
@@ -4503,7 +4563,7 @@ def _hub_cta(portal_href, portal_label):
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+13073036279" style="color:#fff;font-weight:800;text-decoration:none">+1 (307) 303-6279</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+19283936198" style="color:#fff;font-weight:800;text-decoration:none">+1 (928) 393-6198</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div></div></section>')
 
@@ -6820,6 +6880,118 @@ def _acc_faq_schema(faq):
     return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": ents}) + '</script>'
 
 
+# ---------- LOADBOOT VIDEO (lazy facade + VideoObject schema) ----------
+# yt: paste the YouTube ID after upload and the embed swaps to YouTube automatically.
+# Until then the self-hosted MP4 plays inline (poster loads, video only on click).
+LB_VIDEOS = {
+ 'detention-pay-policy': dict(
+   yt='zNJAyL6hLTo',
+   mp4='/video/loadboot-detention-explainer.mp4',
+   poster='/video/loadboot-detention-explainer.jpg',
+   vtt='/video/loadboot-detention-explainer.vtt',
+   title='Detention Pay: The 5 Rules That Get It Paid (Every Time)',
+   desc='Detention costs US trucking $15.1B a year and fewer than half of billed detention is ever paid. '
+        'This is the five-rule system that gets it paid: written terms before you book, the clock starting at '
+        'your on-time arrival, notifying before free time ends, the five pieces of evidence, and invoicing '
+        'immediately with the load.',
+   dur='PT5M19S', seconds=319, upload='2026-07-30',
+   chapters=[(0,'Why 17% of truckers never get paid'),(13,'$15.1B a year &mdash; the real scale'),
+             (43,'It is not only money &mdash; the safety cost'),(63,'You are not the exception'),
+             (83,'The part nobody says out loud'),(108,'The five rules'),
+             (117,'Rule 1 &mdash; get it in writing before you book'),(154,'Rule 2 &mdash; the clock starts at your on-time arrival'),
+             (177,'Rule 3 &mdash; notify before free time ends'),(199,'Rule 4 &mdash; five pieces of evidence'),
+             (215,'Rule 5 &mdash; invoice immediately, with the load'),(239,'What a corporate channel will not tell you'),
+             (273,'How LoadBoot builds the five rules into the load'),(299,'What it costs')]),
+}
+_LBV_CSS = ('<style>.lbv{max-width:1000px;margin:0 auto}.lbv-fr{position:relative;border-radius:18px;overflow:hidden;'
+ 'border:1px solid rgba(148,163,184,.35);box-shadow:0 30px 80px -34px rgba(11,18,32,.45);background:#0b1220;aspect-ratio:16/9}'
+ '.lbv-fr>iframe,.lbv-fr>video{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#0b1220}'
+ '.lbv-p{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;cursor:pointer;background:#0b1220;display:block}'
+ '.lbv-p img{width:100%;height:100%;object-fit:cover;display:block}'
+ '.lbv-p .pb{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:96px;height:96px;border-radius:50%;'
+ 'background:#ff5c1a;display:grid;place-items:center;box-shadow:0 18px 44px -12px rgba(255,92,26,.7);transition:transform .18s}'
+ '.lbv-p:hover .pb{transform:translate(-50%,-50%) scale(1.07)}'
+ '.lbv-p .du{position:absolute;right:14px;bottom:12px;background:rgba(6,10,20,.86);color:#fff;font-weight:800;'
+ 'font-size:.82rem;padding:5px 10px;border-radius:8px;letter-spacing:.02em}'
+ '.lbv-ch{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:6px 20px;margin:18px auto 0;max-width:1000px}'
+ '.lbv-ch a{display:flex;gap:10px;align-items:baseline;padding:6px 2px;text-decoration:none;font-size:.92rem;color:inherit;border-bottom:1px solid rgba(148,163,184,.16)}'
+ '.lbv-ch a:hover{color:#ff5c1a}.lbv-ch b{color:#2f6df6;font-variant-numeric:tabular-nums;font-weight:800;min-width:44px}'
+ '.lbv-lead{max-width:680px;margin:-6px auto 22px;text-align:center;font-size:1.06rem;line-height:1.65;color:var(--muted,#64748b)}'
+ '.lbv-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:0 auto 26px}'
+ '.lbv-who{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;align-items:baseline;margin:-12px auto 26px;font-size:.9rem}'
+ '.lbv-who span{color:var(--muted,#64748b);font-weight:700}'
+ '.lbv-who a{font-weight:800;color:#2f6df6;text-decoration:none;border-bottom:1px solid rgba(47,109,246,.35)}'
+ '.lbv-who a:hover{color:#ff5c1a;border-bottom-color:rgba(255,92,26,.5)}'
+ '.lbv-dt{max-width:1000px;margin:16px auto 0}'
+ '.lbv-dt>summary{cursor:pointer;list-style:none;text-align:center;font-size:.9rem;font-weight:700;color:#2f6df6;padding:8px 0}'
+ '.lbv-dt>summary::-webkit-details-marker{display:none}'
+ '.lbv-src{margin-top:14px;text-align:center;max-width:720px;margin-left:auto;margin-right:auto;font-size:.82rem}'
+ '@media(max-width:620px){.lbv-p .pb{width:70px;height:70px}.lbv-lead{font-size:.98rem}.lbv-ch{grid-template-columns:1fr}}'
+ '</style>')
+def _lbv_ts(x):
+    return '%d:%02d' % (x//60, x%60)
+def _lb_video_section(_slug):
+    v = LB_VIDEOS.get(_slug)
+    if not v: return ''
+    _pl = ('<span class="pb" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff">'
+           '<path d="M8 5v14l11-7z"/></svg></span>')
+    _fac = ('<button class="lbv-p" type="button" id="lbvP" aria-label="Play video: ' + v['title'] + '">'
+            '<img src="' + v['poster'] + '" alt="' + v['title'] + '" width="1920" height="1080" loading="lazy" decoding="async">'
+            + _pl + '<span class="du">' + _lbv_ts(v['seconds']) + '</span></button>')
+    _ch = ''.join('<a href="#lbv" data-t="%d"><b>%s</b><span>%s</span></a>' % (t, _lbv_ts(t), lbl) for t, lbl in v['chapters'])
+    _js = ("<script>(function(){var b=document.getElementById('lbvP');if(!b)return;var f=b.parentNode;"
+      "var YT=" + repr(v['yt']) + ",MP=" + repr(v['mp4']) + ",VT=" + repr(v['vtt']) + ";var el=null;"
+      "function load(t){if(el){if(el.tagName==='VIDEO'){el.currentTime=t;el.play();}return;}"
+      "if(YT){el=document.createElement('iframe');el.src='https://www.youtube-nocookie.com/embed/'+YT+"
+      "'?autoplay=1&rel=0&modestbranding=1&start='+Math.floor(t);el.setAttribute('title'," + repr(v['title']) + ");"
+      "el.setAttribute('allow','accelerometer;autoplay;encrypted-media;picture-in-picture');el.setAttribute('allowfullscreen','');}"
+      "else{el=document.createElement('video');el.src=MP;el.controls=true;el.playsInline=true;el.preload='metadata';"
+      "el.setAttribute('poster'," + repr(v['poster']) + ");if(VT){var tr=document.createElement('track');tr.kind='captions';"
+      "tr.srclang='en';tr.label='English';tr.src=VT;tr.default=true;el.appendChild(tr);}"
+      "el.addEventListener('loadedmetadata',function(){if(t){el.currentTime=t;}el.play();});}"
+      "b.remove();f.appendChild(el);try{if(window.lbTrack)window.lbTrack('video_play',{video:" + repr(_slug) + ",start:t});}catch(e){}}"
+      "b.addEventListener('click',function(){load(0);});"
+      "Array.prototype.forEach.call(document.querySelectorAll('.lbv-ch a[data-t]'),function(a){"
+      "a.addEventListener('click',function(e){e.preventDefault();load(parseInt(a.getAttribute('data-t'),10));"
+      "var d=a.closest('details');if(d){d.open=false;}});});"
+      "})();</script>")
+    _inner = (_LBV_CSS
+      + '<p class="lbv-lead">Fewer than half of billed detention is ever paid. Not because drivers did not wait '
+        '&mdash; because they could not prove it.</p>'
+      + '<div class="lbv-cta">'
+        '<a class="btn btn-primary" href="/get-started.html">Start free &mdash; pick your role &rarr;</a>'
+        '<a class="btn lbv-b2" href="/gps-tracking.html">See how the proof works</a>'
+        '</div>'
+      + '<div class="lbv-who"><span>Whichever side of the load you are on:</span>'
+        '<a href="/carriers.html">Carriers</a>'
+        '<a href="/us-truck-dispatcher.html">Dispatchers</a>'
+        '<a href="/brokers.html">Brokers</a>'
+        '<a href="/shipper-solutions.html">Shippers</a>'
+        '</div>'
+      + '<div class="lbv reveal" id="lbv"><div class="lbv-fr">' + _fac + '</div>'
+      + '<details class="lbv-dt"><summary>' + str(len(v['chapters'])) + ' chapters &mdash; jump straight to any rule</summary>'
+        '<div class="lbv-ch">' + _ch + '</div></details>'
+      + '<p class="src-disc lbv-src">Figures on screen: ATRI &middot; DOT Office of Inspector General &middot; DAT '
+        '&middot; OOIDA. English captions included. Runtime ' + _lbv_ts(v['seconds']) + '.</p>'
+      + '</div>' + _js)
+    return _sec('The five-rule system', 'Detention pay that actually gets paid', _inner)
+
+def _lb_video_schema(_slug):
+    v = LB_VIDEOS.get(_slug)
+    if not v: return ''
+    import json as _j
+    o = {"@context":"https://schema.org","@type":"VideoObject","name":v['title'],
+         "description":v['desc'],"thumbnailUrl":["https://loadboot.com"+v['poster']],
+         "uploadDate":v['upload'],"duration":v['dur'],
+         "contentUrl":"https://loadboot.com"+v['mp4'],
+         "publisher":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com"},
+         "isFamilyFriendly":True,"inLanguage":"en-US",
+         "hasPart":[{"@type":"Clip","name":re.sub('&mdash;','-',l),"startOffset":t,
+                     "url":"https://loadboot.com/"+_slug+".html#lbv"} for t,l in v['chapters']]}
+    if v['yt']: o["embedUrl"] = "https://www.youtube.com/embed/"+v['yt']
+    return '<script type="application/ld+json">' + _j.dumps(o) + '</script>'
+
+
 # ---------- ACCESSORIAL FLAGSHIP DATA (H1, real product shots, who-it-protects) ----------
 _ACC_H1 = {
  'detention-pay-policy': 'Truck Detention Pay &mdash; $60/hr After 2 Hours Free Time, GPS-Proven',
@@ -6903,6 +7075,7 @@ for _p in _ACC_PAGES:
     _calc = _ACC_CALC.get(_slug)
     if _calc:
         _pg += _acc_calc_html(_calc)
+    _pg += _lb_video_section(_slug)
     _pg += _sec('The standard', 'What applies on every LoadBoot load unless the posting says otherwise', (
         '<div class="cards g1"><article class="card"><div class="card-ic">&#128176;</div><h3>' + _p['std'] + '</h3><p>' + _p['ctx'] + '</p></article></div>'))
     _pg += _sec('What it looks like on the road', 'A real-world scenario', (
@@ -6961,7 +7134,7 @@ for _p in _ACC_PAGES:
          (_seo['title'] if _seo else _name + ' Policy | LoadBoot'),
          (_seo['desc'] if _seo else (_p['defn'][:150])[:168]),
          _slug + '.html', _pg,
-         schema=(_acc_faq_schema(_p.get('faq') or []) + _acc_howto_schema(_name, _p.get('steps') or []) + _acc_fresh_schema(_name)))
+         schema=(_acc_faq_schema(_p.get('faq') or []) + _acc_howto_schema(_name, _p.get('steps') or []) + _acc_fresh_schema(_name) + _lb_video_schema(_slug)))
 
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
@@ -6982,7 +7155,7 @@ page('sitemap.html', 'Sitemap | Loadboot', 'Every page on the Loadboot website �
 # ---------- SITEMAP + ROBOTS ----------
 DOMAIN = 'https://loadboot.com'
 # PROD_REF/STAGING_REF/context targets are defined once near the top of this file.
-_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'unsub.html'}
+_SITEMAP_EXCLUDE = {'dashboard.html', '404.html', 'broker-claim.html', 'broker-ping.html', 'unsub.html'}
 pages = [f for f in sorted(os.listdir(OUT)) if f.endswith('.html') and f not in _SITEMAP_EXCLUDE]
 urls = ''.join('<url><loc>%s/%s</loc><changefreq>weekly</changefreq></url>' % (DOMAIN, ('' if f=='index.html' else f)) for f in pages)
 sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls
@@ -7208,6 +7381,19 @@ try:
         print('SHOTS copied:', len(os.listdir(_shots_dst)))
 except Exception as _e:
     print('SHOTS copy skipped:', _e)
+
+# ---------- VIDEO: explainer assets for the public pages ----------
+try:
+    _vid_src = os.path.join(SRC, 'video')
+    if os.path.isdir(_vid_src):
+        _vid_dst = os.path.join(OUT, 'video')
+        os.makedirs(_vid_dst, exist_ok=True)
+        for _f in os.listdir(_vid_src):
+            if _f.lower().endswith(('.mp4', '.webm', '.jpg', '.jpeg', '.png', '.webp', '.vtt', '.srt')):
+                shutil.copy2(os.path.join(_vid_src, _f), os.path.join(_vid_dst, _f))
+        print('VIDEO copied:', len(os.listdir(_vid_dst)))
+except Exception as _e:
+    print('VIDEO copy skipped:', _e)
 
 # ---------- PREVIEW REBIND (item 8: ENTIRE preview is staging-bound) ----------
 # The legacy dashboard.html (and any other copied artifact) hardcodes the PRODUCTION
