@@ -392,7 +392,7 @@
         '<button id="lbc-send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11.5 21 3l-8.5 18-2.6-7.4L3 11.5Z" fill="currentColor"/></svg></button>' +
       '</div><div id="lbc-pow">' +
       ((cfg.origin === 'carrier' || cfg.origin === 'partner')
-        ? '<a href="tel:+19283936198" style="color:#64748b;text-decoration:none;font-weight:800">📞 +1 (928) 393-6198</a> · 24/7 · LoadBoot'
+        ? '<a href="tel:+13073036279" style="color:#64748b;text-decoration:none;font-weight:800">📞 +1 (307) 303-6279</a> · 24/7 · LoadBoot'
         : 'LoadBoot · The Operating System for Trucking') +
       '</div></div>';
 
