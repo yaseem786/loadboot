@@ -363,6 +363,16 @@ function authScreen() {
       if (signup) {
         const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()) }, window.__LB_AGENT ? { role: 'agent' } : {}));
         if (error) throw error;
+        // Supabase returns success with an empty identities array when the address is
+        // already registered — it will not error, and no email is sent. Without this the
+        // user is told a confirmation link is on the way and waits for mail that never comes.
+        if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setMode(false);
+          err.className = 'cp-err';
+          err.textContent = 'That email already has a LoadBoot account. Sign in below — or tap “Forgot password?” if you do not remember it.';
+          btn.disabled = false;
+          return;
+        }
         if (!data || !data.session) { setMode(false); err.className = 'cp-err ok'; err.textContent = '✓ Account created! We emailed a confirmation link to ' + em + '. Click it (check spam too), then sign in here.'; btn.disabled = false; return; }
         // Phone OTP verification — active the moment an SMS provider (Twilio) is configured; graceful otherwise.
         try {

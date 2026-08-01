@@ -53,6 +53,16 @@ function authScreen() {
       if (signup) {
         const { data, error } = await signUp(em, pw, {});
         if (error) throw error;
+        // Supabase returns success with an empty identities array when the address is
+        // already registered — it will not error, and no email is sent. Without this the
+        // user is told a confirmation link is on the way and waits for mail that never comes.
+        if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setMode(false);
+          err.className = 'cp-err';
+          err.textContent = 'That email already has a LoadBoot account. Sign in below with your password.';
+          btn.disabled = false;
+          return;
+        }
         if (!data || !data.session) { err.className = 'cp-err ok'; err.textContent = 'Account created! Check your email to confirm, then sign in.'; setMode(false); btn.disabled = false; return; }
         boot(); return;
       }
