@@ -399,8 +399,8 @@ NAV = [('index.html','Home'),('services.html','Services'),('how-it-works.html','
        ('pricing.html','Pricing'),('load-score.html','Load Score'),('blog.html','Blog'),
        ('about.html','About'),('contact.html','Contact')]
 
-PHONE_DISP = '+1 (307) 303-6279'
-PHONE_TEL = '+13073036279'
+PHONE_DISP = '+1 (469) 253-7575'
+PHONE_TEL = '+14692537575'
 # One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
 PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
  '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '">' + PHONE_DISP + '</a>'
@@ -419,8 +419,8 @@ def header(active):
                       '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
-    mob = '<a href="tel:+13073036279" class="nav-mob">&#128222; Call us 24/7 &mdash; +1 (307) 303-6279</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
-    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+13073036279" class="tb-call">&#128222; 24/7&nbsp; +1 (307) 303-6279</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
+    mob = '<a href="tel:+14692537575" class="nav-mob">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
+    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
@@ -438,7 +438,7 @@ def footer():
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
-<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+13073036279">&#128222; +1 (307) 303-6279 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
@@ -1427,7 +1427,7 @@ about_body += _about_faq_html
 
 _about_org_schema = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About LoadBoot",'
     '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
-    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-307-303-6279","areaServed":"US",'
+    '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-469-253-7575","areaServed":"US",'
     '"founder":{"@type":"Person","name":"Muhammad Yaseen"},'
     '"legalName":"LoadBoot LLC",'
     '"duns":"149880967",'
@@ -1495,8 +1495,8 @@ var f=document.getElementById('qfForm');if(!f)return;f.addEventListener('submit'
 </script>"""
 
 # ---------- "Get a call" section (contact page): role-gated number + call-me-now/schedule ----------
-VOICE_NUMBER_DISPLAY = '+1 (307) 303-6279'
-VOICE_NUMBER_TEL = '+13073036279'
+VOICE_NUMBER_DISPLAY = '+1 (469) 253-7575'
+VOICE_NUMBER_TEL = '+14692537575'
 call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="max-width:820px">
 <div class="sec-head center reveal"><div class="eyebrow">Prefer to talk?</div><h2>Get a call from LoadBoot</h2>
 <p class="lead center" style="max-width:600px;margin:0 auto">Riley, our 24/7 front desk, answers instantly &mdash; or calls you the moment you ask, or at a time you pick.</p></div>
@@ -4546,7 +4546,7 @@ def _hub_cta(portal_href, portal_label):
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+13073036279" style="color:#fff;font-weight:800;text-decoration:none">+1 (307) 303-6279</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none">+1 (469) 253-7575</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div></div></section>')
 
