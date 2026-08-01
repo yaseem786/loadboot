@@ -1524,7 +1524,7 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 <div class="field"><label for="cwWhenSel">When?</label><select id="cwWhenSel"><option value="now">Call me right now</option><option value="later">Pick a time</option></select></div>
 <div class="field" id="cwWhenWrap" hidden><label for="cwWhen">Date &amp; time (your local time)</label><input type="datetime-local" id="cwWhen"></div>
 </div>
-<button class="btn btn-primary" id="cwBtn" style="width:100%%;justify-content:center;margin-top:18px">&#128222; Call me</button>
+<button class="btn btn-primary" id="cwBtn" style="width:100%;justify-content:center;margin-top:18px">&#128222; Call me</button>
 <p id="cwMsg" style="text-align:center;margin-top:12px;font-size:.92rem;color:var(--muted)">By requesting a call you agree to receive one call from LoadBoot at this number.</p>
 </div></div></div></section>
 <script>(function(){

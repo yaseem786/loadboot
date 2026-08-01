@@ -1,8 +1,11 @@
 // delivery-worker — drains app_private.message_deliveries and sends via Resend.
-// v5: CLEAN PREMIUM shell (single consistent look for EVERY LoadBoot email — app + auth).
+// v6: BIG-BRAND shell — clean header + Uber/Amazon-grade footer (link columns, Get-the-app pill).
+// v7 (2026-08-01): every email now offers a phone call. A slim line above the footer carries the
+// 24/7 number as a tel: link plus a button to loadboot.com/contact.html#call, where the
+// recipient can have Riley call them immediately or book a date and time. Agents,
+// dispatchers and referral partners are excluded — those relationships run in writing.
+// The number is read from app_private.retell_config via the support_phone() RPC, never typed.
 // Same safety model: no RESEND_API_KEY => safe no-op. Identities: hello@ / dispatch@ / billing@.
-// The Supabase Auth "Confirm signup" template (docs/email-templates/confirm-signup-premium.html)
-// mirrors this exact shell, so app-sent and auth emails look identical — only the body changes.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 Deno.serve(async (_req) => {
@@ -22,8 +25,28 @@ Deno.serve(async (_req) => {
   const SITE = Deno.env.get("SITE_URL") || "https://loadboot.com";
   const LOGO = Deno.env.get("BRAND_LOGO_URL") || `${SITE}/email-logo-white-2x.png`;
 
-  // ---- CLEAN PREMIUM SHELL (v5) — navy header + logo/tagline, thin brand accent, body, clean navy footer ----
-  const shell = (bodyHtml: string, unsubUrl: string, subject = "") =>
+  let PHONE_DISPLAY = "";
+  try { const { data: ph } = await sb.rpc("support_phone"); PHONE_DISPLAY = typeof ph === "string" ? ph : ""; } catch (_) { PHONE_DISPLAY = ""; }
+  const PHONE_TEL = PHONE_DISPLAY.replace(/[^0-9+]/g, "");
+
+  const NO_CALL_RE = /(agent|dispatcher|referral|commission|payout)/i;
+  const wantsCall = (d: { template_key?: string | null; meta?: Record<string, unknown> | null }): boolean => {
+    if (!PHONE_DISPLAY) return false;
+    const role = String((d.meta?.role ?? d.meta?.audience ?? "") as string).toLowerCase();
+    if (["agent", "dispatcher", "referral"].includes(role)) return false;
+    if (d.meta?.no_call === true) return false;
+    return !NO_CALL_RE.test(String(d.template_key ?? ""));
+  };
+
+  const callBandHtml = () =>
+    `<tr><td class="lb-pad" style="padding:0 32px 24px">
+    <div style="border-top:1px solid #e8eef6;padding-top:13px;font-size:13px;line-height:1.7;color:#64748b">
+      &#128222; Rather just talk? Call us 24/7 on <a href="tel:${PHONE_TEL}" style="color:#0883F7;font-weight:800;text-decoration:none;white-space:nowrap">${PHONE_DISPLAY}</a>
+      &nbsp;&middot;&nbsp; or <a href="${SITE}/contact.html#call" style="color:#0883F7;font-weight:700;text-decoration:none">have us call you &rarr;</a>
+    </div>
+  </td></tr>`;
+
+  const shell = (bodyHtml: string, unsubUrl: string, subject = "", callBand = "") =>
     `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   body{margin:0;padding:0}
@@ -45,6 +68,7 @@ Deno.serve(async (_req) => {
   </td></tr>
   <tr><td style="height:4px;background:#0883F7;background:linear-gradient(90deg,#0883F7,#FC5305);font-size:0;line-height:0">&nbsp;</td></tr>
   <tr><td class="lb-pad" style="padding:34px 32px 30px;color:#0f172a;font-size:15px;line-height:1.7">${bodyHtml}</td></tr>
+  ${callBand}
   <tr><td class="lb-pad" style="padding:30px 32px 8px;background:#10223B">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
       <td align="left" style="vertical-align:middle"><img src="${LOGO}" width="140" height="34" alt="LoadBoot" style="display:block;border:0;max-width:140px;height:auto"></td>
@@ -127,8 +151,10 @@ Deno.serve(async (_req) => {
   for (const d of claimed ?? []) {
     const subject = (d.meta && d.meta.subject) ? String(d.meta.subject) : "LoadBoot";
     const unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`;
-    const html = (d.meta && d.meta.body_html) ? shell(String(d.meta.body_html), unsubUrl, subject) : null;
-    const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}`;
+    const withCall = wantsCall(d);
+    const html = (d.meta && d.meta.body_html) ? shell(String(d.meta.body_html), unsubUrl, subject, withCall ? callBandHtml() : "") : null;
+    const callLine = withCall ? `\n\nPrefer to talk? Call us 24/7 on ${PHONE_DISPLAY}, or book a time and we call you: ${SITE}/contact.html#call` : "";
+    const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + callLine + `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}`;
     try {
       const ident = senderFor(d);
       const payload: Record<string, unknown> = { from: ident.from, to: d.recipient_email, subject, text,
