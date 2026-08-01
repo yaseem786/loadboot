@@ -72,6 +72,14 @@ $('signupBtn').onclick = async () => {
   try {
     const { data, error } = await signUpDriver(email, pw, token, { name });
     if (error) throw error;
+    // Supabase returns success with an empty identities array when the address is
+    // already registered — it will not error, and no email is sent. Without this the
+    // user is told a confirmation link is on the way and waits for mail that never comes.
+    if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      msg('That email already has a LoadBoot account. Enter your password above and tap Sign in to join this carrier.');
+      $('signupBtn').disabled = false;
+      return;
+    }
     if (data && data.session) { await finish(); }
     else { msg('Check your email to confirm your address, then open this same link again to finish joining.', true); $('signupBtn').disabled = false; }
   } catch (e) { $('signupBtn').disabled = false; msg((e && e.message) || 'Sign up failed.'); }
