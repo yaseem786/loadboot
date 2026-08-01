@@ -7,6 +7,7 @@
 // The number is read from app_private.retell_config via the support_phone() RPC, never typed.
 // Same safety model: no RESEND_API_KEY => safe no-op. Identities: hello@ / dispatch@ / billing@.
 // v10 (2026-08-01): outreach.* is pinned to the marketing identity — it was matching DISPATCH_RE on the word "carrier" and sending from dispatch@loadboot.com.
+// v13 (2026-08-01): new "support" identity (hello@loadboot.com) replaces "marketing" as the final fallback, so Command Center replies and transactional mail leave the main domain instead of the cold-outreach subdomain SENDER_MARKETING now points at.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 Deno.serve(async (_req) => {
@@ -133,6 +134,7 @@ Deno.serve(async (_req) => {
     marketing: { from: Deno.env.get("SENDER_MARKETING") || "LoadBoot <hello@loadboot.com>", replyTo: "hello@loadboot.com" },
     dispatch: { from: Deno.env.get("SENDER_DISPATCH") || "LoadBoot Dispatch <dispatch@loadboot.com>", replyTo: "dispatch@loadboot.com" },
     billing: { from: Deno.env.get("SENDER_BILLING") || "LoadBoot Billing <billing@loadboot.com>", replyTo: "billing@loadboot.com" },
+    support: { from: Deno.env.get("SENDER_SUPPORT") || "LoadBoot Support <hello@loadboot.com>", replyTo: "hello@loadboot.com" },
   };
   const DISPATCH_RE = /(load|trip|offer|dispatch|booking|tracking|pod|detention|checkin|carrier|driver|ops\.)/i;
   const BILLING_RE = /(billing|invoice|payment|settlement|payout|statement|receipt|factoring)/i;
@@ -148,7 +150,13 @@ Deno.serve(async (_req) => {
     if (BILLING_RE.test(key)) return "billing";
     if (DISPATCH_RE.test(key)) return "dispatch";
     if (d.source === "campaign") return "marketing";
-    return "marketing";
+    // Final fallback is "support" (hello@loadboot.com), never "marketing". SENDER_MARKETING now
+    // points at mail.loadboot.com, the COLD-OUTREACH subdomain. Anything reaching this line was
+    // NOT positively identified as outreach, campaign, billing or dispatch — in practice that is
+    // a human Command Center reply (cc_mail_reply -> sys_email, template_key 'mail.reply',
+    // meta.category 'transactional') or ordinary transactional mail such as welcome.account and
+    // onboarding.confirm_email. A person writing back to a customer must come from the main domain.
+    return "support";
   };
   const senderFor = (d: Parameters<typeof categoryOf>[0]): { from: string; replyTo: string | null } =>
     domainVerified ? IDENTITIES[categoryOf(d)] : { from: RESEND_FROM, replyTo: null };
