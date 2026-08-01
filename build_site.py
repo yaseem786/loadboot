@@ -1926,7 +1926,7 @@ A1_FEAT=('<svg class="feat-art" viewBox="0 0 1200 360" preserveAspectRatio="xMid
  '<rect x="864" y="120" width="34" height="170" rx="6" fill="#FC5305" opacity=".85"/>'
  '</svg>')
 rich_article('how-much-does-a-truck-dispatcher-cost.html',
- 'Truck Dispatcher Cost 2026: 5\u201310% of Gross or $200\u2013$500/Month \u2014 Full Fee Breakdown',
+ 'Truck Dispatcher Cost 2026: 5\u201310% of Gross Explained',
  'Real 2026 dispatcher pricing: percentage deals run 5\u201310% of gross, flat fees $200\u2013$500 per truck per month. What each model gets you, the hidden fees and red flags to avoid, and when a dispatcher pays for itself.',
  'Dispatch Pricing','How Much Does a Truck Dispatcher Cost in 2026?',
  'Percentage vs flat fee, what 5% should cover, the red flags that mean you are overpaying, and the simple math on whether a dispatcher pays for itself.',
@@ -2101,7 +2101,7 @@ A2_FAQ=[
  ('Is factoring worth the fee?','It depends on your cash flow. Paying 1&ndash;3% to get paid in a day or two is often worth it in your first months, when a slow-paying broker can sink you. Once you have a cash cushion, many carriers drop it to keep the fee.'),
  ('Who gets me a better rate, a dispatcher or a broker?','A broker is paid to move the shipper&rsquo;s freight for as little as the market allows, so their incentive is a lower rate. A dispatcher works for you and is motivated to negotiate the rate up, since on a percentage model they only earn more when you do.')]
 rich_article('truck-dispatcher-vs-freight-broker.html',
- 'Truck Dispatcher vs Freight Broker: The Difference, Costs & Who You Need (2026)',
+ 'Truck Dispatcher vs Freight Broker: Costs & Who You Need',
  'Dispatcher vs broker vs factoring in plain English: who works for the carrier, who legally controls the freight, how each gets paid (5% flat vs 15\u201325% margin vs 1\u20133% factoring), and which you actually need.',
  'Carrier Basics','Truck Dispatcher vs Freight Broker vs Factoring',
  'Three roles every carrier deals with &mdash; but they do completely different jobs. Who represents whom, what each can legally do, how the money flows, and which ones you actually need.',
@@ -2308,7 +2308,7 @@ TX_FAQ=[
  ('How does LoadBoot charge Texas carriers?','The same flat 5% of the linehaul as everywhere else &mdash; no sign-up fee, no monthly minimum, no contract. You approve every load, keep your own authority, and only pay when we actually book you.'),
 ]
 rich_article('truck-dispatcher-in-texas.html',
- 'Truck Dispatcher in Texas &mdash; Lanes, Rates &amp; Loads (2026) | Loadboot',
+ 'Truck Dispatcher in Texas &mdash; Lanes &amp; Rates (2026)',
  'Truck dispatch in Texas: Triangle lanes, Laredo border freight, energy and produce seasons, and how a dispatcher keeps a Texas truck loaded.',
  'Texas Carrier Guide','Truck Dispatcher in Texas: Lanes, Rates &amp; How to Stay Loaded',
  'The biggest trucking market in America is also the easiest place to haul cheap. The Triangle, the border, the oil patch, the produce season &mdash; and how dispatch discipline turns Texas volume into Texas profit.',
@@ -2425,7 +2425,7 @@ CA_FAQ=[
  ('How does LoadBoot charge California carriers?','The same flat 5% of the linehaul as every carrier — no setup fee, no monthly minimum, no contract. Every load shows its full rate card before you accept, and detention is measured from your own arrive/depart stamps.'),
 ]
 rich_article('truck-dispatcher-in-california.html',
- 'Truck Dispatcher in California — Ports &amp; Produce (2026) | Loadboot',
+ 'Truck Dispatcher in California &mdash; Ports &amp; Produce',
  'Truck dispatch in California: LA/Long Beach ports, Inland Empire reloads, Central Valley produce, I-5/99 corridors, CARB and AB5 realities.',
  'California Carrier Guide','Truck Dispatcher in California: Ports, Produce &amp; Staying Compliant',
  'The biggest freight economy in America is also its most regulated. The ports engine, the produce calendar, the I-5 spine &mdash; and the CARB/AB5 layer every CA operator must respect.',
@@ -2463,7 +2463,7 @@ CF_FAQ=[
  ('Does LoadBoot ever push cheap freight?','The matching engine will not auto-offer you a load below the minimum rate YOU set in your dispatch preferences — your floor is enforced by the system on every automated run, and every load shows its full rate card before you accept.'),
 ]
 rich_article('how-to-avoid-cheap-freight.html',
- 'How to Avoid Cheap Freight — Floor Price &amp; Reload Math | Loadboot',
+ 'How to Avoid Cheap Freight &mdash; Floor Price &amp; Reload Math',
  'Refuse cheap freight without sitting empty: compute your floor price, price reload pairs not single legs, fund your no, and negotiate with specifics.',
  'Rate Discipline Guide','How to Avoid Cheap Freight (Without Sitting Empty)',
  'Every market has a bottom third &mdash; and it is engineered to find the carrier without a number. The floor, the pairs, the practiced no: a system for hauling only freight that pays.',
@@ -2498,7 +2498,7 @@ GA_FAQ=[
  ('How does LoadBoot charge Southeast carriers?','The same flat 5% of the linehaul as everywhere — no setup fee, no monthly minimum, no contract. Every load shows the full rate card (detention, layover, TONU, lumper) before you accept.'),
 ]
 rich_article('truck-dispatcher-in-georgia.html',
- 'Truck Dispatcher in Georgia &amp; Florida (2026 Playbook) | Loadboot',
+ 'Truck Dispatcher in Georgia &amp; Florida (2026 Playbook)',
  'Truck dispatch in Georgia and Florida: Atlanta reloads, Savannah port freight, the Florida imbalance priced as pairs, lanes and seasons.',
  'Southeast Carrier Guide','Truck Dispatcher in Georgia &amp; Florida: The Southeast Playbook',
  'Atlanta is the reload machine, Savannah keeps climbing, and Florida pays great going in &mdash; then tests you on the way out. The Southeast, honestly priced.',
@@ -2641,7 +2641,7 @@ GL_FAQ=[
  ('Is LoadBoot a load board or a dispatch service?','Both layers of one system: a live, verified load board where booked and expired freight disappears instantly \u2014 plus an optional flat-5% dispatch service where LoadBoot\u2019s dispatchers find, negotiate and book freight for you (industry dispatch services typically charge 5\u201310%).')]
 
 rich_article('ghost-loads-load-board-problems.html',
- 'Ghost Loads &amp; Load Board Problems 2026: Why Booking One Load Takes 20 Calls | LoadBoot',
+ 'Ghost Loads: Why Booking One Load Takes 20 Calls (2026)',
  'Ghost loads, stale posts, bait rates and double brokering: why carriers burn 3\u20136 hours booking one load, what it costs per week, how to spot fakes \u2014 and how a truck operating system removes the problem entirely.',
  'The Carrier\u2019s #1 Time Thief','Ghost Loads &amp; Fake Freight: Why the Load Board Wastes Your Day \u2014 and the System That Fixes It',
  'The load you just called on was covered yesterday. The next three don\u2019t exist at the posted rate. Here is why the boards stay broken, what it costs you per week, and what a truck operating system does differently.',
@@ -2878,7 +2878,7 @@ PD_FAQ = [
 ]
 
 rich_article('truck-driver-per-diem-2026.html',
- 'Truck Driver Per Diem 2026: Rates, Rules &amp; the $12,800 Most Owner-Operators Miss | Loadboot',
+ 'Truck Driver Per Diem 2026: Rates, Rules &amp; the $12,800',
  'IRS per diem for truck drivers 2026: $80/day, 80% deductible ($64/night). 200 nights out = $12,800 in deductions. Who can claim it, the proof the IRS wants, and how to make that proof build itself.',
  'Trucking Tax Deductions','Truck Driver Per Diem 2026: The $12,800 Most Owner-Operators Never Claim',
  'The IRS does not want your meal receipts. It wants proof of the nights you were away &mdash; and that is exactly where drivers lose thousands. Here is the 2026 rule, the real math, and how to make the record write itself.',
@@ -2955,7 +2955,7 @@ PF_FAQ=[
 ]
 RELATED['protect-freight-from-loss-damage-and-fraud.html'] = [('ship-direct-to-carrier.html','Ship Direct to Carriers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking &amp; Proof'),('compliance.html','Carrier Verification'),('features.html','All Features')]
 rich_article('protect-freight-from-loss-damage-and-fraud.html',
- 'How to Protect Your Freight From Loss, Damage &amp; Fraud: A Shipper&rsquo;s Guide | LoadBoot',
+ 'Protect Freight From Loss, Damage &amp; Fraud: Shipper Guide',
  'A shipper&rsquo;s complete guide to protecting freight: how to vet carriers, cargo insurance vs liability, double-brokering red flags, chain-of-custody GPS proof and what to do when a claim happens.',
  'Shipper Freight Protection','How to Protect Your Freight From Loss, Damage &amp; Fraud',
  'Freight is stolen, damaged and double-brokered every day &mdash; almost always because the carrier was never really vetted. Here is how a shipper protects a load from booking to delivery, step by step.',
@@ -3014,7 +3014,7 @@ LB_FAQ=[
 ]
 RELATED['load-board-subscription-cost.html'] = [('free-load-board-for-brokers.html','Free Load Board for Brokers'),('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('ghost-loads-load-board-problems.html','Ghost Loads &amp; Fake Freight'),('features.html','All Features'),('payments-settlements.html','Payments &amp; Settlements')]
 rich_article('load-board-subscription-cost.html',
- 'The Real Cost of Load Board Subscriptions in 2026 (and How Brokers Cut It to Zero) | LoadBoot',
+ 'Load Board Subscription Costs 2026 (and How to Pay Zero)',
  'What a load board actually costs freight brokers in 2026: subscription tiers, 25&ndash;45% renewal hikes, add-ons, per-seat fees and the fake-load tax &mdash; and how a free verified board cuts the bill to zero.',
  'Freight Broker Costs','The Real Cost of Load Board Subscriptions in 2026',
  'The sticker price is the smallest part of what a load board costs you. Here is the full 2026 math &mdash; renewal hikes, add-ons, per-seat fees, the fake-load tax &mdash; and how brokers cut it to zero.',
@@ -3078,7 +3078,7 @@ SW_FAQ=[
 ]
 RELATED['how-to-ship-without-a-broker.html'] = [('ship-direct-to-carrier.html','Ship Direct to Carriers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('brokers.html','For Brokers'),('features.html','All Features'),('gps-tracking.html','GPS Tracking &amp; Proof')]
 rich_article('how-to-ship-without-a-broker.html',
- 'How to Ship Freight Without a Broker: A Step-by-Step Guide for Businesses | LoadBoot',
+ 'How to Ship Freight Without a Broker: Step-by-Step Guide',
  'How to ship freight directly to carriers without a broker: what a broker really does, the risks of going direct, a step-by-step process to do it safely, and how to keep the 15&ndash;20% savings without the fraud risk.',
  'Direct Freight Shipping','How to Ship Freight Without a Broker',
  'Cutting out the broker can save 15&ndash;20% &mdash; or cost you a stolen load if you skip the part brokers actually do. Here is how to ship direct safely, step by step.',
@@ -3170,7 +3170,7 @@ BLOGPOSTS += [
 ]
 RELATED['oversize-load-rates-per-mile.html'] = [('flatbed-dispatch.html','Flatbed Dispatch'),('market-rates.html','Market Rates Per Mile'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('detention-pay-policy.html','Detention Pay'),('carrier-application.html','Apply as Carrier')]
 rich_article('oversize-load-rates-per-mile.html',
- 'Oversize Load Rates 2026: How Much Do Oversize Loads Pay Per Mile? ($4–$15+) | LoadBoot',
+ 'Oversize Load Rates 2026: Pay Per Mile ($4&ndash;$15+)',
  'How much do oversize loads pay per mile? 2026 rates: $4–$5.50 permit-only, $5–$8 escorted, $8–$15+ superloads vs ~$3.72 legal flatbed. Permit fees, pilot car costs, and how to price the whole move.',
  'Freight Rates &amp; Heavy Haul','How Much Do Oversize Loads Pay Per Mile? 2026 Oversize &amp; Heavy Haul Rates',
  'Oversize pays $4 to $15+ per mile in 2026 &mdash; but permits, pilot cars and daylight-only clocks eat amateurs alive. Here are the real rate tiers, the real costs underneath them, and the math for pricing the whole move.',
@@ -4206,7 +4206,7 @@ ref += final_cta()
 page('referral.html', 'Referral Program Update — Now the LoadBoot Agent Program',
      'The referral program is now the LoadBoot Agent Program: one link for carriers, brokers and shippers, 1% of gross on every delivered load, recurring.',
      'referral.html', '<section class="section"><div class="wrap" style="text-align:center;padding:80px 0"><h1>The referral program is now the <span style="color:#FC5305">Agent Program</span></h1><p class="lead center" style="max-width:640px;margin:14px auto 24px">Same idea, bigger engine: one link for carriers, brokers and shippers \u00b7 1% of gross on every delivered load \u00b7 overrides 5 levels deep \u00b7 live chain tracking and monthly payouts.</p><a href="agents.html" class="btn btn-primary">See the Agent Program &rarr;</a> <a href="/app/agent/" class="btn btn-secondary" style="margin-left:8px">Create your agent account</a></div></section>',
-     '<meta http-equiv="refresh" content="4;url=/agents.html">')
+     '')
 
 # ---------- AGENT PROGRAM (independent dispatchers — pair-based 1% recurring) ----------
 AGENT_CSS = '''<style>
@@ -7092,7 +7092,8 @@ with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADE
 # ---------- _redirects ----------
 # Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files
 # are ever copied here, so nothing sensitive can be fetched. This file is intentionally minimal.
-REDIRECTS = "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
+REDIRECTS = "/referral.html /agents.html 301!\n"
+REDIRECTS += "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
 REDIRECTS += "# /page.html (impressions split across 29 duplicates in GSC). 301 the extensionless\n"
 REDIRECTS += "# form to the canonical .html form so link equity consolidates. Generated per build.\n"
 _rd_exclude = {'index.html', '404.html', 'dashboard.html'}
