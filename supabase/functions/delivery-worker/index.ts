@@ -6,6 +6,7 @@
 // dispatchers and referral partners are excluded — those relationships run in writing.
 // The number is read from app_private.retell_config via the support_phone() RPC, never typed.
 // Same safety model: no RESEND_API_KEY => safe no-op. Identities: hello@ / dispatch@ / billing@.
+// v10 (2026-08-01): outreach.* is pinned to the marketing identity — it was matching DISPATCH_RE on the word "carrier" and sending from dispatch@loadboot.com.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 Deno.serve(async (_req) => {
@@ -139,6 +140,11 @@ Deno.serve(async (_req) => {
     const explicit = d.meta && typeof d.meta.category === "string" ? String(d.meta.category).toLowerCase() : "";
     if (explicit in IDENTITIES) return explicit;
     const key = String(d.template_key ?? "");
+    // Cold outreach always sends from the marketing identity, never from dispatch@ or
+    // billing@. DISPATCH_RE matches the word "carrier", so keys like outreach.carrier.1
+    // were being classified as dispatch and sent from the address that carries real load
+    // mail. Operational and acquisition email must never share a sender identity.
+    if (/^outreach[._-]/i.test(key)) return "marketing";
     if (BILLING_RE.test(key)) return "billing";
     if (DISPATCH_RE.test(key)) return "dispatch";
     if (d.source === "campaign") return "marketing";
