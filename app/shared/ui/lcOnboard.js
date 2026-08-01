@@ -1,7 +1,17 @@
 // lcOnboard.js — LoadBoot live-chat onboarding concierge (marketing site).
 // Runs INSIDE the live chat widget (liveChatCore.js) via the LBChat._ob extension hooks.
 // Full signup + onboarding without leaving the chat: role → FMCSA verify → contact →
-// account (magic link — NO password ever typed in chat) → AI document pre-check → done.
+// password (real email + password signup, same as the portal) → role-specific steps → done.
+// The visitor chooses a real password here and signs in at their portal with the SAME
+// email + password afterwards (no magic link, no passwordless account they can't log into).
+// SECURITY: the password is POSTed straight to /auth/v1/signup and lives only in a local
+// variable — it is NEVER put on state, never sent to lc_ob_save / rpc(), never added as a
+// chat message, and therefore is never persisted anywhere in the chat transcript or CRM.
+// A "reset my password" intent (or LBChatOnboard.reset()) drives /auth/v1/recover.
+// Dispatchers fork right after the role card: dispatcher_intent = 'job' (applying for a
+// salaried dispatcher seat) or 'independent' (brings their own carriers for the 1% agent
+// commission) — both still end up with a real 'agent' account, but the questions and the
+// closing copy differ, and a job application is written to the transcript as one clear note.
 // State is saved server-side per visitor (lc_ob_get / lc_ob_save), so a visitor can leave,
 // come back days later, ask other questions mid-flow — and resume exactly where they left off.
 (function () {
@@ -46,16 +56,38 @@
     '.lbo-resume .go{margin-left:auto;background:#FC5305;border-radius:9px;padding:7px 11px;font:800 11.5px Inter,Arial;white-space:nowrap}'
   ].join('');
 
+  // Signup metadata shape matters: the handle_new_user() DB trigger branches on
+  // raw_user_meta_data->>'role' — 'agent' builds a referrer + agent_profile, 'driver'
+  // skips the org, anything else (or absent) creates a carrier organization. So carrier,
+  // broker and shipper must NOT send a 'role' key at all.
+  function metaBase(s) {
+    return {
+      name: s.data.contact_name || null,
+      company: s.data.company || (s.data.fmcsa && s.data.fmcsa.legal_name) || null,
+      phone: s.data.phone || null
+    };
+  }
+  function metaWith(s, extra) {
+    var m = metaBase(s);
+    if (extra) { for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) m[k] = extra[k]; } }
+    return m;
+  }
+
   var ROLES = {
-    carrier:    { icon: '🚚', label: 'Carrier / Owner-operator',
+    carrier:    { icon: '🚚', label: 'Carrier / Owner-operator', portal: '/app/carrier/', mins: 'about 5 minutes',
+      meta: function (s) { return metaBase(s); },
       pitch: "Smart move. Here's what you get: <b>verified loads only</b> (zero ghost loads), detention & TONU <b>pre-agreed in writing</b> on every load, GPS proof that gets you paid, and a flat <b>5% only when we book you</b> — $0 monthly. Setup takes ~5 minutes right here." },
-    broker:     { icon: '🏢', label: 'Freight Broker',
+    broker:     { icon: '🏢', label: 'Freight Broker', portal: '/app/partner/', mins: 'about 3 minutes',
+      meta: function (s) { return metaWith(s, { partner_kind: 'broker' }); },
       pitch: "Welcome! Brokers post loads <b>100% free — forever</b>. Every carrier is FMCSA-verified before they can book, you get live GPS + geofenced arrive/depart stamps, automatic document collection, and zero double-brokering. Let's get your account up in ~3 minutes." },
-    shipper:    { icon: '📦', label: 'Shipper',
+    shipper:    { icon: '📦', label: 'Shipper', portal: '/app/partner/', mins: 'about 3 minutes',
+      meta: function (s) { return metaWith(s, { partner_kind: 'shipper' }); },
       pitch: "Great choice. Direct-to-carrier shipping: <b>no broker margin stacking</b>, FMCSA-verified carriers, live GPS tracking with photo proof of delivery, and one transparent rate. You'll see exactly which truck has your freight, 24/7. ~3 minutes to set up." },
-    dispatcher: { icon: '🧑‍✈️', label: 'Dispatcher',
+    dispatcher: { icon: '🧑‍✈️', label: 'Dispatcher', portal: '/app/agent/', mins: 'about 3 minutes',
+      meta: function (s) { return metaWith(s, { role: 'agent' }); },
       pitch: "We work with sharp dispatchers. Depending on what you're after — a dispatcher seat with LoadBoot or bringing your carriers onto the platform — I'll set you up and route you to the right team. ~3 minutes." },
-    agent:      { icon: '📣', label: 'Referral Partner',
+    agent:      { icon: '📣', label: 'Referral Partner', portal: '/app/agent/', mins: 'about 2 minutes',
+      meta: function (s) { return metaWith(s, { role: 'agent' }); },
       pitch: "Our Referral Partner program pays <b>1% of gross</b> on every load your referred carriers run — for as long as they run. Refer 5 active trucks and it's real monthly income. Account takes ~3 minutes." }
   };
 
@@ -109,7 +141,23 @@
     w.appendChild(el('div', 'lbo-prog-t', txt));
     n.appendChild(w);
   }
-  function steps(role) { return role === 'carrier' ? ['role', 'mc', 'contact', 'account', 'docs', 'w9', 'sign', 'done'] : ['role', 'contact', 'account', 'done']; }
+  var CARRIER_STEPS = ['role', 'mc', 'contact', 'password', 'docs', 'w9', 'sign', 'done'];
+  function steps(role) {
+    switch (role) {
+      case 'carrier': return CARRIER_STEPS;
+      case 'broker': return ['role', 'contact', 'password', 'authority', 'done'];
+      case 'shipper': return ['role', 'contact', 'password', 'prefs', 'done'];
+      case 'dispatcher': return ['role', 'intent', 'contact', 'password', 'prefs', 'done'];
+      case 'agent': return ['role', 'contact', 'password', 'prefs', 'done'];
+      default: return CARRIER_STEPS;
+    }
+  }
+  // Next step after the password card, per role.
+  function afterPassword(role) {
+    if (role === 'carrier') return function () { stepDocs(0); };
+    if (role === 'broker') return stepAuthority;
+    return stepPrefs;
+  }
   function pctFor(role, step) {
     var ss = steps(role || 'carrier'); var i = ss.indexOf(step); if (i < 0) i = 0;
     return Math.round((i / (ss.length - 1)) * 100);
@@ -135,13 +183,41 @@
     H().addMsg('visitor', ROLES[k].icon + ' ' + ROLES[k].label);
     save({ role_label: ROLES[k].label }, '📋 Onboarding started — role: ' + k);
     var n = card();
-    prog(n, 12, 'Step ' + stepNum(k, k === 'carrier' ? 'mc' : 'contact'));
+    prog(n, 12, 'Step ' + stepNum(k, k === 'carrier' ? 'mc' : k === 'dispatcher' ? 'intent' : 'contact'));
     n.appendChild(el('div', 'lbo-h', ROLES[k].icon + ' Perfect.'));
     n.appendChild(el('div', 'lbo-s', ROLES[k].pitch));
+    n.appendChild(el('div', 'lbo-s', "That's <b>" + steps(k).length + ' quick steps</b> — ' + ROLES[k].mins + '. You can stop any time and pick up right where you left off.'));
     var go = el('button', 'lbo-btn', k === 'carrier' ? "Let's verify my authority →" : "Let's do it →");
     go.type = 'button';
-    go.onclick = function () { if (k === 'carrier') stepMC(); else stepContact(); };
+    go.onclick = function () { if (k === 'carrier') stepMC(); else if (k === 'dispatcher') stepIntent(); else stepContact(); };
     n.appendChild(go);
+  }
+
+  // ---------- STEP: intent (dispatcher only) ----------
+  // Two very different people pick "Dispatcher": someone applying for a salaried seat on our
+  // desk, and an independent dispatcher bringing their own carriers. dispatcher_intent decides
+  // which questions stepPrefs asks and how stepDone signs off.
+  var INTENTS = [
+    ['job', '💼  A dispatcher job at LoadBoot'],
+    ['independent', '🤝  I dispatch for my own carriers']
+  ];
+  function stepIntent() {
+    var s = state(); s.step = 'intent'; save(null, null);
+    var n = card();
+    prog(n, pctFor(s.role, 'intent'), 'Step ' + stepNum(s.role, 'intent'));
+    n.appendChild(el('div', 'lbo-h', '🧑‍✈️ Which one are you after?'));
+    n.appendChild(el('div', 'lbo-s', "Both doors are open. We hire dispatchers onto our own desk (that's a paid seat at LoadBoot), and we work with independent dispatchers who bring the carriers they already run and earn <b>1% of gross</b> on every load. There's no wrong answer — pick the one that fits and I'll ask the right questions."));
+    INTENTS.forEach(function (d) {
+      var b = el('button', 'lbo-btn ghost', d[1]);
+      b.type = 'button';
+      b.onclick = function () {
+        s.data.dispatcher_intent = d[0];
+        H().addMsg('visitor', d[1]);
+        save({ dispatcher_intent: d[0] }, '🧑‍✈️ Dispatcher intent: ' + d[0]);
+        stepContact();
+      };
+      n.appendChild(b);
+    });
   }
 
   // ---------- STEP: MC / FMCSA (carrier) ----------
@@ -240,49 +316,183 @@
       if (f.company) s.data.company = f.company.value.trim();
       H().addMsg('visitor', '👤 ' + nm + ' · ' + em);
       save({ contact_name: nm, email: em, phone: ph, company: s.data.company || null }, '👤 Onboarding contact: ' + nm + ' · ' + em + ' · ' + ph);
-      stepAccount();
+      stepPassword();
     };
   }
 
-  // ---------- STEP: account (magic link — no password in chat) ----------
-  function stepAccount() {
-    var s = state(); s.step = 'account'; save(null, null);
+  // ---------- STEP: password (real email + password signup, same as the portal) ----------
+  // The password below never leaves this function: not saved, not rpc'd, not echoed in chat.
+  function stepPassword() {
+    var s = state(); s.step = 'password'; save(null, null);
+    var next = afterPassword(s.role);
     var n = card();
-    prog(n, pctFor(s.role, 'account'), 'Step ' + stepNum(s.role, 'account'));
-    n.appendChild(el('div', 'lbo-h', '🔐 Create your account'));
-    n.appendChild(el('div', 'lbo-s', "For your security we <b>never ask for a password in chat</b>. I'll email a secure sign-in link to <b>" + esc(s.data.email) + "</b> — one tap and your portal is open. You set your password later, inside your account."));
+    prog(n, pctFor(s.role, 'password'), 'Step ' + stepNum(s.role, 'password'));
+    n.appendChild(el('div', 'lbo-h', '🔐 Create your password'));
+    n.appendChild(el('div', 'lbo-s', 'This is the password you\'ll use to sign in at your portal with <b>' + esc(s.data.email) + '</b> — the exact same one, so pick something you\'ll remember.'));
+    n.appendChild(el('label', null, 'Password'));
+    var p1 = document.createElement('input'); p1.type = 'password'; p1.setAttribute('autocomplete', 'new-password'); p1.placeholder = 'At least 8 characters'; n.appendChild(p1);
+    n.appendChild(el('label', null, 'Confirm password'));
+    var p2 = document.createElement('input'); p2.type = 'password'; p2.setAttribute('autocomplete', 'new-password'); p2.placeholder = 'Type it again'; n.appendChild(p2);
     var err = el('div', 'lbo-err'); n.appendChild(err);
-    var b = el('button', 'lbo-btn blue', '✉️ Create account & email my link'); b.type = 'button'; n.appendChild(b);
+    var b = el('button', 'lbo-btn blue', '🔐 Create my account'); b.type = 'button'; n.appendChild(b);
     var skip = el('button', 'lbo-btn ghost', s.role === 'carrier' ? 'Skip for now → documents first' : 'Not now'); skip.type = 'button'; n.appendChild(skip);
+    n.appendChild(el('div', 'lbo-note', '🔒 Sent straight to our secure sign-in system — never stored in this chat, never visible to our team.'));
     b.onclick = async function () {
+      var pw = p1.value, pw2 = p2.value;
+      if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters'; err.style.display = 'block'; return; }
+      if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) { err.textContent = 'Password needs at least one letter and one number'; err.style.display = 'block'; return; }
+      if (pw !== pw2) { err.textContent = "Those two passwords don't match"; err.style.display = 'block'; return; }
+      err.style.display = 'none';
       b.disabled = true; b.textContent = 'Creating your account…';
       var c = H().ctx();
       try {
-        var meta = { role: s.role === 'dispatcher' ? 'carrier' : s.role, full_name: s.data.contact_name, phone: s.data.phone, lb_source: 'livechat_onboarding' };
-        if (s.data.fmcsa) { meta.mc_number = s.data.fmcsa.mc; meta.dot_number = s.data.fmcsa.dot; meta.company = s.data.fmcsa.legal_name; }
-        else if (s.data.company) meta.company = s.data.company;
-        var r = await fetch(c.cfg.url + '/auth/v1/otp', {
+        var meta = ROLES[s.role] && ROLES[s.role].meta ? ROLES[s.role].meta(s) : metaBase(s);
+        var portal = (ROLES[s.role] && ROLES[s.role].portal) || '/app/carrier/';
+        var r = await fetch(c.cfg.url + '/auth/v1/signup?redirect_to=' + encodeURIComponent('https://loadboot.com' + portal), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon },
-          body: JSON.stringify({ email: s.data.email, create_user: true, data: meta })
+          body: JSON.stringify({ email: s.data.email, password: pw, data: meta })
         });
         var d = await r.json().catch(function () { return {}; });
-        if (!r.ok) throw new Error((d && (d.msg || d.error_description || d.message)) || 'Could not create the account');
-        save({ account_requested: true }, '🔐 Account created via chat (magic link emailed): ' + s.data.email + ' role=' + s.role);
+        var msg = (d && (d.msg || d.error_description || d.message || d.error)) || '';
+        if (!r.ok) {
+          if (/already registered|already exists|User already/i.test(String(msg))) return existingAccountCard(next);
+          throw new Error(msg || 'Could not create the account');
+        }
+        save({ account_created: true }, '🔐 Account created via chat (email + password signup): ' + s.data.email + ' role=' + s.role);
         try { rpc('lc_ob_save', { p_visitor_key: c.vKey, p_conversation_id: c.convId || null, p_role: s.role, p_step_key: s.step, p_patch: null, p_note: null, p_account_email: s.data.email, p_account_created: true, p_completed: null }); } catch (e) {}
         var ok = card();
-        prog(ok, pctFor(s.role, 'account') + 8, 'Account ✓');
-        ok.appendChild(el('div', 'lbo-h', '✅ Done — check your inbox!'));
-        ok.appendChild(el('div', 'lbo-s', 'Secure sign-in link sent to <b>' + esc(s.data.email) + '</b>. It may take a minute (check spam too). You can keep going here while it arrives.'));
-        var go = el('button', 'lbo-btn', s.role === 'carrier' ? 'Next: document check →' : 'Finish up →'); go.type = 'button'; ok.appendChild(go);
-        go.onclick = function () { if (s.role === 'carrier') stepDocs(); else stepDone(); };
+        prog(ok, pctFor(s.role, 'password') + 6, 'Account ✓');
+        ok.appendChild(el('div', 'lbo-h', '✅ Account created — check your inbox!'));
+        ok.appendChild(el('div', 'lbo-s', 'A verification email is on its way to <b>' + esc(s.data.email) + '</b> (check spam too). <b>Click that link to confirm your address</b>, then sign in at your portal with this email and the password you just chose. You can keep going here while it arrives.'));
+        var go = el('button', 'lbo-btn', s.role === 'carrier' ? 'Next: document check →' : 'Next →'); go.type = 'button'; ok.appendChild(go);
+        go.onclick = function () { next(); };
       } catch (e) {
-        b.disabled = false; b.textContent = '✉️ Create account & email my link';
+        b.disabled = false; b.textContent = '🔐 Create my account';
         err.textContent = (e && e.message) || 'Something went wrong — try again';
         err.style.display = 'block';
       }
     };
-    skip.onclick = function () { if (s.role === 'carrier') stepDocs(); else stepDone(); };
+    p2.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); b.click(); } });
+    skip.onclick = function () { next(); };
+  }
+  function existingAccountCard(next) {
+    var s = state();
+    var n = card();
+    n.appendChild(el('div', 'lbo-h', '👋 You already have an account'));
+    n.appendChild(el('div', 'lbo-s', '<b>' + esc(s.data.email) + '</b> is already registered with LoadBoot. If you remember the password, just sign in at your portal — otherwise I can email you a reset link right now.'));
+    var rst = el('button', 'lbo-btn blue', '🔑 Send me a password reset link'); rst.type = 'button'; n.appendChild(rst);
+    var cont = el('button', 'lbo-btn ghost', 'Continue setup anyway →'); cont.type = 'button'; n.appendChild(cont);
+    rst.onclick = function () { startReset(s.data.email); };
+    cont.onclick = function () { next(); };
+  }
+
+  // ---------- STEP: authority (broker) ----------
+  function stepAuthority() {
+    var s = state(); s.step = 'authority'; save(null, null);
+    var n = card();
+    prog(n, pctFor(s.role, 'authority'), 'Step ' + stepNum(s.role, 'authority'));
+    n.appendChild(el('div', 'lbo-h', '🏢 Your brokerage authority'));
+    n.appendChild(el('div', 'lbo-s', 'Two quick compliance details so carriers can see you\'re legit before they book.'));
+    n.appendChild(el('label', null, 'MC / brokerage authority number'));
+    var mc = document.createElement('input'); mc.placeholder = 'e.g. 123456'; mc.inputMode = 'numeric'; n.appendChild(mc);
+    var wrap = el('div', null);
+    wrap.style.cssText = 'display:flex;align-items:flex-start;gap:8px;font:400 12.5px/1.5 Inter,Arial;color:#475569';
+    var bond = document.createElement('input'); bond.type = 'checkbox'; bond.style.cssText = 'width:16px;height:16px;margin-top:1px;flex:0 0 auto';
+    var bl = el('label', null, 'I confirm we carry an active <b>$75,000 BMC-84</b> surety bond (or BMC-85 trust).');
+    bl.style.cssText = 'font:400 12.5px/1.5 Inter,Arial;color:#475569;text-transform:none;letter-spacing:0;margin:0';
+    wrap.appendChild(bond); wrap.appendChild(bl);
+    bl.onclick = function () { bond.checked = !bond.checked; };
+    n.appendChild(wrap);
+    var err = el('div', 'lbo-err'); n.appendChild(err);
+    var b = el('button', 'lbo-btn', 'Continue →'); b.type = 'button'; n.appendChild(b);
+    var skip = el('button', 'lbo-btn ghost', "Skip — I'll add it in my portal"); skip.type = 'button'; n.appendChild(skip);
+    b.onclick = function () {
+      var v = (mc.value || '').replace(/[^0-9]/g, '');
+      if (v.length < 4) { err.textContent = 'Enter your MC / brokerage authority number'; err.style.display = 'block'; return; }
+      if (!bond.checked) { err.textContent = 'Please confirm your active BMC-84 surety bond'; err.style.display = 'block'; return; }
+      err.style.display = 'none';
+      H().addMsg('visitor', '🏢 MC ' + v + ' · BMC-84 confirmed');
+      save({ broker_mc: v, bmc84_confirmed: true }, '🏢 Broker authority captured: MC ' + v + ' · $75,000 BMC-84 confirmed in chat');
+      stepDone();
+    };
+    skip.onclick = function () { save({ authority_skipped: true }, '🏢 Broker authority skipped in chat — will collect in portal'); stepDone(); };
+    mc.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); b.click(); } });
+  }
+
+  // ---------- STEP: prefs (shipper / dispatcher / agent) ----------
+  var PREFS = {
+    shipper: { head: '📦 About your freight', sub: 'So we can match you with the right verified carriers from day one.', fields: [
+      ['ship_what', 'What do you ship?', 'e.g. palletized food, machinery, retail', 'text'],
+      ['lanes', 'Typical lanes', 'e.g. Chicago to Dallas', 'text'],
+      ['loads_month', 'Loads per month', 'e.g. 20', 'number']
+    ] },
+    agent: { head: '📣 About your network', sub: 'The more we know, the faster we can get your referral links and payouts live.', fields: [
+      ['network', "Who's in your network?", 'e.g. owner-operators in Texas', 'text'],
+      ['referrals_est', 'Roughly how many could you refer?', 'e.g. 15', 'number'],
+      ['payout_email', 'Best email for payouts', 'you@company.com', 'email']
+    ] }
+  };
+  // Dispatchers get one of these two, depending on dispatcher_intent. `note` is the prefix of
+  // the Command Center transcript line, so the team can spot a real job application instantly.
+  var DISPATCHER_PREFS = {
+    job: { head: '💼 Your application', sub: 'This goes straight to the team that hires our dispatchers — the more you tell me, the faster they can come back to you.', note: '💼 DISPATCHER JOB APPLICATION —', fields: [
+      ['years_dispatching', 'Years of dispatching experience', 'e.g. 4', 'text'],
+      ['equipment', 'Equipment you know best', 'e.g. reefer, flatbed, power only', 'text'],
+      ['hours_available', 'Which hours can you cover?', 'e.g. 8am-5pm Central, or nights', 'text'],
+      ['current_company', 'Current or last company (optional)', 'Where you dispatch now', 'text'],
+      ['resume_link', 'LinkedIn or résumé link (optional)', 'linkedin.com/in/…', 'text'],
+      ['pay_expected', 'Expected monthly pay (USD) (optional)', 'e.g. 3500', 'text']
+    ] },
+    independent: { head: '🤝 Your book of business', sub: 'So we can size your desk, set up your agent commission and get your carriers moved across without a mess.', note: '🤝 INDEPENDENT DISPATCHER —', fields: [
+      ['carriers_today', 'How many carriers do you dispatch for today?', 'e.g. 8', 'text'],
+      ['equipment', 'Equipment they run', 'e.g. reefer, flatbed, power only', 'text'],
+      ['carriers_bringing', 'Roughly how many could you bring to LoadBoot?', 'e.g. 5', 'text'],
+      ['payout_email', 'Best email for commission payouts', 'you@company.com', 'email']
+    ] }
+  };
+  function prefsCfg(s) {
+    if (s.role === 'dispatcher') return s.data.dispatcher_intent === 'job' ? DISPATCHER_PREFS.job : DISPATCHER_PREFS.independent;
+    return PREFS[s.role] || PREFS.shipper;
+  }
+  function stepPrefs() {
+    var s = state(); s.step = 'prefs'; save(null, null);
+    var cfg = prefsCfg(s);
+    var n = card();
+    prog(n, pctFor(s.role, 'prefs'), 'Step ' + stepNum(s.role, 'prefs'));
+    n.appendChild(el('div', 'lbo-h', cfg.head));
+    n.appendChild(el('div', 'lbo-s', cfg.sub));
+    var f = {};
+    cfg.fields.forEach(function (d) {
+      n.appendChild(el('label', null, d[1]));
+      var i = document.createElement('input'); i.placeholder = d[2]; i.type = d[3];
+      if (d[3] === 'number') i.inputMode = 'numeric';
+      if (s.data[d[0]]) i.value = s.data[d[0]];
+      else if (d[0] === 'payout_email' && s.data.email) i.value = s.data.email;
+      f[d[0]] = i; n.appendChild(i);
+    });
+    var err = el('div', 'lbo-err'); n.appendChild(err);
+    var b = el('button', 'lbo-btn', 'Continue →'); b.type = 'button'; n.appendChild(b);
+    var skip = el('button', 'lbo-btn ghost', "Skip — I'll add this later"); skip.type = 'button'; n.appendChild(skip);
+    n.appendChild(el('div', 'lbo-note', '🔒 Used to match you internally — never sold, never spammed'));
+    b.onclick = function () {
+      var patch = {}, parts = [], any = false;
+      cfg.fields.forEach(function (d) {
+        var v = (f[d[0]].value || '').trim();
+        patch[d[0]] = v || null;
+        if (v) { any = true; parts.push(d[1] + ': ' + v); }
+      });
+      if (!any) { err.textContent = 'Fill in at least one answer, or tap skip'; err.style.display = 'block'; return; }
+      if (patch.payout_email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(patch.payout_email)) { err.textContent = "That payout email doesn't look right"; err.style.display = 'block'; return; }
+      err.style.display = 'none';
+      cfg.fields.forEach(function (d) { if (patch[d[0]]) s.data[d[0]] = patch[d[0]]; });
+      H().addMsg('visitor', cfg.head.slice(0, 2) + ' ' + parts.join(' · '));
+      save(patch, cfg.note
+        ? cfg.note + ' ' + parts.join(' · ')
+        : cfg.head.slice(0, 2) + ' ' + s.role + ' details captured in chat — ' + parts.join(' · '));
+      stepDone();
+    };
+    skip.onclick = function () { save({ prefs_skipped: true }, '⏭️ ' + s.role + ' details skipped in chat — will collect later'); stepDone(); };
   }
 
   // ---------- STEP: docs (carrier) ----------
@@ -492,20 +702,82 @@
       try { rpc('lc_identify', { p_id: c.convId, p_visitor_key: c.vKey, p_name: s.data.contact_name || null, p_email: s.data.email || null }); } catch (e) {}
     }
     try { rpc('lc_ob_save', { p_visitor_key: c.vKey, p_conversation_id: c.convId || null, p_role: s.role, p_step_key: 'done', p_patch: null, p_note: '🎉 Onboarding COMPLETED in chat — ' + (s.data.contact_name || '') + ' (' + (s.role || '') + '). Review docs & follow up.', p_account_email: null, p_account_created: null, p_completed: true }); } catch (e) {}
+    var portal = (ROLES[s.role] && ROLES[s.role].portal) || '/app/carrier/';
+    var portalName = portal === '/app/partner/' ? 'Broker & shipper portal' : portal === '/app/agent/' ? 'Agent portal' : 'Carrier portal';
     var n = card();
     prog(n, 100, 'Complete 🎉');
     var d = el('div', 'lbo-done');
     d.appendChild(el('div', 'big', '🎉'));
     d.appendChild(el('b', null, (s.data.contact_name ? esc(s.data.contact_name.split(' ')[0]) + ', you' : 'You') + "'re in!"));
-    d.appendChild(el('p', null, s.role === 'carrier'
-      ? 'Your sign-in link is in your email. Our compliance team gives every document a human double-check — usually within a few business hours — then you\'re cleared to book.'
-      : 'Your sign-in link is in your email. Our team will reach out shortly to finish any details.'));
-    var a = el('a', null, 'Open my portal →');
-    a.href = s.role === 'broker' || s.role === 'shipper' ? '/app/partner/' : '/app/carrier/';
+    var tail = ' Our team will reach out shortly to finish any details.';
+    if (s.role === 'carrier') {
+      tail = ' Our compliance team gives every document a human double-check — usually within a few business hours — then you\'re cleared to book.';
+    } else if (s.role === 'dispatcher') {
+      tail = s.data.dispatcher_intent === 'job'
+        ? ' Your application is with our hiring team now — a real person reads every one and replies by email, so watch that inbox. In the meantime your account is already live, so feel free to sign in and look around.'
+        : ' Your agent account is ready: your referral link and earnings dashboard are waiting inside the portal. Our team will reach out shortly to help you move your carriers across.';
+    }
+    d.appendChild(el('p', null, 'Sign in with <b>' + esc(s.data.email || 'this email') + '</b> and the password you just created. If you haven\'t clicked the verification email yet, open it first — that confirms your address and unlocks sign-in.' + tail));
+    var a = el('a', null, 'Open my ' + portalName + ' →');
+    a.href = portal;
     a.style.cssText = 'display:inline-block;background:#FC5305;color:#fff;font:800 13px Inter,Arial;padding:11px 18px;border-radius:11px;text-decoration:none';
     d.appendChild(a);
     n.appendChild(d);
+    n.appendChild(el('div', 'lbo-note', 'Forgot it later? Just type "reset my password" here and I\'ll sort it out.'));
     n.appendChild(el('div', 'lbo-note', 'Questions any time — just type below. This chat stays saved for you. 💬'));
+  }
+
+  // ---------- password reset (self-serve, also reachable via LBChatOnboard.reset) ----------
+  function startReset(prefillEmail) {
+    var n = card();
+    n.appendChild(el('div', 'lbo-h', '🔑 Reset your password'));
+    n.appendChild(el('div', 'lbo-s', 'No problem — which portal do you sign in to? I\'ll send the reset link so it drops you back in the right place.'));
+    Object.keys(ROLES).forEach(function (k) {
+      var b = el('button', 'lbo-btn ghost', ROLES[k].icon + ' ' + ROLES[k].label);
+      b.type = 'button';
+      b.onclick = function () { resetEmailCard(k, prefillEmail); };
+      n.appendChild(b);
+    });
+  }
+  function resetEmailCard(k, prefillEmail) {
+    var s = state();
+    var n = card();
+    n.appendChild(el('div', 'lbo-h', '🔑 Where should I send the link?'));
+    n.appendChild(el('div', 'lbo-s', 'Enter the email on your LoadBoot account. The reset link takes you to your ' + esc(ROLES[k].label) + ' portal once you\'ve chosen a new password.'));
+    n.appendChild(el('label', null, 'Email'));
+    var inp = document.createElement('input'); inp.type = 'email'; inp.placeholder = 'you@company.com';
+    inp.setAttribute('autocomplete', 'email');
+    if (prefillEmail) inp.value = prefillEmail;
+    else if (s.data.email) inp.value = s.data.email;
+    n.appendChild(inp);
+    var err = el('div', 'lbo-err'); n.appendChild(err);
+    var b = el('button', 'lbo-btn blue', '✉️ Email me a reset link'); b.type = 'button'; n.appendChild(b);
+    n.appendChild(el('div', 'lbo-note', '🔒 Handled by our secure sign-in system — passwords are never typed or stored in this chat.'));
+    b.onclick = async function () {
+      var em = (inp.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) { err.textContent = "That email doesn't look right"; err.style.display = 'block'; return; }
+      err.style.display = 'none';
+      b.disabled = true; b.textContent = 'Sending…';
+      var c = H().ctx();
+      try {
+        await fetch(c.cfg.url + '/auth/v1/recover?redirect_to=' + encodeURIComponent('https://loadboot.com' + ROLES[k].portal), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon },
+          body: JSON.stringify({ email: em })
+        });
+      } catch (e) {}
+      // Same answer either way — never reveal whether an account exists for this address.
+      try { save({ reset_requested: true }, '🔑 Password reset link requested in chat for ' + em); } catch (e) {}
+      var ok = card();
+      ok.appendChild(el('div', 'lbo-h', '✉️ Check your inbox'));
+      ok.appendChild(el('div', 'lbo-s', 'If that email has a LoadBoot account, a reset link is on its way. Open it and choose a new password — then sign in at your portal.'));
+      var a = el('a', null, 'Go to my portal →');
+      a.href = ROLES[k].portal;
+      a.style.cssText = 'display:inline-block;text-align:center;background:#0883F7;color:#fff;font:800 13px Inter,Arial;padding:11px 18px;border-radius:11px;text-decoration:none';
+      ok.appendChild(a);
+      ok.appendChild(el('div', 'lbo-note', 'Nothing after a few minutes? Check spam, or just ask me here. 💬'));
+    };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); b.click(); } });
   }
 
   // ---------- resume / hooks ----------
@@ -513,8 +785,12 @@
   function stepFor(key) {
     switch (key) {
       case 'mc': return stepMC;
+      case 'intent': return stepIntent;
       case 'contact': return stepContact;
-      case 'account': return stepAccount;
+      case 'password': return stepPassword;
+      case 'account': return stepPassword; // legacy key — live rows still sit on 'account'
+      case 'authority': return stepAuthority;
+      case 'prefs': return stepPrefs;
       case 'docs': return function () { stepDocs(0); };
       case 'w9': return stepW9;
       case 'sign': return stepAgreement;
@@ -542,10 +818,15 @@
 
   window.LBChatOnboard = {
     begin: function () { stepRole(); },
+    reset: startReset,
     checkResume: checkResume,
     // called by liveChatCore on every rendered message
     onMsg: function (sender, body) {
       var s = state();
+      if (sender === 'visitor' && /forgot .*password|reset .*password|password reset|can'?t log ?in|cannot log ?in|lost my password/i.test(String(body || ''))) {
+        setTimeout(function () { if (!document.querySelector('.lbo-card')) startReset(); }, 1400);
+        return;
+      }
       if (sender === 'visitor' && /start (my )?(5.minute )?setup/i.test(String(body || ''))) {
         setTimeout(function () { if (!document.querySelector('.lbo-card')) stepRole(); }, 1400);
         return;
