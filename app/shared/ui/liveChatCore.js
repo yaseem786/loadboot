@@ -76,7 +76,14 @@
       var label = u.replace('https://loadboot.com/', '').replace('.html', '').replace(/[-_]/g, ' ') || 'loadboot.com';
       if (u.indexOf('https://loadboot.com') !== 0) label = u;
       return '<a href="' + u + '" target="_blank" rel="noopener">' + esc(label) + ' →</a>';
-    });
+    })
+      // A phone number the bot offers should be one tap away on a phone, not text to copy.
+      .replace(/\+1 \(\d{3}\) \d{3}-\d{4}/g, function (p) {
+        return '<a href="tel:' + p.replace(/[^0-9+]/g, '') + '">' + p + '</a>';
+      })
+      .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, function (m) {
+        return '<a href="mailto:' + m + '">' + m + '</a>';
+      });
   }
 
   async function api(fn, args) {
