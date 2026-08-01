@@ -572,7 +572,7 @@ def page(fname, title, desc, active, body, schema=''):
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">%s</head><body>
+<link rel="stylesheet" href="styles.css?v=6"><script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "xvcrda1da1");</script>%s</head><body>
 %s
 %s
 %s
@@ -1751,12 +1751,36 @@ def carrier_network_section(aud='broker'):
     return ("<section style=\"background:radial-gradient(900px 380px at 12% -20%,rgba(8,131,247,.35),transparent 60%),""radial-gradient(680px 320px at 96% 130%,rgba(252,83,5,.18),transparent 55%),linear-gradient(140deg,#0b1830 0%,#10223B 55%,#132c4e 100%);color:#fff;padding:74px 0\">""<div class=\"wrap\"><div class=\"sec-head reveal\" style=\"text-align:center\"><div class=\"eyebrow\" style=\"color:#7cc0ff\">LoadBoot Carrier Network</div>"f'<h2 style="color:#fff;max-width:900px;margin:8px auto 0">{h2}</h2>'f'<p style="color:#cbd7e6;max-width:820px;margin:16px auto 0;font-size:1.05rem;line-height:1.75">{lead}</p></div>'f'<div class="grid g4 reveal" style="margin-top:34px">{cards_html}</div>'"<div class=\"ctarow\" style=\"justify-content:center;margin-top:30px\">"f'<a href="{cta_href}" class="btn btn-primary">Browse the carrier network &rarr;</a>'"<a href=\"carriers.html\" class=\"btn btn-secondary\" style=\"background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)\">How carriers get verified</a></div>""</div></section>")
 
 
-def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,body_html,faqs,feat_svg=''):
+# Real first-publish dates per article, recovered from git history on 2026-08-01
+# (commit-exact where a commit names the article; otherwise the article's known publish week).
+PUB_DATES = {
+ 'how-much-does-a-truck-dispatcher-cost.html':'2026-06-27',
+ 'truck-dispatcher-vs-freight-broker.html':'2026-06-27',
+ 'owner-operator-dispatch-service-guide.html':'2026-07-01',
+ 'do-new-authority-carriers-need-a-dispatcher.html':'2026-07-08',
+ 'how-to-read-a-rate-confirmation.html':'2026-07-10',
+ 'truck-driver-per-diem-2026.html':'2026-07-12',
+ 'truck-dispatcher-in-texas.html':'2026-07-13',
+ 'truck-dispatcher-in-california.html':'2026-07-15',
+ 'ghost-loads-load-board-problems.html':'2026-07-17',
+ 'protect-freight-from-loss-damage-and-fraud.html':'2026-07-21',
+ 'load-board-subscription-cost.html':'2026-07-21',
+ 'how-to-ship-without-a-broker.html':'2026-07-21',
+ 'truck-dispatcher-in-georgia.html':'2026-07-22',
+ 'how-to-avoid-cheap-freight.html':'2026-07-24',
+ 'oversize-load-rates-per-mile.html':'2026-07-28',
+}
+
+def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,body_html,faqs,feat_svg='',pub='2026-06-27'):
+    pub = PUB_DATES.get(fname, pub)
+    # pub: real first-publish date (YYYY-MM-DD). Shown in the visible dateline and in Article schema.
+    _pm={'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'}
+    _pd=pub.split('-'); pub_h=_pm.get(_pd[1],_pd[1])+' '+str(int(_pd[2]))+', '+_pd[0]
     e=lambda s:s.replace('"',"'")
     crumb='<div class="wrap"><nav class="crumbs"><a href="index.html">Home</a> &rsaquo; <a href="blog.html">Blog</a> &rsaquo; '+h1+'</nav></div>'
     herob=('<header class="art-hero"><div class="wrap"><div class="art-eyebrow">'+eyebrow+'</div><h1>'+h1
            +'</h1><p class="art-sub">'+deck+'</p><div class="art-meta"><span>By Loadboot Dispatch Team</span>'
-           '<span>&middot; Updated June 2026</span><span>&middot; '+str(read_min)+' min read</span></div></div></header>')
+           '<span>&middot; Published '+pub_h+'</span><span>&middot; '+str(read_min)+' min read</span></div></div></header>')
     # Only reference the hero photo if the file is actually present (else keep the gradient SVG).
     hero_img=('<img src="'+hero+'" alt="'+hero_alt+'" width="1200" height="630" decoding="async">') if asset_exists(hero) else ''
     feat='<div class="wrap"><figure class="art-feat">'+feat_svg+hero_img+'</figure></div>'
@@ -1769,7 +1793,7 @@ def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,bod
     art=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"'+e(h1)
          +'","description":"'+e(desc)+'","image":"https://loadboot.com/'+(hero if asset_exists(hero) else 'icon-512.png')+'","author":{"@type":"Organization","name":"Loadboot"},'
          '"publisher":{"@type":"Organization","name":"Loadboot","logo":{"@type":"ImageObject","url":"https://loadboot.com/icon-512.png"}},'
-         '"datePublished":"2026-06-27","dateModified":"2026-06-27"}</script>')
+         '"datePublished":"'+pub+'","dateModified":"'+pub+'"}</script>')
     bcr=('<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":'
          '[{"@type":"ListItem","position":1,"name":"Home","item":"https://loadboot.com/"},'
          '{"@type":"ListItem","position":2,"name":"Blog","item":"https://loadboot.com/blog.html"},'
