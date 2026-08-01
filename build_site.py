@@ -459,7 +459,7 @@ def footer():
 <div style="margin-bottom:20px"><a href="https://www.capterra.com/p/10050953/LoadBoot/" rel="noopener" target="_blank" aria-label="LoadBoot reviews on Capterra" style="display:inline-flex;align-items:center;gap:10px;background:#0d1b30;border:1px solid #1e3a5f;border-radius:12px;padding:10px 16px;text-decoration:none;margin:0">
 <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5l9.5 3.6L3 12.7V5.5z" fill="#FF9D28"/><path d="M12.5 9.1L21 5.5l-8.5 15.4V9.1z" fill="#068EEF"/><path d="M3 12.7l9.5-3.6v11.8L3 12.7z" fill="#044D80"/></svg>
 <span style="display:inline;margin:0;font-size:.88rem;color:#cbd5e1">Find us on <b style="color:#fff">Capterra</b> &mdash; read &amp; leave a review</span></a></div>
-<div class="foot-bottom"><span>&copy; 2026 Loadboot. All rights reserved. &middot; Serving carriers in all 48 states.</span>
+<div class="foot-bottom"><span>&copy; 2026 LoadBoot LLC &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; D-U-N-S&reg; 149880967 &middot; Serving carriers in all 48 states.</span>
 <span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html#create" class="btn btn-primary">Get Started</a></div>
@@ -729,6 +729,21 @@ with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mi
 with open(os.path.join(OUT,'app.js'),'w',encoding='utf-8') as f: f.write(JS + PWA_JS)
 with open(os.path.join(OUT,'manifest.webmanifest'),'w',encoding='utf-8') as f: f.write(MANIFEST)
 with open(os.path.join(OUT,'sw.js'),'w',encoding='utf-8') as f: f.write(SW)
+
+# Digital Asset Links — lets the LoadBoot Android app (TWA, package com.loadboot.app) open
+# loadboot.com full-screen without the browser bar. The fingerprint is the SHA-256 of the
+# Play upload keystore (loadboot-upload.keystore) generated 2026-07-31. If that keystore is
+# ever regenerated, this fingerprint must be updated or the app falls back to browser chrome.
+# IndexNow key file — proves site ownership so we can ping search engines the moment
+# a page is published (bing.com/indexnow). Ping URL (open after any deploy):
+#   https://api.indexnow.org/indexnow?url=https://loadboot.com/sitemap.xml&key=98c78c14a552b1f4ee3c80a2e791179c
+with open(os.path.join(OUT, '98c78c14a552b1f4ee3c80a2e791179c.txt'), 'w', encoding='utf-8') as f:
+    f.write('98c78c14a552b1f4ee3c80a2e791179c')
+
+_wk = os.path.join(OUT, '.well-known')
+os.makedirs(_wk, exist_ok=True)
+with open(os.path.join(_wk, 'assetlinks.json'), 'w', encoding='utf-8') as f:
+    f.write('[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.loadboot.app","sha256_cert_fingerprints":["A6:5D:53:C0:27:9A:1C:C6:93:37:43:EB:64:AF:B8:05:21:01:0E:98:8B:AC:49:82:33:85:B5:5F:E9:28:6E:06"]}}]')
 
 ROAD = '''<section class="road-sec"><div class="wrap">
 <div class="sec-head reveal"><div class="eyebrow">Always Moving</div><h2>Your truck, loaded and rolling &mdash; coast to coast</h2><p class="lead">We keep freight moving across all 48 states, day and night.</p></div>
@@ -1099,8 +1114,8 @@ ROLEBAND = ('<section style="padding:26px 0 8px"><div class="wrap"><div class="g
 
 home_body = HERO+ROLEBAND+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
 home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'
-page('index.html','Truck Dispatch & Verified Load Board — Carriers, Brokers & Shippers | LoadBoot',
-     'US truck dispatch and a zero-ghost load board on one platform: carriers book higher-paying freight with the rate card in writing, brokers cover loads with verified capacity in minutes, shippers watch every mile on live GPS. Flat 5%, no contracts.',
+page('index.html','Truck Dispatch & Verified Load Board for Carriers | LoadBoot',
+     'Truck dispatch and a verified load board with zero ghost loads on one platform. Flat 5% for carriers, free posting for brokers, live GPS tracking.',
      'index.html', home_body, home_faq_schema)
 
 # ---------- SERVICE PAGE BUILDER ----------
@@ -1414,11 +1429,15 @@ _about_org_schema = ('<script type="application/ld+json">{"@context":"https://sc
     '"url":"https://loadboot.com/about.html","mainEntity":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com/",'
     '"logo":"https://loadboot.com/logo-full.png","email":"hello@loadboot.com","telephone":"+1-307-303-6279","areaServed":"US",'
     '"founder":{"@type":"Person","name":"Muhammad Yaseen"},'
+    '"legalName":"LoadBoot LLC",'
+    '"duns":"149880967",'
+    '"foundingDate":"2026",'
+    '"address":{"@type":"PostalAddress","streetAddress":"30 N Gould St Ste N","addressLocality":"Sheridan","addressRegion":"WY","postalCode":"82801","addressCountry":"US"},'
     '"slogan":"The Operating System for Trucking",'
     '"description":"LoadBoot is the operating system for US trucking: a verified zero-ghost-load board, flat 5% dispatch, live GPS proof, documents, compliance and payments on one platform for carriers, freight brokers, shippers and dispatchers.",'
     '"knowsAbout":["truck dispatch","verified load board","freight brokerage software","shipper freight tracking","owner-operator dispatch","new authority carriers","detention pay","freight payments"]}}</script>')
-page('about.html','About LoadBoot — The Operating System for Trucking | Carriers, Brokers & Shippers',
-     'What LoadBoot is and why it exists: a verified load board with zero ghost loads, flat 5% dispatch, live GPS proof, written detention on every load, and one platform for carriers, brokers, shippers and dispatchers.',
+page('about.html','About LoadBoot — The Operating System for Trucking',
+     'About LoadBoot: a verified load board and dispatch platform with zero ghost loads, flat 5% for carriers, free broker posting and written rate cons.',
      'about.html', about_body, schema=_about_org_schema + _about_faq_schema)
 
 # ---------- CONTACT ----------
@@ -1529,7 +1548,7 @@ btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.sched
 )
 
 
-page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who you are dealing with</div><h2>There is a person behind this</h2><p style="max-width:66ch;margin:0 auto">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Not a call centre and not a faceless brand &mdash; if you email <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>, it reaches him.</p></div></div></section>')
+page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create your carrier profile, request a rate quote, or send Loadboot a message. Flat 5%, no contracts. A dispatcher responds within 15 minutes.','contact.html', contact_body + call_section + '<section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Direct lines</div><h2>Skip the form if you prefer email</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">&#128075;</div><h3>hello@loadboot.com</h3><p>New carriers, general questions, onboarding, compliance and support.</p></div><div class="card reveal"><div class="icon">&#128666;</div><h3>dispatch@loadboot.com</h3><p>Anything about an active load or trip — appointments, tracking, PODs, exceptions.</p></div><div class="card reveal"><div class="icon">&#129534;</div><h3>billing@loadboot.com</h3><p>Invoices, settlements, payment status and disputes.</p></div></div></div></section><section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">What happens next</div><h2>After you reach out</h2></div><div class="grid g3 reveal"><div class="card reveal"><div class="icon">1</div><h3>A person reads it</h3><p>Every message lands with a real dispatcher or success rep — no ticket black hole.</p></div><div class="card reveal"><div class="icon">2</div><h3>Fast first response</h3><p>Business-hours messages usually hear back within the hour; active-load issues jump the queue.</p></div><div class="card reveal"><div class="icon">3</div><h3>Tracked to done</h3><p>Your request gets an owner and stays open until you say it is solved.</p></div></div></div></section><section><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Who you are dealing with</div><h2>There is a person behind this</h2><p style="max-width:66ch;margin:0 auto">LoadBoot is founded and run by <b style="color:var(--navy)">Muhammad Yaseen</b>. Not a call centre and not a faceless brand &mdash; if you email <a href="mailto:hello@loadboot.com" style="color:var(--blue);font-weight:700">hello@loadboot.com</a>, it reaches him.</p></div><div class="grid g3 reveal" style="margin-top:34px"><div class="card reveal"><div class="icon">&#127970;</div><h3>Legal entity</h3><p><b>LoadBoot LLC</b><br>A Wyoming limited liability company<br>Filing ID 2026-002044986</p></div><div class="card reveal"><div class="icon">&#128205;</div><h3>Registered office</h3><p>30 N Gould St, Ste N<br>Sheridan, WY 82801<br>United States</p></div><div class="card reveal"><div class="icon">&#128290;</div><h3>D-U-N-S&reg; Number</h3><p><b>14-988-0967</b><br>Verified with Dun &amp; Bradstreet<br>D-U-N-S&reg; is a registered trademark of D&amp;B</p></div></div></div></section>')
 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
@@ -1574,8 +1593,8 @@ pr_faq = [('Are there any setup or hidden fees?','No. There are no setup fees, m
 ('What do brokers, shippers and agents pay?','Nothing to use the platform. The Partner Portal (posting, tracking, documents) and the Agent Portal are included free &mdash; LoadBoot&rsquo;s only revenue is the flat 5% dispatch fee on the carrier side, and agents are paid out of that same fee.')]
 pf_html, pf_sch = faq_block(pr_faq)
 pr_body += pf_html + final_cta()
-page('pricing.html','Pricing — Flat 5% for Carriers, Free for Brokers, Shippers & Agents | LoadBoot',
-     'Loadboot truck dispatch pricing: a flat 5% of gross, no setup fees, no monthly fees, no long-term contract. You only pay when we book your load.',
+page('pricing.html','Pricing — Flat 5% for Carriers, Free for Brokers | LoadBoot',
+     'LoadBoot pricing: truck dispatch at a flat 5% of gross, no setup or monthly fees, free load posting for brokers. Pay only when your load books.',
      'pricing.html', PHONE_STRIP + pr_body, pf_sch)
 
 # ---------- BLOG ----------
@@ -3277,7 +3296,7 @@ tools_seo = '''<section class="bg-soft"><div class="wrap" style="max-width:880px
 tools_body = svc_hero('Free Tools for Truckers &amp; Owner-Operators','Price loads, know your true cost per mile, and stop leaving money on the table &mdash; with the same calculators our dispatchers use every day. Free, no signup, instant results.')
 tools_body += LSP + tools_intro + tools_section + tools_seo + tools_faq_html + final_cta() + '<script>' + TOOLS_JS + '</script>'
 tools_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Free Trucker Tools","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free load profit, rate-per-mile, cost-per-mile, fuel, break-even, take-home, detention and deadhead calculators for truck drivers and owner-operators."}</script>' + tools_faq_schema
-page('tools.html','Trucking Calculator 2026 — Free Cost Per Mile, Profit Per Load & Rate Tools | LoadBoot','The free trucking calculator suite truckers actually use: cost per mile, profit per load, rate per mile, fuel, break-even, take-home and detention pay — instant answers, no signup, no login.','tools.html', tools_body, tools_schema)
+page('tools.html','Trucking Calculators — Free Cost Per Mile & Rate Tools | LoadBoot','Free trucking calculators with no signup: cost per mile, profit per load, rate per mile, fuel, break-even and detention pay. Instant answers, no login.','tools.html', tools_body, tools_schema)
 
 
 # ---------- COST PER MILE CALCULATOR (dedicated GSC landing: "trucking calculator" / "cost per mile") ----------
@@ -3474,8 +3493,8 @@ _FQ_CATS = [
 ]
 _faq_body_hc, _faq_sch = _fq_page(_FQ_CATS)
 faq_body = _faq_body_hc + final_cta()
-page('faq.html', 'LoadBoot Help Center &mdash; FAQ for Carriers, Brokers, Shippers &amp; Dispatchers',
-     'Every answer in one place: dispatch pricing (flat 5%), free broker posting, shipper tracking, detention pay, documents, W-9, QuickBooks, ELD and getting started — searchable, by role.',
+page('faq.html', 'FAQ & Help Center — Carriers, Brokers & Shippers | LoadBoot',
+     'FAQ for carriers, brokers, shippers and dispatchers: flat 5% dispatch pricing, free broker posting, detention pay, documents and getting started.',
      'faq.html', PHONE_STRIP + faq_body, _faq_sch)
 
 # ---- Broker claim page (email load ingestion) — premium v2: steps, policy links, portal signup ----
@@ -3545,8 +3564,8 @@ _bc_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest
  "fetch('https://" + APP_REF + ".supabase.co/auth/v1/otp',{method:'POST',headers:{'Content-Type':'application/json',apikey:key},body:JSON.stringify({email:em,create_user:true,data:{role:'broker',full_name:n,lb_source:'email_loads_claim'}})}).then(function(x){return x.json().catch(function(){return {}})}).then(function(dd){var m=document.getElementById('bcPortalMsg');"
  "if(dd&&(dd.msg||dd.error_description)){m.textContent=dd.msg||dd.error_description;pb.disabled=false;pb.textContent='✉️ Create my portal login';}else{m.innerHTML='✓ Check your inbox — secure sign-in link sent to <b>'+em+'</b>';pb.style.display='none';}});};}}"
  "else{e.textContent=(r&&r.error)||'Something went wrong — try again';e.style.display='block';b.disabled=false;b.textContent='✍️ Accept standards & activate my loads';}});};})();</script>")
-page('broker-claim.html', 'Claim Your Loads — LoadBoot for Brokers',
-     'One-time confirmation for brokers posting loads by email: verify your company, read and accept LoadBoot posting standards, get your portal login — and your emailed loads go live automatically.',
+page('broker-claim.html', 'Claim Your Loads — Broker Email Verification | LoadBoot',
+     'Claim your loads as a broker: verify your company, accept posting standards and get portal access. Emailed loads go live automatically, free for brokers.',
      'brokers.html', _bc_body + _bc_js)
 
 
@@ -3625,8 +3644,8 @@ adp += m_dark('Where LoadBoot fits', 'Set up once, tracked forever', '', [
  ('truck', 'New-authority freight', 'We know which brokers accept fresh MCs. See our dedicated new-authority dispatch program.'),
 ], accent='#38bdf8', numbered=False)
 adp += _adfaq_html + _COMPL_DISC + final_cta()
-page('authority-dot-setup.html','Trucking Authority &amp; DOT Setup Guide (USDOT, MC, Insurance) | Loadboot',
- 'Step-by-step USDOT and MC authority setup for new carriers: filing order, insurance, BOC-3, UCR, IRP, costs to plan for, the waiting period, and the New Entrant audit.',
+page('authority-dot-setup.html','Trucking Authority & DOT Setup Guide (USDOT, MC) | LoadBoot',
+ 'Trucking authority and DOT setup step by step: USDOT and MC filing order, insurance, BOC-3, UCR, IRP, costs and the New Entrant audit for new carriers.',
  'services.html', adp, _adfaq_sch)
 
 # ---------- 2. BOC-3 / UCR ----------
@@ -3694,8 +3713,8 @@ hvp += _sec('Where LoadBoot fits','The Schedule 1 that is always findable', _car
  ('&#129309;','Referral to e-file providers','We can point you to established IRS-authorized e-file providers — filing takes minutes.'),
 ]))
 hvp += _hvfaq_html + _COMPL_DISC + final_cta()
-page('form-2290-hvut.html','Form 2290 (HVUT) Guide — Deadlines &amp; Schedule 1 | Loadboot',
- 'Heavy Vehicle Use Tax explained: who files Form 2290, July–June deadlines, prorated first-use rules, Schedule 1 proof for the DMV, e-filing tips and common mistakes.',
+page('form-2290-hvut.html','Form 2290 HVUT Guide — Deadlines & Schedule 1 | LoadBoot',
+ 'Form 2290 Heavy Vehicle Use Tax guide: who files, July to June deadlines, prorated first-use rules, Schedule 1 proof for the DMV and e-filing tips.',
  'services.html', hvp, _hvfaq_sch)
 
 # ---------- 4. IFTA ----------
@@ -3733,8 +3752,8 @@ ifp += _sec('Where LoadBoot fits','Your miles are already organized', _cards([
  ('&#129309;','Referral to filing services','Prefer to outsource the return? We will point you to reputable IFTA preparers.'),
 ]))
 ifp += _iffaq_html + _COMPL_DISC + final_cta()
-page('ifta-fuel-tax.html','IFTA Fuel Tax Guide — Quarterly Returns, Records &amp; Audits | Loadboot',
- 'How IFTA works: qualified vehicles, base-state license, quarterly return math, the records auditors demand, deadlines, and clean-filing habits.',
+page('ifta-fuel-tax.html','IFTA Fuel Tax Guide — Quarterly Returns & Audits | LoadBoot',
+ 'IFTA fuel tax explained: qualified vehicles, base-state license, quarterly return math, the records auditors want, deadlines and clean filing habits.',
  'services.html', ifp, _iffaq_sch)
 
 _ag_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Independent Agent — Trucking Marketplace (Commission, Remote)","description":"Refer brokers, carriers and shippers to LoadBoot and earn 1% of every delivered load your referred clients move — recurring, uncapped, paid monthly. The software does the dispatch: live load board, GPS tracking, automatic invoicing and payments. You own the relationships.","datePosted":"2026-07-12","validThrough":"2027-07-12T23:59:59-05:00","employmentType":"CONTRACTOR","hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":0,"maxValue":10000}},"directApply":true}</script>'
@@ -3806,8 +3825,8 @@ car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and wha
      ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
     'Send application', 'Thanks — we&rsquo;ll be in touch.')
 _disp_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"US Truck Dispatcher (Remote, Salary + Performance)","description":"Dispatch for assigned US carriers on the LoadBoot platform: hunt loads, negotiate rates, keep trucks loaded, manage trips and documents. Base salary plus per-truck and performance bonus; salary starts when a carrier is assigned. Manage 5-15 trucks. Requires ~1-2 years US-trucking dispatch experience, strong English, load-board (DAT/Truckstop) proficiency and FMCSA/HOS knowledge. Strict screening and a paid working trial before hire.","datePosted":"2026-07-22","validThrough":"2027-07-22T23:59:59-05:00","employmentType":["CONTRACTOR","FULL_TIME"],"hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":200,"maxValue":700}},"directApply":true}</script>'
-page('careers.html', 'Careers at Loadboot — US Truck Dispatcher (Salary) & Referral Partner (1%)',
-     'LoadBoot is hiring US truck dispatchers (salary + per-truck + performance bonus, remote) and freight referral partners earning 1% of every delivered load (recurring, uncapped). Apply in 5 minutes.',
+page('careers.html', 'Careers at LoadBoot — Dispatcher & Referral Partner Roles',
+     'Careers at LoadBoot: salaried US truck dispatcher roles and freight referral partners earning 1% of every delivered load. Remote friendly, apply fast.',
      'careers.html', car, _disp_job_schema + _ag_job_schema)
 
 # ---- US Truck Dispatcher (SEO landing) ----
@@ -3860,8 +3879,8 @@ _dsp_faq_html, _dsp_faq_sch = faq_block([
 ])
 _dsp_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","serviceType":"Truck dispatch service","name":"LoadBoot US Truck Dispatch","areaServed":{"@type":"Country","name":"USA"},"provider":{"@type":"Organization","name":"LoadBoot","url":"https://loadboot.com"},"description":"Dedicated US truck dispatchers for owner-operators and small fleets - load sourcing, rate negotiation and back-office, booked under the carrier\\u2019s own authority for a flat 5%.","offers":{"@type":"Offer","priceSpecification":{"@type":"PriceSpecification","price":"5","priceCurrency":"USD","valueAddedTaxIncluded":false},"description":"Flat 5% of linehaul on delivered, paid loads"}}</script>'
 dsp += _dsp_faq_html + final_cta()
-page('us-truck-dispatcher.html', 'US Truck Dispatcher &mdash; Dedicated Dispatch Service (Flat 5%) | LoadBoot',
- 'LoadBoot is a US truck dispatch service for owner-operators and small fleets: a dedicated dispatcher finds loads, negotiates rates and keeps your trucks loaded, booked under your own authority for a flat 5% - only when you get paid. Van, reefer, flatbed, hotshot, power-only.',
+page('us-truck-dispatcher.html', 'US Truck Dispatcher — Dedicated Dispatch at Flat 5% | LoadBoot',
+ 'US truck dispatcher service for owner-operators and small fleets: we find loads, negotiate rates and keep trucks moving under your authority, flat 5%.',
  'services.html', dsp, _dsp_schema + _dsp_faq_sch)
 RELATED['us-truck-dispatcher.html'] = [('owner-operator-dispatch.html','Owner-Operator Dispatch'),('new-authority-dispatch.html','New-Authority Dispatch'),('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker'),('careers.html','Become a Dispatcher'),('carriers.html','For Carriers')]
 
@@ -3890,8 +3909,8 @@ _ftl_faq_html, _ftl_faq_sch = faq_block([
  ('How do I post a partial load as a broker or shipper?', 'The posting wizard requires a load size (Full or Partial). For partials you add pallets, weight and dims, and the rate card (detention, TONU, layover) prints on the posting like every LoadBoot load.'),
 ])
 ftl += _ftl_faq_html + final_cta()
-page('full-truckload-vs-ltl.html', 'FTL vs LTL vs Partial Truckload — Differences, Rates & Which Pays Best | LoadBoot',
- 'Full truckload (FTL), LTL and partial freight explained: what each is, when partials pay better, box-truck and hotshot fit, and how LoadBoot posts and matches both full loads and partials by truck size and weight capacity.',
+page('full-truckload-vs-ltl.html', 'FTL vs LTL vs Partial Truckload — Key Differences | LoadBoot',
+ 'FTL vs LTL vs partial truckload explained: what each mode is, when partials pay better, and how LoadBoot matches full and partial loads by truck size.',
  'resources.html', ftl, _ftl_faq_sch)
 RELATED['full-truckload-vs-ltl.html'] = [('box-truck-dispatch.html','Box Truck Dispatch'),('hotshot-dispatch.html','Hotshot Dispatch'),('load-board.html','Live Load Board'),('us-truck-dispatcher.html','US Truck Dispatch'),('market-rates.html','Market Rates'),('carriers.html','For Carriers')]
 
@@ -3999,8 +4018,8 @@ _cfaq_html, _cfaq_sch = faq_block([
     ('How do I get paid?', 'Delivery flips your invoice to DUE automatically &mdash; deadlines, receipt-verified transfers, factoring/NOA routing and QuickBooks sync are built in. See <a href="payments-settlements.html">payments &amp; settlements</a>.'),
 ])
 cp += _real_screen('board-card-details.webp',420,909,'A real load card opened — full rate card with detention, TONU and layover terms printed before booking','A real load, opened &mdash; the FULL rate card printed before you ever book.','What you book from','Every load shows its whole hand') + _cfaq_html + final_cta()
-page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5%, Every Rate in Writing | LoadBoot',
-     'Loadboot dispatches your truck: finds loads, negotiates rates, handles paperwork, detention and invoicing. Flat 5%, no contracts, keep your authority.',
+page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5% | LoadBoot',
+     'Truck dispatch service for carriers: we find loads, negotiate rates and handle paperwork with every rate confirmation in writing. Flat 5%, no contracts.',
      'services.html', cp, _cfaq_sch)
 
 # ---- Dedicated Broker page (~15 sections; brokers only) ----
@@ -4072,8 +4091,8 @@ bp += ('<section class="bg-soft"><div class="wrap"><div class="sec-head reveal">
  '<div class="card" style="text-align:center"><div style="font-weight:900;font-size:1.6rem;color:#0883F7">1</div><p>receipt can settle a whole trip &mdash; freight plus approved claims, confirmed by the carrier. <a href="payments-settlements.html">The payables rail</a>.</p></div>'
  '</div></div></section>') + _bfaq_html
 bp += m_gradcta('Already a broker partner?', 'Post loads, review documents and watch shipments move &mdash; live in your Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#0b1220 0%,#1e3a5f 60%,#312e81 100%)', btncolor='#60a5fa', btntext='#0b1220')
-page('brokers.html', 'Freight Broker Solutions — Verified Carrier Capacity, Covered in Minutes | LoadBoot',
-     'Brokers post loads to a vetted Loadboot carrier network with explainable matching, live visibility, clean documentation and API/webhook integration. Broker partners only.',
+page('brokers.html', 'Freight Broker Load Board — Verified Carriers | LoadBoot',
+     'Freight brokers post loads free on LoadBoot and cover them with FMCSA-verified carriers: live GPS visibility, clean documents and API integration.',
      'partners.html', bp, _bfaq_sch)
 
 # ---- Shipper Solutions page (Inc 58, directive #37) — INQUIRY/CONSULTATION ONLY.
@@ -4160,8 +4179,8 @@ _rfaq_html, _rfaq_sch = faq_block([
 ref += _rfaq_html
 ref += REF_CAPTURE_JS
 ref += final_cta()
-page('referral.html', 'Referral Program &mdash; now the LoadBoot Agent Program',
-     'The LoadBoot referral program has grown into the Agent Program: one link for carriers, brokers and shippers, 1% of gross on every delivered load, 5 levels of overrides.',
+page('referral.html', 'Referral Program Update — Now the LoadBoot Agent Program',
+     'The referral program is now the LoadBoot Agent Program: one link for carriers, brokers and shippers, 1% of gross on every delivered load, recurring.',
      'referral.html', '<section class="section"><div class="wrap" style="text-align:center;padding:80px 0"><h1>The referral program is now the <span style="color:#FC5305">Agent Program</span></h1><p class="lead center" style="max-width:640px;margin:14px auto 24px">Same idea, bigger engine: one link for carriers, brokers and shippers \u00b7 1% of gross on every delivered load \u00b7 overrides 5 levels deep \u00b7 live chain tracking and monthly payouts.</p><a href="agents.html" class="btn btn-primary">See the Agent Program &rarr;</a> <a href="/app/agent/" class="btn btn-secondary" style="margin-left:8px">Create your agent account</a></div></section>',
      '<meta http-equiv="refresh" content="4;url=/agents.html">')
 
@@ -4275,8 +4294,8 @@ _ag_faq_html, _ag_faq_sch = faq_block([
 ])
 
 
-page('agents.html', 'LoadBoot Referral Partner Program — Earn 1% of Every Load, Recurring',
- 'Commission referral program: bring a broker + carrier pair to LoadBoot and earn 1% of every GPS-verified delivered load — recurring, no cap, paid monthly. No license needed. Prefer a salaried seat? See our US Dispatcher role.',
+page('agents.html', 'Referral Partner Program — Earn 1% Per Load | LoadBoot',
+ 'Referral partner program: refer a broker and carrier pair and earn 1% of every GPS-verified delivered load, recurring with no cap. No license needed.',
  'partners.html', AGENT_BODY + _ag_faq_html + final_cta(), _ag_job_schema + _ag_faq_sch)
 RELATED['agents.html'] = [('careers.html','US Dispatcher role'),('partners.html','Partner Portal'),('brokers.html','For Brokers'),('carriers.html','For Carriers'),('contact.html','Apply / Contact')]
 
@@ -4459,8 +4478,8 @@ _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org",
   '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
   '<script>' + _MR_JS + '</script>')
 
-page('market-rates.html', 'Truckload Rates Per Mile 2026 (Updated Weekly): Van $3.00 · Flatbed $3.72 | LoadBoot',
-     'Live 2026 truckload rates per mile, updated weekly — dry van ~$3.00, flatbed ~$3.72, hotshot ~$2.40 all-in. What carriers get paid, what brokers pay, free trucking rate calculator included. No login.',
+page('market-rates.html', 'Truckload Rates Per Mile 2026 — Updated Weekly | LoadBoot',
+     'Truckload rates per mile for 2026, updated weekly: dry van, flatbed and hotshot averages, plus a free trucking rate calculator with no signup or login.',
      'market-rates.html', _mr_body + _mr_faq)
 
 
@@ -4673,8 +4692,8 @@ hub += ('<script>(function(){var tabs=document.querySelectorAll(".hub-tab");var 
         'tabs.forEach(function(t){t.addEventListener("click",function(){show(t.getAttribute("data-hub"));});});'
         'var h=(location.hash||"").replace("#","");if(h&&document.getElementById("hp-"+h))show(h);})();</script>')
 hub += REF_CAPTURE_JS
-page('get-started.html', 'Create Your Loadboot Account &mdash; Carrier, Broker, Shipper, Agent &amp; Referral',
-     'Create a Loadboot account in minutes. Carriers, freight brokers, shippers, agents and referral partners &mdash; pick your role and get set up. Flat 5%, no contracts.',
+page('get-started.html', 'Create Your LoadBoot Account — Carrier, Broker, Shipper',
+     'Create your LoadBoot account in minutes: carriers, freight brokers, shippers and agents pick a role and get set up. Flat 5% dispatch, free for brokers.',
      'get-started.html', hub)
 
 # ---- Login portal chooser ----
@@ -4687,8 +4706,8 @@ lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
     ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
     ('&#10067;', 'Need an account?', 'New to Loadboot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
 ], 'g3'))
-page('login.html', 'Log in to Loadboot | Carrier, Partner, Driver &amp; Developer Portals',
-     'Choose your Loadboot portal: Carrier Portal, Partner Portal, Agent Portal, Developer/API or Command Center. New here? Create a carrier account in minutes.',
+page('login.html', 'Log in to LoadBoot — Carrier, Partner & Developer Portals',
+     'Log in to your LoadBoot portal: Carrier, Partner, Agent, Developer API or Command Center. New here? Create a carrier account with flat 5% dispatch.',
      'login.html', lg)
 
 # ============================================================================
@@ -5048,8 +5067,8 @@ feat += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);col
  '</div></div></section>')
 
 RELATED['features.html'] = [('how-it-works.html','How It Works'),('gps-tracking.html','GPS Tracking'),('payments-settlements.html','Payments'),('factoring-noa.html','Factoring & NOA'),('fleet-management.html','Fleet Management'),('integrations.html','Integrations')]
-page('features.html', 'LoadBoot Features — Load Board, GPS Tracking, Payments, Factoring & QuickBooks | Trucking Software',
-     'Explore every LoadBoot feature: ghost-free load board, one-tap booking with instant rate confirmations, GPS geofence tracking with detention proof, receipt-verified payments, a full factoring/NOA engine, fleet tools, compliance automation and live two-way QuickBooks sync.',
+page('features.html', 'LoadBoot Features — Load Board, GPS Tracking & Payments',
+     'LoadBoot features: a load board with zero ghost loads, one-tap booking with written rate confirmations, live GPS tracking, payments and QuickBooks sync.',
      'features.html', feat, _feat_schema)
 
 # ---------------- LIVE LOAD BOARD — flagship product page (code-verified features, zero invention) ----------------
@@ -5350,8 +5369,8 @@ lbx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '</div></div></section>')
 
 RELATED['load-board.html'] = [('book-truck-loads.html','One-Tap Booking'),('features.html','All Features'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('how-to-get-loads-with-new-authority.html','Loads with New Authority'),('gps-tracking.html','GPS Tracking'),('market-rates.html','Market Rates')]
-page('load-board.html', 'Load Board for Truckers with Zero Ghost Loads — Find & Book Truck Loads Free | LoadBoot',
-     'Free-to-search truck load board with zero ghost loads: booked freight vanishes instantly. Direct offers with live countdowns, propose-a-rate, real GPS deadhead, published detention/TONU/layover pay, one-tap booking with instant rate confirmations. For carriers, owner-operators, brokers & shippers.',
+page('load-board.html', 'Load Board for Truckers — Zero Ghost Loads | LoadBoot',
+     'Load board for truckers with zero ghost loads: booked freight vanishes instantly, real GPS deadhead, published detention pay and one-tap booking.',
      'load-board.html', lbx, _lbx_schema)
 
 # ---------------- ONE-TAP BOOKING — flagship page (decision -> tap -> everything before roll-out) ----------------
@@ -5507,8 +5526,8 @@ bkx += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '</div></div></section>')
 
 RELATED['book-truck-loads.html'] = [('load-board.html','Live Load Board'),('how-to-read-a-rate-confirmation.html','Read a Rate Confirmation'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('features.html','All Features')]
-page('book-truck-loads.html', 'Book Truck Loads Online in One Tap — Instant Rate Confirmation & Dispatch Sheet | LoadBoot',
-     'Book truck loads online without phone calls: one tap books atomically, the immutable rate confirmation and dispatch sheet generate in seconds, exact addresses and pickup numbers unlock instantly, and six smart gates stop bad bookings before they happen. For carriers and owner-operators.',
+page('book-truck-loads.html', 'Book Truck Loads Online — Instant Rate Confirmation | LoadBoot',
+     'Book truck loads online without phone calls: one tap books the load, and the written rate confirmation and dispatch sheet generate in seconds.',
      'book-truck-loads.html', bkx, _bkx_schema)
 
 # ---------------- ACCOUNT / ONBOARDING GUIDES (per role) ----------------
@@ -5628,7 +5647,7 @@ cmpb += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);col
  '<a href="create-agent-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#129309; Agent</a>'
  '</div></div></section>')
 RELATED['compliance.html'] = [('create-carrier-account.html','Carrier Verification'),('create-broker-account.html','Broker Verification'),('authority-dot-setup.html','Authority & DOT Setup'),('boc3-ucr.html','BOC-3 & UCR'),('features.html','All Features'),('faq.html','FAQ')]
-page('compliance.html', 'Compliance & Verification — FMCSA Checks, Document Vault, E-Sign Gates | LoadBoot', 'How LoadBoot keeps every side of a load verified: FMCSA authority and bond checks at signup, an expiry-tracked document vault with visible review trackers, E-SIGN Act e-signatures, and compliance gates for carriers, brokers, shippers and agents.', 'compliance.html', cmpb, _cmp_schema)
+page('compliance.html', 'Compliance & Verification — FMCSA Checks & E-Sign | LoadBoot', 'Compliance and verification on LoadBoot: FMCSA authority checks at signup, an expiry-tracked document vault and e-sign gates for carriers and brokers.', 'compliance.html', cmpb, _cmp_schema)
 
 
 
@@ -5800,8 +5819,8 @@ trk += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '</div></div></section>')
 
 RELATED['gps-tracking.html'] = [('book-truck-loads.html','One-Tap Booking'),('detention-pay-policy.html','Detention Pay'),('payments-settlements.html','Payments & Settlements'),('load-board.html','Live Load Board'),('emergency-rescheduling-policy.html','Emergency Rescheduling'),('features.html','All Features')]
-page('gps-tracking.html', 'Real-Time Truck Load Tracking — GPS Geofence Proof, No ELD Required | LoadBoot',
-     'Live truck load tracking from the driver&rsquo;s phone: 800-meter geofences stamp arrive/depart automatically, detention claims file themselves with server-verified GPS evidence, brokers and shippers watch a live map with ETA and per-stop detention meters. ELD optional (Samsara/Motive), privacy-off at delivery.',
+page('gps-tracking.html', 'Truck Load Tracking — GPS Geofence Proof, No ELD | LoadBoot',
+     'Live truck load tracking with GPS geofences: arrivals and departures stamp automatically and detention claims file with verified evidence. No ELD needed.',
      'gps-tracking.html', trk, _trk_schema)
 
 pay = FTX_CSS + LBX_CSS
@@ -5892,7 +5911,7 @@ pay += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="factoring-noa.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Factoring &amp; NOA</a>'
  '</div></div></section>')
 RELATED['payments-settlements.html'] = [('factoring-noa.html','Factoring & NOA'),('detention-pay-policy.html','Detention Pay'),('gps-tracking.html','GPS Tracking & Proof'),('integrations.html','QuickBooks & Integrations'),('pricing.html','Pricing'),('features.html','All Features')]
-page('payments-settlements.html', 'Trucking Payments & Settlements — Receipt-Verified Rails, One-Receipt Trip Settlement | LoadBoot', 'Delivery flips the invoice to DUE automatically. PAY-BY deadlines, one-receipt trip settlement, receipt-verified transfers with landing ETA, confirm-received loops, GPS-proven claims, factoring/NOA routing and QuickBooks sync — every dollar keeps its paper trail.', 'payments-settlements.html', pay, _pay_schema)
+page('payments-settlements.html', 'Trucking Payments & Settlements — Receipt Verified | LoadBoot', 'Trucking payments and settlements with a full paper trail: receipt-verified transfers, GPS-proven claims, factoring routing and live QuickBooks sync.', 'payments-settlements.html', pay, _pay_schema)
 
 fac = FTX_CSS + LBX_CSS
 
@@ -5955,7 +5974,7 @@ fac += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="payments-settlements.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Payments &amp; settlements</a>'
  '</div></div></section>')
 RELATED['factoring-noa.html'] = [('payments-settlements.html','Payments & Settlements'),('carriers.html','For Carriers'),('detention-pay-policy.html','Detention Pay'),('pricing.html','Pricing'),('features.html','All Features')]
-page('factoring-noa.html', 'Factoring & NOA Engine for Trucking — UCC §9-406 Built In | LoadBoot', 'Real Notice-of-Assignment support: the factor&rsquo;s verified remit-to on every broker pay panel with UCC §9-406 language, per-broker factor/direct routing, a clean release flow, and a factoring packet (invoice, RC, POD, receipts, GPS proof) that assembles itself.', 'factoring-noa.html', fac, _fac_schema)
+page('factoring-noa.html', 'Factoring & NOA Engine for Trucking — UCC 9-406 | LoadBoot', 'Factoring and NOA support built in: verified factor remit-to on every broker pay panel, per-broker routing and a factoring packet with GPS proof.', 'factoring-noa.html', fac, _fac_schema)
 
 flt = FTX_CSS + LBX_CSS
 
@@ -6018,7 +6037,7 @@ flt += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="payments-settlements.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">How the money side works</a>'
  '</div></div></section>')
 RELATED['fleet-management.html'] = [('payments-settlements.html','Payments & Settlements'),('gps-tracking.html','GPS Tracking & Proof'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('features.html','All Features')]
-page('fleet-management.html', 'Trucking Fleet Management Software — Drivers, Trucks, Maintenance & Per-Trip P&L | LoadBoot', 'Run the whole fleet back office in the carrier portal: magic-link driver invites, license & medical expiry alerts, maintenance logs with next-due dates, fuel-card CSV import, per-trip profit & cost per mile, payroll from trips, IFTA state miles and per-diem from the GPS trail.', 'fleet-management.html', flt, _flt_schema)
+page('fleet-management.html', 'Trucking Fleet Management Software — Per-Trip P&L | LoadBoot', 'Trucking fleet management software: driver invites, expiry alerts, maintenance logs, fuel-card import, per-trip profit and IFTA miles from the GPS trail.', 'fleet-management.html', flt, _flt_schema)
 
 from how_module import HIW2_CSS, hiw_journey, hiw_chat5, hiw_band, hiw_engine
 hiw = FTX_CSS + LBX_CSS + HIW2_CSS
@@ -6119,7 +6138,7 @@ hiw += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);colo
  '<a href="create-agent-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">&#129309; Agent</a>'
  '</div></div></section>')
 RELATED['how-it-works.html'] = [('load-board.html','Live Load Board'),('book-truck-loads.html','One-Tap Booking'),('gps-tracking.html','GPS Tracking & Proof'),('payments-settlements.html','Payments & Settlements'),('compliance.html','Compliance & Verification'),('features.html','All Features')]
-page('how-it-works.html', 'How LoadBoot Works — Load to Paid for Carriers, Brokers, Shippers & Agents', 'The whole loop, step by step: posting with the rate card in writing, first-accept-wins offers to verified carriers, one-tap booking with e-signed rate confirmations, geofenced GPS tracking, automatic invoicing and receipt-verified payment — explained for every role.', 'how-it-works.html', hiw, _hiw_schema)
+page('how-it-works.html', 'How LoadBoot Works — From Load to Paid for Every Role', 'How LoadBoot works from load to paid: posting with rates in writing, offers to FMCSA-verified carriers, e-signed rate confirmations and live GPS tracking.', 'how-it-works.html', hiw, _hiw_schema)
 
 # ---------- COMMAND CENTER — public transparency page ----------
 _cc_faq = [('Is the Command Center a product I can buy?', "No — it is LoadBoot's own operations desk, included in how the marketplace runs. You never pay for it separately; you feel it as same-day verification, verified claims, and receipts that actually get checked."), ('Do humans or software make the decisions?', 'Both, deliberately: software prepares — matching, documents, reminders, evidence — and a person approves anything that moves money or status. The maker and the checker are never the same account.'), ('Can staff edit GPS logs or timestamps?', 'No. Arrive/depart stamps are recorded server-side from GPS events. Nobody — carrier, broker, or LoadBoot staff — has an edit button on the event log.'), ('What does the Command Center see?', 'Role-scoped operational data: verification queues, active trips and exceptions, claims with their GPS evidence, and payment receipts awaiting verification. Private commercial data stays scoped to its owners.')]
@@ -6152,7 +6171,7 @@ ccpub += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head r
  + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _cc_faq)
  + '</div></div></section>')
 RELATED['command-center.html'] = [('how-it-works.html','How It Works'),('compliance.html','Compliance & Verification'),('security.html','Security'),('about.html','About LoadBoot'),('features.html','All Features'),('contact.html','Contact')]
-page('command-center.html', 'The LoadBoot Command Center — How Our Operations Desk Works', 'Transparency about LoadBoot&rsquo;s back office: the staff Command Center where verifications are approved same-day, claims are checked against server-side GPS evidence, payment receipts are verified by humans, and every action is audited — maker and checker never the same account.', 'command-center.html', ccpub, _cc_schema)
+page('command-center.html', 'Command Center — How the LoadBoot Operations Desk Works', 'Inside the LoadBoot Command Center: same-day verifications, claims checked against server-side GPS evidence and human-verified payment receipts.', 'command-center.html', ccpub, _cc_schema)
 
 sp = FTX_CSS + LBX_CSS
 
@@ -6207,7 +6226,7 @@ sp += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color
  '<a href="contact.html#quote" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Talk about your lanes</a>'
  '</div></div></section>')
 RELATED['shipper-solutions.html'] = [('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('compliance.html','Carrier Verification'),('detention-pay-policy.html','Accessorial Standards'),('contact.html','Contact')]
-page('shipper-solutions.html', 'Shipper Solutions — Vetted Carrier Capacity With Dock-Level GPS Proof | LoadBoot', 'Move freight with carriers vetted for authority, insurance and account health under licensed brokerage: live map and ETA on every shipment, geofenced arrive/depart proof at your own docks, POD captured at delivery, published accessorial standards with GPS evidence — free for shippers and facilities.', 'shipper-solutions.html', sp, _ship_schema)
+page('shipper-solutions.html', 'Shipper Solutions — Vetted Carriers, GPS Proof | LoadBoot', 'Shipper solutions with vetted carrier capacity: live map and ETA on every shipment, geofenced arrive and depart proof at your docks, free for shippers.', 'shipper-solutions.html', sp, _ship_schema)
 
 # ---- DEMAND-SIDE SEO #1: Free load board for brokers ----
 # Search-intent page (NOT a product page). Targets "free load board for brokers",
@@ -6274,8 +6293,8 @@ flb += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center 
  + linkcard('ghost-loads-load-board-problems.html', '&#128123;', 'The ghost-load problem', 'Why fake freight exists on the big boards and how a verified board eliminates it.')
  + '</div></div></section>')
 RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('ship-direct-to-carrier.html','Ship Direct to Carriers'),('load-board-subscription-cost.html','Load Board Cost Guide'),('features.html','All Features'),('load-board.html','Live Load Board')]
-page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post Loads at $0 (DAT Alternative) | LoadBoot',
-     'A genuinely free load board for freight brokers: post loads with no subscription and no per-post fee, reach FMCSA-verified carriers, and get live GPS tracking, document handling and one-receipt payables built in. A no-cost alternative to paid load boards, for licensed brokers.',
+page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post Loads at $0 | LoadBoot',
+     'Free load board for brokers: post loads with no subscription and no per-post fee, reach FMCSA-verified carriers and get live GPS tracking built in.',
      'partners.html', flb, _flb_faq_sch)
 
 # ---- DEMAND-SIDE SEO #2: Ship direct to carrier (shipper money-keyword page) ----
@@ -6340,8 +6359,8 @@ sdc += ('<section><div class="wrap"><div class="sec-head center reveal"><div cla
  + linkcard('gps-tracking.html', '&#128205;', 'GPS tracking &amp; proof', 'How live tracking and geofenced arrive/depart stamps protect your freight and settle disputes.')
  + '</div></div></section>')
 RELATED['ship-direct-to-carrier.html'] = [('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('how-to-ship-without-a-broker.html','Ship Without a Broker (Guide)'),('protect-freight-from-loss-damage-and-fraud.html','Protect Your Freight (Guide)'),('features.html','All Features'),('free-load-board-for-brokers.html','Free Load Board for Brokers')]
-page('ship-direct-to-carrier.html', 'Ship Direct to Carriers — Post Freight Free, Skip the Broker Markup | LoadBoot',
-     'Post your freight directly to verified carriers and skip the broker markup without the fraud risk: carrier authority and insurance verified for you, live GPS on every shipment, double-brokering protection and receipt-verified payments. Free for shippers; moves under licensed brokerage where required.',
+page('ship-direct-to-carrier.html', 'Ship Direct to Carriers — Post Freight Free | LoadBoot',
+     'Ship direct to verified carriers and skip the broker markup: authority and insurance checked for you, live GPS on every shipment, free for shippers.',
      'shipper-solutions.html', sdc, _sdc_faq_sch)
 
 intg = FTX_CSS + LBX_CSS
@@ -6402,7 +6421,7 @@ intg += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);col
  '<a href="/app/developer/" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25)">Developer portal</a>'
  '</div></div></section>')
 RELATED['integrations.html'] = [('payments-settlements.html','Payments & Settlements'),('fleet-management.html','Fleet Management'),('gps-tracking.html','GPS Tracking & Proof'),('compliance.html','Compliance & Verification'),('features.html','All Features'),('contact.html','Contact')]
-page('integrations.html', 'QuickBooks, ELD & API Integrations for Trucking — Live Two-Way Sync | LoadBoot', 'Live integrations, no vaporware: native QuickBooks Online two-way sync (invoices and expenses push, paid status pulls back), Samsara/Motive ELD tracking via pasted token, EFS/Comdata/WEX fuel-card import, CSV exports for Wave/Xero, and an API with webhooks for TMS integration.', 'integrations.html', intg, _intg_schema)
+page('integrations.html', 'QuickBooks, ELD & API Integrations for Trucking | LoadBoot', 'QuickBooks, ELD and API integrations for trucking: live two-way QuickBooks sync, Samsara and Motive tracking, fuel-card import and webhooks for your TMS.', 'integrations.html', intg, _intg_schema)
 
 # ---- Apps page: the LoadBoot mobile experience (PWA today, stores in preparation) ----
 ap = svc_hero('The LoadBoot App', 'One operating system for trucking &mdash; carrier, broker and shipper tools that live on your phone. Install in 10 seconds, no app store needed.')
@@ -6435,8 +6454,8 @@ ap += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color
  '<form class="news" style="justify-content:center" onsubmit="event.preventDefault();var f=this,em=f.querySelector(\'input\').value;var done=function(){f.innerHTML=\'<span style=\\\'color:#86efac;font-weight:700\\\'>You are on the launch list &#x2713;</span>\';};if(window.lbSubmitLead){window.lbSubmitLead(\'app_waitlist\',{email:em}).then(done).catch(done);}else{done();}">'
  '<input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Join the launch list</button></form>'
  '</div></div></section>')
-page('apps.html', 'LoadBoot App &mdash; Carrier, Broker &amp; Shipper Tools on Your Phone',
-     'Install the LoadBoot app on Android or iPhone in seconds: post your truck, book loads, track trips, upload PODs and manage freight from your phone.',
+page('apps.html', 'LoadBoot App — Carrier, Broker & Shipper Tools on Mobile',
+     'The LoadBoot app for Android and iPhone: post your truck, book loads with written rate confirmations, track trips and upload PODs from your phone.',
      'apps.html', ap)
 
 # ---- Accessorial policy pages: full 12-section guides (linked from load details & app) ----
