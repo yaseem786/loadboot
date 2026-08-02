@@ -1769,6 +1769,7 @@ PUB_DATES = {
  'truck-dispatcher-in-georgia.html':'2026-07-22',
  'how-to-avoid-cheap-freight.html':'2026-07-24',
  'oversize-load-rates-per-mile.html':'2026-07-28',
+ 'should-i-buy-a-truck-before-2027-epa-rule.html':'2026-08-01',
 }
 
 def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,body_html,faqs,feat_svg='',pub='2026-06-27'):
@@ -3178,6 +3179,117 @@ rich_article('oversize-load-rates-per-mile.html',
  OS_TOC, OS_BODY, OS_FAQ, feat_svg=OS_FEAT)
 THUMBS['oversize-load-rates-per-mile.html']=OS_FEAT
 READTIME['oversize-load-rates-per-mile.html']=10
+
+# ===== ARTICLE : Should an owner-operator buy a truck before the 2027 EPA rule? =====
+PREMIUM_ARTICLES.add('should-i-buy-a-truck-before-2027-epa-rule.html')
+EP27_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="ep27" x1="0" y1="0" x2="1" y2="1">'
+ '<stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs>'
+ '<rect width="400" height="200" fill="url(#ep27)"/>'
+ '<text x="20" y="150" font-family="Manrope,Arial" font-weight="800" font-size="118" fill="#0883F7" opacity=".34">2027</text>'
+ '<path d="M40 168 H300" stroke="#334155" stroke-width="3"/>'
+ '<rect x="60" y="140" width="22" height="28" rx="3" fill="#3b82f6"/>'
+ '<rect x="92" y="120" width="22" height="48" rx="3" fill="#3b82f6"/>'
+ '<rect x="124" y="92" width="22" height="76" rx="3" fill="#FC5305"/>'
+ '<rect x="156" y="64" width="22" height="104" rx="3" fill="#FC5305"/>'
+ '<text x="196" y="60" font-family="Manrope,Arial" font-weight="800" font-size="21" fill="#fff">Fleet orders surge</text>'
+ '<text x="196" y="86" font-family="Inter,Arial" font-size="14" fill="#93c5fd">One-truck buyers shop used</text></svg>')
+EP27_TOC=[('rule','What actually changes in 2027'),('prebuy','The pre-buy is real &mdash; and it is fleet-sized'),
+ ('shut-out','Why the build-slot race is not your race'),('used','The used market is where this lands'),
+ ('history','What happened after the last three pre-buys'),('paths','Three paths and what each one costs'),
+ ('questions','Questions to answer before you sign'),('supply','A supply story worth watching'),
+ ('bottom','What nobody can tell you')]
+EP27_BODY=(
+'<p>The EPA&rsquo;s 2027 emissions rule is doing what emissions rules have always done: pulling truck orders forward. Fleets are buying now so they do not have to buy later. The obvious question for a one-truck or five-truck carrier is whether to do the same thing.</p>'
+'<p>The less obvious question &mdash; and the one that actually decides it &mdash; is whether a small carrier can join a pre-buy at all, and what happens to the used market if it cannot.</p>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Short version: the pre-buy is documented and large. FTR reported <b>30,500 Class 8 net orders in June 2026, up 241% year over year</b>, with 2026 build slots nearly gone. But those slots are being bought by fleets ordering in volume. For a carrier buying one truck, the decision is mostly a <b>used-truck</b> decision &mdash; and the cost of a 2027 truck is still being rewritten by EPA as of this month.</div></div>'
+
+'<h2 id="rule">What actually changes in 2027</h2>'
+'<p>Model year 2027 tightens the NOx limit sharply and adds new low-load and idle test cycles, which is why manufacturers are adding aftertreatment heating hardware. That part is settled. The American Trucking Associations, National Tank Truck Carriers, the Truckload Carriers Association and 49 state trucking associations petitioned to push the standard to 2031; EPA rejected the delay and kept the model-year 2027 start date, as Commercial Carrier Journal reported.</p>'
+'<p>What is <i>not</i> settled is what compliance costs. In July 2026 EPA proposed amendments to the same rule. According to FleetOwner&rsquo;s reporting on the proposal, EPA would drop the extended emissions warranty back to the model-year 2026 level of 100,000 miles or five years, remove DEF derates in favor of visible or audible warnings, and push the extended useful-life requirement out three years to model year 2030. EPA estimated the package could save <b>up to $6,000 per diesel vehicle</b>. The comment period closes 29 August 2026, with a final rule expected before 2027 trucks reach dealers.</p>'
+'<p>So the 2027 truck will still be a 2027 truck. But a large share of the number people have been quoting for two years &mdash; the long-warranty, long-useful-life compliance stack &mdash; is being renegotiated in public right now.</p>'
+'<p>The published cost estimates were never close to each other. In its rulemaking, EPA put the technology cost at <b>$4,827 per truck in 2017 dollars</b> (about $6,243 in 2024 dollars), plus roughly $3,612 in lifetime DEF and $3,028 in lifetime emissions-related repairs, according to Overdrive&rsquo;s summary of the estimates. In the same reporting, Joel Morrow of Alpha Drivers Transportation ballparked the cost of emission-reduction technology on current trucks at <b>$20,000 to $40,000</b>, and Scott Pearson of Peterbilt of Atlanta said plainly that &ldquo;there is real cost&hellip; and it is really passed on&rdquo; to buyers, calling the 2027 change potentially &ldquo;DPF on steroids.&rdquo;</p>'
+'<p>Emissions are also not the only line moving. Overdrive reported an owner-operator whose dealer quote on a new International HX carried a <b>$9,500 tariff charge</b> under the 25% Section 232 tariffs on imported medium- and heavy-duty trucks, with a comparable truck going from $155,000 for a 2023 model to $190,000 for the current model year. If you are pricing a truck this year, ask for that line to be itemized.</p>'
+
+'<h2 id="prebuy">The pre-buy is real &mdash; and it is fleet-sized</h2>'
+'<p>The order data is not ambiguous. Per FTR, Class 8 net orders in <b>April 2026 were up 199%</b> year over year. <b>May came in at 26,600 units, up 124%</b> year over year and <b>56% above the ten-year May average</b>. <b>June reached 30,500 units, up 16% from May and 241% year over year</b>, roughly 68% above the ten-year June average.</p>'
+'<p>Capacity, not appetite, became the constraint. FTR said remaining 2026 build slots could fill before the usual August window, and by early July noted that orders may already be spilling into first-quarter 2027 slots. FTR senior analyst Dan Moyer framed the shift directly: the focus of the cycle has moved from demand to whether truck manufacturers can execute against the backlog &mdash; &ldquo;build execution, supplier readiness, labor availability and delivery timing will become increasingly important as 2026 progresses.&rdquo;</p>'
+'<p>ACT Research&rsquo;s Carter Vieth added the freight-side reason it held up: demand stayed &ldquo;buoyed by materially improved spot and contract rates on top of regulatory clarity.&rdquo; A pre-buy only happens when carriers can both justify and finance the truck.</p>'
+
+'<h2 id="shut-out">Why the build-slot race is not your race</h2>'
+'<p>Here is the part the trade coverage skips. A sold-out order board is not a queue everyone stands in equally. Those slots go to fleets placing volume orders months ahead, often against standing allocation with a manufacturer. A carrier buying one truck is a retail customer, and a retail customer buys what a dealer has on the ground.</p>'
+'<p>Dealer stock is the first thing that thins out when a factory is committed. So the operator with the least ability to absorb a price increase &mdash; one truck, one revenue stream, no allocation agreement, no fleet financing terms &mdash; is also the one least able to get in front of it. The pre-buy is not a door that closes at the same time for everybody. For most small carriers it was never fully open.</p>'
+'<p>What is realistically available to a one-to-five truck operation right now is a unit already sitting on a lot, a fleet-spec order someone else released, or a used truck. Two of those three are the used market.</p>'
+
++svc_banner('Make the truck you already have earn its keep',
+  'Loadboot books, negotiates and manages freight for owner-operators and small fleets at a flat 5% &mdash; no contracts, no monthly fee, and every load priced against your cost per mile.',
+  'Apply as a carrier','carrier-application.html')+
+
+'<h2 id="used">The used market is where this lands</h2>'
+'<p>If you buy used, the relevant question is not what a 2027 truck will sticker for. It is what a three- to six-year-old truck costs, and what the pre-buy does to that number.</p>'
+'<p>The most recent data point: ACT Research reported that US used Class 8 retail sales rose <b>11% month over month in June 2026</b>, with the average retail price <b>above $61,000, up 5% from May</b>. ACT vice president Steve Tam noted the sales gain was larger than historical seasonality suggested &mdash; which called for about 2% &mdash; and that &ldquo;pricing once again easily defeated seasonal expectations.&rdquo;</p>'
+'<p>Two mechanisms are pulling on that market at the same time, in opposite directions:</p>'
+'<ul>'
+'<li><b>Demand pull, now.</b> Every small carrier who reads the same headlines is shopping for the same pre-2027 iron. So is every buyer who wanted a new truck and could not get a slot or stomach the quote. That is more bidders on a fixed pool of trucks.</li>'
+'<li><b>Supply push, later.</b> A pre-buy eventually delivers. Trucks that get built and delivered generally push trade-ins into the used channel behind them. More used supply arrives &mdash; but only after the builds happen, and only in the specs the fleets were running.</li>'
+'</ul>'
+'<p>Which force wins, and when, is what nobody can promise you. What you can do is stop treating &ldquo;used truck prices&rdquo; as one number. The truck you would buy and the truck you already own sit in the same market: if used values firm up, your trade-in rises alongside your replacement cost. Trading like for like is closer to a wash than it looks. The damage is in trading up.</p>'
+
+'<h2 id="history">What happened after the last three pre-buys</h2>'
+'<p>Pre-buys are a recurring feature of this industry, not a novelty. In an April 2022 analysis prepared for the Truck &amp; Engine Manufacturers Association, ACT Research quantified the past cycles. Ahead of the EPA&rsquo;04 standard it estimated roughly <b>30,000 units</b> pulled forward &mdash; what it called &ldquo;the Hidden Pre-buy of 2002,&rdquo; noting that despite poor economic conditions it was large, well-capitalized truckers who managed to pull demand forward. Ahead of model year 2007 the same analysis put it at a combined <b>119,000 heavy-duty and 29,000 medium-duty units</b>.</p>'
+'<p>Then the counter-example. Ahead of EPA&rsquo;10, ACT found <b>no significant pre-buy at all</b>: demand in 2009 ran 26% <i>below</i> modeled levels because the financial crisis overwhelmed the regulation.</p>'
+'<p>Two things follow. A pre-buy is borrowed demand: units bought early are units not bought later, and order boards have historically fallen hard afterwards. But the pattern is a tendency, not a law &mdash; a freight recession can erase it completely.</p>'
+
+'<h2 id="paths">Three paths and what each one costs</h2>'
+'<table class="cmp"><thead><tr><th>Path</th><th>The case for it</th><th>Your exposure</th></tr></thead><tbody>'
+'<tr><td>Buy a used pre-2027 truck now</td><td>Known emissions architecture, a smaller payment, technicians who have already seen it, and you can be in it this month.</td><td>You are buying into a market where ACT reported prices beating seasonal expectations in June 2026 &mdash; and buying wear you did not put on the truck.</td></tr>'
+'<tr><td>Buy a new 2026-spec truck</td><td>Full factory warranty, current known technology, and no exposure to whatever the 2027 hardware turns out to cost.</td><td>FTR reports 2026 build slots essentially committed, so you are shopping lot stock. Tariff line items are landing on quotes now, and a large fixed payment locks you against rates nobody can forecast.</td></tr>'
+'<tr><td>Wait and buy a 2027 or later truck</td><td>The rule&rsquo;s cost is still being amended &mdash; EPA&rsquo;s July 2026 proposal alone estimated up to $6,000 per vehicle in savings. Post-pre-buy order collapses have historically left manufacturers with capacity to fill.</td><td>You keep running an aging truck, and every major failure lands on you instead of a warranty. First-year builds of any new emissions generation have to earn their reliability reputation in the field.</td></tr>'
+'</tbody></table>'
+'<p>None of the three is obviously right. They are three different risks &mdash; price, downtime, technology &mdash; and which one you can carry depends on your books, not the news cycle.</p>'
+
+'<h2 id="questions">Questions to answer before you sign</h2>'
+'<ul>'
+'<li><b>What is your cost per mile with the payment in it?</b> Not without it. Run the number both ways before you shop &mdash; the <a href="cost-per-mile-calculator.html">cost per mile calculator</a> takes a few minutes, and it tells you what rate you now have to hold to break even.</li>'
+'<li><b>How much life is left in the truck you have?</b> Be specific: miles on the engine, aftertreatment history, transmission and rears, tire and brake position. A truck with a known major repair coming is a different decision than a truck with two clean years in it.</li>'
+'<li><b>What is your current truck worth today?</b> Get a real trade quote and a retail comparison, not a guess. That number is half the transaction.</li>'
+'<li><b>What warranty does the truck actually carry?</b> Get it in writing. The emissions warranty terms for model year 2027 are the exact thing EPA proposed to change in July 2026, so a verbal answer given this summer may not match the truck you take delivery of.</li>'
+'<li><b>Where does it get serviced on your lanes?</b> A new emissions architecture means fault codes that only certain dealers can clear. If the nearest one sits well off your usual routes, that is a real operating cost.</li>'
+'<li><b>What are the financing terms?</b> Rate, term, down payment, prepayment. A single-truck buyer does not get fleet terms, and a long term with a big balloon can outlive the truck&rsquo;s best years.</li>'
+'<li><b>If used: what do the records show?</b> Maintenance history, DPF and EGR and SCR service, ECM data, and a pre-purchase inspection by a shop that does not work for the seller. This is the single cheapest risk reduction available to you.</li>'
+'</ul>'
+
+'<h2 id="supply">A supply story worth watching</h2>'
+'<p>One more thing happening in the same window. Daimler Truck is ending manufacturing at its Portland facility on Swan Island by the end of 2026, cutting about 375 jobs after building trucks there since the 1940s. Production shifts to five existing assembly plants in North and South Carolina plus three plants in Mexico, and Portland &mdash; where the electric eCascadia and eM2 were assembled &mdash; remains DTNA&rsquo;s North American headquarters and a centre for engineering, product development and testing, according to the Portland Tribune.</p>'
+'<p>You do not need an opinion on that. But footprints are being reorganized at the same moment backlogs sit at multi-year highs and a new standard is landing. That is the context behind any 2027 delivery date a dealer quotes you, and a fair thing to press on before you put money down.</p>'
+
+'<h2 id="bottom">What nobody can tell you</h2>'
+'<p>Nobody knows the final cost of a 2027 truck, because EPA is still writing it. Nobody knows where used prices go, because that depends on how much of the pre-buy actually gets built and how freight rates behave while it does. Nobody knows whether the post-pre-buy slump arrives on schedule or gets overwritten by the economy the way 2009 overwrote it.</p>'
+'<p>What is knowable is your side of it: what your truck is worth, what it is going to cost you to keep, what a payment does to your break-even rate, and how many bad weeks you can absorb before a payment becomes a problem. Those are the numbers that decide this, and they are the only ones in the whole discussion that you control.</p>'
+'<p>The pre-buy is a fleet event. Your decision is not. Price it off your own books.</p>'
+'<p class="small">Loadboot is a dispatch and carrier-operations platform, not a financial advisor or lender, and nothing here is a recommendation to buy, sell or finance equipment. Figures are attributed to the sources named; regulations, prices and market conditions change.</p>')
+EP27_FAQ=[
+ ('Will a 2027 truck really cost more?','Almost certainly something, but the published estimates are far apart and the rule is still moving. EPA&rsquo;s own rulemaking put the technology cost at $4,827 per truck in 2017 dollars, about $6,243 in 2024 dollars. Joel Morrow of Alpha Drivers Transportation ballparked emission-reduction technology on current trucks at $20,000 to $40,000, per Overdrive. And in July 2026 EPA proposed rolling back the extended warranty and useful-life requirements, which it estimated could save up to $6,000 per diesel vehicle. Anyone quoting you one firm number today is quoting a number the rulemaking has not finished setting.'),
+ ('Was the 2027 EPA rule delayed?','No. ATA, the Truckload Carriers Association, National Tank Truck Carriers and 49 state trucking associations asked EPA to push the standard to 2031, and EPA declined, keeping the model-year 2027 start. What EPA did propose in July 2026 was a set of amendments &mdash; dropping the extended emissions warranty back to 100,000 miles or five years, removing DEF derates in favor of visible or audible warnings, and delaying the extended useful-life requirement to model year 2030. The comment period closes 29 August 2026.'),
+ ('Can an owner-operator still order a 2026 truck?','Ordering a factory build is largely out of reach: FTR reported 2026 build slots tracking to sell out before the usual August window, and by July said orders may be spilling into first-quarter 2027 slots. What is still findable is lot stock, a fleet order that got released, or a cancelled build. Ask dealers specifically what is on the ground and what is uncommitted, rather than asking for an order slot.'),
+ ('Does a pre-buy push used truck prices up?','It pulls in both directions. In the near term more buyers chase the same pre-2027 trucks, which is upward pressure &mdash; ACT Research reported the average used Class 8 retail price above $61,000 in June 2026, up 5% from May, with Steve Tam noting pricing beat seasonal expectations. Later, the trucks that get built and delivered normally send trade-ins into the used channel, which is downward pressure. The timing between those two is what makes confident predictions unreliable.'),
+ ('What happened to the market after past pre-buys?','ACT Research&rsquo;s April 2022 analysis for the Truck &amp; Engine Manufacturers Association estimated about 30,000 units pulled forward ahead of EPA&rsquo;04, and a combined 119,000 heavy-duty and 29,000 medium-duty units ahead of model year 2007 &mdash; demand borrowed from the following years, which is why order boards fall afterwards. The exception is instructive: ahead of EPA&rsquo;10 there was no meaningful pre-buy, with 2009 demand running 26% below modeled levels because of the financial crisis.'),
+ ('How do I decide whether to buy now or wait?','By pricing it off your own operation rather than the headlines. Work out your cost per mile with the new payment included, what your current truck is worth today, how many months of reliable service are left in it, and how large a repair bill you could absorb without missing a payment. A cheap truck you cannot keep loaded is worse than an expensive one you can &mdash; which is why the freight side of the decision matters as much as the price.')]
+BLOGPOSTS += [
+ ('should-i-buy-a-truck-before-2027-epa-rule.html',
+  'Should You Buy a Truck Before the 2027 EPA Rule? An Owner-Operator&rsquo;s View',
+  'The 2027 EPA pre-buy explained for one-to-five truck carriers: what the rule changes, why build slots go to fleets, what it means for used truck prices, and the questions to answer before you buy.',
+  'Fleets are ordering trucks at record pace ahead of the 2027 EPA rule &mdash; and 2026 build slots are gone. Here is what that pre-buy actually means for a carrier buying one truck, not four hundred.', ''),
+]
+RELATED['should-i-buy-a-truck-before-2027-epa-rule.html'] = [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('owner-operator-dispatch.html','Owner-Operator Dispatch'),('market-rates.html','Market Rates Per Mile'),('how-to-avoid-cheap-freight.html','How to Avoid Cheap Freight'),('truck-driver-per-diem-2026.html','Truck Driver Per Diem'),('carrier-application.html','Apply as Carrier')]
+rich_article('should-i-buy-a-truck-before-2027-epa-rule.html',
+ 'Buy a Truck Before the 2027 EPA Rule? Owner-Operator Guide',
+ 'Should an owner-operator buy a truck before the 2027 EPA NOx rule? The pre-buy data, why build slots go to large fleets, what it means for used truck prices, and the questions to answer first.',
+ 'Equipment &amp; Buying Decisions','Should You Buy a Truck Before the 2027 EPA Rule?',
+ 'Class 8 orders are surging and 2026 build slots are gone &mdash; but the pre-buy is a large-fleet event. Here is what it actually means for a carrier buying one truck, and where the effect really lands.',
+ 9,'truck-fleet.webp','Class 8 trucks staged at a freight yard ahead of the 2027 EPA emissions rule',
+ EP27_TOC, EP27_BODY, EP27_FAQ, feat_svg=EP27_FEAT)
+THUMBS['should-i-buy-a-truck-before-2027-epa-rule.html']=EP27_FEAT
+READTIME['should-i-buy-a-truck-before-2027-epa-rule.html']=9
 
 bcards = ''.join(blog_card(fn,t,ex,READTIME.get(fn,5)) for fn,t,d,ex,bl in BLOGPOSTS)
 blog_body = svc_hero('The Loadboot Blog','Practical guides for owner-operators and carriers &mdash; pricing, authority, finding loads, and running a more profitable truck.')
