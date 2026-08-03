@@ -1,0 +1,3 @@
+-- bl_out_0200 — cc_outreach_crm returns a per-day 'daily' breakdown (total / delivered /
+-- accepted / bounced / failed) from message_deliveries, so the CC panel shows exact wire
+-- numbers instead of click analytics. Applied to production 2026-08-03.

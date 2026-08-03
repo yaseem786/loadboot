@@ -1,0 +1,5 @@
+-- bl_out_0202 — all 15 outreach templates replaced with plain personal emails (parts=null,
+-- html sends as-is). 1,200 designed sends had produced 13 clicks and 0 replies; they were
+-- also double-wrapped in the transactional shell until delivery-worker v15. Every link keeps
+-- its utm_campaign so click tracking still works; every body keeps {UNSUB}.
+-- Applied to production 2026-08-03.

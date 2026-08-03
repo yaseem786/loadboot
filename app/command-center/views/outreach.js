@@ -61,8 +61,12 @@ export function renderOutreach(host) {
       if (status === 'bounced') totalBounced += n;
       if (status === 'completed') totalDone += n;
     });
-    const sentN = sends.filter(s => s.status === 'sent').reduce((a, s) => a + s.n, 0);
-    const failN = sends.filter(s => s.status === 'failed' || s.status === 'bounced').reduce((a, s) => a + s.n, 0);
+    // "Sent" must mean everything that went out the door. Resend's delivery webhook moves
+    // rows from 'sent' to 'delivered', so counting only status='sent' silently shrinks the
+    // number as confirmations arrive — which is why the panel under-reported real sends.
+    const sentN = sends.filter(s => s.status === 'sent' || s.status === 'delivered').reduce((a, s) => a + s.n, 0);
+    const failN = sends.filter(s => s.status === 'failed' || s.status === 'bounced' || s.status === 'dead_letter').reduce((a, s) => a + s.n, 0);
+    const daily = (crm && crm.daily) || [];
     const on = !!st.enabled;
 
     mount(kpis, [
@@ -82,14 +86,26 @@ export function renderOutreach(host) {
 
     mount(grid, [
       el('div', { class: 'lb-card fa-col2' }, [
-        el('div', { class: 'fa-cardhead' }, [el('h3', null, 'Send results by email (last 30 days)'), el('span', null, sentN.toLocaleString() + ' delivered')]),
+        el('div', { class: 'fa-cardhead' }, [el('h3', null, 'Exact sends by day (last 30 days)'), el('span', null, sentN.toLocaleString() + ' sent · ' + failN + ' failed/bounced')]),
+        daily.length ? el('table', { class: 'cc-table' }, [
+          el('thead', null, el('tr', null, ['Day', 'Went out', 'Delivery confirmed', 'Bounced', 'Failed'].map(h => el('th', null, h)))),
+          el('tbody', null, daily.map(dd => el('tr', { class: 'cc-row' }, [
+            el('td', null, el('b', null, dd.day)),
+            el('td', null, el('span', { class: 'cc-pill cc-pill-blue' }, String(dd.total || 0))),
+            el('td', null, String(dd.delivered || 0)),
+            el('td', null, (dd.bounced || 0) > 0 ? el('span', { class: 'cc-pill cc-pill-red' }, String(dd.bounced)) : '0'),
+            el('td', null, (dd.failed || 0) > 0 ? el('span', { class: 'cc-pill cc-pill-red' }, String(dd.failed)) : '0'),
+          ]))),
+        ]) : el('div', { class: 'lb-state' }, 'No sends in this window.'),
+        el('div', { class: 'fa-cardhead', style: 'margin-top:16px' }, [el('h3', null, 'Send results by email (last 30 days)')]),
         tplRows.length ? el('table', { class: 'cc-table' }, [
-          el('thead', null, el('tr', null, ['Email', 'Sent', 'Queued', 'Failed'].map(h => el('th', null, h)))),
+          el('thead', null, el('tr', null, ['Email', 'Sent', 'Confirmed', 'Queued', 'Failed'].map(h => el('th', null, h)))),
           el('tbody', null, tplRows.map(t => el('tr', { class: 'cc-row' }, [
             el('td', null, el('b', null, TPL_LABEL(t))),
-            el('td', null, el('span', { class: 'cc-pill cc-pill-green' }, String(byTpl[t].sent || 0))),
+            el('td', null, el('span', { class: 'cc-pill cc-pill-green' }, String((byTpl[t].sent || 0) + (byTpl[t].delivered || 0)))),
+            el('td', null, String(byTpl[t].delivered || 0)),
             el('td', null, String(byTpl[t].queued || 0)),
-            el('td', null, (byTpl[t].failed || byTpl[t].bounced) ? el('span', { class: 'cc-pill cc-pill-red' }, String((byTpl[t].failed || 0) + (byTpl[t].bounced || 0))) : '0'),
+            el('td', null, (byTpl[t].failed || byTpl[t].bounced || byTpl[t].dead_letter) ? el('span', { class: 'cc-pill cc-pill-red' }, String((byTpl[t].failed || 0) + (byTpl[t].bounced || 0) + (byTpl[t].dead_letter || 0))) : '0'),
           ]))),
         ]) : el('div', { class: 'lb-state' }, 'No sends yet — first batch goes out at the daily run (13:00 UTC).'),
         camps.length ? el('div', { style: 'margin-top:16px' }, [
