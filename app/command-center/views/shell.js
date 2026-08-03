@@ -170,6 +170,22 @@ function globalSearchBox() {
   return wrap;
 }
 
+// Notification payloads carry a link written by whichever backend raised them, and the
+// writers never agreed on a convention: some store the in-app route ('/crm'), others the
+// full deploy path with its own hash ('/app/command-center/#/agents'). Blindly prefixing
+// '#' turned the second kind into '#/app/command-center/#/agents' — a dead click, which is
+// what most staff notifications were. Normalize to the route and prefix once.
+function ccNotifHref(raw) {
+  let u = String(raw || '').trim();
+  if (!u) return '#';
+  if (/^https?:\/\//i.test(u)) return u;          // absolute link — leave alone
+  const h = u.indexOf('#');
+  if (h !== -1) u = u.slice(h + 1);                // '/app/command-center/#/agents' -> '/agents'
+  else u = u.replace(/^\/app\/command-center\/?/, '/');
+  if (u.charAt(0) !== '/') u = '/' + u;            // '#carriers' -> '/carriers'
+  return '#' + u;
+}
+
 function notifBell() {
   const badge = el('span', { hidden: true, style: 'position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#ef4444;color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1' });
   const btn = el('button', { class: 'cc-iconbtn', title: 'Notifications', style: 'position:relative' }, [icon('bell', 18), badge]);
@@ -190,7 +206,7 @@ function notifBell() {
       ]),
       ...items.map(n => {
         const p = n.payload || {};
-        const url = p.url ? (String(p.url).charAt(0) === '/' ? '#' + p.url : p.url) : '#';
+        const url = ccNotifHref(p.url);
         return el('a', { class: 'cc-search-row', href: url, style: n.read_at ? 'opacity:.55' : '', onClick: async () => { try { if (!n.read_at) await markMyNotification(n.id); } catch (_) {} panel.hidden = true; refresh(); } }, [
           el('div', null, [el('b', null, p.title || n.template_key || 'Update'), p.body ? el('div', { class: 'cc-sub' }, p.body) : '',
             n.created_at ? el('div', { class: 'cc-sub', style: 'font-size:11px;opacity:.75;margin-top:2px' }, new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + new Date(n.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) : '']),

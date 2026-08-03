@@ -8,6 +8,18 @@
 // Same safety model: no RESEND_API_KEY => safe no-op. Identities: hello@ / dispatch@ / billing@.
 // v10 (2026-08-01): outreach.* is pinned to the marketing identity — it was matching DISPATCH_RE on the word "carrier" and sending from dispatch@loadboot.com.
 // v13 (2026-08-01): new "support" identity (hello@loadboot.com) replaces "marketing" as the final fallback, so Command Center replies and transactional mail leave the main domain instead of the cold-outreach subdomain SENDER_MARKETING now points at.
+// v14 (2026-08-03): every link in the shell now carries its colour on an inner <span> with
+// !important, not on the bare <a>. Inline colour on an anchor is not durable: Gmail, Outlook.com,
+// Apple Mail and webmail compose editors all re-apply their own link colour, and a browser
+// preview of an already-visited link does the same. The footer's pale links were rendering as
+// mid-blue on the navy panel, and CTA buttons as dark-on-blue — unreadable in both cases.
+// The <span> is what those clients actually respect. Same fix was applied to all 45 body
+// templates in bl_mail_0199; this covers the shell that wraps them.
+// v15 (2026-08-03): outreach.* emails are NOT wrapped in the shell. outreach_render (and the
+// plain-text templates that replaced it in bl_out_0202) produce a COMPLETE email of their own;
+// wrapping that in the transactional shell nested one branded email inside another — two
+// headers, two footers, two call bands — for every one of the 1,200 cold emails sent so far.
+// A cold email must also never carry the customer shell: it has its own unsubscribe footer.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 Deno.serve(async (_req) => {
@@ -52,6 +64,7 @@ Deno.serve(async (_req) => {
     `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   body{margin:0;padding:0}
+  a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important}
   @media only screen and (max-width:620px){
     .lb-card{width:100%!important;border-radius:0!important}
     .lb-pad{padding-left:22px!important;padding-right:22px!important}
@@ -76,7 +89,7 @@ Deno.serve(async (_req) => {
       <td align="left" style="vertical-align:middle"><img src="${LOGO}" width="140" height="34" alt="LoadBoot" style="display:block;border:0;max-width:140px;height:auto"></td>
       <td align="right" style="vertical-align:middle">
         <table role="presentation" cellpadding="0" cellspacing="0" align="right"><tr><td style="border:1px solid rgba(255,255,255,.28);border-radius:999px">
-          <a href="${SITE}/apps.html" style="display:inline-block;padding:9px 18px;font-size:12.5px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px">&#9660;&nbsp; Get the app</a>
+          <a href="${SITE}/apps.html" style="display:inline-block;padding:9px 18px;font-size:12.5px;font-weight:700;color:#ffffff !important;text-decoration:none;border-radius:999px"><span style="color:#ffffff !important;text-decoration:none">&#9660;&nbsp; Get the app</span></a>
         </td></tr></table>
       </td>
     </tr></table>
@@ -87,28 +100,28 @@ Deno.serve(async (_req) => {
       <td width="33%" style="vertical-align:top;padding-right:10px">
         <div style="font-size:10.5px;font-weight:800;letter-spacing:.13em;color:#5c6f8f;text-transform:uppercase;margin-bottom:8px">Company</div>
         <div style="font-size:13px;line-height:2.15">
-          <a href="${SITE}/about.html" style="color:#cbd5e1;text-decoration:none">About us</a><br>
-          <a href="${SITE}/how-it-works.html" style="color:#cbd5e1;text-decoration:none">How it works</a><br>
-          <a href="${SITE}/blog.html" style="color:#cbd5e1;text-decoration:none">Blog</a><br>
-          <a href="${SITE}/contact.html" style="color:#cbd5e1;text-decoration:none">Contact</a>
+          <a href="${SITE}/about.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">About us</span></a><br>
+          <a href="${SITE}/how-it-works.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">How it works</span></a><br>
+          <a href="${SITE}/blog.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">Blog</span></a><br>
+          <a href="${SITE}/contact.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">Contact</span></a>
         </div>
       </td>
       <td width="33%" style="vertical-align:top;padding-right:10px">
         <div style="font-size:10.5px;font-weight:800;letter-spacing:.13em;color:#5c6f8f;text-transform:uppercase;margin-bottom:8px">Products</div>
         <div style="font-size:13px;line-height:2.15">
-          <a href="${SITE}/services.html" style="color:#cbd5e1;text-decoration:none">Dispatch services</a><br>
-          <a href="${SITE}/pricing.html" style="color:#cbd5e1;text-decoration:none">Pricing</a><br>
-          <a href="${SITE}/market-rates.html" style="color:#cbd5e1;text-decoration:none">Market rates</a><br>
-          <a href="${SITE}/cost-per-mile-calculator.html" style="color:#cbd5e1;text-decoration:none">Cost-per-mile calculator</a>
+          <a href="${SITE}/services.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">Dispatch services</span></a><br>
+          <a href="${SITE}/pricing.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">Pricing</span></a><br>
+          <a href="${SITE}/market-rates.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">Market rates</span></a><br>
+          <a href="${SITE}/cost-per-mile-calculator.html" style="color:#cbd5e1 !important;text-decoration:none"><span style="color:#cbd5e1 !important;text-decoration:none">Cost-per-mile calculator</span></a>
         </div>
       </td>
       <td width="33%" style="vertical-align:top">
         <div style="font-size:10.5px;font-weight:800;letter-spacing:.13em;color:#5c6f8f;text-transform:uppercase;margin-bottom:8px">Sign in</div>
         <div style="font-size:13px;line-height:2.15">
-          <a href="${SITE}/app/carrier/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Carrier portal</a><br>
-          <a href="${SITE}/app/partner/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Broker &amp; shipper portal</a><br>
-          <a href="${SITE}/app/agent/" style="color:#7dd3fc;text-decoration:none;font-weight:700">Agent portal</a><br>
-          <a href="${SITE}/agents.html" style="color:#7dd3fc;text-decoration:none;font-weight:700">Agent program (1%)</a>
+          <a href="${SITE}/app/carrier/" style="color:#7dd3fc !important;text-decoration:none;font-weight:700"><span style="color:#7dd3fc !important;text-decoration:none">Carrier portal</span></a><br>
+          <a href="${SITE}/app/partner/" style="color:#7dd3fc !important;text-decoration:none;font-weight:700"><span style="color:#7dd3fc !important;text-decoration:none">Broker &amp; shipper portal</span></a><br>
+          <a href="${SITE}/app/agent/" style="color:#7dd3fc !important;text-decoration:none;font-weight:700"><span style="color:#7dd3fc !important;text-decoration:none">Agent portal</span></a><br>
+          <a href="${SITE}/agents.html" style="color:#7dd3fc !important;text-decoration:none;font-weight:700"><span style="color:#7dd3fc !important;text-decoration:none">Agent program (1%)</span></a>
         </div>
       </td>
     </tr></tbody></table>
@@ -116,10 +129,10 @@ Deno.serve(async (_req) => {
   <tr><td class="lb-pad" style="padding:18px 32px 26px;background:#10223B">
     <div style="border-top:1px solid rgba(255,255,255,.12);margin:0 0 14px"></div>
     <div style="font-size:11.5px;line-height:2">
-      <a href="${SITE}/privacy.html" style="color:#94a3b8;text-decoration:none">Privacy</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/terms.html" style="color:#94a3b8;text-decoration:none">Terms</a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/contact.html" style="color:#94a3b8;text-decoration:none">Support</a> &nbsp;&middot;&nbsp;
-      <a href="${unsubUrl}" style="color:#94a3b8;text-decoration:none">Unsubscribe</a>
+      <a href="${SITE}/privacy.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Privacy</span></a> &nbsp;&middot;&nbsp;
+      <a href="${SITE}/terms.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Terms</span></a> &nbsp;&middot;&nbsp;
+      <a href="${SITE}/contact.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Support</span></a> &nbsp;&middot;&nbsp;
+      <a href="${unsubUrl}" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Unsubscribe</span></a>
     </div>
     <div style="color:#5c6f8f;font-size:11px;line-height:1.8;margin-top:8px">
       LoadBoot &middot; Truck dispatch &amp; logistics technology &middot; United States<br>
@@ -165,8 +178,13 @@ Deno.serve(async (_req) => {
   for (const d of claimed ?? []) {
     const subject = (d.meta && d.meta.subject) ? String(d.meta.subject) : "LoadBoot";
     const unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`;
-    const withCall = wantsCall(d);
-    const html = (d.meta && d.meta.body_html) ? shell(String(d.meta.body_html), unsubUrl, subject, withCall ? callBandHtml() : "") : null;
+    // Outreach bodies are complete emails with their own unsubscribe footer — send them
+    // exactly as rendered. Wrapping them in the shell nested two branded emails (v15).
+    const selfContained = /^outreach[._-]/i.test(String(d.template_key ?? ""));
+    const withCall = !selfContained && wantsCall(d);
+    const html = (d.meta && d.meta.body_html)
+      ? (selfContained ? String(d.meta.body_html) : shell(String(d.meta.body_html), unsubUrl, subject, withCall ? callBandHtml() : ""))
+      : null;
     const callLine = withCall ? `\n\nPrefer to talk? Call us 24/7 on ${PHONE_DISPLAY}, or book a time and we call you: ${SITE}/contact.html#call` : "";
     const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + callLine + `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}`;
     try {

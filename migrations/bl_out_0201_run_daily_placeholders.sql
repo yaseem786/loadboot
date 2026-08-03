@@ -1,0 +1,3 @@
+-- bl_out_0201 — outreach_run_daily: {NAME} now title-cased from ALL-CAPS FMCSA names
+-- (LLC/USA/DBA restored); placeholders work in subjects; {STATE} added; cap notification
+-- url fixed '/task-queue' -> '/automation'. Applied to production 2026-08-03.
