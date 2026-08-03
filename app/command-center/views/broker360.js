@@ -76,6 +76,25 @@ export function renderBroker360(host, orgId) {
       ].filter(Boolean)),
     ]);
 
+    // ---- Signup profile — what the person actually typed at signup ----
+    // Fresh partners have an empty partner_profiles row, so before bl_ops_0204 this page
+    // showed a broker with no name, phone or email anywhere. The RPC now returns the auth
+    // signup metadata; this card makes it visible so staff can vet who signed up.
+    const kvRow = (k, v) => v ? el('div', { style: 'display:flex;gap:10px;padding:4px 0' }, [
+      el('span', { class: 'cc-sub', style: 'min-width:110px;font-weight:700' }, k), el('span', null, String(v))]) : null;
+    const signupCard = el('div', { class: 'lb-card', style: 'margin-top:14px' }, [
+      el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Signup profile'),
+        el('span', { class: 'cc-sub' }, 'as entered at account creation')]),
+      el('div', null, [
+        kvRow('Name', prof.signup_name || prof.contact_name),
+        kvRow('Company', prof.signup_company || o.name),
+        kvRow('Email', prof.signup_email || prof.email),
+        kvRow('Phone', prof.phone),
+        kvRow('Signed up as', prof.signup_kind),
+        kvRow('Signup date', prof.signup_at ? fmtDateTime(prof.signup_at) : null),
+      ].filter(Boolean)),
+    ]);
+
     // ---- KPIs ----
     const mand = packet.filter((x) => x.tag !== 'optional');
     const mandOk = mand.filter((x) => x.status === 'verified' || x.status === 'waived').length;
@@ -324,7 +343,7 @@ export function renderBroker360(host, orgId) {
     ]);
 
     mount(host, el('div', { class: 'cc-view' }, el('div', null, [
-      head, kpis,
+      head, signupCard, kpis,
       el('div', { style: 'margin-top:16px' }, packetCard),
       gateRow,
       bankCard ? el('div', { style: 'margin-top:16px' }, bankCard) : null,

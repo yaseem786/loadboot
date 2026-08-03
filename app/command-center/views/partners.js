@@ -59,7 +59,11 @@ export function renderPartners(host) {
     mount(body, el('div', { class: 'lb-state lb-loading' }, 'Loading…'));
     try { rows = await listPartners({ kind, search }); }
     catch (e) { showError(body, humanizeError(e), load); return; }
-    if (!rows.length) { mount(body, card(el('div', { class: 'cc-sub', style: 'padding:8px' }, 'No partners yet. Add a broker or shipper to get started.'))); return; }
+    // NOTE: no early return when the CRM directory is empty. The real partner ACCOUNTS
+    // (portal logins) render below regardless — the old `if (!rows.length) return` here
+    // hid every real broker signup whenever no manual CRM record existed, which is
+    // exactly the state a brand-new platform is in. A signed-up broker must always
+    // be visible in this tab.
     // ---- REAL partner accounts (logins) — carrier-tab parity: click opens Broker 360 ----
     let accs = []; try { accs = await partnersAccounts() || []; } catch (_) { accs = []; }
     const q9 = (search || '').toLowerCase();
