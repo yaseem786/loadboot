@@ -1,0 +1,6 @@
+-- bl_ops_0205 — Partner directory purity + missing-doc semantics + per-item reminder.
+-- Applied to production 2026-08-03. (1) '(Agent)' orgs excluded from cc_partners_accounts
+-- (they live in the Dispatch team section); (2) cc_partner_360 items with no submission
+-- read 'missing', not 'pending'; (3) new cc_partner_packet_remind: in-app + branded email
+-- naming the exact missing item (authenticated-only, anon revoked; anon SECDEF still 27);
+-- (4) TAB LLC flipped to 'pending' so the approval gate applies to her too.

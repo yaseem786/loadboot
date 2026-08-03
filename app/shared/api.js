@@ -201,6 +201,7 @@ export const publishAgreement = (kind, version, legalOk) => rpc('cc_publish_agre
 export const myOnboardingPacket = () => rpc('cc_my_onboarding_packet');
 export const onboardingSubmitItem = (key, ref, note) => rpc('cc_onboarding_submit_item', { p_key: key, p_ref: ref, p_note: note ?? null });
 export const onboardingReviewItem = (org, key, action, note) => rpc('cc_onboarding_review_item', { p_org: org, p_key: key, p_action: action, p_note: note ?? null });
+export const partnerPacketRemind = (org, key) => rpc('cc_partner_packet_remind', { p_org: org, p_key: key });
 export const partnerSetStatus = (org, action, reason) => rpc('cc_partner_set_status', { p_org: org, p_action: action, p_reason: reason ?? null });
 export const partnersAccounts = () => rpc('cc_partners_accounts', {});
 export const partner360 = (org) => rpc('cc_partner_360', { p_org: org });

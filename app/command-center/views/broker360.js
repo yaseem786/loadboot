@@ -4,7 +4,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 
 import { card, statCard, statusPill, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
-import { partner360, onboardingReviewItem, claimBundle, partnerSetStatus, accountHealth, issueViolation } from '../../shared/api.js';
+import { partner360, onboardingReviewItem, claimBundle, partnerSetStatus, accountHealth, issueViolation, partnerPacketRemind } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
@@ -147,6 +147,12 @@ export function renderBroker360(host, orgId) {
             (manage && st !== 'verified') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
               try { await onboardingReviewItem(orgId, it.key, 'verify', null); toast(it.label + ' verified — partner notified', 'success'); load(); } catch (e) { b.disabled = false; toast(humanizeError(e), 'error'); }
             } }, '✓ Verify') : null,
+            // Carrier-360 parity: nudge the partner about THIS document — in-app + branded
+            // email naming the exact item. Shown when nothing usable is on record.
+            (manage && (st === 'missing' || st === 'rejected')) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', title: 'Send the partner an in-app + email reminder for this document', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
+              try { const r = await partnerPacketRemind(orgId, it.key); toast('Reminder sent — in-app + ' + ((r && r.emails) || 0) + ' email(s)', 'success'); } catch (e) { toast(humanizeError(e), 'error'); }
+              b.disabled = false;
+            } }, '🔔 Remind') : null,
             manage ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: () => {
               const HINTS = {
                 mc_authority: 'Check the MC on the letter against FMCSA (card below) — name and status must match.',
