@@ -1,0 +1,26 @@
+-- bl_ops_0204 — partner signup hygiene. Applied to production 2026-08-03.
+--
+-- Four defects surfaced by the first real broker signup (TAB LLC / Sandra) and the
+-- fake-MC pattern on carrier signups:
+--
+-- 1. handle_new_user provisioned a CARRIER org for broker/shipper signups — partner_kind
+--    was never checked, so a broker signup got a spurious carrier org alongside the real
+--    broker org (plus a carrier-worded welcome email). Now skipped when partner_kind is
+--    broker/shipper/facility; cc_partner_register owns partner-org creation.
+-- 2. cc_partner_register created partner orgs status='active'. The rest of the system was
+--    already built for pending-until-verified: cc_partner_submit_load refuses posting
+--    unless active, and cc_onboarding_review_item flips pending->active when the packet
+--    completes (and back on rejection of a required item). Born-active bypassed the whole
+--    approval design and made Broker 360 show "Account approved" for an unapproved broker.
+--    New partner orgs are now born 'pending'. Existing orgs untouched (grandfathered).
+-- 3. cc_partner_360 'profile' read only partner_profiles, which a fresh signup has not
+--    filled — the 360 showed nothing of what the person typed at signup. It now falls
+--    back to auth signup metadata (signup_name/company/kind/email/at + phone), and the
+--    Broker 360 view gained a "Signup profile" card (broker360.js).
+-- 4. update_my_carrier_profile accepted 8-digit MC numbers; real MC numbers have at most
+--    7 digits. Both fake MCs that got in this week (99849375, 70719839) were 8 digits.
+--    MC regex tightened to ^[0-9]{1,7}$ with a human error message.
+--
+-- All four applied via in-place rewrite / full redefinition; verified after apply:
+-- register_pending=true, profile_fallback=true, mc_7digit=true, trigger_fixed=true,
+-- anon-executable SECURITY DEFINER count unchanged at 27.
