@@ -5,7 +5,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
-import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue, agentSuspend, ccAgentPayoutVerify } from '../../shared/api.js';
+import { ccAgentsList, ccAgent360, ccAgentDecide, ccAgentMsgs, ccAgentMsgSend, ccAgentNotifySend, ccAgentDocReview, referralPayoutDecide, referralPayoutQueue, agentSuspend, ccAgentPayoutVerify, ccAgentPayoutRequestDetails, ccAgentPayoutApproveMethod } from '../../shared/api.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -138,17 +138,32 @@ export function renderAgents(host) {
               m9 === 'ach' ? row9('Account #', mask9(pd.account, 4)) : null,
               m9 === 'crypto' ? row9('Network', pd.wallet_network || 'TRC-20') : null,
               m9 === 'crypto' ? row9('Wallet', pd.wallet ? String(pd.wallet).slice(0, 6) + '…' + String(pd.wallet).slice(-6) : null) : null,
-              (m9 === 'intl' || m9 === 'local_bank') ? row9('Bank', pd.bank_name) : null,
-              (m9 === 'intl' || m9 === 'local_bank') ? row9('IBAN / account', mask9(pd.iban, 4)) : null,
-              (m9 === 'intl' || m9 === 'local_bank') ? row9('SWIFT / BIC', pd.swift) : null,
+              (m9 === 'intl' || m9 === 'local_bank' || m9 === 'other') ? row9('Bank', pd.bank_name) : null,
+              (m9 === 'intl' || m9 === 'local_bank' || m9 === 'other') ? row9('IBAN / account', mask9(pd.iban, 4)) : null,
+              (m9 === 'intl' || m9 === 'local_bank' || m9 === 'other') ? row9('SWIFT / BIC', pd.swift) : null,
               row9('Bank address', pd.bank_address),
-              m9 === 'other' ? row9('Requested method', pd.other, true) : null,
+              m9 === 'other' ? row9('Beneficiary address', pd.beneficiary_address) : null,
+              m9 === 'other' ? row9('Requested method', pd.other, !pd.other_approved) : null,
               row9('Country', p.country),
               row9('Tax form', (p.tax_form || '—') + (p.tax_id_last4 ? ' · TIN •••' + p.tax_id_last4 : '')),
             ].filter(Boolean);
+            // For an alternative rail, name the fields that are actually missing. "Do not pay"
+            // with no list is what forced a reviewer to either guess or reject a real agent.
+            const MISS9 = [
+              ['Account title (exact legal name on the account)', pd.account_title],
+              ['Provider / bank name', pd.bank_name],
+              ['IBAN / account number', pd.iban || pd.account],
+              ['SWIFT / BIC', pd.swift],
+              ['Provider / bank address', pd.bank_address],
+              ['Beneficiary address (agent’s own address)', pd.beneficiary_address],
+            ].filter(([, v]) => !String(v || '').trim()).map(([k]) => k);
+            const appr9 = pd.other_approved || null;
             const note9 = m9 === 'intl'
               ? '⚠ Legacy direct-IBAN payout. New agents are onboarded on Payoneer — a US-sourced USD wire to a foreign IBAN is slow and expensive. Ask this agent to switch to Payoneer before the next run.'
-              : m9 === 'other' ? '⚠ Unapproved method — do NOT pay until a reviewer confirms it can receive an international USD payment in the agent’s own name.'
+              : m9 === 'other' ? (appr9
+                  ? '✓ Method approved' + (appr9.at ? ' on ' + fmtDate(appr9.at) : '') + ' — ' + (appr9.label || 'alternative rail') + ' can receive an international USD payment in this agent’s own name.' + (appr9.note ? ' Reviewer note: ' + appr9.note : '')
+                  : '⚠ Unapproved method — do NOT pay until a reviewer confirms it can receive an international USD payment in the agent’s own name.'
+                    + (MISS9.length ? ' Still missing: ' + MISS9.join(' · ') + '.' : ' All receiving details are on file — assess the provider, then approve the method.'))
               : m9 === 'crypto' ? 'Send a small test transfer before the first full payout. The network fee is deducted from the payout and printed on the receipt.'
               : m9 === 'local_bank' ? 'Pay via Payoneer’s local bank transfer to this account — lands in local currency, usually 1–3 business days. Verify the account title matches the ID.'
               : m9 === 'payoneer' ? 'Pay the Payoneer account; the agent withdraws to their own local bank inside Payoneer. LoadBoot adds no fee.'
@@ -156,8 +171,27 @@ export function renderAgents(host) {
             return el('div', { style: 'padding:8px 0' }, [
               el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px' }, [el('div', { style: 'font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em' }, [icon('card',15),' Payout & bank details']), el('span', { class: 'cc-pill cc-pill-' + (pd.payout_status==='verified'?'green':pd.payout_status==='rejected'?'red':'amber') }, pd.payout_status==='verified'?'✓ Verified':pd.payout_status==='rejected'?'✕ Rejected':'Pending review')]),
               ...rows9,
-              note9 ? el('div', { style: 'margin-top:8px;background:#f8fafc;border:1px solid #e6ebf3;border-radius:10px;padding:9px 12px;font-size:.8rem;line-height:1.55;color:#475569' }, note9) : null,
-              el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [pd.payout_status!=='verified' ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#16a34a;border-color:#16a34a', onClick: async (ev) => { const b=ev.currentTarget; if(!await askConfirm('Verify payout',{ body:'Mark this payout method as verified? Payouts can be sent here.' })) return; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,true,null); toast('Payout verified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('check',15),' Verify bank details']) : null,pd.payout_status!=='rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const r=await askReason('Reject payout details — reason (agent sees this + gets an email):'); if(!r) return; const b=ev.currentTarget; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,false,r); toast('Payout rejected — agent notified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('x',15),' Reject with reason']) : null,].filter(Boolean)),
+              note9 ? el('div', { style: 'margin-top:8px;border-radius:10px;padding:9px 12px;font-size:.8rem;line-height:1.55;'
+                + ((m9 === 'other' && appr9) ? 'background:#f0fdf4;border:1px solid #bbf7d0;color:#166534' : 'background:#f8fafc;border:1px solid #e6ebf3;color:#475569') }, note9) : null,
+              pd.details_requested ? el('div', { style: 'margin-top:6px;font-size:.76rem;color:#b45309' },
+                '📨 Details requested ' + fmtDate(pd.details_requested.at) + ' — waiting on the agent: ' + (pd.details_requested.fields || []).join(', ')) : null,
+              // ---- alternative-rail review actions (only when the agent picked "Other") ----
+              m9 === 'other' ? el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [
+                MISS9.length ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', title: 'Email + in-app request listing exactly which receiving details are still missing', onClick: async (ev) => {
+                  if (!await askConfirm('Request receiving details', { body: 'Email + in-app request will ask this agent for: ' + MISS9.join(', ') + '. Their onboarding screen unlocks so they can add them.', confirmLabel: 'Send request' })) return;
+                  const b = ev.currentTarget; b.disabled = true;
+                  try { await ccAgentPayoutRequestDetails(x.user_id, MISS9, null); toast('Request sent — agent notified by email + in-app', 'success'); open360(x); }
+                  catch (e) { b.disabled = false; toast(humanizeError(e), 'error'); }
+                } }, [icon('bell',15),' Request receiving details']) : null,
+                (!appr9 && !MISS9.length) ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#0f766e;border-color:#0f766e', title: 'Record that this rail can legally receive an international USD payment in the agent’s own name', onClick: async (ev) => {
+                  const why = await askReason('Approve this payout method — what did you confirm?', { note: 'This records your assessment of the RAIL. Verifying the account numbers is still a separate step.', submitLabel: 'Approve method' });
+                  if (!why) return;
+                  const b = ev.currentTarget; b.disabled = true;
+                  try { await ccAgentPayoutApproveMethod(x.user_id, why); toast('Method approved — you can now verify the account', 'success'); open360(x); }
+                  catch (e) { b.disabled = false; toast(humanizeError(e), 'error'); }
+                } }, [icon('check',15),' Approve this method']) : null,
+              ].filter(Boolean)) : null,
+              el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [(pd.payout_status!=='verified' && !(m9 === 'other' && !appr9)) ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#16a34a;border-color:#16a34a', onClick: async (ev) => { const b=ev.currentTarget; if(!await askConfirm('Verify payout',{ body:'Mark this payout method as verified? Payouts can be sent here.' })) return; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,true,null); toast('Payout verified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('check',15),' Verify bank details']) : null,pd.payout_status!=='rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const r=await askReason('Reject payout details — reason (agent sees this + gets an email):'); if(!r) return; const b=ev.currentTarget; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,false,r); toast('Payout rejected — agent notified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('x',15),' Reject with reason']) : null,].filter(Boolean)),
             ].filter(Boolean));
           })(),
           el('div', { style: 'margin-top:10px' }, [docRow('🪪 Government photo ID', pd.id_doc, 'id'), docRow('🏦 Bank proof', pd.bank_doc, 'bank')]),

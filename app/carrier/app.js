@@ -1036,10 +1036,40 @@ async function agentPortal(user) {
           mount(host9, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '💬 Talk to LoadBoot dispatch')]), list9, h('div', { style: 'display:flex;gap:8px;margin-top:8px' }, [inp9, send9])]);
         })();
         return host9; };
-      const W = window.__agw = window.__agw || { step: 0, d: Object.assign({ full_name: feed.name || '', network: {} }, obProfile || {}) };
+      // Seed the wizard from the saved profile. payout_details is a nested jsonb, so
+      // flatten it back onto the flat payout_* keys the fields bind to — otherwise an
+      // agent re-opening the form sees empty boxes and re-types (or loses) their details.
+      const pdSeed9 = (obProfile && obProfile.payout_details) || {};
+      const W = window.__agw = window.__agw || { step: 0, d: Object.assign({ full_name: feed.name || '', network: {} }, obProfile || {}, {
+        payout_title: pdSeed9.account_title || '', payout_bank: pdSeed9.bank_name || '', payout_email: pdSeed9.email || '',
+        payout_routing: pdSeed9.routing || '', payout_account: pdSeed9.account || '', payout_wallet: pdSeed9.wallet || '',
+        payout_iban: pdSeed9.iban || '', payout_swift: pdSeed9.swift || '', payout_bank_addr: pdSeed9.bank_address || '',
+        payout_ben_addr: pdSeed9.beneficiary_address || '', payout_other: pdSeed9.other || '',
+        id_doc: pdSeed9.id_doc || null, id_doc_name: pdSeed9.id_doc_name || null,
+        bank_doc: pdSeed9.bank_doc || null, bank_doc_name: pdSeed9.bank_doc_name || null,
+        tax_class: (pdSeed9.tax || {}).classification || '', tax_tin: (pdSeed9.tax || {}).tin || '',
+        tax_biz: (pdSeed9.tax || {}).business_name || '', tax_citizen: (pdSeed9.tax || {}).citizenship || '',
+        tax_dob: (pdSeed9.tax || {}).dob || '',
+      }) };
       const d = W.d;
+      // Staff asked this agent for missing receiving details. Without this branch the
+      // under-review screen below would lock them out of the very form they must fix.
+      const req9 = pdSeed9.details_requested || null;
+      const needsFix9 = pdSeed9.payout_status === 'info_requested' || pdSeed9.payout_status === 'rejected';
       const stEl = (st9, note9, tone9) => h('div', { style: 'background:' + (tone9 === 'ok' ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)' : tone9 === 'warn' ? 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4)' : 'rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4)') + ';border-radius:12px;padding:12px 14px;font-weight:700;color:#e6edf8' }, [h('b', null, st9), note9 ? h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, note9) : null]);
-      if (obStatus === 'under_review') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('⏳ UNDER REVIEW', 'LoadBoot dispatch is reviewing your application — usually under 24 hours. You will get an in-app + email decision. Your link works meanwhile; earnings switch on at approval.', 'warn'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
+      if (obStatus === 'under_review' && needsFix9 && !W.editPayout) {
+        const fields9 = (req9 && Array.isArray(req9.fields)) ? req9.fields : [];
+        mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [
+          stEl('📋 ACTION NEEDED — payout details', 'Your application is with us, but we cannot approve your payout method until the details below are on file. Everything else is done.', 'warn'),
+          fields9.length ? h('div', { style: 'margin-top:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:12px 14px;color:#fcd9a2' }, [
+            h('b', null, 'We still need:'),
+            h('ul', { style: 'margin:6px 0 0;padding-left:20px;line-height:1.7' }, fields9.map((f9) => h('li', null, String(f9)))),
+            (req9 && req9.note) ? h('div', { style: 'margin-top:8px;font-style:italic' }, String(req9.note)) : null,
+          ].filter(Boolean)) : null,
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:12px;background:#0883F7', onClick: () => { W.editPayout = true; W.step = 2; render(); } }, '✏️ Add my payout details'),
+        ].filter(Boolean)), trackerCard9(), threadCard9()])); return;
+      }
+      if (obStatus === 'under_review' && !W.editPayout) { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('⏳ UNDER REVIEW', 'LoadBoot dispatch is reviewing your application — usually under 24 hours. You will get an in-app + email decision. Your link works meanwhile; earnings switch on at approval.', 'warn'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
       if (obStatus === 'approved') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✅ VERIFIED', 'You earn 1% on every delivered load your referred clients move.', 'ok'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;background:#0883F7', onClick: agreementPdf9 }, '⬇ Signed agreement (PDF)'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;margin-left:8px;background:#0883F7', onClick: taxPdf9 }, '⬇ Signed tax form (PDF)')]), trackerCard9(), threadCard9()])); return; }
       if (obStatus === 'rejected') { mount(content, h('div', null, [tl9(), agCard('🛡 Verification status', [stEl('✕ NOT APPROVED', (obProfile && obProfile.review_note) || 'Contact support for details.', 'bad')]), threadCard9()])); return; }
       const fld = (lbl9, key9, ph9, type9) => { const i9 = h('input', { class: 'cp-in', type: type9 || 'text', placeholder: ph9 || '' }); i9.value = d[key9] || ''; i9.oninput = () => { d[key9] = i9.value; }; return h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
@@ -1091,6 +1121,15 @@ async function agentPortal(user) {
             d.payout_method === 'ach' ? fld('Account # *', 'payout_account', '') : null,
             d.payout_method === 'crypto' ? fld('USDT TRC-20 wallet address *', 'payout_wallet', 'starts with T\u2026 (Tron network only)') : null,
             d.payout_method === 'other' ? fld('Which method, and why? *', 'payout_other', 'e.g. Wise account in my legal name \u2014 Payoneer is unavailable in my country') : null,
+            // OTHER \u2014 the reason alone is not payable. A reviewer can only approve an
+            // alternative rail if the actual receiving coordinates are here; without them
+            // the payout run fails silently weeks later. Same fields a US bank asks for on
+            // an international wire.
+            d.payout_method === 'other' ? fld('Provider / bank name *', 'payout_bank', 'e.g. Revolut Bank UAB, Wise, Bank of Georgia') : null,
+            d.payout_method === 'other' ? fld('IBAN / account number *', 'payout_iban', 'exactly as your provider shows it') : null,
+            d.payout_method === 'other' ? fld('SWIFT / BIC *', 'payout_swift', 'e.g. REVOLT21 \u2014 your provider lists this under \u201creceive internationally\u201d') : null,
+            d.payout_method === 'other' ? fld('Provider / bank address *', 'payout_bank_addr', 'street, city, country of the provider') : null,
+            d.payout_method === 'other' ? fld('Your address (as registered with the provider) *', 'payout_ben_addr', 'street, city, postcode, country') : null,
             h('div', { style: 'flex:1;min-width:200px' }, [h('label', { class: 'cp-lbl' }, 'Tax form *'), tax9]),
           ].filter(Boolean)),
           // PAYOUT GUIDANCE — honest about what actually works cross-border, and what it costs.
@@ -1176,12 +1215,20 @@ async function agentPortal(user) {
             err9.textContent = 'Mobile wallets (JazzCash, EasyPaisa, bKash, M-Pesa, GCash…) cannot receive international USD payouts. Use Payoneer — it deposits into your own local bank for you.'; return;
           }
         }
-        if (d.payout_method === 'other' && !String(d.payout_other || '').trim()) { err9.textContent = 'Describe your payout method.'; return; }
+        if (d.payout_method === 'other') {
+          if (!String(d.payout_other || '').trim()) { err9.textContent = 'Describe your payout method.'; return; }
+          if (!String(d.payout_bank || '').trim() || !String(d.payout_iban || '').trim() || !String(d.payout_swift || '').trim()) {
+            err9.textContent = 'Provider name, IBAN / account number and SWIFT / BIC are required — we cannot send an international payment without them.'; return;
+          }
+          if (!String(d.payout_bank_addr || '').trim() || !String(d.payout_ben_addr || '').trim()) {
+            err9.textContent = 'Provider address and your own address are required on international transfers.'; return;
+          }
+        }
         if (d.tax_form === 'w9' && (!d.tax_class || !String(d.tax_tin || '').trim())) { err9.textContent = 'W-9: tax classification and SSN/EIN are required.'; return; }
         if (d.tax_form === 'w8ben' && (!String(d.tax_citizen || '').trim() || !String(d.tax_dob || '').trim())) { err9.textContent = 'W-8BEN: country of citizenship and date of birth are required.'; return; }
         const b9 = ev9.currentTarget; b9.disabled = true; b9.textContent = 'Submitting…';
         try {
-          d.payout_details = { account_title: d.payout_title || null, bank_name: d.payout_bank || null, email: d.payout_email || null, routing: d.payout_routing || null, account: d.payout_account || null, wallet: d.payout_wallet || null, wallet_network: d.payout_method === 'crypto' ? 'TRC-20' : null, iban: d.payout_iban || null, swift: d.payout_swift || null, bank_address: d.payout_bank_addr2 || d.payout_bank_addr || null, other: d.payout_other || null, id_doc: d.id_doc || null, id_doc_name: d.id_doc_name || null, bank_doc: d.bank_doc || null, bank_doc_name: d.bank_doc_name || null, tax: { form: d.tax_form || null, classification: d.tax_class || null, tin: d.tax_tin || null, business_name: d.tax_biz || null, citizenship: d.tax_citizen || null, dob: d.tax_dob || null } };
+          d.payout_details = { account_title: d.payout_title || null, bank_name: d.payout_bank || null, email: d.payout_email || null, routing: d.payout_routing || null, account: d.payout_account || null, wallet: d.payout_wallet || null, wallet_network: d.payout_method === 'crypto' ? 'TRC-20' : null, iban: d.payout_iban || null, swift: d.payout_swift || null, bank_address: d.payout_bank_addr2 || d.payout_bank_addr || null, beneficiary_address: d.payout_ben_addr || null, other: d.payout_other || null, id_doc: d.id_doc || null, id_doc_name: d.id_doc_name || null, bank_doc: d.bank_doc || null, bank_doc_name: d.bank_doc_name || null, tax: { form: d.tax_form || null, classification: d.tax_class || null, tin: d.tax_tin || null, business_name: d.tax_biz || null, citizenship: d.tax_citizen || null, dob: d.tax_dob || null } };
           d.tax_id_last4 = String(d.tax_tin || '').replace(/\D/g, '').slice(-4) || null;
           await agentSaveOnboarding(d, true);
           location.reload();

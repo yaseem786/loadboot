@@ -1,0 +1,4 @@
+-- bl_mail_0206 — admin_review_document's inline emails (document approved/rejected +
+-- account verified) missed bl_mail_0199's CTA fix because their HTML lives inside the
+-- function, not comm_templates. Both buttons now carry colour on an inner <span> with
+-- !important. Applied to production 2026-08-03; anon SECDEF count unchanged at 27.
