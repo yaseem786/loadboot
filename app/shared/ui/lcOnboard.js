@@ -177,6 +177,13 @@
       b.onclick = function () { pickRole(k); };
       n.appendChild(b);
     });
+    // Returning users: sign in right here and get a live picture of their setup —
+    // what's done, what's missing, and their verification status.
+    n.appendChild(el('div', 'lbo-note', '— or —'));
+    var si = el('button', 'lbo-btn ghost', '🔑 I already have an account — sign in');
+    si.type = 'button';
+    si.onclick = function () { H().addMsg('visitor', '🔑 I already have an account'); stepSignIn(); };
+    n.appendChild(si);
   }
   function pickRole(k) {
     var s = state(); s.role = k;
@@ -728,6 +735,84 @@
   }
 
   // ---------- password reset (self-serve, also reachable via LBChatOnboard.reset) ----------
+  // ---- Existing-account sign-in: chat checks the account live and resumes onboarding ----
+  // The password goes ONLY to the auth endpoint and the field is wiped immediately after
+  // the request — it never enters save()/state/chat history, same rule as signup.
+  function stepSignIn(prefillEmail) {
+    var s = state();
+    var n = card();
+    n.appendChild(el('div', 'lbo-h', '🔑 Sign in to your account'));
+    n.appendChild(el('div', 'lbo-s', "I'll check exactly where your setup stands — what's done, what's left, and your verification status."));
+    n.appendChild(el('label', null, 'Email'));
+    var em = document.createElement('input'); em.type = 'email'; em.placeholder = 'you@company.com'; em.setAttribute('autocomplete', 'email');
+    if (prefillEmail) em.value = prefillEmail; else if (s.data.email) em.value = s.data.email;
+    n.appendChild(em);
+    n.appendChild(el('label', null, 'Password'));
+    var pw = document.createElement('input'); pw.type = 'password'; pw.placeholder = '••••••••'; pw.setAttribute('autocomplete', 'current-password');
+    n.appendChild(pw);
+    var err = el('div', 'lbo-err'); n.appendChild(err);
+    var b = el('button', 'lbo-btn blue', '→ Sign in & check my status'); b.type = 'button'; n.appendChild(b);
+    var rst = el('button', 'lbo-btn ghost', 'Forgot password?'); rst.type = 'button'; n.appendChild(rst);
+    n.appendChild(el('div', 'lbo-note', '🔒 Checked against our secure sign-in system — your password is never stored in this chat.'));
+    rst.onclick = function () { startReset((em.value || '').trim()); };
+    function fail(msg) { err.textContent = msg; err.style.display = 'block'; b.disabled = false; b.textContent = '→ Sign in & check my status'; }
+    b.onclick = async function () {
+      var e9 = (em.value || '').trim(); var p9 = pw.value || '';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e9)) return fail("That email doesn't look right");
+      if (!p9) return fail('Enter your password');
+      err.style.display = 'none'; b.disabled = true; b.textContent = 'Checking…';
+      var c = H().ctx();
+      try {
+        var r = await fetch(c.cfg.url + '/auth/v1/token?grant_type=password', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon },
+          body: JSON.stringify({ email: e9, password: p9 }),
+        });
+        var d = await r.json().catch(function () { return {}; });
+        pw.value = ''; p9 = '';
+        if (!r.ok || !d.access_token) {
+          if ((d.error_code || d.error) === 'email_not_confirmed') return fail('This email is not confirmed yet — check your inbox for the confirmation link (spam too).');
+          return fail('Email or password is wrong. Try again, or tap "Forgot password?" below.');
+        }
+        var r2 = await fetch(c.cfg.url + '/rest/v1/rpc/cc_chat_onboarding_status', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon, Authorization: 'Bearer ' + d.access_token },
+          body: '{}',
+        });
+        var st = await r2.json().catch(function () { return null; });
+        if (!r2.ok || !st || !st.kind) return fail('Signed in fine, but I could not read your account status — open your portal directly and it will all be there.');
+        H().addMsg('visitor', '🔑 Signed in: ' + e9);
+        save({ email: e9, signin_kind: st.kind, signin_status: st.verdict },
+          '🔑 Existing user signed in via chat — ' + st.kind + (st.company ? ' (' + st.company + ')' : '') + ' · status: ' + st.verdict);
+        showAccountStatus(st);
+      } catch (x) { fail('Connection hiccup — give it another try.'); }
+    };
+    pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); b.click(); } });
+  }
+  function showAccountStatus(d) {
+    var n = card();
+    var head, sub;
+    if (d.verdict === 'verified') {
+      head = '🎉 You are fully verified';
+      sub = 'Everything is approved' + (d.company ? ' for <b>' + esc(d.company) + '</b>' : '') + ' — your account is live.';
+    } else if (d.verdict === 'in_review') {
+      head = '⏳ Submitted — in verification';
+      sub = 'Your file is with our review team (usually done within 1 business day). Nothing else is needed from you right now — you will get an email + notification the moment it clears.';
+    } else if (d.verdict === 'ready_to_submit') {
+      head = '✅ Everything is in — one click left';
+      sub = 'Every item is done. Open your dashboard and press <b>Submit for review</b> — that is the only thing left.';
+    } else {
+      head = '📋 Almost there — here is exactly what is left';
+      sub = 'Ticked items are done. Finish the open ones in your portal and press Submit for review.';
+    }
+    n.appendChild(el('div', 'lbo-h', head));
+    n.appendChild(el('div', 'lbo-s', sub));
+    var i, done = d.done || [], miss = d.missing || [];
+    for (i = 0; i < done.length; i++) n.appendChild(el('div', 'lbo-s', '✅ ' + esc(done[i])));
+    for (i = 0; i < miss.length; i++) n.appendChild(el('div', 'lbo-s', '⬜ <b>' + esc(miss[i]) + '</b>'));
+    var go = el('button', 'lbo-btn blue', d.verdict === 'verified' ? '🚀 Open my portal' : '📂 Open my portal & finish');
+    go.type = 'button'; n.appendChild(go);
+    go.onclick = function () { window.open(d.portal || '/app/carrier/', '_blank'); };
+    n.appendChild(el('div', 'lbo-note', 'Anything unclear about an item? Just type the question here — I am right here.'));
+  }
   function startReset(prefillEmail) {
     var n = card();
     n.appendChild(el('div', 'lbo-h', '🔑 Reset your password'));

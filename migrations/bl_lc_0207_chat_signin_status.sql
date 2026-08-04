@@ -1,0 +1,10 @@
+-- bl_lc_0207 (+0207b) — chat onboarding gains 'sign in to existing account'.
+-- Applied to production 2026-08-03. New RPC cc_chat_onboarding_status() (authenticated
+-- only, anon revoked): returns kind/company/verdict (incomplete | ready_to_submit |
+-- in_review | verified), done[] and missing[] item labels, and the right portal link —
+-- for carriers (profile MC/DOT, truck, legal driver, mandatory compliance incl.
+-- condition_key handling so hazmat items only apply to hazmat carriers), partners
+-- (packet items), and agents (referrer status). Verified live against Warren's Courier:
+-- 6 done, 1 missing (MC authority), verdict incomplete. Frontend: lcOnboard.js v3 adds
+-- the sign-in card (password wiped immediately after the auth call, never stored) and
+-- the status card with resume links.

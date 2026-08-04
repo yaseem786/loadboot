@@ -35,8 +35,13 @@ PROD_ANON = os.environ.get('LOADBOOT_PROD_ANON_KEY') or 'sb_publishable_lHr4JKuH
 STAGING_ANON = os.environ.get('LOADBOOT_STAGING_ANON_KEY')   # required for preview builds
 _CTX = (os.environ.get('CONTEXT') or os.environ.get('LOADBOOT_CONTEXT') or 'dev').strip()
 IS_PRODUCTION_CTX = (_CTX == 'production')
+# 'dev' (no CONTEXT env var = a local build on the owner's machine) targets the PRODUCTION
+# project with the PUBLIC publishable key — the same key every visitor's browser receives —
+# so localhost works out of the box. Netlify previews/branches are still staging-locked:
+# they always set CONTEXT, so they can never be 'dev'.
+TARGETS_PROD = IS_PRODUCTION_CTX or _CTX == 'dev'
 _BUILD_ID = (os.environ.get('COMMIT_REF') or os.environ.get('LOADBOOT_BUILD_ID') or ('b' + str(int(__import__('time').time()))))[:12]
-if IS_PRODUCTION_CTX:
+if TARGETS_PROD:
     APP_ENV, APP_REF, APP_ANON = 'production', PROD_REF, PROD_ANON
 else:
     APP_ENV, APP_REF, APP_ANON = 'preview', STAGING_REF, STAGING_ANON
@@ -578,7 +583,7 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 <script>%s</script>
 <script src="app.js?v=6"></script>
-<script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=3"></script><script defer src="/app/shared/ui/lcOnboard.js?v=2"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
+<script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=3"></script><script defer src="/app/shared/ui/lcOnboard.js?v=3"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -7369,8 +7374,9 @@ except Exception as _e:
 # The legacy dashboard.html (and any other copied artifact) hardcodes the PRODUCTION
 # Supabase project. In any non-production build we rewrite every production project
 # reference (URL + publishable key) to the STAGING project, so a Deploy Preview makes
-# ZERO production-backend requests. Production builds are left untouched.
-if not IS_PRODUCTION_CTX:
+# ZERO production-backend requests. Production AND local-dev builds are left untouched
+# (dev targets production on purpose — see TARGETS_PROD at the top).
+if not TARGETS_PROD:
     _sub_pairs = [('https://%s.supabase.co' % PROD_REF, 'https://%s.supabase.co' % STAGING_REF)]
     if STAGING_ANON:
         _sub_pairs.append((PROD_ANON, STAGING_ANON))
@@ -7487,10 +7493,10 @@ if os.path.isdir(APP_SRC):
     # env-config must declare exactly the project ref expected for this context.
     try:
         _cfg_txt = open(os.path.join(OUT,'app','env-config.js'),encoding='utf-8').read()
-        _want_ref = PROD_REF if _CTX=='production' else STAGING_REF
+        _want_ref = PROD_REF if TARGETS_PROD else STAGING_REF
         if ('https://%s.supabase.co' % _want_ref) not in _cfg_txt:
             _errors.append('APP ENV-CONFIG does not target expected project for context %s' % _CTX)
-        _bad_ref = STAGING_REF if _CTX=='production' else PROD_REF
+        _bad_ref = STAGING_REF if TARGETS_PROD else PROD_REF
         if ('https://%s.supabase.co' % _bad_ref) in _cfg_txt:
             _errors.append('APP ENV-CONFIG leaks the wrong project ref for context %s' % _CTX)
         if 'service_role' in _cfg_txt:
@@ -7501,8 +7507,9 @@ if os.path.isdir(APP_SRC):
 # (5) PREVIEW PRODUCTION-ISOLATION GATE (item 8): in any non-production build, the
 #     production project ref must NOT appear in ANY emitted artifact (html/js/css/
 #     json/webmanifest/_headers/_redirects). This proves a Deploy Preview makes zero
-#     production-backend requests at the artifact level.
-if not IS_PRODUCTION_CTX:
+#     production-backend requests at the artifact level. Local-dev builds target
+#     production on purpose (TARGETS_PROD), so the gate applies to CI previews only.
+if not TARGETS_PROD:
     _iso_exts = ('.html', '.js', '.css', '.json', '.webmanifest', '.txt')
     _iso_extra = {'_headers', '_redirects'}
     _leaks = []

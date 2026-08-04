@@ -361,6 +361,11 @@ export const ccAgent360 = (user) => rpc('cc_agent_360', { p_user: user });
 export const ccAgentNotifySend = (user, title, body, email) => rpc('cc_agent_notify_send', { p_user: user, p_title: title, p_body: body, p_email: !!email });
 export const ccAgentDocReview = (user, doc, action, reason) => rpc('cc_agent_doc_review', { p_user: user, p_doc: doc, p_action: action, p_reason: reason ?? null });
 export const ccAgentPayoutVerify = (user, ok, note) => rpc('cc_agent_payout_verify', { p_user: user, p_ok: ok, p_reason: note ?? null });
+// Alternative ("Other") payout methods: ask the agent for the exact missing receiving
+// fields, and record a reviewer's assessment of the rail itself (separate from verifying
+// the account numbers, which stays ccAgentPayoutVerify).
+export const ccAgentPayoutRequestDetails = (user, fields, note) => rpc('cc_agent_payout_request_details', { p_user: user, p_fields: fields, p_note: note ?? null });
+export const ccAgentPayoutApproveMethod = (user, note) => rpc('cc_agent_payout_approve_method', { p_user: user, p_note: note ?? null });
 // ---- Dispatcher (salaried) operational system ----
 export const dispatcherApply = (p, submit) => rpc('dispatcher_apply', { p, p_submit: !!submit });
 export const dispatcherMyStatus = () => rpc('dispatcher_my_status', {});
