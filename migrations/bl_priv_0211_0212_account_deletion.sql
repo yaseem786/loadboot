@@ -1,0 +1,38 @@
+-- bl_priv_0211_account_deletion.sql + bl_priv_0212_account_deletion_staff.sql
+-- (applied to production 2026-08-05)
+--
+-- Account deletion, end to end. Required by Google Play for any app with sign-in:
+-- the user must be able to request deletion of their account and personal data from
+-- inside the app, not only by writing to an email address.
+--
+-- Deliberately a REQUEST + PROCESS flow rather than an instant wipe:
+--   * a carrier mid-load cannot simply vanish - the broker on that load has a right
+--     to the trip record, and the load has to be reassigned first;
+--   * US law forces retention of some records (FMCSA 3 years on load/trip documents,
+--     IRS 7 years on invoices and settlements). An instant "delete everything" button
+--     would be a promise we cannot legally keep.
+-- The user requests, we acknowledge by email, a person completes it within 30 days,
+-- and completion erases every personal field while leaving the legally-required
+-- transaction records standing with the person scrubbed out of them.
+--
+-- 0211 (user side):
+--   table app_private.account_deletion_requests  (one open request per user)
+--   public.request_account_deletion(reason)      - staff notification + branded email
+--   public.cancel_account_deletion()
+--   public.my_account_deletion_status()
+--
+-- 0212 (staff side):
+--   public.cc_account_deletion_queue()
+--   public.cc_account_deletion_process(id, action, note)
+--     'complete' erases: profile contact fields, agent payout/tax/address block,
+--     org bank details, uploaded documents, chats and agent messages, CRM and
+--     outreach traces; then closes the login permanently (random password, address
+--     rewritten, banned_until infinity). The auth row is KEPT, not dropped, so the
+--     retained financial records keep a stable foreign key.
+--     'reject' requires a reason.
+--
+-- Grants: authenticated only on all five functions.
+-- anon-executable SECURITY DEFINER count unchanged at 27.
+--
+-- The authoritative bodies are the ones live in production; this file is the
+-- committed record of the two migrations applied via apply_migration.

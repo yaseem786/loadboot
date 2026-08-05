@@ -1,0 +1,45 @@
+{
+  "id": "/app/",
+  "name": "LoadBoot — The Operating System for Trucking",
+  "short_name": "LoadBoot",
+  "description": "One app for the whole freight cycle: carriers book and run loads, brokers and shippers post freight, and agents track referrals and payouts. Live GPS, documents, settlements and dispatch in one place.",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0b1220",
+  "theme_color": "#0F172A",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "travel"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Carrier Portal",
+      "short_name": "Carrier",
+      "description": "Loads, trips, fleet, documents and finance",
+      "url": "/app/carrier/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Partner Portal",
+      "short_name": "Partner",
+      "description": "Brokers, shippers and facilities — post and manage freight",
+      "url": "/app/partner/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Agent Portal",
+      "short_name": "Agent",
+      "description": "Referrals, chain, earnings and payouts",
+      "url": "/app/agent/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

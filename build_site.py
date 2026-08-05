@@ -465,7 +465,7 @@ def footer():
 <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5l9.5 3.6L3 12.7V5.5z" fill="#FF9D28"/><path d="M12.5 9.1L21 5.5l-8.5 15.4V9.1z" fill="#068EEF"/><path d="M3 12.7l9.5-3.6v11.8L3 12.7z" fill="#044D80"/></svg>
 <span style="display:inline;margin:0;font-size:.88rem;color:#cbd5e1">Find us on <b style="color:#fff">Capterra</b> &mdash; read &amp; leave a review</span></a></div>
 <div class="foot-bottom"><span>&copy; 2026 LoadBoot LLC &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; D-U-N-S&reg; 149880967 &middot; Serving carriers in all 48 states.</span>
-<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
+<span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="delete-account.html" style="display:inline">Delete account</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
 <div class="mcta"><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="contact.html#create" class="btn btn-primary">Get Started</a></div>
 '''
@@ -3316,6 +3316,56 @@ priv += '''<section><div class="wrap prose reveal" style="max-width:800px">
 <h2>Contact</h2><p>Questions about this policy? Reach us through our contact page.</p></div></section>'''
 priv += final_cta()
 page('privacy.html','Privacy Policy | Loadboot','How Loadboot collects, uses, and protects the information you share through our website.','privacy.html',priv)
+
+# ---------- ACCOUNT DELETION (required by Google Play for apps with sign-in) ----------
+# Play policy: the store listing must carry a link to a page that names the app, gives
+# the steps to request deletion, and states what is deleted, what is kept and for how
+# long. Written to be accurate about what LoadBoot can and cannot erase — freight and
+# tax records carry legal retention duties that no request can override.
+dele = svc_hero('Delete your LoadBoot account',
+                'How to close your LoadBoot account and have your personal data deleted &mdash; what goes, what has to stay, and how long it takes.')
+dele += '''<section><div class="wrap prose reveal" style="max-width:800px">
+<p><em>Last updated: 2026.</em> This page applies to the <b>LoadBoot</b> app and to loadboot.com, both operated by <b>LoadBoot LLC</b>.</p>
+
+<h2>How to request deletion</h2>
+<p>You can request deletion in either of these ways. Both reach the same team and are handled identically.</p>
+<p><b>From the app or website:</b> sign in, open your portal, and go to <b>Settings &rarr; Account &rarr; Delete my account</b>. Confirm the request when prompted.</p>
+<p><b>By email:</b> write to <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> from the email address on your account, with the subject line <b>&ldquo;Delete my account&rdquo;</b>. Tell us your company name so we can locate the right record. If you write from a different address we will ask you to verify ownership of the account first &mdash; this protects you from someone else deleting your account.</p>
+<p>You do not need an active subscription, and there is no charge.</p>
+
+<h2>What gets deleted</h2>
+<p>Once your request is verified we permanently delete:</p>
+<ul>
+<li>Your sign-in credentials and account profile &mdash; name, email address, phone number and mailing address</li>
+<li>Documents you uploaded &mdash; operating authority, certificates of insurance, W-9, bank verification, identity documents and any other files in your compliance folder</li>
+<li>Your banking and payout details</li>
+<li>Location history recorded while you were sharing your position on an active load</li>
+<li>Driver and equipment records you entered</li>
+<li>Messages between you and LoadBoot dispatch or support</li>
+<li>Notification preferences and any saved searches</li>
+</ul>
+
+<h2>What we have to keep, and for how long</h2>
+<p>Some records cannot be erased on request because United States law requires us to retain them. We keep only what the law requires, and we do not use it for any other purpose.</p>
+<ul>
+<li><b>Completed load and trip records</b> &mdash; rate confirmations, bills of lading, proof of delivery and dispatch records. Federal motor carrier record-keeping rules require these to be retained; we hold them for <b>three years</b> from delivery.</li>
+<li><b>Financial and tax records</b> &mdash; invoices, settlements, commission payments and the tax forms attached to them. Retained for <b>seven years</b> to meet Internal Revenue Service requirements.</li>
+<li><b>Fraud and safety records</b> &mdash; where an account was suspended or removed for fraud, a minimal record is kept so the same party cannot simply re-register. Retained for <b>five years</b>.</li>
+</ul>
+<p>Where a record must be kept, we remove or replace the personal details inside it wherever the law allows, so what remains is the transaction rather than the person.</p>
+
+<h2>How long it takes</h2>
+<p>We acknowledge every request within <b>2 business days</b> and complete deletion within <b>30 days</b>. Backups are overwritten on their normal cycle, so a copy may persist in encrypted backup storage for up to <b>90 days</b> before it is gone entirely. Nobody can read or restore it from there in the ordinary course.</p>
+
+<h2>If you would rather not delete everything</h2>
+<p>You can close your account without deleting your history, or ask us to remove specific documents while keeping the account open. Tell us which you prefer and we will do that instead. If you simply want to stop hearing from us, every email we send carries a one-click unsubscribe.</p>
+
+<h2>Questions</h2>
+<p>Write to <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> or call <b>+1 (469) 253-7575</b>. A person answers, any hour.</p>
+<p style="color:var(--muted);font-size:.9rem">See also our <a href="privacy.html">Privacy Policy</a> and <a href="terms.html">Terms of Service</a>.</p>
+</div></section>'''
+dele += final_cta()
+page('delete-account.html','Delete your account | LoadBoot','How to delete your LoadBoot account and personal data: the steps, what is deleted, what must be retained by law, and how long it takes.','delete-account.html',dele)
 
 terms = svc_hero('Terms of Service','The agreement that governs your use of the LoadBoot platform &mdash; written to be read, not just scrolled past.')
 terms += """<section><div class="wrap prose reveal" style="max-width:840px">
@@ -7129,7 +7179,7 @@ _SITEMAP_GROUPS = [
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
-  ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
+  ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('delete-account.html', 'Delete your account'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
 _sm_body = svc_hero('Sitemap', 'Every page on Loadboot, in one place.')
 _sm_cols = ''

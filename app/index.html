@@ -7,6 +7,13 @@
 <meta name="theme-color" content="#0F172A">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<!-- Unified app manifest: scope /app/ so ONE installed app (and one Play Store TWA)
+     covers every portal — carrier, partner (broker/shipper), agent, developer, staff.
+     The per-portal manifests stay for anyone installing a single portal on its own. -->
+<link rel="manifest" href="/app/loadboot.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LoadBoot">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   html,body{margin:0;min-height:100%}
@@ -28,6 +35,13 @@
   .lb-portal .s{font-size:12px;color:#94a3b8;margin-top:2px}
   .lb-portal .d{margin-left:auto;font-weight:500;font-size:13px}
   .lb-new{margin-top:22px;text-align:center;font-size:13px;color:#94a3b8}
+  /* Installed-app mode (Play Store TWA / PWA): hide the staff + integrator doors.
+     display-mode:standalone covers the TWA; the JS below also catches Android's
+     referrer signal for TWAs that report as browser. */
+  @media all and (display-mode: standalone){ .lb-web-only{display:none !important} }
+  @media all and (display-mode: fullscreen){ .lb-web-only{display:none !important} }
+  @media all and (display-mode: minimal-ui){ .lb-web-only{display:none !important} }
+  html.lb-installed .lb-web-only{display:none !important}
   .lb-new a{color:#60A5FA;font-weight:700;text-decoration:none}
 </style>
 </head>
@@ -46,12 +60,33 @@
     <a class="lb-portal" href="/app/carrier/"><span class="ic">&#128667;</span><span><span class="t">Carrier Portal</span><br><span class="s">Loads, trips, fleet, documents &amp; finance</span></span><span class="d" style="color:#FB923C">&rsaquo;</span></a>
     <a class="lb-portal" href="/app/partner/"><span class="ic">&#129309;</span><span><span class="t">Partner Portal</span><br><span class="s">Brokers, shippers &amp; facilities</span></span><span class="d" style="color:#94A3B8">&rsaquo;</span></a>
         <a class="lb-portal" href="/app/agent/"><span class="ic">&#129297;</span><span><span class="t">Agent Portal</span><br><span class="s">Independent dispatchers &mdash; chain, earnings &amp; payouts</span></span><span class="d" style="color:#FB923C">&rsaquo;</span></a>
-    <a class="lb-portal" href="/app/developer/"><span class="ic">&#128104;&#8205;&#128187;</span><span><span class="t">Developers &amp; API</span><br><span class="s">API keys, docs &amp; integrations</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
-    <a class="lb-portal" href="/app/command-center/"><span class="ic">&#127970;</span><span><span class="t">Command Center</span><br><span class="s">LoadBoot staff only</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
+    <!-- Staff/integrator surfaces. Hidden when launched as the installed app (Play Store
+         TWA / PWA): a carrier on their phone should never be offered a door marked
+         "LoadBoot staff only", and a store reviewer must not hit a portal they cannot
+         sign in to — that reads as "part of the app is inaccessible" and fails review.
+         Both stay fully available on the website. -->
+    <a class="lb-portal lb-web-only" href="/app/developer/"><span class="ic">&#128104;&#8205;&#128187;</span><span><span class="t">Developers &amp; API</span><br><span class="s">API keys, docs &amp; integrations</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
+    <a class="lb-portal lb-web-only" href="/app/command-center/"><span class="ic">&#127970;</span><span><span class="t">Command Center</span><br><span class="s">LoadBoot staff only</span></span><span class="d" style="color:#60A5FA">&rsaquo;</span></a>
   </div>
   <div class="lb-new">New to LoadBoot? <a href="/get-started.html">Create an account &rarr;</a></div>
 </div>
 <script>
+// Installed-app detection. The CSS media queries catch a normal standalone launch;
+// a Play Store TWA can still report display-mode:browser, so we also check Android's
+// TWA referrer and remember the answer for the rest of the session.
+(function(){
+  try {
+    var installed = (window.matchMedia && (matchMedia('(display-mode: standalone)').matches
+                    || matchMedia('(display-mode: fullscreen)').matches
+                    || matchMedia('(display-mode: minimal-ui)').matches))
+                 || window.navigator.standalone === true
+                 || document.referrer.indexOf('android-app://') === 0
+                 || sessionStorage.getItem('lb_installed') === '1';
+    if (installed) { document.documentElement.classList.add('lb-installed');
+                     try { sessionStorage.setItem('lb_installed','1'); } catch(_){} }
+  } catch (_) {}
+})();
+
 // Real-app behaviour: remember the last portal used and jump straight to it on launch
 // (like WhatsApp opening your chats, not a website). Add ?choose=1 to pick a different portal.
 (function(){

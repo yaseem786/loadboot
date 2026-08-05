@@ -361,6 +361,14 @@ export const ccAgentDocReview = (user, doc, action, reason) => rpc('cc_agent_doc
 export const partnerPacketRemind = (org, key) => rpc('cc_partner_packet_remind', { p_org: org, p_key: key });
 export const prefsProfileStrength = () => rpc('cc_prefs_profile_strength');
 export const prefsSaveSection = (section, payload) => rpc('cc_prefs_save_section', { p_section: section, p: payload ?? {} });
+// Account deletion (Google Play requires an in-app route, not just an email address).
+// Request + staff-completed erase — see migrations bl_priv_0211/0212 for why it is
+// not an instant wipe (legal retention on freight and tax records).
+export const requestAccountDeletion = (reason) => rpc('request_account_deletion', { p_reason: reason ?? null });
+export const cancelAccountDeletion = () => rpc('cancel_account_deletion');
+export const myAccountDeletionStatus = () => rpc('my_account_deletion_status');
+export const ccAccountDeletionQueue = () => rpc('cc_account_deletion_queue');
+export const ccAccountDeletionProcess = (id, action, note) => rpc('cc_account_deletion_process', { p_id: id, p_action: action, p_note: note ?? null });
 export const ccAgentPayoutVerify = (user, ok, note) => rpc('cc_agent_payout_verify', { p_user: user, p_ok: ok, p_reason: note ?? null });
 // Alternative ("Other") payout methods: ask the agent for the exact missing receiving
 // fields, and record a reviewer's assessment of the rail itself (separate from verifying

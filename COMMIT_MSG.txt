@@ -1,77 +1,77 @@
-Agent payout: reviewable "Other" methods, support-signed outreach
+Google Play launch: app manifest, account deletion, listing assets
 
-Two independent pieces of work: a real review path for alternative agent
-payout rails, and the outreach signature change from founder to support desk.
+Groundwork for publishing LoadBoot on Google Play as a Trusted Web Activity,
+plus the account-deletion feature Play requires of any app with sign-in.
 
---- Agent payout: "Other" was unreviewable (migrations 0209, 0210) ------------
+--- One app, every portal ----------------------------------------------------
 
-An agent picking "Other" got a single free-text box and nowhere to put the
-receiving-account coordinates. Petar Travica (Croatia, Revolut, W-8BEN) signed
-up with account_title only - no bank name, IBAN, SWIFT or addresses - and the
-reviewer's only options were to verify blind or reject a legitimate agent.
-The amber warning said "do NOT pay" without naming what was missing.
+app/loadboot.webmanifest (new) - unified manifest scoped to /app/, so a single
+installed app (and a single Play listing) covers carrier, partner and agent
+rather than shipping three. start_url /app/, standalone, maskable icons, and
+long-press shortcuts straight into each portal. The per-portal manifests stay
+for anyone installing one portal on its own.
 
-Backend (bl_agent_0209_payout_other_review.sql):
-  * cc_agent_payout_request_details(user, fields[], note) - staff-only. Flags
-    payout_status='info_requested', stores the requested field list, and sends
-    the agent an in-app notification plus a branded email listing exactly what
-    is needed. Authenticated-only grant.
-  * cc_agent_payout_approve_method(user, note) - staff-only. Records that the
-    RAIL can receive an international USD payment in the agent's own name.
-    Deliberately separate from cc_agent_payout_verify, which is about the
-    account numbers. Refuses outright if IBAN/account or account_title is
-    missing - an approved method with no account number is how a payout run
-    fails silently weeks later.
+app/index.html - links the new manifest, and hides the Command Center and
+Developers & API cards when launched as the installed app (CSS display-mode
+plus an android-app:// referrer check, remembered for the session). Two reasons:
+a carrier on their phone should never be offered a door marked "LoadBoot staff
+only", and a store reviewer must not hit a portal they cannot sign in to -
+that reads as "part of the app is inaccessible" and fails review. Both remain
+fully available on the website.
+
+--- Account deletion (migrations 0211, 0212) ---------------------------------
+
+Play policy: users must be able to request deletion of their account and
+personal data from inside the app, and the store listing must carry a public
+page describing it. Neither existed.
+
+Built as REQUEST + PROCESS, not an instant wipe, because an instant wipe would
+be a promise we cannot legally keep: FMCSA requires 3 years of load and trip
+documents, the IRS 7 years of invoices and settlements, and a carrier mid-load
+cannot vanish while a broker still has a right to that trip record.
+
+Backend:
+  request_account_deletion / cancel_account_deletion / my_account_deletion_status
+  cc_account_deletion_queue / cc_account_deletion_process
+  Completing a request erases profile contact fields, the agent payout/tax/
+  address block, org bank details, uploaded documents, chats and agent messages,
+  and CRM/outreach traces, then closes the login permanently. The auth row is
+  kept, not dropped, so retained financial records keep a stable foreign key.
+  Requesting notifies staff in-app and sends the user a branded confirmation.
   anon-executable SECURITY DEFINER count unchanged at 27.
 
-Two latent bugs surfaced while wiring the agent side, both fixed in
-bl_agent_0210_payout_merge_and_echo.sql:
-  * agent_save_onboarding REPLACED payout_details wholesale. An agent returning
-    to add just an IBAN would have wiped their uploaded ID, bank proof, tax
-    data and the reviewer's own flags. Now merges; null/empty incoming keys are
-    dropped so a blank box never erases a stored value. Re-submitting after an
-    info request clears 'details_requested' and returns payout_status to
-    'pending' so the row re-enters the normal queue.
-  * agent_onboarding_status stripped payout_details entirely, so the portal
-    could neither prefill the form nor show what staff had asked for. Now
-    returns the agent's own coordinates to the agent's own session, minus the
-    tax TIN (SSN/EIN stays write-only).
-
 Frontend:
-  * app/carrier/app.js - "Other" now renders provider name, IBAN/account,
-    SWIFT/BIC, provider address and beneficiary address, all required on
-    submit. Wizard state is seeded from the saved payout_details (previously
-    the nested jsonb never reached the flat payout_* keys, so returning agents
-    saw empty boxes). New "Action needed" screen: under_review no longer locks
-    an agent out of the very form staff asked them to fix - it lists the
-    requested fields and opens the payout step.
-  * app/command-center/views/agents.js - payout card shows the bank rows for
-    'other', computes and names the missing fields inside the warning, adds
-    "Request receiving details" and "Approve this method", turns the warning
-    green once the method is approved, and gates "Verify bank details" behind
-    that approval. Shows a pending-request line while waiting on the agent.
-  * app/shared/api.js - ccAgentPayoutRequestDetails, ccAgentPayoutApproveMethod.
+  app/carrier/app.js - "Delete account" card in Settings (serves both the
+  carrier and agent portals). States plainly what is erased and what law
+  requires us to keep, links the full policy, confirms before sending, and
+  once open switches to a pending state with a Cancel button.
+  app/shared/api.js - the five wrappers.
 
-Verified in production: the approve-method guard correctly refuses Petar's
-profile (no IBAN); the details request delivered to ptravica90@gmail.com at
-23:06 UTC and his payout_status is now info_requested.
+build_site.py - new public page delete-account.html, linked from the footer and
+the legal navigation. Names LoadBoot LLC, gives both routes to request deletion
+(in-app and privacy@loadboot.com), and itemises what is deleted, what is
+retained and for how long, with the 2-day / 30-day / 90-day-backup timeline.
+Build verified.
 
---- Outreach signature: founder -> support desk (migration 0208) -------------
+Still to do: the same Settings card in app/partner/app.js, whose settings view
+has a different shape.
 
-Owner decision. All 15 outreach_templates rows now sign as Riley / Carrier .
-Broker . Shipper Support rather than Muhammad Yaseen / Founder. "Riley" is the
-identity that already answers the phone line and places onboarding calls, so a
-reply or callback resolves to a consistent contact instead of an invented
-employee. Three in-body lines ("you are talking to the founder, not a sales
-team", "not a support queue", "the founder reads this inbox") were rewritten -
-leaving them would have contradicted the new signature inside the same email.
-The migration ends with a guard that raises if any template still carries
-founder/Muhammad. Transactional templates and the email shell are untouched.
+--- Play Console groundwork --------------------------------------------------
 
-Reply-rate should be watched against the founder-signed baseline of the last
-10-14 days.
+Four reviewer accounts created and sign-in verified (carrier, broker, shipper,
+agent). Separate broker and shipper accounts are needed despite sharing one
+dashboard, because their onboarding packets have no items in common - broker
+wants FMCSA authority and a $75k BMC-84 bond, shipper wants a credit
+application and payment terms.
 
-Migrations are applied to production; the JS changes need push + deploy.
+Store listing prepared off-repo: title "LoadBoot Load Board & Dispatch" (30),
+short and full descriptions, 1024x500 feature graphic, and eight phone
+screenshots. The source screenshots were 1170x2532 - Play rejects anything
+where the long side exceeds twice the short side (2.16), so each was padded
+sideways onto the app background to land on 9:16 and converted from WebP,
+which Play does not accept.
+
+Migrations are applied to production; the JS and build changes need deploy.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01MYESSZsAyWrijD8HH7PZpU
