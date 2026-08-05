@@ -357,6 +357,10 @@ export const ccAgentsList = () => rpc('cc_agents_list', {});
 export const ccAgent360 = (user) => rpc('cc_agent_360', { p_user: user });
 export const ccAgentNotifySend = (user, title, body, email) => rpc('cc_agent_notify_send', { p_user: user, p_title: title, p_body: body, p_email: !!email });
 export const ccAgentDocReview = (user, doc, action, reason) => rpc('cc_agent_doc_review', { p_user: user, p_doc: doc, p_action: action, p_reason: reason ?? null });
+// Per-item packet reminder from Broker 360 (in-app + branded email to every member).
+export const partnerPacketRemind = (org, key) => rpc('cc_partner_packet_remind', { p_org: org, p_key: key });
+export const prefsProfileStrength = () => rpc('cc_prefs_profile_strength');
+export const prefsSaveSection = (section, payload) => rpc('cc_prefs_save_section', { p_section: section, p: payload ?? {} });
 export const ccAgentPayoutVerify = (user, ok, note) => rpc('cc_agent_payout_verify', { p_user: user, p_ok: ok, p_reason: note ?? null });
 // Alternative ("Other") payout methods: ask the agent for the exact missing receiving
 // fields, and record a reviewer's assessment of the rail itself (separate from verifying
