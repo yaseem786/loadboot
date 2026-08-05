@@ -121,10 +121,25 @@ export function renderAgents(host) {
           // exactly where the money is going before approving a payout, without opening the DB.
           (() => {
             const M9 = { payoneer: '⭐ Payoneer', local_bank: '🏦 Local bank · paid via Payoneer', ach: '🏦 US bank (ACH)', crypto: '₿ USDT · TRC-20', intl: '🏦 International bank', other: '❓ Other (requested)' };
-            const mask9 = (v9, keep) => { const t9 = String(v9 || ''); return t9 ? '•••' + t9.slice(-(keep || 4)) : null; };
             const row9 = (k9, v9, warn) => v9 ? el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed #eef2f7;font-size:.85rem' }, [
               el('span', { style: 'color:#64748b' }, k9),
               el('b', { style: 'text-align:right;word-break:break-word;color:' + (warn ? '#b45309' : '#0f172a') }, v9)]) : null;
+            // Masking protects against shoulder-surfing, but whoever sends the wire has to
+            // read the full number and type it into their bank. Click to reveal + copy.
+            const secretRow9 = (k9, full9, keep9) => {
+              const t9 = String(full9 || ''); if (!t9) return null;
+              let shown9 = false;
+              const val9 = el('b', { style: 'text-align:right;word-break:break-all;color:#0f172a;cursor:pointer;user-select:all', title: 'Click to reveal / hide' }, '•••' + t9.slice(-(keep9 || 4)));
+              const cp9 = el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'padding:1px 7px;font-size:.7rem', title: 'Copy full value', onClick: async (ev) => {
+                try { await navigator.clipboard.writeText(t9); const b = ev.currentTarget; b.textContent = '✓'; setTimeout(() => { b.textContent = '⧉'; }, 1200); }
+                catch (_) { toast('Copy failed — click the value to reveal it', 'error'); }
+              } }, '⧉');
+              val9.onclick = () => { shown9 = !shown9; val9.textContent = shown9 ? t9 : ('•••' + t9.slice(-(keep9 || 4))); };
+              return el('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed #eef2f7;font-size:.85rem;align-items:center' }, [
+                el('span', { style: 'color:#64748b' }, k9),
+                el('span', { style: 'display:flex;gap:6px;align-items:center;justify-content:flex-end;flex:1' }, [val9, cp9]),
+              ]);
+            };
             const m9 = String(p.payout_method || '');
             const rows9 = [
               row9('Method', M9[m9] || m9 || '— not set —', !m9),
@@ -134,12 +149,12 @@ export function renderAgents(host) {
               m9 === 'payoneer' ? row9('Payoneer email', pd.email) : null,
               m9 === 'payoneer' ? row9('Payoneer customer ID', pd.account) : null,
               m9 === 'ach' ? row9('Bank', pd.bank_name) : null,
-              m9 === 'ach' ? row9('Routing', mask9(pd.routing, 4)) : null,
-              m9 === 'ach' ? row9('Account #', mask9(pd.account, 4)) : null,
+              m9 === 'ach' ? secretRow9('Routing', pd.routing, 4) : null,
+              m9 === 'ach' ? secretRow9('Account #', pd.account, 4) : null,
               m9 === 'crypto' ? row9('Network', pd.wallet_network || 'TRC-20') : null,
-              m9 === 'crypto' ? row9('Wallet', pd.wallet ? String(pd.wallet).slice(0, 6) + '…' + String(pd.wallet).slice(-6) : null) : null,
+              m9 === 'crypto' ? secretRow9('Wallet', pd.wallet, 6) : null,
               (m9 === 'intl' || m9 === 'local_bank' || m9 === 'other') ? row9('Bank', pd.bank_name) : null,
-              (m9 === 'intl' || m9 === 'local_bank' || m9 === 'other') ? row9('IBAN / account', mask9(pd.iban, 4)) : null,
+              (m9 === 'intl' || m9 === 'local_bank' || m9 === 'other') ? secretRow9('IBAN / account', pd.iban || pd.account, 4) : null,
               (m9 === 'intl' || m9 === 'local_bank' || m9 === 'other') ? row9('SWIFT / BIC', pd.swift) : null,
               row9('Bank address', pd.bank_address),
               m9 === 'other' ? row9('Beneficiary address', pd.beneficiary_address) : null,
