@@ -7,6 +7,7 @@ import ENV from '../shared/env.js';
 import { US_CITIES } from './us-cities.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updatePassword } from '../shared/session.js';
 import {
+  requestAccountDeletion, cancelAccountDeletion, myAccountDeletionStatus,
   pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
@@ -2733,7 +2734,43 @@ async function appView(user) {
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Documents'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('documents') }, 'Open')]),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Sign out'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: async () => { await signOut(); location.reload(); } }, 'Sign out')]),
     ]);
-    mount(content, h('div', null, [themeCard, cpmCard, pushCard, availCard, tabsCard, acctCard].filter(Boolean)));
+    // Account deletion. Google Play requires an in-app route to request deletion of the
+    // account and personal data — an email address alone is not accepted. Honest about
+    // what survives: freight and tax records carry legal retention we cannot waive.
+    const delCard = (() => {
+      const host = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-muted' }, 'Loading…')]);
+      const paint = (st) => {
+        const open = st && st.status === 'requested';
+        mount(host, [
+          h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Delete account'),
+          open
+            ? h('div', null, [
+                h('div', { style: 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 14px;color:#fcd9a2;font-weight:600' },
+                  '⏳ Deletion requested — we complete it within 30 days. You can still cancel.'),
+                h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:10px', onClick: async (ev) => {
+                  const b = ev.currentTarget; b.disabled = true;
+                  try { await cancelAccountDeletion(); lbToast('Deletion request cancelled', 'ok'); load(); }
+                  catch (e) { b.disabled = false; lbToast((e && e.message) || 'Failed.', 'urgent'); }
+                } }, 'Cancel my deletion request'),
+              ])
+            : h('div', null, [
+                h('div', { class: 'cpx-set-s', style: 'line-height:1.6' },
+                  'Permanently deletes your profile, contact details, uploaded documents, banking details and location history. Delivered load paperwork and settlement records are kept where US law requires (3 years for load documents, 7 for tax records), with your personal details removed from them. '),
+                h('a', { href: 'https://loadboot.com/delete-account.html', target: '_blank', rel: 'noopener', style: 'color:#0883F7;font-size:.86rem' }, 'Read the full policy →'),
+                h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:12px;background:#b91c1c;border-color:#b91c1c', onClick: async (ev) => {
+                  if (!confirm('Request deletion of your LoadBoot account and personal data?\n\nA person completes this within 30 days. You can cancel any time before then.')) return;
+                  const b = ev.currentTarget; b.disabled = true;
+                  try { await requestAccountDeletion(null); lbToast('Request received — check your email', 'ok'); load(); }
+                  catch (e) { b.disabled = false; lbToast((e && e.message) || 'Failed.', 'urgent'); }
+                } }, 'Delete my account'),
+              ]),
+        ]);
+      };
+      const load = async () => { let st = null; try { st = await myAccountDeletionStatus(); } catch (_) {} paint(st); };
+      load();
+      return host;
+    })();
+    mount(content, h('div', null, [themeCard, cpmCard, pushCard, availCard, tabsCard, acctCard, delCard].filter(Boolean)));
   }
 
   async function loadDashboard() {
