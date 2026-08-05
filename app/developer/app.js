@@ -5,6 +5,8 @@ import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
 import { createApiKey, listApiKeys, revokeApiKey, myWebhooks, myWebhookCreate, myWebhookDelete } from '../shared/api.js';
+import { initTelemetry } from '../shared/telemetry.js';
+initTelemetry();  // real-user error + Core Web Vitals capture
 
 
 // PWA real-app behaviour: remember this portal so the installed app opens here next launch.
