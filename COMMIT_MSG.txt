@@ -1,75 +1,97 @@
-Google Play launch: app manifest, account deletion, listing assets
+Google Play launch: unified app, account deletion, error monitoring
 
-Groundwork for publishing LoadBoot on Google Play as a Trusted Web Activity,
-plus the account-deletion feature Play requires of any app with sign-in.
+Three pieces of groundwork for publishing LoadBoot on Google Play as a Trusted
+Web Activity, plus the observability that should have existed already.
 
 --- One app, every portal ----------------------------------------------------
 
 app/loadboot.webmanifest (new) - unified manifest scoped to /app/, so a single
-installed app (and a single Play listing) covers carrier, partner and agent
-rather than shipping three. start_url /app/, standalone, maskable icons, and
-long-press shortcuts straight into each portal. The per-portal manifests stay
-for anyone installing one portal on its own.
+installed app and a single Play listing cover carrier, partner and agent rather
+than shipping three. start_url /app/, standalone, maskable icons, long-press
+shortcuts into each portal. The per-portal manifests stay for anyone installing
+one portal on its own.
 
 app/index.html - links the new manifest, and hides the Command Center and
-Developers & API cards when launched as the installed app (CSS display-mode
-plus an android-app:// referrer check, remembered for the session). Two reasons:
-a carrier on their phone should never be offered a door marked "LoadBoot staff
-only", and a store reviewer must not hit a portal they cannot sign in to -
-that reads as "part of the app is inaccessible" and fails review. Both remain
-fully available on the website.
+Developers & API cards when launched as the installed app (CSS display-mode plus
+an android-app:// referrer check, remembered for the session). Two reasons: a
+carrier on their phone should never be offered a door marked "LoadBoot staff
+only", and a store reviewer must not hit a portal they cannot sign in to - that
+reads as "part of the app is inaccessible" and fails review. Both stay fully
+available on the website.
 
 --- Account deletion (migrations 0211, 0212) ---------------------------------
 
-Play policy: users must be able to request deletion of their account and
-personal data from inside the app, and the store listing must carry a public
-page describing it. Neither existed.
+Play requires users to be able to request deletion of their account and personal
+data from inside the app, and the listing to carry a public page describing it.
+Neither existed.
 
 Built as REQUEST + PROCESS, not an instant wipe, because an instant wipe would
 be a promise we cannot legally keep: FMCSA requires 3 years of load and trip
 documents, the IRS 7 years of invoices and settlements, and a carrier mid-load
 cannot vanish while a broker still has a right to that trip record.
 
-Backend:
   request_account_deletion / cancel_account_deletion / my_account_deletion_status
   cc_account_deletion_queue / cc_account_deletion_process
-  Completing a request erases profile contact fields, the agent payout/tax/
-  address block, org bank details, uploaded documents, chats and agent messages,
-  and CRM/outreach traces, then closes the login permanently. The auth row is
-  kept, not dropped, so retained financial records keep a stable foreign key.
-  Requesting notifies staff in-app and sends the user a branded confirmation.
-  anon-executable SECURITY DEFINER count unchanged at 27.
 
-Frontend:
-  app/carrier/app.js - "Delete account" card in Settings (serves both the
-  carrier and agent portals). States plainly what is erased and what law
-  requires us to keep, links the full policy, confirms before sending, and
-  once open switches to a pending state with a Cancel button.
+Completing a request erases profile contact fields, the agent payout/tax/address
+block, org bank details, uploaded documents, chats and agent messages, and
+CRM/outreach traces, then closes the login permanently. The auth row is kept,
+not dropped, so retained financial records keep a stable foreign key. Requesting
+notifies staff in-app and sends the user a branded confirmation.
+
+  app/carrier/app.js - "Delete account" card in Settings (serves the carrier and
+    agent portals). Says plainly what is erased and what law requires us to keep,
+    links the policy, confirms before sending, then shows a pending state with a
+    Cancel button.
   app/shared/api.js - the five wrappers.
+  build_site.py - public page delete-account.html, linked from the footer and
+    legal nav, with the 2-day / 30-day / 90-day-backup timeline. Build verified.
 
-build_site.py - new public page delete-account.html, linked from the footer and
-the legal navigation. Names LoadBoot LLC, gives both routes to request deletion
-(in-app and privacy@loadboot.com), and itemises what is deleted, what is
-retained and for how long, with the 2-day / 30-day / 90-day-backup timeline.
-Build verified.
+Still to do: the same card in app/partner/app.js, whose settings view differs.
 
-Still to do: the same Settings card in app/partner/app.js, whose settings view
-has a different shape.
+--- Client error + performance monitoring (migration 0213) -------------------
+
+Until now a broken deploy was invisible. The Command Center sat on its loading
+screen for half an hour today and the cause - one missing export in api.js - had
+to be found by reading Netlify and Postgres logs by hand. On phones that loop
+does not exist at all: a carrier whose app breaks just leaves.
+
+  app/shared/telemetry.js (new) - window.onerror, unhandled rejections, failed
+    script/style loads, and Core Web Vitals (LCP, INP, CLS, FCP, TTFB) via
+    PerformanceObserver with Google's thresholds. No third-party library, no SDK.
+    Wired into the carrier, partner, command-center and developer entry points.
+  app_private.client_errors / client_vitals, tele_scrub(), tele_ingest()
+  public.track_web_event - EXTENDED, not replaced.
+
+Three things make it worth having rather than noise:
+  * Grouping. Errors are fingerprinted from a normalised message plus the top
+    stack frame, so a loop throwing 5,000 times costs one row and one request.
+    Each session sends at most 8 errors and never repeats one.
+  * Privacy. Messages and stacks are scrubbed for emails, tokens and long digit
+    runs on the device AND again in Postgres; query strings are dropped from
+    routes. An error monitor that quietly accumulates user data is a liability.
+  * Regressions. An error marked resolved that reappears on a newer build_id is
+    reopened automatically - the silent regression is the case this is for.
+
+anon-executable SECURITY DEFINER count unchanged at 27: telemetry rides the
+ingestion door that was already anon-callable rather than opening a new one.
+
+Still to do: the Command Center dashboard over these tables, and alerting on a
+new error type or a spike.
 
 --- Play Console groundwork --------------------------------------------------
 
 Four reviewer accounts created and sign-in verified (carrier, broker, shipper,
-agent). Separate broker and shipper accounts are needed despite sharing one
-dashboard, because their onboarding packets have no items in common - broker
-wants FMCSA authority and a $75k BMC-84 bond, shipper wants a credit
-application and payment terms.
+agent). Broker and shipper need separate accounts despite sharing one dashboard,
+because their onboarding packets have no items in common - broker wants FMCSA
+authority and a $75k BMC-84 bond, shipper wants a credit application and payment
+terms. Content rating came back Everyone / PEGI 3 with no descriptors.
 
 Store listing prepared off-repo: title "LoadBoot Load Board & Dispatch" (30),
-short and full descriptions, 1024x500 feature graphic, and eight phone
-screenshots. The source screenshots were 1170x2532 - Play rejects anything
-where the long side exceeds twice the short side (2.16), so each was padded
-sideways onto the app background to land on 9:16 and converted from WebP,
-which Play does not accept.
+short and full descriptions, 1024x500 feature graphic, eight phone screenshots.
+The source shots were 1170x2532 - Play rejects anything where the long side
+exceeds twice the short side (2.16) - so each was padded sideways onto the app
+background to land on 9:16 and converted from WebP, which Play does not accept.
 
 Migrations are applied to production; the JS and build changes need deploy.
 

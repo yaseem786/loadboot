@@ -78,6 +78,8 @@ import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
 import { renderEmailBuilder } from './views/emailBuilder.js';
 import { renderSupport } from './views/support.js';
+import { initTelemetry } from '../shared/telemetry.js';
+initTelemetry();  // real-user error + Core Web Vitals capture
 import { renderReports } from './views/reports.js';
 import { renderNotifications } from './views/notifications.js';
 import { renderAutomationsAdmin } from './views/automationsAdmin.js';

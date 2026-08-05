@@ -1,0 +1,36 @@
+-- bl_obs_0213_client_telemetry.sql   (applied to production 2026-08-05)
+--
+-- Client-side observability: JavaScript errors and Core Web Vitals from real users.
+--
+-- Why: until now a broken deploy was invisible. The Command Center sat on its loading
+-- screen for half an hour today and the only way to find the cause was reading Netlify
+-- and Postgres logs by hand. On phones that feedback loop does not exist at all -- a
+-- carrier whose app breaks simply leaves and we never hear about it.
+--
+-- Tables
+--   app_private.client_errors  -- GROUPED by fingerprint, one row per distinct error.
+--                                 hits/first_seen/last_seen/users_seen, status
+--                                 open|resolved|ignored, sample payload with
+--                                 breadcrumbs + device + connection.
+--   app_private.client_vitals  -- LCP / INP / CLS / FCP / TTFB with Google's rating.
+--
+-- Functions
+--   app_private.tele_scrub(text)  -- strips emails, JWT/publishable tokens and long
+--                                    digit runs. The client scrubs too; never trust
+--                                    the client with this.
+--   app_private.tele_ingest(jsonb)
+--   public.track_web_event(jsonb) -- EXTENDED, not replaced. Telemetry rides the
+--                                    ingestion door that is already anon-callable, so
+--                                    no new anon-executable function is introduced and
+--                                    the anon SECURITY DEFINER count stays at 27.
+--                                    Unknown types fall through to the original
+--                                    analytics path untouched.
+--
+-- Two design points worth keeping:
+--   * Grouping is server-side on conflict(fingerprint): a render loop throwing 5,000
+--     times costs one row, not 5,000.
+--   * A 'resolved' error that reappears on a NEWER build_id is automatically reopened.
+--     A silent regression is the failure mode this is meant to catch.
+--
+-- Client half: app/shared/telemetry.js, wired into the carrier, partner,
+-- command-center and developer entry points.

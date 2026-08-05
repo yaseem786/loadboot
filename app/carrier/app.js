@@ -45,6 +45,8 @@ import '../shared/ui/chatWidget.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountStrengthCard, maybeShowMicroAsk } from './prefs-strength.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
+import { initTelemetry } from '../shared/telemetry.js';
+initTelemetry();  // real-user error + Core Web Vitals capture
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
 // agent/index.html sets an inline window.__LB_AGENT flag, but the site CSP (script-src

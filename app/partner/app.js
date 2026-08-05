@@ -34,6 +34,8 @@ import { mountAvatarEditor } from '../shared/ui/avatar.js';
 import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { payInstructions, payMarkSent, payDueItems, payTripMarkSent, ccLoadStops, isMyOrgAgent } from '../shared/api.js';
+import { initTelemetry } from '../shared/telemetry.js';
+initTelemetry();  // real-user error + Core Web Vitals capture
 (async () => { try { window.__lbAgentOrg = !!(await isMyOrgAgent()); } catch (_) { window.__lbAgentOrg = false; } })();
 
 
