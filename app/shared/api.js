@@ -124,8 +124,6 @@ export const partnerLoadStatus = (partnerLoadId) => rpc('cc_partner_load_status'
 export const loadAdvisor = (loadId, overrides) => rpc('cc_load_advisor', { p_load: loadId, p_overrides: overrides ?? {} });
 export const setDispatchPrefs = (o) => rpc('cc_set_dispatch_prefs', { p: o ?? {} });
 export const getDispatchPrefs = () => rpc('cc_get_dispatch_prefs');
-export const prefsProfileStrength = () => rpc('cc_prefs_profile_strength');
-export const prefsSaveSection = (section, payload) => rpc('cc_prefs_save_section', { p_section: section, p: payload ?? {} });
 // AI Load Pilot — fleet level: reverse advisor (best open loads for one carrier) + one-click greedy dispatch plan.
 export const carrierBestLoads = (carrierId, limit) => rpc('cc_carrier_best_loads', { p_carrier: carrierId ?? null, p_limit: limit ?? 10 });
 export const dispatchPlan = (maxLoads) => rpc('cc_dispatch_plan', { p_max_loads: maxLoads ?? 20 });
@@ -201,7 +199,6 @@ export const publishAgreement = (kind, version, legalOk) => rpc('cc_publish_agre
 export const myOnboardingPacket = () => rpc('cc_my_onboarding_packet');
 export const onboardingSubmitItem = (key, ref, note) => rpc('cc_onboarding_submit_item', { p_key: key, p_ref: ref, p_note: note ?? null });
 export const onboardingReviewItem = (org, key, action, note) => rpc('cc_onboarding_review_item', { p_org: org, p_key: key, p_action: action, p_note: note ?? null });
-export const partnerPacketRemind = (org, key) => rpc('cc_partner_packet_remind', { p_org: org, p_key: key });
 export const partnerSetStatus = (org, action, reason) => rpc('cc_partner_set_status', { p_org: org, p_action: action, p_reason: reason ?? null });
 export const partnersAccounts = () => rpc('cc_partners_accounts', {});
 export const partner360 = (org) => rpc('cc_partner_360', { p_org: org });
