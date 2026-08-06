@@ -715,6 +715,12 @@ export const globalSearch = (q, limit) => rpc('cc_global_search', { p_q: q, p_li
 export const fleetOverview = () => rpc('cc_fleet_overview');
 export const listDrivers = (o = {}) => rpc('cc_list_drivers', { p_carrier: o.carrier ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
 export const fleetExpiryBoard = (days) => rpc('cc_fleet_expiry_board', { p_days: days ?? 45 });
+// Ongoing broker/shipper compliance — what was verified once and has since gone stale.
+export const partnerComplianceBoard = (days) => rpc('cc_partner_compliance_board', { p_days: days ?? 45 });
+export const packetSetDates = (org, key, expires, recheck) => rpc('cc_packet_set_dates', { p_org: org, p_key: key, p_expires: expires ?? null, p_recheck: recheck ?? null });
+// Daily FMCSA authority poll — what the machine knows, and the docket it reads it from.
+export const authorityBoard = () => rpc('cc_authority_board');
+export const orgSetDocket = (org, mc, dot) => rpc('cc_org_set_docket', { p_org: org, p_mc: mc ?? null, p_dot: dot ?? null });
 export const contactsDirectory = (o = {}) => rpc('cc_contacts_directory', { p_search: o.search ?? null, p_kind: o.kind ?? null, p_limit: o.limit ?? 200 });
 export const warnDriverExpiry = (driver, kind) => rpc('cc_warn_driver_expiry', { p_driver: driver, p_kind: kind });
 export const listPermissionsFor = (userId) => rpc('cc_list_permissions_for', { p_user: userId });

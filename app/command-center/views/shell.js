@@ -37,6 +37,7 @@ const NAV = [
     { path: '/documents', label: 'Document review', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
     { path: '/fleet', label: 'Fleet & drivers', icon: 'users', perm: 'fleet.view', flag: 'fleet' },
     { path: '/fleet-expiry', label: 'License & medical expiry', icon: 'shield', perm: 'any:fleet.view,carriers.view' },
+    { path: '/partner-compliance', label: 'Broker & shipper re-verification', icon: 'shield', perm: 'any:compliance.view,partners.view' },
     { path: '/account-health', label: 'Account Health', icon: 'users', perm: 'carriers.view' },
   ]},
   { group: 'Brokers & Shippers', items: [

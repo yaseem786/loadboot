@@ -52,6 +52,7 @@ import { renderAgents } from './views/agents.js';
 import { renderDispatchers } from './views/dispatchers.js';
 import { renderFleet } from './views/fleet.js';
 import { renderFleetExpiry } from './views/fleetExpiry.js';
+import { renderPartnerCompliance } from './views/partnerCompliance.js';
 import { renderContactsDirectory } from './views/contactsDirectory.js';
 import { renderManagement } from './views/management.js';
 import { renderAnalyticsWeb } from './views/analyticsWeb.js';
@@ -227,6 +228,7 @@ async function boot() {
     '/management': () => { setActive('/bi'); if (can('analytics.view') || can('reports.view')) renderBI(content); else denied(); }, // retired duplicate — alias to BI
     '/fleet': () => { setActive('/fleet'); if (fleetEnabled && can('fleet.view')) renderFleet(content); else denied(); },
     '/fleet-expiry': () => { setActive('/fleet-expiry'); if (can('fleet.view') || can('carriers.view')) renderFleetExpiry(content); else denied(); },
+    '/partner-compliance': () => { setActive('/partner-compliance'); if (can('compliance.view') || can('partners.view')) renderPartnerCompliance(content); else denied(); },
     '/contacts': () => { setActive('/contacts'); if (can('carriers.view') || can('partners.view')) renderContactsDirectory(content); else denied(); },
     '/dispatch': () => { setActive('/dispatch'); guard(['loads.create', 'loads.assign', 'loads.publish', 'carriers.view'], () => renderDispatch(content))(); },
     '/carriers': () => { setActive('/carriers'); guard(['carriers.view', 'carriers.edit', 'carriers.approve'], () => renderCarriers(content))(); },
