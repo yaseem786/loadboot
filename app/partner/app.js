@@ -381,6 +381,8 @@ async function openCancellationHistory(l) {
 const PACKET_RULES = {
   mc_authority: 'Your FMCSA broker authority — the legal licence to broker freight.',
   bmc84_bond: 'The $75,000 surety bond/trust that protects carriers if a broker fails to pay.',
+  boc3: 'Your BOC-3 — who can be served legal process on your behalf in each state. FMCSA will not keep broker authority active without one.',
+  ucr: 'Unified Carrier Registration for the current year. Brokers register annually even with no trucks.',
   w9: 'IRS taxpayer form — needed before any settlement money moves.',
   coi: 'Insurance certificate (GL / E&O / contingent cargo).',
   broker_agreement: 'Your signed master agreement with LoadBoot.',
@@ -400,6 +402,8 @@ const PACKET_SPEC = {
   // broker
   mc_authority:     { fields: [['Broker MC number', 'MC-000000']], file: 'required', fileHint: 'Broker authority letter (PDF or photo)' },
   bmc84_bond:       { file: 'required', fileHint: 'BMC-84 bond / BMC-85 trust certificate (PDF or photo)' },
+  boc3:             { fields: [['Process agent / filing company', 'e.g. the service that filed your BOC-3']], file: 'required', fileHint: 'BOC-3 confirmation from FMCSA (PDF or photo)' },
+  ucr:              { fields: [['UCR registration year', 'e.g. 2026'], ['Base state', 'the state you registered in']], file: 'required', fileHint: 'UCR receipt / confirmation (PDF or photo)' },
   broker_agreement: { file: 'required', fileHint: 'Signed Broker Agreement (PDF or photo)' },
   bank_instructions:{ fields: [['Bank name', ''], ['Account holder (legal name)', ''], ['Account number', 'digits only'], ['Routing / ABA (9 digits)', ''], ['Account type', 'Checking / Savings'], ['Bank address', 'street, city, state'], ['Bank phone', ''], ['Remittance / billing email', '']], file: 'required', fileHint: 'Voided check / bank letter (PDF or photo)' },
   claims_procedure: { fields: [['Claims contact name', 'who owns cargo claims on your side'], ['Claims phone', ''], ['Claims email', ''], ['Process — how a claim is handled', 'acknowledge → investigate → settle, with timelines']], file: 'optional', fileHint: 'Claims procedure doc (optional)' },
