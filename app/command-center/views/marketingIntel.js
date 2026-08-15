@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // marketingIntel.js — C6: the ad desk's one screen. First-party, ad-campaign-ready data:
 // which pages pull traffic, which UTM sources/campaigns produce LEADS (spend Google/Meta/TikTok
 // budgets on measured conversion, not vibes), leads by audience (carrier/broker/shipper/referral),

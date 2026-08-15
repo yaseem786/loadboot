@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // compliance.js — Wave 2 Carrier Onboarding & Compliance. Onboarding queue + per-carrier
 // compliance checklist (MC authority, COI, W-9, MCS-150, safety) with expiry tracking,
 // document verification, and a human-approval gate. Reads/writes via cc_compliance_* /

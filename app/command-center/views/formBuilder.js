@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // formBuilder.js — Command Center: Form Builder (ct-waveBH, Directive §12.7).
 // Staff define custom forms (fields, thank-you). Published forms render on a public
 // hosted page (/forms/?f=key) and submit through the existing submit_web_form path, so

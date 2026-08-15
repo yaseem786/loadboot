@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // opsMap.js — Control Tower Wave J: Live Operations Map.
 // Plots consented, active trips on a Leaflet + OpenStreetMap map (no third-party key
 // required). A side list names every tracked carrier/driver and focuses its marker on

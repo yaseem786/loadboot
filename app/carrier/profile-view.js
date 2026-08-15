@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // My Profile — the carrier's own profile exactly as brokers see it (contact hidden),
 // plus the full live FMCSA record (7 tabs). Self-contained, scoped-dark styling so it
 // renders correctly regardless of the surrounding portal theme. Read-only.

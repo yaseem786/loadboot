@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // trips.js — Wave 3 Loads / Dispatch / Trips. Trip board (lifecycle) + trip detail
 // (route, driver, stops, status timeline, advance status, add note). A trip is the
 // execution record of a booked load. Reads/writes via cc_dispatch_* / cc_*_trip RPCs

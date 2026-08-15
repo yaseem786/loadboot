@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // partnerIntake.js — Command Center: Partner Intake (ct-waveBG).
 // Staff review of what partners submit through the Partner Portal:
 //  • Broker loads   → Accept / Decline / Post to the real load board

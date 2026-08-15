@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // loadIntake.js — Command Center Load Intake workspace (Increment 43). Every load carries a normalized SOURCE
 // attribution + verification/confidence, so staff can see where a load came from and how trustworthy it is
 // before it enters matching. New loads are created with explicit source attribution (no silently-"verified" data).

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // actionCenter.js — Control Tower Wave I: the personalized Action Center home.
 // Instead of a generic dashboard, this surfaces "what needs YOU now" — a single
 // priority-ranked queue across tasks, tickets, forms, documents, exceptions and

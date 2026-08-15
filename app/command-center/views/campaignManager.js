@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // campaignManager.js — Campaign Manager (Phase 3C). Compose a campaign from a saved
 // audience + template + channels, schedule it, and send. Push channel sends for real
 // via the existing staff-gated push-send (reusing the broadcast pipeline); email/SMS

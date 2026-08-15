@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // liveChat.js — CC Live chat: a scale-ready agent inbox (built for ~1000 concurrent chats).
 // Human queue first (SLA timers), staff assignment, search across messages, canned replies,
 // sound + tab-title alerts on new handoffs, AI-resolution stats, bot training panel.

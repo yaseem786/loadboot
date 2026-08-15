@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // push.js — Web Push subscribe/unsubscribe helper (Phase 5). Requires a registered service
 // worker (the Pocket app's pocket-sw.js or the Command Center SW) that handles 'push' events.
 // The VAPID public key is safe to ship; the private key lives only in Supabase secrets.

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // integrations.js — Wave 8 Integrations / Webhooks. Connected integrations, outbound webhook
 // endpoints (https-only) subscribed to domain events, and a delivery queue. Reads/writes via
 // cc_integration* / cc_*endpoint* / cc_*deliver* RPCs (integrations.view/manage), RBAC-gated +

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // dispatch.js — Dispatch Board. Loads grouped into lifecycle columns; advance/retreat
 // a load with secured cc_set_load_status (loads.assign, scope-checked + audited). If the
 // server rejects, the UI reverts. Responsive: columns on desktop, stacked list on mobile.

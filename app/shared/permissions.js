@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // permissions.js — client-side permission cache for UI HIDING ONLY.
 // The server re-checks every privileged action (RLS + RPC). Hiding a control here is
 // a convenience, never a security boundary: a hidden button still cannot perform an

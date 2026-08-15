@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // deliveryHealth.js — Command Center view over the UNIFIED delivery engine (cvb/cvc/cvd).
 // One delivery ledger for every channel: shows the live status histogram, a filterable recent-deliveries
 // table (attempts column exposes retry progress), dead-letter isolation, and the suppression list with

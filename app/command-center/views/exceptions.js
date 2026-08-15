@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // exceptions.js — Command Center: Trip Exceptions queue (migration cuu_staff_exception_queue).
 // Carrier-reported exceptions (detention, TONU, accident, breakdown, ...) land here for dispatch to
 // resolve. RBAC: dispatch.manage (server-enforced). Open tab first; resolving requires dispatch.manage.

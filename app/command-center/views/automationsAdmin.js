@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // automationsAdmin.js — Control Tower Wave F: Automations management.
 // Lists every automation rule (trigger → action), shows which need human approval, and
 // lets an owner enable/disable a rule. Read via cc_list_rules (staff); toggling requires

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // marketRates.js — CC: DAT-style market rates, staff sees ALL THREE audiences (carrier buy,
 // broker sell, shipper) side by side. Data: cc_lane_rate (staff payload) via the shared widget.
 import { el, mount } from '../../shared/ui/dom.js';

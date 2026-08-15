@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // usGeo.js — offline US freight geography. ~150 major freight cities + state
 // centroids fallback. Zero APIs, zero cost, works offline. Coordinates are
 // city-center approximations (±a few miles) — always labeled as estimates.

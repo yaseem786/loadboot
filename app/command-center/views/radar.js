@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // radar.js — Wave 10 Ops Radar ("Today"). One screen of everything that needs attention now,
 // pulled live across every module via cc_ops_radar() (staff-only, RBAC-gated). Each card links
 // into the module that resolves it. Auto-refreshes so the operator always sees the current state.

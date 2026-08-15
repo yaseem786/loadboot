@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // loading.js — consistent loading / empty / error states for async views.
 import { el, mount } from './ui/dom.js';
 

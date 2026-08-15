@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // audiences.js — Audience / Segment Builder (Phase 3B). Build and save reusable
 // audiences (carriers, leads, staff segments) with a live recipient estimate +
 // sample. Resolution to actual recipients happens in the delivery layer (push/email).

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // contactsDirectory.js — one directory of every account holder (carrier / broker / shipper /
 // facility) with a verified badge and drill-down. Reads cc_contacts_directory (carriers.view
 // or partners.view). Identity is staff-only here; the marketplace-facing views stay anonymized.

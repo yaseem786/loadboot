@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // trip-map.js — LoadBoot premium live trip (v3).
 // inDrive-class experience, trucking semantics:
 // • Opens straight onto the A→B leg (real road route via OSRM, dark CARTO tiles)

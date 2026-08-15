@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // templates.js — Template Studio (Phase 3A). One shared template system for marketing
 // and transactional messages across email / portal / push / SMS. Variables are an
 // allowlist enforced server-side (unknown {{vars}} fail the save). Draft → published →

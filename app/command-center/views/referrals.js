@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // referrals.js — Referral Program overview (WEB-2 part 2). Staff read of the multi-level referral engine
 // (cwi_referral_engine): who is referring, how much has accrued/is payable/has been paid, and a top-referrer
 // leaderboard. HONESTY: commissions are paid out of LoadBoot's own 5% fee (never an extra charge to a carrier),

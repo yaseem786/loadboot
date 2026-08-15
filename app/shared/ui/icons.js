@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // icons.js — inline line icons (Lucide-style, stroke=currentColor). Code-defined
 // trusted SVG markup only; never built from user data.
 import { el } from './dom.js';

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // addr-suggest.js — street-address autocomplete for any <input>.
 // Free OSM geocoder (Photon, no API key). US-biased, debounced, keyboard-free simple list.
 // Usage: attachAddressSuggest(input) — picks fill the input with "123 Main St, Dallas, TX 75201".

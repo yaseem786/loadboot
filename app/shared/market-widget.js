@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // market-widget.js — DAT-style Market Rates widget, shared by carrier/broker/shipper portals + CC.
 // Audience-aware: the backend (cc_lane_rate) decides what the session may see —
 // carrier gets carrier (buy) rates, shipper gets shipper (sell) rates, broker gets BOTH, staff gets all.

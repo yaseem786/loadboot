@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // shell.js — persistent Command Center chrome for the FULL ops suite (65+ screens):
 // premium topbar (title + breadcrumb + user), and the content host the router fills.
 // Nav items hide by permission (UI convenience only; routes are still guarded and

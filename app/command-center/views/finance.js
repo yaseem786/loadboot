@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // finance.js — Wave 5 Finance. Dispatch-fee invoices (flat 5%) + carrier settlements.
 // Invoices are created from delivered trips; settlements bundle a carrier's unpaid invoices
 // and PAYING OUT is gated behind finance.approve + a human-approval automation task.

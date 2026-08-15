@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // comms.js — Wave 4 Communications. Message threads (optionally tied to a carrier/load/trip),
 // a notification center over the Automation Core notifications, and reusable templates.
 // Reads/writes via cc_comm_* RPCs (comm.view/send), all RBAC-gated + audited. Starting a

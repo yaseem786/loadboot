@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // googleData.js — Phase 3/4: REAL Google Analytics 4 + Google Search Console.
 // Server-side via the ga4-insights / gsc-insights edge functions (service-account auth;
 // keys never touch the browser). Clearly labelled by source, with connection status and

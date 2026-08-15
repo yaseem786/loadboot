@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // login.js — staff sign-in. Auth only; authorization (is_staff) is checked after.
 // We never create accounts or set passwords here — staff arrive via invitation.
 import { el, mount } from '../../shared/ui/dom.js';

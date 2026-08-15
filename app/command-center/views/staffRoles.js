@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // staffRoles.js — Staff & Roles (functional in 2A).
 // Lists staff + their roles (get_staff_directory), and offers privileged actions
 // (assign/revoke role, suspend/reactivate, revoke sessions) — each server-authorized

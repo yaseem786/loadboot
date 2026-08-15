@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // safetyDesk.js — Operations Safety desk: live trip emergencies (Safety v2, design LOCKED).
 // Open incidents first, live location block, proof list, Acknowledge -> carrier notified,
 // Verify genuine -> approve reschedule -> carrier + broker notified (bell + email).

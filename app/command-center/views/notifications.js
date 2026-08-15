@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // notifications.js — Control Tower Wave F: Notifications center.
 // A single place to see queued/sent notifications (email/SMS/in-app) and mark them read.
 // Until a delivery provider (Resend/Twilio) is connected, items stay queued — never

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // bookingRequests.js — staff queue of carrier requests to book loads. Approve books the
 // load for the requesting carrier (creates the trip); decline notifies them. Staff see the
 // real carrier name plus the anonymized-style trust profile (verified badge, rating, score).

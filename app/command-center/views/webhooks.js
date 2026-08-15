@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // webhooks.js — Outbound Webhooks admin (Phase 1 hardening). Shows registered
 // endpoints and their delivery log with status (pending/sent/failed/dead) and a
 // manual retry for dead-lettered deliveries — so a provider failure never silently

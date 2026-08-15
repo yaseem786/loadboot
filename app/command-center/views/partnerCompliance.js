@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // partnerCompliance.js — the ongoing side of broker & shipper compliance.
 //
 // The packet screen (broker360) answers "did we ever check this?". This one answers

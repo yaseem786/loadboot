@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // automation.js — Automation Core view: operational health + open task queue.
 // Reads cc_automation_health + cc_list_tasks; completes via cc_complete_task. All
 // RBAC-gated server-side. Gated behind the automation_core_enabled flag (nav hidden

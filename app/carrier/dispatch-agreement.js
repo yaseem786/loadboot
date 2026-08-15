@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // Dispatch Service Agreement — carrier sign flow + executed-PDF print.
 // Records the signature via cc_carrier_sign_agreement (compliance requirement
 // 'dispatch_agreement' -> pending -> Command Center approves in the compliance queue).

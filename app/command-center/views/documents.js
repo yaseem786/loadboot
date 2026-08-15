@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // documents.js — Document review queue. Read cc_list_documents; approve/reject via
 // admin_review_document (documents.review, scope-checked + audited server-side).
 import { el, mount } from '../../shared/ui/dom.js';

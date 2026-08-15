@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // emailLoads.js — Email Load Ingestion review center (premium v2).
 // Stats strip → status filter → detail table → click-through drawer with EVERY parsed field,
 // broker dossier, terms record and the ORIGINAL raw email. Verify/Block/Claim-link inline.

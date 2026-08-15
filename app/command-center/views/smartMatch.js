@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // smartMatch.js — Smart Matching (Phase 5, dispatch intelligence). Pick a load and see
 // deterministically-ranked carrier recommendations with a score, compliance flag,
 // on-time history and a plain-language reason. Assignment stays a human action

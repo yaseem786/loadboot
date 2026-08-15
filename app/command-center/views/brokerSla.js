@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // brokerSla.js — Broker SLA & on-time analytics (Inc 68). Staff view of each broker's fill rate, on-time
 // delivery, cover speed and open exceptions — computed only from real partner_loads -> posted load -> trip
 // linkage. Nothing estimated; the basis is stated on every scorecard row.

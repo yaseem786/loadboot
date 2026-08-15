@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // marketingAnalytics.js — Marketing Analytics (Phase 3E). Campaign performance,
 // consent health and audience coverage in one place. Honest about email open-tracking
 // limits — click/conversion events are more reliable than opens.

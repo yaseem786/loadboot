@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // bi.js — Business Intelligence (Inc 64). One staff-only executive summary + trend series, computed entirely
 // from real rows by cc_bi_executive_summary / cc_bi_timeseries. Every figure is counted (never estimated);
 // on-time % explicitly states its basis. CSV export flattens the summary for offline analysis.

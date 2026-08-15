@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // controlTower.js — Trip Control Tower (Increments 50–51). Live active-trip board: status, last location with
 // SOURCE + freshness (never invented — 'n/a' until a consented check-in exists), consent/tracking method,
 // booking-checklist gaps, open exceptions, and the computed NEXT REQUIRED ACTION per trip. Staff-gated.

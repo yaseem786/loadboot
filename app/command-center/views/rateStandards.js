@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // rateStandards.js — staff editor for marketplace rate standards (detention/layover/
 // TONU/lumper/RPM benchmarks etc.). Reads cc_rate_standards, writes cc_set_rate_standard
 // (dispatch.manage or settings.manage — server re-checks). Every change is audit-logged

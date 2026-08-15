@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // fleet.js — Enterprise Completion: Fleet & execution. Drivers and trucks per carrier with
 // license/medical expiry tracking (feeds the daily compliance scan). Reads/writes via
 // cc_fleet_* / cc_*_driver / cc_*_truck RPCs (fleet.view/manage), RBAC-gated + audited.

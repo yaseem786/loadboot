@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // partners.js — Control Tower Wave C: Brokers & Shippers.
 // Brokers and shippers as first-class records with contact, MC, billing terms and credit
 // limit. List + filter + search, create/edit in a drawer, status hold/active, and a

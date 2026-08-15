@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // analytics.js — Wave 6 Analytics. Operational dashboards over the live modules: headline
 // KPIs, dispatch-fee revenue trend, loads/trips breakdowns, on-time rate, top carriers.
 // All data via read-only cc_analytics_* RPCs (analytics.view), RBAC-gated + audited.

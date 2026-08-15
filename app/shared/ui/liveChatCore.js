@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // liveChatCore.js — LoadBoot live chat widget (self-hosted; AI assistant + human handoff).
 // Plain script (no imports) so the SAME file powers the marketing site and all portals.
 // Usage: window.LBChat.mount({ url, anon, origin, getToken? })

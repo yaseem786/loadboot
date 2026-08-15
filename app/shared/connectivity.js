@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // connectivity.js — online/offline banner. Phase 2A has NO offline mutation queue:
 // when offline, live areas show "Connection required" and mutations are disabled.
 // We never serve stale private data from cache (see service worker policy).

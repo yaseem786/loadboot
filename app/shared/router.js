@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // router.js — minimal dependency-free hash router for a single-page app shell.
 // Hash routing keeps everything client-side (no server rewrites needed) and keeps
 // private app state out of the URL path that search engines might index.

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // announcements.js — Control Tower Wave L: Announcements & Broadcast center.
 // Send an Info / Warning / Emergency / Promotion message to ALL carriers or one specific
 // carrier; it appears in their Carrier Portal (desktop + phone). Toggle active, set expiry.

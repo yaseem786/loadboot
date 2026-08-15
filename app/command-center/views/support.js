@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // support.js — Control Tower Wave D: Support / tickets.
 // A triage inbox for support requests: priority-ordered list, create, assign, and resolve.
 // Creating a ticket fires the support follow-up automation. Reads/writes via cc_*ticket*

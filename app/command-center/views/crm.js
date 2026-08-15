@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // crm.js — Wave 1 CRM & Sales. Pipeline overview + leads + lead detail (stage move,
 // activities, create). Reads/writes via cc_crm_* RPCs (crm.view/edit), all RBAC-gated
 // + audited server-side; creating a lead emits a domain event into the Automation Core.

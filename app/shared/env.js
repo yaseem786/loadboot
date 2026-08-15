@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // env.js — read + validate the build-injected environment.
 // The build (build_site.py) writes /app/env-config.js which sets window.__LB_ENV
 // with the project URL, anon (publishable) key, project id, and environment name.

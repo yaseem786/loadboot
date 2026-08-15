@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // supabaseClient.js — single shared Supabase client (auth + RPC only).
 // Loaded from a PINNED CDN build of supabase-js. The anon/publishable key is the
 // only credential in the browser; all privileged logic is server-side (RLS + RPC).

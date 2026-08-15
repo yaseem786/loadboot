@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // dispatchers.js — CC DISPATCHERS module: the salaried, verified dispatch workforce.
 // Pipeline (applied → screening → skills_test → trial → verified → active), carrier
 // assignment + per-carrier SOP, and salary (base + per-active-truck + performance bonus).

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // app.js — Command Center V1 bootstrap.
 // Flow: validate env -> require session (else login) -> load staff context ->
 // deny if not staff -> render shell + guarded hash router. Every privileged action
