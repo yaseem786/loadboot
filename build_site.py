@@ -739,6 +739,11 @@ with open(os.path.join(OUT,'sw.js'),'w',encoding='utf-8') as f: f.write(SW)
 # loadboot.com full-screen without the browser bar. The fingerprint is the SHA-256 of the
 # Play upload keystore (loadboot-upload.keystore) generated 2026-07-31. If that keystore is
 # ever regenerated, this fingerprint must be updated or the app falls back to browser chrome.
+# 2026-08-15: second fingerprint appended — new upload keystore loadboot-upload.keystore
+# (alias loadboot, pw in PLAY-KEYSTORE-NOTE.txt, NOT committed) after the 07-31 keystore was lost
+# with its ephemeral session. Old fingerprint kept — harmless.
+# 2026-08-15 (later): third fingerprint = GOOGLE PLAY APP-SIGNING cert (from Play Console
+# App integrity) — this is the one devices actually see; required for TWA full-screen.
 # IndexNow key file — proves site ownership so we can ping search engines the moment
 # a page is published (bing.com/indexnow). Ping URL (open after any deploy):
 #   https://api.indexnow.org/indexnow?url=https://loadboot.com/sitemap.xml&key=98c78c14a552b1f4ee3c80a2e791179c
@@ -748,7 +753,7 @@ with open(os.path.join(OUT, '98c78c14a552b1f4ee3c80a2e791179c.txt'), 'w', encodi
 _wk = os.path.join(OUT, '.well-known')
 os.makedirs(_wk, exist_ok=True)
 with open(os.path.join(_wk, 'assetlinks.json'), 'w', encoding='utf-8') as f:
-    f.write('[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.loadboot.app","sha256_cert_fingerprints":["A6:5D:53:C0:27:9A:1C:C6:93:37:43:EB:64:AF:B8:05:21:01:0E:98:8B:AC:49:82:33:85:B5:5F:E9:28:6E:06"]}}]')
+    f.write('[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.loadboot.app","sha256_cert_fingerprints":["A6:5D:53:C0:27:9A:1C:C6:93:37:43:EB:64:AF:B8:05:21:01:0E:98:8B:AC:49:82:33:85:B5:5F:E9:28:6E:06","A7:F2:AA:FE:A3:00:CE:25:43:BD:5D:F0:E1:9D:17:97:73:51:4D:B7:34:2A:7B:78:26:94:2F:3C:EE:91:F1:48","BA:6D:94:58:1C:98:59:6D:50:23:D0:AA:E7:8E:A3:8A:5A:50:DE:16:F7:04:89:56:EF:24:14:3E:DC:54:AB:25"]}}]')
 
 ROAD = '''<section class="road-sec"><div class="wrap">
 <div class="sec-head reveal"><div class="eyebrow">Always Moving</div><h2>Your truck, loaded and rolling &mdash; coast to coast</h2><p class="lead">We keep freight moving across all 48 states, day and night.</p></div>
