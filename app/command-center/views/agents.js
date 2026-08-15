@@ -130,8 +130,8 @@ export function renderAgents(host) {
               const t9 = String(full9 || ''); if (!t9) return null;
               let shown9 = false;
               const val9 = el('b', { style: 'text-align:right;word-break:break-all;color:#0f172a;cursor:pointer;user-select:all', title: 'Click to reveal / hide' }, '•••' + t9.slice(-(keep9 || 4)));
-              const cp9 = el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'padding:1px 7px;font-size:.7rem', title: 'Copy full value', onClick: async (ev) => {
-                try { await navigator.clipboard.writeText(t9); const b = ev.currentTarget; b.textContent = '✓'; setTimeout(() => { b.textContent = '⧉'; }, 1200); }
+              const cp9 = el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'padding:1px 7px;font-size:.7rem', title: 'Copy full value', onClick: async (ev) => { const __el9 = ev.currentTarget;
+                try { await navigator.clipboard.writeText(t9); const b = __el9; b.textContent = '✓'; setTimeout(() => { b.textContent = '⧉'; }, 1200); }
                 catch (_) { toast('Copy failed — click the value to reveal it', 'error'); }
               } }, '⧉');
               val9.onclick = () => { shown9 = !shown9; val9.textContent = shown9 ? t9 : ('•••' + t9.slice(-(keep9 || 4))); };
@@ -192,27 +192,28 @@ export function renderAgents(host) {
                 '📨 Details requested ' + fmtDate(pd.details_requested.at) + ' — waiting on the agent: ' + (pd.details_requested.fields || []).join(', ')) : null,
               // ---- alternative-rail review actions (only when the agent picked "Other") ----
               m9 === 'other' ? el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [
-                MISS9.length ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', title: 'Email + in-app request listing exactly which receiving details are still missing', onClick: async (ev) => {
+                MISS9.length ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', title: 'Email + in-app request listing exactly which receiving details are still missing', onClick: async (ev) => { const __el9 = ev.currentTarget;
                   if (!await askConfirm('Request receiving details', { body: 'Email + in-app request will ask this agent for: ' + MISS9.join(', ') + '. Their onboarding screen unlocks so they can add them.', confirmLabel: 'Send request' })) return;
-                  const b = ev.currentTarget; b.disabled = true;
+                  const b = __el9; b.disabled = true;
                   try { await ccAgentPayoutRequestDetails(x.user_id, MISS9, null); toast('Request sent — agent notified by email + in-app', 'success'); open360(x); }
                   catch (e) { b.disabled = false; toast(humanizeError(e), 'error'); }
                 } }, [icon('bell',15),' Request receiving details']) : null,
                 (!appr9 && !MISS9.length) ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#0f766e;border-color:#0f766e', title: 'Record that this rail can legally receive an international USD payment in the agent’s own name', onClick: async (ev) => {
                   const why = await askReason('Approve this payout method — what did you confirm?', { note: 'This records your assessment of the RAIL. Verifying the account numbers is still a separate step.', submitLabel: 'Approve method' });
                   if (!why) return;
-                  const b = ev.currentTarget; b.disabled = true;
+                  const b = __el9; b.disabled = true;
                   try { await ccAgentPayoutApproveMethod(x.user_id, why); toast('Method approved — you can now verify the account', 'success'); open360(x); }
                   catch (e) { b.disabled = false; toast(humanizeError(e), 'error'); }
+  or(e), 'error'); }
                 } }, [icon('check',15),' Approve this method']) : null,
               ].filter(Boolean)) : null,
-              el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [(pd.payout_status!=='verified' && !(m9 === 'other' && !appr9)) ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#16a34a;border-color:#16a34a', onClick: async (ev) => { const b=ev.currentTarget; if(!await askConfirm('Verify payout',{ body:'Mark this payout method as verified? Payouts can be sent here.' })) return; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,true,null); toast('Payout verified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('check',15),' Verify bank details']) : null,pd.payout_status!=='rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const r=await askReason('Reject payout details — reason (agent sees this + gets an email):'); if(!r) return; const b=ev.currentTarget; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,false,r); toast('Payout rejected — agent notified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('x',15),' Reject with reason']) : null,].filter(Boolean)),
+              el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [(pd.payout_status!=='verified' && !(m9 === 'other' && !appr9)) ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#16a34a;border-color:#16a34a', onClick: async (ev) => { const b=__el9; if(!await askConfirm('Verify payout',{ body:'Mark this payout method as verified? Payouts can be sent here.' })) return; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,true,null); toast('Payout verified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('check',15),' Verify bank details']) : null,pd.payout_status!=='rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const __el9 = ev.currentTarget; const r=await askReason('Reject payout details — reason (agent sees this + gets an email):'); if(!r) return; const b=__el9; b.disabled=true; try{ await ccAgentPayoutVerify(x.user_id,false,r); toast('Payout rejected — agent notified','success'); open360(x);}catch(e){ b.disabled=false; toast(humanizeError(e),'error'); } } }, [icon('x',15),' Reject with reason']) : null,].filter(Boolean)),
             ].filter(Boolean));
           })(),
           el('div', { style: 'margin-top:10px' }, [docRow('🪪 Government photo ID', pd.id_doc, 'id'), docRow('🏦 Bank proof', pd.bank_doc, 'bank')]),
           el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [...((['approved','active'].includes(String(p.status || ''))) ? [el('span', { class: 'cc-pill cc-pill-green', style: 'align-self:center;font-weight:800;padding:8px 12px' }, '✓ Approved — chain earning live')] : [act('✓ Approve', 'approve'), act('？ More info', 'info', 'lb-btn-secondary'), act('✕ Reject', 'reject', 'lb-btn-secondary')]),
             el('button', { class: 'lb-btn lb-btn-sm', title: 'Email + in-app reminder listing what this agent still needs to finish onboarding', onClick: async (ev) => {
-              const b = ev.currentTarget; const w = b.textContent; b.disabled = true;
+              const b = __el9; const w = b.textContent; b.disabled = true;
               const miss = [];
               if (!p.agreement_signed_at) miss.push('sign the agent agreement');
               if (!p.payout_method) miss.push('add your payout method');

@@ -33,20 +33,42 @@ let started = false;
 
 // ---------------------------------------------------------------- helpers
 
+// A JWT is three dot-separated segments. The first two start with eyJ (base64 of '{"'),
+// the SIGNATURE does not — so a pattern anchored only on eyJ leaves the signature behind.
+// That is not a theoretical gap: a real Supabase signup callback was captured in
+// production with the header and payload masked and the signature still readable.
+// Match the whole thing, dots included.
+const JWT = /eyJ[A-Za-z0-9_-]{5,}(?:\.[A-Za-z0-9_-]+){0,2}/g;
+
+// Anything shaped like a credential, whatever it is called. Denylisting known token
+// formats only protects against the formats you thought of; this catches the parameter
+// regardless of what the value looks like.
+const CREDENTIAL_PARAM =
+  /\b(access_token|refresh_token|id_token|provider_token|auth_token|token|apikey|api_key|secret|password|passwd|pwd|session|sig|signature)\b\s*[=:]\s*[^&\s"'}\]]+/gi;
+
 function scrub(s) {
   return String(s == null ? '' : s)
     .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '<email>')
-    .replace(/eyJ[A-Za-z0-9_-]{10,}/g, '<token>')
+    .replace(CREDENTIAL_PARAM, '$1=<redacted>')
+    .replace(JWT, '<token>')
     .replace(/sb_[a-z]+_[A-Za-z0-9_-]{10,}/g, '<token>')
+    .replace(/\b[A-Za-z0-9_-]{40,}\b/g, '<opaque>')   // long opaque strings are never useful here
     .replace(/\d{9,}/g, '<num>')
     .slice(0, 2000);
 }
 
-// Route without the query string: query strings carry ids and tokens, and two users
-// hitting the same screen must land on the same fingerprint.
+// The route is a grouping key, not a record of where the user was. Query strings and
+// fragment payloads carry ids and tokens, and two users on the same screen must land on
+// the same fingerprint — so both goals point the same way: keep the path, drop the rest.
+//
+// '#/broker?id=...' -> '#/broker'   (a route with parameters)
+// '#access_token=...' -> '#<redacted>'  (not a route at all — an auth callback payload)
 function route() {
-  try { return scrub(location.pathname + (location.hash || '')).slice(0, 256); }
-  catch (_) { return ''; }
+  try {
+    let hash = (location.hash || '').split(/[?&]/)[0];
+    if (hash.indexOf('=') !== -1) hash = '#<redacted>';
+    return scrub(location.pathname.split('?')[0] + hash).slice(0, 256);
+  } catch (_) { return ''; }
 }
 
 function portal() {
