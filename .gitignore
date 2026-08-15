@@ -20,3 +20,7 @@ ga-service-account.json
 
 # Cowork device-bridge workaround: git lock files moved here (bridge cannot unlink)
 _to_delete/
+
+# Play upload keystore — NEVER commit
+loadboot-upload.keystore
+PLAY-KEYSTORE-NOTE.txt
