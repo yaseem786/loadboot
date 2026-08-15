@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // avatar.js — self-contained profile-avatar editor (#31). Shows the user's own photo
 // (or initials fallback) and lets them upload/replace it. Stored in the private
 // documents bucket under {auth.uid()}/avatar/... and recorded via cc_set_my_avatar.

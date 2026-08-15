@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // systemHealth.js — Observability & System Health (Phase 1). Surfaces the live
 // platform signals from cc_system_health: event-outbox health, automation tasks,
 // notification delivery, scheduled (pg_cron) jobs and security events, with an

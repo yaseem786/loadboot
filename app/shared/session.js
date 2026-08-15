@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // session.js — authentication/session surface for both apps.
 // Auth is owned by Supabase Auth. MFA truth = AAL from Auth (addendum §11): we read
 // the assurance level from Auth, never from a duplicated profile column.

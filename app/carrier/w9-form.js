@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
 // W-9 tax setup — Amazon Seller Central-style guided interview + completed-form print.
 // Records via cc_carrier_submit_w9 (compliance requirement 'w9' -> pending -> Command

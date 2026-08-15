@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // sw-register.js — register the app service worker (scope /app/) and surface an
 // instant "update available" prompt so installed PWAs (mobile home-screen app)
 // pick up new deploys immediately instead of only on a cold reopen.

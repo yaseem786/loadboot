@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // fleetExpiry.js — cross-carrier CDL / medical-card expiry monitor. Warn the carrier with one
 // click (owner notified instantly). Reads cc_fleet_expiry_board, writes cc_warn_driver_expiry.
 import { el, mount } from '../../shared/ui/dom.js';

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // verificationCenter.js — Command Center: Carrier Verification Center (ct-waveBH).
 // Verifies carriers against the OFFICIAL FMCSA QCMobile API (fmcsa-verify edge fn),
 // compares the official record to what the carrier submitted, computes discrepancies

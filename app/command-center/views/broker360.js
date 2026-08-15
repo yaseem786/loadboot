@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // broker360.js — one-stop Broker/Partner 360 (Carrier-360 parity for the broker side):
 // packet review with file previews + verify/reject, FMCSA lookup, loads, claims, health, timeline.
 import { el, mount } from '../../shared/ui/dom.js';

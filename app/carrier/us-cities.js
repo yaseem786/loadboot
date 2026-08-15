@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // us-cities.js — offline 'City, ST' suggestion list for address/home-base inputs.
 // No external API: fast, free, works on mobile. ~342 major US freight cities.
 export const US_CITIES = [

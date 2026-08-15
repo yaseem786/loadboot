@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // lcOnboard.js — LoadBoot live-chat onboarding concierge (marketing site).
 // Runs INSIDE the live chat widget (liveChatCore.js) via the LBChat._ob extension hooks.
 // Full signup + onboarding without leaving the chat: role → FMCSA verify → contact →

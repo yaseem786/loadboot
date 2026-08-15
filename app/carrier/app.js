@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // app.js — LoadBoot Carrier Portal. A full, responsive carrier-facing web app:
 // desktop shows a sidebar dashboard; mobile collapses to a bottom tab bar. Carriers
 // sign in / self-register, then see ONLY their own data via self-scoping cc_pocket_*
@@ -3153,22 +3154,17 @@ async function appView(user) {
       if (!navigator.geolocation) return res9(null);
       navigator.geolocation.getCurrentPosition((p9) => res9(p9), () => res9(null), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
     });
-    if (!pos9) {
-      mount(content, h('div', { class: 'cp-card', style: 'max-width:560px;margin:40px auto;text-align:center;padding:36px 28px' }, [
-        h('div', { style: 'font-size:52px;line-height:1' }, '\ud83d\udccd'),
-        h('div', { class: 'cp-row-t', style: 'font-size:1.2rem;margin:14px 0 6px' }, 'Turn on location to open the Load Board'),
-        h('div', { class: 'cp-muted', style: 'line-height:1.7;margin-bottom:10px' }, 'LoadBoot shows REAL road deadhead from where your truck is right now to every pickup \u2014 and uses geofenced GPS check-ins as your proof for detention and on-time pay. Without your location the board would show you wrong numbers, so it stays locked.'),
-        h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.25);border-radius:12px;padding:10px 14px;font-size:.8rem;text-align:left;margin-bottom:14px' }, [
-          '\u2713 Used only while you use the app \u2014 shown to brokers only AFTER you book their load', h('br'),
-          '\u2713 Powers real deadhead miles, arrival proof and detention evidence', h('br'),
-          '\u2713 Never sold, never shared outside your booked trips',
-        ]),
-        h('button', { class: 'cp-btn', style: 'width:100%', onClick: () => loadLoads() }, '\ud83d\udccd Enable location & open the board'),
-        h('div', { class: 'cp-muted', style: 'font-size:.72rem;margin-top:10px' }, 'Blocked it by mistake? Tap the \ud83d\udd12/\u24d8 icon in the address bar \u2192 Site settings \u2192 Location \u2192 Allow, then press the button again.'),
-      ]));
-      return;
-    }
-    window.__lbPos = pos9;
+    // \ud83d\udccd BOARD-FIRST: location is now OPTIONAL for BROWSING (soft banner below) and
+    // REQUIRED at BOOKING time (see lbEnsurePos in the book flow) \u2014 anti-fraud stays intact:
+    // no booking request leaves without live GPS, geofenced check-ins unchanged.
+    window.__lbPos = pos9 || null;
+    const gpsBanner = pos9 ? null : h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+      h('div', { style: 'min-width:200px;flex:1' }, [
+        h('div', { class: 'cp-row-t' }, '\ud83d\udccd Turn on location to see your real deadhead'),
+        h('div', { class: 'cp-row-s' }, 'Browse freely \u2014 with location ON, every load shows true road miles from your truck to pickup. GPS is required when you book (it powers your detention pay proof).'),
+      ]),
+      h('button', { class: 'cp-btn cp-btn-sm', style: 'flex:none', onClick: () => loadLoads() }, 'Enable location'),
+    ]);
     // Dispatch preferences drive matching — nudge (action tone) until they are set.
     (async () => {
       try {
@@ -3466,16 +3462,49 @@ async function appView(user) {
         ]);
       }
     } catch (_) {}
-    if (!rows || !rows.length) { mount(availWrap, h('div', null, [truckCard, setupBanner, bestCard, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No available loads right now. Check back soon.'))].filter(Boolean))); mount(content, h('div', null, [capNudge, tabsBar, reqHost, availWrap].filter(Boolean))); return; }
+    if (!rows || !rows.length) { mount(availWrap, h('div', null, [truckCard, setupBanner, bestCard, (function () {
+      const dp9 = _dp || {};
+      const prefsSet9 = !!(dp9.min_rpm || (dp9.preferred_equipment || []).length || (dp9.preferred_lanes || []).length);
+      return h('div', { class: 'cp-card', style: 'text-align:center;padding:34px 22px' }, [
+        h('div', { style: 'font-size:46px;line-height:1' }, '\ud83d\udef0'),
+        h('div', { class: 'cp-row-t', style: 'font-size:1.15rem;margin:12px 0 6px' }, 'Your dispatcher is out hunting freight for you'),
+        h('div', { class: 'cp-muted', style: 'max-width:540px;margin:0 auto;line-height:1.7' }, 'LoadBoot is not a wall of 10,000 stale reposts \u2014 every load that appears here is real, verified, and gone the second it books. Freight lands from broker partners and direct shippers; the moment one matches your lanes and equipment you get an instant alert.'),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px' }, [
+          h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('account') }, prefsSet9 ? '\ud83c\udfaf Tune your lanes & rate' : '\ud83c\udfaf Tell us your lanes & rate'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('rates') }, '\ud83d\udcc8 Market rates'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('fleet') }, '\ud83d\ude9b Add your truck'),
+        ]),
+        h('div', { class: 'cp-row-s', style: 'margin-top:14px;color:#94a3b8' }, '\u2b06 Post your truck above \u2014 matching loads auto-alert you, and your dispatcher sees exactly where you free up next.'),
+      ]);
+    })()].filter(Boolean))); mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean))); return; }
     renderList = () => {
       const shown = applyFilters(rows);
       const grid = document.getElementById('cp-loadgrid-host');
       if (grid) { grid.innerHTML = ''; shown.forEach(l => grid.appendChild(loadCard(l))); if (!shown.length) grid.appendChild(h('div', { class: 'cp-muted' }, 'No loads match your filters.')); }
     };
+    // \ud83d\udd12 GPS gate moved from browse-time to BOOK-time: a booking request never leaves
+    // without a live position \u2014 asks for permission right here if the carrier skipped it.
+    async function lbEnsurePos() {
+      if (window.__lbPos) return true;
+      const p9b = await new Promise((res9) => {
+        if (!navigator.geolocation) return res9(null);
+        navigator.geolocation.getCurrentPosition((p9) => res9(p9), () => res9(null), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+      });
+      if (p9b) { window.__lbPos = p9b; try { loadLoads(); } catch (_) {} return true; }
+      openModal('\ud83d\udccd Location required to book', [
+        h('div', { style: 'text-align:center;padding:6px 0' }, [
+          h('div', { style: 'font-size:44px;line-height:1' }, '\ud83d\udccd'),
+          h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'Turn on location to send a booking request'),
+          h('div', { class: 'cp-row-s', style: 'max-width:340px;margin:0 auto' }, 'Brokers see your live deadhead with every request, and your GPS arrive/depart stamps are the proof that gets detention PAID. Blocked it by mistake? Tap the \ud83d\udd12/\u24d8 icon in the address bar \u2192 Site settings \u2192 Location \u2192 Allow, then try again.'),
+        ]),
+      ]);
+      return false;
+    }
     const loadCard = (l) => (function () {
       const rpm = l.rpm ? '$' + Number(l.rpm).toFixed(2) + '/mi' : '';
       const bookWrap = h('div', { class: 'cpx-req-bw' });
       const book = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
+        if (!(await lbEnsurePos())) return;
         if (!ov.compliance_ok) {
           const closeV = openModal('Verify your account first', [
             h('div', { style: 'text-align:center;padding:6px 0' }, [
@@ -3555,7 +3584,8 @@ async function appView(user) {
         return;
       } }, 'Request to book');
       bookWrap.appendChild(book);
-      const counter = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+      const counter = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+        if (!(await lbEnsurePos())) return;
         if (!ov.compliance_ok || (l.hazmat && !hazVerified)) { book.click(); return; }
         const rateIn = h('input', { class: 'cp-in', type: 'number', placeholder: 'Your all-in rate ($)' });
         const noteIn = h('input', { class: 'cp-in', placeholder: 'Optional note to the broker' });
@@ -3912,7 +3942,7 @@ async function appView(user) {
     })();
     const gridHost = h('div', { class: 'cp-loadgrid', id: 'cp-loadgrid-host' });
     mount(availWrap, h('div', null, [truckCard, filterBar, setupBanner, bestCard, gridHost].filter(Boolean)));
-    mount(content, h('div', null, [capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
+    mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
     renderList();
   }
 

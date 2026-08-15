@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // accountHealth.js — Amazon-style ACCOUNT HEALTH per account holder, LIVE-computed worst-first.
 // Clickable/expandable detail + SUGGESTED warning that pre-fills the issue form from real deductions.
 import { el, mount } from '../../shared/ui/dom.js';

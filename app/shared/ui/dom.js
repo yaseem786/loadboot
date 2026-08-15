@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // dom.js — tiny safe DOM helpers. `el()` never sets innerHTML from data, so values
 // are inserted as text nodes (XSS-safe by construction).
 export function el(tag, attrs, children) {

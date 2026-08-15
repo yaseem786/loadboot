@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // loadPilot.js — AI Load Pilot drawer. Max input → max output: load economics (RPM, est. margin), data trust,
 // source reliability, lane history, timing, completeness — each factor itemized with points — plus a carrier
 // PUSH ranking that folds in each carrier's last known location (real deadhead when coords exist) and their

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // content.js — Wave 7 Content / Marketing. Manage blog posts (draft/published/archived)
 // and editable site pages. Reads/writes via cc_content_* / cc_*_post / cc_*_page RPCs
 // (content.view/edit/publish), all RBAC-gated + audited. Publishing emits a marketing

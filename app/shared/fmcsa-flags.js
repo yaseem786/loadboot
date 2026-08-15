@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // fmcsa-flags.js — automatic FMCSA risk flags for staff review (CC Carrier 360 / onboarding).
 // Pulls the same public FMCSA datasets the carrier "My Profile" uses and turns them into
 // red/amber flags so the reviewer never has to compute rates by hand.

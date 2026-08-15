@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // Premium Account & Settings — the LOCKED design ported into the live carrier app.
 // Renders hero + metric strip + sub-tab nav + rich section cards, wired to real data.
 import { openSignModal, printExecutedAgreement } from './dispatch-agreement.js';

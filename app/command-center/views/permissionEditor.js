@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // permissionEditor.js — Amazon Seller-Central-style per-user permission matrix.
 // Shows every permission grouped by category with a checkbox. Check = allow, uncheck =
 // remove. Permissions inherited from a role are honored; an explicit override (allow/deny)

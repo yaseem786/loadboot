@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // pluginMarketplace.js — Command Center: Plugin Marketplace (ct-waveBH).
 // A safe extension platform. Each plugin is a reviewed manifest (scopes, data
 // accessed, outbound domains, required secrets). Install goes through an explicit

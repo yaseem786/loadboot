@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // financeAnalytics.js — Finance Analytics. Real charts over the dispatch-fee ledger:
 // monthly gross + fee + collected series, AR aging buckets, invoice-status mix, and
 // top carriers by fee. All data comes from the staff-gated cc_finance_analytics RPC

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // emailBuilder.js — Command Center: Visual Email Builder (ct-waveBH, Directive §12.3).
 // Block-based composer (heading, text, button, image, divider, spacer) → generates
 // responsive, brand-kit-styled email HTML and saves it into the existing Template Studio

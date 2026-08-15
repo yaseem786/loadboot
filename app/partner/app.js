@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // app.js — LoadBoot Partner Portal. One responsive web app that serves the three
 // non-carrier partner types — BROKER, SHIPPER and FACILITY — adapting to the kind of
 // account the signed-in user holds. Like the carrier portal, every read/write is a

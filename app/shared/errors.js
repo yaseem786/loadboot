@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // errors.js — translate raw RPC/transport errors into safe, human messages.
 // Never leak SQL text, stack traces, or internal identifiers to the UI.
 export function humanizeError(e) {

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // storage.js — carrier-facing document uploads to the private `documents` bucket.
 // Files are stored under the uploader's own user folder (`{auth.uid()}/…`), which is
 // exactly what the storage RLS policy (doc_read/doc_upload) and the documents-table

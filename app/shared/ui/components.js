@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // components.js — premium UI building blocks shared by Command Center views.
 // All code-defined; values from data are inserted as text nodes (XSS-safe).
 import { el } from './dom.js';

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // chatWidget.js — mounts the real LoadBoot live chat (AI assistant + human handoff)
 // in the portals. Auto-mounts on import for carrier/partner/agent; the Command
 // Center is skipped (staff answer chats in CC → Live chat instead of chatting with

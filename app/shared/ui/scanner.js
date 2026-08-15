@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // scanner.js — dependency-free "Scan to PDF": camera/gallery photos → one PDF.
 // Builds a minimal, valid PDF where each page embeds a JPEG (DCTDecode) at full page size.
 // No external libraries, works offline. Output: Blob (application/pdf).

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // placeholder.js — honest "not built yet" panel for Phase 2A non-functional modules.
 // No fake metrics or dev data — the addendum forbids fake data in a production-like build.
 import { el, mount } from '../../shared/ui/dom.js';

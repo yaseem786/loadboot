@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // analyticsWeb.js — Control Tower Wave A: Analytics Control Center.
 // First-party, privacy-safe web analytics over the live beacon pipeline: live visitors,
 // traffic overview, top pages, referrers, and AI-assistant (ChatGPT/Perplexity/…) referrals.

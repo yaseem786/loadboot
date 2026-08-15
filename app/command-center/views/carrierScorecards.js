@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // carrierScorecards.js — Carrier Performance Scorecards. Deterministic, explainable score per carrier
 // (score == sum of shown factor points), computed only from real trips/offers/exceptions. No invented data.
 import { el, mount } from '../../shared/ui/dom.js';

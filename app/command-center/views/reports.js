@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // reports.js — Control Tower Wave E: Reports center.
 // Pick a report (finance, carriers, operations, sales, website, compliance) and a time
 // window; the server returns a typed table that renders here and exports to CSV / Excel /

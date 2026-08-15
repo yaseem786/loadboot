@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // carriers.js — Carrier directory + detail drawer.
 // Reads: cc_list_carriers / cc_get_carrier. Mutations: cc_set_carrier_status
 // (carriers.approve, scope-checked + audited server-side). Permission-denied is

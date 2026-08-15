@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // loads.js — Loads & trips. Read cc_list_loads / cc_get_load; create via cc_create_load
 // (loads.create), assign carrier via cc_assign_load and move status via cc_set_load_status
 // (loads.assign, scope-checked + audited). Every action is re-authorized server-side.

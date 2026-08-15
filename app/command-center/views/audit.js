@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // audit.js — Audit viewer (functional in 2A). Reads via get_audit_logs (audit.view).
 import { el, mount } from '../../shared/ui/dom.js';
 import { getAuditLogs } from '../../shared/api.js';

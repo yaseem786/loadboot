@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // brandKit.js — Command Center: Marketing Brand Kit (ct-waveBH).
 // One reusable brand identity (logo, colors, fonts, footers, social links) that the
 // Template Studio, campaigns, portal banners and landing pages draw from. Live preview.

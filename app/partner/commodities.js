@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // commodities.js — curated US freight commodity list → default equipment.
 // Used by the post-load wizard: datalist autocomplete + equipment suggestion.
 // Equipment codes must match the wizard's Equipment options.

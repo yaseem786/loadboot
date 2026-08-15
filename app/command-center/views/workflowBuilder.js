@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // workflowBuilder.js — Workflow Builder (Increment 63, v1). Structured multi-step builder: add typed nodes
 // (trigger → condition/delay/task/notification/email → end), connect condition true/false branches, validate,
 // SIMULATE against a sample event (no side effects), publish, run history. Guardrails live server-side:

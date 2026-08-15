@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // systemModules.js — Platform Module Registry (System Health area). Reads the live
 // app_private.platform_modules registry via cc_list_modules / cc_module_summary.
 // This is the "module factory" control surface: every capability and its status,

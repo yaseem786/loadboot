@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // settings.js — typed system settings (settings.manage). Reads/writes via the
 // allowlisted get_setting / set_setting RPCs. Only known, typed keys are exposed;
 // the server validates type + bounds and audits every change.

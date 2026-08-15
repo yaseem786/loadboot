@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // prefs-strength.js v2 — Carrier Preferences Completion System (LinkedIn-style).
 // Ring card (fully clickable) → checklist sheet of all sections → chip popups with PREFILL
 // (edit any answered section) → save auto-advances to the next missing section (chain) → 🎉 at 100%.

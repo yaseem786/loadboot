@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // exporters.js — client-side CSV / Excel / PDF exports for Command Center tables.
 // No server libraries: CSV and Excel are built as Blobs and downloaded; PDF reuses a
 // clean print window (browser "Save as PDF"). Columns are [{key,label,fmt?}]; rows are

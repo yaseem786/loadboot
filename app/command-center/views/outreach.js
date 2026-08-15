@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // outreach.js — Outreach CRM: the automated email acquisition engine dashboard.
 // Shows engine state, contact CRM (carrier/broker/shipper), per-template send
 // results and campaign clicks/signups. Controls: enable/disable, caps, run-now.

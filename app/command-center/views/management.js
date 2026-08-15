@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // management.js — Enterprise Completion: Management dashboard. Executive summary across the
 // whole operation, lane rate history, and a system-health strip. Read-only via
 // cc_management_dashboard / cc_lane_history / cc_system_health (staff-gated).

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // printDoc.js — renders a document payload (from cc_invoice_document / cc_ratecon_document)
 // into a clean printable window the user can save as PDF via the browser. No server PDF lib.
 const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });

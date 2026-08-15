@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // iosInstall.js — iPhone/iPad Safari users get a one-time premium "Add to Home Screen"
 // guide (PWA install has no native prompt on iOS). Shows once per 14 days, never when
 // already installed (standalone), dismissible. Plain script — safe on portals + site.

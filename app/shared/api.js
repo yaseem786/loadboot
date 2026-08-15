@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // api.js — thin, typed wrappers over the server RPCs (migrations 0016–0019).
 // Every call is authorized server-side; these wrappers only shape arguments and
 // normalize errors. No business logic lives here.

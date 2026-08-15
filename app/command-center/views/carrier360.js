@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // carrier360.js — Control Tower Wave B: Carrier 360 record page.
 // One screen that ties together everything already in the system for a single carrier:
 // profile, compliance, safety grade, documents, drivers, trips, finance, and an audit

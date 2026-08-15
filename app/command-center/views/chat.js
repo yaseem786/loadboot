@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // chat.js — Control Tower Wave H: staff team chat.
 // A lightweight live channel for the ops team. Posts via cc_post_chat, reads via
 // cc_list_chat (polled every 4s for new messages). author_user is the trusted identity;

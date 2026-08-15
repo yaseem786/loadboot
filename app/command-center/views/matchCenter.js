@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // matchCenter.js — Match Center (Increments 45–46). For a given load, shows ranked ELIGIBLE carriers as cards
 // with an explainable score breakdown (deadhead/ETA honestly marked unavailable — no invented GPS), and a
 // collapsible list of INELIGIBLE carriers with their exact hard-fail reasons. An ineligible carrier is never

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // campaigns.js — Control Tower Wave L: Marketing Campaign manager.
 // Create a UTM-tagged campaign, get a ready-to-share tracking link, and see live
 // performance (sessions + conversions) pulled from first-party web analytics by utm_campaign.

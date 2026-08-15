@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // seo.js — Control Tower Wave A: SEO & Website control center.
 // Two surfaces: Keyword tracking (rank, best/previous position, intent, priority) and a
 // Redirect manager (301/302 with loop + chain validation server-side). Keyword positions

@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // flags.js — Feature Flags (functional in 2A). Reads/writes via flags.manage RPCs.
 import { el, mount } from '../../shared/ui/dom.js';
 import { getFeatureFlags, setFeatureFlag } from '../../shared/api.js';

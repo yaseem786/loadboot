@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // app.js — LoadBoot Developer Portal. Any signed-in user can mint API keys and
 // call the public developer API (the dev-api edge function). Keys are shown once
 // at creation (only a hash is stored server-side) and can be revoked any time.

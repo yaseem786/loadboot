@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // agents.js — CC AGENTS module: every agent, full 360 — application + docs, chain,
 // downline (levels 2–5), earnings, payouts, message thread, notify/email. Built for
 // hundreds of agents: search + status filter + sortable summary table.

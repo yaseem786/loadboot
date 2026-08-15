@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // podReview.js — Command Center: POD Document Review Queue (migration cul_pod_review_workflow).
 // Lists pending trip PODs, opens a signed private preview, and lets an authorized reviewer
 // Approve or Reject (rejection requires a reason). Approval triggers invoice-prep exactly once

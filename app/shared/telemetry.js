@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // telemetry.js — real-user error and performance monitoring for the LoadBoot apps.
 //
 // WHY: until this existed, a broken deploy was invisible. A carrier whose app fails to

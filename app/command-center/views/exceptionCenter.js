@@ -1,3 +1,4 @@
+// lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // exceptionCenter.js — Exception Center (Increments 52–53). One queue for everything going wrong on active
 // trips: auto-detected detention (from REAL arrive/depart stamps — never invented), breakdowns, weather,
 // missed appointments. Detention drafts are visible but stay NON-billable until a dispatcher reviews them.
