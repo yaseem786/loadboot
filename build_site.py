@@ -523,7 +523,7 @@ RELATED = {
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
  'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
- 'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
+ 'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
  'case-studies.html':       [('carriers.html','For Carriers'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('pricing.html','Pricing')],
  'authority-dot-setup.html':[('new-authority-dispatch.html','New Authority Dispatch'),('boc3-ucr.html','BOC-3 / UCR Guide'),('form-2290-hvut.html','Form 2290 (HVUT)'),('ifta-fuel-tax.html','IFTA Guide'),('carrier-application.html','Apply as Carrier')],
@@ -3174,7 +3174,7 @@ BLOGPOSTS += [
   'Oversize load rates 2026: $4&ndash;$5.50/mi permit-only, $5&ndash;$8 escorted, $8&ndash;$15+ superloads. Permit and pilot-car costs, why the premium exists, and how to price the whole move.',
   'Oversize pays $4 to $15+ per mile in 2026 &mdash; but permits, pilot cars and daylight-only clocks eat amateurs alive. The real tiers, the real costs, and the pricing math for the whole move.', ''),
 ]
-RELATED['oversize-load-rates-per-mile.html'] = [('flatbed-dispatch.html','Flatbed Dispatch'),('market-rates.html','Market Rates Per Mile'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('detention-pay-policy.html','Detention Pay'),('carrier-application.html','Apply as Carrier')]
+RELATED['oversize-load-rates-per-mile.html'] = [('flatbed-dispatch.html','Flatbed Dispatch'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('detention-pay-policy.html','Detention Pay'),('carrier-application.html','Apply as Carrier')]
 rich_article('oversize-load-rates-per-mile.html',
  'Oversize Load Rates 2026: Pay Per Mile ($4&ndash;$15+)',
  'How much do oversize loads pay per mile? 2026 rates: $4–$5.50 permit-only, $5–$8 escorted, $8–$15+ superloads vs ~$3.72 legal flatbed. Permit fees, pilot car costs, and how to price the whole move.',
@@ -3184,6 +3184,150 @@ rich_article('oversize-load-rates-per-mile.html',
  OS_TOC, OS_BODY, OS_FAQ, feat_svg=OS_FEAT)
 THUMBS['oversize-load-rates-per-mile.html']=OS_FEAT
 READTIME['oversize-load-rates-per-mile.html']=10
+
+# ===== PREMIUM ARTICLE : Fuel surcharge in trucking (carrier + broker + shipper + agent) =====
+FS_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="fsg" x1="0" y1="0" x2="1" y2="1">'
+ '<stop offset="0" stop-color="#10223B"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
+ '<rect width="400" height="200" fill="url(#fsg)"/>'
+ '<text x="200" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#93c5fd">FUEL SURCHARGE FORMULA</text>'
+ '<rect x="34" y="70" width="332" height="52" rx="8" fill="#0b1220" opacity=".72"/>'
+ '<text x="200" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="#fff">(Diesel &#8722; Peg) &#247; MPG</text>'
+ '<text x="200" y="113" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#FC5305">= $0.23 &#8211; $0.47 per mile</text>'
+ '<text x="200" y="152" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8">DOE weekly index &#183; loaded miles &#183; 2026</text></svg>')
+FS_TOC=[('what-is','What a fuel surcharge actually is'),('formula','The FSC formula &mdash; three numbers, nothing else'),
+ ('doe','The DOE index every surcharge points at'),('worked','What FSC pays: worked 2026 examples'),
+ ('gap','Why FSC never covers all your fuel'),('all-in','All-in rates vs linehaul + FSC'),
+ ('brokers','For brokers &amp; shippers: an FSC that survives audit'),('writing','Getting the surcharge paid in writing')]
+FS_BODY=(
+'<p>The fuel surcharge is the most misunderstood line on a rate confirmation. Carriers treat it as bonus money. Brokers quote it as if it were charity. Shippers audit it once a year and discover they have been paying a peg nobody has updated since 2019. All three are wrong in the same way: the fuel surcharge is not a discount, a bonus or a courtesy &mdash; it is a <b>price-indexing mechanism</b>, and it has exactly three inputs. This guide shows the formula, the index it points at, what it pays in 2026 dollars, and the gap it leaves behind that quietly eats owner-operators.</p>'
+'<div class="callout cl-info"><span class="ic">&#128161;</span><div>Quick answer: fuel surcharge per mile = <b>(current diesel price per gallon &minus; the base &ldquo;peg&rdquo; price) &divide; truck MPG</b>. At $3.85/gal diesel with the common 6.0 MPG divisor, that is about <b>$0.43/mile</b> on a $1.25 peg, <b>$0.31/mile</b> on a $2.00 peg, and <b>$0.23/mile</b> on a $2.50 peg. Same fuel, same truck &mdash; the peg alone moves the money by nearly 90%.</div></div>'
+
+'<h2 id="what-is">What a fuel surcharge actually is</h2>'
+'<p>Freight rates are negotiated weeks or months before the truck rolls. Diesel is not. A lane priced when diesel sat at $3.40 becomes a losing lane at $4.60, and a windfall at $2.90. Rather than reprice every lane every week, the industry split the rate into two parts: a <b>linehaul</b> that covers the truck, the driver, the trailer and the profit, and a <b>fuel surcharge</b> that floats with the diesel market.</p>'
+'<p>That split matters more than it sounds. The linehaul is what you negotiated. The surcharge is what the formula produces. When a broker says &ldquo;I got you $3.10 a mile,&rdquo; the only useful follow-up question is: <em>is that linehaul, or is that all-in?</em> Because $3.10 all-in on a $0.43 surcharge is a $2.67 linehaul &mdash; and $2.67 is a very different business than $3.10.</p>'
+'<p>Four parties, four reasons to care:</p>'
+'<ul>'
+'<li><b>Carriers and owner-operators:</b> the surcharge is the only part of the rate that moves when your biggest variable cost moves. If it is missing, mispegged, or paid on the wrong miles, every diesel spike comes straight out of your margin.</li>'
+'<li><b>Brokers:</b> a published, indexed surcharge is the cheapest way to keep capacity through a fuel run-up without renegotiating a book of contracts. It is also the line most likely to be disputed on an invoice, so it needs to be defensible.</li>'
+'<li><b>Shippers:</b> the surcharge is a real, auditable cost of your freight, and a stale peg is a permanent overpayment (or a permanent capacity problem) hiding inside a routing guide.</li>'
+'<li><b>Referral partners:</b> carriers who understand FSC stay in business, and carriers who stay in business keep paying. It is worth 90 seconds of any <a href="agents.html">referral conversation</a>.</li>'
+'</ul>'
+
+'<h2 id="formula">The FSC formula &mdash; three numbers, nothing else</h2>'
+'<p>Almost every fuel surcharge in North American trucking, from a one-truck spot load to a Fortune 100 routing guide, is the same equation:</p>'
+'<div class="callout cl-info"><span class="ic">&#128207;</span><div><b>FSC per mile = (Current diesel $/gal &minus; Peg $/gal) &divide; MPG</b><br>Every argument about a fuel surcharge is really an argument about one of those three numbers.</div></div>'
+'<p><b>1. The current diesel price.</b> Not what you paid at the pump &mdash; what the agreed index says. Nearly always the DOE/EIA weekly average (below). Pump price varies by station, discount programs and state taxes; the index is neutral ground both sides can verify.</p>'
+'<p><b>2. The peg (or base, or threshold).</b> The diesel price at which the surcharge is zero &mdash; the fuel cost that is assumed to be baked into the linehaul already. <b>$1.25/gal</b> is the legacy peg inherited from the late 1990s and still surprisingly common. Modern contracts more often set <b>$2.00&ndash;$2.50</b>. A higher peg means a smaller surcharge and, in theory, a higher linehaul to compensate. In practice the linehaul does not always get raised, which is why the peg is worth reading before you sign.</p>'
+'<p><b>3. The MPG divisor.</b> The fuel economy the surcharge assumes. <b>6.0 MPG</b> is the default. Reefers running the box, heavy-haul and older equipment burn closer to 5.0&ndash;5.5; a modern aero tractor at light weight can beat 7.0. A lower divisor pays more surcharge per mile. If you run a reefer against a 6.5 divisor, the formula is quietly funding somebody else&rsquo;s truck.</p>'
+'<table class="cmp"><thead><tr><th>Input</th><th>Common setting</th><th>What moving it does</th></tr></thead><tbody>'
+'<tr><td>Index</td><td>DOE/EIA weekly national average</td><td>Regional (PADD) indexes can run $0.20&ndash;$0.60/gal off national</td></tr>'
+'<tr><td>Peg</td><td>$1.25 legacy &middot; $2.00&ndash;$2.50 modern</td><td>Each $0.25 of peg is about <b>$0.04/mile</b> at 6.0 MPG</td></tr>'
+'<tr><td>MPG divisor</td><td>6.0 standard &middot; 5.5 reefer/heavy</td><td>6.5 vs 5.5 changes FSC by roughly <b>$0.07/mile</b></td></tr>'
+'<tr><td>Miles paid</td><td>Loaded miles (most common)</td><td>Practical, all-miles surcharges are materially richer</td></tr>'
+'<tr><td>Update cadence</td><td>Weekly, effective Monday</td><td>Monthly resets lag a spike by up to four weeks</td></tr>'
+'</tbody></table>'
++svc_banner('Every LoadBoot load posts its fuel terms before you book',
+  'Linehaul, surcharge basis, detention, layover and TONU are on the rate card in writing &mdash; flat 5% dispatch, no contracts, no surprises at settlement.',
+  'See how booking works','how-it-works.html')+
+
+'<h2 id="doe">The DOE index every surcharge points at</h2>'
+'<p>The reference nearly every contract names is the <b>U.S. Energy Information Administration (EIA, part of the Department of Energy) weekly On-Highway Diesel Fuel Price</b>. It is published every Monday afternoon, it is free, and it reports a national average plus regional averages for the PADD districts (New England, Central Atlantic, Lower Atlantic, Midwest, Gulf Coast, Rocky Mountain, West Coast, and California broken out separately).</p>'
+'<p>Three details decide real money:</p>'
+'<ul>'
+'<li><b>National or regional?</b> California and the West Coast routinely price well above the national average; the Gulf Coast routinely prices below it. A West Coast carrier paid off the national index is under-recovered on every mile. A contract that says only &ldquo;the DOE index&rdquo; without naming which one is an argument waiting to happen.</li>'
+'<li><b>Which week applies?</b> The standard convention is that Monday&rsquo;s published number governs loads picking up that week. Some contracts use the prior week, some use a monthly average. In a fast-rising market a one-week lag is real money; in a falling market it is real money in the other direction.</li>'
+'<li><b>Effective on pickup or delivery?</b> On a five-day transcontinental move spanning a Monday reset, this is not academic. Pickup date is the cleaner and more common convention.</li>'
+'</ul>'
+'<p>None of this is exotic. It is simply the difference between a surcharge you can calculate yourself and a surcharge you have to take somebody&rsquo;s word on &mdash; and the second kind is how <a href="how-to-avoid-cheap-freight.html">cheap freight</a> disguises itself as a good rate.</p>'
+
+'<h2 id="worked">What FSC pays: worked 2026 examples</h2>'
+'<p>Take diesel at <b>$3.85/gal</b> &mdash; the working assumption in the LoadBoot <a href="cost-per-mile-calculator.html">cost-per-mile calculator</a>. Here is what the same truck, on the same lane, earns in surcharge under different terms:</p>'
+'<table class="cmp"><thead><tr><th>Peg</th><th>MPG divisor</th><th>FSC per mile</th><th>On a 500-mi load</th></tr></thead><tbody>'
+'<tr><td>$1.25</td><td>6.0</td><td><b>$0.43</b></td><td>$216</td></tr>'
+'<tr><td>$1.25</td><td>5.5 (reefer/heavy)</td><td><b>$0.47</b></td><td>$236</td></tr>'
+'<tr><td>$2.00</td><td>6.0</td><td><b>$0.31</b></td><td>$154</td></tr>'
+'<tr><td>$2.50</td><td>6.0</td><td><b>$0.23</b></td><td>$113</td></tr>'
+'<tr><td>$2.50</td><td>6.5</td><td><b>$0.21</b></td><td>$104</td></tr>'
+'</tbody></table>'
+'<p>Read the top and bottom rows together. Same diesel, same 500 miles, same truck: <b>$216 against $104</b>. Nothing about the freight changed. Only the paperwork did. That spread &mdash; a bit over $0.22 a mile &mdash; is larger than most carriers&rsquo; entire net margin per mile.</p>'
+'<p>Now put it against the market. LoadBoot publishes <a href="market-rates.html">spot rates all-in</a> &mdash; linehaul and fuel combined &mdash; because that is the number that pays your bills. In July 2026 the all-in averages ran about <b>$3.03/mi dry van</b>, <b>$3.39 reefer</b> and <b>$3.72 flatbed</b>. Decompose the van number at a $1.25 peg and 6.0 MPG: $3.03 all-in &minus; $0.43 surcharge = a <b>$2.60 linehaul</b>. That $2.60 is the number to compare against your true cost per mile, and it is the number a broker quoting &ldquo;$3.03&rdquo; is hoping you will not work out.</p>'
+
+'<h2 id="gap">Why FSC never covers all your fuel</h2>'
+'<p>Here is the part that catches new authorities. The surcharge is designed to cover the fuel cost <em>above the peg</em>, on <em>loaded miles only</em>. Your truck burns diesel below the peg too, and it burns diesel empty.</p>'
+'<p>Run the full picture on that 500-mile van load at $3.85/gal, 6.0 MPG, $1.25 peg, with 100 miles of deadhead to get to the shipper:</p>'
+'<ul>'
+'<li>Total miles driven: <b>600</b> (500 loaded + 100 empty)</li>'
+'<li>Diesel burned: 600 &divide; 6.0 = <b>100 gallons</b> &rarr; 100 &times; $3.85 = <b>$385 of fuel</b></li>'
+'<li>Surcharge collected: 500 loaded miles &times; $0.43 = <b>$216</b></li>'
+'<li><b>Fuel not covered by the surcharge: $169</b> &mdash; 44% of the fuel bill, which must come out of the linehaul</li>'
+'</ul>'
+'<div class="callout cl-warn"><span class="ic">&#9888;</span><div>The surcharge is a hedge, not a reimbursement. It exists so a diesel spike does not destroy a rate you agreed to last month &mdash; not to make your fuel free. Any lane plan that assumes &ldquo;fuel is covered by FSC&rdquo; is under-priced from the first mile. Empty miles are where this bleeds fastest.</div></div>'
+'<p>This is exactly why <a href="cost-per-mile-calculator.html">knowing your own cost per mile</a> is not optional. Industry research (ATRI) has put the average marginal cost of running a truck at roughly <b>$2.20&ndash;$2.30 per mile</b> including driver wages in recent years; a solo owner-operator driving their own truck typically lands between <b>$1.40 and $1.90</b> before paying themselves. Your break-even is a linehaul number. Compare the surcharge to your fuel, and the linehaul to your cost &mdash; never mix the two.</p>'
+
+'<h2 id="all-in">All-in rates vs linehaul + FSC</h2>'
+'<p>Two ways to quote the same load, and they are not interchangeable:</p>'
+'<table class="cmp"><thead><tr><th></th><th>All-in</th><th>Linehaul + FSC</th></tr></thead><tbody>'
+'<tr><td>What it is</td><td>One number covering everything</td><td>Two lines that move independently</td></tr>'
+'<tr><td>Good for</td><td>Spot freight, fast decisions, comparing offers</td><td>Contract freight held for months or years</td></tr>'
+'<tr><td>Risk to the carrier</td><td>You carry all fuel risk for the trip</td><td>Almost none, <em>if</em> the peg and index are fair</td></tr>'
+'<tr><td>Where it goes wrong</td><td>Comparing an all-in offer to a linehaul offer</td><td>A peg nobody has revisited since 2019</td></tr>'
+'</tbody></table>'
+'<p>For a one-day spot load, all-in is usually the honest way to quote: the fuel price is not going to move before you deliver, and one number is easier to compare against the market. For a dedicated lane you will run every week for a year, insist on the split &mdash; otherwise you are underwriting the diesel market for free.</p>'
+'<p>The classic trap in a broker call: they quote an all-in number, you compare it against a linehaul-plus-fuel number from another lane, and the worse load looks better. Before you answer, ask two questions &mdash; <em>is that all-in?</em> and <em>what is the fuel basis?</em> The answers take five seconds and are worth hundreds of dollars a week. If both loads move on the same equipment, put both into <a href="tools.html">the calculators</a> and compare linehaul to linehaul.</p>'
++svc_banner('Stop decoding rate cons alone',
+  'LoadBoot dispatchers negotiate the linehaul, verify the fuel basis and put every accessorial in writing before you commit &mdash; then chase the money so you can drive.',
+  'Apply as a carrier &mdash; free','carrier-application.html')+
+
+'<h2 id="brokers">For brokers &amp; shippers: an FSC that survives audit</h2>'
+'<p>On the buying side, a fuel surcharge program has one job: keep the routing guide honest when diesel moves, without renegotiating anything. It fails in two directions, and both are expensive.</p>'
+'<p><b>A peg set too low</b> (or an index nobody updates) overpays quietly for years and shows up in a freight audit as a number nobody can defend. <b>A peg set too high</b> under-recovers carriers, and under-recovered carriers do not refuse your freight &mdash; they simply take it last, which arrives as service failures and tender rejections rather than as a rate conversation.</p>'
+'<p>A defensible program names all six of these, in writing:</p>'
+'<ul>'
+'<li><b>The index</b> &mdash; EIA/DOE weekly on-highway diesel, and <em>which</em> average: national or a named PADD region.</li>'
+'<li><b>The peg</b> &mdash; the exact base price, with a note on when it was last reviewed.</li>'
+'<li><b>The divisor</b> &mdash; MPG assumed, ideally differentiated for reefer and heavy-haul equipment.</li>'
+'<li><b>The miles</b> &mdash; loaded only, or all miles including deadhead.</li>'
+'<li><b>The cadence</b> &mdash; weekly effective Monday, or monthly, and whether pickup or delivery date governs.</li>'
+'<li><b>Reefer fuel</b> &mdash; a reefer unit burns roughly 0.6&ndash;0.9 gallons per hour running the box; state whether that is inside the surcharge or billed separately.</li>'
+'</ul>'
+'<p>A surcharge table published in $0.05/gal brackets, refreshed every Monday against the DOE number, settles almost every dispute before it starts &mdash; because both sides can compute the same answer from public data. On LoadBoot the fuel basis travels with the posting the same way <a href="detention-pay-policy.html">detention</a> and <a href="tonu-policy.html">TONU</a> do: agreed at posting, attached to the trip, settled with the invoice. And for the tax side of fuel, the miles you run by state feed <a href="ifta-fuel-tax.html">IFTA reporting</a>, which is a separate obligation the surcharge does not touch.</p>'
+
+'<h2 id="writing">Getting the surcharge paid in writing</h2>'
+'<p>A fuel surcharge you cannot compute is a fuel surcharge you cannot collect. Before you accept the load, the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> should let you reproduce the number yourself. If it does not, that is the conversation to have now &mdash; not at settlement.</p>'
+'<ul>'
+'<li><b>Is the quote all-in or linehaul + FSC?</b> Get the answer before you negotiate, not after.</li>'
+'<li><b>Which index and which region?</b> &ldquo;The DOE&rdquo; is not specific enough if you run the West Coast.</li>'
+'<li><b>What peg and what MPG?</b> Two numbers, one sentence, and they decide roughly $0.20 a mile.</li>'
+'<li><b>Loaded or all miles?</b> Deadhead is where the surcharge gap does its damage.</li>'
+'<li><b>Does the rate con show the FSC as its own line?</b> A separate line is auditable; a merged number is a negotiation you already lost.</li>'
+'<li><b>Reefer fuel and multi-stop miles</b> &mdash; stated, or assume they are not paid.</li>'
+'</ul>'
+'<p>The habit worth building is simple: work the formula yourself before you say yes. Three numbers, one division, ten seconds. It turns the most misunderstood line on the rate con into the one you can defend &mdash; and it is the same discipline that gets <a href="detention-pay-policy.html">detention</a>, <a href="layover-policy.html">layover</a> and <a href="lumper-policy.html">lumper</a> money paid instead of argued about.</p>'
+'<p class="small">Figures are planning references, not quotes. Diesel prices, pegs and surcharge programs vary by contract, region and week &mdash; verify the current DOE/EIA index and your own rate confirmation before pricing a load. LoadBoot is a dispatch and carrier-operations platform, not a tax or financial advisor.</p>')
+FS_FAQ=[
+ ('How do you calculate a fuel surcharge in trucking?','Subtract the base &ldquo;peg&rdquo; price from the current diesel price per gallon, then divide by the assumed MPG. At $3.85/gal diesel with a $1.25 peg and a 6.0 MPG divisor: ($3.85 &minus; $1.25) &divide; 6.0 = $0.43 per mile. Multiply by the paid miles &mdash; usually loaded miles only &mdash; to get the surcharge on the load. On a 500-mile run that is about $216.'),
+ ('What is a normal fuel surcharge per mile in 2026?','It depends entirely on the peg and divisor, not on any industry standard. At $3.85/gal diesel and 6.0 MPG, a $1.25 peg produces about $0.43/mile, a $2.00 peg about $0.31, and a $2.50 peg about $0.23. That is why &ldquo;what is a normal FSC&rdquo; is the wrong question &mdash; ask what peg and what divisor the contract uses, because those two numbers move the answer by roughly $0.20 a mile.'),
+ ('What is the fuel surcharge peg or base price?','The diesel price at which the surcharge equals zero &mdash; the fuel cost assumed to be already covered inside the linehaul. $1.25/gal is a legacy peg from the late 1990s that is still widely used; newer contracts commonly set $2.00&ndash;$2.50. A higher peg should come with a higher linehaul; if it does not, the carrier is absorbing the difference.'),
+ ('Does the fuel surcharge cover all my fuel?','No, and it is not designed to. It covers fuel cost above the peg, on loaded miles only. On a 500-mile load with 100 miles of deadhead at $3.85/gal and 6.0 MPG, the truck burns about 100 gallons ($385 of fuel) while a $1.25-peg surcharge pays about $216 &mdash; leaving roughly $169, about 44% of the fuel bill, to come out of the linehaul. Price the linehaul against your cost per mile, not against the surcharge.'),
+ ('Which diesel index do fuel surcharges use?','Almost always the U.S. Energy Information Administration (EIA/DOE) weekly On-Highway Diesel Fuel Price, published every Monday. It reports a national average plus regional PADD averages. Which one your contract names matters: California and the West Coast typically run well above the national average, so a West Coast carrier paid off the national index under-recovers on every mile.'),
+ ('Is an all-in rate better than linehaul plus fuel surcharge?','For short spot loads, all-in is usually cleaner &mdash; diesel will not move before you deliver, and one number is easier to compare. For contract or dedicated lanes running for months, insist on the split, because otherwise you carry the entire fuel risk for the life of the agreement. The real mistake is comparing an all-in offer against a linehaul-only offer; always ask &ldquo;is that all-in?&rdquo; before you negotiate.')]
+PREMIUM_ARTICLES.add('fuel-surcharge-trucking.html')
+BLOGPOSTS += [
+ ('fuel-surcharge-trucking.html',
+  'How to Calculate a Fuel Surcharge in Trucking (2026 FSC Formula)',
+  'Fuel surcharge explained: the (diesel &minus; peg) &divide; MPG formula, the DOE weekly index, what FSC pays per mile in 2026, and why it never covers all your fuel.',
+  'The fuel surcharge has exactly three inputs &mdash; and the peg alone can swing $0.22 a mile. Here is the formula, the index, and the gap that quietly eats owner-operators.', ''),
+]
+RELATED['fuel-surcharge-trucking.html'] = [('market-rates.html','Market Rates Per Mile'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('how-to-avoid-cheap-freight.html','How to Avoid Cheap Freight'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('carrier-application.html','Apply as Carrier')]
+rich_article('fuel-surcharge-trucking.html',
+ 'Fuel Surcharge in Trucking 2026: How to Calculate FSC Per Mile',
+ 'How to calculate a fuel surcharge: (diesel price &minus; peg) &divide; MPG. 2026 examples — $0.23–$0.47 per mile depending on peg and divisor, the DOE weekly index, all-in vs linehaul + FSC, and why FSC never covers all your fuel.',
+ 'Freight Rates &amp; Fuel','How to Calculate a Fuel Surcharge in Trucking (2026 FSC Formula &amp; Rates)',
+ 'The fuel surcharge has exactly three inputs: the diesel index, the peg, and the MPG divisor. Change the peg alone and the same 500-mile load pays $216 or $104. Here is the formula, the index everyone points at, and the fuel gap it leaves behind.',
+ 9,'fuel-surcharge-hero.jpg','Truck fueling at a diesel island with the weekly DOE on-highway diesel price used to set fuel surcharges',
+ FS_TOC, FS_BODY, FS_FAQ, feat_svg=FS_FEAT)
+THUMBS['fuel-surcharge-trucking.html']=FS_FEAT
+READTIME['fuel-surcharge-trucking.html']=9
 
 # ===== ARTICLE : Should an owner-operator buy a truck before the 2027 EPA rule? =====
 PREMIUM_ARTICLES.add('should-i-buy-a-truck-before-2027-epa-rule.html')
@@ -3551,7 +3695,7 @@ CPMC_BODY_MID = ('<section class="bg-soft"><div class="wrap" style="max-width:88
  '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">$64 per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
  '</div></div></section>')
 
-RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier')]
+RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier')]
 
 _cpmc_faq_html, _cpmc_faq_sch = faq_block([
  ('What is a good cost per mile for a trucking company in 2026?',
@@ -3571,7 +3715,7 @@ cpmc_body += CPMC_CALC + CPMC_BODY_TOP
 cpmc_body += '<section style="padding-top:0"><div class="wrap">' + svc_banner('Know your number. Then let us beat it.','Loadboot dispatchers price every load against YOUR cost per mile &mdash; flat 5%, no contracts, no forced dispatch.','See how dispatch works','how-it-works.html') + '</div></section>'
 cpmc_body += CPMC_BODY_MID + _cpmc_faq_html + final_cta()
 cpmc_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loadboot Trucking Cost Per Mile Calculator","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free cost per mile calculator for truckers: itemize fixed and variable costs to get true cost per mile, break-even rate and profit per mile."}</script>' + _cpmc_faq_sch
-page('cost-per-mile-calculator.html','Cost Per Mile Calculator for Trucking (2026) &mdash; Free &amp; Itemized | LoadBoot'.replace('&mdash;','—').replace('&amp;','&'),'Free trucking cost per mile calculator: itemize your fixed and variable costs, get your true cost per mile, break-even rate and profit per mile instantly. No signup, no login.','tools.html', cpmc_body, cpmc_schema)
+page('cost-per-mile-calculator.html','Cost Per Mile Calculator for Trucking (2026) &mdash; Free, Itemized &amp; Average CPM $2.20–$2.30/Mile | LoadBoot'.replace('&mdash;','—').replace('&amp;','&'),'Free trucking cost per mile calculator: itemize your fixed and variable costs, get your true cost per mile, break-even rate and profit per mile instantly. Industry research (ATRI) puts the average marginal cost of trucking at roughly $2.20–$2.30 per mile; solo owner-operators typically land $1.40–$1.90. No signup, no login.','tools.html', cpmc_body, cpmc_schema)
 
 # ======================================================================
 # SPRINT 1 — PUBLIC MARKETING WEBSITE COMPLETION (added pages)
@@ -6752,8 +6896,8 @@ _ACC_SEO = {
         ('\u201cDetention wasn\u2019t on the rate con\u201d','If you signed a rate con without a detention clause, that load is lost \u2014 negotiate BEFORE accepting. On LoadBoot every posting carries a written detention rate; a load cannot post without one.'),
         ('\u201cSubmit within 24 hours or forget it\u201d','Late paperwork dies in an inbox. LoadBoot builds the claim from trip data and files it the moment you tap submit.')]),
  'tonu-policy': dict(
-   title='TONU in Trucking 2026: Truck Ordered Not Used Fee \u2014 How to Get Paid | LoadBoot',
-   desc='TONU (Truck Ordered Not Used) explained: typical $150\u2013$300+ fees, who pays, how to invoice a TONU, the evidence you need, and what to do when a broker refuses \u2014 on LoadBoot the TONU is pre-agreed in writing and auto-paid on late cancels.',
+   title='TONU Meaning in Trucking 2026: $250 Truck Ordered Not Used Fee &amp; How Much the Charge Is | LoadBoot',
+   desc='TONU meaning in trucking: Truck Ordered Not Used is the cancellation fee owed to the carrier \u2014 typically $150\u2013$350 (LoadBoot standard $250) plus deadhead. How much a TONU charge is, who pays, how to invoice a TONU, the evidence you need, and what to do when a broker refuses \u2014 on LoadBoot the TONU is pre-agreed in writing and auto-paid on late cancels.',
    ev=['The signed rate confirmation with the TONU clause \u2014 without it in WRITING, a TONU is nearly unenforceable',
        'Proof of dispatch: when the truck was assigned and rolling (LoadBoot trip record)',
        'GPS trail showing deadhead miles already driven toward the pickup',
@@ -6795,8 +6939,8 @@ _ACC_SEO = {
         ('\u201cThat\u2019s included in the linehaul\u201d','Loading is the shipper\u2019s job. Industry standard is $75\u2013$150/stop on top \u2014 LoadBoot prints it on the rate confirmation.'),
         ('Facility denies the driver worked','The signed BOL notation + a 10-second dock photo ends that conversation.')]),
  'fcfs-policy': dict(
-   title='FCFS in Trucking 2026: First Come First Served \u2014 and Detention Still Applies | LoadBoot',
-   desc='FCFS (first come, first served) explained for truckers: how the arrival window works, why detention still starts at gate check-in, the queue evidence that protects you, and what to do when a dock takes trucks out of order \u2014 plus how LoadBoot stamps your check-in automatically.',
+   title='FCFS Meaning in Trucking 2026: First Come First Served, and 2-Hour Detention Still Applies | LoadBoot',
+   desc='FCFS meaning in trucking: first come, first served means no appointment \u2014 you take your place in the gate queue. How the arrival window works, why detention still starts 2 hours after gate check-in, the queue evidence that protects you, and what to do when a dock takes trucks out of order \u2014 plus how LoadBoot stamps your check-in automatically.',
    ev=['Gate check-in time \u2014 photograph the gate ticket the moment you arrive; with FCFS your check-in IS your whole case',
        'GPS arrive stamp inside the posted FCFS window (ELD or the LoadBoot app records it)',
        'The posting showing FCFS + the exact window \u2014 a LoadBoot load always states one',
