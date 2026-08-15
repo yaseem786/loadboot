@@ -5893,6 +5893,93 @@ function tripStepper(status) {
   };
   const docFmt = (t) => DOC_FMT[t] || DOC_FMT.other;
   const extOf = (f) => (f && f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '');
+  /* ---------- 📋 Doc pre-flight (advisory): requirement guide + instant AI pre-check ----------
+     Prevention-first onboarding: the carrier learns what a document must contain BEFORE uploading,
+     and gets an instant AI verdict at upload time (doc-precheck edge fn). Staff review stays final;
+     any pre-check failure silently falls through to the normal manual-review path — never blocks. */
+  const LB_DOC_GUIDE = {
+    insurance: { title: '📋 Your COI must show all 4 — most rejections happen here:', items: [
+      '① CERTIFICATE HOLDER = LoadBoot (No. 1 rejection reason — your agent adds it free)',
+      '② Commercial AUTO liability $1,000,000 (general liability alone never counts)',
+      '③ MOTOR TRUCK CARGO listed (typically $100,000)',
+      '④ Every truck you will run, scheduled with its VIN',
+    ], script: (nm) => 'Hi — please issue a fresh Certificate of Insurance (ACORD 25) for ' + (nm || 'my company') + ' with: (1) LoadBoot named as the CERTIFICATE HOLDER, (2) our $1,000,000 commercial auto liability shown, (3) our motor truck cargo coverage listed, and (4) all our trucks scheduled with their VINs. Please email it to me as a PDF. Thank you!' },
+    authority: { title: '📋 Upload the FMCSA document itself:', items: [
+      'The MC certificate / operating-authority letter from FMCSA (not a UCR receipt or BOC-3)',
+      'Your legal name and MC/DOT numbers must be clearly readable',
+    ] },
+    w9: { title: '📋 W-9 quick check before you upload:', items: [
+      'Line 1 = your legal company name · exactly ONE tax classification box checked',
+      'SIGNED and DATED — unsigned W-9s are always rejected',
+    ] },
+    noa: { title: '📋 NOA letter check:', items: [
+      'The official Notice of Assignment issued by your factoring company (PDF)',
+      'It must name your company and show the factor\u2019s remit-to details',
+    ] },
+  };
+  function lbDocGuideCard(t9) {
+    const g9 = LB_DOC_GUIDE[t9]; if (!g9) return null;
+    const kids9 = [h('div', { class: 'cp-row-t', style: 'font-size:.92rem' }, g9.title)];
+    g9.items.forEach((it9) => kids9.push(h('div', { class: 'cp-row-s', style: 'margin-top:3px' }, it9)));
+    if (g9.script) kids9.push(h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: async (ev9) => {
+      const b9 = ev9.currentTarget;
+      try { await navigator.clipboard.writeText(g9.script(ov.carrier)); b9.textContent = '✓ Copied — paste it in a text or email to your insurance agent'; }
+      catch (_) { alert(g9.script(ov.carrier)); }
+      setTimeout(() => { b9.textContent = '📋 Copy ready-made message for your insurance agent'; }, 3000);
+    } }, '📋 Copy ready-made message for your insurance agent'));
+    return h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;margin:10px 0;background:rgba(8,131,247,.05)' }, kids9);
+  }
+  async function lbAiPrecheck(f9, t9) {
+    try {
+      if (!['insurance', 'authority', 'w9', 'noa'].includes(t9)) return null;
+      if (!f9 || f9.size > 8 * 1024 * 1024) return null;
+      const mime9 = f9.type || 'application/pdf';
+      if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(mime9)) return null;
+      const b64 = await new Promise((res9, rej9) => { const r9 = new FileReader(); r9.onload = () => res9(String(r9.result).split(',')[1] || ''); r9.onerror = rej9; r9.readAsDataURL(f9); });
+      if (!b64) return null;
+      const { getClient } = await import('../shared/supabaseClient.js');
+      const sb9 = await getClient(); const { data: { session: ss9 } } = await sb9.auth.getSession();
+      if (!ss9) return null;
+      const env9 = window.__LB_ENV || {};
+      const ctrl9 = new AbortController(); const tm9 = setTimeout(() => ctrl9.abort(), 45000);
+      const r9 = await fetch(env9.supabaseUrl + '/functions/v1/doc-precheck', {
+        method: 'POST', signal: ctrl9.signal,
+        headers: { 'Content-Type': 'application/json', apikey: env9.supabaseAnonKey, Authorization: 'Bearer ' + ss9.access_token },
+        body: JSON.stringify({ doc_type: t9, mime: mime9, data_b64: b64, context: { legal_name: ov.carrier || null } }),
+      });
+      clearTimeout(tm9);
+      if (!r9.ok) return null;
+      const j9 = await r9.json();
+      return (j9 && j9.ok && j9.ai && j9.verdict) ? j9.verdict : null;
+    } catch (_) { return null; }
+  }
+  function lbPrecheckGate(v9) {
+    // reject → modal listing problems+fixes; resolves TRUE = upload anyway, FALSE = fix first.
+    return new Promise((resolve9) => {
+      if (!v9 || v9.verdict !== 'reject') {
+        if (v9 && v9.verdict === 'warning' && v9.summary) lbToast(v9.summary, 'action', '⚠ Heads up — check this');
+        resolve9(true); return;
+      }
+      let done9 = false;
+      const probe9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:10px;line-height:1.6' }, v9.summary || 'This document will very likely be rejected in review.');
+      const finish9 = (ok9) => { if (done9) return; done9 = true; try { closeG9(); } catch (_) {} clearInterval(iv9); resolve9(ok9); };
+      const closeG9 = openModal('🤖 Instant check found a problem', [
+        probe9,
+        h('div', null, (v9.issues || []).slice(0, 5).map((i9) => h('div', { style: 'border-left:3px solid ' + (i9.severity === 'reject' ? '#ef4444' : '#f59e0b') + ';padding:7px 11px;margin:6px 0;background:rgba(239,68,68,.06);border-radius:0 9px 9px 0' }, [
+          h('div', { style: 'font-weight:800;font-size:.85rem' }, i9.problem || ''),
+          i9.fix ? h('div', { class: 'cp-row-s', style: 'margin-top:2px;color:#16a34a;font-weight:700' }, '✔ Fix: ' + i9.fix) : null,
+        ].filter(Boolean)))),
+        h('div', { class: 'cp-row-s', style: 'margin:10px 0;color:#94a3b8' }, 'Fixing it first saves you a rejection and a re-upload — or send it anyway and our team reviews it manually.'),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:4px' }, [
+          h('button', { class: 'cp-btn', style: 'flex:1;min-width:190px', onClick: () => finish9(false) }, "✋ I'll fix it first (recommended)"),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'flex:0 0 auto', onClick: () => finish9(true) }, 'Upload anyway'),
+        ]),
+      ]);
+      // if the carrier closes the modal with ✕/Esc, treat it as "fix first" (nothing submitted)
+      const iv9 = setInterval(() => { if (!document.body.contains(probe9)) finish9(false); }, 400);
+    });
+  }
+
   async function loadDocuments() {
     mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
     let c; try { c = await pocketCompliance(); } catch (e) { c = { requirements: [] }; }
@@ -5952,7 +6039,9 @@ function tripStepper(status) {
     const fmtLine = h('div', { class: 'cp-row-s', style: 'font-weight:700;color:#b45309' });
     const fileIn = h('input', { class: 'cp-in', type: 'file' });
     const applyFmt = () => { const r = docFmt(typeSel.value); fileIn.accept = r.exts.map(e => '.' + e).join(','); fmtLine.textContent = '📌 Required format: ' + r.label; };
-    typeSel.onchange = applyFmt; applyFmt();
+    const guideHost = h('div');
+    const renderGuide = () => { guideHost.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHost.appendChild(g9); };
+    typeSel.onchange = () => { applyFmt(); renderGuide(); }; applyFmt(); renderGuide();
     const msg = h('div', { class: 'cp-err' });
     const up = h('button', { class: 'cp-btn', onClick: async () => {
       const f = fileIn.files && fileIn.files[0];
@@ -5973,6 +6062,15 @@ function tripStepper(status) {
           up.disabled = false; up.textContent = 'Upload';
           return;
         }
+        // 🤖 instant advisory AI pre-check — catches holder/limits/name problems BEFORE submission
+        up.textContent = '🤖 Checking your document…';
+        const pv9 = await lbAiPrecheck(f, typeSel.value);
+        if (!(await lbPrecheckGate(pv9))) {
+          up.disabled = false; up.textContent = 'Upload document';
+          msg.className = 'cp-err ok'; msg.textContent = 'Nothing was submitted — fix it with your agent, then upload the corrected file here.';
+          return;
+        }
+        up.textContent = 'Uploading…';
         const meta = await uploadDocument(f, typeSel.value);
         await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path });
         fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded — in review. You will NOT be asked again; track it right here.';
@@ -6023,6 +6121,14 @@ function tripStepper(status) {
         if (!file) { msg2.textContent = 'Choose a file first.'; return; }
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Submitting…';
         try {
+          upBtn.textContent = '🤖 Checking your document…';
+          const pv9 = await lbAiPrecheck(file, typeSel2.value);
+          if (!(await lbPrecheckGate(pv9))) {
+            upBtn.disabled = false; upBtn.textContent = 'Submit for review';
+            msg2.className = 'cp-err ok'; msg2.textContent = 'Nothing was submitted — fix it first, then come back and submit the corrected file.';
+            return;
+          }
+          upBtn.textContent = 'Submitting…';
           const meta = await uploadDocument(file, typeSel2.value);
           await carrierUploadDocument({ type: typeSel2.value, fileName: meta.fileName, filePath: meta.path });
           msg2.className = 'cp-err ok'; msg2.textContent = '✓ Submitted — status is now IN REVIEW. You cannot change it until the review decision.';
@@ -6045,9 +6151,12 @@ function tripStepper(status) {
         prev2.appendChild(h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Check the preview — this exact file goes to review.'));
         upBtn.disabled = false;
       };
+      const guideHost2 = h('div');
+      const renderGuide2 = () => { guideHost2.innerHTML = ''; const g9 = lbDocGuideCard(typeSel2.value); if (g9) guideHost2.appendChild(g9); };
+      typeSel2.onchange = renderGuide2; renderGuide2();
       const close2 = openModal('Submit — ' + r.name, [
         h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'PDF or photo, up to 25 MB. Choose the file, check the preview, then submit. While in review it is locked — you can change it again only after a decision.'),
-        typeSel2, fileIn2, prev2, msg2, upBtn,
+        typeSel2, guideHost2, fileIn2, prev2, msg2, upBtn,
       ]);
     };
     const verifyAuthority = (r) => {
@@ -6146,7 +6255,7 @@ function tripStepper(status) {
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
         sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
-      h('div', { class: 'cp-card' }, [cardHead('Upload an extra document', 'Anything not listed above \u2014 permits, lease agreements, references'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, fileIn, msg, up]),
+      h('div', { class: 'cp-card' }, [cardHead('Upload an extra document', 'Anything not listed above \u2014 permits, lease agreements, references'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, guideHost, fileIn, msg, up]),
       h('div', { class: 'cp-card' }, [cardHead('My uploads \u2014 review status', 'Every file you sent, incl. plan-of-action attachments'), listWrap]),
     ]));
     async function loadList() {
@@ -6311,6 +6420,9 @@ function tripStepper(status) {
       const fileIn = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
       const msg = h('div', { class: 'cp-err' });
       let autoUp = false;
+      const guideHostW = h('div');
+      const renderGuideW = () => { guideHostW.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHostW.appendChild(g9); };
+      typeSel.onchange = renderGuideW; renderGuideW();
       const reqHost = h('div');
       const hazHost = h('div');
       const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = (c && c.requirements) || [];
@@ -6320,6 +6432,7 @@ function tripStepper(status) {
             if (dt0 === 'w9') { w9Btn.click(); return; }
             if (dt0 === 'agreement') { agrBtn.click(); return; }
             if (dt0) { try { typeSel.value = dt0; if (typeSel.value !== dt0) typeSel.value = 'other'; } catch (_) {} }
+            try { renderGuideW(); } catch (_) {}
             autoUp = true; fileIn.click();
           };
           const act = okd ? h('span', { class: 'cp-pill green' }, 'Approved')
@@ -6330,12 +6443,15 @@ function tripStepper(status) {
         mount(hazHost, (f.hazmat && hazLeft.length) ? h('div', { class: 'cp-ann warning', style: 'margin:8px 0' }, [h('div', { class: 'cp-ann-t' }, 'Hazmat \u2014 ' + hazLeft.length + ' document(s) still needed'), h('div', { class: 'cp-ann-b' }, hazLeft.map((r) => r.name).join(' \u00b7 ') + ' \u2014 mandatory before hazmat loads can be booked.')]) : h('span'));
       } catch (_) {} }; loadReqs();
       const list = h('div'); const refresh = async () => { try { const ds = await carrierListDocuments(); mount(list, (ds && ds.length) ? h('div', null, ds.map(d => h('div', { class: 'cp-row' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t' }, d.file_name), h('div', { class: 'cp-row-s' }, (d.type || 'document') + ' \u00b7 uploaded')]), h('div', { style: 'display:flex;gap:8px;align-items:center' }, [pill(d.status || 'pending'), (String(d.status || 'pending').toLowerCase() === 'pending' ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: () => { try { typeSel.value = d.type || 'other'; } catch (_) {} autoUp = true; fileIn.click(); } }, 'Change') : null)].filter(Boolean))]))) : h('div', { class: 'cp-muted' }, 'No documents yet.')); } catch (_) {} };
-      const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { const file = fileIn.files && fileIn.files[0]; msg.textContent = ''; msg.className = 'cp-err'; if (!file) { msg.textContent = 'Choose a file.'; return; } { const rule = docFmt(typeSel.value); const ex = extOf(file); if (rule.exts.indexOf(ex) < 0) { const _m = 'This document must be ' + (rule.exts.length === 1 ? rule.exts[0].toUpperCase() : rule.exts.map((e) => e.toUpperCase()).join('/')) + ' \u2014 ' + rule.label + '.'; msg.textContent = _m; lbToast(_m, 'urgent', 'Wrong file format'); fileIn.value = ''; return; } } up.disabled = true; up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; lbToast('Document uploaded \u2014 sent for review. The checklist above now shows \u201cIn review\u201d.', 'success', 'Uploaded \u2713'); await refresh(); try { loadReqs(); } catch (_) {} } catch (e) { const _um = (e && e.message) || 'Upload failed.'; msg.className = 'cp-err'; msg.textContent = _um; lbToast(_um, 'urgent', 'Upload failed'); } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
+      const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { const file = fileIn.files && fileIn.files[0]; msg.textContent = ''; msg.className = 'cp-err'; if (!file) { msg.textContent = 'Choose a file.'; return; } { const rule = docFmt(typeSel.value); const ex = extOf(file); if (rule.exts.indexOf(ex) < 0) { const _m = 'This document must be ' + (rule.exts.length === 1 ? rule.exts[0].toUpperCase() : rule.exts.map((e) => e.toUpperCase()).join('/')) + ' \u2014 ' + rule.label + '.'; msg.textContent = _m; lbToast(_m, 'urgent', 'Wrong file format'); fileIn.value = ''; return; } } up.disabled = true; up.textContent = '🤖 Checking…';
+        const pv9 = await lbAiPrecheck(file, typeSel.value);
+        if (!(await lbPrecheckGate(pv9))) { up.disabled = false; up.textContent = 'Upload'; fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Nothing submitted — fix it first, then upload the corrected file.'; return; }
+        up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; lbToast('Document uploaded \u2014 sent for review. The checklist above now shows \u201cIn review\u201d.', 'success', 'Uploaded \u2713'); await refresh(); try { loadReqs(); } catch (_) {} } catch (e) { const _um = (e && e.message) || 'Upload failed.'; msg.className = 'cp-err'; msg.textContent = _um; lbToast(_um, 'urgent', 'Upload failed'); } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
       fileIn.addEventListener('change', () => { if (autoUp && fileIn.files && fileIn.files[0]) { autoUp = false; up.click(); } });
       refresh();
       const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Complete W-9 in-app');
       const agrBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'Agreement') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Sign dispatch agreement');
-      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), h('div', { class: 'cp-inlineform' }, [typeSel, fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
+      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), h('div', { class: 'cp-inlineform' }, [typeSel, fileIn, up, msg]), guideHostW, h('div', { style: 'margin-top:10px' }, list)]);
     }
     function reviewStep() {
       const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);
@@ -6387,7 +6503,10 @@ function tripStepper(status) {
             const st9 = h('span', { class: 'cp-row-s' }, f.noa_uploaded ? '✓ NOA letter attached' : '');
             const up9 = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { const b9 = ev9.currentTarget;
               const f9 = fIn9.files && fIn9.files[0]; if (!f9) { st9.textContent = 'Choose the factor\u2019s NOA PDF first.'; st9.style.color = '#f87171'; return; }
-              b9.disabled = true; b9.textContent = 'Uploading\u2026';
+              b9.disabled = true; b9.textContent = '🤖 Checking\u2026';
+              const pv9 = await lbAiPrecheck(f9, 'noa');
+              if (!(await lbPrecheckGate(pv9))) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#94a3b8'; st9.textContent = 'Nothing submitted — attach the corrected NOA when ready.'; return; }
+              b9.textContent = 'Uploading\u2026';
               try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
               catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#f87171'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }
             } }, 'Upload NOA');
