@@ -34,8 +34,8 @@ export function renderRadar(host) {
         el('div', { class: 'cc-sub' }, (x.city ? x.city + ', ' + (x.state || '') + ' · ' : '') + (x.years_exp != null ? x.years_exp + 'y exp · ' : '') + 'code ' + (x.code || '—') + ' · payout ' + (x.payout_method || '—') + ' · ' + (x.tax_form || 'no tax form') + ' · agreement ' + (x.agreement_signed ? '✓ ' + (x.signed_name || '') : '✕ UNSIGNED')),
         el('div', { style: 'display:flex;gap:6px;margin-top:6px' }, [
           el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => { const b9 = ev.currentTarget; if (!await askConfirm('Please confirm', { body: 'Approve this agent? Their chain starts earning immediately.', danger: true })) return; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'approve', null); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✓ Approve'),
-          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const nt9 = await askReason('What info is needed? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'info', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '？ More info'),
-          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const nt9 = await askReason('Reject — why? (agent sees this)'); if (!nt9) return; const b9 = ev.currentTarget; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'reject', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✕ Reject'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const __el9 = ev.currentTarget; const nt9 = await askReason('What info is needed? (agent sees this)'); if (!nt9) return; const b9 = __el9; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'info', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '？ More info'),
+          el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const nt9 = await askReason('Reject — why? (agent sees this)'); if (!nt9) return; const b9 = __el9; b9.disabled = true; try { await ccAgentDecide(x.user_id, 'reject', nt9); load(); } catch (e9) { b9.disabled = false; alert((e9 && e9.message) || 'Failed.'); } } }, '✕ Reject'),
           el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async () => {
             let th9 = []; try { th9 = (await ccAgentMsgs(x.user_id)) || []; } catch (_) {}
             const hist9 = th9.length ? th9.map((m9) => (m9.sender === 'staff' ? 'CC' : 'Agent') + ' (' + new Date(m9.at).toLocaleString() + '): ' + m9.body).join('\n') : '(no messages yet)';
@@ -46,6 +46,7 @@ export function renderRadar(host) {
       ]))),
     ]) : '';
     const feeCard = feeRows.length ? card([
+   s.length ? card([
       el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, [icon('card',15),' Fee receipts to verify']), el('span', { class: 'cc-pill cc-pill-amber' }, String(feeRows.length))]),
       el('div', { class: 'cc-doclist' }, feeRows.slice(0, 10).map((x) => el('div', { class: 'cc-docrow', style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding:6px 0' }, [
         el('div', null, [

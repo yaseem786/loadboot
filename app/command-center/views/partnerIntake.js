@@ -206,9 +206,9 @@ export function renderPartnerIntake(host, focusId) {
           try { await requestUpdate('partner_load', l.id, l.broker_org, msg); toast('Update request sent \u2014 auto-drafted from the failed checks.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
           catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, '\u2709 Ask update (auto-drafted)') : null,
-        l.status === 'submitted' ? el('button', { class: 'lb-btn', style: 'color:#b91c1c', onClick: async (ev) => {
+        l.status === 'submitted' ? el('button', { class: 'lb-btn', style: 'color:#b91c1c', onClick: async (ev) => { const __el9 = ev.currentTarget;
           if (!await askConfirm('Please confirm', { body: 'Decline this load? The broker is notified.', danger: true })) return;
-          const b9 = ev.currentTarget; b9.disabled = true;
+          const b9 = __el9; b9.disabled = true;
           try { await decidePartnerLoad(l.id, 'decline'); toast('Declined.', 'success'); document.getElementById('cc-drawer-root')?.remove(); reload(); }
           catch (e) { b9.disabled = false; toast(humanizeError(e), 'error'); }
         } }, 'Decline') : null,
