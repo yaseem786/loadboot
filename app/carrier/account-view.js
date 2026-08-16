@@ -365,6 +365,21 @@ export async function renderPremiumAccount(host, ctx) {
   // password + signout
   const pwBtn = root.querySelector('#acx-pw'); if (pwBtn) pwBtn.addEventListener('click', () => { if (ctx.go) ctx.go('account'); toast('Use “Forgot password” on the sign-in screen to reset securely'); });
   const soBtn = root.querySelector('#acx-signout'); if (soBtn) soBtn.addEventListener('click', async () => { soBtn.disabled = true; soBtn.textContent = 'Signing out…'; try { if (ctx.signOut) await ctx.signOut(); location.reload(); } catch (_) { location.reload(); } });
+
+  // Uber-style account footer: a muted Sign out at the very BOTTOM of the Account
+  // page (below every sub-tab) + app build — where mobile users expect to find it.
+  (function acxFooter() {
+    if (root.querySelector('#acx-foot-signout')) return;
+    var v = '';
+    try { v = (window.__LB_ENV && window.__LB_ENV.buildId) ? String(window.__LB_ENV.buildId) : ''; } catch (_) {}
+    var f = document.createElement('div');
+    f.style.cssText = 'margin:34px 0 10px;padding:0 4px;text-align:center';
+    f.innerHTML = '<button id="acx-foot-signout" style="background:none;border:0;cursor:pointer;color:#8ea2c3;font-weight:700;font-size:.92rem;padding:12px 26px;border-radius:12px">Sign out</button>'
+      + '<div style="margin-top:6px;color:#5a6e8f;font-size:.72rem;font-weight:600">LoadBoot · The Operating System for Trucking' + (v ? ' · ' + v : '') + '</div>';
+    root.appendChild(f);
+    var fb = f.querySelector('#acx-foot-signout');
+    fb.addEventListener('click', async function () { fb.disabled = true; fb.textContent = 'Signing out…'; try { if (ctx.signOut) await ctx.signOut(); location.reload(); } catch (_) { location.reload(); } });
+  })();
 }
 
 export default renderPremiumAccount;
