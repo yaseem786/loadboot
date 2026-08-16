@@ -36,6 +36,7 @@ import '../shared/ui/chatWidget.js';
 import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { payInstructions, payMarkSent, payDueItems, payTripMarkSent, ccLoadStops, isMyOrgAgent } from '../shared/api.js';
 import { initTelemetry } from '../shared/telemetry.js';
+import { initBackNav, pushLayer, popLayer } from '../shared/backnav.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
 (async () => { try { window.__lbAgentOrg = !!(await isMyOrgAgent()); } catch (_) { window.__lbAgentOrg = false; } })();
 
@@ -154,7 +155,10 @@ const KIND_LABEL = { broker: 'Broker', shipper: 'Shipper', facility: 'Facility' 
 
 /* ---------- modal (was missing — brokerDocs crashed without it) ---------- */
 function openModal(title, children, opts) {
-  const close = () => { ov.remove(); document.removeEventListener('keydown', onEsc); };
+  let closed = false;
+  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); };
+  const guard = () => realClose();                              // back gesture → just close
+  const close = () => { if (closed) return; realClose(); popLayer(guard); };  // manual close → unwind history too
   const onEsc = (e) => { if (e.key === 'Escape') close(); };
   const card = h('div', { class: 'cp-modal-card', onClick: (e) => e.stopPropagation(), style: 'background:#fff;width:100%;max-width:' + ((opts && opts.wide) ? 'min(940px,94vw)' : '520px') + ';border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto' }, [
     h('div', { style: 'display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;background:#fff' }, [h('h3', { style: 'margin:0;font-size:1.02rem' }, title), h('button', { style: 'background:none;border:none;font-size:24px;color:#64748b;cursor:pointer', onClick: close }, '×')]),
@@ -164,6 +168,7 @@ function openModal(title, children, opts) {
   if (window.matchMedia && window.matchMedia('(min-width: 700px)').matches) { ov.style.alignItems = 'center'; ov.style.padding = '24px'; card.style.borderRadius = '18px'; }
   document.body.appendChild(ov);
   document.addEventListener('keydown', onEsc);
+  pushLayer(guard);
   return close;
 }
 
@@ -492,8 +497,13 @@ function authScreen() {
   const sub = h('p', { class: 'cp-auth-sub' }, 'Sign in to your partner portal.');
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
+  // System back while in create-account mode returns to sign-in.
+  let sgOn = false;
+  const sgGuard = () => { sgOn = false; if (document.body.contains(email)) setMode(false); };
   const setMode = (s) => {
     signup = s;
+    if (s && !sgOn) { sgOn = true; pushLayer(sgGuard); }
+    else if (!s && sgOn) { sgOn = false; popLayer(sgGuard); }
     title.textContent = s ? 'Create your account' : 'Welcome back';
     sub.textContent = s ? 'Set up your partner account — it’s free.' : 'Sign in to your partner portal.';
     extra.style.display = s ? 'block' : 'none';
@@ -567,6 +577,7 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
+      h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:#64748b;font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
       h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#94A3B8;line-height:1;margin-top:5px" }, 'Partner')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, typeBlock, err, btn, toggle,
       h('div', { class: 'cp-staff' }, [
@@ -4468,6 +4479,8 @@ function packetAgreementCards(skipPacket) {
     brender();
   }
   window.addEventListener('hashchange', () => { const t9 = (location.hash || '').replace('#', ''); if (t9 && t9 !== btab && BNAV.some((n) => n[0] === t9)) bgo(t9); });
+  // Big-brand Android back: back → Dashboard first, exit only from Dashboard.
+  initBackNav({ goHome: () => { if (btab !== 'dashboard') { bgo('dashboard'); return true; } return false; } });
   const bShell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: KIND_LABEL[ov.kind] || 'Broker' })),

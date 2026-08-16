@@ -47,6 +47,7 @@ import { registerAppSW } from '../shared/sw-register.js';
 import { mountStrengthCard, maybeShowMicroAsk } from './prefs-strength.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 import { initTelemetry } from '../shared/telemetry.js';
+import { initBackNav, pushLayer, popLayer } from '../shared/backnav.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
@@ -146,7 +147,10 @@ function lbToast(msg, tone, title) {
 }
 // Lightweight modal used by self-service forms (fleet, etc.). Closes on backdrop click or ✕.
 function openModal(title, children) {
-  const close = () => { ov.remove(); document.removeEventListener('keydown', onEsc); };
+  let closed = false;
+  const realClose = () => { if (closed) return; closed = true; ov.remove(); document.removeEventListener('keydown', onEsc); };
+  const guard = () => realClose();                              // back gesture → just close
+  const close = () => { if (closed) return; realClose(); popLayer(guard); };  // ✕/backdrop/Esc/after-save → close + unwind history
   const onEsc = (e) => { if (e.key === 'Escape') close(); };
   const card = h('div', { class: 'cp-modal-card', onClick: (e) => e.stopPropagation() }, [
     h('div', { class: 'cp-modal-head' }, [h('h3', null, title), h('button', { class: 'cp-modal-x', 'aria-label': 'Close', onClick: close }, '×')]),
@@ -155,6 +159,7 @@ function openModal(title, children) {
   const ov = h('div', { class: 'cp-modal', onClick: close }, card);
   document.body.appendChild(ov);
   document.addEventListener('keydown', onEsc);
+  pushLayer(guard);
   const first = card.querySelector('input,select,textarea'); if (first) first.focus();
   return close;
 }
@@ -343,8 +348,14 @@ function authScreen() {
         err.className = 'cp-err ok'; err.textContent = '✓ Reset link sent to ' + em + ' — check your inbox (and spam).'; }
       catch (e) { err.textContent = (e && e.message) || 'Could not send reset link.'; }
     } }, 'Forgot password?'));
+  // System back while in create-account mode returns to sign-in (instead of
+  // leaving the page) — same layer mechanism the modals use.
+  let sgOn = false;
+  const sgGuard = () => { sgOn = false; if (document.body.contains(email)) setMode(false); };
   const setMode = (s) => {
     signup = s;
+    if (s && !sgOn) { sgOn = true; pushLayer(sgGuard); }
+    else if (!s && sgOn) { sgOn = false; popLayer(sgGuard); }
     const AG = !!window.__LB_AGENT;
     title.textContent = s ? (AG ? 'Apply as a LoadBoot Dispatcher' : 'Create your account') : 'Welcome back';
     sub.textContent = s ? (AG ? 'Create your account, then apply to dispatch for US carriers — salaried, base + per-truck + performance.' : 'Set up your carrier profile — it’s free.')
@@ -447,6 +458,7 @@ function authScreen() {
   mount(root, h('div', { class: 'cp-auth' }, [
     h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
+      h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:#8ea2c3;font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
       h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : 'Carrier')]),
       title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), passWrap, extra, err, btn, toggle, forgot,
       h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
@@ -1687,6 +1699,8 @@ async function agentPortal(user) {
     const it = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it ? it[1] : 'Dashboard';
     (async () => { try { feed = (await agentFeed()) || feed; } catch (_) {} render(); })();
   }
+  // Big-brand Android back for the agent shell too: back → Dashboard first, then exit.
+  initBackNav({ goHome: () => { if (tab !== 'dashboard') { go('dashboard'); return true; } return false; } });
   // ---- 🔔 notification bell (top-right): commissions, chain joins, payout + doc updates ----
   const agBellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
   const agBellList = h('div', { style: 'max-height:380px;overflow:auto' });
@@ -2101,6 +2115,9 @@ async function appView(user) {
     render();
   }
   window.addEventListener('hashchange', () => { const t = (location.hash || '').replace('#', ''); if (t && t !== tab && (NAV.some(n => n[0] === t) || EXTRA_TABS.includes(t))) go(t); });
+  // Big-brand Android back: from any non-home tab, back returns to Dashboard first;
+  // only from Dashboard does it leave the app. Open modals are handled in backnav.js.
+  initBackNav({ goHome: () => { if (tab !== 'dashboard') { go('dashboard'); return true; } return false; } });
 
   function render() {
     if (tab === 'settings') { loadSettings(); return; }
