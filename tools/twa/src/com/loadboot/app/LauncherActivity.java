@@ -89,7 +89,7 @@ public class LauncherActivity extends Activity {
         // Safety net: if the service never connects, open the plain browser.
         handler.postDelayed(new Runnable() {
             @Override public void run() { if (!launched) fallback(); }
-        }, 3000);
+        }, 2000);
     }
 
     /** Prefer Chrome; otherwise any browser exposing the Custom Tabs service. */
@@ -109,9 +109,27 @@ public class LauncherActivity extends Activity {
     private void fallback() {
         if (launched) return;
         launched = true;
+        // Open in a real browser, never back into this app (our own VIEW filter
+        // for loadboot.com could otherwise loop once app links verify).
+        Intent i = new Intent(Intent.ACTION_VIEW, url);
+        i.addCategory(Intent.CATEGORY_BROWSABLE);
         try {
-            startActivity(new Intent(Intent.ACTION_VIEW, url));
+            Intent probe = new Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com"));
+            probe.addCategory(Intent.CATEGORY_BROWSABLE);
+            String pick = null;
+            for (ResolveInfo ri : getPackageManager().queryIntentActivities(probe, 0)) {
+                String p = ri.activityInfo.packageName;
+                if (getPackageName().equals(p)) continue;
+                if ("com.android.chrome".equals(p)) { pick = p; break; }
+                if (pick == null) pick = p;
+            }
+            if (pick != null) i.setPackage(pick);
         } catch (Exception ignored) {}
+        try { startActivity(i); }
+        catch (Exception e) {
+            try { startActivity(new Intent(Intent.ACTION_VIEW, url)); }
+            catch (Exception ignored) {}
+        }
         finishSoon();
     }
 
