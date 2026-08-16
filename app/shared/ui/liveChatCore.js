@@ -45,6 +45,16 @@
     '#lbc-foot{padding:10px 12px 8px;background:#fff;border-top:1px solid #eef2f7}',
     '.lbc-form{margin:2px 0 0 36px;max-width:82%;background:linear-gradient(180deg,#ffffff,#f7faff);border:1.5px solid #dbe9fb;border-radius:16px;border-bottom-left-radius:6px;padding:14px;box-shadow:0 6px 22px rgba(8,131,247,.10);display:flex;flex-direction:column;gap:8px;animation:lbcUp .25s ease}',
     '.lbc-form label{font:700 10.5px Inter,Arial;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:-4px}',
+    '.lbc-form::before{content:"";display:block;height:2px;border-radius:2px;background:linear-gradient(90deg,#0883F7 0%,#0883F7 55%,#FC5305 100%);margin:-4px -2px 6px;opacity:.9}',
+    '.lbc-fhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:2px}',
+    '.lbc-ftitle{font:800 12.5px Manrope,Inter,Arial;color:#0f172a;letter-spacing:-.01em;line-height:1.35}',
+    '.lbc-fsub{font:400 11.5px Inter,Arial;color:#64748b;line-height:1.45;margin-top:3px}',
+    '.lbc-form button.lbc-fx{flex:0 0 auto;width:26px;height:26px;min-width:26px;margin:0;border:0;background:none;box-shadow:none;color:#94a3b8;font:700 17px Inter,Arial;line-height:1;cursor:pointer;border-radius:8px;padding:0;transform:none}',
+    '.lbc-form button.lbc-fx:hover{background:#eef2f7;color:#0f172a;transform:none;box-shadow:none}',
+    '.lbc-form button.lbc-fskip{background:none;border:0;box-shadow:none;margin:0;color:#64748b;font:600 11.5px Inter,Arial;cursor:pointer;padding:4px 6px;text-decoration:underline;text-underline-offset:2px;border-radius:8px;transform:none}',
+    '.lbc-form button.lbc-fskip:hover{color:#0f172a;background:#f1f5f9;transform:none;box-shadow:none}',
+    '.lbc-form.lbc-card-past{opacity:.5}',
+    '.lbc-fdone{margin:2px 0 0 36px;font:600 11.5px Inter,Arial;color:#64748b}',
     '.lbc-form input{border:1.5px solid #dbe4ef;border-radius:11px;padding:10px 12px;font:400 13.5px Inter,Arial;outline:none;color:#0f172a;background:#fff;width:100%;box-sizing:border-box}',
     '.lbc-form input:focus{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.12)}',
     '.lbc-form button{margin-top:2px;background:linear-gradient(135deg,#FC5305,#e34a02);color:#fff;border:none;border-radius:11px;padding:11px;font:800 13.5px Inter,Arial;cursor:pointer;transition:transform .15s;box-shadow:0 8px 20px rgba(252,83,5,.35)}',
@@ -98,9 +108,28 @@
     return r.json();
   }
 
+  // A dynamic card (contact form, call-back form, chip row) belongs to the NEWEST message only.
+  // Before rendering anything new, retire the old ones — otherwise the contact box stays stranded
+  // above the conversation while the bot answers the next question. If the visitor is mid-way
+  // through typing into a card we keep it (destroying half-typed contact details is worse) and
+  // just fade it back.
+  function dropStaleCards() {
+    var stale = els.body.querySelectorAll('.lbc-form-dyn,.lbc-callform-dyn,.lbc-chips-dyn');
+    for (var i = 0; i < stale.length; i++) {
+      var n = stale[i], busy = false;
+      var fields = n.querySelectorAll('input,select,textarea');
+      for (var k = 0; k < fields.length; k++) {
+        if (fields[k] === document.activeElement || String(fields[k].value || '').trim()) busy = true;
+      }
+      if (busy) { n.classList.add('lbc-card-past'); continue; }
+      n.remove();
+    }
+  }
+
   function addMsg(sender, body) {
     // [[note]] messages are internal staff-inbox notes (onboarding milestones, doc verdicts) — never render for visitors
     if (String(body).indexOf('[[note]]') === 0) return;
+    dropStaleCards();
     var me = sender === 'visitor';
     var chipDef = null, formDef = null;
     var cm = String(body).match(/\[\[chips:([\s\S]*?)\]\]/);
@@ -126,6 +155,24 @@
       var wantName = formDef.indexOf('name') >= 0;
       var wantEmail = formDef.indexOf('email') >= 0;
       var nameIn = null, emailIn = null;
+      // Premium header — says what this is for, and gives an out. Nothing here is required to
+      // keep chatting, so the visitor chooses.
+      var head = document.createElement('div'); head.className = 'lbc-fhead';
+      var htxt = document.createElement('div');
+      htxt.innerHTML = '<div class="lbc-ftitle">Want our team to follow up?</div>' +
+        '<div class="lbc-fsub">Optional \u2014 you can keep chatting with me either way.</div>';
+      var fx = document.createElement('button');
+      fx.type = 'button'; fx.className = 'lbc-fx'; fx.setAttribute('aria-label', 'Not now'); fx.title = 'Not now';
+      fx.innerHTML = '&times;';
+      head.appendChild(htxt); head.appendChild(fx);
+      card.appendChild(head);
+      fx.onclick = function () {
+        var d = document.createElement('div');
+        d.className = 'lbc-fdone';
+        d.textContent = 'No problem \u2014 back to your questions. \ud83d\udc4d';
+        card.parentNode.insertBefore(d, card);
+        card.remove();
+      };
       if (wantName) {
         var l1 = document.createElement('label'); l1.textContent = 'Your name';
         nameIn = document.createElement('input'); nameIn.placeholder = 'e.g. John Carter'; nameIn.autocomplete = 'name';
@@ -138,8 +185,14 @@
       }
       var ferr = document.createElement('div'); ferr.className = 'lbc-ferr';
       var sub = document.createElement('button'); sub.type = 'button'; sub.textContent = '✓ Send to LoadBoot team';
-      var note = document.createElement('div'); note.className = 'lbc-fnote'; note.textContent = '🔒 Private — only our team sees this';
-      card.appendChild(ferr); card.appendChild(sub); card.appendChild(note);
+      var note = document.createElement('div'); note.className = 'lbc-fnote'; note.textContent = '🔒 Private — only our team sees this. No spam, and no calls unless you ask.';
+      var skipRow = document.createElement('div');
+      skipRow.style.cssText = 'text-align:center;margin-top:-2px';
+      var skip = document.createElement('button');
+      skip.type = 'button'; skip.className = 'lbc-fskip'; skip.textContent = 'Not now, just asking questions';
+      skip.onclick = function () { fx.onclick(); };
+      skipRow.appendChild(skip);
+      card.appendChild(ferr); card.appendChild(sub); card.appendChild(skipRow); card.appendChild(note);
       sub.onclick = async function () {
         ferr.style.display = 'none';
         var nv = nameIn ? nameIn.value.trim() : '';

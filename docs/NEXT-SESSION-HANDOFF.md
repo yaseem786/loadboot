@@ -1,5 +1,66 @@
 # LoadBoot — NEXT-SESSION HANDOFF (read this FIRST)
 
+## 🟢 2026-08-16 SESSION — LIVE CHAT AI + MOBILE FIXES + EMAIL SPOOFING (start here)
+
+### ⚡ Already LIVE (server-side, nothing to deploy)
+- **Gemini AI is answering the live chat on PRODUCTION.** Edge fn `lc-brain` v3 + migration
+  `bl_lc_brain_0198`; flag row `app_private.lc_brain_config.enabled = true` on prod AND staging.
+  Kill switch: `update app_private.lc_brain_config set enabled=false where id;` (instant, reverts to
+  the keyword KB, nothing else changes).
+- **Live-chat overhaul, both DBs:** `bl_lc_lang_0193` (language-aware KB — English visitors were being
+  answered in SPANISH), `bl_lc_repair_0194` (never repeat a message, never show the dead-end menu twice,
+  admit defeat and escalate when the visitor says we got it wrong), `bl_lc_teach_0195` +
+  `bl_lc_lang2_0196` + `bl_lc_teach2_0200` (KB 104 → **117 rows**, 99 en / 18 es),
+  `bl_lc_leadask_0197` (answer-first contact ask), `bl_lc_gate_0199` (**lead gate**: anonymous website
+  visitor gets 2 real answers, then name+email required; portal/known-email/human-request exempt;
+  the held question is auto-answered when contact arrives).
+- **CC "🧠 Bot training" backlog cleared: 0 unresolved misses.**
+- **Email auth verified live** (SPF `-all`, valid DMARC quarantine, send-subdomain SPF, both DKIMs).
+
+### 💾 ON DISK, NOT COMMITTED — this is the first thing to finish
+Branch `feat/dispatcher-model` (it equals `origin/main`, so a push to main fast-forwards; local `main`
+is 64 behind — ignore it).
+- `build_site.py` — footer white-gap fix (`body{padding-bottom:72px}` moved into the navy footer),
+  `styles.css?v=7`, `liveChatCore.js?v=4`, backToTop script tag, **contact.html inline-JS SyntaxError
+  fix** (it had killed the whole lead form), security.html anti-phishing section + global footer notice.
+- `app/shared/ui/backToTop.js` (NEW) and the 5 portal `index.html` files (script tag).
+- `app/shared/ui/liveChatCore.js` — stranded-contact-card fix (`dropStaleCards`) + premium optional
+  contact card with × / "Not now".
+- `supabase/functions/lc-brain/index.ts` (NEW, reference copy of the deployed function).
+- `docs/security/email-spoofing-fix-2026-08-16.md`, `docs/outreach/fav-transport-jennifer-reply.md`.
+**After pushing:** Netlify builds itself (`site/` is gitignored). Then FETCH THE LIVE SITE and confirm
+the footer gap and the back-to-top button — see the deploy-#125 lesson lower in this file.
+
+### ➡️ NEXT TASKS, in order
+1. **Commit + push the above**, then verify live on a phone-width viewport.
+2. **Answer live-chat conversation `af4d30ad-1c01-4f1b-b8b4-20d2324e5354`** — 16 Aug 17:08, website,
+   said "I'm a carrier", `pending_human = true`, nobody has replied. Real person waiting.
+3. **Wire the Spanish flow to the brain.** `app_private.lc_bot_step_es` still has NONE of the new rules
+   (no brain dispatch, no anti-repeat, no repair detector, no lead ask, no gate). English-only today.
+4. **Chat watchdog cron.** If `pg_net` fails to deliver, the visitor gets silence. Add a job that
+   answers (or escalates) any visitor message with no bot reply after 60s.
+5. **~29 Aug: flip DMARC to `p=reject; sp=reject`** (owner has a reminder). Verify from outside with
+   `https://dns.google/resolve?name=_dmarc.loadboot.com&type=TXT` — and vary the URL, WebFetch caches
+   15 minutes.
+6. **Watch the lead gate for a week.** Conversations started vs `answers_given >= 2` vs
+   `email is not null`. If chats die at `gate_hits = 1` with no email, move the gate to 3 answers or
+   make it soft. Threshold is inline in `lc_bot_step`; add `lc_brain_config.gate_after` if it needs a knob.
+7. Optional: Gemini spend cap; BIMI/CMC only when volume justifies the ~$1.4k/yr certificate.
+
+### ⚠️ Gotchas earned this session (full detail in project memory)
+- `thinkingBudget: 0` is mandatory for Gemini 2.5-flash, otherwise it returns empty `parts`.
+- Gemini can emit a literal newline inside its JSON string → `JSON.parse` throws. `lc-brain` v3 has a
+  four-stage rescue; never let a parse error discard a written answer.
+- pg_net only sends **after COMMIT** — `pg_sleep` in the same transaction sees nothing.
+- Exact KB match scores `2.0 + 0.1 × words`, so a LONGER pattern beats a shorter one. When a new intent
+  loses, add the phrasing people actually type; do not raise priority.
+- A one-token change to a huge plpgsql function: `pg_get_functiondef` → `replace` → `execute`, after
+  asserting the anchor appears exactly once.
+- Staging live chat is behind prod (no `lc_identify`, no `lc_ob_*`, `lc_bot_step_es` is a shim).
+- The `.lbc-form button` CSS rule outranks a plain `.lbc-fx` — scope new controls as
+  `.lbc-form button.lbc-fx`.
+
+
 ## 🟢 START HERE — current state + next action (owner is continuing here)
 
 **Local dev now works** (owner's Windows machine, Python 3.14 installed):
