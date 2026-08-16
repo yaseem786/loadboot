@@ -6,7 +6,7 @@
 // so a partner can only ever see and touch its own records. Admin/staff use the
 // Command Center; carriers use the Carrier portal.
 import ENV from '../shared/env.js';
-import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updateEmail } from '../shared/session.js';
+import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updateEmail, mfaListFactors, mfaEnrollTotp, mfaVerify, mfaUnenroll, mfaRequired, signOutEverywhere } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
 import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
@@ -27,6 +27,8 @@ import {
   getPaymentInstructions, partnerSubmitInvoicePayment,
   loadChecklist, partnerChecklistSubmit, partnerUpdateRequests, partnerRespondUpdate,
   isFlagEnabled, myReferral, claimReferral,
+  requestAccountDeletion, cancelAccountDeletion, myAccountDeletionStatus,
+  deviceSeen, myDevices,
 } from '../shared/api.js';
 import { registerAppSW } from '../shared/sw-register.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
@@ -37,6 +39,11 @@ import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { payInstructions, payMarkSent, payDueItems, payTripMarkSent, ccLoadStops, isMyOrgAgent } from '../shared/api.js';
 import { initTelemetry } from '../shared/telemetry.js';
 import { initBackNav, pushLayer, popLayer } from '../shared/backnav.js';
+import { haptic, showSkeleton, attachPullToRefresh, setAppBadge } from '../shared/ux.js';
+import { enablePush, disablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
+import { renderFaq, PARTNER_FAQ } from '../shared/faq.js';
+import { initInstallPrompt } from '../shared/installprompt.js';
+import { showWhatsNew } from '../shared/whatsnew.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
 (async () => { try { window.__lbAgentOrg = !!(await isMyOrgAgent()); } catch (_) { window.__lbAgentOrg = false; } })();
 
@@ -166,6 +173,16 @@ function openModal(title, children, opts) {
   ]);
   const ov = h('div', { style: 'position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center', onClick: close }, card);
   if (window.matchMedia && window.matchMedia('(min-width: 700px)').matches) { ov.style.alignItems = 'center'; ov.style.padding = '24px'; card.style.borderRadius = '18px'; }
+  card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', title || 'Dialog');
+  // Focus trap (2026-08 audit): Tab cycles inside the dialog instead of escaping behind the scrim.
+  card.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const els = card.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');
+    if (!els.length) return;
+    const first = els[0], last = els[els.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
   document.body.appendChild(ov);
   document.addEventListener('keydown', onEsc);
   pushLayer(guard);
@@ -272,6 +289,9 @@ function openReschedule(l, after) {
     } catch (e) { save.disabled = false; save.textContent = 'Update & re-activate'; err.textContent = (e && e.message) || 'Could not update.'; }
   };
 }
+/* ---- 2026-08 audit: blocking alert() → premium toast (35 call sites upgraded at once).
+   Module-scope shadow; verified no call site depends on alert's blocking behaviour. ---- */
+function alert(msg) { try { pToast(String(msg == null ? 'Something went wrong.' : msg), { kind: 'error' }); } catch (_) { try { window.alert(msg); } catch (__) {} } }
 function pToast(msg, opts) {
   opts = opts || {};
   const kind = opts.kind || 'ok'; // ok | error | info
@@ -579,7 +599,15 @@ function authScreen() {
     h('div', { class: 'cp-auth-card' }, [
       h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:#64748b;font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
       h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#94A3B8;line-height:1;margin-top:5px" }, 'Partner')]),
-      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, typeBlock, err, btn, toggle,
+      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), pass, extra, typeBlock, err, btn,
+      // 2026-08 audit: locked-out brokers had NO recovery path from the sign-in screen.
+      h('button', { style: 'background:none;border:0;color:#0883F7;font-weight:700;font-size:.85rem;cursor:pointer;padding:8px 0 0;text-align:left', onClick: async (ev9) => {
+        const em9 = email.value.trim();
+        if (!em9 || em9.indexOf('@') < 1) { err.className = 'cp-err'; err.textContent = 'Type your email above first, then tap \u201cForgot password?\u201d.'; return; }
+        const _fb9 = ev9.currentTarget; _fb9.disabled = true;
+        try { const r9 = await resetPassword(em9); if (r9 && r9.error) throw r9.error; err.className = 'cp-err ok'; err.textContent = '\u2713 Password-reset link sent to ' + em9 + ' \u2014 check your inbox (and spam).'; }
+        catch (e9) { err.className = 'cp-err'; err.textContent = (e9 && e9.message) || 'Could not send the reset email.'; _fb9.disabled = false; }
+      } }, 'Forgot password?'), toggle,
       h('div', { class: 'cp-staff' }, [
         h('a', { href: '/app/carrier/' }, 'Are you a carrier? →'),
         h('a', { href: '/app/command-center/' }, 'Staff? Command Center →'),
@@ -894,6 +922,145 @@ function securityCard() {
         try { const u9 = await getUser(); const r9 = await resetPassword((u9 && u9.email) || ''); if (r9 && r9.error) throw r9.error; b9.textContent = '\u2713 Reset link sent to your email'; }
         catch (_) { b9.textContent = 'Could not send — try later'; b9.disabled = false; } } }, 'Send password-reset email'),
     ]), st9,
+    (function () {
+      const host9 = h('div', { style: 'margin-top:12px;border-top:1px solid rgba(148,163,184,.25);padding-top:10px' });
+      const sst9 = h('div', { class: 'cp-err' });
+      async function draw9() {
+        host9.innerHTML = '';
+        let fs9 = { totp: [] }; try { fs9 = await mfaListFactors(); } catch (_) {}
+        const f9 = (fs9.totp || []).find((x9) => x9.status === 'verified');
+        const row9 = (label9, btn9) => h('div', { style: 'display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap' }, [h('div', { class: 'cp-sub', style: 'margin:0;flex:1;min-width:180px' }, label9), btn9]);
+        if (f9) {
+          host9.appendChild(row9(['Two-factor authentication ', h('span', { class: 'cp-pill green' }, 'ON')], h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (e9) => {
+            if (!window.confirm('Turn OFF two-factor authentication?')) return;
+            const b9 = e9.currentTarget; b9.disabled = true; sst9.textContent = '';
+            try { await mfaUnenroll(f9.id); await draw9(); } catch (er9) { sst9.textContent = (er9 && er9.message) || 'Could not turn off 2FA — sign out and back in, then retry.'; b9.disabled = false; }
+          } }, 'Turn off')));
+        } else {
+          host9.appendChild(row9('Two-factor authentication (authenticator app)', h('button', { class: 'cp-btn cp-btn-sm', onClick: async (e9) => {
+            const b9 = e9.currentTarget; b9.disabled = true; sst9.textContent = '';
+            try {
+              const en9 = await mfaEnrollTotp();
+              const code9 = h('input', { class: 'cp-in', inputmode: 'numeric', maxlength: '6', placeholder: '6-digit code from the app', style: 'text-align:center;font-weight:800;letter-spacing:.3em' });
+              const em9 = h('div', { class: 'cp-err' });
+              const close9 = openModal('🔐 Set up two-factor', [
+                h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, '1. Open Google Authenticator (or any TOTP app) → add account → scan this code.'),
+                en9.totp && en9.totp.qr_code ? h('div', { style: 'background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center', html: en9.totp.qr_code }) : null,
+                h('div', { class: 'cp-sub', style: 'margin:8px 0;word-break:break-all' }, 'Can\u2019t scan? Enter this key manually: ' + ((en9.totp && en9.totp.secret) || '')),
+                h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, '2. Type the 6-digit code the app shows:'),
+                code9, em9,
+                h('button', { class: 'cp-btn', style: 'width:100%;margin-top:8px', onClick: async (ev9) => {
+                  const vb9 = ev9.currentTarget; vb9.disabled = true; em9.textContent = '';
+                  try { await mfaVerify(en9.id, code9.value); close9(); haptic('success'); pToast('Two-factor authentication is ON \u2014 you\u2019ll be asked for a code at sign-in.', 'ok'); await draw9(); }
+                  catch (er9) { em9.textContent = (er9 && er9.message) || 'Wrong code \u2014 try again.'; vb9.disabled = false; }
+                } }, 'Activate 2FA'),
+              ].filter(Boolean));
+            } catch (er9) { sst9.textContent = (er9 && er9.message) || 'Could not start 2FA setup.'; }
+            b9.disabled = false;
+          } }, 'Enable')));
+        }
+        host9.appendChild(row9('Sign out on every device (revokes all sessions)', h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (e9) => {
+          if (!window.confirm('Sign out of LoadBoot on ALL devices, including this one?')) return;
+          e9.currentTarget.disabled = true; await signOutEverywhere(); location.reload();
+        } }, 'Sign out everywhere')));
+        host9.appendChild(row9('Download my data (JSON copy of your account)', h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (e9) => {
+          const b9 = e9.currentTarget; b9.disabled = true; b9.textContent = 'Preparing\u2026';
+          const grab9 = async (fn9) => { try { return await fn9(); } catch (_) { return null; } };
+          try {
+            const data9 = {
+              exported_at: new Date().toISOString(),
+              profile: await grab9(() => partnerGetProfile()),
+              overview: await grab9(() => partnerOverview()),
+              loads: await grab9(() => partnerMyLoads(500)),
+              invoices: await grab9(() => partnerMyInvoices(500)),
+              claims: await grab9(() => partnerClaims()),
+              notifications: await grab9(() => partnerNotifications(200)),
+            };
+            const a9 = document.createElement('a');
+            a9.href = URL.createObjectURL(new Blob([JSON.stringify(data9, null, 2)], { type: 'application/json' }));
+            a9.download = 'loadboot-my-data.json';
+            document.body.appendChild(a9); a9.click();
+            setTimeout(() => { URL.revokeObjectURL(a9.href); a9.remove(); }, 1500);
+            haptic('success');
+          } catch (er9) { sst9.textContent = (er9 && er9.message) || 'Export failed.'; }
+          b9.disabled = false; b9.textContent = 'Download';
+        } }, 'Download')));
+        try {
+          const devs9 = await myDevices();
+          if (Array.isArray(devs9) && devs9.length) {
+            const myKey9 = localStorage.getItem('lb_device_key');
+            host9.appendChild(h('div', { class: 'cp-sub', style: 'margin-top:12px;font-weight:800;text-transform:uppercase;font-size:.68rem;letter-spacing:.06em' }, 'Devices signed in (last 10)'));
+            devs9.slice(0, 10).forEach((d9) => {
+              host9.appendChild(h('div', { style: 'display:flex;align-items:center;gap:10px;margin-top:6px' }, [
+                h('div', { class: 'cp-sub', style: 'margin:0;flex:1' }, (d9.label || 'Device') + (d9.device_key === myKey9 ? ' \u2014 this device' : '') + ' \u00b7 last active ' + new Date(d9.last_seen).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })),
+                d9.device_key === myKey9 ? h('span', { class: 'cp-pill green' }, 'current') : null,
+              ].filter(Boolean)));
+            });
+          }
+        } catch (_) {}
+      }
+      draw9();
+      return h('div', null, [host9, sst9]);
+    })(),
+  ]);
+}
+/* ---- 2026-08 audit: Account page was a 2-card stub — notifications, help, legal/version, delete-account (Play policy) ---- */
+function pnotifCard() {
+  const st9 = h('div', { class: 'cp-err' });
+  const btn9 = h('button', { class: 'cp-btn cp-btn-sm' }, '\u2026');
+  async function draw9() { try { const on9 = await isPushEnabled(); btn9.textContent = on9 ? 'Turn off on this device' : 'Enable on this device'; btn9.dataset.on = on9 ? '1' : '0'; } catch (_) { btn9.textContent = 'Enable on this device'; btn9.dataset.on = '0'; } }
+  btn9.onclick = async () => { btn9.disabled = true; st9.className = 'cp-err'; st9.textContent = '';
+    try { if (btn9.dataset.on === '1') { await disablePush(); } else { await enablePush('Partner portal'); } await draw9(); haptic('success'); st9.className = 'cp-err ok'; st9.textContent = '\u2713 Saved.'; }
+    catch (e9) { st9.textContent = (e9 && e9.message) || 'Could not change push notifications.'; }
+    btn9.disabled = false; };
+  if (pushSupported()) { if (typeof Notification !== 'undefined' && Notification.permission === 'denied') { btn9.disabled = true; btn9.textContent = 'Blocked \u2014 enable in browser/phone settings'; } else draw9(); } else { btn9.disabled = true; btn9.textContent = 'Not supported on this browser'; }
+  return h('div', { class: 'cp-card' }, [
+    h('div', { class: 'cp-cardhead' }, [h('h3', null, '\ud83d\udd14 Notifications')]),
+    h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Push alerts on this device for booking requests, claims and load milestones.'),
+    btn9, st9,
+  ]);
+}
+function phelpCard() {
+  const c9 = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [h('h3', null, '\u2753 Help center')]), h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Instant answers \u2014 or use the chat bubble to reach a person.')]);
+  try { renderFaq(c9, PARTNER_FAQ); } catch (_) {}
+  return c9;
+}
+function plegalCard() {
+  const build9 = (window.__LB_ENV && window.__LB_ENV.buildId) || '';
+  return h('div', { class: 'cp-card' }, [
+    h('div', { class: 'cp-cardhead' }, [h('h3', null, '\u2139 About & legal')]),
+    h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+      h('a', { class: 'cp-btn cp-btn-sm ghost', href: '/privacy.html', target: '_blank', rel: 'noopener', style: 'text-decoration:none' }, 'Privacy policy'),
+      h('a', { class: 'cp-btn cp-btn-sm ghost', href: '/terms.html', target: '_blank', rel: 'noopener', style: 'text-decoration:none' }, 'Terms of service'),
+      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev9) => { ev9.currentTarget.disabled = true; await signOut(); location.reload(); } }, 'Sign out'),
+    ]),
+    build9 ? h('div', { class: 'cp-sub', style: 'margin-top:10px;color:#94a3b8' }, 'LoadBoot Partner \u00b7 build ' + build9) : null,
+  ].filter(Boolean));
+}
+function pdeleteCard() {
+  const st9 = h('div', { class: 'cp-err' });
+  const host9 = h('div');
+  async function draw9() {
+    host9.innerHTML = '';
+    let d9 = null; try { d9 = await myAccountDeletionStatus(); } catch (_) {}
+    if (d9 && (d9.status === 'pending' || d9.status === 'requested')) {
+      host9.appendChild(h('div', { class: 'cp-sub' }, '\u23f3 Deletion requested \u2014 your account and personal data will be removed after the 30-day window' + (d9.delete_after ? ' (on ' + String(d9.delete_after).slice(0, 10) + ')' : '') + '. Changed your mind?'));
+      host9.appendChild(h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: async (e9) => { const _b9 = e9.currentTarget; _b9.disabled = true; st9.textContent = ''; try { await cancelAccountDeletion(); await draw9(); } catch (er9) { st9.textContent = (er9 && er9.message) || 'Could not cancel.'; _b9.disabled = false; } } }, 'Cancel deletion'));
+      return;
+    }
+    const why9 = h('input', { class: 'cp-in', placeholder: 'Why are you leaving? (optional)' });
+    host9.appendChild(h('div', { class: 'cp-sub' }, 'Permanently delete your LoadBoot account and personal data. Deletion is queued with a 30-day window \u2014 open loads, invoices and legally required records complete or are retained as the law requires.'));
+    host9.appendChild(why9);
+    host9.appendChild(h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#dc2626;border-color:#dc2626;color:#fff;margin-top:8px', onClick: async (e9) => {
+      if (!window.confirm('Request deletion of your LoadBoot account and personal data? You get a 30-day window to cancel.')) return;
+      const _b9 = e9.currentTarget; _b9.disabled = true; st9.textContent = '';
+      try { await requestAccountDeletion(why9.value.trim() || null); haptic('warn'); await draw9(); } catch (er9) { st9.textContent = (er9 && er9.message) || 'Could not request deletion.'; _b9.disabled = false; }
+    } }, 'Delete my account'));
+  }
+  draw9();
+  return h('div', { class: 'cp-card', style: 'border-color:rgba(220,38,38,.35)' }, [
+    h('div', { class: 'cp-cardhead' }, [h('h3', null, '\ud83d\uddd1 Delete account')]),
+    host9, st9,
   ]);
 }
 function accountCard() {
@@ -1513,14 +1680,18 @@ async function brokerDash(user, ov) {
   const listHost = h('div', { class: 'cp-tablewrap' }, h('div', { class: 'lb-state lb-loading' }, 'Loading…'));
   // ----- Load Wizard (Inc 44): multi-step broker submission with duplicate detection + doc checklist -----
   const w = { appointment_required: false, tracking_required: false };
+  // 2026-08 audit: draft auto-save — a refresh used to wipe the whole 5-step wizard.
+  try { const _pd9 = JSON.parse(localStorage.getItem('lb_pl_draft') || 'null'); if (_pd9 && typeof _pd9 === 'object') Object.assign(w, _pd9); } catch (_) {}
+  let _plT9 = null;
+  const _plSave = () => { clearTimeout(_plT9); _plT9 = setTimeout(() => { try { localStorage.setItem('lb_pl_draft', JSON.stringify(w)); } catch (_) {} }, 400); };
   const stepHost = h('div');
   const STEPS = ['Lane', 'Schedule', 'Equipment & commodity', 'Requirements', 'Review'];
   let step = 0, confirmDup = false, prevStep = 0;
   // reactive=true => re-render the step live on each keystroke (market estimate, TEAM check, etc.)
   // stay wired even after the value is cleared and retyped, with focus + caret preserved.
   function renderStepFocus(fkey, caret) { renderStep(); try { const el = stepHost.querySelector('[data-fkey="' + fkey + '"]'); if (el) { el.focus(); if (el.type !== 'number' && caret != null) { try { el.setSelectionRange(caret, caret); } catch (_) {} } } } catch (_) {} }
-  const wi = (label, key, type, reactive) => { const i = inp(label, type || 'text'); i.value = w[key] || ''; i.setAttribute('data-fkey', key); i.oninput = () => { w[key] = i.value; if (reactive) { let c = null; try { c = i.selectionStart; } catch (_) {} renderStepFocus(key, c); } }; return field(label, i); };
-  const toggle = (label, key) => { const b = h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; b.className = 'cp-btn ghost' + (w[key] ? ' on' : ''); b.textContent = label + ': ' + (w[key] ? 'Yes' : 'No'); } }, label + ': ' + (w[key] ? 'Yes' : 'No')); return b; };
+  const wi = (label, key, type, reactive) => { const i = inp(label, type || 'text'); i.value = w[key] || ''; i.setAttribute('data-fkey', key); i.oninput = () => { w[key] = i.value; _plSave(); if (reactive) { let c = null; try { c = i.selectionStart; } catch (_) {} renderStepFocus(key, c); } }; return field(label, i); };
+  const toggle = (label, key) => { const b = h('button', { class: 'cp-btn ghost' + (w[key] ? ' on' : ''), onClick: () => { w[key] = !w[key]; _plSave(); b.className = 'cp-btn ghost' + (w[key] ? ' on' : ''); b.textContent = label + ': ' + (w[key] ? 'Yes' : 'No'); } }, label + ': ' + (w[key] ? 'Yes' : 'No')); return b; };
   function renderStep() {
     let body;
     if (step === 0) {
@@ -2462,7 +2633,7 @@ async function brokerDash(user, ov) {
         if (directCarrier) { payload.details.direct_carrier_id = directCarrier.id; payload.details.direct_carrier_name = directCarrier.name; payload.details.direct_wait_minutes = w.direct_wait_minutes || '15'; }
         await partnerSubmitLoad(payload);
         err.className = 'cp-err ok'; err.textContent = '✓ Load submitted' + (directCarrier ? ' \u2014 \ud83c\udfaf direct offer to ' + directCarrier.name + ' fires automatically when dispatch posts it' : '') + ' \u2014 our dispatch team will review it and generate the document checklist.'; directCarrier = null;
-        for (const k in w) delete w[k]; w.appointment_required = false; w.tracking_required = false; step = 0; confirmDup = false; renderStep(); loadList();
+        for (const k in w) delete w[k]; w.appointment_required = false; w.tracking_required = false; step = 0; confirmDup = false; try { localStorage.removeItem('lb_pl_draft'); } catch (_) {} renderStep(); loadList(); try { pToast('\u2713 Load submitted \u2014 dispatch reviews it and posts it to carriers', 'ok'); haptic('success'); } catch (_) {}
       } catch (e) {
         const msg = (e && e.message) || 'Could not submit the load.';
         if (/duplicate/i.test(msg)) { confirmDup = true; err.textContent = 'Possible duplicate in the last 24h. Press “Submit anyway” to proceed.'; renderStep(); }
@@ -2538,6 +2709,21 @@ async function brokerDash(user, ov) {
       let __bq9 = {};
       try { ((await bookRequestsQueue('pending')) || []).forEach(r9 => { const k9 = [r9.origin, r9.destination, r9.equipment].join('|'); (__bq9[k9] = __bq9[k9] || []).push(r9); }); } catch (_) {}
       if (!rows || !rows.length) { mount(listHost, h('div', { class: 'lb-state' }, 'No loads yet. Post your first load above.')); return; }
+      // 2026-08 audit: search + status filter — a broker with 50 loads no longer scrolls a wall of cards.
+      const _mlNorm9 = (x9) => String(x9 || '').toLowerCase();
+      const rowsF = rows.filter((l) => {
+        const q9 = _mlNorm9(window.__mlQ9);
+        const okQ9 = !q9 || [l.origin, l.destination, l.equipment, l.ref, l.id, l.carrier].some((v9) => _mlNorm9(v9).includes(q9));
+        const t9 = _mlNorm9(l.status) + ' ' + _mlNorm9(l.board_status);
+        const st9 = window.__mlSt9 || 'all';
+        const okS9 = st9 === 'all' || (st9 === 'active' ? /available|posted|booked|assigned|covered|transit|dispatch/.test(t9) : st9 === 'delivered' ? /deliver|complete|invoiced/.test(t9) : /submitted|pending|review|rejected/.test(t9));
+        return okQ9 && okS9;
+      });
+      const qIn9 = h('input', { class: 'cp-in', placeholder: '\ud83d\udd0e Search origin, destination, ref, carrier\u2026', value: window.__mlQ9 || '', style: 'margin:0;flex:1;min-width:180px' });
+      let qT9 = null; qIn9.oninput = () => { window.__mlQ9 = qIn9.value; clearTimeout(qT9); qT9 = setTimeout(() => loadList(), 300); };
+      const stSel9 = h('select', { class: 'cp-in', style: 'margin:0;max-width:170px' }, [['all', 'Status: all'], ['active', 'Active / posted'], ['delivered', 'Delivered'], ['review', 'In review']].map(([v9, l9]) => { const o9 = h('option', { value: v9 }, l9); if ((window.__mlSt9 || 'all') === v9) o9.selected = true; return o9; }));
+      stSel9.onchange = () => { window.__mlSt9 = stSel9.value; loadList(); };
+      const bar9 = h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center' }, [qIn9, stSel9, h('span', { class: 'cp-sub', style: 'margin:0' }, rowsF.length + '/' + rows.length)]);
       // Mobile-first load cards with a lifecycle stepper (submitted -> posted -> booked -> delivered).
       const BSTEPS = [['submitted', 'Submitted'], ['posted', 'Posted'], ['booked', 'Booked'], ['delivered', 'Delivered']];
       const bIdx = (l) => {
@@ -2547,7 +2733,7 @@ async function brokerDash(user, ov) {
         if (/available|posted/.test(t)) return 1;
         return 0;
       };
-      mount(listHost, h('div', null, rows.map(l => {
+      mount(listHost, h('div', null, [bar9].concat(rowsF.length ? [] : [h('div', { class: 'lb-state' }, 'No loads match your search \u2014 clear the filters above.')]).concat(rowsF.map(l => {
         const idx = bIdx(l);
         const stepper = h('div', { style: 'display:flex;gap:5px;margin:10px 0 4px' }, BSTEPS.map(([k, label], i) =>
           h('div', { style: 'flex:1;text-align:center' }, [
@@ -2748,7 +2934,7 @@ async function brokerDash(user, ov) {
             } }, '\u2715 Cancel') : null,
           ].filter(Boolean)),
         ]);
-      })));
+      }))));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
 
@@ -3274,6 +3460,10 @@ async function brokerDash(user, ov) {
             h('div', { class: 'cp-sub', style: 'margin-top:8px' }, 'Detention & layover accrue from the driver\u2019s GPS arrive/depart stamps at each stop. Approved amounts pass straight through to the carrier\u2019s invoice \u2014 LoadBoot takes no cut.'),
           ]);
         })(),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px' }, [
+          document.querySelector('.lbc-fab') ? h('button', { class: 'cp-btn cp-btn-sm', onClick: () => { const f9 = document.querySelector('.lbc-fab'); if (f9) f9.click(); } }, '\ud83d\udcac Chat with dispatch') : null,
+          h('a', { class: 'cp-btn cp-btn-sm ghost', style: 'text-decoration:none', href: 'mailto:dispatch@loadboot.com?subject=' + encodeURIComponent('Load ' + (ld.origin || '') + ' \u2192 ' + (ld.destination || '') + ' \u2014 tracking question') }, '\u2709 Email dispatch'),
+        ].filter(Boolean)),
         h('div', { class: 'cp-sub', style: 'margin-top:10px;text-align:center' }, 'Auto-refreshes every 30 seconds \u00b7 GPS is captured from the driver\u2019s device from booking to delivery \u00b7 every milestone lands in your notifications'),
       ].filter(Boolean)));
       // tiles
@@ -4192,7 +4382,7 @@ function packetAgreementCards(skipPacket) {
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
     onboarding: [brokerOnboardingWizard()],
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
-    account: [accountCard(), securityCard()],
+    account: [accountCard(), securityCard(), pnotifCard(), phelpCard(), plegalCard(), pdeleteCard()],
   };
   let btab = (location.hash || '').replace('#', '') || 'dashboard';
   let __openPostOnBoot = false;
@@ -4481,6 +4671,16 @@ function packetAgreementCards(skipPacket) {
   window.addEventListener('hashchange', () => { const t9 = (location.hash || '').replace('#', ''); if (t9 && t9 !== btab && BNAV.some((n) => n[0] === t9)) bgo(t9); });
   // Big-brand Android back: back → Dashboard first, exit only from Dashboard.
   initBackNav({ goHome: () => { if (btab !== 'dashboard') { bgo('dashboard'); return true; } return false; } });
+  try { attachPullToRefresh(bContent, async () => { brender(); }); } catch (_) {}
+  // 2026-08 audit: pending-claims badge on the tab bar + OS app-icon badge.
+  async function refreshTabBadges9() {
+    try {
+      const cls9 = ((await partnerClaims()) || []).filter((c9) => String(c9.broker_status || 'pending') === 'pending').length;
+      (bLinks['claims'] || []).forEach((a9) => { let b9 = a9.querySelector('.cp-tab-badge'); if (cls9 > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(cls9 > 9 ? '9+' : cls9); } else if (b9) b9.remove(); });
+      setAppBadge(cls9);
+    } catch (_) {}
+  }
+  refreshTabBadges9(); setInterval(refreshTabBadges9, 120000);
   const bShell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
       h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: KIND_LABEL[ov.kind] || 'Broker' })),
@@ -4766,8 +4966,35 @@ async function boot() {
   if (!session) { authScreen(); return; }
   _hadSession = true; watchAuth();
   try { mountOfflineBanner(); } catch (_) {}
+  try { initInstallPrompt(); } catch (_) {}
+  try { ensurePushHealthy('Partner portal'); } catch (_) {}
+  try { let dk9 = localStorage.getItem('lb_device_key'); if (!dk9) { dk9 = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('lb_device_key', dk9); } deviceSeen(dk9, (/android/i.test(navigator.userAgent) ? 'Android' : /iphone|ipad/i.test(navigator.userAgent) ? 'iPhone/iPad' : 'Computer') + ' \u00b7 ' + (/chrome/i.test(navigator.userAgent) ? 'Chrome' : /safari/i.test(navigator.userAgent) ? 'Safari' : 'Browser'), navigator.userAgent).catch(() => {}); } catch (_) {}
+  try { showWhatsNew(['Post-a-load now auto-saves a draft as you type', 'Delete account, push notifications, help center and legal \u2014 new on the Account page', 'Forgot-password link on the sign-in screen', 'Pull down on any page to refresh']); } catch (_) {}
+  try { const f9 = await mfaRequired(); if (f9) { renderMfaGateP(f9); return; } } catch (_) {}
   let user = null; try { user = await getUser(); } catch (_) {}
   appView(user);
+}
+
+/* ---- 2FA login gate (2026-08 audit, owner-approved) ---- */
+function renderMfaGateP(factorId) {
+  const err9 = h('div', { class: 'cp-err' });
+  const code9 = h('input', { class: 'cp-in', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '6', placeholder: '6-digit code', style: 'font-size:1.3rem;letter-spacing:.35em;text-align:center;font-weight:800' });
+  const go9 = h('button', { class: 'cp-btn cp-btn-lg', style: 'width:100%;margin-top:10px' }, 'Verify');
+  const submit9 = async () => {
+    const c9 = code9.value.trim(); if (c9.length < 6) { err9.textContent = 'Enter the 6-digit code from your authenticator app.'; return; }
+    go9.disabled = true; go9.textContent = 'Verifying…'; err9.textContent = '';
+    try { await mfaVerify(factorId, c9); haptic('success'); boot(); }
+    catch (e9) { err9.textContent = (e9 && e9.message) || 'Wrong code — try again.'; go9.disabled = false; go9.textContent = 'Verify'; code9.value = ''; code9.focus(); }
+  };
+  go9.onclick = submit9; code9.onkeydown = (e9) => { if (e9.key === 'Enter') submit9(); };
+  mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
+    h('h1', null, '🔐 Two-factor check'),
+    h('p', { class: 'cp-auth-sub' }, 'This account is protected with 2FA. Enter the code from your authenticator app.'),
+    code9, err9, go9,
+    h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:10px', onClick: async () => { await signOut(); location.reload(); } }, 'Use a different account'),
+  ])));
+  root.setAttribute('aria-busy', 'false');
+  setTimeout(() => code9.focus(), 60);
 }
 
 boot();

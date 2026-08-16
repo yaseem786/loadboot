@@ -29,6 +29,56 @@ export async function getAAL() {
   }
 }
 
+/* ---- MFA / TOTP (2026-08 audit, owner-approved): real 2FA via Supabase Auth. ----
+   Enroll: mfaEnrollTotp() -> { id, totp: { qr_code (SVG string), secret, uri } }
+   then mfaVerify(factorId, code) to activate. Login gating: mfaRequired() returns
+   the verified factorId when the session is aal1 but the account has aal2. */
+export async function mfaListFactors() {
+  const sb = await getClient();
+  const { data, error } = await sb.auth.mfa.listFactors();
+  if (error) throw error;
+  return data || { totp: [] };
+}
+export async function mfaEnrollTotp() {
+  const sb = await getClient();
+  const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Authenticator app' });
+  if (error) throw error;
+  return data;
+}
+export async function mfaVerify(factorId, code) {
+  const sb = await getClient();
+  const ch = await sb.auth.mfa.challenge({ factorId });
+  if (ch.error) throw ch.error;
+  const v = await sb.auth.mfa.verify({ factorId, challengeId: ch.data.id, code: String(code || '').trim() });
+  if (v.error) throw v.error;
+  return true;
+}
+export async function mfaUnenroll(factorId) {
+  const sb = await getClient();
+  const { error } = await sb.auth.mfa.unenroll({ factorId });
+  if (error) throw error;
+  return true;
+}
+// Returns the verified TOTP factor id when a second factor is REQUIRED to reach aal2.
+export async function mfaRequired() {
+  try {
+    const a = await getAAL();
+    if (a.next === 'aal2' && a.current !== 'aal2') {
+      const f = await mfaListFactors();
+      const t = (f.totp || []).find((x) => x.status === 'verified');
+      return t ? t.id : null;
+    }
+  } catch (_) {}
+  return null;
+}
+
+// Sign out on EVERY device (revokes all refresh tokens server-side), then local purge.
+export async function signOutEverywhere() {
+  const sb = await getClient();
+  try { await Promise.race([sb.auth.signOut({ scope: 'global' }), new Promise((r) => setTimeout(r, 4000))]); } catch (_) {}
+  await signOut();
+}
+
 export async function signInWithPassword(email, password) {
   const sb = await getClient();
   // Mobile keyboards inject trailing spaces / zero-width & RTL marks (suggestion taps,

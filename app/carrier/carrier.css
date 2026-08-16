@@ -648,3 +648,34 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
   .cp-inflight-actions .cp-btn{width:100%;margin:0}
   .cp-inflight-actions .cp-pill{align-self:flex-start}
 }
+
+/* ================= 2026-08 app-audit additions (skeletons, PTR, badges) ================= */
+/* Skeleton loaders — content-shaped shimmer instead of "Loading…" text */
+.lb-skel-wrap{display:flex;flex-direction:column;gap:12px;padding:4px 0}
+.lb-skel-card{background:var(--lb-card-bg,rgba(148,163,184,.07));border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:14px}
+.lb-skel-card.row{display:flex;gap:12px;align-items:center}
+.lb-skel{position:relative;overflow:hidden;background:rgba(148,163,184,.18);border-radius:8px}
+.lb-skel::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent);animation:lbSkelSweep 1.4s infinite}
+.lb-skel.ln{height:12px;margin-top:8px}
+.lb-skel.ln:first-child{margin-top:0}
+.lb-skel.av{width:42px;height:42px;border-radius:50%;flex:none}
+.lb-skel.w40{width:40%}.lb-skel.w45{width:45%}.lb-skel.w55{width:55%}.lb-skel.w60{width:60%}.lb-skel.w70{width:70%}.lb-skel.w75{width:75%}.lb-skel.w80{width:80%}.lb-skel.w90{width:90%}
+@keyframes lbSkelSweep{100%{transform:translateX(100%)}}
+
+/* Pull-to-refresh indicator */
+.lb-ptr{position:fixed;top:calc(env(safe-area-inset-top) - 40px);left:50%;transform:translateX(-50%);z-index:9996;background:#10223B;color:#eaf1fb;border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:8px 16px;display:flex;align-items:center;gap:8px;font:700 12.5px system-ui,sans-serif;box-shadow:0 10px 26px -8px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .15s}
+.lb-ptr.show{opacity:1}
+.lb-ptr.ready .lb-ptr-spin{border-top-color:#0883F7;animation:lbPtrSpin .8s linear infinite}
+.lb-ptr-spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(148,163,184,.4);border-top-color:#94a3b8;flex:none}
+@keyframes lbPtrSpin{to{transform:rotate(360deg)}}
+
+/* Saved-load star + tab-bar unread badge */
+.cpx-fav{background:none;border:0;cursor:pointer;font-size:20px;line-height:1;padding:2px 4px;margin-left:auto;color:#94a3b8;flex:none;min-width:32px;min-height:32px}
+.cpx-fav.on{color:#f59e0b}
+.cp-navlink{position:relative}
+.cp-tab-badge{position:absolute;top:2px;right:calc(50% - 18px);min-width:16px;height:16px;border-radius:99px;background:#FC5305;color:#fff;font:800 10px/16px system-ui,sans-serif;text-align:center;padding:0 4px}
+
+/* Reduced motion — blanket guard (WCAG): kill all animation for users who ask for it */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
