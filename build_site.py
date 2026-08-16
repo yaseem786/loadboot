@@ -276,7 +276,7 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .social a:hover{background:var(--blue)}
 .links5{display:grid;grid-template-columns:repeat(6,1fr);gap:26px;margin-bottom:40px}
 .foot-bottom{border-top:1px solid #1e293b;padding-top:24px;font-size:.88rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.mcta{display:none;position:fixed;bottom:0;left:0;right:0;z-index:70;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:12px 16px;gap:10px}
+.mcta{display:none;position:fixed;bottom:0;left:0;right:0;z-index:70;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));gap:10px}
 .mcta a{flex:1;justify-content:center}
 .scroll-road-sec{position:relative;color:#fff;padding:88px 0 70px;overflow:hidden;background:linear-gradient(135deg,#10223B,#1e293b)}
 .scroll-road-sec h2{color:#fff}.scroll-road-sec .eyebrow{color:#93c5fd}
@@ -302,7 +302,7 @@ footer .logo{color:#fff}footer a{color:#cbd5e1;display:block;margin:8px 0;font-s
 .g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}
 section{padding:66px 0}.promise,.fcta{padding:48px 24px}.form-grid{grid-template-columns:1fr}
 .foot-top{grid-template-columns:1fr}.links5{grid-template-columns:repeat(2,1fr);gap:28px 20px}
-.cmp{font-size:.82rem}.cmp th,.cmp td{padding:12px 10px}.mcta{display:flex}body{padding-bottom:72px}}
+.cmp{font-size:.82rem}.cmp th,.cmp td{padding:12px 10px}.mcta{display:flex}body{padding-bottom:0}footer{padding-bottom:calc(30px + 76px + env(safe-area-inset-bottom,0px))}}
 header{-webkit-backdrop-filter:blur(14px)}.mcta{-webkit-backdrop-filter:blur(10px)}
 img{max-width:100%;height:auto}*{-webkit-tap-highlight-color:transparent}
 @media(max-width:880px){.cmp{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}.wrap{padding:0 18px}h1,h2{word-break:break-word}.hero{padding:74px 0 78px}.sec-head{margin-bottom:34px}.promise,.fcta{border-radius:20px;padding:42px 22px}.quote-wrap{padding:26px}.scroll-road{height:120px}.hero-btns{flex-direction:column;align-items:stretch}.hero-btns .btn{width:100%;justify-content:center}.ctarow{flex-direction:column;align-items:stretch}.ctarow .btn{width:100%;justify-content:center}.hd-btn{display:none}.nav-cta{gap:0}}
@@ -577,13 +577,13 @@ def page(fname, title, desc, active, body, schema=''):
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6"><script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "xvcrda1da1");</script><script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>%s</head><body>
+<link rel="stylesheet" href="styles.css?v=7"><script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "xvcrda1da1");</script><script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>%s</head><body>
 %s
 %s
 %s
 <script>%s</script>
 <script src="app.js?v=6"></script>
-<script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=3"></script><script defer src="/app/shared/ui/lcOnboard.js?v=3"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
+<script defer src="/app/shared/ui/backToTop.js?v=1"></script><script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=3"></script><script defer src="/app/shared/ui/lcOnboard.js?v=3"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -1539,7 +1539,7 @@ var dw=document.getElementById('detailsWrap');if(dw)dw.style.display=isAcct?'non
 var nm=document.querySelector('[name=name]');if(nm)nm.required=!isAcct;var em=document.querySelector('[name=email]');if(em)em.required=!isAcct;
 var msg=document.querySelector('[name=message]');var ml=document.getElementById('msgLabel');
 if(msg){msg.required=(!isAcct&&!isQuote);}
-if(ml){ml.innerHTML=(!isAcct&&!isQuote)?'Your message':((isQuote?'Load / lane details ':'Anything else? ')+'<span style=\'color:var(--muted);font-weight:500\'>(optional)</span>');}
+if(ml){ml.innerHTML=(!isAcct&&!isQuote)?'Your message':((isQuote?'Load / lane details ':'Anything else? ')+'<span style="color:var(--muted);font-weight:500">(optional)</span>');}
 var b=document.getElementById('submitBtn');if(b){b.style.display=isAcct?'none':'';b.innerHTML=(isQuote?'Get My Rate Quote':'Send Message')+' &rarr;';}
 var t=document.getElementById('formIntro');if(t)t.textContent=isAcct?'Tell us about your operation and a dispatcher gets you set up.':(isQuote?'Tell us about a load or lane and we will send you a rate.':'Send us a message and we will get right back to you.');}
 (function(){var h=location.hash;var map={'#quote':'iQuote','#ask':'iAsk','#question':'iAsk','#create':'iAcct','#account':'iAcct','#form':null};if(h in map){var id=map[h];if(id){var r=document.getElementById(id);if(r)r.checked=true;}setTimeout(function(){var f=document.getElementById('qfForm');if(f)f.scrollIntoView({behavior:'smooth',block:'start'});},150);}qfIntent();
@@ -7466,7 +7466,7 @@ NOTFOUND = (
 '<meta name="viewport" content="width=device-width,initial-scale=1">'
 '<meta name="robots" content="noindex,follow">'
 '<title>Page not found &mdash; Loadboot</title>'
-'<link rel="stylesheet" href="/styles.css?v=6">'
+'<link rel="stylesheet" href="/styles.css?v=7">'
 '<link rel="icon" href="/favicon.ico?v=2">'
 '<style>.nf{min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}'
 '.nf .in{max-width:520px}.nf .c{font-family:\'Manrope\',sans-serif;font-weight:800;font-size:3.2rem;color:#0883F7;line-height:1}'
