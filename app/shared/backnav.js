@@ -59,8 +59,14 @@ window.addEventListener('popstate', onPop);
 
 export function initBackNav(opts) {
   goHome = (opts && opts.goHome) || null;
+  // 2026-08 audit fix: a re-init used to drop tracked layers while their history
+  // entries survived, making the next N back presses dead. Unwind them instead.
+  const orphans = stack.length;
   stack.length = 0;     // a fresh shell invalidates any stale logged-out layers
-  if (inited) return;   // per-pageload: root marker + app entry already in place
+  if (inited) {
+    if (orphans > 0) { try { suppress += orphans; history.go(-orphans); } catch (_) {} }
+    return;
+  }
   inited = true;
   try {
     history.replaceState({ lb: 'root' }, '', location.href);   // entry under the app
@@ -76,6 +82,11 @@ export function pushLayer(closeFn) {
 export function popLayer(closeFn) {
   const i = stack.lastIndexOf(closeFn);
   if (i < 0) return;
+  const wasTop = i === stack.length - 1;
   stack.splice(i, 1);
-  try { suppress++; history.back(); } catch (_) {}
+  // 2026-08 audit fix: only pop history when the closed layer was the TOP one.
+  // Popping for a non-top layer consumed the top layer's entry and desynced the
+  // stack. Leaving the extra entry is safe: onPop closes layers stack-first, and
+  // once the stack is empty a leftover entry is a harmless no-op back press.
+  if (wasTop) { try { suppress++; history.back(); } catch (_) {} }
 }

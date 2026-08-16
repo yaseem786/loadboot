@@ -6,7 +6,7 @@
 // so cross-carrier access is impossible). Admin/staff use the Command Center.
 import ENV from '../shared/env.js';
 import { US_CITIES } from './us-cities.js';
-import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updatePassword } from '../shared/session.js';
+import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updatePassword, mfaListFactors, mfaEnrollTotp, mfaVerify, mfaUnenroll, mfaRequired, signOutEverywhere } from '../shared/session.js';
 import {
   requestAccountDeletion, cancelAccountDeletion, myAccountDeletionStatus,
   pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
@@ -33,10 +33,11 @@ import {
   iftaSet, iftaSummary, truckSetMaintenance, fleetMaintenance,
   fleetServiceAdd, fleetServiceList, fleetServiceDelete,
   payrollAdd, payrollList, payrollMarkPaid, payrollDelete,
+  laneRate, fuelPricesGet, deviceSeen, myDevices, facilityReviewSubmit, facilityRatings,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
 import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
-import { enablePush, isPushEnabled, pushSupported } from '../shared/push.js';
+import { enablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
 import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
@@ -48,6 +49,10 @@ import { mountStrengthCard, maybeShowMicroAsk } from './prefs-strength.js';
 import { mountOfflineBanner } from '../shared/connectivity.js';
 import { initTelemetry } from '../shared/telemetry.js';
 import { initBackNav, pushLayer, popLayer } from '../shared/backnav.js';
+import { haptic, showSkeleton, attachPullToRefresh, setAppBadge, countUp, attachSwipeAction } from '../shared/ux.js';
+import { showWhatsNew } from '../shared/whatsnew.js';
+import { initInstallPrompt } from '../shared/installprompt.js';
+import { renderFaq, CARRIER_FAQ } from '../shared/faq.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
@@ -132,8 +137,55 @@ function lbNotifDest(n, p) {
   if (/approved|welcome|booking/.test(txt)) return 'dashboard';
   return 'notifications';
 }
+/* ---- Lane-rate context at the negotiation moment (2026-08 audit: DAT pattern) ---- */
+function _lbSt(x) { const m = String(x || '').match(/,\s*([A-Za-z]{2})(?:\s|$)/); return m ? m[1].toUpperCase() : null; }
+function lbLaneRateCard(l) {
+  const host = h('div');
+  (async () => {
+    try {
+      const o = _lbSt(l.origin), d = _lbSt(l.destination);
+      if (!o || !d) return;
+      const r = await laneRate(o, d, l.equipment || null, l.miles || null);
+      if (!r || (!r.avg_rpm && !r.avg && !r.low)) return;
+      const f = (v) => (v == null ? null : '$' + Number(v).toFixed(2));
+      const low = f(r.low_rpm ?? r.low), avg = f(r.avg_rpm ?? r.avg), high = f(r.high_rpm ?? r.high);
+      const myRpm = (l.rate && Number(l.miles) > 0) ? Number(l.rate) / Number(l.miles) : null;
+      const rows = [low ? 'low ' + low : null, avg ? 'avg ' + avg : null, high ? 'high ' + high : null].filter(Boolean).join(' · ');
+      if (!rows) return;
+      host.appendChild(h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:12px;padding:10px 13px;font-size:.8rem;margin-bottom:12px' }, [
+        h('b', { style: 'display:block;margin-bottom:2px' }, '📊 ' + o + ' → ' + d + ' market ($/mi): ' + rows),
+        myRpm && (r.avg_rpm ?? r.avg) ? h('span', { style: 'color:' + (myRpm >= Number(r.avg_rpm ?? r.avg) ? '#16a34a' : '#d97706') + ';font-weight:700' },
+          'This load pays $' + myRpm.toFixed(2) + '/mi — ' + (myRpm >= Number(r.avg_rpm ?? r.avg) ? 'at or above' : 'below') + ' the lane average.') : null,
+      ].filter(Boolean)));
+    } catch (_) {}
+  })();
+  return host;
+}
+/* ---- Store-review ask (Play In-App-Review has no TWA web API — deep-link the listing) ---- */
+function lbMaybeAskStoreReview() {
+  try {
+    if (Date.now() - Number(localStorage.getItem('lb_store_rev') || 0) < 90 * 864e5) return;
+    localStorage.setItem('lb_store_rev', String(Date.now()));
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const card = h('div', { style: 'position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:9998;background:#10223B;color:#eaf1fb;border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:14px 16px;box-shadow:0 18px 44px -12px rgba(0,0,0,.65);max-width:480px;margin:0 auto' }, [
+      h('div', { style: 'display:flex;align-items:center;gap:8px' }, [h('b', { style: 'font-size:14px' }, '⭐ Enjoying LoadBoot?'), h('button', { style: 'margin-left:auto;background:none;border:0;color:#8ea2c3;font-size:18px;cursor:pointer', onClick: () => card.remove() }, '×')]),
+      h('div', { style: 'font-size:.84rem;color:#b9c6db;margin-top:4px' }, 'A quick rating helps more carriers find verified freight.'),
+      isAndroid ? h('a', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px;display:inline-block;text-decoration:none', href: 'https://play.google.com/store/apps/details?id=com.loadboot.app', target: '_blank', rel: 'noopener' }, 'Rate on Google Play') : null,
+    ].filter(Boolean));
+    document.body.appendChild(card);
+    setTimeout(() => { try { card.remove(); } catch (_) {} }, 25000);
+  } catch (_) {}
+}
+/* ---- 2026-08 audit: blocking alert() → premium toast (57 call sites upgraded at once).
+   Module-scope shadow: every alert(...) in this file now renders the branded toast.
+   Verified: no call site depends on alert's blocking behaviour or return value. ---- */
+function alert(msg) { try { lbToast(String(msg == null ? 'Something went wrong.' : msg)); } catch (_) { try { window.alert(msg); } catch (__) {} } }
+/* ---- Saved loads (favorites) — 2026-08 audit: DAT/Truckstop table-stakes ---- */
+function _lbFavs() { try { return new Set(JSON.parse(localStorage.getItem('lb_fav_loads') || '[]')); } catch (_) { return new Set(); } }
+function lbFavToggle(id) { const s9 = _lbFavs(); const k9 = String(id); const on9 = !s9.has(k9); if (on9) s9.add(k9); else s9.delete(k9); try { localStorage.setItem('lb_fav_loads', JSON.stringify(Array.from(s9).slice(-200))); } catch (_) {} return on9; }
 function lbToast(msg, tone, title) {
   const t = toneOf(tone || 'urgent');
+  try { haptic(tone === 'success' ? 'success' : tone === 'action' ? 'tap' : 'warn'); } catch (_) {}
   if (!_lbToastHost) { _lbToastHost = h('div', { style: 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:10px;width:min(480px,92vw)' }); document.body.appendChild(_lbToastHost); }
   const icon = tone === 'success' ? '\u2713' : tone === 'action' ? '\u2139' : '!';
   const card = h('div', { style: 'display:flex;gap:12px;align-items:flex-start;background:#111c31;border:1px solid rgba(255,255,255,.12);border-left:4px solid ' + t.c + ';border-radius:14px;padding:13px 14px;box-shadow:0 18px 44px -14px rgba(0,0,0,.7);transform:translateY(-8px);opacity:0;transition:.25s' }, [
@@ -157,6 +209,17 @@ function openModal(title, children) {
     h('div', { class: 'cp-modal-body' }, Array.isArray(children) ? children : [children]),
   ]);
   const ov = h('div', { class: 'cp-modal', onClick: close }, card);
+  card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', title || 'Dialog');
+  // Focus trap (2026-08 audit): Tab cycles inside the dialog instead of escaping behind the scrim.
+  const onTrap = (e) => {
+    if (e.key !== 'Tab') return;
+    const els = card.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');
+    if (!els.length) return;
+    const first = els[0], last = els[els.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  card.addEventListener('keydown', onTrap);
   document.body.appendChild(ov);
   document.addEventListener('keydown', onEsc);
   pushLayer(guard);
@@ -1942,6 +2005,7 @@ const NAV = [
   ['dashboard', 'Dashboard', 'dash'], ['health', 'Ratings', 'shield'], ['loads', 'Load Board', 'loads'], ['trips', 'My Loads', 'trips'],
   ['profile', 'My Profile', 'idcard'], ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
   ['rates', 'Market Rates', 'finance'],
+  ['notifications', 'Alerts', 'bell'],
   ['support', 'Support', 'support'], ['safety', 'Safety', 'sos'], ['account', 'Account', 'user'],
 ];
 
@@ -1959,6 +2023,7 @@ async function appView(user) {
 
   const EXTRA_TABS = ['onboarding', 'notifications', 'settings', 'reinstate'];
   let tab = (location.hash || '').replace('#', '') || 'dashboard';
+  if (tab.indexOf('/') > 0) { const _dl9 = tab.split('/'); tab = _dl9[0]; if (_dl9[1]) window.__lbDeepEnt = { tab: _dl9[0], id: _dl9.slice(1).join('/') }; }  // entity deep links: #loads/<id>, #trips/<id>
   if (!NAV.some(n => n[0] === tab) && !EXTRA_TABS.includes(tab)) tab = 'dashboard';
   const content = h('div', { class: 'cp-content' });
   const navLinks = {};
@@ -1983,7 +2048,10 @@ async function appView(user) {
   const titleEl = h('h1', { class: 'cp-top-title' }, 'Dashboard');
   const bellBadge = h('span', { class: 'cp-bell-badge', hidden: true });
   const bell = h('button', { class: 'cp-iconbtn cp-bell', title: 'Notifications', onClick: () => go('notifications') }, [icon('bell', 20), bellBadge]);
-  async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true; } catch (_) {} }
+  async function refreshUnread() { try { const ns = await pocketNotifications(50); const u = (ns || []).filter(n => !n.read_at).length; if (u > 0) { bellBadge.textContent = String(u > 9 ? '9+' : u); bellBadge.hidden = false; } else bellBadge.hidden = true;
+    setAppBadge(u);
+    (navLinks['notifications'] || []).forEach(a9 => { let b9 = a9.querySelector('.cp-tab-badge'); if (u > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(u > 9 ? '9+' : u); } else if (b9) b9.remove(); });
+  } catch (_) {} }
   // ---- Availability (Online/Offline) — REAL state stored in dispatch preferences ----
   const availPill = h('button', { class: 'cpx-avail on cpx-desktop', title: 'Your availability for new loads', onClick: () => toggleAvail() }, '…');
   let _dp = null, _dashK = null;
@@ -2106,6 +2174,8 @@ async function appView(user) {
   ]);
   mount(root, shell);
   root.setAttribute('aria-busy', 'false');
+  // Pull-to-refresh (big-brand standard): re-runs the current view + unread count.
+  try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}
 
   function go(id) {
     tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);  // replace, not push — keeps Back working / no hash pile-up
@@ -2114,7 +2184,8 @@ async function appView(user) {
     titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding', settings: 'Settings', reinstate: 'Account reinstatement' }[tab] || 'Dashboard');
     render();
   }
-  window.addEventListener('hashchange', () => { const t = (location.hash || '').replace('#', ''); if (t && t !== tab && (NAV.some(n => n[0] === t) || EXTRA_TABS.includes(t))) go(t); });
+  window.addEventListener('hashchange', () => { let t = (location.hash || '').replace('#', ''); if (t.indexOf('/') > 0) { const p9 = t.split('/'); t = p9[0]; if (p9[1]) window.__lbDeepEnt = { tab: t, id: p9.slice(1).join('/') }; }
+    if (t && t !== tab && (NAV.some(n => n[0] === t) || EXTRA_TABS.includes(t))) go(t); else if (t === tab && window.__lbDeepEnt) render(); });
   // Big-brand Android back: from any non-home tab, back returns to Dashboard first;
   // only from Dashboard does it leave the app. Open modals are handled in backnav.js.
   initBackNav({ goHome: () => { if (tab !== 'dashboard') { go('dashboard'); return true; } return false; } });
@@ -2134,8 +2205,26 @@ async function appView(user) {
     else if (tab === 'health') loadHealth();
     else if (tab === 'reinstate') loadReinstate();
     else if (tab === 'safety') loadSafety();
-    else if (tab === 'rates') import('../shared/market-widget.js').then(function (m) { const hst = h('div'); mount(content, hst); m.renderMarketWidget(hst, { sub: 'What lanes PAY the truck right now \u2014 real LoadBoot bookings + national benchmarks. Never haul below your cost per mile.' }); }).catch(function () { mount(content, h('div', { class: 'cp-muted' }, 'Could not load market rates.')); });
+    else if (tab === 'rates') import('../shared/market-widget.js').then(function (m) { const hst = h('div'); const fuelHost9 = h('div'); mount(content, h('div', null, [hst, fuelHost9]));
+      m.renderMarketWidget(hst, { sub: 'What lanes PAY the truck right now \u2014 real LoadBoot bookings + national benchmarks. Never haul below your cost per mile.' });
+      // 2026-08 audit + owner request: fuel finder — DOE/EIA weekly diesel by region (auto-refreshed weekly).
+      (async function () { try {
+        const fp9 = await fuelPricesGet(); if (!Array.isArray(fp9) || !fp9.length) return;
+        const us9 = fp9.find(function (x9) { return x9.region === 'US average'; });
+        fuelHost9.appendChild(h('div', { class: 'cp-card', style: 'margin-top:12px' }, [
+          cardHead('\u26fd Diesel prices \u2014 DOE weekly survey', us9 ? 'US average $' + Number(us9.diesel).toFixed(3) + '/gal \u00b7 week of ' + us9.as_of : ''),
+          h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px' }, fp9.filter(function (x9) { return x9.region !== 'US average'; }).map(function (x9) {
+            const hot9 = us9 && Number(x9.diesel) > Number(us9.diesel);
+            return h('div', { style: 'border:1px solid rgba(148,163,184,.25);border-radius:12px;padding:10px 12px' }, [
+              h('div', { class: 'cp-row-s', style: 'font-weight:700' }, x9.region),
+              h('div', { style: 'font-weight:800;font-size:1.05rem;color:' + (hot9 ? '#fbbf24' : '#4ade80') }, '$' + Number(x9.diesel).toFixed(3) + '/gal'),
+            ]);
+          })),
+          h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Fuel your profit engine uses this data \u2014 set your MPG in Settings. Green = at/below national average, amber = above.'),
+        ]));
+      } catch (_) {} })(); }).catch(function () { mount(content, h('div', { class: 'cp-muted' }, 'Could not load market rates.')); });
     else loadDashboard();
+    try { const de9 = window.__lbDeepEnt; if (de9 && de9.tab === 'trips' && de9.id && tab === 'trips') { window.__lbDeepEnt = null; let n9 = 0; const iv9 = setInterval(() => { n9++; const el9 = content.querySelector('[data-trip="' + de9.id + '"]'); if (el9) { clearInterval(iv9); el9.scrollIntoView({ behavior: 'smooth', block: 'start' }); el9.style.outline = '2px solid #0883F7'; el9.style.outlineOffset = '3px'; setTimeout(() => { el9.style.outline = ''; }, 3500); } else if (n9 > 25) clearInterval(iv9); }, 200); } } catch (_) {}
   }
 
   /* ----- on-open prompts: notifications + location ----- */
@@ -2144,21 +2233,31 @@ async function appView(user) {
     if (pushSupported()) {
       isPushEnabled().then(on => {
         if (on) return;
+        try { if (Date.now() - Number(localStorage.getItem('lb_hide_push') || 0) < 14 * 864e5) return; } catch (_) {}
+        if (Notification.permission === 'denied') {
+          const dcard = h('div', { class: 'cp-prompt' }, [
+            icon('bell', 22),
+            h('div', { class: 'cp-prompt-txt' }, [h('b', null, 'Notifications are blocked'), h('span', null, 'Turn them on in your phone Settings \u2192 Apps \u2192 LoadBoot \u2192 Notifications to get load offers and payment alerts.')]),
+            h('button', { class: 'cp-prompt-x', onClick: () => { try { localStorage.setItem('lb_hide_push', String(Date.now())); } catch (_) {} dcard.remove(); } }, '\u00d7'),
+          ]);
+          promptHost.appendChild(dcard);
+          return;
+        }
         const card = h('div', { class: 'cp-prompt' }, [
           icon('bell', 22),
           h('div', { class: 'cp-prompt-txt' }, [h('b', null, 'Turn on notifications'), h('span', null, 'Get alerts for new loads, payments and dispatcher messages.')]),
           h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '…'; try { const _ct1638 = ev.currentTarget; await enablePush('Carrier portal'); card.remove(); } catch (e) { _ct1638.disabled = false; _ct1638.textContent = 'Enable'; alert((e && e.message) || 'Could not enable.'); } } }, 'Enable'),
-          h('button', { class: 'cp-prompt-x', onClick: () => card.remove() }, '×'),
+          h('button', { class: 'cp-prompt-x', onClick: () => { try { localStorage.setItem('lb_hide_push', String(Date.now())); } catch (_) {} card.remove(); } }, '×'),
         ]);
         promptHost.appendChild(card);
       });
     }
-    if (navigator.geolocation) {
+    if (navigator.geolocation && !(function () { try { return Date.now() - Number(localStorage.getItem('lb_hide_geo') || 0) < 14 * 864e5; } catch (_) { return false; } })()) {
       const card = h('div', { class: 'cp-prompt' }, [
         icon('pin', 22),
         h('div', { class: 'cp-prompt-txt' }, [h('b', null, 'Share your location'), h('span', null, 'Let dispatch see your position while a load is active. You stay in control.')]),
         h('button', { class: 'cp-btn cp-btn-sm', onClick: (ev) => { ev.currentTarget.disabled = true; navigator.geolocation.getCurrentPosition(() => { ev.currentTarget.textContent = 'Allowed ✓'; card.remove(); }, () => { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Allow'; }); } }, 'Allow'),
-        h('button', { class: 'cp-prompt-x', onClick: () => card.remove() }, '×'),
+        h('button', { class: 'cp-prompt-x', onClick: () => { try { localStorage.setItem('lb_hide_geo', String(Date.now())); } catch (_) {} card.remove(); } }, '×'),
       ]);
       promptHost.appendChild(card);
     }
@@ -2459,7 +2558,31 @@ async function appView(user) {
   async function loadHealth() {
     mount(content, h('div', { class: 'cp-muted' }, 'Calculating your rating…'));
     let mr = null; try { mr = await myRating(); } catch (_) { mr = null; }
-    let ah; try { ah = await accountHealth(); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load account health.'))); return; }
+    let ah; try { ah = await accountHealth(); } catch (e) { mount(content, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-muted' }, (e && e.message) || 'Could not load account health.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => loadHealth() }, 'Retry')])); return; }
+    // 2026-08 audit: visible status tier from REAL delivered/on-time stats (Uber Pro pattern, honest copy).
+    const tierCard9 = h('div');
+    (async () => {
+      try {
+        const [tr9, tp9] = await Promise.all([pocketTrips(200).catch(() => []), myTrustProfile().catch(() => null)]);
+        const done9 = (tr9 || []).filter(t9 => t9.status === 'delivered' || t9.status === 'invoiced').length;
+        const ot9 = tp9 && tp9.on_time_pct != null ? Number(tp9.on_time_pct) : null;
+        const TIERS9 = [['Bronze', 0, '#b45309'], ['Silver', 5, '#94a3b8'], ['Gold', 20, '#f59e0b'], ['Platinum', 50, '#7cc0ff']];
+        let ti9 = 0; TIERS9.forEach((t9, i9) => { if (done9 >= t9[1] && (i9 < 2 || (ot9 == null || ot9 >= (i9 === 2 ? 90 : 95)))) ti9 = i9; });
+        const cur9 = TIERS9[ti9], nxt9 = TIERS9[ti9 + 1] || null;
+        const pct9 = nxt9 ? Math.min(100, Math.round(done9 / nxt9[1] * 100)) : 100;
+        tierCard9.appendChild(h('div', { class: 'cp-card', style: 'border-color:' + cur9[2] + '55' }, [
+          h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [
+            h('span', { style: 'font-size:26px;line-height:1' }, ti9 >= 3 ? '💎' : ti9 === 2 ? '🥇' : ti9 === 1 ? '🥈' : '🥉'),
+            h('div', { style: 'flex:1;min-width:160px' }, [
+              h('div', { class: 'cp-row-t' }, 'LoadBoot Status: ' + cur9[0]),
+              h('div', { class: 'cp-row-s' }, done9 + ' delivered' + (ot9 != null ? ' · ' + ot9 + '% on-time' : '') + (nxt9 ? ' — ' + Math.max(0, nxt9[1] - done9) + ' more to ' + nxt9[0] : ' — top tier')),
+            ]),
+          ]),
+          nxt9 ? h('div', { style: 'height:6px;border-radius:99px;background:rgba(148,163,184,.2);margin-top:10px;overflow:hidden' }, h('i', { style: 'display:block;height:6px;border-radius:99px;width:' + pct9 + '%;background:' + cur9[2] })) : null,
+          h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8' }, 'Higher tiers rank you higher in broker matching and direct-offer targeting — built purely from your real delivered record.'),
+        ].filter(Boolean)));
+      } catch (_) {}
+    })();
     ah = ah || {}; const score = Number(ah.score || 0);
     const tone = toneOf(ah.tier === 'healthy' ? 'success' : ah.tier === 'building' ? 'info' : ah.tier === 'at_risk' ? 'warning' : 'urgent');
     const ded = Array.isArray(ah.deductions) ? ah.deductions : [];
@@ -2675,7 +2798,7 @@ async function appView(user) {
         ].filter(Boolean))),
       ].filter(Boolean));
     })();
-    mount(content, h('div', null, [tiles, heroCard, poaCard, strikesCard, actions, groupsCard, ratingCard, reviewsCard, trustCard, networkCard, explain].filter(Boolean)));
+    mount(content, h('div', null, [tierCard9, tiles, heroCard, poaCard, strikesCard, actions, groupsCard, ratingCard, reviewsCard, trustCard, networkCard, explain].filter(Boolean)));
   }
   /* ----- Settings (inDrive pattern): appearance, notifications, availability ----- */
   function loadSettings() {
@@ -2752,6 +2875,102 @@ async function appView(user) {
         h('div', null, [h('div', { class: 'cpx-set-t' }, '📱 Bottom tab bar — your shortcuts'), hint, wrap]),
       ]);
     })();
+    // 2026-08 audit (owner-approved): real security controls — TOTP 2FA, global sign-out, data export.
+    const secCard = h('div', { class: 'cp-card' }, [h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, '🔐 Security')]);
+    (function () {
+      const st9 = h('div', { class: 'cp-err' });
+      const host9 = h('div');
+      async function draw9() {
+        host9.innerHTML = '';
+        let fs9 = { totp: [] }; try { fs9 = await mfaListFactors(); } catch (_) {}
+        const f9 = (fs9.totp || []).find((x9) => x9.status === 'verified');
+        if (f9) {
+          host9.appendChild(h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, ['Two-factor authentication ', h('span', { class: 'cp-pill green' }, 'ON')]),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: async (e9) => {
+              if (!confirm('Turn OFF two-factor authentication? Your account becomes password-only.')) return;
+              const b9 = e9.currentTarget; b9.disabled = true; st9.textContent = '';
+              try { await mfaUnenroll(f9.id); await draw9(); }
+              catch (er9) { st9.textContent = (er9 && er9.message) || 'Could not turn off 2FA — sign out and back in, then retry.'; b9.disabled = false; }
+            } }, 'Turn off')]));
+        } else {
+          host9.appendChild(h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Two-factor authentication (authenticator app)'),
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-left:auto', onClick: async (e9) => {
+              const b9 = e9.currentTarget; b9.disabled = true; st9.textContent = '';
+              try {
+                const en9 = await mfaEnrollTotp();
+                const code9 = h('input', { class: 'cp-in', inputmode: 'numeric', maxlength: '6', placeholder: '6-digit code from the app', style: 'text-align:center;font-weight:800;letter-spacing:.3em' });
+                const em9 = h('div', { class: 'cp-err' });
+                const close9 = openModal('🔐 Set up two-factor', [
+                  h('div', { class: 'cp-row-s', style: 'margin-bottom:8px' }, '1. Open Google Authenticator (or any TOTP app) → add account → scan this code.'),
+                  en9.totp && en9.totp.qr_code ? h('div', { style: 'background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center', html: en9.totp.qr_code }) : null,
+                  h('div', { class: 'cp-row-s', style: 'margin:8px 0;word-break:break-all' }, 'Can’t scan? Enter this key manually: ' + ((en9.totp && en9.totp.secret) || '')),
+                  h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, '2. Type the 6-digit code the app shows:'),
+                  code9, em9,
+                  h('button', { class: 'cp-btn', style: 'width:100%;margin-top:8px', onClick: async (ev9) => {
+                    const vb9 = ev9.currentTarget; vb9.disabled = true; em9.textContent = '';
+                    try { await mfaVerify(en9.id, code9.value); close9(); haptic('success'); lbToast('Two-factor authentication is ON — you’ll be asked for a code at sign-in.', 'success'); await draw9(); }
+                    catch (er9) { em9.textContent = (er9 && er9.message) || 'Wrong code — try again.'; vb9.disabled = false; }
+                  } }, 'Activate 2FA'),
+                ].filter(Boolean));
+              } catch (er9) { st9.textContent = (er9 && er9.message) || 'Could not start 2FA setup.'; }
+              b9.disabled = false;
+            } }, 'Enable')]));
+        }
+        host9.appendChild(h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Sign out on every device (revokes all sessions)'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: async (e9) => {
+            if (!confirm('Sign out of LoadBoot on ALL devices, including this one?')) return;
+            e9.currentTarget.disabled = true;
+            await signOutEverywhere(); location.reload();
+          } }, 'Sign out everywhere')]));
+        host9.appendChild(h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Download my data (JSON copy of your account)'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: async (e9) => {
+            const b9 = e9.currentTarget; b9.disabled = true; b9.textContent = 'Preparing…';
+            try {
+              const grab9 = async (fn9) => { try { return await fn9(); } catch (_) { return null; } };
+              const data9 = {
+                exported_at: new Date().toISOString(),
+                profile: await grab9(() => pocketGetProfile()),
+                overview: await grab9(() => pocketOverview()),
+                dispatch_preferences: await grab9(() => getDispatchPrefs()),
+                notification_preferences: await grab9(() => pocketGetPreferences()),
+                trips: await grab9(() => pocketTrips(500)),
+                invoices: await grab9(() => pocketInvoices(500)),
+                documents: await grab9(() => carrierListDocuments()),
+                emergency_contacts: await grab9(() => emergencyContacts()),
+                rating: await grab9(() => myRating()),
+              };
+              downloadBlob(new Blob([JSON.stringify(data9, null, 2)], { type: 'application/json' }), 'loadboot-my-data.json');
+              haptic('success');
+            } catch (er9) { st9.textContent = (er9 && er9.message) || 'Export failed.'; }
+            b9.disabled = false; b9.textContent = 'Download';
+          } }, 'Download')]));
+        // Device list (informational; per-device revoke = the global sign-out above)
+        try {
+          const devs9 = await myDevices();
+          if (Array.isArray(devs9) && devs9.length) {
+            const myKey9 = localStorage.getItem('lb_device_key');
+            host9.appendChild(h('div', { class: 'cp-row-s', style: 'margin-top:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;font-size:.68rem;letter-spacing:.06em' }, 'Devices signed in (last 10)'));
+            devs9.slice(0, 10).forEach((d9) => {
+              host9.appendChild(h('div', { class: 'cpx-set-row' }, [
+                h('div', { class: 'cpx-set-t' }, [
+                  (d9.label || 'Device') + (d9.device_key === myKey9 ? ' — this device' : ''),
+                  h('div', { class: 'cp-row-s', style: 'font-size:.7rem;opacity:.7' }, 'last active ' + new Date(d9.last_seen).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })),
+                ]),
+                d9.device_key === myKey9 ? h('span', { class: 'cp-pill green', style: 'margin-left:auto' }, 'current') : null,
+              ].filter(Boolean)));
+            });
+          }
+        } catch (_) {}
+      }
+      draw9();
+      secCard.appendChild(host9); secCard.appendChild(st9);
+    })();
+    // 2026-08 audit: referral program was unreachable for carriers — surface it here.
+    const refCard = h('div', { class: 'cp-card' }, [h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, '🎁 Invite & earn'), h('div', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'Refer carriers, brokers or agents — you earn a share of the dispatch fee on every load they run.')]);
+    (async () => { try { const r9 = await myReferral(); if (!r9 || !r9.code) { refCard.style.display = 'none'; return; }
+      refCard.appendChild(buildReferralStats(r9));
+      if (navigator.share) refCard.appendChild(h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => { navigator.share({ title: 'Join me on LoadBoot', text: 'Verified loads, real dispatch, 5% only when you book. Sign up with my link:', url: r9.link }).catch(() => {}); } }, '📤 Share my link'));
+    } catch (_) { refCard.style.display = 'none'; } })();
     const acctCard = h('div', { class: 'cp-card' }, [
       h('h3', { class: 'cp-row-t', style: 'margin:0 0 4px' }, 'Account'),
       h('div', { class: 'cpx-set-row' }, [h('div', { class: 'cpx-set-t' }, 'Profile, preferences & compliance'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:auto', onClick: () => go('account') }, 'Open')]),
@@ -2794,11 +3013,11 @@ async function appView(user) {
       load();
       return host;
     })();
-    mount(content, h('div', null, [themeCard, cpmCard, pushCard, availCard, tabsCard, acctCard, delCard].filter(Boolean)));
+    mount(content, h('div', null, [themeCard, cpmCard, pushCard, availCard, tabsCard, secCard, refCard, acctCard, delCard].filter(Boolean)));
   }
 
   async function loadDashboard() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    showSkeleton(content, 'cards');
     let dash = null, comp, anns, invs;
     try {
       let trips9 = [], rate9 = [];
@@ -3095,6 +3314,7 @@ async function appView(user) {
         send9.disabled = true; send9.textContent = 'Sending\u2026';
         try {
           await rateCounterparty(r9.trip_id, stars9, cm9.value.trim() || null);
+          if (stars9 >= 5) lbMaybeAskStoreReview();
           try { localStorage.setItem('lb:rated:' + r9.trip_id, String(stars9)); } catch (_) {}
           card9.replaceChildren(h('div', { style: 'text-align:center;padding:8px 0' }, [
             h('div', { style: 'font-size:1.6rem' }, '\u2705'),
@@ -3199,7 +3419,7 @@ async function appView(user) {
         if (content.firstChild) content.insertBefore(bn, content.firstChild); else content.appendChild(bn);
       } catch (_) {}
     })();
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading available loads…'));
+    showSkeleton(content, 'cards', 5);
     let __cap9 = null; try { __cap9 = await myCapacity(); } catch (_) {}
     const capNudge = (__cap9 && __cap9.at_capacity) ? h('div', { class: 'cp-card', style: 'border-left:4px solid #f59e0b;margin-bottom:12px' }, [
       h('div', { class: 'cp-row-t' }, '\ud83d\ude9a All your trucks are booked (' + __cap9.active_trips + '/' + __cap9.capacity + ')'),
@@ -3435,6 +3655,51 @@ async function appView(user) {
     const fRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi', style: 'margin:0;max-width:110px' });
     const fRate = h('input', { class: 'cp-in', type: 'number', placeholder: 'Min $', style: 'margin:0;max-width:110px' });
     const fSize = h('select', { class: 'cp-in', style: 'margin:0;max-width:150px' }, [['', 'Size: all'], ['full', 'Full (FTL)'], ['partial', 'Partial (LTL)']].map(([v9, l9]) => h('option', { value: v9 }, l9)));
+    // 2026-08 audit + owner request: multi-leg TRIP BUILDER — chain 2 loads into one tour.
+    function lbTripBuilder9(list9) {
+      const L9 = (list9 || []).filter(l9 => l9 && l9.rate && l9.origin && l9.destination && !lbExpired(l9));
+      const combos9 = [];
+      for (const A9 of L9) {
+        for (const B9 of L9) {
+          if (A9.id === B9.id) continue;
+          const stA9 = _lbSt(A9.destination), stB9 = _lbSt(B9.origin);
+          if (!stA9 || !stB9 || stA9 !== stB9) continue;
+          let dh9 = null;
+          if (A9.delivery_lat != null && A9.delivery_lng != null && B9.pickup_lat != null && B9.pickup_lng != null) {
+            dh9 = Math.round(havMi(Number(A9.delivery_lat), Number(A9.delivery_lng), Number(B9.pickup_lat), Number(B9.pickup_lng)) * 1.2);
+            if (dh9 > 200) continue;
+          }
+          if (A9.delivery_date && B9.pickup_date && String(B9.pickup_date) < String(A9.delivery_date)) continue;
+          const rate9 = Number(A9.rate || 0) + Number(B9.rate || 0);
+          const mi9 = Number(A9.miles || 0) + Number(B9.miles || 0) + (dh9 == null ? 60 : dh9);
+          combos9.push({ a: A9, b: B9, dh: dh9, rate: rate9, mi: mi9, rpm: mi9 > 0 ? rate9 / mi9 : 0 });
+        }
+      }
+      combos9.sort((x9, y9) => y9.rate - x9.rate);
+      const top9 = combos9.slice(0, 6);
+      openModal('🔗 Trip Builder — 2-leg tours', [
+        h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'Loads on the board chained into round-style tours: leg 2 starts in the state where leg 1 delivers. Ranked by total revenue — book each leg normally.'),
+        top9.length ? h('div', null, top9.map(c9 => h('div', { style: 'border:1px solid rgba(148,163,184,.25);border-radius:14px;padding:12px 14px;margin-bottom:10px' }, [
+          h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline' }, [
+            h('b', { style: 'font-size:.95rem' }, (c9.a.origin || '') + ' → ' + (c9.a.destination || '') + '  ⇒  ' + (c9.b.origin || '') + ' → ' + (c9.b.destination || '')),
+            h('b', { style: 'color:#4ade80;font-size:1.05rem' }, money(c9.rate)),
+          ]),
+          h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, [
+            Math.round(c9.mi).toLocaleString() + ' total mi',
+            '$' + c9.rpm.toFixed(2) + '/mi combined',
+            c9.dh != null ? c9.dh + ' mi connect deadhead' : 'same-state reload',
+            c9.a.pickup_date ? 'PU ' + c9.a.pickup_date : null,
+          ].filter(Boolean).join(' · ')),
+          h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(c9.a.id) }, 'Leg 1 details'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => showLoadDetail(c9.b.id) }, 'Leg 2 details'),
+          ]),
+        ]))) : h('div', { class: 'cp-muted', style: 'padding:14px 0' }, 'No chainable pairs on the current board — more loads unlock tours automatically. Try widening your filters.'),
+      ].filter(Boolean));
+    }
+    const tbBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Chain two loads into one revenue-ranked tour', onClick: () => lbTripBuilder9(rows || []) }, '🔗 Trip Builder');
+    let _favOnly = false;
+    const favBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Show only loads you saved with the star', onClick: (e9) => { _favOnly = !_favOnly; e9.currentTarget.style.color = _favOnly ? '#f59e0b' : ''; e9.currentTarget.style.borderColor = _favOnly ? '#f59e0b' : ''; renderList(); } }, '★ Saved');
     const applyFilters = (list) => (list || []).filter(l => {
       const okO = !fOrigin.value.trim() || String(l.origin || '').toLowerCase().includes(fOrigin.value.trim().toLowerCase());
       const okD = !fDest.value.trim() || String(l.destination || '').toLowerCase().includes(fDest.value.trim().toLowerCase());
@@ -3443,21 +3708,26 @@ async function appView(user) {
       const okM = !fRate.value || Number(l.rate || 0) >= Number(fRate.value);
       const sz = String(((l.details || {}).load_size) || '').toLowerCase();
       const okS = !fSize.value || (fSize.value === 'partial' ? /partial|ltl/.test(sz) : (!!sz && !/partial|ltl/.test(sz)));
-      return okO && okD && okE && okR && okM && okS;
+      const okF = !_favOnly || _lbFavs().has(String(l.id));
+      return okF && okO && okD && okE && okR && okM && okS;
     });
     // Collapsed by default — tap "Filters" to open (inDrive pattern)
     const fBody = h('div', { style: 'display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px' },
       [fOrigin, fDest, fEq, fSize, fRpm, fRate, h('button', { class: 'cp-btn cp-btn-sm', onClick: () => renderList() }, 'Apply'),
-       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; fSize.value = ''; renderList(); fCount(); } }, 'Clear')]);
+       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { fOrigin.value = fDest.value = fEq.value = fRpm.value = fRate.value = ''; fSize.value = ''; try { localStorage.removeItem('lb_lb_filters'); } catch (_) {} renderList(); fCount(); } }, 'Clear')]);
     const fChip = h('span', { class: 'cpx-chip', style: 'display:none' }, '');
     const fCount = () => { const n = [fOrigin, fDest, fEq, fRpm, fRate, fSize].filter(x => (x.value || '').trim()).length; fChip.style.display = n ? 'inline-block' : 'none'; fChip.textContent = n + ' active'; };
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(x => x.addEventListener('input', fCount)); fSize.addEventListener('change', () => { fCount(); renderList(); });
     const fToggle = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { const open = fBody.style.display !== 'none'; fBody.style.display = open ? 'none' : 'flex'; fToggle.firstChild.textContent = open ? '⚙ Filters ▾' : '⚙ Filters ▴'; } }, [h('span', null, '⚙ Filters ▾'), fChip]);
     const filterBar = h('div', { class: 'cp-card', style: 'margin-bottom:12px;padding:10px 14px' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:8px' }, [fToggle]),
+      h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [fToggle, favBtn, tbBtn]),
       fBody,
     ]);
     [fOrigin, fDest, fEq, fRpm, fRate].forEach(inp => { inp.onkeydown = (e) => { if (e.key === 'Enter') renderList(); }; });
+    // Smart defaults (2026-08 audit): filters remember themselves across visits.
+    const _fSave = () => { try { localStorage.setItem('lb_lb_filters', JSON.stringify({ o: fOrigin.value, d: fDest.value, e: fEq.value, r: fRpm.value, m: fRate.value, s: fSize.value })); } catch (_) {} };
+    [fOrigin, fDest, fEq, fRpm, fRate].forEach(x9 => x9.addEventListener('input', _fSave)); fSize.addEventListener('change', _fSave);
+    try { const _fs9 = JSON.parse(localStorage.getItem('lb_lb_filters') || 'null'); if (_fs9 && [_fs9.o, _fs9.d, _fs9.e, _fs9.r, _fs9.m, _fs9.s].some(x9 => x9)) { fOrigin.value = _fs9.o || ''; fDest.value = _fs9.d || ''; fEq.value = _fs9.e || ''; fRpm.value = _fs9.r || ''; fRate.value = _fs9.m || ''; fSize.value = _fs9.s || ''; fCount(); fBody.style.display = 'flex'; fToggle.firstChild.textContent = '⚙ Filters ▴'; } } catch (_) {}
     let renderList = () => {};
     const bestCard = null; // AI Pilot removed — its deadhead/score estimates were unreliable
 
@@ -3589,6 +3859,7 @@ async function appView(user) {
           ]),
           (l.accessorials && (l.accessorials.detention_per_hr || l.accessorials.tonu)) ? h('div', { style: 'background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:10px 13px;font-size:.8rem;color:#0f766e;font-weight:700;margin-bottom:12px' },
             '\ud83d\udee1 Protected in writing: detention $' + (l.accessorials.detention_per_hr || '60') + '/hr after ' + (l.accessorials.detention_free_hours || '2') + 'h · TONU $' + (l.accessorials.tonu || '250') + ' · layover $' + (l.accessorials.layover_per_day || '250') + '/day') : null,
+          lbLaneRateCard(l),
           h('div', { class: 'cp-row-s', style: 'margin-bottom:12px' }, 'The broker reviews your verified trust profile and approves or declines. Nothing moves and you\u2019re not committed until approved — first acceptance wins the load.'),
           err9,
           h('div', { style: 'display:flex;gap:10px' }, [go9, h('button', { class: 'cp-btn ghost', style: 'flex:0 0 auto', onClick: () => closeB9() }, 'Cancel')]),
@@ -3619,6 +3890,7 @@ async function appView(user) {
           catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Send counter'; emsg.textContent = (e && e.message) || 'Could not send.'; }
         } }, 'Send counter');
         const closeC = openModal('Propose your rate', [
+          lbLaneRateCard(l),
           h('p', { class: 'cp-row-s', style: 'margin-bottom:8px' }, 'Posted: ' + money(l.rate) + (rpm ? ' \u00b7 ' + rpm : '') + '. Propose your all-in rate \u2014 it goes to the broker with your booking request.'),
           rateIn, noteIn, emsg, send,
         ]);
@@ -3742,6 +4014,7 @@ async function appView(user) {
               ps.broker_trust_score != null ? 'Trust ' + ps.broker_trust_score + '/100' : null,
               ps.loads_delivered != null ? ps.loads_delivered + ' delivered on LoadBoot' : null,
               ps.on_time_pct != null ? ps.on_time_pct + '% on-time' : null,
+              ps.avg_days_to_pay != null ? '\ud83d\udcb0 pays in ~' + ps.avg_days_to_pay + ' days (' + (ps.paid_transfers || 0) + ' paid transfers on LoadBoot)' : null,
             ].filter(Boolean).join(' · ') || (ps.signal || '')),
             h('div', { class: 'cp-row-s', style: 'color:#94a3b8' }, 'Payment history (days-to-pay): insufficient verified data yet — builds automatically as invoices settle on LoadBoot. Ratings are trip-verified only.'),
           ]));
@@ -3899,7 +4172,8 @@ async function appView(user) {
             (_profit >= 0 ? '≈ +' : '≈ −') + money(Math.abs(_profit)).replace('$', '$') + ' est. profit')
         : null;
       return h('article', { class: 'cp-load cpx-req' }, [
-        h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null, profitEl].filter(Boolean)),
+        h('div', { class: 'cpx-req-rate' }, [h('span', { class: 'v' }, money(l.rate)), rpm ? h('span', { class: 'rpm' }, rpm) : null, profitEl,
+          (function () { const k9 = String(l.id); const on9 = _lbFavs().has(k9); const b9 = h('button', { class: 'cpx-fav' + (on9 ? ' on' : ''), title: 'Save this load', 'aria-label': 'Save this load', onClick: (e9) => { e9.stopPropagation(); const now9 = lbFavToggle(k9); e9.currentTarget.classList.toggle('on', now9); e9.currentTarget.textContent = now9 ? '★' : '☆'; haptic('tap'); if (_favOnly) renderList(); } }, on9 ? '★' : '☆'); return b9; })()].filter(Boolean)),
         h('div', { class: 'cpx-req-chips' }, [
           h('span', { class: 'cpx-chip eq' }, [icon('truck',15), ' ' + (l.equipment || 'Van')]),
           l.hazmat ? h('span', { class: 'cpx-chip', style: 'background:rgba(220,38,38,.14);color:#b91c1c;font-weight:800' }, '☣ HAZMAT') : null,
@@ -3965,6 +4239,7 @@ async function appView(user) {
     mount(availWrap, h('div', null, [truckCard, filterBar, setupBanner, bestCard, gridHost].filter(Boolean)));
     mount(content, h('div', null, [gpsBanner, capNudge, tabsBar, reqHost, availWrap].filter(Boolean)));
     renderList();
+    try { const de9 = window.__lbDeepEnt; if (de9 && de9.tab === 'loads' && de9.id) { window.__lbDeepEnt = null; showLoadDetail(de9.id); } } catch (_) {}
   }
 
   /* Decision-complete load overview (A2): everything a carrier needs BEFORE booking — accessorial rate card,
@@ -3973,6 +4248,16 @@ async function appView(user) {
     const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading load details…'));
     openModal('Load overview', [bodyEl]);
     let d; try { d = await carrierLoadDetail(loadId); } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load details.')); return; }
+    // 2026-08 audit: facility ratings (carriers rate pickup/delivery facilities after delivery).
+    (async function () { try {
+      const o9 = d && (d.origin || (d.load && d.load.origin)), de9 = d && (d.destination || (d.load && d.load.destination));
+      if (!o9 && !de9) return;
+      const fr9 = await facilityRatings([o9, de9].filter(Boolean));
+      const pk9 = fr9 && fr9[String(o9 || '').toLowerCase().trim()], dl9 = fr9 && fr9[String(de9 || '').toLowerCase().trim()];
+      if (!pk9 && !dl9) return;
+      bodyEl.appendChild(h('div', { class: 'cp-row-s', style: 'margin-top:10px;padding:9px 12px;border:1px solid rgba(245,158,11,.35);border-radius:10px;background:rgba(245,158,11,.07)' },
+        '\ud83c\udfed Facility ratings from carriers: ' + [pk9 ? 'pickup ' + pk9.avg + '\u2605 (' + pk9.n + ')' : null, dl9 ? 'delivery ' + dl9.avg + '\u2605 (' + dl9.n + ')' : null].filter(Boolean).join(' \u00b7 ')));
+    } catch (_) {} })();
     // C3 — posting party's REAL track record (identity stays hidden) appended to the decision set.
     (async () => {
       let ps; try { ps = await carrierViewPoster(loadId); } catch (_) { return; }
@@ -4085,14 +4370,14 @@ function tripStepper(status) {
   return h('div', { class: 'cp-steps' }, nodes);
 }
   async function loadTrips() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
-    let rows; try { rows = await pocketTrips(80); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Failed to load.'))); return; }
+    showSkeleton(content, 'cards');
+    let rows; try { rows = await pocketTrips(80); } catch (e) { mount(content, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-muted' }, 'Could not load your trips — check your connection.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => loadTrips() }, 'Retry')])); return; }
     try {
       const act9 = (rows || []).find(r9 => /planned|dispatched|in_transit/.test(String(r9.status || '')));
       if (act9) ensureLiveLoc(act9.id);
       else if (_liveWatch != null) { stopLiveLoc(); }
     } catch (_) {}
-    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No trips yet. Booked loads will appear here.'))); return; }
+    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card', style: 'text-align:center;padding:26px 16px' }, [h('div', { style: 'font-size:40px;line-height:1' }, '🚛'), h('div', { class: 'cp-row-t', style: 'margin:10px 0 4px' }, 'No trips yet'), h('div', { class: 'cp-muted' }, 'Book a load and it appears here with live tracking, documents and settlement.'), h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: () => go('loads') }, '🔎 Browse the Load Board')])); return; }
     mount(content, h('div', { class: 'cp-card' }, [cardHead('My trips', rows.length + ' total'), ...rows.map(t => {
       const active = t.status === 'planned' || t.status === 'dispatched' || t.status === 'in_transit';
       const confirm = (t.status === 'dispatched') ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => { ev.currentTarget.disabled = true; try { const _ct3516 = ev.currentTarget; await pocketConfirmTrip(t.id); _ct3516.textContent = 'Confirmed ✓'; } catch (x) { _ct3516.textContent = 'Error'; } } }, 'Confirm') : null;
@@ -4151,7 +4436,17 @@ function tripStepper(status) {
         const send = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
           if (!sel) { alert('Choose 1–5 stars.'); return; }
           ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Sending…';
-          try { await rateCounterparty(t.id, sel, cmt.value.trim() || null); rateW.innerHTML = ''; rateW.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green, #16a34a)' }, '✓ Rating submitted — thank you')); }
+          try { await rateCounterparty(t.id, sel, cmt.value.trim() || null); rateW.innerHTML = ''; rateW.appendChild(h('div', { class: 'cp-row-s', style: 'color:var(--lb-green, #16a34a)' }, '✓ Rating submitted — thank you')); if (sel >= 5) lbMaybeAskStoreReview();
+            // 2026-08 audit: also rate the facilities (one tap per stop) — builds the crowd-sourced facility data.
+            [['pickup', '\ud83d\udce6 Rate pickup facility'], ['delivery', '\ud83d\udce4 Rate delivery facility']].forEach(function (fk9) {
+              const frow9 = h('div', { class: 'cp-row-s', style: 'margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [h('span', null, fk9[1] + ':')]);
+              for (let st9 = 1; st9 <= 5; st9++) {
+                frow9.appendChild(h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'padding:2px 8px', onClick: async function (ev9) {
+                  const b9 = ev9.currentTarget; try { await facilityReviewSubmit(t.id, fk9[0], st9, null); frow9.innerHTML = ''; frow9.appendChild(h('span', { style: 'color:var(--lb-green, #16a34a)' }, '\u2713 ' + fk9[1].replace('Rate ', '') + ' rated ' + st9 + '\u2605')); haptic('tap'); } catch (e9) { b9.textContent = '!'; }
+                } }, st9 + '\u2605'));
+              }
+              rateW.appendChild(frow9);
+            }); }
           catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit rating'; alert((e && e.message) || 'Could not rate.'); }
         } }, 'Submit rating');
         rateW.appendChild(h('div', { class: 'cp-inlineform' }, [h('div', { class: 'cp-row-s' }, 'Rate the posting party for this trip:'), starsBar, cmt, send]));
@@ -4522,7 +4817,17 @@ function tripStepper(status) {
           ]) : null,
         ].filter(Boolean)));
       } }, '\ud83d\udce6 Dispatch pack');
-      const chips = h('div', { class: 'cp-trip-actions', style: 'margin-top:10px' }, [confirm, start, deliver, loadDetBtn, dpackBtn, dwell, accBtn, pod, issue, emergency, cancelBtn].filter(Boolean));
+      // 2026-08 audit: Uber-pattern contact action right on the trip card.
+      const contactBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => {
+        let close9 = null;
+        close9 = openModal('Contact dispatch', [
+          h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'A person answers — dispatch is on call for active loads.'),
+          h('a', { class: 'cp-btn', style: 'display:block;text-align:center;margin-bottom:8px;text-decoration:none', href: 'tel:+14692537575' }, '📞 Call dispatch'),
+          document.querySelector('.lbc-fab') ? h('button', { class: 'cp-btn ghost', style: 'width:100%', onClick: () => { if (close9) close9(); const f9 = document.querySelector('.lbc-fab'); if (f9) f9.click(); } }, '💬 Live chat') : null,
+          h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:8px', onClick: () => { if (close9) close9(); go('support'); } }, '🎫 Open a support ticket'),
+        ].filter(Boolean));
+      } }, '📞 Contact');
+      const chips = h('div', { class: 'cp-trip-actions', style: 'margin-top:10px' }, [confirm, start, deliver, loadDetBtn, dpackBtn, dwell, accBtn, pod, issue, emergency, contactBtn, cancelBtn].filter(Boolean));
       const moreW = h('div', { style: 'display:none' }, [h('div', { class: 'cp-trip-actions' }, [settleBtn, sheetBtn, rcBtn, packBtn, history, nav, share, live, assign, reloadBtn, rateBtn].filter(Boolean))]);
       const moreT = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'width:100%;margin-top:8px', onClick: (ev) => {
         const open = moreW.style.display !== 'none';
@@ -4574,7 +4879,7 @@ function tripStepper(status) {
         h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'This load is no longer assigned to you. Pick up a replacement on the Load Board.'),
         h('button', { class: 'cp-btn cp-btn-sm', style: 'background:#0883F7;color:#fff;margin-top:9px', onClick: () => { location.hash = '#loads'; } }, '🔎 Browse Load Board'),
       ].filter(Boolean)) : null;
-      return h('div', { class: 'cp-trip' }, [
+      return h('div', { class: 'cp-trip', 'data-trip': String(t.id || '') }, [
         hero,
         tripStepper(t.status),
         cancelInfo,
@@ -4767,6 +5072,16 @@ function tripStepper(status) {
       zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('drag'); };
       zone.ondragleave = () => zone.classList.remove('drag');
       zone.ondrop = (e) => { e.preventDefault(); zone.classList.remove('drag'); pick(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); };
+      // 2026-08 audit: scan the paper POD with the camera — photos become one PDF, straight into the picker.
+      const camIn = h('input', { type: 'file', accept: 'image/*', capture: 'environment', multiple: true, style: 'display:none' });
+      camIn.onchange = async () => {
+        const fs9 = Array.from(camIn.files || []); if (!fs9.length) return;
+        err.textContent = ''; prog.textContent = 'Building PDF from ' + fs9.length + ' photo' + (fs9.length > 1 ? 's' : '') + '…';
+        try { const blob9 = await imagesToPdf(fs9); prog.textContent = ''; pick(new File([blob9], 'POD-scan-' + Date.now() + '.pdf', { type: 'application/pdf' })); haptic('success'); }
+        catch (_) { prog.textContent = ''; err.textContent = 'Could not build the PDF — try again or pick a file instead.'; }
+        camIn.value = '';
+      };
+      const camBtn9 = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'width:100%;margin-top:8px', onClick: () => camIn.click() }, '📷 Scan paper POD with camera');
 
       async function doUpload() {
         if (!file) return;
@@ -4789,7 +5104,7 @@ function tripStepper(status) {
 
       mount(wrap, [
         state.hasPending ? h('div', { class: 'cp-row-s', style: 'color:#b45309' }, 'A POD is already awaiting review — uploading again adds a new version.') : null,
-        zone, input, prev, err, prog,
+        zone, camBtn9, camIn, input, prev, err, prog,
         h('div', { class: 'cp-trip-actions' }, [up]),
       ].filter(Boolean));
       return wrap;
@@ -4798,7 +5113,7 @@ function tripStepper(status) {
 
   /* ----- Fleet: carrier self-service drivers & trucks (own org only, server-scoped) ----- */
   async function loadFleet() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    showSkeleton(content, 'cards');
     let drivers, trucks;
     try { [drivers, trucks] = await Promise.all([pocketDrivers(), pocketTrucks()]); }
     catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, (e && e.message) || 'Failed to load.'))); return; }
@@ -5299,8 +5614,8 @@ function tripStepper(status) {
   }
 
   async function loadFinance() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
-    let rows; try { rows = await pocketInvoices(100); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Failed to load.'))); return; }
+    showSkeleton(content, 'cards');
+    let rows; try { rows = await pocketInvoices(100); } catch (e) { mount(content, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-muted' }, 'Could not load your finance data — check your connection.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => loadFinance() }, 'Retry')])); return; }
     rows = rows || [];
     const due = rows.filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const paid = rows.filter(i => i.status === 'paid').reduce((a, i) => a + (Number(i.fee) || 0), 0);
@@ -6002,11 +6317,42 @@ function tripStepper(status) {
   }
 
   async function loadDocuments() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    showSkeleton(content, 'cards');
     let c; try { c = await pocketCompliance(); } catch (e) { c = { requirements: [] }; }
     const reqs = (c && c.requirements) || [];
     let allDocs = []; try { allDocs = await carrierListDocuments(); } catch (_) { allDocs = []; }
     const latestDoc = (t) => (allDocs || []).find(d => d.type === t) || null; // list is newest-first
+    // 2026-08 audit: Web Share Target inbox — a file shared from the phone's gallery/apps
+    // lands in the 'lb-share-inbox' cache (see sw.js); offer to upload it here.
+    const shareBanner9 = h('div');
+    (async () => {
+      try {
+        if (!('caches' in window)) return;
+        const c9 = await caches.open('lb-share-inbox');
+        const keys9 = await c9.keys();
+        if (!keys9.length) return;
+        const res9 = await c9.match(keys9[keys9.length - 1]);
+        if (!res9) return;
+        const name9 = res9.headers.get('x-name') || 'shared-file';
+        const type9 = res9.headers.get('content-type') || 'application/octet-stream';
+        const blob9 = await res9.blob();
+        const file9 = new File([blob9], name9, { type: type9 });
+        const st9 = h('div', { class: 'cp-row-s' });
+        shareBanner9.appendChild(h('div', { class: 'cp-card', style: 'border-color:rgba(8,131,247,.5)' }, [
+          h('div', { class: 'cp-row-t' }, '📥 File shared to LoadBoot'),
+          h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, name9 + ' · ' + Math.round(blob9.size / 1024) + ' KB — upload it to your documents?'),
+          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+            h('button', { class: 'cp-btn cp-btn-sm', onClick: async (e9) => {
+              const b9 = e9.currentTarget; b9.disabled = true; b9.textContent = 'Uploading…';
+              try { const m9 = await uploadDocument(file9, 'other'); await carrierUploadDocument({ type: 'other', fileName: m9.fileName, filePath: m9.path }); await Promise.all(keys9.map(k9 => c9.delete(k9))); haptic('success'); lbToast('Shared file uploaded — dispatch will review it.', 'success'); loadDocuments(); }
+              catch (er9) { st9.textContent = (er9 && er9.message) || 'Upload failed.'; b9.disabled = false; b9.textContent = 'Upload to Documents'; }
+            } }, 'Upload to Documents'),
+            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { await Promise.all(keys9.map(k9 => c9.delete(k9))); } catch (_) {} shareBanner9.innerHTML = ''; } }, 'Dismiss'),
+          ]),
+          st9,
+        ]));
+      } catch (_) {}
+    })();
     const listWrap = h('div');
     // 🏦 factoring active but NOA letter not uploaded yet → loud reminder at the top
     let noaBanner9 = null;
@@ -6271,7 +6617,7 @@ function tripStepper(status) {
       }
     } catch (_) {}
     const sorted = reqs.slice().sort((a, b) => ({ urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(a).t] - { urgent: 0, action: 1, warning: 2, success: 3 }[reqTone(b).t]));
-    mount(content, h('div', null, [noaBanner9, scanCard, 
+    mount(content, h('div', null, [shareBanner9, noaBanner9, scanCard, 
       h('div', { class: 'cp-card' }, [cardHead('What LoadBoot needs from you',
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
@@ -6299,7 +6645,13 @@ function tripStepper(status) {
     const body = h('textarea', { class: 'cp-in', rows: '3', placeholder: 'Describe the issue…' });
     const msg = h('div', { class: 'cp-err' });
     const list = h('div');
-    const send = h('button', { class: 'cp-btn', onClick: async () => { msg.textContent = ''; if (!subj.value.trim()) { msg.textContent = 'Subject is required.'; return; } send.disabled = true; send.textContent = 'Sending…'; try { const _a9 = (send._getAtts ? send._getAtts() : []); const _bodyF = body.value.trim() + (_a9.length ? '\n\nATTACHED DOCUMENTS (' + _a9.length + '): ' + _a9.map((x) => x.file_name).join(' \u00b7 ') + ' \u2014 files are in document review.' : ''); await pocketRaiseIssue(subj.value.trim(), _bodyF); subj.value = ''; body.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Sent — we’ll get back to you.'; await loadIssues(); } catch (e) { msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'Could not send.'; } send.disabled = false; send.textContent = 'Send to dispatch'; } }, 'Send to dispatch');
+    const send = h('button', { class: 'cp-btn', onClick: async () => { msg.textContent = ''; if (!subj.value.trim()) { msg.textContent = 'Subject is required.'; return; } send.disabled = true; send.textContent = 'Sending…'; try { const _a9 = (send._getAtts ? send._getAtts() : []); const _bodyF = body.value.trim() + (_a9.length ? '\n\nATTACHED DOCUMENTS (' + _a9.length + '): ' + _a9.map((x) => x.file_name).join(' \u00b7 ') + ' \u2014 files are in document review.' : ''); await pocketRaiseIssue(subj.value.trim(), _bodyF); subj.value = ''; body.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Sent — we’ll get back to you.'; await loadIssues(); } catch (e) {
+      const m9 = String((e && e.message) || '');
+      if (!navigator.onLine || /fetch|network|timeout/i.test(m9)) {
+        // 2026-08 audit: offline outbox — the ticket is queued and auto-sent on reconnect.
+        try { const q9 = JSON.parse(localStorage.getItem('lb_ticket_outbox') || '[]'); q9.push({ s: subj.value.trim(), b: _bodyF, t: Date.now() }); localStorage.setItem('lb_ticket_outbox', JSON.stringify(q9.slice(-10))); subj.value = ''; body.value = ''; msg.className = 'cp-err ok'; msg.textContent = '📮 You appear offline — the ticket is saved and will send automatically when you reconnect.'; } catch (_) { msg.className = 'cp-err'; msg.textContent = m9 || 'Could not send.'; }
+      } else { msg.className = 'cp-err'; msg.textContent = m9 || 'Could not send.'; }
+    } send.disabled = false; send.textContent = 'Send to dispatch'; } }, 'Send to dispatch');
     const exList = h('div');
     // A7 — the carrier's direct line to Command Center, always visible on top.
     const deskCard = h('div', { class: 'cp-card' }, [cardHead('Your dispatch desk', 'Message us any time — a person answers'),
@@ -6321,7 +6673,10 @@ function tripStepper(status) {
       ]),
       h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Replies within business hours; dispatch is on call for active loads.'),
     ].filter(Boolean));
-    mount(content, h('div', null, [deskCard, h('div', { class: 'cp-grid' }, [
+    // 2026-08 audit: in-app searchable Help Center (Uber/DoorDash pattern) — FAQ tier before the ticket tier.
+    const faqCard9 = h('div', { class: 'cp-card' }, [cardHead('Help center', 'Instant answers — search before you wait on a reply')]);
+    try { renderFaq(faqCard9, CARRIER_FAQ); } catch (_) {}
+    mount(content, h('div', null, [deskCard, faqCard9, h('div', { class: 'cp-grid' }, [
       h('div', { class: 'cp-card' }, [cardHead('Raise an issue'), subj, body, (() => {
         const att9 = [];
         const fIn = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.85rem' });
@@ -6368,7 +6723,7 @@ function tripStepper(status) {
 
   /* ----- Onboarding wizard (Phase 2A) ----- */
   async function loadOnboarding() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    showSkeleton(content, 'cards');
     const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Conestoga', 'Tanker', 'Car Hauler'];
     const STEPS = ['Company & authority', 'Operation & equipment', 'Factoring & payment', 'Dispatch preferences', 'Documents', 'Review & submit'];
     let prof = {}; try { prof = await pocketGetProfile(); } catch (_) { prof = {}; }
@@ -6573,9 +6928,11 @@ function tripStepper(status) {
   }
 
   function statTile(label, value, iconName, accent, onClick) {
+    const vEl = h('div', { class: 'cp-stat-v' }, value);
+    try { countUp(vEl, value); } catch (_) {}
     return h('button', { class: 'cp-stat ' + (accent || '') + (onClick ? ' clickable' : ''), onClick: onClick || null }, [
       h('div', { class: 'cp-stat-ic' }, icon(iconName, 20)),
-      h('div', null, [h('div', { class: 'cp-stat-v' }, value), h('div', { class: 'cp-stat-l' }, label)]),
+      h('div', null, [vEl, h('div', { class: 'cp-stat-l' }, label)]),
     ]);
   }
   function cardHead(title, sub, onClick) { return h('div', { class: 'cp-cardhead' }, [h('div', null, [h('h3', null, title), sub ? h('span', { class: 'cp-cardhead-sub' }, sub) : null].filter(Boolean)), onClick ? h('button', { class: 'cp-link', onClick }, 'View all →') : null].filter(Boolean)); }
@@ -6652,7 +7009,7 @@ function tripStepper(status) {
     ]);
   }
   async function loadSafety() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
+    showSkeleton(content, 'cards');
     let trips = []; try { trips = (await pocketTrips(30)) || []; } catch (_) {}
     const active = (trips || []).filter(t => ['dispatched', 'in_transit', 'at_pickup', 'loaded'].includes(String(t.status || '').toLowerCase()));
     let incidents = []; try { incidents = (await myTripIncidents()) || []; } catch (_) {}
@@ -6694,7 +7051,7 @@ function tripStepper(status) {
         h('div', null, [h('div', { class: 'cp-row-t' }, c.name), h('div', { class: 'cp-row-s' }, (c.relation ? c.relation + ' · ' : '') + c.phone)]),
         h('div', { style: 'display:flex;gap:6px' }, [
           h('a', { class: 'cp-btn cp-btn-sm', href: 'tel:' + c.phone, style: 'text-decoration:none' }, 'Call'),
-          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { await emergencyContactDelete(c.id); loadSafety(); } catch (_) {} } }, '✕'),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { if (!confirm('Remove ' + c.name + ' from your emergency contacts?')) return; try { await emergencyContactDelete(c.id); haptic('warn'); loadSafety(); } catch (_) {} } }, '✕'),
         ]),
       ])),
       h('div', { class: 'cp-formrow2', style: 'margin-top:8px' }, [cName, cRel]),
@@ -6722,8 +7079,8 @@ function tripStepper(status) {
   }
 
   async function loadNotifications() {
-    mount(content, h('div', { class: 'cp-muted' }, 'Loading…'));
-    let rows; try { rows = await pocketNotifications(60); } catch (e) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'Could not load notifications.'))); return; }
+    showSkeleton(content, 'cards');
+    let rows; try { rows = await pocketNotifications(60); } catch (e) { mount(content, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-muted' }, 'Could not load notifications — check your connection.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => loadNotifications() }, 'Retry')])); return; }
     if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No notifications yet. Alerts about your loads, payments and onboarding will appear here.'))); refreshUnread(); return; }
     const unread9 = rows.filter(n => !n.read_at).length;
     const card = h('div', { class: 'cp-card' }, [cardHead('Notifications', unread9 + ' unread'),
@@ -6743,6 +7100,8 @@ function tripStepper(status) {
           n.created_at ? h('div', { class: 'cp-row-s', style: 'font-size:.68rem;opacity:.75;margin-top:2px' }, new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + new Date(n.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) : null].filter(Boolean)),
         n.read_at ? null : h('span', { class: 'cp-pill blue' }, 'new'),
       ].filter(Boolean));
+      // 2026-08 audit: swipe a row left to mark it read (iOS Mail pattern).
+      if (!n.read_at) attachSwipeAction(row, { onAction: async () => { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); row.classList.remove('unread'); const p9 = row.querySelector('.cp-pill.blue'); if (p9) p9.remove(); refreshUnread(); } catch (_) {} } });
       return row;
     })]);
     mount(content, card);
@@ -6757,6 +7116,28 @@ function tripStepper(status) {
 let _hadSession = false, _watching = false;
 function watchAuth() { if (_watching) return; _watching = true; onAuthChange((s) => { if (s) { _hadSession = true; return; } if (_hadSession) { _hadSession = false; location.reload(); } }); }
 
+/* ---- 2FA login gate (2026-08 audit, owner-approved): aal1 session + enrolled factor -> ask for the code ---- */
+function renderMfaGate(factorId) {
+  const err9 = h('div', { class: 'cp-err' });
+  const code9 = h('input', { class: 'cp-in', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '6', placeholder: '6-digit code', style: 'font-size:1.3rem;letter-spacing:.35em;text-align:center;font-weight:800' });
+  const go9 = h('button', { class: 'cp-btn cp-btn-lg', style: 'width:100%;margin-top:10px' }, 'Verify');
+  const submit9 = async () => {
+    const c9 = code9.value.trim(); if (c9.length < 6) { err9.textContent = 'Enter the 6-digit code from your authenticator app.'; return; }
+    go9.disabled = true; go9.textContent = 'Verifying…'; err9.textContent = '';
+    try { await mfaVerify(factorId, c9); haptic('success'); boot(); }
+    catch (e9) { err9.textContent = (e9 && e9.message) || 'Wrong code — try again.'; go9.disabled = false; go9.textContent = 'Verify'; code9.value = ''; code9.focus(); }
+  };
+  go9.onclick = submit9; code9.onkeydown = (e9) => { if (e9.key === 'Enter') submit9(); };
+  mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [
+    h('h1', null, '🔐 Two-factor check'),
+    h('p', { class: 'cp-auth-sub' }, 'This account is protected with 2FA. Enter the code from your authenticator app.'),
+    code9, err9, go9,
+    h('button', { class: 'cp-btn ghost', style: 'width:100%;margin-top:10px', onClick: async () => { await signOut(); location.reload(); } }, 'Use a different account'),
+  ])));
+  root.setAttribute('aria-busy', 'false');
+  setTimeout(() => code9.focus(), 60);
+}
+
 async function boot() {
   if (/type=recovery/.test(location.hash || '')) { recoveryScreen(); return; }
   root.setAttribute('aria-busy', 'true');
@@ -6765,6 +7146,22 @@ async function boot() {
   if (!session) { authScreen(); return; }
   _hadSession = true; watchAuth();
   try { mountOfflineBanner(); } catch (_) {}
+  try { initInstallPrompt(); } catch (_) {}
+  try { ensurePushHealthy('Carrier portal'); } catch (_) {}
+  // Device list (2026-08 audit): register/refresh this device so Settings → Security can show it.
+  try { let dk9 = localStorage.getItem('lb_device_key'); if (!dk9) { dk9 = 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('lb_device_key', dk9); } deviceSeen(dk9, (/android/i.test(navigator.userAgent) ? 'Android' : /iphone|ipad/i.test(navigator.userAgent) ? 'iPhone/iPad' : 'Computer') + ' \u00b7 ' + (/chrome/i.test(navigator.userAgent) ? 'Chrome' : /safari/i.test(navigator.userAgent) ? 'Safari' : 'Browser'), navigator.userAgent).catch(() => {}); } catch (_) {}
+  // Flush any offline-queued support tickets (2026-08 audit outbox).
+  async function flushTicketOutbox9() {
+    let q9 = []; try { q9 = JSON.parse(localStorage.getItem('lb_ticket_outbox') || '[]'); } catch (_) {}
+    if (!q9.length || !navigator.onLine) return;
+    const rest9 = [];
+    for (const t9 of q9) { try { await pocketRaiseIssue(t9.s, t9.b); } catch (_) { rest9.push(t9); } }
+    try { localStorage.setItem('lb_ticket_outbox', JSON.stringify(rest9)); } catch (_) {}
+    if (q9.length && !rest9.length) lbToast('Your queued support ticket' + (q9.length > 1 ? 's were' : ' was') + ' sent.', 'success');
+  }
+  try { flushTicketOutbox9(); window.addEventListener('online', () => setTimeout(flushTicketOutbox9, 1500)); } catch (_) {}
+  try { showWhatsNew(['Saved loads (★) + filters that remember themselves on the Load Board', 'Pull down on any page to refresh', 'Scan paper PODs with your camera — straight to upload', 'New Help Center with instant answers in Support', 'Unread badges on Alerts and your app icon']); } catch (_) {}
+  try { const f9 = await mfaRequired(); if (f9) { renderMfaGate(f9); return; } } catch (_) {}
   let user = null; try { user = await getUser(); } catch (_) {}
   // /app/agent/ is the AGENT product — never render the carrier portal here,
   // even if this login also owns a carrier org (agents are a separate persona).

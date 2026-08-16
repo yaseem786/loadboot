@@ -1002,3 +1002,10 @@ export const myTripIncidents = (trip) => rpc('cc_my_trip_incidents', { p_trip: t
 export const safetyIncidents = (status) => rpc('cc_safety_incidents', { p_status: status ?? null });
 export const ackIncident = (id) => rpc('cc_ack_incident', { p_id: id });
 export const approveIncidentReschedule = (id, win, note) => rpc('cc_approve_incident_reschedule', { p_id: id, p_new_window: win, p_note: note ?? null });
+
+/* ---- 2026-08 app-audit backend features (bl_ux_0192) ---- */
+export const fuelPricesGet = () => rpc('fuel_prices_get');
+export const deviceSeen = (key, label, ua) => rpc('device_seen', { p_key: key, p_label: label ?? null, p_ua: ua ?? null });
+export const myDevices = () => rpc('my_devices');
+export const facilityReviewSubmit = (trip, kind, stars, comment) => rpc('facility_review_submit', { p_trip: trip, p_kind: kind, p_stars: stars, p_comment: comment ?? null });
+export const facilityRatings = (keys) => rpc('facility_ratings', { p_keys: keys });

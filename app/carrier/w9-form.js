@@ -66,6 +66,8 @@ export function openW9Wizard(ctx, opts, onDone) {
   root.appendChild(bar); root.appendChild(body); root.appendChild(msg);
 
   let step = 1; let close;
+  // 2026-08 audit: draft persistence — an accidental backdrop tap used to lose all 5 steps.
+  try { const _d9 = JSON.parse(sessionStorage.getItem('lb_w9_draft') || 'null'); if (_d9 && _d9.state) { for (var _k9 in _d9.state) { if (Object.prototype.hasOwnProperty.call(state, _k9) && _d9.state[_k9]) state[_k9] = _d9.state[_k9]; } if (_d9.step >= 1 && _d9.step <= 5) step = _d9.step; } } catch (_) {}
   const setDots = function () { dots.forEach(function (d, i) { d.style.background = i < step ? '#0883F7' : '#e2e8f0'; }); };
   const btnRow = function (backTo, nextFn, nextLabel) {
     const row = mk('div', 'display:flex;gap:8px;margin-top:16px');
@@ -76,6 +78,7 @@ export function openW9Wizard(ctx, opts, onDone) {
   const head = function (t, s) { const h = mk('div', 'font-size:1.15rem;font-weight:800', t); const sub = mk('div', 'color:#94a3b8;font-size:.8rem;margin:2px 0 4px', s); const wrap = mk('div'); wrap.appendChild(h); wrap.appendChild(sub); return wrap; };
 
   function render() {
+    try { sessionStorage.setItem('lb_w9_draft', JSON.stringify({ step: step, state: state })); } catch (_) {}
     setDots(); body.innerHTML = ''; msg.textContent = '';
     if (step === 1) {
       body.appendChild(head('Start your W-9', 'Step 1 of 5 — Tax identity. Enter your name exactly as on your tax return.'));
@@ -140,6 +143,7 @@ export function openW9Wizard(ctx, opts, onDone) {
           await carrierSubmitW9({ name: state.name, business_name: state.business, classification: state.cls, llc_class: state.cls.indexOf('LLC') >= 0 ? state.llc : '', address: state.address, city_state_zip: state.csz, tin: state.tin, signer_name: sig.value.trim(), signed_date: today(), ref: REF });
           if (close) close();
           if (ctx.toast) ctx.toast('W-9 completed — sent to the Command Center for review');
+          try { sessionStorage.removeItem('lb_w9_draft'); } catch (_) {}
           if (onDone) onDone();
         } catch (e) { btn.disabled = false; btn.textContent = 'Sign & submit W-9'; msg.textContent = (e && e.message) || 'Could not submit your W-9.'; }
       };
