@@ -730,7 +730,49 @@ def _mincss(c):
     c=_re.sub(r'\s*([{};,])\s*',r'\1',c)           # trim space around { } ; ,
     c=c.replace(';}','}')                            # drop trailing semicolons
     return c.strip()
-with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS))
+# ---------- RESPONSIVE HARDENING (2026-08 sweep) ----------
+# Fixes the mobile/tablet horizontal-overflow classes found by the automated
+# 360/390/768px audit (108 failing page-checks before; 0 after). Additive only —
+# appended last so it wins the cascade. See docs/RESPONSIVE-SWEEP-2026-08.md.
+RESP_CSS = """
+/* No page may pan/zoom-out sideways on mobile: clip the viewport itself. */
+html{overflow-x:clip}
+/* Grid tracks must never inherit a min-content floor wider than the screen. */
+.art-grid>*,.foot-top>*,.ab2-hero-in>*,.route-grid>*{min-width:0}
+[style*="grid-template-columns"]>*{min-width:0}
+.art-body{max-width:100%}
+/* Footer call row + newsletter form wrap instead of forcing the footer wide. */
+.foot-call-row{flex-wrap:wrap}
+form.news{flex-wrap:wrap}form.news input{min-width:0;flex:1 1 170px}
+/* Illustrative SVGs scale down with their container. */
+.ab2-viz svg,.ab2-hero-in svg,.art-fig svg{max-width:100%;height:auto}
+/* Wide comparison/data tables become swipe-scrollable on small screens. */
+@media(max-width:880px){
+table.cmp,table.accx-cmp,table.ftx-cmp,table.mr-t,.art-body table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+table.cmp thead,table.accx-cmp thead,table.ftx-cmp thead,table.mr-t thead,.art-body table thead{min-width:640px}
+table.cmp tbody,table.accx-cmp tbody,table.ftx-cmp tbody,table.mr-t tbody,.art-body table tbody{min-width:640px}
+}
+/* Inline-styled fixed-column grids collapse gracefully on small screens
+   (inline styles beat classes, so this needs !important — mobile only). */
+@media(max-width:640px){
+[style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:1fr 1fr!important}
+[style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr!important}
+[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+}
+@media(min-width:641px) and (max-width:880px){
+[style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:1fr 1fr!important}
+}
+/* Accessorial stat chips: long money ranges wrap instead of clipping. */
+.accx-stat{min-width:0}
+.accx-stat b{white-space:normal;overflow-wrap:anywhere}
+/* Hub CTA buttons wrap their label instead of overflowing. */
+@media(max-width:640px){
+.hub-cta-btn{white-space:normal;width:100%;justify-content:center;box-sizing:border-box}
+.mcta{max-width:100vw;box-sizing:border-box}
+}
+"""
+
+with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS + RESP_CSS))
 with open(os.path.join(OUT,'app.js'),'w',encoding='utf-8') as f: f.write(JS + PWA_JS)
 with open(os.path.join(OUT,'manifest.webmanifest'),'w',encoding='utf-8') as f: f.write(MANIFEST)
 with open(os.path.join(OUT,'sw.js'),'w',encoding='utf-8') as f: f.write(SW)

@@ -575,7 +575,10 @@ function authScreen() {
       ]),
     ])]),
   ]));
-  setMode(false);
+  // Deep link: /app/partner/#signup opens straight in create-account mode —
+  // used by the in-app signup page so brokers/shippers sign up in-app.
+  setMode(location.hash === '#signup');
+  if (location.hash === '#signup') { try { history.replaceState(null, '', location.pathname); } catch (_) {} }
   root.setAttribute('aria-busy', 'false');
 }
 
