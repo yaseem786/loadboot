@@ -464,6 +464,7 @@ def footer():
 <div style="margin-bottom:20px"><a href="https://www.capterra.com/p/10050953/LoadBoot/" rel="noopener" target="_blank" aria-label="LoadBoot reviews on Capterra" style="display:inline-flex;align-items:center;gap:10px;background:#0d1b30;border:1px solid #1e3a5f;border-radius:12px;padding:10px 16px;text-decoration:none;margin:0">
 <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5l9.5 3.6L3 12.7V5.5z" fill="#FF9D28"/><path d="M12.5 9.1L21 5.5l-8.5 15.4V9.1z" fill="#068EEF"/><path d="M3 12.7l9.5-3.6v11.8L3 12.7z" fill="#044D80"/></svg>
 <span style="display:inline;margin:0;font-size:.88rem;color:#cbd5e1">Find us on <b style="color:#fff">Capterra</b> &mdash; read &amp; leave a review</span></a></div>
+<div style="border-top:1px solid #1e293b;padding-top:18px;margin-bottom:20px;font-size:.86rem;line-height:1.8;color:#94a3b8"><b style="color:#e2e8f0">Security notice.</b> LoadBoot never asks for your password by email, and never asks you to &ldquo;confirm&rdquo; or &ldquo;reactivate&rdquo; one. Our mail only ever comes from <b style="color:#e2e8f0">@loadboot.com</b> &mdash; if a message wants you to log in from a link, ignore it and open loadboot.com yourself. <a href="security.html" style="display:inline">How we contact you &rarr;</a></div>
 <div class="foot-bottom"><span>&copy; 2026 LoadBoot LLC &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; D-U-N-S&reg; 149880967 &middot; Serving carriers in all 48 states.</span>
 <span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="delete-account.html" style="display:inline">Delete account</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
@@ -583,7 +584,7 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 <script>%s</script>
 <script src="app.js?v=6"></script>
-<script defer src="/app/shared/ui/backToTop.js?v=1"></script><script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=3"></script><script defer src="/app/shared/ui/lcOnboard.js?v=3"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
+<script defer src="/app/shared/ui/backToTop.js?v=1"></script><script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=4"></script><script defer src="/app/shared/ui/lcOnboard.js?v=3"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -4744,6 +4745,16 @@ sec += _sec('How we protect you', 'Security by design', _cards([
     ('&#128737;', 'Isolated environments', 'Staging and production are kept strictly separate; the public build never references internal systems.'),
     ('&#128257;', 'Recoverable changes', 'Database changes are tracked and reversible, with documented rollback procedures.'),
 ]))
+sec += _sec('How Loadboot contacts you &mdash; and what we never do',
+    'Phishing emails that fake our name do exist. Here is how to tell them apart in five seconds.', _cards([
+    ('&#128273;', 'We never ask for your password', 'Not by email, not by text, not on a call &mdash; ever. Loadboot staff cannot see your password and will never ask you to &ldquo;confirm&rdquo;, &ldquo;reactivate&rdquo;, &ldquo;re-sync&rdquo; or &ldquo;verify&rdquo; one.'),
+    ('&#9993;', 'Our mail only comes from @loadboot.com', 'Real Loadboot email ends in <b>@loadboot.com</b> &mdash; nothing else. Check the actual address, not the display name: anyone can put &ldquo;LoadBoot&rdquo; in front of a random Gmail address.'),
+    ('&#128279;', 'Never log in from an email link', 'If a message wants you to sign in, close it and type <b>loadboot.com</b> in your browser yourself, then use the portal. That single habit defeats almost every phishing attempt.'),
+    ('&#9888;', 'What we do email you about', 'Load offers, rate confirmations, documents, settlements and account notices. We never send &ldquo;your mailbox is full&rdquo;, &ldquo;your password expires today&rdquo; or &ldquo;your account will be deleted in 24 hours&rdquo; &mdash; those are always fake.'),
+    ('&#128176;', 'We never change payment details by email', 'Banking or factoring changes are only ever made by you inside the portal. An email asking you to update where your money goes is fraud, no matter who it looks like it is from.'),
+    ('&#128231;', 'Forward it, do not click it', 'Not sure? Forward the message to <a href="mailto:security@loadboot.com">security@loadboot.com</a> and we will tell you within the day. Never click the button first.'),
+]))
+sec += '<section><div class="wrap prose reveal" style="max-width:820px"><h2>What we do on our side</h2><p>Our domain publishes <b>SPF</b>, <b>DKIM</b> and a <b>DMARC</b> policy, so mail providers can detect and refuse email that forges a loadboot.com address. That stops most spoofing before it ever reaches you &mdash; but it cannot stop a lookalike domain or a fake display name, which is why the five rules above matter.</p></div></section>'
 sec += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><h2>Report a security concern</h2><p>Found something? Email <a href="mailto:security@loadboot.com">security@loadboot.com</a> and we will respond promptly.</p></div></section>'
 page('security.html', 'Security &amp; Trust at Loadboot | How We Protect Your Data',
      'How Loadboot protects your account and documents: least-privilege access, private document storage, full audit trails and maker/checker payouts.',
