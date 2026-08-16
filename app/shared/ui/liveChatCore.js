@@ -333,7 +333,7 @@
         sessionStorage.setItem('lb_lc_teased', '1');
         var t = document.createElement('div');
         t.id = 'lbc-teaser';
-        t.style.cssText = 'position:fixed;right:18px;bottom:86px;max-width:260px;background:#fff;border:1px solid #e6edf5;border-radius:16px;border-bottom-right-radius:6px;box-shadow:0 16px 50px rgba(2,6,23,.25);padding:13px 15px;z-index:2147483645;font-family:Inter,system-ui,Arial;font-size:13px;color:#0f172a;line-height:1.5;cursor:pointer;animation:lbcUp .3s ease';
+        t.style.cssText = 'position:fixed;right:18px;bottom:' + (((window.__lbcFabOffset || 18) + 68)) + 'px;max-width:260px;background:#fff;border:1px solid #e6edf5;border-radius:16px;border-bottom-right-radius:6px;box-shadow:0 16px 50px rgba(2,6,23,.25);padding:13px 15px;z-index:2147483645;font-family:Inter,system-ui,Arial;font-size:13px;color:#0f172a;line-height:1.5;cursor:pointer;animation:lbcUp .3s ease';
         var openers = [
           '<b>👋 Need a hand?</b><br>I answer instantly — pricing, loads, setup, anything trucking.',
           '<b>🚀 New here?</b><br>I can set up your whole account right in this chat — about 5 minutes, done.',
@@ -433,11 +433,33 @@
     els.input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(els.input.value); } });
     els.input.addEventListener('input', autoGrow);
 
-    // Mobile: keep the FAB above portal tab bars
+    // Keep the FAB (and its panel/teaser) clear of portal bottom tab bars.
+    // The tab bar renders AFTER login, so a one-shot check is not enough: we
+    // measure the real bar, re-check on resize/rotation/route changes, and
+    // watch the DOM so the offset is always right the moment the bar appears.
     try {
-      var mq = window.matchMedia('(max-width: 900px)');
-      var place = function () { fab.style.bottom = mq.matches && document.querySelector('.lb-tabbar,.cp-tabbar,#bTabbar') ? 'calc(84px + env(safe-area-inset-bottom))' : '18px'; };
-      place(); mq.addEventListener('change', place); setTimeout(place, 1500);
+      var placeFab = function () {
+        var off = 18;
+        var bar = document.querySelector('.cp-tabbar,.lb-tabbar,#bTabbar,.mcta');
+        if (bar) {
+          var br = bar.getBoundingClientRect();
+          var visible = br.height > 0 && br.top < window.innerHeight && getComputedStyle(bar).display !== 'none';
+          if (visible) off = Math.max(18, Math.round(window.innerHeight - br.top) + 12);
+        }
+        fab.style.bottom = 'calc(' + off + 'px + env(safe-area-inset-bottom, 0px))';
+        if (window.innerWidth > 520) panel.style.bottom = (off + 68) + 'px';
+        var tz = document.getElementById('lbc-teaser');
+        if (tz) tz.style.bottom = (off + 68) + 'px';
+        window.__lbcFabOffset = off;
+      };
+      placeFab();
+      window.addEventListener('resize', placeFab);
+      window.addEventListener('hashchange', function () { setTimeout(placeFab, 300); });
+      if (window.MutationObserver) {
+        var moT = null;
+        new MutationObserver(function () { clearTimeout(moT); moT = setTimeout(placeFab, 250); })
+          .observe(document.body, { childList: true, subtree: true });
+      } else { setInterval(placeFab, 1500); }
     } catch (e) {}
 
     // Extension hooks for the onboarding concierge (lcOnboard.js — marketing site only).

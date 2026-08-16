@@ -453,7 +453,11 @@ function authScreen() {
     ]),
     ]),
   ]));
-  setMode(false);
+  // Deep link: /app/carrier/#signup (and /app/agent/#signup) opens straight in
+  // create-account mode — used by the in-app signup page so new users sign
+  // up INSIDE the app instead of being bounced to the marketing site.
+  setMode(location.hash === '#signup');
+  if (location.hash === '#signup') { try { history.replaceState(null, '', location.pathname); } catch (_) {} }
   root.setAttribute('aria-busy', 'false');
 }
 

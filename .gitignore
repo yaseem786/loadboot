@@ -24,3 +24,6 @@ _to_delete/
 # Play upload keystore — NEVER commit
 loadboot-upload.keystore
 PLAY-KEYSTORE-NOTE.txt
+
+# Session staging area (device bridge) — never commit
+_stage/
