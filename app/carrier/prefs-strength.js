@@ -6,6 +6,7 @@
 // removing data later deducts the score again (prefs_strength v2, bl_pref_0193).
 // Backend: cc_prefs_profile_strength() + cc_prefs_save_section() + cc_get_dispatch_prefs().
 import { prefsProfileStrength, prefsSaveSection, getDispatchPrefs } from '../shared/api.js';
+import { pushLayer, popLayer } from '../shared/backnav.js';
 
 const SEC = {
   lanes:      { icon: '🛣️', title: 'Your favorite lanes', sub: 'We push loads on these lanes to the top of your board.', pct: 15 },
@@ -86,7 +87,7 @@ export async function maybeShowMicroAsk() {
 
 // ---------- shared sheet shell ----------
 function sheet(innerHTML) {
-  const old = document.getElementById('psxModal'); if (old) old.remove();
+  const old = document.getElementById('psxModal'); if (old) { if (old.__psxGuard) popLayer(old.__psxGuard); old.remove(); }
   const wrap = document.createElement('div'); wrap.id = 'psxModal';
   wrap.innerHTML = '<div class="psx-ov" style="position:fixed;inset:0;background:rgba(4,8,16,.72);z-index:2400;display:flex;align-items:flex-end;justify-content:center">'
     + '<div class="psx-sheet" style="background:#0d1526;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:22px 20px 18px;box-shadow:0 -20px 60px rgba(0,0,0,.5)">'
@@ -102,7 +103,11 @@ function sheet(innerHTML) {
     + '#psxModal .psx-anim{animation:psxPop .28s ease}'
     + '@media(min-width:640px){#psxModal .psx-ov{align-items:center!important}#psxModal .psx-sheet{border-radius:20px!important}}</style>';
   document.body.appendChild(wrap);
-  wrap.querySelector('.psx-ov').addEventListener('click', (e) => { if (e.target === e.currentTarget) wrap.remove(); });
+  // Android back closes this sheet (instead of leaving the portal); manual closes unwind.
+  const psxGuard = () => { const m9 = document.getElementById('psxModal'); if (m9) m9.remove(); };
+  wrap.__psxGuard = psxGuard; pushLayer(psxGuard);
+  const psxUnwind = () => popLayer(psxGuard);
+  wrap.querySelector('.psx-ov').addEventListener('click', (e) => { if (e.target === e.currentTarget) { wrap.remove(); psxUnwind(); } });
   return wrap;
 }
 const refreshCard = () => { if (_host) mountStrengthCard(_host); };
@@ -132,7 +137,7 @@ export async function openChecklist(refreshHost) {
         + '</div>';
     }).join('')
     + '</div></div>');
-  wrap.querySelector('#psxX').onclick = () => wrap.remove();
+  wrap.querySelector('#psxX').onclick = () => { wrap.remove(); psxUnwind(); };
   wrap.querySelectorAll('.psx-row').forEach((r) => r.addEventListener('click', () => openMicroAsk(r.dataset.sec, _host, { backToList: true })));
 }
 
@@ -226,7 +231,7 @@ export async function openMicroAsk(key, refreshHost, opts) {
   };
   const al = wrap.querySelector('#mxAddLane'); if (al) al.addEventListener('click', addLane);
   wrap.querySelectorAll('#mxLaneList [data-lane]').forEach((el2) => { el2.onclick = () => el2.remove(); });
-  const close = () => { wrap.remove(); refreshCard(); };
+  const close = () => { wrap.remove(); psxUnwind(); refreshCard(); };
   wrap.querySelector('#psxX').onclick = close;
   const back = wrap.querySelector('#psxBack'); if (back) back.onclick = () => { refreshCard(); openChecklist(_host); };
   wrap.querySelector('#psxSkip').onclick = async () => { close(); try { _strength = await prefsSaveSection(key, { _skip: true }); } catch (_) {} refreshCard(); };
@@ -255,7 +260,7 @@ export async function openMicroAsk(key, refreshHost, opts) {
         + '<h3 style="color:#eaf1fb;margin:6px 0 6px">Profile fully tuned</h3>'
         + '<p style="color:#8ea2c3;font-size:.9rem;max-width:380px;margin:0 auto 16px">Matching now runs on your complete profile — best-fit loads reach you first. Edit any answer from the Profile strength card.</p>'
         + '<button type="button" id="psxDone" style="background:#0883F7;border:0;color:#fff;border-radius:12px;padding:12px 30px;font-weight:800;cursor:pointer">Done</button></div>')
-        .querySelector('#psxDone').onclick = () => { const m2 = document.getElementById('psxModal'); if (m2) m2.remove(); refreshCard(); };
+        .querySelector('#psxDone').onclick = () => { const m2 = document.getElementById('psxModal'); if (m2) { if (m2.__psxGuard) popLayer(m2.__psxGuard); m2.remove(); } refreshCard(); };
     } catch (e) { btn.disabled = false; btn.textContent = 'Retry'; }
   };
 }
