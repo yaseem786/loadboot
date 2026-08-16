@@ -96,8 +96,12 @@ import { renderLogin } from './views/login.js';
 import { registerAppSW } from '../shared/sw-register.js';
 
 
-// PWA real-app behaviour: remember this portal so the installed app opens here next launch.
-try { localStorage.setItem('lb_last_portal', '/app/command-center/'); } catch (_) {}
+// PWA real-app behaviour: remember this portal so the installed app opens here next
+// launch — but ONLY once a staff session exists. An accidental tap into the staff
+// login page must never hijack where the app opens from then on.
+import('../shared/session.js').then((s) => s.getSession()).then((sess) => {
+  if (sess) { try { localStorage.setItem('lb_last_portal', '/app/command-center/'); } catch (_) {} }
+}).catch(() => {});
 
 registerAppSW();
 const root = document.getElementById('lb-app');

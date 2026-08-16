@@ -10,8 +10,11 @@ import { initTelemetry } from '../shared/telemetry.js';
 initTelemetry();  // real-user error + Core Web Vitals capture
 
 
-// PWA real-app behaviour: remember this portal so the installed app opens here next launch.
-try { localStorage.setItem('lb_last_portal', '/app/developer/'); } catch (_) {}
+// Remember this portal only once a session exists — an accidental tap into the
+// developer portal must not hijack where the installed app opens next launch.
+import('../shared/session.js').then((s) => s.getSession()).then((sess) => {
+  if (sess) { try { localStorage.setItem('lb_last_portal', '/app/developer/'); } catch (_) {} }
+}).catch(() => {});
 
 const root = document.getElementById('lb-app');
 const API_BASE = ENV.supabaseUrl + '/functions/v1/dev-api';
