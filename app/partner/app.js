@@ -2019,7 +2019,7 @@ async function brokerDash(user, ov) {
       const isFlat = ['Flatbed', 'Step Deck', 'Conestoga', 'Hotshot'].indexOf(w.equipment || '') >= 0;
       body = h('div', null, [
         h('div', { class: 'cp-formgrid' }, [
-          sl('Equipment *', 'equipment', ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Conestoga', 'Power Only', 'Box Truck', 'Hotshot'], () => renderStep()),
+          sl('Equipment *', 'equipment', ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Conestoga', 'Power Only', 'Box Truck', 'Cargo Van', 'Sprinter Van', 'Hotshot'], () => renderStep()),
           (directCarrier && w.equipment) ? (() => {
             const hint9 = h('div', { class: 'cp-sub', style: 'grid-column:1/-1' }, '\ud83c\udfaf Checking ' + directCarrier.name + '\u2019s equipment\u2026');
             (async () => {
@@ -2080,9 +2080,9 @@ async function brokerDash(user, ov) {
             // Baselines are overridable from CC via cc_rate_standards keys (rpm_dry_van, rpm_reefer, ...).
             const mi9 = Number(w.miles) || 0;
             if (!w.equipment || mi9 <= 0) return null;
-            const BASE = { 'Dry Van': 2.05, 'Reefer': 2.40, 'Flatbed': 2.55, 'Step Deck': 2.65, 'Conestoga': 2.70, 'Power Only': 1.85, 'Box Truck': 1.60, 'Hotshot': 2.00 };
+            const BASE = { 'Dry Van': 2.05, 'Reefer': 2.40, 'Flatbed': 2.55, 'Step Deck': 2.65, 'Conestoga': 2.70, 'Power Only': 1.85, 'Box Truck': 1.60, 'Cargo Van': 1.45, 'Sprinter Van': 1.55, 'Hotshot': 2.00 };
             // industry MINIMUM $/mi (2026: owner-operator cost floor ~$1.80\u20132.00 + margin) \u2014 suggestions never go below this
-            const FLOOR = { 'Dry Van': 2.00, 'Reefer': 2.50, 'Flatbed': 2.50, 'Step Deck': 2.55, 'Conestoga': 2.60, 'Power Only': 1.80, 'Box Truck': 1.55, 'Hotshot': 2.00 };
+            const FLOOR = { 'Dry Van': 2.00, 'Reefer': 2.50, 'Flatbed': 2.50, 'Step Deck': 2.55, 'Conestoga': 2.60, 'Power Only': 1.80, 'Box Truck': 1.55, 'Cargo Van': 1.30, 'Sprinter Van': 1.40, 'Hotshot': 2.00 };
             let rpm0 = BASE[w.equipment] || 2.10; let liveN = 0;
             let floor0 = FLOOR[w.equipment] || 2.00;
             // LIVE platform-booking layer is GATED OFF until marketplace volume is meaningful.

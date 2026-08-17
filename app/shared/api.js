@@ -678,7 +678,10 @@ export const carrierLinkDriver = (fleetDriver, user) => rpc('cc_carrier_link_dri
 export const acceptDriverInvite = (token) => rpc('cc_accept_driver_invite', { p_token: token });
 export const pocketUpsertDriver = (o = {}) => rpc('cc_pocket_upsert_driver', { p_id: o.id ?? null, p_name: o.name, p_phone: o.phone ?? null, p_email: o.email ?? null, p_license_no: o.licenseNo ?? null, p_license_state: o.licenseState ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
 export const pocketTrucks = () => rpc('cc_pocket_trucks');
-export const pocketUpsertTruck = (o = {}) => rpc('cc_pocket_upsert_truck', { p_id: o.id ?? null, p_unit_no: o.unitNo, p_plate: o.plate ?? null, p_vin: o.vin ?? null, p_equipment: o.equipment ?? null });
+export const coiVehicles = () => rpc('cc_coi_vehicles');
+export const pocketUpsertTruck = (o = {}) => rpc('cc_pocket_upsert_truck', { p_id: o.id ?? null, p_unit_no: o.unitNo, p_plate: o.plate ?? null, p_vin: o.vin ?? null, p_equipment: o.equipment ?? null,
+  p_payload_lbs: o.payloadLbs ?? null, p_cargo_len_in: o.cargoLenIn ?? null, p_cargo_width_in: o.cargoWidthIn ?? null, p_cargo_height_in: o.cargoHeightIn ?? null,
+  p_vin_make: o.vinMake ?? null, p_vin_model: o.vinModel ?? null, p_vin_year: o.vinYear ?? null, p_vin_gvwr: o.vinGvwr ?? null, p_vin_body: o.vinBody ?? null });
 // carrier team (existing members) — migration cus_carrier_team
 export const pocketTeam = () => rpc('cc_pocket_team');
 export const pocketSetMember = (o = {}) => rpc('cc_pocket_set_member', { p_user: o.user, p_role: o.role ?? null, p_status: o.status ?? null });
