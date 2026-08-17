@@ -12,7 +12,7 @@ import {
   pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
-  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, coiVehicles, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
+  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, coiVehicles, vinCoverage, fleetFmcsaCheck, setLegalOwner, truckLoadingProfiles, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
   carrierUploadDocument, carrierListDocuments, fmcsaVerify, carrierAgreementSignature, carrierW9,
   emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
@@ -2283,7 +2283,7 @@ async function appView(user) {
     // Predefined requirements per pause-reason category
     const REQ = (() => {
       if (/insur|coi/i.test(reason)) return [
-        { t: 'New Certificate of Insurance (COI)', d: 'Active policy showing $1M auto liability + $100k cargo, with LoadBoot listed as certificate holder. Ask your insurance agent \u2014 they issue it the same day.', type: 'insurance' }];
+        { t: 'New Certificate of Insurance (COI)', d: 'Active policy showing $1M auto liability + $100k cargo, with LoadBoot LLC, 30 N Gould St, Ste N, Sheridan, WY 82801 listed as certificate holder. Ask your insurance agent \u2014 they issue it the same day, free.', type: 'insurance' }];
       if (/fmcsa|authority|oos/i.test(reason)) return [
         { t: 'FMCSA authority proof', d: 'Your authority must show ACTIVE again. Upload the FMCSA reinstatement letter or your updated MCS-150 confirmation.', type: 'authority' }];
       if (/safety/i.test(reason)) return [
@@ -3364,6 +3364,8 @@ async function appView(user) {
     })();
     const prefsHost = h('div', null);
     mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
+    try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
     try { mountStrengthCard(prefsHost); setTimeout(function () { try { maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {}
     openPrompts();
   }
@@ -3574,25 +3576,94 @@ async function appView(user) {
     const truckCard = h('div', { class: 'cp-card', style: 'margin-bottom:12px' }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, [icon('truck',15),' Post my truck']), h('div', { class: 'cp-row-s' }, 'Tell us where your truck frees up — matching loads alert you automatically.')]),
-        h('button', { class: 'cp-btn cp-btn-sm', onClick: () => {
+        h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => {
+          // Posting a truck is a sales document, not a form. Everything a broker
+          // decides on is pulled off the truck record we already hold, so the
+          // carrier picks a unit and we fill the rest in for them.
+          let fleet9 = []; try { fleet9 = await pocketTrucks(); } catch (_) { fleet9 = []; }
+          const pick = h('select', { class: 'cp-in' }, [h('option', { value: '' }, fleet9.length ? 'Which truck?…' : 'No trucks added yet — posting without one')]
+            .concat(fleet9.map(t9 => h('option', { value: t9.id }, 'Unit ' + (t9.unit_no || '?') + (t9.equipment ? ' · ' + t9.equipment : '') + (t9.vin ? ' · VIN …' + String(t9.vin).slice(-6) : '')))));
           const org = h('input', { class: 'cp-in', placeholder: 'Truck location — City, ST *', value: (_dp && _dp.home_base) || '' });
+          const rad = h('input', { class: 'cp-in', type: 'number', min: '25', step: '25', placeholder: 'Miles I will drive to pick up', value: '150' });
+          const dest = h('input', { class: 'cp-in', placeholder: 'Where I want to end up (optional) — e.g. TX, or Dallas' });
           const from = h('input', { class: 'cp-in', type: 'date', value: new Date().toISOString().slice(0, 10) });
           const to = h('input', { class: 'cp-in', type: 'date', value: new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10) });
           const eq = h('input', { class: 'cp-in', placeholder: 'Equipment (e.g. Van, Reefer)', value: ((_dp && _dp.preferred_equipment) || []).join(', ') });
           const rpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi (optional)', value: (_dp && _dp.min_rpm) || '' });
+          const notes = h('textarea', { class: 'cp-in', rows: '2', placeholder: 'Anything else a dispatcher should know (optional)' });
+          const specHost = h('div');
           const auto = h('input', { type: 'checkbox' });
+
+          // What the truck already tells us — shown so the carrier can see the posting
+          // is complete, and so gaps are obvious while they can still fix them.
+          const paintSpec = async () => {
+            specHost.innerHTML = '';
+            const t9 = fleet9.find(x => x.id === pick.value);
+            if (!t9) return;
+            if (t9.domicile_city) org.value = t9.domicile_city + (t9.domicile_state ? ', ' + t9.domicile_state : '');
+            if (t9.equipment) eq.value = t9.equipment;
+            if (t9.min_rpm && !rpm.value) rpm.value = t9.min_rpm;
+            if (t9.max_radius_miles) rad.value = t9.max_radius_miles;
+            const bits = [];
+            if (t9.payload_lbs) bits.push(Number(t9.payload_lbs).toLocaleString() + ' lb');
+            if (t9.cargo_len_in && t9.cargo_width_in && t9.cargo_height_in) bits.push(t9.cargo_len_in + '×' + t9.cargo_width_in + '×' + t9.cargo_height_in + ' in');
+            if (t9.pallet_positions) bits.push(t9.pallet_positions + ' pallets');
+            if (t9.liftgate) bits.push('liftgate' + (t9.liftgate_cap_lbs ? ' ' + Number(t9.liftgate_cap_lbs).toLocaleString() + ' lb' : ''));
+            if (t9.dock_high) bits.push('dock high');
+            if (t9.has_pallet_jack) bits.push('pallet jack');
+            if (t9.has_ramp) bits.push('ramp');
+            if (t9.temp_control && t9.temp_control !== 'none') bits.push(t9.temp_control);
+            if (t9.hazmat_placarded) bits.push('hazmat');
+            if (t9.twic) bits.push('TWIC');
+            if (t9.team_driven) bits.push('team');
+            specHost.appendChild(h('div', { style: 'border:1px solid rgba(74,222,128,.22);background:rgba(74,222,128,.05);border-radius:11px;padding:9px 12px;margin:2px 0 4px;font-size:.83rem;line-height:1.6' }, [
+              h('div', { style: 'font-weight:800;color:#4ade80;margin-bottom:2px' }, 'Brokers will see'),
+              h('div', { style: 'color:#94a3b8' }, bits.length ? bits.join(' · ') : 'No capacity details on this truck yet — add them and you will match far more loads.'),
+              bits.length ? null : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => { try { _closePT(); } catch (_) {} truckForm(t9); } }, 'Add them now'),
+            ]));
+            // The certificate decides what we can dispatch, so say it before they post.
+            if (t9.vin) {
+              try {
+                const cv = await vinCoverage(t9.vin);
+                if (cv && cv.state === 'not_covered') specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fca5a5' },
+                  'This truck is not listed on your certificate of insurance, so we cannot dispatch it. Ask your agent to add the VIN and upload the updated certificate — then post it.'));
+                else if (cv && cv.state === 'no_coi') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fcd34d' },
+                  'We do not have your certificate of insurance yet. You can post, but nothing can be dispatched until it is on file.'));
+              } catch (_) {}
+            }
+          };
+          pick.addEventListener('change', paintSpec);
+
           const save = h('button', { class: 'cp-btn', onClick: async (ev) => {
             if (!org.value.trim()) { alert('Truck location required (City, ST).'); return; }
             ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Posting…';
             try {
-              const r = await postTruck({ origin: org.value.trim(), available_from: from.value, available_to: to.value,
-                equipment: eq.value.split(',').map(x => x.trim()).filter(Boolean), min_rpm: rpm.value || null, auto_request: auto.checked });
-              _closePT(); alert('Truck posted ✓ — ' + (r.matches || 0) + ' matching load(s) found now. New matches will notify you.'); loadLoads();
-            } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Post truck'; alert((e && e.message) || 'Could not post.'); }
+              const r = await postTruck({ truck_id: pick.value || null, origin: org.value.trim(),
+                radius_miles: rad.value || null, dest_pref: dest.value.trim() || null,
+                available_from: from.value, available_to: to.value,
+                equipment: eq.value.split(',').map(x => x.trim()).filter(Boolean),
+                min_rpm: rpm.value || null, notes: notes.value.trim() || null, auto_request: auto.checked });
+              _closePT();
+              lbToast((r.matches || 0) + ' matching load(s) on the board right now. New ones will alert you as they post.', 'ok', '🚛 Truck posted');
+              loadLoads();
+            } catch (e) {
+              ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Post truck';
+              if (e && e.code === 'LB001') { lbToast('This truck is not on your certificate of insurance, so it cannot be posted for dispatch. Add the VIN to your policy schedule and upload the updated certificate — we verify it the same day.', 'urgent', 'Not on your insurance'); return; }
+              if (e && e.code === 'LB002') { lbToast('This truck has no VIN on file. Add it under Fleet first — brokers check the VIN before they release a load.', 'urgent', 'VIN required'); return; }
+              lbToast((e && e.message) || 'Could not post.', 'urgent', 'Not posted');
+            }
           } }, 'Post truck');
-          const _closePT = openModal('Post my truck', [org, h('div', { class: 'cp-formrow2' }, [from, to]), eq, rpm,
+          const lbl = (txt) => h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 -2px' }, txt);
+          const _closePT = openModal('Post my truck', [
+            lbl('Which truck'), pick, specHost,
+            lbl('Where it frees up'), org,
+            h('div', { class: 'cp-formrow2' }, [rad, dest]),
+            lbl('Available'), h('div', { class: 'cp-formrow2' }, [from, to]),
+            lbl('Equipment and floor rate'), eq, rpm,
+            lbl('Notes'), notes,
             h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.88rem' }, [auto, 'Auto-request matching loads (broker still approves every booking)']),
-            save]);
+            h('div', { style: 'height:8px' }), save]);
+          paintSpec();
         } }, '+ Post truck'),
       ]),
       (postings && postings.length) ? h('div', { style: 'margin-top:10px' }, postings.map(p => {
@@ -5131,12 +5202,34 @@ function tripStepper(status) {
       ]),
       d.license_exp ? h('div', { class: 'cp-row-s' }, 'License expires ' + d.license_exp + (d.medical_exp ? ' · Medical ' + d.medical_exp : '')) : null,
     ].filter(Boolean)))) : h('div', { class: 'cp-muted' }, 'No drivers yet. Add your first driver.'));
-    const renderTrucks = () => mount(truckList, trucks.length ? h('div', null, trucks.map(t => h('div', { class: 'cp-trip' }, [
-      h('div', { class: 'cp-trip-head' }, [
-        h('div', null, [h('div', { class: 'cp-row-t' }, 'Unit ' + t.unit_no), h('div', { class: 'cp-row-s' }, [t.equipment, t.plate ? 'Plate ' + t.plate : null].filter(Boolean).join(' · ') || '—')]),
-        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => truckForm(t) }, 'Edit'),
-      ]),
-    ]))) : h('div', { class: 'cp-muted' }, 'No trucks yet. Add your first truck.'));
+    // Loading capability is derived from liftgate + dock height + pallet jack. It rides on
+    // the truck card because it is the first thing that decides whether a load is even
+    // possible — and because an unanswered one costs the carrier the freight that pays best.
+    let _loadProfiles = {};
+    const renderTrucks = () => mount(truckList, trucks.length ? h('div', null, trucks.map(t => {
+      const prof = _loadProfiles[t.id];
+      const chipHost = h('span');
+      if (prof) { try { import('./economics.js').then((m) => { chipHost.innerHTML = m.loadingChip(prof); }).catch(() => {}); } catch (_) {} }
+      return h('div', { class: 'cp-trip' }, [
+        h('div', { class: 'cp-trip-head' }, [
+          h('div', null, [
+            h('div', { class: 'cp-row-t' }, 'Unit ' + t.unit_no),
+            h('div', { class: 'cp-row-s' }, [t.equipment, t.plate ? 'Plate ' + t.plate : null].filter(Boolean).join(' · ') || '—'),
+            h('div', { style: 'margin-top:6px' }, [chipHost]),
+          ]),
+          h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => truckForm(t) }, 'Edit'),
+        ]),
+        (prof && prof.code === 'unknown') ? h('button', { class: 'cpx-banner amber', style: 'margin-top:8px', onClick: () => truckForm(t) },
+          [h('span', null, [icon('alert', 15), '']), h('span', null, 'Tell us about the ' + prof.ask + ' — until we know, we cannot promise a shipper how this truck loads'), h('span', { class: 'cpx-b-go' }, '\u203a')]) : null,
+      ].filter(Boolean));
+    })) : h('div', { class: 'cp-muted' }, 'No trucks yet. Add your first truck.'));
+    (async () => {
+      try {
+        const rows = await truckLoadingProfiles();
+        (rows || []).forEach((r) => { if (r && r.id) _loadProfiles[r.id] = r.profile; });
+        if (Object.keys(_loadProfiles).length) renderTrucks();
+      } catch (_) {}
+    })();
 
     async function inviteDriverToApp(d) {
       try {
@@ -5181,23 +5274,93 @@ function tripStepper(status) {
       } }, 'Save');
       const closeD9 = openModal((d ? 'Edit driver' : 'Add driver'), [name, phone, email, h('div', { class: 'cp-formrow2' }, [lic, st]), h('label', { class: 'cp-row-s' }, 'License expiry'), lexp, h('label', { class: 'cp-row-s' }, 'Medical expiry'), mexp, save]);
     }
+    // ---- Add / edit a truck -------------------------------------------------
+    // Everything a dispatcher would otherwise have to chase over WhatsApp is asked
+    // once, here, while the carrier is already thinking about the vehicle. The VIN
+    // is matched LIVE against the certificate of insurance as they type, so nobody
+    // fills in a whole form only to be refused at Save.
     function truckForm(t) {
-      const unit = h('input', { class: 'cp-in', placeholder: 'Unit number', value: (t && t.unit_no) || '' });
+      const secStyle = 'font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin:16px 0 7px;padding-top:12px;border-top:1px solid rgba(148,163,184,.16)';
+      const sec = (txt, sub) => h('div', null, [
+        h('div', { style: secStyle }, txt),
+        sub ? h('div', { class: 'cp-row-s', style: 'margin:-3px 0 7px' }, sub) : null,
+      ]);
+      const row2 = (a, b) => h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:8px' }, [a, b]);
+      const row3 = (a, b, c) => h('div', { style: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px' }, [a, b, c]);
+      const check = (label2, on) => {
+        const box = h('input', { type: 'checkbox' });
+        if (on) box.checked = true;
+        const el = h('label', { style: 'display:flex;gap:7px;align-items:center;font-size:.86rem;padding:5px 0;cursor:pointer' }, [box, label2]);
+        el._box = box;
+        return el;
+      };
+      const numIn = (ph, val) => h('input', { class: 'cp-in', type: 'number', min: '0', placeholder: ph, value: (val === 0 || val) ? val : '' });
+      const numOf = (el) => (String(el.value).trim() === '' ? null : Number(el.value));
+
+      // --- identity ---
+      const unit = h('input', { class: 'cp-in', placeholder: 'Unit number *', value: (t && t.unit_no) || '' });
       const plate = h('input', { class: 'cp-in', placeholder: 'Plate', value: (t && t.plate) || '' });
-      const vin = h('input', { class: 'cp-in', placeholder: 'VIN', value: (t && t.vin) || '' });
+      const vin = h('input', { class: 'cp-in', placeholder: 'VIN (17 characters)', value: (t && t.vin) || '' });
       const eq = h('select', { class: 'cp-in' }, ['', 'Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Cargo Van', 'Sprinter Van'].map(o => h('option', { value: o, selected: t && t.equipment === o ? 'selected' : null }, o || 'Equipment…')));
+      const vinInfo = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:-4px 0 4px' });
+      const coiInfo = h('div', { style: 'min-height:1.1em;margin:2px 0 4px;font-size:.83rem;line-height:1.55' });
+
+      // --- capacity ---
+      const payload = numIn('Payload (lb) — from your door sticker', t && t.payload_lbs);
+      const cLen = numIn('Cargo length (in)', t && t.cargo_len_in);
+      const cWid = numIn('Cargo width (in)', t && t.cargo_width_in);
+      const cHgt = numIn('Cargo height (in)', t && t.cargo_height_in);
+      const wWell = numIn('Between wheel wells (in) — blank if none', t && t.wheel_well_width_in);
+      const pallets = numIn('Pallet positions (48×40)', t && t.pallet_positions);
+      const capHint = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:-4px 0 4px' });
+
+      // --- doors & deck ---
+      const doorType = h('select', { class: 'cp-in' }, [['', 'Door type…'], ['roll_up', 'Roll-up'], ['swing', 'Swing / barn'], ['side', 'Side door'], ['curtain', 'Curtain side'], ['none', 'Open deck — no doors']].map(o => h('option', { value: o[0], selected: t && t.door_type === o[0] ? 'selected' : null }, o[1])));
+      const doorW = numIn('Door opening width (in)', t && t.door_width_in);
+      const doorH = numIn('Door opening height (in)', t && t.door_height_in);
+      const deckH = numIn('Deck height off ground (in)', t && t.deck_height_in);
+      const dockHigh = check('Dock high — backs straight up to a standard dock', t && t.dock_high);
+
+      // --- loading equipment ---
+      const liftgate = check('Liftgate', t && t.liftgate);
+      const lgCap = numIn('Liftgate capacity (lb)', t && t.liftgate_cap_lbs);
+      const palletJack = check('Pallet jack on board', t && t.has_pallet_jack);
+      const ramp = check('Ramp', t && t.has_ramp);
+      const etrack = check('E-track', t && t.has_etrack);
+      const loadBars = check('Load bars', t && t.has_load_bars);
+      const straps = check('Straps', t && t.has_straps);
+      const blankets = check('Moving blankets', t && t.has_blankets);
+
+      // --- temperature ---
+      const tempCtl = h('select', { class: 'cp-in' }, [['none', 'No temperature control'], ['chilled', 'Chilled / fresh'], ['frozen', 'Frozen'], ['multi', 'Multi-temp']].map(o => h('option', { value: o[0], selected: (t && t.temp_control ? t.temp_control : 'none') === o[0] ? 'selected' : null }, o[1])));
+      const tMin = h('input', { class: 'cp-in', type: 'number', placeholder: 'Coldest °F it holds', value: (t && (t.temp_min_f === 0 || t.temp_min_f)) ? t.temp_min_f : '' });
+      const tMax = h('input', { class: 'cp-in', type: 'number', placeholder: 'Warmest °F it holds', value: (t && (t.temp_max_f === 0 || t.temp_max_f)) ? t.temp_max_f : '' });
+      const tempWrap = h('div', { style: 'display:none' }, [row2(tMin, tMax)]);
+      const syncTemp = () => { tempWrap.style.display = tempCtl.value === 'none' ? 'none' : ''; };
+      tempCtl.addEventListener('change', syncTemp); syncTemp();
+
+      // --- certifications ---
+      const hazmat = check('Hazmat placarded', t && t.hazmat_placarded);
+      const twic = check('TWIC card (ports)', t && t.twic);
+      const tsa = check('TSA / STA approved (air freight)', t && t.tsa_sta);
+      const bonded = check('Customs bonded', t && t.bonded);
+      const team = check('Team driven', t && t.team_driven);
+
+      // --- where it runs ---
+      const dCity = h('input', { class: 'cp-in', placeholder: 'Home city', value: (t && t.domicile_city) || '' });
+      const dState = h('input', { class: 'cp-in', placeholder: 'ST', maxlength: '2', value: (t && t.domicile_state) || '' });
+      const dZip = h('input', { class: 'cp-in', placeholder: 'ZIP', value: (t && t.domicile_zip) || '' });
+      const radius = numIn('Max miles from home', t && t.max_radius_miles);
+      const minRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', min: '0', placeholder: 'Floor rate $/mi', value: (t && t.min_rpm) || '' });
+      const homeTime = h('select', { class: 'cp-in' }, [['', 'Home time…'], ['otr', 'OTR — out as long as it pays'], ['2_weeks', 'Home every 2 weeks'], ['weekly', 'Home weekly'], ['weekends', 'Home on weekends'], ['regional_daily', 'Regional — home most nights'], ['local', 'Local only — home daily']].map(o => h('option', { value: o[0], selected: t && t.home_time === o[0] ? 'selected' : null }, o[1])));
+      const specNote = h('textarea', { class: 'cp-in', rows: '2', placeholder: 'Anything a broker should know about this truck' }, (t && t.spec_note) || '');
+
+      // --- maintenance ---
       const svc = h('input', { class: 'cp-in', type: 'date', value: (t && t.next_service_date) || '' });
       const insp = h('input', { class: 'cp-in', type: 'date', value: (t && t.inspection_exp) || '' });
-      const vinInfo = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:-4px 0 4px' });
-      // Capacity is what decides which loads we may offer, and whether two loads
-      // fit on one run. Asked once here so a dispatcher never has to chase it.
-      const payload = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Payload (lb) \u2014 from your door sticker', value: (t && t.payload_lbs) || '' });
-      const cLen = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Cargo length (in)', value: (t && t.cargo_len_in) || '' });
-      const cWid = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Cargo width (in)', value: (t && t.cargo_width_in) || '' });
-      const cHgt = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Cargo height (in)', value: (t && t.cargo_height_in) || '' });
-      const capHint = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:-4px 0 4px' });
-      const capHead = h('div', { class: 'cp-row-t', style: 'margin-top:6px' }, 'Capacity \u2014 this is what wins you the right loads');
+
       let vinFacts = {};
+      let coiState = null;
       // GVWR is the whole loaded weight, so payload is always a good deal less.
       // Well past half is usually a misread door sticker — warn, never block.
       const GVWR_CEIL = { 'class 1': 6000, 'class 2a': 8500, 'class 2b': 10000, 'class 2h': 10000, 'class 2': 10000, 'class 3': 14000, 'class 4': 16000, 'class 5': 19500, 'class 6': 26000, 'class 7': 33000, 'class 8': 80000 };
@@ -5209,31 +5372,70 @@ function tripStepper(status) {
         if (!key) return;
         const ceil = GVWR_CEIL[key];
         if (lb >= ceil) {
-          capHint.textContent = '\u2715 ' + lb.toLocaleString() + ' lb is more than this chassis weighs in total when loaded (' + ceil.toLocaleString() + ' lb gross). Payload is what you carry on top of the empty vehicle.';
+          capHint.textContent = '✕ ' + lb.toLocaleString() + ' lb is more than this chassis weighs in total when loaded (' + ceil.toLocaleString() + ' lb gross). Payload is what you carry on top of the empty vehicle.';
           capHint.style.color = '#f87171';
         } else if (lb > ceil * 0.55) {
-          capHint.textContent = '\u26a0 ' + lb.toLocaleString() + ' lb looks high for a ' + ceil.toLocaleString() + ' lb gross chassis \u2014 worth double-checking the door sticker before a scale does it for you.';
+          capHint.textContent = '⚠ ' + lb.toLocaleString() + ' lb looks high for a ' + ceil.toLocaleString() + ' lb gross chassis — worth double-checking the door sticker before a scale does it for you.';
           capHint.style.color = '#fbbf24';
         } else {
-          capHint.textContent = '\u2713 Sits comfortably inside the ' + ceil.toLocaleString() + ' lb gross rating.';
+          capHint.textContent = '✓ Sits comfortably inside the ' + ceil.toLocaleString() + ' lb gross rating.';
           capHint.style.color = '#4ade80';
         }
       };
       payload.addEventListener('input', capCheck);
+
+      // Live insurance match. The certificate decides what we may dispatch, so the
+      // carrier learns it here, not after filling in the whole form.
+      const paintCoi = (r) => {
+        coiState = r && r.state;
+        coiInfo.innerHTML = '';
+        if (!r) return;
+        const box = (color, bg, title, body) => h('div', { style: 'border:1px solid ' + color + '55;background:' + bg + ';border-radius:10px;padding:9px 12px' }, [
+          h('div', { style: 'font-weight:800;color:' + color + ';margin-bottom:2px' }, title),
+          body ? h('div', { style: 'color:#94a3b8' }, body) : null,
+        ]);
+        if (r.state === 'covered') {
+          coiInfo.appendChild(box('#4ade80', 'rgba(74,222,128,.07)', '✓ This VIN is on your certificate of insurance',
+            r.mode === 'any_auto' ? 'Your policy covers any auto, so every truck you add is dispatchable.' : 'Cleared for dispatch.'));
+        } else if (r.state === 'not_covered') {
+          const vins = ((r.covered_vins || []).map(v => v.vin).filter(Boolean));
+          coiInfo.appendChild(box('#f87171', 'rgba(248,113,113,.07)', '✕ Not on your certificate of insurance',
+            (vins.length ? 'It currently lists ' + (vins.length === 1 ? 'one truck: ' : vins.length + ' trucks: ') + vins.join(', ') + '. ' : '')
+            + 'Ask your agent to add this VIN to the policy schedule — it is free — then upload the updated certificate under Documents. We verify it the same day.'));
+        } else if (r.state === 'no_coi') {
+          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ No certificate of insurance on file yet',
+            'You can save the truck now, but nothing can be dispatched until we have your COI. Upload it under Documents.'));
+        }
+        if (r.expired) {
+          coiInfo.appendChild(h('div', { style: 'color:#f87171;font-weight:700;margin-top:5px' }, '⚠ The certificate we hold expired on ' + r.expiry_date + ' — send the renewal so nothing stops mid-load.'));
+        }
+      };
+      const checkCoi = async (v) => {
+        if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(v)) { coiInfo.innerHTML = ''; coiState = null; return; }
+        try { paintCoi(await vinCoverage(v)); } catch (_) { coiInfo.innerHTML = ''; }
+      };
+      vin.addEventListener('blur', () => checkCoi(vin.value.trim().toUpperCase()));
+      if (t && t.vin) checkCoi(String(t.vin).toUpperCase());
+
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         const btn9 = ev.currentTarget;
         if (!unit.value.trim()) { alert('Unit number is required.'); return; }
         if (!lbFutureDate(insp, 'Inspection expiry')) return;
+        const ww = numOf(wWell), cw = numOf(cWid);
+        if (ww !== null && cw !== null && ww > cw) {
+          lbToast('The gap between the wheel wells (' + ww + ' in) cannot be wider than the cargo box itself (' + cw + ' in). On a box truck there are no wheel wells — leave that field blank.', 'urgent', 'Check the measurements');
+          return;
+        }
         // REAL-truck check: valid 17-char VIN, decoded LIVE against U.S. DOT (NHTSA).
         const vin9 = vin.value.trim().toUpperCase();
         if (vin9) {
           if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin9) || /^\d{17}$/.test(vin9)) {
-            vinInfo.textContent = '\u2715 Not a real VIN \u2014 17 characters, letters AND digits (no I, O, Q). Copy it from the door-jamb sticker or registration.';
+            vinInfo.textContent = '✕ Not a real VIN — 17 characters, letters AND digits (no I, O, Q). Copy it from the door-jamb sticker or registration.';
             vinInfo.style.color = '#f87171';
-            alert('\u26a0 \u201c' + vin9 + '\u201d is not a valid VIN.\n\nA real VIN is exactly 17 characters and mixes letters and digits (never I, O or Q). It\u2019s on the door-jamb sticker, dash plate, title and registration. Fake VINs fail verification and can pause your account.');
+            alert('⚠ “' + vin9 + '” is not a valid VIN.\n\nA real VIN is exactly 17 characters and mixes letters and digits (never I, O or Q). It’s on the door-jamb sticker, dash plate, title and registration. Fake VINs fail verification and can pause your account.');
             return;
           }
-          btn9.disabled = true; btn9.textContent = 'Verifying VIN\u2026';
+          btn9.disabled = true; btn9.textContent = 'Verifying VIN…';
           try {
             const ctl9 = new AbortController(); const tm9 = setTimeout(() => ctl9.abort(), 7000);
             const rV = await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/' + encodeURIComponent(vin9) + '?format=json', { signal: ctl9.signal });
@@ -5241,34 +5443,48 @@ function tripStepper(status) {
             const jV = await rV.json(); const dV = jV && jV.Results && jV.Results[0];
             if (dV && dV.Make) {
               vinFacts = { make: dV.Make || null, model: dV.Model || null, year: dV.ModelYear || null, gvwr: dV.GVWR || null, body: dV.BodyClass || null };
-              vinInfo.textContent = '\u2713 VIN verified with U.S. DOT: ' + [dV.ModelYear, dV.Make, dV.Model].filter(Boolean).join(' ') + (dV.BodyClass ? ' \u00b7 ' + dV.BodyClass : '') + (dV.GVWR ? ' \u00b7 ' + dV.GVWR : '');
+              vinInfo.textContent = '✓ VIN verified with U.S. DOT: ' + [dV.ModelYear, dV.Make, dV.Model].filter(Boolean).join(' ') + (dV.BodyClass ? ' · ' + dV.BodyClass : '') + (dV.GVWR ? ' · ' + dV.GVWR : '');
               vinInfo.style.color = '#4ade80';
               capCheck();
             } else {
-              vinInfo.textContent = '\u26a0 U.S. DOT registry could not identify this VIN \u2014 double-check it against the truck. Saving anyway; verification may flag it.';
+              vinInfo.textContent = '⚠ U.S. DOT registry could not identify this VIN — double-check it against the truck. Saving anyway; verification may flag it.';
               vinInfo.style.color = '#fbbf24';
             }
-          } catch (_) { vinInfo.textContent = '\u26a0 VIN registry unreachable \u2014 format OK, saving. It will be verified later.'; vinInfo.style.color = '#fbbf24'; }
+          } catch (_) { vinInfo.textContent = '⚠ VIN registry unreachable — format OK, saving. It will be verified later.'; vinInfo.style.color = '#fbbf24'; }
+          await checkCoi(vin9);
         }
-        btn9.disabled = true; btn9.textContent = 'Saving\u2026';
+        btn9.disabled = true; btn9.textContent = 'Saving…';
         try {
-          await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin9 || vin.value.trim(), equipment: eq.value || null,
-            payloadLbs: payload.value ? Number(payload.value) : null, cargoLenIn: cLen.value ? Number(cLen.value) : null,
-            cargoWidthIn: cWid.value ? Number(cWid.value) : null, cargoHeightIn: cHgt.value ? Number(cHgt.value) : null,
-            vinMake: vinFacts.make, vinModel: vinFacts.model, vinYear: vinFacts.year, vinGvwr: vinFacts.gvwr, vinBody: vinFacts.body });
+          await pocketUpsertTruck({
+            id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin9 || vin.value.trim(), equipment: eq.value || null,
+            payloadLbs: numOf(payload), cargoLenIn: numOf(cLen), cargoWidthIn: cw, cargoHeightIn: numOf(cHgt),
+            vinMake: vinFacts.make, vinModel: vinFacts.model, vinYear: vinFacts.year, vinGvwr: vinFacts.gvwr, vinBody: vinFacts.body,
+            domicileCity: dCity.value.trim() || null, domicileState: dState.value.trim().toUpperCase() || null, domicileZip: dZip.value.trim() || null,
+            doorType: doorType.value || null, doorWidthIn: numOf(doorW), doorHeightIn: numOf(doorH),
+            deckHeightIn: numOf(deckH), dockHigh: dockHigh._box.checked,
+            liftgate: liftgate._box.checked, liftgateCapLbs: numOf(lgCap),
+            hasPalletJack: palletJack._box.checked, hasRamp: ramp._box.checked, hasEtrack: etrack._box.checked,
+            hasLoadBars: loadBars._box.checked, hasStraps: straps._box.checked, hasBlankets: blankets._box.checked,
+            palletPositions: numOf(pallets), wheelWellWidthIn: ww,
+            tempControl: tempCtl.value || 'none', tempMinF: tempCtl.value === 'none' ? null : numOf(tMin), tempMaxF: tempCtl.value === 'none' ? null : numOf(tMax),
+            hazmatPlacarded: hazmat._box.checked, twic: twic._box.checked, tsaSta: tsa._box.checked, bonded: bonded._box.checked,
+            teamDriven: team._box.checked, minRpm: minRpm.value ? Number(minRpm.value) : null,
+            maxRadiusMiles: numOf(radius), homeTime: homeTime.value || null, specNote: specNote.value.trim() || null,
+          });
           trucks = await pocketTrucks();
           const saved = t && t.id ? t : trucks.find(x => x.unit_no === unit.value.trim());
           if (saved && saved.id && (svc.value || insp.value)) { try { await truckSetMaintenance(saved.id, svc.value || null, insp.value || null); } catch (_) {} }
           renderTrucks();
           try { closeT9(); } catch (_) {}
-          lbToast('\ud83d\ude9b Truck saved' + (vinInfo.textContent.indexOf('\u2713') === 0 ? ' \u2014 VIN verified with U.S. DOT' : '') + '. Matching loads unlock on the board.', 'ok', 'Fleet updated');
+          lbToast('🚛 Truck saved' + (vinInfo.textContent.indexOf('✓') === 0 ? ' — VIN verified with U.S. DOT' : '')
+            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'ok', 'Fleet updated');
         }
         catch (e) {
           btn9.disabled = false; btn9.textContent = 'Save';
           // The insurance certificate decides which trucks we may dispatch. LB001 =
           // this VIN is not on it; LB002 = no usable VIN was given.
           if (e && e.code === 'LB002') {
-            lbToast('Every truck needs its full 17-character VIN \u2014 that is what your insurance certificate lists, and what brokers check before they release a load.', 'urgent', 'VIN required');
+            lbToast('Every truck needs its full 17-character VIN — that is what your insurance certificate lists, and what brokers check before they release a load.', 'urgent', 'VIN required');
             return;
           }
           if (e && e.code === 'LB001') {
@@ -5279,20 +5495,54 @@ function tripStepper(status) {
               if (vins9.length) listed = ' Right now it covers ' + (vins9.length === 1 ? 'one truck: ' : vins9.length + ' trucks: ') + vins9.join(', ') + '.';
             } catch (_) {}
             lbToast('Your certificate of insurance does not list this VIN, so this truck cannot be dispatched.' + listed
-              + ' Ask your insurance agent to add it to the policy schedule \u2014 it is free \u2014 then upload the updated certificate under Documents. We verify it the same day and the truck goes live.',
+              + ' Ask your insurance agent to add it to the policy schedule — it is free — then upload the updated certificate under Documents. We verify it the same day and the truck goes live.',
               'urgent', 'Not on your insurance');
             return;
           }
           if (e && e.code === 'LB003') { lbToast((e && e.message) || 'That payload does not fit this chassis.', 'urgent', 'Check the payload'); return; }
           lbToast((e && e.message) || 'Could not save.', 'urgent', 'Truck not saved');
         }
-      } }, 'Save');
-      const closeT9 = openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, vinInfo, eq, capHead, payload, capHint, cLen, cWid, cHgt,
+      } }, 'Save truck');
+
+      const closeT9 = openModal((t ? 'Edit truck' : 'Add truck'), [
+        sec('The truck', 'Unit number is how we call it out on a dispatch sheet.'),
+        row2(unit, plate), eq,
+        sec('VIN and insurance', 'We check the VIN against U.S. DOT and against your certificate of insurance as you type.'),
+        vin, vinInfo, coiInfo,
+        sec('Capacity', 'This is what decides which loads we can offer you — and whether two loads fit on one run.'),
+        payload, capHint, row3(cLen, cWid, cHgt), row2(wWell, pallets),
+        sec('Doors and deck', 'Shippers filter on this. A truck without it gets skipped.'),
+        doorType, row3(doorW, doorH, deckH), dockHigh,
+        sec('On-board loading equipment', 'Every box ticked here is a load someone else cannot take.'),
+        h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 12px' }, [liftgate, palletJack, ramp, etrack, loadBars, straps, blankets]),
+        lgCap,
+        sec('Temperature'), tempCtl, tempWrap,
+        sec('Certifications and crew'),
+        h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 12px' }, [hazmat, twic, tsa, bonded, team]),
+        sec('Where this truck runs', 'The truck’s own home base — often not the company address on your MCS-150.'),
+        h('div', { style: 'display:grid;grid-template-columns:2fr .7fr 1fr;gap:8px' }, [dCity, dState, dZip]),
+        row3(radius, minRpm, homeTime),
+        sec('Notes'), specNote,
+        sec('Maintenance'),
         h('label', { class: 'cp-row-s' }, 'Next service due'), svc,
-        h('label', { class: 'cp-row-s' }, 'Annual inspection expires'), insp, save]);
+        h('label', { class: 'cp-row-s' }, 'Annual inspection expires'), insp,
+        h('div', { style: 'height:10px' }), save,
+      ]);
     }
 
     const alertHost = h('div');
+    // FMCSA cross-match. Brokers and insurers compare the fleet on file against the
+    // power units on the MCS-150; the carrier should see that comparison here first,
+    // not in a denied claim. Silent when everything lines up.
+    (async () => {
+      let ck; try { ck = await fleetFmcsaCheck(); } catch (_) { return; }
+      const f9 = ((ck && ck.findings) || []).filter(x => x && x.code !== 'no_fmcsa');
+      if (!f9.length) return;
+      const tone = (lv) => lv === 'block' ? 'red' : lv === 'warn' ? 'amber' : 'blue';
+      f9.forEach(x => alertHost.appendChild(h('button', { class: 'cpx-banner ' + tone(x.level), onClick: () =>
+        lbToast(x.detail + (ck.safer_url ? '\n\nYour SAFER snapshot: ' + ck.safer_url : ''), x.level === 'block' ? 'urgent' : 'info', x.title) },
+        [h('span', null, [icon('alert', 15), '']), h('span', null, x.title), h('span', { class: 'cpx-b-go' }, '\u203a')])));
+    })();
     // Maintenance reminders: service due (14d) / inspection due (30d) banners
     (async () => {
       let mt; try { mt = await fleetMaintenance(); } catch (_) { return; }
@@ -6291,24 +6541,33 @@ function tripStepper(status) {
      Prevention-first onboarding: the carrier learns what a document must contain BEFORE uploading,
      and gets an instant AI verdict at upload time (doc-precheck edge fn). Staff review stays final;
      any pre-check failure silently falls through to the normal manual-review path — never blocks. */
+  // One definition of the certificate holder. "Name LoadBoot" is not enough for an
+  // insurance agent — they need the legal entity and the registered office, or the
+  // certificate comes back wrong a second time.
+  const LB_COI_HOLDER = 'LoadBoot LLC, 30 N Gould St, Ste N, Sheridan, WY 82801, United States';
+  // The finished block, line for line. Agents type what they are handed, so we hand
+  // them the whole holder box and never a summary of it.
+  const LB_COI_HOLDER_BLOCK = 'LoadBoot LLC\n30 N Gould St, Ste N\nSheridan, WY 82801\nUnited States';
   const LB_DOC_GUIDE = {
     insurance: { title: '📋 Your COI must show all 4 — most rejections happen here:', items: [
-      '① CERTIFICATE HOLDER = LoadBoot (No. 1 rejection reason — your agent adds it free)',
+      '① CERTIFICATE HOLDER = ' + LB_COI_HOLDER + ' (No. 1 rejection reason — your agent adds it free. Holder only; we do not need to be an additional insured, so no endorsement and no extra cost)',
       '② Commercial AUTO liability $1,000,000 (general liability alone never counts)',
       '③ MOTOR TRUCK CARGO listed (typically $100,000)',
-      '④ Every truck you will run, scheduled with its VIN',
-    ], script: (nm) => 'Hi — please issue a fresh Certificate of Insurance (ACORD 25) for ' + (nm || 'my company') + ' with: (1) LoadBoot named as the CERTIFICATE HOLDER, (2) our $1,000,000 commercial auto liability shown, (3) our motor truck cargo coverage listed, and (4) all our trucks scheduled with their VINs. Please email it to me as a PDF. Thank you!' },
+      '④ Every truck you will run, scheduled with its VIN — we can only dispatch a truck the policy actually covers',
+    ], script: (nm) => 'Hi — please issue a fresh Certificate of Insurance (ACORD 25) for ' + (nm || 'my company') + ' with:\n\n(1) CERTIFICATE HOLDER \u2014 it must read exactly:\n' + LB_COI_HOLDER_BLOCK + '\nCertificate holder only — not additional insured.\n(2) $1,000,000 commercial auto liability.\n(3) Motor truck cargo coverage listed.\n(4) All trucks scheduled with their VINs.\n\nNothing else on the policy changes. Please email it back as a PDF. Thank you!' },
     authority: { title: '📋 Upload the FMCSA document itself:', items: [
       'The MC certificate / operating-authority letter from FMCSA (not a UCR receipt or BOC-3)',
       'Your legal name and MC/DOT numbers must be clearly readable',
     ] },
     w9: { title: '📋 W-9 quick check before you upload:', items: [
-      'Line 1 = your legal company name · exactly ONE tax classification box checked',
+      'Line 1 must match the tax box you tick. Single-member LLC on your SSN → put YOUR legal name on Line 1 and the LLC on Line 2. LLC with its own EIN → LLC name on Line 1 and tick "Limited liability company". Company name on Line 1 with "Individual/sole proprietor" ticked is the most common rejection we see',
+      'Use the name of the person or entity on the LLC\u2019s tax records — not whoever happens to be filling the form in',
       'SIGNED and DATED — unsigned W-9s are always rejected',
     ] },
     noa: { title: '📋 NOA letter check:', items: [
       'The official Notice of Assignment issued by your factoring company (PDF)',
       'It must name your company and show the factor\u2019s remit-to details',
+      'Remit-to needs the FULL account and routing numbers. Most NOA letters print only the last four digits — ask your factor for the complete ACH details, we cannot set up payment without them',
     ] },
   };
   function lbDocGuideCard(t9) {
@@ -6835,6 +7094,8 @@ function tripStepper(status) {
       if (!factoring && !someBank) throw new Error('Add your bank account for payouts (or select factoring above).');
       if (!allBank) throw new Error('Please complete all bank fields.');
       if (!/^\d{9}$/.test(String(f.routing_number).trim())) throw new Error('Routing number must be 9 digits.');
+      if (!String(f.legal_owner_name || '').trim()) throw new Error('Add the legal owner name \u2014 the person or entity the IRS has on file. On your W-9 that is Line 1, and it is usually the owner rather than the company. We ask now so your W-9 is not rejected later.');
+      try { await setLegalOwner(String(f.legal_owner_name).trim()); } catch (_) {}
       await setMyPaymentProfile({ bank_name: String(f.bank_name).trim(), account_title: String(f.account_title).trim(), account_number: String(f.account_number).trim(), routing_number: String(f.routing_number).trim(), payment_method: 'ach' });
       lbToast('Bank account added \u2014 one more document is now required: Bank Verification (voided check or bank letter). It has been added to your Documents checklist.', 'action', 'Bank verification required');
     }
@@ -6869,7 +7130,7 @@ function tripStepper(status) {
             try { renderGuideW(); } catch (_) {}
             autoUp = true; fileIn.click();
           };
-          const act = okd ? h('span', { class: 'cp-pill green' }, 'Approved')
+          const act = okd ? h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { class: 'cp-pill green' }, 'Approved'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: () => { if (!confirm('Replace \u201C' + r.name + '\u201D?\n\n' + (r.mandatory ? 'This is a required document. The new file goes back to In review and new bookings pause until it is approved \u2014 loads you have already booked are not affected.' : 'The new file goes back to In review. Your booking stays open.') + '\n\nContinue?')) return; goUp(); } }, dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Update')])
             : rev ? h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { class: 'cp-pill blue' }, 'Uploaded \u2713 In review'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: goUp }, dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Change')].filter(Boolean))
             : h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0', onClick: goUp }, dt0 === 'w9' ? 'Start W-9' : dt0 === 'agreement' ? 'Sign' : 'Upload');
           return h('div', { class: 'cp-row', style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : (r.mandatory ? 'Required \u2014 not on file' : 'Optional'))]), act]); })]));
@@ -6918,7 +7179,7 @@ function tripStepper(status) {
         body = h('div', null, [h('div', { class: 'cp-wiz-grid' }, [field('Company / carrier name', 'company', 'Acme Trucking LLC'), field('Your name', 'contact_name'), field('Phone', 'phone'), field('MC number', 'mc', '123456'), field('DOT number', 'dot', '1234567')]), h('p', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Verify your authority live with FMCSA \u2014 instant, nothing to upload for THIS step. (Insurance, W-9 and other documents come later, at the Documents step.)'), vbtn, vmsg, resCard].filter(Boolean));
       }
       else if (st === 1) { const eq = h('div', { class: 'cp-eqgrid' }, EQUIP.map(e => { const on = (f.equipment_types || []).includes(e); const b = h('button', { class: 'cp-chip2' + (on ? ' on' : ''), onClick: () => { const s = new Set(f.equipment_types || []); if (s.has(e)) s.delete(e); else s.add(e); f.equipment_types = [...s]; b.classList.toggle('on'); } }, e); return b; })); body = h('div', { class: 'cp-wiz-grid' }, [field('Home base (city, ST)', 'home_base', 'Dallas, TX'), field('Search radius (miles)', 'radius_miles', '300', 'number'), field('Number of trucks', 'truck_count', '1'), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Equipment types'), eq]), toggle('Haul hazmat', 'hazmat'), toggle('Available weekends', 'weekend_ok')]); }
-      else if (st === 2) body = h('div', null, [h('p', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'We don\u2019t manage your factoring \u2014 we only need to know where money flows: after delivery we route your invoice/BOL paperwork to the right place, and your dispatch fee is collected the right way.'), (String(f.factoring_status || '') === 'interested' ? h('div', { class: 'cp-ann', style: 'margin-bottom:10px' }, [h('div', { class: 'cp-ann-t' }, 'We\u2019ll connect you \u2713'), h('div', { class: 'cp-ann-b' }, 'After you submit, our team reaches out with 2\u20133 recommended factoring partners \u2014 you sign with them directly. Until your factoring is live, add your bank below so settlements can reach you.')]) : null), h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring \u2014 pay me direct'], ['interested', 'Recommend me a factoring partner']]), field(String(f.factoring_status || '') === 'interested' ? 'Pick a recommended factoring partner' : 'Factoring company', 'factoring_company', String(f.factoring_status || '') === 'interested' ? 'Tap to see our recommended list' : 'Your factoring company\u2019s name'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp'), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Bank account for settlement payouts'), h('span', { class: 'cp-row-s' }, 'Encrypted & tokenized. Factoring carriers: optional but RECOMMENDED \u2014 direct-pay / quick-pay brokers and your dispatch fee can settle here while factored loads pay via your factor. No factoring: required. The account title MUST match your legal company name (sole proprietors: the owner\u2019s name on the W-9) \u2014 mismatched titles fail verification.')]), field('Bank name', 'bank_name', 'e.g. Chase'), field('Account holder / title \u2014 must match your LEGAL company name', 'account_title', 'Exactly as on your W-9 / authority'), field('Account number', 'account_number'), field('Routing number (ABA)', 'routing_number', '9 digits')]),
+      else if (st === 2) body = h('div', null, [h('p', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'We don\u2019t manage your factoring \u2014 we only need to know where money flows: after delivery we route your invoice/BOL paperwork to the right place, and your dispatch fee is collected the right way.'), (String(f.factoring_status || '') === 'interested' ? h('div', { class: 'cp-ann', style: 'margin-bottom:10px' }, [h('div', { class: 'cp-ann-t' }, 'We\u2019ll connect you \u2713'), h('div', { class: 'cp-ann-b' }, 'After you submit, our team reaches out with 2\u20133 recommended factoring partners \u2014 you sign with them directly. Until your factoring is live, add your bank below so settlements can reach you.')]) : null), h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring \u2014 pay me direct'], ['interested', 'Recommend me a factoring partner']]), field(String(f.factoring_status || '') === 'interested' ? 'Pick a recommended factoring partner' : 'Factoring company', 'factoring_company', String(f.factoring_status || '') === 'interested' ? 'Tap to see our recommended list' : 'Your factoring company\u2019s name'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp'), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Bank account for settlement payouts'), h('span', { class: 'cp-row-s' }, 'Encrypted & tokenized. Factoring carriers: optional but RECOMMENDED \u2014 direct-pay / quick-pay brokers and your dispatch fee can settle here while factored loads pay via your factor. No factoring: required. The account title MUST match your legal company name (sole proprietors: the owner\u2019s name on the W-9) \u2014 mismatched titles fail verification.')]), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Who the IRS has on file'), h('span', { class: 'cp-row-s' }, 'On a W-9 this is Line 1, and for most owner-operators it is a person, not the company. If your LLC is single-member and files on your SSN, put YOUR name here and the LLC goes on Line 2. Getting this one line wrong is the most common reason a W-9 comes back.')]), field('Legal owner name \u2014 exactly as on your tax records', 'legal_owner_name', 'e.g. Rosa Linda Gonzalez'), field('Bank name', 'bank_name', 'e.g. Chase'), field('Account holder / title \u2014 must match your LEGAL company name', 'account_title', 'Exactly as on your W-9 / authority'), field('Account number', 'account_number'), field('Routing number (ABA)', 'routing_number', '9 digits')]),
         (String(f.factoring_status || '') === 'yes' ? h('div', { style: 'margin-top:12px;border:1.5px solid rgba(139,92,246,.4);background:rgba(139,92,246,.07);border-radius:14px;padding:12px 14px' }, [
           h('div', { class: 'cp-row-t', style: 'margin-bottom:2px' }, [icon('bank',15),' Your factor\u2019s REMIT-TO — exactly what brokers need to pay them']),
           h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;line-height:1.6' }, 'Copy these from your factoring company\u2019s NOA / remittance sheet. Once verified, every broker automatically sees THESE details (never your bank) on the pay panel of every load, with the NOA warning. Upload the NOA letter itself at the Documents step (type: Notice of assignment).'),
