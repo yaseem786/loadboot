@@ -12,7 +12,7 @@ import {
   pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
-  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
+  pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, coiVehicles, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
   carrierUploadDocument, carrierListDocuments, fmcsaVerify, carrierAgreementSignature, carrierW9,
   emergencyContacts, emergencyContactAdd, emergencyContactDelete, reportTripIncident, myTripIncidents,
@@ -5185,10 +5185,41 @@ function tripStepper(status) {
       const unit = h('input', { class: 'cp-in', placeholder: 'Unit number', value: (t && t.unit_no) || '' });
       const plate = h('input', { class: 'cp-in', placeholder: 'Plate', value: (t && t.plate) || '' });
       const vin = h('input', { class: 'cp-in', placeholder: 'VIN', value: (t && t.vin) || '' });
-      const eq = h('select', { class: 'cp-in' }, ['', 'Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck'].map(o => h('option', { value: o, selected: t && t.equipment === o ? 'selected' : null }, o || 'Equipment…')));
+      const eq = h('select', { class: 'cp-in' }, ['', 'Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Cargo Van', 'Sprinter Van'].map(o => h('option', { value: o, selected: t && t.equipment === o ? 'selected' : null }, o || 'Equipment…')));
       const svc = h('input', { class: 'cp-in', type: 'date', value: (t && t.next_service_date) || '' });
       const insp = h('input', { class: 'cp-in', type: 'date', value: (t && t.inspection_exp) || '' });
       const vinInfo = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:-4px 0 4px' });
+      // Capacity is what decides which loads we may offer, and whether two loads
+      // fit on one run. Asked once here so a dispatcher never has to chase it.
+      const payload = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Payload (lb) \u2014 from your door sticker', value: (t && t.payload_lbs) || '' });
+      const cLen = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Cargo length (in)', value: (t && t.cargo_len_in) || '' });
+      const cWid = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Cargo width (in)', value: (t && t.cargo_width_in) || '' });
+      const cHgt = h('input', { class: 'cp-in', type: 'number', min: '1', placeholder: 'Cargo height (in)', value: (t && t.cargo_height_in) || '' });
+      const capHint = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:-4px 0 4px' });
+      const capHead = h('div', { class: 'cp-row-t', style: 'margin-top:6px' }, 'Capacity \u2014 this is what wins you the right loads');
+      let vinFacts = {};
+      // GVWR is the whole loaded weight, so payload is always a good deal less.
+      // Well past half is usually a misread door sticker — warn, never block.
+      const GVWR_CEIL = { 'class 1': 6000, 'class 2a': 8500, 'class 2b': 10000, 'class 2h': 10000, 'class 2': 10000, 'class 3': 14000, 'class 4': 16000, 'class 5': 19500, 'class 6': 26000, 'class 7': 33000, 'class 8': 80000 };
+      const capCheck = () => {
+        capHint.textContent = ''; capHint.style.color = '';
+        const lb = Number(payload.value || 0); if (!lb) return;
+        const g = String(vinFacts.gvwr || '').toLowerCase();
+        const key = Object.keys(GVWR_CEIL).sort((a, b) => b.length - a.length).find(k => g.indexOf(k) >= 0);
+        if (!key) return;
+        const ceil = GVWR_CEIL[key];
+        if (lb >= ceil) {
+          capHint.textContent = '\u2715 ' + lb.toLocaleString() + ' lb is more than this chassis weighs in total when loaded (' + ceil.toLocaleString() + ' lb gross). Payload is what you carry on top of the empty vehicle.';
+          capHint.style.color = '#f87171';
+        } else if (lb > ceil * 0.55) {
+          capHint.textContent = '\u26a0 ' + lb.toLocaleString() + ' lb looks high for a ' + ceil.toLocaleString() + ' lb gross chassis \u2014 worth double-checking the door sticker before a scale does it for you.';
+          capHint.style.color = '#fbbf24';
+        } else {
+          capHint.textContent = '\u2713 Sits comfortably inside the ' + ceil.toLocaleString() + ' lb gross rating.';
+          capHint.style.color = '#4ade80';
+        }
+      };
+      payload.addEventListener('input', capCheck);
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         const btn9 = ev.currentTarget;
         if (!unit.value.trim()) { alert('Unit number is required.'); return; }
@@ -5209,8 +5240,10 @@ function tripStepper(status) {
             clearTimeout(tm9);
             const jV = await rV.json(); const dV = jV && jV.Results && jV.Results[0];
             if (dV && dV.Make) {
-              vinInfo.textContent = '\u2713 VIN verified with U.S. DOT: ' + [dV.ModelYear, dV.Make, dV.Model].filter(Boolean).join(' ') + (dV.VehicleType ? ' \u00b7 ' + dV.VehicleType : '');
+              vinFacts = { make: dV.Make || null, model: dV.Model || null, year: dV.ModelYear || null, gvwr: dV.GVWR || null, body: dV.BodyClass || null };
+              vinInfo.textContent = '\u2713 VIN verified with U.S. DOT: ' + [dV.ModelYear, dV.Make, dV.Model].filter(Boolean).join(' ') + (dV.BodyClass ? ' \u00b7 ' + dV.BodyClass : '') + (dV.GVWR ? ' \u00b7 ' + dV.GVWR : '');
               vinInfo.style.color = '#4ade80';
+              capCheck();
             } else {
               vinInfo.textContent = '\u26a0 U.S. DOT registry could not identify this VIN \u2014 double-check it against the truck. Saving anyway; verification may flag it.';
               vinInfo.style.color = '#fbbf24';
@@ -5219,7 +5252,10 @@ function tripStepper(status) {
         }
         btn9.disabled = true; btn9.textContent = 'Saving\u2026';
         try {
-          await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin9 || vin.value.trim(), equipment: eq.value || null });
+          await pocketUpsertTruck({ id: t && t.id, unitNo: unit.value.trim(), plate: plate.value.trim(), vin: vin9 || vin.value.trim(), equipment: eq.value || null,
+            payloadLbs: payload.value ? Number(payload.value) : null, cargoLenIn: cLen.value ? Number(cLen.value) : null,
+            cargoWidthIn: cWid.value ? Number(cWid.value) : null, cargoHeightIn: cHgt.value ? Number(cHgt.value) : null,
+            vinMake: vinFacts.make, vinModel: vinFacts.model, vinYear: vinFacts.year, vinGvwr: vinFacts.gvwr, vinBody: vinFacts.body });
           trucks = await pocketTrucks();
           const saved = t && t.id ? t : trucks.find(x => x.unit_no === unit.value.trim());
           if (saved && saved.id && (svc.value || insp.value)) { try { await truckSetMaintenance(saved.id, svc.value || null, insp.value || null); } catch (_) {} }
@@ -5227,9 +5263,31 @@ function tripStepper(status) {
           try { closeT9(); } catch (_) {}
           lbToast('\ud83d\ude9b Truck saved' + (vinInfo.textContent.indexOf('\u2713') === 0 ? ' \u2014 VIN verified with U.S. DOT' : '') + '. Matching loads unlock on the board.', 'ok', 'Fleet updated');
         }
-        catch (e) { btn9.disabled = false; btn9.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
+        catch (e) {
+          btn9.disabled = false; btn9.textContent = 'Save';
+          // The insurance certificate decides which trucks we may dispatch. LB001 =
+          // this VIN is not on it; LB002 = no usable VIN was given.
+          if (e && e.code === 'LB002') {
+            lbToast('Every truck needs its full 17-character VIN \u2014 that is what your insurance certificate lists, and what brokers check before they release a load.', 'urgent', 'VIN required');
+            return;
+          }
+          if (e && e.code === 'LB001') {
+            let listed = '';
+            try {
+              const cov9 = await coiVehicles();
+              const vins9 = ((cov9 && cov9.vins) || []).map(v => v.vin).filter(Boolean);
+              if (vins9.length) listed = ' Right now it covers ' + (vins9.length === 1 ? 'one truck: ' : vins9.length + ' trucks: ') + vins9.join(', ') + '.';
+            } catch (_) {}
+            lbToast('Your certificate of insurance does not list this VIN, so this truck cannot be dispatched.' + listed
+              + ' Ask your insurance agent to add it to the policy schedule \u2014 it is free \u2014 then upload the updated certificate under Documents. We verify it the same day and the truck goes live.',
+              'urgent', 'Not on your insurance');
+            return;
+          }
+          if (e && e.code === 'LB003') { lbToast((e && e.message) || 'That payload does not fit this chassis.', 'urgent', 'Check the payload'); return; }
+          lbToast((e && e.message) || 'Could not save.', 'urgent', 'Truck not saved');
+        }
       } }, 'Save');
-      const closeT9 = openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, vinInfo, eq,
+      const closeT9 = openModal((t ? 'Edit truck' : 'Add truck'), [unit, plate, vin, vinInfo, eq, capHead, payload, capHint, cLen, cWid, cHgt,
         h('label', { class: 'cp-row-s' }, 'Next service due'), svc,
         h('label', { class: 'cp-row-s' }, 'Annual inspection expires'), insp, save]);
     }
@@ -6724,7 +6782,7 @@ function tripStepper(status) {
   /* ----- Onboarding wizard (Phase 2A) ----- */
   async function loadOnboarding() {
     showSkeleton(content, 'cards');
-    const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Conestoga', 'Tanker', 'Car Hauler'];
+    const EQUIP = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Hotshot', 'Power Only', 'Box Truck', 'Cargo Van', 'Sprinter Van', 'Conestoga', 'Tanker', 'Car Hauler'];
     const STEPS = ['Company & authority', 'Operation & equipment', 'Factoring & payment', 'Dispatch preferences', 'Documents', 'Review & submit'];
     let prof = {}; try { prof = await pocketGetProfile(); } catch (_) { prof = {}; }
     const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', hazmat: false, weekend_ok: false, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '', bank_name: '', account_title: '', account_number: '', routing_number: '', fr_title: '', fr_bank: '', fr_account: '', fr_routing: '', fr_email: '', fr_advance: '', fr_fee: '', fr_days: '30' }, prof || {});
