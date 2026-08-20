@@ -3225,21 +3225,14 @@ async function appView(user) {
       // and starting above zero is deliberate, people finish what looks part-done.
       // What was wrong: the mandatory documents were not in the denominator at all, so the
       // ring could read 100% on an account that still could not book a load. They are now.
-      const signup = [pr.company, pr.contact_name];
-      const wizard = [pr.phone, (pr.mc || pr.dot), pr.home_base,
-        ((pr.equipment_types || []).length ? '1' : ''), pr.truck_count, pr.factoring_status];
-      const mand = (((comp && comp.requirements) || []).filter((r) => r.mandatory));
-      const filled = (a) => a.filter((x) => x != null && String(x).trim() !== '').length;
-      const wizardDone = filled(wizard);
-      const docsDone = mand.filter((r) => String(r.status || '').toLowerCase() === 'valid').length;
-      const steps = signup.length + wizard.length + mand.length;
-      _obPct = steps ? Math.round(((filled(signup) + wizardDone + docsDone) / steps) * 100) : 0;
+      const _prog = lbOnboardingPct(pr, comp);
+      _obPct = _prog.pct;
       _obRing.style.background = 'conic-gradient(#0883F7 ' + _obPct + '%, rgba(255,255,255,.1) 0)';
       _obRing.firstChild.textContent = _obPct + '%';
       // "Resume" has to mean resume. It used to key off pct > 0, and since signup always
       // fills the company in, it read "Resume onboarding" to someone who had never opened
       // the wizard. Only what the wizard itself collects counts as having started.
-      _obBtn.textContent = ((wizardDone + docsDone) > 0 ? 'Resume onboarding \u2192' : 'Start onboarding \u2192');
+      _obBtn.textContent = (_prog.started ? 'Resume onboarding \u2192' : 'Start onboarding \u2192');
     } catch (_) { _obRing.firstChild.textContent = '0%'; } })();
     const _dueAmt = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const topBanners = [
@@ -7080,6 +7073,28 @@ function tripStepper(status) {
     }
   }
 
+  // One definition of "how far along am I", shared by the dashboard ring and the wizard's
+  // own progress bar. They used to disagree: the ring counted fields and approved
+  // documents, the bar counted which step you happened to be standing on. So a carrier
+  // with their company and name already filled saw a number on the dashboard and 0% on
+  // step 1 of the wizard — same question, two answers. Position is already stated in
+  // words ("Step 1 of 6"); the bar should say completion.
+  function lbOnboardingPct(p, comp) {
+    p = p || {};
+    const signup = [p.company, p.contact_name];
+    const wizard = [p.phone, (p.mc || p.dot), p.home_base,
+      ((p.equipment_types || []).length ? '1' : ''), p.truck_count, p.factoring_status];
+    const mand = (((comp && comp.requirements) || []).filter((r) => r.mandatory));
+    const filled = (a) => a.filter((x) => x != null && String(x).trim() !== '').length;
+    const wizardDone = filled(wizard);
+    const docsDone = mand.filter((r) => String(r.status || '').toLowerCase() === 'valid').length;
+    const steps = signup.length + wizard.length + mand.length;
+    return {
+      pct: steps ? Math.round(((filled(signup) + wizardDone + docsDone) / steps) * 100) : 0,
+      started: (wizardDone + docsDone) > 0,
+    };
+  }
+
   /* ----- Onboarding wizard (Phase 2A) ----- */
   async function loadOnboarding() {
     showSkeleton(content, 'cards');
@@ -7089,6 +7104,11 @@ function tripStepper(status) {
     const f = Object.assign({ company: '', contact_name: '', phone: '', mc: '', dot: '', home_base: '', radius_miles: '', equipment_types: [], truck_count: '', hazmat: false, weekend_ok: false, factoring_status: '', factoring_company: '', contact_method: '', whatsapp: '', bank_name: '', account_title: '', account_number: '', routing_number: '', fr_title: '', fr_bank: '', fr_account: '', fr_routing: '', fr_email: '', fr_advance: '', fr_fee: '', fr_days: '30' }, prof || {});
     if (!Array.isArray(f.equipment_types)) f.equipment_types = [];
     let st = 0; let fmcsaRes = null;
+    // Compliance drives part of the progress figure, so the wizard needs it too — and it
+    // refreshes after the Documents step so approving a file moves the bar.
+    let _obComp = null;
+    const refreshComp = async () => { try { _obComp = await pocketCompliance(); } catch (_) {} };
+    refreshComp().then(() => { try { draw(); } catch (_) {} });
     try { const _j = sessionStorage.getItem('lb:onb:jump'); if (_j != null) { st = Math.max(0, Math.min(5, Number(_j) || 0)); sessionStorage.removeItem('lb:onb:jump'); } } catch (_) {}
     // Dispatch preferences are REQUIRED at onboarding (drive best-match loads + CC AI matching);
     // the carrier can change them any time later in Account.
@@ -7206,7 +7226,7 @@ function tripStepper(status) {
     }
     function doneCard() { return [h('div', { class: 'cp-wiz-done' }, [h('div', { style: 'font-size:2.4rem' }, '✓'), h('h3', null, 'Submitted for review'), h('p', { class: 'cp-row-s' }, 'Thanks! Our team is reviewing your onboarding. You’ll get a notification when it’s approved.'), h('button', { class: 'cp-btn cp-btn-sm', onClick: () => go('dashboard') }, 'Back to dashboard')])]; }
     function draw() {
-      const pct = Math.round((st / (STEPS.length - 1)) * 100);
+      const pct = lbOnboardingPct(f, _obComp).pct;
       let body;
       if (st === 0) {
         const vmsg = h('div', { class: 'cp-err' });
