@@ -6563,10 +6563,27 @@ function tripStepper(status) {
       '④ Every truck you will run, scheduled with its VIN — we can only dispatch a truck the policy actually covers',
     ], script: (nm) => 'Hi — please issue a fresh Certificate of Insurance (ACORD 25) for ' + (nm || 'my company') + ' with:\n\n(1) CERTIFICATE HOLDER \u2014 it must read exactly:\n' + LB_COI_HOLDER_BLOCK + '\nCertificate holder only — not additional insured.\n(2) $1,000,000 commercial auto liability.\n(3) Motor truck cargo coverage listed.\n(4) All trucks scheduled with their VINs.\n\nNothing else on the policy changes. Please email it back as a PDF. Thank you!' },
     authority: { title: '📋 Upload the FMCSA document itself:', items: [
-      'The MC certificate / operating-authority letter from FMCSA (not a UCR receipt or BOC-3)',
+      'The MC certificate / operating-authority letter FMCSA issued to YOU \u2014 the one addressed to your company at its registered address (not a UCR receipt or BOC-3)',
       'Your legal name and MC/DOT numbers must be clearly readable',
+      'A SAFER Company Snapshot printout is a stopgap, not the document. Anyone can print one for any USDOT, so it shows the authority exists but not that it is yours \u2014 we may accept it to keep you moving and then ask for the certificate anyway. Send the certificate first if you have it; it is in your FMCSA/Motus account under registration documents',
     ] },
-    w9: { title: '📋 W-9 quick check before you upload:', items: [
+    // The screen says W-9 and the agreement need no file, and then the upload dropdown
+    // offers both anyway. A carrier who takes the dropdown at its word skips every guard
+    // in cc_carrier_submit_w9 — bl_w9_0235/0236 validate the in-app form and cannot see a
+    // PDF at all. Marshall Patterson's uploaded W-9 was unsigned with both an SSN and an
+    // EIN filled in, and nothing caught it except a human reading the file. So: steer.
+    agreement: { title: '↩ You do not need to upload this one', items: [
+      'Tap Sign on the Dispatch Service Agreement in the checklist above — it signs electronically in about a minute and is countersigned instantly.',
+      'Only upload a file here if you have a signed copy from us that you need to put back on record.',
+    ] },
+    w9: { title: '↩ Quicker to fill in than to upload', items: [
+      'Tap Start W-9 in the checklist above. It asks who the IRS treats as the taxpayer and fills Line 1, Line 2 and the tax box in for you — the part that gets most W-9s rejected — then you e-sign it. About two minutes.',
+      'If you would rather upload one your accountant prepared that is fine, but check these two first, because they are what send W-9s back:',
+      '① It must be SIGNED AND DATED. The certification is made under penalties of perjury, so an unsigned W-9 is not a valid one however correct the rest of it is.',
+      '② Only ONE taxpayer number. Filling in both the SSN box and the EIN box is ambiguous — use the number the income is reported under, which is your SSN if your own name is on Line 1.',
+      'Line 1 must match the tax box either way. Single-member LLC on your SSN → YOUR legal name on Line 1, the LLC on Line 2. LLC with its own EIN → LLC name on Line 1 and tick Limited liability company.',
+    ] },
+    _w9_legacy: { title: '📋 W-9 quick check before you upload:', items: [
       'Line 1 must match the tax box you tick. Single-member LLC on your SSN → put YOUR legal name on Line 1 and the LLC on Line 2. LLC with its own EIN → LLC name on Line 1 and tick "Limited liability company". Company name on Line 1 with "Individual/sole proprietor" ticked is the most common rejection we see',
       'Use the name of the person or entity on the LLC\u2019s tax records — not whoever happens to be filling the form in',
       'SIGNED and DATED — unsigned W-9s are always rejected',
