@@ -1,99 +1,72 @@
-Google Play launch: unified app, account deletion, error monitoring
+Carrier truck intelligence: deep spec, VIN-to-COI matching, FMCSA cross-checks, and break-even
 
-Three pieces of groundwork for publishing LoadBoot on Google Play as a Trusted
-Web Activity, plus the observability that should have existed already.
+One day's work, all of it coming out of the same question: what did we have to ask a
+carrier over WhatsApp that the product should already have known?
 
---- One app, every portal ----------------------------------------------------
+Add truck
+- 30 new fields: truck domicile, door type and opening size, deck height, dock high,
+  liftgate + capacity, pallet jack / ramp / e-track / load bars / straps / blankets,
+  pallet positions, wheel-well width, temperature range, hazmat / TWIC / TSA / bonded /
+  team, floor rate, max radius, home time.
+- Rebuilt as a sectioned modal instead of one long column.
+- Refuses a wheel-well gap wider than the cargo box.
 
-app/loadboot.webmanifest (new) - unified manifest scoped to /app/, so a single
-installed app and a single Play listing cover carrier, partner and agent rather
-than shipping three. start_url /app/, standalone, maskable icons, long-press
-shortcuts into each portal. The per-portal manifests stay for anyone installing
-one portal on its own.
+VIN to certificate of insurance, live
+- New cc_vin_coverage. On VIN blur the form says whether the truck is on the policy,
+  before Save rather than after: green when covered, red with the VINs the policy does
+  list, amber when no COI is on file.
+- cc_pocket_upsert_truck now takes one jsonb payload. The old 14-arg signature stays as
+  a thin wrapper so tabs open during the deploy keep working; the arg names do not
+  collide, so PostgREST has no ambiguity.
 
-app/index.html - links the new manifest, and hides the Command Center and
-Developers & API cards when launched as the installed app (CSS display-mode plus
-an android-app:// referrer check, remembered for the session). Two reasons: a
-carrier on their phone should never be offered a door marked "LoadBoot staff
-only", and a store reviewer must not hit a portal they cannot sign in to - that
-reads as "part of the app is inaccessible" and fails review. Both stay fully
-available on the website.
+Post a truck
+- Pick a truck from the fleet and the posting fills itself in: domicile, equipment,
+  floor rate, radius. Shows a "brokers will see" spec card and the certificate state,
+  and refuses to post a truck the policy does not cover.
 
---- Account deletion (migrations 0211, 0212) ---------------------------------
+Loading profile — derived, not asked
+- liftgate + dock height + pallet jack were being collected and never read, so a truck
+  that cannot reach the ground could still be offered a residential drop. They now
+  resolve to one capability: ground capable / dock or forklift / forklift or levelling
+  dock / unknown. Deck height refines it — docks sit at 48-52in and most levelers reach
+  about 12in below.
+- cc_prebook_check gained a ground-delivery check. ADVISORY only: it is inferred from
+  free text a broker typed, so a false positive must never block a real booking.
 
-Play requires users to be able to request deletion of their account and personal
-data from inside the app, and the listing to carry a public page describing it.
-Neither existed.
+Know your number
+- Carriers think in dollars per week; matching thinks in dollars per mile. New card
+  turns one into the other: weekly cost in, break-even miles out, with a scenario table
+  from 1,000 to 3,000 miles. The figure is volunteered, never required, and never
+  leaves the carrier's own account.
+- Round-trip preference, which had nowhere to live and is the thing carriers ask for
+  most.
 
-Built as REQUEST + PROCESS, not an instant wipe, because an instant wipe would
-be a promise we cannot legally keep: FMCSA requires 3 years of load and trip
-documents, the IRS 7 years of invoices and settlements, and a carrier mid-load
-cannot vanish while a broker still has a right to that trip record.
+FMCSA cross-check
+- Compares the fleet against the MCS-150: unit counts, hazmat claim vs the HM indicator,
+  cargo classes, filing age, interstate vs intrastate, and whether the USDOT and MC on
+  file actually belong to this carrier.
+- This immediately found two live defects. Prime Freight's USDOT was stored a digit
+  short and resolved to an unrelated inactive Canadian carrier; JMS's MC docket was a
+  digit short. Both corrected.
+- Census snapshots refresh nightly through pg_net.
 
-  request_account_deletion / cancel_account_deletion / my_account_deletion_status
-  cc_account_deletion_queue / cc_account_deletion_process
+Money and documents
+- Bank account numbers and ABA routing numbers are validated, checksum included.
+  Factoring remit-to now needs the factor's full account number, not the last four.
+- Approved documents can finally be replaced. They had no Update button, so "every
+  document is re-submittable" was only half true.
+- Certificate holder is quoted as the finished four-line block everywhere. lc-doc-check
+  had been asking carriers to "name LoadBoot" with no address at all.
+- Onboarding collects the legal owner name, the W-9 line that had failed for every
+  carrier who tried.
 
-Completing a request erases profile contact fields, the agent payout/tax/address
-block, org bank details, uploaded documents, chats and agent messages, and
-CRM/outreach traces, then closes the login permanently. The auth row is kept,
-not dropped, so retained financial records keep a stable foreign key. Requesting
-notifies staff in-app and sends the user a branded confirmation.
+Fixes to things this work broke or exposed
+- carrier_safety.authority_status did not allow 'unknown', which fmcsa-verify v26+
+  always sends. Every FMCSA save had been failing silently since that deploy, because
+  the edge function captures saveError and still returns ok:true.
+- home_time had two vocabularies across two tables. They now share one, and the
+  truck-level value wins over the carrier default.
+- bl_sec_0225 closes an anon-grant path that revoke-from-public does not reach.
 
-  app/carrier/app.js - "Delete account" card in Settings (serves the carrier and
-    agent portals). Says plainly what is erased and what law requires us to keep,
-    links the policy, confirms before sending, then shows a pending state with a
-    Cancel button.
-  app/shared/api.js - the five wrappers.
-  build_site.py - public page delete-account.html, linked from the footer and
-    legal nav, with the 2-day / 30-day / 90-day-backup timeline. Build verified.
-
-Still to do: the same card in app/partner/app.js, whose settings view differs.
-
---- Client error + performance monitoring (migration 0213) -------------------
-
-Until now a broken deploy was invisible. The Command Center sat on its loading
-screen for half an hour today and the cause - one missing export in api.js - had
-to be found by reading Netlify and Postgres logs by hand. On phones that loop
-does not exist at all: a carrier whose app breaks just leaves.
-
-  app/shared/telemetry.js (new) - window.onerror, unhandled rejections, failed
-    script/style loads, and Core Web Vitals (LCP, INP, CLS, FCP, TTFB) via
-    PerformanceObserver with Google's thresholds. No third-party library, no SDK.
-    Wired into the carrier, partner, command-center and developer entry points.
-  app_private.client_errors / client_vitals, tele_scrub(), tele_ingest()
-  public.track_web_event - EXTENDED, not replaced.
-
-Three things make it worth having rather than noise:
-  * Grouping. Errors are fingerprinted from a normalised message plus the top
-    stack frame, so a loop throwing 5,000 times costs one row and one request.
-    Each session sends at most 8 errors and never repeats one.
-  * Privacy. Messages and stacks are scrubbed for emails, tokens and long digit
-    runs on the device AND again in Postgres; query strings are dropped from
-    routes. An error monitor that quietly accumulates user data is a liability.
-  * Regressions. An error marked resolved that reappears on a newer build_id is
-    reopened automatically - the silent regression is the case this is for.
-
-anon-executable SECURITY DEFINER count unchanged at 27: telemetry rides the
-ingestion door that was already anon-callable rather than opening a new one.
-
-Still to do: the Command Center dashboard over these tables, and alerting on a
-new error type or a spike.
-
---- Play Console groundwork --------------------------------------------------
-
-Four reviewer accounts created and sign-in verified (carrier, broker, shipper,
-agent). Broker and shipper need separate accounts despite sharing one dashboard,
-because their onboarding packets have no items in common - broker wants FMCSA
-authority and a $75k BMC-84 bond, shipper wants a credit application and payment
-terms. Content rating came back Everyone / PEGI 3 with no descriptors.
-
-Store listing prepared off-repo: title "LoadBoot Load Board & Dispatch" (30),
-short and full descriptions, 1024x500 feature graphic, eight phone screenshots.
-The source shots were 1170x2532 - Play rejects anything where the long side
-exceeds twice the short side (2.16) - so each was padded sideways onto the app
-background to land on 9:16 and converted from WebP, which Play does not accept.
-
-Migrations are applied to production; the JS and build changes need deploy.
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01MYESSZsAyWrijD8HH7PZpU
+Migrations bl_fleet_0210 through bl_pref_0231, applied to staging and production.
+esbuild clean. New file: app/carrier/economics.js.

@@ -679,9 +679,40 @@ export const acceptDriverInvite = (token) => rpc('cc_accept_driver_invite', { p_
 export const pocketUpsertDriver = (o = {}) => rpc('cc_pocket_upsert_driver', { p_id: o.id ?? null, p_name: o.name, p_phone: o.phone ?? null, p_email: o.email ?? null, p_license_no: o.licenseNo ?? null, p_license_state: o.licenseState ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
 export const pocketTrucks = () => rpc('cc_pocket_trucks');
 export const coiVehicles = () => rpc('cc_coi_vehicles');
-export const pocketUpsertTruck = (o = {}) => rpc('cc_pocket_upsert_truck', { p_id: o.id ?? null, p_unit_no: o.unitNo, p_plate: o.plate ?? null, p_vin: o.vin ?? null, p_equipment: o.equipment ?? null,
-  p_payload_lbs: o.payloadLbs ?? null, p_cargo_len_in: o.cargoLenIn ?? null, p_cargo_width_in: o.cargoWidthIn ?? null, p_cargo_height_in: o.cargoHeightIn ?? null,
-  p_vin_make: o.vinMake ?? null, p_vin_model: o.vinModel ?? null, p_vin_year: o.vinYear ?? null, p_vin_gvwr: o.vinGvwr ?? null, p_vin_body: o.vinBody ?? null });
+// One jsonb payload instead of 40 positional params. The positional overload still
+// exists server-side for tabs that were open during the deploy; its arg names do not
+// collide with `p`, so PostgREST resolves both without ambiguity.
+export const pocketUpsertTruck = (o = {}) => rpc('cc_pocket_upsert_truck', { p: {
+  id: o.id ?? null, unit_no: o.unitNo, plate: o.plate ?? null, vin: o.vin ?? null, equipment: o.equipment ?? null,
+  payload_lbs: o.payloadLbs ?? null, cargo_len_in: o.cargoLenIn ?? null, cargo_width_in: o.cargoWidthIn ?? null, cargo_height_in: o.cargoHeightIn ?? null,
+  vin_make: o.vinMake ?? null, vin_model: o.vinModel ?? null, vin_year: o.vinYear ?? null, vin_gvwr: o.vinGvwr ?? null, vin_body: o.vinBody ?? null,
+  domicile_city: o.domicileCity ?? null, domicile_state: o.domicileState ?? null, domicile_zip: o.domicileZip ?? null,
+  door_type: o.doorType ?? null, door_width_in: o.doorWidthIn ?? null, door_height_in: o.doorHeightIn ?? null,
+  deck_height_in: o.deckHeightIn ?? null, dock_high: o.dockHigh ?? null,
+  liftgate: o.liftgate ?? null, liftgate_cap_lbs: o.liftgateCapLbs ?? null,
+  has_pallet_jack: o.hasPalletJack ?? null, has_ramp: o.hasRamp ?? null, has_etrack: o.hasEtrack ?? null,
+  has_load_bars: o.hasLoadBars ?? null, has_straps: o.hasStraps ?? null, has_blankets: o.hasBlankets ?? null,
+  pallet_positions: o.palletPositions ?? null, wheel_well_width_in: o.wheelWellWidthIn ?? null,
+  temp_control: o.tempControl ?? null, temp_min_f: o.tempMinF ?? null, temp_max_f: o.tempMaxF ?? null,
+  hazmat_placarded: o.hazmatPlacarded ?? null, twic: o.twic ?? null, tsa_sta: o.tsaSta ?? null, bonded: o.bonded ?? null,
+  team_driven: o.teamDriven ?? null, min_rpm: o.minRpm ?? null, max_radius_miles: o.maxRadiusMiles ?? null,
+  home_time: o.homeTime ?? null, spec_note: o.specNote ?? null,
+} });
+// Live VIN <-> certificate-of-insurance match, so the carrier hears about it while
+// they are still typing rather than after they press Save.
+export const vinCoverage = (vin) => rpc('cc_vin_coverage', { p_vin: vin });
+// Cross-matches the fleet against what the carrier filed on their MCS-150.
+export const fleetFmcsaCheck = () => rpc('cc_fleet_fmcsa_check');
+// The W-9 name. Two of two carriers had a different legal owner than the contact,
+// and both W-9s came back rejected for it.
+export const setLegalOwner = (name) => rpc('cc_set_legal_owner', { p_name: name });
+// Derived loading capability per truck — liftgate + dock height + pallet jack turned
+// into one sentence a broker can act on.
+export const truckLoadingProfiles = () => rpc('cc_truck_loading_profiles');
+// Carriers think in dollars per week; matching thinks in dollars per mile.
+export const breakeven = (weeklyCost, rpm) => rpc('cc_breakeven', { p_weekly_cost: weeklyCost ?? null, p_rpm: rpm ?? null });
+export const setCostAndLanes = (weeklyCost, includesPay, roundTrip) =>
+  rpc('cc_set_cost_and_lanes', { p_weekly_cost: weeklyCost ?? null, p_includes_pay: includesPay ?? null, p_round_trip: roundTrip ?? null });
 // carrier team (existing members) — migration cus_carrier_team
 export const pocketTeam = () => rpc('cc_pocket_team');
 export const pocketSetMember = (o = {}) => rpc('cc_pocket_set_member', { p_user: o.user, p_role: o.role ?? null, p_status: o.status ?? null });
