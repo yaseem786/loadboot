@@ -5,7 +5,7 @@ import { openSignModal, printExecutedAgreement } from './dispatch-agreement.js';
 import { printExecutedW9 } from './w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { uploadDocument } from '../shared/storage.js';
-import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, myHazmatReadiness, carrierRequestReverify, carrierAgreementSignature, setMyAvatar, myAvatar } from '../shared/api.js';
+import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, myHazmatReadiness, carrierRequestReverify, carrierAgreementSignature, setMyAvatar, myAvatar, requestAccountAction } from '../shared/api.js';
 
 function sic(n) {
   var P = {
@@ -163,7 +163,19 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div class="acx-sub">⚙ Operations</div>'
     +   '<div class="row"><div><div class="rt">Haul hazmat</div><div class="rs">Requires endorsement on file</div></div><div class="tg' + (dp.hazmat ? ' on' : '') + '" id="acx-haz"></div></div>'
     +   '<div class="row"><div><div class="rt">Team drivers</div><div class="rs">Two drivers, longer runs</div></div><div class="tg' + (dp.team_drivers ? ' on' : '') + '" id="acx-team"></div></div>'
-    +   '<div class="row"><div><div class="rt">Available weekends</div><div class="rs">Include Sat/Sun loads</div></div><div class="tg' + (dp.weekend_ok !== false ? ' on' : '') + '" id="acx-wknd"></div></div>'
+    // Three states, not two. Whether someone works Saturdays is a fact about their life,
+    // and a toggle cannot say "not answered" — it silently said yes for every carrier who
+    // had never been asked, while brokers saw no Weekends OK chip and the profile-strength
+    // meter went on asking. Three surfaces, three different beliefs. Now: unanswered stays
+    // unanswered and is shown as such (bl_pref_0242).
+    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Available weekends</div>'
+    +     '<div class="rs">Should we offer you Saturday and Sunday pickups?</div>'
+    +     '<div id="acx-wkwrap" style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">'
+    +       '<button type="button" class="acx-wk" data-v="true">Yes, weekends are fine</button>'
+    +       '<button type="button" class="acx-wk" data-v="false">Keep my weekends free</button>'
+    +     '</div>'
+    +     '<div id="acx-wkhint" class="rs" style="margin-top:7px"></div>'
+    +   '</div></div>'
     +   '<div class="hint" style="margin-top:10px;background:#f0f7ff;border:1px solid #d6e8ff;color:#2b5f93;border-radius:11px;padding:9px 12px;font-size:.75rem">More detail = sharper, better-paying matches. Blank fields never hurt your account \u2014 they just mean broader matching.</div>'
     +   '<div style="margin-top:12px"><button class="btn sm" id="acx-savedisp">Save preferences</button></div></div>'
     + '<div class="card" id="s-sec"><div class="sec-h"><div class="sec-ico ic-violet">' + sic('lock') + '</div><div class="sec-t">Security &amp; sign-in</div></div><div class="sec-s">Protect your account and your money.</div>'
@@ -192,8 +204,13 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div class="pol" style="cursor:default"><span class="rt">W-9 Tax Form</span>' + (w9Status === 'valid' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-green">Approved</span><button class="btn ghost sm" id="acx-w9-dl">Download</button></span>' : (w9Status === 'pending' || w9Status === 'in_review' || w9Status === 'review' || w9Status === 'submitted' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-blue">In review</span><button class="btn ghost sm" id="acx-w9-dl">Download</button></span>' : '<span class="pill p-gray">Not on file</span>')) + '</div>'
     +   '<div class="pol" style="cursor:default"><span class="rt">Dispatch Service Agreement</span>' + (agrStatus === 'valid' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-green">Approved</span><button class="btn ghost sm" id="acx-agr-dl">Download</button></span>' : (agrStatus === 'pending' || agrStatus === 'in_review' || agrStatus === 'review' ? '<span style="display:flex;gap:8px;align-items:center"><span class="pill p-blue">In review</span><button class="btn ghost sm" id="acx-agr-dl">Download</button></span>' : '<button class="btn sm" id="acx-agr-sign">Sign agreement</button>')) + '</div></div>'
     + '<div class="card dangerc" id="s-danger"><div class="sec-h"><div class="sec-ico ic-red">' + sic('alert') + '</div><div class="sec-t">Danger zone</div></div><div class="sec-s">Pause new load offers or close your account. A person handles every request — nothing happens automatically.</div>'
-    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Pause activation</div><div class="rs">Stop new offers temporarily — your data stays safe</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Pause%20my%20LoadBoot%20account&body=Please%20pause%20new%20load%20offers%20on%20my%20account.">Request pause</a></div>'
-    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Close account</div><div class="rs">Permanently deactivate — we confirm with you first</div></div><a class="btn danger sm" style="flex:none;text-decoration:none" href="mailto:hello@loadboot.com?subject=Close%20my%20LoadBoot%20account">Contact us</a></div></div>'
+    // Both of these were mailto: links. If the carrier had no mail client wired up — most
+    // people on a phone — tapping them did nothing at all and the request never existed.
+    // They now record a real request, tell the carrier we have it, and raise it in the
+    // Command Center. Still nothing deactivates automatically (bl_acc_0243).
+    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Pause activation</div><div class="rs">Stop new offers temporarily — your data stays safe</div></div><button class="btn danger sm" style="flex:none" id="acx-pause">Request pause</button></div>'
+    +   '<div class="row"><div style="min-width:0;flex:1"><div class="rt">Close account</div><div class="rs">Permanently deactivate — we confirm with you first</div></div><button class="btn danger sm" style="flex:none" id="acx-close">Request closure</button></div>'
+    +   '<div class="rs" id="acx-dangermsg" style="margin-top:10px"></div></div>'
     + '</div>'
     + '<div class="acx-toast" id="acx-toast"></div>'
     + '</div>';
@@ -330,8 +347,59 @@ export async function renderPremiumAccount(host, ctx) {
     }
     hazEl.classList.add('on');
   });
-  const wkndEl = root.querySelector('#acx-wknd'); if (wkndEl) wkndEl.addEventListener('click', () => wkndEl.classList.toggle('on'));
+  // null = never answered. We keep it null rather than guessing on the carrier's behalf.
+  let wkVal = (dp.weekend_ok === true) ? 'true' : (dp.weekend_ok === false ? 'false' : null);
+  const wkBtns = Array.from(root.querySelectorAll('.acx-wk'));
+  const wkHint = root.querySelector('#acx-wkhint');
+  const paintWk = () => {
+    wkBtns.forEach((b) => {
+      const on = wkVal !== null && b.getAttribute('data-v') === wkVal;
+      b.style.cssText = 'cursor:pointer;border-radius:999px;padding:8px 15px;font:700 .8rem inherit;'
+        + (on ? 'background:#0883F7;color:#fff;border:1px solid #0883F7'
+              : 'background:transparent;color:#93a4bd;border:1px solid rgba(148,163,184,.4)');
+    });
+    if (wkHint) {
+      wkHint.textContent = wkVal === null
+        ? 'Not answered yet \u2014 until you pick one we will not assume either way.'
+        : (wkVal === 'true' ? 'Brokers will see you as available at weekends.'
+                            : 'We will keep Saturday and Sunday pickups away from you.');
+      wkHint.style.color = wkVal === null ? '#eab308' : '';
+    }
+  };
+  wkBtns.forEach((b) => b.addEventListener('click', () => { wkVal = b.getAttribute('data-v'); paintWk(); }));
+  paintWk();
   const teamEl = root.querySelector('#acx-team'); if (teamEl) teamEl.addEventListener('click', () => teamEl.classList.toggle('on'));
+  // Danger zone — ask once, plainly, then record it.
+  const dangerMsg = root.querySelector('#acx-dangermsg');
+  const askAction = (btn, action, question, ok) => {
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      if (!confirm(question)) return;
+      const label = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        const r = await requestAccountAction(action, null);
+        if (dangerMsg) {
+          dangerMsg.style.color = '#12a150';
+          dangerMsg.textContent = (r && r.already_open)
+            ? 'You already have this request open — a person is on it. Nothing further needed.'
+            : ok;
+        }
+        toast(ok);
+        btn.textContent = 'Requested ✓';
+      } catch (e) {
+        btn.disabled = false; btn.textContent = label;
+        if (dangerMsg) { dangerMsg.style.color = '#e0304a'; dangerMsg.textContent = (e && e.message) || 'Could not send that.'; }
+      }
+    });
+  };
+  askAction(root.querySelector('#acx-pause'), 'pause',
+    'Pause new load offers?\n\nYou keep your account, documents and history — we simply stop sending you new offers until you tell us to start again. A person handles this; nothing changes automatically.',
+    'Pause requested — a person will confirm with you shortly.');
+  askAction(root.querySelector('#acx-close'), 'close',
+    'Request to close your account?\n\nBefore anything is closed we check two things with you: that any load in progress is finished or handed over, and that you have been paid everything you are owed. Nothing is deactivated until you confirm.',
+    'Closure requested — we will confirm with you before anything is deactivated.');
+
   const saveDisp = root.querySelector('#acx-savedisp');
   if (saveDisp) saveDisp.addEventListener('click', async () => {
     saveDisp.disabled = true; saveDisp.textContent = 'Saving…';
@@ -350,7 +418,7 @@ export async function renderPremiumAccount(host, ctx) {
         avoid_states: (root.querySelector('#acx-avoid').value || '').split(',').map((x) => x.trim()).filter(Boolean),
         hazmat: hazEl ? hazEl.classList.contains('on') : false,
         team_drivers: teamEl ? teamEl.classList.contains('on') : false,
-        weekend_ok: wkndEl ? wkndEl.classList.contains('on') : true,
+        weekend_ok: wkVal === null ? null : wkVal === 'true',
       });
       saveDisp.textContent = 'Saved ✓'; toast('Dispatch preferences saved'); setTimeout(() => { saveDisp.disabled = false; saveDisp.textContent = 'Save preferences'; }, 1400);
     } catch (e) { saveDisp.disabled = false; saveDisp.textContent = 'Save preferences'; toast((e && e.message) || 'Could not save'); }

@@ -429,6 +429,14 @@ export const reviewDocument = (documentId, decision, note) =>
 // the reviewer looking at the document. This is what feeds cc_vin_coverage, the truck
 // form's green/red banner and the LB001 gate on posting (bl_coi_0234).
 export const coiPanel = (documentId) => rpc('cc_coi_panel', { p_document: documentId });
+// Danger zone. Records the request and raises it with staff — nothing deactivates on its
+// own, which is what the screen has always promised (bl_acc_0243).
+export const requestAccountAction = (action, reason) =>
+  rpc('cc_request_account_action', { p_action: action, p_reason: reason ?? null });
+export const accountRequests = (status, limit) =>
+  rpc('cc_account_requests', { p_status: status ?? 'open', p_limit: limit ?? 100 });
+export const resolveAccountRequest = (id, status, note) =>
+  rpc('cc_resolve_account_request', { p_id: id, p_status: status, p_note: note ?? null });
 export const setCoiCoverage = (o = {}) => rpc('cc_set_coi_coverage', {
   p_org: o.org, p_mode: o.mode, p_vins: o.vins ?? null,
   p_document: o.document ?? null, p_expiry: o.expiry ?? null, p_note: o.note ?? null,
