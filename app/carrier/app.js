@@ -3221,12 +3221,25 @@ async function appView(user) {
     ]);
     if (onbHero) (async () => { try {
       const pr = (await pocketGetProfile()) || {};
-      const parts = [pr.company, pr.contact_name, pr.phone, (pr.mc || pr.dot), pr.home_base, ((pr.equipment_types || []).length ? '1' : ''), pr.factoring_status];
-      const done = parts.filter((x) => x != null && String(x).trim() !== '').length;
-      _obPct = Math.round((done / parts.length) * 100);
+      // Name and company are real answers the carrier typed at signup, so they count —
+      // and starting above zero is deliberate, people finish what looks part-done.
+      // What was wrong: the mandatory documents were not in the denominator at all, so the
+      // ring could read 100% on an account that still could not book a load. They are now.
+      const signup = [pr.company, pr.contact_name];
+      const wizard = [pr.phone, (pr.mc || pr.dot), pr.home_base,
+        ((pr.equipment_types || []).length ? '1' : ''), pr.truck_count, pr.factoring_status];
+      const mand = (((comp && comp.requirements) || []).filter((r) => r.mandatory));
+      const filled = (a) => a.filter((x) => x != null && String(x).trim() !== '').length;
+      const wizardDone = filled(wizard);
+      const docsDone = mand.filter((r) => String(r.status || '').toLowerCase() === 'valid').length;
+      const steps = signup.length + wizard.length + mand.length;
+      _obPct = steps ? Math.round(((filled(signup) + wizardDone + docsDone) / steps) * 100) : 0;
       _obRing.style.background = 'conic-gradient(#0883F7 ' + _obPct + '%, rgba(255,255,255,.1) 0)';
       _obRing.firstChild.textContent = _obPct + '%';
-      _obBtn.textContent = (_obPct > 0 ? 'Resume onboarding \u2192' : 'Submit Your Profile \u2192');
+      // "Resume" has to mean resume. It used to key off pct > 0, and since signup always
+      // fills the company in, it read "Resume onboarding" to someone who had never opened
+      // the wizard. Only what the wizard itself collects counts as having started.
+      _obBtn.textContent = ((wizardDone + docsDone) > 0 ? 'Resume onboarding \u2192' : 'Start onboarding \u2192');
     } catch (_) { _obRing.firstChild.textContent = '0%'; } })();
     const _dueAmt = (invs || []).filter(i => i.status === 'sent').reduce((a, i) => a + (Number(i.fee) || 0), 0);
     const topBanners = [
