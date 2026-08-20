@@ -6563,10 +6563,27 @@ function tripStepper(status) {
       '④ Every truck you will run, scheduled with its VIN — we can only dispatch a truck the policy actually covers',
     ], script: (nm) => 'Hi — please issue a fresh Certificate of Insurance (ACORD 25) for ' + (nm || 'my company') + ' with:\n\n(1) CERTIFICATE HOLDER \u2014 it must read exactly:\n' + LB_COI_HOLDER_BLOCK + '\nCertificate holder only — not additional insured.\n(2) $1,000,000 commercial auto liability.\n(3) Motor truck cargo coverage listed.\n(4) All trucks scheduled with their VINs.\n\nNothing else on the policy changes. Please email it back as a PDF. Thank you!' },
     authority: { title: '📋 Upload the FMCSA document itself:', items: [
-      'The MC certificate / operating-authority letter from FMCSA (not a UCR receipt or BOC-3)',
+      'The MC certificate / operating-authority letter FMCSA issued to YOU \u2014 the one addressed to your company at its registered address (not a UCR receipt or BOC-3)',
       'Your legal name and MC/DOT numbers must be clearly readable',
+      'A SAFER Company Snapshot printout is a stopgap, not the document. Anyone can print one for any USDOT, so it shows the authority exists but not that it is yours \u2014 we may accept it to keep you moving and then ask for the certificate anyway. Send the certificate first if you have it; it is in your FMCSA/Motus account under registration documents',
     ] },
-    w9: { title: '📋 W-9 quick check before you upload:', items: [
+    // The screen says W-9 and the agreement need no file, and then the upload dropdown
+    // offers both anyway. A carrier who takes the dropdown at its word skips every guard
+    // in cc_carrier_submit_w9 — bl_w9_0235/0236 validate the in-app form and cannot see a
+    // PDF at all. Marshall Patterson's uploaded W-9 was unsigned with both an SSN and an
+    // EIN filled in, and nothing caught it except a human reading the file. So: steer.
+    agreement: { title: '↩ You do not need to upload this one', items: [
+      'Tap Sign on the Dispatch Service Agreement in the checklist above — it signs electronically in about a minute and is countersigned instantly.',
+      'Only upload a file here if you have a signed copy from us that you need to put back on record.',
+    ] },
+    w9: { title: '↩ Quicker to fill in than to upload', items: [
+      'Tap Start W-9 in the checklist above. It asks who the IRS treats as the taxpayer and fills Line 1, Line 2 and the tax box in for you — the part that gets most W-9s rejected — then you e-sign it. About two minutes.',
+      'If you would rather upload one your accountant prepared that is fine, but check these two first, because they are what send W-9s back:',
+      '① It must be SIGNED AND DATED. The certification is made under penalties of perjury, so an unsigned W-9 is not a valid one however correct the rest of it is.',
+      '② Only ONE taxpayer number. Filling in both the SSN box and the EIN box is ambiguous — use the number the income is reported under, which is your SSN if your own name is on Line 1.',
+      'Line 1 must match the tax box either way. Single-member LLC on your SSN → YOUR legal name on Line 1, the LLC on Line 2. LLC with its own EIN → LLC name on Line 1 and tick Limited liability company.',
+    ] },
+    _w9_legacy: { title: '📋 W-9 quick check before you upload:', items: [
       'Line 1 must match the tax box you tick. Single-member LLC on your SSN → put YOUR legal name on Line 1 and the LLC on Line 2. LLC with its own EIN → LLC name on Line 1 and tick "Limited liability company". Company name on Line 1 with "Individual/sole proprietor" ticked is the most common rejection we see',
       'Use the name of the person or entity on the LLC\u2019s tax records — not whoever happens to be filling the form in',
       'SIGNED and DATED — unsigned W-9s are always rejected',
@@ -6852,7 +6869,7 @@ function tripStepper(status) {
       ]);
     };
     const verifyAuthority = (r) => {
-      const mcIn = h('input', { class: 'cp-in', placeholder: 'MC number (e.g. 1234567)' });
+      const mcIn = h('input', { class: 'cp-in', placeholder: 'MC number \u2014 6, 7 or 8 digits' });
       const dotIn = h('input', { class: 'cp-in', placeholder: 'USDOT number (e.g. 3456789)' });
       const res = h('div', { style: 'margin-top:10px' });
       const msg = h('div', { class: 'cp-err' });
@@ -6905,7 +6922,11 @@ function tripStepper(status) {
           sub ? h('div', { style: 'font-size:9px;color:#94a3b8' }, sub) : null,
         ].filter(Boolean));
       })) : null;
-      const note = rejected && d && d.review_note ? h('div', { style: 'margin-top:6px;border-radius:9px;padding:8px 11px;background:rgba(220,38,38,.08);color:#b91c1c;font-size:12px;font-weight:700' }, '✕ Reason: ' + d.review_note) : null;
+      // The reason used to come only off the document row, so a requirement with no file
+      // behind it — the W-9, the agreement — showed "Rejected" and nothing else. Fall back
+      // to the requirement's own note, which cc_pocket_compliance now returns (bl_ob_0233).
+      const whyTxt = (rejected && ((d && d.review_note) || r.note)) || '';
+      const note = whyTxt ? h('div', { style: 'margin-top:6px;border-radius:9px;padding:8px 11px;background:rgba(220,38,38,.08);color:#b91c1c;font-size:12px;font-weight:700;line-height:1.6;white-space:pre-wrap' }, '\u2715 Reason: ' + whyTxt) : null;
       // Owner spec: LOCKED while in review — no replace until a decision comes back.
       const inReview = stateIdx >= 2 && !rejected && r.status !== 'valid';
       const actionable = r.status !== 'valid' && !inReview;
@@ -7194,7 +7215,7 @@ function tripStepper(status) {
             draw(); }
           catch (e) { _vb.disabled = false; _vb.textContent = 'Verify with FMCSA'; vmsg.className = 'cp-err'; vmsg.textContent = (e && e.message) || 'FMCSA verification failed \u2014 you can still continue and upload your authority letter.'; }
         } }, 'Verify with FMCSA');
-        body = h('div', null, [h('div', { class: 'cp-wiz-grid' }, [field('Company / carrier name', 'company', 'Acme Trucking LLC'), field('Your name', 'contact_name'), field('Phone', 'phone'), field('MC number', 'mc', '123456'), field('DOT number', 'dot', '1234567')]), h('p', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Verify your authority live with FMCSA \u2014 instant, nothing to upload for THIS step. (Insurance, W-9 and other documents come later, at the Documents step.)'), vbtn, vmsg, resCard].filter(Boolean));
+        body = h('div', null, [h('div', { class: 'cp-wiz-grid' }, [field('Company / carrier name', 'company', 'Acme Trucking LLC'), field('Your name', 'contact_name'), field('Phone', 'phone'), field('MC number', 'mc', '6, 7 or 8 digits'), field('DOT number', 'dot', 'e.g. 1234567')]), h('p', { class: 'cp-row-s', style: 'margin-top:8px' }, '\u2139\ufe0f Your MC can be 6, 7 or 8 digits \u2014 FMCSA issues 8-digit dockets to newer authorities and all of them are valid here. Enter it exactly as FMCSA shows it, without the \u201cMC\u201d prefix.'), h('p', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Verify your authority live with FMCSA \u2014 instant, nothing to upload for THIS step. (Insurance, W-9 and other documents come later, at the Documents step.)'), vbtn, vmsg, resCard].filter(Boolean));
       }
       else if (st === 1) { const eq = h('div', { class: 'cp-eqgrid' }, EQUIP.map(e => { const on = (f.equipment_types || []).includes(e); const b = h('button', { class: 'cp-chip2' + (on ? ' on' : ''), onClick: () => { const s = new Set(f.equipment_types || []); if (s.has(e)) s.delete(e); else s.add(e); f.equipment_types = [...s]; b.classList.toggle('on'); } }, e); return b; })); body = h('div', { class: 'cp-wiz-grid' }, [field('Home base (city, ST)', 'home_base', 'Dallas, TX'), field('Search radius (miles)', 'radius_miles', '300', 'number'), field('Number of trucks', 'truck_count', '1'), h('div', { class: 'cp-fld' }, [h('span', { class: 'cp-row-t' }, 'Equipment types'), eq]), toggle('Haul hazmat', 'hazmat'), toggle('Available weekends', 'weekend_ok')]); }
       else if (st === 2) body = h('div', null, [h('p', { class: 'cp-row-s', style: 'margin-bottom:10px' }, 'We don\u2019t manage your factoring \u2014 we only need to know where money flows: after delivery we route your invoice/BOL paperwork to the right place, and your dispatch fee is collected the right way.'), (String(f.factoring_status || '') === 'interested' ? h('div', { class: 'cp-ann', style: 'margin-bottom:10px' }, [h('div', { class: 'cp-ann-t' }, 'We\u2019ll connect you \u2713'), h('div', { class: 'cp-ann-b' }, 'After you submit, our team reaches out with 2\u20133 recommended factoring partners \u2014 you sign with them directly. Until your factoring is live, add your bank below so settlements can reach you.')]) : null), h('div', { class: 'cp-wiz-grid' }, [selectField('Factoring', 'factoring_status', [['', '—'], ['yes', 'I use factoring'], ['no', 'No factoring \u2014 pay me direct'], ['interested', 'Recommend me a factoring partner']]), field(String(f.factoring_status || '') === 'interested' ? 'Pick a recommended factoring partner' : 'Factoring company', 'factoring_company', String(f.factoring_status || '') === 'interested' ? 'Tap to see our recommended list' : 'Your factoring company\u2019s name'), selectField('Preferred contact', 'contact_method', [['', '—'], ['phone', 'Phone'], ['sms', 'SMS'], ['whatsapp', 'WhatsApp'], ['email', 'Email']]), field('WhatsApp number', 'whatsapp'), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Bank account for settlement payouts'), h('span', { class: 'cp-row-s' }, 'Encrypted & tokenized. Factoring carriers: optional but RECOMMENDED \u2014 direct-pay / quick-pay brokers and your dispatch fee can settle here while factored loads pay via your factor. No factoring: required. The account title MUST match your legal company name (sole proprietors: the owner\u2019s name on the W-9) \u2014 mismatched titles fail verification.')]), h('div', { class: 'cp-fld', style: 'grid-column:1/-1' }, [h('span', { class: 'cp-row-t' }, 'Who the IRS has on file'), h('span', { class: 'cp-row-s' }, 'On a W-9 this is Line 1, and for most owner-operators it is a person, not the company. If your LLC is single-member and files on your SSN, put YOUR name here and the LLC goes on Line 2. Getting this one line wrong is the most common reason a W-9 comes back.')]), field('Legal owner name \u2014 exactly as on your tax records', 'legal_owner_name', 'e.g. Rosa Linda Gonzalez'), field('Bank name', 'bank_name', 'e.g. Chase'), field('Account holder / title \u2014 must match your LEGAL company name', 'account_title', 'Exactly as on your W-9 / authority'), field('Account number', 'account_number'), field('Routing number (ABA)', 'routing_number', '9 digits')]),
