@@ -8,6 +8,7 @@ import { getDocumentsQueue, reviewDocument } from '../../shared/api.js';
 import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
+import { coiCoverageCard } from './coiCoverage.js';
 
 const STATUSES = [
   { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' },
@@ -82,6 +83,9 @@ export function renderDocuments(host) {
       el('label', { class: 'cc-card-title', style: 'margin-top:16px;display:block' }, 'Document'),
       previewBox,
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [openBtn, dlBtn]),
+      // Insurance only: record what the policy covers while the certificate is on screen.
+      // Renders nothing for other document types (bl_coi_0234).
+      coiCoverageCard(d, load),
       can('documents.review') ? el('label', { class: 'cc-card-title', style: 'margin-top:16px;display:block' }, 'Decision') : '',
       can('documents.review') ? note : '',
       actions,

@@ -425,6 +425,14 @@ export const exceptionCenter = (status, limit) => rpc('cc_exception_center', { p
 // ---- privileged actions ----
 export const reviewDocument = (documentId, decision, note) =>
   rpc('admin_review_document', { p_document: documentId, p_decision: decision, p_note: note ?? null });
+// What a certificate of insurance actually covers — read while reviewing it, recorded by
+// the reviewer looking at the document. This is what feeds cc_vin_coverage, the truck
+// form's green/red banner and the LB001 gate on posting (bl_coi_0234).
+export const coiPanel = (documentId) => rpc('cc_coi_panel', { p_document: documentId });
+export const setCoiCoverage = (o = {}) => rpc('cc_set_coi_coverage', {
+  p_org: o.org, p_mode: o.mode, p_vins: o.vins ?? null,
+  p_document: o.document ?? null, p_expiry: o.expiry ?? null, p_note: o.note ?? null,
+});
 
 export const assignRole = (o) => rpc('admin_assign_role', {
   p_user: o.userId, p_role_key: o.roleKey, p_scope_type: o.scopeType,
