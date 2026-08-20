@@ -2468,7 +2468,12 @@ async function appView(user) {
     ]);
     const fmtHint = h('div', { class: 'cp-row-s', style: 'margin-top:4px' });
     const applyFmt9 = () => { const r = docFmt(typeSel.value); fileIn.accept = r.exts.map((e) => '.' + e).join(','); fmtHint.textContent = '\ud83d\udccc Required format: ' + r.label; };
-    typeSel.addEventListener('change', applyFmt9); applyFmt9();
+    // A paused carrier is the one who can least afford a second rejection, and an insurance
+    // pause is by far the commonest reason to be here. Show the same requirements card the
+    // Documents step shows \u2014 above the file picker, so it is read before a file is chosen.
+    const guideHostR = h('div');
+    const renderGuideR = () => { guideHostR.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHostR.appendChild(g9); };
+    typeSel.addEventListener('change', () => { applyFmt9(); renderGuideR(); }); applyFmt9(); renderGuideR();
     const upMsg = h('div', { class: 'cp-row-s' });
     const upBtn = h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (ev) => {
       const btn9 = ev.currentTarget;
@@ -2495,7 +2500,9 @@ async function appView(user) {
     const subMsg = h('div', { class: 'cp-err' });
     const formCard = h('div', { class: 'cp-card' }, [
       h('div', { class: 'cp-row-t' }, paused ? 'Submit your reinstatement request' : 'Submit your plan of action'),
-      h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px' }, [typeSel, fileIn, upBtn]),
+      h('div', { style: 'margin-top:10px' }, typeSel),
+      guideHostR,
+      h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px' }, [fileIn, upBtn]),
       fmtHint, upMsg, attHost,
       h('div', { class: 'cp-row-s', style: 'margin:10px 0 4px;font-weight:700' }, 'Describe it (required)'),
       msgIn, subMsg,
@@ -3133,7 +3140,7 @@ async function appView(user) {
       h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:rgba(239,68,68,.14);color:#f87171;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px' }, '\u26a0'),
       h('div', { style: 'flex:1;min-width:220px' }, [
         h('div', { class: 'cp-row-t', style: 'font-size:1.08rem' }, _rejReqs.length + ' document(s) need your action'),
-        h('div', { class: 'cp-row-s' }, _rejReqs.map(r => r.name + (r.note ? ' \u2014 ' + r.note : '')).join('  \u00b7  ')),
+        h('div', { class: 'cp-row-s' }, _rejReqs.map(r => r.name + (r.note ? ' \u2014 ' + (String(r.note).length > 96 ? String(r.note).slice(0, 96).replace(/\s+\S*$/, '') + '\u2026' : String(r.note)) : '')).join('  \u00b7  ')),
       ]),
       h('button', { class: 'cp-btn', style: 'margin:0;background:linear-gradient(135deg,#dc2626,#f87171)', onClick: () => { try { sessionStorage.setItem('lb:onb:jump', '4'); } catch (_) {} go('onboarding'); } }, 'Fix now \u2192'),
     ]) : null;
@@ -6568,6 +6575,7 @@ function tripStepper(status) {
       'The official Notice of Assignment issued by your factoring company (PDF)',
       'It must name your company and show the factor\u2019s remit-to details',
       'Remit-to needs the FULL account and routing numbers. Most NOA letters print only the last four digits — ask your factor for the complete ACH details, we cannot set up payment without them',
+      'It must be from the SAME factor you named on your Payment page. If you have switched factors, update the remit-to first and send the old factor\u2019s release letter — a broker who pays the wrong factor can be made to pay the invoice twice, so we cannot release freight while the two disagree',
     ] },
   };
   function lbDocGuideCard(t9) {
@@ -7111,7 +7119,7 @@ function tripStepper(status) {
     }
     function docStep() {
       const types = [['w9', 'W-9'], ['authority', 'Operating authority'], ['insurance', 'Insurance / COI'], ['mcs150', 'MCS-150 (Biennial Update)'], ['safety', 'FMCSA Safety Rating'], ['noa', 'Notice of assignment (factoring)'], ['agreement', 'Signed agreement']].concat(f.hazmat ? [['hazmat_reg', 'PHMSA Hazmat Registration'], ['hazmat_h', 'CDL Hazmat (H) Endorsement'], ['hazmat_coi', 'Hazmat Insurance COI']] : []).concat([['bank_check', 'Bank verification (voided check / letter)'], ['other', 'Other']]);
-      const typeSel = h('select', { class: 'cp-in' }, types.map(([v, l]) => h('option', { value: v }, l)));
+      const typeSel = h('select', { class: 'cp-in' }, types.map(([v, l]) => h('option', { value: v, selected: v === 'insurance' ? 'selected' : null }, l)));
       const fileIn = h('input', { class: 'cp-in', type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx' });
       const msg = h('div', { class: 'cp-err' });
       let autoUp = false;
@@ -7121,19 +7129,29 @@ function tripStepper(status) {
       const reqHost = h('div');
       const hazHost = h('div');
       const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = (c && c.requirements) || [];
-        mount(reqHost, h('div', { style: 'margin-bottom:10px' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Required documents checklist'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (r.mandatory ? '#f87171' : '#fbbf24');
+        mount(reqHost, h('div', { style: 'margin-bottom:10px' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Required documents checklist'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad || r.mandatory ? '#f87171' : '#fbbf24');
           let dt0 = r.doc_type || (/w-?9/i.test(r.name || '') ? 'w9' : /agreement/i.test(r.name || '') ? 'agreement' : ''); if (/agreement/i.test(dt0)) dt0 = 'agreement'; if (/^w-?9$/i.test(dt0)) dt0 = 'w9';
           const goUp = () => {
             if (dt0 === 'w9') { w9Btn.click(); return; }
             if (dt0 === 'agreement') { agrBtn.click(); return; }
             if (dt0) { try { typeSel.value = dt0; if (typeSel.value !== dt0) typeSel.value = 'other'; } catch (_) {} }
             try { renderGuideW(); } catch (_) {}
+            // A rejected document is not a re-upload, it is a fix. Throwing the file picker
+            // open on top of the requirements card is how a carrier sends the same wrong
+            // certificate twice — so here we show him the checklist first and let him choose
+            // the moment he is actually ready.
+            if (bad) {
+              try { guideHostW.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+              lbToast('Read the checklist above first \u2014 it lists exactly what this document has to show. Pick your file when you have the corrected one.', 'action', 'Before you re-upload');
+              return;
+            }
             autoUp = true; fileIn.click();
           };
           const act = okd ? h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { class: 'cp-pill green' }, 'Approved'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: () => { if (!confirm('Replace \u201C' + r.name + '\u201D?\n\n' + (r.mandatory ? 'This is a required document. The new file goes back to In review and new bookings pause until it is approved \u2014 loads you have already booked are not affected.' : 'The new file goes back to In review. Your booking stays open.') + '\n\nContinue?')) return; goUp(); } }, dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Update')])
             : rev ? h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { class: 'cp-pill blue' }, 'Uploaded \u2713 In review'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: goUp }, dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Change')].filter(Boolean))
-            : h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0', onClick: goUp }, dt0 === 'w9' ? 'Start W-9' : dt0 === 'agreement' ? 'Sign' : 'Upload');
-          return h('div', { class: 'cp-row', style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : (r.mandatory ? 'Required \u2014 not on file' : 'Optional'))]), act]); })]));
+            : h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0' + (bad ? ';background:linear-gradient(135deg,#dc2626,#f87171)' : ''), onClick: goUp }, bad ? (dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Upload the corrected one') : dt0 === 'w9' ? 'Start W-9' : dt0 === 'agreement' ? 'Sign' : 'Upload');
+          const why = bad && r.note ? h('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28)' }, [h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#f87171;margin-bottom:3px' }, 'Why it was ' + (st === 'expired' ? 'expired' : 'rejected') + (r.reviewed_at ? ' \u00b7 ' + new Date(r.reviewed_at).toLocaleDateString() : '')), h('div', { class: 'cp-row-s', style: 'color:#fca5a5;white-space:pre-wrap' }, r.note)]) : null;
+          return h('div', { class: 'cp-row', style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') : (r.mandatory ? 'Required \u2014 not on file' : 'Optional')), why].filter(Boolean)), act]); })]));
         const hazLeft = rs.filter((r) => /hazmat|phmsa/i.test(r.name || '') && ['missing', 'expired', 'rejected'].indexOf(String(r.status || 'missing').toLowerCase()) >= 0);
         mount(hazHost, (f.hazmat && hazLeft.length) ? h('div', { class: 'cp-ann warning', style: 'margin:8px 0' }, [h('div', { class: 'cp-ann-t' }, 'Hazmat \u2014 ' + hazLeft.length + ' document(s) still needed'), h('div', { class: 'cp-ann-b' }, hazLeft.map((r) => r.name).join(' \u00b7 ') + ' \u2014 mandatory before hazmat loads can be booked.')]) : h('span'));
       } catch (_) {} }; loadReqs();
@@ -7146,7 +7164,7 @@ function tripStepper(status) {
       refresh();
       const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Complete W-9 in-app');
       const agrBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'Agreement') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Sign dispatch agreement');
-      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), h('div', { class: 'cp-inlineform' }, [typeSel, fileIn, up, msg]), guideHostW, h('div', { style: 'margin-top:10px' }, list)]);
+      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), typeSel, guideHostW, h('div', { class: 'cp-inlineform' }, [fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
     }
     function reviewStep() {
       const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);

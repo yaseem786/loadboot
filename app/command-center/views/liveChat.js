@@ -7,6 +7,7 @@ import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard, segmented, searchBox, fmtDateTime, openDrawer } from '../../shared/ui/components.js';
 import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccLcTeach, ccLcMissDismiss, ccLcAssign, ccLcCannedList, ccLcCannedSave, ccRetellCallback, ccLcCalls, ccLcPresenceGet, ccLcPresenceSet } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
+import { richText, parseDirectives } from '../../shared/ui/chatText.js';
 
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
 const FILTERS = [
@@ -150,15 +151,42 @@ export function renderLiveChat(host) {
     lastCount = (c.messages || []).length;
     const idn = identity(c);
     const msgs = el('div', { style: 'flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 2px;max-height:calc(100vh - 500px)' },
-      (c.messages || []).map(m => {
+      (c.messages || []).map((m, i, arr) => {
         const mine = m.sender !== 'visitor';
-        const clean = String(m.body).replace(/\[\[(chips|form)[^\]]*\]\]/g, '').trim();
-        return el('div', { style: 'display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') }, [
-          el('span', { class: 'cc-sub', style: 'font-size:10px;margin:0 4px 1px' },
-            (m.sender === 'bot' ? '⚡ AI assistant' : m.sender === 'staff' ? '🧑 Staff' : idn.label) + ' · ' + fmtDateTime(m.at)),
-          el('div', { style: 'max-width:80%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;' +
-            (m.sender === 'visitor' ? 'background:rgba(148,163,184,.15)' : m.sender === 'bot' ? 'background:rgba(8,131,247,.15)' : 'background:rgba(252,83,5,.18)') }, clean),
-        ]);
+        const d = parseDirectives(m.body);
+        const prev = i > 0 ? arr[i - 1] : null;
+        const dayOf = (t) => { try { return new Date(t).toDateString(); } catch (_) { return ''; } };
+        const newDay = !prev || dayOf(prev.at) !== dayOf(m.at);
+
+        // Watchdog and system notes are not messages anyone sent — they should not
+        // look like one.
+        if (d.note) {
+          return el('div', { style: 'align-self:center;max-width:92%;margin:2px 0' }, [
+            el('div', { style: 'background:rgba(251,191,36,.10);border:1px solid rgba(251,191,36,.32);border-radius:10px;padding:7px 11px;font-size:11.5px;line-height:1.5;color:#a16207;text-align:center', html: '⚠️ ' + richText(d.text) }),
+          ]);
+        }
+
+        const who = m.sender === 'bot' ? '⚡ AI assistant' : m.sender === 'staff' ? '🧑 Staff' : idn.label;
+        const bubbleBg = m.sender === 'visitor' ? 'background:#f1f5f9;color:#0f172a;border:1px solid #e2e8f0'
+          : m.sender === 'bot' ? 'background:#eff6ff;color:#0f172a;border:1px solid #dbeafe'
+          : 'background:#0883F7;color:#ffffff;border:1px solid #0883F7';
+        const radius = mine ? 'border-radius:16px 16px 4px 16px' : 'border-radius:16px 16px 16px 4px';
+
+        return el('div', { style: 'display:flex;flex-direction:column;gap:3px' }, [
+          newDay ? el('div', { style: 'align-self:center;margin:8px 0 4px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8' },
+            (() => { try { return new Date(m.at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); } catch (_) { return ''; } })()) : null,
+          el('div', { style: 'display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') }, [
+            el('span', { class: 'cc-sub', style: 'font-size:10px;margin:0 6px 1px' }, who + ' · ' + fmtDateTime(m.at)),
+            d.text ? el('div', { style: 'max-width:80%;padding:10px 13px;' + radius + ';font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;box-shadow:0 1px 2px rgba(15,23,42,.06);' + bubbleBg,
+              html: richText(d.text) }) : null,
+            // What the bot actually put in front of them. An agent taking over blind
+            // is the reason people repeat themselves.
+            d.chips.length ? el('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;max-width:80%;margin-top:3px;justify-content:' + (mine ? 'flex-end' : 'flex-start') },
+              d.chips.map((ch) => el('span', { style: 'background:#ffffff;border:1px dashed #cbd5e1;color:#64748b;border-radius:999px;padding:3px 9px;font-size:10.5px;font-weight:600' }, ch))) : null,
+            d.askedFor ? el('span', { style: 'font-size:10.5px;color:#94a3b8;margin:3px 6px 0;font-style:italic' }, '↳ asked for ' + d.askedFor) : null,
+            d.callback ? el('span', { style: 'font-size:10.5px;color:#94a3b8;margin:3px 6px 0;font-style:italic' }, '↳ offered a callback') : null,
+          ]),
+        ].filter(Boolean));
       }));
     const inp = el('textarea', { class: 'cc-input', rows: '2', placeholder: 'Reply as LoadBoot team… (Enter to send · ⚡ for saved replies)' });
     const reply = async () => {
