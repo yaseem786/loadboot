@@ -55,7 +55,33 @@ export function openW9Wizard(ctx, opts, onDone) {
   const mk = function (tag, css, txt) { const e = document.createElement(tag); if (css) e.style.cssText = css; if (txt != null) e.textContent = txt; return e; };
   const inCss = 'width:100%;border:1px solid #eaf0f7;border-radius:11px;padding:11px 12px;font-size:.94rem;background:#fafcff;margin-top:3px';
   const lblCss = 'font-size:.72rem;color:#51617a;font-weight:700;display:block;margin-top:11px';
-  const state = { name: opts.carrier || '', business: '', cls: '', llc: 'C = C corporation', address: '', csz: '', tin: '' };
+  // Who the IRS treats as the taxpayer. Everything on Line 1, Line 2 and the tax box is
+  // DERIVED from this — see the note above openW9Wizard.
+  const state = { who: '', name: '', business: '', cls: '', llc: '', address: '', csz: '', tin: '' };
+  let COMPANY = String(opts.carrier || '').trim();
+  // The legal owner name is collected at onboarding (bl_ob_0224) precisely so this form
+  // knows who Line 1 is, and until now the form never asked for it. Best-effort: if it is
+  // not on file the field is simply empty and the carrier types it.
+  let OWNER = String(opts.owner || '').trim();
+  if (!OWNER || !COMPANY) {
+    import('../shared/api.js')
+      .then(function (m) { return m.pocketGetProfile(); })
+      .then(function (pr) {
+        if (!pr) return;
+        const o = String(pr.legal_owner_name || '').trim();
+        const c = String(pr.company || '').trim();
+        let changed = false;
+        if (o && !OWNER) { OWNER = o; changed = true; }
+        if (c && !COMPANY) { COMPANY = c; changed = true; }
+        if (changed && step <= 2) render();
+      })
+      .catch(function () {});
+  }
+  const COMPANYISH = /(^|[^a-z])(llc|l\.l\.c|pllc|inc\.?|incorporated|corp\.?|corporation|ltd\.?|limited|company|lp|llp|trucking|transport|transportation|logistics|freight|carriers?|express|hauling|haulers?|enterprises?|holdings|group)([^a-z]|$)/i;
+  // Two letters and five digits is not enough: "hazel green 35750" satisfies that with
+  // the "en" of "green", which is exactly the address we had to reject by hand. Match a
+  // standalone USPS state code. Mirrors app_private.has_us_state_zip (bl_w9_0236).
+  const US_STATE_ZIP = /(^|[^A-Za-z])(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|PR|VI|GU|AS|MP)[ ,]+\d{5}([^0-9]|$)/i;
 
   const root = mk('div');
   // progress
@@ -81,54 +107,159 @@ export function openW9Wizard(ctx, opts, onDone) {
     try { sessionStorage.setItem('lb_w9_draft', JSON.stringify({ step: step, state: state })); } catch (_) {}
     setDots(); body.innerHTML = ''; msg.textContent = '';
     if (step === 1) {
-      body.appendChild(head('Start your W-9', 'Step 1 of 5 — Tax identity. Enter your name exactly as on your tax return.'));
-      const l1 = mk('label', lblCss, 'Name (as shown on your income tax return)'); const nm = mk('input', inCss); nm.value = state.name;
-      const l2 = mk('label', lblCss, 'Business name / DBA (if different)'); const bz = mk('input', inCss); bz.value = state.business; bz.placeholder = 'Optional';
-      body.appendChild(l1); body.appendChild(nm); body.appendChild(l2); body.appendChild(bz);
-      body.appendChild(btnRow(0, function () { if (nm.value.trim().length < 2) { msg.textContent = 'Enter your legal name.'; return; } state.name = nm.value.trim(); state.business = bz.value.trim(); step = 2; render(); }));
-    } else if (step === 2) {
-      body.appendChild(head('Federal tax classification', 'Step 2 of 5 — Choose the one that matches your IRS filing.'));
-      const l = mk('label', lblCss, 'Classification'); const sel = mk('select', inCss);
-      sel.appendChild(mk('option', '', 'Select…'));
-      CLASSES.forEach(function (c) { const o = mk('option', '', c); o.value = c; if (state.cls === c) o.selected = true; sel.appendChild(o); });
-      const llcWrap = mk('div', state.cls.indexOf('LLC') >= 0 ? '' : 'display:none');
-      const ll = mk('label', lblCss, 'LLC tax classification'); const lsel = mk('select', inCss);
-      ['C = C corporation', 'S = S corporation', 'P = Partnership'].forEach(function (x) { const o = mk('option', '', x); o.value = x; if (state.llc === x) o.selected = true; lsel.appendChild(o); });
-      llcWrap.appendChild(ll); llcWrap.appendChild(lsel);
-      // Plain-language hints — truck drivers should never need a CPA to pick this.
-      const HINTS = {
-        'Individual / sole proprietor': '\u2705 Most single-truck owner-operators pick THIS. You run the business under your own name (or a DBA) \u2014 no separate company, or a single-member LLC taxed as yourself.',
-        'C corporation': 'Your company files its OWN corporate tax return (Form 1120). Rare for small carriers \u2014 pick only if your accountant set this up.',
-        'S corporation': 'Your company elected S-corp status with the IRS (Form 2553) \u2014 common for established small fleets that pay the owner a salary.',
-        'Partnership': 'Two or more owners legally share the business and its profits.',
-        'Trust / estate': 'Rare \u2014 only if the business is owned by a trust or an estate.',
-        'Limited liability company (LLC)': 'Your company is registered as an LLC with the state. You will also pick how the IRS taxes it below \u2014 it is on your IRS election letter, or ask whoever files your taxes. (Single-owner LLC with no election? Choose \u201cIndividual / sole proprietor\u201d above instead.)'
+      // THE question. Ask it once, plainly, and derive Line 1 and the tax box from it.
+      // Asking for a name first (pre-filled with the company) and the classification
+      // second is what produced a contradictory W-9 from every carrier who tried.
+      body.appendChild(head('Who does the IRS treat as the taxpayer?', 'Step 1 of 5 \u2014 get this right and the rest of the form fills itself in.'));
+      const CHOICES = [
+        ['me', 'Me, personally',
+         'I am a sole proprietor, or a single-member LLC that has not elected corporate tax. My business income lands on my own tax return.',
+         'Almost every single-truck owner-operator is this one.'],
+        ['company', 'The company itself',
+         'The company files its own tax return \u2014 an LLC taxed as a C or S corporation, a corporation, or a partnership.',
+         'You would have an IRS election letter for this.'],
+      ];
+      const pickHost = mk('div', 'display:grid;gap:9px;margin-top:6px');
+      const drawPick = function () {
+        pickHost.innerHTML = '';
+        CHOICES.forEach(function (c) {
+          const on = state.who === c[0];
+          const b = mk('button', 'text-align:left;cursor:pointer;border-radius:13px;padding:13px 15px;width:100%;'
+            + (on ? 'background:#eef6ff;border:2px solid #0883F7' : 'background:#fafcff;border:2px solid #eaf0f7'));
+          b.appendChild(mk('div', 'font-weight:800;font-size:.96rem;color:#0b1b33', (on ? '\u2713 ' : '') + c[1]));
+          b.appendChild(mk('div', 'font-size:.79rem;color:#51617a;line-height:1.55;margin-top:3px', c[2]));
+          b.appendChild(mk('div', 'font-size:.74rem;color:#0883F7;font-weight:700;margin-top:4px', c[3]));
+          b.onclick = function () { state.who = c[0]; drawPick(); };
+          pickHost.appendChild(b);
+        });
       };
-      const hint = mk('div', 'background:#f0f7ff;border:1px solid #d6e8ff;border-radius:11px;padding:10px 12px;font-size:.78rem;line-height:1.55;color:#2b5f93;margin-top:8px', 'Not sure? It\u2019s written on your last tax return \u2014 or ask whoever files your taxes. Most owner-operators are \u201cIndividual / sole proprietor\u201d.');
-      const setHint = function () { hint.textContent = HINTS[sel.value] || 'Not sure? It\u2019s written on your last tax return \u2014 or ask whoever files your taxes. Most owner-operators are \u201cIndividual / sole proprietor\u201d.'; };
-      if (state.cls) setHint();
-      sel.onchange = function () { llcWrap.style.display = sel.value.indexOf('LLC') >= 0 ? '' : 'none'; setHint(); };
-      body.appendChild(l); body.appendChild(sel); body.appendChild(hint); body.appendChild(llcWrap);
-      body.appendChild(btnRow(1, function () { if (!sel.value) { msg.textContent = 'Pick a classification.'; return; } state.cls = sel.value; state.llc = lsel.value; step = 3; render(); }));
+      drawPick();
+      body.appendChild(pickHost);
+      body.appendChild(mk('div', 'background:#f0f7ff;border:1px solid #d6e8ff;border-radius:11px;padding:10px 12px;font-size:.78rem;line-height:1.55;color:#2b5f93;margin-top:10px',
+        'Not sure? Having an LLC does not by itself put the company on this form. What matters is whether the company files its own tax return. If your business income shows up on your personal return, pick the first one.'));
+      body.appendChild(btnRow(0, function () {
+        if (!state.who) { msg.textContent = 'Pick one so we can fill the form in correctly.'; return; }
+        // Derive the classification now; step 2 only confirms the names.
+        if (state.who === 'me') {
+          state.cls = 'Individual / sole proprietor';
+          state.llc = '';
+          if (!state.name || state.name === COMPANY) state.name = OWNER || '';
+          if (!state.business) state.business = COMPANY;
+        } else {
+          if (state.cls === 'Individual / sole proprietor') state.cls = '';
+          if (!state.name || state.name === OWNER) state.name = COMPANY;
+        }
+        step = 2; render();
+      }));
+    } else if (step === 2) {
+      if (state.who === 'me') {
+        body.appendChild(head('Your name goes on Line 1', 'Step 2 of 5 \u2014 this is the line that gets it rejected.'));
+        body.appendChild(mk('div', 'background:#effaf3;border:1px solid #b7e4c7;border-radius:11px;padding:10px 12px;font-size:.79rem;line-height:1.6;color:#166534;margin-top:4px',
+          'Because your business income goes on your own tax return, the IRS wants YOU on Line 1'
+          + (COMPANY ? ' and ' + COMPANY + ' on Line 2' : '')
+          + '. Putting the company on Line 1 with \u201cIndividual / sole proprietor\u201d ticked is the single most common reason a W-9 comes back.'));
+        const l1 = mk('label', lblCss, 'Line 1 \u2014 your legal name, exactly as on your tax return');
+        const nm = mk('input', inCss); nm.value = state.name; nm.placeholder = OWNER || 'Your full legal name';
+        const l2 = mk('label', lblCss, 'Line 2 \u2014 business name / DBA');
+        const bz = mk('input', inCss); bz.value = state.business || COMPANY; bz.placeholder = COMPANY || 'Optional';
+        body.appendChild(l1); body.appendChild(nm); body.appendChild(l2); body.appendChild(bz);
+        body.appendChild(mk('div', 'font-size:.75rem;color:#94a3b8;margin-top:8px', 'Tax classification: Individual / sole proprietor \u2014 set for you from your last answer.'));
+        body.appendChild(btnRow(1, function () {
+          const v = nm.value.trim();
+          if (v.length < 3) { msg.textContent = 'Enter your own legal name.'; return; }
+          if (COMPANYISH.test(v) || (COMPANY && v.toLowerCase() === COMPANY.toLowerCase())) {
+            msg.textContent = 'That looks like the company name. Line 1 has to be the person \u2014 put ' + (COMPANY || 'the company') + ' on Line 2 instead.';
+            return;
+          }
+          state.name = v; state.business = bz.value.trim();
+          state.cls = 'Individual / sole proprietor'; state.llc = '';
+          step = 3; render();
+        }));
+      } else {
+        body.appendChild(head('The company goes on Line 1', 'Step 2 of 5 \u2014 name and how the IRS taxes it.'));
+        const l1 = mk('label', lblCss, 'Line 1 \u2014 the company\u2019s legal name');
+        const nm = mk('input', inCss); nm.value = state.name || COMPANY; nm.placeholder = COMPANY || 'Company legal name';
+        const l2 = mk('label', lblCss, 'Line 2 \u2014 DBA (only if you trade under a different name)');
+        const bz = mk('input', inCss); bz.value = state.business; bz.placeholder = 'Optional';
+        const l3 = mk('label', lblCss, 'How does the IRS tax the company?');
+        const sel = mk('select', inCss);
+        sel.appendChild(mk('option', '', 'Select\u2026'));
+        // Deliberately no "Individual / sole proprietor" here — that answer belongs to the
+        // other path, and offering it is exactly how the contradiction got made.
+        ['Limited liability company (LLC)', 'C Corporation', 'S Corporation', 'Partnership', 'Trust / estate'].forEach(function (c) {
+          const o = mk('option', '', c); o.value = c; if (state.cls === c) o.selected = true; sel.appendChild(o);
+        });
+        const llcWrap = mk('div', String(state.cls).indexOf('LLC') >= 0 ? '' : 'display:none');
+        const ll = mk('label', lblCss, 'LLC tax classification \u2014 the letter on your IRS election letter');
+        const lsel = mk('select', inCss);
+        lsel.appendChild(mk('option', '', 'Select\u2026'));
+        ['C = C corporation', 'S = S corporation', 'P = Partnership'].forEach(function (x) {
+          const o = mk('option', '', x); o.value = x; if (state.llc === x) o.selected = true; lsel.appendChild(o);
+        });
+        llcWrap.appendChild(ll); llcWrap.appendChild(lsel);
+        const HINTS = {
+          'Limited liability company (LLC)': 'An LLC that elected to be taxed as a corporation or partnership. Pick the letter below \u2014 it is on the IRS letter that confirmed the election. If your LLC never made an election, go back a step: you are the taxpayer, not the company.',
+          'C Corporation': 'The company files its own Form 1120. Rare for small carriers.',
+          'S Corporation': 'The company elected S-corp status on Form 2553 \u2014 common once a fleet pays the owner a salary.',
+          'Partnership': 'Two or more owners share the business and its profits.',
+          'Trust / estate': 'Only if the business is owned by a trust or an estate.',
+        };
+        const hint = mk('div', 'background:#f0f7ff;border:1px solid #d6e8ff;border-radius:11px;padding:10px 12px;font-size:.78rem;line-height:1.55;color:#2b5f93;margin-top:8px',
+          'Pick the one your accountant filed. It is on your last business tax return.');
+        const setHint = function () { if (HINTS[sel.value]) hint.textContent = HINTS[sel.value]; };
+        if (state.cls) setHint();
+        sel.onchange = function () { llcWrap.style.display = sel.value.indexOf('LLC') >= 0 ? '' : 'none'; setHint(); };
+        body.appendChild(l1); body.appendChild(nm); body.appendChild(l2); body.appendChild(bz);
+        body.appendChild(l3); body.appendChild(sel); body.appendChild(hint); body.appendChild(llcWrap);
+        body.appendChild(btnRow(1, function () {
+          if (nm.value.trim().length < 2) { msg.textContent = 'Enter the company\u2019s legal name.'; return; }
+          if (!sel.value) { msg.textContent = 'Pick how the IRS taxes the company.'; return; }
+          if (sel.value.indexOf('LLC') >= 0 && !lsel.value) { msg.textContent = 'Pick the LLC tax letter \u2014 C, S or P.'; return; }
+          state.name = nm.value.trim(); state.business = bz.value.trim();
+          state.cls = sel.value; state.llc = sel.value.indexOf('LLC') >= 0 ? lsel.value : '';
+          step = 3; render();
+        }));
+      }
     } else if (step === 3) {
       body.appendChild(head('Address', 'Step 3 of 5 — Where the IRS should mail correspondence.'));
       const l1 = mk('label', lblCss, 'Street address'); const a = mk('input', inCss); a.value = state.address; a.placeholder = '1200 Trucker Way';
       const l2 = mk('label', lblCss, 'City, State, ZIP'); const cz = mk('input', inCss); cz.value = state.csz; cz.placeholder = 'Dallas, TX 75201';
       body.appendChild(l1); body.appendChild(a); body.appendChild(l2); body.appendChild(cz);
       try { attachAddressSuggest(a, { onPick: function (r) { a.value = r.street; if (r.tail) cz.value = r.tail; } }); } catch (_) {}
-      body.appendChild(btnRow(2, function () { if (a.value.trim().length < 3 || cz.value.trim().length < 3) { msg.textContent = 'Enter your full address.'; return; } state.address = a.value.trim(); state.csz = cz.value.trim(); step = 4; render(); }));
+      body.appendChild(btnRow(2, function () {
+        if (a.value.trim().length < 3) { msg.textContent = 'Enter your street address.'; return; }
+        // "hazel green 35750" got through once and had to be rejected by hand. The state is
+        // the part people drop, so name it rather than just refusing the form.
+        if (!US_STATE_ZIP.test(cz.value.trim())) {
+          msg.textContent = 'City, state and ZIP \u2014 e.g. "Hazel Green, AL 35750". The two-letter state is the bit that usually gets missed.';
+          return;
+        }
+        state.address = a.value.trim(); state.csz = cz.value.trim(); step = 4; render();
+      }));
     } else if (step === 4) {
-      body.appendChild(head('Taxpayer ID (TIN)', 'Step 4 of 5 — Businesses use an EIN; sole proprietors may use SSN or EIN.'));
-      const l = mk('label', lblCss, 'EIN (or SSN for sole proprietor)'); const t = mk('input', inCss); t.value = state.tin; t.placeholder = '12-3456789'; t.setAttribute('inputmode', 'numeric');
+      const personal = state.who === 'me';
+      body.appendChild(head('Taxpayer ID (TIN)', 'Step 4 of 5 — ' + (personal ? 'the number this income is reported under — yours.' : 'the company’s own federal tax ID.')));
+      const l = mk('label', lblCss, personal ? 'Your SSN — or your EIN if you hold one as a sole proprietor' : 'The company’s EIN');
+      const t = mk('input', inCss); t.value = state.tin; t.placeholder = personal ? '123-45-6789' : '12-3456789'; t.setAttribute('inputmode', 'numeric');
+      const tinWhy = mk('div', 'font-size:.78rem;color:#51617a;line-height:1.55;margin-top:6px', personal
+        ? 'It has to be the number this income is reported under. If you hold an EIN as a sole proprietor either works — the IRS prefers your SSN.'
+        : 'Nine digits, from the IRS letter that issued it — not your personal SSN, since you told us the company is the taxpayer.');
       const lock = mk('div', 'font-size:.72rem;color:#12a150;font-weight:700;margin-top:8px', '🔒 Stored securely & masked — only the last 4 digits appear in review; the full number is used solely for your W-9.');
-      body.appendChild(l); body.appendChild(t); body.appendChild(lock);
+      body.appendChild(l); body.appendChild(t); body.appendChild(tinWhy); body.appendChild(lock);
       body.appendChild(btnRow(3, function () { const digits = t.value.replace(/\D/g, ''); if (digits.length !== 9) { msg.textContent = 'Enter a valid 9-digit EIN or SSN.'; return; } state.tin = t.value.trim(); step = 5; render(); }));
     } else if (step === 5) {
       body.appendChild(head('Certify & sign', 'Step 5 of 5 — Review, certify, and e-sign (IRS W-9 certification).'));
       const rev = mk('div', 'background:#f7fbff;border:1px solid #d6e8ff;border-radius:12px;padding:11px;font-size:.82rem;line-height:1.8;margin-top:4px;color:#0f1e36');
       const digits = state.tin.replace(/\D/g, '');
-      rev.innerHTML = '<div><b>Name:</b> ' + state.name + '</div><div><b>Classification:</b> ' + state.cls + (state.cls.indexOf('LLC') >= 0 ? ' (' + state.llc + ')' : '') + '</div><div><b>Address:</b> ' + state.address + ', ' + state.csz + '</div><div><b>TIN:</b> ••-•••' + digits.slice(-4) + '</div>';
+      rev.innerHTML = '<div><b>Line 1 (taxpayer):</b> ' + state.name + '</div>'
+        + (state.business ? '<div><b>Line 2 (business name):</b> ' + state.business + '</div>' : '')
+        + '<div><b>Classification:</b> ' + state.cls + (state.llc ? ' (' + state.llc + ')' : '') + '</div>'
+        + '<div><b>Address:</b> ' + state.address + ', ' + state.csz + '</div>'
+        + '<div><b>TIN:</b> ' + (digits ? '\u2022\u2022\u2022\u2022\u2022\u2022' + digits.slice(-4) : '\u2014') + '</div>';
       body.appendChild(rev);
+      body.appendChild(mk('div', 'font-size:.78rem;color:#51617a;line-height:1.6;margin-top:8px', state.who === 'me'
+        ? 'Line 1 is you because your business income goes on your own tax return. That is what makes this W-9 acceptable.'
+        : 'Line 1 is the company because the company files its own return under its own EIN.'));
       const c1w = mk('label', 'display:flex;gap:9px;align-items:flex-start;font-size:.8rem;margin:11px 0'); const c1 = mk('input'); c1.type = 'checkbox'; c1w.appendChild(c1); c1w.appendChild(mk('span', '', 'Under penalties of perjury, the TIN shown is correct, I am a U.S. person, and I am not subject to backup withholding.'));
       const c2w = mk('label', 'display:flex;gap:9px;align-items:flex-start;font-size:.8rem;margin:6px 0'); const c2 = mk('input'); c2.type = 'checkbox'; c2w.appendChild(c2); c2w.appendChild(mk('span', '', 'I consent to sign this W-9 electronically (ESIGN/UETA).'));
       const ls = mk('label', lblCss, 'Type your full legal name to sign'); const sig = mk('input', inCss + ';font-family:cursive;font-size:1.1rem'); sig.placeholder = 'Your full name';
@@ -145,7 +276,16 @@ export function openW9Wizard(ctx, opts, onDone) {
           if (ctx.toast) ctx.toast('W-9 completed — sent to the Command Center for review');
           try { sessionStorage.removeItem('lb_w9_draft'); } catch (_) {}
           if (onDone) onDone();
-        } catch (e) { btn.disabled = false; btn.textContent = 'Sign & submit W-9'; msg.textContent = (e && e.message) || 'Could not submit your W-9.'; }
+        } catch (e) {
+          btn.disabled = false; btn.textContent = 'Sign & submit W-9';
+          // bl_w9_0235 refuses a self-contradicting W-9 server-side. Send them back to
+          // the step that owns the problem instead of stranding them on the signature.
+          const code = e && e.code;
+          msg.textContent = (e && e.message) || 'Could not submit your W-9.';
+          if (code === 'LB010' || code === 'LB013') { setTimeout(function () { step = 1; render(); msg.textContent = (e && e.message) || ''; }, 1600); }
+          else if (code === 'LB011') { setTimeout(function () { step = 3; render(); msg.textContent = (e && e.message) || ''; }, 1600); }
+          else if (code === 'LB012') { setTimeout(function () { step = 4; render(); msg.textContent = (e && e.message) || ''; }, 1600); }
+        }
       };
       body.appendChild(btn); body.appendChild(back);
     }
