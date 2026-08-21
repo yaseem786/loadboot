@@ -64,7 +64,14 @@ export async function renderPremiumAccount(host, ctx) {
   const agrReq = reqs.find((r) => /dispatch service agreement|dispatch_agreement/i.test(r.name || '')) || null;
   const agrStatus = agrReq ? String(agrReq.status || 'missing').toLowerCase() : 'missing';
   const healthScore = health && health.score != null ? String(health.score) : '—';
-  const rating = trust && trust.rating != null ? (Number(trust.rating).toFixed(1) + '★') : (trust && trust.verified ? 'Verified' : 'New');
+  // A number in this tile is an opinion other people formed about you. Until
+  // enough of them have, there is no opinion to report — so say "New", the way
+  // Uber says "No rating yet" and Amazon shows no stars rather than zero stars.
+  // The old code printed 1.0★ here, because the server derived the stars from
+  // the paperwork score. One star does not read as "no data" to anyone.
+  const _rated = trust && trust.rating != null && trust.rating_state !== 'new';
+  const rating = _rated ? (Number(trust.rating).toFixed(1) + '★') : 'New';
+  const ratingLabel = _rated ? 'Rating' : 'Rating · after ' + ((trust && trust.ratings_needed) || 3) + ' loads';
   const name = (prof && prof.company) || ov.carrier || (comp && comp.carrier) || 'Your company';
   const _stageRev = ['submitted', 'in_review', 'review', 'compliance_check', 'changes_requested'].indexOf(String(ov.onboarding_stage || '').toLowerCase()) >= 0;
   const email = user.email || '';
@@ -139,7 +146,7 @@ export async function renderPremiumAccount(host, ctx) {
     + '</div>'
     + '<div class="mstrip">'
     +   '<div class="m"><div class="v">' + esc(healthScore) + '</div><div class="l">Health</div></div>'
-    +   '<div class="m"><div class="v">' + esc(rating) + '</div><div class="l">Rating</div></div>'
+    +   '<div class="m"><div class="v">' + esc(rating) + '</div><div class="l">' + esc(ratingLabel) + '</div></div>'
     +   '<div class="m"><div class="v">' + okDocs + '/' + totalDocs + '</div><div class="l">Docs</div></div>'
     +   '<div class="m"><div class="v">' + esc(wknet) + '</div><div class="l">Wk net</div></div>'
     + '</div>'

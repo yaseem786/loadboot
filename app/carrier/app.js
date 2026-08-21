@@ -2707,17 +2707,29 @@ async function appView(user) {
       let tp; try { tp = await myTrustProfile(); } catch (_) { trustCard.remove(); return; }
       if (!tp || !tp.exists) { trustCard.remove(); return; }
       const vtone = tp.verified ? toneOf('success') : toneOf('warning');
+      // This card is titled "What brokers & shippers see about you", so whatever it
+      // prints had better be true. It used to print one filled star and "1.0 / 5" for
+      // a carrier on their first day, because the server built the stars out of the
+      // paperwork score instead of anyone's actual rating. Nobody reads one star as
+      // "not rated yet". Show the New state until there are real ratings behind it.
+      const _rated = tp.rating != null && tp.rating_state !== 'new';
       const rating = Number(tp.rating || 0);
-      const stars = '\u2605'.repeat(Math.round(rating)) + '\u2606'.repeat(5 - Math.round(rating));
+      const stars = _rated ? ('\u2605'.repeat(Math.round(rating)) + '\u2606'.repeat(5 - Math.round(rating))) : '';
       const docsOk = tp.docs_required > 0 && tp.docs_verified === tp.docs_required;
       mount(trustCard, [cardHead('Trust profile', 'What brokers & shippers see about you'),
         h('div', { style: 'display:flex;align-items:center;gap:14px;flex-wrap:wrap' }, [
           h('span', { class: 'cp-pill', style: 'background:' + vtone.bg + ';color:' + vtone.c + ';font-weight:800' }, tp.verified ? '\u2713 ' + tp.verified_label : 'Not yet verified'),
-          h('div', { style: 'font-size:1.35rem;color:#f59e0b;letter-spacing:3px' }, stars),
-          h('b', null, rating.toFixed(1) + ' / 5'),
-        ]),
+          _rated ? h('div', { style: 'font-size:1.35rem;color:#f59e0b;letter-spacing:3px' }, stars) : null,
+          _rated
+            ? h('b', null, rating.toFixed(1) + ' / 5 \u00b7 ' + (tp.ratings_count || 0) + ' rating' + ((tp.ratings_count === 1) ? '' : 's'))
+            : h('span', { class: 'cp-pill', style: 'background:#eef2ff;color:#3730a3;font-weight:800' }, 'New \u00b7 no rating yet'),
+        ].filter(Boolean)),
+        _rated ? null : h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Brokers see "New", not a low score. Your star rating appears once ' + ((tp.ratings_needed) || 3) + ' more delivered load' + (((tp.ratings_needed) || 3) === 1 ? ' has' : 's have') + ' been rated \u2014 until then nothing here counts against you.'),
         h('div', { class: 'cp-kpis', style: 'margin-top:12px' }, [
-          statTile('Trust score', String(tp.trust_score || 0), 'shield', 'blue'),
+          // 25 of the 100 points come from delivery performance, which an account
+          // with no deliveries has not earned rather than failed. Show the ceiling
+          // it can actually reach today so a 60 does not look like a 60/100.
+          statTile('Trust score', String(tp.trust_score || 0) + '/' + (tp.score_max || 100), 'shield', 'blue'),
           statTile('Docs verified', (tp.docs_verified || 0) + '/' + (tp.docs_required || 0), 'docs', docsOk ? 'green' : 'amber'),
           tp.on_time_pct != null ? statTile('On-time', tp.on_time_pct + '%', 'trips', tp.on_time_pct >= 90 ? 'green' : 'amber') : statTile('Deliveries', String(tp.deliveries || 0), 'trips', 'blue'),
           statTile('Member', (tp.tenure_months || 0) + ' mo', 'user', 'violet'),
@@ -2732,7 +2744,7 @@ async function appView(user) {
       if (!ps.length) { mount(networkCard, [cardHead('Approved brokers', 'Your network'), h('div', { class: 'cp-row-s' }, 'No approved brokers yet. When a broker approves your booking request they appear here \u2014 keep working with trusted partners through LoadBoot. Identities stay private.')]); return; }
       mount(networkCard, [cardHead('Approved brokers', ps.length + ' in your network'), h('div', null, ps.map(pp => {
         const vt = toneOf(pp.verified ? 'success' : 'info');
-        const stars = pp.rating ? '\u2605'.repeat(Math.round(pp.rating)) + '\u2606'.repeat(5 - Math.round(pp.rating)) : '';
+        const stars = (pp.rating != null && pp.rating_state !== 'new') ? ('\u2605'.repeat(Math.round(pp.rating)) + '\u2606'.repeat(5 - Math.round(pp.rating))) : 'New';
         return h('div', { class: 'cp-row', style: 'border-left:4px solid ' + vt.c + ';padding-left:10px;border-radius:8px' }, [
           h('div', null, [h('div', { class: 'cp-row-t' }, 'Broker ' + (pp.ref || '\u2014') + (pp.verified ? ' \u2713' : '')), h('div', { class: 'cp-row-s' }, [pp.deals + ' approved load(s)', pp.trust_score != null ? 'Trust ' + pp.trust_score + '/100' : null, stars].filter(Boolean).join(' \u00b7 '))]),
           h('span', { class: 'cp-pill', style: 'background:' + vt.bg + ';color:' + vt.c }, pp.verified ? 'Verified' : 'Unverified'),
