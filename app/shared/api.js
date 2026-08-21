@@ -1071,3 +1071,6 @@ export const facilityRatings = (keys) => rpc('facility_ratings', { p_keys: keys 
 
 // bl_cc_0237: staff-side live tracking feed for the CC Loads & trips tracker (loadTracker.js)
 export const staffTrackLoad = (loadId) => rpc('cc_staff_track_load', { p_load: loadId });
+
+// bl_fleet_0234: full fleet view for CC Carrier 360 (restored after a parallel-session merge dropped it)
+export const ccCarrierFleet360 = (orgId) => rpc('cc_carrier_fleet_360', { p_org: orgId });
