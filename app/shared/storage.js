@@ -25,6 +25,23 @@ export async function uploadDocument(file, kind) {
   return { path, fileName: file.name, contentType: file.type || null, size: file.size || null };
 }
 
+// Staff uploading a document a carrier sent us by email. The file MUST land in the
+// carrier's own folder, not the staff member's — doc_read only lets a carrier open what is
+// under their own user id, so a file parked anywhere else would be invisible to the person
+// it belongs to. bl_doc_0248b adds the matching storage policy.
+export async function uploadDocumentForCarrier(file, kind, carrierUserId) {
+  if (!file) throw new Error('No file selected.');
+  if (!carrierUserId) throw new Error('Which carrier is this for?');
+  if (file.size > 25 * 1024 * 1024) throw new Error('File is larger than 25 MB.');
+  const sb = await getClient();
+  const path = `${carrierUserId}/${kind || 'other'}/${Date.now()}-${rand()}-${safeName(file.name)}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, {
+    contentType: file.type || 'application/octet-stream', upsert: false,
+  });
+  if (error) throw new Error(error.message || 'Upload failed.');
+  return { path, fileName: file.name, contentType: file.type || null, size: file.size || null };
+}
+
 // Proof-of-delivery upload. Enforces the private-bucket path contract that the server re-validates:
 //   {auth.uid()}/pod/{tripId}/{immutable-name}
 // The first folder must equal auth.uid() (storage doc_upload RLS); the server also re-checks the trip.
@@ -110,4 +127,4 @@ export async function uploadTripDoc(file, tripId, kind) {
   if (error) throw new Error(error.message || 'Upload failed.');
   return { path, fileName: file.name, contentType: file.type, size: file.size };
 }
-export default { uploadDocument, uploadPodDocument, uploadTripDoc, uploadAvatar, signedDocumentUrl };
+export default { uploadDocument, uploadDocumentForCarrier, uploadPodDocument, uploadTripDoc, uploadAvatar, signedDocumentUrl };
