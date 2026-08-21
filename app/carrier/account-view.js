@@ -76,7 +76,23 @@ export async function renderPremiumAccount(host, ctx) {
   const mc = (prof && prof.mc) || ov.mc_number || ov.mc || '';
   const dot = (prof && prof.dot) || ov.dot_number || ov.usdot || ov.dot || '';
   const wknet = ov.week_net != null ? ('$' + Number(ov.week_net).toLocaleString()) : '—';
-  const sub = ['Owner-operator', mc ? ('MC ' + mc) : null, dot ? ('DOT ' + dot) : null].filter(Boolean).join(' · ');
+  // "Owner-operator" used to be hardcoded here, so a three-truck fleet was told it was an
+  // owner-operator and a carrier who had never said what they run was told it too. Derive
+  // it from the carrier's own answer — it is a statement about their business, not ours —
+  // and when they have not answered, claim nothing and just show the dockets.
+  const _fleetN = Number(String((prof && prof.truck_count) || '').replace(/[^0-9]/g, ''));
+  const _drives = (prof && prof.owner_drives) || null;
+  // One truck is not enough to call someone an owner-operator — that word means they
+  // drive it themselves. One truck with a hired driver is a fleet owner, and it changes
+  // what suits them. Onboarding asks; until it is answered we stay vague on purpose.
+  const roleLabel = !isFinite(_fleetN) || _fleetN < 1 ? null
+    : _fleetN === 1
+      ? (_drives === 'employed' ? 'Fleet owner · 1 truck'
+         : _drives ? 'Owner-operator' : 'Carrier · 1 truck')
+    : _fleetN < 10
+      ? ((_drives === 'owner' || _drives === 'both' ? 'Driving owner · ' : 'Small fleet · ') + _fleetN + ' trucks')
+      : ('Fleet · ' + _fleetN + ' trucks');
+  const sub = [roleLabel, mc ? ('MC ' + mc) : null, dot ? ('DOT ' + dot) : null].filter(Boolean).join(' · ');
 
   const docHtml = reqs.filter((r) => { const _st = String(r.status || '').toLowerCase(); return _st !== 'valid' && (r.mandatory || _st === 'pending' || _st === 'in_review' || _st === 'review' || _st === 'submitted'); }).map((r) => {
     const st = String(r.status || '').toLowerCase();
@@ -119,7 +135,7 @@ export async function renderPremiumAccount(host, ctx) {
     + '<div class="hero"><div class="glow g1"></div><div class="glow g2"></div>'
     +   '<div class="brandrow"><img src="/logo-full-dark.png" alt="LoadBoot" style="height:24px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))"><div class="glass"><span class="gdot"></span> Online</div></div>'
     +   '<div class="profrow"><div class="ava" id="acx-ava">' + esc(initials) + '<div class="cam" id="acx-cam">&#9998;</div></div>'
-    +     '<div><div class="pname">' + esc(name) + '</div><div class="psub">' + esc(sub || 'Owner-operator') + '</div>' + vpill + '</div></div>'
+    +     '<div><div class="pname">' + esc(name) + '</div><div class="psub">' + esc(sub || 'Carrier') + '</div>' + vpill + '</div></div>'
     + '</div>'
     + '<div class="mstrip">'
     +   '<div class="m"><div class="v">' + esc(healthScore) + '</div><div class="l">Health</div></div>'

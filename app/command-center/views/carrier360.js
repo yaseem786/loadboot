@@ -193,11 +193,73 @@ export function renderCarrier360(host, orgId) {
       ]), { subtitle: d.name || '' });
     }
     safetyCard.appendChild(safetyHost); safetyCard.appendChild(fmcsaBtn);
+    // Amazon/Uber treatment: one live row per document type, with replaced versions folded
+    // away underneath. A flat list mixed superseded files in with current ones, so a
+    // carrier who had re-uploaded three times looked like a carrier with three problems.
+    // Nothing is hidden — the history is one click away and still says why it was replaced.
+    const DOC_LABEL = {
+      insurance: 'Certificate of insurance', authority: 'Operating authority', w9: 'W-9',
+      bank_check: 'Bank verification', noa: 'Factoring NOA', mcs150: 'MCS-150',
+      safety: 'FMCSA safety rating', agreement: 'Dispatch agreement',
+      hazmat_reg: 'PHMSA hazmat registration', hazmat_h: 'CDL hazmat endorsement',
+      hazmat_coi: 'Hazmat insurance COI', rate_con: 'Rate confirmation',
+      bol: 'Bill of lading', pod: 'Proof of delivery', other: 'Other',
+    };
+    const byType = new Map();
+    docs.forEach((x) => {
+      const k = String(x.type || 'other');
+      if (!byType.has(k)) byType.set(k, []);
+      byType.get(k).push(x);
+    });
+    // Newest first within each type; the current one is the newest that has not been replaced.
+    const groups = [];
+    byType.forEach((list, type) => {
+      const sorted = list.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      const live = sorted.filter((x) => String(x.status || '') !== 'superseded');
+      const current = live[0] || sorted[0];
+      const history = sorted.filter((x) => x !== current);
+      groups.push({ type, current, history });
+    });
+    groups.sort((a, b) => new Date(b.current.created_at || 0) - new Date(a.current.created_at || 0));
+    const olderCount = groups.reduce((n, g) => n + g.history.length, 0);
+
+    const docRow = (x, muted) => el('tr', {
+      class: 'cc-row', style: 'cursor:pointer' + (muted ? ';opacity:.55' : ''),
+      title: muted ? 'An earlier version — preview / download' : 'Preview / download',
+      onClick: () => openDocPreview(x),
+    }, [
+      el('td', null, muted ? el('span', { class: 'cc-sub' }, '↳ replaced') : (DOC_LABEL[x.type] || x.type || '—')),
+      el('td', null, x.file_name || '—'),
+      el('td', null, statusPill(x.status)),
+      el('td', null, [fmtDate(x.created_at), ' ', el('span', { class: 'cc-row-go' }, '›')]),
+    ]);
+
+    const docsBody = el('tbody');
+    groups.forEach((g) => {
+      docsBody.appendChild(docRow(g.current, false));
+      if (!g.history.length) return;
+      const histRows = g.history.map((x) => docRow(x, true));
+      let open = false;
+      const toggle = el('tr', null, el('td', {
+        colspan: '4',
+        style: 'padding:4px 8px 8px 8px;cursor:pointer;color:#0883F7;font-size:.78rem;font-weight:700',
+        onClick: () => {
+          open = !open;
+          histRows.forEach((r) => { r.style.display = open ? '' : 'none'; });
+          toggle.firstChild.textContent = (open ? '▾ Hide ' : '▸ ') + g.history.length
+            + ' earlier version' + (g.history.length === 1 ? '' : 's');
+        },
+      }, '▸ ' + g.history.length + ' earlier version' + (g.history.length === 1 ? '' : 's')));
+      docsBody.appendChild(toggle);
+      histRows.forEach((r) => { r.style.display = 'none'; docsBody.appendChild(r); });
+    });
+
     const docsCard = card([
-      el('h4', { class: 'cc-card-title' }, 'Documents (' + docs.length + ')'),
-      docs.length ? el('table', { class: 'cc-table cc-table-tight' }, [
+      el('h4', { class: 'cc-card-title' },
+        'Documents (' + groups.length + (olderCount ? ' current · ' + olderCount + ' replaced' : '') + ')'),
+      groups.length ? el('table', { class: 'cc-table cc-table-tight' }, [
         el('thead', null, el('tr', null, [el('th', null, 'Type'), el('th', null, 'File'), el('th', null, 'Status'), el('th', null, 'Added')])),
-        el('tbody', null, docs.map(x => el('tr', { class: 'cc-row', style: 'cursor:pointer', title: 'Preview / download', onClick: () => openDocPreview(x) }, [el('td', null, x.type || '—'), el('td', null, x.file_name || '—'), el('td', null, statusPill(x.status)), el('td', null, [fmtDate(x.created_at), ' ', el('span', { class: 'cc-row-go' }, '\u203a')])]))),
+        docsBody,
       ]) : el('div', { class: 'cc-sub' }, 'No documents on file.'),
     ]);
 

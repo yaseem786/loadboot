@@ -429,6 +429,12 @@ export const reviewDocument = (documentId, decision, note) =>
 // the reviewer looking at the document. This is what feeds cc_vin_coverage, the truck
 // form's green/red banner and the LB001 gate on posting (bl_coi_0234).
 export const coiPanel = (documentId) => rpc('cc_coi_panel', { p_document: documentId });
+// Documents that reach us by email rather than through the portal (bl_doc_0248).
+export const staffUploadDocument = (o = {}) => rpc('cc_staff_upload_document', {
+  p_carrier: o.carrier, p_type: o.type, p_path: o.path, p_file_name: o.fileName,
+  p_source: o.source ?? 'email', p_source_note: o.sourceNote ?? null,
+});
+export const documentProvenance = (documentId) => rpc('cc_document_provenance', { p_document: documentId });
 // Danger zone. Records the request and raises it with staff — nothing deactivates on its
 // own, which is what the screen has always promised (bl_acc_0243).
 export const requestAccountAction = (action, reason) =>
@@ -662,6 +668,7 @@ export const pocketSaveProfile = (p = {}) => rpc('update_my_carrier_profile', {
   p_equipment_types: p.equipmentTypes ?? null, p_min_rpm: p.minRpm ?? null,
   p_max_deadhead: p.maxDeadhead ?? null, p_avoid_states: p.avoidStates ?? null,
   p_weekend_ok: p.weekendOk ?? null, p_hazmat: p.hazmat ?? null,
+  p_owner_drives: p.ownerDrives ?? null,
   p_contact_method: p.contactMethod ?? null, p_whatsapp: p.whatsapp ?? null,
   p_factoring_status: p.factoringStatus ?? null, p_factoring_company: p.factoringCompany ?? null,
 });

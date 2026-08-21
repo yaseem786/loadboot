@@ -9,6 +9,7 @@ import { can } from '../../shared/permissions.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { coiCoverageCard } from './coiCoverage.js';
+import { staffUploadCard } from './staffUpload.js';
 
 const STATUSES = [
   { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' },
@@ -86,6 +87,8 @@ export function renderDocuments(host) {
       // Insurance only: record what the policy covers while the certificate is on screen.
       // Renders nothing for other document types (bl_coi_0234).
       coiCoverageCard(d, load),
+      // A carrier who emailed us a document instead of uploading it (bl_doc_0248).
+      staffUploadCard({ id: d.carrier_id, name: d.company }, load),
       can('documents.review') ? el('label', { class: 'cc-card-title', style: 'margin-top:16px;display:block' }, 'Decision') : '',
       can('documents.review') ? note : '',
       actions,
