@@ -1551,7 +1551,9 @@ function approvedPartnersCard() {
     const ps = (np && np.partners) || [];
     if (!ps.length) { mount(body, h('div', { class: 'cp-sub' }, 'No approved partners yet. Carriers you approve and shippers you work with appear here as verified, anonymized profiles \u2014 you keep dealing through LoadBoot.')); return; }
     mount(body, ps.map(p => {
-      const stars = p.rating ? '\u2605'.repeat(Math.round(p.rating)) + '\u2606'.repeat(5 - Math.round(p.rating)) : '';
+      // "New" is a fact; an empty gap next to a trust score reads as a missing
+      // widget. Say which one it is.
+      const stars = (p.rating != null && p.rating_state !== 'new') ? ('\u2605'.repeat(Math.round(p.rating)) + '\u2606'.repeat(5 - Math.round(p.rating))) : 'New';
       const label = (p.role === 'carrier' ? 'Carrier ' : p.role === 'shipper' ? 'Shipper ' : 'Partner ') + (p.ref || '');
       return h('div', { style: 'padding:8px 10px;margin:6px 0;border:1px solid #e2e8f0;border-radius:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-left:4px solid ' + (p.verified ? '#16a34a' : '#94a3b8') }, [
         h('div', null, [h('b', null, label + (p.verified ? ' \u2713' : '')), h('div', { class: 'cp-sub' }, [p.deals + ' deal(s)', p.trust_score != null ? 'Trust ' + p.trust_score + '/100' : null].filter(Boolean).join(' \u00b7 '))]),
@@ -1571,7 +1573,12 @@ function bookRequestsCard() {
     if (!rows || !rows.length) { mount(body, h('div', { class: 'cp-sub' }, 'No pending booking requests. Carriers who request your loads appear here \u2014 approve or decline after seeing their verified trust profile. Their identity and contact stay private until you work together through LoadBoot.')); return; }
     mount(body, rows.map(r => {
       const t = r.trust || {}; const rate = Number(t.rating || 0);
-      const stars = rate ? '\u2605'.repeat(Math.round(rate)) + '\u2606'.repeat(5 - Math.round(rate)) : '';
+      // A carrier with no delivery history is not a one-star carrier. The server
+      // used to derive stars from their document score, so brand-new carriers
+      // arrived in this queue looking rated-and-bad. Show them as new instead —
+      // the trust score and docs-verified line below carry the real signal.
+      const _rated = t.rating != null && t.rating_state !== 'new';
+      const stars = _rated ? ('\u2605'.repeat(Math.round(rate)) + '\u2606'.repeat(5 - Math.round(rate))) : 'New carrier \u00b7 no ratings yet';
       const badge = h('span', { style: 'padding:3px 9px;border-radius:20px;font-weight:800;font-size:.72rem;' + (t.verified ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e') }, t.verified ? '\u2713 ' + (t.verified_label || 'Verified') : 'Unverified');
       const note = h('input', { class: 'cp-in', placeholder: 'Optional note to the carrier\u2026' });
       const decide = async (action, ev) => { ev.currentTarget.disabled = true; ev.currentTarget.textContent = '\u2026'; try { const _ct1334 = ev.currentTarget; await decideBookRequest(r.id, action, note.value || null); render(); } catch (e) { _ct1334.disabled = false; alert((e && e.message) || 'Failed'); } };
