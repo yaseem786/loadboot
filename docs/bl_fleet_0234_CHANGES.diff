@@ -1,0 +1,213 @@
+--- /mnt/user-data/uploads/loadboot/app/command-center/views/carrier360.js	2026-08-21 11:20:54.380206292 +0000
++++ carrier360.js	2026-08-21 11:25:39.049330517 +0000
+@@ -10,7 +10,7 @@
+ import { showError } from '../../shared/loading.js';
+ import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
+ import { signedDocumentUrl } from '../../shared/storage.js';
+-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice, ccCarrierPrefs } from '../../shared/api.js';
++import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
+ import { humanizeError } from '../../shared/errors.js';
+ import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
+ import { can } from '../../shared/permissions.js';
+@@ -272,6 +272,180 @@
+       ]) : el('div', { class: 'cc-sub' }, 'No drivers recorded.'),
+     ]);
+ 
++    // ---- 🚛 Fleet — the truck exactly as the carrier described it, checked against the COI ----
++    // Until now the only fleet fact on this screen was profile.truck_count: a number the
++    // carrier typed at signup. Meanwhile the Add-truck form collects fifty columns, so staff
++    // approving a certificate or answering "can this truck take a 4,000 lb pallet off a kerb"
++    // went back to WhatsApp to ask for spec we already held. It is all here now.
++    // The VIN verdict is the part that matters: a carrier may only be dispatched on insurance
++    // that names their truck, so every truck states its own position against the approved COI
++    // and, where it matches, quotes the vehicle line AS PRINTED ON THE CERTIFICATE — staff
++    // compare the two themselves rather than taking our word that they agree.
++    const fleetCard = card([el('h4', { class: 'cc-card-title' }, '🚛 Fleet'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Loading trucks…')]);
++    (async () => {
++      let fl;
++      try { fl = await ccCarrierFleet360(orgId); }
++      catch (e) { mount(fleetCard, [el('h4', { class: 'cc-card-title' }, '🚛 Fleet'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, humanizeError(e))]); return; }
++      const trucks = (fl && fl.trucks) || [];
++      const trailers = (fl && fl.trailers) || [];
++      const coi = (fl && fl.coi) || {};
++      const cts = (fl && fl.counts) || {};
++      const coiMode = String(coi.mode || 'unknown');
++
++      // Self-styled pills so this card does not depend on which cc-pill-* colours exist.
++      const TONE = {
++        green: 'background:#e8f8ef;color:#136c3c;border:1px solid #a7e5c3',
++        red:   'background:#fdecec;color:#a31414;border:1px solid #f6b9b9',
++        amber: 'background:#fff5e3;color:#8a5300;border:1px solid #ffd99b',
++        gray:  'background:#f1f5f9;color:#475569;border:1px solid #dbe3ec',
++        blue:  'background:#e9f2fe;color:#0b4c92;border:1px solid #b6d6fb',
++      };
++      const tag = (tone, txt) => el('span', { style: (TONE[tone] || TONE.gray) + ';border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:800;white-space:nowrap' }, txt);
++
++      const VERDICT = {
++        covered:     ['green', '✓ VIN listed on the COI',
++          'The approved certificate names this vehicle. This truck is insured to be dispatched.'],
++        not_covered: ['red', '✕ VIN NOT on the COI',
++          'The policy is scheduled and does not name this VIN. Dispatching this truck would run it uninsured — the carrier has to send an endorsement adding the vehicle before it can be used.'],
++        no_coi:      ['gray', 'No approved COI to check against',
++          'There is no approved certificate of insurance on file for this carrier yet, so nothing can be matched. This is expected mid-onboarding.'],
++        invalid_vin: ['amber', '⚠ VIN unreadable',
++          'This is not 17 valid VIN characters, so it cannot be matched against the certificate. Ask the carrier to re-send it from the door jamb or registration.'],
++        no_vin:      ['amber', '⚠ No VIN recorded',
++          'The truck was saved without a VIN, so its insurance cannot be verified at all.'],
++      };
++
++      const yn9 = (v) => v === true ? 'Yes' : v === false ? 'No' : null;
++      const inch = (v) => (v == null || v === '') ? null : v + ' in';
++      const lbs = (v) => (v == null || v === '') ? null : Number(v).toLocaleString() + ' lb';
++      // Only answered fields are printed. A wall of em-dashes reads as "we know nothing",
++      // when the truth is normally "we know most of it and are missing two things".
++      const row9 = (label, value) => (value == null || value === '' || value === false) ? null
++        : el('div', { style: 'display:flex;gap:10px;justify-content:space-between;padding:2px 0;font-size:.82rem' }, [
++            el('span', { style: 'color:#64748b' }, label), el('b', { style: 'text-align:right' }, String(value))]);
++      const block9 = (title, rows) => { const r = (rows || []).filter(Boolean); return r.length
++        ? el('div', { style: 'min-width:200px;flex:1 1 210px' }, [
++            el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin:12px 0 3px' }, title), r])
++        : null; };
++      const list9 = (arr) => arr.filter(Boolean).length ? arr.filter(Boolean).join(' · ') : null;
++
++      const coiLabel = coiMode === 'scheduled' ? 'Scheduled — only the VINs printed on the certificate are insured'
++        : coiMode === 'any_auto' ? 'Any auto — every vehicle the carrier owns is insured'
++        : 'No approved certificate of insurance on file';
++      const coiExpired = !!coi.expired;
++      const coiStrip = el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f7fafd;border:1px solid #e6edf6;border-radius:12px;padding:10px 13px;margin-top:10px' }, [
++        el('b', { style: 'font-size:.85rem' }, '🛡 Insurance coverage'),
++        tag(coiMode === 'unknown' ? 'gray' : coiExpired ? 'red' : 'blue', coiMode === 'scheduled' ? 'Scheduled' : coiMode === 'any_auto' ? 'Any auto' : 'Unknown'),
++        coi.expiry_date ? tag(coiExpired ? 'red' : 'green', (coiExpired ? 'Expired ' : 'Valid to ') + fmtDate(coi.expiry_date)) : null,
++        coiMode === 'scheduled' ? tag('gray', ((coi.vehicles || []).length) + ' VIN(s) on the certificate') : null,
++        el('div', { class: 'cc-sub', style: 'flex-basis:100%' }, coiLabel + (coi.note ? ' · ' + coi.note : '')),
++        (coi.document && coi.document.file_name) ? el('div', { class: 'cc-sub', style: 'flex-basis:100%' }, 'From: ' + coi.document.file_name + ' (' + (coi.document.status || 'unknown') + ')') : null,
++      ].filter(Boolean));
++
++      const truckEl = (t) => {
++        const st = String(t.vin_state || 'no_vin');
++        const V = VERDICT[st] || VERDICT.no_vin;
++        // "Any auto" earns a different sentence: nothing was matched, the policy simply
++        // covers everything the carrier owns. Saying "listed on the COI" there would be false.
++        const vTxt = (st === 'covered' && coiMode === 'any_auto') ? '✓ Covered — policy covers any owned auto' : V[1];
++        const vNote = (st === 'covered' && coiMode === 'any_auto')
++          ? 'The certificate is written as any-auto, so this vehicle does not need to be named on it.' : V[2];
++        const heading = [t.unit_no ? 'Unit ' + t.unit_no : 'Truck', t.equipment,
++          list9([t.vin_year, t.vin_make, t.vin_model])].filter(Boolean).join(' · ');
++        const lp = t.loading || {};
++        return el('details', { style: 'border:1px solid #e6edf6;border-radius:12px;padding:11px 14px;margin-top:10px;background:#fff' }, [
++          el('summary', { style: 'cursor:pointer;display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-weight:800;font-size:.9rem' }, [
++            el('span', null, heading),
++            tag(V[0], vTxt),
++            (st === 'covered' && coiExpired) ? tag('red', 'COI expired ' + fmtDate(coi.expiry_date)) : null,
++            String(t.status || 'active') !== 'active' ? tag('gray', String(t.status)) : null,
++          ].filter(Boolean)),
++          el('div', { style: 'margin-top:9px' }, [
++            el('div', { style: 'font-size:.84rem' }, [el('b', null, 'VIN '), el('span', { style: 'font-family:ui-monospace,Menlo,monospace' }, t.vin_normalized || t.vin || '—')]),
++            el('div', { class: 'cc-sub', style: 'margin-top:3px' }, vNote),
++            (t.coi_line && t.coi_line.descr)
++              ? el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'Certificate reads: “' + t.coi_line.descr + '”')
++              : (st === 'covered' && coiMode === 'scheduled')
++                ? el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'The certificate lists this VIN with no vehicle description — check the year/make/model above against the document itself before approving.')
++                : null,
++            (lp.label) ? el('div', { style: 'margin-top:9px;background:#f1f6fd;border:1px solid #dbe9fb;border-radius:10px;padding:9px 11px' }, [
++              el('b', { style: 'font-size:.84rem' }, '📦 ' + lp.label),
++              el('div', { class: 'cc-sub', style: 'margin-top:2px' }, lp.detail || ''),
++              lp.pallet_jack_note ? el('div', { class: 'cc-sub', style: 'margin-top:2px' }, lp.pallet_jack_note) : null,
++            ]) : null,
++            el('div', { style: 'display:flex;gap:24px;flex-wrap:wrap' }, [
++              block9('Vehicle', [
++                row9('Plate', t.plate), row9('Body', t.vin_body), row9('GVWR', t.vin_gvwr),
++                row9('Equipment', t.equipment), row9('Status', t.status),
++              ]),
++              block9('Capacity', [
++                row9('Payload', lbs(t.payload_lbs)),
++                row9('Cargo L×W×H', list9([t.cargo_len_in, t.cargo_width_in, t.cargo_height_in]) ? [t.cargo_len_in, t.cargo_width_in, t.cargo_height_in].map((x) => x == null ? '?' : x).join(' × ') + ' in' : null),
++                row9('Pallet positions', t.pallet_positions),
++                row9('Wheel-well width', inch(t.wheel_well_width_in)),
++                row9('Capacity note', t.capacity_note),
++              ]),
++              block9('Doors & deck', [
++                row9('Door type', t.door_type), row9('Door W×H', (t.door_width_in || t.door_height_in) ? [t.door_width_in, t.door_height_in].map((x) => x == null ? '?' : x).join(' × ') + ' in' : null),
++                row9('Deck height', inch(t.deck_height_in)), row9('Dock high', yn9(t.dock_high)),
++              ]),
++              block9('On board', [
++                row9('Liftgate', t.liftgate ? ('Yes' + (t.liftgate_cap_lbs ? ' · ' + Number(t.liftgate_cap_lbs).toLocaleString() + ' lb' : '')) : yn9(t.liftgate)),
++                row9('Loading gear', list9([t.has_pallet_jack ? 'Pallet jack' : null, t.has_ramp ? 'Ramp' : null, t.has_etrack ? 'E-track' : null, t.has_load_bars ? 'Load bars' : null, t.has_straps ? 'Straps' : null, t.has_blankets ? 'Blankets' : null])),
++              ]),
++              block9('Temperature', [
++                row9('Control', t.temp_control),
++                row9('Range', (t.temp_min_f != null || t.temp_max_f != null) ? [t.temp_min_f, t.temp_max_f].map((x) => x == null ? '?' : x).join(' to ') + ' °F' : null),
++              ]),
++              block9('Certifications & crew', [
++                row9('Endorsements', list9([t.hazmat_placarded ? 'Hazmat placarded' : null, t.twic ? 'TWIC' : null, t.tsa_sta ? 'TSA STA' : null, t.bonded ? 'Bonded' : null])),
++                row9('Team driven', yn9(t.team_driven)),
++              ]),
++              block9('Where it runs', [
++                row9('Domicile', list9([t.domicile_city, t.domicile_state, t.domicile_zip])),
++                row9('Rate floor', t.min_rpm != null ? '$' + t.min_rpm + '/mi' : null),
++                row9('Max radius', t.max_radius_miles != null ? t.max_radius_miles + ' mi' : null),
++                row9('Home time', t.home_time),
++              ]),
++              block9('Maintenance', [
++                row9('Next service', t.next_service_date ? fmtDate(t.next_service_date) : null),
++                row9('Inspection expires', t.inspection_exp ? fmtDate(t.inspection_exp) : null),
++                row9('Added', t.created_at ? fmtDate(t.created_at) : null),
++              ]),
++            ].filter(Boolean)),
++            t.spec_note ? el('div', { class: 'cc-sub', style: 'margin-top:10px;border-top:1px solid #eef2f7;padding-top:7px' }, ['Carrier note: ', t.spec_note]) : null,
++          ]),
++        ]);
++      };
++
++      // One alarm line, above everything, when a truck is on the fleet that the policy
++      // does not name. That is the condition that must never quietly reach dispatch.
++      const uninsured = trucks.filter((t) => String(t.vin_state) === 'not_covered');
++      mount(fleetCard, el('div', null, [
++        el('div', { class: 'cc-card-head' }, [
++          el('h4', { class: 'cc-card-title' }, '🚛 Fleet (' + trucks.length + (trailers.length ? ' · ' + trailers.length + ' trailer(s)' : '') + ')'),
++          el('span', { class: 'cc-sub' }, 'everything the carrier entered on the truck, checked against the COI'),
++        ]),
++        uninsured.length ? el('div', { style: TONE.red + ';border-radius:12px;padding:10px 13px;margin-top:10px;font-size:.86rem;font-weight:700' },
++          '⛔ ' + uninsured.length + ' truck(s) are NOT named on the approved certificate — do not dispatch them until the carrier sends an endorsement.') : null,
++        coiStrip,
++        (cts.trucks != null) ? el('div', { style: 'display:flex;gap:7px;flex-wrap:wrap;margin-top:10px' }, [
++          tag('gray', (cts.active || 0) + ' active'),
++          cts.covered ? tag('green', cts.covered + ' insured') : null,
++          cts.not_covered ? tag('red', cts.not_covered + ' not on the COI') : null,
++          cts.no_coi ? tag('gray', cts.no_coi + ' awaiting a COI') : null,
++          cts.vin_problem ? tag('amber', cts.vin_problem + ' with a VIN problem') : null,
++        ].filter(Boolean)) : null,
++        trucks.length ? el('div', null, trucks.map(truckEl))
++          : el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'No trucks registered yet' + (p.truck_count ? ' — the carrier said they run ' + p.truck_count + ' at signup, so the fleet has not been entered.' : '.')),
++        trailers.length ? el('div', { style: 'margin-top:12px' }, [
++          el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px' }, 'Trailers'),
++          el('div', { class: 'cc-sub' }, trailers.map((x) => [x.unit_no, x.type, x.status].filter(Boolean).join(' · ')).join('  |  ')),
++        ]) : null,
++      ].filter(Boolean)));
++    })();
++
++
+     const trips = d.recent_trips || [];
+     const tripsCard = card([
+       el('h4', { class: 'cc-card-title' }, 'Recent trips'),
+@@ -1269,6 +1443,7 @@
+       el('div', { style: 'margin-top:16px' }, healthCard),
+       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [appCard, fmcsaXCard]),
+       el('div', { style: 'margin-top:16px' }, safetyCard),
++      el('div', { style: 'margin-top:16px' }, fleetCard),
+       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [driversCard, payoutCard]), // docsCard MERGED into Onboarding & compliance (view/verify/actions per doc live there)
+       el('div', { class: 'cc-grid-2', style: 'margin-top:16px' }, [tripsCard, scCard]),
+       el('div', { style: 'margin-top:16px' }, backCard),
+--- /mnt/user-data/uploads/loadboot/app/shared/api.js	2026-08-21 11:20:54.576206288 +0000
++++ api.js	2026-08-21 11:24:31.227866198 +0000
+@@ -853,6 +853,10 @@
+ 
+ // ---- Control Tower Wave B: entity 360 (flag: entity360_enabled) ----
+ export const carrier360 = (org) => rpc('cc_carrier_360', { p_org: org });
++// Staff-side fleet for one carrier: every column the Add-truck form collects, plus each
++// truck's own VIN verdict against the approved COI. Separate from cc_carrier_360 on
++// purpose — that payload is already wide, and this one is droppable.
++export const ccCarrierFleet360 = (org) => rpc('cc_carrier_fleet_360', { p_org: org });
+ export const entityAudit = (o = {}) => rpc('cc_entity_audit', { p_target_type: o.targetType ?? null, p_target_id: o.targetId ?? null, p_org: o.org ?? null, p_limit: o.limit ?? 60 });
+ 
+ // ---- Wave C: Brokers & Shippers (flag: partners_enabled) ----

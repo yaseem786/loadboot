@@ -482,15 +482,18 @@ HEADX = LOCALBIZ + GA_SNIPPET
 _BEACON = ("<script>(function(){try{"
   "var K='lb_aid',aid=localStorage.getItem(K);if(!aid){aid=Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(K,aid);}"
   "var q=new URLSearchParams(location.search);if(q.get('lb_internal')==='1'){localStorage.setItem('lb_int','1');}var internal=localStorage.getItem('lb_int')==='1';"
+  # oc = outreach contact token (&oc=<uuid> on cold-email links). Persisted so a later
+  # visit/signup in the same browser still attributes to the same outreach contact.
+  "var oc='';try{oc=q.get('oc')||'';if(oc){localStorage.setItem('lb_oc',oc);}else{oc=localStorage.getItem('lb_oc')||'';}}catch(e){}"
   "var ref=document.referrer||'',rh='';try{rh=ref?new URL(ref).hostname:'';}catch(e){}"
   "var ua=navigator.userAgent||'';var dev=/Mobi|Android|iPhone|iPad/i.test(ua)?'mobile':'desktop';"
   "var br=/Edg/i.test(ua)?'Edge':/Chrome/i.test(ua)?'Chrome':/Firefox/i.test(ua)?'Firefox':/Safari/i.test(ua)?'Safari':'Other';"
   "var os=/Windows/i.test(ua)?'Windows':/Mac/i.test(ua)?'macOS':/Android/i.test(ua)?'Android':/iPhone|iPad|iOS/i.test(ua)?'iOS':/Linux/i.test(ua)?'Linux':'Other';"
   "var EP='https://%s.supabase.co/rest/v1/rpc/track_web_event',AK='%s';"
   "function send(p){try{fetch(EP,{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:p}),keepalive:true}).catch(function(){});}catch(e){}}"
-  "send({anon_id:aid,type:'pageview',page:location.pathname,referrer:ref,referrer_host:rh,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),device:dev,browser:br,os:os,language:navigator.language,timezone:(Intl.DateTimeFormat().resolvedOptions().timeZone||''),ua:ua,internal:internal});"
+  "send({anon_id:aid,type:'pageview',page:location.pathname,referrer:ref,referrer_host:rh,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),oc:oc,device:dev,browser:br,os:os,language:navigator.language,timezone:(Intl.DateTimeFormat().resolvedOptions().timeZone||''),ua:ua,internal:internal});"
   "window.lbTrack=function(t,x){var b=Object.assign({anon_id:aid,type:t,page:location.pathname},x||{});send(b);};"
-  "window.lbSubmitLead=function(fk,d){var b=Object.assign({form_key:fk,anon_id:aid,page:location.pathname,referrer:ref,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign')},d||{});return fetch(EP.replace('track_web_event','submit_web_form'),{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:b})});};"
+  "window.lbSubmitLead=function(fk,d){var b=Object.assign({form_key:fk,anon_id:aid,page:location.pathname,referrer:ref,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),oc:oc},d||{});return fetch(EP.replace('track_web_event','submit_web_form'),{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:b})});};"
   "}catch(e){}})();</script>") % (APP_REF, APP_ANON)
 HEADX = HEADX + _BEACON
 
