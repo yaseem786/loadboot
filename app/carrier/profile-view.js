@@ -184,7 +184,7 @@ export async function renderMyProfile(host){
   var lanes=(dp.preferred_lanes||[]);
   var _stApproved=['approved','active','completed'].indexOf(String(ov.onboarding_stage||'').toLowerCase())>=0;
   var verified=!!(ov.compliance_ok)&&_stApproved;
-  var statusBadge=(String(ov.account_status||'')==='paused')?'<span class="badge b-rev" style="background:rgba(239,68,68,.16);color:#f87171">⏸ Account paused</span>':(ov.poa_required)?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:#fbbf24">📋 Plan of action required</span>':verified?'<span class="badge b-ok">✓ VERIFIED</span>':(ov.compliance_ok?'<span class="badge b-rev">Docs verified — approval pending</span>':'<span class="badge b-rev">Under review</span>');
+  var statusBadge=(String(ov.account_status||'')==='paused')?'<span class="badge b-rev" style="background:rgba(239,68,68,.16);color:#f87171">⏸ Account paused</span>':(ov.poa_required)?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:#fbbf24">📋 Plan of action required</span>':verified?'<span class="badge b-ok">✓ VERIFIED</span>':(ov.compliance_ok?'<span class="badge b-rev">Docs verified — approval pending</span>':((['','not_started'].indexOf(String(ov.onboarding_stage||'').toLowerCase())>=0)?'<span class="badge b-rev" style="background:rgba(148,163,184,.16);color:#cbd5e1">Not submitted</span>':'<span class="badge b-rev">Under review</span>'));
 
   // compliance badges from the doc list
   function has(re){try{return ((comp&&comp.requirements)||[]).some(function(r){return re.test(String(r.name||''))&&/valid|verified|approv|on file|active/i.test(String(r.status||''));});}catch(_){return false;}}

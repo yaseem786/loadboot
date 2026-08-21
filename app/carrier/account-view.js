@@ -73,7 +73,9 @@ export async function renderPremiumAccount(host, ctx) {
   const rating = _rated ? (Number(trust.rating).toFixed(1) + '★') : 'New';
   const ratingLabel = _rated ? 'Rating' : 'Rating · after ' + ((trust && trust.ratings_needed) || 3) + ' loads';
   const name = (prof && prof.company) || ov.carrier || (comp && comp.carrier) || 'Your company';
-  const _stageRev = ['submitted', 'in_review', 'review', 'compliance_check', 'changes_requested'].indexOf(String(ov.onboarding_stage || '').toLowerCase()) >= 0;
+  // 'docs_review' is the stage the Command Center actually sets after submit; it was missing
+  // from this list, so a carrier in document review saw the pre-submit wording.
+  const _stageRev = ['submitted', 'docs_review', 'in_review', 'review', 'compliance_check', 'changes_requested'].indexOf(String(ov.onboarding_stage || '').toLowerCase()) >= 0;
   const email = user.email || '';
   const um = (user && user.user_metadata) || {};
   const contactName = (prof && prof.contact_name) || um.name || user.name || '';
@@ -116,6 +118,10 @@ export async function renderPremiumAccount(host, ctx) {
   const ringOff = totalDocs ? (100 - (okDocs / totalDocs * 100)) : 100;
   const _stageApproved = ['approved', 'active', 'completed'].indexOf(String(ov.onboarding_stage || '').toLowerCase()) >= 0;
   const _stageRejected = String(ov.onboarding_stage || '').toLowerCase() === 'rejected';
+  // No onboarding row exists until the carrier submits, so an empty stage means they have
+  // not started. Saying "PENDING VERIFICATION" to that person is a lie about our side of
+  // the deal: nobody is verifying anything, because nothing was ever sent to us.
+  const _stageNone = ['', 'not_started'].indexOf(String(ov.onboarding_stage || '').toLowerCase()) >= 0 && !compliant;
   const _isPaused = String(ov.account_status || '') === 'paused';
   const _poaReq = !_isPaused && ov.poa_required;
   const vpill = _stageRejected && !_isPaused
@@ -128,6 +134,8 @@ export async function renderPremiumAccount(host, ctx) {
     ? '<div class="vpill"><span class="gdot"></span> VERIFIED — BOOKING OPEN</div>'
     : compliant
       ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(8,131,247,.28),rgba(8,131,247,.12));color:#9cc5f4;border-color:rgba(8,131,247,.4)"><span class="gdot" style="background:#0883F7;box-shadow:0 0 0 4px rgba(8,131,247,.25)"></span> DOCS VERIFIED — FINAL APPROVAL PENDING</div>'
+      : _stageNone
+      ? '<div class="vpill" style="background:linear-gradient(90deg,rgba(148,163,184,.22),rgba(148,163,184,.08));color:#cbd5e1;border-color:rgba(148,163,184,.35)"><span class="gdot" style="background:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.2)"></span> NOT SUBMITTED \u2014 START ONBOARDING</div>'
       : '<div class="vpill" style="background:linear-gradient(90deg,rgba(217,119,6,.28),rgba(217,119,6,.12));color:#fcd34d;border-color:rgba(217,119,6,.4)"><span class="gdot" style="background:#fbbf24;box-shadow:0 0 0 4px rgba(251,191,36,.25)"></span> PENDING VERIFICATION</div>';
 
   const dp = (await getDispatchPrefs().catch(() => ({}))) || {};

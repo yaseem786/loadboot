@@ -23,7 +23,7 @@ export function renderOutreach(host) {
   const tplHost = el('div', { style: 'margin-top:16px' });
   const logHost = el('div', { style: 'margin-top:16px' });
   mount(host, el('div', null, [
-    sectionHead('Outreach CRM', 'Automated daily email engine — FMCSA carriers, brokers and shippers get a 7-part value drip from hello@loadboot.com. Caps auto-ramp weekly; bounces auto-block; kill-switch pauses on high failure.'),
+    sectionHead('Outreach CRM', 'Automated email engine — FMCSA carriers, brokers and shippers get a 7-part value drip from the dedicated mail.loadboot.com sending domain (replies land at hello@). Sends spread across 4 daily runs; bounces auto-block; a reply or signup stops that contact\'s drip; kill-switch pauses on high failure.'),
     kpis, todayHost, grid, tplHost, logHost,
   ]));
   load();
@@ -75,6 +75,9 @@ export function renderOutreach(host) {
       statCard({ icon: 'users', label: 'Contacts', value: totalActive.toLocaleString(), sub: totalAll.toLocaleString() + ' total · ' + totalDone.toLocaleString() + ' completed drip', accent: 'blue' }),
       statCard({ icon: 'bell', label: 'Emails sent (30d)', value: sentN.toLocaleString(), sub: (st.sent_today || 0) + ' today · last run ' + (st.last_run ? fmtDateTime(st.last_run) : 'never'), accent: 'violet' }),
       statCard({ icon: 'alert', label: 'List health', value: totalBounced.toLocaleString() + ' bounced', sub: totalUnsub.toLocaleString() + ' unsubscribed · ' + failN + ' failed sends', accent: (sentN > 50 && failN / Math.max(1, sentN + failN) > 0.05) ? 'red' : 'green' }),
+      statCard({ icon: 'check', label: 'Results', value: (tot.converted || 0) + ' signup' + ((tot.converted || 0) === 1 ? '' : 's'),
+        sub: (tot.replied || 0) + ' replies · ' + (tot.clicked_contacts || 0) + ' contacts clicked' + ((opens.opened || 0) ? ' · ' + opens.opened + ' opens/30d' : ''),
+        accent: (tot.converted || 0) > 0 ? 'green' : 'blue' }),
     ]);
 
     // Per-template table (merge statuses per tpl)
@@ -82,8 +85,11 @@ export function renderOutreach(host) {
     sends.forEach(s => { byTpl[s.tpl] = byTpl[s.tpl] || {}; byTpl[s.tpl][s.status] = s.n; });
     const tplRows = Object.keys(byTpl).sort();
 
-    // Campaign clicks/signups from web analytics (utm_campaign)
+    // Campaign clicks/signups from web analytics (utm_campaign) + v2 totals
     const camps = (stats && (stats.campaigns || stats.rows)) || (Array.isArray(stats) ? stats : []);
+    const tot = (stats && stats.totals) || {};
+    const opens = (stats && stats.opens) || {};
+    const convs = (stats && stats.conversions) || [];
 
     mount(grid, [
       el('div', { class: 'lb-card fa-col2' }, [
@@ -121,6 +127,18 @@ export function renderOutreach(host) {
             ]))),
           ]),
         ]) : null,
+        convs.length ? el('div', { style: 'margin-top:16px' }, [
+          el('div', { class: 'fa-cardhead' }, [el('h3', null, '🎯 Outreach signups — cold email → account')]),
+          el('table', { class: 'cc-table' }, [
+            el('thead', null, el('tr', null, ['Company', 'Audience', 'Emails got', 'Signed up'].map(h => el('th', null, h)))),
+            el('tbody', null, convs.map(cv => el('tr', { class: 'cc-row' }, [
+              el('td', null, el('b', null, cv.company || '—')),
+              el('td', { style: 'text-transform:capitalize' }, cv.kind || '—'),
+              el('td', null, String(cv.emails_got || 0)),
+              el('td', null, cv.signed_up ? fmtDateTime(cv.signed_up) : '—'),
+            ]))),
+          ]),
+        ]) : null,
       ]),
       el('div', null, [
         el('div', { class: 'lb-card' }, [
@@ -131,7 +149,7 @@ export function renderOutreach(host) {
           ]),
           capRow('Daily cap (base)', st.base_cap, v => control('base_cap', v)),
           capRow('Hard max/day', st.max_cap, v => control('max_cap', v)),
-          el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'Cap auto-doubles weekly from base (started ' + (st.started_on || '—') + ') up to the hard max. Keep max ≤ 400/day until the sending subdomain (mail.loadboot.com) is verified — protects the main domain.'),
+          el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'Cap auto-doubles weekly from base (started ' + (st.started_on || '—') + ') up to the hard max. Sends leave the verified mail.loadboot.com subdomain and spread across 4 runs (13/15/17/19 UTC); the day\'s ceiling is the "outreach.daily_cap" setting, per-run size is "outreach.batch_per_run".'),
         ]),
         el('div', { class: 'lb-card', style: 'margin-top:16px' }, [
           el('div', { class: 'fa-cardhead' }, [el('h3', null, 'Contacts by audience')]),
@@ -145,7 +163,7 @@ export function renderOutreach(host) {
               el('td', null, String(kinds[k].bounced || 0)),
             ]))),
           ]),
-          el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'Each contact gets the 7-email drip for its own audience (carrier ≠ broker), one email every 3+ days. Bounces auto-block; unsubscribe is one click. Kill-switch: >10% failures over 2 days auto-pauses the engine and alerts staff.'),
+          el('p', { class: 'cc-sub', style: 'margin-top:10px' }, 'Each contact gets the 7-email drip for its own audience (carrier ≠ broker), one email every 3+ days. A reply or a signup stops that contact\'s drip automatically, and anyone who already has an account is never emailed. Bounces auto-block; unsubscribe is one click. Kill-switch: >10% failures over 2 days auto-pauses the engine and alerts staff.'),
         ]),
       ]),
     ]);

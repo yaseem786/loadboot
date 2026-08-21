@@ -853,6 +853,10 @@ export const setIntegrationStatus = (provider, status, config) => rpc('cc_set_in
 
 // ---- Control Tower Wave B: entity 360 (flag: entity360_enabled) ----
 export const carrier360 = (org) => rpc('cc_carrier_360', { p_org: org });
+// Staff-side fleet for one carrier: every column the Add-truck form collects, plus each
+// truck's own VIN verdict against the approved COI. Separate from cc_carrier_360 on
+// purpose — that payload is already wide, and this one is droppable.
+export const ccCarrierFleet360 = (org) => rpc('cc_carrier_fleet_360', { p_org: org });
 export const entityAudit = (o = {}) => rpc('cc_entity_audit', { p_target_type: o.targetType ?? null, p_target_id: o.targetId ?? null, p_org: o.org ?? null, p_limit: o.limit ?? 60 });
 
 // ---- Wave C: Brokers & Shippers (flag: partners_enabled) ----
