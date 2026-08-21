@@ -230,11 +230,8 @@ const money = (v) => '$' + (Number(v) || 0).toLocaleString(undefined, { maximumF
 const havMi = (a, b, c, d) => { const R = 3959, t = Math.PI / 180, dLat = (c - a) * t, dLng = (d - b) * t;
   const x = Math.sin(dLat / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.asin(Math.min(1, Math.sqrt(x))); };
-const STATUS_TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray', active: 'green', not_started: 'gray', submitted: 'blue', docs_review: 'blue', compliance_check: 'blue', approved: 'green' };
-const FRIENDLY_STATUS = { planned: 'Booked — ready to start', dispatched: 'At pickup', in_transit: 'On the road', delivered: 'Delivered', invoiced: 'Invoiced', cancelled: 'Cancelled',
-  // Onboarding stages. Before this map existed the account pill said "Pending" to a carrier
-  // who had never opened the wizard — nothing was pending, because nothing had been sent.
-  not_started: 'Not started', submitted: 'Submitted — in review', docs_review: 'Documents in review', compliance_check: 'Final compliance check', approved: 'Approved', rejected: 'Declined' };
+const STATUS_TONE = { planned: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green', invoiced: 'green', draft: 'gray', sent: 'amber', paid: 'green', valid: 'green', missing: 'gray', pending: 'amber', expired: 'red', rejected: 'red', open: 'amber', resolved: 'green', closed: 'gray', active: 'green' };
+const FRIENDLY_STATUS = { planned: 'Booked — ready to start', dispatched: 'At pickup', in_transit: 'On the road', delivered: 'Delivered', invoiced: 'Invoiced', cancelled: 'Cancelled' };
 // A load whose pickup DAY has already passed is EXPIRED — it stays visible but cannot be booked
 // until the broker updates its schedule.
 function lbExpired(l) { if (!l || !l.pickup_date) return false; const d = new Date(String(l.pickup_date) + 'T23:59:59'); return !isNaN(d.getTime()) && d.getTime() < Date.now(); }
@@ -3123,27 +3120,18 @@ async function appView(user) {
     ]);
     const annCards = (anns || []).map(a => h('div', { class: 'cp-ann ' + (a.kind || 'info') }, [h('div', { class: 'cp-ann-t' }, a.title), a.body ? h('div', { class: 'cp-ann-b' }, a.body) : null].filter(Boolean)));
 
-    // The DB only writes a carrier_onboarding row at SUBMIT (stage CHECK =
-    // submitted/docs_review/compliance_check/approved/rejected), so a carrier who has not
-    // started has no stage at all. The old fallback here was the word 'pending', which told
-    // that carrier something of theirs was pending review when they had never sent anything.
-    // No stage = not started, and we say so.
-    const _stage0 = String(acct.onboarding_stage || ov.onboarding_stage || 'not_started').toLowerCase();
-    const _notStarted0 = (_stage0 === 'not_started' || _stage0 === '') && !acct.onboarding_complete;
-    const acctStrip = h('div', { class: 'cp-card cp-row-click', style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer', onClick: () => go(_notStarted0 ? 'onboarding' : 'account') }, [
-      h('div', null, [h('div', { class: 'cp-row-t' }, 'Account status'), h('div', { class: 'cp-row-s' }, _notStarted0 ? 'Not submitted yet \u2014 send your profile to unlock loads' : 'Verification & onboarding - tap to review')]),
+    const acctStrip = h('div', { class: 'cp-card cp-row-click', style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer', onClick: () => go('account') }, [
+      h('div', null, [h('div', { class: 'cp-row-t' }, 'Account status'), h('div', { class: 'cp-row-s' }, 'Verification & onboarding - tap to review')]),
       h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
-        pill(_notStarted0 ? 'not_started' : _stage0),
-        // "Docs needed" reads like a rejection notice. Nothing has been asked of someone who
-        // has not started, so state the fact instead of implying they are behind.
-        h('span', { class: 'cp-pill ' + (ov.compliance_ok ? 'green' : _notStarted0 ? 'gray' : 'amber') }, ov.compliance_ok ? 'Compliant' : _notStarted0 ? 'No documents yet' : 'Docs needed'),
-        h('button', { class: 'cp-btn cp-btn-sm' + (ov.compliance_ok || _notStarted0 ? '' : ' cp-attn-pulse'), onClick: (e) => { e.stopPropagation(); go(_notStarted0 ? 'onboarding' : 'account'); } }, _notStarted0 ? 'Start' : 'Review'),
+        pill(acct.onboarding_stage || ov.onboarding_stage || 'pending'),
+        h('span', { class: 'cp-pill ' + (ov.compliance_ok ? 'green' : 'amber') }, ov.compliance_ok ? 'Compliant' : 'Docs needed'),
+        h('button', { class: 'cp-btn cp-btn-sm' + (ov.compliance_ok ? '' : ' cp-attn-pulse'), onClick: (e) => { e.stopPropagation(); go('account'); } }, 'Review'),
       ]),
     ]);
     // Premium onboarding strip (prototype design) — % = real profile completeness.
     const _obDone = !!acct.onboarding_complete;
     const _obStage = String(acct.onboarding_stage || ov.onboarding_stage || '').toLowerCase();
-    const _obSubmitted = ['submitted', 'docs_review', 'in_review', 'review', 'compliance_check', 'changes_requested'].indexOf(_obStage) >= 0;
+    const _obSubmitted = ['submitted', 'in_review', 'review', 'compliance_check', 'changes_requested'].indexOf(_obStage) >= 0;
     let _obPct = _obDone ? 100 : 0;
     const _obRing = h('div', { style: 'width:64px;height:64px;border-radius:50%;flex:none;background:conic-gradient(#0883F7 0%, rgba(255,255,255,.1) 0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 26px -6px rgba(8,131,247,.55)' },
       h('div', { style: 'width:52px;height:52px;border-radius:50%;background:#111c31;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px' }, '\u2026'));
@@ -3400,24 +3388,10 @@ async function appView(user) {
       } catch (_) {}
     })();
     const prefsHost = h('div', null);
-    const econHost = h('div', null);
-    // Where Profile strength sits depends on where the carrier is — never two percentage
-    // rings on one screen. Not started: the onboarding hero owns the only number, and the
-    // strength card would ask for preferences the wizard is about to ask for anyway, so it
-    // stays off. Submitted / in review: the carrier is waiting with nothing to do, and this
-    // is the one card that still moves their matching forward — put it directly under the
-    // hero. Approved: it belongs with the working numbers, under the KPI strip.
-    const _psSlot = _obDone ? 'kpis' : _obSubmitted ? 'hero' : 'off';
-    mount(content, h('div', null, [tripHero9, rateCard9, onbHero,
-      (_psSlot === 'hero' ? prefsHost : null),
-      noaDash9, ...topBanners, kpis,
-      (_psSlot === 'kpis' ? prefsHost : null),
-      acctStrip, setupCard, econHost, promptHost, ...annCards,
-      h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
+    const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
-    // The 6-hourly micro-ask popup rides on the same gate: do not interrupt someone who has
-    // not finished onboarding with a preferences question.
-    if (_psSlot !== 'off') { try { mountStrengthCard(prefsHost); setTimeout(function () { try { maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {} }
+    try { mountStrengthCard(prefsHost); setTimeout(function () { try { maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {}
     openPrompts();
   }
 
@@ -5382,6 +5356,42 @@ function tripStepper(status) {
       const straps = check('Straps', t && t.has_straps);
       const blankets = check('Moving blankets', t && t.has_blankets);
 
+      // --- the trailer (open-deck combos) ---
+      // A hotshot's capacity IS the trailer: the F-250 tows it, the Big Tex carries
+      // the freight. Until now the form knew everything about the truck and nothing
+      // about the trailer — which is why posting Munster's unit on a load board
+      // meant asking the carrier on WhatsApp for deck length and payload. These show
+      // only for open-deck equipment; a dry van keeps its uncluttered form.
+      const trType = h('select', { class: 'cp-in' }, [['', 'Trailer type…'], ['gooseneck', 'Gooseneck'], ['bumper_pull', 'Bumper pull'], ['deckover', 'Deckover'], ['lowboy', 'Lowboy'], ['none', 'No trailer — deck on chassis']].map(o => h('option', { value: o[0], selected: t && t.trailer_type === o[0] ? 'selected' : null }, o[1])));
+      const trLen = numIn('Deck length (ft) — from the trailer plate', t && t.trailer_len_ft);
+      const trVin = h('input', { class: 'cp-in', placeholder: 'Trailer VIN (17 characters) — it is on your COI schedule', value: (t && t.trailer_vin) || '' });
+      const tarps = check('Tarps on board', t && t.has_tarps);
+      const chains = check('Chains & binders', t && t.has_chains);
+      const OPEN_DECK = ['Hotshot', 'Flatbed', 'Step Deck', 'Power Only', 'Conestoga'];
+      const trailerSec = h('div', { style: 'display:none' }, [
+        sec('The trailer', 'For open-deck work the trailer IS the capacity — every load board asks for this before your truck can be posted.'),
+        trType, row2(trLen, trVin),
+        h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 12px' }, [tarps, chains]),
+      ]);
+      const syncTrailer = () => { trailerSec.style.display = OPEN_DECK.indexOf(eq.value) >= 0 ? '' : 'none'; };
+      eq.addEventListener('change', syncTrailer); syncTrailer();
+
+      // Posting readiness — the fields a dispatcher must have before this unit can go
+      // on ANY load board. Advisory, never blocking: the save still works, but the
+      // gaps are named while the carrier is right here with the form open.
+      const postReady = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:2px 0 4px' });
+      const readyCheck = () => {
+        const missing = [];
+        if (!numOf(payload)) missing.push('payload');
+        if (!numOf(cLen) && !numOf(trLen)) missing.push('deck/cargo length');
+        if (!(dZip.value.trim() || (dCity.value.trim() && dState.value.trim()))) missing.push('home base');
+        if (OPEN_DECK.indexOf(eq.value) >= 0 && !trType.value) missing.push('trailer type');
+        if (missing.length) { postReady.textContent = '\u26a0 Not posting-ready \u2014 load boards will ask for: ' + missing.join(', '); postReady.style.color = '#fbbf24'; }
+        else { postReady.textContent = '\u2713 Posting-ready \u2014 this unit can go on a load board as-is.'; postReady.style.color = '#4ade80'; }
+      };
+      [payload, cLen, trLen, dZip, dCity, dState].forEach((el2) => el2.addEventListener('input', readyCheck));
+      [eq, trType].forEach((el2) => el2.addEventListener('change', readyCheck));
+
       // --- temperature ---
       const tempCtl = h('select', { class: 'cp-in' }, [['none', 'No temperature control'], ['chilled', 'Chilled / fresh'], ['frozen', 'Frozen'], ['multi', 'Multi-temp']].map(o => h('option', { value: o[0], selected: (t && t.temp_control ? t.temp_control : 'none') === o[0] ? 'selected' : null }, o[1])));
       const tMin = h('input', { class: 'cp-in', type: 'number', placeholder: 'Coldest °F it holds', value: (t && (t.temp_min_f === 0 || t.temp_min_f)) ? t.temp_min_f : '' });
@@ -5521,6 +5531,8 @@ function tripStepper(status) {
             hazmatPlacarded: hazmat._box.checked, twic: twic._box.checked, tsaSta: tsa._box.checked, bonded: bonded._box.checked,
             teamDriven: team._box.checked, minRpm: minRpm.value ? Number(minRpm.value) : null,
             maxRadiusMiles: numOf(radius), homeTime: homeTime.value || null, specNote: specNote.value.trim() || null,
+            trailerType: trType.value || null, trailerLenFt: numOf(trLen), trailerVin: trVin.value.trim().toUpperCase() || null,
+            hasTarps: tarps._box.checked, hasChains: chains._box.checked,
           });
           trucks = await pocketTrucks();
           const saved = t && t.id ? t : trucks.find(x => x.unit_no === unit.value.trim());
@@ -5567,6 +5579,7 @@ function tripStepper(status) {
         sec('On-board loading equipment', 'Every box ticked here is a load someone else cannot take.'),
         h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 12px' }, [liftgate, palletJack, ramp, etrack, loadBars, straps, blankets]),
         lgCap,
+        trailerSec,
         sec('Temperature'), tempCtl, tempWrap,
         sec('Certifications and crew'),
         h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:0 12px' }, [hazmat, twic, tsa, bonded, team]),
@@ -5577,8 +5590,9 @@ function tripStepper(status) {
         sec('Maintenance'),
         h('label', { class: 'cp-row-s' }, 'Next service due'), svc,
         h('label', { class: 'cp-row-s' }, 'Annual inspection expires'), insp,
-        h('div', { style: 'height:10px' }), save,
+        h('div', { style: 'height:10px' }), postReady, save,
       ]);
+      readyCheck();
     }
 
     const alertHost = h('div');
@@ -7133,6 +7147,75 @@ function tripStepper(status) {
     };
   }
 
+  // ----- FMCSA screen -------------------------------------------------------
+  // This used to be one boolean:
+  //     __disq = authority === 'inactive' || allowedToOperate === 'N' || outOfService
+  // which got three separate things wrong.
+  //
+  // 1. It never looked at brokerOnly, even though the edge function reads FMCSA
+  //    Licensing & Insurance and returns it. A freight broker holds broker
+  //    authority and no carrier authority, so the function reports authority as
+  //    "inactive" — and a broker did get stopped, but by accident, and was then
+  //    told "your authority is inactive / out of service". That is false. Their
+  //    authority is perfectly active; it is broker authority. We dispatch
+  //    carriers, and a broker signing up as a carrier is how double-brokering
+  //    starts, so this needs its own verdict and its own sentence.
+  // 2. It failed open on "unknown". FMCSA's L&I endpoint returns nothing for a
+  //    freshly granted docket, and for at least one path it returns nothing for
+  //    a large broker too — Total Quality Logistics entered by DOT is stopped,
+  //    the same company entered by MC walks straight through. Unknown is not a
+  //    pass. We let them continue (an unreadable federal API is not the
+  //    carrier's fault) but the account is flagged so review sees it.
+  // 3. It said nothing about an entity holding BOTH authorities. That is legal
+  //    and common, and not a block — but review should know.
+  //
+  // Returns a verdict, never a bare boolean, so every caller says the true thing.
+  function lbFmcsaScreen(res) {
+    const cr = (res && (res.carrier || res.result)) || null;
+    if (!cr) {
+      return { block: false, code: 'unreadable', flag: true,
+        title: 'FMCSA did not answer',
+        msg: 'We could not reach FMCSA to check this authority. You can continue — but your account goes to our compliance team for a manual check before you can book.' };
+    }
+    if (cr.brokerOnly === true) {
+      return { block: true, code: 'broker_only', flag: true,
+        title: 'This is a broker authority, not a carrier authority',
+        msg: 'FMCSA Licensing & Insurance shows ' + (cr.legalName || 'this entity') + ' holding ACTIVE broker authority and no motor carrier authority'
+             + (cr.mcNumber ? ' (docket ' + cr.mcNumber + ')' : '') + '. Nothing is wrong with your registration — but LoadBoot dispatches carriers, and a broker cannot be onboarded as one. If you also hold motor carrier authority under a different USDOT, enter that number instead. If you want to post freight to our carriers, that is a broker account, not this one.' };
+    }
+    if (cr.outOfService === true) {
+      return { block: true, code: 'out_of_service', flag: true,
+        title: 'Out of service',
+        msg: 'FMCSA shows this USDOT under an out-of-service order' + (cr.oosDate ? ' dated ' + cr.oosDate : '') + '. We cannot onboard while that stands — resolve it with FMCSA first.' };
+    }
+    if (cr.allowedToOperate === 'N') {
+      return { block: true, code: 'not_allowed', flag: true,
+        title: 'Not allowed to operate',
+        msg: 'FMCSA lists this USDOT as not allowed to operate. Onboarding is blocked until that clears.' };
+    }
+    if (cr.authority === 'inactive' && cr.authorityVerified === true) {
+      return { block: true, code: 'authority_inactive', flag: true,
+        title: 'Operating authority is not active',
+        msg: 'FMCSA Licensing & Insurance shows no active motor carrier authority on this USDOT. Onboarding is blocked until FMCSA shows it active again.' };
+    }
+    if (cr.brokerAuthority === true && cr.carrierAuthority === true) {
+      return { block: false, code: 'dual_authority', flag: true,
+        title: 'Carrier and broker authority',
+        msg: 'You hold both motor carrier and broker authority. That is fine — you are onboarding as a carrier, and loads we dispatch to you must be run on your own authority, not re-brokered.' };
+    }
+    if (cr.authorityVerified !== true || cr.authority === 'unknown') {
+      return { block: false, code: 'authority_unverified', flag: true,
+        title: 'Authority could not be confirmed',
+        msg: 'FMCSA has not published authority records for this number yet — normal for a docket granted in the last few weeks. You can continue; our compliance team confirms it from your authority letter before you book.' };
+    }
+    if (cr.brokerHint === 'no_power_units') {
+      return { block: false, code: 'no_power_units', flag: true,
+        title: 'No trucks on file with FMCSA',
+        msg: 'Your MCS-150 reports no power units. Continue, but compliance will ask about it — we can only dispatch equipment that exists on the federal record.' };
+    }
+    return { block: false, code: 'ok', flag: false };
+  }
+
   /* ----- Onboarding wizard (Phase 2A) ----- */
   async function loadOnboarding() {
     showSkeleton(content, 'cards');
@@ -7269,41 +7352,24 @@ function tripStepper(status) {
       if (st === 0) {
         const vmsg = h('div', { class: 'cp-err' });
         const g = (k) => { if (!fmcsaRes) return null; const cc = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase()); for (const src of [fmcsaRes, fmcsaRes.result, fmcsaRes.carrier]) { if (src && src[k] != null) return src[k]; if (src && src[cc] != null) return src[cc]; } return null; };
-        // The edge function REFUSES to claim operating authority (v26): the public feeds it can
-        // reach prove registration, not a grant of for-hire authority, and it said so by sending
-        // the literal string 'unknown'. This card used to print that word raw — to a carrier,
-        // "Authority: unknown" reads as "your verification failed", when the truth is simply
-        // that a person checks SAFER during review. Say the truth instead of the enum.
-        const _authRaw = String(g('authority_status') || g('authority') || '').toLowerCase();
-        const _authEl = (_authRaw === 'active') ? h('b', null, 'Active')
-          : (_authRaw === 'inactive') ? h('b', { style: 'color:#f87171' }, 'Inactive')
-          : h('span', { style: 'text-align:right' }, [h('b', null, 'Confirmed at review'), h('div', { class: 'cp-row-s', style: 'margin-top:1px' }, 'our team reads your FMCSA record before approval')]);
         const resCard = fmcsaRes ? h('div', { class: 'cp-card', style: 'margin-top:8px' }, [
           h('div', { class: 'cp-row' }, [h('span', null, 'Legal name'), h('b', null, String(g('legal_name') || g('name') || f.company || '\u2014'))]),
-          fmcsaRes.__nameFixed ? h('div', { class: 'cp-row-s', style: 'color:#4ade80' }, '\u2713 Company name set to the FMCSA legal name' + (fmcsaRes.__nameWas ? ' \u2014 replaced \u201c' + fmcsaRes.__nameWas + '\u201d from your sign-up' : '')) : null,
-          h('div', { class: 'cp-row' }, [h('span', null, 'Registration'), h('b', null, String(g('registration_status') || '\u2014'))]),
-          h('div', { class: 'cp-row' }, [h('span', null, 'Authority'), _authEl]),
+          h('div', { class: 'cp-row' }, [h('span', null, 'Authority'), h('b', null, String(g('authority_status') || g('authority') || g('operating_status') || g('allowed_to_operate') || 'checked'))]),
           h('div', { class: 'cp-row' }, [h('span', null, 'Safety rating'), h('span', null, String(g('safety_rating') || 'none'))]),
-          (fmcsaRes && fmcsaRes.__disq) ? h('div', { class: 'cp-ann emergency', style: 'margin-top:8px' }, [h('div', { class: 'cp-ann-t' }, 'Not authorized to operate'), h('div', { class: 'cp-ann-b' }, fmcsaRes.__disqWhy || 'FMCSA lists this authority as inactive / out of service. Onboarding is blocked until FMCSA shows it ACTIVE again.')]) : null,
-          fmcsaRes.saferUrl ? h('a', { href: fmcsaRes.saferUrl, target: '_blank', rel: 'noopener', class: 'cp-row-s', style: 'display:inline-block;margin-top:6px;color:#0883F7' }, 'View your full FMCSA record (SAFER) \u2197') : null,
-            h('div', { class: 'cp-row-s' }, '\u2713 Company details above are live from FMCSA \u2014 nothing to upload for this step.'),
-        ].filter(Boolean)) : null;
+          (fmcsaRes && fmcsaRes.__screen && (fmcsaRes.__screen.block || fmcsaRes.__screen.flag))
+            ? h('div', { class: 'cp-ann ' + (fmcsaRes.__screen.block ? 'emergency' : 'warning'), style: 'margin-top:8px' },
+                [h('div', { class: 'cp-ann-t' }, fmcsaRes.__screen.title), h('div', { class: 'cp-ann-b' }, fmcsaRes.__screen.msg)])
+            : null,
+            h('div', { class: 'cp-row-s' }, '\u2713 Live from FMCSA (SAFER/QCMobile). Verified authority strengthens your profile.'),
+        ]) : null;
         const vbtn = h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:6px', onClick: async (ev) => { const _vb = ev.currentTarget;
           const mc = String(f.mc || '').trim(), dot = String(f.dot || '').trim();
           if (!mc && !dot) { vmsg.className = 'cp-err'; vmsg.textContent = 'Enter your MC or DOT number first.'; return; }
           ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Verifying with FMCSA\u2026';
-          try { let dd; try { dd = await fmcsaVerify({ mc: mc || null, dot: dot || null }); } catch (e1) { if (/not responding|taking too long|Could not reach/i.test((e1 && e1.message) || '')) { _vb.textContent = 'FMCSA slow \u2014 retrying\u2026'; await new Promise((r) => setTimeout(r, 1500)); dd = await fmcsaVerify({ mc: mc || null, dot: dot || null }); } else { throw e1; } } fmcsaRes = dd || {}; const cr = fmcsaRes.carrier || fmcsaRes.result || fmcsaRes; const nm = cr && (cr.legalName || cr.legal_name || cr.dbaName || cr.name);
-            // The company on file is whatever was typed at sign-up; FMCSA's legal name is the
-            // company's registered identity. On a successful verify the legal name WINS and the
-            // field is rewritten — and we say so on the card (__nameFixed/__nameWas), because a
-            // silent replacement looks like the form ignoring what the carrier typed.
-            if (nm && String(nm).trim() && String(nm).trim().toUpperCase() !== String(f.company || '').trim().toUpperCase()) { fmcsaRes.__nameFixed = true; fmcsaRes.__nameWas = String(f.company || '').trim() || null; }
-            if (nm) f.company = nm; if (cr && cr.phone && !String(f.phone || '').trim()) f.phone = String(cr.phone); if (cr && cr.mcNumber) f.mc = String(cr.mcNumber).replace(/\D/g, ''); if (cr && cr.dotNumber) f.dot = String(cr.dotNumber);
-            // An inactive USDOT REGISTRATION also blocks — same rule the CC fleet cross-check
-            // applies (usdot_inactive = block). Authority itself stays a human decision at review.
-            fmcsaRes.__disq = !!(cr && (cr.authority === 'inactive' || cr.allowedToOperate === 'N' || cr.outOfService === true || cr.registrationStatus === 'inactive'));
-            if (fmcsaRes.__disq && cr && cr.registrationStatus === 'inactive' && !(cr.outOfService === true)) fmcsaRes.__disqWhy = 'FMCSA shows this USDOT registration as INACTIVE. Onboarding is blocked until the registration is active again \u2014 if you recently reactivated, FMCSA can take a few days to update.';
-            if (fmcsaRes.__disq) lbToast('FMCSA lists this authority as INACTIVE or under an out-of-service order. LoadBoot only onboards carriers with active authority \u2014 resolve it with FMCSA first, or contact support if this looks wrong.', 'urgent', 'Authority not active');
+          try { let dd; try { dd = await fmcsaVerify({ mc: mc || null, dot: dot || null }); } catch (e1) { if (/not responding|taking too long|Could not reach/i.test((e1 && e1.message) || '')) { _vb.textContent = 'FMCSA slow \u2014 retrying\u2026'; await new Promise((r) => setTimeout(r, 1500)); dd = await fmcsaVerify({ mc: mc || null, dot: dot || null }); } else { throw e1; } } fmcsaRes = dd || {}; const cr = fmcsaRes.carrier || fmcsaRes.result || fmcsaRes; const nm = cr && (cr.legalName || cr.legal_name || cr.dbaName || cr.name); if (nm) f.company = nm; if (cr && cr.phone && !String(f.phone || '').trim()) f.phone = String(cr.phone); if (cr && cr.mcNumber) f.mc = String(cr.mcNumber).replace(/\D/g, ''); if (cr && cr.dotNumber) f.dot = String(cr.dotNumber);
+            fmcsaRes.__screen = lbFmcsaScreen(fmcsaRes);
+            fmcsaRes.__disq = !!fmcsaRes.__screen.block;
+            if (fmcsaRes.__screen.block || fmcsaRes.__screen.flag) lbToast(fmcsaRes.__screen.msg, fmcsaRes.__screen.block ? 'urgent' : 'action', fmcsaRes.__screen.title);
             draw(); }
           catch (e) { _vb.disabled = false; _vb.textContent = 'Verify with FMCSA'; vmsg.className = 'cp-err'; vmsg.textContent = (e && e.message) || 'FMCSA verification failed \u2014 you can still continue and upload your authority letter.'; }
         } }, 'Verify with FMCSA');
@@ -7366,9 +7432,9 @@ function tripStepper(status) {
         ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { const _btn = ev.currentTarget; _btn.disabled = true; _btn.textContent = 'Saving…'; try { if (st === 0 && (!String(f.company || '').trim() || !String(f.contact_name || '').trim() || (!String(f.mc || '').trim() && !String(f.dot || '').trim()))) { throw new Error('Company name, your name, and MC or DOT number are required to continue.'); } if (st === 0 && !fmcsaRes && (String(f.dot || '').trim() || String(f.mc || '').trim())) {
             // Carrier skipped the Verify button — run the FMCSA screen silently before allowing continue.
             _btn.textContent = 'Checking FMCSA\u2026';
-            try { const dd0 = await fmcsaVerify({ mc: String(f.mc || '').trim() || null, dot: String(f.dot || '').trim() || null }); fmcsaRes = dd0 || {}; const cr0 = fmcsaRes.carrier || {}; const nm0 = cr0 && (cr0.legalName || cr0.legal_name || cr0.dbaName || cr0.name); if (nm0) f.company = nm0; /* legal name wins here too — the explicit Verify button is not the only path through step 1 */ fmcsaRes.__disq = !!(cr0 && (cr0.authority === 'inactive' || cr0.allowedToOperate === 'N' || cr0.outOfService === true || cr0.registrationStatus === 'inactive')); } catch (_) { /* FMCSA unreachable — let CC risk flags catch it at review */ }
+            try { const dd0 = await fmcsaVerify({ mc: String(f.mc || '').trim() || null, dot: String(f.dot || '').trim() || null }); fmcsaRes = dd0 || {}; fmcsaRes.__screen = lbFmcsaScreen(fmcsaRes); fmcsaRes.__disq = !!fmcsaRes.__screen.block; } catch (_) { /* FMCSA unreachable — recorded as a review flag below, not treated as a pass */ fmcsaRes = { __screen: lbFmcsaScreen(null), __disq: false }; }
           }
-          if (st === 0 && fmcsaRes && fmcsaRes.__disq) { throw new Error('FMCSA shows this authority as INACTIVE or out of service \u2014 onboarding is blocked until your authority is active again.'); }
+          if (st === 0 && fmcsaRes && fmcsaRes.__disq) { throw new Error((fmcsaRes.__screen && fmcsaRes.__screen.msg) || 'FMCSA shows this authority as INACTIVE or out of service \u2014 onboarding is blocked until your authority is active again.'); }
           if (st === 1) {
             const miss1 = [];
             if (!String(f.home_base || '').trim()) miss1.push('home base (city, ST)');

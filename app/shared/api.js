@@ -720,6 +720,8 @@ export const pocketUpsertTruck = (o = {}) => rpc('cc_pocket_upsert_truck', { p: 
   hazmat_placarded: o.hazmatPlacarded ?? null, twic: o.twic ?? null, tsa_sta: o.tsaSta ?? null, bonded: o.bonded ?? null,
   team_driven: o.teamDriven ?? null, min_rpm: o.minRpm ?? null, max_radius_miles: o.maxRadiusMiles ?? null,
   home_time: o.homeTime ?? null, spec_note: o.specNote ?? null,
+  trailer_type: o.trailerType ?? null, trailer_len_ft: o.trailerLenFt ?? null, trailer_vin: o.trailerVin ?? null,
+  has_tarps: o.hasTarps ?? null, has_chains: o.hasChains ?? null,
 } });
 // Live VIN <-> certificate-of-insurance match, so the carrier hears about it while
 // they are still typing rather than after they press Save.
@@ -853,10 +855,6 @@ export const setIntegrationStatus = (provider, status, config) => rpc('cc_set_in
 
 // ---- Control Tower Wave B: entity 360 (flag: entity360_enabled) ----
 export const carrier360 = (org) => rpc('cc_carrier_360', { p_org: org });
-// Staff-side fleet for one carrier: every column the Add-truck form collects, plus each
-// truck's own VIN verdict against the approved COI. Separate from cc_carrier_360 on
-// purpose — that payload is already wide, and this one is droppable.
-export const ccCarrierFleet360 = (org) => rpc('cc_carrier_fleet_360', { p_org: org });
 export const entityAudit = (o = {}) => rpc('cc_entity_audit', { p_target_type: o.targetType ?? null, p_target_id: o.targetId ?? null, p_org: o.org ?? null, p_limit: o.limit ?? 60 });
 
 // ---- Wave C: Brokers & Shippers (flag: partners_enabled) ----
@@ -1070,3 +1068,6 @@ export const deviceSeen = (key, label, ua) => rpc('device_seen', { p_key: key, p
 export const myDevices = () => rpc('my_devices');
 export const facilityReviewSubmit = (trip, kind, stars, comment) => rpc('facility_review_submit', { p_trip: trip, p_kind: kind, p_stars: stars, p_comment: comment ?? null });
 export const facilityRatings = (keys) => rpc('facility_ratings', { p_keys: keys });
+
+// bl_cc_0237: staff-side live tracking feed for the CC Loads & trips tracker (loadTracker.js)
+export const staffTrackLoad = (loadId) => rpc('cc_staff_track_load', { p_load: loadId });

@@ -70,6 +70,12 @@ export function renderOutreach(host) {
     const daily = (crm && crm.daily) || [];
     const on = !!st.enabled;
 
+    // Campaign clicks/signups from web analytics (utm_campaign) + v2 totals
+    const camps = (stats && (stats.campaigns || stats.rows)) || (Array.isArray(stats) ? stats : []);
+    const tot = (stats && stats.totals) || {};
+    const opens = (stats && stats.opens) || {};
+    const convs = (stats && stats.conversions) || [];
+
     mount(kpis, [
       statCard({ icon: on ? 'check' : 'alert', label: 'Engine', value: on ? 'RUNNING' : 'PAUSED', sub: on ? ('cap ' + (st.base_cap || 0) + '/day → max ' + (st.max_cap || 0)) : 'sends disabled', accent: on ? 'green' : 'amber' }),
       statCard({ icon: 'users', label: 'Contacts', value: totalActive.toLocaleString(), sub: totalAll.toLocaleString() + ' total · ' + totalDone.toLocaleString() + ' completed drip', accent: 'blue' }),
@@ -85,11 +91,6 @@ export function renderOutreach(host) {
     sends.forEach(s => { byTpl[s.tpl] = byTpl[s.tpl] || {}; byTpl[s.tpl][s.status] = s.n; });
     const tplRows = Object.keys(byTpl).sort();
 
-    // Campaign clicks/signups from web analytics (utm_campaign) + v2 totals
-    const camps = (stats && (stats.campaigns || stats.rows)) || (Array.isArray(stats) ? stats : []);
-    const tot = (stats && stats.totals) || {};
-    const opens = (stats && stats.opens) || {};
-    const convs = (stats && stats.conversions) || [];
 
     mount(grid, [
       el('div', { class: 'lb-card fa-col2' }, [
