@@ -670,6 +670,28 @@ export function renderCarrier360(host, orgId) {
         ]);
       } catch (_) { mount(fmcsaXCard, [el('h4', { class: 'cc-card-title' }, 'FMCSA cross-check'), el('div', { class: 'cc-sub', style: 'margin-top:8px' }, 'FMCSA unreachable right now \u2014 try again shortly.')]); }
     })();
+    // ---- L&I AUTHORITY TYPES (v28): the census cannot tell a broker from a carrier — this can.
+    // Appended as its own strip so it lands whether or not the census fetch above succeeded.
+    if (p.dot) (async () => {
+      try {
+        const fv = await fmcsaVerify({ dot: p.dot });
+        const cr = (fv && fv.carrier) || {};
+        const t = cr.authorityTypes || null;
+        const strip = el('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid ' + (cr.brokerOnly ? '#f6b9b9' : cr.carrierAuthority ? '#a7e5c3' : '#dbe3ec') + ';background:' + (cr.brokerOnly ? '#fdecec' : cr.carrierAuthority ? '#e8f8ef' : '#f8fafc') }, [
+          el('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8' }, 'Operating authority \u2014 FMCSA L&I'),
+          cr.authorityVerified ? el('div', { style: 'margin-top:4px;font-size:.85rem' }, [
+            el('b', { style: 'color:' + (cr.brokerOnly ? '#a31414' : cr.carrierAuthority ? '#136c3c' : '#8a5300') },
+              cr.brokerOnly ? '\u26d4 BROKER authority ONLY \u2014 this entity arranges freight, it does not haul it. Do not onboard as a carrier.'
+                : cr.carrierAuthority ? '\u2713 Active for-hire carrier authority' + (cr.brokerAuthority ? ' (also holds broker authority \u2014 legitimate, but watch for double-brokering)' : '')
+                : 'No active authority of any type on file'),
+            el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'Types: ' + [t && t.common ? 'Common \u2713' : 'Common \u2717', t && t.contract ? 'Contract \u2713' : 'Contract \u2717', t && t.broker ? 'Broker \u2713' : 'Broker \u2717'].join(' \u00b7 ')
+              + ((cr.liDockets || []).length ? ' \u00b7 dockets: ' + (cr.liDockets || []).map((d9) => d9.docket).filter(Boolean).join(', ') : '')),
+          ]) : el('div', { class: 'cc-sub', style: 'margin-top:4px' }, 'L&I returned no authority records \u2014 authority stays UNVERIFIED. Read the SAFER snapshot ("Operating Authority Status") before approving.'
+            + (cr.brokerHint === 'no_power_units' ? ' \u26a0 Census shows ZERO power units \u2014 pattern of a broker or shipper, not a carrier.' : '')),
+        ]);
+        fmcsaXCard.appendChild(strip);
+      } catch (_) { /* strip is best-effort — the census card above already rendered */ }
+    })();
     // ---- ONE-STOP: Onboarding & compliance control (verify / reject / warn / approve — all here) ----
     const compCard = card([el('h4', { class: 'cc-card-title' }, 'Onboarding & compliance'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Loading…')]);
     async function loadComp() {
