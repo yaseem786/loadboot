@@ -1,0 +1,9 @@
+-- bl_match_0258 — cc_match_rank now honors carrier preferences that were collected but
+-- IGNORED by matching (found in the 2026-08-21 carrier data-flow audit):
+--   • avoid_states  → -8 pts + "⛔ <ST> on carrier avoid-states list" risk
+--   • min/max_trip_miles band → -3 outside / +2 inside
+--   • min_notice_hours vs pickup (pickup assumed 08:00) → -3 + short-notice risk
+--   • max_weight_lbs vs load weight (digits parsed from the weight text) → -5 + risk
+-- Additive: existing factors/scoring unchanged; new checks extend the pfit lateral only.
+-- Applied to STAGING + PROD 2026-08-21 via Supabase MCP (full definition in DB).
+-- Staging E2E proof: test carrier score 101 → 82 (-19 = -8-3-3-5), all four notes+risks fired.
