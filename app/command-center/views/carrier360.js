@@ -95,6 +95,9 @@ export function renderCarrier360(host, orgId) {
           F('Hazmat', yn(pr.hazmat)), F('Team drivers', yn(pr.team_drivers)), F('Weekends', pr.weekend_ok ? 'Available' : 'No'),
           F('Min notice', pr.min_notice_hours ? pr.min_notice_hours + ' h' : null),
           Fc('Avoid states', pr.avoid_states),
+          F('Equipment notes', (pr.equipment_detail && typeof pr.equipment_detail === 'object')
+            ? (Object.keys(pr.equipment_detail).map((k) => k.replace(/_/g, ' ') + ': ' + pr.equipment_detail[k]).join(' \u00b7 ') || null)
+            : null),
           F('Cost/mile', rpm(pr.cost_per_mile)),
           F('Notes', pr.notes),
           F('Operating radius', pr.operating_radius_miles ? pr.operating_radius_miles + ' mi from home' : null),
@@ -161,8 +164,11 @@ export function renderCarrier360(host, orgId) {
       el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Safety & authority'), verifyBtn]),
       kv('Authority', sc.authority_status || 'unknown'),
       kv('Safety rating', sc.safety_rating || 'none'),
-      kv('Out of service', sc.out_of_service ? 'YES' : 'No'),
-      kv('On-time delivery', sc.on_time_pct != null ? sc.on_time_pct + '%' : '—'),
+      kv('Out of service', sc.out_of_service
+        ? ('\u26d4 YES' + (sc.out_of_service_date ? ' \u2014 since ' + fmtDate(sc.out_of_service_date) : ' \u2014 date not on file'))
+        : (sc.out_of_service_date ? 'No \u2014 cleared (last OOS ' + fmtDate(sc.out_of_service_date) + ')' : 'No')),
+      kv('Authority record checked', sc.last_checked ? fmtDate(sc.last_checked) : '\u2014'),
+      kv('On-time delivery', sc.on_time_pct != null ? sc.on_time_pct + '%' : '\u2014'),
       fmcsaStatus,
     ]);
 
