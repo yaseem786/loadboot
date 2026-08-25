@@ -304,9 +304,10 @@ export function renderLiveChat(host) {
               : c.status === 'dialing' ? '📞 Ringing…'
               : c.status === 'scheduled' ? '📅 Scheduled'
               : c.status === 'no-answer' ? '☎ No answer'
+              : c.status === 'no-result' ? '⚠ No result'
               : c.status === 'cancelled' ? '— Cancelled'
               : c.status;
-            const tone = answered ? 'green' : c.status === 'in-progress' ? 'blue' : c.status === 'no-answer' ? 'red' : c.status === 'cancelled' ? 'gray' : 'amber';
+            const tone = answered ? 'green' : c.status === 'in-progress' ? 'blue' : c.status === 'no-answer' ? 'red' : c.status === 'no-result' ? 'amber' : c.status === 'cancelled' ? 'gray' : 'amber';
             return el('span', { class: 'cc-pill cc-pill-' + tone }, label);
           })()),
           el('td', null, c.duration_sec != null ? (Math.floor(c.duration_sec / 60) + 'm ' + (c.duration_sec % 60) + 's') : '—'),

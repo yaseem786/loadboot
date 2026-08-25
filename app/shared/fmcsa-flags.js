@@ -5,7 +5,18 @@
 // National reference averages: vehicle OOS ~21%, driver OOS ~6% (FMCSA published).
 
 const FBASE = 'https://data.transportation.gov/resource';
-async function get(path) { try { const r = await fetch(FBASE + '/' + path, { headers: { Accept: 'application/json' } }); if (!r.ok) return null; return await r.json(); } catch (_) { return null; } }
+// Returns the rows on success, or the string 'unreachable' when Socrata could not be read.
+// The distinction matters: "Socrata answered and had no row" and "Socrata did not answer" are
+// completely different findings, and collapsing both to null used to print an accusatory
+// "verify the number" flag on a perfectly valid DOT whenever the dataset was down.
+async function get(path) {
+  try {
+    const r = await fetch(FBASE + '/' + path, { headers: { Accept: 'application/json' } });
+    if (!r.ok) return 'unreachable';
+    return await r.json();
+  } catch (_) { return 'unreachable'; }
+}
+const rows = (x) => (Array.isArray(x) ? x : []);
 
 export async function fmcsaRiskFlags(dot) {
   dot = String(dot || '').replace(/\D/g, '');
@@ -16,16 +27,25 @@ export async function fmcsaRiskFlags(dot) {
     get('fx4q-ay7w.json?dot_number=' + dot + '&$order=insp_date DESC&$limit=120'),
     get('aayw-vxb3.json?dot_number=' + dot + '&$order=report_date DESC&$limit=40'),
   ]);
-  const c = (census && census[0]) || null;
-  if (!c) { flags.push({ tone: 'warning', text: 'FMCSA: no census record found for DOT ' + dot + ' — verify the number.' }); return flags; }
+  if (census === 'unreachable') {
+    flags.push({ tone: 'warning', text: 'FMCSA: the census dataset did not respond, so none of these checks could run for DOT ' + dot + '. This says nothing about the carrier — re-run it later, or read the SAFER snapshot by hand.' });
+    return flags;
+  }
+  const c = rows(census)[0] || null;
+  if (!c) {
+    // Socrata answered and genuinely has no row. Still not proof the number is wrong: the census
+    // extract lags a newly granted authority by weeks (Warren's Courier, Aug 2026).
+    flags.push({ tone: 'warning', text: 'FMCSA: DOT ' + dot + ' is not in the census dataset. That is normal for an authority granted in the last few weeks and is NOT proof the number is wrong — check the SAFER snapshot before telling the carrier anything.' });
+    return flags;
+  }
 
   // authority / status
   if (String(c.status_code || '').toUpperCase() !== 'A') flags.push({ tone: 'urgent', text: 'FMCSA: operating status is NOT ACTIVE — do not approve until FMCSA shows it active.' });
   if (String(c.docket1_status_code || '').toUpperCase() === 'I') flags.push({ tone: 'urgent', text: 'FMCSA: MC docket is INACTIVE.' });
 
   // out-of-service rates from recent inspections
-  const rows = insp || []; let veh = 0, vehO = 0, drv = 0, drvO = 0;
-  rows.forEach((x) => {
+  const inspRows = rows(insp); let veh = 0, vehO = 0, drv = 0, drvO = 0;
+  inspRows.forEach((x) => {
     const L = String(x.insp_level_id);
     if (L === '1' || L === '2' || L === '5') { veh++; if (Number(x.vehicle_oos_total) > 0) vehO++; }
     if (L === '1' || L === '2' || L === '3') { drv++; if (Number(x.driver_oos_total) > 0) drvO++; }
@@ -39,7 +59,7 @@ export async function fmcsaRiskFlags(dot) {
 
   // recent crashes (24 months)
   const cutoff = Date.now() - 730 * 86400000;
-  const recent = (crash || []).filter((x) => { const t = Date.parse(String(x.report_date || '').slice(0, 10)); return isFinite(t) && t >= cutoff; });
+  const recent = rows(crash).filter((x) => { const t = Date.parse(String(x.report_date || '').slice(0, 10)); return isFinite(t) && t >= cutoff; });
   const fatal = recent.reduce((a, x) => a + (Number(x.fatalities) || 0), 0);
   if (fatal > 0) flags.push({ tone: 'urgent', text: 'FMCSA: ' + fatal + ' fatality(ies) in crashes within the last 24 months.' });
   else if (recent.length >= 3) flags.push({ tone: 'warning', text: 'FMCSA: ' + recent.length + ' recorded crashes in the last 24 months.' });

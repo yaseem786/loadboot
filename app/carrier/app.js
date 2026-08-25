@@ -9,7 +9,7 @@ import { US_CITIES } from './us-cities.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updatePassword, mfaListFactors, mfaEnrollTotp, mfaVerify, mfaUnenroll, mfaRequired, signOutEverywhere } from '../shared/session.js';
 import {
   requestAccountDeletion, cancelAccountDeletion, myAccountDeletionStatus,
-  pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
+  myCarrierOrg, pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
   pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
   pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, coiVehicles, vinCoverage, fleetFmcsaCheck, setLegalOwner, truckLoadingProfiles, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
@@ -6932,20 +6932,51 @@ function tripStepper(status) {
       const res = h('div', { style: 'margin-top:10px' });
       const msg = h('div', { class: 'cp-err' });
       const vbtn = h('button', { class: 'cp-btn', style: 'background:linear-gradient(135deg,#0e7490,#06b6d4)', onClick: async (ev) => {
+        // _vb was never declared in this handler - the only `const _vb` in the file belongs to the
+        // signup wizard's button (different closure). So this line threw a ReferenceError on every
+        // click and the button did nothing at all: no request, no message. Found 23 Aug.
+        const _vb = ev.currentTarget;
         const mc = mcIn.value.trim(), dot = dotIn.value.trim();
         if (!mc && !dot) { msg.className = 'cp-err'; msg.textContent = 'Enter your MC or DOT number.'; return; }
         _vb.disabled = true; _vb.textContent = 'Verifying with FMCSA\u2026'; msg.textContent = '';
         try {
-          const d = await fmcsaVerify({ mc: mc || null, dot: dot || null });
+          // 23 Aug: this dialog used to (a) pass no carrierOrg, so the edge function's save block
+          // never ran and NOTHING reached the dispatcher, and (b) print a green "FMCSA verified"
+          // tick even when authority came back "unknown". Both fixed: we send carrierOrg so the
+          // result is persisted to carrier_safety, and the same lbFmcsaScreen() the signup wizard
+          // uses decides what the carrier is told.
+          const _org = await myCarrierOrg().catch(() => null);
+          const d = await fmcsaVerify({ carrierOrg: _org || null, mc: mc || null, dot: dot || null });
           const g = (k) => { const cc = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase()); for (const src of [d, d && d.result, d && d.carrier]) { if (src && src[k] != null) return src[k]; if (src && src[cc] != null) return src[cc]; } return null; };
+          const scr = lbFmcsaScreen(d);
+          const verified = g('authority_verified') === true;
+          const authTxt = verified ? String(g('authority') || 'checked') : 'could not be confirmed';
           mount(res, h('div', { class: 'cp-card', style: 'margin-top:8px' }, [
-            h('div', { class: 'cp-row' }, [h('span', null, 'Authority'), h('b', null, String(g('authority_status') || g('authority') || g('operating_status') || g('allowed_to_operate') || 'checked'))]),
+            h('div', { class: 'cp-row' }, [h('span', null, 'Authority'), h('b', null, authTxt)]),
             h('div', { class: 'cp-row' }, [h('span', null, 'Safety rating'), h('span', null, String(g('safety_rating') || 'none'))]),
             h('div', { class: 'cp-row' }, [h('span', null, 'Out of service'), h('span', null, String(g('out_of_service') != null ? g('out_of_service') : 'No'))]),
+            scr && (scr.block || scr.flag)
+              ? h('div', { class: 'cp-ann ' + (scr.block ? 'emergency' : 'warning'), style: 'margin-top:8px' },
+                  [h('div', { class: 'cp-ann-t' }, scr.title), h('div', { class: 'cp-ann-b' }, scr.msg)])
+              : null,
             h('div', { class: 'cp-row-s' }, 'Live from FMCSA (SAFER/QCMobile) via MC/DOT \u2014 nothing to upload for this verification.'),
-          ]));
-          msg.className = 'cp-err ok'; msg.textContent = '\u2713 FMCSA verified \u2014 sent to your dispatcher for approval.';
-        } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Verify with FMCSA'; msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'FMCSA verification failed \u2014 try again or upload the authority letter instead.'; }
+          ].filter(Boolean)));
+          if (scr && scr.block) {
+            msg.className = 'cp-err'; msg.textContent = scr.title + ' \u2014 this cannot be accepted as your authority record.';
+            _vb.disabled = false; _vb.textContent = 'Verify with FMCSA';
+          } else if (!verified) {
+            msg.className = 'cp-err'; msg.textContent = 'FMCSA has not published authority records for this number yet. Nothing was recorded \u2014 upload your authority letter (PDF) instead, or try again later.';
+            _vb.disabled = false; _vb.textContent = 'Verify with FMCSA';
+          } else if (d && d.saved === false) {
+            msg.className = 'cp-err'; msg.textContent = 'FMCSA confirmed your authority, but we could not save it to your file. Please try again.';
+            _vb.disabled = false; _vb.textContent = 'Verify with FMCSA';
+          } else {
+            msg.className = 'cp-err ok'; msg.textContent = '\u2713 FMCSA verified \u2014 sent to your dispatcher for approval.';
+          }
+        // Native events null out currentTarget once dispatch finishes, and this handler awaits -
+        // so ev.currentTarget is null by the time an error lands here and the old line threw a
+        // TypeError of its own, leaving the button stuck on "Verifying with FMCSA...". Use _vb.
+        } catch (e) { _vb.disabled = false; _vb.textContent = 'Verify with FMCSA'; msg.className = 'cp-err'; msg.textContent = (e && e.message) || 'FMCSA verification failed \u2014 try again or upload the authority letter instead.'; }
       } }, 'Verify with FMCSA');
       const upl = h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:8px', onClick: () => uploadFor(r) }, 'Or upload authority letter (PDF) instead');
       openModal('Operating authority \u2014 verify with FMCSA', [
