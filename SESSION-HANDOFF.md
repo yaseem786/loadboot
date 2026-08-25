@@ -44,13 +44,14 @@ truck row `4a2e54a1-d6b3-4b62-bcd2-e89bfffe6d99` (unit 1)
 | Deck | **30 ft gooseneck flatbed (25+5)**, 102" wide, ~34" deck height |
 | **Max payload** | **9,000 lbs** — is se upar sab kuch auto-reject |
 | Securement | lumber tarp + flat tarp, Grade 80 chains + binders, straps, **mega ramps** |
+| ⚠️ Tarp preference | **Justin TARP KARNA NAHI CHAHTA** (WhatsApp 22 Aug: *"I'd rather not tarp"*). Tarps uske paas HAIN, magar tarp-required load aakhri chara hai — sirf tab jab rate us mehnat ka saaf muawza de, **aur pehle us se poochhna hai**. |
 | Truck | 2024 Ford F-250, VIN `1FT8W2BT3REE14250`, plate POJ7838, Class 3 |
 | Trailer | VIN `16V3F3821TA471001` |
 | Annual inspection | valid to 2027-08-13 |
 | Radius | 200 mi deadhead · home weekly |
 
 ### SCHEDULE — CONFIRMED (Justin, 22 Aug 6:17am WhatsApp)
-- **Monday 24 Aug, 8:00 AM start** — pakka.
+- **Monday 24 Aug** — pehle usne "8am" kaha tha, phir refine kiya: *"I'll be hooked up and ready to go at 9am"*. **Yani trailer laga kar 9:00 AM ET par rolling.** Brokers ko pickup availability **9am se** quote karo, 8am se nahi — warna pehla hi load late ho jayega.
 - **Monday overnight bahar reh sakta hai.** Uske alfaz: *"If you can put me out Monday over night and find me a load home that would be the best case scenario."*
 - Weekend (Sat/Sun) available hai **lekin raat ghar aana hai** → sirf same-day round trip.
 - DB mein uski apni prefs: floor **$1.50/mi**, max weight 9,000, deadhead 200, avoid NY+CA, min notice 2h, **weekend_ok = true**, weekly cost $2,860 → breakeven ~**$572/din** + fuel ~$0.28/mi.
@@ -85,9 +86,14 @@ Maine `fmcsa-verify` chalaya:
 
 **Is ka natija:** Warren ko abhi dispatch **nahi** kar sakte. Aur wajah "FMCSA feed lag" **nahi** hai (ye hamara pichla khayal ghalat tha) — wajah ye hai ke MC number ghalat hai aur authority L&I par active nahi dikh rahi. Brokers ke systems (Highway, RMIS) usay isi bina par reject kar denge.
 
+### UPDATE (22 Aug, Warren ka jawab)
+- **MC ka masla band.** Warren ne khud confirm kiya: *"Yes that's right"* — **99849375 hi uska MC hai**; pehle usne ghalat number diya tha aur naya aane par update karne ka kaha tha. `organizations.mc_number` **mat badlo**, 99849375 hi rehne do. FMCSA abhi purana docket 58740462 dikha raha hai — feed ko catch up karna hai.
+- **Truck specs bhi usne confirm kar diye** (16 ft box / 4,200 lbs) — file mein pehle se sahi the.
+- **Asal rukawat sirf authority hai.** Usne poochha: *"I do not see where I get the authority letter from. Can you help me with that?"* — yani uske paas letter hai hi nahi, jo is baat ki taraf ishara karta hai ke **authority abhi grant hi nahi hui**.
+- Usay ye bataya gaya: `https://li-public.fmcsa.dot.gov` par apna USDOT 5677034 daal kar khud status dekhe; FMCSA helpline **1-800-832-5660**; aur sab se ahem — **apne insurance agent se poochhe ke BMC-91X FMCSA ke paas file hui ya nahi.** Naye carriers ki authority aksar isi filing par atakti hai. BOC-3 bhi chahiye.
+
 **Karna kya hai:**
-- Warren se poochho: uska asal MC number kya hai, aur kya authority **grant** ho chuki hai ya abhi **pending** hai? Uska FMCSA authority letter maango.
-- Jab tak wo confirm na kare, `organizations.mc_number` **mat badlo** — ye carrier identity data hai. Confirm hone par 99849375 → 58740462 update karo.
+- Uske jawab / L&I screenshot ka intezar. Jab tak L&I par authority active na dikhe, dispatch nahi ho sakta.
 - Scheduled re-check `trig_01ErKGwcsuoU1V3KDL1zJSba` (Mon 24 Aug 14:00 UTC) mojood hai — **uska prompt update karna hoga**, kyunke wo abhi bhi ghalat MC 99849375 check karta hai. DOT 5677034 se check karwao.
 - Payment profile: factoring **Flat Rate Funding Group, LLC**, noa_status verified. **`remittance_email` jaan-boojh kar NULL hai** — NOA par koi email nahi tha. Pehli settlement se pehle Flat Rate (313-638-7500) se AR email confirm karna hai. `remittance_email_note` mein ye likha hai. **Yahan koi email andaze se mat daalna.**
 
@@ -133,7 +139,7 @@ Trial: **din 8 (~29 Aug) par cancel/downgrade ka faisla** warna $79/mo. VPN lazm
 
 **Faisla 1 — carrier ka account carrier khud banaye. Hum uski jagah nahi banate.**
 Highway government ID + face capture maangta hai aur FMCSA record ke against verify karta hai. Uski jagah signup karna theek wohi harkat hai jo ye system rokne ke liye bana hai — natija Munster ka MC flag hona ho sakta hai, aur phir har Highway-wala broker darwaza band kar dega. Hum guide karte hain, data tayyar karte hain; **carrier sign karta hai**. Ye user ki apni hifazat bhi hai (cargo claim / double-brokering ki zimmedari).
-Justin ka signup message + uske exact figures: `dispatch/highway-setup-munster.md`. Link: `https://highway.com/onboarding/sign-up` (FWF ka direct: `highway.com/go/fwf`). Signup ke baad **LoadBoot ko authorized dispatch service** add karwana hai.
+Justin ka signup message + uske exact figures: `dispatch/highway-setup-munster.md`. Link: **`https://highway.com/onboarding/sign-up/carrier-details`** (aakhir ka `/carrier-details` lazmi hai — us ke baghair "link expired" aata hai; ye ghalti 22 Aug ko hui). Mobile app: "Highway for Carriers" (iOS id6751547865 / Android com.highway.tfx). FWF ka direct: `highway.com/go/fwf`. **⚠️ 22 Aug UPDATE — Justin ka Highway account BAN CHUKA HAI** (*"its already set up"*). Aur uske sath ek ghalti bhi saaf hui: maine likha tha ke wo LoadBoot ko "authorized dispatch service" add kar de — **Highway mein aisa feature hai hi nahi**, aur na koi dispatcher account type. Jo hai wo multi-user **approve** model hai (*"Approve new users before they can manage your account"*), aur har user ko apna government ID + live photo + carrier ki taraf se kaam karne ka saboot dena parta hai. **Carrier ka login kabhi use nahi karna** — ek documented case mein Highway ke fraud engine ne isi wajah se carrier ki profile flag kar di. Highway se poochhna ho to `service@highway.com` / 906-444-2929; unka koi public help center nahi. Aur `iDispatchHub` wala press release MAT bhejna — wo dispatchers ko carriers vet karne ka tool deta hai, ulta kaam.
 
 **Faisla 2 — Highway partnership abhi NAHI karni.** (22 Aug, tehqeeq ke baad)
 Poori industry **broker-pays, broker-initiated** hai. Koi platform aisa nahi jahan dispatch company ek dafa onboard kare aur wo kai brokers tak khud pahunch jaye. Saboot (TMS vendors ki apni docs):
@@ -164,20 +170,30 @@ Agent ka prompt pehle `{{broker_name}}`, `{{load_ref}}`, `{{origin}}` … use ka
 
 **Behtar hal (baad ke liye):** `lc_calls` mein `vars jsonb` column + `retell_dial` se pass — tab structured variables bhi chalen. Ye migration hai, prod+staging dono par.
 
-### 🚨 WEBHOOK BUG — Monday se pehle theek karna LAZMI hai
-22 Aug ko chaaron broker calls DB mein `no-answer / 0 sec` dikhin, magar **Retell ke apne call history mein teen calls waqai connect hui thin** (1:09, 1:39, 1:10). Wajah:
+### ✅ WEBHOOK — HAL HO GAYA (22 Aug shaam ko verify kiya)
+22 Aug ki chaaron broker calls DB mein `no-answer / 0 sec` dikhin, jabke **Retell ke apne call history mein teen calls waqai connect hui thin** (1:09, 1:39, 1:10). Wajah agent ka khali webhook tha.
 
-**"Riley Broker Outbound" agent ka `Agent Level Webhook URL` KHALI hai.**
+**Ab theek hai. Version history se poori kahani saaf hui:**
 
-Is liye Retell kabhi LoadBoot ko batata hi nahi ke call ka kya bana; `voice_run_scheduled()` 3 minute baad stale `dialing` row ko `no-answer` mark kar deta hai. Natija: **call ho jati hai, transcript hamesha ke liye zaya ho jata hai.**
-(Riley **Inbound** agent par webhook laga hua hai — isi liye inbound calls ke summaries theek aate hain.)
+| Version | Publish waqt | Webhook |
+|---|---|---|
+| **V4** "CC variables + Monday overnight" | 22 Aug **07:21** PT | ❌ nahi tha — **calls isi par chalin (07:30–07:55)**, is liye transcripts zaya |
+| **V5** | 22 Aug **11:40** PT | ✅ **webhook mojood** |
+| Draft V6 | — | V5 ki auto-copy, koi pending change nahi |
 
-**Fix:** agent ke Webhook Settings mein URL daalo. `public.retell_webhook(jsonb)` par `anon` ko EXECUTE hai aur wo single unnamed jsonb param leta hai, is liye PostgREST RPC endpoint chalega:
+Phone number `latest_published` par set hai → **V5 use hoga → Monday ki calls DB mein aayengi.**
+
+**Verified webhook URL:**
 `https://rwscphuhpjoudvljvmdk.supabase.co/rest/v1/rpc/retell_webhook?apikey=<ANON_KEY>`
-**Pehle Riley Inbound agent ka webhook URL kholo aur bilkul wohi copy karo** — wo chal raha hai, andaza lagane ki zarurat nahi. Phir agent Publish karo aur ek test call se tasdeeq karo ke `lc_calls` mein summary/transcript aaya.
-⚠️ Dashboard ka Webhook Settings section click par band ho jata hai aur renderer freeze hota hai — sabar se, chhote steps mein.
+(anon key `get_publishable_keys` se; `public.retell_webhook(jsonb)` par `anon` ko EXECUTE hai aur wo single unnamed jsonb param leta hai, is liye PostgREST RPC seedha chalta hai — **koi header nahi chahiye**, apikey query string mein kaafi hai.)
 
-**Retell dashboard ka masla:** editor bara text ek saath type karne par freeze ho jata hai aur prompt khali chhor deta hai. **Chhote hisson mein type karo aur har hisse ke baad screenshot se verify karo.** Cloud sandbox se `api.retellai.com` tak nahi pahunch sakte (403 CONNECT); browser page ke andar se fetch karna parta hai, aur API key capture karne ki koshish classifier block kar deta hai — **UI use karo**.
+**Do tareeqon se test kiya:**
+1. Sandbox se `POST .../rpc/retell_webhook?apikey=…` body `{"event":"call_ended"}` → `200 {"ok": true, "ignored": true}` (function chali, bina call object ke sahi ignore kiya).
+2. Retell dashboard ka apna **Test** button → *"Test webhook sent successfully"*.
+
+**Webhook Events** (agent → Webhook Settings → Set Up): **Call started ✅ · Call ended ✅ · Call analyzed ✅** — teenon zaroori events on hain. Baqi (Transcript updated, Transfer *) off — theek hai.
+
+> **Race condition ka darr ab nahi:** `voice_run_scheduled()` sirf un rows ko `no-answer` karta hai jo 3 minute se `dialing` par atki hon. Webhook chalne se `call_started` foran status `in-progress` kar deta hai, is liye sweep unhen chhuta hi nahi.
 
 ### Call pipeline (ye ab poora kaam karta hai)
 ```
@@ -331,7 +347,7 @@ Account lena hai. **Dispatcher access ka rasta:** demo form `cloud.comms.dat.com
 4. Munster ki truck posting ka `available_to` 24 Aug se aage barhao.
 5. **Product bug:** dobara post karne par purani truck_posting supersede ho.
 6. Marshall: COI (ACORD 25) + bank letter.
-7. **🚨 Retell webhook URL — "Riley Broker Outbound" agent par KHALI hai** (section 7). Monday se pehle lazmi, warna calls hongi magar transcripts zaya ho jayenge.
+7. ~~Retell webhook URL~~ — **HO GAYA** (V5 par mojood, dono tarah test kiya). Section 7 dekho.
 8. `lc_calls.vars jsonb` + `retell_dial` — structured call variables (migration, dono DB).
 8. **LinkedIn/Facebook se load sourcing + DAT account** — agle session ka asal kaam (section 11).
 10. Meow bank application (US business card — 123LB billing US/CA only).

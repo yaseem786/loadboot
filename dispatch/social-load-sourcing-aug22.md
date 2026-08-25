@@ -71,7 +71,7 @@ Matlab: in groups mein **noise zyada hai, asal broker loads kam**. Is liye:
 
 ## 2. POST A — Facebook groups (capacity post)
 
-> Carrier ka naam/MC/phone kahin nahi. Sirf LoadBoot ka contact.
+> Carrier ka naam/MC/phone kahin nahi. Sirf LoadBoot ka contact — WhatsApp + email, Retell wala (469) number nahi.
 
 ```
 🚛 AVAILABLE MONDAY 8/24 — 30 FT HOTSHOT GOOSENECK
@@ -89,14 +89,19 @@ WHAT WE WANT
 • Partials, machinery, pipe, lumber, crated freight, anything that rolls up ramps
 • $2.00/mi and up, all-in. No NY, no CA.
 
-BROKERS ONLY. Rate con goes in the carrier's name — we dispatch, we do not re-broker.
+VERIFIED BROKERS ONLY — here's what we check, every load:
+• Broker authority active on FMCSA (L&I docket, not just a census record)
+• Surety bond current
+• Credit run through our factor before we book
+• Rate con in the carrier's name. A different MC on the rate con and we walk.
+We dispatch. We do not re-broker.
+
 MC, DOT, COI and W-9 sent in DM once we're talking about a real load.
 
-📞 (469) 253-7575
-✉️ dispatch@loadboot.com
 💬 WhatsApp (928) 393-6198
+✉️ dispatch@loadboot.com
 
-LoadBoot — dispatch for verified small-fleet carriers.
+LoadBoot — The Operating System for Trucking.
 ```
 
 ---
@@ -120,21 +125,22 @@ truck under freight it can't legally carry — that's the whole point of vetting
 Brokers — send me a message and I'll come back with MC, DOT, COI and W-9 the same hour.
 The rate confirmation goes in the carrier's name. We dispatch; we don't re-broker.
 
-dispatch@loadboot.com | (469) 253-7575
+dispatch@loadboot.com | WhatsApp (928) 393-6198
 
-#hotshot #flatbed #freight #dispatch #logistics #ohiofreight
+#hotshottrucking #flatbed #freightbrokers #logistics #ohiofreight
 ```
 
 ---
 
-## 4. POST C — LinkedIn "Asim" account (5,000 broker/dispatcher connections)
+## 4. POST C — LinkedIn "Asim" account (~500 broker/dispatcher connections)
 
-> Lehja shakhsi, kyunke ye personal profile hai. Ye account sab se qeemti asset hai — mahine mein
-> 1-2 capacity post se zyada nahi, warna connections ke saamne spam lagega.
+> Lehja shakhsi, kyunke ye personal profile hai. ~500 connections hain, zyadatar dispatchers aur
+> brokers — is liye freight-toned post fit hai. Mahine mein 2-3 capacity post se zyada nahi.
+> **Image mat lagayein — sirf text.**
 
 ```
 One of our carriers has a 30 ft gooseneck sitting empty Monday morning in Cincinnati, and
-I'd rather ask 5,000 freight people than refresh a load board all weekend.
+I'd rather ask the freight people in my feed than refresh a load board all weekend.
 
 Specs, honestly: 25+5 deck, 102 in wide, 9,000 lbs max payload. Tarps, Grade 80 chains and
 binders, straps, mega ramps. $1M auto, $100k cargo. Authority active and verified.
@@ -148,7 +154,7 @@ OH/KY/IN/TN Tuesday. Partials and machinery welcome. No NY, no CA.
 
 If you've got something, message me — MC, DOT, COI and W-9 come straight back.
 
-dispatch@loadboot.com | (469) 253-7575
+dispatch@loadboot.com | WhatsApp (928) 393-6198
 ```
 
 ---
@@ -186,7 +192,7 @@ and I'll confirm or pass within the hour. Rate confirmation in the carrier's nam
 
 [NAME]
 LoadBoot Dispatch
-dispatch@loadboot.com · (469) 253-7575
+WhatsApp (928) 393-6198 · dispatch@loadboot.com
 ```
 
 ### DM bhejne se pehle 3-GATE (kabhi skip nahi)
@@ -212,7 +218,7 @@ dispatch@loadboot.com · (469) 253-7575
 | FB groups | Ek din mein **4-6 groups**, sab ek saath nahi | subah 6-8 AM ET (brokers tab load post karte hain) |
 | FB company page | hafte mein 2-3 | — |
 | LinkedIn company page | hafte mein 2-3 | Mon/Wed subah |
-| **Asim account** | **mahine mein 1-2 capacity post** | zyada karoge to 5,000 connections ke saamne spam |
+| **Asim account** | **mahine mein 2-3 capacity post** | zyada karoge to ~500 freight connections ke saamne spam |
 | Yaseen personal | Asim ki post par repost | usi din |
 
 FB groups mein **wohi post har group mein copy-paste na karo** — Facebook usay spam detect karta hai.
@@ -344,3 +350,62 @@ Aakhri jumla jaan boojh kar likha hai — isi se pata chalega ke DAT ka koi disp
 - [Add a new user and purchase a new seat — DAT One Help Center](https://one.support.dat.com/4-account-billing-84e74143/user-management-f41a4be0/add-a-new-user-and-purchase-a-new-seat-0c787870)
 - [Trucking Fleet Services (plans & pricing) — DAT](https://www.dat.com/carriers)
 - [Load Board for Carriers — Truckstop.com](https://truckstop.com/product/load-board/carrier/)
+
+---
+
+## 7b. ⚠️ Updates jo 22 Aug ko baad mein aayin
+
+1. **Tagline badal gayi** — ab **"The Operating System for Trucking"** hai, "Keep Your Wheels
+   Earning" nahi. ⚠️ Repo mein `dispatch/loadboot-signature.html` aur `docs/brand-kit/BRAND-KIT.md`
+   mein abhi bhi purani tagline hai — wo alag se theek karni hain.
+2. **"Verified brokers only" ka block posts mein add ho gaya.** Jo 5 FB posts 22 Aug ko ja chuki
+   hain un mein ye block **nahi** hai — agli baar wali posts mein hai. Purani posts edit karne ki
+   zarurat nahi (edit karne se approval dobara pending ho sakti hai).
+3. **Contact ab sirf WhatsApp (928) 393-6198 + dispatch@loadboot.com.** Retell wala
+   **(469) 253-7575 posts se hata diya gaya** (owner ka faisla). ⚠️ Jo 5 FB posts ja chuki hain un
+   mein (469) abhi bhi mojood hai — wo Retell inbound Riley par jayega, jo theek hai, magar
+   agli posts mein sirf WhatsApp hai.
+   ⚠️ **Yaad rakhne wali baat:** section 8 wali tehqeeq ke mutabiq paanchon verified brokers mein se
+   kisi ne bhi SMS/WhatsApp publish nahi kiya — poori industry **phone + email + carrier portal**
+   par hai. Sirf WhatsApp dene se kuch brokers rabta nahi karenge. Agar hafte bhar mein calls/DMs
+   na aayein to email ke sath ek callable number wapas lagane par ghaur karna.
+
+---
+
+## 8. Images — kya lagana hai aur kya nahi
+
+**Spec card:** `dispatch/capacity-card-munster-aug24.png` (1080×1080). Source: `dispatch/capacity-card.html`
+(dobara render karne ke liye — tareekh/lane badal kar naya bana lein).
+
+| Kahan | Image? |
+|---|---|
+| FB groups | **Haan** — spec card |
+| FB company page | Haan — spec card |
+| LinkedIn company page | Haan — spec card |
+| **Asim account** | **Nahi** — sirf text. Graphic lagate hi post "ad" ban jati hai |
+| Yaseen personal repost | Nahi |
+
+### Jo image kabhi NAHI lagani
+- **Justin ke truck ki asal photo.** Darwaze par DOT/MC likha hai aur plate POJ7838 nazar aayegi —
+  poora anonymity rule wahin khatam. (Uski ijazat bhi chahiye hogi.)
+- **Stock truck photo** — har dispatcher ki post mein wohi hai.
+- **Laal-kaale "URGENTLY HIRING" / "NO MC? NO PROBLEM!" style graphics.** In groups ki "Recent media"
+  isi se bhari hui hai — yani wo scammers ki visual zabaan hai. Us jaisa banane ka matlab hai
+  unhi jaise dikhna.
+
+Card jaan-boojh kar saada rakha hai: dark navy, sirf numbers, koi truck ki tasveer nahi, koi
+exclamation mark nahi. Broker ko 2 second mein pata chal jaye ke fit hai ya nahi.
+
+---
+
+## 9. LinkedIn hashtags — kam hi behtar
+
+LinkedIn ne **2024 mein hashtag following khatam kar di**. Hashtags se ab reach nahi barhti —
+wo sirf search aur topic classification ke liye kaam karte hain. **10+ hashtags spam detection
+trigger karte hain.** **3–5 se zyada kabhi nahi.**
+
+- Company page capacity post: `#hotshottrucking #flatbed #freightbrokers #logistics #ohiofreight`
+- Lane badle to aakhri swap: `#midwestfreight` / `#texasfreight` / `#southeastfreight`
+- Asim ki post: sirf `#freight #hotshot #brokers`
+- Personal repost: koi nahi
+- **FB groups: hashtags ka koi faida nahi — mat lagayein.**

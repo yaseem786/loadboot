@@ -623,6 +623,9 @@ export const listDeliveries = (o = {}) => rpc('cc_list_deliveries', { p_status: 
 
 // ---- Wave 9 carrier self-service RPCs (cc_pocket_* server functions; used by the Carrier Portal) ----
 export const pocketOverview = () => rpc('cc_pocket_overview');
+// The carrier portal never holds its own org id (every carrier RPC resolves it server-side).
+// fmcsa-verify's save block needs it explicitly, so this hands it to the signed-in carrier only.
+export const myCarrierOrg = () => rpc('cc_my_carrier_org');
 export const pocketTrips = (limit) => rpc('cc_pocket_trips', { p_limit: limit ?? 50 });
 export const pocketInvoices = (limit) => rpc('cc_pocket_invoices', { p_limit: limit ?? 50 });
 export const pocketCompliance = () => rpc('cc_pocket_compliance');
@@ -938,7 +941,11 @@ export const fmcsaVerify = async (o = {}) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
   const _invoke = sb.functions.invoke('fmcsa-verify', { body: { carrier_org: o.carrierOrg ?? null, dot: o.dot ?? null, mc: o.mc ?? null } });
-  const _timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('FMCSA is taking too long. Please try again, or upload your authority letter (PDF) instead.')), 15000));
+  // 25s, not 15s. The edge function chains socrata/qcmobile -> SAFER lookup -> L&I -> SAFER
+  // authority; its worst case when a source HANGS is ~15.3s (v34, after parallelising the first
+  // two and dropping the L&I retry-on-timeout). At 15s the browser gave up first and showed
+  // "taking too long" even though SAFER was about to answer. Keep this ABOVE the server budget.
+  const _timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('FMCSA is taking too long. Please try again, or upload your authority letter (PDF) instead.')), 25000));
   const { data, error } = await Promise.race([_invoke, _timeout]);
   if (error) { const e = new Error((error && error.message) || 'FMCSA verification failed'); e.fn = 'fmcsa-verify'; throw e; }
   if (data && data.error) throw new Error(data.error);

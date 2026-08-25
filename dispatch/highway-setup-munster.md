@@ -1,7 +1,10 @@
 # Highway onboarding — Munster Logistics LLC
 ### Sab data tayyar hai. Justin ko sirf paste karna hai — 10 minute ka kaam.
 
-**Link:** `https://highway.com/onboarding/sign-up`
+**Link (SAHI wala):** `https://highway.com/onboarding/sign-up/carrier-details`
+**Ya asaan tareeqa — mobile app:** iPhone `apps.apple.com/us/app/highway-for-carriers/id6751547865` · Android `play.google.com/store/apps/details?id=com.highway.tfx`
+
+> ⚠️ **22 Aug:** pehle maine `highway.com/onboarding/sign-up` diya tha — wo adhoora tha aur Justin ko "link expired" mila. Sahi URL ke aakhir mein `/carrier-details` lazmi hai.
 (Fifth Wheel Freight ka direct link: `https://highway.com/go/fwf` — dono ek hi profile banate hain, aik baar karo to Sureway/ATS aur FWF dono ke liye chal jayega.)
 
 ---
@@ -14,7 +17,7 @@ Is liye ye account **Justin ke apne haath se, apne email se** banna chahiye. Usk
 
 Agar koi aur uski jagah signup kare to sab se acha natija ye hoga ke verification atak jayegi; sab se bura ye ke **Munster ka MC flag ho jayega**, aur phir har Highway-wala broker (FWF, Sureway/ATS aur sainkron aur) darwaza band kar dega. 10 minute bachane ke liye ye risk lena theek nahi.
 
-**Sahi rasta:** Justin account banaye → phir Highway ke andar **LoadBoot ko authorized dispatch service** ke tor par add kar de. Us ke baad load-level kaam tum kar sakte ho, aur wo bilkul legitimate hai.
+**Sahi rasta:** Justin khud account banaye. **(Ho gaya — 22 Aug.)** ~~Phir LoadBoot ko authorized dispatch service add kare~~ — ye hissa GHALAT tha, Highway mein aisa feature hai hi nahi. Neeche aakhri section parho.
 
 ---
 
@@ -28,7 +31,9 @@ Agar koi aur uski jagah signup kare to sab se acha natija ye hoga ke verificatio
 >
 > It has to come from you, because it verifies against your FMCSA record — that's the whole point of it.
 >
-> **https://highway.com/onboarding/sign-up**
+> **https://highway.com/onboarding/sign-up/carrier-details**
+>
+> Or easier on your phone — search "Highway for Carriers" in the App Store or Play Store.
 >
 > About 10 minutes. What it'll ask for:
 >
@@ -40,9 +45,9 @@ Agar koi aur uski jagah signup kare to sab se acha natija ye hoga ke verificatio
 > · Insurance: $1M auto liability, $100k cargo — it may pull this from your COI on its own
 > · W-9
 >
-> One thing to watch for: when it asks about a dispatch service, add **LoadBoot** as an authorized party. That's what lets me handle setups and rate confirmations without pulling you off the road for every one.
->
 > Screenshot me anything that asks for something you don't have and I'll get it to you.
+
+> ⚠️ **22 Aug — GHALAT NIKLA:** is message mein pehle likha tha "add LoadBoot as an authorized party". **Highway mein aisa koi feature hai hi nahi.** Justin ne khud bataya: *"its already set up I cant add you as a dispatcher"* — wo theek keh raha tha. Tafseel neeche.
 
 **Note:** is message mein kahin nahi likha ke loads kahan se aa rahi hain. Ye sirf setup ki baat hai — jo bilkul sach hai. Koi jhoot bhi nahi bola gaya, kyunke jhoot pakra jata hai aur carrier ka bharosa ek dafa tootta hai to wapas nahi aata.
 
@@ -78,7 +83,7 @@ Agar koi aur uski jagah signup kare to sab se acha natija ye hoga ke verificatio
 
 - Ye poora data sheet (upar) — ho gaya.
 - Justin ka message — upar tayyar hai.
-- Highway ke andar LoadBoot ko authorized dispatcher add karne ke baad: load-level sab kaam.
+- Broker se phone/email par baat aur load-level sab kaam (Highway ke andar hamari rasai ki zarurat nahi).
 - Jo bhi document Highway maange (W-9, COI, authority letter) — main foran nikaal kar bhej doon.
 - Agar Justin phans jaye to har screen ka step-by-step bata doon.
 
@@ -101,3 +106,22 @@ Aur Munster **bilkul naya carrier** hai. Justin ko Highway, RMIS, MyCarrierPacke
 Ye line sirf usool ki baat nahi — **ye aap ki apni hifazat bhi hai.** Agar aap Justin ki jagah sign karen aur aage chal kar koi cargo claim ya double-brokering ka jhagra ho, to zimmedari aap ke sar par aa sakti hai. Carrier khud sign kare to zimmedari wahin rehti hai jahan honi chahiye.
 
 **Aur ek faida:** jo dispatcher carrier ka setup khara karta hai, carrier us ko chhorta nahi. Ye rishta mazboot karne ka sab se sasta tareeqa hai — aap ke paas abhi teen carriers hain, aur pehla wala jo kaamyab hoga wohi aap ka reference banega.
+
+
+---
+
+## ⚠️ Highway mein DISPATCHER add nahi hota — 22 Aug ki tehqeeq
+
+**Nateeja: Highway mein koi "add a dispatcher" feature nahi hai, aur na hi koi dispatcher account type.** Justin sahi tha. Ye mera ghalat mashwara tha.
+
+**Jo waqai mojood hai:** carrier ke account par ek se zyada user ho sakte hain — magar ye **invite** ka nahi, **approve** ka model hai. Highway ki apni copy: *"Approve new users before they can manage your account."* Yani doosra banda khud signup karta hai, aur carrier usay approve karta hai. Is liye Justin ko "add" ka button mila hi nahi — shayad hota hi nahi.
+
+**Aur har user ko apni identity sabit karni parti hai.** Highway: *"Government ID, live photo match, plus proof they can act for the carrier. Every user, every time."* Yani dispatcher ko bhi apna government ID aur live photo dena hoga, aur ye sabit karna hoga ke wo us carrier ki taraf se kaam kar sakta hai.
+
+**🚨 Carrier ka login KABHI use nahi karna.** Ye sirf usool ki baat nahi. Ek asal report (truckingoffice.com) mein ek banda kehta hai ke usne ek carrier ke session se doosre carrier ka packet bhara, aur **Highway ne doosre carrier ki profile flag kar di** ("additional VINs"). Yani dispatch service ka aam tareeqa Highway ka fraud engine pakar leta hai — aur nuqsan carrier ka hota hai.
+
+**Highway se poochhne ka rasta:** `service@highway.com` · **906-444-2929** (906-HIGHWAY). Highway ka koi public help center nahi hai (`highway.com/support`, `/contact`, `/carriers` — sab 404).
+
+**⚠️ Ek trap:** Highway ka ek press release hai *"...Delivers Carrier Identity to Independent Dispatchers"* (iDispatchHub). Naam se lagta hai wohi cheez hai — **ulta hai.** Wo dispatchers ko *carriers ko vet karne* ka tool deta hai, carrier ke account tak rasai nahi. Ye link kabhi mat bhejna.
+
+**Amli faisla:** ye zaroori nahi hai. Justin ka Highway account ban chuka hai — **yehi asal cheez thi.** Broker jab onboard karega, invite usi ke paas jayega aur wo minton mein poora kar dega. Hum broker se phone/email par baat karte rahenge, jaisa ab tak kar rahe hain.
