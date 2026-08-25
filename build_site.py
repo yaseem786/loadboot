@@ -4784,6 +4784,149 @@ page('status.html', 'Loadboot System Status',
      'Live operational status for the Loadboot website, carrier portal, driver app and API.',
      'status.html', st)
 
+# ---- Developer API (public docs; the page every syndication partner asks for) ----
+API_PAGE = svc_hero('LoadBoot Developer API',
+  'Post freight to LoadBoot straight from your TMS or load-posting network. REST, JSON, API-key auth, batch posting and idempotent retries.',
+  'Partner with us', 'contact.html#quote')
+
+API_PAGE += ('<section><div class="wrap prose reveal" style="max-width:860px">'
+  '<h2>Who this is for</h2>'
+  '<p>Two audiences use this API. <b>Freight brokers</b> already posting on LoadBoot who want their TMS to do it automatically instead of someone re-keying loads. And <b>load-posting networks and TMS vendors</b> &mdash; if you syndicate broker postings to multiple boards, this is how you add LoadBoot as a destination.</p>'
+  '<p>Posting is free. There is no per-post fee and no subscription. What we ask is the thing that makes the board worth posting to: the API key must belong to a licensed, document-verified LoadBoot broker account, so every load on the board came from a real brokerage.</p>'
+  '</div></section>')
+
+API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal" style="max-width:860px">'
+  '<h2>Getting a key</h2>'
+  '<ol style="line-height:2">'
+  '<li>Create a broker account at <a href="create-broker-account.html">Create a broker account</a> and complete verification &mdash; authority, bond and documents.</li>'
+  '<li>Open the <a href="/app/partner/">Partner Portal</a> and generate an API key.</li>'
+  '<li>Give the key the <code>write</code> scope to post loads, <code>read</code> to pull them.</li>'
+  '</ol>'
+  '<p style="margin-top:14px">Keys look like <code>lb_&hellip;</code> and are shown once. If you are a network or TMS vendor and want a sandbox key before wiring anything up, email '
+  '<a href="mailto:api@loadboot.com">api@loadboot.com</a> and say what you are integrating &mdash; we will set one up.</p>'
+  '</div></section>')
+
+_API_BASE = 'https://' + APP_REF + '.supabase.co/functions/v1/dev-api'
+
+API_PAGE += ('<section><div class="wrap prose reveal" style="max-width:860px">'
+  '<h2>Post a load</h2>'
+  '<p><code>POST ' + _API_BASE + '?resource=loads</code> &nbsp;&middot;&nbsp; scope <code>write</code></p>'
+  '<pre style="background:#0b1524;color:#dce6f2;padding:18px 20px;border-radius:12px;overflow-x:auto;font-size:.82rem;line-height:1.7">'
+  'curl -X POST "' + _API_BASE + '?resource=loads" \\\n'
+  '  -H "Authorization: Bearer lb_YOUR_KEY" \\\n'
+  '  -H "Content-Type: application/json" \\\n'
+  '  -d \'{\n'
+  '    "origin": "Dallas, TX",\n'
+  '    "destination": "Atlanta, GA",\n'
+  '    "pickup_date": "2026-09-02",\n'
+  '    "hazmat": false,\n'
+  '    "equipment": "Dry Van",\n'
+  '    "rate": 2450,\n'
+  '    "miles": 780,\n'
+  '    "weight": 42000,\n'
+  '    "commodity": "Palletized goods",\n'
+  '    "reference": "YOUR-LOAD-12345",\n'
+  '    "idempotency_key": "YOUR-LOAD-12345"\n'
+  '  }\'</pre>'
+  '</div></section>')
+
+_API_FIELDS = [
+  ('origin', 'string', 'required', 'City, ST &mdash; e.g. <code>Dallas, TX</code>'),
+  ('destination', 'string', 'required', 'City, ST'),
+  ('pickup_date', 'date', 'required', '<code>YYYY-MM-DD</code>. A date in the past is rejected.'),
+  ('hazmat', 'boolean', 'required', 'We will not infer this. Declare it explicitly.'),
+  ('equipment', 'string', 'recommended', 'Dry Van, Reefer, Flatbed, Step Deck, Hotshot, Power Only, Box Truck'),
+  ('rate', 'number', 'recommended', 'All-in rate in USD. Loads without a rate get far less carrier attention.'),
+  ('miles', 'number', 'recommended', 'Loaded miles. We estimate if omitted.'),
+  ('weight', 'number', 'recommended', 'Pounds.'),
+  ('commodity', 'string', 'recommended', 'What is on the truck.'),
+  ('reference', 'string', 'recommended', 'Your load number. Echoed back in the response.'),
+  ('idempotency_key', 'string', 'recommended', 'Reuse it and a retry will not double-post. Your load number works well.'),
+  ('origin_full', 'string', 'optional', 'Full pickup address. Kept private until the load is booked.'),
+  ('destination_full', 'string', 'optional', 'Full delivery address. Kept private until booked.'),
+  ('delivery_date', 'date', 'optional', '<code>YYYY-MM-DD</code>'),
+  ('pickup_window', 'string', 'optional', 'e.g. <code>08:00-15:00</code>. Without this or <code>appointment_required</code> the load posts as FCFS.'),
+  ('delivery_window', 'string', 'optional', 'Same format.'),
+  ('appointment_required', 'boolean', 'optional', 'Set true if the shipper schedules an appointment.'),
+  ('tracking_required', 'boolean', 'optional', 'Defaults to LoadBoot standard tracking.'),
+  ('hazmat_info', 'string', 'optional', 'UN number, class, placards. Required reading if <code>hazmat</code> is true.'),
+  ('accessorials', 'object', 'optional', 'Your own detention / layover / TONU / lumper terms. See below.'),
+  ('stops', 'array', 'optional', 'Additional stops beyond origin and destination.'),
+  ('pickup_lat / pickup_lng', 'number', 'optional', 'Skip our geocoding if you already have coordinates.'),
+  ('delivery_lat / delivery_lng', 'number', 'optional', 'Same.'),
+]
+_rows = ''.join(
+  '<tr><td><code>%s</code></td><td style="color:#64748b">%s</td><td><b style="color:%s">%s</b></td><td>%s</td></tr>'
+  % (n, t, ('#dc2626' if r == 'required' else '#0967d2' if r == 'recommended' else '#64748b'), r, d)
+  for n, t, r, d in _API_FIELDS)
+API_PAGE += ('<section class="bg-soft"><div class="wrap reveal" style="max-width:920px">'
+  '<h2 style="margin-bottom:14px">Fields</h2>'
+  '<div style="overflow-x:auto"><table class="mr-t" style="min-width:640px"><thead><tr>'
+  '<th>Field</th><th>Type</th><th>&nbsp;</th><th>Notes</th></tr></thead><tbody>' + _rows + '</tbody></table></div>'
+  '<p style="color:#64748b;font-size:.9rem;margin-top:12px">Unknown fields are ignored rather than rejected, so extra columns from your TMS will not fail the post.</p>'
+  '</div></section>')
+
+API_PAGE += ('<section><div class="wrap prose reveal" style="max-width:860px">'
+  '<h2>Accessorial terms: we fill the gaps</h2>'
+  '<p>A carrier will not book a load without knowing what happens when they sit at a dock for four hours. LoadBoot requires detention, layover, TONU and lumper terms on every posting &mdash; and we know your TMS almost certainly does not carry those fields.</p>'
+  '<p>So if you omit them, we apply <a href="detention-pay-policy.html">LoadBoot\'s published standard terms</a> automatically: detention $60/hr after 2 free hours, layover $250/day, <a href="tonu-policy.html">TONU $250</a>, <a href="lumper-policy.html">lumper reimbursed with receipt</a>. The carrier still sees written terms; they are ours rather than yours.</p>'
+  '<p>If your brokerage has its own terms, send them and they win &mdash; we only fill what is missing:</p>'
+  '<pre style="background:#0b1524;color:#dce6f2;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.82rem;line-height:1.7">'
+  '"accessorials": {\n'
+  '  "detention_per_hr": "75",\n'
+  '  "detention_free_hours": "2",\n'
+  '  "layover_per_day": "300",\n'
+  '  "tonu": "350",\n'
+  '  "lumper_policy": "Reimbursed with receipt"\n'
+  '}</pre>'
+  '</div></section>')
+
+API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal" style="max-width:860px">'
+  '<h2>Posting in batches</h2>'
+  '<p>Send up to <b>50 loads</b> per request as <code>{"loads": [ &hellip; ]}</code> or a bare JSON array. Each load is validated on its own, so one bad row does not sink the batch.</p>'
+  '<p>You get <code>200</code> when every load posted, <code>207</code> when some did and some did not, and <code>400</code> when none did. Read the per-item <code>results</code> array either way &mdash; each entry carries your <code>reference</code> back so you can match failures to your own records.</p>'
+  '<pre style="background:#0b1524;color:#dce6f2;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.82rem;line-height:1.7">'
+  '{\n'
+  '  "posted": 2,\n'
+  '  "failed": 1,\n'
+  '  "results": [\n'
+  '    { "index": 0, "ok": true,  "reference": "A-1001", "result": { "ok": true } },\n'
+  '    { "index": 1, "ok": true,  "reference": "A-1002", "result": { "ok": true } },\n'
+  '    { "index": 2, "ok": false, "reference": "A-1003",\n'
+  '      "error": "Pickup date has already PASSED — update your pickup schedule before posting." }\n'
+  '  ]\n'
+  '}</pre>'
+  '<h2 style="margin-top:26px">Retries are safe</h2>'
+  '<p>Send an <code>idempotency_key</code> on each load, or an <code>Idempotency-Key</code> header for the whole request. Repeat the same key and we return the original load instead of creating a duplicate. If your network times out mid-post, just send it again.</p>'
+  '</div></section>')
+
+_API_ERRS = [
+  ('401', 'Missing, invalid or revoked API key.'),
+  ('403', 'Key lacks the scope &mdash; <code>write</code> to post, <code>read</code> to fetch.'),
+  ('400', 'Body was not JSON, the batch was empty, or every load failed validation.'),
+  ('207', 'Partial batch &mdash; read <code>results</code> to see which loads landed.'),
+  ('404', 'Unknown <code>resource</code>, or a POST to something other than <code>loads</code>.'),
+]
+API_PAGE += ('<section><div class="wrap prose reveal" style="max-width:860px">'
+  '<h2>Responses</h2><ul style="line-height:2.1">'
+  + ''.join('<li><code>%s</code> &mdash; %s</li>' % (c, m) for c, m in _API_ERRS)
+  + '</ul>'
+  '<p>Validation errors come back as plain sentences, not codes &mdash; the message tells you what to fix. The most common ones on a first integration are a missing <code>hazmat</code> declaration, a pickup date in the past, and a key whose broker account has not finished document verification.</p>'
+  '<h2 style="margin-top:26px">Reading loads</h2>'
+  '<p><code>GET ' + _API_BASE + '?resource=loads&amp;limit=25</code> &middot; scope <code>read</code> &mdash; returns public load opportunities. <code>GET ?resource=me</code> confirms which account a key belongs to and what scopes it has, which is the quickest way to check your setup.</p>'
+  '</div></section>')
+
+API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal center" style="max-width:760px;text-align:center">'
+  '<h2>Load boards, TMS vendors and posting networks</h2>'
+  '<p>If you syndicate broker postings, we would like LoadBoot on your destination list. We are a newer board and our carrier network is small today &mdash; we are not going to pretend otherwise. What we offer your users is one more free destination with no workflow change, and a board with no ghost loads: every posting comes from a verified brokerage, and covered freight comes down immediately.</p>'
+  '<p>The integration above is live now, and we will add CSV or email intake if that fits your pipeline better.</p>'
+  '<div class="ctarow" style="margin-top:20px;justify-content:center"><a href="mailto:api@loadboot.com" class="btn btn-primary">Email api@loadboot.com</a><a href="contact.html#quote" class="btn btn-secondary">Contact us</a></div>'
+  '</div></section>')
+
+page('api.html', 'Developer API &mdash; Post Loads to LoadBoot | LoadBoot',
+     'LoadBoot developer API: post freight from your TMS or load-posting network. REST, JSON, API-key auth, batch posting up to 50 loads, idempotent retries. Free to post.',
+     'api.html', API_PAGE)
+
 # ---- Market Rates (public, SEO + lead-gen): all three audiences on ONE page, live weekly numbers ----
 _MR_JS = ("(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
   "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
@@ -6563,6 +6706,7 @@ ccpub += ('<section class="ftx-sec"><div class="wrap"><div class="sec-head revea
 ccpub += ('<section class="ftx-sec alt"><div class="wrap"><div class="sec-head reveal"><div class="eyebrow">Questions</div><h2>Command Center FAQ</h2></div><div style="max-width:820px">'
  + ''.join('<details class="reveal" style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:16px 20px;margin-bottom:10px"><summary style="font-weight:700;color:#10223B;cursor:pointer">' + q + '</summary><p style="color:#475569;line-height:1.75;margin:10px 0 0">' + a + '</p></details>' for q,a in _cc_faq)
  + '</div></div></section>')
+RELATED['api.html'] = [('brokers.html','For Brokers'),('free-load-board-for-brokers.html','Free Load Board for Brokers'),('create-broker-account.html','Create a Broker Account'),('integrations.html','Integrations'),('load-board.html','Live Load Board'),('compliance.html','Compliance & Verification')]
 RELATED['command-center.html'] = [('how-it-works.html','How It Works'),('compliance.html','Compliance & Verification'),('security.html','Security'),('about.html','About LoadBoot'),('features.html','All Features'),('contact.html','Contact')]
 page('command-center.html', 'Command Center — How the LoadBoot Operations Desk Works', 'Inside the LoadBoot Command Center: same-day verifications, claims checked against server-side GPS evidence and human-verified payment receipts.', 'command-center.html', ccpub, _cc_schema)
 
@@ -7379,7 +7523,7 @@ for _p in _ACC_PAGES:
 _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
-  ('Resources', [('resources.html', 'Resources'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
+  ('Resources', [('resources.html', 'Resources'), ('api.html', 'Developer API'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('delete-account.html', 'Delete your account'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
