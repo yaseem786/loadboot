@@ -1,0 +1,239 @@
+{
+ "note": "Recorded national benchmark snapshots exported from app_private.rate_history. Append a new entry each week with refresh_rate_snapshot.py. Never hand-edit an existing snapshot - the dated reports are built from these.",
+ "snapshots": [
+  {
+   "as_of": "2026-07-08",
+   "iso_year": 2026,
+   "iso_week": 28,
+   "rates": {
+    "Box Truck": {
+     "rpm": 1.65,
+     "source": "published 2026 averages"
+    },
+    "Conestoga": {
+     "rpm": 2.75,
+     "source": "derived from flatbed segment"
+    },
+    "Dry Van": {
+     "rpm": 2.1,
+     "source": "National industry benchmarks (published averages)"
+    },
+    "Flatbed": {
+     "rpm": 2.65,
+     "source": "National industry benchmarks (published averages)"
+    },
+    "Hotshot": {
+     "rpm": 2.05,
+     "source": "published 2026 averages"
+    },
+    "Power Only": {
+     "rpm": 1.9,
+     "source": "published 2026 averages"
+    },
+    "Reefer": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (published averages)"
+    },
+    "Step Deck": {
+     "rpm": 2.7,
+     "source": "derived from flatbed segment"
+    }
+   }
+  },
+  {
+   "as_of": "2026-07-13",
+   "iso_year": 2026,
+   "iso_week": 29,
+   "rates": {
+    "Box Truck": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Conestoga": {
+     "rpm": 3.79,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Dry Van": {
+     "rpm": 3.0,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Flatbed": {
+     "rpm": 3.69,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Hotshot": {
+     "rpm": 2.6,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Power Only": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Reefer": {
+     "rpm": 3.39,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Step Deck": {
+     "rpm": 3.74,
+     "source": "National industry benchmarks (Jul 2026)"
+    }
+   }
+  },
+  {
+   "as_of": "2026-07-21",
+   "iso_year": 2026,
+   "iso_week": 30,
+   "rates": {
+    "Box Truck": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Conestoga": {
+     "rpm": 3.82,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Dry Van": {
+     "rpm": 3.0,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Flatbed": {
+     "rpm": 3.72,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Hotshot": {
+     "rpm": 2.4,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Power Only": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Reefer": {
+     "rpm": 3.39,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Step Deck": {
+     "rpm": 3.77,
+     "source": "National industry benchmarks (Jul 2026)"
+    }
+   }
+  },
+  {
+   "as_of": "2026-07-28",
+   "iso_year": 2026,
+   "iso_week": 31,
+   "rates": {
+    "Box Truck": {
+     "rpm": 2.58,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Conestoga": {
+     "rpm": 3.82,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Dry Van": {
+     "rpm": 3.03,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Flatbed": {
+     "rpm": 3.72,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Hotshot": {
+     "rpm": 2.4,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Power Only": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Reefer": {
+     "rpm": 3.39,
+     "source": "National industry benchmarks (Jul 2026)"
+    },
+    "Step Deck": {
+     "rpm": 3.77,
+     "source": "National industry benchmarks (Jul 2026)"
+    }
+   }
+  },
+  {
+   "as_of": "2026-08-15",
+   "iso_year": 2026,
+   "iso_week": 33,
+   "rates": {
+    "Box Truck": {
+     "rpm": 2.5,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Conestoga": {
+     "rpm": 3.7,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Dry Van": {
+     "rpm": 2.95,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Flatbed": {
+     "rpm": 3.6,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Hotshot": {
+     "rpm": 2.4,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Power Only": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Reefer": {
+     "rpm": 3.38,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Step Deck": {
+     "rpm": 3.65,
+     "source": "National industry benchmarks (Aug 2026)"
+    }
+   }
+  },
+  {
+   "as_of": "2026-08-17",
+   "iso_year": 2026,
+   "iso_week": 34,
+   "rates": {
+    "Box Truck": {
+     "rpm": 2.5,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Conestoga": {
+     "rpm": 3.7,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Dry Van": {
+     "rpm": 2.95,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Flatbed": {
+     "rpm": 3.6,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Hotshot": {
+     "rpm": 2.4,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Power Only": {
+     "rpm": 2.55,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Reefer": {
+     "rpm": 3.38,
+     "source": "National industry benchmarks (Aug 2026)"
+    },
+    "Step Deck": {
+     "rpm": 3.65,
+     "source": "National industry benchmarks (Aug 2026)"
+    }
+   }
+  }
+ ]
+}

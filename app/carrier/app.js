@@ -235,6 +235,16 @@ const FRIENDLY_STATUS = { planned: 'Booked — ready to start', dispatched: 'At 
 // A load whose pickup DAY has already passed is EXPIRED — it stays visible but cannot be booked
 // until the broker updates its schedule.
 function lbExpired(l) { if (!l || !l.pickup_date) return false; const d = new Date(String(l.pickup_date) + 'T23:59:59'); return !isNaN(d.getTime()) && d.getTime() < Date.now(); }
+// A load that reached us through a syndication partner (LoadBoard Network,
+// AscendTMS PostEverywhere, ...) carries details.source_notice written by
+// app_private.label_syndicated_load(). bookable:false means the posting
+// brokerage has not finished LoadBoot verification, so the server will refuse
+// the booking (bl_soft_0279/0280). We show the load honestly rather than hide
+// it, but we say so on the card — the carrier should never discover this by
+// tapping Book and getting an error.
+function lbSourceNotice(l) { const n = l && l.details && l.details.source_notice; return (n && typeof n === 'object') ? n : null; }
+function lbSourceBlocked(l) { const n = lbSourceNotice(l); return !!(n && n.bookable === false); }
+function lbSourceProvider(l) { const n = lbSourceNotice(l); return (n && n.provider) ? String(n.provider) : 'a partner network'; }
 // Full-trip feasibility from the driver's live GPS: location -> pickup -> delivery, with HOS.
 // Solo = 11h drive then 10h reset; Team = nonstop. Used for the board badges AND to block a
 // booking the driver physically cannot deliver on time.
@@ -3929,6 +3939,17 @@ async function appView(user) {
           ]);
           return;
         }
+        if (lbSourceBlocked(l)) {
+          openModal('\u26a0 Not bookable yet', [
+            h('div', { style: 'text-align:center;padding:6px 0' }, [
+              h('div', { style: 'font-size:44px;line-height:1' }, '\u23f3'),
+              h('div', { class: 'cp-row-t', style: 'margin:10px 0 6px;font-size:1.05rem' }, 'This load came from ' + lbSourceProvider(l)),
+              h('div', { class: 'cp-row-s', style: 'max-width:380px;margin:0 auto;line-height:1.7' }, 'The brokerage that posted it has not completed LoadBoot verification yet \u2014 we have not confirmed their authority, insurance or bond. We will not let you commit a truck to freight we cannot stand behind.'),
+              h('div', { class: 'cp-row-s', style: 'max-width:380px;margin:10px auto 0;line-height:1.7;color:#94a3b8' }, 'We are chasing their paperwork. The moment it clears, this load becomes bookable on its own and you will see it here \u2014 nothing for you to do.'),
+            ]),
+          ]);
+          return;
+        }
         if (lbExpired(l)) { openModal('\u23f0 This load has expired', [h('div', { class: 'cp-row-s' }, 'Its pickup time has already passed. The broker must update the pickup schedule before it can be booked \u2014 it stays on the board as EXPIRED until they do. You can\u2019t request it right now.')]); return; }
         const _f = lbFeas(l, _dp);
         if (_f.have && (!_f.delOk || !_f.puOk)) {
@@ -4281,6 +4302,7 @@ async function appView(user) {
           (l.details && l.details.team_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.35)' }, '\u26a0 \ud83d\udc65 TEAM DRIVERS REQUIRED') : h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\ud83d\udc64 Solo OK'),
           (l.details && l.details.driver_assist_required) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.16);color:#fbbf24;font-weight:800' }, '\u26a0 DRIVER ASSIST REQUIRED') : null,
           lbExpired(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(239,68,68,.2);color:#fca5a5;font-weight:800;border:1px solid rgba(239,68,68,.45)' }, '\u23f0 EXPIRED \u2014 pickup date passed, waiting on broker') : null,
+          lbSourceBlocked(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(245,158,11,.18);color:#fbbf24;font-weight:800;border:1px solid rgba(245,158,11,.45)' }, '\u26a0 VIA ' + lbSourceProvider(l).toUpperCase() + ' \u2014 broker not LoadBoot-verified yet, not bookable') : (lbSourceNotice(l) ? h('span', { class: 'cpx-chip', style: 'background:rgba(148,163,184,.12);color:#94a3b8;font-weight:700' }, '\u21aa Posted via ' + lbSourceProvider(l)) : null),
           (window.__lbDh && window.__lbDh[l.id] != null) ? h('span', { class: 'cpx-chip', style: 'background:rgba(34,197,94,.16);color:#4ade80;font-weight:800' }, '\ud83d\udccd ' + window.__lbDh[l.id].toLocaleString() + ' mi deadhead \u2014 live from your GPS') : null,
           (function () {
             const dh = (window.__lbDh && window.__lbDh[l.id] != null) ? Number(window.__lbDh[l.id]) : null;

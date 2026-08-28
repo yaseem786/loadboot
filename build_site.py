@@ -3,6 +3,7 @@ import os, shutil, re, sys, json
 from tools_module import TOOLS_CSS, TOOLS_HTML, TOOLS_JS
 from load_score_module import LS_CSS, LS_HTML, LS_JS
 from motifs_module import mi, m_rail, m_timeline, m_split, m_dark, m_zigzag, m_statband, m_gradcta
+from market_reports_module import build_market_reports   # workstream 01 layer 2: dated weekly reports
 # SOURCE vs PUBLISH separation (Netlify: command="python3 build_site.py", publish="site").
 #   SRC  = repo root. Holds SOURCE only (this script, modules, dashboard.html, images,
 #          netlify.toml, runtime.txt, migrations/, docs/, README, content-queue). NOT published.
@@ -16,7 +17,8 @@ shutil.rmtree(OUT, ignore_errors=True)   # clean
 os.makedirs(OUT, exist_ok=True)          # recreate
 # Files in SRC root that must NEVER be copied into the publish dir (source-only):
 _NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','motifs_module.py','netlify.toml',
-               'runtime.txt','README.md','content-queue.md','.gitignore'}
+               'runtime.txt','README.md','content-queue.md','.gitignore',
+               'market_reports_module.py','refresh_rate_snapshot.py','rate_snapshots.json'}
 _ASSET_EXTS = ('.webp','.png','.jpg','.jpeg','.avif','.ico','.svg','.gif')
 def asset_exists(name):
     """True if a referenced local asset is present in SRC (so the page can reference it)."""
@@ -391,6 +393,7 @@ NAV_MENU = [
   ('Resources', 'resources.html', [
     ('how-it-works.html', 'How it works'),
     ('market-rates.html', 'Market rates per mile'),
+    ('freight-market-reports.html', 'Weekly market reports'),
     ('cost-per-mile-calculator.html', 'Cost-per-mile calculator'),
     ('load-score.html', 'Load Score'),
     ('blog.html', 'Blog'),
@@ -462,6 +465,7 @@ def footer():
 </div>
 ''' + (AI_RESEARCH_BLOCK if AI_RESEARCH_FOOTER_ENABLED else '') + '''<div style="border-top:1px solid #1e293b;padding-top:24px;margin-bottom:24px"><div class="foot-h" style="margin-bottom:10px">Service areas &mdash; we dispatch nationwide</div><p style="font-size:.88rem;line-height:2">Texas &middot; California &middot; Florida &middot; Georgia &middot; Illinois &middot; Ohio &middot; Pennsylvania &middot; North Carolina &middot; Tennessee &middot; Indiana &middot; Michigan &middot; New Jersey &middot; Arizona &middot; Washington &middot; Missouri &middot; and all 48 contiguous states.</p></div>
 <div style="border-top:1px solid #1e293b;padding-top:18px;margin-bottom:20px;font-size:.86rem;line-height:1.8;color:#94a3b8"><b style="color:#e2e8f0">Security notice.</b> LoadBoot never asks for your password by email, and never asks you to &ldquo;confirm&rdquo; or &ldquo;reactivate&rdquo; one. Our mail only ever comes from <b style="color:#e2e8f0">@loadboot.com</b> &mdash; if a message wants you to log in from a link, ignore it and open loadboot.com yourself. <a href="security.html" style="display:inline">How we contact you &rarr;</a></div>
+<div style="border-top:1px solid #1e293b;padding-top:18px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><a href="https://play.google.com/store/apps/details?id=com.loadboot.app" rel="noopener" target="_blank" aria-label="Get the LoadBoot app on Google Play" style="display:inline-block;margin:0"><img src="/google-play-badge.svg" alt="Get it on Google Play" width="150" height="45" style="display:block;height:45px;width:auto"></a><span style="font-size:.86rem;color:#94a3b8">The LoadBoot app &mdash; carrier, broker, shipper and agent portals in one install. iPhone: <a href="apps.html" style="display:inline">add to Home Screen</a>.</span></div>
 <div class="foot-bottom"><span>&copy; 2026 LoadBoot LLC &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; D-U-N-S&reg; 149880967 &middot; Serving carriers in all 48 states.</span>
 <span><a href="privacy.html" style="display:inline">Privacy</a> &middot; <a href="terms.html" style="display:inline">Terms</a> &middot; <a href="delete-account.html" style="display:inline">Delete account</a> &middot; <a href="cookies.html" style="display:inline">Cookies</a> &middot; <a href="accessibility.html" style="display:inline">Accessibility</a> &middot; <a href="security.html" style="display:inline">Security</a> &middot; <a href="status.html" style="display:inline">Status</a> &middot; <a href="sitemap.html" style="display:inline">Sitemap</a></span></div>
 </div>''' + (AI_RESEARCH_JS if AI_RESEARCH_FOOTER_ENABLED else '') + '''</footer>
@@ -924,7 +928,7 @@ LIVEBOARD = ('<section id="opportunities" class="bg-soft"><div class="wrap"><div
 HOME_RATES = ('<section id="market-rates" class="bg-soft"><div class="wrap">'
  '<div class="sec-head center reveal"><div class="eyebrow">Live Market Data</div>'
  '<h2>Today\u2019s Truckload Freight Rates Per Mile</h2>'
- '<p class="lead center" style="margin:0 auto;max-width:760px">Current national trucking rates per mile \u2014 dry van, reefer, flatbed and hotshot spot rates, blended from real LoadBoot bookings and published industry benchmarks. What carriers get paid, what freight brokers buy and sell at, and what shippers pay \u2014 <b>updated weekly</b>.</p></div>'
+ '<p class="lead center" style="margin:0 auto;max-width:760px">Current national trucking rates per mile \u2014 dry van, reefer, flatbed and hotshot spot rates, blended from real LoadBoot bookings and published industry benchmarks. What carriers get paid, what freight brokers buy and sell at, and what shippers pay \u2014 <b>every figure dated</b>.</p></div>'
  '<style>.hmr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:22px 0}'
  '.hmr{background:#fff;border:1px solid #e6ebf3;border-radius:16px;padding:18px;text-align:center;box-shadow:0 12px 30px -24px rgba(2,12,30,.35);transition:transform .15s}'
  '.hmr:hover{transform:translateY(-3px)}'
@@ -936,7 +940,7 @@ HOME_RATES = ('<section id="market-rates" class="bg-soft"><div class="wrap">'
  + ''.join('<div class="hmr"><div class="e">' + e + ' Rates</div><div class="p" data-eq="' + e + '">\u2014</div><div class="r" data-eqr="' + e + '">loading\u2026</div></div>'
            for e in ['Dry Van', 'Reefer', 'Flatbed', 'Hotshot'])
  + '</div>'
- '<div class="hmr-note" id="hmrAsOf">National spot averages, all-in linehaul per mile \u00b7 refreshed weekly</div>'
+ '<div class="hmr-note" id="hmrAsOf">National spot averages, all-in linehaul per mile \u00b7 each figure carries its own as-of date</div>'
  '<div class="plb-cta reveal" style="margin-top:16px"><a href="/market-rates.html" class="btn btn-primary">See all freight rates \u2014 carrier, broker &amp; shipper sides &rarr;</a>'
  '<span class="plb-note">Free lane-level rates (state \u2192 state, low/avg/high, 12-week trends) inside every LoadBoot account.</span></div>'
  '</div></section>')
@@ -1172,11 +1176,17 @@ page('index.html','Truck Dispatch & Verified Load Board for Carriers | LoadBoot'
      'index.html', home_body, home_faq_schema)
 
 # ---------- SERVICE PAGE BUILDER ----------
-def svc_hero(h1,lead,tert_label='All Services',tert_href='services.html'):
+def svc_hero(h1,lead,tert_label='All Services',tert_href='services.html',
+             cta_href='contact.html#create', cta_label=None,
+             cta2_href='contact.html#quote', cta2_label='Get a Quote'):
+    # Defaults reproduce the original hero exactly. Broker/shipper pages override
+    # the primary CTA to point at the portal — sending someone who wants to post
+    # freight to a contact form was costing us the signup (audit, 25 Aug).
+    cta_label = cta_label or ('Get Started ' + ARW)
     return '''<section class="hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div><div class="wrap" style="position:relative;z-index:1;max-width:820px">
 <span class="badge reveal"><span class="dot"></span> Loadboot Dispatch</span><h1 class="reveal d1">%s</h1>
 <p class="lead reveal d2" style="margin:22px 0 28px">%s</p>
-<div class="hero-btns reveal d3"><a href="contact.html#create" class="btn btn-primary">Get Started %s</a><a href="contact.html#quote" class="btn btn-secondary">Get a Quote</a><a href="%s" class="btn btn-ghost">%s &rarr;</a></div></div></section>''' % (h1,lead,ARW,tert_href,tert_label)
+<div class="hero-btns reveal d3"><a href="%s" class="btn btn-primary">%s</a><a href="%s" class="btn btn-secondary">%s</a><a href="%s" class="btn btn-ghost">%s &rarr;</a></div></div></section>''' % (h1,lead,cta_href,cta_label,cta2_href,cta2_label,tert_href,tert_label)
 
 EXTRA = {
  "Reefer": [
@@ -3495,19 +3505,40 @@ blog_body += final_cta()
 page('blog.html','Loadboot Blog: Dispatch Tips &amp; Guides | Carriers','Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.','blog.html', blog_body)
 
 # ---------- LEGAL PAGES ----------
-priv = svc_hero('Privacy Policy','How Loadboot collects, uses, and protects your information.')
-priv += '''<section><div class="wrap prose reveal" style="max-width:800px">
-<p><em>Last updated: 2026.</em> This Privacy Policy explains how Loadboot ("we", "us") handles information you provide through this website.</p>
-<h2>Information we collect</h2><p>Depending on how you use Loadboot, we may collect: <b>account information</b> (name, email, phone, password handled securely by our authentication provider); <b>carrier and authority information</b> (company, MC/DOT numbers, equipment, lanes, preferences); <b>documents you upload</b> (such as authority, insurance, W-9 and load paperwork), stored privately; <b>precise location</b> &mdash; only if and while you explicitly consent to share it for load matching or active-load tracking; <b>usage analytics</b> on our public marketing pages. We do <b>not</b> run advertising analytics inside the authenticated carrier portal.</p>
-<h2>How we use it</h2><p>To provide dispatch services &mdash; finding, negotiating and booking loads; reviewing carrier documents; matching loads to your equipment and (with consent) location; communicating about your loads and account; and operating and improving the website. We do not sell your information.</p>
-<h2>Precise location &mdash; consent based</h2><p>Location sharing is <b>optional</b> and off by default. The portal is fully usable without it. You choose either a one-time share or sharing while a load is active, and you can revoke it at any time from your dashboard. We record your consent and store only your most recent location while sharing is active; sharing stops when you revoke it, sign out, or the active period ends. Only your assigned LoadBoot dispatcher can view it.</p>
-<h2>Sharing</h2><p>We share information only as needed to provide services &mdash; for example, with brokers or a factoring company you choose &mdash; or where required by law. We do not sell personal information.</p>
-<h2>Data security</h2><p>Documents are kept in private storage with per-account access controls and time-limited links; access to carrier records is restricted by server-enforced authorization so one carrier cannot access another&rsquo;s data. No method of transmission is perfectly secure, but we apply reasonable safeguards.</p>
-<h2>Retention</h2><p>We keep information for as long as needed to provide services and meet legal obligations, then delete or anonymize it. Location data is minimized to the latest necessary point rather than a long history, unless a reviewed operational need applies.</p>
-<h2>Your rights</h2><p>You may request access to, correction of, or deletion of your information, withdraw location consent, or close your account, by contacting us through this site. We will respond promptly.</p>
-<h2>Contact</h2><p>Questions about this policy? Reach us through our contact page.</p></div></section>'''
+priv = svc_hero('Privacy Policy','How LoadBoot collects, uses, shares and protects your information &mdash; on loadboot.com, in the portals and in the LoadBoot app.')
+priv += """<section><div class="wrap prose reveal" style="max-width:800px">
+<p><em>Last updated: August 28, 2026.</em> This Privacy Policy explains how <b>LoadBoot LLC</b> ("LoadBoot", "we", "us") handles information when you use <b>loadboot.com</b>, the <b>LoadBoot web portals</b> (Carrier, Partner, Agent, Developer and Command Center) and the <b>LoadBoot Android app</b> published on Google Play as <i>LoadBoot Load Board &amp; Dispatch</i> (package <code>com.loadboot.app</code>) &mdash; together, the "Platform". The Android app is the same portal, packaged for your phone: everything below applies to it identically. It applies to carriers, brokers, shippers, agents and anyone who visits the site.</p>
+<h2>Information we collect</h2>
+<p>What we collect depends on which portal you use. We collect it from you directly, from your device with your permission, and from public regulatory sources.</p>
+<p><b>Everyone (account &amp; contact).</b> Name, email, phone, company, and a password handled by our authentication provider (we never see it in clear text). Messages you send us in-app, by chat, email or phone, and your communication preferences.</p>
+<p><b>Carriers and owner-operators.</b> Company and authority details (MC/DOT numbers, equipment, lanes, domicile, preferences and availability); documents you upload &mdash; operating authority, certificate of insurance, W-9 (which contains your EIN or SSN), dispatch agreement, notice of assignment, rate confirmations, BOLs, PODs and receipts &mdash; stored privately; settlement and payout details (bank or factoring information you enter for payment); photos you take for proof of delivery; and <b>precise location</b>, only if and while you consent to share it for load matching or active-load tracking (see below). We also read public FMCSA/SAFER records to verify your authority and insurance.</p>
+<p><b>Brokers and shippers.</b> Company, MC/bond details and contact people; the loads you post (origin, destination, dates, equipment, rate, references, notes); loads you send to <b>loads@loadboot.com</b> by email, including the sender address, signature block and attachments needed to post them; documents and messages exchanged on a load; and payment records for loads you pay through the Platform.</p>
+<p><b>Agents and referral partners.</b> Your referral link and the accounts that sign up through it, commission and payout records, and the tax and payment details needed to pay you.</p>
+<p><b>Automatically.</b> Device and app information (device type, OS, app version, language, push token if you enable notifications), log data (IP address, pages or screens viewed, timestamps, errors and crashes) and, on the public marketing pages only, aggregate analytics. We do <b>not</b> run advertising analytics or ad tracking inside the signed-in portals or the app.</p>
+<h2>How we use it</h2>
+<p>To run the Platform: verifying carriers, posting and matching loads, sending and accepting load offers, booking, dispatching, tracking trips, collecting and reviewing documents, calculating detention, accessorials and settlements, paying carriers and agents, and answering support. To keep the Platform safe: fraud, double-brokering and ghost-load prevention, security monitoring and legal compliance. To communicate with you about your loads, documents, account and (with your preferences) product news. To improve the Platform using aggregate, de-identified usage data. We do not sell your personal information and we do not use it for third-party advertising.</p>
+<h2>Precise location &mdash; consent based</h2>
+<p>Location sharing is <b>optional</b> and off by default; the Platform is fully usable without it. When you choose to share it &mdash; a one-time share, or sharing while a load is active &mdash; the app uses your device&rsquo;s GPS while it is open or, if you allow it, while a trip is running, so that arrival and departure can be stamped automatically. You can revoke sharing at any time from your dashboard or your device settings. We record your consent, keep only the location points needed for the active trip and its proof-of-service record, and stop collecting when you revoke it, sign out, or the trip ends. Location on an active load is visible to your assigned LoadBoot dispatcher and, as trip status and geofenced arrive/depart stamps, to the broker or shipper on that load.</p>
+<h2>How information is shared</h2>
+<p>We share information only as needed to provide the service you asked for, and we never sell it:</p>
+<p><b>Between the parties on a load, at your direction.</b> When a carrier books or requests a load, the broker or shipper sees the carrier&rsquo;s company name, MC/DOT, equipment, verification status, contact details and trip status; the carrier sees the broker&rsquo;s or shipper&rsquo;s company, contact and load details. Documents attached to a load (rate confirmation, BOL, POD) are visible to both sides of that load. Carrier financials, notes and other loads are never shown to brokers, and vice versa.</p>
+<p><b>Service providers acting for us</b> &mdash; hosting and database, authentication, email and SMS delivery, telephony, mapping and geocoding, document storage and payment processing. They may process data only on our instructions.</p>
+<p><b>Your factoring company or payment partner</b>, if you choose one, to the extent needed to pay you.</p>
+<p><b>Regulators and the law</b> &mdash; where required by law, to enforce our terms, or to protect the rights and safety of users and the public. In a merger or acquisition, information may transfer to the successor under this policy.</p>
+<h2>Data security</h2>
+<p>Data is encrypted in transit (TLS). Documents are kept in private storage with per-account access controls and time-limited links; access to records is restricted by server-enforced authorization so one company cannot access another&rsquo;s data. Sensitive tax documents are viewable only by the account owner and the LoadBoot staff who review them. No method of transmission or storage is perfectly secure, but we apply safeguards appropriate to the data we hold.</p>
+<h2>Retention</h2>
+<p>We keep account information while your account is open. Load, trip, document and settlement records are kept for as long as needed to complete the load, resolve disputes and meet tax, transportation and legal record-keeping obligations (generally up to seven years), then deleted or anonymized. Location data is minimized to what the trip record needs rather than a long history. Marketing analytics are aggregated.</p>
+<h2>Your rights and choices</h2>
+<p>You may access, correct or export your information, withdraw location consent, change your notification preferences, or <b>delete your account</b> at any time: in the app or portal go to <i>Settings &rarr; Account &rarr; Delete my account</i>, or email <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> from your account address. Our <a href="delete-account.html">account deletion page</a> explains exactly what is removed and what must be kept for legal reasons. Residents of California and other states with privacy laws have the rights those laws provide; we honour them for everyone.</p>
+<h2>Children</h2>
+<p>The Platform is for businesses and is not directed to anyone under 18. We do not knowingly collect information from children.</p>
+<h2>Changes</h2>
+<p>We will post any changes here with a new date, and notify account holders of material changes by email or in-app.</p>
+<h2>Contact</h2>
+<p>LoadBoot LLC &middot; <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> &middot; +1 (469) 253-7575 &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; or use our <a href="contact.html">contact page</a>.</p></div></section>"""
 priv += final_cta()
-page('privacy.html','Privacy Policy | Loadboot','How Loadboot collects, uses, and protects the information you share through our website.','privacy.html',priv)
+page('privacy.html','Privacy Policy | LoadBoot','How LoadBoot collects, uses, shares and protects your information on loadboot.com, in the portals and in the LoadBoot Android app.','privacy.html',priv)
 
 # ---------- ACCOUNT DELETION (required by Google Play for apps with sign-in) ----------
 # Play policy: the store listing must carry a link to a page that names the app, gives
@@ -4307,7 +4338,7 @@ page('unsub.html', 'Unsubscribe | LoadBoot', 'Unsubscribe from LoadBoot outreach
  'contact.html', '<section><div class="wrap" style="max-width:640px;text-align:center;padding:90px 24px"><h1>Unsubscribe</h1><p class="lead center" id="unsubMsg" style="margin-top:16px">Working&hellip;</p><p style="margin-top:26px;color:#64748B;font-size:.9rem">Changed your mind? You can always find our free tools at <a href="market-rates.html" style="color:#0883F7">loadboot.com/market-rates</a>.</p></div></section>' + _unsub_js, '')
 
 # ---- Partner Program ----
-pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.')
+pp = svc_hero('Loadboot Partner Program', 'For brokers, shippers and facilities who want a reliable, professional carrier network and clean, on-time paperwork.', cta_href='/app/partner/', cta_label='Open the Partner Portal &rarr;', cta2_href='create-broker-account.html', cta2_label='Create a broker account')
 pp += m_zigzag('Partner with Loadboot', 'A network you can rely on', [
  ('shieldcheck', 'Vetted carriers', 'Work with carriers whose authority, insurance and compliance are actively tracked &mdash; fewer surprises, cleaner loads.'),
  ('doccheck', 'Clean documentation', 'Rate confirmations, BOLs and PODs handled properly and delivered on time, so billing and claims stay simple.'),
@@ -4406,7 +4437,7 @@ page('carriers.html', 'Truck Dispatch Service for Carriers — Flat 5% | LoadBoo
      'services.html', cp, _cfaq_sch)
 
 # ---- Dedicated Broker page (~15 sections; brokers only) ----
-bp = svc_hero('A Reliable Carrier Network for Brokers',
+bp = svc_hero(cta_href='/app/partner/', cta_label='Post a load &rarr;', cta2_href='create-broker-account.html', cta2_label='How verification works', h1='A Reliable Carrier Network for Brokers', lead=
     'Post a load and reach vetted carriers whose authority, insurance and compliance are actively tracked &mdash; with clean, on-time documentation and one professional point of contact on every load.')
 bp += _sec('Why brokers work with Loadboot', 'Fewer surprises, cleaner loads', _cards([
     ('&#129309;', 'Vetted carriers', 'Carrier authority, insurance and compliance are actively monitored &mdash; you cover freight with less risk.'),
@@ -4803,7 +4834,7 @@ API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal" style="max
   '<li>Give the key the <code>write</code> scope to post loads, <code>read</code> to pull them.</li>'
   '</ol>'
   '<p style="margin-top:14px">Keys look like <code>lb_&hellip;</code> and are shown once. If you are a network or TMS vendor and want a sandbox key before wiring anything up, email '
-  '<a href="mailto:api@loadboot.com">api@loadboot.com</a> and say what you are integrating &mdash; we will set one up.</p>'
+  '<a href="mailto:hello@loadboot.com">hello@loadboot.com</a> and say what you are integrating &mdash; we will set one up.</p>'
   '</div></section>')
 
 _API_BASE = 'https://' + APP_REF + '.supabase.co/functions/v1/dev-api'
@@ -4920,7 +4951,7 @@ API_PAGE += ('<section class="bg-soft"><div class="wrap prose reveal center" sty
   '<h2>Load boards, TMS vendors and posting networks</h2>'
   '<p>If you syndicate broker postings, we would like LoadBoot on your destination list. We are a newer board and our carrier network is small today &mdash; we are not going to pretend otherwise. What we offer your users is one more free destination with no workflow change, and a board with no ghost loads: every posting comes from a verified brokerage, and covered freight comes down immediately.</p>'
   '<p>The integration above is live now, and we will add CSV or email intake if that fits your pipeline better.</p>'
-  '<div class="ctarow" style="margin-top:20px;justify-content:center"><a href="mailto:api@loadboot.com" class="btn btn-primary">Email api@loadboot.com</a><a href="contact.html#quote" class="btn btn-secondary">Contact us</a></div>'
+  '<div class="ctarow" style="margin-top:20px;justify-content:center"><a href="mailto:hello@loadboot.com" class="btn btn-primary">Email hello@loadboot.com</a><a href="contact.html#quote" class="btn btn-secondary">Contact us</a></div>'
   '</div></section>')
 
 page('api.html', 'Developer API &mdash; Post Loads to LoadBoot | LoadBoot',
@@ -4936,15 +4967,15 @@ _MR_JS = ("(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "';"
   "+'<td class=\"mr-c\">$'+Number(b.carrier_rpm).toFixed(2)+'</td>'"
   "+'<td class=\"mr-b\">$'+Number(b.broker_buy_rpm).toFixed(2)+' / $'+Number(b.broker_sell_rpm).toFixed(2)+'</td>'"
   "+'<td class=\"mr-s\">$'+Number(b.shipper_rpm).toFixed(2)+'</td></tr>';}).join('');"
-  "var el2=document.getElementById('mrAsOf');if(el2&&asof)el2.textContent='Updated '+asof+' \u00b7 refreshed weekly';"
+  "var el2=document.getElementById('mrAsOf');if(el2&&asof)el2.textContent='Updated '+asof+'.';"
   "}).catch(function(){});})();")
 
 _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20%,rgba(8,131,247,.35),transparent 60%),radial-gradient(700px 320px at 95% 120%,rgba(252,83,5,.22),transparent 55%),linear-gradient(120deg,#0b1830,#10223B 60%,#132c4e);color:#fff;padding:64px 0 46px}.mrx-hero h1{color:#fff;font-size:clamp(1.9rem,4.2vw,3rem);margin:0 0 10px}.mrx-hero p{color:rgba(255,255,255,.82);max-width:780px;font-size:1.02rem;line-height:1.7}.mrx-badge{display:inline-flex;gap:7px;align-items:center;background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(74,222,128,.35);border-radius:999px;padding:6px 15px;font-weight:800;font-size:.74rem;letter-spacing:.06em;margin-bottom:16px}.mrx-badge i{width:8px;height:8px;border-radius:99px;background:#22c55e;display:inline-block;animation:mrb 1.5s infinite}@keyframes mrb{50%{opacity:.25}}.mrx-stats{display:flex;gap:30px;flex-wrap:wrap;margin-top:22px}.mrx-stats b{display:block;font-size:1.5rem;color:#7cc0ff}.mrx-stats span{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;opacity:.65;font-weight:700}.mr-t{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 18px 44px -26px rgba(2,12,30,.4)}.mr-t th{background:#10223B;color:#fff;text-align:left;padding:13px 16px;font-size:.7rem;letter-spacing:.09em;text-transform:uppercase}.mr-t td{padding:13px 16px;border-bottom:1px solid #eef2f7;font-size:.95rem}.mr-sub{font-size:.72rem;color:#64748b}.mr-c{color:#0967d2;font-weight:800}.mr-b{color:#7c3aed;font-weight:800}.mr-s{color:#15803d;font-weight:800}.mrx-aud{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin:26px 0}.mrx-card{background:#fff;border:1px solid #e6ebf3;border-radius:20px;padding:26px;box-shadow:0 14px 36px -26px rgba(2,12,30,.35);position:relative;overflow:hidden}.mrx-card:before{content:"";position:absolute;top:0;left:0;right:0;height:5px}.mrx-card.c:before{background:linear-gradient(90deg,#0883F7,#60a5fa)}.mrx-card.b:before{background:linear-gradient(90deg,#7c3aed,#a78bfa)}.mrx-card.s:before{background:linear-gradient(90deg,#16a34a,#4ade80)}.mrx-card svg{margin-bottom:12px}.mrx-card h3{margin:0 0 8px;font-size:1.12rem}.mrx-card p,.mrx-card li{font-size:.9rem;color:#475569;line-height:1.7}.mrx-card ul{padding-left:18px;margin:10px 0}.mrx-card .cta{display:inline-block;margin-top:12px;font-weight:800;color:#0883F7;text-decoration:none}.mrx-sec h2{font-size:1.5rem;margin:38px 0 10px}.mrx-sec p{max-width:840px;color:#475569;line-height:1.75}.mrx-fac{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}.mrx-f{background:#f7fafd;border:1px solid #e6ebf3;border-radius:14px;padding:16px}.mrx-f b{display:block;margin-bottom:5px}.mrx-f span{font-size:.84rem;color:#64748b;line-height:1.6}.mrx-faq{background:#fff;border:1px solid #e6ebf3;border-radius:16px;margin:10px 0;padding:16px 20px}.mrx-faq h3{margin:0 0 6px;font-size:.98rem}.mrx-faq p{margin:0;font-size:.88rem;color:#475569;line-height:1.7}.mrx-cta{background:linear-gradient(120deg,#0b1830,#14335c);border-radius:22px;color:#fff;padding:36px;text-align:center;margin:40px 0}.mrx-cta h2{color:#fff;margin:0 0 8px}.mrx-cta p{color:rgba(255,255,255,.8);max-width:640px;margin:0 auto 18px}</style>'
 '<section class="mrx-hero"><div class="wrap">'
-'<span class="mrx-badge"><i></i>LIVE \u00b7 UPDATED WEEKLY</span>'
+'<span class="mrx-badge"><i></i>LIVE \u00b7 NATIONAL BENCHMARKS</span>'
 '<h1>Truckload Freight Rates Per Mile \u2014 Live Spot Rates for Carriers, Brokers &amp; Shippers</h1>'
-'<p>Current trucking rates per mile across dry van, reefer, flatbed, power only and hotshot \u2014 blended from <b style="color:#fff">real LoadBoot marketplace bookings</b> and published national benchmarks. See what the truck gets paid, what freight brokers buy and sell at, and what shippers pay \u2014 every side of the spot market on one page. <span id="mrAsOf">Refreshed weekly.</span></p>'
-'<div class="mrx-stats"><div><b>8</b><span>Equipment types</span></div><div><b>3</b><span>Market sides</span></div><div><b>Weekly</b><span>Benchmark refresh</span></div><div><b>Live</b><span>From real bookings</span></div></div>'
+'<p>Current trucking rates per mile across dry van, reefer, flatbed, power only and hotshot \u2014 blended from <b style="color:#fff">real LoadBoot marketplace bookings</b> and published national benchmarks. See what the truck gets paid, what freight brokers buy and sell at, and what shippers pay \u2014 every side of the spot market on one page. <span id="mrAsOf">Every figure carries its own as-of date.</span></p>'
+'<div class="mrx-stats"><div><b>8</b><span>Equipment types</span></div><div><b>3</b><span>Market sides</span></div><div><b>Dated</b><span>Every benchmark</span></div><div><b>Live</b><span>From real bookings</span></div></div>'
 '</div></section>'
 
 '<section class="wrap" style="padding:34px 0 10px">'
@@ -4990,7 +5021,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above updates weekly; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>How we calculate these freight rates</h2>'
-'<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed weekly; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
+'<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>Freight rate FAQs</h2>'
 '<div class="mrx-faq"><h3>What is the average trucking rate per mile right now?</h3><p>National spot averages currently run roughly $2.00\u2013$2.70/mi for dry van, $2.15\u2013$3.40 for reefer and $2.20\u2013$3.70 for flatbed \u2014 the live table above shows this week\u2019s numbers by equipment and market side.</p></div>'
@@ -5009,14 +5040,679 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 
 
 _mr_faq = ('<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":['
-  '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":"National spot averages currently run roughly $2.00-$2.70 per mile for dry van, $2.15-$3.40 for reefer and $2.20-$3.70 for flatbed, depending on lane and season. The live table on this page is refreshed weekly."}},'
+  '{"@type":"Question","name":"What is the average trucking rate per mile right now?","acceptedAnswer":{"@type":"Answer","text":"National spot averages currently run roughly $2.00-$2.70 per mile for dry van, $2.15-$3.40 for reefer and $2.20-$3.70 for flatbed, depending on lane and season. The live table on this page shows the date each benchmark was last updated."}},'
   '{"@type":"Question","name":"What is the difference between shipper, broker and carrier rates?","acceptedAnswer":{"@type":"Answer","text":"The carrier rate is what the truck is paid. Brokers buy capacity at the carrier rate and sell the shipment to shippers with a typical 12-18% margin, so shipper rates run higher than carrier rates on the same lane."}},'
   '{"@type":"Question","name":"What is the minimum rate per mile a carrier should accept?","acceptedAnswer":{"@type":"Answer","text":"Most owner-operators need $2.00-$2.50 per mile for dry van and $2.50+ for reefer or flatbed to cover an all-in operating cost of roughly $1.80-$2.00 per mile plus margin."}}]}</script>'
   '<script>' + _MR_JS + '</script>')
 
-page('market-rates.html', 'Truckload Rates Per Mile 2026 — Updated Weekly | LoadBoot',
-     'Truckload rates per mile for 2026, updated weekly: dry van, flatbed and hotshot averages, plus a free trucking rate calculator with no signup or login.',
+page('market-rates.html', 'Truckload Rates Per Mile 2026 — Carrier, Broker &amp; Shipper | LoadBoot',
+     'Truckload rates per mile for 2026, each benchmark shown with its as-of date: dry van, flatbed and hotshot averages, plus a free trucking rate calculator with no signup or login.',
      'market-rates.html', _mr_body + _mr_faq)
+
+# _acc_faq_schema must be defined BEFORE the equipment rate pages below use it. It used
+# to live ~2,400 lines further down, which meant `python build_site.py` failed with
+# NameError at the first equipment page and no full build had ever succeeded with them.
+def _acc_faq_schema(faq):
+    import json as _json, re as _re
+    ents = []
+    for q, a in faq:
+        qq = _re.sub(r'<[^>]+>', '', q); aa = _re.sub(r'<[^>]+>', '', a)
+        ents.append({"@type": "Question", "name": qq, "acceptedAnswer": {"@type": "Answer", "text": aa}})
+    return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": ents}) + '</script>'
+
+
+# ---- Equipment rate pages (supply-side SEO, workstream 01) -------------------
+# GSC 28d to 2026-08-25: "truckload freight rates" 57 impressions, "full truckload
+# rates" 31, "truckload rates" 26 -- ALL zero clicks at average position 45. We are
+# already visible for rate intent and losing every click to depth. Meanwhile
+# market-rates.html is the most-visited page on the whole site (722 visitors/30d,
+# ahead of the homepage) off ONE page.
+#
+# get_public_market_rates() already returns eight equipment types each carrying
+# carrier_rpm, broker_buy_rpm, broker_sell_rpm AND shipper_rpm -- three audiences of
+# data buried in one table. This splits it into one deep page per equipment, written
+# for the people who POST freight, not only for the truck.
+#
+# Depth is deliberate: the first draft of these pages ran ~760 words against an
+# existing site standard of 2,200-5,700. Thin pages do not rank on competitive
+# commercial terms, so each page now carries a rate breakdown, specs, live lane
+# examples, seasonality, an equipment comparison, accessorial impact, carrier
+# profitability and 7 FAQs with schema.
+#
+# Two-layer pattern copied from DAT: these are the evergreen hubs. Layer two is a
+# weekly dated post per equipment linking back into its hub -- that is the engine.
+
+_EQ_RATES = [
+ dict(slug='dry-van', name='Dry Van', alt='Reefer', altslug='reefer',
+  intro='Dry van is the default of American truckload — roughly two-thirds of everything that moves on a trailer moves in one. That ubiquity is exactly why it is the most rate-sensitive equipment on any board: there is a van in almost every market, so the number tracks fuel, season and lane balance far more tightly than scarcity.',
+  specs=[('Trailer length','48 ft and 53 ft; 53 ft is the default for truckload'),
+         ('Inside dimensions','~52⁄3 long × 98″ wide × 108″ tall on a standard 53′'),
+         ('Standard pallets','26 pallets floor-loaded, 52 double-stacked if the freight allows'),
+         ('Max payload','44,000–45,000 lb before you start fighting axle weights'),
+         ('Loading','Dock-to-dock, rear doors; some have side doors or logistics posts')],
+  lanes=[('Chicago, IL','Atlanta, GA',717),('Los Angeles, CA','Dallas, TX',1435),('Columbus, OH','Charlotte, NC',426)],
+  season=[('Jan–Feb','The annual floor. Post-holiday volume collapse and every truck is looking for freight.'),
+          ('Mar–May','Recovery. Spring retail resets and produce beginning to pull capacity elsewhere.'),
+          ('Jun–Aug','Steady. Produce season pulls reefers out of the market, which quietly firms up van.'),
+          ('Sep–Nov','The strongest stretch. Retail builds for Q4 and capacity tightens.'),
+          ('Dec','Sharp drop after the second week once holiday freight is in position.')],
+  vs='A reefer can haul dry freight, but you will pay reefer money for it. Use a van unless the load genuinely needs temperature control — or unless you need the extra insulation for freeze protection in winter, which is the one honest reason to book a reefer and run it dry.',
+  drivers=[('Lane balance','A load leaving a market everyone wants to leave pays less. Dallas and Atlanta outbound run soft; a lane heading INTO a low-volume market carries a premium because the truck may deadhead back out.'),
+    ('Season','Q4 retail and produce season both pull vans off the market. January and February are the floor.'),
+    ('Weight','Past roughly 44,000 lb you start limiting which trucks can legally take it, and the rate follows.'),
+    ('Appointment vs FCFS','A hard appointment window narrows the pool of trucks that can make it and adds risk of detention. FCFS freight books faster and cheaper.'),
+    ('Fuel','Fuel surcharge moves with the DOE average and is normally quoted separately from line haul. When someone quotes you an "all-in" number, ask what fuel assumption sits inside it.')],
+  ships='Packaged consumer goods, paper and print, non-perishable food and beverage, electronics, apparel, retail replenishment, e-commerce fulfilment, household goods.',
+  broker='Van is where margin is thinnest, because every broker alive can cover it. The money is not in buying cheap — it is in covering fast. A load re-posted three times has already burned the margin you were protecting, and the carriers who saw it twice now price it as a problem lane. Post it once, at a number that moves, with the accessorial terms already written down.',
+  shipper='If your van quote sits well above the benchmark below, you are usually paying for one of three things: a hard appointment, a slow-loading dock, or a destination nobody wants to run to. Two of those three you can change. Ask the broker which one is driving the number before you accept it — a good one will tell you.',
+  faq=[('What is a good dry van rate per mile in 2026?','Compare the carrier number below against your own cost per mile. Most owner-operators need roughly $1.80–$2.00 all-in to break even, so any load at or under that is losing money once deadhead is counted.'),
+   ('Why is my dry van quote higher than the national average?','Averages hide lane direction, appointment requirements and weight. A quote well above the benchmark usually reflects a hard delivery appointment, a low-volume destination, or freight heavy enough to limit which trucks can legally take it.'),
+   ('How many pallets fit in a 53-foot dry van?','Twenty-six standard 48×40 pallets floor-loaded, or up to 52 if the freight can be double-stacked. Weight usually becomes the limit before floor space does.'),
+   ('What is the maximum weight for a dry van load?','Around 44,000–45,000 lb of cargo. The legal gross combination limit is 80,000 lb, and the tractor and trailer account for most of the difference.'),
+   ('How often do dry van spot rates change?','Weekly under normal conditions and daily in a disrupted market. The figures on this page carry the date they were last updated.'),
+   ('Is dry van cheaper than reefer?','Yes, typically 10–20% cheaper on the same lane. A reefer costs more to buy, more to run and carries far higher cargo liability.'),
+   ('Should I book FCFS or an appointment?','First-come-first-served freight books faster and cheaper because it does not constrain the driver’s clock. Use appointments only where the receiver genuinely requires one.')]),
+
+ dict(slug='reefer', name='Reefer', alt='Dry Van', altslug='dry-van',
+  intro='Reefer carries a premium over dry van for reasons that are easy to state and expensive to ignore: the trailer costs far more to buy and run, and the driver takes on real liability the moment a temperature record matters. Nothing swings this number harder than produce season.',
+  specs=[('Trailer length','53 ft standard; 48 ft still common in regional food distribution'),
+         ('Inside dimensions','~50⁄6 long × 97″ wide × 100″ tall — insulation costs you space'),
+         ('Standard pallets','24–26 pallets; less than a van because of wall thickness'),
+         ('Max payload','42,000–44,000 lb — the reefer unit itself weighs'),
+         ('Temperature range','−20°F to +70°F typical; continuous or cycle-sentry operation')],
+  lanes=[('Fresno, CA','Chicago, IL',2110),('McAllen, TX','Atlanta, GA',1200),('Grand Rapids, MI','Dallas, TX',1180)],
+  season=[('Jan–Mar','Soft, with a Florida and Mexico produce floor underneath it.'),
+          ('Apr–Jul','Produce season. California, Arizona, Florida and the Southeast pull reefers out of everything else — rates in and out of those markets can run 40–60% above the annual average.'),
+          ('Aug–Sep','Cooling off as the harvest tapers, but still above the winter baseline.'),
+          ('Oct–Dec','Holiday food volume gives a second, smaller lift through Thanksgiving and Christmas.')],
+  vs='A dry van cannot protect freight from heat or freeze. But the reverse is worth knowing too: in winter, shippers of freeze-sensitive but non-refrigerated freight book reefers and run them on heat — paying reefer money for protection rather than cooling.',
+  drivers=[('Produce season','May through July out of the growing regions is the single biggest swing factor in refrigerated freight. Capacity abandons general freight to chase it.'),
+    ('Continuous vs cycle-sentry','Continuous run burns noticeably more fuel and rules out some trailers. It belongs on the rate confirmation, not in a phone call.'),
+    ('Pre-cool and wash-out','A trailer that must be washed out and pre-cooled before loading is an hour or more of unpaid time unless somebody priced it in.'),
+    ('Temperature spec','A −10°F frozen load and a 34°F fresh load are different jobs with different risk. Frozen generally pays more.'),
+    ('Multi-stop','Food distribution loves multi-stop routes. Each stop is time, and each opening of the doors is a temperature event.')],
+  ships='Fresh and frozen food, produce, dairy, meat and poultry, seafood, pharmaceuticals and vaccines, flowers and nursery stock, cosmetics, some chemicals and adhesives.',
+  broker='Reefer claims are the expensive ones, and they trace back to a temperature spec that was verbal far more often than to actual equipment failure. Put the set point, continuous-or-cycle, and the pre-cool requirement in writing on every reefer load. It costs nothing and it is the whole difference between a claim you win with a download and one you simply eat.',
+  shipper='The cheapest reefer quote is very often the one that has not read your temperature spec. Before you compare numbers, confirm the carrier knows the set point and whether you require continuous run — and confirm it is written on the rate confirmation, not agreed on a call.',
+  faq=[('Why are reefer rates higher than dry van rates?','Refrigerated trailers cost far more to buy and operate, burn fuel to hold temperature, and carry much higher cargo liability. Reefer typically runs 10–20% above dry van on the same lane, and far more during produce season.'),
+   ('What is produce season and how much does it actually move rates?','Roughly May through July, when fresh produce volume out of California, Arizona, Florida and the Southeast pulls refrigerated capacity out of general freight. Rates in and out of those markets can run 40–60% above the annual average.'),
+   ('Who pays if the temperature is wrong at delivery?','It depends almost entirely on whether the requirement was documented before pickup. A set point on the rate confirmation plus a download from the trailer usually settles it. A verbal instruction usually does not.'),
+   ('What is the difference between continuous and cycle-sentry?','Continuous runs the reefer unit constantly, holding a tighter temperature band and burning more fuel. Cycle-sentry runs it only as needed to hold the set point. Sensitive freight — most pharmaceuticals, many fresh products — requires continuous.'),
+   ('How many pallets fit in a 53-foot reefer?','Typically 24–26, slightly fewer than a dry van because the insulated walls take up interior width.'),
+   ('Do I need a pre-cooled trailer?','If you are loading fresh or frozen product, yes. Loading into a warm trailer puts the product outside its band before the doors close, and the temperature download will show it.'),
+   ('Can a reefer haul dry freight?','Yes, and carriers do it to avoid deadheading. Expect to pay closer to reefer money for the privilege, and confirm the trailer is clean and odour-free if your freight is food-grade.')]),
+
+ dict(slug='flatbed', name='Flatbed', alt='Step Deck', altslug='step-deck',
+  intro='Flatbed rates track construction and industrial output far more than retail, which is why flatbed can be firm in a week when van is soft. The number also contains something van rates do not: real unpaid physical labour. Tarping and securing a load is work, and it takes time.',
+  specs=[('Trailer length','48 ft and 53 ft; 48 ft is still the flatbed standard'),
+         ('Deck width','102″ legal — anything wider needs permits'),
+         ('Deck height','~60″ from the ground, giving about 8⁄6 of legal load height'),
+         ('Max payload','48,000–52,000 lb — more than a van, because there is no trailer box'),
+         ('Securement','Chains, binders, straps, edge protection, coil racks, tarps')],
+  lanes=[('Houston, TX','Denver, CO',1030),('Birmingham, AL','Chicago, IL',660),('Pittsburgh, PA','Charlotte, NC',450)],
+  season=[('Jan–Feb','Weakest. Northern construction stops and steel volume slows.'),
+          ('Mar–May','Sharp climb as building season opens across the Midwest and South.'),
+          ('Jun–Sep','Peak. Construction, roofing and infrastructure all running at once.'),
+          ('Oct–Dec','Tapering, though the South and Southwest stay active well into winter.')],
+  vs='Use a step deck the moment your load passes about 8⁄6 in height. A flatbed can physically carry it, but it will not be legal, and the driver — not you — is the one who gets the citation.',
+  drivers=[('Tarping','A tarped load is an extra hour or more of physical work and should carry its own fee. A quote that does not mention tarping almost certainly has not priced it.'),
+    ('Construction season','Spring and summer building activity in the Midwest and South lifts flatbed hard. Winter in the northern lanes drops it just as hard.'),
+    ('Securement complexity','Chains, binders, straps, edge protection and coil racks are the carrier’s cost and time. Freight needing unusual securement narrows the pool of trucks that can legally take it.'),
+    ('Dimensions','Anything past 102″ wide or 8⁄6 tall moves into permit territory and a different rate structure entirely.'),
+    ('Loading method','Crane, forklift or driver-assisted all change how long the truck sits. Sitting is what turns a good rate into a bad day.')],
+  ships='Steel and coil, lumber and building materials, machinery, pipe and tubing, roofing, precast concrete, HVAC units, farm and construction equipment.',
+  broker='Flatbed is where a bad match costs the most, because the truck usually cannot discover the problem until it is standing at the shipper. Deck length, legal width, height and securement gear belong in the posting — not in the phone call after the driver arrives and says no. One wasted trip and that carrier prices your lane as a risk from then on.',
+  shipper='Give dimensions and weight up front, including whether the load needs tarping. A flatbed quote issued without dimensions is a guess, and the correction always arrives after the truck is already at your gate — which is the most expensive moment for it to arrive.',
+  faq=[('Do flatbed rates include tarping?','Not automatically. Tarping is extra physical labour and normally carries its own fee. If the quote does not name a tarp charge, confirm whether tarping is expected before you book.'),
+   ('Why is flatbed more expensive than dry van?','Securement equipment, real physical loading work, a smaller pool of qualified drivers, and far more exposure to weather and load-shift liability.'),
+   ('What makes a flatbed load oversize?','Generally anything beyond 102″ wide, about 13⁄6 tall overall, or 53 ft long. Oversize needs permits and often escorts, which changes the rate structure completely.'),
+   ('How much weight can a flatbed carry?','Typically 48,000–52,000 lb — more than a dry van, because there is no trailer box eating into the weight allowance.'),
+   ('What is the maximum legal load height on a flatbed?','About 8⁄6 of freight on a standard 60″ deck, keeping the total under the 13⁄6 legal limit. Taller than that and you need a step deck.'),
+   ('Who is responsible for securing the load?','The driver is legally responsible for securement under FMCSA rules, but the shipper is responsible for how the freight is presented and loaded. Both matter when something shifts.'),
+   ('How far in advance should I book flatbed in summer?','During peak construction season, two to three days ahead on a normal lane. Same-day flatbed in July is expensive when it is available at all.')]),
+
+ dict(slug='step-deck', name='Step Deck', alt='Flatbed', altslug='flatbed',
+  intro='A step deck exists for one reason: to carry freight that is too tall to be legal on a flatbed. That lower deck buys roughly a foot and a half of height, and because there are far fewer step decks than flatbeds, the scarcity shows up in the rate even when the freight itself is ordinary.',
+  specs=[('Trailer length','48 ft and 53 ft; typically 37–43 ft of lower deck'),
+         ('Deck heights','Upper deck ~60″, lower deck ~40″ from the ground'),
+         ('Legal load height','About 10′ on the lower deck versus 8⁄6 on a flatbed'),
+         ('Max payload','45,000–48,000 lb'),
+         ('Ramps','Some carry them, many do not — always state whether you need them')],
+  lanes=[('Peoria, IL','Houston, TX',1050),('Charlotte, NC','Kansas City, MO',900),('Portland, OR','Salt Lake City, UT',770)],
+  season=[('Jan–Feb','Soft, tracking flatbed.'),
+          ('Mar–Jun','Strong — agricultural equipment moving ahead of planting and construction ramping up.'),
+          ('Jul–Sep','Peak, with equipment dealers and infrastructure projects both active.'),
+          ('Oct–Dec','Harvest equipment moves, then tapers into winter.')],
+  vs='If your load is under about 8⁄6 tall, a flatbed will carry it for less money and is easier to find. The step deck premium is worth paying only when the height genuinely requires it — or when you need ramps to drive equipment on.',
+  drivers=[('Height','The entire reason this trailer exists. Freight between roughly 8⁄6 and 10′ tall needs the lower deck to stay legal.'),
+    ('Trailer scarcity','There are far fewer step decks than flatbeds. On a thin lane you are competing for a small pool, and the rate reflects it.'),
+    ('Ramps','Self-propelled equipment needs ramps, and not every step deck carries them. Say so in the posting or you will lose a day.'),
+    ('Tarping','Same as flatbed — if it needs a tarp, it needs a tarp fee.'),
+    ('Deck length needed','A 40 ft machine will not sit on a 37 ft lower deck. Give the footprint, not just the weight.')],
+  ships='Construction equipment, agricultural machinery, tall industrial parts, bundled steel, crated units, HVAC and generator sets, tanks.',
+  broker='Step deck postings fail on one missing number more than anything else: the height. Without it a driver cannot work out whether the load is legal on his trailer, and you will re-post the load after he tells you no. Add lower-deck length and whether ramps are required and your coverage time drops noticeably.',
+  shipper='Measure the tallest point including the pallet, crate or skid. Eight and a half feet is the practical line where flatbed stops working and step deck begins — and being wrong about it means the truck arrives and cannot legally load.',
+  faq=[('When do I need a step deck instead of a flatbed?','Generally when the load is taller than about 8 feet 6 inches. The step deck’s lower deck buys roughly 18 more inches of legal height.'),
+   ('Why does a step deck cost more than a flatbed?','Fewer trailers in the market and the same securement labour. The scarcity is the premium.'),
+   ('Do step decks come with ramps?','Not all of them. If the equipment drives on and off under its own power, the posting must say ramps are required.'),
+   ('What is the maximum load height on a step deck?','Roughly 10 feet on the lower deck, keeping the total under the 13⁄6 legal limit in most states.'),
+   ('How long is the lower deck?','Usually 37 to 43 feet depending on the trailer. If your machine is longer than that, the load will not sit properly and you need a different trailer.'),
+   ('Is a step deck the same as a drop deck?','Yes — step deck, drop deck and lowboy-style single-drop all describe the same basic trailer with an upper and lower deck.'),
+   ('Can a step deck haul normal flatbed freight?','Yes, and carriers will take it to avoid an empty return. You may pay slightly above flatbed money for it.')]),
+
+ dict(slug='conestoga', name='Conestoga', alt='Flatbed', altslug='flatbed',
+  intro='A Conestoga is an open-deck trailer with a rolling tarp system built onto a frame. It carries the highest rate in the open-deck family because the trailer costs far more and the pool of them is small — but it removes an hour of manual tarping and protects freight from weather without enclosing it in a van.',
+  specs=[('Trailer types','Built on flatbed or step deck chassis; 48 ft and 53 ft'),
+         ('Covering','Rolling tarp on a rigid frame, opens from the side or the rear'),
+         ('Usable height','~8′ under the frame on a flatbed Conestoga; less than an open deck'),
+         ('Max payload','44,000–48,000 lb — the tarp system has real weight'),
+         ('Loading','Side, top or rear — the main advantage over a van')],
+  lanes=[('Cleveland, OH','Atlanta, GA',720),('Wichita, KS','Phoenix, AZ',1050),('Greenville, SC','Dallas, TX',1050)],
+  season=[('Year-round','Less seasonal than plain flatbed, because the freight that needs a Conestoga needs it in every month.'),
+          ('Winter','Demand firms in wet and snowy months when open-deck freight cannot be safely tarped by hand.'),
+          ('Spring–Summer','Tracks flatbed upward with construction and machinery volume.')],
+  vs='A flatbed plus tarps costs less and there are far more of them. Choose a Conestoga when the freight genuinely cannot be hand-tarped, cannot be loaded from the rear, or when a wet-damage claim would cost more than the rate difference — which for finished machinery is usually.',
+  drivers=[('Trailer cost and scarcity','A Conestoga costs substantially more than a flatbed and there are far fewer of them. Scarcity sets the floor under the rate.'),
+    ('No tarping labour','The rolling system replaces an hour or more of manual tarping, and part of what you are paying for is that hour not happening.'),
+    ('Weather-sensitive freight','Freight that cannot get wet but must load from the side or top is precisely what this trailer exists for.'),
+    ('Height limits','The frame eats vertical space. A load that fits on an open flatbed may not fit under a Conestoga frame.'),
+    ('Regional availability','Conestogas cluster around manufacturing corridors. Outside them, expect a longer search and a higher number.')],
+  ships='Finished machinery that cannot be tarped by hand, steel that must stay dry, aerospace and defence components, sensitive crated freight, building products with finished surfaces.',
+  broker='Conestoga is a small pool and posting it at flatbed money simply will not cover — you will lose a day discovering that. Price it as its own equipment class from the first posting, and confirm the load fits under the frame before you commit, because "it fits on a flatbed" does not mean it fits in a Conestoga.',
+  shipper='If your freight cannot get wet and cannot be forklifted from the rear, a Conestoga is almost always cheaper than the damage claim from a badly tarped flatbed load. Check your load height against the frame clearance before you book, not after.',
+  faq=[('What is a Conestoga trailer?','A flatbed or step deck fitted with a rolling tarp on a rigid frame, so freight can be loaded from the side or top and then fully enclosed without manual tarping.'),
+   ('Why is Conestoga the most expensive open-deck equipment?','The trailers cost far more to buy and there are far fewer of them. You are paying for scarcity plus the elimination of tarping labour.'),
+   ('Is a Conestoga the same as a curtain-side?','They are closely related — both enclose open-deck freight with a moving cover. Conestoga refers to the specific rolling-frame system and is the term used across most of the US market.'),
+   ('How tall can freight be on a Conestoga?','Usually around 8 feet under the frame on a flatbed chassis, less than you would get on an open deck. Always check clearance against your actual load height.'),
+   ('Can a Conestoga be loaded from the top?','Yes — that is one of its main advantages. The tarp rolls back to allow crane or overhead loading, which a dry van cannot do at all.'),
+   ('Do I still need to secure the load in a Conestoga?','Yes. The tarp protects from weather; it does not secure anything. Full securement rules still apply.'),
+   ('When is a Conestoga cheaper than a dry van?','When the freight cannot be loaded through rear doors. A crane-loaded or side-loaded piece would need to be disassembled to fit a van, and that labour usually exceeds the rate difference.')]),
+
+ dict(slug='power-only', name='Power Only', alt='Dry Van', altslug='dry-van',
+  intro='Power only means the tractor arrives and pulls a trailer that somebody else owns. The rate per mile sits below van because the carrier is not supplying the trailer — but the load also moves faster, because drop-and-hook removes live loading from the equation entirely.',
+  specs=[('What the carrier supplies','Tractor and driver only'),
+         ('What you supply','The trailer, loaded, legal and roadworthy'),
+         ('Typical use','Drop yards, trailer pools, shipper-owned fleets'),
+         ('Fifth wheel','Standard height suits most van and reefer trailers; confirm for specialised equipment'),
+         ('Turn time','Minutes, not hours — that is the entire point')],
+  lanes=[('Memphis, TN','Dallas, TX',450),('Harrisburg, PA','Atlanta, GA',700),('Ontario, CA','Phoenix, AZ',360)],
+  season=[('Jan–Feb','Softest, tracking general freight.'),
+          ('Mar–Aug','Steady — power only tracks distribution volume more than seasonal peaks.'),
+          ('Sep–Nov','Firms up with retail build, especially around large distribution networks.'),
+          ('Dec','Drops with everything else once holiday freight is positioned.')],
+  vs='Use a standard dry van when you do not own trailers or run drop yards. Power only only makes economic sense when the trailer is already there, already loaded, and genuinely ready to move.',
+  drivers=[('No trailer cost','The carrier supplies only the tractor and driver, and the rate reflects exactly that.'),
+    ('Drop and hook','No waiting at a dock. Faster turns mean a carrier can accept less per mile and still earn more per day — which is why this works for both sides.'),
+    ('Trailer condition','A trailer with bad tires, lights or brakes becomes the driver’s DOT violation. Carriers price that risk in on shippers they have not worked with.'),
+    ('Yard access','Gate hours, guard procedures and yard congestion all eat the time advantage that makes power only cheap.'),
+    ('Trailer availability at destination','If there is nothing to pick up at the other end, the carrier deadheads out and prices the outbound accordingly.')],
+  ships='Anything already loaded in a shipper-owned or broker-owned trailer — retail distribution, large manufacturers, drop-yard networks, trailer-pool programmes.',
+  broker='Power only is the fastest coverage you can offer and the cheapest per mile — but only when the trailer is genuinely ready and genuinely legal. One driver turned away for a bad tire costs you that lane’s reputation with every carrier he tells, and drivers tell each other. Verify the trailer before you post, not after.',
+  shipper='If you own trailers and run drop yards, power only is usually the lowest all-in cost per load available to you. The trade is that trailer maintenance becomes your problem, visibly and immediately — a driver refusing your trailer is a public event in a way a maintenance log never is.',
+  faq=[('What does power only mean in trucking?','The carrier provides the tractor and driver only. The trailer is supplied by the shipper, the broker, or a trailer pool.'),
+   ('Why is power only cheaper per mile?','The carrier is not supplying, maintaining or insuring the trailer, and drop-and-hook removes loading and unloading time from the trip.'),
+   ('Who is responsible if the trailer is not roadworthy?','The driver receives the DOT violation, which is exactly why carriers inspect before hooking and will refuse a trailer with bad tires, lights or brakes.'),
+   ('Do I need my own trailers to use power only?','Yes, or access to a trailer pool. Power only assumes the trailer already exists and is already loaded.'),
+   ('Can power only carriers pull reefer trailers?','Yes, though the carrier needs to be comfortable running the reefer unit, and responsibility for fuel and temperature monitoring should be written down before the load moves.'),
+   ('Is power only good for expedited freight?','It can be excellent, because there is no loading delay. It only works if the trailer is genuinely pre-loaded and ready at the gate.'),
+   ('What is a trailer pool?','A set of trailers kept at a shipper location so carriers can drop an empty and take a loaded one without waiting. It is what makes power only economics work.')]),
+
+ dict(slug='hotshot', name='Hotshot', alt='Flatbed', altslug='flatbed',
+  intro='Hotshot is a heavy-duty pickup pulling a gooseneck or bumper-pull trailer. It exists for freight that is either too urgent or too small to wait for a full truckload, and the rate per mile looks high right up until you remember the load is usually a fraction of a trailer.',
+  specs=[('Truck class','Class 3–5 pickup — typically a dually one-ton'),
+         ('Trailer','Gooseneck 30–40 ft, or bumper-pull 20–30 ft'),
+         ('Max payload','10,000–16,500 lb depending on the rig'),
+         ('Deck width','102″ legal, same as a flatbed'),
+         ('Authority','Interstate for-hire hotshot needs full operating authority and insurance')],
+  lanes=[('Odessa, TX','Oklahoma City, OK',400),('Houston, TX','Shreveport, LA',240),('Denver, CO','Salt Lake City, UT',520)],
+  season=[('Year-round','Driven by urgency rather than season — a down production line does not wait for spring.'),
+          ('Mar–Oct','Firmer, tracking construction and oilfield activity.'),
+          ('Winter storms','Spikes hard. Emergency parts and utility work create the highest hotshot rates of the year.')],
+  vs='A flatbed carries three times the weight for not much more money per load. Hotshot wins on speed and on small loads — if your freight fills a real trailer, you are paying a premium for nothing.',
+  drivers=[('Urgency','Most hotshot freight is expedited. Somebody’s line is down or a job site is waiting, and speed is the actual product being purchased.'),
+    ('Payload limit','Typically 10,000–16,500 lb. Past that it is not a hotshot job and pretending otherwise cancels the load at the dock.'),
+    ('Deadhead','Hotshot lanes are rarely balanced, so the return trip is often empty and gets priced into the outbound.'),
+    ('Team or solo','A true expedited run may need a team to stay legal on hours. That doubles the labour cost.'),
+    ('Oilfield activity','Permian and Bakken activity drives a large share of US hotshot demand and moves the regional rate with it.')],
+  ships='Construction and oilfield parts, small equipment, machinery components, urgent replacement parts, small steel loads, pipe, generators.',
+  broker='Hotshot rates look expensive per mile and are usually cheap per job. When a shipper balks at the rate per mile, reframe it as total cost of the load against a full truckload they would only half fill — and against the cost of their line staying down another day, which is the number they are actually comparing against.',
+  shipper='Weigh it before you post it. The single most common hotshot failure is a load that turns out to be over the rig’s payload, discovered at the dock, which cancels the job and costs you a TONU plus the delay you were paying to avoid.',
+  faq=[('How much weight can a hotshot carry?','Typically 10,000 to 16,500 pounds depending on the truck and trailer rating. Above that you need a full truckload carrier.'),
+   ('Why is the hotshot rate per mile higher than dry van?','The load is smaller, the trip is usually expedited, and the return leg is often empty. Judge hotshot on total cost per load, not on cost per mile.'),
+   ('Do hotshot carriers need operating authority?','Yes. Running hotshot freight interstate for hire requires operating authority, insurance and the same safety compliance as any other carrier, regardless of vehicle size.'),
+   ('What size trailer does a hotshot use?','Usually a 30–40 ft gooseneck or a 20–30 ft bumper-pull. Deck width is the same 102″ as a flatbed.'),
+   ('Is hotshot the same as expedited?','Not quite. Hotshot describes the equipment; expedited describes the service. Most hotshot freight is expedited, but a sprinter van or a straight truck can run expedited too.'),
+   ('When should I use hotshot instead of LTL?','When the freight is urgent. LTL is cheaper but moves through terminals and takes days; hotshot is direct, one truck, one driver, straight through.'),
+   ('Do hotshot loads need a CDL?','If the combined gross rating is over 26,001 lb, yes. Many hotshot rigs are deliberately specced just under that line, but operating authority is still required either way.')]),
+
+ dict(slug='box-truck', name='Box Truck', alt='Dry Van', altslug='dry-van',
+  intro='Box truck covers freight that is too big for a courier and too small for a 53-foot trailer. Rates per mile sit low, but so do the distances — most box truck work is regional, and the economics come from how many stops fit in a day rather than how many miles.',
+  specs=[('Box length','16, 20, 24 and 26 ft are the common sizes'),
+         ('Deck height','Typically 34–48″ — this is the number that decides whether delivery works'),
+         ('Max payload','3,000–12,000 lb depending on chassis'),
+         ('Liftgate','Optional and critical — many box trucks do not have one'),
+         ('CDL','Not required under 26,001 lb GVWR; authority still required for for-hire interstate')],
+  lanes=[('Newark, NJ','Boston, MA',225),('Atlanta, GA','Nashville, TN',250),('Chicago, IL','Milwaukee, WI',92)],
+  season=[('Jan–Feb','Soft after the holiday delivery peak.'),
+          ('Mar–Aug','Steady regional distribution volume.'),
+          ('Sep–Dec','Strongest — retail replenishment and final-mile volume through the holidays.'),
+          ('Year-round','Medical, lab and service-parts work barely moves with season at all.')],
+  vs='A dry van is far cheaper per pound if you can fill it and the receiver has a dock. Box truck wins on access — tight urban streets, no dock, residential and small-business delivery where a 53-footer simply cannot go.',
+  drivers=[('Liftgate','A delivery with no dock and no forklift needs a liftgate. Not every box truck has one, and it belongs in the posting.'),
+    ('Dock height','A truck with a 37″ deck cannot back into a fixed 48″ dock. This is the single most common failed delivery in the class.'),
+    ('Regional density','Box truck economics come from multiple stops within a small radius, not from long miles.'),
+    ('Hand unload','Driver-assisted or full hand unload is labour and should be paid as such. It is also the most common source of an argument on delivery.'),
+    ('Urban access','Low bridges, weight-restricted streets and permit zones all narrow which trucks can legally reach the receiver.')],
+  ships='Final-mile freight, small pallets, furniture and appliances, medical and laboratory supplies, retail replenishment, LTL overflow, trade-show and event freight.',
+  broker='Box truck postings fail on physical fit far more often than on price. State the deck height, whether a liftgate is required, and whether the receiver has a dock or expects a ground-level hand unload — all three, every time. The rate is rarely the reason a box truck load does not cover.',
+  shipper='If your receiver has no dock, say so before you book rather than after. A liftgate requirement discovered at the door becomes a TONU plus a redelivery, which costs several times what the liftgate would have added to the original rate.',
+  faq=[('What is the average box truck rate per mile?','See the live figure below. Box truck rates per mile sit under dry van, but trips are shorter, so the number of stops per day matters more than the rate per mile.'),
+   ('Do I need a liftgate?','If the receiving location has no loading dock and no forklift, yes. A liftgate requirement discovered at the door usually turns into a failed delivery and a redelivery charge.'),
+   ('Does a box truck driver need a CDL?','Not if the vehicle is under 26,001 lb gross. Above that a CDL is required, and hauling for hire interstate requires operating authority regardless of weight.'),
+   ('How much can a box truck carry?','Anywhere from about 3,000 to 12,000 lb depending on the chassis. Always confirm payload rather than assuming from the box length.'),
+   ('What is dock height and why does it matter?','It is the height of the truck floor from the ground. A fixed dock built for 48″ trailers will not meet a 37″ box truck deck without an adjustable leveler, and the freight cannot be moved across the gap.'),
+   ('Is a box truck cheaper than LTL?','For a single direct delivery, often yes — and it is far faster, because LTL routes through terminals. For very small shipments over long distances, LTL usually wins.'),
+   ('Can a box truck do residential delivery?','Yes, and it is one of the main reasons to use one. Confirm street access, weight restrictions and whether a liftgate and hand unload are required.')]),
+]
+
+_EQ_EXTRA = {
+ 'dry-van': dict(
+   post=[('Give the real weight, not the round number','A load posted at "about 40,000" that scales at 46,200 gets refused at the shipper. Weight decides which trucks are legal on the lane.'),
+         ('Say FCFS or give the appointment window','This is the single biggest factor in how fast a van load covers. FCFS freight books hours faster because it does not put the driver\u2019s clock at risk.'),
+         ('State dock hours and whether there is overnight parking','A 07:00 appointment with no place to park the night before means the driver has to solve that problem himself, and he will price it in or skip the load.'),
+         ('Name the commodity','"General freight" tells a carrier nothing. Some commodities need seals, some need food-grade trailers, and a carrier who finds out at the dock leaves.'),
+         ('Post the accessorial terms with the load','Detention, TONU and lumper in writing on the posting removes the negotiation that otherwise happens by phone after something goes wrong.')],
+   regions=[('Above national','Northeast into New England, the Pacific Northwest, and anywhere in the upper Midwest in winter \u2014 low outbound volume means the truck risks deadheading out.'),
+            ('Around national','The Southeast triangle of Atlanta, Charlotte and Memphis; the Texas triangle; the Chicago\u2013Ohio corridor. Deep freight, balanced flows.'),
+            ('Below national','Outbound from Los Angeles, Dallas and Atlanta \u2014 large surpluses of trucks looking for a way out.')]),
+ 'reefer': dict(
+   post=[('Put the set point in writing, with continuous or cycle','Verbal temperature specs are the root of most reefer claims. A number on the rate confirmation and a download from the trailer settles almost any dispute.'),
+         ('Say whether pre-cool is required, and to what temperature','Pre-cooling is unpaid time unless somebody priced it. Carriers who discover it at the dock either charge for it or leave.'),
+         ('Declare fresh or frozen','A 34\u00b0F fresh load and a \u221210\u00b0F frozen load are different jobs with different risk profiles and different rates.'),
+         ('List every stop','Multi-stop food distribution is normal, but each stop is time and each door opening is a temperature event. Three stops posted as one is how a load falls apart.'),
+         ('Confirm lumper expectations up front','Grocery and food distribution almost always means a lumper. Say who pays and how it gets reimbursed before the truck is at the gate.')],
+   regions=[('Above national','Out of the growing regions during harvest \u2014 California\u2019s Central Valley, Yuma, South Texas and Florida from spring through midsummer.'),
+            ('Around national','Midwest food-processing corridors: Wisconsin dairy, Iowa and Nebraska protein, Michigan produce.'),
+            ('Below national','Inbound to the growing regions during harvest, because every reefer in the country is heading there anyway and will take cheap freight to get positioned.')]),
+ 'flatbed': dict(
+   post=[('Give length, width, height and weight \u2014 all four','A flatbed quote without dimensions is a guess, and the correction arrives after the truck is at your gate. This is the most expensive moment for it to arrive.'),
+         ('Say whether it needs tarping, and how many tarps','Tarping is an hour of physical work in whatever weather exists that day. It carries a fee, and a load posted without mentioning it will be re-quoted on arrival.'),
+         ('Describe the securement the freight needs','Coil racks, edge protection, chains versus straps \u2014 not every flatbed carries everything, and a driver without the right gear cannot legally load.'),
+         ('State how it loads','Crane, forklift, or driver-assisted changes how long the truck sits and whether the driver needs specific PPE or site training.'),
+         ('Flag anything over-dimensional early','Past 102\u2033 wide or 8\u20326\u2033 tall you are in permit territory, which is a different rate structure and a different set of carriers entirely.')],
+   regions=[('Above national','The Northeast and Pacific Northwest, where flatbed density is thin, and anywhere with active infrastructure work.'),
+            ('Around national','The steel corridor from Pittsburgh through Ohio and Indiana; the Southeast building-products belt.'),
+            ('Below national','Outbound from Houston and the Gulf Coast, where flatbed supply pools around industrial and energy freight.')]),
+ 'step-deck': dict(
+   post=[('Lead with the height','This is the number that determines whether a step deck is needed at all, and whether the load is legal once it is on there. Nothing else matters until height is known.'),
+         ('Give the lower-deck length you need','A 40 ft machine will not sit on a 37 ft lower deck. The footprint matters as much as the weight.'),
+         ('Say whether ramps are required','Self-propelled equipment needs ramps and many step decks do not carry them. Discovering this at the shipper costs a full day.'),
+         ('Confirm whether it tarps','A tall load that also needs a tarp is a much harder job than either one alone.'),
+         ('Give the loading method and site conditions','Soft ground, low clearance or a tight yard can rule out a trailer that would otherwise fit the freight perfectly.')],
+   regions=[('Above national','Thin-density lanes in the Mountain West and northern New England, where step decks are genuinely scarce.'),
+            ('Around national','The equipment-manufacturing belt \u2014 Illinois, Iowa, Wisconsin \u2014 and the Southeast.'),
+            ('Below national','Around large equipment-auction hubs, where step decks gather waiting for outbound freight.')]),
+ 'conestoga': dict(
+   post=[('Check your load height against the frame, not the deck','The rolling frame eats vertical space. Freight that fits on an open flatbed may not fit under a Conestoga, and this is the most common failed booking in the class.'),
+         ('Say which side or end it loads from','Side, top and rear loading are all possible, and the answer changes which trailers work and how long loading takes.'),
+         ('Confirm the freight still needs securement','The tarp protects from weather; it secures nothing. Full securement rules still apply and the driver still needs the gear.'),
+         ('Post it as its own equipment class','Posting a Conestoga load at flatbed money does not cover it. You will lose a day proving that.'),
+         ('Give as much lead time as you can','This is a small pool. Same-day Conestoga on a thin lane is expensive when it is available at all.')],
+   regions=[('Above national','Anywhere outside the manufacturing corridors, where Conestogas are genuinely rare.'),
+            ('Around national','The Midwest and Southeast manufacturing belt, where most Conestogas are based.'),
+            ('Below national','Rarely below \u2014 scarcity keeps a floor under this equipment almost everywhere.')]),
+ 'power-only': dict(
+   post=[('Confirm the trailer is legal before you post','Tires, lights, brakes and a current annual inspection. A driver refused at your gate tells every other driver he knows.'),
+         ('Give gate hours and the check-in procedure','Yard congestion and guard procedures eat the time advantage that makes power only cheap in the first place.'),
+         ('Say whether there is an empty to take out','If the carrier deadheads out of your yard, that cost lands on the outbound rate whether you see it itemised or not.'),
+         ('State the trailer type and any special requirements','A reefer trailer means the driver is responsible for running the unit and monitoring temperature. Say who pays for reefer fuel.'),
+         ('Give the trailer number and where it is parked','Sounds trivial. A driver circling a 400-trailer yard for forty minutes is detention you will end up paying.')],
+   regions=[('Above national','Markets with few drop yards, where the carrier cannot chain power-only work together.'),
+            ('Around national','Major distribution corridors \u2014 Memphis, Harrisburg, the Inland Empire, Dallas.'),
+            ('Below national','Dense drop-yard networks where a driver can run several power-only turns a day.')]),
+ 'hotshot': dict(
+   post=[('Weigh it before you post it','The most common hotshot failure is a load that turns out to be over the rig\u2019s payload, discovered at the dock. That is a TONU plus the delay you were paying to avoid.'),
+         ('Give real dimensions','A 40 ft gooseneck and a 20 ft bumper-pull are very different trailers. Length matters as much as weight.'),
+         ('Say how urgent it genuinely is','Hotshot pricing is driven by urgency. If it can wait two days, an LTL or a flatbed will cost far less.'),
+         ('Confirm whether it needs to be tarped or secured','A hotshot is an open deck. The same securement and weather rules apply as on a flatbed.'),
+         ('Give both contacts and both sets of hours','Expedited freight moving overnight needs somebody reachable at the other end. A locked gate at 03:00 turns a rescue into a layover.')],
+   regions=[('Above national','The Permian Basin, the Bakken and other energy markets during active drilling \u2014 and anywhere hit by a storm.'),
+            ('Around national','The Texas triangle and the industrial Southeast.'),
+            ('Below national','Rarely. Hotshot pricing is set by urgency far more than by lane balance.')]),
+ 'box-truck': dict(
+   post=[('State the receiver\u2019s dock height, or say there is no dock','A 37\u2033 deck cannot meet a fixed 48\u2033 dock. This single missing number causes more failed box-truck deliveries than everything else combined.'),
+         ('Say clearly whether a liftgate is required','Not every box truck has one. A liftgate requirement found at the door becomes a TONU and a redelivery.'),
+         ('Confirm who unloads','Driver-assisted or full hand unload is labour and should be paid as such. It is also the most common argument on delivery.'),
+         ('Give street access details','Low bridges, weight-restricted streets, tight residential turns and permit zones all decide which trucks can legally reach the receiver.'),
+         ('Post the number of stops and the radius','Box truck economics are stops per day, not miles. A tight multi-stop route can pay well at a low rate per mile.')],
+   regions=[('Above national','Dense urban delivery zones with access restrictions \u2014 Manhattan, central Boston, San Francisco.'),
+            ('Around national','Regional distribution around mid-size metros.'),
+            ('Below national','Markets with heavy box-truck supply from expedited and moving companies looking for backhaul work.')]),
+}
+for _e in _EQ_RATES:
+    _e.update(_EQ_EXTRA[_e['slug']])
+
+_EQ_HAS_DISPATCH = {'dry-van','reefer','flatbed','hotshot','power-only','box-truck'}
+
+# ---- Workstream 01, LAYER 2: dated weekly market reports ---------------------
+# Layer 1 (above) is the eight evergreen hubs. Layer 2 is a dated report per recorded
+# benchmark week that links back into them -- DAT's actual engine is that two-layer
+# shape, not its data. Snapshots live in rate_snapshots.json (append-only; add a week
+# with `python refresh_rate_snapshot.py`). Built here, BEFORE the hub loop, so each hub
+# can link forward to its newest dated post.
+_MR_PAGES, _MR_LATEST = [], {}
+try:
+    with open(os.path.join(SRC, 'rate_snapshots.json'), encoding='utf-8') as _f:
+        _MR_SNAPS = json.load(_f).get('snapshots') or []
+    if _MR_SNAPS:
+        _MR_PAGES, _MR_LATEST = build_market_reports(_MR_SNAPS, _EQ_RATES, _acc_faq_schema)
+        print('market reports: %d pages from %d weekly snapshots' % (len(_MR_PAGES), len(_MR_SNAPS)))
+    else:
+        print('market reports: rate_snapshots.json has no snapshots - none built')
+except FileNotFoundError:
+    # Not fatal: the site must still build for someone who has not pulled the data file.
+    # It IS reported, because silently shipping without the reports is how a whole
+    # content engine disappears from a deploy without anyone noticing.
+    print('market reports: rate_snapshots.json NOT FOUND - no dated reports in this build')
+
+_EQR_CSS = ('<style>'
+ '.eqr-hero{background:radial-gradient(1000px 400px at 12% -20%,rgba(8,131,247,.35),transparent 60%),'
+   'radial-gradient(700px 320px at 95% 120%,rgba(252,83,5,.22),transparent 55%),'
+   'linear-gradient(120deg,#0b1830,#10223B 60%,#132c4e);color:#fff;padding:60px 0 46px}'
+ '.eqr-hero h1{color:#fff;font-size:clamp(1.85rem,4.1vw,2.85rem);margin:0 0 12px;line-height:1.13}'
+ '.eqr-hero p{color:rgba(255,255,255,.84);max-width:790px;line-height:1.75;font-size:1.02rem}'
+ '.eqr-badge{display:inline-flex;gap:7px;align-items:center;background:rgba(34,197,94,.15);color:#4ade80;'
+   'border:1px solid rgba(74,222,128,.35);border-radius:999px;padding:6px 15px;font-weight:800;'
+   'font-size:.74rem;letter-spacing:.06em;margin-bottom:14px}'
+ '.eqr-badge i{width:8px;height:8px;border-radius:99px;background:#22c55e;display:inline-block;animation:eqrb 1.5s infinite}'
+ '@keyframes eqrb{50%{opacity:.25}}'
+ '.eqr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:16px;margin:26px 0 18px}'
+ '.eqr-c{background:#fff;border:1px solid #e6ebf3;border-radius:18px;padding:22px;position:relative;'
+   'overflow:hidden;box-shadow:0 14px 36px -26px rgba(2,12,30,.35)}'
+ '.eqr-c:before{content:"";position:absolute;top:0;left:0;right:0;height:5px}'
+ '.eqr-c.c:before{background:linear-gradient(90deg,#0883F7,#60a5fa)}'
+ '.eqr-c.b:before{background:linear-gradient(90deg,#7c3aed,#a78bfa)}'
+ '.eqr-c.s:before{background:linear-gradient(90deg,#16a34a,#4ade80)}'
+ '.eqr-c .who{font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#64748b}'
+ '.eqr-c .big{font-size:2rem;font-weight:800;margin:6px 0 2px;font-variant-numeric:tabular-nums;line-height:1.1}'
+ '.eqr-c.c .big{color:#0967d2}.eqr-c.b .big{color:#7c3aed}.eqr-c.s .big{color:#15803d}'
+ '.eqr-c .sub{font-size:.84rem;color:#64748b;line-height:1.6}'
+ '.eqr-t{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;'
+   'box-shadow:0 14px 36px -28px rgba(2,12,30,.35);margin:16px 0}'
+ '.eqr-t th{background:#10223B;color:#fff;text-align:left;padding:12px 15px;font-size:.69rem;'
+   'letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}'
+ '.eqr-t td{padding:12px 15px;border-bottom:1px solid #eef2f7;font-size:.93rem;color:#334155;line-height:1.6}'
+ '.eqr-t tr:last-child td{border-bottom:0}'
+ '.eqr-t td b{color:#0f172a}'
+ '.eqr-num{font-variant-numeric:tabular-nums;font-weight:800;color:#0967d2;white-space:nowrap}'
+ '.eqr-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(252px,1fr));gap:14px;margin:18px 0}'
+ '.eqr-fi{background:#f7fafd;border:1px solid #e6ebf3;border-radius:14px;padding:17px}'
+ '.eqr-fi b{display:block;margin-bottom:6px;color:#0f172a}'
+ '.eqr-fi span{font-size:.89rem;color:#475569;line-height:1.68}'
+ '.eqr-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:22px 0}'
+ '.eqr-n{border-left:3px solid #0883F7;background:#f7fafd;border-radius:0 12px 12px 0;padding:17px 19px}'
+ '.eqr-n.s{border-left-color:#16a34a}'
+ '.eqr-n b{display:block;font-size:.7rem;letter-spacing:.11em;text-transform:uppercase;color:#64748b;margin-bottom:7px}'
+ '.eqr-n p{margin:0;font-size:.93rem;color:#334155;line-height:1.75}'
+ '.eqr-faq{background:#fff;border:1px solid #e6ebf3;border-radius:16px;margin:10px 0;padding:17px 21px}'
+ '.eqr-faq h3{margin:0 0 6px;font-size:1rem;color:#0f172a}'
+ '.eqr-faq p{margin:0;font-size:.91rem;color:#475569;line-height:1.74}'
+ '.eqr-other{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px;justify-content:center}'
+ '.eqr-other a{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:7px 14px;'
+   'font-size:.86rem;font-weight:700;text-decoration:none;color:#0f172a}'
+ '.eqr-note{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:15px 18px;'
+   'color:#713f12;font-size:.9rem;line-height:1.72;margin:16px 0;max-width:840px}'
+ '</style>')
+
+def _eqr_js(eq_name, lanes):
+    import json as _j
+    return ("<script>(function(){var SB='" + _BOARD_SB + "',KEY='" + _BOARD_KEY + "',EQ=" + _j.dumps(eq_name)
+      + ",LANES=" + _j.dumps([m for _o, _d, m in lanes]) + ";"
+      "fetch(SB+'/rest/v1/rpc/get_public_market_rates',{method:'POST',headers:{apikey:KEY,"
+      "Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}'})"
+      ".then(function(r){return r.ok?r.json():Promise.reject(r.status);}).then(function(d){"
+      "if(!d||!d.length)return;var b=null;for(var i=0;i<d.length;i++){if(d[i].equipment===EQ){b=d[i];break;}}if(!b)return;"
+      "function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}"
+      "function m2(n){return '$'+Number(n).toFixed(2);}"
+      "function m0(n){return '$'+Math.round(n).toLocaleString();}"
+      "set('eqrC',m2(b.carrier_rpm)+'/mi');"
+      "set('eqrB',m2(b.broker_buy_rpm)+' \\u2192 '+m2(b.broker_sell_rpm));"
+      "set('eqrS',m2(b.shipper_rpm)+'/mi');"
+      "set('eqrRange','Typical range '+m2(b.low)+'\\u2013'+m2(b.high)+'/mi');"
+      "var mg=(b.broker_sell_rpm-b.broker_buy_rpm)/b.broker_sell_rpm*100;"
+      "set('eqrMargin','About '+mg.toFixed(0)+'% gross margin at these numbers');"
+      "if(b.as_of)set('eqrAsOf','Updated '+b.as_of);"
+      "for(var k=0;k<LANES.length;k++){set('eqrLc'+k,m0(LANES[k]*b.carrier_rpm));"
+      "set('eqrLs'+k,m0(LANES[k]*b.shipper_rpm));}"
+      "set('eqrBd1',m2(b.carrier_rpm*0.78));set('eqrBd2',m2(b.carrier_rpm*0.22));"
+      "set('eqrBd3',m2(b.carrier_rpm));set('eqrBd4',m2(b.shipper_rpm-b.carrier_rpm));"
+      "set('eqrBd5',m2(b.shipper_rpm));"
+      "var be=b.carrier_rpm-1.90;set('eqrProfit',(be>=0?'+':'\\u2212')+'$'+Math.abs(be).toFixed(2)+'/mi');"
+      "var pe=document.getElementById('eqrProfit');if(pe)pe.style.color=be>=0?'#15803d':'#dc2626';"
+      "}).catch(function(){});})();</script>")
+
+for _eq in _EQ_RATES:
+    _n, _s = _eq['name'], _eq['slug']
+    _low = _n.lower()
+
+    _b = _EQR_CSS
+    _b += ('<section class="eqr-hero"><div class="wrap">'
+      '<span class="eqr-badge"><i></i> LIVE \u00b7 <span id="eqrAsOf">national benchmarks</span></span>'
+      '<h1>' + _n + ' Freight Rates Per Mile</h1>'
+      '<p>' + _eq['intro'] + '</p></div></section>')
+
+    # --- 1. the three numbers
+    _b += ('<section><div class="wrap">'
+      '<div class="eqr-grid">'
+      '<div class="eqr-c c"><div class="who">Carrier is paid</div><div class="big" id="eqrC">\u2014</div>'
+        '<div class="sub" id="eqrRange">Typical range</div></div>'
+      '<div class="eqr-c b"><div class="who">Broker buys \u2192 sells</div><div class="big" id="eqrB">\u2014</div>'
+        '<div class="sub" id="eqrMargin">Gross margin</div></div>'
+      '<div class="eqr-c s"><div class="who">Shipper pays</div><div class="big" id="eqrS">\u2014</div>'
+        '<div class="sub">All-in, before accessorials</div></div></div>'
+      '<div class="eqr-note"><b>Where these numbers come from.</b> These are <b>national benchmark</b> figures, '
+      'not a proprietary rate panel built from our own transaction history \u2014 we say so plainly, because a rate '
+      'is only useful when you know what stands behind it. Treat them as a sanity check on a quote you have been '
+      'given, not as a replacement for the specific lane in front of you. '
+      '<a href="market-rates.html">Compare all equipment types \u2192</a></div>'
+      '</div></section>')
+
+    # --- 1b. forward link into the dated series (layer 1 -> layer 2)
+    _mr = _MR_LATEST.get(_s)
+    if _mr:
+        _b += ('<section><div class="wrap prose">'
+          '<div class="eqr-note" style="background:#eff6ff;border-color:#bfdbfe;color:#1e3a5f">'
+          '<b>Latest dated ' + _low + ' report:</b> '
+          '<a href="' + _mr[0] + '">' + _n + ' rates &mdash; week ' + ('%02d' % _mr[1])
+          + ', ' + str(_mr[2]) + ' &rarr;</a> &middot; '
+          '<a href="freight-market-reports.html">all weekly market reports &rarr;</a><br>'
+          'This page always shows the current benchmark. The dated reports keep the number that was '
+          'recorded in the week they cover, and are never edited afterwards.</div>'
+          '</div></section>')
+
+    # --- 2. rate breakdown
+    _b += ('<section class="bg-soft"><div class="wrap prose">'
+      '<h2>What the ' + _low + ' rate is actually made of</h2>'
+      '<p>A single "rate per mile" hides four different things. Brokers and shippers argue about the wrong one all '
+      'the time, so here is the whole stack, using the live numbers above.</p>'
+      '<table class="eqr-t"><thead><tr><th>Component</th><th>Per mile</th><th>Who it belongs to</th></tr></thead><tbody>'
+      '<tr><td><b>Line haul</b></td><td class="eqr-num" id="eqrBd1">\u2014</td>'
+        '<td>The truck\u2019s core revenue \u2014 driver pay, tractor, trailer, maintenance, insurance.</td></tr>'
+      '<tr><td><b>Fuel surcharge</b></td><td class="eqr-num" id="eqrBd2">\u2014</td>'
+        '<td>Moves with the DOE average. Quoted separately in contract freight, buried inside the number in spot freight. '
+        '<a href="fuel-surcharge-trucking.html">How fuel surcharge works \u2192</a></td></tr>'
+      '<tr><td><b>Carrier total</b></td><td class="eqr-num" id="eqrBd3">\u2014</td>'
+        '<td>What actually lands on the carrier\u2019s rate confirmation.</td></tr>'
+      '<tr><td><b>Broker margin</b></td><td class="eqr-num" id="eqrBd4">\u2014</td>'
+        '<td>Covers coverage work, credit risk, claims exposure and the brokerage\u2019s own cost of doing business.</td></tr>'
+      '<tr><td><b>Shipper pays</b></td><td class="eqr-num" id="eqrBd5">\u2014</td>'
+        '<td>The all-in number, before any accessorial actually incurred on the load.</td></tr>'
+      '</tbody></table>'
+      '<p style="color:#64748b;font-size:.9rem">The line haul and fuel split shown is an industry-typical '
+      'approximation \u2014 roughly 78/22 at current diesel levels. On a real load it moves with the lane and the '
+      'week, which is exactly why fuel is normally quoted as its own line.</p>'
+      '</div></section>')
+
+    # --- 3. drivers
+    _b += ('<section><div class="wrap prose"><h2>What moves the ' + _low + ' number</h2>'
+      '<div class="eqr-f">' + ''.join(
+        '<div class="eqr-fi"><b>' + t + '</b><span>' + d + '</span></div>' for t, d in _eq['drivers']
+      ) + '</div></div></section>')
+
+    # --- 4. specs
+    _b += ('<section class="bg-soft"><div class="wrap prose">'
+      '<h2>' + _n + ' specifications that decide the rate</h2>'
+      '<p>Most failed bookings are not arguments about money \u2014 they are a load that physically does not fit the '
+      'trailer that showed up. These are the numbers to put in a posting.</p>'
+      '<table class="eqr-t"><tbody>' + ''.join(
+        '<tr><td style="width:34%"><b>' + k + '</b></td><td>' + v + '</td></tr>' for k, v in _eq['specs']
+      ) + '</tbody></table>'
+      '<p><b>Commonly shipped on ' + _low + ':</b> ' + _eq['ships'] + '</p></div></section>')
+
+    # --- 5. lane examples
+    _lane_rows = ''.join(
+      '<tr><td><b>' + o + ' \u2192 ' + d + '</b></td><td class="eqr-num">' + format(mi, ',') + ' mi</td>'
+      '<td class="eqr-num" id="eqrLc' + str(i) + '">\u2014</td>'
+      '<td class="eqr-num" style="color:#15803d" id="eqrLs' + str(i) + '">\u2014</td></tr>'
+      for i, (o, d, mi) in enumerate(_eq['lanes']))
+    _b += ('<section><div class="wrap prose"><h2>What that looks like on a real lane</h2>'
+      '<p>Benchmark rate per mile multiplied by real lane distance. Useful as a starting point for a conversation, '
+      'not as a quote \u2014 direction, season and appointment requirements all move the true number.</p>'
+      '<table class="eqr-t"><thead><tr><th>Lane</th><th>Distance</th><th>Carrier gets</th><th>Shipper pays</th></tr></thead>'
+      '<tbody>' + _lane_rows + '</tbody></table>'
+      '<p style="color:#64748b;font-size:.9rem">Distances are practical truck miles and will differ slightly from '
+      'a car routing. <a href="cost-per-mile-calculator.html">Work out your own cost per mile \u2192</a></p>'
+      '</div></section>')
+
+    # --- 6. seasonality
+    _b += ('<section class="bg-soft"><div class="wrap prose">'
+      '<h2>When ' + _low + ' rates rise and fall</h2>'
+      '<table class="eqr-t"><thead><tr><th style="width:22%">Period</th><th>What happens</th></tr></thead><tbody>'
+      + ''.join('<tr><td><b>' + p + '</b></td><td>' + w + '</td></tr>' for p, w in _eq['season'])
+      + '</tbody></table></div></section>')
+
+    # --- 7. vs alternative
+    _b += ('<section><div class="wrap prose">'
+      '<h2>' + _n + ' or ' + _eq['alt'] + '?</h2>'
+      '<p>' + _eq['vs'] + '</p>'
+      '<p><a href="' + _eq['altslug'] + '-freight-rates.html">See ' + _eq['alt'].lower()
+      + ' rates per mile \u2192</a></p></div></section>')
+
+    # --- 8. both sides
+    _b += ('<section class="bg-soft"><div class="wrap prose">'
+      '<h2>Reading this number from both sides of the load</h2>'
+      '<div class="eqr-two">'
+      '<div class="eqr-n"><b>If you are a broker</b><p>' + _eq['broker'] + '</p></div>'
+      '<div class="eqr-n s"><b>If you are a shipper</b><p>' + _eq['shipper'] + '</p></div></div>'
+      '</div></section>')
+
+    # --- 9. accessorials
+    _b += ('<section><div class="wrap prose"><h2>The accessorials that quietly change the real rate</h2>'
+      '<p>Line haul is the number everyone negotiates. Accessorials are the number that decides whether the lane '
+      'was actually profitable. LoadBoot publishes its terms rather than renegotiating them load by load, so both '
+      'sides know before the truck moves.</p>'
+      '<table class="eqr-t"><thead><tr><th>Accessorial</th><th>LoadBoot standard</th><th>When it bites</th></tr></thead><tbody>'
+      '<tr><td><b><a href="detention-pay-policy.html">Detention</a></b></td><td>$60/hr after 2 free hours</td>'
+        '<td>Four hours at a dock can exceed the whole margin on a short lane.</td></tr>'
+      '<tr><td><b><a href="layover-policy.html">Layover</a></b></td><td>$250/day</td>'
+        '<td>A missed appointment that pushes delivery to the next day.</td></tr>'
+      '<tr><td><b><a href="tonu-policy.html">TONU</a></b></td><td>$250</td>'
+        '<td>Truck ordered, then the load is not there or does not fit.</td></tr>'
+      '<tr><td><b><a href="lumper-policy.html">Lumper</a></b></td><td>Reimbursed with receipt</td>'
+        '<td>Grocery and food distribution, almost every time.</td></tr>'
+      '</tbody></table></div></section>')
+
+    # --- 10. profitability
+    _b += ('<section class="bg-soft"><div class="wrap prose">'
+      '<h2>Is this rate profitable for the truck?</h2>'
+      '<p>Worth knowing whichever side of the load you are on. A broker who understands the carrier\u2019s floor '
+      'covers freight faster; a shipper who understands it stops wondering why the cheapest quote keeps falling '
+      'through. Against a typical all-in operating cost of <b>$1.90 per mile</b> for a small carrier, the current '
+      '' + _low + ' benchmark leaves:</p>'
+      '<div class="eqr-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">'
+      '<div class="eqr-c c"><div class="who">Margin over operating cost</div>'
+        '<div class="big" id="eqrProfit">\u2014</div>'
+        '<div class="sub">Per loaded mile, before deadhead</div></div></div>'
+      '<div class="eqr-note"><b>Deadhead is the part that decides it.</b> A rate that looks healthy on loaded miles '
+      'can lose money once the truck runs 150 empty miles to reach the pickup. That is why a load with a short '
+      'deadhead often books faster than a load paying more from further away \u2014 and why posting your real '
+      'pickup location matters more than shaving the rate.</div>'
+      '<p>$1.90 is a working average for a one-truck operation. Fleets with newer equipment and better fuel '
+      'programmes run below it; an older truck with high maintenance can sit well above. '
+      '<a href="cost-per-mile-calculator.html">Calculate your actual number \u2192</a></p>'
+      '</div></section>')
+
+    # --- 10b. posting checklist  (supply-side: this is the section brokers/shippers act on)
+    _b += ('<section><div class="wrap prose">'
+      '<h2>Posting a ' + _low + ' load that actually covers</h2>'
+      '<p>Rate is rarely the reason a ' + _low + ' load sits. It sits because a carrier cannot tell from the '
+      'posting whether the load is legal on his trailer, how long he will wait, or what he gets paid if it goes '
+      'wrong. Five things fix most of that.</p>'
+      '<table class="eqr-t"><tbody>' + ''.join(
+        '<tr><td style="width:38%"><b>' + t + '</b></td><td>' + d + '</td></tr>' for t, d in _eq['post']
+      ) + '</tbody></table>'
+      '<p><a href="/app/partner/">Post a ' + _low + ' load \u2192</a> \u00b7 '
+      '<a href="free-load-board-for-brokers.html">Why posting is free for brokers \u2192</a></p>'
+      '</div></section>')
+
+    # --- 10c. regional variation
+    _b += ('<section class="bg-soft"><div class="wrap prose">'
+      '<h2>Where ' + _low + ' pays above and below the national number</h2>'
+      '<p>A national benchmark is an average of very different markets. Direction matters as much as distance \u2014 '
+      'the same lane run the other way can price completely differently.</p>'
+      '<table class="eqr-t"><thead><tr><th style="width:24%">Versus national</th><th>Markets</th></tr></thead><tbody>'
+      + ''.join('<tr><td><b>' + p + '</b></td><td>' + w + '</td></tr>' for p, w in _eq['regions'])
+      + '</tbody></table></div></section>')
+
+    # --- 11. FAQ
+    _b += ('<section><div class="wrap prose"><h2>' + _n + ' rate questions</h2>'
+      + ''.join('<div class="eqr-faq"><h3>' + q + '</h3><p>' + a + '</p></div>' for q, a in _eq['faq'])
+      + '</div></section>')
+
+    # --- 12. CTA
+    _alt_cta = ('<a href="' + _s + '-dispatch.html" class="btn btn-secondary">I run a ' + _low + ' \u2192</a>'
+                if _s in _EQ_HAS_DISPATCH
+                else '<a href="load-board.html" class="btn btn-secondary">See live loads \u2192</a>')
+    _b += ('<section class="bg-soft"><div class="wrap prose center" style="text-align:center;max-width:760px">'
+      '<h2>Moving ' + _low + ' freight?</h2>'
+      '<p>Posting is free for brokers and shippers \u2014 no subscription and no per-post fee. Every carrier who '
+      'can accept your load has had authority, insurance and safety checked first, every load carries live GPS, '
+      'and the accessorial terms above are written down before the truck moves rather than argued about after.</p>'
+      '<div class="ctarow" style="margin-top:18px;justify-content:center">'
+      '<a href="/app/partner/" class="btn btn-primary">Post a load \u2192</a>' + _alt_cta + '</div>'
+      '<div class="eqr-other">' + ''.join(
+        '<a href="' + o['slug'] + '-freight-rates.html">' + o['name'] + ' rates</a>'
+        for o in _EQ_RATES if o['slug'] != _s) + '</div>'
+      '</div></section>')
+
+    RELATED[_s + '-freight-rates.html'] = [
+      ('market-rates.html', 'All Market Rates'),
+      ('load-board.html', 'Live Load Board'),
+      ('brokers.html', 'For Brokers'),
+      ('shipper-solutions.html', 'Shipper Solutions'),
+      ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'),
+      ('free-load-board-for-brokers.html', 'Free Load Board for Brokers'),
+    ]
+
+    page(_s + '-freight-rates.html',
+         _n + ' Freight Rates Per Mile 2026 \u2014 Carrier, Broker &amp; Shipper | LoadBoot',
+         _n + ' freight rates per mile, updated as new national data lands: what the carrier is paid, what brokers buy and sell at, '
+         'what shippers pay, plus lane examples, seasonality and the accessorials that move the real number.',
+         _s + '-freight-rates.html',
+         _b + _eqr_js(_n, _eq['lanes']),
+         schema=_acc_faq_schema(_eq['faq']))
+
+
+
+
+# ---- Workstream 01 layer 2: write the dated market reports --------------------
+# Emitted after the hub loop so every hub file already exists when the build's own
+# asset checker walks the output and resolves the links pointing back at them.
+for _mrp in _MR_PAGES:
+    RELATED[_mrp['fname']] = _mrp['related']
+    page(_mrp['fname'], _mrp['title'], _mrp['desc'], 'blog.html', _mrp['body'], _mrp['schema'])
+if _MR_PAGES:
+    print('market reports written: ' + ', '.join(p['fname'] for p in _MR_PAGES[-3:]) + ' ...')
 
 
 # ---- Cookie Policy ----
@@ -5522,7 +6218,7 @@ feat += fsec('security','Trust the platform','Security and reliability by design
   'Every carrier sees only their own data &mdash; enforced at the database layer, not the UI. Money data never touches the browser cache, and the app installs on any phone like a native app.',
   ['<b>Self-scoping data</b> &mdash; server resolves your org from your session; cross-account access is structurally impossible.',
    '<b>Encryption</b> &mdash; TLS 1.2+ in transit, AES-256 at rest; secrets live server-side only.',
-   '<b>Installable app</b> &mdash; PWA with push notifications and weak-signal resilience; native apps in preparation. <a href="apps.html">Get the app</a>.',
+   '<b>Installable app</b> &mdash; on Google Play for Android, PWA with push notifications and weak-signal resilience everywhere else. <a href="apps.html">Get the app</a>.',
    '<b>Audit trails</b> &mdash; bookings, payments, claims and document events are all timestamped records.'],
   ('Get the app','apps.html')),
  ('<div class="ftx-mock"><div style="font-weight:800;color:#fff;margin-bottom:10px">&#128274; Your account, your data</div>'
@@ -6770,7 +7466,7 @@ page('shipper-solutions.html', 'Shipper Solutions — Vetted Carriers, GPS Proof
 # "DAT alternative free", "post loads free no subscription". Problem-first: board cost +
 # ghost loads + paid-software stack. Funnels to create-broker-account. Unique vs brokers.html
 # (that page is the product pitch; this one is the switch-from-a-paid-board pitch).
-flb = svc_hero('A Free Load Board for Brokers &mdash; Post Loads at $0, Covered in Minutes',
+flb = svc_hero(cta_href='/app/partner/', cta_label='Post a load &rarr;', cta2_href='create-broker-account.html', cta2_label='How verification works', h1='A Free Load Board for Brokers &mdash; Post Loads at $0, Covered in Minutes', lead=
     'No subscription. No per-post fee. No renewal hike. Post your freight to a network of FMCSA-verified carriers &mdash; with live GPS tracking, clean documents and one-receipt payables built in, at no cost to your brokerage.',
     tert_label='All Features', tert_href='features.html')
 flb += _sec('The problem', 'You are paying a premium just to post a load', _cards([
@@ -6785,6 +7481,8 @@ flb += _sec('The answer', 'Post free &mdash; and the software comes with it', _c
     ('&#128196;', 'Documents &amp; payables built in', 'Rate confirmation, BOL and POD ride the load; delivery flips it into a one-receipt payable with a PAY-BY deadline. No bolt-on TMS required. <a href="payments-settlements.html">How payables work &rarr;</a>'),
     ('&#9989;', 'Zero ghost loads', 'Stale postings auto-close and cancellations carry TONU exposure, so the board stays real &mdash; your postings are believed because fakes cost money here. <a href="ghost-loads-load-board-problems.html">The ghost-load problem &rarr;</a>'),
     ('&#128274;', 'Your data stays yours', 'Carrier financials and your internal notes stay private; you see load and trip status, ETAs and document state &mdash; nothing more, nothing less. <a href="brokers.html">The full broker program &rarr;</a>'),
+    ('&#128231;', 'Post by email &mdash; loads@loadboot.com', 'Already blast your load list to a carrier network? Add <b>loads@loadboot.com</b> to the same send. We read the lanes, equipment, dates and rate from your email, post each load to the verified board under your company, and reply if anything is missing. Nothing to install, nothing to re-type. <a href="integrations.html#email">How email posting works &rarr;</a>'),
+    ('&#128241;', 'Post from your phone', 'The LoadBoot app on Google Play carries the Partner portal: post, watch offers, track the truck and approve documents from anywhere. <a href="apps.html">Get the app &rarr;</a>'),
 ]))
 flb += _sec('Why the board is clean', 'Verified carriers only &mdash; double-brokering has nowhere to hide', _cards([
     ('&#128737;', 'FMCSA-checked on every load', 'Carrier authority and MC/DOT are verified against the federal record, not photocopied once at signup. Inactive or revoked authority never gets your load. <a href="compliance.html">Carrier verification &rarr;</a>'),
@@ -6838,7 +7536,7 @@ page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post L
 # Targets "ship without a broker", "direct shipper load board", "post a load direct to
 # carrier", "cheapest way to ship truckload", "how to vet a carrier". Problem-first: broker
 # margin + fraud fear + no visibility. Honesty guard: moves under licensed brokerage where required.
-sdc = svc_hero('Ship Direct to Verified Carriers &mdash; Post Your Freight Free',
+sdc = svc_hero(cta_href='/app/partner/', cta_label='Post your freight &rarr;', cta2_href='create-shipper-account.html', cta2_label='How it works', h1='Ship Direct to Verified Carriers &mdash; Post Your Freight Free', lead=
     'Skip the broker markup without taking on the fraud risk. Post your load to carriers whose authority and insurance are verified for you, watch every mile on live GPS, and settle with the carrier directly &mdash; free for shippers.',
     tert_label='All Features', tert_href='features.html')
 sdc += _sec('The problem', 'Going direct sounds cheaper &mdash; until it goes wrong', _cards([
@@ -6927,6 +7625,21 @@ intg += ('<section class="ftx-sec"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal"><div style="max-width:340px;margin:0 auto"><img src="/shots/qbo-export-phone.webp" alt="Accounting export — QuickBooks-compatible CSVs for invoices, expenses and payments with date range" width="420" height="596" loading="lazy" decoding="async" style="display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 60px -30px rgba(11,18,32,.55)"></div><div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">The escape hatch &mdash; clean CSVs for any accountant, any software.</div></div>'
  '</div></div></section>')
 
+intg += ('<section class="ftx-sec" id="email"><div class="wrap"><div class="lbx-grid2">'
+ '<div class="reveal"><div class="ftx-kicker">For brokers &amp; shippers</div><h2 class="ftx-h">Post loads by email &mdash; loads@loadboot.com</h2>'
+ '<p class="ftx-p">Most brokerages already send a daily load list to their carrier email list. Add <b>loads@loadboot.com</b> to that send and the list becomes postings on the verified board &mdash; no TMS integration, no re-typing.</p>'
+ '<div style="margin-top:12px">'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>We parse every load in the email</b> &mdash; origin, destination, pickup date, equipment and rate, plus your company, MC and phone from the signature block.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Missing a field? We reply and ask</b> &mdash; answer in one line (&ldquo;rate is $2,050&rdquo;) and the load goes live.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>One-time claim, then automatic</b> &mdash; the first email gets a claim link so we know the loads are yours and LoadBoot&rsquo;s published accessorial terms apply; after that every send posts on its own.</div></div>'
+ '<div class="ftx-li"><span class="ftx-tick">&#x2713;</span><div><b>Request-to-book</b> &mdash; when a verified carrier requests one of your email loads you get a confirmation email; confirm with the pickup address (or just reply &ldquo;Confirmed&rdquo;) and the rate confirmation goes out.</div></div>'
+ '</div></div>'
+ '<div class="reveal"><div class="ftx-code" style="background:#0b1220;color:#e2e8f0;border-radius:14px;padding:18px 20px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86rem;line-height:1.7;border:1px solid rgba(148,163,184,.25)">'
+ '<div style="color:#94a3b8">To: carriers@yourlist.com</div><div style="color:#94a3b8">Cc: <b style="color:#7dd3fc">loads@loadboot.com</b></div><div style="color:#94a3b8;margin-bottom:10px">Subject: Loads for Thursday</div>'
+ '<div>Dallas, TX &rarr; Atlanta, GA &middot; Thu 9/4 &middot; 53&rsquo; dry van &middot; $2,850</div><div>Houston, TX &rarr; Memphis, TN &middot; Thu 9/4 &middot; reefer &middot; $2,100</div><div>Laredo, TX &rarr; Chicago, IL &middot; Fri 9/5 &middot; flatbed &middot; $3,400</div>'
+ '<div style="margin-top:10px;color:#94a3b8">&mdash; Apex Freight Co &middot; (555) 010-2020</div></div>'
+ '<div style="text-align:center;color:#64748b;font-size:.78rem;margin-top:8px">Three loads, posted to the verified board from one email.</div></div>'
+ '</div></div></section>')
 intg += ('<section class="ftx-sec alt"><div class="wrap"><div class="lbx-grid2">'
  '<div class="reveal" style="order:2"><div class="ftx-kicker">Trucks &amp; fuel</div><h2 class="ftx-h">ELD tracking and fuel cards, without a project</h2>'
  '<div style="margin-top:12px">'
@@ -6960,8 +7673,8 @@ intg += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);col
 RELATED['integrations.html'] = [('payments-settlements.html','Payments & Settlements'),('fleet-management.html','Fleet Management'),('gps-tracking.html','GPS Tracking & Proof'),('compliance.html','Compliance & Verification'),('features.html','All Features'),('contact.html','Contact')]
 page('integrations.html', 'QuickBooks, ELD & API Integrations for Trucking | LoadBoot', 'QuickBooks, ELD and API integrations for trucking: live two-way QuickBooks sync, Samsara and Motive tracking, fuel-card import and webhooks for your TMS.', 'integrations.html', intg, _intg_schema)
 
-# ---- Apps page: the LoadBoot mobile experience (PWA today, stores in preparation) ----
-ap = svc_hero('The LoadBoot App', 'One operating system for trucking &mdash; carrier, broker and shipper tools that live on your phone. Install in 10 seconds, no app store needed.')
+# ---- Apps page: the LoadBoot mobile experience (Google Play live 26 Aug 2026; iOS = PWA, App Store in preparation) ----
+ap = svc_hero('The LoadBoot App', 'One operating system for trucking &mdash; carrier, broker, shipper and agent tools that live on your phone. Now on Google Play for Android; installs in 10 seconds on iPhone.', cta_href='https://play.google.com/store/apps/details?id=com.loadboot.app', cta_label='Get it on Google Play &rarr;', cta2_href='/app/', cta2_label='Open the web app')
 ap += _sec('Your apps', 'Same account everywhere &mdash; phone, tablet, laptop.', _cards([
     ('&#128667;', 'LoadBoot Carrier', 'Post your truck, get matched loads, run trips with GPS &amp; detention proof, upload PODs, track your money. <a href="/app/carrier/">Open Carrier &rarr;</a>'),
     ('&#129309;', 'LoadBoot Partner', 'Brokers &amp; shippers: post loads, vet carriers by rating, track shipments live, manage documents. <a href="/app/partner/">Open Partner &rarr;</a>'),
@@ -6971,28 +7684,28 @@ ap += _sec('Your apps', 'Same account everywhere &mdash; phone, tablet, laptop.'
 ], 'g2'))
 ap += _sec('Install on your phone', 'Works like a native app: home-screen icon, full screen, push notifications, works on weak truck-stop signal.', (
     '<div class="cards g2">'
-    '<article class="card"><div class="card-ic">&#129302;</div><h3>Android</h3><p>Open <b>loadboot.com/app</b> in Chrome &rarr; tap the menu (&#8942;) &rarr; <b>&ldquo;Install app&rdquo;</b> or <b>&ldquo;Add to Home screen&rdquo;</b>. The LoadBoot icon appears like any other app.</p></article>'
+    '<article class="card"><div class="card-ic">&#129302;</div><h3>Android &mdash; on Google Play</h3><p>Install <b>LoadBoot Load Board &amp; Dispatch</b> from Google Play. One app, every portal: sign in as a carrier, broker, shipper or agent.</p><p style="margin-top:12px"><a href="https://play.google.com/store/apps/details?id=com.loadboot.app" rel="noopener" target="_blank" aria-label="Get it on Google Play"><img src="/google-play-badge.svg" alt="Get it on Google Play" width="180" height="54" style="display:block;height:54px;width:auto"></a></p><p class="src-disc" style="margin-top:10px">No Play access? Open <b>loadboot.com/app</b> in Chrome &rarr; menu (&#8942;) &rarr; <b>&ldquo;Install app&rdquo;</b> &mdash; same product, same account.</p></article>'
     '<article class="card"><div class="card-ic">&#63743;</div><h3>iPhone</h3><p>Open <b>loadboot.com/app</b> in Safari &rarr; tap <b>Share</b> &rarr; <b>&ldquo;Add to Home Screen&rdquo;</b>. Launches full-screen with the LoadBoot icon.</p></article>'
     '</div>'
-    '<p class="src-disc" style="margin-top:18px">Native listings on the Apple App Store and Google Play are in preparation. The installed web app above is the same product with the same account.</p>'))
+    '<p class="src-disc" style="margin-top:18px">The Android app on Google Play and the installed web app are the same product with the same account &mdash; use whichever you prefer. An App Store listing for iPhone is in preparation.</p>'))
 ap += ('<section style="background:linear-gradient(135deg,#0b1220,#12304f);color:#fff"><div class="wrap" style="padding:64px 0">'
- '<div class="sec-head center reveal" style="color:#fff"><div class="eyebrow" style="color:#7dd3fc">Coming soon</div>'
- '<h2 style="color:#fff;font-size:2rem">LoadBoot is coming to the <span style="color:#FC5305">App Store</span> &amp; <span style="color:#34d399">Google Play</span></h2>'
- '<p class="lead center" style="color:#cbd5e1;max-width:680px;margin:14px auto 0">Native apps with true background GPS, push notifications and offline paperwork are in development. The web app already installs on any phone today — the native apps take it further.</p></div>'
- '<div class="reveal" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px">'
+ '<div class="sec-head center reveal" style="color:#fff"><div class="eyebrow" style="color:#7dd3fc">Now available</div>'
+ '<h2 style="color:#fff;font-size:2rem">LoadBoot is live on <span style="color:#34d399">Google Play</span></h2>'
+ '<p class="lead center" style="color:#cbd5e1;max-width:680px;margin:14px auto 0">Loads, trips, GPS proof, PODs and settlements for carriers &mdash; free load posting, verified carriers and live tracking for brokers and shippers &mdash; referral earnings for agents. One install, choose your portal at sign-in.</p></div>'
+ '<div class="reveal" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px;align-items:center">'
+ '<a href="https://play.google.com/store/apps/details?id=com.loadboot.app" rel="noopener" target="_blank" aria-label="Get it on Google Play"><img src="/google-play-badge.svg" alt="Get it on Google Play" width="220" height="66" style="display:block;height:66px;width:auto"></a>'
  '<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 26px;display:flex;align-items:center;gap:12px"><span style="font-size:1.7rem">&#63743;</span><div style="text-align:left"><div style="font-size:.68rem;color:#94a3b8;letter-spacing:.06em">COMING SOON ON THE</div><div style="font-weight:800;font-size:1.05rem">App Store</div></div></div>'
- '<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 26px;display:flex;align-items:center;gap:12px"><span style="font-size:1.7rem">&#9654;</span><div style="text-align:left"><div style="font-size:.68rem;color:#94a3b8;letter-spacing:.06em">COMING SOON ON</div><div style="font-weight:800;font-size:1.05rem">Google Play</div></div></div>'
  '</div>'
  '<div class="reveal" style="max-width:520px;margin:30px auto 0;text-align:center">'
- '<p style="color:#cbd5e1;margin-bottom:12px">Be first in line — we email launch day only, nothing else:</p>'
+ '<p style="color:#cbd5e1;margin-bottom:12px">iPhone user? Install the web app today (Share &rarr; Add to Home Screen) and we will email you once, on App Store launch day:</p>'
  # NOTE: use the HEX entity &#x2713; here (not &#10003;) — deglyph() rewrites &#10003; into an
  # inline SVG containing double quotes, which TERMINATES this double-quoted onsubmit attribute
  # and dumps the rest of the handler as visible text on the page.
  '<form class="news" style="justify-content:center" onsubmit="event.preventDefault();var f=this,em=f.querySelector(\'input\').value;var done=function(){f.innerHTML=\'<span style=\\\'color:#86efac;font-weight:700\\\'>You are on the launch list &#x2713;</span>\';};if(window.lbSubmitLead){window.lbSubmitLead(\'app_waitlist\',{email:em}).then(done).catch(done);}else{done();}">'
- '<input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Join the launch list</button></form>'
+ '<input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Join the iOS launch list</button></form>'
  '</div></div></section>')
 page('apps.html', 'LoadBoot App — Carrier, Broker & Shipper Tools on Mobile',
-     'The LoadBoot app for Android and iPhone: post your truck, book loads with written rate confirmations, track trips and upload PODs from your phone.',
+     'The LoadBoot app on Google Play (and as a web app on iPhone): carriers book loads and run trips with GPS proof; brokers and shippers post loads free and track them live.',
      'apps.html', ap)
 
 # ---- Accessorial policy pages: full 12-section guides (linked from load details & app) ----
@@ -7367,13 +8080,7 @@ def _acc_howto_schema(name, steps):
     return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "HowTo",
       "name": "How to claim " + name + " as a truck driver", "step": st}) + '</script>'
 
-def _acc_faq_schema(faq):
-    import json as _json, re as _re
-    ents = []
-    for q, a in faq:
-        qq = _re.sub(r'<[^>]+>', '', q); aa = _re.sub(r'<[^>]+>', '', a)
-        ents.append({"@type": "Question", "name": qq, "acceptedAnswer": {"@type": "Answer", "text": aa}})
-    return '<script type="application/ld+json">' + _json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": ents}) + '</script>'
+# (_acc_faq_schema is defined earlier, above its first use in the equipment rate pages.)
 
 
 # ---------- ACCESSORIAL FLAGSHIP DATA (H1, real product shots, who-it-protects) ----------
@@ -7523,7 +8230,7 @@ for _p in _ACC_PAGES:
 _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
-  ('Resources', [('resources.html', 'Resources'), ('api.html', 'Developer API'), ('load-score.html', 'Load Score Tool'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
+  ('Resources', [('resources.html', 'Resources'), ('api.html', 'Developer API'), ('load-score.html', 'Load Score Tool'), ('freight-market-reports.html', 'Weekly Freight Market Reports'), ('dry-van-freight-rates.html', 'Dry Van Rates'), ('reefer-freight-rates.html', 'Reefer Rates'), ('flatbed-freight-rates.html', 'Flatbed Rates'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('delete-account.html', 'Delete your account'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]

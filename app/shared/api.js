@@ -962,7 +962,7 @@ export const listChat = (after = 0, limit = 100) => rpc('cc_list_chat', { p_afte
 // ---- ct-waveBG: Partner Portal (broker / shipper / facility self-service) ----
 // Self-scoping like the carrier pocket API: the server resolves the partner org from
 // the session (my_partner_org), so a partner only ever sees/writes its own records.
-export const partnerRegister = (kind, company) => rpc('cc_partner_register', { p_kind: kind, p_company: company });
+export const partnerRegister = (kind, company, mc) => rpc('cc_partner_register', { p_kind: kind, p_company: company, p_mc: mc ?? null });
 export const partnerOverview = () => rpc('cc_partner_overview');
 // broker
 export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null, p_idempotency_key: o.idempotencyKey ?? null, p_origin_full: o.originFull ?? null, p_destination_full: o.destinationFull ?? null, p_pickup_lat: o.pickupLat ?? null, p_pickup_lng: o.pickupLng ?? null, p_delivery_lat: o.deliveryLat ?? null, p_delivery_lng: o.deliveryLng ?? null });

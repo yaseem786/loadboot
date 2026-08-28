@@ -14,7 +14,8 @@ import { lookupCommodity, suggestCommodities } from './commodities.js';
 import { renderFmcsaOnly } from '../carrier/profile-view.js';
 import { renderMarketWidget } from '../shared/market-widget.js';
 import {
-  partnerRegister, partnerOverview,
+  partnerRegister, partnerOverview, fmcsaVerify,
+  createApiKey, listApiKeys, revokeApiKey,
   partnerPostLoad, partnerMyLoads, partnerSubmitLoad, rateStandards, brokerShipmentInbox, brokerQuoteShipment, shipperMyShipments, brokerClaimShipment, brokerTenderShipment, myOnboardingPacket, onboardingSubmitItem, currentAgreement, acceptAgreement,
   partnerRequestShipment, partnerMyShipments, partnerCarrierDirectory, partnerCarrierCapacity, partnerCarrierReviews, loadPickupStatus, partnerLoadCancellations, partnerUpdatePickup, setOrgLogo, partnerLoadFull, partnerTrackLoad, marketRpm, laneRate, partnerExtendOffer, partnerOfferWithdraw, partnerCarrierPacket, partnerEligibleDetail, requestPacketCopies, shipperPostLoad,
   partnerClaims, partnerReviewClaim, claimEscalate, partnerCancelLoad, partnerEligibleCarriers, partnerOfferSend,
@@ -625,6 +626,15 @@ function authScreen() {
 function choosePartnerType(user) {
   const err = h('div', { class: 'cp-err' });
   const company = h('input', { class: 'cp-in', type: 'text', placeholder: 'Company name', autocomplete: 'organization' });
+  // Broker authority. Every broker page on the site promises we check authority
+  // and the federal bond before posting unlocks — until now the signup never
+  // asked for the number, so there was nothing to check against. Shown only for
+  // brokers, and screened against FMCSA before the account is created.
+  const mc = h('input', { class: 'cp-in', type: 'text', placeholder: 'MC number (e.g. 123456)', inputmode: 'numeric', autocomplete: 'off' });
+  const mcHint = h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#94a3b8' }, 'Your FMCSA broker authority number. We check it against FMCSA before your account is created.');
+  const mcWrap = h('div', { style: 'display:none;margin-top:12px' }, [mc, mcHint]);
+  const showMc = (kind) => { mcWrap.style.display = (kind === 'broker') ? 'block' : 'none'; };
+  let mcAck = false;   // set once the carrier has seen and accepted a not-found warning
   let chosen = null;
   const cards = {};
   const opt = (kind, title, desc) => {
@@ -632,6 +642,7 @@ function choosePartnerType(user) {
       chosen = kind;
       Object.values(cards).forEach(x => x.classList.remove('sel'));
       c.classList.add('sel');
+      showMc(kind); mcAck = false;
     } }, [h('div', { class: 'cp-typecard-t' }, title), h('div', { class: 'cp-typecard-d' }, desc)]);
     cards[kind] = c; return c;
   };
@@ -639,8 +650,37 @@ function choosePartnerType(user) {
     err.textContent = ''; err.className = 'cp-err';
     if (!chosen) { err.textContent = 'Pick what type of partner you are.'; return; }
     if (!company.value.trim()) { err.textContent = 'Enter your company name.'; return; }
+    let mcDigits = '';
+    if (chosen === 'broker') {
+      mcDigits = String(mc.value || '').replace(/[^0-9]/g, '');
+      if (!mcDigits) { err.textContent = 'Enter your MC number — brokers need active authority to post loads.'; return; }
+      if (mcDigits.length > 8) { err.textContent = 'That MC number is too long — it is at most 8 digits.'; return; }
+    }
+    btn.disabled = true;
+    // Screen against FMCSA before creating the account. Two rules, both learned
+    // the hard way: a lookup that cannot REACH FMCSA is never a verdict (an
+    // outage must not read as "you are not authorised"), and a not-found means
+    // nothing about whether the number is valid — FMCSA's indexes lag a new
+    // docket by weeks. So a miss warns once and lets them through; only a
+    // transport error is swallowed entirely.
+    if (chosen === 'broker' && !mcAck) {
+      btn.textContent = 'Checking FMCSA…';
+      try {
+        const fd = await fmcsaVerify({ mc: mcDigits });
+        if (fd && fd.found === false) {
+          mcAck = true;
+          err.className = 'cp-err';
+          err.textContent = 'FMCSA has no record for MC-' + mcDigits + ' yet. New authority can take weeks to appear in their index, so this may be fine — check the number, then press Continue again and we will verify it during onboarding.';
+          btn.disabled = false; btn.textContent = 'Continue anyway →';
+          return;
+        }
+      } catch (_) {
+        // Could not reach FMCSA. That is "we could not check", not a rejection.
+        mcAck = true;
+      }
+    }
     btn.disabled = true; btn.textContent = 'Setting up…';
-    try { await partnerRegister(chosen, company.value.trim()); appView(user); }
+    try { await partnerRegister(chosen, company.value.trim(), mcDigits || null); appView(user); }
     catch (e) { err.textContent = (e && e.message) || 'Could not set up your account.'; btn.disabled = false; btn.textContent = 'Continue'; }
   } }, 'Continue');
   mount(root, h('div', { class: 'cp-auth' }, [
@@ -653,6 +693,7 @@ function choosePartnerType(user) {
         opt('shipper', 'Shipper', 'Request freight, get it moved, and track shipments.'),
         opt('facility', 'Facility / Warehouse', 'Schedule dock appointments and manage check-ins.'),
       ]),
+      mcWrap,
       (function preselectFromSignup9() {
         try {
           var k9 = user && user.user_metadata && user.user_metadata.partner_kind;
@@ -4236,6 +4277,7 @@ function packetAgreementCards(skipPacket) {
     ['network', 'Network', 'user'],
     ['onboarding', 'Documents', 'dock'],
     ['invoices', 'Invoices', 'finance'],
+    ['developers', 'API & Keys', 'zap'],
     ['account', 'Account', 'user'],
   ];
   const myLoadsCard = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('loads', 18), h('h3', null, 'My loads')]), listHost]);
@@ -4634,7 +4676,84 @@ function packetAgreementCards(skipPacket) {
   };
   bgoHook = (id) => bgo(id);
   window.__lbOpenPost = () => { postFoldOpen = true; brender(); setTimeout(() => { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
+  // ---------- Developers: self-serve API keys ----------
+  // Without this every partner key had to be minted by hand, which is the same
+  // bottleneck that left a broker pending for 22 days. A syndication partner
+  // integrating at 2am should not need us awake.
+  function developersView() {
+    const host = h('div');
+    const listHost9 = h('div', { class: 'cp-muted' }, 'Loading your keys…');
+    const nameIn = h('input', { class: 'cp-in', placeholder: 'What is this key for? e.g. "LoadBoard Network"' });
+    const wRead = h('input', { type: 'checkbox', checked: true, disabled: true });
+    const wWrite = h('input', { type: 'checkbox' });
+    const out9 = h('div');
+    const err9 = h('div', { class: 'cp-err' });
+
+    const paint9 = async () => {
+      let rows = [];
+      try { rows = (await listApiKeys()) || []; } catch (e) { mount(listHost9, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load keys.')); return; }
+      const live = rows.filter(r => !r.revoked_at);
+      if (!live.length) { mount(listHost9, h('div', { class: 'cp-muted' }, 'No keys yet. Create one below to start posting loads from your own system.')); return; }
+      mount(listHost9, h('div', null, live.map(r => h('div', { class: 'cp-row', style: 'display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.15)' }, [
+        h('div', null, [
+          h('div', { class: 'cp-row-t' }, r.name || 'Untitled key'),
+          h('div', { class: 'cp-row-s', style: 'color:#94a3b8' }, r.prefix + '…  ·  ' + (r.scopes || []).join(', ') + '  ·  ' + (r.last_used_at ? 'last used ' + new Date(r.last_used_at).toLocaleDateString() : 'never used')),
+        ]),
+        h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
+          if (!confirm('Revoke "' + (r.name || 'this key') + '"? Anything using it stops posting immediately.')) return;
+          try { await revokeApiKey(r.id); await paint9(); } catch (e) { alert((e && e.message) || 'Could not revoke.'); }
+        } }, 'Revoke'),
+      ]))));
+    };
+    paint9();
+
+    const makeBtn = h('button', { class: 'cp-btn', onClick: async () => {
+      err9.textContent = '';
+      const nm = nameIn.value.trim();
+      if (!nm) { err9.textContent = 'Give the key a name so you know what to revoke later.'; return; }
+      const scopes = ['read']; if (wWrite.checked) scopes.push('write');
+      makeBtn.disabled = true; makeBtn.textContent = 'Creating…';
+      try {
+        const res = await createApiKey(nm, scopes);
+        const full = (res && res.key) || '';
+        mount(out9, h('div', { class: 'cp-card', style: 'margin-top:14px;border:1.5px solid rgba(245,158,11,.5)' }, [
+          h('div', { class: 'cp-row-t', style: 'margin-bottom:6px' }, 'Copy this key now — we cannot show it again'),
+          h('div', { class: 'cp-row-s', style: 'color:#94a3b8;margin-bottom:10px' }, 'We only store a hash of it. If you lose it, revoke the key and make a new one.'),
+          h('code', { style: 'display:block;word-break:break-all;background:#0b1524;color:#dce6f2;padding:12px 14px;border-radius:8px;font-size:.85rem' }, full),
+          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:10px', onClick: () => { try { navigator.clipboard.writeText(full); } catch (_) {} } }, 'Copy key'),
+        ]));
+        nameIn.value = ''; wWrite.checked = false;
+        await paint9();
+      } catch (e) { err9.textContent = (e && e.message) || 'Could not create the key.'; }
+      makeBtn.disabled = false; makeBtn.textContent = 'Create key';
+    } }, 'Create key');
+
+    mount(host, h('div', null, [
+      h('div', { class: 'cp-card' }, [
+        h('div', { class: 'cp-cardhead' }, [icon('zap', 18), h('h3', null, 'Post loads from your own system')]),
+        h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Send freight straight from your TMS or load-posting network instead of typing it here. REST, JSON, batch up to 50 loads, and idempotency keys so a retry never double-posts.'),
+        h('a', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:12px;display:inline-block', href: 'https://loadboot.com/api.html', target: '_blank', rel: 'noopener' }, 'Read the API docs →'),
+      ]),
+      h('div', { class: 'cp-card', style: 'margin-top:14px' }, [
+        h('div', { class: 'cp-cardhead' }, [icon('lock', 18), h('h3', null, 'Your API keys')]),
+        listHost9,
+      ]),
+      h('div', { class: 'cp-card', style: 'margin-top:14px' }, [
+        h('div', { class: 'cp-cardhead' }, [icon('plus', 18), h('h3', null, 'Create a key')]),
+        nameIn,
+        h('div', { style: 'display:flex;gap:18px;flex-wrap:wrap;margin:12px 0 4px' }, [
+          h('label', { style: 'display:flex;gap:7px;align-items:center;color:#94a3b8' }, [wRead, h('span', null, 'Read loads (always on)')]),
+          h('label', { style: 'display:flex;gap:7px;align-items:center' }, [wWrite, h('span', null, 'Post loads')]),
+        ]),
+        h('div', { class: 'cp-row-s', style: 'color:#94a3b8;margin-bottom:10px' }, 'Only give a key "Post loads" if something needs to create freight on your behalf.'),
+        err9, makeBtn, out9,
+      ]),
+    ]));
+    return host;
+  }
+
   function brender() {
+    if (btab === 'developers') { mount(bContent, developersView()); return; }
     if (btab === 'loads') { mount(bContent, h('div', null, [myLoadsCard])); return; }
     if (btab === 'dashboard') {
       const bdRate9 = h('div');
