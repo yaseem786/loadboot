@@ -1,0 +1,35 @@
+--- /tmp/build_site.ws02.py	2026-08-28 20:16:47.037509677 +0000
++++ build_site.py	2026-08-28 20:17:16.622869402 +0000
+@@ -1357,8 +1357,8 @@
+   ('Can you keep me loaded on regional flatbed lanes?','Absolutely. Tell us your home base and preferred lanes and we plan loads to keep you regional if that\'s what you want.'),
+   ('What does flatbed dispatch cost?','A flat 5% of gross on loads we book, no contract, cancel anytime.')])
+ 
+-svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Service 2026 — Flat 5%, No Contracts | LoadBoot',
+- 'Dry van truck dispatch for owner-operators and fleets. Consistent, well-paying van freight, rate negotiation, and back-office support. Flat 5%, no contracts.',
++svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Services 2026 — Dry Van Dispatcher, Flat 5%, No Contracts | LoadBoot',
++ 'Dry van dispatch services for owner-operators and fleets: a dedicated dry van dispatcher booking consistent van freight, negotiating every rate and handling the back office. Flat 5% of gross, no contracts.',
+  'Dry Van Dispatch Services Across the USA','Steady, consistent van freight that keeps your truck moving &mdash; booked, negotiated, and managed by a dedicated dispatcher.',
+  ['Dry van is the backbone of freight, but consistency is everything. The difference between a good week and a bad one is having someone working loads ahead of you. That\'s what we do.',
+   'We book reliable van freight on your preferred lanes, negotiate every rate, and keep your schedule full &mdash; so you\'re never sitting empty waiting for the next load.'],
+@@ -1379,8 +1379,8 @@
+   ('Can you find paying backhauls?','We plan loads to reduce empty miles and find backhauls whenever the lane allows.'),
+   ('What does hotshot dispatch cost?','A flat 5% of gross on loads we book, no contract.')])
+ 
+-svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services | Loadboot',
+- 'Power only truck dispatch. We book drop-and-hook power only freight for your tractor, negotiate rates, and handle brokers. Flat 5%, no contracts.',
++svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services 2026 — Power Only Dispatcher, Drop-and-Hook Freight, Flat 5% | LoadBoot',
++ 'Power only dispatch services for tractor-only carriers in the USA: a power only dispatcher booking drop-and-hook and trailer-supplied freight, negotiating every rate and handling broker setup. Flat 5% of gross, no contracts.',
+  'Power Only Dispatch Services Across the USA','Flexible drop-and-hook freight for your tractor &mdash; we keep you pulling trailers and earning without the wait.',
+  ['Power only gives you flexibility, but it takes the right broker relationships to stay loaded. We connect you with consistent power only freight and keep your tractor working.',
+   'We book drop-and-hook and trailer-supplied loads that fit your tractor, negotiate the rate, and handle the broker setup so you stay productive.'],
+@@ -7822,8 +7822,8 @@
+ # ---- "broker refuses" escalation, FAQ schema, conversion CTA. (2026 keyword research)
+ _ACC_SEO = {
+  'detention-pay-policy': dict(
+-   title='Detention Pay for Truckers 2026: Rates, How to Claim &amp; Get Paid | LoadBoot',
+-   desc='Detention pay explained for carriers: $50\u2013$100/hr 2026 rates, the 2-hour free time rule, exactly how to claim detention, what evidence to collect, and what to do when a broker refuses \u2014 plus how LoadBoot pays it automatically.',
++   title='Detention Pay for Truckers 2026: How Much Is It \u2014 $50\u2013$100/Hour, Detention Charges in Trucking &amp; How to Claim | LoadBoot',
++   desc='How much is detention pay? Detention charges in trucking run $50\u2013$100/hr in 2026, after 2 hours of free time. Exactly how to claim detention pay, what evidence to collect, what to do when a broker refuses \u2014 plus how LoadBoot pays it automatically.',
+    ev=['Timestamped photo of your truck AT the gate on arrival (phone camera puts time + GPS in the file)',
+        'The appointment time straight off the rate confirmation \u2014 on-time arrival is the foundation of every claim',
+        'GPS arrive/depart stamps (ELD or the LoadBoot app records them for you)',

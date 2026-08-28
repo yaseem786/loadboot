@@ -1,0 +1,64 @@
+seo: 28 new pages + 3 retitled — rate hubs, market reports, industry pages
+
+Supply-side SEO. Everything below was built between 25 and 28 August and has
+been sitting unpushed in one stack. All of it deploys together.
+
+Workstream 01 layer 1 — 8 equipment rate hubs (25 Aug)
+  {slug}-freight-rates.html for dry-van, reefer, flatbed, step-deck, conestoga,
+  power-only, hotshot, box-truck. Live per-equipment data from
+  get_public_market_rates(); three audience cards (carrier paid / broker
+  buy-sell + margin / shipper pays); rate drivers, seasonality, lane examples,
+  3 FAQs each with schema. _EQ_HAS_DISPATCH guards the CTA because
+  step-deck-dispatch.html and conestoga-dispatch.html do not exist.
+
+Workstream 01 layer 2 — 13 dated weekly market reports (25 Aug)
+  New market_reports_module.py + refresh_rate_snapshot.py + rate_snapshots.json.
+  6 combined weekly reports + 6 rotating equipment deep-dives + the evergreen
+  archive freight-market-reports.html, generated from an append-only snapshot
+  store. Three guards stop it publishing a false "dry van up 43% week over week"
+  off a methodology break in app_private.rate_history: source-family matching,
+  a 15% max-plausible-move cap, and an all-identical check that reports
+  "not refreshed" rather than "unchanged".
+
+Date-anchored the cadence wording (25 Aug)
+  13 exact-string edits removing "refreshed weekly" / "updated weekly" from the
+  8 hubs, the homepage live-rates band and market-rates.html. rate_benchmarks
+  has been stale at as_of 2026-08-17, so the claim was false. The JS already
+  showed the real date; only the static fallbacks and the prose lied.
+  NOTE: market-rates.html's <title> changed — watch its GSC position.
+
+Google Play (28 Aug)
+  Play badge in the footer and on apps.html, Play Store links, Android install
+  copy.
+
+Workstream 02 — 6 shipper-by-industry pages + hub (28 Aug)
+  New industry_pages_module.py. food-and-beverage, building-materials,
+  retail-and-ecommerce, manufacturing-and-industrial, agriculture-and-produce,
+  metals-and-steel at {industry}-freight-shipping.html (2,699-3,040 words each),
+  plus the freight-shipping-by-industry.html hub. No load board publishes this
+  page type; only the 3PLs do.
+  Written as information, not customer claims — FSMA 21 CFR Part 1 Subpart O,
+  49 CFR 393.100-393.136 securement incl. the 393.120 coil rule, retail MABD /
+  OTIF / ASN, produce pre-cooling and the harvest migration, plant receiving.
+  No rate numbers on any of them, deliberately: the live figures live on the
+  rate pages where JS keeps them honest.
+  Two-way linked with the layer-1 hubs; one nav entry and one footer link, both
+  pointing at the hub rather than six verticals.
+
+R6 SEO title surgery — 3 pages (28 Aug)
+  Re-verified against live GSC (28d to 2026-08-26) before editing; all three
+  still at 0 clicks, so all three eligible.
+    detention-pay-policy   0 clicks / 136 impressions / pos 55.7
+    dry-van-dispatch       0 clicks /  91 impressions / pos 77.7
+    power-only-dispatch    0 clicks / 105 impressions / pos 74.5
+  Every existing keyword preserved, query language added, URLs unchanged.
+  power-only-dispatch also had the brand misspelled lowercase as "Loadboot".
+
+Docs
+  docs/seo/WEEKLY-LOG.md          R6 row with pre-edit baselines
+  docs/seo/OFF-PAGE-PACK-2026-08-28.md
+  docs/WORKSTREAM-02-build_site.diff, docs/seo/R6-title-surgery.diff
+
+Build verified: python3 build_site.py -> BUILD OK, exit 0, all new pages in
+sitemap.xml, zero unresolved internal links, only the 78 known optional
+PENDING SCREENSHOT warnings.
