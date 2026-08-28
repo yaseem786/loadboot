@@ -1,4 +1,5 @@
 # LoadBoot — Dispatcher (Agent) Portal Audit
+> **STATUS 28 Aug 2026 (evening): P0 + most of P1 are BUILT.** See "§6 What was built" at the bottom. Remaining: P2 (DAT API, RC OCR, ELD) and P1 #10/#11/#12 on *real* trips (today a booking mirrors its events into `trip_events`; the CC trip tools themselves are not yet surfaced to the dispatcher).
 **Date:** 28 Aug 2026 · **Scope:** `app/agent/` → `carrier/app.js` (`agentPortal()`, lines 604–1906), `shared/api.js`, `command-center/views/dispatchers.js` · **Benchmark:** what a dispatcher gets inside Amazon Relay / Uber Freight / a modern TMS (Alvys, Rose Rocket) vs what a LoadBoot dispatcher gets today.
 
 ---
@@ -129,3 +130,64 @@ LoadBoot already has the backend for 1, 3, 4, 5 and half of 2. It has none of th
 3. `dispatchers.js` — commission ledger tab next to salary; trial start/end dates + per-load rows.
 4. P1 items as separate modules (`agent-board.js`, `agent-trips.js`, `agent-queue.js`).
 5. `node --check` every file; `python build_site.py` must print BUILD OK before any claim that a page works.
+
+---
+
+## 6. What was built (28 Aug 2026) — read before touching any of it
+
+### Backend — two migrations, both applied on STAGING and tested end-to-end in a rolled-back `DO` block. Not yet on PROD.
+- **`migrations/bl_disp_0288_dispatcher_workspace.sql`** (staging has it as `0288` + fix-ups `0288b/c/d`; the file is the consolidated, correct version — apply the file to prod as one migration).
+  Tables (all RLS-locked, RPC-only): `truck_availability`, `dispatcher_bookings`, `dispatcher_booking_events`, `dispatcher_commission`, `broker_contacts`, `dispatcher_messages`. Columns on `dispatcher_profiles`: `commission_pct`, `trial_start`, `trial_end`.
+  Helpers: `app_private.disp_is_assigned(org)`, `disp_is_carrier_member(org)`, `disp_role_for(org)` → staff | dispatcher | carrier.
+  RPCs (dispatcher): `dispatcher_workspace_feed`, `dispatcher_set_availability`, `dispatcher_log_booking` (flags `below_min` vs truck/SOP/profile min rate; auto-adds broker to the book; staff notification), `dispatcher_booking_update` (RC attach; dispatched → picked_up → delivered; cancel; mirrors into `trip_events` when linked), `dispatcher_booking_event` (check_call / note / exception / eta; exception alerts staff), `dispatcher_booking_timeline`, `dispatcher_broker_upsert/delete`, `dispatcher_thread_list/send`, `carrier_my_dispatcher`.
+  RPCs (staff): `cc_dispatcher_set_terms` (commission % ≤ 5, trial window), `cc_dispatcher_bookings`, **`cc_dispatcher_booking_decide`** (approve = requires RC on file → inserts `public.loads` as **`booked`** (never `available`, or the posting matcher would offer an already-booked load to other carriers) + `app_private.trips` + stops + event; trip compliance triggers (valid driver) come back as a readable `error`), `cc_dispatcher_commission_status/list`. `cc_dispatcher_assign` now accepts dispatchers in **`trial`**.
+  Trigger: booking → `delivered/invoiced/paid` creates/re-prices a **draft** `dispatcher_commission` row at the profile's `commission_pct`; cancelled/rejected voids it.
+  Storage policy `doc_read_assigned_dispatcher`: assigned dispatcher can read the carrier owner's `documents/` folder (carrier packet).
+- **`migrations/bl_disp_0289_dispatcher_board.sql`** — `app_private.my_carrier_org()` gains ONE extra source: transaction-local `app.dispatch_as`, honoured only when the caller has an active assignment for that org. Only the `dispatcher_*` wrappers set it (`app_private.disp_act_as`). Wrappers: `dispatcher_board` (best-fit ranking + available loads + book requests + truck postings), `dispatcher_load_detail`, `dispatcher_request_book` (carrier engine's gates still apply: prefs complete, compliance, hazmat, pickup passed), `dispatcher_post_truck` (**auto_request forced false**; origin defaults from availability), `dispatcher_update_posting`, `dispatcher_posting_matches`. KPIs computed from bookings + events: `app_private.disp_kpis`, `dispatcher_my_kpis`, `cc_dispatcher_kpis`. Prod's `my_carrier_org` was byte-compared (whitespace-only diff) before writing this — safe to apply.
+
+### Frontend
+- **`app/agent/dispatcher-workspace.js`** (new, ~55 KB, scoped dark styles, `dw-` classes). Tabs: Today (work queue + KPI tiles + rules), **Board**, Trucks (carrier card + SOP + truck specs + availability editor), Bookings (log form with RC upload + live $/mile vs min-rate check; detail modal with status actions, check call, ETA, exception, cancel, timeline), Brokers, Money (per-load ledger), Messages (3-way thread), Packet (carrier docs via signed URLs), **My KPIs**.
+- **`app/carrier/app.js`** — one hook in `renderDispatcherHome()`: status ∈ {trial, verified, active} → dynamic-import the module and mount it under the status card; fallback card if the import fails. Trial status text changed. Nothing else touched.
+- **`app/shared/api.js`** — wrappers appended after `ccCarrierPrefs`.
+- **`app/command-center/views/dispatchers.js`** — 360 drawer gains: computed KPI strip, commission % + trial window, bookings queue (Open RC · Approve → create trip · Reject · invoiced/paid), commission ledger (approve / pay / void), shared thread. Assign picker allows `trial`. Salary run now records computed KPIs in `kpi.computed`.
+
+### Verified
+`node --check` on all four JS files; real `python build_site.py` → BUILD OK (module lands in `site/app/agent/` and in the SW precache); headless-Chromium render of every tab with mocked RPCs (desktop + 390 px): zero page/console errors; booking log, availability save, request-to-book, post-truck all call the right RPC with the right payload.
+
+### Added later on 28 Aug (evening, round 2)
+- **Icons**: all emoji replaced with Lucide-style line icons (`shared/ui/icons.js` + 10 extras in the module). CC view too.
+- **`bl_disp_0290_dispatcher_trip_tools.sql`** (staging): `app_private.can_touch_trip()` gains the assignment-scoped `app.dispatch_as` clause (prod/staging bytes were identical before the change); `dispatcher_trip(org, trip)` (trip row, stops, timeline, dwell, PODs, RC, claims, issues) and `dispatcher_trip_action(org, trip, action, p)` (arrive / depart / checkin / accessorial / issue → the carrier engines, mirrored onto the booking timeline). UI: **Trip panel** inside the booking modal once `trip_id` is set.
+- **`bl_fix_0291_claim_compute_detention_bigint.sql`** (staging): pre-existing PROD bug — carrier detention claims without explicit `detention_minutes` 500'd (`sum(int)` → bigint vs `detention_bill(uuid,int)`). One `::int` cast. **Apply to prod with the others.**
+- **Carrier portal**: `app/carrier/dispatcher-card.js` + one dynamic-import hook in the dashboard (after the break-even card). Shows the assigned dispatcher and the shared thread; renders nothing when there is no dispatcher.
+
+### Round 3 (28 Aug, late) — RC reader
+- **Edge function `rc-parse`** — `supabase/functions/rc-parse/index.ts`, deployed **staging v3 + prod v1** (verify_jwt). Body `{ mime, data_b64 }` ≤ 8 MB (same convention as `doc-precheck`); Gemini with a strict `responseSchema` + `thinkingBudget:0`; model chain `gemini-flash-latest → 2.5-flash → 2.0-flash → 2.5-flash-lite` (flash-latest is first because the others returned 400/503 for inline PDFs on 28 Aug); returns `{ ok, fields, confidence, warnings, model }` or `{ ok:false, error, errors[] }`. Verified end-to-end on BOTH projects with a synthetic TQL rate con: every field correct, confidence high (prod ≈ 5 s, staging ≈ 15 s).
+- **Workspace**: the RC file input is now the FIRST field of "Log a booking"; choosing a file calls `readRateCon()` and prefills every empty field, shows a green/orange "Read from the RC (… confidence): …" box with the carrier named on the RC, multi-stop notice and the model's warnings. Advisory only — any failure just says "fill by hand"; nothing blocks.
+
+### Round 4 (28 Aug, late) — carrier keeps availability current
+- **`bl_disp_0292_carrier_availability_view.sql`** (staging): `carrier_my_dispatcher()` now returns the carrier's trucks with their `truck_availability`.
+- **Carrier card** (`app/carrier/dispatcher-card.js`): "Where is your truck?" block per unit — status / empty at / empty from / home by / home location / drive hours left / driver / overnight rules / note → `dispatcher_set_availability` (carrier role). The dispatcher's Today queue and Board pick it up on the next refresh. ELD HOS auto-sync is NOT built: `app_private.eld_integrations` has **0 rows on prod**, so there is nothing to test against — the manual field is the honest version for now.
+
+### Round 5 (28 Aug, late) — ELD HOS sync, dead tabs, and the ELD bug
+- **`bl_eld_0293_hos_sync.sql`** (staging): `eld_hos_targets()` (service role; every ACTIVE integration whose carrier has a LoadBoot dispatcher — trip or not) + `eld_hos_ingest(token, drivers[])` (ingest-token auth; matches driver → truck by name on `truck_availability`, or the single truck of a one-truck carrier; unmatched names are returned, never guessed). Tested: name match, unmatched, bad token.
+- **PROD BUG found and fixed in the same file (0293b on staging):** `eld_integrations_status_check` only allowed `disconnected|connected|error`, while `carrier_eld_setup` inserts `'active'` and `eld_ingest`/`eld_poll_targets` filter on `'active'`. **"Connect ELD" has always thrown 23514 — that is why the table is empty on prod.** Widened the check to include `'active'`.
+- **`supabase/functions/eld-poll/index.ts`** → staging v3 (prod still v3-old = GPS only; deploy the file to prod after the migration). GPS path unchanged; new step (2) reads Samsara `/fleet/hos/clocks` (documented fields) or Motive `v1/available_time` (defensive parser — no live account to verify against) and posts to `eld_hos_ingest`. Staging run: `{ok, targets:0, hos:{pushed:0, errors:[]}}`.
+- **Agent portal dead code removed** (`app/carrier/app.js`): the unreachable `post`, `carriers`, `resources` tabs and the duplicate old `dispatch` console — 203 lines. Comment at the top of `renderDispatcherHome` corrected. `node --input-type=module --check` + full build pass.
+- **How a carrier turns HOS on**: Account → ELD (calls `carrier_eld_setup(provider, rotate, api_token)`) with a Samsara API token that has *Read ELD Compliance (US)* + *Read Vehicles* scopes, or a Motive API key. Within 5 minutes the dispatcher's truck card shows "HOS drive left" with a `samsara · driving · shift 9.2h · cycle 41h · synced …` note. Until then the field stays manual.
+
+### To do next (in order)
+1. Yaseen: commit + push; apply `0288` → `0289` → `0290` → `0291` → `0292` → `0293` to prod, then deploy `eld-poll` to prod (files as-is); CC → Abdul → trial → terms → assign Warren's.
+2. P2 left: DAT/Truckstop API — no free/self-serve API exists (see §7); 123Loadboard partner API is the realistic first integration.
+3. Clean the four dead agent tabs (`dispatch`, `carriers`, `post`, `resources`).
+
+---
+
+## 7. External load-board APIs — what actually exists (checked 28 Aug 2026)
+| Board | API? | How to get it | Free? |
+|---|---|---|---|
+| **DAT** | Yes — Load Board, BookNow, Tracking, Freight Posting, RateView via developer.dat.com | Create a developer account; access is granted per company under a commercial agreement (developersupport@dat.com). A dispatcher's own DAT login does NOT grant API use. | **No** — paid/partner. |
+| **Truckstop** | Yes — load search, truck search, post load (developer.truckstop.com) | Signed **Systems Integration Agreement** required before credentials are issued (integrations@truckstop.com). | **No** — partner agreement. |
+| **123Loadboard** | Yes — post/search loads, post/search trucks, rates, messaging, bid/book | partner-integrations@123loadboard.com · 437-887-2934; a tech lead is assigned. LoadBoot already has a 123Loadboard account with both carriers' searches set up. | Not published; partner terms. **Best first target.** |
+| Free boards (Doft, Trulos, TruckSmarter, C.H. Robinson) | Web only; no public API for third-party dispatch tools | — | Free to use by hand; scraping them is against their terms and not something to build. |
+
+So: there is no free DAT or Truckstop API. The trial runs on Abdul's own DAT seat + "Log a booking" (with the RC reader), and LoadBoot's own board. If you want one integration, email 123Loadboard first — the RC-reader and booking log already give you the internal side.

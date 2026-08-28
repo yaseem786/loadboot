@@ -790,8 +790,10 @@ async function agentPortal(user) {
         : h('span', { class: 'cp-pill', style: 'background:rgba(245,158,11,.15);color:#fbbf24' }, [icon('loads',15),' POSTED']),
     ]));
   };
-  // ---- DISPATCHER HOME: detailed application → status → hired console. The portal is
-  //      100% dispatcher; referral/chain code remains in the file but is unwired. ----
+  // ---- DISPATCHER HOME: application → status → (once hired) the Dispatcher Workspace module
+  //      (../agent/dispatcher-workspace.js). The referral / chain / earnings / payouts tabs in AGNAV
+  //      are the Referral Partner program and stay live. The old duplicate 'dispatch' console and
+  //      the unreachable 'post' / 'carriers' / 'resources' tabs were removed 28 Aug 2026. ----
   async function renderDispatcherHome(host) {
     mount(host, h('div', { class: 'cp-muted' }, 'Loading…'));
     let d = null; try { d = await dispatcherMyStatus(); } catch (_) {}
@@ -800,7 +802,7 @@ async function agentPortal(user) {
       applied: ['#94a3b8', '📝 Draft — finish and submit to apply'],
       screening: ['#fbbf24', '⏳ In screening — the team is reviewing your application'],
       skills_test: ['#fbbf24', '📝 Skills test — check your email / messages'],
-      trial: ['#fbbf24', '🚀 Paid working trial in progress'],
+      trial: ['#4ade80', '🚀 Working trial in progress — your workspace is open below'],
       verified: ['#4ade80', '✅ Verified — you’ll be assigned a carrier soon'],
       active: ['#4ade80', '✅ Active dispatcher'],
       suspended: ['#f87171', '⏸ Suspended — contact the team'],
@@ -968,6 +970,23 @@ async function agentPortal(user) {
     if (referralUpsell) cards.unshift(referralUpsell);
     if (waitBanner) cards.unshift(waitBanner);
     const asg = (d.assignments || []).filter((a9) => a9.status !== 'ended');
+    // Dispatcher Workspace (bl_disp_0288): once hired (trial/verified/active) the dashboard IS the
+    // workspace — trucks, availability, bookings + RC, commission, thread, packet. Loaded as its own
+    // module so the application form / referral code above stays untouched. Falls back to the
+    // read-only cards below if the module fails to load (old SW cache, offline).
+    if (['trial', 'verified', 'active'].includes(prof.status)) {
+      const wsHost = h('div', { id: 'dw-host' }, h('div', { class: 'cp-muted' }, 'Opening your workspace…'));
+      mount(host, h('div', null, [cards[0], wsHost]));
+      try {
+        const mod = await import('../agent/dispatcher-workspace.js');
+        await mod.mountDispatcherWorkspace(wsHost, {});
+        return;
+      } catch (e9) {
+        try { console.warn('[dispatcher-workspace] failed to load', e9); } catch (_) {}
+        mount(wsHost, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, h('h3', null, 'Workspace unavailable')), h('div', { class: 'cp-row-s' }, 'Could not open the dispatcher workspace (' + ((e9 && e9.message) || 'load error') + '). Pull to refresh, or clear the app cache and sign in again.')]));
+        return;
+      }
+    }
     if (asg.length) {
       cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
         const s9 = a9.sop || {};
@@ -1333,111 +1352,6 @@ async function agentPortal(user) {
         bar9, body9, err9,
         h('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [backB, nextB].filter(Boolean)),
       ].filter(Boolean)), trackerCard9(), threadCard9()]));
-    } else if (tab === 'post') {
-      mount(content, h('div', null, [
-        h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('user',15),' Bring demand the compliant way \u2014 refer a broker or shipper.']),
-        agCard('\ud83d\udcc8 How agents bring demand (and earn 1%)', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, 'As a LoadBoot agent you earn 1% of gross on every delivered load your chain touches \u2014 plus overrides on agents you recruit. But agents do NOT post or offer freight themselves: posting/offering freight to carriers is licensed-broker activity (FMCSA broker authority + a $75,000 bond), and doing it without a license carries penalties.'),
-          h('div', { class: 'cp-row-t', style: 'margin-top:12px' }, 'The compliant way to bring demand:'),
-          h('div', { class: 'cp-row-s', style: 'line-height:1.85;margin-top:4px' }, [icon('check',14),' Refer a freight BROKER or SHIPPER with your link \u2014 they post their OWN loads on LoadBoot (they are the licensed broker / freight owner).']),
-          h('div', { class: 'cp-row-s', style: 'line-height:1.85' }, [icon('check',14),' Every delivered load your chain touches pays you 1% automatically \u2014 recurring, uncapped, plus downline overrides.']),
-          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:14px' }, [
-            h('button', { class: 'cp-btn', onClick: () => go('chain') }, [icon('user',15),' Refer a broker or shipper \u2192']),
-            h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('earnings') }, 'View earnings'),
-          ]),
-          h('div', { class: 'cp-row-s', style: 'margin-top:14px;color:#8ea2c3;line-height:1.75' }, 'Want to actively dispatch for a specific carrier (managed dispatch)? That is a separate Dedicated Dispatcher role \u2014 you work for ONE carrier and find loads FOR them (never offering freight to the open market). Contact LoadBoot to set it up.'),
-        ]),
-      ]));
-    } else if (tab === 'carriers') {
-      if (isVerified && feed.own_broker_org) {
-        
-        if (!document.getElementById('agn-cn-css')) { const st9 = document.createElement('style'); st9.id = 'agn-cn-css'; st9.textContent = `
-      .cn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-      .cn-card{position:relative;background:#fff;border:1px solid #e6ebf3;border-radius:20px;overflow:hidden;box-shadow:0 14px 38px -26px rgba(2,12,30,.35);transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column}
-      .cn-card:hover{transform:translateY(-4px);box-shadow:0 26px 54px -26px rgba(2,12,30,.45)}
-      .cn-top{background:linear-gradient(120deg,#0d1b33,#10223B 60%,#14335c);padding:14px 16px 40px;position:relative}
-      .cn-top:after{content:'';position:absolute;inset:0;background:radial-gradient(420px 120px at 85% -30%,rgba(8,131,247,.35),transparent 60%)}
-      .cn-idrow{position:relative;z-index:1;display:flex;gap:8px;justify-content:space-between;align-items:flex-start}
-      .cn-since{font-size:.63rem;color:rgba(255,255,255,.55);font-weight:600;letter-spacing:.04em}
-      .cn-ava{width:60px;height:60px;border-radius:16px;margin:-34px 0 0 16px;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.15rem;color:#fff;background:linear-gradient(135deg,#0883F7,#10223B);border:3.5px solid #fff;box-shadow:0 10px 22px -10px rgba(2,12,30,.5);overflow:hidden;flex:0 0 auto}
-      .cn-ava.lg{width:74px;height:74px;margin:0;font-size:1.4rem}
-      .cn-body{padding:6px 16px 12px;flex:1;display:flex;flex-direction:column}
-      .cn-name{font-weight:800;font-size:1.02rem;color:#10223B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .cn-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.64rem;font-weight:800;letter-spacing:.02em}
-      .cn-rate{display:inline-flex;align-items:center;gap:7px;margin:5px 0 2px;cursor:pointer;border:0;background:transparent;padding:2px 0;font-size:.83rem;font-weight:700;color:#10223B;text-align:left}
-      .cn-rate .st{color:#f59e0b;letter-spacing:1.5px;font-size:.92rem}
-      .cn-rate .lnk{color:#0883F7;font-size:.76rem;font-weight:700}
-      .cn-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:9px 0}
-      .cn-kpi{background:linear-gradient(180deg,#f8fafc,#f1f5f9);border:1px solid #e9eef5;border-radius:13px;padding:8px 3px;text-align:center}
-      .cn-kpi b{display:block;font-size:1rem;font-weight:800;color:#10223B}
-      .cn-kpi span{font-size:.57rem;text-transform:uppercase;letter-spacing:.07em;color:#7c8aa0;font-weight:800}
-      .cn-sec{margin:6px 0}
-      .cn-sec .k{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;font-weight:800;margin-bottom:5px}
-      .cn-chips{display:flex;gap:6px;flex-wrap:wrap}
-      .cn-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;font-size:.7rem;font-weight:700;background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}
-      .cn-chip.blue{background:#eff6ff;color:#1d4ed8;border-color:#dbeafe}
-      .cn-chip.green{background:#f0fdf4;color:#166534;border-color:#dcfce7}
-      .cn-chip.amber{background:#fffbeb;color:#92400e;border-color:#fde68a}
-      .cn-chip.red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
-      .cn-chip.more{cursor:pointer;color:#0883F7;background:#fff;border-style:dashed}
-      .cn-foot{display:flex;gap:8px;border-top:1px solid #f1f5f9;padding:11px 16px;background:#fbfcfe}
-      .cn-cta{flex:1;border:0;border-radius:12px;padding:10px 14px;font-weight:800;font-size:.8rem;color:#fff;cursor:pointer;background:linear-gradient(120deg,#0883F7,#0967d2);box-shadow:0 8px 18px -8px rgba(8,131,247,.6)}
-      .cn-ghost{flex:1;border:1.5px solid #e2e8f0;background:#fff;border-radius:12px;padding:9px 12px;font-weight:700;font-size:.78rem;color:#334155;cursor:pointer;white-space:nowrap}
-      .cn-ghost:hover{border-color:#0883F7;color:#0883F7}
-      .cn-dist{display:flex;align-items:center;gap:8px;font-size:.76rem;color:#64748b;margin:2px 0}
-      .cn-dist .bar{flex:1;height:7px;border-radius:99px;background:#eef2f7;overflow:hidden}
-      .cn-dist .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#f59e0b,#fbbf24)}
-`; document.head.appendChild(st9); }
-        const realEq9 = (e) => e && /[a-zA-Z]{2,}/.test(String(e));
-        const mixOf9 = (c) => (c.fleet_mix || []).filter(m => realEq9(m.type));
-        const initials9 = (nm) => String(nm || '?').split(/\s+/).slice(0, 2).map(x => x[0] || '').join('').toUpperCase();
-        const starsTxt9 = (v) => '★'.repeat(Math.round(v || 0)) + '☆'.repeat(Math.max(0, 5 - Math.round(v || 0)));
-        const pill9 = (txt, bg, fg) => h('span', { class: 'cn-pill', style: 'background:' + bg + ';color:' + fg }, txt);
-        const chip9 = (txt, cls) => h('span', { class: 'cn-chip' + (cls ? ' ' + cls : '') }, txt);
-        const kpi9 = (label, val, fg) => h('div', { class: 'cn-kpi' }, [h('b', { style: fg ? 'color:' + fg : '' }, val), h('span', null, label)]);
-        const sec9 = (label, kids) => (kids && kids.length) ? h('div', { class: 'cn-sec' }, [h('div', { class: 'k' }, label), h('div', { class: 'cn-chips' }, kids)]) : null;
-        const avaEl9 = (c, lg) => h('div', { class: 'cn-ava' + (lg ? ' lg' : '') }, initials9(c.name));
-        const insured9 = (c) => (c.compliance || []).some(x => /insurance|coi/i.test(String(x)));
-        const dotClean9 = (c) => c.dot ? String(c.dot).replace(/^DOT\s*/i, '') : null;
-        const mcClean9 = (c) => c.mc ? String(c.mc).replace(/^MC\s*/i, '') : null;
-        const rateLine9 = (c) => h('button', { class: 'cn-rate', onClick: () => openReviews9(c) }, (c.ratings_count || 0) > 0 ? [ h('span', { class: 'st' }, starsTxt9(c.stars)), h('span', null, String(c.stars)), h('span', { class: 'lnk' }, c.ratings_count + ' review' + (c.ratings_count === 1 ? '' : 's') + ' — read →') ] : [h('span', { class: 'cn-chip blue', style: 'font-size:.68rem' }, '✨ New on LoadBoot — not rated yet')]);
-        const kpiBand9 = (c) => { const hh = c.health != null ? Number(c.health) : null; const hFg = hh == null ? '#7c8aa0' : hh >= 85 ? '#16a34a' : hh >= 60 ? '#d97706' : '#dc2626'; return h('div', { class: 'cn-kpis' }, [ kpi9('On-time', c.on_time_pct != null ? c.on_time_pct + '%' : 'New', c.on_time_pct != null ? (c.on_time_pct >= 90 ? '#16a34a' : '#d97706') : '#94a3b8'), kpi9('Delivered', String(c.delivered || 0)), kpi9('Cancels', String(c.carrier_cancels || 0), (c.carrier_cancels || 0) > 0 ? '#dc2626' : '#16a34a'), kpi9('Health', hh != null ? String(hh) : '—', hFg) ]); };
-        const fmcsaChips9 = (c) => [ c.dot ? chip9('DOT ' + dotClean9(c)) : null, c.mc ? chip9('MC ' + mcClean9(c)) : null, c.authority ? chip9('Authority: ' + String(c.authority).toUpperCase(), String(c.authority).toLowerCase() === 'active' ? 'green' : 'amber') : null, (c.safety_rating && String(c.safety_rating).toLowerCase() !== 'none') ? chip9('Safety: ' + String(c.safety_rating).toUpperCase()) : null, c.driver_count ? chip9(c.driver_count + ' drivers') : null ].filter(Boolean);
-        const fleetChips9 = (c) => mixOf9(c).map(m => chip9('🚛 ' + m.type + (m.n > 1 ? ' × ' + m.n : ''), 'blue')).concat((!mixOf9(c).length ? (c.preferred_equipment || []).filter(realEq9).map(e => chip9('🚛 ' + e, 'blue')) : []));
-        const capChips9 = (c) => [ c.hazmat ? chip9('☢ HAZMAT certified', 'amber') : null, c.team_drivers ? chip9('👥 Team drivers', 'green') : null, c.weekend_ok ? chip9('Weekends OK', 'green') : null, c.max_weight_lbs ? chip9('Max ' + Number(c.max_weight_lbs).toLocaleString() + ' lb') : null ].filter(Boolean);
-        const covChips9 = (c) => [ c.home_base ? chip9('📍 ' + c.home_base) : null, (c.preferred_lanes || []).length ? chip9('Runs: ' + c.preferred_lanes.join(', ')) : null ].filter(Boolean);
-        const statusStrip9 = (c) => { const authOk = String(c.authority || '').toLowerCase() === 'active'; const dotEl = (ok, txt, warnTxt) => h('span', { style: 'display:inline-flex;align-items:center;gap:5px;font-weight:700;color:' + (ok ? '#166534' : '#92400e') }, [ h('span', { style: 'width:8px;height:8px;border-radius:99px;background:' + (ok ? '#22c55e' : '#f59e0b') }), ok ? txt : warnTxt ]); return h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:.74rem;color:#475569;background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:7px 11px;margin:7px 0 2px' }, [ dotClean9(c) ? h('span', { style: 'font-weight:700' }, 'DOT ' + dotClean9(c)) : null, mcClean9(c) ? h('span', { style: 'font-weight:700' }, 'MC ' + mcClean9(c)) : null, c.authority ? dotEl(authOk, 'Authority ACTIVE', 'Authority ' + String(c.authority).toUpperCase()) : null, insured9(c) ? dotEl(true, '🛡 Insured ✓') : null ].filter(Boolean)); };
-        const capacityLine9 = (c) => { const kids = fleetChips9(c).slice(0, 3); if (c.hazmat) kids.push(chip9('☢', 'amber')); if (c.team_drivers) kids.push(chip9('👥', 'green')); return kids; };
-        const clamp9 = (arr, n) => arr.length > n ? arr.slice(0, n).concat(h('span', { class: 'cn-chip more' }, '+' + (arr.length - n) + ' more')) : arr;
-        const openReviews9 = async (c) => { const bodyEl = h('div', null, h('div', { class: 'cp-muted' }, 'Loading reviews…')); openModal('⭐ ' + (c.name || 'Carrier') + ' — trip-verified reviews', [bodyEl]); let rows; try { rows = (await partnerCarrierReviews(c.id)) || []; } catch (e) { mount(bodyEl, h('div', { class: 'cp-err' }, (e && e.message) || 'Could not load reviews.')); return; } const avg = c.stars || (rows.length ? (rows.reduce((a, r) => a + (r.stars || 0), 0) / rows.length) : 0); const dist = [5,4,3,2,1].map(n => ({ n, c: rows.filter(r => Math.round(r.stars) === n).length })); mount(bodyEl, h('div', null, [ h('div', { style: 'display:flex;gap:18px;align-items:center;margin-bottom:12px;flex-wrap:wrap' }, [ h('div', { style: 'text-align:center' }, [ h('div', { style: 'font-size:2.2rem;font-weight:800;color:#10223B;line-height:1' }, rows.length ? Number(avg).toFixed(1) : '—'), h('div', { style: 'color:#f59e0b;letter-spacing:2px' }, starsTxt9(avg)), h('div', { class: 'cp-muted' }, rows.length + ' review' + (rows.length === 1 ? '' : 's')) ]), h('div', { style: 'flex:1;min-width:220px' }, dist.map(d => h('div', { class: 'cn-dist' }, [ h('span', { style: 'width:22px;font-weight:700' }, d.n + '★'), h('div', { class: 'bar' }, h('i', { style: 'width:' + (rows.length ? Math.round(100 * d.c / rows.length) : 0) + '%' })), h('span', { style: 'width:18px;text-align:right' }, String(d.c)) ]))) ]), h('div', { style: 'background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 13px;font-size:.8rem;color:#1e40af;margin-bottom:12px' }, '🔒 Every review is trip-verified — only a broker who completed a booking with this carrier can rate it.'), rows.length ? h('div', null, rows.map(r => h('div', { style: 'border:1px solid #eef2f7;border-radius:14px;padding:12px 14px;margin-bottom:9px' }, [ h('div', { style: 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap' }, [ h('span', { style: 'color:#f59e0b;letter-spacing:1.5px;font-weight:700' }, starsTxt9(r.stars)), h('span', { class: 'cp-muted' }, r.date || '') ]), r.comment ? h('div', { style: 'margin:6px 0 4px;color:#334155;font-size:.88rem;line-height:1.55' }, '“' + r.comment + '”') : null ].filter(Boolean)))) : h('div', { style: 'text-align:center;padding:26px;color:#64748b' }, [ h('div', { style: 'font-size:34px' }, '✨'), h('div', { style: 'font-weight:700;color:#10223B;margin:6px 0 3px' }, 'New carrier on LoadBoot'), h('div', { class: 'cp-muted' }, 'Ratings appear after brokers finish loads with them — trip-verified.') ]) ])); };
-        const openFmcsa9 = (c) => { const host = h('div', { style: 'width:100%' }, h('div', { class: 'cp-muted' }, 'Loading live FMCSA profile…')); openModal('🛡 ' + (c.name || 'Carrier') + ' — live FMCSA profile', [host]); import('./profile-view.js').then((m) => { try { m.renderFmcsaOnly(host, String(c.dot).replace(/\D/g, ''), { light: true }); } catch (e) { mount(host, h('div', { class: 'cp-err' }, 'Could not load FMCSA data.')); } }).catch(() => mount(host, h('div', { class: 'cp-err' }, 'Could not load FMCSA data.'))); };
-        const openProfile9 = (c) => { openModal('Carrier profile', [h('div', null, [ h('div', { style: 'display:flex;gap:14px;align-items:center;margin-bottom:4px' }, [ avaEl9(c, true), h('div', { style: 'min-width:0' }, [ h('div', { style: 'font-weight:800;font-size:1.15rem;color:#10223B' }, c.name || 'Carrier'), h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:5px' }, [ pill9('✓ LOADBOOT VERIFIED', '#dcfce7', '#166534'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', '#ede9fe', '#6d28d9') : null, c.out_of_service ? pill9('⛔ OUT OF SERVICE', '#fee2e2', '#991b1b') : null, c.available === false ? pill9('⏸ NOT ACCEPTING LOADS', '#fef3c7', '#92400e') : null, pill9('MEMBER SINCE ' + String(c.member_since || '—').toUpperCase(), '#f1f5f9', '#334155') ].filter(Boolean)) ]) ]), rateLine9(c), kpiBand9(c), sec9('FMCSA · authority', fmcsaChips9(c)), sec9('Fleet — what they run', fleetChips9(c)), sec9('Coverage', covChips9(c)), (c.compliance || []).length ? sec9('Compliance on file', c.compliance.map(x => chip9('✓ ' + x, 'green'))) : null, sec9('Capabilities', capChips9(c)), h('div', { style: 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap' }, [ h('button', { class: 'cn-ghost', onClick: () => openReviews9(c) }, '⭐ Reviews'), c.dot ? h('button', { class: 'cn-ghost', onClick: () => openFmcsa9(c) }, '🛡 Live FMCSA profile') : null ].filter(Boolean)) ].filter(Boolean))]); };
-        const post9 = (c) => h('div', { class: 'cn-card' }, [
-          h('div', { class: 'cn-top' }, [h('div', { class: 'cn-idrow' }, [ h('span', { class: 'cn-since' }, 'MEMBER SINCE ' + String(c.member_since || '—').toUpperCase()), h('div', { style: 'display:flex;gap:6px;position:relative;z-index:1' }, [ pill9('✓ VERIFIED', 'rgba(34,197,94,.18)', '#4ade80'), ((c.compliance || []).length >= 3) ? pill9('📦 Carrier packet 🔒', 'rgba(139,92,246,.2)', '#c4b5fd') : null, c.out_of_service ? pill9('⛔ OOS', 'rgba(239,68,68,.2)', '#fca5a5') : null ].filter(Boolean)) ])]),
-          avaEl9(c),
-          h('div', { class: 'cn-body' }, [ h('div', { class: 'cn-name', title: c.name || '' }, c.name || 'Carrier'), rateLine9(c), kpiBand9(c), statusStrip9(c), sec9('Capacity', clamp9(capacityLine9(c), 5)), sec9('Coverage', clamp9(covChips9(c), 2)), h('div', { style: 'flex:1' }) ].filter(Boolean)),
-          h('div', { class: 'cn-foot' }, [ h('button', { class: 'cn-ghost', style: 'flex:1', onClick: () => openProfile9(c) }, 'View full profile') ]),
-        ]);
-        const banner9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:12px;background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;font-weight:700' }, [icon('truck',15),' The LoadBoot Carrier Network — search FMCSA-verified carriers, then 🎯 Post a load to any carrier. When it DELIVERS, your 1% lands automatically.']);
-        const search9 = h('input', { class: 'cp-input', placeholder: 'Search by name, DOT, MC, equipment, lane or home base…', style: 'width:100%;margin-bottom:12px' });
-        const grid9 = h('div', { class: 'cn-grid' });
-        const host9 = h('div', null, [banner9, h('div', { class: 'cp-muted' }, 'Loading verified carriers…')]);
-        mount(content, host9);
-        (async () => {
-          let list9 = [];
-          try { list9 = await agentCarrierDirectory(); } catch (e9) { mount(host9, [banner9, h('div', { class: 'cp-card' }, (e9 && e9.message) || 'Could not load carriers.')]); return; }
-          list9 = Array.isArray(list9) ? list9 : [];
-          const draw9 = (items) => mount(grid9, items.length ? items.map(post9) : h('div', { class: 'cp-muted' }, 'No carriers match your search.'));
-          search9.oninput = () => { const qq = search9.value.toLowerCase().trim(); draw9(!qq ? list9 : list9.filter((c) => JSON.stringify(c).toLowerCase().includes(qq))); };
-          const strip9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:10px' }, list9.length + ' verified carrier' + (list9.length === 1 ? '' : 's') + ' in the network');
-          mount(host9, [banner9, search9, strip9, grid9]); draw9(list9);
-        })();
-      } else {
-        mount(content, agCard('\ud83d\ude9a Carrier Network', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, [icon('lock',15),' Unlocks after verification: once LoadBoot approves your referral application, your commissions start clearing and paying out to your verified account.']),
-          h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => go('verify') }, [icon('shield',15),' Go to Get Verified \u2192']),
-        ]));
-      }
     } else if (tab === 'chain') {
       const CH = window.__agch = window.__agch || { q: '', side: 'all', sort: 'newest', show: 30 };
       const all9 = Array.isArray(feed.chain) ? feed.chain.slice() : [];
@@ -1627,13 +1541,6 @@ async function agentPortal(user) {
           agCard('📜 Payout history & tracking', reqRows9.length ? reqRows9 : [h('div', { class: 'cp-muted' }, 'No payouts yet. Flow: REQUESTED → APPROVED → 💸 SENT (3–5 business days) → ✓ you confirm RECEIVED.')]),
         ]));
       })();
-    } else if (tab === 'resources') {
-      mount(content, h('div', null, [
-        linkCard(),
-        agCard('📚 How the program works', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, '1% of gross on every GPS-verified DELIVERED load your referred clients move · 15-day clearing window · monthly payouts from $100 · your cut comes out of LoadBoot’s own fee — your clients never pay extra · full program details: loadboot.com/agents.html'),
-        ]),
-      ]));
     } else if (tab === 'settings') {
       const kv9 = (k9, v9) => h('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem' }, [h('span', { class: 'cp-row-s' }, k9), h('b', { style: 'text-align:right;word-break:break-word' }, v9 || '—')]);
       const stMap9 = { approved: ['#4ade80', '✅ Verified'], under_review: ['#fbbf24', '⏳ Under review'], info_needed: ['#fbbf24', '✋ Info needed'], rejected: ['#f87171', '✕ Not approved'], draft: ['#94a3b8', '📝 Not submitted'] };
@@ -1673,97 +1580,6 @@ async function agentPortal(user) {
           h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Program or account questions: hello@loadboot.com — or message the review team any time from the Verification Center thread. Full program details: loadboot.com/agents.html'),
         ]),
       ]));
-    } else if (tab === 'dispatch') {
-      // ---- Salaried Dispatcher console: apply → status → assigned carriers + SOP ----
-      const host = h('div');
-      mount(content, host);
-      mount(host, h('div', { class: 'cp-muted' }, 'Loading…'));
-      (async () => {
-        let d = null; try { d = await dispatcherMyStatus(); } catch (_) {}
-        const prof = d && d.profile;
-        const stMsg = {
-          applied: ['#94a3b8', '📝 Draft — submit to start screening'],
-          screening: ['#fbbf24', '⏳ In screening — we’re reviewing your application'],
-          skills_test: ['#fbbf24', '📝 Skills test — check your email / messages'],
-          trial: ['#fbbf24', '🚀 Paid working trial in progress'],
-          verified: ['#4ade80', '✅ Verified — you’ll be assigned a carrier soon'],
-          active: ['#4ade80', '✅ Active dispatcher'],
-          suspended: ['#f87171', '⏸ Suspended — contact the team'],
-          rejected: ['#f87171', '✕ Not approved at this time'],
-        };
-        if (!prof) {
-          // Application form
-          const f = {
-            full_name: h('input', { class: 'cp-in', placeholder: 'Full name', value: feed.name || '' }),
-            phone: h('input', { class: 'cp-in', placeholder: 'WhatsApp / phone' }),
-            country: h('input', { class: 'cp-in', placeholder: 'Country' }),
-            city: h('input', { class: 'cp-in', placeholder: 'City' }),
-            english: h('select', { class: 'cp-in' }, [['', 'English level *'], ['fluent', 'Fluent'], ['professional', 'Professional'], ['conversational', 'Conversational'], ['basic', 'Basic']].map(([v9, l9]) => h('option', { value: v9 }, l9))),
-            years: h('input', { class: 'cp-in', type: 'number', placeholder: 'Years of US dispatch experience' }),
-          };
-          const boards = ['DAT', 'Truckstop', 'Amazon Relay', 'Newtrul', 'Other'];
-          const bsel = {};
-          const boardBox = h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin:6px 0' }, boards.map((b9) => { const c9 = h('input', { type: 'checkbox' }); bsel[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); }));
-          const msg = h('div', { class: 'cp-err' });
-          const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
-            const b9 = ev.currentTarget;
-            if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim()) { msg.textContent = 'Name, country and English level are required.'; return; }
-            b9.disabled = true; b9.textContent = 'Submitting…';
-            const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.filter((x9) => bsel[x9].checked) };
-            const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
-            if (r && r.error) { msg.textContent = r.error; b9.disabled = false; b9.textContent = 'Submit application'; return; }
-            go('dispatch');
-          } }, 'Submit application');
-          mount(host, h('div', null, [
-            agCard('🧑‍✈️ Become a salaried LoadBoot Dispatcher', [
-              h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:10px' }, 'This is the SALARIED role (separate from your 1% referral earnings). You’ll dispatch for assigned US carriers — hunt loads, negotiate rates, keep trucks loaded. Base salary + per-truck + performance bonus; salary starts when a carrier is assigned. Strict screening + a paid trial before hire.'),
-              f.full_name, h('div', { style: 'display:flex;gap:8px' }, [f.country, f.city]), f.phone, f.english, f.years,
-              h('div', { class: 'cp-row-s', style: 'margin-top:6px' }, 'Load boards you can operate:'), boardBox,
-              msg, submit,
-            ]),
-          ]));
-          return;
-        }
-        // Status + assignments
-        const st9 = stMsg[prof.status] || stMsg.applied;
-        const cards = [agCard('🧑‍✈️ Dispatcher status', [
-          h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1])]),
-          prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
-          (prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : ''),
-        ])];
-        const asg = (d.assignments || []).filter((a9) => a9.status !== 'ended');
-        if (asg.length) {
-          cards.push(agCard('🚚 Your assigned carriers (' + asg.length + ')', asg.map((a9) => {
-            const s9 = a9.sop || {};
-            return h('div', { style: 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)' }, [
-              h('div', { style: 'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap' }, [h('b', { style: 'color:#fff' }, a9.carrier || 'Carrier'), h('span', { class: 'cp-pill', style: 'color:#4ade80' }, (a9.trucks || 0) + ' trucks · ' + a9.status)]),
-              h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.7' }, [
-                s9.scope_value ? h('div', { style: 'color:#7cc0ff' }, '⚖️ Your scope for this carrier: ' + s9.scope_value + ' — only source loads that fit this scope (keeps loads from overlapping your other carriers).') : '',
-                s9.lanes ? h('div', null, 'Lanes: ' + s9.lanes) : '',
-                s9.min_rate ? h('div', null, 'Min rate/mile: ' + s9.min_rate) : '',
-                s9.equipment ? h('div', null, 'Equipment: ' + s9.equipment) : '',
-                s9.home_time ? h('div', null, 'Home-time: ' + s9.home_time) : '',
-                s9.rules ? h('div', null, 'Rules: ' + s9.rules) : '',
-                !s9.lanes && !s9.rules && !s9.scope_value ? h('div', { class: 'cp-muted' }, 'SOP will appear here once the Command Center sets it.') : '',
-              ]),
-            ]);
-          })));
-          if (d.salary) cards.push(agCard('💵 Latest salary', [h('div', { class: 'cp-row-s' }, (d.salary.currency || 'PKR') + ' ' + Number(d.salary.total || 0).toLocaleString() + ' · ' + (d.salary.active_trucks || 0) + ' trucks · ' + d.salary.status)]));
-        } else if (prof.status === 'active' || prof.status === 'verified') {
-          cards.push(agCard('🚚 Assigned carriers', [h('div', { class: 'cp-muted' }, 'No carrier assigned yet — you’ll be notified the moment the Command Center assigns one.')]));
-        }
-        cards.push(agCard('📋 Your responsibilities', [h('div', { class: 'cp-row-s', style: 'line-height:1.8' }, 'Keep every assigned truck loaded · negotiate the best rate/mile · book only with verified brokers · manage pickups, docs and HOS. Questions: hello@loadboot.com')]));
-        cards.push(agCard('⚖️ Compliance rules — never break these', [h('div', { class: 'cp-row-s', style: 'line-height:1.9' }, [
-          h('div', null, '✓ Book every load under the CARRIER’s own authority (rate con names the carrier, not you or LoadBoot).'),
-          h('div', null, '✓ Source loads only within your assigned SCOPE for each carrier — never take a load two of your carriers could both haul.'),
-          h('div', null, '✓ Go through a broker for freight — never solicit shippers directly.'),
-          h('div', null, '✕ Never touch or route freight money — the broker pays the carrier/factor; LoadBoot bills its fee to the carrier.'),
-          h('div', null, '✕ Never re-broker or re-assign a booked load to another carrier.'),
-          h('div', null, '✕ Never accept a load first and then hunt for a truck.'),
-          h('div', { class: 'cp-muted', style: 'margin-top:4px' }, 'These keep you a bona fide agent of the carrier (FMCSA 88 FR 39368), not an unlicensed broker.'),
-        ])]));
-        mount(host, h('div', null, cards));
-      })();
     }
   }
   function go(id) { tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
@@ -3401,6 +3217,9 @@ async function appView(user) {
     mount(content, h('div', null, [tripHero9, rateCard9, onbHero, noaDash9, ...topBanners, kpis, acctStrip, setupCard, prefsHost, promptHost, ...annCards, h('div', { class: 'cp-grid' }, [notifCard, tripsCard, financeCard])].filter(Boolean)));
     const econHost = h('div', null); prefsHost.parentNode.insertBefore(econHost, prefsHost.nextSibling);
     try { import('./economics.js').then((m) => m.mountBreakevenCard(econHost)).catch(() => {}); } catch (_) {}
+    // Dispatcher card (bl_disp_0288): only renders when this carrier has an active LoadBoot dispatcher.
+    const dispHost = h('div', null); econHost.parentNode.insertBefore(dispHost, econHost.nextSibling);
+    try { import('./dispatcher-card.js').then((m) => m.mountDispatcherCard(dispHost)).catch(() => { try { dispHost.remove(); } catch (_) {} }); } catch (_) {}
     try { mountStrengthCard(prefsHost); setTimeout(function () { try { maybeShowMicroAsk(); } catch (_) {} }, 1600); } catch (_) {}
     openPrompts();
   }

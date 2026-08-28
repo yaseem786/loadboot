@@ -4,6 +4,8 @@ from tools_module import TOOLS_CSS, TOOLS_HTML, TOOLS_JS
 from load_score_module import LS_CSS, LS_HTML, LS_JS
 from motifs_module import mi, m_rail, m_timeline, m_split, m_dark, m_zigzag, m_statband, m_gradcta
 from market_reports_module import build_market_reports   # workstream 01 layer 2: dated weekly reports
+from industry_pages_module import (build_industry_pages, build_industry_index,
+                                   industry_links_for_equipment)  # workstream 02: shipper-by-industry pages
 # SOURCE vs PUBLISH separation (Netlify: command="python3 build_site.py", publish="site").
 #   SRC  = repo root. Holds SOURCE only (this script, modules, dashboard.html, images,
 #          netlify.toml, runtime.txt, migrations/, docs/, README, content-queue). NOT published.
@@ -18,7 +20,8 @@ os.makedirs(OUT, exist_ok=True)          # recreate
 # Files in SRC root that must NEVER be copied into the publish dir (source-only):
 _NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','motifs_module.py','netlify.toml',
                'runtime.txt','README.md','content-queue.md','.gitignore',
-               'market_reports_module.py','refresh_rate_snapshot.py','rate_snapshots.json'}
+               'market_reports_module.py','refresh_rate_snapshot.py','rate_snapshots.json',
+               'industry_pages_module.py'}
 _ASSET_EXTS = ('.webp','.png','.jpg','.jpeg','.avif','.ico','.svg','.gif')
 def asset_exists(name):
     """True if a referenced local asset is present in SRC (so the page can reference it)."""
@@ -384,6 +387,7 @@ NAV_MENU = [
     ('brokers.html', 'For brokers'),
     ('free-load-board-for-brokers.html', 'Free load board for brokers'),
     ('shipper-solutions.html', 'For shippers'),
+    ('freight-shipping-by-industry.html', 'Freight shipping by industry'),
     ('ship-direct-to-carrier.html', 'Ship direct to carriers'),
     ('us-truck-dispatcher.html', 'US truck dispatchers'),
     ('careers.html', 'Become a dispatcher (hiring)'),
@@ -458,7 +462,7 @@ def footer():
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
-<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
+<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="freight-shipping-by-industry.html">Freight Shipping by Industry</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
 <div><div class="foot-h">Compliance</div><a href="compliance.html">Compliance &amp; Verification</a><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
 <div><div class="foot-h">Company</div><a href="index.html">Home</a><a href="about.html">About</a><a href="command-center.html">Operations Command Center</a><a href="features.html">All Features</a><a href="load-board.html">Live Load Board</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
 <div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral Partner Program (1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="create-carrier-account.html">Create Carrier Account</a><a href="create-broker-account.html">Create Broker Account</a><a href="create-shipper-account.html">Create Shipper Account</a><a href="create-agent-account.html">Create Agent Account</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="load-board.html">Live Load Board (Zero Ghost Loads)</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
@@ -1353,8 +1357,8 @@ svc_page('flatbed-dispatch.html','Flatbed','Flatbed Dispatch Services for Owner-
   ('Can you keep me loaded on regional flatbed lanes?','Absolutely. Tell us your home base and preferred lanes and we plan loads to keep you regional if that\'s what you want.'),
   ('What does flatbed dispatch cost?','A flat 5% of gross on loads we book, no contract, cancel anytime.')])
 
-svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Service 2026 — Flat 5%, No Contracts | LoadBoot',
- 'Dry van truck dispatch for owner-operators and fleets. Consistent, well-paying van freight, rate negotiation, and back-office support. Flat 5%, no contracts.',
+svc_page('dry-van-dispatch.html','Dry Van','Dry Van Dispatch Services 2026 — Dry Van Dispatcher, Flat 5%, No Contracts | LoadBoot',
+ 'Dry van dispatch services for owner-operators and fleets: a dedicated dry van dispatcher booking consistent van freight, negotiating every rate and handling the back office. Flat 5% of gross, no contracts.',
  'Dry Van Dispatch Services Across the USA','Steady, consistent van freight that keeps your truck moving &mdash; booked, negotiated, and managed by a dedicated dispatcher.',
  ['Dry van is the backbone of freight, but consistency is everything. The difference between a good week and a bad one is having someone working loads ahead of you. That\'s what we do.',
   'We book reliable van freight on your preferred lanes, negotiate every rate, and keep your schedule full &mdash; so you\'re never sitting empty waiting for the next load.'],
@@ -1375,8 +1379,8 @@ svc_page('hotshot-dispatch.html','Hotshot','Hotshot Dispatch Services | Loadboot
   ('Can you find paying backhauls?','We plan loads to reduce empty miles and find backhauls whenever the lane allows.'),
   ('What does hotshot dispatch cost?','A flat 5% of gross on loads we book, no contract.')])
 
-svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services | Loadboot',
- 'Power only truck dispatch. We book drop-and-hook power only freight for your tractor, negotiate rates, and handle brokers. Flat 5%, no contracts.',
+svc_page('power-only-dispatch.html','Power Only','Power Only Dispatch Services 2026 — Power Only Dispatcher, Drop-and-Hook Freight, Flat 5% | LoadBoot',
+ 'Power only dispatch services for tractor-only carriers in the USA: a power only dispatcher booking drop-and-hook and trailer-supplied freight, negotiating every rate and handling broker setup. Flat 5% of gross, no contracts.',
  'Power Only Dispatch Services Across the USA','Flexible drop-and-hook freight for your tractor &mdash; we keep you pulling trailers and earning without the wait.',
  ['Power only gives you flexibility, but it takes the right broker relationships to stay loaded. We connect you with consistent power only freight and keep your tractor working.',
   'We book drop-and-hook and trailer-supplied loads that fit your tractor, negotiate the rate, and handle the broker setup so you stay productive.'],
@@ -5018,7 +5022,7 @@ _mr_body = ('<style>.mrx-hero{background:radial-gradient(1000px 400px at 12% -20
 '</div></section>'
 
 '<section class="wrap mrx-sec"><h2>Current rates by equipment type</h2>'
-'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above updates weekly; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
+'<p><b>Dry van rates per mile</b> anchor the market \u2014 the most trucks, the most loads, the tightest spread. <b>Reefer rates per mile</b> carry a $0.40\u20130.70 premium for the trailer, fuel for the unit and produce-season risk. <b>Flatbed rates per mile</b> run highest of the big three: tarping, securement and specialized freight. <b>Power only</b> prices below van (the trailer is the shipper\u2019s), while <b>hotshot rates</b> track expedited small-load demand. The live table above carries the date each benchmark was last rebuilt; inside LoadBoot each number sharpens with every real booking on the platform.</p></section>'
 
 '<section class="wrap mrx-sec"><h2>How we calculate these freight rates</h2>'
 '<p>Three blended layers, honestly labeled: <b>(1) Real LoadBoot bookings</b> \u2014 actual accepted rates on our marketplace, the strongest signal, refreshed continuously; <b>(2) Published national benchmarks</b> \u2014 published national industry indices, refreshed as new data lands and always shown with their as-of date; <b>(3) Confidence labels</b> \u2014 every lane result says whether it comes from lane-level bookings (HIGH), platform-wide data (MEDIUM) or the national benchmark (LOW). A rate is a guide, not a quote \u2014 but you always know exactly where it came from.</p></section>'
@@ -5415,6 +5419,15 @@ except FileNotFoundError:
     # content engine disappears from a deploy without anyone noticing.
     print('market reports: rate_snapshots.json NOT FOUND - no dated reports in this build')
 
+# ---- Workstream 02: shipper-by-industry pages -------------------------------
+# The largest unclaimed page type in load-board SEO (audit 25 Aug 2026): no load board
+# publishes these, only the 3PLs. Built BEFORE the hub loop so each equipment hub can
+# link forward to the industries that ride on it; emitted AFTER it, alongside the
+# market reports, so the build's own asset checker resolves both directions.
+_IND_PAGES = build_industry_pages(_EQ_RATES, _acc_faq_schema)
+_IND_FOR_EQ = industry_links_for_equipment()
+print('industry pages: %d built' % len(_IND_PAGES))
+
 _EQR_CSS = ('<style>'
  '.eqr-hero{background:radial-gradient(1000px 400px at 12% -20%,rgba(8,131,247,.35),transparent 60%),'
    'radial-gradient(700px 320px at 95% 120%,rgba(252,83,5,.22),transparent 55%),'
@@ -5692,7 +5705,7 @@ for _eq in _EQ_RATES:
       ('shipper-solutions.html', 'Shipper Solutions'),
       ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'),
       ('free-load-board-for-brokers.html', 'Free Load Board for Brokers'),
-    ]
+    ] + _IND_FOR_EQ.get(_s, [])
 
     page(_s + '-freight-rates.html',
          _n + ' Freight Rates Per Mile 2026 \u2014 Carrier, Broker &amp; Shipper | LoadBoot',
@@ -5713,6 +5726,17 @@ for _mrp in _MR_PAGES:
     page(_mrp['fname'], _mrp['title'], _mrp['desc'], 'blog.html', _mrp['body'], _mrp['schema'])
 if _MR_PAGES:
     print('market reports written: ' + ', '.join(p['fname'] for p in _MR_PAGES[-3:]) + ' ...')
+
+# ---- Workstream 02: write the shipper-by-industry pages ----------------------
+for _ipg in _IND_PAGES:
+    RELATED[_ipg['fname']] = _ipg['related']
+    page(_ipg['fname'], _ipg['title'], _ipg['desc'], 'shipper-solutions.html', _ipg['body'], _ipg['schema'])
+_IND_INDEX = build_industry_index(_EQ_RATES, _acc_faq_schema)
+RELATED[_IND_INDEX['fname']] = _IND_INDEX['related']
+page(_IND_INDEX['fname'], _IND_INDEX['title'], _IND_INDEX['desc'], 'shipper-solutions.html',
+     _IND_INDEX['body'], _IND_INDEX['schema'])
+if _IND_PAGES:
+    print('industry pages written: ' + ', '.join(p['fname'] for p in _IND_PAGES) + ' + ' + _IND_INDEX['fname'])
 
 
 # ---- Cookie Policy ----
@@ -7798,8 +7822,8 @@ _ACC_PAGES.append(dict(slug='emergency-rescheduling-policy', name='Emergency Res
 # ---- "broker refuses" escalation, FAQ schema, conversion CTA. (2026 keyword research)
 _ACC_SEO = {
  'detention-pay-policy': dict(
-   title='Detention Pay for Truckers 2026: Rates, How to Claim &amp; Get Paid | LoadBoot',
-   desc='Detention pay explained for carriers: $50\u2013$100/hr 2026 rates, the 2-hour free time rule, exactly how to claim detention, what evidence to collect, and what to do when a broker refuses \u2014 plus how LoadBoot pays it automatically.',
+   title='Detention Pay for Truckers 2026: How Much Is It \u2014 $50\u2013$100/Hour, Detention Charges in Trucking &amp; How to Claim | LoadBoot',
+   desc='How much is detention pay? Detention charges in trucking run $50\u2013$100/hr in 2026, after 2 hours of free time. Exactly how to claim detention pay, what evidence to collect, what to do when a broker refuses \u2014 plus how LoadBoot pays it automatically.',
    ev=['Timestamped photo of your truck AT the gate on arrival (phone camera puts time + GPS in the file)',
        'The appointment time straight off the rate confirmation \u2014 on-time arrival is the foundation of every claim',
        'GPS arrive/depart stamps (ELD or the LoadBoot app records them for you)',
@@ -8231,6 +8255,7 @@ _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
   ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('api.html', 'Developer API'), ('load-score.html', 'Load Score Tool'), ('freight-market-reports.html', 'Weekly Freight Market Reports'), ('dry-van-freight-rates.html', 'Dry Van Rates'), ('reefer-freight-rates.html', 'Reefer Rates'), ('flatbed-freight-rates.html', 'Flatbed Rates'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
+  ('Freight by industry', [('freight-shipping-by-industry.html', 'Freight Shipping by Industry'), ('food-and-beverage-freight-shipping.html', 'Food & Beverage'), ('building-materials-freight-shipping.html', 'Building Materials'), ('retail-and-ecommerce-freight-shipping.html', 'Retail & E-commerce'), ('manufacturing-and-industrial-freight-shipping.html', 'Manufacturing & Industrial'), ('agriculture-and-produce-freight-shipping.html', 'Agriculture & Produce'), ('metals-and-steel-freight-shipping.html', 'Metals & Steel'), ('shipper-solutions.html', 'Shipper Solutions')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
   ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('delete-account.html', 'Delete your account'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
 ]
