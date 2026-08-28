@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-R6 SEO surgery -- three title/meta edits in build_site.py.
+R6 SEO surgery -- three title/meta edits in build_site.py, plus one honesty fix.
 
 Run from the repo root:  python apply_r6_seo.py   then  python build_site.py
 
@@ -85,6 +85,18 @@ EDITS = [
   " 'Power only dispatch services for tractor-only carriers in the USA: a power only dispatcher booking "
   "drop-and-hook and trailer-supplied freight, negotiating every rate and handling broker setup. Flat 5% of "
   "gross, no contracts.',"),
+
+ # ---- (d) market-rates.html -- a cadence claim the 25 Aug pass missed ---------
+ # The 25 Aug work made 13 edits removing "refreshed weekly" / "updated weekly"
+ # because `rate_benchmarks` has not moved from as_of 2026-08-17. This sentence
+ # survived, and it is now LIVE on the highest-impression page on the site
+ # (1,709 impressions / 28d). It promises a weekly cadence that does not happen.
+ # The JS beside it already prints the real as-of date -- point at that instead.
+ ("market-rates cadence claim",
+  "The live table above updates weekly; inside LoadBoot each number sharpens with "
+  "every real booking on the platform.",
+  "The live table above carries the date each benchmark was last rebuilt; inside "
+  "LoadBoot each number sharpens with every real booking on the platform."),
 ]
 
 

@@ -389,6 +389,35 @@ export const ccDispatcherSalarySet = (user, base, perTruck, currency) => rpc('cc
 export const ccDispatcherSalaryRun = (user, period, bonus, kpi, note) => rpc('cc_dispatcher_salary_run', { p_user: user, p_period: period, p_bonus: bonus ?? 0, p_kpi: kpi ?? {}, p_note: note ?? null });
 export const ccDispatcherSalaryStatus = (id, status) => rpc('cc_dispatcher_salary_status', { p_id: id, p_status: status });
 export const ccCarrierPrefs = (carrier) => rpc('cc_carrier_prefs', { p_carrier: carrier });
+// ---- Dispatcher Workspace (bl_disp_0288) — assignment-scoped server-side ----
+export const dispatcherWorkspaceFeed = () => rpc('dispatcher_workspace_feed', {});
+export const dispatcherSetAvailability = (truck, p) => rpc('dispatcher_set_availability', { p_truck: truck, p: p ?? {} });
+export const dispatcherLogBooking = (p) => rpc('dispatcher_log_booking', { p: p ?? {} });
+export const dispatcherBookingUpdate = (id, p) => rpc('dispatcher_booking_update', { p_id: id, p: p ?? {} });
+export const dispatcherBookingEvent = (booking, kind, note, location, eta) => rpc('dispatcher_booking_event', { p_booking: booking, p_kind: kind, p_note: note ?? null, p_location: location ?? null, p_eta: eta ?? null });
+export const dispatcherBookingTimeline = (booking) => rpc('dispatcher_booking_timeline', { p_booking: booking });
+export const dispatcherBrokerUpsert = (p) => rpc('dispatcher_broker_upsert', { p: p ?? {} });
+export const dispatcherBrokerDelete = (id) => rpc('dispatcher_broker_delete', { p_id: id });
+export const dispatcherThreadList = (assignment, limit) => rpc('dispatcher_thread_list', { p_assignment: assignment, p_limit: limit ?? 200 });
+export const dispatcherThreadSend = (assignment, body) => rpc('dispatcher_thread_send', { p_assignment: assignment, p_body: body });
+export const carrierMyDispatcher = () => rpc('carrier_my_dispatcher', {});
+export const ccDispatcherSetTerms = (user, pct, trialStart, trialEnd) => rpc('cc_dispatcher_set_terms', { p_user: user, p_commission_pct: pct, p_trial_start: trialStart ?? null, p_trial_end: trialEnd ?? null });
+export const ccDispatcherBookings = (o = {}) => rpc('cc_dispatcher_bookings', { p_user: o.user ?? null, p_status: o.status ?? null, p_limit: o.limit ?? 200 });
+export const ccDispatcherBookingDecide = (id, action, note) => rpc('cc_dispatcher_booking_decide', { p_id: id, p_action: action, p_note: note ?? null });
+export const ccDispatcherCommissionStatus = (id, status, note) => rpc('cc_dispatcher_commission_status', { p_id: id, p_status: status, p_note: note ?? null });
+export const ccDispatcherCommissionList = (user) => rpc('cc_dispatcher_commission_list', { p_user: user ?? null });
+// ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
+export const dispatcherBoard = (org, limit) => rpc('dispatcher_board', { p_org: org, p_limit: limit ?? 20 });
+export const dispatcherLoadDetail = (org, load) => rpc('dispatcher_load_detail', { p_org: org, p_load: load });
+export const dispatcherRequestBook = (org, load, note) => rpc('dispatcher_request_book', { p_org: org, p_load: load, p_note: note ?? null });
+export const dispatcherPostTruck = (org, p) => rpc('dispatcher_post_truck', { p_org: org, p: p ?? {} });
+export const dispatcherUpdatePosting = (org, id, action) => rpc('dispatcher_update_posting', { p_org: org, p_id: id, p_action: action });
+export const dispatcherPostingMatches = (org, id) => rpc('dispatcher_posting_matches', { p_org: org, p_id: id });
+export const dispatcherMyKpis = (days) => rpc('dispatcher_my_kpis', { p_days: days ?? 30 });
+export const ccDispatcherKpis = (user, days) => rpc('cc_dispatcher_kpis', { p_user: user, p_days: days ?? 30 });
+// ---- bl_disp_0290 — real-trip tools behind an approved booking ----
+export const dispatcherTrip = (org, trip) => rpc('dispatcher_trip', { p_org: org, p_trip: trip });
+export const dispatcherTripAction = (org, trip, action, p) => rpc('dispatcher_trip_action', { p_org: org, p_trip: trip, p_action: action, p: p ?? {} });
 export const partnerUpdateLoad = (load, p) => rpc('partner_update_load', { p_load: load, p });
 export const partnerLoadChangeRequest = (load, request) => rpc('partner_load_change_request', { p_load: load, p_request: request });
 export const ccOutreachStats = (days) => rpc('cc_outreach_stats', { p_days: days ?? 30 });

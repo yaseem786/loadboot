@@ -8,14 +8,16 @@ import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm } from '../../shared/ui/components.js';
 import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSop,
          ccDispatcherUnassign, ccDispatcherSalarySet, ccDispatcherSalaryRun, ccDispatcherSalaryStatus,
-         getCarriersDirectory, ccCarrierPrefs } from '../../shared/api.js';
+         getCarriersDirectory, ccCarrierPrefs,
+         ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide, ccDispatcherCommissionStatus, ccDispatcherCommissionList,
+         dispatcherThreadList, dispatcherThreadSend, ccDispatcherKpis } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 
 const PIPE = ['applied', 'screening', 'skills_test', 'trial', 'verified', 'active', 'suspended', 'rejected'];
 const STPILL = {
   applied: ['applied', 'violet'], screening: ['screening', 'amber'], skills_test: ['skills test', 'amber'],
-  trial: ['paid trial', 'amber'], verified: ['verified', 'green'], active: ['ACTIVE', 'green'],
+  trial: ['trial (commission)', 'amber'], verified: ['verified', 'green'], active: ['ACTIVE', 'green'],
   suspended: ['suspended', 'red'], rejected: ['rejected', 'red'], withdrawn: ['withdrawn', 'violet'],
 };
 function pill(st) { const m = STPILL[st] || [st, 'violet']; return el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0]); }
@@ -105,6 +107,12 @@ export function renderDispatchers(host) {
         pipeline(pp),
         // ---- assignments ----
         assignSection(dd),
+        // ---- trial terms + per-load commission (bl_disp_0288) ----
+        kpiSection(dd),
+        termsSection(dd),
+        bookingsSection(dd),
+        commissionSection(dd),
+        threadSection(dd),
         // ---- salary ----
         salarySection(dd),
       ]);
@@ -128,7 +136,7 @@ export function renderDispatchers(host) {
       if (st === 'applied') btns.push(actBtn('Start screening →', 'screening', 'lb-btn-primary'));
       if (st === 'screening') btns.push(actBtn('Send skills test →', 'skills_test', 'lb-btn-primary'));
       if (st === 'skills_test') btns.push(actBtn('Move to paid trial →', 'trial', 'lb-btn-primary'));
-      if (st === 'trial') btns.push(actBtn('✓ Verify (passed)', 'verify', 'lb-btn-primary'));
+      if (st === 'trial') { btns.push(actBtn('✓ Verify (passed)', 'verify', 'lb-btn-primary')); btns.push(el('span', { class: 'cc-sub', style: 'margin-left:6px' }, 'Trial = assign a carrier below + set commission %. The dispatcher’s workspace opens the moment both are set.')); }
       if (st === 'verified') btns.push(el('span', { class: 'cc-sub' }, 'Verified — assign a carrier below to activate.'));
       if (st === 'active' || st === 'verified') btns.push(actBtn('Suspend', 'suspend', 'lb-btn-danger', 'Suspend this dispatcher?'));
       if (st === 'suspended') btns.push(actBtn('Reinstate', 'reinstate', 'lb-btn-primary'));
@@ -147,7 +155,7 @@ export function renderDispatchers(host) {
       ])) : [el('div', { class: 'cc-sub' }, 'No active carriers assigned.')];
       // assign picker (verified/active only)
       let picker = '';
-      if (['verified', 'active'].includes((dd.profile || {}).status)) {
+      if (['trial', 'verified', 'active'].includes((dd.profile || {}).status)) {
         const sel = el('select', { class: 'lb-input', style: 'max-width:260px' }, [el('option', { value: '' }, 'Choose a carrier…')].concat(
           state.carriers.map((c) => el('option', { value: c.id }, c.name || c.id))));
         const btn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
@@ -232,7 +240,7 @@ export function renderDispatchers(host) {
       const util = el('input', { class: 'lb-input', type: 'number', placeholder: 'util %', style: 'max-width:90px' });
       const ontime = el('input', { class: 'lb-input', type: 'number', placeholder: 'on-time %', style: 'max-width:100px' });
       const runBtn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
-        const kpi = { utilization: Number(util.value) || null, on_time: Number(ontime.value) || null };
+        const kpi = { utilization: Number(util.value) || null, on_time: Number(ontime.value) || (lastKpi && lastKpi.on_time_pct != null ? Number(lastKpi.on_time_pct) : null), computed: lastKpi || null };
         const r = await ccDispatcherSalaryRun(x.user_id, period.value + '-01', Number(bonus.value), kpi, null).catch((e) => ({ error: humanizeError(e) }));
         if (r && r.error) { toast(r.error); return; }
         toast('✓ ' + money0(r.total, r.currency) + ' (' + r.active_trucks + ' trucks)'); rerender();
@@ -251,6 +259,124 @@ export function renderDispatchers(host) {
         el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px' }, [el('span', { class: 'cc-sub' }, 'Run'), period, bonus, util, ontime, runBtn]),
         ledger.length ? el('div', null, ledger) : el('div', { class: 'cc-sub' }, 'No salary runs yet.'),
       ]);
+    }
+
+    // ---------------------------------------------------------------- bl_disp_0289: computed KPIs (replaces hand-typed util/on-time)
+    let lastKpi = null;
+    function kpiSection(dd) {
+      const box = el('div', { class: 'cc-sub' }, 'Loading KPIs…');
+      const sel = el('select', { class: 'lb-input', style: 'max-width:160px' }, [[14, 'Trial · 14 days'], [30, 'Last 30 days'], [90, 'Last 90 days']].map(([v, l]) => el('option', { value: v, selected: v === 30 ? '' : undefined }, l)));
+      sel.addEventListener('change', paint);
+      async function paint() {
+        let k; try { k = await ccDispatcherKpis(x.user_id, Number(sel.value)); } catch (e) { mount(box, el('span', { class: 'cc-sub' }, humanizeError(e))); return; }
+        if (!k || k.error) { mount(box, el('span', { class: 'cc-sub' }, (k && k.error) || 'unavailable')); return; }
+        lastKpi = k;
+        const t = (l, v) => el('div', { style: 'flex:1;min-width:110px;background:#f8fafc;border:1px solid #e6edf5;border-radius:10px;padding:8px 10px' }, [el('div', { style: 'font-weight:800;font-size:1.05rem' }, v == null ? '—' : String(v)), el('div', { class: 'cc-sub' }, l)]);
+        mount(box, el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+          t('Bookings', k.bookings), t('Delivered', k.delivered), t('Cancelled', k.cancelled), t('Loads / wk', k.loads_per_week), t('Gross', money(k.gross)), t('Avg $/mi', k.avg_rpm != null ? '$' + Number(k.avg_rpm).toFixed(2) : null),
+          t('On-time', k.on_time_pct != null ? k.on_time_pct + '%' : null), t('Check calls / load', k.check_calls_per_load), t('RC attached', k.rc_attach_rate != null ? k.rc_attach_rate + '%' : null), t('Below-min', k.below_min_share != null ? k.below_min_share + '%' : null), t('Brokers', k.brokers_used),
+        ]));
+      }
+      paint();
+      return card([el('div', { style: 'display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px' }, [el('div', { style: 'font-weight:700' }, 'Performance (computed from bookings + events)'), sel]), box]);
+    }
+    // ---------------------------------------------------------------- bl_disp_0288: terms
+    function termsSection(dd) {
+      const pp = dd.profile || {};
+      const pct = el('input', { class: 'lb-input', type: 'number', step: '0.25', min: '0', max: '5', value: pp.commission_pct != null ? pp.commission_pct : 0, style: 'max-width:110px' });
+      const ts = el('input', { class: 'lb-input', type: 'date', value: pp.trial_start || '', style: 'max-width:160px' });
+      const te = el('input', { class: 'lb-input', type: 'date', value: pp.trial_end || '', style: 'max-width:160px' });
+      const btn = el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
+        const r = await ccDispatcherSetTerms(x.user_id, Number(pct.value), ts.value || null, te.value || null).catch((e) => ({ error: humanizeError(e) }));
+        if (r && r.error) { toast(r.error); return; } toast('✓ terms saved'); rerender();
+      } }, 'Save');
+      return card([
+        el('div', { style: 'font-weight:700;margin-bottom:4px' }, 'Commission & trial window'),
+        el('div', { class: 'cc-sub', style: 'margin-bottom:6px' }, 'Per-load commission = this % of gross line-haul on every load the dispatcher books that reaches Delivered. LoadBoot keeps 5% from the carrier, so this is capped at 5. Trial dates drive the countdown in the dispatcher’s workspace.'),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [el('span', { class: 'cc-sub' }, '% of gross'), pct, el('span', { class: 'cc-sub' }, 'trial'), ts, el('span', { class: 'cc-sub' }, '→'), te, btn]),
+      ]);
+    }
+    // ---------------------------------------------------------------- bookings queue (approve creates load + trip)
+    function bookingsSection(dd) {
+      const box = el('div', { class: 'cc-sub' }, 'Loading bookings…');
+      const BST = { pending_rc: ['awaiting RC', 'amber'], rc_received: ['RC in — APPROVE?', 'amber'], approved: ['approved', 'green'], dispatched: ['dispatched', 'green'], picked_up: ['in transit', 'green'], delivered: ['delivered', 'green'], invoiced: ['invoiced', 'green'], paid: ['paid', 'green'], cancelled: ['cancelled', 'violet'], rejected: ['rejected', 'red'] };
+      const bpill = (st) => { const m = BST[st] || [st, 'violet']; return el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0]); };
+      const decide = async (b, action) => {
+        let note = null;
+        if (action === 'reject') { note = await askReason('Why not? (the dispatcher sees this)'); if (note === false) return; }
+        else if (action === 'approve') { if (!(await askConfirm('Approve ' + b.origin + ' → ' + b.destination + ' at ' + money(b.gross) + (b.below_min ? ' — BELOW the carrier minimum' : '') + '? This creates the load + trip in the Command Center.'))) return; }
+        const r = await ccDispatcherBookingDecide(b.id, action, note).catch((e) => ({ error: humanizeError(e) }));
+        if (r && r.error) { toast(r.error); return; }
+        toast('✓ ' + action + (r.trip ? ' · trip created' : '')); paint();
+      };
+      async function paint() {
+        let rows = []; try { rows = await ccDispatcherBookings({ user: x.user_id, limit: 100 }); } catch (e) { mount(box, el('div', { class: 'cc-sub' }, humanizeError(e))); return; }
+        if (!Array.isArray(rows)) rows = [];
+        mount(box, rows.length ? rows.map((b) => {
+          const rpm = b.miles > 0 ? (Number(b.gross) / Number(b.miles)).toFixed(2) : null;
+          return el('div', { style: 'padding:8px 0;border-bottom:1px solid #eef2f7' }, [
+            el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
+              el('b', { style: 'flex:1;min-width:200px' }, b.origin + ' → ' + b.destination), bpill(b.status), b.below_min ? el('span', { class: 'cc-pill cc-pill-red' }, 'below min') : '',
+            ]),
+            el('div', { class: 'cc-sub' }, [b.carrier || '', b.truck ? ' · ' + b.truck : '', ' · ', b.broker || '', b.broker_mc ? ' (MC ' + b.broker_mc + ')' : '', ' · ', money(b.gross), rpm ? ' · $' + rpm + '/mi' : '', b.miles ? ' · ' + b.miles + ' mi' : '', b.pickup_at ? ' · PU ' + fmtDateTime(b.pickup_at) : '', b.rc_number ? ' · RC ' + b.rc_number : ''].join('')),
+            b.notes ? el('div', { class: 'cc-sub' }, b.notes) : '',
+            b.decision_note ? el('div', { class: 'cc-sub' }, 'Decision: ' + b.decision_note) : '',
+            el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px' }, [
+              b.rc_doc_path ? docBtn('Open RC', b.rc_doc_path) : el('span', { class: 'cc-sub' }, 'No RC attached yet'),
+              ['pending_rc', 'rc_received'].includes(b.status) ? el('button', { class: 'lb-btn lb-btn-primary', onClick: () => decide(b, 'approve') }, 'Approve → create trip') : '',
+              ['pending_rc', 'rc_received'].includes(b.status) ? el('button', { class: 'lb-btn lb-btn-danger', onClick: () => decide(b, 'reject') }, 'Reject') : '',
+              b.status === 'delivered' ? el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => decide(b, 'invoiced') }, 'Mark invoiced') : '',
+              b.status === 'invoiced' ? el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => decide(b, 'paid') }, 'Mark paid') : '',
+              b.trip_id ? el('a', { class: 'lb-btn lb-btn-ghost', href: '#trips' }, 'Trip ↗') : '',
+              b.commission ? el('span', { class: 'cc-pill cc-pill-' + (b.commission.status === 'paid' ? 'green' : 'amber') }, 'commission ' + money(b.commission.amount) + ' · ' + b.commission.status) : '',
+            ]),
+          ]);
+        }) : el('div', { class: 'cc-sub' }, 'No bookings logged yet.'));
+      }
+      paint();
+      return card([el('div', { style: 'font-weight:700;margin-bottom:4px' }, 'Bookings logged by this dispatcher'),
+        el('div', { class: 'cc-sub', style: 'margin-bottom:6px' }, 'Approve only from the rate confirmation. Approving creates the CC load + trip so tracking, POD and invoicing run as normal; the dispatcher is told to dispatch the driver.'), box]);
+    }
+    // ---------------------------------------------------------------- commission ledger
+    function commissionSection(dd) {
+      const box = el('div', { class: 'cc-sub' }, 'Loading…');
+      async function paint() {
+        let rows = []; try { rows = await ccDispatcherCommissionList(x.user_id); } catch (e) { mount(box, el('div', { class: 'cc-sub' }, humanizeError(e))); return; }
+        if (!Array.isArray(rows)) rows = [];
+        const tot = (st) => rows.filter((r) => r.status === st).reduce((a, r) => a + Number(r.amount || 0), 0);
+        mount(box, [
+          el('div', { class: 'cc-sub', style: 'margin-bottom:6px' }, 'draft ' + money(tot('draft')) + ' · approved (owed) ' + money(tot('approved')) + ' · paid ' + money(tot('paid'))),
+          rows.length ? el('div', null, rows.map((r) => el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #eef2f7' }, [
+            el('div', { style: 'flex:1;min-width:200px' }, [el('b', null, money(r.amount) + ' · ' + (r.lane || '')), el('div', { class: 'cc-sub' }, r.pct + '% of ' + money(r.gross) + ' · ' + fmtDate(r.created_at) + (r.paid_at ? ' · paid ' + fmtDate(r.paid_at) : ''))]),
+            el('span', { class: 'cc-pill cc-pill-' + (r.status === 'paid' ? 'green' : r.status === 'approved' ? 'amber' : r.status === 'void' ? 'red' : 'violet') }, r.status),
+            r.status === 'draft' ? el('button', { class: 'lb-btn lb-btn-ghost', onClick: async () => { const q = await ccDispatcherCommissionStatus(r.id, 'approved').catch(() => null); if (q && q.ok) { toast('✓ approved'); paint(); } } }, 'Approve') : '',
+            r.status === 'approved' ? el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => { const q = await ccDispatcherCommissionStatus(r.id, 'paid').catch(() => null); if (q && q.ok) { toast('✓ paid'); paint(); } } }, 'Mark paid') : '',
+            ['draft', 'approved'].includes(r.status) ? el('button', { class: 'lb-btn lb-btn-danger', onClick: async () => { if (!(await askConfirm('Void this commission line?'))) return; const q = await ccDispatcherCommissionStatus(r.id, 'void').catch(() => null); if (q && q.ok) { toast('voided'); paint(); } } }, 'Void') : '',
+          ]))) : el('div', { class: 'cc-sub' }, 'No commission lines yet — they appear when a booking is marked Delivered.'),
+        ]);
+      }
+      paint();
+      return card([el('div', { style: 'font-weight:700;margin-bottom:4px' }, 'Per-load commission ledger'), box]);
+    }
+    // ---------------------------------------------------------------- 3-way thread (staff view)
+    function threadSection(dd) {
+      const active = (dd.assignments || []).filter((a) => a.status !== 'ended');
+      if (!active.length) return '';
+      const wrap = el('div');
+      active.forEach((a) => {
+        const list = el('div', { style: 'max-height:240px;overflow:auto;background:#f8fafc;border:1px solid #e6edf5;border-radius:10px;padding:8px 10px;margin:6px 0' }, el('span', { class: 'cc-sub' }, 'Loading…'));
+        const inp = el('input', { class: 'lb-input', placeholder: 'Message dispatcher + carrier…' });
+        const send = el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => { if (!inp.value.trim()) return; const r = await dispatcherThreadSend(a.id, inp.value).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } inp.value = ''; paint(); } }, 'Send');
+        async function paint() {
+          try { const r = await dispatcherThreadList(a.id, 100); const ms = (r && r.messages) || [];
+            mount(list, ms.length ? ms.map((m) => el('div', { style: 'padding:4px 0;border-bottom:1px solid #eef2f7;font-size:.88rem' }, [el('span', { class: 'cc-sub' }, (m.role === 'system' ? 'system' : m.role) + (m.by ? ' · ' + m.by : '') + ' · ' + fmtDateTime(m.at) + ' — '), m.body])) : el('span', { class: 'cc-sub' }, 'No messages yet.'));
+            list.scrollTop = list.scrollHeight;
+          } catch (e) { mount(list, el('span', { class: 'cc-sub' }, humanizeError(e))); }
+        }
+        paint();
+        wrap.appendChild(el('div', null, [el('div', { style: 'font-weight:600;display:flex;gap:6px;align-items:center' }, [icon('chat', 16), a.carrier || 'carrier']), list, el('div', { style: 'display:flex;gap:6px' }, [inp, send])]));
+      });
+      return card([el('div', { style: 'font-weight:700;margin-bottom:4px' }, 'Shared thread (dispatcher · carrier · LoadBoot)'), wrap]);
     }
 
     mount(wrap, sections(d));
