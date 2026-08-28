@@ -1,72 +1,44 @@
-Carrier truck intelligence: deep spec, VIN-to-COI matching, FMCSA cross-checks, and break-even
+Play app live: site Play badge + privacy rewrite + broker/tablet store shots; workstream 02 industry-pages module
 
-One day's work, all of it coming out of the same question: what did we have to ask a
-carrier over WhatsApp that the product should already have known?
+Google Play (LoadBoot Load Board & Dispatch, com.loadboot.app) went live 26 Aug.
+This commit closes the listing<->website<->app gaps from docs/PLAY-LISTING-AUDIT-2026-08-28.md
+and lands the other session's workstream-02 (shipper-by-industry) module.
 
-Add truck
-- 30 new fields: truck domicile, door type and opening size, deck height, dock high,
-  liftgate + capacity, pallet jack / ramp / e-track / load bars / straps / blankets,
-  pallet positions, wheel-well width, temperature range, hazmat / TWIC / TSA / bonded /
-  team, floor rate, max radius, home time.
-- Rebuilt as a sectioned modal instead of one long column.
-- Refuses a wheel-well gap wider than the cargo box.
+Site (build_site.py)
+- /apps: "Now available on Google Play" + badge; "coming soon" scoped to the App Store;
+  Android card links to the listing, PWA install kept as fallback.
+- Footer on every page: Google Play badge + one-line iPhone note.
+- /privacy: full rewrite dated 28 Aug 2026 — covers loadboot.com, all portals and the
+  Android app; carrier / broker & shipper / agent data sections; location consent;
+  sharing between parties on a load (user-directed) so it matches the Play Data safety
+  declaration; retention; deletion via Settings or privacy@loadboot.com.
+- /free-load-board-for-brokers: "Post by email — loads@loadboot.com" and
+  "Post from your phone" cards.  /integrations#email: email-posting section.
+- "native apps in preparation" wording updated in the features list.
 
-VIN to certificate of insurance, live
-- New cc_vin_coverage. On VIN blur the form says whether the truck is on the policy,
-  before Save rather than after: green when covered, red with the VINs the policy does
-  list, amber when no COI is on file.
-- cc_pocket_upsert_truck now takes one jsonb payload. The old 14-arg signature stays as
-  a thin wrapper so tabs open during the deploy keep working; the arg names do not
-  collide, so PostgREST has no ambiguity.
+App shells
+- app/shared/ui/playInstall.js (new): Android-only, never inside the installed app
+  (standalone / android-app://com.loadboot.app referrer), 14-day dismissible
+  "Get LoadBoot on Google Play" pill. Included in carrier, partner, agent index.html
+  and the /app/ chooser.
+- google-play-badge.svg (new, root): self-drawn badge; swap for the official asset later.
 
-Post a truck
-- Pick a truck from the fleet and the posting fills itself in: domicile, equipment,
-  floor rate, radius. Shows a "brokers will see" spec card and the certificate state,
-  and refuses to post a truck the policy does not cover.
+Store assets (docs/playstore-screenshots/)
+- broker-01..04 (1080x1920), tablet7-01..03 (1200x1920), tablet10-01..03 (1600x2560):
+  marketing frames built from live partner-portal captures + the carrier dashboard.
+  Uploaded to Play; listing update (new short description, 8 phone shots incl. 3
+  broker, 7" + 10" tablet shots) submitted for review 28 Aug. Tag "Vehicle maintenance"
+  removed.
 
-Loading profile — derived, not asked
-- liftgate + dock height + pallet jack were being collected and never read, so a truck
-  that cannot reach the ground could still be offered a residential drop. They now
-  resolve to one capability: ground capable / dock or forklift / forklift or levelling
-  dock / unknown. Deck height refines it — docks sit at 48-52in and most levelers reach
-  about 12in below.
-- cc_prebook_check gained a ground-delivery check. ADVISORY only: it is inferred from
-  free text a broker typed, so a false positive must never block a real booking.
+Docs
+- docs/PLAY-LISTING-AUDIT-2026-08-28.md: the cross-match audit that drove the above.
 
-Know your number
-- Carriers think in dollars per week; matching thinks in dollars per mile. New card
-  turns one into the other: weekly cost in, break-even miles out, with a scenario table
-  from 1,000 to 3,000 miles. The figure is volunteered, never required, and never
-  leaves the carrier's own account.
-- Round-trip preference, which had nowhere to live and is the thing carriers ask for
-  most.
+Workstream 02 (other session, same day)
+- industry_pages_module.py, apply_workstream02.py, docs/WORKSTREAM-02-build_site.diff:
+  shipper-by-industry pages module + the patch that wires it into build_site.py.
+  NOTE: build_site.py was edited by the Play session at 12:24; the workstream-02 diff
+  was produced at 18:37 — re-check the diff applies cleanly before running apply_workstream02.py.
 
-FMCSA cross-check
-- Compares the fleet against the MCS-150: unit counts, hazmat claim vs the HM indicator,
-  cargo classes, filing age, interstate vs intrastate, and whether the USDOT and MC on
-  file actually belong to this carrier.
-- This immediately found two live defects. Prime Freight's USDOT was stored a digit
-  short and resolved to an unrelated inactive Canadian carrier; JMS's MC docket was a
-  digit short. Both corrected.
-- Census snapshots refresh nightly through pg_net.
-
-Money and documents
-- Bank account numbers and ABA routing numbers are validated, checksum included.
-  Factoring remit-to now needs the factor's full account number, not the last four.
-- Approved documents can finally be replaced. They had no Update button, so "every
-  document is re-submittable" was only half true.
-- Certificate holder is quoted as the finished four-line block everywhere. lc-doc-check
-  had been asking carriers to "name LoadBoot" with no address at all.
-- Onboarding collects the legal owner name, the W-9 line that had failed for every
-  carrier who tried.
-
-Fixes to things this work broke or exposed
-- carrier_safety.authority_status did not allow 'unknown', which fmcsa-verify v26+
-  always sends. Every FMCSA save had been failing silently since that deploy, because
-  the edge function captures saveError and still returns ok:true.
-- home_time had two vocabularies across two tables. They now share one, and the
-  truck-level value wins over the carrier default.
-- bl_sec_0225 closes an anon-grant path that revoke-from-public does not reach.
-
-Migrations bl_fleet_0210 through bl_pref_0231, applied to staging and production.
-esbuild clean. New file: app/carrier/economics.js.
+Prod data (no code): demo brokerage/shipper loads re-dated to 29 Aug–3 Sep and
+app_private.partner_loads seeded (10 rows) so the reviewer/demo accounts show a live
+board. Demo-only visibility. They expire again ~3 Sep.

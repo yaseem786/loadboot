@@ -1,14 +1,15 @@
 --- /tmp/build_site.py.orig	2026-08-28 18:26:06.162575907 +0000
-+++ build_site.py	2026-08-28 18:26:17.797130652 +0000
-@@ -4,6 +4,7 @@
++++ build_site.py	2026-08-28 18:49:06.920906964 +0000
+@@ -4,6 +4,8 @@
  from load_score_module import LS_CSS, LS_HTML, LS_JS
  from motifs_module import mi, m_rail, m_timeline, m_split, m_dark, m_zigzag, m_statband, m_gradcta
  from market_reports_module import build_market_reports   # workstream 01 layer 2: dated weekly reports
-+from industry_pages_module import build_industry_pages  # workstream 02: shipper-by-industry pages
++from industry_pages_module import (build_industry_pages, build_industry_index,
++                                   industry_links_for_equipment)  # workstream 02: shipper-by-industry pages
  # SOURCE vs PUBLISH separation (Netlify: command="python3 build_site.py", publish="site").
  #   SRC  = repo root. Holds SOURCE only (this script, modules, dashboard.html, images,
  #          netlify.toml, runtime.txt, migrations/, docs/, README, content-queue). NOT published.
-@@ -18,7 +19,8 @@
+@@ -18,7 +20,8 @@
  # Files in SRC root that must NEVER be copied into the publish dir (source-only):
  _NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','motifs_module.py','netlify.toml',
                 'runtime.txt','README.md','content-queue.md','.gitignore',
@@ -18,16 +19,24 @@
  _ASSET_EXTS = ('.webp','.png','.jpg','.jpeg','.avif','.ico','.svg','.gif')
  def asset_exists(name):
      """True if a referenced local asset is present in SRC (so the page can reference it)."""
-@@ -458,7 +460,7 @@
+@@ -384,6 +387,7 @@
+     ('brokers.html', 'For brokers'),
+     ('free-load-board-for-brokers.html', 'Free load board for brokers'),
+     ('shipper-solutions.html', 'For shippers'),
++    ('freight-shipping-by-industry.html', 'Freight shipping by industry'),
+     ('ship-direct-to-carrier.html', 'Ship direct to carriers'),
+     ('us-truck-dispatcher.html', 'US truck dispatchers'),
+     ('careers.html', 'Become a dispatcher (hiring)'),
+@@ -458,7 +462,7 @@
  <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
  <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
  <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 -<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
-+<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="food-and-beverage-freight-shipping.html">Food &amp; Beverage Freight</a><a href="building-materials-freight-shipping.html">Building Materials Freight</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
++<div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="freight-shipping-by-industry.html">Freight Shipping by Industry</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
  <div><div class="foot-h">Compliance</div><a href="compliance.html">Compliance &amp; Verification</a><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
  <div><div class="foot-h">Company</div><a href="index.html">Home</a><a href="about.html">About</a><a href="command-center.html">Operations Command Center</a><a href="features.html">All Features</a><a href="load-board.html">Live Load Board</a><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="faq.html">FAQ</a><a href="resources.html">Resources</a><a href="blog.html">Blog</a><a href="careers.html">Careers</a><a href="contact.html">Contact</a></div>
  <div><div class="foot-h">Programs &amp; Login</div><a href="brokers.html">For Brokers</a><a href="partners.html">Partner Program</a><a href="agents.html">Referral Partner Program (1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a><a href="case-studies.html">Examples</a><a href="login.html">Log in</a><a href="apps.html">Get the App</a><a href="create-carrier-account.html">Create Carrier Account</a><a href="create-broker-account.html">Create Broker Account</a><a href="create-shipper-account.html">Create Shipper Account</a><a href="create-agent-account.html">Create Agent Account</a><a href="/app/carrier/">Carrier Portal</a><a href="/app/partner/">Partner Portal</a><a href="/app/developer/">Developers &amp; API</a></div><div><div class="foot-h">Rates &amp; Driver Pay</div><a href="market-rates.html">Market Rates Per Mile</a><a href="cost-per-mile-calculator.html">Cost Per Mile Calculator</a><a href="load-board.html">Live Load Board (Zero Ghost Loads)</a><a href="ghost-loads-load-board-problems.html">Ghost Loads &amp; Fake Freight</a><a href="detention-pay-policy.html">Detention Pay</a><a href="tonu-policy.html">TONU Fees</a><a href="layover-policy.html">Layover Pay</a><a href="lumper-policy.html">Lumper Fees</a><a href="driver-assist-policy.html">Driver Assist Pay</a><a href="fcfs-policy.html">FCFS &amp; Scheduling</a><a href="emergency-rescheduling-policy.html">Emergency Rescheduling</a></div>
-@@ -5415,6 +5417,18 @@
+@@ -5415,6 +5419,15 @@
      # content engine disappears from a deploy without anyone noticing.
      print('market reports: rate_snapshots.json NOT FOUND - no dated reports in this build')
  
@@ -37,16 +46,13 @@
 +# link forward to the industries that ride on it; emitted AFTER it, alongside the
 +# market reports, so the build's own asset checker resolves both directions.
 +_IND_PAGES = build_industry_pages(_EQ_RATES, _acc_faq_schema)
-+_IND_FOR_EQ = {}
-+for _ip in _IND_PAGES:
-+    for _es in _ip['equip']:
-+        _IND_FOR_EQ.setdefault(_es, []).append((_ip['fname'], _ip['ind_label'] + ' Freight'))
++_IND_FOR_EQ = industry_links_for_equipment()
 +print('industry pages: %d built' % len(_IND_PAGES))
 +
  _EQR_CSS = ('<style>'
   '.eqr-hero{background:radial-gradient(1000px 400px at 12% -20%,rgba(8,131,247,.35),transparent 60%),'
     'radial-gradient(700px 320px at 95% 120%,rgba(252,83,5,.22),transparent 55%),'
-@@ -5692,7 +5706,7 @@
+@@ -5692,7 +5705,7 @@
        ('shipper-solutions.html', 'Shipper Solutions'),
        ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'),
        ('free-load-board-for-brokers.html', 'Free Load Board for Brokers'),
@@ -55,7 +61,7 @@
  
      page(_s + '-freight-rates.html',
           _n + ' Freight Rates Per Mile 2026 \u2014 Carrier, Broker &amp; Shipper | LoadBoot',
-@@ -5714,6 +5728,13 @@
+@@ -5714,6 +5727,17 @@
  if _MR_PAGES:
      print('market reports written: ' + ', '.join(p['fname'] for p in _MR_PAGES[-3:]) + ' ...')
  
@@ -63,17 +69,21 @@
 +for _ipg in _IND_PAGES:
 +    RELATED[_ipg['fname']] = _ipg['related']
 +    page(_ipg['fname'], _ipg['title'], _ipg['desc'], 'shipper-solutions.html', _ipg['body'], _ipg['schema'])
++_IND_INDEX = build_industry_index(_EQ_RATES, _acc_faq_schema)
++RELATED[_IND_INDEX['fname']] = _IND_INDEX['related']
++page(_IND_INDEX['fname'], _IND_INDEX['title'], _IND_INDEX['desc'], 'shipper-solutions.html',
++     _IND_INDEX['body'], _IND_INDEX['schema'])
 +if _IND_PAGES:
-+    print('industry pages written: ' + ', '.join(p['fname'] for p in _IND_PAGES))
++    print('industry pages written: ' + ', '.join(p['fname'] for p in _IND_PAGES) + ' + ' + _IND_INDEX['fname'])
 +
  
  # ---- Cookie Policy ----
  ck = svc_hero('Cookie Policy', 'How Loadboot uses cookies and similar technologies, and the choices you have.')
-@@ -8231,6 +8252,7 @@
+@@ -8231,6 +8255,7 @@
    ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
    ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
    ('Resources', [('resources.html', 'Resources'), ('api.html', 'Developer API'), ('load-score.html', 'Load Score Tool'), ('freight-market-reports.html', 'Weekly Freight Market Reports'), ('dry-van-freight-rates.html', 'Dry Van Rates'), ('reefer-freight-rates.html', 'Reefer Rates'), ('flatbed-freight-rates.html', 'Flatbed Rates'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
-+  ('Freight by industry', [('food-and-beverage-freight-shipping.html', 'Food & Beverage Freight Shipping'), ('building-materials-freight-shipping.html', 'Building Materials Freight Shipping'), ('shipper-solutions.html', 'Shipper Solutions'), ('ship-direct-to-carrier.html', 'Ship Direct to Carriers')]),
++  ('Freight by industry', [('freight-shipping-by-industry.html', 'Freight Shipping by Industry'), ('food-and-beverage-freight-shipping.html', 'Food & Beverage'), ('building-materials-freight-shipping.html', 'Building Materials'), ('retail-and-ecommerce-freight-shipping.html', 'Retail & E-commerce'), ('manufacturing-and-industrial-freight-shipping.html', 'Manufacturing & Industrial'), ('agriculture-and-produce-freight-shipping.html', 'Agriculture & Produce'), ('metals-and-steel-freight-shipping.html', 'Metals & Steel'), ('shipper-solutions.html', 'Shipper Solutions')]),
    ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),
    ('Legal & trust', [('security.html', 'Security & Trust'), ('privacy.html', 'Privacy'), ('terms.html', 'Terms'), ('delete-account.html', 'Delete your account'), ('cookies.html', 'Cookie Policy'), ('accessibility.html', 'Accessibility')]),
  ]
