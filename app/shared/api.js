@@ -226,7 +226,10 @@ export const carrierFactoringBrokers = () => rpc('carrier_factoring_brokers');
 export const carrierFactoringBrokerSet = (broker, direct) => rpc('carrier_factoring_broker_set', { p_broker: broker, p_direct: direct });
 export const payTripMarkSent = (trip, receiptPath, receiptName, paymentRef) => rpc('pay_trip_mark_sent', { p_trip: trip, p_receipt_path: receiptPath, p_receipt_name: receiptName, p_payment_ref: paymentRef ?? null, p_method: 'bank_transfer' });
 export const payRequestReminder = (kind, ref) => rpc('pay_request_reminder', { p_kind: kind, p_ref: ref });
-export const carrierEldSetup = (provider, rotate, apiToken) => rpc('carrier_eld_setup', { p_provider: provider ?? 'generic', p_rotate: !!rotate, p_api_token: apiToken ?? null });
+export const carrierEldSetup = (provider, rotate, apiToken, orgName) => rpc('carrier_eld_setup', { p_provider: provider ?? 'generic', p_rotate: !!rotate, p_api_token: apiToken ?? null, p_org_name: orgName ?? null });
+// bl_eld_0297 — read-only status for the card (no insert side-effect) + disconnect
+export const carrierEldStatus = () => rpc('carrier_eld_status', {});
+export const carrierEldDisconnect = (provider) => rpc('carrier_eld_disconnect', { p_provider: provider });
 export const carrierAccountingExport = (from, to) => rpc('carrier_accounting_export', { p_from: from ?? null, p_to: to ?? null });
 export const carrierFuelImport = (rows) => rpc('carrier_fuel_import', { p_rows: rows });
 export const carrierAssignSuggestions = () => rpc('carrier_assignment_suggestions', {});
