@@ -459,7 +459,7 @@ def footer():
 <form class="news" onsubmit="event.preventDefault();var f=this,em=f.querySelector('input').value;var done=function(){f.innerHTML='<span style=\\'color:#86efac;font-weight:600\\'>Subscribed &mdash; thanks!</span>';};if(window.lbSubmitLead){window.lbSubmitLead('newsletter',{email:em}).then(done).catch(done);}else{done();}"><input type="email" placeholder="Your email" required><button class="btn btn-primary" type="submit">Subscribe</button></form></div>
 </div>
 <div class="links5">
-<div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">24/7 Dispatch</a></div>
+<div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">Dispatch Desk</a></div>
 <div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="freight-shipping-by-industry.html">Freight Shipping by Industry</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
@@ -838,7 +838,7 @@ WHYUS = '''<section id="why"><div class="wrap"><div class="sec-head reveal"><div
 STATS = '''<div class="stats"><div class="wrap stats-grid">
 <div class="stat reveal"><div class="n" data-count="48">48</div><div class="l">States covered</div></div>
 <div class="stat reveal d1"><div class="n">5%</div><div class="l">Flat rate, no contracts</div></div>
-<div class="stat reveal d2"><div class="n">24/7</div><div class="l">Dispatch support</div></div>
+<div class="stat reveal d2"><div class="n">On-call</div><div class="l">for every load in motion</div></div>
 <div class="stat reveal d3"><div class="n">15<span style="font-size:1.3rem">min</span></div><div class="l">Avg. reply (business hrs)</div></div>
 </div></div>'''
 
@@ -912,7 +912,7 @@ def _networks():
       '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Rate card first</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Detention, TONU and layover terms printed on every posting &mdash; before you accept.</div></div>'
       '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Zero ghost loads</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Stale postings auto-close and late cancels carry TONU exposure &mdash; fakes cost money here.</div></div>'
       '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Real deadhead</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Miles measured from where your truck actually is, not from the city center.</div></div>'
-      '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">You approve</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Nothing books without your tap, and the rate confirmation e-signs in-app.</div></div>'
+      '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">You approve</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Nothing books without your OK, and LoadBoot checks every rate confirmation against your floor before the driver moves.</div></div>'
       '</div></div>')
     foot=('<p class="src-disc reveal" style="text-align:center;margin-top:16px">Available sources depend on your authority, equipment and eligibility. '
       'LoadBoot is an independent dispatch service and marketplace &mdash; not a freight broker; when broker authority is legally required, freight moves through licensed broker partners.</p>')
@@ -1023,7 +1023,7 @@ COMPARE = '''<section id="compare" class="bg-soft"><div class="wrap"><div class=
 <tr><td>Expert rate negotiation</td><td class="no">On your own</td><td>Varies</td><td class="us">Every load</td></tr>
 <tr><td>No long-term contract</td><td>&mdash;</td><td class="no">Often locked in</td><td class="us">Cancel anytime</td></tr>
 <tr><td>You approve every load</td><td class="yes">Yes</td><td>Sometimes</td><td class="us">Always</td></tr>
-<tr><td>24/7 support</td><td class="no">No</td><td>Limited</td><td class="us">Yes</td></tr>
+<tr><td>On-call while your load is moving</td><td class="no">No</td><td>Limited</td><td class="us">Yes</td></tr>
 <tr><td>Added-value (factoring, IFTA, claims)</td><td class="no">No</td><td class="no">Rarely</td><td class="us">Included help</td></tr>
 </tbody></table></div></div></section>'''
 
@@ -1038,7 +1038,7 @@ HOW = '''<section id="how"><div class="wrap"><div class="sec-head reveal"><div c
 # ---------- HOME ----------
 home_faqs=[('Do I need my own authority (MC/DOT)?','Yes &mdash; we dispatch for carriers who hold their own operating authority. New-authority carriers are welcome, and we help with broker setup.'),
 ('How do you charge?','A flat 5% of your gross on the loads we book &mdash; no hidden fees and no long-term contract. You only pay when you earn.'),
-('Is there a long-term contract?','No. You can cancel anytime. We earn your business load by load.'),
+('Is there a long-term contract?','No long-term lock-in. You sign a short dispatch agreement (it names LoadBoot as your dispatcher so brokers can work with us) and can end it with 30 days&rsquo; written notice; loads already booked finish under it. We earn your business load by load.'),
 ('What kind of freight do you dispatch?','Dry van, reefer, flatbed, step deck, hotshot, power-only, and box truck/expedited.'),
 ('How soon can you start?','Usually within a day or two of completing your carrier setup.'),
 ('Do you work with new-authority carriers?','Absolutely &mdash; new carriers are a core part of who we help.'),
@@ -1400,7 +1400,7 @@ svc_page('owner-operator-dispatch.html','Owner-Operator','Owner-Operator Dispatc
  [('Do I keep my own authority?','Yes &mdash; you keep your authority and stay in control. You approve every load and rate before anything is booked.'),
   ('Is there a contract?','No. Cancel anytime &mdash; we earn your business load by load.'),
   ('What does dispatch cost for owner-operators?','A flat 5% of your gross on loads we book, with no hidden fees.')],
- shots=('booking-rate-con.webp',720,2078,'A real e-signed rate confirmation — the rate, the lane and every accessorial term in writing before the truck moves','Your approval, in writing &mdash; a real rate confirmation, e-signed in-app before anything rolls.'))
+ shots=('booking-rate-con.webp',720,2078,'A real rate confirmation — the rate, the lane and every accessorial term in writing before the truck moves','Your approval, in writing &mdash; a real rate confirmation, checked by LoadBoot before anything rolls.'))
 
 svc_page('new-authority-dispatch.html','New Authority','New Authority Truck Dispatch — Loads From Day One, No Minimum Authority Age | LoadBoot',
  'Dispatch for new-authority carriers. We help you get set up with brokers, book your first loads, and start earning. Flat 5%, no contracts, real guidance.',
@@ -1424,9 +1424,9 @@ serv_body += '''<section><div class="wrap"><div class="sec-head reveal"><div cla
 <div class="card reveal d2"><div class="icon">&#129309;</div><h3>Broker Communication</h3><p>Calls, packet setups, and check-ins handled for you.</p></div>
 <div class="card reveal"><div class="icon">&#129517;</div><h3>Route &amp; Lane Planning</h3><p>Smart planning to reduce empty miles.</p></div>
 <div class="card reveal d1"><div class="icon">&#128196;</div><h3>Document Management</h3><p>Rate cons, BOLs, and PODs &mdash; organized and on time.</p></div>
-<div class="card reveal d2"><div class="icon">&#128336;</div><h3>24/7 Dispatch Support</h3><p>A dedicated dispatcher who has your back on the road.</p></div>
+<div class="card reveal d2"><div class="icon">&#128336;</div><h3>Dispatch Desk + On-Call</h3><p>A dedicated dispatcher during US business hours, and an on-call desk for every load in motion &mdash; breakdowns, late pickups, detention.</p></div>
 </div></div></section>'''
-serv_body += m_statband([('20+','services under one roof'),('5%','flat fee, no contract'),('24/7','dispatch desk'),('1','partner for the whole business')])
+serv_body += m_statband([('20+','services under one roof'),('5%','flat fee, no contract'),('On-call','for loads in motion'),('1','partner for the whole business')])
 serv_body += m_zigzag('Back-Office &middot; Money &middot; Claims', 'Everything around the load &mdash; handled for you', [
  ('clipboard','Broker Packet Onboarding','Get set up with brokers fast &mdash; packets, references, and setup forms completed for you.'),
  ('wallet','Factoring Setup','Get paid in hours, not weeks, through vetted factoring partners.'),
@@ -1486,7 +1486,7 @@ _about_faq_html, _about_faq_schema = faq_block([
  ('📦 Shipper — Do I need to commit to volume?', 'No commitments. Ship one load or run program freight — the rate, tracking and paperwork work the same. As your volume grows, dedicated capacity and lane pricing grow with it.'),
  ('📦 Shipper — How do I get a rate?', 'Create a free shipper account and post your shipment, check the live market-rates page for current per-mile pricing, or just open the chat and tell us the lane — a real quote, not a teaser.'),
  # ---- Dispatchers & Referral Partners ----
- ('🧑‍✈️ Dispatcher — Can I dispatch with LoadBoot?', 'Yes — we hire US-based dispatchers and give them real tooling: verified freight, matching, rate confirmations, live tracking and settlements, with compliance workflows built in. See the careers page for open seats.'),
+ ('🧑‍✈️ Dispatcher — Can I dispatch with LoadBoot?', 'Yes — we hire experienced, verified remote dispatchers (strict screening, a working trial, US Eastern hours) and give them real tooling: verified freight, matching, rate confirmations, live tracking and settlements, with compliance workflows built in. See the careers page for open seats.'),
  ('📣 Referral partner — How does the 1% program work?', 'Refer a carrier or broker; when they run loads on LoadBoot, you earn 1% of gross on every load they move — for as long as they keep running. Transparent statements in your Agent Portal, no caps, no clawback games, and the people you refer never pay extra.'),
  ('📣 Referral partner — Who can join and what does it cost?', 'Anyone with a trucking network — drivers, fleet owners, factoring reps, insurance agents, influencers. It costs nothing: create a referral account, share your link, and watch your book build monthly income.'),
 ])
@@ -1620,7 +1620,7 @@ page('contact.html','Get Started, Get a Quote or Contact Us | Loadboot','Create 
 # ---------- PRICING ----------
 pr_body = svc_hero('Simple, Honest Dispatch Pricing','One flat rate, no contracts, no hidden fees. You only pay when we actually book you a load &mdash; so our goals and yours are always the same.')
 pr_body += '''<section><div class="wrap"><div class="promise reveal"><div class="glow"></div><div class="eyebrow" style="color:#93c5fd">Our Rate</div><h2>A flat 5% of gross &mdash; that's it</h2><p>No setup fees. No monthly minimums. No long-term contract. We charge 5% of the gross on the loads we book for you, and nothing on the weeks you don't run. If we don't add value, you can walk away anytime.</p><div class="reply">&#9989; You only pay when you earn</div></div></div></section>'''
-pr_inc = ['Dedicated dispatcher for your truck','Higher-paying load booking','Rate negotiation on every load','Broker setup and communication','Route and lane planning','Document and paperwork management','24/7 dispatch support','Help with factoring, IFTA, and compliance']
+pr_inc = ['Dedicated dispatcher for your truck','Higher-paying load booking','Rate negotiation on every load','Broker setup and communication','Route and lane planning','Document and paperwork management','Business-hours desk + on-call while loaded','Help with factoring, IFTA, and compliance']
 _pr_receipt = ('<div style="background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:30px;max-width:400px;margin:0 auto;box-shadow:0 30px 60px -30px rgba(15,23,42,.35)">'
  '<div style="font-family:Manrope;font-weight:800;font-size:1.05rem;margin-bottom:16px;display:flex;justify-content:space-between"><span>Example load</span><span style="color:#94a3b8;font-weight:600;font-size:.8rem">illustrative</span></div>'
  '<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f1f5f9;font-size:.95rem"><span style="color:#64748b">Linehaul (Dallas &rarr; Atlanta)</span><b>$2,640</b></div>'
@@ -1654,7 +1654,7 @@ pr_body += m_split('All included', 'Everything is included in your 5%',
 pr_body += COMPARE
 pr_faq = [('Are there any setup or hidden fees?','No. There are no setup fees, monthly fees, or hidden charges. You pay a flat 5% only on the loads we book.'),
 ('What if I have a slow week?','You pay nothing on loads you don\'t run. We only earn when we book freight for you.'),
-('Is there a contract?','No long-term contract &mdash; cancel anytime. We earn your business load by load.'),
+('Is there a contract?','A short dispatch agreement, no long-term lock-in &mdash; end it with 30 days&rsquo; written notice. We earn your business load by load.'),
 ('How is the 5% calculated?','It\'s 5% of the gross (line-haul) on each load we book and you approve. Every delivered load auto-invoices the fee with a branded PDF &mdash; see <a href="payments-settlements.html">how payments &amp; settlements work</a>.'),
 ('Do you work with new-authority carriers?','Yes &mdash; new authority carriers are a core part of who we help.'),
 ('What do brokers, shippers and agents pay?','Nothing to use the platform. The Partner Portal (posting, tracking, documents) and the Agent Portal are included free &mdash; LoadBoot&rsquo;s only revenue is the flat 5% dispatch fee on the carrier side, and agents are paid out of that same fee.')]
@@ -4184,9 +4184,9 @@ car += ('<section class="bg-soft" id="roles"><div class="wrap"><div class="sec-h
  '<div class="grid g2 reveal" style="max-width:980px;margin:0 auto">'
  '<a class="card reveal" href="us-truck-dispatcher.html" style="display:block;text-decoration:none;border:2px solid #FC5305;position:relative;background:linear-gradient(160deg,#10223B,#0d2a4d);color:#fff">'
  '<span style="position:absolute;top:14px;right:14px;background:#FC5305;color:#fff;font-size:.65rem;font-weight:900;padding:5px 11px;border-radius:999px;letter-spacing:.06em">&#9889; OPEN NOW &middot; REMOTE</span>'
- '<div class="icon">&#128222;</div><h3 style="color:#fff">US Truck Dispatcher &mdash; salary + performance</h3>'
- '<p style="color:#b9c6da">Dispatch for <b style="color:#7cc0ff">assigned US carriers</b> &mdash; hunt loads, negotiate rates, keep trucks loaded, manage trips and docs. <b style="color:#4ade80">Base salary + per-truck + performance bonus</b>; salary starts the day a carrier is assigned to you. Manage 5&ndash;8 trucks to start, ramp to 10&ndash;15.</p>'
- '<p style="color:#b9c6da;font-size:.9rem;margin-top:8px">Needs ~1&ndash;2 yrs US-trucking dispatch, strong English, DAT/Truckstop, FMCSA/HOS. Strict screening + paid trial before hire.</p>'
+ '<div class="icon">&#128222;</div><h3 style="color:#fff">US Truck Dispatcher &mdash; commission trial, then a written package</h3>'
+ '<p style="color:#b9c6da">Dispatch for <b style="color:#7cc0ff">assigned US carriers</b> &mdash; hunt loads, negotiate rates, keep trucks loaded, manage trips and docs. <b style="color:#4ade80">Paid trial on commission &mdash; a % of gross on every load you deliver</b> (10 working days, from the day your first carrier is assigned); pass it and your written offer sets the package (base + per-truck + performance). Manage 1&ndash;3 trucks in the trial, ramp to 10&ndash;15.</p>'
+ '<p style="color:#b9c6da;font-size:.9rem;margin-top:8px">Needs ~1&ndash;2 yrs US-trucking dispatch, strong English, <b>your own DAT/Truckstop login</b>, FMCSA/HOS, and hours that overlap the US East Coast. Strict screening + commission trial before hire.</p>'
  '<p style="color:#7cc0ff;font-weight:800;margin-top:10px">See the dispatcher role &rarr;</p></a>'
  '<a class="card reveal" href="agents.html" style="display:block;text-decoration:none"><div class="icon">&#129309;</div><h3>Freight Referral Partner &mdash; 1% recurring</h3><p>No experience needed. Refer carriers, brokers and shippers to LoadBoot with your link and earn <b style="color:#16a34a">1% of every delivered load your referred clients move &mdash; recurring, uncapped</b>, plus multi-level overrides. Commission only, paid from our fee &mdash; your clients never pay extra.</p><p style="color:#64748B;font-size:.85rem;margin-top:8px">Open signup &middot; remote &middot; commission (no salary)</p><p style="color:#0883F7;font-weight:800;margin-top:8px">See the program + earnings calculator &rarr;</p></a>'
  '</div></div></section>')
@@ -4195,36 +4195,36 @@ car += ('<section><div class="wrap"><div class="sec-head center reveal"><div cla
  '<div class="grid g3 reveal">'
  '<div class="card reveal"><div class="icon">1</div><h3>Apply (5 minutes)</h3><p>The form below &mdash; a real person reads every message, usually within 48 hours. A LinkedIn or CV link beats a formal cover letter.</p></div>'
  '<div class="card reveal"><div class="icon">2</div><h3>One honest conversation</h3><p>15&ndash;30 minutes about what you&rsquo;ve actually done &mdash; lanes you&rsquo;ve run, brokers you know, systems you&rsquo;ve used. No trick questions.</p></div>'
- '<div class="card reveal"><div class="icon">3</div><h3>Start doing the work</h3><p>Referral partners get their account + link the same week. Dispatchers go through verification and a paid working trial, then get assigned their first carrier &mdash; salary starts on assignment.</p></div>'
+ '<div class="card reveal"><div class="icon">3</div><h3>Start doing the work</h3><p>Referral partners get their account + link the same week. Dispatchers go through verification, get their first carrier and run a 10-working-day trial on commission (a % of every load delivered) &mdash; pass the KPIs and the written package starts.</p></div>'
  '</div></div></section>')
 # ---- DETAILED US TRUCK DISPATCHER JOB DESCRIPTION (SEO) ----
 car += ('<section id="dispatcher-job"><div class="wrap prose reveal" style="max-width:900px">'
- '<div class="eyebrow">Full job description</div><h2>US Truck Dispatcher (Remote) &mdash; Salary + Performance</h2>'
- '<p><b>About the role.</b> As a LoadBoot dispatcher you run day-to-day operations for the US carriers assigned to you &mdash; you find loads, negotiate rates, keep every truck loaded and manage the trip from booking to delivered POD. You are the carrier&rsquo;s dedicated dispatcher: you work <i>for</i> the carrier, under the carrier&rsquo;s own operating authority, and you are paid a salary by LoadBoot &mdash; not a commission on freight. This is a remote, full-time contractor role open worldwide, built for experienced US-trucking dispatchers.</p>'
+ '<div class="eyebrow">Full job description</div><h2>US Truck Dispatcher (Remote) &mdash; Commission Trial + Performance Package</h2>'
+ '<p><b>About the role.</b> As a LoadBoot dispatcher you run day-to-day operations for the US carriers assigned to you &mdash; you find loads, negotiate rates, keep every truck loaded and manage the trip from booking to delivered POD. You are the carrier&rsquo;s dedicated dispatcher: you work <i>for</i> the carrier, under the carrier&rsquo;s own operating authority, and you are paid by LoadBoot &mdash; the carrier never pays you and you never touch freight money. This is a remote, full-time contractor role open worldwide, built for experienced US-trucking dispatchers.</p>'
  '<h3>What you&rsquo;ll do (responsibilities)</h3><ul>'
- '<li><b>Hunt and book loads</b> for your assigned carriers on the LoadBoot Carrier Network and the carrier&rsquo;s own load-board seat, matched to their lanes, equipment and minimum rate.</li>'
+ '<li><b>Hunt and book loads</b> for your assigned carriers on the LoadBoot Carrier Network and your own DAT/Truckstop seat, matched to their lanes, equipment and minimum rate.</li>'
  '<li><b>Negotiate rates</b> with brokers to your carrier&rsquo;s target rate-per-mile &mdash; never haul below their cost per mile.</li>'
  '<li><b>Keep trucks loaded</b> &mdash; plan reloads off each drop point to cut deadhead, maximize utilization and respect the driver&rsquo;s home-time.</li>'
  '<li><b>Manage the trip</b> &mdash; pickups, appointments, check calls, HOS awareness, detention/TONU capture, and clean documents (rate cons, BOLs, PODs).</li>'
  '<li><b>Book under the carrier&rsquo;s authority</b> with verified brokers only &mdash; every rate confirmation names the carrier, never LoadBoot.</li>'
- '<li><b>Communicate</b> with your carrier and the Command Center daily, and follow the per-carrier SOP (lanes, minimum rate, equipment, do&rsquo;s and don&rsquo;ts).</li>'
+ '<li><b>Communicate</b> with your carrier and the Command Center daily &mdash; only in the shared thread and the carrier&rsquo;s WhatsApp group, never on side channels; driver calls are for emergencies and get summarised in the group &mdash; and follow the per-carrier SOP (lanes, minimum rate, equipment, do&rsquo;s and don&rsquo;ts).</li>'
  '<li><b>Hit your KPIs</b> &mdash; truck utilization, on-time delivery, gross per truck, low cancellations and carrier retention.</li>'
  '</ul>'
  '<h3>What we need (requirements)</h3><ul>'
  '<li><b>~1&ndash;2 years of US-trucking dispatch experience</b> (owner-operators or small fleets).</li>'
- '<li><b>Load-board proficiency &mdash; you should be able to operate DAT and Truckstop.</b> You dispatch on the carrier&rsquo;s own load-board authority/seat; hands-on board experience is essential.</li>'
+ '<li><b>Load-board proficiency &mdash; you should be able to operate DAT and Truckstop.</b> You bring <b>your own DAT/Truckstop login</b> &mdash; you never use the carrier&rsquo;s; hands-on board experience is essential.</li>'
  '<li><b>Strong English</b> communication &mdash; you talk to US brokers and drivers all day.</li>'
  '<li><b>FMCSA / HOS knowledge</b> and solid US geography and lane sense.</li>'
  '<li><b>Rate negotiation</b> skill, organization and the ability to juggle several trucks at once.</li>'
- '<li>Reliable internet, a quiet workspace, and availability that overlaps US business hours.</li>'
+ '<li>Reliable internet, a quiet workspace, and availability that overlaps <b>US Eastern business hours (08:00&ndash;18:00 ET)</b> &mdash; brokers, rate confirmations and appointments all run on Eastern time.</li>'
  '</ul>'
- '<h3>What we offer (salary package, in detail)</h3>'
- '<p>Your pay has three parts, and it starts the day a carrier is assigned to you:</p><ul>'
- '<li><b>Base salary</b> &mdash; a fixed monthly base that begins on your first carrier assignment.</li>'
+ '<h3>What we offer (pay, in detail)</h3>'
+ '<p>You start on a <b>10-working-day trial paid on commission</b>: a fixed % of gross line-haul on every load you book that is delivered inside the window, shown per load in your workspace and paid to your local account with the FX rate and transfer reference on record. Pass the trial (&ge;3 loads/week per truck, average rate above the carrier&rsquo;s floor, 100% rate confirmations attached, &ge;2 check calls per load, no dispatch-caused cancellations) and your written offer sets a package with three parts:</p><ul>'
+ '<li><b>Base</b> &mdash; a fixed monthly amount from your first post-trial month.</li>'
  '<li><b>Per-active-truck pay</b> &mdash; an additional amount for every active truck you keep loaded, so your pay grows as your book grows (you&rsquo;ll manage ~5&ndash;8 trucks to start, ramping to 10&ndash;15).</li>'
  '<li><b>Performance bonus</b> &mdash; paid monthly on your KPIs (utilization, on-time, gross per truck, retention). Perform, and you earn more.</li>'
  '</ul>'
- '<p>The exact figures for your tier (probation, dispatcher, senior) are shared in your written offer and scale with your book and results. Top performers with a full book earn the most. Salary is paid monthly; you are an independent contractor responsible for your own local taxes.</p>'
+ '<p>The exact figures for your tier (probation, dispatcher, senior) are shared in your written offer and scale with your book and results. Top performers with a full book earn the most. Commission is paid per load, the package monthly; you are an independent contractor responsible for your own local taxes.</p>'
  '<h3>Rules, regulations &amp; policies</h3><ul>'
  '<li><b>You are a dispatcher, not a broker.</b> You work as the carrier&rsquo;s bona fide agent (FMCSA guidance, 88 FR 39368): loads are booked under the carrier&rsquo;s own authority, for that carrier only.</li>'
  '<li><b>No allocation of freight.</b> You source each load for one pre-assigned carrier within your assigned scope &mdash; you never take a single load and choose between carriers.</li>'
@@ -4242,9 +4242,9 @@ car += lead_form('careers', 'Apply to Loadboot', 'Tell us about yourself and wha
      ('company', 'Current / most recent role', 'text', False),
      ('message', 'What are you great at? Share a link to your CV or LinkedIn.', 'textarea', True)],
     'Send application', 'Thanks — we&rsquo;ll be in touch.')
-_disp_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"US Truck Dispatcher (Remote, Salary + Performance)","description":"Dispatch for assigned US carriers on the LoadBoot platform: hunt loads, negotiate rates, keep trucks loaded, manage trips and documents. Base salary plus per-truck and performance bonus; salary starts when a carrier is assigned. Manage 5-15 trucks. Requires ~1-2 years US-trucking dispatch experience, strong English, load-board (DAT/Truckstop) proficiency and FMCSA/HOS knowledge. Strict screening and a paid working trial before hire.","datePosted":"2026-07-22","validThrough":"2027-07-22T23:59:59-05:00","employmentType":["CONTRACTOR","FULL_TIME"],"hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":200,"maxValue":700}},"directApply":true}</script>'
+_disp_job_schema = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"US Truck Dispatcher (Remote, Commission Trial + Performance Package)","description":"Dispatch for assigned US carriers on the LoadBoot platform: hunt loads, negotiate rates, keep trucks loaded, manage trips and documents. 10-working-day trial paid on commission (a % of every delivered load), then a written package (base + per-truck + performance). Manage 1-15 trucks. Requires ~1-2 years US-trucking dispatch experience, strong English, your own DAT/Truckstop login, FMCSA/HOS knowledge and US Eastern business-hours availability. Strict screening before hire.","datePosted":"2026-07-22","validThrough":"2027-07-22T23:59:59-05:00","employmentType":["CONTRACTOR","FULL_TIME"],"hiringOrganization":{"@type":"Organization","name":"LoadBoot","sameAs":"https://loadboot.com"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"USA"},"baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","unitText":"MONTH","minValue":200,"maxValue":700}},"directApply":true}</script>'
 page('careers.html', 'Careers at LoadBoot — Dispatcher & Referral Partner Roles',
-     'Careers at LoadBoot: salaried US truck dispatcher roles and freight referral partners earning 1% of every delivered load. Remote friendly, apply fast.',
+     'Careers at LoadBoot: remote US truck dispatcher roles (commission trial, then a written package) and freight referral partners earning 1% of every delivered load. Remote friendly, apply fast.',
      'careers.html', car, _disp_job_schema + _ag_job_schema)
 
 # ---- US Truck Dispatcher (SEO landing) ----
@@ -4282,7 +4282,7 @@ dsp += _sec('Why LoadBoot dispatch', 'Honest, compliant, flat 5%', _cards([
 ]))
 dsp += ('<section class="bg-soft"><div class="wrap"><div class="sec-head center reveal"><div class="eyebrow">Work with us</div><h2>Want to BE a dispatcher?</h2></div>'
  '<div class="reveal" style="max-width:760px;margin:0 auto;text-align:center;color:#475569;line-height:1.8">'
- 'LoadBoot hires salaried US truck dispatchers (remote): base salary + per-truck + performance bonus, with strict screening and a paid trial. If you know DAT/Truckstop, FMCSA/HOS and how to negotiate a rate, this seat is for you.'
+ 'LoadBoot hires remote US truck dispatchers: a 10-working-day trial on commission, then a written package (base + per-truck + performance), with strict screening. If you know DAT/Truckstop, FMCSA/HOS and how to negotiate a rate, this seat is for you.'
  '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px">'
  '<a href="careers.html#dispatcher-job" class="btn btn-primary">Read the full job description ' + ARW + '</a>'
  '<a href="/app/agent/" class="btn btn-secondary">Apply as a dispatcher</a>'
@@ -4708,7 +4708,7 @@ _ag_faq_html, _ag_faq_sch = faq_block([
  ('Is it really recurring - every load, forever?', 'Yes. This is not a one-time signup bonus. As long as your referred clients keep moving freight on LoadBoot, every delivered load pays your commission. Your book of clients is your asset.'),
  ('Who pays my commission - do my clients pay extra?', 'No. Your commission comes out of LoadBoot&rsquo;s own service fee. Your broker and carrier pay exactly what they would pay anyway.'),
  ('How and when am I paid?', 'Commissions become payable after a 15-day clearing window (protects against cancelled or disputed loads), and payouts run monthly from a $100 minimum balance - bank transfer or Payoneer.'),
- ('Do I need a dispatch license or MC authority?', 'No. You are a referral partner, not a broker of record. You connect people; LoadBoot&rsquo;s platform handles the freight, documents and payments. (Prefer to actually dispatch trucks for a salary? That is our separate, verified US Dispatcher role - see Careers.)'),
+ ('Do I need a dispatch license or MC authority?', 'No. You are a referral partner, not a broker of record. You connect people; LoadBoot&rsquo;s platform handles the freight, documents and payments. (Prefer to actually dispatch trucks? That is our separate, verified US Dispatcher role - see Careers.)'),
 ])
 
 

@@ -4,6 +4,9 @@
 // renders correctly regardless of the surrounding portal theme. Read-only.
 import { pocketGetProfile, pocketOverview, getDispatchPrefs, pocketCompliance, myPaymentProfile, myAvatar, setMyAvatar } from '../shared/api.js';
 import { uploadDocument } from '../shared/storage.js';
+// 29 Aug 2026 — the same renderer the Command Center uses for Carrier 360, so the carrier
+// reads exactly what their dispatcher reads. audience:'carrier' keeps staff wording out.
+import { equipmentDetailCard, carrierNotesCard } from '../shared/ui/carrierDetail.js';
 
 var FBASE = 'https://data.transportation.gov/resource';
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];});}
@@ -210,11 +213,25 @@ export async function renderMyProfile(host){
       +stats
       +'<div class="sec-h">Equipment</div><div class="chips">'+(equip.length?equip.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip" style="opacity:.55">Not set yet \u2014 add equipment in onboarding</span>')+'</div>'
       +'<div class="sec-h">Lanes</div><div class="chips">'+(lanes.length?lanes.map(function(e){return '<span class="chip">'+esc(e)+'</span>';}).join(''):'<span class="chip" style="opacity:.55">Not set yet \u2014 add lanes in dispatch preferences</span>')+'</div>'
+      +'<div id="lbmp-truckdetail"></div>'
       +'<div class="sec-h">Compliance <span class="verified">on file</span></div><div class="chips">'+badge(cCoi,'COI')+badge(cW9,'W-9')+badge(cAgr,'Signed Agreement')+badge(cAuth,'FMCSA Authority')+(isFactoring?badge(true,'Factoring'):'')+(cBankPending?'<span class="badge b-rev" style="background:rgba(217,119,6,.16);color:#fbbf24">&#9203; Banking &mdash; in review</span>':((cBank||!isFactoring)?badge(cBank,'Banking'):''))+'</div>'
       +'</div>'
       +'<div class="card">'+fmcsa+'</div>'
       +'</div>';
     // wire tabs
+    // Truck + operating detail, rendered from the same module as Carrier 360 so there is
+    // one version of the truth. Everything is read-only here; the amber panel turns whatever
+    // we are still missing into a plain list of what we need from them.
+    try{
+      var tdHost=host.querySelector('#lbmp-truckdetail');
+      if(tdHost){
+        var eqCard=equipmentDetailCard(dp&&dp.equipment_detail,{audience:'carrier',theme:'dark',
+          title:'\ud83e\uddf0 Your truck, as we have it on file',
+          subtitle:'This is what we quote brokers from. If anything here is wrong, tell your dispatcher and we will fix it the same day.'});
+        if(eqCard) tdHost.appendChild(eqCard);
+      }
+    }catch(_){}
+
     var tabs=host.querySelectorAll('#lbmp .tab');
     for(var i=0;i<tabs.length;i++){tabs[i].addEventListener('click',function(e){cur=Number(e.currentTarget.getAttribute('data-tab'))||0;var p=host.querySelector('#lbmp-panel');if(p)p.innerHTML=fpanel(D,cur);var all=host.querySelectorAll('#lbmp .tab');for(var k=0;k<all.length;k++)all[k].classList.toggle('on',Number(all[k].getAttribute('data-tab'))===cur);});}
     wireAvatar(host);

@@ -411,6 +411,15 @@ export const ccDispatcherBookings = (o = {}) => rpc('cc_dispatcher_bookings', { 
 export const ccDispatcherBookingDecide = (id, action, note) => rpc('cc_dispatcher_booking_decide', { p_id: id, p_action: action, p_note: note ?? null });
 export const ccDispatcherCommissionStatus = (id, status, note) => rpc('cc_dispatcher_commission_status', { p_id: id, p_status: status, p_note: note ?? null });
 export const ccDispatcherCommissionList = (user) => rpc('cc_dispatcher_commission_list', { p_user: user ?? null });
+// ---- bl_disp_0300 hardening — reads, acks, pause, queue, payout ----
+export const dispatcherThreadMarkRead = (assignment) => rpc('dispatcher_thread_mark_read', { p_assignment: assignment });
+export const ccDispatcherQueue = () => rpc('cc_dispatcher_queue', {});
+export const ccDispatcherCommissionPay = (ids, p) => rpc('cc_dispatcher_commission_pay', { p_ids: ids, p: p ?? {} });
+export const carrierMyDispatcherBookings = (limit) => rpc('carrier_my_dispatcher_bookings', { p_limit: limit ?? 100 });
+export const carrierDispatcherAck = (assignment) => rpc('carrier_dispatcher_ack', { p_assignment: assignment });
+export const carrierDispatcherPause = (assignment, pause, reason) => rpc('carrier_dispatcher_pause', { p_assignment: assignment, p_pause: !!pause, p_reason: reason ?? null });
+export const ccDispatcherResendIntro = (assignment) => rpc('cc_dispatcher_resend_intro', { p_assignment: assignment });
+export const carrierBookingAck = (booking, ok, note) => rpc('carrier_booking_ack', { p_booking: booking, p_ok: !!ok, p_note: note ?? null });
 // ---- Dispatcher Workspace P1 (bl_disp_0289) — board / posting / KPIs, acting for an assigned carrier ----
 export const dispatcherBoard = (org, limit) => rpc('dispatcher_board', { p_org: org, p_limit: limit ?? 20 });
 export const dispatcherLoadDetail = (org, load) => rpc('dispatcher_load_detail', { p_org: org, p_load: load });

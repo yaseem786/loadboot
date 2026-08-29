@@ -23,9 +23,9 @@ floor: **Justin $572 · Warren $780**
 |---|---|
 | Truck | 2026 HINO L6, 26 ft box, VIN 5PVNJ7DVXT5T51569 — Enterprise se **ek hafte** ke liye rented |
 | Payload | **10,000 lb** |
-| Interior | 94" chaura × 97" ooncha · **LENGTH ABHI TAK NAHI MILI — 3 baar poocha ja chuka. Broker ko koi number mat batao.** |
+| Interior | **308" (25 ft 8 in) × 94" chaura × 97" ooncha** — 308 Warren ka apna diya hua figure hai (handoff purana tha) |
 | Dock-high / liftgate | Dono **haan** · pallet jack haan, **magar aaj Sat 29 Aug nahi** |
-| Drivers | Jason Warren (malik) + Anthony Robinson — dono policy par scheduled |
+| Drivers | Jason Warren (malik) + Anthony Robinson (driver) — **29 Aug ke ACORD par dono scheduled** ✅ |
 | Floor | **$780/din** (weekly $3,900 incl. pay) · min_rpm 2.10 · **max deadhead 100 mi** |
 | Insurance | Progressive Southeastern **878041030**, 05 Aug 26 – 05 Aug 27. $1M auto liab, $100k cargo, $2,500 ded. |
 | Cert holder | **EAN Services LLC (Enterprise)** — LoadBoot cert holder par **nahi** hai, maanga hua hai |
@@ -33,11 +33,13 @@ floor: **Justin $572 · Warren $780**
 | Address | Policy par **Fayetteville NC 28306**, hamare paas **Hinesville GA** — farq confirm nahi hua |
 | Rabta | **Sirf Jason ke zariye** (254-226-7286). Us ne saaf kaha. Anthony se seedhi baat nahi. |
 
-> ⚠️ **DB mein do cheezein ghalat hain** — `fleet_trucks` unit 0026 ki spec note mein
-> `cargo_len_in = 308` likha hai (wo **andaza** hai, "normal for a 26 ft box" se nikala hua) aur
-> certificate holder **LoadBoot LLC** likha hai (asal mein **EAN Services**). Dono theek karne layak hain,
-> warna agli session inhein sach samajh legi. Main ne DB par kuch likha nahi — ye prod hai, tumhara faisla.
-> *(Maine kal apne pehle draft mein yahi do figures sach maan kar likh di thin — ab hata di hain.)*
+> ✅ **DRIVER KA MASLA HAL — 29 Aug.** 28 Aug ke ACORD par sirf Jason scheduled tha, jabke
+> chalane wala Anthony hai. Carrier ne usi din reissue karwa liya: **29 Aug ka certificate
+> (cert no. ...T084605) par "The following are scheduled drivers: Anthony Robinson, JASON WARREN"** —
+> dono. Insurance ki taraf se Anthony clear hai.
+>
+> Ek cheez abhi bhi khuli hai: **Enterprise ka rental agreement alag contract hai.** Us par bhi
+> Anthony authorized driver hona chahiye — wo policy se nahi aata. Jason se confirm karwa lo.
 
 ### Trip plan (Warren ne pehle hi maan liya hai)
 - **Aaj Sat 10:00 baje Jacksonville se truck lena hai, 11:00 tak ready.**

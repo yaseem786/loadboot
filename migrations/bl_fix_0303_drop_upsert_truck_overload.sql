@@ -1,0 +1,25 @@
+-- bl_fix_0303_drop_upsert_truck_overload
+-- 29 Aug 2026
+--
+-- public.cc_pocket_upsert_truck existed twice: the real cc_pocket_upsert_truck(jsonb), and
+-- a legacy 14-parameter wrapper whose entire body was a call to the jsonb one:
+--
+--   select public.cc_pocket_upsert_truck(jsonb_strip_nulls(jsonb_build_object(
+--     'id', p_id, 'unit_no', p_unit_no, 'plate', p_plate, 'vin', p_vin,
+--     'equipment', p_equipment, 'payload_lbs', p_payload_lbs,
+--     'cargo_len_in', p_cargo_len_in, 'cargo_width_in', p_cargo_width_in,
+--     'cargo_height_in', p_cargo_height_in, 'vin_make', p_vin_make,
+--     'vin_model', p_vin_model, 'vin_year', p_vin_year,
+--     'vin_gvwr', p_vin_gvwr, 'vin_body', p_vin_body)));
+--
+-- Two overloads of one name is how PostgREST produces PGRST203, "could not choose the best
+-- candidate function". Add truck is already the most fragile screen in the portal; it does
+-- not need a second way to fail.
+--
+-- Checked before dropping: no database function references cc_pocket_upsert_truck, and
+-- nothing under app/ mentions p_unit_no or any other named parameter — the client calls
+-- rpc('cc_pocket_upsert_truck', { p: {...} }), which resolves to the jsonb signature only.
+-- Applied to staging then production; both now report exactly one overload.
+--
+-- Reversible: recreate the wrapper from the body quoted above.
+drop function if exists public.cc_pocket_upsert_truck(uuid,text,text,text,text,integer,integer,integer,integer,text,text,text,text,text);
