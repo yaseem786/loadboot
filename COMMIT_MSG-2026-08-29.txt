@@ -1,0 +1,39 @@
+fix(carrier): surface every fleet RPC error code on Add truck (LB001-LB004, 22023)
+
+Adding a truck could fail silently. The fleet_truck_coi_gate trigger raises
+LB004 when a carrier has no verified certificate of insurance on file, and the
+carrier portal had no branch for that code at all — LB004 appears nowhere in
+app/ or migrations/. The VIN panel made it worse: on state 'no_coi' it told the
+carrier "You can save the truck now", which the trigger then refuses.
+
+app/shared/errors.js
+  - new rpcMessage(e) / rpcTitle(e, fallback) and LB_CODE_TITLES. The database
+    already writes carrier-facing sentences for LB001-LB020 and 22023;
+    humanizeError() was flattening them to "That value is not allowed."
+    rpcMessage passes those through and falls back to humanizeError for
+    anything unrecognised. humanizeError itself is unchanged, so no existing
+    call site changes behaviour.
+
+app/carrier/app.js (truck form)
+  - explicit branches for LB004 (no verified COI), 22023 (rejected value) and
+    42501 (not your truck / not a carrier account)
+  - LB001 now distinguishes the trailer-VIN case from the insurance-schedule
+    case; it used to show the insurance message for a bad trailer plate
+  - offline saves say the truck was NOT saved instead of "Failed to fetch"
+  - unhandled errors keep their own sentence and append "(code XXXXX)"
+  - console.error on every failure so the next one is diagnosable
+  - finally { } always re-enables the button — a stuck "Saving..." button is
+    what made this look broken rather than blocked
+  - the no_coi panel now says a truck cannot be added until the COI is verified
+  - truck-saved toast used tone 'ok', which is not in the TONE map, so a
+    successful save rendered as a red "Action needed !" card; now 'success'
+
+dispatch/RILEY-FIX-2026-08-29.md
+dispatch/DISPATCH-WARREN-JUSTIN-2026-08-29.md
+  - Riley inbound/outbound diagnosis with the lc_calls evidence, paste-ready
+    Retell blocks, and the Warren truck-change correction (unit 0012 retired
+    28 Aug, unit 0026 26 ft Hino is live); Warren/Justin outreach drafts.
+
+Verified: python build_site.py -> BUILD OK; node --check clean on both JS files
+and on the built site/app/carrier/app.js.
+No migration in this change. No database change.

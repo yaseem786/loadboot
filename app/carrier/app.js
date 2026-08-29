@@ -22,7 +22,7 @@ import {
   isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
-  pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
+  pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringRemitUpdate, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
   carrierEldSetup, carrierAccountingExport, carrierFuelImport, carrierFleetOptimization, qboAuthUrl, qboStatus,
   submitReinstatement, myReinstatements, poaThread, myStrikes, claimEscalate, pocketUploadTripDoc, pocketCancelTrip, cancelPreview, tripPickupStatus,
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
@@ -5305,8 +5305,12 @@ function tripStepper(status) {
             (vins.length ? 'It currently lists ' + (vins.length === 1 ? 'one truck: ' : vins.length + ' trucks: ') + vins.join(', ') + '. ' : '')
             + 'Ask your agent to add this VIN to the policy schedule — it is free — then upload the updated certificate under Documents. We verify it the same day.'));
         } else if (r.state === 'no_coi') {
-          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ No certificate of insurance on file yet',
-            'You can save the truck now, but nothing can be dispatched until we have your COI. Upload it under Documents.'));
+          // 29 Aug 2026: this used to say 'You can save the truck now'. It cannot —
+          // the fleet_truck_coi_gate trigger refuses the insert with LB004 until a
+          // verified COI is on file. Saying so here stops the carrier filling in a
+          // whole form for nothing.
+          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ We need your certificate of insurance first',
+            'A truck cannot be added until we have your COI on file and verified. Upload it on the Documents page — we review it the same working day, then this truck saves in one tap.'));
         }
         if (r.expired) {
           coiInfo.appendChild(h('div', { style: 'color:#f87171;font-weight:700;margin-top:5px' }, '⚠ The certificate we hold expired on ' + r.expiry_date + ' — send the renewal so nothing stops mid-load.'));
@@ -5381,17 +5385,30 @@ function tripStepper(status) {
           renderTrucks();
           try { closeT9(); } catch (_) {}
           lbToast('🚛 Truck saved' + (vinInfo.textContent.indexOf('✓') === 0 ? ' — VIN verified with U.S. DOT' : '')
-            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'ok', 'Fleet updated');
+            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'success', 'Fleet updated');
         }
         catch (e) {
-          btn9.disabled = false; btn9.textContent = 'Save';
-          // The insurance certificate decides which trucks we may dispatch. LB001 =
-          // this VIN is not on it; LB002 = no usable VIN was given.
+          // 29 Aug 2026 — Add truck used to look like it did nothing. Every code the
+          // server can raise on this path is now named and shown:
+          //   LB001 truck VIN not on the COI  (or a bad TRAILER vin - different message)
+          //   LB002 no usable VIN given
+          //   LB003 payload above the chassis GVWR
+          //   LB004 no verified COI on file at all - the fleet_truck_coi_gate trigger
+          //   22023 a value the RPC rejects (unit number, wheel wells, trailer length)
+          //   42501 not a carrier account / not your truck
+          // Anything else still shows its own sentence rather than being swallowed.
+          try { console.error('[fleet] save truck failed', e && e.code, e && e.message); } catch (_) {}
           if (e && e.code === 'LB002') {
             lbToast('Every truck needs its full 17-character VIN — that is what your insurance certificate lists, and what brokers check before they release a load.', 'urgent', 'VIN required');
             return;
           }
           if (e && e.code === 'LB001') {
+            // The same code also guards the TRAILER vin; that message is about the
+            // trailer plate, not the insurance schedule, so pass it through as-is.
+            if (/trailer/i.test((e && e.message) || '')) {
+              lbToast(e.message, 'urgent', 'Check the trailer VIN');
+              return;
+            }
             let listed = '';
             try {
               const cov9 = await coiVehicles();
@@ -5404,7 +5421,23 @@ function tripStepper(status) {
             return;
           }
           if (e && e.code === 'LB003') { lbToast((e && e.message) || 'That payload does not fit this chassis.', 'urgent', 'Check the payload'); return; }
-          lbToast((e && e.message) || 'Could not save.', 'urgent', 'Truck not saved');
+          if (e && e.code === 'LB004') {
+            lbToast((e && e.message)
+              || 'We need your certificate of insurance on file and verified before a truck can be added. Upload the COI on your Documents page and we will review it, usually the same working day.',
+              'urgent', 'Certificate of insurance needed first');
+            return;
+          }
+          if (e && e.code === '22023') { lbToast((e && e.message) || 'One of the values on this form is not allowed.', 'urgent', 'Check what you typed'); return; }
+          if (e && e.code === '42501') { lbToast('This account is not allowed to change that truck. If you think that is wrong, tell your dispatcher.', 'urgent', 'Not allowed on this account'); return; }
+          const net9 = /failed to fetch|networkerror|load failed/i.test((e && e.message) || '');
+          if (net9) { lbToast('The truck was NOT saved — the app could not reach the server. Check your signal and press Save again.', 'urgent', 'No connection'); return; }
+          lbToast(((e && e.message) || 'Could not save.') + (e && e.code ? ' (code ' + e.code + ')' : ''), 'urgent', 'Truck not saved');
+        }
+        finally {
+          // Whatever happened above — a handled code, an unhandled one, or a throw
+          // inside the catch itself — the carrier gets a live button back. A stuck
+          // 'Saving…' button is what made this look broken rather than blocked.
+          btn9.disabled = false; btn9.textContent = 'Save truck';
         }
       } }, 'Save truck');
 
@@ -5838,6 +5871,40 @@ function tripStepper(status) {
             catch (e9) { b9.disabled = false; msg9.textContent = (e9 && e9.message) || 'Failed.'; } } }, 'Activate factoring — file the NOA'),
           msg9,
         ]);
+        // bl_fin_0299 (29 Aug 2026): factoring ON but the factor's ACH details missing (NOA letters often carry
+        // only a P.O. box) — let the carrier complete them here without re-filing the NOA. Staff verify before
+        // the first settlement (remit_verified flag).
+        const fr9 = (pp9 && pp9.factor_remit) || {};
+        const remitRow9 = on9 ? (() => {
+          const g9 = { account_title: fr9.account_title || (pp9 && pp9.factoring_company) || '', bank_name: fr9.bank_name || '', account_number: '', routing_number: '', remittance_email: fr9.remittance_email || '', source: '' };
+          const gi9 = (k9, lbl9, ph9) => { const i9 = h('input', { class: 'cp-in', placeholder: ph9 || '', value: g9[k9] || '', autocomplete: 'off' }); i9.oninput = () => { g9[k9] = i9.value; }; return h('div', { style: 'flex:1;min-width:190px' }, [h('label', { class: 'cp-lbl' }, lbl9), i9]); };
+          const gmsg9 = h('div', { style: 'margin-top:6px;min-height:1em;color:#f87171;font-weight:700;font-size:.82rem' });
+          const open9 = !fr9.has_ach;
+          const formHost9 = h('div', { style: open9 ? '' : 'display:none' }, [
+            h('div', { class: 'cp-row-s', style: 'line-height:1.7;margin:8px 0' }, 'These are the details your FACTORING COMPANY gave you for receiving payments — from their welcome packet, remittance-instructions letter, or their portal. Not your own bank. Brokers and LoadBoot pay the factor here; the factor pays you.'),
+            h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
+              gi9('account_title', 'Payee name (exactly as the factor wrote it) *', ''),
+              gi9('bank_name', 'Factor’s bank *', ''),
+              gi9('account_number', 'Factor’s account number *', 'full number'),
+              gi9('routing_number', 'Factor’s ACH routing number *', '9 digits'),
+              gi9('remittance_email', 'Factor’s remittance / AR email', 'e.g. invoice@factor.com'),
+              gi9('source', 'Where did you get these? ', 'e.g. Flat Rate welcome packet, page 2'),
+            ]),
+            h('button', { class: 'cp-btn', style: 'margin-top:10px', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true; gmsg9.textContent = '';
+              try { const r9 = await carrierFactoringRemitUpdate(g9); if (r9 && r9.error) throw new Error(r9.error); lbToast('Saved — LoadBoot confirms these with ' + ((pp9 && pp9.factoring_company) || 'your factor') + ' before the first settlement.', 'success', 'Remit-to saved'); loadFinance(); }
+              catch (e9) { b9.disabled = false; gmsg9.textContent = (e9 && e9.message) || 'Failed.'; } } }, 'Save factor remit-to details'),
+            gmsg9,
+          ]);
+          return h('div', { style: 'margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)' }, [
+            h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' }, [
+              h('div', null, [h('div', { style: 'font-weight:800' }, 'Factor’s remit-to (where brokers and LoadBoot send the money)'),
+                h('div', { class: 'cp-row-s' }, fr9.has_ach ? ((fr9.account_title || '') + ' · ' + (fr9.bank_name || '') + ' ····' + (fr9.account_last4 || '') + (fr9.remit_verified === false ? ' · ⏳ LoadBoot is confirming these with the factor' : fr9.remit_verified ? ' · ✅ confirmed' : '')) : (fr9.remit_to ? 'On file: ' + fr9.remit_to + ' (mailing address only — no ACH yet)' : 'Not on file yet'))]),
+              !open9 ? h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { formHost9.style.display = formHost9.style.display === 'none' ? '' : 'none'; } }, 'Update') : null,
+            ].filter(Boolean)),
+            !fr9.has_ach ? h('div', { style: 'margin-top:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:11px;padding:9px 12px;color:#fcd9a2;line-height:1.5;font-size:.86rem' }, 'Action needed: your factor’s ACH details are missing, so settlements cannot be paid electronically. Fill them in below (2 minutes).') : null,
+            formHost9,
+          ].filter(Boolean));
+        })() : null;
         const releaseRow9 = on9 ? h('div', { style: 'margin-top:10px' }, [
           h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, 'Leaving your factor? Upload their signed RELEASE LETTER under Documents → Factoring NOA, then tap below — until the release, brokers must keep paying the factor.'),
           h('button', { class: 'cp-btn-ghost', style: 'margin-top:7px', onClick: async (ev9) => { const b9 = ev9.currentTarget; b9.disabled = true;
@@ -5878,7 +5945,7 @@ function tripStepper(status) {
             h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + chip9[0] }, (on9 ? ((pp9 && pp9.factoring_company) || 'Factoring') + ' · ' : '') + st9.toUpperCase()),
           ]),
           h('div', { class: 'cp-row-s', style: 'margin-top:6px;line-height:1.65' }, chip9[1]),
-          form9, brokerList9, releaseRow9,
+          form9, remitRow9, brokerList9, releaseRow9,
         ].filter(Boolean)));
       })();
       return host9;

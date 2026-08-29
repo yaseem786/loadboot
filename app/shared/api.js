@@ -218,6 +218,8 @@ export const paymentProfilesQueue = (status) => rpc('cc_payment_profiles_queue',
 export const verifyPaymentProfile = (org, ok, note) => rpc('cc_verify_payment_profile', { p_org: org, p_ok: ok, p_note: note ?? null });
 export const carrierPaymentProfile = (org) => rpc('cc_carrier_payment_profile', { p_org: org });
 export const carrierFactoringSet = (p) => rpc('carrier_factoring_set', { p });
+// bl_fin_0299 — complete/update the FACTOR's remit-to (ACH) after the NOA is verified; keeps NOA status, flags for staff
+export const carrierFactoringRemitUpdate = (p) => rpc('carrier_factoring_remit_update', { p });
 export const ccFactoringVerify = (org, ok, note) => rpc('cc_factoring_verify', { p_org: org, p_ok: ok, p_note: note ?? null });
 export const ccOnboardingRemind = (org, doc) => rpc('cc_onboarding_remind', { p_org: org, p_doc: doc ?? null });
 export const ccOnboardingReminderStatus = (org) => rpc('cc_onboarding_reminder_status', { p_org: org });

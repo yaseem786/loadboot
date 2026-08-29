@@ -17,6 +17,48 @@ export function humanizeError(e) {
   return 'Something went wrong. Please try again.';
 }
 
+/* ---------------------------------------------------------------------------
+   rpcMessage(e) — 29 Aug 2026.
+   The database raises a small set of NAMED codes (LB001…LB020) and every one of
+   them already carries a sentence written for the carrier, not for a developer.
+   humanizeError() above deliberately flattens unknown errors so no SQL leaks out;
+   the side effect was that these good messages were flattened too — a carrier
+   pressed Save and got 'That value is not allowed.', or nothing they understood.
+   rpcMessage keeps the server's own wording for the codes we own, and only falls
+   back to humanizeError for anything unrecognised. Additive: humanizeError is
+   untouched, so no existing call site changes behaviour.
+--------------------------------------------------------------------------- */
+export const LB_CODE_TITLES = {
+  LB001: 'Not on your insurance',
+  LB002: 'VIN required',
+  LB003: 'Check the payload',
+  LB004: 'Certificate of insurance needed first',
+  LB010: 'W-9 needs a change',
+  LB011: 'W-9 needs a change',
+  LB012: 'W-9 needs a change',
+  LB013: 'W-9 needs a change',
+  LB014: 'Check your profile',
+  LB015: 'Check your profile',
+  LB016: 'Compliance blocked this',
+  LB020: 'Account cannot be reopened',
+  '22023': 'Check what you typed',
+  '42501': 'Not allowed on this account',
+};
+
+export function rpcMessage(e) {
+  if (!e) return 'Something went wrong.';
+  const code = e.code ? String(e.code) : '';
+  const msg = (e.message || '').trim();
+  // Codes we own: the server sentence IS the carrier-facing sentence.
+  if (msg && (/^LB\d{3}$/.test(code) || code === '22023')) return msg;
+  return humanizeError(e);
+}
+
+export function rpcTitle(e, fallback) {
+  const code = e && e.code ? String(e.code) : '';
+  return LB_CODE_TITLES[code] || fallback || 'Could not save';
+}
+
 export function toast(message, kind = 'info') {
   let host = document.getElementById('lb-toasts');
   if (!host) {
@@ -33,4 +75,4 @@ export function toast(message, kind = 'info') {
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 4200);
 }
 
-export default { humanizeError, toast };
+export default { humanizeError, rpcMessage, rpcTitle, LB_CODE_TITLES, toast };
