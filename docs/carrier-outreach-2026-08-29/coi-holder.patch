@@ -1,0 +1,48 @@
+--- /mnt/user-data/uploads/loadboot/app/carrier/app.js	2026-08-29 17:00:22.992775340 +0000
++++ app.js	2026-08-29 17:03:50.891590150 +0000
+@@ -6562,6 +6562,32 @@
+     } }, '📋 Copy ready-made message for your insurance agent'));
+     return h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;margin:10px 0;background:rgba(8,131,247,.05)' }, kids9);
+   }
++
++  // ── The one box that sends most certificates back ────────────────────────────
++  // 29 Aug 2026 audit: 7 of the 11 open carrier blockers were the same thing — an
++  // ACORD 25 whose CERTIFICATE HOLDER named the carrier itself, or DAT, or a policy
++  // monitoring service, never LoadBoot. The coverage was almost always already right.
++  // The guide card that explains this only appears once the carrier opens the upload
++  // dropdown — which is AFTER he has already phoned his agent and been sent the wrong
++  // certificate. So the holder box now sits on the requirement row itself, copy-ready,
++  // at the moment he first reads that a COI is needed.
++  function lbCoiHolderBlock(nm9) {
++    const copyBtn9 = (label9, text9, done9) => h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0 8px 6px 0', onClick: async (ev9) => {
++      const b9 = ev9.currentTarget;
++      try { await navigator.clipboard.writeText(text9()); b9.textContent = done9; } catch (_) { alert(text9()); }
++      setTimeout(() => { b9.textContent = label9; }, 3000);
++    } }, label9);
++    return h('div', { class: 'cp-card', 'data-lb': 'coi-holder', style: 'border-left:4px solid #FC5305;margin:8px 0 14px;background:rgba(252,83,5,.06)' }, [
++      h('div', { class: 'cp-row-t', style: 'font-size:.92rem' }, '\u26a0 Before you call your agent \u2014 the box that sends most certificates back'),
++      h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'Your coverage is usually already right. What gets a certificate rejected is the CERTIFICATE HOLDER box naming your own company, your factor, or a monitoring service. It has to read exactly this:'),
++      h('div', { style: 'margin:9px 0;padding:11px 13px;border:1px dashed rgba(252,83,5,.55);border-radius:10px;font-weight:800;line-height:1.6;white-space:pre-line;font-size:.9rem' }, LB_COI_HOLDER_BLOCK),
++      h('div', { class: 'cp-row-s', style: 'margin-bottom:9px' }, 'Certificate holder ONLY \u2014 not additional insured. That means no endorsement and no extra premium, and it takes an agent about two minutes. While they have the file open, ask for $1,000,000 commercial auto liability, $100,000 motor truck cargo, and every truck scheduled with its VIN \u2014 we can only dispatch a truck the policy actually names.'),
++      h('div', null, [
++        copyBtn9('\ud83d\udccb Copy the holder address', () => LB_COI_HOLDER_BLOCK, '\u2713 Copied'),
++        copyBtn9('\u2709 Copy the whole message for your agent', () => LB_DOC_GUIDE.insurance.script(nm9), '\u2713 Copied \u2014 paste it into a text or email'),
++      ]),
++    ]);
++  }
+   async function lbAiPrecheck(f9, t9) {
+     try {
+       if (!['insurance', 'authority', 'w9', 'noa'].includes(t9)) return null;
+@@ -7256,7 +7282,11 @@
+           // deep-link anchor: #documents/w9, /agreement, /insurance, /authority, /bank land on THIS row.
+           try { const _b9 = (act && act.tagName === 'BUTTON') ? act : (act && act.querySelector ? act.querySelector('button') : null); const _k9 = r.doc_type || dt0; if (_b9 && _k9) _b9.setAttribute('data-lb', 'docbtn-' + _k9); } catch (_) {}
+           const why = bad && r.note ? h('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28)' }, [h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#f87171;margin-bottom:3px' }, 'Why it was ' + (st === 'expired' ? 'expired' : 'rejected') + (r.reviewed_at ? ' \u00b7 ' + new Date(r.reviewed_at).toLocaleDateString() : '')), h('div', { class: 'cp-row-s', style: 'color:#fca5a5;white-space:pre-wrap' }, r.note)]) : null;
+-          return h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') : (r.mandatory ? 'Required \u2014 not on file' : 'Optional')), why].filter(Boolean)), act]); })]));
++          const row9 = h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') : (r.mandatory ? 'Required \u2014 not on file' : 'Optional')), why].filter(Boolean)), act]);
++          // The holder block rides with the row while the item is still open — not once it is
++          // approved or already in review, where it would only be noise.
++          const isCoi9 = (r.doc_type === 'insurance' || r.doc_type === 'hazmat_coi' || /certificate of insurance/i.test(r.name || ''));
++          return (isCoi9 && !okd && !rev) ? h('div', null, [row9, lbCoiHolderBlock(ov && ov.carrier)]) : row9; })]));
+         const hazLeft = rs.filter((r) => /hazmat|phmsa/i.test(r.name || '') && ['missing', 'expired', 'rejected'].indexOf(String(r.status || 'missing').toLowerCase()) >= 0);
+         mount(hazHost, (f.hazmat && hazLeft.length) ? h('div', { class: 'cp-ann warning', style: 'margin:8px 0' }, [h('div', { class: 'cp-ann-t' }, 'Hazmat \u2014 ' + hazLeft.length + ' document(s) still needed'), h('div', { class: 'cp-ann-b' }, hazLeft.map((r) => r.name).join(' \u00b7 ') + ' \u2014 mandatory before hazmat loads can be booked.')]) : h('span'));
+       } catch (_) {} }; loadReqs();

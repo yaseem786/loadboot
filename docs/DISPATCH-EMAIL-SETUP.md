@@ -1,56 +1,87 @@
-# dispatch@loadboot.com for Abdul — the correct setup (checked against your live DNS, 29 Aug 2026)
+# Abdul's LoadBoot e-mail — free, his own credentials, receive + send (via Resend)
 
-## What your domain actually has right now
+**Decided 29 Aug 2026.** No spare Namecheap mailbox slot · must stay free · AWS is not an option · Abdul must have his own login and be able to receive *and* send · he must never be able to read dispatch@ (LoadBoot's own mailbox: billing, factoring, insurance).
 
-| Record | Value | Meaning |
-|---|---|---|
-| NS | deborah/beau.ns.cloudflare.com | DNS is on Cloudflare ✔ |
-| MX | mx1/mx2.privateemail.com | **Mail is hosted at Namecheap Private Email** — not Cloudflare, not Google |
-| SPF | `v=spf1 include:spf.privateemail.com -all` | Only Namecheap may send as @loadboot.com (Resend/SES use the `send.` sub-domain — fine) |
-| DMARC | `p=quarantine; adkim=r; aspf=r` | Anything not aligned to loadboot.com lands in **spam** |
+## The shape of the solution
+| | How |
+|---|---|
+| **Address** | `abdul@loadboot.com` — an alias of the dispatch@ mailbox (free, already created) |
+| **Receiving** | Namecheap filter rule "Abdul — alias mail": *Any recipient contains abdul@loadboot.com* → **Forward to** his Gmail + **Keep** a copy. Already built and tested. |
+| **Sending** | Resend SMTP with **his own API key**. Resend has **no inbox and no IMAP** — the credential physically cannot read any mailbox. |
+| **Revoke** | Delete that one API key in Resend. Sending stops instantly; nothing else is affected. |
 
-**So do NOT turn on Cloudflare Email Routing.** Enabling it makes Cloudflare replace your MX records with its own — every existing mailbox on privateemail.com (hello@, and dispatch@ if it already exists) would stop receiving mail. Cloudflare Routing is only for domains with no mailbox provider.
+Why not the other routes: 2FA on dispatch@ does not help — the App password it forces for mail clients works for **IMAP/POP3/SMTP** (Namecheap KB 10816) with no per-protocol scope, so he could read the whole mailbox. A new Namecheap mailbox costs $8.88/yr (Launch). Cloudflare Email Routing or Zoho on loadboot.com would replace the MX records and kill hello@, billing@ and dispatch@. Gmail's own SMTP fails DMARC (`p=quarantine`).
 
-Also: "Abdul sends from his Gmail with *Send as dispatch@loadboot.com* over Gmail's SMTP" **fails DMARC** — the envelope and DKIM are gmail.com, not loadboot.com, and `p=quarantine` sends it to spam. The fix is to send through Namecheap's SMTP with a real dispatch@ login — then SPF + DKIM align and it lands in the inbox.
+---
 
-## The setup (free if dispatch@ is already a mailbox; otherwise one extra mailbox on your Namecheap plan)
+## Steps
 
-### Step 1 — Namecheap: make sure dispatch@loadboot.com is a real mailbox
-1. namecheap.com → Account → **Dashboard → Private Email** (or Domain List → loadboot.com → Manage → Private Email).
-2. If `dispatch@loadboot.com` is listed as a **mailbox** → open it, note/reset its password. Done, go to Step 2.
-3. If it is only an **alias** (or does not exist) → **Add mailbox** → `dispatch` → set a strong password. (An alias can receive but cannot log in to SMTP, and Abdul needs SMTP to send aligned mail.) If your plan has no free seat, "Add mailbox" shows the price for one more seat — that is the only cost in this whole setup.
-4. Do **not** give Abdul this password directly — you will paste it into his Gmail once (Step 3) so the credential lives in the app, not in a WhatsApp chat.
+### 1. Create Abdul's API key (2 min, you)
+1. resend.com → log in → **API Keys** → **Create API Key**.
+2. Name: `abdul-dispatch`
+3. Permission: **Sending access**
+4. Domain: **loadboot.com** (not "all domains").
+5. **Copy the key now** — it is shown only once.
 
-### Step 2 — Namecheap webmail: forward a copy to both of you
-1. privateemail.com → log in as **dispatch@loadboot.com**.
-2. Settings (gear) → **Mail → Filters/Forwarding** (label varies: "Auto Forward" / "Forwarding").
-3. Add: forward to `20190myaseen@gmail.com` **and** `abdulrafeh85@gmail.com` — tick **keep a copy in the mailbox**. Save.
-4. Send a test from any address to dispatch@loadboot.com → both Gmail inboxes should receive it within a minute.
+### 2. Give Abdul two values
+- SMTP username: `resend`
+- SMTP password: the API key
 
-### Step 3 — Abdul's Gmail: "Send mail as" dispatch@loadboot.com (5 minutes, do it with him on a call)
-1. Gmail (desktop) → gear → **See all settings → Accounts and Import**.
+Send them on a call or through a password-manager link — not in a plain WhatsApp message. These open no mailbox.
+
+### 3. His Gmail — "Send mail as" (5 min, do it together)
+1. Gmail on desktop → gear → **See all settings** → **Accounts and Import**.
 2. **Send mail as → Add another email address.**
-3. Name: `LoadBoot Dispatch` · Email: `dispatch@loadboot.com` · **untick "Treat as an alias"** → Next.
-4. SMTP server: `mail.privateemail.com` · Port **465** · Username: `dispatch@loadboot.com` · Password: the mailbox password · **SSL** → Add account.
-5. Gmail e-mails a confirmation code to dispatch@loadboot.com → it arrives in Abdul's Gmail via the forward from Step 2 → paste the code.
-6. Back in Accounts and Import: set **"When replying to a message: reply from the same address the message was sent to"** and make dispatch@loadboot.com the **default** so every new mail he writes goes out as LoadBoot.
-7. Test: he sends a mail from Gmail as dispatch@ to your Gmail → open it → ⋮ → **Show original** → you want `SPF: PASS`, `DKIM: PASS` (d=loadboot.com or privateemail), `DMARC: PASS`.
+3. Name: `Abdul Rafeh — LoadBoot Dispatch` · Email: `abdul@loadboot.com` · **untick "Treat as an alias"** → Next.
+4. SMTP server: `smtp.resend.com` · Port: **465** · Username: `resend` · Password: the API key · **SSL** → **Add Account**.
+5. Gmail sends a confirmation code to abdul@loadboot.com → the forward rule delivers it to his Gmail → paste the code.
+6. Back in **Accounts and Import**: make `abdul@loadboot.com` the **default** address, and select **"Reply from the same address the message was sent to."**
 
-### Step 4 — LoadBoot side (already done today)
-- Every staff notification (RC to approve, exceptions, cancellations) already e-mails **dispatch@loadboot.com** → now both of you see them.
-- The carrier intro e-mail and the carrier card show **dispatch@loadboot.com** (and your US WhatsApp once you set it), never Abdul's number. Both values live in **CC → Settings → `dispatch.contact_email` / `dispatch.whatsapp`** — change them there any time, no code.
+### 4. Verify (1 min)
+He mails you → open it → ⋮ → **Show original**. Expect:
+- `DKIM: PASS` with `d=loadboot.com`
+- `DMARC: PASS`
+- SPF may show fail/neutral — that is normal and harmless here: the return-path belongs to Resend, and DMARC passes on DKIM alignment. This is exactly how LoadBoot's ~600 system e-mails a day already go out.
 
-### Step 5 — Signature for Abdul (Gmail → Settings → General → Signature, attach to dispatch@)
+### 5. Signature (his Gmail → Settings → General → Signature, attached to abdul@)
 ```
 Abdul Rafeh · LoadBoot Dispatch
-dispatch@loadboot.com · WhatsApp +1 (xxx) xxx-xxxx
-Dispatching for [Carrier name], MC [number] — rate confirmations to this address, please.
+abdul@loadboot.com
+Dispatching for [Carrier name], MC [number]
 ```
 
-## Rules for Abdul on this mailbox
-- Broker set-ups, rate confirmations, check-call e-mails: from dispatch@ only. Never from his Gmail identity.
-- Never e-mail a carrier's bank letter / voided check — those requests come to you.
-- Anything from a factoring company, insurance agent, or a broker's accounting → forward to you, do not answer.
+---
 
-## If you ever want a second seat later
-A second mailbox in Namecheap Private Email is cheaper than moving to Zoho/Google, and keeps SPF/DKIM exactly as they are today. Zoho Mail Free would require changing MX away from Namecheap — same breakage risk as Cloudflare Routing.
+## The one caveat, and how it is controlled
+A Resend key with sending access to `loadboot.com` can technically put **any** `@loadboot.com` address in the From field — including billing@ or yours. Controls:
+
+1. **Every send is logged.** Resend → **Emails** shows From, To, subject and status for each message sent with that key. Full audit trail, better than a normal mailbox.
+2. **Instant revocation** — delete the key.
+3. **Written rule for Abdul** (below).
+4. If you ever want a hard technical lock: add `dispatch.loadboot.com` as a second domain in Resend and issue a key scoped to that subdomain — then he can only send as `abdul@dispatch.loadboot.com`. Cleaner security, longer address; not needed for a 10-day trial.
+
+Quota: LoadBoot already sends ~600 e-mails/day through this account, so it is on a paid plan; Abdul's ~20–40/day is noise. (Resend's free tier is 100/day, 3,000/month.)
+
+---
+
+## Rules for Abdul
+- Every broker, carrier and rate-confirmation e-mail goes out from **abdul@loadboot.com** — never his personal Gmail identity, never any other loadboot.com address.
+- **CC dispatch@loadboot.com on every broker e-mail** — that is LoadBoot's record.
+- Bank details, voided checks, factoring, insurance: never answer — forward to Yaseen.
+- One channel otherwise: the WhatsApp group and the portal thread.
+
+## Message to send him
+> Your LoadBoot work e-mail is **abdul@loadboot.com**. Mail sent to it reaches your Gmail, and from today everything you write for LoadBoot goes out from that address. Use it for every broker, carrier and rate-confirmation e-mail — never your personal Gmail.
+>
+> We'll set it up together on a call, 5 minutes in your Gmail settings. I'll give you the mail-server username and password then.
+>
+> Rules: **CC dispatch@loadboot.com on every broker e-mail** — that's our record. Anything about bank details, voided checks, factoring or insurance: don't reply, forward it to me. Signature:
+> `Abdul Rafeh · LoadBoot Dispatch · abdul@loadboot.com · dispatching for [Carrier], MC [number]`
+
+## Sources
+- Resend — SMTP settings (host, ports, username `resend`, password = API key; send-only, no inbox): https://resend.com/docs/send-with-smtp
+- Resend — pricing / free tier: https://resend.com/docs/knowledge-base/what-is-resend-pricing
+- Namecheap — App passwords cover IMAP/POP3/SMTP with no scope: https://www.namecheap.com/support/knowledgebase/article.aspx/10816/2178/how-to-use-app-passwords-for-private-email/
+- Namecheap — 2FA (webmail only): https://www.namecheap.com/support/knowledgebase/article.aspx/10782/2306/new-how-to-set-up-twofactor-authentication-2fa-in-private-email/
+- Namecheap — aliases, send + receive: https://www.namecheap.com/support/knowledgebase/article.aspx/10791/2306/new-how-to-create-an-alias-for-namecheap-private-email/
+- Namecheap — additional mailbox prices: https://www.namecheap.com/support/knowledgebase/article.aspx/9185/2215/prices-for-additional-mailboxes-for-namecheap-private-email/

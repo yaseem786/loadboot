@@ -272,18 +272,6 @@ export function renderCarrier360(host, orgId) {
         el('thead', null, el('tr', null, [el('th', null, 'Type'), el('th', null, 'File'), el('th', null, 'Status'), el('th', null, 'Added')])),
         docsBody,
       ]) : el('div', { class: 'cc-sub' }, 'No documents on file.'),
-      // 29 Aug 2026 — the staff upload card only existed inside the Documents review queue,
-      // so a certificate that arrived by email for a carrier with nothing pending had nowhere
-      // to go and this page showed no way to replace one. documents.carrier_id is the OWNER's
-      // user id, not the org id, so it is taken from a document already on the file.
-      (() => {
-        const owner9 = (docs.find((x9) => x9 && x9.carrier_id) || {}).carrier_id || null;
-        if (!owner9) {
-          return el('div', { class: 'cc-sub', style: 'margin-top:12px' },
-            'Nothing on file yet — the first document has to come from the carrier\u2019s portal or the Documents review queue.');
-        }
-        return el('div', { style: 'margin-top:14px' }, staffUploadCard({ id: owner9, name: d.name }, load));
-      })(),
     ]);
 
     const drivers = d.drivers || [];
@@ -777,7 +765,17 @@ export function renderCarrier360(host, orgId) {
                 ? el('img', { src: url, style: 'width:100%;border:1px solid #e8edf3;border-radius:12px' })
                 : el('iframe', { src: url, style: 'width:100%;height:70vh;border:1px solid #e8edf3;border-radius:12px;background:#fff' }),
             ]);
-          } catch (e) { alert(humanizeError(e)); }
+          } catch (e) {
+            // 29 Aug 2026: this used to show only humanizeError()'s generic sentence, so a
+            // failure here ("You do not have permission to do that.") named neither the step
+            // that failed nor the code behind it. Two different things can fail — the RPC
+            // (cc_document_file, permission-gated) and the storage signature — and the fix
+            // is different for each, so say which one and carry the code through.
+            try { console.error('[carrier360] view document failed', r.key, r.document_id, e && e.code, e && e.message); } catch (_) {}
+            const code9 = (e && e.code) ? ' [' + e.code + ']' : '';
+            const raw9 = (e && e.message) ? ' — ' + e.message : '';
+            alert(humanizeError(e) + code9 + raw9 + '\n\nDocument ' + r.document_id + ' (' + r.key + ').');
+          }
           b0.disabled = false;
         } }, [icon('doc',15),' View']) : '';
         const verifyBtn = can('compliance.verify') ? el('button', { class: 'cc-chip-btn', onClick: () => {
@@ -885,7 +883,22 @@ export function renderCarrier360(host, orgId) {
           el('span', { class: 'cc-sub', style: 'font-size:.76rem' }, st9 ? ('Last manual reminder: ' + f9(st9.last_manual) + (st9.last_auto ? ' · last auto: ' + f9(st9.last_auto) : '') + ' · auto engine runs on cron — these buttons are the extra human push') : ''),
         ].filter(Boolean)));
       })();
-      mount(compCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding & compliance'), el('span', { class: 'cc-pill cc-pill-' + (allOk ? 'green' : 'amber') }, allOk ? 'all mandatory valid' : 'action needed')]), pipeline, remindWrap9, el('div', null, rows.length ? rows : el('div', { class: 'cc-sub' }, 'No requirements found.')), gate]);
+      // 29 Aug 2026 — until now there was NO way to put a document on a carrier's file from
+      // this page. The staff upload card existed only inside the Documents review queue, and
+      // only against an already-pending row, so a certificate a carrier emailed us had nowhere
+      // to go. It belongs here, under the requirements it satisfies.
+      // documents.carrier_id is the OWNER's user id, not the org id, so take it from a
+      // document already on the file rather than guessing.
+      const upload9 = (() => {
+        const owner9 = (docs.find((x9) => x9 && x9.carrier_id) || {}).carrier_id || null;
+        if (!owner9) {
+          return el('div', { class: 'cc-sub', style: 'margin-top:14px' },
+            'No document on file yet, so there is nothing to attach a staff upload to. The first one has to come from the carrier\u2019s own portal.');
+        }
+        return el('div', { style: 'margin-top:16px;padding-top:14px;border-top:1px solid #eef2f7' },
+          staffUploadCard({ id: owner9, name: d.name }, () => { load(); }));
+      })();
+      mount(compCard, [el('div', { class: 'cc-card-head' }, [el('h4', { class: 'cc-card-title' }, 'Onboarding & compliance'), el('span', { class: 'cc-pill cc-pill-' + (allOk ? 'green' : 'amber') }, allOk ? 'all mandatory valid' : 'action needed')]), pipeline, remindWrap9, el('div', null, rows.length ? rows : el('div', { class: 'cc-sub' }, 'No requirements found.')), gate, upload9]);
     }
     loadComp();
 

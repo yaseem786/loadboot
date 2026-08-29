@@ -14,6 +14,14 @@ export function humanizeError(e) {
     return 'That value is not allowed.';
   if (msg.indexOf('failed to fetch') >= 0 || msg.indexOf('networkerror') >= 0)
     return 'Connection required — this action needs to reach the server.';
+  // 29 Aug 2026: an unrecognised failure used to end here as a bare sentence naming
+  // nothing, and it cost a whole afternoon. Carrier directory -> Approve was dying on
+  // SQLSTATE 22P02 (bl_fix_0304) and the screen only ever said "Something went wrong",
+  // so there was no thread to pull. A SQLSTATE is five characters of standard Postgres
+  // vocabulary — it is not SQL text, a stack trace or an internal identifier, so it does
+  // not breach what this function exists to prevent, and it turns an unreproducible
+  // report into a one-line diagnosis.
+  if (e.code) return 'Something went wrong. Please try again. (code ' + e.code + ')';
   return 'Something went wrong. Please try again.';
 }
 

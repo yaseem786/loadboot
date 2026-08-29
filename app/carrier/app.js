@@ -66,8 +66,6 @@ if (location.pathname.indexOf('/app/agent/') === 0) window.__LB_AGENT = 1;
 try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' : '/app/carrier/'); } catch (_) {}
 
 // inDrive-style theme system — Off (light) / On (dark) / System. Official palette only.
-// bl_disp_0302: '?ack=<assignment>' from the "meet your dispatcher" e-mail survives the in-app login → dispatcher-card.js acknowledges it.
-try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) sessionStorage.setItem('lb_disp_ack', _ack0); } catch (_) {}
 const THEME_KEY = 'lb_theme';
 function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
 function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
@@ -5147,7 +5145,21 @@ function tripStepper(status) {
     // once, here, while the carrier is already thinking about the vehicle. The VIN
     // is matched LIVE against the certificate of insurance as they type, so nobody
     // fills in a whole form only to be refused at Save.
+    // 29 Aug 2026 — every call site of truckForm (+ Add truck, Edit, the two maintenance
+    // banners, the unknown-profile prompt) called it bare from an onClick. If building the
+    // form threw, the modal simply never opened: no dialog, no toast, no console entry, and
+    // nothing sent to the server — indistinguishable from a dead button. This wrapper makes
+    // that failure speak. _truckFormInner is the original function, untouched.
     function truckForm(t) {
+      try { return _truckFormInner(t); }
+      catch (eForm9) {
+        try { console.error('[fleet] could not build the truck form', eForm9); } catch (_) {}
+        lbToast('The truck form could not open' + ((eForm9 && eForm9.message) ? ' (' + eForm9.message + ')' : '')
+          + '. Nothing was lost — tell your dispatcher and we will fix it.', 'urgent', 'Form did not open');
+        return null;
+      }
+    }
+    function _truckFormInner(t) {
       const secStyle = 'font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin:16px 0 7px;padding-top:12px;border-top:1px solid rgba(148,163,184,.16)';
       const sec = (txt, sub) => h('div', null, [
         h('div', { style: secStyle }, txt),
@@ -5223,6 +5235,19 @@ function tripStepper(status) {
       // on ANY load board. Advisory, never blocking: the save still works, but the
       // gaps are named while the carrier is right here with the form open.
       const postReady = h('div', { class: 'cp-row-s', style: 'min-height:1.1em;margin:2px 0 4px' });
+      // 29 Aug 2026 — MOVED UP. These three were declared ~20 lines BELOW, yet
+      // readyCheck's listener wiring on the next few lines puts dZip/dCity/dState in an
+      // array at build time. `const` is not hoisted into scope like `var`: touching it
+      // before its declaration is a temporal-dead-zone ReferenceError, thrown while the
+      // form was still being built. openModal was never reached, so no dialog appeared,
+      // no toast fired and nothing was sent — the "+ Add truck" button looked dead.
+      // Confirmed by running the real portal headless against a stubbed client:
+      //   ReferenceError: Cannot access 'dZip' before initialization
+      // Declaring them before first use is the whole fix; nothing else changes.
+      const dCity = h('input', { class: 'cp-in', placeholder: 'Home city', value: (t && t.domicile_city) || '' });
+      const dState = h('input', { class: 'cp-in', placeholder: 'ST', maxlength: '2', value: (t && t.domicile_state) || '' });
+      const dZip = h('input', { class: 'cp-in', placeholder: 'ZIP', value: (t && t.domicile_zip) || '' });
+
       const readyCheck = () => {
         const missing = [];
         if (!numOf(payload)) missing.push('payload');
@@ -5251,9 +5276,6 @@ function tripStepper(status) {
       const team = check('Team driven', t && t.team_driven);
 
       // --- where it runs ---
-      const dCity = h('input', { class: 'cp-in', placeholder: 'Home city', value: (t && t.domicile_city) || '' });
-      const dState = h('input', { class: 'cp-in', placeholder: 'ST', maxlength: '2', value: (t && t.domicile_state) || '' });
-      const dZip = h('input', { class: 'cp-in', placeholder: 'ZIP', value: (t && t.domicile_zip) || '' });
       const radius = numIn('Max miles from home', t && t.max_radius_miles);
       const minRpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', min: '0', placeholder: 'Floor rate $/mi', value: (t && t.min_rpm) || '' });
       const homeTime = h('select', { class: 'cp-in' }, [['', 'Home time…'], ['otr', 'OTR — out as long as it pays'], ['2_weeks', 'Home every 2 weeks'], ['weekly', 'Home weekly'], ['weekends', 'Home on weekends'], ['regional_daily', 'Regional — home most nights'], ['local', 'Local only — home daily']].map(o => h('option', { value: o[0], selected: t && t.home_time === o[0] ? 'selected' : null }, o[1])));
@@ -5307,8 +5329,12 @@ function tripStepper(status) {
             (vins.length ? 'It currently lists ' + (vins.length === 1 ? 'one truck: ' : vins.length + ' trucks: ') + vins.join(', ') + '. ' : '')
             + 'Ask your agent to add this VIN to the policy schedule — it is free — then upload the updated certificate under Documents. We verify it the same day.'));
         } else if (r.state === 'no_coi') {
-          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ No certificate of insurance on file yet',
-            'You can save the truck now, but nothing can be dispatched until we have your COI. Upload it under Documents.'));
+          // 29 Aug 2026: this used to say 'You can save the truck now'. It cannot —
+          // the fleet_truck_coi_gate trigger refuses the insert with LB004 until a
+          // verified COI is on file. Saying so here stops the carrier filling in a
+          // whole form for nothing.
+          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ We need your certificate of insurance first',
+            'A truck cannot be added until we have your COI on file and verified. Upload it on the Documents page — we review it the same working day, then this truck saves in one tap.'));
         }
         if (r.expired) {
           coiInfo.appendChild(h('div', { style: 'color:#f87171;font-weight:700;margin-top:5px' }, '⚠ The certificate we hold expired on ' + r.expiry_date + ' — send the renewal so nothing stops mid-load.'));
@@ -5323,6 +5349,15 @@ function tripStepper(status) {
 
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         const btn9 = ev.currentTarget;
+        // 29 Aug 2026 — OUTER GUARD. Everything below used to run unguarded: the field
+        // validation, the NHTSA VIN decode and the certificate-of-insurance lookup all sit
+        // BEFORE the try that wraps the save call. A throw in any of them — one undefined
+        // field, one changed shape — killed the handler with no toast, no console entry and
+        // no request, so the button looked dead while the server had never been asked
+        // anything. Production audit confirms it: on the account being tested there is not a
+        // single carrier.truck.upsert entry, so the click was never reaching the database.
+        // Nothing in this form is allowed to fail in silence again.
+        try {
         if (!unit.value.trim()) { alert('Unit number is required.'); return; }
         if (!lbFutureDate(insp, 'Inspection expiry')) return;
         const ww = numOf(wWell), cw = numOf(cWid);
@@ -5383,17 +5418,30 @@ function tripStepper(status) {
           renderTrucks();
           try { closeT9(); } catch (_) {}
           lbToast('🚛 Truck saved' + (vinInfo.textContent.indexOf('✓') === 0 ? ' — VIN verified with U.S. DOT' : '')
-            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'ok', 'Fleet updated');
+            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'success', 'Fleet updated');
         }
         catch (e) {
-          btn9.disabled = false; btn9.textContent = 'Save';
-          // The insurance certificate decides which trucks we may dispatch. LB001 =
-          // this VIN is not on it; LB002 = no usable VIN was given.
+          // 29 Aug 2026 — Add truck used to look like it did nothing. Every code the
+          // server can raise on this path is now named and shown:
+          //   LB001 truck VIN not on the COI  (or a bad TRAILER vin - different message)
+          //   LB002 no usable VIN given
+          //   LB003 payload above the chassis GVWR
+          //   LB004 no verified COI on file at all - the fleet_truck_coi_gate trigger
+          //   22023 a value the RPC rejects (unit number, wheel wells, trailer length)
+          //   42501 not a carrier account / not your truck
+          // Anything else still shows its own sentence rather than being swallowed.
+          try { console.error('[fleet] save truck failed', e && e.code, e && e.message); } catch (_) {}
           if (e && e.code === 'LB002') {
             lbToast('Every truck needs its full 17-character VIN — that is what your insurance certificate lists, and what brokers check before they release a load.', 'urgent', 'VIN required');
             return;
           }
           if (e && e.code === 'LB001') {
+            // The same code also guards the TRAILER vin; that message is about the
+            // trailer plate, not the insurance schedule, so pass it through as-is.
+            if (/trailer/i.test((e && e.message) || '')) {
+              lbToast(e.message, 'urgent', 'Check the trailer VIN');
+              return;
+            }
             let listed = '';
             try {
               const cov9 = await coiVehicles();
@@ -5406,7 +5454,33 @@ function tripStepper(status) {
             return;
           }
           if (e && e.code === 'LB003') { lbToast((e && e.message) || 'That payload does not fit this chassis.', 'urgent', 'Check the payload'); return; }
-          lbToast((e && e.message) || 'Could not save.', 'urgent', 'Truck not saved');
+          if (e && e.code === 'LB004') {
+            lbToast((e && e.message)
+              || 'We need your certificate of insurance on file and verified before a truck can be added. Upload the COI on your Documents page and we will review it, usually the same working day.',
+              'urgent', 'Certificate of insurance needed first');
+            return;
+          }
+          if (e && e.code === '22023') { lbToast((e && e.message) || 'One of the values on this form is not allowed.', 'urgent', 'Check what you typed'); return; }
+          if (e && e.code === '42501') { lbToast('This account is not allowed to change that truck. If you think that is wrong, tell your dispatcher.', 'urgent', 'Not allowed on this account'); return; }
+          const net9 = /failed to fetch|networkerror|load failed/i.test((e && e.message) || '');
+          if (net9) { lbToast('The truck was NOT saved — the app could not reach the server. Check your signal and press Save again.', 'urgent', 'No connection'); return; }
+          lbToast(((e && e.message) || 'Could not save.') + (e && e.code ? ' (code ' + e.code + ')' : ''), 'urgent', 'Truck not saved');
+        }
+        finally {
+          // Whatever happened above — a handled code, an unhandled one, or a throw
+          // inside the catch itself — the carrier gets a live button back. A stuck
+          // 'Saving…' button is what made this look broken rather than blocked.
+          btn9.disabled = false; btn9.textContent = 'Save truck';
+        }
+        } catch (eFatal9) {
+          // The outer guard. If we land here the save never even reached the server.
+          try { console.error('[fleet] truck form crashed before the save', eFatal9); } catch (_) {}
+          lbToast('The form hit a problem before it could save, so nothing was sent. '
+            + ((eFatal9 && eFatal9.message) ? '(' + eFatal9.message + ') ' : '')
+            + 'Please tell your dispatcher what you had typed and we will sort it out.',
+            'urgent', 'Nothing was saved');
+        } finally {
+          btn9.disabled = false; btn9.textContent = 'Save truck';
         }
       } }, 'Save truck');
 
