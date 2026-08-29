@@ -127,5 +127,27 @@ for us, not for them.
 carrierDetail.js gained a `theme` palette and an optional `title: null` for hosts
 that supply their own heading. The Command Center rendering is unchanged.
 
+--------------------------------------------------------------------------
+8. migrations/bl_fix_0304_carrier_status_jsonb_cast.sql  (new)
+   + humanizeError now names the SQLSTATE  (app/shared/errors.js)
+--------------------------------------------------------------------------
+Carrier directory -> open a carrier -> Approve had never worked. Neither had
+"Send back": both call cc_set_carrier_status, which is declared RETURNS jsonb but
+assigns the TEXT result of cc_set_carrier_status_core into a jsonb variable. The
+bare word 'active' is not valid JSON, so every call died on SQLSTATE 22P02 after
+the core had already done its work, and the update rolled back with it.
+
+It stayed hidden because the throw comes from the wrapper (nothing reaches the
+audit log as a refusal) and humanizeError had no 22P02 branch, so the only thing
+anyone ever saw was "Something went wrong. Please try again."
+
+to_jsonb() fixes it; signature and client are unchanged. Applied to staging then
+production and verified on production inside a rolled-back subtransaction:
+22P02 before, PROBE_OK returned="active" after.
+
+errors.js: an unrecognised error now appends its SQLSTATE — "(code 22P02)". Five
+characters of standard Postgres vocabulary, not SQL text or a stack trace, and it
+turns an unreproducible report into a one-line diagnosis.
+
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01GZGjrfFQaaD1xFJ9VriMnd
