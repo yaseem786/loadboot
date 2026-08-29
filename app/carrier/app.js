@@ -5521,42 +5521,10 @@ function tripStepper(status) {
       })();
       return host9;
     })();
-    // 🛰 ELD / TELEMATICS — live webhook ingest (Motive, Samsara, any device that can POST)
-    const eldCard9 = (() => {
-      const host9 = h('div', { class: 'cp-card' }, [cardHead([icon('gps',15),' ELD & telematics'], 'device GPS feeds your trips'), h('div', { class: 'cp-muted' }, 'Loading…')]);
-      let prov9 = 'generic';
-      const paint9 = async (rotate9, apiTok9) => {
-        let d9 = null; try { d9 = await carrierEldSetup(prov9, !!rotate9, apiTok9 || null); } catch (_) { mount(host9, h('span')); return; }
-        mount(host9, [cardHead([icon('gps',15),' ELD & telematics'], 'device GPS feeds your trips'),
-          h('div', { class: 'cp-row-s', style: 'line-height:1.65;margin-bottom:8px' }, 'Point your ELD / telematics webhook (Motive, Samsara, Garmin — anything that can POST a position) at LoadBoot and your trucks track themselves even with the app closed. Positions route to the active trip automatically.'),
-          h('div', { class: 'cp-row-s' }, 'Status: ' + (d9.last_ping_at ? '🟢 last ping ' + new Date(d9.last_ping_at).toLocaleString() : '⚪ no pings yet')),
-          h('div', { style: 'background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.3);border-radius:11px;padding:10px 13px;margin:8px 0;font-family:ui-monospace,Menlo,monospace;font-size:.72rem;line-height:1.8;user-select:all;word-break:break-all' }, d9.webhook || ''),
-          h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
-            h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { try { navigator.clipboard.writeText(String(d9.token || '')); lbToast('Ingest token copied.', 'ok', '🛰 Copied'); } catch (_) {} } }, [icon('clipboard',15),' Copy token']),
-            h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { if (confirm('Rotate the token? The old one stops working immediately.')) paint9(true); } }, '♻ Rotate token'),
-          ]),
-          (() => {
-            const provSel9 = h('select', { class: 'cp-in', style: 'max-width:170px' }, [['generic', 'Generic webhook'], ['samsara', 'Samsara (API token)'], ['motive', 'Motive / KeepTruckin (API key)']].map(([v9, l9]) => h('option', { value: v9, selected: v9 === prov9 ? 'selected' : null }, l9)));
-            const tokIn9 = h('input', { class: 'cp-in', type: 'password', placeholder: 'Provider API token (from their dashboard)', style: 'flex:1;min-width:220px' });
-            provSel9.onchange = () => { prov9 = provSel9.value; };
-            return h('div', { style: 'margin-top:10px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px' }, [
-              h('div', { class: 'cp-row-t', style: 'font-size:.85rem' }, '🔌 Direct provider connection — no webhook setup needed'),
-              h('div', { class: 'cp-row-s', style: 'margin:3px 0 8px;line-height:1.6' }, 'Samsara: Settings → API Tokens → create a read-only token. Motive: Admin → API → generate key. Paste it here — LoadBoot polls your trucks every 5 minutes and feeds the active trip automatically.'),
-              h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [provSel9, tokIn9,
-                h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev9) => { const b9 = ev9.currentTarget;
-                  if (prov9 === 'generic') { lbToast('Pick Samsara or Motive for a direct connection — Generic uses the webhook above.', 'action', '🔌 Provider'); return; }
-                  if (!tokIn9.value.trim()) { lbToast('Paste the API token from your provider dashboard first.', 'urgent', '🔌 Token'); return; }
-                  b9.disabled = true; try { await paint9(false, tokIn9.value.trim()); lbToast('Connected — polling starts within 5 minutes. Watch the status line turn 🟢.', 'success', '🔌 ' + prov9); } catch (_) { b9.disabled = false; }
-                } }, 'Connect'),
-              ]),
-              d9.has_api_token ? h('div', { class: 'cp-pill', style: 'background:rgba(34,197,94,.14);color:#4ade80;margin-top:6px' }, '✓ Provider API token on file — polling active') : null,
-            ].filter(Boolean));
-          })(),
-        ]);
-      };
-      paint9(false);
-      return host9;
-    })();
+    // ELD / TELEMATICS — card lives in ./eld-connect.js (29 Aug 2026): read-only status, vendor-published
+    // connect steps, LIVE token test (edge fn eld-test) before save, poller errors surfaced (bl_eld_0297).
+    const eldCard9 = h('div', { class: 'cp-card' }, [cardHead([icon('gps',15),' ELD & telematics'], 'device GPS feeds your trips'), h('div', { class: 'cp-muted' }, 'Loading…')]);
+    (async () => { try { const m9 = await import('./eld-connect.js'); await m9.mountEldCard(eldCard9, { toast: lbToast }); } catch (_) { mount(eldCard9, h('span')); } })();
     const assignCard9 = h('div', { class: 'cp-card' }, [cardHead('\ud83c\udfaf Fleet plan \u2014 optimized'), h('div', { class: 'cp-muted' }, 'Loading\u2026')]);
     (async () => { try { const m9 = await import('./assign-optimizer.js'); await m9.renderAssignOptimizer(assignCard9, { goBoard: () => go('loads') }); } catch (_) { assignCard9.style.display = 'none'; } })();
     mount(content, h('div', null, [

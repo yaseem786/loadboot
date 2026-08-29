@@ -1,8 +1,11 @@
 // eld-poll — polls Samsara/Motive with each carrier's OWN api token and feeds
 //   (1) positions into their active trip via the public eld_ingest RPC (unchanged, since v1), and
 //   (2) NEW 28 Aug 2026 (bl_eld_0293): drivers' hours-of-service clocks into truck_availability via
-//       eld_hos_ingest, for every carrier with an active integration AND a LoadBoot dispatcher —
-//       trip or no trip, because the dispatcher plans the NEXT load from the remaining drive time.
+//       eld_hos_ingest, for every carrier with an active integration (since bl_eld_0297: dispatcher or
+//       not) — trip or no trip, because the dispatcher plans the NEXT load from the remaining drive time,
+//       and a successful pull is what lets the carrier's card say "connected · synced N min ago".
+//   (3) 29 Aug 2026 (bl_eld_0297): provider failures are written back with eld_mark_error so the carrier
+//       sees "Samsara rejected the token (HTTP 401 invalid token)" on the card instead of silence.
 // Both writes are ingest-token authenticated (per carrier); the function needs the service role only
 // to read the target lists. Invoked by pg_cron (net.http_post) every 5 minutes. Throttled to >=3 min.
 // Samsara: GET /fleet/hos/clocks → driveRemainingDurationMs / shiftRemainingDurationMs /
@@ -29,11 +32,19 @@ function hoursFrom(v: unknown, unitHint: 'ms' | 'auto'): number | null {
   return Math.round(n * 10) / 10;
 }
 
+// Samsara has a separate EU region host; a token minted in an EU org gets 401 on the US host.
+// samsaraFetch tries US first and falls back to EU on 401 (bl_eld_0297 / eld-test does the same).
+async function samsaraFetch(path: string, token: string): Promise<Response> {
+  let r = await fetch('https://api.samsara.com' + path, { headers: { Authorization: 'Bearer ' + token } });
+  if (r.status === 401) r = await fetch('https://api.eu.samsara.com' + path, { headers: { Authorization: 'Bearer ' + token } });
+  return r;
+}
+
 async function samsaraHos(token: string): Promise<Drv[]> {
   const out: Drv[] = []; let after = '';
   for (let page = 0; page < 5; page++) {
-    const r = await fetch('https://api.samsara.com/fleet/hos/clocks?limit=512' + (after ? '&after=' + encodeURIComponent(after) : ''), { headers: { Authorization: 'Bearer ' + token } });
-    if (!r.ok) throw new Error('samsara hos ' + r.status);
+    const r = await samsaraFetch('/fleet/hos/clocks?limit=512' + (after ? '&after=' + encodeURIComponent(after) : ''), token);
+    if (!r.ok) throw new Error('Samsara rejected the token (HTTP ' + r.status + (r.status === 401 ? ' invalid token' : r.status === 403 ? ' missing HOS read scope' : '') + ')');
     const j = await r.json();
     for (const row of (j && j.data) || []) {
       const c = row.clocks || row; const drv = row.driver || {};
@@ -48,7 +59,7 @@ async function samsaraHos(token: string): Promise<Drv[]> {
 
 async function motiveHos(token: string): Promise<Drv[]> {
   const r = await fetch('https://api.gomotive.com/v1/available_time', { headers: { 'X-Api-Key': token } });
-  if (!r.ok) throw new Error('motive hos ' + r.status);
+  if (!r.ok) throw new Error('Motive rejected the key (HTTP ' + r.status + (r.status === 401 ? ' invalid API key' : '') + ')');
   const j = await r.json();
   const rows = (j && (j.users || j.drivers || j.available_time || j.data)) || [];
   const out: Drv[] = [];
@@ -77,8 +88,8 @@ Deno.serve(async (_req) => {
     try {
       let lat: number | null = null, lng: number | null = null, at: string | null = null;
       if (t.provider === 'samsara') {
-        const r = await fetch('https://api.samsara.com/fleet/vehicles/locations', { headers: { Authorization: 'Bearer ' + t.api_token } });
-        if (!r.ok) throw new Error('samsara ' + r.status);
+        const r = await samsaraFetch('/fleet/vehicles/locations', t.api_token);
+        if (!r.ok) throw new Error('Samsara rejected the token (HTTP ' + r.status + ')');
         const j = await r.json();
         const vs = (j && j.data) || [];
         let best: any = null;
@@ -86,7 +97,7 @@ Deno.serve(async (_req) => {
         if (best) { lat = best.latitude; lng = best.longitude; at = best.time || null; }
       } else if (t.provider === 'motive') {
         const r = await fetch('https://api.gomotive.com/v1/vehicle_locations', { headers: { 'X-Api-Key': t.api_token } });
-        if (!r.ok) throw new Error('motive ' + r.status);
+        if (!r.ok) throw new Error('Motive rejected the key (HTTP ' + r.status + ')');
         const j = await r.json();
         const vs = (j && (j.vehicles || j.vehicle_locations)) || [];
         let best: any = null;
@@ -97,7 +108,7 @@ Deno.serve(async (_req) => {
       const { error: e2 } = await sb.rpc('eld_ingest', { p_token: t.ingest_token, p_lat: lat, p_lng: lng, p_speed: null, p_at: at });
       if (e2) throw new Error(e2.message);
       pushed++;
-    } catch (_e) { failed++; }
+    } catch (e) { failed++; try { await sb.rpc('eld_mark_error', { p_token: t.ingest_token, p_error: 'gps: ' + ((e as Error).message || 'error') }); } catch (_) { /* best effort */ } }
   }
 
   // ---- (2) HOS → truck_availability (dispatcher carriers) ----
@@ -108,12 +119,18 @@ Deno.serve(async (_req) => {
     for (const t of (hosTargets as any[]) || []) {
       try {
         const drivers = t.provider === 'samsara' ? await samsaraHos(t.api_token) : t.provider === 'motive' ? await motiveHos(t.api_token) : [];
-        if (!drivers.length) { hosErrors.push(t.provider + ': no drivers returned'); continue; }
+        // an empty driver list is still a SUCCESSFUL provider call — stamp the connection ok (bl_eld_0297) so
+        // the carrier's card can say "connected · synced", then move on
         const { data: res, error: e4 } = await sb.rpc('eld_hos_ingest', { p_token: t.ingest_token, p_drivers: drivers });
         if (e4) throw new Error(e4.message);
+        if (!drivers.length) hosErrors.push(t.provider + ': no drivers returned');
         hosPushed += Number((res as any)?.matched || 0);
         hosUnmatched = hosUnmatched.concat(((res as any)?.unmatched as string[]) || []);
-      } catch (e) { hosFailed++; hosErrors.push(t.provider + ': ' + ((e as Error).message || 'error')); }
+      } catch (e) {
+        hosFailed++; const msg = (e as Error).message || 'error'; hosErrors.push(t.provider + ': ' + msg);
+        // tell the carrier's card (bl_eld_0297): "Samsara rejected the token (401)" instead of silent 401s every 5 min
+        try { await sb.rpc('eld_mark_error', { p_token: t.ingest_token, p_error: msg }); } catch (_) { /* best effort */ }
+      }
     }
   } catch (e) { hosErrors.push('targets: ' + ((e as Error).message || 'error')); }
 
