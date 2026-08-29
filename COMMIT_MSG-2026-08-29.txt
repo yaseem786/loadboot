@@ -1,39 +1,131 @@
-fix(carrier): surface every fleet RPC error code on Add truck (LB001-LB004, 22023)
+fix(carrier+cc): surface every fleet RPC error code, rebuild the carrier detail
+cards, and stop the carrier portal wiping staff equipment notes
 
-Adding a truck could fail silently. The fleet_truck_coi_gate trigger raises
-LB004 when a carrier has no verified certificate of insurance on file, and the
-carrier portal had no branch for that code at all — LB004 appears nowhere in
-app/ or migrations/. The VIN panel made it worse: on state 'no_coi' it told the
-carrier "You can save the truck now", which the trigger then refuses.
+--------------------------------------------------------------------------
+1. Add truck failed silently  (app/shared/errors.js, app/carrier/app.js)
+--------------------------------------------------------------------------
+The fleet_truck_coi_gate trigger (bl_coi_0300) raises LB004 when a carrier has
+no verified certificate of insurance, and the portal had no branch for that code
+at all — LB004 appeared nowhere in app/ or migrations/. The VIN panel made it
+worse: on state 'no_coi' it told the carrier "You can save the truck now", which
+the trigger then refuses.
 
 app/shared/errors.js
-  - new rpcMessage(e) / rpcTitle(e, fallback) and LB_CODE_TITLES. The database
+  - new rpcMessage(e) / rpcTitle(e, fallback) + LB_CODE_TITLES. The database
     already writes carrier-facing sentences for LB001-LB020 and 22023;
     humanizeError() was flattening them to "That value is not allowed."
-    rpcMessage passes those through and falls back to humanizeError for
-    anything unrecognised. humanizeError itself is unchanged, so no existing
-    call site changes behaviour.
+    rpcMessage passes those through and falls back to humanizeError otherwise.
+    humanizeError itself is unchanged — no existing call site changes behaviour.
 
 app/carrier/app.js (truck form)
-  - explicit branches for LB004 (no verified COI), 22023 (rejected value) and
-    42501 (not your truck / not a carrier account)
-  - LB001 now distinguishes the trailer-VIN case from the insurance-schedule
-    case; it used to show the insurance message for a bad trailer plate
-  - offline saves say the truck was NOT saved instead of "Failed to fetch"
-  - unhandled errors keep their own sentence and append "(code XXXXX)"
-  - console.error on every failure so the next one is diagnosable
-  - finally { } always re-enables the button — a stuck "Saving..." button is
-    what made this look broken rather than blocked
-  - the no_coi panel now says a truck cannot be added until the COI is verified
-  - truck-saved toast used tone 'ok', which is not in the TONE map, so a
-    successful save rendered as a red "Action needed !" card; now 'success'
+  - explicit branches for LB004, 22023 and 42501
+  - LB001 now separates the trailer-VIN message from the insurance-schedule one
+    (the same code guards both; the old branch always told the insurance story)
+  - a `finally` block always restores the button, so a throw inside the catch
+    can no longer leave it stuck on "Saving…"
+  - the no_coi panel says a truck cannot be added until the COI is verified,
+    instead of promising a save the database refuses
+  - the success toast used tone 'ok', which is not in TONE — a successful save
+    rendered as a red "Action needed !". Now 'success'.
 
-dispatch/RILEY-FIX-2026-08-29.md
-dispatch/DISPATCH-WARREN-JUSTIN-2026-08-29.md
-  - Riley inbound/outbound diagnosis with the lc_calls evidence, paste-ready
-    Retell blocks, and the Warren truck-change correction (unit 0012 retired
-    28 Aug, unit 0026 26 ft Hino is live); Warren/Justin outreach drafts.
+--------------------------------------------------------------------------
+2. Carrier 360 detail cards  (app/shared/ui/carrierDetail.js — new,
+                              app/command-center/views/carrier360.js)
+--------------------------------------------------------------------------
+equipment_detail was rendered as Object.keys(...).join(' · ') inside a 150px
+auto-fit grid cell, and notes as a raw string beside it. On a carrier with 18
+keys that produced one unreadable paragraph ending "· interior height in: 97",
+with the operating facts a dispatcher needs buried inside it.
 
-Verified: python build_site.py -> BUILD OK; node --check clean on both JS files
-and on the built site/app/carrier/app.js.
-No migration in this change. No database change.
+New shared renderer (written against shared/ui/dom.js only, so the carrier
+portal can import the same one):
+  - equipmentDetailCard(detail, {audience}) — labelled fields with units,
+    Yes/No pills for booleans, long prose in its own full-width block, and any
+    UNANSWERED / UNCONFIRMED / TBD value lifted into an "open questions" panel.
+    audience:'carrier' turns that panel into "we still need these from you"
+    without exposing staff wording.
+  - carrierNotesCard(notes) — parses "YYYY-MM-DD: ..." lines into a timeline,
+    newest first; undated text is kept, never dropped.
+
+carrier360.js: four additive edits — imports, drop the two flattened cells,
+render the new cards full width under the prefs grid.
+
+--------------------------------------------------------------------------
+3. A document could not be put on a carrier's file from their own page
+   (app/command-center/views/carrier360.js)
+--------------------------------------------------------------------------
+staffUploadCard was mounted only inside the Documents review queue, against an
+existing document row. A certificate that arrived by email for a carrier with
+nothing pending had nowhere to go, and the Carrier 360 Documents card offered no
+way to add or replace one. It is now mounted there too. documents.carrier_id is
+the OWNER's user id rather than the org id, so it is taken from a document
+already on the file; with no documents on file the card is replaced by a line
+pointing at the portal / review queue.
+
+--------------------------------------------------------------------------
+4. migrations/bl_prefs_0301_equipment_detail_merge.sql  (new)
+--------------------------------------------------------------------------
+cc_prefs_save_section assigned equipment_detail wholesale:
+    equipment_detail = p->'equipment_detail'
+The carrier-side Equipment micro-ask sends exactly { note: "<text>" } (or {}),
+so the first time a carrier touched it every staff-written key — VIN, payload,
+liftgate, dock height, the delivery deadline — was silently destroyed.
+Now merged: the carrier's keys still win, the staff keys they never sent
+survive, and an empty object clears only the carrier's own `note`.
+Applied to staging (snslhvmkjusozgjelghi) and verified, then to production
+(rwscphuhpjoudvljvmdk) and verified. One line changed; everything else is the
+function exactly as it was.
+
+Verified: node --check on every edited .js, `python build_site.py` = BUILD OK,
+and the new cards rendered headless against Warren's real row with no JS errors.
+
+--------------------------------------------------------------------------
+5. migrations/bl_voice_0302_lead_safety_net.sql  (new)
+   migrations/bl_voice_0302a_staging_lc_calls_drift.sql  (new, staging only)
+--------------------------------------------------------------------------
+Lead creation lived entirely inside `if event = 'call_analyzed'`. Measured on
+production: 19 of 59 answered calls (32%) are still at status 'ended' and never
+received that event, so no lead, contact or follow-up task was ever created for
+any of them — including the 28 Aug inbound caller who said "I'm trying to find a
+dispatcher", then rang three more times.
+
+Lead creation now runs on call_ended as well; it is already idempotent via
+lc_calls.lead_id. Also: transcript keeps whichever version is LONGER (it used
+coalesce(new, old), so a later partial event could shorten a fuller one), and the
+no-analysis fallback now triggers when interest_level is unknown rather than only
+when the whole analysis object is null.
+
+Judgement call, flagged: with no interest_level the duration floor is 30s inbound
+and stays 60s outbound. Change the `case when rec.direction='inbound'` line if noisy.
+
+0302a adds `analysis` and `lead_id` to app_private.lc_calls on STAGING, which had
+been missing them since bl_voice_0183. retell_webhook could not be executed there
+at all (42703), which is why it had only ever been changed on production.
+
+Verified on staging before production: inbound 47s -> lead created; outbound 47s ->
+no lead; three events on one call -> exactly one lead; a shorter later transcript
+does not overwrite a longer stored one. Test rows removed.
+
+--------------------------------------------------------------------------
+6. migrations/bl_fix_0303_drop_upsert_truck_overload.sql  (new)
+--------------------------------------------------------------------------
+cc_pocket_upsert_truck existed twice — the real (jsonb) one and a legacy 14-param
+wrapper that just called it. Two overloads of one name is what produces PostgREST
+PGRST203. Verified unreferenced by any DB function and by anything under app/,
+then dropped on staging and production. Both now report exactly one overload.
+
+--------------------------------------------------------------------------
+7. Carrier-facing truck card  (app/carrier/profile-view.js)
+--------------------------------------------------------------------------
+My Profile now renders the same equipment_detail card from
+shared/ui/carrierDetail.js with audience:'carrier' and theme:'dark', so the carrier
+sees exactly the spec we quote brokers from, and whatever we are still missing
+appears as "We still need these from you" rather than staff wording.
+The dispatch NOTES timeline is deliberately NOT shown to carriers — those entries
+carry internal commentary ("available flag was false, corrected") that is written
+for us, not for them.
+carrierDetail.js gained a `theme` palette and an optional `title: null` for hosts
+that supply their own heading. The Command Center rendering is unchanged.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01GZGjrfFQaaD1xFJ9VriMnd

@@ -13,6 +13,10 @@ import { signedDocumentUrl } from '../../shared/storage.js';
 import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
+// 29 Aug 2026 — equipment_detail and notes used to be flattened into two 150px grid cells.
+// Same renderer the carrier portal can import, so both sides read one version of the truth.
+import { equipmentDetailCard, carrierNotesCard } from '../../shared/ui/carrierDetail.js';
+import { staffUploadCard } from './staffUpload.js';
 import { can } from '../../shared/permissions.js';
 
 export function renderCarrier360(host, orgId) {
@@ -95,11 +99,7 @@ export function renderCarrier360(host, orgId) {
           F('Hazmat', yn(pr.hazmat)), F('Team drivers', yn(pr.team_drivers)), F('Weekends', pr.weekend_ok ? 'Available' : 'No'),
           F('Min notice', pr.min_notice_hours ? pr.min_notice_hours + ' h' : null),
           Fc('Avoid states', pr.avoid_states),
-          F('Equipment notes', (pr.equipment_detail && typeof pr.equipment_detail === 'object')
-            ? (Object.keys(pr.equipment_detail).map((k) => k.replace(/_/g, ' ') + ': ' + pr.equipment_detail[k]).join(' \u00b7 ') || null)
-            : null),
           F('Cost/mile', rpm(pr.cost_per_mile)),
-          F('Notes', pr.notes),
           F('Operating radius', pr.operating_radius_miles ? pr.operating_radius_miles + ' mi from home' : null),
           F('Home time', pr.home_time || null),
           F('Load size', pr.load_size || null),
@@ -109,6 +109,11 @@ export function renderCarrier360(host, orgId) {
           F('DAT access', pr.external_boards && pr.external_boards.dat ? pr.external_boards.dat : null),
           F('Truckstop access', pr.external_boards && pr.external_boards.truckstop ? pr.external_boards.truckstop : null),
         ]),
+        // The two free-shaped columns, each in its own full-width block rather than squeezed
+        // into a 150px cell: equipment_detail as labelled fields with its unanswered items
+        // pulled out, and notes as a dated timeline.
+        (() => { const c9 = equipmentDetailCard(pr.equipment_detail, { audience: 'staff' }); return c9 ? el('div', { style: 'margin-top:16px;padding-top:14px;border-top:1px solid #eef2f7' }, c9) : null; })(),
+        (() => { const n9 = carrierNotesCard(pr.notes); return n9 ? el('div', { style: 'margin-top:16px;padding-top:14px;border-top:1px solid #eef2f7' }, n9) : null; })(),
         (pr.external_boards && (pr.external_boards.dat === 'active' || pr.external_boards.truckstop === 'active'))
           ? el('div', { style: 'margin-top:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;color:#1d4ed8;font-weight:700;font-size:.86rem' },
               '\ud83d\udda5 Carrier has ' + [pr.external_boards.dat === 'active' ? 'DAT' : null, pr.external_boards.truckstop === 'active' ? 'Truckstop' : null].filter(Boolean).join(' + ')
@@ -267,6 +272,18 @@ export function renderCarrier360(host, orgId) {
         el('thead', null, el('tr', null, [el('th', null, 'Type'), el('th', null, 'File'), el('th', null, 'Status'), el('th', null, 'Added')])),
         docsBody,
       ]) : el('div', { class: 'cc-sub' }, 'No documents on file.'),
+      // 29 Aug 2026 — the staff upload card only existed inside the Documents review queue,
+      // so a certificate that arrived by email for a carrier with nothing pending had nowhere
+      // to go and this page showed no way to replace one. documents.carrier_id is the OWNER's
+      // user id, not the org id, so it is taken from a document already on the file.
+      (() => {
+        const owner9 = (docs.find((x9) => x9 && x9.carrier_id) || {}).carrier_id || null;
+        if (!owner9) {
+          return el('div', { class: 'cc-sub', style: 'margin-top:12px' },
+            'Nothing on file yet — the first document has to come from the carrier\u2019s portal or the Documents review queue.');
+        }
+        return el('div', { style: 'margin-top:14px' }, staffUploadCard({ id: owner9, name: d.name }, load));
+      })(),
     ]);
 
     const drivers = d.drivers || [];

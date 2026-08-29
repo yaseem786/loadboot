@@ -191,3 +191,55 @@ LoadBoot already has the backend for 1, 3, 4, 5 and half of 2. It has none of th
 | Free boards (Doft, Trulos, TruckSmarter, C.H. Robinson) | Web only; no public API for third-party dispatch tools | — | Free to use by hand; scraping them is against their terms and not something to build. |
 
 So: there is no free DAT or Truckstop API. The trial runs on Abdul's own DAT seat + "Log a booking" (with the RC reader), and LoadBoot's own board. If you want one integration, email 123Loadboard first — the RC-reader and booking log already give you the internal side.
+
+## 8. Deep audit v2 (29 Aug 2026) — every tab, cross-portal linkage, what was fixed
+
+Benchmark used: Amazon Relay (load board + trip status + Relay Ops), DAT One (search/post/matching, rate view), Uber Freight (booking → tracking → POD), plus what a real US dispatch desk does (Eastern time, check-call cadence, RC-first, one channel). "Above standard" here means: nothing on any tab is hand-typed twice, every rule the desk enforces is enforced server-side, and every party sees exactly what it needs and nothing more.
+
+### 8.1 Tab-by-tab — what belongs, what does not, what changed
+
+| Tab | Must be there (standard) | Must NOT be there | Fixed 29 Aug (0300/0301 + frontend) |
+|---|---|---|---|
+| **Today** | Work queue from server timestamps; ET clock; trial countdown; carrier-confirmation status; unread; per-truck next action | Salary talk, carrier bank info, generic "welcome" filler | ET/PKT clock strip; queue uses `last_event_at`, `carrier_ack`, `pod_count`, `updated_by_role`; new rules: pickup passed, POD missing, carrier problem, daily 06:00 ET availability line, truck OFF/maintenance, carrier not confirmed; keyboard-navigable rows; rule #5 = one channel |
+| **Board** | Loads scored for the truck; details before request; filters; posting with floor from SOP; requests → bookings automatically | Broker contact info before acceptance; auto-book | `dispatcher_load_detail` modal; min $/mi, max deadhead, text filters; posting pre-fills effective floor + home-by; `dispatcher_request_book` now creates the booking (source `loadboot`) and the trip link trigger fills `trip_id` |
+| **Trucks** | Specs incl. liftgate capacity; SOP floor + note; who last updated availability; HOS note; last GPS; carrier confirmation status | Owner user id / VIN (dropped from feed); editing driver the carrier set | `effective_min_rpm` (SOP overrides truck overrides carrier); availability saves only changed keys; 0–14 h HOS validation; home-by < empty-from refused; GPS link; "confirmed you / not confirmed" pill |
+| **Bookings** | RC-first flow; duplicate RC refused; edit before approval; stops; cancel with reason (blocked after pickup); dispatch message; ET everywhere; RC carrier/MC mismatch warning; timeline | Approve button (LoadBoot only); invoiced/paid (Finance owns it); native dialogs | All of the above; RC locked after approval; weight vs payload check; source badge; trip panel with Google-Maps last location; issue/cancel via modals |
+| **Brokers** | Book with loads/gross per broker; quick-fill on booking form; outcome taxonomy; tel/mailto | Nothing from other dispatchers | `bookings`/`gross` per broker from feed; datalist quick-fill; outcome select; sorted by volume |
+| **Money** | Pending → approved → paid with the real payout (amount, currency, FX, ref); frozen % per load | Base salary / per-truck prose (gone); editable amounts | New columns + copy; en-US formatting |
+| **Messages** | Participants; system messages; poll; mark-read; Ctrl+Enter; unread badge that clears | Emails of parties (removed from RPC) | 30 s poll (visible tab only), `dispatcher_thread_mark_read`, participants line, system bubble style |
+| **Packet** | authority / insurance / w9 / noa only; missing-doc warning; "never send bank details" | Voided check, rate cons, BOLs, IDs (0298 whitelist + storage policy) | LABEL map = 4 types; missing list (NOA only when factored); copy button |
+| **My KPIs** | Trial window from profile; pass bar with green/red tiles; deadhead %, RC turnaround, per-truck rates | Hand-typed KPIs | `disp_kpis` v2 (to_status, per truck, deadhead, rc_turnaround); trial-window option; thresholds coloured |
+
+### 8.2 Cross-portal linkage matrix
+
+Legend: ✅ linked (live) · ➖ deliberately NOT linked · ⬜ not applicable
+
+| Object / event | Dispatcher portal | Carrier portal | Command Center | Marketing site |
+|---|---|---|---|---|
+| Assignment created | ✅ feed + system msg + e-mail | ✅ card + e-mail + **confirm** (`carrier_dispatcher_ack`) | ✅ 360 shows `carrier_ack_at`; SOP required first | ➖ |
+| SOP (floor, scope, home time) | ✅ read-only in Trucks | ✅ "rules your dispatcher works to" (read-only) | ✅ editor (numeric floor + note) | ➖ |
+| Truck availability | ✅ edit (partial) | ✅ edit; sees who updated | ✅ via carrier 360 (unchanged) | ➖ |
+| ELD / HOS | ✅ `hos_note`, GPS | ✅ ELD card (0297) | ✅ eld_integrations status | ✅ "connect your ELD" copy |
+| Booking logged / RC attached | ✅ | ➖ (carrier sees the load only from RC-received onward, RC file only after approval) | ✅ queue (age, SLA, hours-to-pickup, driver-set) + notification + e-mail | ➖ |
+| Approval | ➖ (can't approve) | ✅ notified; RC becomes a carrier document; Got it / Problem | ✅ guarded approve; creates load + trip; freezes % | ➖ |
+| Check calls / exceptions | ✅ | ✅ trip timeline (trip_events mirror) | ✅ moving list "last touch" + exception alerts | ➖ |
+| Cancellation | ✅ with reason, blocked after pickup | ✅ notified, truck → empty | ✅ notified; trip cancelled | ➖ |
+| Commission | ✅ Money (own only) | ➖ never shown | ✅ approve / void / **pay** dialog | ➖ (no % promised publicly) |
+| Thread | ✅ | ✅ | ✅ (mark-read so unread counts are per user) | ➖ |
+| Carrier bank / voided check | ➖ (0298) | ✅ Finance card | ✅ payment profile | ➖ |
+| Dispatcher e-mail/phone ↔ carrier | ➖ e-mail hidden; phone shown by design (WhatsApp group) | ✅ phone + hours | ✅ | ➖ |
+| Carrier's DAT/Truckstop login | ➖ never (own seat) | ⬜ | ⬜ | ✅ careers copy says "your own login" |
+| Pause | ➖ (notified only) | ✅ `carrier_dispatcher_pause` | ✅ Pause / End (force when loads moving) | ➖ |
+| Trial / pay terms | ✅ trial window + % | ➖ trial hidden (label "LoadBoot dispatcher") | ✅ terms form on "Move to trial"; terms log | ✅ careers = commission trial → written package |
+
+### 8.3 Marketing copy corrected (build_site.py)
+"salary starts the day a carrier is assigned" → 10-working-day commission trial, then written package; "carrier's own load-board seat" → your own DAT/Truckstop login; "US-based dispatchers" → verified remote dispatchers on US Eastern hours; "24/7 dispatch support/desk" → business-hours desk + on-call while loaded (Riley's 24/7 phone line untouched — that one is real); "rate confirmation e-signs in-app" → LoadBoot checks the RC against your floor; "cancel anytime / no contract" → short dispatch agreement, 30 days' notice (matches the actual agreement in lcOnboard.js §14 and the 180-day non-circumvention).
+
+### 8.4 Build log 29 Aug
+- `bl_disp_0298` packet whitelist · `bl_fin_0299` factor remit-to · `bl_disp_0300a–e` hardening (applied staging + prod as five parts, one file in repo) · `bl_disp_0301` CC list/360 polish. All additive; every RPC keeps its signature.
+- Frontend: `app/agent/dispatcher-workspace.js` (rewritten, ET-first, no native dialogs), `app/carrier/dispatcher-card.js` (confirm / pause / loads / rules), `app/command-center/views/dispatchers.js` (queue, guarded approve, RC preview, pay dialog, no salary UI), `app/shared/api.js` (+7 wrappers).
+- Verified: `node --input-type=module --check` on all 5 modules; headless renders of all 9 dispatcher tabs, booking modal, cancel modal, log form with stops, carrier card (confirm + Got-it flow), CC queue + 360 + below-floor approve flow (reason → confirm → decide); `python build_site.py` BUILD OK.
+- Not done / owner actions: Warren's new COI upload in CC; WhatsApp groups; Abdul's final e-mail; Warren's factoring e-mail; `dispatch@loadboot.com` alias decision.
+
+### 8.5 Carrier intro e-mail + acknowledgement model (`bl_disp_0302`, 29 Aug)
+The carrier already signed the Dispatch Service Agreement (§4 limited authorization), so assigning a named dispatcher needs **no second consent** and nothing blocks on it. What the carrier gets is a branded "Meet <dispatcher>" e-mail (rendered by `app_private.disp_assign_email_html`, wrapped by delivery-worker's shell): what they do, how a load moves (group OK → RC to LoadBoot → approval → driver rolls), what they can/cannot see, the SOP rules, the one-channel rule, a one-tap **Got it** link (`/app/carrier/?ack=<assignment>` → `carrier_dispatcher_ack`, idempotent, survives the in-app login via `sessionStorage`). `ack_state` = `confirmed` | `pending` (< 72 h since notice) | `notified` (72 h passed — the card collapses to one line, the dispatcher's Today queue stops nagging). Staff can (re)send from the 360 (`cc_dispatcher_resend_intro`). The e-mail pulls `sop.min_rate_note` verbatim — keep that note durable, not "this week".

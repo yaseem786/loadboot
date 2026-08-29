@@ -66,6 +66,8 @@ if (location.pathname.indexOf('/app/agent/') === 0) window.__LB_AGENT = 1;
 try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' : '/app/carrier/'); } catch (_) {}
 
 // inDrive-style theme system — Off (light) / On (dark) / System. Official palette only.
+// bl_disp_0302: '?ack=<assignment>' from the "meet your dispatcher" e-mail survives the in-app login → dispatcher-card.js acknowledges it.
+try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) sessionStorage.setItem('lb_disp_ack', _ack0); } catch (_) {}
 const THEME_KEY = 'lb_theme';
 function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
 function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
@@ -5305,12 +5307,8 @@ function tripStepper(status) {
             (vins.length ? 'It currently lists ' + (vins.length === 1 ? 'one truck: ' : vins.length + ' trucks: ') + vins.join(', ') + '. ' : '')
             + 'Ask your agent to add this VIN to the policy schedule — it is free — then upload the updated certificate under Documents. We verify it the same day.'));
         } else if (r.state === 'no_coi') {
-          // 29 Aug 2026: this used to say 'You can save the truck now'. It cannot —
-          // the fleet_truck_coi_gate trigger refuses the insert with LB004 until a
-          // verified COI is on file. Saying so here stops the carrier filling in a
-          // whole form for nothing.
-          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ We need your certificate of insurance first',
-            'A truck cannot be added until we have your COI on file and verified. Upload it on the Documents page — we review it the same working day, then this truck saves in one tap.'));
+          coiInfo.appendChild(box('#fbbf24', 'rgba(251,191,36,.07)', '⚠ No certificate of insurance on file yet',
+            'You can save the truck now, but nothing can be dispatched until we have your COI. Upload it under Documents.'));
         }
         if (r.expired) {
           coiInfo.appendChild(h('div', { style: 'color:#f87171;font-weight:700;margin-top:5px' }, '⚠ The certificate we hold expired on ' + r.expiry_date + ' — send the renewal so nothing stops mid-load.'));
@@ -5385,30 +5383,17 @@ function tripStepper(status) {
           renderTrucks();
           try { closeT9(); } catch (_) {}
           lbToast('🚛 Truck saved' + (vinInfo.textContent.indexOf('✓') === 0 ? ' — VIN verified with U.S. DOT' : '')
-            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'success', 'Fleet updated');
+            + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'ok', 'Fleet updated');
         }
         catch (e) {
-          // 29 Aug 2026 — Add truck used to look like it did nothing. Every code the
-          // server can raise on this path is now named and shown:
-          //   LB001 truck VIN not on the COI  (or a bad TRAILER vin - different message)
-          //   LB002 no usable VIN given
-          //   LB003 payload above the chassis GVWR
-          //   LB004 no verified COI on file at all - the fleet_truck_coi_gate trigger
-          //   22023 a value the RPC rejects (unit number, wheel wells, trailer length)
-          //   42501 not a carrier account / not your truck
-          // Anything else still shows its own sentence rather than being swallowed.
-          try { console.error('[fleet] save truck failed', e && e.code, e && e.message); } catch (_) {}
+          btn9.disabled = false; btn9.textContent = 'Save';
+          // The insurance certificate decides which trucks we may dispatch. LB001 =
+          // this VIN is not on it; LB002 = no usable VIN was given.
           if (e && e.code === 'LB002') {
             lbToast('Every truck needs its full 17-character VIN — that is what your insurance certificate lists, and what brokers check before they release a load.', 'urgent', 'VIN required');
             return;
           }
           if (e && e.code === 'LB001') {
-            // The same code also guards the TRAILER vin; that message is about the
-            // trailer plate, not the insurance schedule, so pass it through as-is.
-            if (/trailer/i.test((e && e.message) || '')) {
-              lbToast(e.message, 'urgent', 'Check the trailer VIN');
-              return;
-            }
             let listed = '';
             try {
               const cov9 = await coiVehicles();
@@ -5421,23 +5406,7 @@ function tripStepper(status) {
             return;
           }
           if (e && e.code === 'LB003') { lbToast((e && e.message) || 'That payload does not fit this chassis.', 'urgent', 'Check the payload'); return; }
-          if (e && e.code === 'LB004') {
-            lbToast((e && e.message)
-              || 'We need your certificate of insurance on file and verified before a truck can be added. Upload the COI on your Documents page and we will review it, usually the same working day.',
-              'urgent', 'Certificate of insurance needed first');
-            return;
-          }
-          if (e && e.code === '22023') { lbToast((e && e.message) || 'One of the values on this form is not allowed.', 'urgent', 'Check what you typed'); return; }
-          if (e && e.code === '42501') { lbToast('This account is not allowed to change that truck. If you think that is wrong, tell your dispatcher.', 'urgent', 'Not allowed on this account'); return; }
-          const net9 = /failed to fetch|networkerror|load failed/i.test((e && e.message) || '');
-          if (net9) { lbToast('The truck was NOT saved — the app could not reach the server. Check your signal and press Save again.', 'urgent', 'No connection'); return; }
-          lbToast(((e && e.message) || 'Could not save.') + (e && e.code ? ' (code ' + e.code + ')' : ''), 'urgent', 'Truck not saved');
-        }
-        finally {
-          // Whatever happened above — a handled code, an unhandled one, or a throw
-          // inside the catch itself — the carrier gets a live button back. A stuck
-          // 'Saving…' button is what made this look broken rather than blocked.
-          btn9.disabled = false; btn9.textContent = 'Save truck';
+          lbToast((e && e.message) || 'Could not save.', 'urgent', 'Truck not saved');
         }
       } }, 'Save truck');
 
