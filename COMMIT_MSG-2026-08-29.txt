@@ -149,5 +149,88 @@ errors.js: an unrecognised error now appends its SQLSTATE — "(code 22P02)". Fi
 characters of standard Postgres vocabulary, not SQL text or a stack trace, and it
 turns an unreproducible report into a one-line diagnosis.
 
+--------------------------------------------------------------------------
+9. "+ Add truck" opened nothing and said nothing  (app/carrier/app.js)
+--------------------------------------------------------------------------
+dZip/dCity/dState were used by readyCheck's listener wiring ~20 lines ABOVE
+their own const declarations — a temporal-dead-zone ReferenceError thrown while
+the form was still being built, so openModal was never reached: no dialog, no
+toast, no request, and the button looked dead. Declarations moved above first
+use; nothing else changed.
+Found by running the real built portal headless against a stubbed Supabase
+client (the new truckForm guard named it: "Cannot access 'dZip' before
+initialization"). Verified after the fix the same way: modal opens, zero JS
+errors, save toasts "Truck saved".
+Also uncovered: build_site.py does not check ES-module imports, so an app.js /
+api.js pair from different commits deploys as BUILD OK and then fails to boot.
+Worth a build-step check later.
+
+--------------------------------------------------------------------------
+10. Breathing room between stacked cards  (app/carrier/carrier.css)
+--------------------------------------------------------------------------
+Most tabs mount .cp-card elements as bare siblings in a plain div, so
+consecutive cards sat flush against each other. New rule adds 14px only between
+ADJACENT cards; a second rule zeroes it inside .cp-grid, which has its own gap.
+Measured on the rendered Fleet tab: all seven adjacent gaps exactly 14px.
+
+--------------------------------------------------------------------------
+11. migrations/bl_fix_0305_dispatcher_storage_policy.sql  (new)
+--------------------------------------------------------------------------
+The 28 Aug doc_read_assigned_dispatcher storage policy broke EVERY document
+View/Download in both portals: its EXISTS referenced organizations and
+dispatcher_assignments directly, RLS evaluates with the caller's privileges,
+authenticated has no grant on either — so every documents-bucket read died with
+"permission denied for table organizations" (surfaced by the new error format).
+It also parsed storage.foldername(o.name) — the org's NAME — instead of the
+object's path. Both fixed: the check moved into a SECURITY DEFINER helper the
+policy calls. Applied staging then production; verified as authenticated:
+168 objects visible, no error.
+
+12. Premium thin scrollbars PORTAL-WIDE + card gaps in all three portals
+    (carrier.css, partner.css, command-center.css)
+One global thin-scrollbar rule per stylesheet instead of chasing each container
+(modals, drawers, tables, panels, the page itself); anything that hides its bar
+or sets its own width is more specific and still wins. The agent portal reuses
+carrier.css and inherits it. Adjacent-card gap rules added to the partner portal
+(.cp-content) and the Command Center (.cc-view .lb-card) to match the carrier
+fix; grids keep their own gap. Verified across every carrier tab headless:
+zero flush cards, all gaps 14-16px, no JS errors.
+
+--------------------------------------------------------------------------
+13. migrations/bl_agent_0306_engine_truth.sql  (new)
+    + docs/AGENT-PORTAL-AUDIT-2026-08-29.md
+--------------------------------------------------------------------------
+Agent/referral earnings engine — four correctness fixes (referral_commissions
+was EMPTY on prod, so no history was touched):
+  1. amount is now pct-of-GROSS as every agent-facing document promises,
+     instead of fee*pct/5 (correct only while fee is exactly 5% of gross);
+  2. the upline walk continues PAST inactive nodes instead of stopping —
+     an active grandparent no longer loses overrides because a mid-chain
+     recruit is still pending;
+  3. pair-activation now HOLDS at payable-promotion (agent-program referrers
+     only) instead of discarding at insert — every earned row is visible as
+     accrued immediately;
+  4. commissions void with their invoice and revive if it comes back; paid
+     rows never touched.
+The fin_invoices trigger now runs referral_accrue_all() so every path accrues
+the moment the invoice lands (was 30-min cron for agent-sourced loads).
+Staging-tested with a 4-level chain in a rolled-back txn (skip-node, amounts on
+gross, clawback/revival, pair-hold — all exact), then applied to production and
+verified. Dispatcher portal untouched.
+
+--------------------------------------------------------------------------
+14. migrations/bl_agent_0307_pair_transparency.sql (new) + pair modal box
+    (app/carrier/app.js)
+--------------------------------------------------------------------------
+Makes the 0306 pair-hold visible: agent_chain_status gains pair_missing +
+held_on_pair; the Payouts tab names the hold and the exact missing side
+("$X is earned and safe, but held — bring a CARRIER / the FREIGHT side …
+nothing you earned is ever lost"); the pair modal shows the same number in
+an amber box. Verified on staging (held=$24.00, missing=demand, rolled back),
+applied to production. Also confirmed "1% lands on delivery" was already
+functionally true (auto_invoice_on_delivery; cc_create_invoice_core refuses
+non-delivered trips) — no engine change needed. app.js edited from the MERGED
+base and committed with the expectedMtimeMs guard, no force.
+
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01GZGjrfFQaaD1xFJ9VriMnd

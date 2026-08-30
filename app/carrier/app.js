@@ -66,6 +66,8 @@ if (location.pathname.indexOf('/app/agent/') === 0) window.__LB_AGENT = 1;
 try { localStorage.setItem('lb_last_portal', window.__LB_AGENT ? '/app/agent/' : '/app/carrier/'); } catch (_) {}
 
 // inDrive-style theme system — Off (light) / On (dark) / System. Official palette only.
+// bl_disp_0302: '?ack=<assignment>' from the "meet your dispatcher" e-mail survives the in-app login → dispatcher-card.js acknowledges it.
+try { const _ack0 = new URLSearchParams(location.search).get('ack'); if (_ack0) sessionStorage.setItem('lb_disp_ack', _ack0); } catch (_) {}
 const THEME_KEY = 'lb_theme';
 function themeMode() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; } }
 function setThemeMode(m) { try { localStorage.setItem(THEME_KEY, m); } catch (_) {} applyTheme(); }
@@ -93,6 +95,56 @@ const h = (tag, attrs, kids) => {
   return e;
 };
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
+
+// ── DEEP LINKS  #tab/target ───────────────────────────────────────────────────
+// An email or a push says "add your truck"; the link should land on the Add-truck button, not on
+// a tab the carrier then has to read. app.js already splits "#fleet/add-truck" into
+// window.__lbDeepEnt = {tab,id}; this map turns the id into a real element. Anything not in the
+// map is ignored, so an old link — or a typo — still lands correctly on the tab. A trailing "!"
+// means click it too, and is only ever used on buttons that open a modal, never on a file picker,
+// which a browser blocks without a real user gesture.
+const LB_DEEP = {
+  account: {
+    profile: '#s-profile', verification: '#s-verify', verify: '#s-verify',
+    business: '#s-biz', biz: '#s-biz', dispatch: '#s-disp', prefs: '#s-disp',
+    preferences: '#s-disp', security: '#s-sec', alerts: '#s-notif',
+    payments: '#s-pay', pay: '#s-pay', bank: '#s-pay', support: '#s-support',
+  },
+  fleet: {
+    'add-truck': '[data-lb="add-truck"]!', truck: '[data-lb="trucks-card"]', trucks: '[data-lb="trucks-card"]',
+    'add-driver': '[data-lb="add-driver"]!', driver: '[data-lb="drivers-card"]', drivers: '[data-lb="drivers-card"]',
+  },
+  documents: {
+    checklist: '[data-lb="doc-checklist"]', upload: '[data-lb="doc-upload"]',
+    w9: '[data-lb="docbtn-w9"]!', agreement: '[data-lb="docbtn-dispatch_agreement"]!',
+    insurance: '[data-lb="doc-insurance"]', coi: '[data-lb="doc-insurance"]',
+    authority: '[data-lb="doc-authority"]', mc: '[data-lb="doc-authority"]',
+    bank: '[data-lb="doc-bank_check"]', mcs150: '[data-lb="doc-mcs150"]',
+  },
+};
+function lbRunDeepLink(tab) {
+  let de; try { de = window.__lbDeepEnt; } catch (_) { return; }
+  if (!de || !de.id || de.tab !== tab) return;
+  const map = LB_DEEP[tab]; if (!map) return;                    // loads/trips keep their own handlers
+  const spec = map[String(de.id).toLowerCase()]; if (!spec) return;
+  window.__lbDeepEnt = null;
+  const doClick = spec.slice(-1) === '!';
+  const sel = doClick ? spec.slice(0, -1) : spec;
+  let n = 0;                                                      // views mount async — wait for the node
+  const iv = setInterval(() => {
+    n++;
+    let el = null; try { el = document.querySelector(sel); } catch (_) {}
+    if (!el) { if (n > 40) clearInterval(iv); return; }            // 40 x 200ms = 8s, then give up quietly
+    clearInterval(iv);
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+    if (sel.charAt(0) === '#') {                                  // account page: light the matching chip
+      try { document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', '#' + c.dataset.t === sel)); } catch (_) {}
+    }
+    try { el.style.outline = '2px solid #0883F7'; el.style.outlineOffset = '3px';
+          setTimeout(() => { el.style.outline = ''; }, 3500); } catch (_) {}
+    if (doClick) setTimeout(() => { try { el.click(); } catch (_) {} }, 500);
+  }, 200);
+}
 // GLOBAL notification / status tone tokens — defined ONCE, reused everywhere (dashboard gaps, notification feed,
 // Command Center pushes). Command Center controls a notification's severity via payload.tone.
 const TONE = {
@@ -126,7 +178,8 @@ function lbNotifDest(n, p) {
   const key9 = String((n && n.template_key) || '').toLowerCase();
   // trip/tracking alerts ALWAYS belong on My Loads, whatever the stored url says
   if (/^trip\.|^tracking/.test(key9)) return 'trips';
-  if (p && p.url && p.url.indexOf('#') >= 0) { const t = p.url.split('#')[1]; if (t && TABS9.indexOf(t.replace(/^\//, '')) >= 0) return t.replace(/^\//, ''); }
+  // a deep link is "#tab/target" — take the tab, the target is handled by lbRunDeepLink
+  if (p && p.url && p.url.indexOf('#') >= 0) { const t = p.url.split('#')[1]; if (t) { const t0 = t.replace(/^\//, '').split('/')[0]; if (TABS9.indexOf(t0) >= 0) return t0; } }
   const txt = (((p && p.title) || '') + ' ' + ((n && n.template_key) || '')).toLowerCase();
   if (/reinstat|plan of action|poa|paused|more information/.test(txt)) return 'reinstate';
   if (/document|coi|insurance|w-?9|agreement|authority|upload/.test(txt)) return 'documents';
@@ -1648,6 +1701,15 @@ async function agentPortal(user) {
         h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.7' },
           '1) A load is GPS-verified DELIVERED where any side is yours → 2) 1% of the gross lands in Earnings within the half hour (🔔 + email) → 3) it clears in 15 days → 4) from $100 you request a payout in the Payouts tab. Your clients never pay extra — your cut comes out of LoadBoot\u2019s own 5% fee.'),
       ]),
+      // bl_agent_0307 (29 Aug 2026): money the pair rule is holding is the strongest reason
+      // to finish the pair — show it, with the exact side that unlocks it.
+      (!active9 && cs9 && Number(cs9.held_on_pair) > 0) ? h('div', { style: 'margin-top:10px;border-radius:12px;padding:12px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35)' }, [
+        h('div', { style: 'font-weight:900;color:#fcd34d' }, '💰 $' + Number(cs9.held_on_pair).toFixed(2) + ' already earned — waiting on your pair'),
+        h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.65' },
+          'This is real commission from delivered loads, held only because your chain isn’t paired yet. '
+          + (cs9.pair_missing === 'carrier' ? 'Bring ONE carrier through your link and it releases.' : 'Bring ONE broker or shipper through your link — or post a load yourself — and it releases.')
+          + ' Nothing you earned is ever lost.'),
+      ]) : null,
       h('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [
         h('button', { class: 'cp-btn', onClick: () => { try { navigator.clipboard.writeText((cs9 && cs9.link) || ('https://loadboot.com/?ref=' + (feed.code || ''))); } catch (_) {} } }, '🔗 Copy my link — one link for every side'),
         h('button', { class: 'cp-btn-ghost', onClick: () => { if (close9) close9(); go('chain'); } }, 'Open My Chain'),
@@ -2051,6 +2113,7 @@ async function appView(user) {
       } catch (_) {} })(); }).catch(function () { mount(content, h('div', { class: 'cp-muted' }, 'Could not load market rates.')); });
     else loadDashboard();
     try { const de9 = window.__lbDeepEnt; if (de9 && de9.tab === 'trips' && de9.id && tab === 'trips') { window.__lbDeepEnt = null; let n9 = 0; const iv9 = setInterval(() => { n9++; const el9 = content.querySelector('[data-trip="' + de9.id + '"]'); if (el9) { clearInterval(iv9); el9.scrollIntoView({ behavior: 'smooth', block: 'start' }); el9.style.outline = '2px solid #0883F7'; el9.style.outlineOffset = '3px'; setTimeout(() => { el9.style.outline = ''; }, 3500); } else if (n9 > 25) clearInterval(iv9); }, 200); } } catch (_) {}
+    try { lbRunDeepLink(tab); } catch (_) {}   // #fleet/add-truck, #account/payments, #documents/w9 …
   }
 
   /* ----- on-open prompts: notifications + location ----- */
@@ -5614,14 +5677,14 @@ function tripStepper(status) {
           ? 'You can run ONE load at a time. Add another truck so a second load can be booked while the first is still rolling \u2014 each truck runs its own load, with its own driver. Add the truck below, add its driver, then tap \u201cInvite to app\u201d so their phone tracks that load.'
           : 'Each of your ' + trucks.length + ' trucks can carry its own load at the same time (' + trucks.length + ' concurrent loads). Invite each driver to the app so every truck is tracked separately.'),
       ]),
-      h('div', { class: 'cp-card' }, [
+      h('div', { class: 'cp-card', 'data-lb': 'drivers-card' }, [
         cardHead('Drivers', drivers.length + ' total'),
-        h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', onClick: () => driverForm(null) }, '+ Add driver'),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', 'data-lb': 'add-driver', onClick: () => driverForm(null) }, '+ Add driver'),
         driverList,
       ]),
-      h('div', { class: 'cp-card' }, [
+      h('div', { class: 'cp-card', 'data-lb': 'trucks-card' }, [
         cardHead('Trucks & equipment', trucks.length + ' total'),
-        h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', onClick: () => truckForm(null) }, '+ Add truck'),
+        h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-bottom:12px', 'data-lb': 'add-truck', onClick: () => truckForm(null) }, '+ Add truck'),
         truckList,
       ]),
       (() => {
@@ -6584,6 +6647,31 @@ function tripStepper(status) {
     } }, '📋 Copy ready-made message for your insurance agent'));
     return h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;margin:10px 0;background:rgba(8,131,247,.05)' }, kids9);
   }
+
+  // ── The one box that sends most certificates back ────────────────────────────
+  // 29 Aug 2026 audit: 7 of the 11 open carrier blockers were the same thing — an ACORD 25 whose
+  // CERTIFICATE HOLDER named the carrier itself, or DAT, or a policy monitoring service, never
+  // LoadBoot. The coverage was almost always already right. The guide card that explains this only
+  // appears once the carrier opens the upload dropdown — which is AFTER he has phoned his agent and
+  // been sent the wrong certificate. So the holder box now sits on the requirement row itself,
+  // copy-ready, at the moment he first reads that a COI is needed.
+  function lbCoiHolderBlock(nm9) {
+    const copyBtn9 = (label9, text9, done9) => h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0 8px 6px 0', onClick: async (ev9) => {
+      const b9 = ev9.currentTarget;
+      try { await navigator.clipboard.writeText(text9()); b9.textContent = done9; } catch (_) { alert(text9()); }
+      setTimeout(() => { b9.textContent = label9; }, 3000);
+    } }, label9);
+    return h('div', { class: 'cp-card', 'data-lb': 'coi-holder', style: 'border-left:4px solid #FC5305;margin:8px 0 14px;background:rgba(252,83,5,.06)' }, [
+      h('div', { class: 'cp-row-t', style: 'font-size:.92rem' }, '⚠ Before you call your agent — the box that sends most certificates back'),
+      h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, 'Your coverage is usually already right. What gets a certificate rejected is the CERTIFICATE HOLDER box naming your own company, your factor, or a monitoring service. It has to read exactly this:'),
+      h('div', { style: 'margin:9px 0;padding:11px 13px;border:1px dashed rgba(252,83,5,.55);border-radius:10px;font-weight:800;line-height:1.6;white-space:pre-line;font-size:.9rem' }, LB_COI_HOLDER_BLOCK),
+      h('div', { class: 'cp-row-s', style: 'margin-bottom:9px' }, 'Certificate holder ONLY — not additional insured. That means no endorsement and no extra premium, and it takes an agent about two minutes. While they have the file open, ask for $1,000,000 commercial auto liability, $100,000 motor truck cargo, and every truck scheduled with its VIN — we can only dispatch a truck the policy actually names.'),
+      h('div', null, [
+        copyBtn9('📋 Copy the holder address', () => LB_COI_HOLDER_BLOCK, '✓ Copied'),
+        copyBtn9('✉ Copy the whole message for your agent', () => LB_DOC_GUIDE.insurance.script(nm9), '✓ Copied — paste it into a text or email'),
+      ]),
+    ]);
+  }
   async function lbAiPrecheck(f9, t9) {
     try {
       if (!['insurance', 'authority', 'w9', 'noa'].includes(t9)) return null;
@@ -7254,7 +7342,7 @@ function tripStepper(status) {
       const reqHost = h('div');
       const hazHost = h('div');
       const loadReqs = async () => { try { const c = await pocketCompliance(); const rs = (c && c.requirements) || [];
-        mount(reqHost, h('div', { style: 'margin-bottom:10px' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Required documents checklist'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad || r.mandatory ? '#f87171' : '#fbbf24');
+        mount(reqHost, h('div', { style: 'margin-bottom:10px', 'data-lb': 'doc-checklist' }, [h('div', { class: 'cp-row-t', style: 'margin-bottom:4px' }, 'Required documents checklist'), ...rs.map((r) => { const st = String(r.status || 'missing').toLowerCase(); const okd = st === 'valid'; const rev = st === 'pending' || st === 'in_review' || st === 'review' || st === 'submitted'; const bad = st === 'rejected' || st === 'expired'; const col = okd ? '#34d399' : rev ? '#3b9dff' : (bad || r.mandatory ? '#f87171' : '#fbbf24');
           let dt0 = r.doc_type || (/w-?9/i.test(r.name || '') ? 'w9' : /agreement/i.test(r.name || '') ? 'agreement' : ''); if (/agreement/i.test(dt0)) dt0 = 'agreement'; if (/^w-?9$/i.test(dt0)) dt0 = 'w9';
           const goUp = () => {
             if (dt0 === 'w9') { w9Btn.click(); return; }
@@ -7275,8 +7363,14 @@ function tripStepper(status) {
           const act = okd ? h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { class: 'cp-pill green' }, 'Approved'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: () => { if (!confirm('Replace \u201C' + r.name + '\u201D?\n\n' + (r.mandatory ? 'This is a required document. The new file goes back to In review and new bookings pause until it is approved \u2014 loads you have already booked are not affected.' : 'The new file goes back to In review. Your booking stays open.') + '\n\nContinue?')) return; goUp(); } }, dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Update')])
             : rev ? h('div', { style: 'display:flex;gap:8px;align-items:center' }, [h('span', { class: 'cp-pill blue' }, 'Uploaded \u2713 In review'), h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0', onClick: goUp }, dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Change')].filter(Boolean))
             : h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0' + (bad ? ';background:linear-gradient(135deg,#dc2626,#f87171)' : ''), onClick: goUp }, bad ? (dt0 === 'w9' ? 'Redo W-9' : dt0 === 'agreement' ? 'Re-sign' : 'Upload the corrected one') : dt0 === 'w9' ? 'Start W-9' : dt0 === 'agreement' ? 'Sign' : 'Upload');
+          // deep-link anchor: #documents/w9, /agreement, /insurance, /authority, /bank land on THIS row.
+          try { const _b9 = (act && act.tagName === 'BUTTON') ? act : (act && act.querySelector ? act.querySelector('button') : null); const _k9 = r.doc_type || dt0; if (_b9 && _k9) _b9.setAttribute('data-lb', 'docbtn-' + _k9); } catch (_) {}
           const why = bad && r.note ? h('div', { style: 'margin-top:6px;border-radius:10px;padding:9px 12px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28)' }, [h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#f87171;margin-bottom:3px' }, 'Why it was ' + (st === 'expired' ? 'expired' : 'rejected') + (r.reviewed_at ? ' \u00b7 ' + new Date(r.reviewed_at).toLocaleDateString() : '')), h('div', { class: 'cp-row-s', style: 'color:#fca5a5;white-space:pre-wrap' }, r.note)]) : null;
-          return h('div', { class: 'cp-row', style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') : (r.mandatory ? 'Required \u2014 not on file' : 'Optional')), why].filter(Boolean)), act]); })]));
+          const row9 = h('div', { class: 'cp-row', 'data-lb': (r.doc_type || dt0) ? 'doc-' + (r.doc_type || dt0) : null, style: 'border-left:3px solid ' + col + ';padding-left:10px' }, [h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t', style: 'font-size:.88rem' }, r.name), h('div', { class: 'cp-row-s' }, okd ? 'Approved \u2713' : rev ? 'Submitted \u00b7 in review' : bad ? (st === 'expired' ? '\u2715 Expired \u2014 send a current one' : '\u2715 Rejected \u2014 fix it and re-upload') : (r.mandatory ? 'Required \u2014 not on file' : 'Optional')), why].filter(Boolean)), act]);
+          // The holder block rides with the row while the item is still open — not once it is
+          // approved or already in review, where it would only be noise.
+          const isCoi9 = (r.doc_type === 'insurance' || r.doc_type === 'hazmat_coi' || /certificate of insurance/i.test(r.name || ''));
+          return (isCoi9 && !okd && !rev) ? h('div', null, [row9, lbCoiHolderBlock(ov && ov.carrier)]) : row9; })]));
         const hazLeft = rs.filter((r) => /hazmat|phmsa/i.test(r.name || '') && ['missing', 'expired', 'rejected'].indexOf(String(r.status || 'missing').toLowerCase()) >= 0);
         mount(hazHost, (f.hazmat && hazLeft.length) ? h('div', { class: 'cp-ann warning', style: 'margin:8px 0' }, [h('div', { class: 'cp-ann-t' }, 'Hazmat \u2014 ' + hazLeft.length + ' document(s) still needed'), h('div', { class: 'cp-ann-b' }, hazLeft.map((r) => r.name).join(' \u00b7 ') + ' \u2014 mandatory before hazmat loads can be booked.')]) : h('span'));
       } catch (_) {} }; loadReqs();
@@ -7289,7 +7383,7 @@ function tripStepper(status) {
       refresh();
       const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Complete W-9 in-app');
       const agrBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'Agreement') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Sign dispatch agreement');
-      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), typeSel, guideHostW, h('div', { class: 'cp-inlineform' }, [fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
+      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), typeSel, guideHostW, h('div', { class: 'cp-inlineform', 'data-lb': 'doc-upload' }, [fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
     }
     function reviewStep() {
       const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);
@@ -7555,36 +7649,138 @@ function tripStepper(status) {
     mount(content, h('div', null, [callRow, sosCard, repCard, contactsCard, centre].filter(Boolean)));
   }
 
+  // ── NOTIFICATION CENTRE ──────────────────────────────────────────────────────
+  // 29 Aug 2026 audit: onboarding nudges were read at 4% (158 sent, 7 read); one carrier carried
+  // ten unread notifications describing one missing certificate; 166 rows had no tone at all and
+  // rendered neutral grey. The list also coloured only urgent/success/"everything else blue",
+  // throwing away four of the five tones the app already defines in TONE. This rebuild uses all
+  // five, groups by day, collapses repeats, shows relative time, and puts a real action button on
+  // anything that needs the carrier — pointed at the exact card via the #tab/target deep links.
+  let _lbNotifFilter = 'all';
+  function lbNotifGlyph(k) {
+    k = String(k || '').toLowerCase();
+    if (/pay|invoice|settle|payout|factoring|bank|fee|remit/.test(k)) return '💰';
+    if (/trip|tracking|pod|detention|pickup|delivery/.test(k)) return '🗺';
+    if (/posting|fleet|truck|driver/.test(k)) return '🚛';
+    if (/offer|load|book|match/.test(k)) return '📦';
+    if (/document|compliance|onboarding|packet|w9|coi|insurance|authority/.test(k)) return '📄';
+    if (/health|violation|strike|rating|safety/.test(k)) return '🛡';
+    if (/account|profile|email|deletion/.test(k)) return '👤';
+    return '🔔';
+  }
+  function lbRelTime(iso) {
+    try {
+      const d = new Date(iso), ms = Date.now() - d.getTime();
+      if (!isFinite(ms)) return '';
+      const m = Math.round(ms / 60000);
+      if (m < 1) return 'just now';
+      if (m < 60) return m + ' min ago';
+      const hrs = Math.round(m / 60);
+      if (hrs < 24) return hrs + ' h ago';
+      const days = Math.round(hrs / 24);
+      if (days === 1) return 'Yesterday ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      if (days < 7) return days + ' days ago';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (_) { return ''; }
+  }
+  function lbNotifBucket(iso) {
+    try {
+      const d = new Date(iso), n = new Date(), same = (a, b) => a.toDateString() === b.toDateString();
+      if (same(d, n)) return 'Today';
+      const y = new Date(n); y.setDate(y.getDate() - 1);
+      if (same(d, y)) return 'Yesterday';
+      return 'Earlier';
+    } catch (_) { return 'Earlier'; }
+  }
+  function lbNotifSubject(n) { const p = n.payload || {}; return String(p.subject || p.doc || n.template_key || ''); }
+  const lbNotifNeeds = (n) => !n.read_at && ['urgent', 'warning', 'action'].indexOf(((n.payload || {}).tone) || 'info') >= 0;
+
   async function loadNotifications() {
     showSkeleton(content, 'cards');
-    let rows; try { rows = await pocketNotifications(60); } catch (e) { mount(content, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-muted' }, 'Could not load notifications — check your connection.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => loadNotifications() }, 'Retry')])); return; }
-    if (!rows || !rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No notifications yet. Alerts about your loads, payments and onboarding will appear here.'))); refreshUnread(); return; }
-    const unread9 = rows.filter(n => !n.read_at).length;
-    const card = h('div', { class: 'cp-card' }, [cardHead('Notifications', unread9 + ' unread'),
-      unread9 ? h('div', { style: 'text-align:right;margin:-6px 0 8px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async (e9) => {
-        e9.currentTarget.disabled = true;
-        try { await pocketMarkAllNotificationsRead(); } catch (_) {}
-        refreshUnread(); loadNotifications();
-      } }, '\u2713 Mark all read')) : null,
-      ...rows.map(n => {
-      const p = n.payload || {};
-      // Owner: every notification carries the official LoadBoot mark (real asset, not a text card),
-      // with a tone-colored ring — like a native push notification showing the app icon.
-      const toneCol = p.tone === 'urgent' ? '#dc2626' : p.tone === 'success' ? '#16a34a' : '#0883F7';
-      const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'), style: 'align-items:flex-start;gap:12px', onClick: async () => { if (!n.read_at) { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); row.classList.remove('unread'); refreshUnread(); } catch (_) {} } go(lbNotifDest(n, p)); }, title: 'Open the page this notification is about' }, [
-        h('span', { html: '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="display:block;border-radius:9px;box-shadow:0 0 0 2px ' + toneCol + '33">', style: 'flex:none;line-height:0;margin-top:2px' }),
-        h('div', { style: 'min-width:0;flex:1' }, [h('div', { class: 'cp-row-t' }, p.title || n.template_key || 'Notification'), p.body ? h('div', { class: 'cp-row-s' }, p.body) : null,
-          n.created_at ? h('div', { class: 'cp-row-s', style: 'font-size:.68rem;opacity:.75;margin-top:2px' }, new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + new Date(n.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) : null].filter(Boolean)),
+    let rows;
+    try { rows = await pocketNotifications(60); }
+    catch (e) { mount(content, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-muted' }, 'Could not load notifications — check your connection.'), h('button', { class: 'cp-btn cp-btn-sm', style: 'margin-top:8px', onClick: () => loadNotifications() }, 'Retry')])); return; }
+    rows = rows || [];
+    if (!rows.length) { mount(content, h('div', { class: 'cp-card' }, h('div', { class: 'cp-muted' }, 'No notifications yet. Alerts about your loads, payments and onboarding will appear here.'))); refreshUnread(); return; }
+
+    const unread9 = rows.filter((n) => !n.read_at).length;
+    const needsN = rows.filter(lbNotifNeeds).length;
+
+    // Collapse repeats of the same subject into one row with a count. Eight "Document received"
+    // receipts are one fact, not eight.
+    const seen = {}, list = [];
+    rows.forEach((n) => {
+      const k = (n.template_key || '') + '|' + lbNotifSubject(n);
+      if (seen[k] !== undefined) { list[seen[k]]._dup = (list[seen[k]]._dup || 1) + 1; return; }
+      seen[k] = list.length; list.push(n);
+    });
+    const shown = list.filter((n) => _lbNotifFilter === 'all' ? true : _lbNotifFilter === 'unread' ? !n.read_at : lbNotifNeeds(n));
+
+    const chip = (id, label, count) => h('button', { class: 'cp-btn cp-btn-sm' + (_lbNotifFilter === id ? '' : ' ghost'), style: 'margin:0 7px 8px 0',
+      onClick: () => { _lbNotifFilter = id; loadNotifications(); } }, label + (count != null ? ' · ' + count : ''));
+
+    const kids = [
+      cardHead('Notifications', unread9 ? unread9 + ' unread' : 'All caught up'),
+      h('div', { style: 'margin:2px 0 6px' }, [
+        chip('needs', 'Needs you', needsN), chip('unread', 'Unread', unread9), chip('all', 'All', list.length),
+        unread9 ? h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin:0 0 8px', onClick: async (e9) => {
+          e9.currentTarget.disabled = true;
+          try { await pocketMarkAllNotificationsRead(); } catch (_) {}
+          refreshUnread(); loadNotifications();
+        } }, '✓ Mark all read') : null,
+      ].filter(Boolean)),
+    ];
+    if (!shown.length) kids.push(h('div', { class: 'cp-muted', style: 'padding:10px 0' }, _lbNotifFilter === 'needs' ? 'Nothing needs you right now.' : 'Nothing unread — you are up to date.'));
+
+    let bucket = null;
+    shown.forEach((n) => {
+      const p = n.payload || {}, tone = toneOf(p.tone), b = lbNotifBucket(n.created_at);
+      if (b !== bucket) { bucket = b; kids.push(h('div', { style: 'font-size:.63rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#94a3b8;margin:15px 0 3px' }, b)); }
+      const dest = lbNotifDest(n, p), navItem = NAV.find((x) => x[0] === dest);
+      const open9 = async () => {
+        if (!n.read_at) { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); refreshUnread(); } catch (_) {} }
+        // a notification that carries a deep target ("#documents/insurance") sets the hash so the
+        // resolver runs and lands on the exact card; a plain tab just navigates.
+        const hash9 = (p.url && p.url.indexOf('#') >= 0) ? p.url.split('#')[1].replace(/^\//, '') : '';
+        if (hash9.indexOf('/') > 0) { try { location.hash = '#' + hash9; return; } catch (_) {} }
+        go(dest);
+      };
+      const act = (['urgent', 'warning', 'action'].indexOf(p.tone) >= 0 && !n.read_at)
+        ? h('div', { style: 'margin-top:9px;display:flex;align-items:center;gap:11px;flex-wrap:wrap' }, [
+            h('button', { class: 'cp-btn cp-btn-sm', style: 'margin:0;background:' + tone.c + ';color:#07101d;font-weight:800', onClick: (e9) => { e9.stopPropagation(); open9(); } },
+              (p.cta || (p.tone === 'urgent' ? 'Fix it' : 'Open')) + ' →'),
+            navItem ? h('span', { style: 'font-size:.68rem;color:#94a3b8' }, navItem[1]) : null,
+          ].filter(Boolean))
+        : null;
+      // The icon is the real LoadBoot app icon with a tone ring; the small corner glyph is what
+      // says at a glance whether this is a document, a truck or a payment.
+      const mark = '<span style="position:relative;display:inline-block">'
+        + '<img src="/icon-512.png" width="36" height="36" alt="LoadBoot" style="display:block;border-radius:11px;box-shadow:0 0 0 2px ' + tone.c + '">'
+        + '<span style="position:absolute;right:-6px;bottom:-6px;width:19px;height:19px;border-radius:7px;background:#0e1726;border:1.5px solid ' + tone.c + ';font-size:10px;line-height:16px;text-align:center">' + lbNotifGlyph(n.template_key) + '</span></span>';
+      const row = h('div', { class: 'cp-row cp-notif' + (n.read_at ? '' : ' unread'),
+        style: 'align-items:flex-start;gap:12px;border-left:3px solid ' + tone.c + ';padding-left:11px;border-radius:0 12px 12px 0'
+               + (n.read_at ? ';opacity:.72' : ';background:' + tone.bg),
+        onClick: open9, title: 'Open the page this notification is about' }, [
+        h('span', { html: mark, style: 'flex:none;line-height:0;margin-top:2px' }),
+        h('div', { style: 'min-width:0;flex:1' }, [
+          h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, [
+            h('span', { style: 'font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:' + tone.c }, tone.label),
+            n._dup ? h('span', { style: 'font-size:.62rem;font-weight:800;color:#94a3b8;background:rgba(148,163,184,.16);border-radius:999px;padding:1px 7px' }, '×' + n._dup) : null,
+            h('span', { style: 'margin-left:auto;font-size:.66rem;color:#94a3b8;white-space:nowrap' }, lbRelTime(n.created_at)),
+          ].filter(Boolean)),
+          h('div', { class: 'cp-row-t', style: 'margin-top:1px' }, p.title || n.template_key || 'Notification'),
+          p.body ? h('div', { class: 'cp-row-s' }, p.body) : null,
+          act,
+        ].filter(Boolean)),
         n.read_at ? null : h('span', { class: 'cp-pill blue' }, 'new'),
       ].filter(Boolean));
-      // 2026-08 audit: swipe a row left to mark it read (iOS Mail pattern).
-      if (!n.read_at) attachSwipeAction(row, { onAction: async () => { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); row.classList.remove('unread'); const p9 = row.querySelector('.cp-pill.blue'); if (p9) p9.remove(); refreshUnread(); } catch (_) {} } });
-      return row;
-    })]);
-    mount(content, card);
+      // swipe a row left to mark it read (iOS Mail pattern) — kept from the previous build
+      if (!n.read_at) attachSwipeAction(row, { onAction: async () => { try { await pocketMarkNotificationRead(n.id); n.read_at = new Date().toISOString(); refreshUnread(); loadNotifications(); } catch (_) {} } });
+      kids.push(row);
+    });
+    mount(content, h('div', { class: 'cp-card' }, kids));
     refreshUnread();
   }
-
   go(tab);
   refreshUnread();
 }

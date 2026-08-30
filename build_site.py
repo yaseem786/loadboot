@@ -8338,6 +8338,12 @@ with open(os.path.join(OUT,'_headers'),'w',encoding='utf-8') as f: f.write(HEADE
 # Publish dir is /site and contains ONLY built output — no Python/Markdown/SQL/source files
 # are ever copied here, so nothing sensitive can be fetched. This file is intentionally minimal.
 REDIRECTS = "/referral.html /agents.html 301!\n"
+# Outreach open pixel. Served from loadboot.com rather than *.supabase.co so the tracker
+# rides the same domain as the rest of the email's images — a third-party host in a cold
+# email is one more thing for a spam filter to dislike. 200 = proxy (not a redirect):
+# Netlify forwards the query string, the edge function answers with a 1x1 GIF.
+# Backing function: Supabase edge function `mail-open` (prod project rwscphuhpjoudvljvmdk).
+REDIRECTS += "/o.gif https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/mail-open 200\n"
 REDIRECTS += "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
 REDIRECTS += "# /page.html (impressions split across 29 duplicates in GSC). 301 the extensionless\n"
 REDIRECTS += "# form to the canonical .html form so link equity consolidates. Generated per build.\n"

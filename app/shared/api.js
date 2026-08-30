@@ -442,6 +442,16 @@ export const ccOutreachTemplates = () => rpc('cc_outreach_templates', {});
 export const ccOutreachTemplatePreview = (id) => rpc('cc_outreach_template_preview', { p_id: id });
 export const ccOutreachTemplateSave = (o) => rpc('cc_outreach_template_save', { p_audience: o.audience, p_day: o.day, p_subject: o.subject, p_html: o.html ?? null, p_active: o.active ?? true });
 export const ccOutreachLog = (filter, limit) => rpc('cc_outreach_log', { p_filter: filter || 'all', p_limit: limit ?? 100 });
+// Paged/filterable replacement for ccOutreachLog. The old RPC is hard-capped at 500 rows
+// with no offset, so the CC delivery log could only ever show one truncated page of a
+// 13,000-row table. Left in place so an un-deployed Command Center keeps working.
+export const ccOutreachLogPage = (o) => rpc('cc_outreach_log_page', {
+  p_filter: (o && o.filter) || 'all', p_kind: (o && o.kind) || null,
+  p_days: (o && o.days) ?? 30, p_q: (o && o.q) || null,
+  p_limit: (o && o.limit) ?? 50, p_offset: (o && o.offset) ?? 0 });
+// Broker vs carrier side by side: list size, how much of it has ever been reached,
+// where the drip stands, and the runway to finish the untouched remainder.
+export const ccOutreachAudience = (days) => rpc('cc_outreach_audience', { p_days: days ?? 30 });
 // ---- Live chat (CC inbox; bl_chat_0157/0158) ----
 export const ccLcList = (status, search) => rpc('cc_lc_list', { p_status: status || 'open', p_search: search ?? null });
 export const ccLcGet = (id) => rpc('cc_lc_get', { p_id: id });

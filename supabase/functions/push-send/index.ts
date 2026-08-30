@@ -18,7 +18,15 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const title = String(body.title || "LoadBoot").slice(0, 120);
     const message = String(body.body || "").slice(0, 400);
-    const clickUrl = String(body.url || "/");
+    // 29 Aug 2026 audit: this defaulted to "/", so a push sent without an explicit destination
+    // opened the MARKETING HOMEPAGE instead of the portal. The service worker has a sensible
+    // /app/ default of its own, but it never applied — this field was never absent.
+    const clickUrl = String(body.url || "/app/carrier/#notifications");
+    // The service worker already supports coalescing (options.tag + renotify) and nothing ever
+    // set a tag, so ten reminders about one certificate arrived as ten separate notifications in
+    // the phone's shade. Callers pass a stable tag (e.g. "onboarding.reminder:<org>") and the
+    // newest one replaces the previous instead of stacking beside it.
+    const tag = body.tag ? String(body.tag).slice(0, 80) : undefined;
     const audience = body.audience ?? null; const userIds = Array.isArray(body.user_ids) ? body.user_ids : null;
     const org = body.org ?? null;
     if (!audience && !userIds && !org) return json({ error: "provide audience, user_ids or org" }, 400);
@@ -26,7 +34,7 @@ Deno.serve(async (req: Request) => {
     if (!tr.ok) return json({ error: "could not resolve targets" }, 502);
     const subs: { endpoint: string; p256dh: string; auth: string }[] = await tr.json();
     webpush.setVapidDetails(subj, pub, priv);
-    const payload = JSON.stringify({ title, body: message, url: clickUrl });
+    const payload = JSON.stringify({ title, body: message, url: clickUrl, ...(tag ? { tag } : {}) });
     let sent = 0, failed = 0;
     await Promise.all(subs.map(async (s) => { try { await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload); sent++; } catch { failed++; } }));
     return json({ ok: true, targeted: subs.length, sent, failed });
