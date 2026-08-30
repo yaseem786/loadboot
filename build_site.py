@@ -8342,8 +8342,10 @@ REDIRECTS = "/referral.html /agents.html 301!\n"
 # rides the same domain as the rest of the email's images — a third-party host in a cold
 # email is one more thing for a spam filter to dislike. 200 = proxy (not a redirect):
 # Netlify forwards the query string, the edge function answers with a 1x1 GIF.
-# Backing function: Supabase edge function `mail-open` (prod project rwscphuhpjoudvljvmdk).
-REDIRECTS += "/o.gif https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/mail-open 200\n"
+# Backing function: the Supabase edge function `mail-open` on THIS CONTEXT'S project.
+# It must follow APP_REF, not a hard-coded ref: a Deploy Preview that names the
+# production project in _redirects trips the PRODUCTION-ISOLATION gate below.
+REDIRECTS += "/o.gif https://%s.supabase.co/functions/v1/mail-open 200\n" % APP_REF
 REDIRECTS += "# Loadboot — canonical-URL consolidation: Google was indexing BOTH /page and\n"
 REDIRECTS += "# /page.html (impressions split across 29 duplicates in GSC). 301 the extensionless\n"
 REDIRECTS += "# form to the canonical .html form so link equity consolidates. Generated per build.\n"
