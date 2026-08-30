@@ -1,0 +1,224 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Command Center — Dispatchers</title>
+<style>
+ *{box-sizing:border-box}
+ body{margin:0;background:#f4f7fb;color:#0f172a;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;line-height:1.55}
+ .wrap{max-width:1180px;margin:0 auto;padding:26px 20px 80px}
+ h1{font-size:23px;letter-spacing:-.02em;margin:0 0 4px;font-weight:800}
+ .lede{color:#64748b;font-size:13.5px;max-width:96ch;margin:0 0 18px}
+ .card{background:#fff;border:1px solid #e3eaf3;border-radius:16px;box-shadow:0 1px 2px rgba(16,34,59,.04);margin:0 0 16px}
+ .cardhd{display:flex;align-items:center;gap:12px;padding:15px 18px 13px;border-bottom:1px solid #eef3f9}
+ .cardhd h2{font-size:15.5px;margin:0;font-weight:800;letter-spacing:-.01em}
+ .grow{flex:1}
+ .chip{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.02em;border:1px solid;
+        border-radius:999px;padding:3px 9px;white-space:nowrap;margin:0 5px 4px 0}
+ .btn{border:1px solid #d7e0ec;background:#fff;border-radius:10px;padding:7px 13px;font-weight:700;
+       font-size:12.5px;cursor:pointer;color:#0f172a;white-space:nowrap}
+ .btn.sm{padding:5px 11px;font-size:12px}
+ .btn.primary{background:#0883F7;border-color:#0883F7;color:#fff}
+ .btn.primary[disabled]{background:#c7d7ea;border-color:#c7d7ea;cursor:not-allowed}
+ .btn.ghost{background:#fff}
+ /* triage strip */
+ .triage{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:1px;background:#eef3f9;
+          border-bottom:1px solid #eef3f9}
+ .tcell{background:#fff;padding:13px 14px}
+ .tcell .n{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+ .tcell .l{font-size:11.5px;color:#64748b;margin-top:2px}
+ .tcell.hot .n{color:#dc2626} .tcell.warm .n{color:#b45309} .tcell.cool .n{color:#15803d}
+ .tcell.sel{box-shadow:inset 0 -3px 0 #0883F7}
+ /* rc rows */
+ .rcrow{display:grid;grid-template-columns:1fr 96px 158px 190px auto;gap:14px;align-items:center;
+         padding:13px 18px;border-bottom:1px solid #f1f5fa}
+ .rcrow:last-child{border-bottom:0}
+ .lane{font-weight:800;font-size:14px;letter-spacing:-.01em}
+ .meta{font-size:12.5px;color:#64748b;margin-top:1px}
+ .arrow{color:#94a3b8} .dot{color:#cbd5e1;margin:0 3px}
+ .gross{font-weight:800;font-size:15px} .rpm{font-size:11.5px;color:#64748b}
+ .pu{font-size:12.5px;font-weight:700} .age{font-size:11.5px;color:#64748b}
+ .rcact{display:flex;gap:7px;justify-content:flex-end}
+ @media(max-width:960px){ .rcrow{grid-template-columns:1fr;gap:7px} .rcact{justify-content:flex-start} }
+ /* roster */
+ table{width:100%;border-collapse:collapse;font-size:13px}
+ th{text-align:left;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;
+     font-weight:800;padding:11px 14px;border-bottom:1px solid #eef3f9;white-space:nowrap}
+ td{padding:12px 14px;border-bottom:1px solid #f4f8fc;vertical-align:top}
+ tr:last-child td{border-bottom:0}
+ .dname{font-weight:800} .dsub{font-size:11.5px;color:#64748b;margin-top:1px}
+ .right{text-align:right} .owed{font-weight:700}
+ .ok{color:#15803d;font-weight:700} .warn{color:#b45309;font-weight:700} .bad{color:#dc2626;font-weight:700}
+ .quiet{padding:14px 18px;color:#64748b;font-size:12.5px}
+ .quiet b{color:#0f172a}
+ .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:15px 18px;margin:20px 0 0;font-size:13.5px}
+ .note b{color:#9a3412}
+ .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+ @media(max-width:900px){ .split{grid-template-columns:1fr} }
+ code{background:#eef3f9;border-radius:5px;padding:1px 5px;font-size:12px}
+ .before{background:#fff;border:1px dashed #cbd5e1;border-radius:12px;padding:12px 14px;
+          font-size:12.5px;color:#475569;line-height:1.75}
+ .foot{color:#94a3b8;font-size:12px;margin-top:40px;border-top:1px solid #e3eaf3;padding-top:14px}
+</style></head><body><div class="wrap">
+
+<h1>Command Center · Dispatchers</h1>
+<p class="lede">The redesign proposal. Every field name, count and flag below is the real shape of
+<code>cc_dispatcher_queue</code>, <code>cc_dispatchers_list</code> and <code>cc_dispatcher_kpis</code> —
+nothing here needs new backend. The logic already shipped today in <code>bl_disp_0300</code>; this is
+the surface on top of it.</p>
+
+<div class="card">
+  <div class="cardhd"><h2>Dispatch queue</h2>
+    <span class="grow"></span>
+    <span class="chip" style="color:#dc2626;background:#fef2f2;border-color:#fecaca">3 need a human now</span><span class="chip" style="color:#15803d;background:#f0fdf4;border-color:#bbf7d0">live</span>
+    <button class="btn ghost sm">Refresh</button>
+  </div>
+  <div class="triage">
+    <div class="tcell hot sel"><div class="n">3</div><div class="l">RC to approve</div></div>
+    <div class="tcell warm"><div class="n">2</div><div class="l">Awaiting RC</div></div>
+    <div class="tcell cool"><div class="n">5</div><div class="l">Moving</div></div>
+    <div class="tcell warm"><div class="n">3</div><div class="l">Unread threads</div></div>
+    <div class="tcell warm"><div class="n">4</div><div class="l">Commission to approve</div></div>
+    <div class="tcell hot"><div class="n">$508</div><div class="l">To pay out</div></div>
+    <div class="tcell warm"><div class="n">1</div><div class="l">Trial ending ≤3 d</div></div>
+  </div>
+  
+    <div class="rcrow">
+      <div class="rcmain">
+        <div class="lane">Hinesville, GA → Jacksonville, FL</div>
+        <div class="meta"><b>Abdul Rafeh</b> <span class="arrow">→</span> Warren’s Courier <span class="dot">·</span> TQL</div>
+      </div>
+      <div class="rcmoney"><div class="gross">$1,240</div><div class="rpm">$2.38/mi</div></div>
+      <div class="rcwhen"><div class="pu">PU today 4:00 PM ET</div><div class="age">waiting 1 h 12 m</div></div>
+      <div class="rcflags"><span class="chip" style="color:#dc2626;background:#fef2f2;border-color:#fecaca">pickup in 4 h</span><span class="chip" style="color:#b45309;background:#fffbeb;border-color:#fde68a">no driver on truck</span></div>
+      <div class="rcact">
+        <button class="btn ghost">View RC</button><button class="btn primary">Approve</button>
+      </div>
+    </div>
+    <div class="rcrow">
+      <div class="rcmain">
+        <div class="lane">New Richmond, OH → Louisville, KY</div>
+        <div class="meta"><b>Abdul Rafeh</b> <span class="arrow">→</span> Munster Logistics <span class="dot">·</span> Echo</div>
+      </div>
+      <div class="rcmoney"><div class="gross">$780</div><div class="rpm">$1.94/mi</div></div>
+      <div class="rcwhen"><div class="pu">PU tomorrow 8:00 AM ET</div><div class="age">waiting 18 m</div></div>
+      <div class="rcflags"><span class="chip" style="color:#dc2626;background:#fef2f2;border-color:#fecaca">below floor $2.10</span></div>
+      <div class="rcact">
+        <button class="btn ghost">View RC</button><button class="btn primary">Approve</button>
+      </div>
+    </div>
+    <div class="rcrow">
+      <div class="rcmain">
+        <div class="lane">Auburn, WA → Portland, OR</div>
+        <div class="meta"><b>Sana K.</b> <span class="arrow">→</span> Patterson Freight <span class="dot">·</span> RXO</div>
+      </div>
+      <div class="rcmoney"><div class="gross">$640</div><div class="rpm">$3.05/mi</div></div>
+      <div class="rcwhen"><div class="pu">PU Sat 9:00 AM ET</div><div class="age">waiting 6 m</div></div>
+      <div class="rcflags"><span class="chip" style="color:#b45309;background:#fffbeb;border-color:#fde68a">no RC file</span></div>
+      <div class="rcact">
+        <button class="btn ghost">View RC</button><button class="btn primary" disabled title="Approve only from the RC">Approve</button>
+      </div>
+    </div>
+</div>
+
+<div class="split">
+  <div class="card">
+    <div class="cardhd"><h2>Awaiting rate confirmation</h2><span class="grow"></span><span class="chip" style="color:#b45309;background:#fffbeb;border-color:#fde68a">2</span></div>
+    <div class="quiet">
+      <b>Hinesville → Savannah</b> · Abdul Rafeh · asked 41 min ago<br>
+      <b>New Richmond → Indianapolis</b> · Sana K. · asked 2 h 10 m ago
+    </div>
+  </div>
+  <div class="card">
+    <div class="cardhd"><h2>Loads moving</h2><span class="grow"></span><span class="chip" style="color:#b45309;background:#fffbeb;border-color:#fde68a">1 stale</span></div>
+    <div class="quiet">
+      <b>Auburn → Tacoma</b> · in transit · last touch 12 min<br>
+      <b>Hinesville → Macon</b> · at pickup · <span class="chip" style="color:#b45309;background:#fffbeb;border-color:#fde68a">last touch 5 h</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="cardhd"><h2>The workforce</h2><span class="grow"></span>
+    <button class="btn ghost sm">Hiring pipeline</button><button class="btn ghost sm">Commission runs</button></div>
+  <table>
+    <thead><tr>
+      <th>Dispatcher</th><th>Carriers</th><th>Availability posted</th><th>Bookings 7 d</th>
+      <th>RC → approval</th><th>Unread</th><th>Owed</th><th></th>
+    </tr></thead>
+    <tbody>
+    <tr>
+      <td><div class="dname">Abdul Rafeh</div><div class="dsub">trial · 6 working days left · 2.5% of gross</div></td>
+      <td>2</td>
+      <td><span class="ok">06:04 ET</span></td>
+      <td>7</td>
+      <td><span class="warn">62 min</span></td>
+      <td>3</td>
+      <td class="owed">$412</td>
+      <td class="right"><button class="btn ghost sm">Open 360</button></td>
+    </tr>
+    <tr>
+      <td><div class="dname">Sana K.</div><div class="dsub">verified · 3% of gross</div></td>
+      <td>1</td>
+      <td><span class="bad">not posted</span></td>
+      <td>2</td>
+      <td>14 min</td>
+      <td>0</td>
+      <td class="owed">$96</td>
+      <td class="right"><button class="btn ghost sm">Open 360</button></td>
+    </tr>
+    <tr>
+      <td><div class="dname">Bilal A.</div><div class="dsub">skills test · applied 26 Aug</div></td>
+      <td>0</td>
+      <td>—</td>
+      <td>0</td>
+      <td>—</td>
+      <td>0</td>
+      <td class="owed">—</td>
+      <td class="right"><button class="btn ghost sm">Open 360</button></td>
+    </tr></tbody>
+  </table>
+</div>
+
+<div class="note">
+<b>What changes, and why.</b>
+<b>(1) The triage strip replaces the chip row.</b> Today the seven counts are inline pills and the
+detail underneath is a single joined string — <span class="before">Awaiting RC: Hinesville → Savannah
+(Abdul Rafeh, 41 min) · New Richmond → Indianapolis (Sana K., 2 h)</span> — which cannot be scanned,
+sorted or clicked per item. Each count becomes a filter that drives the list below it.
+<b>(2) An RC row becomes a row.</b> Lane, money and $/mi, pickup countdown, and the risk flags each
+get their own column, so “below floor” and “pickup in 4 h” are seen before the Approve button is
+reached — instead of being three of six pills competing with the lane text.
+<b>(3) Money is a number, not a pill.</b> “to pay” becomes <b>$508</b>, because the question a
+supervisor is actually asking is how much is owed, not how many rows exist.
+<b>(4) The roster answers the supervisor’s real questions in columns</b> — who has carriers, who
+posted availability this morning, how fast their RCs clear, who has unread carrier messages, what
+they are owed — rather than a status pill and a name.
+</div>
+
+<div class="note" style="background:#eff6ff;border-color:#bfdbfe">
+<b>Four things the dispatcher portal knows and the Command Center does not show.</b>
+The portal has nine tabs — Today, Board, Trucks, Bookings, Brokers, Money, Messages, Packet, My KPIs —
+and the supervisor view surfaces almost none of them.
+<b>(1) Availability freshness.</b> The portal asks every dispatcher for a daily availability line
+before <b>06:00 ET</b>. Nothing in the Command Center shows who has not posted it — yet that is the
+first thing that goes wrong, and it silently costs a day of matching. It is a column above.
+<b>(2) Check-call lag.</b> The portal logs check calls; the CC shows a “last touch” only for moving
+loads, buried in a joined line. Stale-touch belongs in the triage strip as its own count.
+<b>(3) Broker setup / packet completeness.</b> The portal has Brokers and Packet tabs — the four
+broker-setup documents. The CC has no view of which dispatcher has how many broker setups done,
+which is the constraint on how much freight they can actually source.
+<b>(4) Their own KPIs.</b> The dispatcher sees “My KPIs”; the supervisor cannot see the same numbers
+side by side across the team, which is what a weekly review needs.
+</div>
+
+<div class="note" style="background:#fef2f2;border-color:#fecaca">
+<b>Before I write any of this — one warning.</b>
+<code>app/command-center/views/dispatchers.js</code> is 57 KB and was <b>reworked today</b> by the
+other session (header: “2026-08-29 audit rework (bl_disp_0300)”, file modified 14:16 UTC). That is
+the same session that has overwritten <code>app/carrier/app.js</code> from a stale copy three times
+today. Rewriting this view now would very likely collide — and this time the work destroyed would be
+<i>theirs</i>. Confirm that session is off this file and I will implement the whole thing.
+</div>
+
+<div class="foot">Preview only — no code changed. Field names from <code>cc_dispatcher_queue</code>,
+<code>cc_dispatchers_list</code>, <code>cc_dispatcher_kpis</code> · 29 August 2026 · LoadBoot</div>
+</div></body></html>

@@ -1,0 +1,258 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dispatch Command — live</title>
+<style>
+ :root{
+   --navy:#10223B; --bg:#0a1424; --panel:#0f1d33; --panel2:#13233d;
+   --line:rgba(148,163,184,.14); --line2:rgba(148,163,184,.24);
+   --ink:#eef4fc; --sub:#9db0cc; --dim:#6b7f9e;
+   --blue:#0883F7; --orange:#FC5305; --red:#f8717a; --redbg:rgba(220,38,38,.13);
+   --amber:#fbbf24; --amberbg:rgba(217,119,6,.13); --green:#34d399; --greenbg:rgba(22,163,74,.13);
+ }
+ *{box-sizing:border-box}
+ body{margin:0;background:radial-gradient(1200px 500px at 70% -10%,rgba(8,131,247,.10),transparent 60%),
+      radial-gradient(900px 400px at 0% 110%,rgba(252,83,5,.05),transparent 55%),var(--bg);
+      color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;line-height:1.5;
+      -webkit-font-smoothing:antialiased}
+ .app{max-width:1340px;margin:0 auto;padding:18px 18px 70px}
+
+ /* ── command bar ─────────────────────────────────────────── */
+ .bar{display:flex;align-items:center;gap:14px;padding:10px 16px;margin-bottom:14px;
+      background:linear-gradient(180deg,rgba(16,34,59,.92),rgba(15,29,51,.92));
+      border:1px solid var(--line2);border-radius:16px;backdrop-filter:blur(6px)}
+ .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;font-size:15.5px}
+ .brand .mark{width:30px;height:30px;border-radius:9px;background:#fff;display:grid;place-items:center;overflow:hidden}
+ .brand .mark svg{display:block}
+ .bar .sep{width:1px;height:22px;background:var(--line2)}
+ .clock{font-variant-numeric:tabular-nums;font-weight:800;font-size:14px}
+ .clock small{color:var(--sub);font-weight:600;margin-left:6px;font-size:11px;letter-spacing:.08em}
+ .livepill{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.1em;
+   color:var(--green);background:var(--greenbg);border:1px solid rgba(52,211,153,.35);border-radius:999px;padding:4px 11px}
+ .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pu 1.6s infinite}
+ @keyframes pu{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+ .who{display:flex;align-items:center;margin-left:auto}
+ .av{width:30px;height:30px;border-radius:50%;border:2px solid var(--bg);margin-left:-7px;position:relative;
+     display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+ .av i{position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg)}
+ .on i{background:var(--green)} .off i{background:#64748b}
+ .who .lbl{font-size:11px;color:var(--sub);margin-left:12px}
+
+ /* ── layout ──────────────────────────────────────────────── */
+ .grid{display:grid;grid-template-columns:minmax(0,1fr) 322px;gap:14px}
+ @media(max-width:1060px){.grid{grid-template-columns:1fr}}
+ .card{background:linear-gradient(180deg,#101f37,#0e1b30);border:1px solid var(--line2);border-radius:18px;
+       box-shadow:0 12px 30px -18px rgba(0,0,0,.6);margin-bottom:14px;overflow:hidden}
+ .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+ .hd h2{margin:0;font-size:14.5px;font-weight:800;letter-spacing:-.01em}
+ .hd .sub{font-size:11.5px;color:var(--sub)}
+ .grow{flex:1}
+
+ /* triage */
+ .triage{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line)}
+ @media(max-width:900px){.triage{grid-template-columns:repeat(4,1fr)}}
+ .t{padding:13px 14px;border-right:1px solid var(--line);cursor:pointer;position:relative;transition:background .15s}
+ .t:hover{background:rgba(8,131,247,.06)}
+ .t:last-child{border-right:0}
+ .t .n{font-size:23px;font-weight:800;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums}
+ .t .l{font-size:10.5px;color:var(--sub);margin-top:3px;letter-spacing:.02em}
+ .t.hot .n{color:var(--red)} .t.warm .n{color:var(--amber)} .t.cool .n{color:var(--green)}
+ .t.sel::after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--blue)}
+
+ /* rc rows */
+ .rc{display:grid;grid-template-columns:minmax(0,1.35fr) 100px 168px minmax(150px,.9fr) auto;gap:14px;align-items:center;
+     padding:14px 18px;border-bottom:1px solid var(--line);transition:background .15s}
+ .rc:hover{background:rgba(8,131,247,.05)}
+ .rc:last-child{border-bottom:0}
+ .rc.flash{animation:fl 2.4s ease-out}
+ @keyframes fl{0%{background:rgba(8,131,247,.22)}100%{background:transparent}}
+ .lane{font-weight:800;font-size:14.5px;letter-spacing:-.01em}
+ .meta{font-size:12px;color:var(--sub);margin-top:2px}
+ .meta b{color:var(--ink);font-weight:700}
+ .gross{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+ .rpm{font-size:11px;color:var(--sub)}
+ .cd{font-variant-numeric:tabular-nums;font-weight:800;font-size:13px}
+ .cd.red{color:var(--red)} .cd.amber{color:var(--amber)}
+ .cdl{font-size:10.5px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+ .age{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+ .fl{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+ .flag{font-size:10.5px;font-weight:800;border-radius:7px;padding:3px 8px;letter-spacing:.03em}
+ .flag.red{color:var(--red);background:var(--redbg);border:1px solid rgba(248,113,122,.3)}
+ .flag.amber{color:var(--amber);background:var(--amberbg);border:1px solid rgba(251,191,36,.3)}
+ .act{display:flex;gap:8px;justify-content:flex-end}
+ .btn{border:1px solid var(--line2);background:rgba(148,163,184,.06);color:var(--ink);border-radius:10px;
+      padding:8px 14px;font-weight:800;font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+ .btn:hover{border-color:var(--blue);background:rgba(8,131,247,.12)}
+ .btn.pri{background:linear-gradient(135deg,var(--blue),#0a6fd6);border-color:transparent;color:#fff}
+ .btn.pri:hover{filter:brightness(1.12)}
+ .btn.pri[disabled]{background:#22344f;color:#6b7f9e;cursor:not-allowed;filter:none}
+ .btn.orange{background:linear-gradient(135deg,var(--orange),#e04a04);border-color:transparent;color:#fff}
+ @media(max-width:960px){.rc{grid-template-columns:1fr;gap:8px}.act{justify-content:flex-start}}
+
+ /* live feed */
+ .feed{max-height:560px;overflow:auto;padding:6px 0}
+ .ev{display:flex;gap:11px;padding:10px 16px;border-bottom:1px solid var(--line);animation:in .35s ease-out}
+ @keyframes in{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+ .ev .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px;flex:none;
+         background:rgba(8,131,247,.12);border:1px solid rgba(8,131,247,.3)}
+ .ev.g .ic{background:var(--greenbg);border-color:rgba(52,211,153,.3)}
+ .ev.r .ic{background:var(--redbg);border-color:rgba(248,113,122,.3)}
+ .ev.a .ic{background:var(--amberbg);border-color:rgba(251,191,36,.3)}
+ .ev .t1{font-size:12.5px;font-weight:700}
+ .ev .t2{font-size:11px;color:var(--sub)}
+ .ev .when{margin-left:auto;font-size:10.5px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+ /* roster */
+ table{width:100%;border-collapse:collapse;font-size:12.5px}
+ th{text-align:left;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim);font-weight:800;
+    padding:11px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+ td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+ tr:last-child td{border-bottom:0}
+ tr:hover td{background:rgba(8,131,247,.04)}
+ .dn{display:flex;align-items:center;gap:10px;font-weight:800}
+ .dsub{font-size:11px;color:var(--sub);font-weight:400;margin-top:1px}
+ .num{font-variant-numeric:tabular-nums;font-weight:700}
+ .ok{color:var(--green);font-weight:800}.warn{color:var(--amber);font-weight:800}.bad{color:var(--red);font-weight:800}
+ .bar2{height:5px;border-radius:5px;background:rgba(148,163,184,.15);overflow:hidden;width:74px;display:inline-block;vertical-align:middle}
+ .bar2 i{display:block;height:100%;border-radius:5px;background:var(--blue)}
+ .right{text-align:right}
+</style></head><body><div class="app">
+
+<div class="bar">
+  <div class="brand"><span class="mark"><svg width="20" height="20" viewBox="0 0 100 100"><rect x="16" y="12" width="16" height="76" fill="#10223B"/><path d="M32 12h30a14 14 0 0 1 0 28H32z" fill="#FC5305"/><path d="M32 44h34a13 13 0 0 1 0 26H32z" fill="#10223B"/><rect x="16" y="76" width="68" height="12" fill="#10223B"/></svg></span>
+    Dispatch Command</div>
+  <span class="sep"></span>
+  <span class="clock" id="clock">—<small>US EASTERN</small></span>
+  <span class="livepill"><span class="pulse"></span>LIVE · channel dispatch:live</span>
+  <div class="who">
+    <span class="av on" style="background:#7c3aed" title="Abdul Rafeh — online, in Bookings tab">AR</span>
+    <span class="av on" style="background:#0e7490" title="Sana K. — online, in Board tab">SK</span>
+    <span class="av off" style="background:#475569" title="Bilal A. — last seen 3 h ago">BA</span>
+    <span class="lbl">2 of 3 dispatchers online now</span>
+  </div>
+</div>
+
+<div class="grid"><div>
+
+  <div class="card">
+    <div class="triage">
+      <div class="t hot sel"><div class="n" id="c-rc">3</div><div class="l">RC to approve</div></div>
+      <div class="t warm"><div class="n">2</div><div class="l">Awaiting RC</div></div>
+      <div class="t cool"><div class="n">5</div><div class="l">Moving</div></div>
+      <div class="t warm"><div class="n">1</div><div class="l">Stale &gt; 4 h</div></div>
+      <div class="t warm"><div class="n" id="c-un">3</div><div class="l">Unread threads</div></div>
+      <div class="t hot"><div class="n">$508</div><div class="l">To pay out</div></div>
+      <div class="t warm"><div class="n">1</div><div class="l">Trial ends ≤3 d</div></div>
+    </div>
+
+    <div class="rc" id="row1">
+      <div><div class="lane">Hinesville, GA → Jacksonville, FL</div>
+        <div class="meta"><b>Abdul Rafeh</b> → Warren’s Courier · TQL · RC #48211</div></div>
+      <div><div class="gross">$1,240</div><div class="rpm">$2.38 /mi · 521 mi</div></div>
+      <div><div class="cd red" data-cd="14292">—</div><div class="cdl">to pickup</div>
+           <div class="age" data-age="4364">waiting —</div></div>
+      <div class="fl"><span class="flag amber">NO DRIVER ON TRUCK</span></div>
+      <div class="act"><button class="btn">View RC</button><button class="btn pri">Approve</button></div>
+    </div>
+
+    <div class="rc">
+      <div><div class="lane">New Richmond, OH → Louisville, KY</div>
+        <div class="meta"><b>Abdul Rafeh</b> → Munster Logistics · Echo · RC #48214</div></div>
+      <div><div class="gross">$780</div><div class="rpm">$1.94 /mi · 402 mi</div></div>
+      <div><div class="cd" data-cd="66120">—</div><div class="cdl">to pickup</div>
+           <div class="age" data-age="1104">waiting —</div></div>
+      <div class="fl"><span class="flag red">BELOW FLOOR $2.10</span><span class="flag amber">NEEDS WRITTEN REASON</span></div>
+      <div class="act"><button class="btn">View RC</button><button class="btn pri">Approve</button></div>
+    </div>
+
+    <div class="rc" id="row3">
+      <div><div class="lane">Auburn, WA → Portland, OR</div>
+        <div class="meta"><b>Sana K.</b> → Patterson Freight · RXO</div></div>
+      <div><div class="gross">$640</div><div class="rpm">$3.05 /mi · 210 mi</div></div>
+      <div><div class="cd" data-cd="151260">—</div><div class="cdl">to pickup</div>
+           <div class="age" data-age="384">waiting —</div></div>
+      <div class="fl"><span class="flag amber" id="rcflag">NO RC FILE YET</span></div>
+      <div class="act"><button class="btn" id="viewrc3" style="display:none">View RC</button>
+        <button class="btn pri" id="appr3" disabled title="Approve only from the RC — never from the summary">Approve</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><h2>The workforce</h2><span class="sub">live from the dispatcher portal — presence, availability, check calls</span>
+      <span class="grow"></span><button class="btn">Hiring pipeline</button><button class="btn">Commission runs</button></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Dispatcher</th><th>Carriers</th><th>Availability<br>(due 06:00 ET)</th><th>Bookings 7d</th>
+        <th>RC → approval</th><th>Check-call SLA</th><th>Broker setups</th><th>Owed</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><div class="dn"><span class="av on" style="background:#7c3aed;margin:0">AR</span>
+              <span>Abdul Rafeh<div class="dsub">trial · 6 working days left · 2.5% of gross · online, Bookings tab</div></span></div></td>
+          <td class="num">2</td><td><span class="ok">06:04 ET ✓</span></td><td class="num">7</td>
+          <td><span class="warn">62 min</span></td><td><span class="ok">on time</span></td>
+          <td><span class="bar2"><i style="width:75%"></i></span> <span class="num">3/4</span></td>
+          <td class="num">$412</td><td class="right"><button class="btn">Open 360</button></td></tr>
+        <tr><td><div class="dn"><span class="av on" style="background:#0e7490;margin:0">SK</span>
+              <span>Sana K.<div class="dsub">verified · 3% of gross · online, Board tab</div></span></div></td>
+          <td class="num">1</td><td><span class="bad">not posted ✗</span></td><td class="num">2</td>
+          <td><span class="ok">14 min</span></td><td><span class="warn">1 overdue</span></td>
+          <td><span class="bar2"><i style="width:100%"></i></span> <span class="num">4/4</span></td>
+          <td class="num">$96</td><td class="right"><button class="btn">Open 360</button></td></tr>
+        <tr><td><div class="dn"><span class="av off" style="background:#475569;margin:0">BA</span>
+              <span>Bilal A.<div class="dsub">skills test · applied 26 Aug · last seen 3 h ago</div></span></div></td>
+          <td class="num">0</td><td>—</td><td class="num">0</td><td>—</td><td>—</td>
+          <td><span class="bar2"><i style="width:0%"></i></span> <span class="num">0/4</span></td>
+          <td>—</td><td class="right"><button class="btn">Open 360</button></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+</div><div>
+
+  <div class="card">
+    <div class="hd"><h2>Live wire</h2><span class="sub">what the portal is doing right now</span></div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><h2>How the link works</h2></div>
+    <div style="padding:12px 16px;font-size:12px;color:var(--sub);line-height:1.8">
+      Both portals already share one Supabase client. The workspace joins channel
+      <b style="color:var(--ink)">dispatch:live</b>: <b style="color:var(--ink)">presence</b>
+      (online + which tab) and <b style="color:var(--ink)">broadcast</b> events —
+      <code>rc_uploaded</code>, <code>availability_posted</code>, <code>check_call</code>,
+      <code>message</code>, <code>status_change</code>. The CC subscribes; a matching row updates
+      in place and flashes. Polling stays as the fallback, so nothing breaks if the socket drops.
+      Approvals flow back the same way — the dispatcher sees “Approved” the second it happens,
+      not on the next poll.
+    </div>
+  </div>
+
+</div></div>
+</div>
+<script>
+// live ET clock
+const clk=document.getElementById('clock');
+function tick(){const d=new Date();clk.innerHTML=d.toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+'<small>US EASTERN</small>';}
+tick();setInterval(tick,1000);
+// countdown / age timers — tabular, ticking
+function fmt(s){s=Math.max(0,s|0);const h=(s/3600)|0,m=((s%3600)/60)|0,x=s%60;return (h?h+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
+setInterval(()=>{document.querySelectorAll('[data-cd]').forEach(e=>{let v=+e.dataset.cd-1;e.dataset.cd=v;e.textContent=fmt(v);if(v<4*3600)e.classList.add('red');else if(v<12*3600)e.classList.add('amber');});
+document.querySelectorAll('[data-age]').forEach(e=>{let v=+e.dataset.age+1;e.dataset.age=v;e.textContent='waiting '+fmt(v);});},1000);
+// live feed — the exact broadcast events the shared module emits
+const F=document.getElementById('feed');
+function ev(cls,ic,t1,t2){const d=document.createElement('div');d.className='ev '+cls;
+d.innerHTML='<span class="ic">'+ic+'</span><span><span class="t1">'+t1+'</span><br><span class="t2">'+t2+'</span></span><span class="when">just now</span>';
+F.prepend(d);let s=0;const iv=setInterval(()=>{s+=5;const w=d.querySelector('.when');if(w)w.textContent=s<60?s+'s ago':Math.round(s/60)+' min ago';},5000);
+while(F.children.length>9)F.removeChild(F.lastChild);}
+ev('g','📄','Abdul uploaded an RC','TQL · Hinesville → Jacksonville · $1,240');
+setTimeout(()=>ev('','💬','Sana → Patterson Freight','“Truck is empty in Auburn from 6 AM”'),1800);
+setTimeout(()=>ev('a','🕒','Check call logged','Warren unit 0026 · at pickup, door 14'),4200);
+setTimeout(()=>{ev('g','📄','Sana uploaded the RXO RC','Auburn → Portland · RC #48219 attached');
+  const f=document.getElementById('rcflag');f.textContent='RC #48219 ATTACHED';f.className='flag';f.style.cssText='color:var(--green);background:var(--greenbg);border:1px solid rgba(52,211,153,.3);font-size:10.5px;font-weight:800;border-radius:7px;padding:3px 8px';
+  document.getElementById('appr3').disabled=false;document.getElementById('viewrc3').style.display='';
+  document.getElementById('row3').classList.add('flash');},7000);
+setTimeout(()=>ev('r','⚠','Availability still not posted','Sana K. · due 06:00 ET · reminder sent to her portal'),10500);
+setInterval(()=>{const p=[['','💬','Abdul → Warren','“Driver confirmed for the 4 PM pickup”'],
+ ['a','🕒','Check call logged','Munster gooseneck · rolling, I-71 S'],
+ ['g','✅','You approved RC #48214','Dispatcher portal updated instantly']];
+ const x=p[(Math.random()*p.length)|0];ev(x[0],x[1],x[2],x[3]);},14000);
+</script>
+</body></html>

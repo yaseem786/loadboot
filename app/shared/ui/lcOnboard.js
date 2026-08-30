@@ -324,7 +324,51 @@
       if (f.company) s.data.company = f.company.value.trim();
       H().addMsg('visitor', '👤 ' + nm + ' · ' + em);
       save({ contact_name: nm, email: em, phone: ph, company: s.data.company || null }, '👤 Onboarding contact: ' + nm + ' · ' + em + ' · ' + ph);
-      stepPassword();
+      stepCallOffer();
+    };
+  }
+
+  // ---------- STEP: call offer (fires Riley immediately, one tap) ----------
+  // By this point we have their number. We do NOT dial uninvited — the visitor taps, and
+  // lc_chat_request_call does the rest: validates the number, rate-limits (2 per visitor
+  // per day, 25 a day overall), packs the last 40 chat messages in as context so Riley
+  // knows what was already said, writes lc_calls, notifies staff, and calls retell_dial().
+  // Either button continues the onboarding — the call never replaces the wizard.
+  function stepCallOffer() {
+    var s = state();
+    var c = H().ctx();
+    if (!c || !c.convId || ['carrier', 'broker', 'shipper'].indexOf(s.role) < 0) { stepPassword(); return; }
+    var n = card();
+    prog(n, pctFor(s.role, 'contact'), 'Step ' + stepNum(s.role, 'contact'));
+    n.appendChild(el('div', 'lbo-h', '\ud83d\udcde Want us to just call you?'));
+    n.appendChild(el('div', 'lbo-s', 'Riley can ring you on <b>' + esc(s.data.phone) + '</b> in about thirty seconds and walk you through the rest. She already has everything you have told me here, so you will not be repeating yourself. Or keep going in chat — about two more minutes.'));
+    var b1 = el('button', 'lbo-btn', '\ud83d\udcde Call me now');
+    var err = el('div', 'lbo-err');
+    var b2 = el('button', 'lbo-btn ghost', 'Keep going in chat →');
+    n.appendChild(b1); n.appendChild(err); n.appendChild(b2);
+    n.appendChild(el('div', 'lbo-note', '\ud83d\udd12 One call, and only because you asked for it'));
+    b2.onclick = function () { save(null, '\ud83d\udcf5 Declined the call — continuing in chat'); stepPassword(); };
+    b1.onclick = async function () {
+      b1.disabled = true; b2.disabled = true; b1.textContent = 'Ringing\u2026';
+      err.style.display = 'none';
+      try {
+        var r = await rpc('lc_chat_request_call', {
+          p_id: c.convId, p_visitor_key: c.vKey, p_phone: s.data.phone,
+          p_role: s.role, p_name: s.data.contact_name, p_email: s.data.email
+        });
+        if (r && r.error) {
+          err.textContent = r.error; err.style.display = 'block';
+          b1.disabled = false; b2.disabled = false; b1.textContent = '\ud83d\udcde Call me now';
+          return;
+        }
+        save(null, '\ud83d\udcde Requested a call to ' + s.data.phone);
+        b1.textContent = '\u2705 Requested \u2014 watch your phone';
+        setTimeout(stepPassword, 1600);
+      } catch (e) {
+        err.textContent = 'Could not place the call just now \u2014 carry on here and we will reach you.';
+        err.style.display = 'block';
+        b1.disabled = false; b2.disabled = false; b1.textContent = '\ud83d\udcde Call me now';
+      }
     };
   }
 

@@ -1,0 +1,28 @@
+-- bl_agent_0307_pair_transparency
+-- 29 Aug 2026 — follow-on to bl_agent_0306. That migration HOLDS pair-rule money at
+-- accrued instead of discarding it; this one makes the hold VISIBLE, because money that
+-- silently sits past its clearing date reads as a broken product, not a rule.
+--
+-- agent_chain_status(): + 'pair_missing' ('carrier' | 'demand' | null) and
+--   'held_on_pair' (accrued commissions past their clearing date, held only by the pair
+--   rule; 0 when the pair is active).
+-- agent_payout_center(): + a 🔗 reason naming the hold and the exact missing side —
+--   "$X is earned and safe, but held — your chain is not paired yet. Bring <side> ...
+--   Nothing you earned is ever lost." The payout tab renders reasons already, so this
+--   needed no frontend change; the pair modal addition in app/carrier/app.js shows the
+--   same number with the same promise.
+--
+-- Same signatures as before, so existing grants are untouched (the CREATE OR REPLACE
+-- ACL-reset trap only bites on a changed signature).
+--
+-- Verified on staging in a rolled-back txn: approved agent + carrier-only chain +
+-- delivered invoice on gross $2,400 → chain_status pair=false, missing=demand,
+-- held_on_pair=$24.00; payout_center reason rendered with the freight-side wording;
+-- promotion correctly held the row at accrued. Applied to production after.
+--
+-- (Also checked while here: invoices are created by auto_invoice_on_delivery, and
+-- cc_create_invoice_core refuses non-delivered trips — so the program's "1% lands on
+-- delivery" wording is functionally TRUE end to end; no engine change was needed.)
+--
+-- Function bodies identical to what was applied via MCP — see the migration in the
+-- Supabase dashboard, or pg_get_functiondef on agent_chain_status / agent_payout_center.

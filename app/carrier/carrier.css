@@ -84,6 +84,12 @@ body { background: var(--lb-bg, #f4f6fb); margin: 0; font-family: var(--lb-font,
 /* grid + cards */
 .cp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .cp-card { background: #fff; border: 1px solid var(--lb-border, #e6ebf3); border-radius: 16px; padding: 18px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+/* 29 Aug 2026 — breathing room between stacked cards. Most tabs mount cards as bare
+   siblings in a plain div, so consecutive cards sat flush against each other. A gap only
+   between ADJACENT cards (not margin-bottom on every card) leaves grids, single cards and
+   inline margin-top overrides exactly as they were; cp-grid children keep their own gap. */
+.cp-content .cp-card + .cp-card { margin-top: 14px; }
+.cp-grid > .cp-card + .cp-card { margin-top: 0; }
 .cp-col2 { grid-column: span 2; }
 .cp-cardhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .cp-cardhead h3 { font-size: 1rem; margin: 0; }
@@ -225,6 +231,13 @@ textarea.cp-in { resize: vertical; }
 .cp-modal { position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,.55); display: flex; align-items: flex-end; justify-content: center; padding: 0; animation: cpfade .15s ease; }
 @keyframes cpfade { from { opacity: 0 } to { opacity: 1 } }
 .cp-modal-card { background: #fff; width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; max-height: 92vh; overflow-y: auto; box-shadow: 0 -20px 60px -20px rgba(0,0,0,.4); }
+/* 29 Aug 2026 — the modal scrolls with the browser's default fat grey bar, which looks
+   broken against the dark theme. Same thin treatment .cp-side already uses. */
+.cp-modal-card { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.35) transparent; }
+.cp-modal-card::-webkit-scrollbar { width: 6px; }
+.cp-modal-card::-webkit-scrollbar-thumb { background: rgba(148,163,184,.35); border-radius: 99px; }
+.cp-modal-card::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.55); }
+.cp-modal-card::-webkit-scrollbar-track { background: transparent; }
 .cp-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border, #e2e8f0); position: sticky; top: 0; background: #fff; }
 .cp-modal-head h3 { margin: 0; font-size: 1.05rem; }
 .cp-modal-x { background: none; border: none; font-size: 26px; line-height: 1; color: #64748b; cursor: pointer; }
@@ -679,3 +692,16 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
 }
+
+/* 29 Aug 2026 — premium scrollbars EVERYWHERE. The browser default fat grey bar was
+   showing on every scroll container that never got the .cp-side/.cc-side treatment
+   (modals, drawers, tables, panels, the page itself). One global rule instead of
+   chasing each container; anything that hides its bar (scrollbar-width:none) or sets
+   its own width is more specific and still wins. height:6px covers horizontal bars
+   on table wraps. */
+* { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.38) transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-thumb { background: rgba(148,163,184,.38); border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.6); }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-corner { background: transparent; }

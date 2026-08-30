@@ -21,6 +21,7 @@ import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAss
          dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead, ccDispatcherKpis } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
+import { dispatchLiveJoin } from '../../shared/dispatch-live.js';
 
 const PIPE = ['applied', 'screening', 'skills_test', 'trial', 'verified', 'active', 'suspended', 'rejected'];
 const STPILL = {
@@ -35,16 +36,173 @@ const mins = (m) => { m = Number(m || 0); if (m < 60) return m + ' min'; if (m <
 // 10 working days (Mon–Fri) from a date — mirrors app_private.add_working_days, used only to PRE-FILL the terms form
 function addWorkingDays(d, n) { const x = new Date(d); let c = 0; while (c < n) { x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) c++; } return x.toISOString().slice(0, 10); }
 
+
+// ---------------------------------------------------------------- premium live queue (bl_disp_0307)
+// The approved "Dispatch Command — live" direction, wired to the REAL queue RPC.
+// Theme-following: every surface/border/text colour is a shared token, so this view stays correct
+// whether the CC is on light-exec.css or cc-dark.css. Only risk colours are literal.
+const DQ_ICON = { rc_uploaded: '📄', availability_posted: '🗓', check_call: '🕒', message: '💬',
+  status_change: '🔁', booking_created: '➕', approved: '✅', rejected: '⛔' };
+const DQ_LABEL = { rc_uploaded: 'Rate confirmation uploaded', availability_posted: 'Availability posted',
+  check_call: 'Check call logged', message: 'New message', status_change: 'Load status changed',
+  booking_created: 'New booking', approved: 'Booking approved', rejected: 'Booking rejected' };
+function dqInitials(n) { const p = String(n || '').trim().split(/\s+/).filter(Boolean).slice(0, 2); return p.length ? p.map((w) => w[0]).join('').toUpperCase() : '?'; }
+function dqColor(k) { let h = 0; const s = String(k || ''); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; const P = ['#7c3aed', '#0e7490', '#b45309', '#0f766e', '#9333ea', '#1d4ed8']; return P[h % P.length]; }
+function dqFmt(s) { s = Math.max(0, Math.round(s)); const h = (s / 3600) | 0, m = ((s % 3600) / 60) | 0, x = s % 60; return (h ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(x).padStart(2, '0'); }
+function dqAgo(ts) { const s = Math.max(0, Math.round((Date.now() - ts) / 1000)); return s < 60 ? s + 's ago' : (s < 3600 ? Math.round(s / 60) + ' min ago' : Math.round(s / 3600) + ' h ago'); }
+function dqStyle() {
+  if (document.getElementById('dq-css')) return;
+  const s = document.createElement('style');
+  s.id = 'dq-css';
+  s.textContent = [
+    '.dq-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px;background:var(--lb-surface);border:1px solid var(--lb-border);border-radius:14px}',
+    '.dq-clock{font-variant-numeric:tabular-nums;font-weight:800}',
+    '.dq-clock small{color:var(--lb-muted);font-weight:700;margin-left:6px;font-size:10px;letter-spacing:.08em}',
+    '.dq-live{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.1em;border-radius:999px;padding:4px 11px;color:#0f9d68;background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.30)}',
+    '.dq-live.off{color:var(--lb-muted);background:rgba(148,163,184,.12);border-color:var(--lb-border)}',
+    '.dq-pulse{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:dqpu 1.6s infinite}',
+    '@keyframes dqpu{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}',
+    '.dq-who{display:flex;align-items:center;margin-left:auto}',
+    '.dq-av{width:28px;height:28px;border-radius:50%;border:2px solid var(--lb-surface);margin-left:-7px;display:grid;place-items:center;font-size:10.5px;font-weight:800;color:#fff;position:relative}',
+    '.dq-av i{position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;border:2px solid var(--lb-surface);background:#22c55e}',
+    '.dq-wholbl{font-size:11px;color:var(--lb-muted);margin-left:10px}',
+    '.dq-grid{display:grid;grid-template-columns:minmax(0,1fr) 322px;gap:14px;align-items:start}',
+    '@media(max-width:1240px){.dq-grid{grid-template-columns:1fr}}',
+    '.dq-triage{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--lb-border);border-radius:14px;overflow:hidden;margin-bottom:12px;background:var(--lb-surface)}',
+    '@media(max-width:900px){.dq-triage{grid-template-columns:repeat(4,1fr)}}',
+    '.dq-t{padding:12px 13px;border-right:1px solid var(--lb-border);cursor:pointer;position:relative;background:none;text-align:left;font:inherit;color:inherit}',
+    '.dq-t:last-child{border-right:0}',
+    '.dq-t:hover{background:rgba(8,131,247,.06)}',
+    '.dq-t .n{font-size:22px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.05}',
+    '.dq-t .l{font-size:10.5px;color:var(--lb-muted);margin-top:3px}',
+    '.dq-t.hot .n{color:#dc2626}.dq-t.warm .n{color:#b45309}.dq-t.cool .n{color:#0f9d68}',
+    '.dq-t.sel::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:#0883F7}',
+    // flex, not a fixed grid: the CC content column is only ~850px once the sidebar and the
+    // live rail take their share, so the row must WRAP instead of crushing the lane to one word.
+    '.dq-rc{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--lb-border)}',
+    '.dq-rc:last-child{border-bottom:0}',
+    '.dq-rc>.dq-c1{flex:1 1 260px;min-width:0}',
+    '.dq-rc>.dq-c2{flex:0 0 auto;min-width:104px}',
+    '.dq-rc>.dq-c3{flex:0 0 auto;min-width:132px}',
+    '.dq-rc>.dq-fl{flex:1 1 150px}',
+    '.dq-rc>.dq-act{flex:0 0 auto;margin-left:auto}',
+    '@media(max-width:640px){.dq-rc>.dq-act{margin-left:0}}',
+    '.dq-lane{font-weight:800;font-size:14px;letter-spacing:-.01em}',
+    '.dq-meta{font-size:12px;color:var(--lb-muted);margin-top:2px}',
+    '.dq-gross{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}',
+    '.dq-rpm{font-size:11px;color:var(--lb-muted)}',
+    '.dq-cd{font-variant-numeric:tabular-nums;font-weight:800;font-size:13px}',
+    '.dq-cd.red{color:#dc2626}.dq-cd.amber{color:#b45309}',
+    '.dq-cdl{font-size:10px;color:var(--lb-muted);letter-spacing:.05em;text-transform:uppercase}',
+    '.dq-age{font-size:11px;color:var(--lb-muted);font-variant-numeric:tabular-nums}',
+    '.dq-fl{display:flex;flex-direction:column;gap:5px;align-items:flex-start}',
+    '.dq-flag{font-size:10.5px;font-weight:800;border-radius:7px;padding:3px 8px}',
+    '.dq-flag.red{color:#dc2626;background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.28)}',
+    '.dq-flag.amber{color:#b45309;background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.28)}',
+    '.dq-act{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}',
+    '.dq-feed{max-height:520px;overflow:auto}',
+    '.dq-ev{display:flex;gap:10px;align-items:flex-start;padding:9px 2px;border-bottom:1px solid var(--lb-border)}',
+    '.dq-ev:last-child{border-bottom:0}',
+    '.dq-ev .ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:13px;flex:none;background:rgba(8,131,247,.10);border:1px solid rgba(8,131,247,.25)}',
+    '.dq-ev .t1{font-size:12.5px;font-weight:700}',
+    '.dq-ev .t2{font-size:11px;color:var(--lb-muted)}',
+    '.dq-ev .when{margin-left:auto;font-size:10.5px;color:var(--lb-muted);white-space:nowrap}',
+    '@media(prefers-reduced-motion:reduce){.dq-pulse{animation:none}}',
+  ].join('');
+  document.head.appendChild(s);
+}
+
 export function renderDispatchers(host) {
-  const state = { q: '', st: 'all', rows: [], carriers: [], queue: null };
+  const state = { q: '', st: 'all', rows: [], carriers: [], queue: null, dq: 'rc', presence: [], feed: [], comm: null, liveShown: false };
   const body = el('div');
   const queueBox = el('div');
+  // bl_disp_0307: this box is now the command bar — ET clock, socket state, presence avatars
+  const presenceBox = el('div');
+  const feedBox = el('div');
+  let dqTimer = null, dqTicks = 0;
+  dqStyle();
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Dispatchers', 'The verified dispatch workforce — hiring pipeline, carrier assignment + SOP, rate-confirmation approvals, per-load commission and payout. One dedicated dispatcher per carrier; nothing moves until LoadBoot approves the RC.'),
-    queueBox,
-    body,
+    presenceBox,
+    el('div', { class: 'dq-grid' }, [el('div', null, [queueBox, body]), el('div', null, [feedBox])]),
   ]));
   load();
+
+  // ---------------------------------------------------------------- realtime (shared/dispatch-live.js)
+  // Broadcast + presence on `dispatch:live` (app_private is not in the realtime publication, so
+  // postgres_changes is not available). An event is only a hint: the queue is ALWAYS repainted
+  // from ccDispatcherQueue(), never from the payload, and the 90 s visible-tab poll below is the
+  // fallback for a dead socket — do not remove it when extending this view.
+  function paintPresence(list) {
+    if (list) state.presence = Array.isArray(list) ? list : [];
+    const on = (state.presence || []).filter((p) => p.role === 'dispatcher');
+    const live = !!(typeof ccLive !== 'undefined' && ccLive && ccLive.isLive());
+    mount(presenceBox, el('div', { class: 'dq-bar' }, [
+      el('div', { style: 'font-weight:800;letter-spacing:-.02em' }, 'Dispatch Command'),
+      el('span', { class: 'dq-clock', id: 'dq-clock' }, '—'),
+      live ? el('span', { class: 'dq-live' }, [el('span', { class: 'dq-pulse' }), 'LIVE · dispatch:live'])
+           : el('span', { class: 'dq-live off', title: 'Realtime is not connected — the queue still refreshes on its poll.' }, 'POLLING · realtime offline'),
+      el('div', { class: 'dq-who' }, on.length
+        ? on.map((p) => el('span', { class: 'dq-av', style: 'background:' + dqColor(p.user_id), title: (p.name || 'dispatcher') + ' — online' + (p.tab ? ', ' + p.tab + ' tab' : '') }, [dqInitials(p.name), el('i')]))
+            .concat([el('span', { class: 'dq-wholbl' }, on.length + ' dispatcher' + (on.length > 1 ? 's' : '') + ' online')])
+        : [el('span', { class: 'dq-wholbl' }, live ? 'no dispatcher online right now' : 'presence needs realtime')]),
+    ]));
+    dqTick();
+  }
+  const ccLive = dispatchLiveJoin({ role: 'cc', name: 'Command Center',
+    onEvent: (e) => { dqFeed(e); paintQueue(); },   // bl_disp_0307 — hint only; paintQueue still refetches
+    onPresence: (list) => paintPresence(list) });
+  const ccPoll = setInterval(() => { if (document.visibilityState === 'visible') paintQueue(); }, 90000);
+  const ccMo = new MutationObserver(() => { if (!document.body.contains(presenceBox)) { clearInterval(ccPoll); clearInterval(dqTimer); try { ccLive.leave(); } catch (_) {} ccMo.disconnect(); } });
+  ccMo.observe(document.body, { childList: true, subtree: true });
+
+  // ---- bl_disp_0307: one-second repaint of the ET clock and of every ticking countdown/age,
+  // plus the live-wire rail. Display only — it never fetches; ccPoll and ccLive do that.
+  paintPresence(null);
+  paintFeed();
+  dqTimer = setInterval(() => {
+    if (!host.isConnected) { clearInterval(dqTimer); return; }
+    dqTick();
+  }, 1000);
+  function dqTick() {
+    dqTicks++;
+    const c = document.getElementById('dq-clock');
+    if (c) c.innerHTML = new Date().toLocaleTimeString('en-US', { timeZone: ET, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) + '<small>US EASTERN</small>';
+    queueBox.querySelectorAll('[data-cd]').forEach((e) => {
+      const v = Number(e.dataset.cd) - 1; e.dataset.cd = String(v);
+      e.textContent = (v < 0 ? '-' : '') + dqFmt(Math.abs(v));
+      e.classList.toggle('red', v < 4 * 3600);
+      e.classList.toggle('amber', v >= 4 * 3600 && v < 12 * 3600);
+    });
+    queueBox.querySelectorAll('[data-age]').forEach((e) => {
+      const v = Number(e.dataset.age) + 1; e.dataset.age = String(v);
+      e.textContent = 'waiting ' + dqFmt(v);
+    });
+    const live = !!(ccLive && ccLive.isLive());
+    if (live !== state.liveShown) { state.liveShown = live; paintPresence(null); paintFeed(); }
+    else if (dqTicks % 5 === 0 && state.feed.length) paintFeed();
+  }
+  function dqFeed(e) {
+    const t2 = [e.lane, e.carrier, e.booking ? 'booking ' + String(e.booking).slice(0, 8) : ''].filter(Boolean).join(' · ');
+    state.feed.unshift({ ic: DQ_ICON[e.type] || '•', t1: DQ_LABEL[e.type] || String(e.type), t2: t2, at: Date.now() });
+    state.feed = state.feed.slice(0, 9);
+    paintFeed();
+  }
+  function paintFeed() {
+    mount(feedBox, card([
+      el('div', { style: 'display:flex;align-items:center;gap:8px;margin-bottom:6px' }, [
+        el('div', { style: 'font-weight:800' }, 'Live wire'), el('span', { style: 'flex:1' }),
+        el('span', { class: 'cc-sub' }, ccLive && ccLive.isLive() ? 'connected' : 'offline'),
+      ]),
+      state.feed.length
+        ? el('div', { class: 'dq-feed' }, state.feed.map((f) => el('div', { class: 'dq-ev' }, [
+            el('span', { class: 'ic' }, f.ic),
+            el('span', null, [el('span', { class: 't1' }, f.t1), el('br'), el('span', { class: 't2' }, f.t2 || '')]),
+            el('span', { class: 'when' }, dqAgo(f.at)),
+          ])))
+        : el('div', { class: 'cc-sub' }, 'Nothing yet. An entry appears here the moment a dispatcher uploads an RC, posts availability, logs a check call or sends a message.'),
+    ]));
+  }
 
   async function load() {
     mount(body, el('div', { class: 'lb-state lb-loading' }, 'Loading dispatchers…'));
@@ -67,37 +225,140 @@ export function renderDispatchers(host) {
     } catch (_) { /* deep link is best-effort */ }
   }
 
-  // ---------------------------------------------------------------- cross-dispatcher queue (bl_disp_0300)
+  // ------------------------------------------- cross-dispatcher queue (bl_disp_0300 → bl_disp_0307)
+  // Same RPC, same guards; the triage strip is a filter over what the queue already returns.
+  // "Stale > 4 h" is derived from moving[].last_touch_min, and the money figures come from the
+  // commission list — no new backend.
   async function paintQueue() {
+    dqStyle();
     let q; try { q = await ccDispatcherQueue(); } catch (e) { mount(queueBox, ''); return; }
     if (!q || q.error) { mount(queueBox, ''); return; }
     state.queue = q;
-    const ap = q.awaiting_approval || [], rc = q.awaiting_rc || [], mv = q.moving || [], ut = (q.unread_threads || []).filter((t) => Number(t.unread) > 0), te = q.trials_ending || [];
-    const total = ap.length + rc.length + ut.length + Number(q.commission_to_approve || 0) + Number(q.commission_to_pay || 0) + te.length;
+    if (state.comm === null) {
+      const c = await ccDispatcherCommissionList(null).catch(() => []);
+      state.comm = Array.isArray(c) ? c : [];
+      paint();                                   // roster rows show "owed" once commissions land
+    }
+    paintQueueBody();
+  }
+
+  function dqSum(status, uid) {
+    return (state.comm || []).filter((c) => c.status === status && (!uid || c.dispatcher_user_id === uid))
+      .reduce((s, c) => s + Number(c.amount || 0), 0);
+  }
+
+  function paintQueueBody() {
+    const q = state.queue || {};
+    const ap = q.awaiting_approval || [], rc = q.awaiting_rc || [], mv = q.moving || [];
+    const ut = (q.unread_threads || []).filter((t) => Number(t.unread) > 0), te = q.trials_ending || [];
+    const stale = mv.filter((b) => Number(b.last_touch_min) > 240);
+    const unread = ut.reduce((s, t) => s + Number(t.unread || 0), 0);
+    const toPay = dqSum('approved'), toApprove = dqSum('draft');
     const byUser = (uid, bid) => { const x = state.rows.find((r) => r.user_id === uid); if (x) open360(x, bid || null); };
-    const chip = (n, l, tone) => el('span', { class: 'cc-pill cc-pill-' + (tone || (n ? 'amber' : 'green')), style: 'margin-right:6px' }, n + ' ' + l);
-    const decideQuick = async (b) => { const ok = await approveFlow(b); if (ok) paintQueue(); };
-    mount(queueBox, card([
-      el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px' }, [
-        el('div', { style: 'font-weight:800;font-size:1.02rem' }, ['Dispatch queue ', total ? el('span', { class: 'cc-pill cc-pill-amber' }, String(total)) : el('span', { class: 'cc-pill cc-pill-green' }, 'clear')]),
-        el('span', { style: 'flex:1' }), el('button', { class: 'lb-btn lb-btn-ghost', onClick: paintQueue }, [icon('refresh', 14), ' Refresh']),
-      ]),
-      el('div', { style: 'margin-bottom:8px' }, [chip(ap.length, 'RC to approve', ap.length ? 'red' : 'green'), chip(rc.length, 'awaiting RC'), chip(mv.length, 'moving', 'green'), chip(ut.length, 'unread threads'), chip(Number(q.commission_to_approve || 0), 'commission to approve'), chip(Number(q.commission_to_pay || 0), 'to pay'), chip(te.length, 'trials ending ≤3 d')]),
-      ap.length ? el('div', null, [el('div', { style: 'font-weight:700;margin:6px 0 2px' }, 'Rate confirmations waiting — approve from the RC, never from the summary'),
-        ...ap.map((b) => el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #eef2f7' }, [
-          el('div', { style: 'flex:1;min-width:240px' }, [el('b', null, b.lane), el('div', { class: 'cc-sub' }, [b.dispatcher, ' → ', b.carrier, ' · ', b.broker, ' · ', money(b.gross), b.miles ? ' · $' + (Number(b.gross) / Number(b.miles)).toFixed(2) + '/mi' : '', ' · PU ', et(b.pickup_at), ' · waiting ', mins(b.age_min)].join(''))]),
-          Number(b.age_min) > 60 ? el('span', { class: 'cc-pill cc-pill-red' }, 'SLA ' + mins(b.age_min)) : '',
-          b.hours_to_pickup != null && Number(b.hours_to_pickup) < 6 ? el('span', { class: 'cc-pill cc-pill-red' }, 'pickup in ' + b.hours_to_pickup + ' h') : '',
-          b.below_min ? el('span', { class: 'cc-pill cc-pill-red' }, 'below floor') : '', !b.driver_set ? el('span', { class: 'cc-pill cc-pill-amber' }, 'no driver on truck') : '', !b.rc_doc_path ? el('span', { class: 'cc-pill cc-pill-amber' }, 'no RC file') : '',
+    const decideQuick = async (b) => { const ok = await approveFlow(b); if (ok) { state.comm = null; paintQueue(); } };
+
+    const cells = [
+      ['rc', String(ap.length), 'RC to approve', ap.length ? 'hot' : 'cool'],
+      ['awaiting', String(rc.length), 'Awaiting RC', rc.length ? 'warm' : 'cool'],
+      ['moving', String(mv.length), 'Moving', 'cool'],
+      ['stale', String(stale.length), 'Stale > 4 h', stale.length ? 'hot' : 'cool'],
+      ['unread', String(unread), 'Unread', unread ? 'warm' : 'cool'],
+      ['pay', toPay ? money(toPay) : String(Number(q.commission_to_pay || 0)), 'To pay out', toPay ? 'hot' : 'cool'],
+      ['trials', String(te.length), 'Trial ends ≤3 d', te.length ? 'warm' : 'cool'],
+    ];
+    const strip = el('div', { class: 'dq-triage' }, cells.map(([k, n, l, tone]) => el('button', {
+      class: 'dq-t ' + tone + (state.dq === k ? ' sel' : ''), type: 'button',
+      onClick: () => { state.dq = k; paintQueueBody(); },
+    }, [el('div', { class: 'n' }, n), el('div', { class: 'l' }, l)])));
+
+    // ---- the premium RC row: lane · money · ticking clocks · risk flags · actions
+    const rcRow = (b) => {
+      const pk = b.pickup_at ? Math.round((new Date(b.pickup_at).getTime() - Date.now()) / 1000) : null;
+      const age = Math.round(Number(b.age_min || 0) * 60);
+      const miles = Number(b.miles || 0), gross = Number(b.gross || 0);
+      const flags = [];
+      if (b.below_min) flags.push(['red', 'BELOW FLOOR — NEEDS WRITTEN REASON']);
+      if (!b.rc_doc_path) flags.push(['amber', 'NO RC FILE YET']);
+      if (!b.driver_set) flags.push(['amber', 'NO DRIVER ON TRUCK']);
+      if (Number(b.age_min) > 60) flags.push(['red', 'SLA ' + mins(b.age_min)]);
+      if (b.hours_to_pickup != null && Number(b.hours_to_pickup) < 6) flags.push(['red', 'PICKUP IN ' + b.hours_to_pickup + ' H']);
+      return el('div', { class: 'dq-rc' }, [
+        el('div', { class: 'dq-c1' }, [
+          el('div', { class: 'dq-lane' }, b.lane || ((b.origin || '') + ' → ' + (b.destination || ''))),
+          el('div', { class: 'dq-meta' }, (b.dispatcher || '—') + ' → ' + (b.carrier || '—') + (b.broker ? ' · ' + b.broker : '') + ' · PU ' + et(b.pickup_at)),
+        ]),
+        el('div', { class: 'dq-c2' }, [
+          el('div', { class: 'dq-gross' }, money(gross)),
+          miles > 0 ? el('div', { class: 'dq-rpm' }, '$' + (gross / miles).toFixed(2) + ' /mi · ' + miles + ' mi') : '',
+        ]),
+        el('div', { class: 'dq-c3' }, [
+          pk === null ? el('div', { class: 'dq-cd' }, '—') : el('div', { class: 'dq-cd', 'data-cd': String(pk) }, (pk < 0 ? '-' : '') + dqFmt(Math.abs(pk))),
+          el('div', { class: 'dq-cdl' }, pk !== null && pk < 0 ? 'pickup passed' : 'to pickup'),
+          el('div', { class: 'dq-age', 'data-age': String(age) }, 'waiting ' + dqFmt(age)),
+        ]),
+        el('div', { class: 'dq-fl' }, flags.length ? flags.map(([t, l]) => el('span', { class: 'dq-flag ' + t }, l)) : [el('span', { class: 'cc-sub' }, 'clean')]),
+        el('div', { class: 'dq-act' }, [
           b.rc_doc_path ? el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => previewRc(b) }, 'View RC') : '',
-          el('button', { class: 'lb-btn lb-btn-primary', disabled: !b.rc_doc_path ? '' : undefined, onClick: () => decideQuick(b) }, 'Approve'),
+          el('button', {
+            class: 'lb-btn lb-btn-primary', disabled: !b.rc_doc_path ? '' : undefined,
+            title: b.rc_doc_path ? 'Read the RC first' : 'Approve only from the RC — never from the summary',
+            onClick: () => decideQuick(b),
+          }, 'Approve'),
           el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(b.dispatcher_user_id, b.id) }, 'Open'),
-        ]))]) : '',
-      rc.length ? el('div', { class: 'cc-sub', style: 'margin-top:8px' }, 'Awaiting RC: ' + rc.map((b) => b.lane + ' (' + b.dispatcher + ', ' + mins(b.age_min) + ')').join(' · ')) : '',
-      mv.length ? el('div', { class: 'cc-sub', style: 'margin-top:6px' }, ['Moving: ', ...mv.map((b, i) => el('span', null, [i ? ' · ' : '', el('a', { href: '#', onClick: (e) => { e.preventDefault(); byUser(b.dispatcher_user_id, b.id); } }, b.lane), ' (' + b.status + ', last touch ' + mins(b.last_touch_min) + (Number(b.last_touch_min) > 240 ? ' ⚠' : '') + ')']))]) : '',
-      ut.length ? el('div', { class: 'cc-sub', style: 'margin-top:6px' }, ['Unread: ', ...ut.map((t, i) => el('span', null, [i ? ' · ' : '', el('a', { href: '#', onClick: (e) => { e.preventDefault(); byUser(t.dispatcher_user_id); } }, t.carrier + ' (' + t.unread + ')')]))]) : '',
-      te.length ? el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Trials ending: ' + te.map((t) => t.name + ' — ' + t.trial_end + ' (' + t.days_left + ' d)').join(' · ') + '. Decide from KPIs: verify or end.') : '',
+        ]),
+      ]);
+    };
+
+    const plain = (b, tail) => el('div', { class: 'dq-rc' }, [
+      el('div', { class: 'dq-c1' }, [
+        el('div', { class: 'dq-lane' }, b.lane || ''),
+        el('div', { class: 'dq-meta' }, (b.dispatcher || '—') + ' → ' + (b.carrier || '—') + (b.broker ? ' · ' + b.broker : '') + ' · ' + tail),
+      ]),
+      el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(b.dispatcher_user_id, b.id) }, 'Open')]),
+    ]);
+
+    let head = '', list = [];
+    if (state.dq === 'rc') {
+      head = 'Rate confirmations waiting — approve from the RC, never from the summary';
+      list = ap.map(rcRow);
+    } else if (state.dq === 'awaiting') {
+      head = 'Booked, RC not in yet — the dispatcher still owes us the paperwork';
+      list = rc.map((b) => plain(b, money(b.gross) + ' · PU ' + et(b.pickup_at) + ' · waiting ' + mins(b.age_min)));
+    } else if (state.dq === 'moving' || state.dq === 'stale') {
+      const src = state.dq === 'stale' ? stale : mv;
+      head = state.dq === 'stale' ? 'No check call in over 4 hours — chase the dispatcher' : 'On the road';
+      list = src.map((b) => plain(b, b.status + ' · last touch ' + mins(b.last_touch_min) + (Number(b.last_touch_min) > 240 ? ' ⚠' : '') + (b.delivery_at ? ' · DEL ' + et(b.delivery_at) : '')));
+    } else if (state.dq === 'unread') {
+      head = 'Carrier threads with unread messages';
+      list = ut.map((t) => el('div', { class: 'dq-rc' }, [
+        el('div', { class: 'dq-c1' }, [el('div', { class: 'dq-lane' }, t.carrier || '—'), el('div', { class: 'dq-meta' }, t.unread + ' unread')]),
+        el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(t.dispatcher_user_id) }, 'Open')]),
+      ]));
+    } else if (state.dq === 'pay') {
+      head = 'Commission — paid per load, through the payout dialog on the dispatcher’s 360';
+      list = [el('div', { class: 'cc-sub', style: 'padding:10px 0' },
+        Number(q.commission_to_approve || 0) + ' to approve (' + money(toApprove) + ') · ' +
+        Number(q.commission_to_pay || 0) + ' approved and unpaid (' + money(toPay) + '). Open a dispatcher below to approve or record a payment.')];
+    } else if (state.dq === 'trials') {
+      head = 'Trials ending — decide from the KPIs: verify or end';
+      list = te.map((t) => el('div', { class: 'dq-rc' }, [
+        el('div', { class: 'dq-c1' }, [el('div', { class: 'dq-lane' }, t.name || '—'), el('div', { class: 'dq-meta' }, 'trial ends ' + t.trial_end + ' · ' + t.days_left + ' d left')]),
+        el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(t.user_id) }, 'Open')]),
+      ]));
+    }
+
+    mount(queueBox, el('div', null, [
+      strip,
+      card([
+        el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px' }, [
+          el('div', { style: 'font-weight:800' }, head || 'Dispatch queue'),
+          el('span', { style: 'flex:1' }),
+          el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => { state.comm = null; paintQueue(); } }, [icon('refresh', 14), ' Refresh']),
+        ]),
+        list.length ? el('div', null, list) : el('div', { class: 'cc-sub', style: 'padding:8px 0' }, 'Nothing here — clear.'),
+      ]),
     ]));
+    dqTick();
   }
 
   // ---------------------------------------------------------------- RC preview (inline; PDF or image)
@@ -123,6 +384,7 @@ export function renderDispatchers(host) {
       }
       toast(r.error); return false;
     }
+    try { ccLive.send('approved', { booking: b.id }); } catch (_) {}
     toast('✓ approved' + (r.trip ? ' · trip created' : '')); return true;
   }
 
@@ -146,12 +408,14 @@ export function renderDispatchers(host) {
     const nAp = q ? (q.awaiting_approval || []).filter((b) => b.dispatcher_user_id === uid).length : 0;
     const nUn = q ? (q.unread_threads || []).filter((t) => t.dispatcher_user_id === uid).reduce((s, t) => s + Number(t.unread || 0), 0) : 0;
     const tr = q ? (q.trials_ending || []).find((t) => t.user_id === uid) : null;
+    const owed = dqSum('approved', uid);
     return el('div', { class: 'cc-row', style: 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:10px 0;border-bottom:1px solid #eef2f7;cursor:pointer', onClick: () => open360(x) }, [
       el('div', { style: 'flex:1;min-width:220px' }, [
         el('div', { style: 'font-weight:700' }, (x.name || '(no name)') + ' · ' + (x.email || '')),
         el('div', { class: 'cc-sub' }, (x.country || '—') + ' · ' + (x.years_exp || 0) + ' yrs exp · applied ' + fmtDate(x.applied_at) + (x.commission_pct != null && Number(x.commission_pct) > 0 ? ' · ' + x.commission_pct + '%' : '')),
       ]),
       nAp ? el('span', { class: 'cc-pill cc-pill-red' }, nAp + ' RC to approve') : '', nUn ? el('span', { class: 'cc-pill cc-pill-amber' }, nUn + ' unread') : '', tr ? el('span', { class: 'cc-pill cc-pill-amber' }, 'trial ends in ' + tr.days_left + ' d') : '',
+      owed ? el('span', { class: 'cc-pill cc-pill-amber' }, money(owed) + ' to pay') : '',
       Number(x.carriers) ? el('span', { class: 'cc-pill cc-pill-green' }, (x.carriers) + ' carrier' + (x.carriers > 1 ? 's' : '') + ' · ' + (x.active_trucks || 0) + ' trucks') : '',
       pill(x.status),
     ]);
@@ -393,7 +657,7 @@ export function renderDispatchers(host) {
       const bpill = (st) => { const m = BST[st] || [st, 'violet']; return el('span', { class: 'cc-pill cc-pill-' + m[1] }, m[0]); };
       const filt = el('select', { class: 'lb-input', style: 'max-width:170px' }, [['open', 'Open'], ['all', 'All'], ['rc_received', 'RC to approve'], ['moving', 'Moving'], ['done', 'Delivered / closed']].map(([v, l]) => el('option', { value: v }, l)));
       filt.addEventListener('change', paint);
-      const reject = async (b) => { const note = await askReason('Why not? (the dispatcher sees this)'); if (note === null) return; const r = await ccDispatcherBookingDecide(b.id, 'reject', note).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } toast('✓ rejected'); paint(); paintQueue(); };
+      const reject = async (b) => { const note = await askReason('Why not? (the dispatcher sees this)'); if (note === null) return; const r = await ccDispatcherBookingDecide(b.id, 'reject', note).catch((e) => ({ error: humanizeError(e) })); if (r && r.error) { toast(r.error); return; } try { ccLive.send('rejected', { booking: b.id }); } catch (_) {} toast('✓ rejected'); paint(); paintQueue(); };
       async function paint() {
         let rows = []; try { rows = await ccDispatcherBookings({ user: x.user_id, limit: 200 }); } catch (e) { mount(box, el('div', { class: 'cc-sub' }, humanizeError(e))); return; }
         if (!Array.isArray(rows)) rows = [];

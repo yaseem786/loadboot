@@ -183,7 +183,12 @@ export function openW9Wizard(ctx, opts, onDone) {
         const bz = mk('input', inCss); bz.value = state.business; bz.placeholder = 'Optional';
         const l3 = mk('label', lblCss, 'How does the IRS tax the company?');
         const sel = mk('select', inCss);
-        sel.appendChild(mk('option', '', 'Select\u2026'));
+        // A placeholder option needs an explicit empty value. mk() only sets textContent,
+        // and an <option> with no value attribute reports its TEXT as .value — so this
+        // read back as the literal string 'Select\u2026', which is truthy, which killed the
+        // `if (!sel.value)` guard below and let the placeholder be saved as a real answer.
+        // (Found 30 Aug 2026: a live carrier's W-9 was stored with llc_class = 'Select\u2026'.)
+        var _ph1 = mk('option', '', 'Select\u2026'); _ph1.value = ''; sel.appendChild(_ph1);
         // Deliberately no "Individual / sole proprietor" here — that answer belongs to the
         // other path, and offering it is exactly how the contradiction got made.
         ['Limited liability company (LLC)', 'C Corporation', 'S Corporation', 'Partnership', 'Trust / estate'].forEach(function (c) {
@@ -192,7 +197,7 @@ export function openW9Wizard(ctx, opts, onDone) {
         const llcWrap = mk('div', String(state.cls).indexOf('LLC') >= 0 ? '' : 'display:none');
         const ll = mk('label', lblCss, 'LLC tax classification \u2014 the letter on your IRS election letter');
         const lsel = mk('select', inCss);
-        lsel.appendChild(mk('option', '', 'Select\u2026'));
+        var _ph2 = mk('option', '', 'Select\u2026'); _ph2.value = ''; lsel.appendChild(_ph2);
         ['C = C corporation', 'S = S corporation', 'P = Partnership'].forEach(function (x) {
           const o = mk('option', '', x); o.value = x; if (state.llc === x) o.selected = true; lsel.appendChild(o);
         });
@@ -271,7 +276,7 @@ export function openW9Wizard(ctx, opts, onDone) {
         if (sig.value.trim().length < 3) { msg.textContent = 'Type your full name to sign.'; return; }
         btn.disabled = true; btn.textContent = 'Submitting…';
         try {
-          await carrierSubmitW9({ name: state.name, business_name: state.business, classification: state.cls, llc_class: state.cls.indexOf('LLC') >= 0 ? state.llc : '', address: state.address, city_state_zip: state.csz, tin: state.tin, signer_name: sig.value.trim(), signed_date: today(), ref: REF });
+          await carrierSubmitW9({ name: state.name, business_name: state.business, classification: state.cls, llc_class: (state.cls.indexOf('LLC') >= 0 && state.llc !== 'Select\u2026') ? state.llc : '', address: state.address, city_state_zip: state.csz, tin: state.tin, signer_name: sig.value.trim(), signed_date: today(), ref: REF });
           if (close) close();
           if (ctx.toast) ctx.toast('W-9 completed — sent to the Command Center for review');
           try { sessionStorage.removeItem('lb_w9_draft'); } catch (_) {}

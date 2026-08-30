@@ -23,6 +23,7 @@ import { uploadDocument, signedDocumentUrl } from '../shared/storage.js';
 import { el, mount, clear } from '../shared/ui/dom.js';
 import { roadMiles } from '../shared/usGeo.js';
 import { icon as sharedIcon } from '../shared/ui/icons.js';
+import { dispatchLiveJoin } from '../shared/dispatch-live.js';
 
 // Line icons (Lucide-style, stroke=currentColor) — shared set + a few extras this module needs.
 const XP = {
@@ -206,11 +207,79 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   const paintClock = () => mount(clockEl, [h('span', { class: 'et' }, [ic('globe', 13), ' US Eastern ', h('b', null, clock(ET))]), h('span', null, ['Pakistan ', h('b', null, clock(PKT))]), h('span', { style: 'opacity:.75' }, 'All times in this workspace are ET — brokers, RCs and appointments use it.')]);
   paintClock(); const clockTimer = setInterval(paintClock, 30000);
   // stop timers when the host is unmounted (tab switch in the shell)
-  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { clearInterval(clockTimer); stopThreadPoll(); mo.disconnect(); } });
+  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { clearInterval(clockTimer); stopThreadPoll(); try { dwLive.leave(); } catch (_) {} try { window.removeEventListener('hashchange', dwHash); } catch (_) {} mo.disconnect(); } });
   mo.observe(document.body, { childList: true, subtree: true });
+  // ---- realtime wire to the Command Center (shared/dispatch-live.js).
+  // Fire-and-forget: every send is a "refetch now" HINT, never data, and every method no-ops
+  // when the websocket is down. The polling and reload paths below stay the source of truth.
+  const dwLiveOpts = { role: 'dispatcher', name: '', tab: tab,
+    onEvent: (e) => { if (['approved', 'rejected', 'message', 'status_change'].includes(e.type)) load(); } };
+  const dwLive = dispatchLiveJoin(dwLiveOpts);
+  // ---- DEEP TARGETS: every button and every external link lands on the exact card, not the tab.
+  // Vocabulary (agent portal): #dashboard/<tab>[/<target>] — the bare #<tab>[/<target>] also works,
+  // because the agent shell falls back to the dashboard for any hash it does not know, and it has no
+  // hashchange listener of its own, so this module owns its sub-route without touching app.js.
+  //   #bookings/<id> · #bookings/new · #trucks/<id> · #trucks/<id>/availability (or #availability/<id>)
+  //   #messages/<assignmentId> · #board/<assignmentId> · #brokers/new · #today · #money · #packet · #kpis
+  // An unknown tab, or an id that is not in the feed, is IGNORED: the tab still opens and nothing
+  // breaks — old links keep working forever.
+  const DW_TABS = ['today', 'board', 'trucks', 'bookings', 'brokers', 'money', 'messages', 'packet', 'kpis'];
+  const DW_ALIAS = { queue: 'today', home: 'today', loads: 'board', search: 'board',
+    fleet: 'trucks', truck: 'trucks', availability: 'trucks', booking: 'bookings', rc: 'bookings',
+    thread: 'messages', chat: 'messages', message: 'messages', commission: 'money', pay: 'money',
+    docs: 'packet', documents: 'packet', packet: 'packet', broker: 'brokers', kpi: 'kpis' };
+  let openThreadId = null, openTruckId = null, openBoardId = null, openAction = null;
+  function dwGo(tabId, target) {
+    const key = String(tabId == null ? '' : tabId).toLowerCase();
+    const t9 = DW_ALIAS[key] || key;
+    if (DW_TABS.indexOf(t9) < 0) return false;
+    const id = String(target == null ? '' : target).trim();
+    openId = null; openThreadId = null; openTruckId = null; openBoardId = null; openAction = null;
+    if (t9 === 'bookings') { if (/^(new|log|add)$/i.test(id)) openAction = 'new-booking'; else if (id) openBooking(id); }
+    else if (t9 === 'messages') { if (id) openThreadId = id; }
+    else if (t9 === 'board') { if (id) openBoardId = id; }
+    else if (t9 === 'brokers') { if (/^(new|add)$/i.test(id)) openAction = 'new-broker'; }
+    else if (t9 === 'trucks') {
+      const p9 = id.split('/');
+      if (p9[0] && !/^availability$/i.test(p9[0])) openTruckId = p9[0];
+      else if (p9[1]) openTruckId = p9[1];
+      if (key === 'availability' || /(^|\/)availability$/i.test(id)) openAction = 'availability';
+    }
+    tab = t9;
+    try { sessionStorage.setItem('dw_tab', tab); } catch (_) {}
+    try { dwLive.setTab(tab); } catch (_) {}
+    render();
+    return true;
+  }
+  // the card a deep link asked for gets the same 3.5 s LoadBoot-blue outline the carrier portal uses
+  function dwFlash(node) {
+    if (!node) return;
+    try {
+      node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      node.style.outline = '2px solid #0883F7'; node.style.outlineOffset = '3px';
+      setTimeout(() => { node.style.outline = ''; node.style.outlineOffset = ''; }, 3500);
+    } catch (_) {}
+  }
+  function dwReadHash() {
+    let raw; try { raw = String(location.hash || '').replace(/^#/, '').split('?')[0]; } catch (_) { return; }
+    if (!raw) return;
+    let parts; try { parts = raw.split('/').filter(Boolean).map(decodeURIComponent); } catch (_) { parts = raw.split('/').filter(Boolean); }
+    for (let i = 0; i < parts.length; i++) {
+      const key = parts[i].toLowerCase();
+      if (DW_TABS.indexOf(DW_ALIAS[key] || key) < 0) continue;          // agent-shell tabs pass through untouched
+      if (dwGo(key, parts.slice(i + 1).join('/'))) {
+        // leave the shell on its own hash so Back still works and targets never re-fire on re-render
+        try { history.replaceState(null, '', location.pathname + location.search + '#dashboard'); } catch (_) {}
+      }
+      return;
+    }
+  }
+  const dwHash = () => dwReadHash();
+  window.addEventListener('hashchange', dwHash);
 
   async function load() {
     try { feed = await dispatcherWorkspaceFeed(); } catch (e) { feed = { error: e.message || 'Could not load your workspace.' }; }
+    try { const p0 = (feed && feed.profile) || {}; dwLiveOpts.name = p0.name || p0.full_name || ''; } catch (_) {}
     render();
   }
   function err(msg) { return h('div', { class: 'dw-err' }, msg); }
@@ -261,21 +330,21 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const p = feed.profile || {};
     if (p.trial_end) { const days = Math.ceil((new Date(p.trial_end + 'T23:59:59') - now) / 86400000); if (days >= 0) q.push({ ic: 'rocket', hot: days <= 2, t: 'Trial: ' + days + ' day' + (days === 1 ? '' : 's') + ' left (ends ' + p.trial_end + ')', s: 'Commission ' + (p.commission_pct || 0) + '% of gross on every load delivered during the trial. My KPIs shows what LoadBoot reviews.', go: 'kpis' }); }
     for (const a of A()) {
-      if ((a.ack_state || (a.carrier_ack_at ? 'confirmed' : 'pending')) === 'pending') q.push({ ic: 'building', t: (a.carrier && a.carrier.name) + ' has not confirmed you yet', s: 'The owner got the intro e-mail and sees a card in their portal. Introduce yourself in Messages and in the WhatsApp group so they tap it today.', go: 'messages' });
-      if (a.last_message && a.last_message.role !== 'dispatcher' && Number(a.unread || 0) > 0) q.push({ ic: 'chat', hot: true, t: a.unread + ' unread from ' + (a.last_message.role === 'carrier' ? (a.carrier && a.carrier.name) : 'LoadBoot'), s: a.last_message.body || '', go: 'messages' });
+      if ((a.ack_state || (a.carrier_ack_at ? 'confirmed' : 'pending')) === 'pending') q.push({ ic: 'building', t: (a.carrier && a.carrier.name) + ' has not confirmed you yet', s: 'The owner got the intro e-mail and sees a card in their portal. Introduce yourself in Messages and in the WhatsApp group so they tap it today.', go: 'messages', id: a.id });
+      if (a.last_message && a.last_message.role !== 'dispatcher' && Number(a.unread || 0) > 0) q.push({ ic: 'chat', hot: true, t: a.unread + ' unread from ' + (a.last_message.role === 'carrier' ? (a.carrier && a.carrier.name) : 'LoadBoot'), s: a.last_message.body || '', go: 'messages', id: a.id });
     }
     for (const t of trucksAll()) {
       const av = t.availability || {}; const act = activeFor(t.id).filter((b) => MOVING.includes(b.status));
       const label = (t._a.carrier && t._a.carrier.name) + ' · Unit ' + (t.unit_no || '?') + ' (' + (t.equipment || 'truck') + ')';
       if (!act.length && (av.status || 'empty') === 'empty') {
-        q.push({ ic: 'search', hot: true, t: 'Find a load — ' + label, s: (av.empty_location ? 'Empty at ' + av.empty_location + (av.empty_at ? ' from ' + when(av.empty_at) : '') : 'Location not set — update availability') + (av.must_be_home_by ? ' · home by ' + whenDay(av.must_be_home_by) : ''), go: 'board' });
+        q.push({ ic: 'search', hot: true, t: 'Find a load — ' + label, s: (av.empty_location ? 'Empty at ' + av.empty_location + (av.empty_at ? ' from ' + when(av.empty_at) : '') : 'Location not set — update availability') + (av.must_be_home_by ? ' · home by ' + whenDay(av.must_be_home_by) : ''), go: 'board', id: t._a.id });
       }
       const upd = av.updated_at ? new Date(av.updated_at).getTime() : 0;
-      if (!upd) q.push({ ic: 'pin', hot: true, t: 'Availability not set — ' + label, s: 'Brokers ask "where is the truck and when is it empty?" — set it before you call anyone.', go: 'trucks' });
-      else if (upd < six && now > six + 2 * 3600000 && av.updated_by_role !== 'eld') q.push({ ic: 'pin', t: 'Daily availability line is due — ' + label, s: 'Last update ' + ago(av.updated_at) + ' by ' + (av.updated_by_role || '?') + '. Ask in the group ("Truck where? Empty since? Home by? Hours OK?") and put the answer in Trucks.', go: 'trucks' });
-      if (av.must_be_home_by) { const hrs = (new Date(av.must_be_home_by) - now) / 3600000; if (hrs > 0 && hrs < 48) q.push({ ic: 'home', hot: hrs < 24, t: 'Home-time deadline in ' + Math.round(hrs) + ' h — ' + label, s: 'Every load from here must land the truck at ' + (av.home_location || 'home') + ' by ' + whenDay(av.must_be_home_by) + '.', go: 'trucks' }); }
-      if (av.hos_drive_left_h != null && av.hos_drive_left_h < 3 && act.length) q.push({ ic: 'clock', hot: true, t: 'HOS: only ' + av.hos_drive_left_h + ' h drive left — ' + label, s: 'Plan the next stop around a reset.' + (av.hos_note ? ' (' + av.hos_note + ')' : ''), go: 'trucks' });
-      if (av.status === 'maintenance' || av.status === 'off') q.push({ ic: 'alert', t: 'Truck is ' + av.status.toUpperCase() + ' — ' + label, s: 'Do not book it. Check with the owner when it is back.', go: 'trucks' });
+      if (!upd) q.push({ ic: 'pin', hot: true, t: 'Availability not set — ' + label, s: 'Brokers ask "where is the truck and when is it empty?" — set it before you call anyone.', go: 'trucks', id: t.id + '/availability' });
+      else if (upd < six && now > six + 2 * 3600000 && av.updated_by_role !== 'eld') q.push({ ic: 'pin', t: 'Daily availability line is due — ' + label, s: 'Last update ' + ago(av.updated_at) + ' by ' + (av.updated_by_role || '?') + '. Ask in the group ("Truck where? Empty since? Home by? Hours OK?") and put the answer in Trucks.', go: 'trucks', id: t.id + '/availability' });
+      if (av.must_be_home_by) { const hrs = (new Date(av.must_be_home_by) - now) / 3600000; if (hrs > 0 && hrs < 48) q.push({ ic: 'home', hot: hrs < 24, t: 'Home-time deadline in ' + Math.round(hrs) + ' h — ' + label, s: 'Every load from here must land the truck at ' + (av.home_location || 'home') + ' by ' + whenDay(av.must_be_home_by) + '.', go: 'trucks', id: t.id }); }
+      if (av.hos_drive_left_h != null && av.hos_drive_left_h < 3 && act.length) q.push({ ic: 'clock', hot: true, t: 'HOS: only ' + av.hos_drive_left_h + ' h drive left — ' + label, s: 'Plan the next stop around a reset.' + (av.hos_note ? ' (' + av.hos_note + ')' : ''), go: 'trucks', id: t.id });
+      if (av.status === 'maintenance' || av.status === 'off') q.push({ ic: 'alert', t: 'Truck is ' + av.status.toUpperCase() + ' — ' + label, s: 'Do not book it. Check with the owner when it is back.', go: 'trucks', id: t.id });
     }
     for (const b of B()) {
       const lane = b.origin + ' → ' + b.destination;
@@ -300,7 +369,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     if (!feed || feed.error) { mount(body, h('div', { class: 'dw-card' }, [h('h3', null, 'Dispatcher workspace'), h('div', { class: 'dw-muted' }, (feed && feed.error) || 'Loading…')])); return; }
     const k = feed.kpi || {}; const unread = A().reduce((s, a) => s + Number(a.unread || 0), 0);
     const TABS = [['today', 'Today', 'clipboard', queue().filter((x) => x.hot).length], ['board', 'Board', 'search', 0], ['trucks', 'Trucks', 'truck', 0], ['bookings', 'Bookings', 'package', Number(k.awaiting_rc || 0) + Number(k.approved || 0)], ['brokers', 'Brokers', 'phone', 0], ['money', 'Money', 'dollar', 0], ['messages', 'Messages', 'chat', unread], ['packet', 'Packet', 'paperclip', 0], ['kpis', 'My KPIs', 'chart', 0]];
-    TABS.forEach(([id, label, icn, n]) => tabsEl.appendChild(h('button', { class: 'dw-tab' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': tab === id ? 'true' : 'false', onClick: () => { tab = id; try { sessionStorage.setItem('dw_tab', id); } catch (_) {} render(); } }, [ic(icn, 16), label, n ? h('span', { class: 'n', 'aria-label': n + ' items' }, String(n)) : null])));
+    TABS.forEach(([id, label, icn, n]) => tabsEl.appendChild(h('button', { class: 'dw-tab' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': tab === id ? 'true' : 'false', onClick: () => { tab = id; try { sessionStorage.setItem('dw_tab', id); } catch (_) {} try { dwLive.setTab(id); } catch (_) {} render(); } }, [ic(icn, 16), label, n ? h('span', { class: 'n', 'aria-label': n + ' items' }, String(n)) : null])));
     if (tab !== 'messages') stopThreadPoll();
     const view = { today: vToday, board: vBoard, trucks: vTrucks, bookings: vBookings, brokers: vBrokers, money: vMoney, messages: vMessages, packet: vPacket, kpis: vKpis }[tab] || vToday;
     mount(body, view());
@@ -336,7 +405,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('div', null, '6. Something went wrong (detention, breakdown, refused freight)? Log an Exception — LoadBoot is alerted instantly.'),
       ])]),
     ]);
-    function go(x) { if (!x.go) return; tab = x.go; if (x.id) openBooking(x.id); render(); }
+    function go(x) { if (!x.go) return; dwGo(x.go, x.id || ''); }
   }
 
   // ---- TRUCKS
@@ -372,7 +441,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   function truckCard(t) {
     const av = t.availability || {}; const act = activeFor(t.id).filter((b) => MOVING.includes(b.status)); const pend = activeFor(t.id).length - act.length;
     const chips = [['Dock-high', t.dock_high], ['Liftgate' + (t.liftgate && t.liftgate_cap_lbs ? ' ' + num(t.liftgate_cap_lbs) + ' lb' : ''), t.liftgate], ['Pallet jack', t.has_pallet_jack], ['Ramp', t.has_ramp], ['Straps', t.has_straps], ['Chains', t.has_chains], ['Tarps', t.has_tarps], ['E-track', t.has_etrack], ['Load bars', t.has_load_bars], ['Blankets', t.has_blankets], ['Team', t.team_driven], ['Hazmat', t.hazmat_placarded]].filter(([, v]) => v != null);
-    const card = h('div', { class: 'dw-card' });
+    const card = h('div', { class: 'dw-card', 'data-truck': t.id });
     const availBox = h('div');
     const gps = t.last_gps && t.last_gps.lat != null ? t.last_gps : null;
     const renderAvail = (editing) => {
@@ -411,12 +480,16 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
           const p = {}; for (const k of Object.keys(next)) if (norm(k, av[k]) !== norm(k, next[k])) p[k] = next[k];
           if (!Object.keys(p).length) p.status = st.value; // nothing changed → just re-confirm today's line (bumps updated_at)
           const r = await dispatcherSetAvailability(t.id, p);
-          if (r && r.error) throw new Error(r.error); toast('Availability saved'); await load();
+          if (r && r.error) throw new Error(r.error); try { dwLive.send('availability_posted', { truck: t.id }); } catch (_) {} toast('Availability saved'); await load();
         } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Save'),
         h('button', { class: 'dw-btn ghost', onClick: () => renderAvail(false) }, 'Cancel'),
       ])]));
     };
     renderAvail(false);
+    if (openTruckId && openTruckId === t.id) {                    // deep link / queue row asked for THIS truck
+      const wantAvail = openAction === 'availability'; openTruckId = null; if (wantAvail) openAction = null;
+      setTimeout(() => { if (wantAvail) renderAvail(true); dwFlash(card); }, 60);
+    }
     const min = minFor(t);
     mount(card, [
       h('h3', null, [h('span', null, [ic('truck'), ' Unit ' + (t.unit_no || '?') + ' — ' + [t.year, t.make, t.model].filter(Boolean).join(' ') + (t.equipment ? ' · ' + t.equipment : '')]), h('span', { class: 'dw-pill', style: 'color:' + (act.length ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, act.length ? act.length + ' LOAD' + (act.length > 1 ? 'S' : '') + ' MOVING' : pend ? pend + ' BOOKING' + (pend > 1 ? 'S' : '') + ' PENDING' : (av.status || 'EMPTY').toUpperCase())]),
@@ -454,6 +527,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       h('div', { class: 'dw-card' }, [h('h3', null, ['Bookings', h('div', { class: 'dw-row' }, [filt, h('button', { class: 'dw-btn', onClick: () => openLogForm(null) }, [ic('plus', 16), 'Log a booking'])])]), list]),
     ]);
     if (openId) { const b = bs.find((x) => x.id === openId); if (b) setTimeout(() => showBooking(b), 0); openId = null; }
+    if (openAction === 'new-booking') { openAction = null; setTimeout(() => openLogForm(null), 0); }
     return wrap;
   }
   function bookingRow(b) {
@@ -485,13 +559,13 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const rcFile = h('input', { type: 'file', accept: '.pdf,image/*', class: 'dw-in' }), rcNo = h('input', { class: 'dw-in', placeholder: 'RC / load number', value: b.rc_number || '' });
     const actions = [];
     if (['pending_rc', 'rc_received'].includes(b.status)) actions.push(h('div', { class: 'dw-avail', style: 'width:100%' }, [h('b', { style: 'color:#7cc0ff' }, [ic('doc', 16), b.rc_doc_path ? ' Replace rate confirmation' : ' Attach the rate confirmation']), h('div', { class: 'dw-form', style: 'margin-top:8px' }, [h('label', null, ['File (PDF / photo)', rcFile]), h('label', null, ['RC number', rcNo])]),
-      h('div', { class: 'dw-row', style: 'margin-top:8px' }, [h('button', { class: 'dw-btn', onClick: (ev) => act(async () => { const f0 = rcFile.files && rcFile.files[0]; if (!f0) throw new Error('Choose the RC file first.'); ev.target.disabled = true; const up = await uploadDocument(f0, 'rate_confirmation'); return dispatcherBookingUpdate(b.id, { rc_doc_path: up.path, rc_doc_name: up.fileName, rc_number: rcNo.value || null }); }, 'RC sent to LoadBoot for approval') }, 'Upload RC'),
+      h('div', { class: 'dw-row', style: 'margin-top:8px' }, [h('button', { class: 'dw-btn', onClick: (ev) => act(async () => { const f0 = rcFile.files && rcFile.files[0]; if (!f0) throw new Error('Choose the RC file first.'); ev.target.disabled = true; const up = await uploadDocument(f0, 'rate_confirmation'); const rr = await dispatcherBookingUpdate(b.id, { rc_doc_path: up.path, rc_doc_name: up.fileName, rc_number: rcNo.value || null }); if (!(rr && rr.error)) { try { dwLive.send('rc_uploaded', { booking: b.id, lane: b.origin + ' → ' + b.destination }); } catch (_) {} } return rr; }, 'RC sent to LoadBoot for approval') }, 'Upload RC'),
         h('button', { class: 'dw-btn ghost', onClick: () => { m.close(); editBooking(b); } }, [ic('edit', 16), 'Edit booking'])])]));
     if (b.status === 'approved') actions.push(h('button', { class: 'dw-btn', onClick: () => act(() => dispatcherBookingUpdate(b.id, { status: 'dispatched', note: noteIn.value }), 'Marked dispatched — truck shows LOADED') }, [ic('truck', 16), 'Driver dispatched']));
     if (b.status === 'dispatched') actions.push(h('button', { class: 'dw-btn', onClick: () => act(() => dispatcherBookingUpdate(b.id, { status: 'picked_up', note: noteIn.value, location: locIn.value }), 'Picked up') }, [ic('package', 16), 'Picked up / loaded']));
     if (b.status === 'picked_up') actions.push(h('button', { class: 'dw-btn', onClick: () => act(() => dispatcherBookingUpdate(b.id, { status: 'delivered', note: noteIn.value, location: locIn.value }), 'Delivered — truck is EMPTY at ' + b.destination) }, [ic('fileCheck', 16), 'Delivered']));
     if (MOVING.includes(b.status)) {
-      actions.push(h('button', { class: 'dw-btn ghost', onClick: () => act(() => dispatcherBookingEvent(b.id, 'check_call', noteIn.value || 'Check call', locIn.value || null, fromET(etaIn.value)), 'Check call logged') }, [ic('phone', 16), 'Log check call']));
+      actions.push(h('button', { class: 'dw-btn ghost', onClick: () => act(async () => { const rr = await dispatcherBookingEvent(b.id, 'check_call', noteIn.value || 'Check call', locIn.value || null, fromET(etaIn.value)); if (!(rr && rr.error)) { try { dwLive.send('check_call', { booking: b.id }); } catch (_) {} } return rr; }, 'Check call logged') }, [ic('phone', 16), 'Log check call']));
       actions.push(h('button', { class: 'dw-btn warn', onClick: () => act(() => { if (!noteIn.value) throw new Error('Describe the exception in the note.'); return dispatcherBookingEvent(b.id, 'exception', noteIn.value, locIn.value || null, null); }, 'Exception logged — LoadBoot alerted') }, [ic('alert', 16), 'Exception']));
       actions.push(h('button', { class: 'dw-btn ghost', onClick: async () => { try { await navigator.clipboard.writeText(dispatchMessage(b, t)); toast('Dispatch message copied — paste it in the WhatsApp group'); } catch (_) { modal('Dispatch message', h('pre', { style: 'white-space:pre-wrap;font-family:inherit' }, dispatchMessage(b, t)), { narrow: true }); } } }, [ic('copy', 16), 'Copy dispatch message']));
     }
@@ -665,7 +739,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         const p = { carrier_org_id: t._a.carrier_org_id, truck_id: t.id, broker: broker.value.trim(), broker_mc: bmc.value, broker_rep: rep.value, broker_phone: bphone.value, broker_email: bemail.value, origin: org.value.trim(), destination: dst.value.trim(), pickup_at: fromET(pu.value), delivery_at: fromET(dl.value), miles: miles.value || null, deadhead: dh.value || null, gross: gross.value, commodity: comm.value, weight_lbs: wt.value || null, equipment: eq.value || t.equipment, rc_number: rcno.value, rc_doc_path: rc && rc.path, rc_doc_name: rc && rc.fileName, notes: notes.value, source: 'external' };
         const st = stopsUI.value(); if (st) p.stops = st;
         const r = await dispatcherLogBooking(p);
-        if (r && r.error) throw new Error(r.error); m.close(); toast(r.status === 'rc_received' ? 'Logged — RC sent to LoadBoot for approval' : 'Logged — attach the RC as soon as you have it'); if (Array.isArray(r.warnings) && r.warnings.length) toast('⚠ ' + r.warnings.join(' · '), true); await load(); tab = 'bookings'; render();
+        if (r && r.error) throw new Error(r.error); try { dwLive.send('booking_created', { booking: r.id }); } catch (_) {} m.close(); toast(r.status === 'rc_received' ? 'Logged — RC sent to LoadBoot for approval' : 'Logged — attach the RC as soon as you have it'); if (Array.isArray(r.warnings) && r.warnings.length) toast('⚠ ' + r.warnings.join(' · '), true); await load(); tab = 'bookings'; render();
       } catch (x) { e.textContent = x.message; ev.target.disabled = false; } } }, 'Save booking'), h('button', { class: 'dw-btn ghost', onClick: () => m.close() }, 'Cancel')]),
     ]));
   }
@@ -678,6 +752,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, [h('b', { style: 'color:#fff' }, r.broker), r.rating ? stars(r.rating) : null]), h('td', null, r.mc || '—'), h('td', null, r.rep || '—'), h('td', null, [r.phone ? h('div', null, h('a', { href: 'tel:' + r.phone, style: 'color:inherit' }, r.phone)) : null, r.email ? h('div', null, h('a', { href: 'mailto:' + r.email, style: 'color:inherit' }, r.email)) : null]), h('td', null, [r.lanes ? h('div', null, r.lanes) : null, r.equipment ? h('div', { class: 'dw-muted' }, r.equipment) : null]), h('td', null, yn(r.new_authority_ok)), h('td', null, Number(r.bookings || 0) ? r.bookings + ' · ' + money(r.gross) : '—'), h('td', null, [r.last_contact_at ? ago(r.last_contact_at) : '—', r.last_outcome ? h('div', { class: 'dw-muted' }, r.last_outcome) : null]),
         h('td', null, h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [h('button', { class: 'dw-btn sm ghost', onClick: () => brokerForm(r) }, 'Edit'), h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Remove ' + r.broker, onClick: async () => { if (!(await confirmBox('Remove ' + r.broker + '?', 'Only the contact card is removed — bookings stay.', 'Remove', true))) return; await dispatcherBrokerDelete(r.id); toast('Removed'); await load(); } }, ic('x', 14))]))])))]) : h('div', { class: 'dw-muted' }, 'No brokers yet. Every booking you log adds its broker here automatically — or add the ones you already know.'));
     paintRows();
+    if (openAction === 'new-broker') { openAction = null; setTimeout(() => brokerForm(null), 0); }
     return h('div', { class: 'dw-card' }, [h('h3', null, ['Broker book (' + rows.length + ')', h('button', { class: 'dw-btn', onClick: () => brokerForm(null) }, [ic('plus', 16), 'Add broker'])]), h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Your relationships are the asset. Log every rep you speak to — especially the ones who work with new authorities. This book is yours; LoadBoot only sees the brokers on bookings.'), list]);
   }
   function brokerForm(r) {
@@ -712,7 +787,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   function stopThreadPoll() { if (threadTimer) { clearInterval(threadTimer); threadTimer = null; } threadVisible = false; }
   function vMessages() {
     const as = A(); if (!as.length) return h('div', { class: 'dw-card' }, [h('h3', null, 'Messages'), h('div', { class: 'dw-muted' }, 'No carrier assigned yet.')]);
-    const wrap = h('div'); let cur = as.find((a) => Number(a.unread || 0) > 0) || as[0]; let lastId = null;
+    const wrap = h('div'); let cur = (openThreadId && as.find((a) => a.id === openThreadId)) || as.find((a) => Number(a.unread || 0) > 0) || as[0]; openThreadId = null; let lastId = null;
     const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier thread', onChange: () => { cur = as.find((a) => a.id === sel.value); lastId = null; paintThread(true); } }, as.map((a) => h('option', { value: a.id, selected: a.id === cur.id }, ((a.carrier && a.carrier.name) || 'Carrier') + (Number(a.unread || 0) ? ' (' + a.unread + ')' : ''))));
     const thread = h('div', { style: 'max-height:52vh;overflow:auto;padding:6px 2px', role: 'log', 'aria-live': 'polite' });
     const who = h('div', { class: 'dw-muted', style: 'margin-bottom:6px' });
@@ -731,7 +806,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     }
     paintThread(true);
     stopThreadPoll(); threadVisible = true; threadTimer = setInterval(() => { if (!document.body.contains(thread)) { stopThreadPoll(); return; } if (document.visibilityState === 'visible') paintThread(false); }, 30000);
-    const send = async (ev) => { if (!inp.value.trim()) return; ev.target.disabled = true; try { const r = await dispatcherThreadSend(cur.id, inp.value); if (r.error) throw new Error(r.error); inp.value = ''; e.textContent = ''; lastId = null; await paintThread(false); } catch (x) { e.textContent = x.message; } ev.target.disabled = false; };
+    const send = async (ev) => { if (!inp.value.trim()) return; ev.target.disabled = true; try { const r = await dispatcherThreadSend(cur.id, inp.value); if (r.error) throw new Error(r.error); try { dwLive.send('message', { assignment: cur.id }); } catch (_) {} inp.value = ''; e.textContent = ''; lastId = null; await paintThread(false); } catch (x) { e.textContent = x.message; } ev.target.disabled = false; };
     inp.addEventListener('keydown', (ev) => { if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); send({ target: sendBtn }); } });
     const sendBtn = h('button', { class: 'dw-btn', onClick: send }, 'Send');
     mount(wrap, h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('chat'), ' Thread with ' + ((cur.carrier && cur.carrier.name) || 'carrier') + ' + LoadBoot']), as.length > 1 ? sel : null]),
@@ -743,7 +818,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   const boardCache = {};
   function vBoard() {
     const as = A(); if (!as.length) return h('div', { class: 'dw-card' }, [h('h3', null, 'Load board'), h('div', { class: 'dw-muted' }, 'No carrier assigned yet.')]);
-    let cur = as[0];
+    let cur = (openBoardId && as.find((a) => a.id === openBoardId)) || as[0]; openBoardId = null;
     const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier', onChange: () => { cur = as.find((a) => a.id === sel.value); paint(); } }, as.map((a) => h('option', { value: a.id }, (a.carrier && a.carrier.name) || 'Carrier')));
     const fMin = h('input', { class: 'dw-in', type: 'number', step: '0.05', placeholder: 'min $/mi', style: 'width:110px', 'aria-label': 'Minimum rate per mile' });
     const fDh = h('input', { class: 'dw-in', type: 'number', placeholder: 'max DH mi', style: 'width:110px', 'aria-label': 'Maximum deadhead' });
@@ -867,7 +942,8 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   }
 
   await load();
-  return { reload: load, setTab: (t) => { tab = t; render(); } };
+  dwReadHash();                                    // an e-mail / notification link lands on the exact card
+  return { reload: load, setTab: (t) => { tab = t; try { dwLive.setTab(t); } catch (_) {} render(); }, open: dwGo, live: dwLive };
 }
 
 export default mountDispatcherWorkspace;
