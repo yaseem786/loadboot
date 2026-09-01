@@ -20,7 +20,54 @@
 // wrapping that in the transactional shell nested one branded email inside another — two
 // headers, two footers, two call bands — for every one of the 1,200 cold emails sent so far.
 // A cold email must also never carry the customer shell: it has its own unsubscribe footer.
+// v16 (2026-08-15): the shell is now the GLOBAL, ONLY source of email branding. If a queued
+// body_html arrives as a FULL HTML DOCUMENT (<!doctype/<html> — e.g. a hand-authored email
+// queued via sys_email with its own header/footer), the worker normalizes it before wrapping:
+// extracts the <body> inner content, strips <head>, and removes any leading/trailing
+// dark brand-band tables (background #0f172a/#10223B/#f4f6f9 wrappers with a logo img) so the
+// shell never nests a second header or footer. 34 emails went out double-headed on 2026-08-15
+// (dispatcher.waitlist ×32, broker.verification, compliance.checklist) before this guard.
+// outreach.* stays exempt (self-contained by design, v15).
+// v17 (2026-09-01): unsubscribe is marketing-only. Transactional/operational mail no longer
+// carries unsubscribe UI or RFC 8058 headers. A final service-role guard runs immediately
+// before Resend so a contact who unsubscribed after claim is not sent the next outreach email.
 import { createClient } from "jsr:@supabase/supabase-js@2";
+
+// v16: normalize a full HTML document into a shell-safe fragment.
+const looksFullDoc = (h: string): boolean => /<!doctype\s|<html[\s>]/i.test(h.slice(0, 500));
+const normalizeFragment = (raw: string): string => {
+  let h = raw;
+  const bodyM = h.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  if (bodyM) h = bodyM[1];
+  h = h.replace(/<!doctype[^>]*>/gi, "").replace(/<head[\s\S]*?<\/head>/gi, "")
+       .replace(/<\/?html[^>]*>/gi, "").replace(/<\/?body[^>]*>/gi, "")
+       .replace(/<style[\s\S]*?<\/style>/gi, "");
+  // Unwrap ONE level of full-width background wrapper table (the common outer scaffold).
+  const wrapM = h.trim().match(/^<table[^>]*(?:background:#(?:f4f6f9|eef2f8)|width="100%")[^>]*>[\s\S]*<td[^>]*>([\s\S]*)<\/td>\s*<\/tr>\s*<\/table>$/i);
+  if (wrapM && !/<table/i.test(h.trim().slice(0, 8)) === false && wrapM[1] && wrapM[1].length > 200) h = wrapM[1];
+  // Drop leading brand-header rows/tables: any <tr>/<table> chunk within the first part of the
+  // markup that carries a dark brand band or a logo image, plus gradient divider rows.
+  for (let i = 0; i < 4; i++) {
+    const t = h.trimStart();
+    const lead = t.match(/^<(tr|table)[^>]*>[\s\S]*?<\/\1>/i);
+    if (!lead) break;
+    const chunk = lead[0];
+    const isBrand = /background:\s*(#0f172a|#10223B)/i.test(chunk) || /email-logo[^"']*\.png/i.test(chunk) || (/linear-gradient/i.test(chunk) && chunk.length < 600);
+    if (isBrand && chunk.length < 3000) { h = t.slice(chunk.length); continue; }
+    break;
+  }
+  // Drop trailing footer rows/tables that look like a brand footer (dark band, copyright, or 'You received this').
+  for (let i = 0; i < 4; i++) {
+    const t = h.trimEnd();
+    const tail = t.match(/<(tr|table)[^>]*>(?:(?!<\1[\s>])[\s\S])*?<\/\1>\s*$/i);
+    if (!tail) break;
+    const chunk = tail[0];
+    const isFooter = /background:\s*(#0f172a|#10223B|#f8fafc)/i.test(chunk) && (/loadboot\.com/i.test(chunk) || /you received this|all rights reserved|&bull;|&copy;/i.test(chunk));
+    if (isFooter && chunk.length < 3000) { h = t.slice(0, t.length - chunk.length); continue; }
+    break;
+  }
+  return h.trim();
+};
 
 Deno.serve(async (_req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -60,7 +107,7 @@ Deno.serve(async (_req) => {
     </div>
   </td></tr>`;
 
-  const shell = (bodyHtml: string, unsubUrl: string, subject = "", callBand = "") =>
+  const shell = (bodyHtml: string, unsubUrl: string | null, subject = "", callBand = "") =>
     `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   body{margin:0;padding:0}
@@ -131,8 +178,8 @@ Deno.serve(async (_req) => {
     <div style="font-size:11.5px;line-height:2">
       <a href="${SITE}/privacy.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Privacy</span></a> &nbsp;&middot;&nbsp;
       <a href="${SITE}/terms.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Terms</span></a> &nbsp;&middot;&nbsp;
-      <a href="${SITE}/contact.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Support</span></a> &nbsp;&middot;&nbsp;
-      <a href="${unsubUrl}" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Unsubscribe</span></a>
+      <a href="${SITE}/contact.html" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Support</span></a>
+      ${unsubUrl ? ` &nbsp;&middot;&nbsp; <a href="${unsubUrl}" style="color:#94a3b8 !important;text-decoration:none"><span style="color:#94a3b8 !important;text-decoration:none">Unsubscribe</span></a>` : ""}
     </div>
     <div style="color:#5c6f8f;font-size:11px;line-height:1.8;margin-top:8px">
       LoadBoot &middot; Truck dispatch &amp; logistics technology &middot; United States<br>
@@ -174,23 +221,62 @@ Deno.serve(async (_req) => {
   const senderFor = (d: Parameters<typeof categoryOf>[0]): { from: string; replyTo: string | null } =>
     domainVerified ? IDENTITIES[categoryOf(d)] : { from: RESEND_FROM, replyTo: null };
 
-  let sent = 0, failed = 0;
+  let sent = 0, failed = 0, suppressed = 0;
   for (const d of claimed ?? []) {
     const subject = (d.meta && d.meta.subject) ? String(d.meta.subject) : "LoadBoot";
-    const unsubUrl = `${UNSUB_BASE}?token=${d.correlation_id}`;
+    // Only marketing mail gets unsubscribe controls. Operational mail must remain deliverable.
+    const selfContained = /^outreach[._-]/i.test(String(d.template_key ?? ""));
+    const marketing = selfContained || d.source === "campaign";
+    const unsubUrl = marketing ? `${UNSUB_BASE}?token=${d.correlation_id}` : null;
+
+    // Fail closed immediately before Resend. This closes the claim→send race: if the
+    // recipient unsubscribed after this row was claimed, no next outreach email leaves.
+    if (marketing) {
+      const { data: allowed, error: guardError } = await sb.rpc("cc_delivery_worker_marketing_allowed", { p_id: d.id });
+      if (guardError) {
+        await sb.rpc("cc_delivery_worker_mark", {
+          p_id: d.id, p_status: "failed",
+          p_reason: `marketing suppression guard failed: ${guardError.message}`,
+          p_provider: "resend", p_dedupe: null,
+        });
+        failed++;
+        continue;
+      }
+      if (allowed !== true) {
+        await sb.rpc("cc_delivery_worker_mark", {
+          p_id: d.id, p_status: "unsubscribed",
+          p_reason: "recipient opted out of marketing/outreach",
+          p_provider: "resend", p_dedupe: null,
+        });
+        suppressed++;
+        continue;
+      }
+    }
+
     // Outreach bodies are complete emails with their own unsubscribe footer — send them
     // exactly as rendered. Wrapping them in the shell nested two branded emails (v15).
-    const selfContained = /^outreach[._-]/i.test(String(d.template_key ?? ""));
     const withCall = !selfContained && wantsCall(d);
-    const html = (d.meta && d.meta.body_html)
-      ? (selfContained ? String(d.meta.body_html) : shell(String(d.meta.body_html), unsubUrl, subject, withCall ? callBandHtml() : ""))
-      : null;
+    let html: string | null = null;
+    if (d.meta && d.meta.body_html) {
+      const raw = String(d.meta.body_html);
+      if (selfContained) html = raw;
+      else {
+        // v16: the shell is the only branding layer — full documents get normalized first.
+        const fragment = looksFullDoc(raw) ? normalizeFragment(raw) : raw;
+        html = shell(fragment || raw, unsubUrl, subject, withCall ? callBandHtml() : "");
+      }
+    }
     const callLine = withCall ? `\n\nPrefer to talk? Call us 24/7 on ${PHONE_DISPLAY}, or book a time and we call you: ${SITE}/contact.html#call` : "";
-    const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + callLine + `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}`;
+    const unsubscribeLine = unsubUrl ? `\n\n— LoadBoot · Support: ${SITE}/contact.html · Unsubscribe: ${unsubUrl}` : `\n\n— LoadBoot · Support: ${SITE}/contact.html`;
+    const text = ((d.meta && d.meta.body_text) ? String(d.meta.body_text) : subject) + callLine + unsubscribeLine;
     try {
       const ident = senderFor(d);
-      const payload: Record<string, unknown> = { from: ident.from, to: d.recipient_email, subject, text,
-        headers: { "X-Entity-Ref-ID": d.idempotency_key, "List-Unsubscribe": `<${unsubUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } };
+      const headers: Record<string, string> = { "X-Entity-Ref-ID": d.idempotency_key };
+      if (unsubUrl) {
+        headers["List-Unsubscribe"] = `<${unsubUrl}>`;
+        headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+      }
+      const payload: Record<string, unknown> = { from: ident.from, to: d.recipient_email, subject, text, headers };
       if (ident.replyTo) payload.reply_to = ident.replyTo;
       if (html) payload.html = html;
       const res = await fetch("https://api.resend.com/emails", {
@@ -206,5 +292,6 @@ Deno.serve(async (_req) => {
       failed++;
     }
   }
-  return Response.json({ ok: true, claimed: (claimed ?? []).length, sent, failed }, { status: 200 });
+  return Response.json({ ok: true, claimed: (claimed ?? []).length, sent, failed, suppressed }, { status: 200 });
 });
+
