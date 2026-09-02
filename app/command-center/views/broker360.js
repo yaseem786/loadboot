@@ -15,7 +15,7 @@ import { printExecutedW9 } from '../../carrier/w9-form.js';
 const money = (n) => '$' + Number(n || 0).toLocaleString();
 
 function printExecutedAgreementDoc(d) {
-  const w = window.open('', '_blank'); if (!w) { alert('Allow pop-ups to download.'); return; }
+  const w = window.open('', '_blank'); if (!w) { toast('Allow pop-ups to download.'); return; }
   const esc = (x) => String(x || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const ref = 'LB-BA-' + (d.signed_date || '').replace(/-/g, '') + '-' + (d.signer || 'X').replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase();
   const raw = String(d.body || '');
@@ -135,7 +135,7 @@ export function renderBroker360(host, orgId) {
           el('div', { style: 'display:flex;gap:6px;align-items:center;flex:none;flex-wrap:wrap' }, [
             el('span', { class: 'cc-pill cc-pill-' + tone }, st),
             fpath ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
-              try { const u = await signedDocumentUrl(fpath, 300); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); }
+              try { const u = await signedDocumentUrl(fpath, 300); window.open(u, '_blank', 'noopener'); } catch (e) { toast(humanizeError(e)); }
               b.disabled = false;
             } }, [icon('eye',15),' View file']) : null,
             (() => {
@@ -202,10 +202,10 @@ export function renderBroker360(host, orgId) {
                 ]),
                 el('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
                   el('button', { class: 'lb-btn lb-btn-primary', style: 'background:#b91c1c;border-color:#b91c1c', onClick: async (ev) => {
-                    if (!why.value.trim()) { alert('Description is required — the partner must know exactly what to fix.'); return; }
+                    if (!why.value.trim()) { toast('Description is required — the partner must know exactly what to fix.'); return; }
                     const b = ev.currentTarget; b.disabled = true; b.textContent = 'Rejecting…';
                     try { await onboardingReviewItem(orgId, it.key, 'reject', cat.value + ' — ' + why.value.trim()); dr.close(); toast('Rejected — partner notified + emailed' + (required ? ' · account parked (pending)' : ''), 'info'); load(); }
-                    catch (e) { b.disabled = false; b.textContent = '✕ Reject item'; alert(humanizeError(e)); }
+                    catch (e) { b.disabled = false; b.textContent = '✕ Reject item'; toast(humanizeError(e)); }
                   } }, '✕ Reject item'),
                   el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => dr.close() }, 'Cancel'),
                 ]),
@@ -269,7 +269,7 @@ export function renderBroker360(host, orgId) {
         kv2('Bank phone', 'bank phone'), kv2('Remittance / billing email', 'remittance'),
         el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [
           fpath9 ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev) => { const b = ev.currentTarget; b.disabled = true;
-            try { const u = await signedDocumentUrl(fpath9, 300); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.disabled = false;
+            try { const u = await signedDocumentUrl(fpath9, 300); window.open(u, '_blank', 'noopener'); } catch (e) { toast(humanizeError(e)); } b.disabled = false;
           } }, [icon('eye',15),' Voided check / bank letter']) : el('span', { class: 'cc-sub' }, [icon('alert',15),' no voided check on file']),
           (manage && st9 !== 'verified') ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev) => { const _btn9 = ev.currentTarget; _btn9.disabled = true;
             try { await onboardingReviewItem(orgId, 'bank_instructions', 'verify', null); toast('Bank details verified — partner notified', 'success'); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e), 'error'); }
@@ -298,7 +298,7 @@ export function renderBroker360(host, orgId) {
       el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap' }, [dotIn,
         el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: () => {
           const dot = (dotIn.value || '').replace(/\D/g, '');
-          if (!dot) { alert('Enter the DOT number from their authority letter.'); return; }
+          if (!dot) { toast('Enter the DOT number from their authority letter.'); return; }
           renderFmcsaOnly(fmcsaHost, dot, { light: true });
         } }, 'Verify with FMCSA')]),
       fmcsaHost,

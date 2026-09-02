@@ -88,7 +88,7 @@ export function renderLoadIntake(host) {
       el('p', { class: 'cc-sub' }, 'Attribute the real source. Do not mark unverified information as verified.'),
       el('div', { style: 'border-top:1px solid var(--lb-border,#e2e8f0);margin:10px 0;padding-top:10px;font-weight:700' }, 'Rate card — required before the load can post'),
       el('p', { class: 'cc-sub' }, 'A carrier must know every rate before booking. The server refuses loads without a complete card. Posting = agreement that these rates apply.'),
-      (() => { const b = el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-bottom:8px', onClick: async () => { let m = {}; try { (await rateStandards() || []).forEach(r => { m[r.key] = r.value; }); } catch (_) {} f.acc_detention_per_hr = m.detention_per_hr || '60'; f.acc_detention_free_hours = m.detention_free_hours || '2'; f.acc_layover_per_day = m.layover_per_day || '250'; f.acc_tonu = m.tonu || '250'; f.acc_lumper_policy = m.lumper_policy || 'Reimbursed with receipt'; alert('LoadBoot standard rates set — adjust any field before posting.'); } }, 'Use industry-typical defaults'); return b; })(),
+      (() => { const b = el('button', { class: 'lb-btn lb-btn-sm', style: 'margin-bottom:8px', onClick: async () => { let m = {}; try { (await rateStandards() || []).forEach(r => { m[r.key] = r.value; }); } catch (_) {} f.acc_detention_per_hr = m.detention_per_hr || '60'; f.acc_detention_free_hours = m.detention_free_hours || '2'; f.acc_layover_per_day = m.layover_per_day || '250'; f.acc_tonu = m.tonu || '250'; f.acc_lumper_policy = m.lumper_policy || 'Reimbursed with receipt'; toast('LoadBoot standard rates set — adjust any field before posting.'); } }, 'Use industry-typical defaults'); return b; })(),
       inp('Detention rate ($/hr) *', 'acc_detention_per_hr', '55'),
       inp('Free time before detention (hours) *', 'acc_detention_free_hours', '2'),
       inp('Layover rate ($/day) *', 'acc_layover_per_day', '225'),
@@ -100,12 +100,12 @@ export function renderLoadIntake(host) {
     ]);
     openDrawer('New load', form, { subtitle: 'Source-attributed intake' });
     async function save() {
-      if (!f.origin || !f.destination) { alert('Origin and destination are required.'); return; }
+      if (!f.origin || !f.destination) { toast('Origin and destination are required.'); return; }
       const missing = [];
       [['acc_detention_per_hr', 'detention rate'], ['acc_detention_free_hours', 'free hours'], ['acc_layover_per_day', 'layover rate'], ['acc_tonu', 'TONU rate']].forEach(([k, l]) => { if (!f[k] || isNaN(Number(f[k])) || Number(f[k]) < 0) missing.push(l); });
       if (!f.acc_lumper_policy) missing.push('lumper policy');
       if (f.scheduling === 'window' && !(f.pickup_window || '').trim()) missing.push('pickup window');
-      if (missing.length) { alert('Required before posting: ' + missing.join(', ') + '.'); return; }
+      if (missing.length) { toast('Required before posting: ' + missing.join(', ') + '.'); return; }
       const payload = Object.assign({}, f);
       payload.field_meta = {
         appointment_required: f.scheduling === 'appointment',
@@ -114,7 +114,7 @@ export function renderLoadIntake(host) {
       };
       ['acc_detention_per_hr', 'acc_detention_free_hours', 'acc_layover_per_day', 'acc_tonu', 'acc_lumper_policy', 'scheduling'].forEach(k => delete payload[k]);
       try { await createLoadSourced(payload); toast('Load created', 'success'); document.getElementById('cc-drawer-root')?.remove(); load(); }
-      catch (e) { alert(humanizeError(e)); }
+      catch (e) { toast(humanizeError(e)); }
     }
   }
 }

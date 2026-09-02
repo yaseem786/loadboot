@@ -108,9 +108,9 @@ export function renderTemplates(host) {
     }
 
     async function save() {
-      if (!f.key.trim() || !f.name.trim()) { alert('Key and name are required.'); return; }
+      if (!f.key.trim() || !f.name.trim()) { toast('Key and name are required.'); return; }
       try { await studioSaveTemplate(f); toast('Template saved', 'success'); document.getElementById('cc-drawer-root')?.remove(); load(); }
-      catch (e) { alert(humanizeError(e)); }
+      catch (e) { toast(humanizeError(e)); }
     }
   }
 }

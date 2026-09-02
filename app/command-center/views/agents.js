@@ -73,16 +73,16 @@ export function renderAgents(host) {
       return el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:5px 0;border-bottom:1px dashed #eef2f7' }, [
         el('span', { style: 'font-size:.85rem;font-weight:700;flex:1;min-width:150px' }, label), chip,
         path ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async (ev) => { const b = ev.currentTarget; const w = b.textContent; b.textContent = '…';
-          try { const u = await signedDocumentUrl(path, 600); window.open(u, '_blank', 'noopener'); } catch (e) { alert(humanizeError(e)); } b.textContent = w; } }, [icon('eye',15),' View']) : '',
-        path && st !== 'accepted' ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { try { await ccAgentDocReview(x.user_id, docKey, 'accept', null); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✓ Accept') : '',
-        path && st !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async () => { const r = await askReason('Reject ' + label + ' — reason (agent sees this + gets an email):'); if (!r) return; try { await ccAgentDocReview(x.user_id, docKey, 'reject', r); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✕ Reject') : '',
+          try { const u = await signedDocumentUrl(path, 600); window.open(u, '_blank', 'noopener'); } catch (e) { toast(humanizeError(e)); } b.textContent = w; } }, [icon('eye',15),' View']) : '',
+        path && st !== 'accepted' ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { try { await ccAgentDocReview(x.user_id, docKey, 'accept', null); open360(x); } catch (e) { toast(humanizeError(e)); } } }, '✓ Accept') : '',
+        path && st !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async () => { const r = await askReason('Reject ' + label + ' — reason (agent sees this + gets an email):'); if (!r) return; try { await ccAgentDocReview(x.user_id, docKey, 'reject', r); open360(x); } catch (e) { toast(humanizeError(e)); } } }, '✕ Reject') : '',
         reason && st === 'rejected' ? el('div', { class: 'cc-sub', style: 'width:100%' }, 'reason: ' + reason) : '',
       ]);
     };
     const act = (lbl, action, cls) => el('button', { class: 'lb-btn lb-btn-sm ' + (cls || ''), onClick: async () => {
       const note = action === 'approve' ? null : prompt(lbl + ' — note (agent sees this):'); if (action !== 'approve' && !note) return;
       if (action === 'approve' && !await askConfirm('Please confirm', { body: 'Approve this agent? Chain starts earning immediately.', danger: true })) return;
-      try { await ccAgentDecide(x.user_id, action, note); open360(x); } catch (e) { alert(humanizeError(e)); }
+      try { await ccAgentDecide(x.user_id, action, note); open360(x); } catch (e) { toast(humanizeError(e)); }
     } }, lbl);
     // message thread
     const thread = el('div', { style: 'max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:6px' },
@@ -90,13 +90,13 @@ export function renderAgents(host) {
         [el('div', null, m.body), el('div', { style: 'font-size:.62rem;color:#94a3b8;margin-top:2px' }, (m.sender === 'staff' ? 'CC' : 'Agent') + ' · ' + fmtDateTime(m.at))])));
     const msgIn = el('input', { class: 'lb-input', placeholder: 'Reply to agent…', style: 'flex:1' });
     const msgBtn = el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { if (!msgIn.value.trim()) return;
-      try { await ccAgentMsgSend(x.user_id, msgIn.value.trim()); open360(x); } catch (e) { alert(humanizeError(e)); } } }, 'Send');
+      try { await ccAgentMsgSend(x.user_id, msgIn.value.trim()); open360(x); } catch (e) { toast(humanizeError(e)); } } }, 'Send');
     // notify form
     const ntT = el('input', { class: 'lb-input', placeholder: 'Notification title', style: 'flex:1;min-width:160px' });
     const ntB = el('input', { class: 'lb-input', placeholder: 'Body', style: 'flex:2;min-width:200px' });
     const ntE = el('input', { type: 'checkbox' });
     const ntSend = el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { if (!ntT.value.trim()) return;
-      try { await ccAgentNotifySend(x.user_id, ntT.value.trim(), ntB.value.trim(), ntE.checked); alert('Sent ✓'); ntT.value = ''; ntB.value = ''; } catch (e) { alert(humanizeError(e)); } } }, 'Send');
+      try { await ccAgentNotifySend(x.user_id, ntT.value.trim(), ntB.value.trim(), ntE.checked); toast('Sent ✓'); ntT.value = ''; ntB.value = ''; } catch (e) { toast(humanizeError(e)); } } }, 'Send');
     const e9 = d.earnings || {};
     mount(body, el('div', null, [
       el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'margin-bottom:12px', onClick: load }, '← All agents'),
@@ -219,10 +219,10 @@ export function renderAgents(host) {
               if (!p.payout_method) miss.push('add your payout method');
               if (!pd.id_doc) miss.push('upload a government photo ID');
               if (!pd.bank_doc) miss.push('upload bank proof');
-              if (!miss.length) { b.disabled = false; alert('Nothing outstanding — this agent has completed every onboarding step.'); return; }
+              if (!miss.length) { b.disabled = false; toast('Nothing outstanding — this agent has completed every onboarding step.'); return; }
               const bodyTxt = 'Welcome to LoadBoot! To finish activating your agent account and start earning, please complete: ' + miss.map((m, i) => (i + 1) + ') ' + m).join('   ') + '. Open your Agent portal and go to onboarding to wrap it up. Reply here if you need any help.';
-              try { await ccAgentNotifySend(x.user_id, 'Finish your LoadBoot agent onboarding', bodyTxt, true); b.textContent = '✓ Reminder sent'; alert('Onboarding reminder sent to ' + (d.email || 'the agent') + ' — premium email + in-app, listing: ' + miss.join(', ') + '.'); }
-              catch (e) { b.disabled = false; b.textContent = w; alert(humanizeError(e)); }
+              try { await ccAgentNotifySend(x.user_id, 'Finish your LoadBoot agent onboarding', bodyTxt, true); b.textContent = '✓ Reminder sent'; toast('Onboarding reminder sent to ' + (d.email || 'the agent') + ' — premium email + in-app, listing: ' + miss.join(', ') + '.'); }
+              catch (e) { b.disabled = false; b.textContent = w; toast(humanizeError(e)); }
             } }, [icon('bell',15),' Send reminder']),
             // SUSPEND / REINSTATE (audit gap): staff could approve + pay an agent but never stop one.
             (String(x.status || '') === 'suspended')
@@ -243,8 +243,8 @@ export function renderAgents(host) {
           el('div', { class: 'cc-sub', style: 'margin:8px 0 4px;font-weight:700' }, 'Payout requests'),
           ...(d.payouts || []).map((q) => el('div', { style: 'display:flex;gap:8px;align-items:center;padding:3px 0' }, [
             el('span', { class: 'cc-sub', style: 'flex:1' }, money(q.amount) + ' · ' + q.status + ' · ' + fmtDate(q.requested_at)),
-            ['requested'].includes(q.status) ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { try { await referralPayoutDecide(q.id, 'approve', null); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✓ Approve') : '',
-            ['requested'].includes(q.status) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async () => { const n = await askReason('Reject — why?'); if (!n) return; try { await referralPayoutDecide(q.id, 'reject', n); open360(x); } catch (e) { alert(humanizeError(e)); } } }, '✕') : '',
+            ['requested'].includes(q.status) ? el('button', { class: 'lb-btn lb-btn-sm', onClick: async () => { try { await referralPayoutDecide(q.id, 'approve', null); open360(x); } catch (e) { toast(humanizeError(e)); } } }, '✓ Approve') : '',
+            ['requested'].includes(q.status) ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', onClick: async () => { const n = await askReason('Reject — why?'); if (!n) return; try { await referralPayoutDecide(q.id, 'reject', n); open360(x); } catch (e) { toast(humanizeError(e)); } } }, '✕') : '',
           ])),
         ]),
       ]),

@@ -47,7 +47,7 @@ export function renderAnnouncements(host) {
         el('td', null, fmtDateTime(a.created_at)),
         el('td', null, a.expires_at ? fmtDateTime(a.expires_at) : '—'),
         el('td', null, manage
-          ? el('button', { class: 'cc-toggle' + (a.active ? ' on' : ''), onClick: async () => { try { await setAnnouncementActive(a.id, !a.active); } catch (e) { alert(humanizeError(e)); return; } load(); } }, a.active ? 'On' : 'Off')
+          ? el('button', { class: 'cc-toggle' + (a.active ? ' on' : ''), onClick: async () => { try { await setAnnouncementActive(a.id, !a.active); } catch (e) { toast(humanizeError(e)); return; } load(); } }, a.active ? 'On' : 'Off')
           : statusPill(a.active ? 'active' : 'paused')),
       ]))),
     ])));
@@ -79,12 +79,12 @@ export function renderAnnouncements(host) {
 
     async function send() {
       const title = fields.title.value.trim();
-      if (!title) { alert('Title is required.'); return; }
-      if (audSel.value === 'carrier' && !carrierSel.value) { alert('Pick a carrier.'); return; }
+      if (!title) { toast('Title is required.'); return; }
+      if (audSel.value === 'carrier' && !carrierSel.value) { toast('Pick a carrier.'); return; }
       try {
         await createAnnouncement({ title, body: bodyIn.value.trim() || null, kind: kindSel.value, audience: audSel.value,
           targetOrg: audSel.value === 'carrier' ? carrierSel.value : null, expiresAt: expIn.value ? new Date(expIn.value).toISOString() : null });
-      } catch (e) { alert(humanizeError(e)); return; }
+      } catch (e) { toast(humanizeError(e)); return; }
       if (pushChk.checked) {
         try {
           const r = await sendPush({ title, body: bodyIn.value.trim() || '', url: '/app/carrier/',

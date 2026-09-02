@@ -11,104 +11,43 @@ import { avatar, brandLogo, BRAND_TAGLINE } from '../../shared/ui/components.js'
 import ENV from '../../shared/env.js';
 import { signOut } from '../../shared/session.js';
 
-// V1 navigation — only the ten shipped screens. Deferred modules (analytics, content,
-// builder, fleet, rate intelligence, finance, messages, search) are intentionally absent.
 const NAV = [
-  // ROLE-CENTRIC IA (Amazon-Relay style): live ops first, then one home per audience
-  // (Carriers / Brokers+Shippers / Agents), then loads, money, growth, insights, comms, admin.
-  // Retired as duplicates: /management (= BI), /webhooks (= Integrations → Webhooks tab).
+  // CC CUT, 2 Sep 2026 (docs/CC-AUDIT-2026-09-02.md): 73 items / 12 groups → 21 items / 6 groups.
+  // Every retired route still works as a deep link; the merged screens live on as tabs
+  // (see app.js TABBED). Hidden screens sit on tables with 0 rows in production.
   { group: 'Home', items: [
-    { path: '/', label: 'Dashboard', icon: 'grid', perm: null },
-    { path: '/radar', label: 'Ops Radar', icon: 'bell', perm: null },
+    { path: '/', label: 'Today', icon: 'grid', perm: null },
     { path: '/automation', label: 'Task queue', icon: 'refresh', perm: null, flag: 'automation' },
-  ]},
-  { group: 'Ops Live', items: [
-    { path: '/dispatch', label: 'Dispatch board', icon: 'grid', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
-    { path: '/control-tower', label: 'Trip Control Tower', icon: 'refresh', perm: 'dispatch.view', flag: 'load_marketplace' },
-    { path: '/map', label: 'Live map', icon: 'truck', perm: null, flag: 'opsMap' },
-    { path: '/safety', label: 'Safety desk', icon: 'shield', perm: 'any:compliance.approve,carriers.view' },
-    { path: '/exceptions', label: 'Exception Center', icon: 'alert', perm: 'dispatch.view', flag: 'load_marketplace' },
-    { path: '/pod-review', label: 'POD Review', icon: 'document', perm: 'dispatch.manage' },
-  ]},
-  { group: 'Carriers', items: [
-    { path: '/carriers', label: 'Carrier directory', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
-    { path: '/booking-requests', label: 'Booking requests', icon: 'list', perm: 'any:loads.assign,loads.publish,carriers.view' },
-    { path: '/compliance', label: 'Onboarding & compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
-    { path: '/verification', label: 'FMCSA verification', icon: 'shield', perm: 'compliance.view' },
-    { path: '/documents', label: 'Document review', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
-    { path: '/fleet', label: 'Fleet & drivers', icon: 'users', perm: 'fleet.view', flag: 'fleet' },
-    { path: '/fleet-expiry', label: 'License & medical expiry', icon: 'shield', perm: 'any:fleet.view,carriers.view' },
-    { path: '/partner-compliance', label: 'Broker & shipper re-verification', icon: 'shield', perm: 'any:compliance.view,partners.view' },
-    { path: '/account-health', label: 'Account Health', icon: 'users', perm: 'carriers.view' },
-  ]},
-  { group: 'Brokers & Shippers', items: [
-    { path: '/partner-intake', label: 'Partner intake', icon: 'doc', perm: 'partners.view', flag: 'partners' },
-    { path: '/partners', label: 'Partner directory', icon: 'users', perm: 'partners.view', flag: 'partners' },
-    { path: '/broker-sla', label: 'Broker SLA', icon: 'trend', perm: 'partners.view', flag: 'partners' },
-  ]},
-  { group: 'Dispatch team', items: [
-    { path: '/dispatchers', label: 'Dispatchers', icon: 'truck', perm: 'carriers.approve' },
-    { path: '/agents', label: 'Referral partners & payouts', icon: 'user', perm: 'carriers.approve' },
-    { path: '/referrals', label: 'Referral Program', icon: 'users', perm: 'finance.view', flag: 'referral_program' },
-  ]},
-  { group: 'Loads & Board', items: [
-    { path: '/load-intake', label: 'Load Intake', icon: 'trend', perm: 'dispatch.view', flag: 'load_marketplace' },
-    { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view' },
-    { path: '/trips', label: 'Trip board', icon: 'truck', perm: 'dispatch.view', flag: 'dispatch' },
-    { path: '/matching', label: 'Smart matching', icon: 'trend', perm: 'carriers.view' },
+  ] },
+  { group: 'Loads', items: [
+    { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view,dispatch.view' },
     { path: '/market-rates', label: 'Market rates', icon: 'doc' },
     { path: '/rate-standards', label: 'Rate standards', icon: 'grid', perm: 'any:dispatch.manage,settings.manage' },
-  ]},
-  { group: 'Money', items: [
-    { path: '/finance', label: 'Invoices & settlements', icon: 'doc', perm: 'finance.view', flag: 'finance' },
-    { path: '/finance-analytics', label: 'Finance analytics', icon: 'trend', perm: 'finance.view', flag: 'finance' },
-  ]},
-  { group: 'Growth', items: [
-    { path: '/crm', label: 'CRM & leads', icon: 'trend', perm: 'crm.view', flag: 'crm' },
-    { path: '/forms', label: 'Forms inbox', icon: 'bell', perm: 'forms.view', flag: 'forms' },
-    { path: '/campaign-manager', label: 'Campaign Manager', icon: 'trend', perm: 'content.view' },
-    { path: '/campaigns', label: 'UTM campaigns', icon: 'trend', perm: 'campaigns.view', flag: 'campaigns' },
-    { path: '/audiences', label: 'Audiences', icon: 'users', perm: 'content.view' },
-    { path: '/email-builder', label: 'Email Builder', icon: 'doc', perm: 'content.view' },
-    { path: '/templates', label: 'Template Studio', icon: 'doc', perm: 'content.view' },
-    { path: '/form-builder', label: 'Form Builder', icon: 'doc', perm: 'content.view' },
-    { path: '/content', label: 'Content & posts', icon: 'doc', perm: 'content.view', flag: 'content' },
-    { path: '/brand-kit', label: 'Brand Kit', icon: 'doc', perm: 'content.view' },
-    { path: '/seo', label: 'SEO & redirects', icon: 'trend', perm: 'seo.view', flag: 'seo' },
-    { path: '/marketing-analytics', label: 'Marketing analytics', icon: 'trend', perm: 'content.view' },
-    { path: '/marketing-intel', label: 'Marketing Intelligence', icon: 'trend', perm: 'analytics.view' },
-  ]},
-  { group: 'Insights', items: [
-    { path: '/bi', label: 'Business Intelligence', icon: 'trend', perm: 'any:analytics.view,reports.view' },
-    { path: '/web-analytics', label: 'Analytics Control Center', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics', children: [
-      { path: '/analytics', label: 'Business Analytics', icon: 'trend', perm: 'analytics.view', flag: 'analytics' },
-      { path: '/google', label: 'Google Search & GA4', icon: 'trend', perm: 'analytics.view' },
-    ] },
-    { path: '/reports', label: 'Reports & exports', icon: 'doc', perm: 'reports.view', flag: 'reports' },
-  ]},
-  { group: 'Comms & Support', items: [
+  ] },
+  { group: 'Carriers', items: [
+    { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
+    { path: '/compliance', label: 'Compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
+    { path: '/documents', label: 'Document review', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
+  ] },
+  { group: 'Partners & People', items: [
+    { path: '/partners', label: 'Brokers & shippers', icon: 'users', perm: 'partners.view', flag: 'partners' },
+    { path: '/partner-intake', label: 'Partner intake', icon: 'doc', perm: 'partners.view', flag: 'partners' },
+    { path: '/dispatchers', label: 'Dispatchers & agents', icon: 'truck', perm: 'carriers.approve' },
+  ] },
+  { group: 'Money & Customers', items: [
+    { path: '/finance', label: 'Finance', icon: 'doc', perm: 'finance.view', flag: 'finance' },
     { path: '/live-chat', label: 'Live chat', icon: 'bell', perm: 'any:comm.view,support.view,dispatch.manage' },
-    { path: '/email-loads', label: 'Email loads', icon: 'bell', perm: 'any:comm.view,support.view,dispatch.manage' },
     { path: '/support', label: 'Support tickets', icon: 'bell', perm: 'support.view', flag: 'support' },
-    { path: '/comms', label: 'Messages & inbox', icon: 'bell', perm: 'comm.view', flag: 'comms' },
-    { path: '/announcements', label: 'Announcements', icon: 'bell', perm: 'announce.view', flag: 'announcements' },
-    { path: '/notifications', label: 'Notifications', icon: 'bell', perm: null, flag: 'notificationsCenter' },
-    { path: '/delivery', label: 'Delivery health', icon: 'refresh', perm: null },
-    { path: '/contacts', label: 'Contacts directory', icon: 'users', perm: 'any:carriers.view,partners.view' },
-    { path: '/chat', label: 'Team chat', icon: 'bell', perm: null, flag: 'teamChat' },
-  ]},
-  { group: 'Administration', items: [
-    { path: '/staff', label: 'Staff & roles', icon: 'users', perm: 'any:users.manage,roles.manage,staff.suspend' },
-    { path: '/automations', label: 'Automation rules', icon: 'refresh', perm: null, flag: 'automationsAdmin' },
-    { path: '/workflows', label: 'Workflow Builder', icon: 'settings', perm: 'settings.manage', flag: 'load_marketplace' },
-    { path: '/integrations', label: 'Integrations, webhooks & API keys', icon: 'refresh', perm: 'integrations.view', flag: 'integrations' },
-    { path: '/audit', label: 'Audit log', icon: 'shield', perm: 'audit.view' },
-    { path: '/health', label: 'System health', icon: 'refresh', perm: null },
-    { path: '/modules', label: 'Module registry', icon: 'grid', perm: 'settings.manage' },
-    { path: '/plugins', label: 'Plugin Marketplace', icon: 'grid', perm: null },
-    { path: '/flags', label: 'Feature flags', icon: 'flag', perm: 'flags.manage' },
-    { path: '/settings', label: 'Settings', icon: 'cog', perm: 'settings.manage' },
-  ]},
+    { path: '/crm', label: 'CRM & outreach', icon: 'trend', perm: 'crm.view', flag: 'crm' },
+    { path: '/forms', label: 'Forms', icon: 'bell', perm: 'forms.view', flag: 'forms' },
+  ] },
+  { group: 'Insights & Admin', items: [
+    { path: '/bi', label: 'Business', icon: 'trend', perm: 'any:analytics.view,reports.view' },
+    { path: '/web-analytics', label: 'Website & marketing', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics' },
+    { path: '/templates', label: 'Templates', icon: 'doc', perm: 'content.view' },
+    { path: '/integrations', label: 'Integrations', icon: 'refresh', perm: 'integrations.view', flag: 'integrations' },
+    { path: '/settings', label: 'Settings', icon: 'cog', perm: 'any:settings.manage,users.manage,roles.manage,flags.manage,audit.view' },
+  ] },
 ];
 
 const FLAT = NAV.flatMap(g => g.items.flatMap(it => it.children ? [it, ...it.children] : [it]));
@@ -119,7 +58,7 @@ function permVisible(item) {
   return can(item.perm);
 }
 
-const SEARCH_HASH = { carrier: '/carriers', partner: '/partners', load: '/trips', lead: '/crm', invoice: '/finance', driver: '/fleet' };
+const SEARCH_HASH = { carrier: '/carriers', partner: '/partners', load: '/loads', lead: '/crm', invoice: '/finance', driver: '/fleet' };
 function flattenNav(arr, out, grp) {
   (arr || []).forEach(it => {
     if (!it) return;

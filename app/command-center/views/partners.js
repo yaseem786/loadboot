@@ -8,7 +8,7 @@ import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
 import { partnersOverview, listPartners, getPartner, upsertPartner, setPartnerStatus, partnersAccounts } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 const COLS = [
@@ -101,12 +101,12 @@ export function renderPartners(host) {
   }
 
   async function openPartner(id) {
-    let p; try { p = await getPartner(id); } catch (e) { alert(humanizeError(e)); return; }
+    let p; try { p = await getPartner(id); } catch (e) { toast(humanizeError(e)); return; }
     const tl = p.timeline || [];
     const actions = el('div', { class: 'cc-drawer-actions' });
     if (manage) {
       actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => { document.getElementById('cc-drawer-root')?.remove(); partnerForm(p); } }, 'Edit'));
-      const setS = async (s) => { try { await setPartnerStatus(id, s); } catch (e) { alert(humanizeError(e)); return; } document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load(); };
+      const setS = async (s) => { try { await setPartnerStatus(id, s); } catch (e) { toast(humanizeError(e)); return; } document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load(); };
       if (p.status !== 'hold') actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => setS('hold') }, 'Put on hold'));
       if (p.status !== 'active') actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => setS('active') }, 'Reactivate'));
     }
@@ -138,10 +138,10 @@ export function renderPartners(host) {
 
     async function save() {
       const name = fields.name.value.trim();
-      if (!name) { alert('Name is required.'); return; }
+      if (!name) { toast('Name is required.'); return; }
       const cl = fields.credit_limit.value === '' ? null : Number(fields.credit_limit.value);
       try { await upsertPartner({ id: p && p.id, kind: kindSel.value, name, mc: fields.mc.value.trim() || null, contactName: fields.contact_name.value.trim() || null, email: fields.email.value.trim() || null, phone: fields.phone.value.trim() || null, billingTerms: fields.billing_terms.value.trim() || null, creditLimit: cl }); }
-      catch (e) { alert(humanizeError(e)); return; }
+      catch (e) { toast(humanizeError(e)); return; }
       document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load();
     }
   }

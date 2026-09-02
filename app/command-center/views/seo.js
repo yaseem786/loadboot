@@ -9,7 +9,7 @@ import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
 import { seoOverview, listKeywords, upsertKeyword, listRedirects, createRedirect, toggleRedirect } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 const KW_COLS = [
@@ -125,11 +125,11 @@ export function renderSeo(host) {
 
       async function save() {
         const kw = fields.keyword.value.trim();
-        if (!kw) { alert('Keyword is required.'); return; }
+        if (!kw) { toast('Keyword is required.'); return; }
         const pos = fields.position.value === '' ? null : Number(fields.position.value);
         try {
           await upsertKeyword({ id: k && k.id, keyword: kw, targetPage: fields.target_page.value.trim() || null, position: pos, priority: fields.priority.value, intent: fields.intent.value.trim() || null });
-        } catch (e) { alert(humanizeError(e)); return; }
+        } catch (e) { toast(humanizeError(e)); return; }
         document.getElementById('cc-drawer-root')?.remove(); loadKpis(); loadKw(null);
       }
     }
@@ -162,7 +162,7 @@ export function renderSeo(host) {
           el('td', null, String(r.type)),
           el('td', null, String(r.hit_count || 0)),
           el('td', null, manage
-            ? el('button', { class: 'cc-toggle' + (r.active ? ' on' : ''), onClick: async () => { try { await toggleRedirect(r.id, !r.active); } catch (e) { alert(humanizeError(e)); return; } loadKpis(); loadRd(); } }, r.active ? 'On' : 'Off')
+            ? el('button', { class: 'cc-toggle' + (r.active ? ' on' : ''), onClick: async () => { try { await toggleRedirect(r.id, !r.active); } catch (e) { toast(humanizeError(e)); return; } loadKpis(); loadRd(); } }, r.active ? 'On' : 'Off')
             : statusPill(r.active ? 'active' : 'paused')),
         ]))),
       ])));
@@ -187,9 +187,9 @@ export function renderSeo(host) {
 
       async function save() {
         const source = fields.source.value.trim(), destination = fields.destination.value.trim();
-        if (!source || !destination) { alert('Source and destination are required.'); return; }
+        if (!source || !destination) { toast('Source and destination are required.'); return; }
         try { await createRedirect({ source, destination, type: Number(typeSel.value), reason: fields.reason.value.trim() || null }); }
-        catch (e) { alert(humanizeError(e)); return; }
+        catch (e) { toast(humanizeError(e)); return; }
         document.getElementById('cc-drawer-root')?.remove(); loadKpis(); loadRd();
       }
     }

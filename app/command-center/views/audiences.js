@@ -48,7 +48,7 @@ export function renderAudiences(host) {
     } }, 'Estimate');
     const saveBtn = manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async (ev) => {
       const _btn9 = ev.currentTarget;
-      if (!nameIn.value.trim()) { alert('Give the audience a name.'); return; }
+      if (!nameIn.value.trim()) { toast('Give the audience a name.'); return; }
       _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value }); toast('Audience saved', 'success'); nameIn.value = ''; loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
       _btn9.disabled = false;
     } }, 'Save audience') : null;

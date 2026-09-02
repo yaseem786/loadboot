@@ -104,7 +104,7 @@ export function renderPartnerIntake(host, focusId) {
       el('p', { class: 'cc-sub' }, 'Shown to partners on their invoices. Bank / JazzCash / Easypaisa details — no payment gateway needed.'),
       el('label', { class: 'cc-field' }, [el('span', null, 'Payment instructions'), ta]),
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:12px' }, [el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
-        try { await setPaymentInstructions(ta.value.trim() || null); } catch (e) { alert(humanizeError(e)); return; }
+        try { await setPaymentInstructions(ta.value.trim() || null); } catch (e) { toast(humanizeError(e)); return; }
         document.getElementById('cc-drawer-root')?.remove(); toast('Payment instructions saved.', 'success');
       } }, 'Save')]),
     ]);
@@ -126,10 +126,10 @@ export function renderPartnerIntake(host, focusId) {
     ]);
     openDrawer('New invoice', form, { subtitle: 'Bill a broker, shipper or facility' });
     async function send() {
-      if (!orgSel.value) { alert('Pick a partner.'); return; }
-      if (!amount.value || Number(amount.value) < 0) { alert('Enter an amount.'); return; }
+      if (!orgSel.value) { toast('Pick a partner.'); return; }
+      if (!amount.value || Number(amount.value) < 0) { toast('Enter an amount.'); return; }
       try { await createPartnerInvoice({ org: orgSel.value, amount: Number(amount.value), description: desc.value.trim() || null, due: due.value || null }); }
-      catch (e) { alert(humanizeError(e)); return; }
+      catch (e) { toast(humanizeError(e)); return; }
       document.getElementById('cc-drawer-root')?.remove(); toast('Invoice issued.', 'success'); reload();
     }
   }
@@ -317,9 +317,9 @@ export function renderPartnerIntake(host, focusId) {
     const form = el('div', null, [
       el('label', { class: 'cc-field' }, [el('span', null, 'What do you need from ' + (l.broker || 'the broker') + '?'), ta]),
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:10px' }, el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
-        if (!ta.value.trim()) { alert('Request text is required.'); return; }
+        if (!ta.value.trim()) { toast('Request text is required.'); return; }
         try { await requestUpdate('partner_load', l.id, l.broker_org, ta.value.trim()); toast('Update requested — the broker sees it in their portal', 'success'); document.getElementById('cc-drawer-root')?.remove(); loadBroker(); }
-        catch (e) { alert(humanizeError(e)); }
+        catch (e) { toast(humanizeError(e)); }
       } }, 'Send request')),
     ]);
     openDrawer('Request update — ' + (l.broker || ''), form, { subtitle: (l.origin || '?') + ' → ' + (l.destination || '?') });

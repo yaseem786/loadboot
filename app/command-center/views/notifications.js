@@ -7,7 +7,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, segmented, card, fmtDateTime } from '../../shared/ui/components.js';
 import { listNotifications, markNotification } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 
 export function renderNotifications(host) {
   let status = null, rows = [];
@@ -45,7 +45,7 @@ export function renderNotifications(host) {
         el('td', null, t.recipient_role || t.recipient_user || '—'),
         el('td', null, statusPill(t.status)),
         el('td', null, fmtDateTime(t.created_at)),
-        el('td', null, t.status !== 'read' ? el('button', { class: 'cc-seg-btn', onClick: async (ev) => { ev.stopPropagation(); try { await markNotification(t.id, 'read'); } catch (e) { alert(humanizeError(e)); return; } load(); } }, 'Mark read') : ''),
+        el('td', null, t.status !== 'read' ? el('button', { class: 'cc-seg-btn', onClick: async (ev) => { ev.stopPropagation(); try { await markNotification(t.id, 'read'); } catch (e) { toast(humanizeError(e)); return; } load(); } }, 'Mark read') : ''),
       ]))),
     ])));
   }

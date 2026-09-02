@@ -217,9 +217,9 @@ export function renderExceptionCenter(host) {
         el('div', { class: 'cc-sub' }, 'This trip has $' + Number(r.accessorial_draft).toLocaleString() + ' in DRAFT accessorials (labeled assumptions). Review them under the trip before billing — resolving this exception does not bill anything.')) : null,
       el('label', { class: 'cc-field' }, [el('span', null, 'Resolution note'), ta]),
       el('div', { class: 'cc-drawer-actions', style: 'margin-top:10px' }, el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
-        if (!ta.value.trim()) { alert('A resolution note is required.'); return; }
+        if (!ta.value.trim()) { toast('A resolution note is required.'); return; }
         try { await resolveException({ id: r.id, note: ta.value.trim() }); toast('Exception resolved', 'success'); document.getElementById('cc-drawer-root')?.remove(); load(); }
-        catch (e) { alert(humanizeError(e)); }
+        catch (e) { toast(humanizeError(e)); }
       } }, 'Mark resolved')),
     ].filter(Boolean));
     openDrawer('Resolve — ' + r.kind, form, { subtitle: (r.origin || '?') + ' → ' + (r.destination || '?') });
