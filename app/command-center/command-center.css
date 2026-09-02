@@ -695,8 +695,12 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
   display:grid;
   grid-template-columns:300px minmax(0,1fr) 320px;
   gap:14px;
+  /* Keep the whole console inside the visible browser area. The old 520px
+     minimum forced short-height windows below the viewport and clipped the
+     composer plus the last cards in the details pane. */
   height:calc(100vh - var(--lcx-head) - 96px);
-  min-height:520px;
+  height:calc(100dvh - var(--lcx-head) - 96px);
+  min-height:0;
 }
 .lcx-console>*{min-width:0;min-height:0}
 .lcx-root.lcx-ctx-closed .lcx-console{grid-template-columns:300px minmax(0,1fr) 44px}
@@ -960,7 +964,11 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
 @media(max-width:900px){
   /* Panes stack: inbox first, then the conversation with a back button; the
      context pane hides entirely rather than crushing the timeline. */
-  .lcx-console{grid-template-columns:1fr;height:calc(100vh - var(--lcx-head) - 60px)}
+  .lcx-console{
+    grid-template-columns:1fr;
+    height:calc(100vh - var(--lcx-head) - 60px);
+    height:calc(100dvh - var(--lcx-head) - 60px);
+  }
   .lcx-ctx{display:none}
   .lcx-center{display:none}
   .lcx-back{display:inline-flex;align-items:center;justify-content:center}
