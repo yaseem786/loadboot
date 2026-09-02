@@ -107,7 +107,7 @@ export function renderVerificationCenter(host) {
       const _btn9 = ev.currentTarget;
       _btn9.disabled = true; _btn9.textContent = 'Re-verifying\u2026';
       try { await fmcsaVerify({ carrierOrg: r.carrier_org }); const d = document.getElementById('cc-drawer-root'); if (d) d.remove(); loadQueue(); loadRecent(); }
-      catch (e) { _btn9.disabled = false; _btn9.textContent = 'Re-verify against FMCSA'; alert(humanizeError(e)); }
+      catch (e) { _btn9.disabled = false; _btn9.textContent = 'Re-verify against FMCSA'; toast(humanizeError(e)); }
     } }, 'Re-verify against FMCSA');
     const body = el('div', null, [
       kvv('Carrier', r.carrier), kvv('Status', r.status), kvv('Match score', (r.match_score != null ? r.match_score + '%' : '\u2014')),

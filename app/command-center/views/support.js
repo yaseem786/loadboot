@@ -10,7 +10,7 @@ import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
 import { supportOverview, listTickets, getTicket, createTicket, setTicketStatus, aiAssist, sendEmail, invoiceLookup } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 const COLS = [
@@ -75,10 +75,10 @@ export function renderSupport(host, focusId) {
   }
 
   async function openTicket(id) {
-    let t; try { t = await getTicket(id); } catch (e) { alert(humanizeError(e)); return; }
+    let t; try { t = await getTicket(id); } catch (e) { toast(humanizeError(e)); return; }
     const actions = el('div', { class: 'cc-drawer-actions' });
     if (manage) {
-      const setS = async (s) => { try { await setTicketStatus(id, s); } catch (e) { alert(humanizeError(e)); return; } document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load(); };
+      const setS = async (s) => { try { await setTicketStatus(id, s); } catch (e) { toast(humanizeError(e)); return; } document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load(); };
       ['open', 'pending', 'resolved', 'closed'].filter(s => s !== t.status).forEach(s => actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => setS(s) }, s.charAt(0).toUpperCase() + s.slice(1))));
     }
     // AI-drafted reply + send email to the requester (Gemini + Resend)
@@ -149,9 +149,9 @@ export function renderSupport(host, focusId) {
 
     async function save() {
       const subject = fields.subject.value.trim();
-      if (!subject) { alert('Subject is required.'); return; }
+      if (!subject) { toast('Subject is required.'); return; }
       try { await createTicket({ subject, body: bodyInput.value.trim() || null, requesterName: fields.requester_name.value.trim() || null, requesterEmail: fields.requester_email.value.trim() || null, category: fields.category.value.trim() || null, priority: prioSel.value }); }
-      catch (e) { alert(humanizeError(e)); return; }
+      catch (e) { toast(humanizeError(e)); return; }
       document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load();
     }
   }

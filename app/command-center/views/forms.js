@@ -9,7 +9,7 @@ import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, searchBox, segmented, card, openDrawer, fmtDateTime } from '../../shared/ui/components.js';
 import { downloadCSV, downloadExcel, printTable } from '../../shared/ui/exporters.js';
 import { formsOverview, listForms, getForm, convertFormToLead, setFormStatus } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 const COLS = [
@@ -85,18 +85,18 @@ export function renderForms(host, focusId) {
 
   async function openForm(id) {
     let f;
-    try { f = await getForm(id); } catch (e) { alert(humanizeError(e)); return; }
+    try { f = await getForm(id); } catch (e) { toast(humanizeError(e)); return; }
     const canManage = can('forms.manage');
     const canConvert = canManage && can('crm.edit');
     const actions = el('div', { class: 'cc-drawer-actions' });
     if (canConvert && f.status !== 'converted') {
       actions.appendChild(el('button', { class: 'lb-btn lb-btn-primary', onClick: async () => {
-        try { await convertFormToLead(id); } catch (e) { alert(humanizeError(e)); return; }
+        try { await convertFormToLead(id); } catch (e) { toast(humanizeError(e)); return; }
         document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load();
       } }, 'Convert to CRM lead'));
     }
     if (canManage) {
-      const setS = async (s) => { try { await setFormStatus(id, s); } catch (e) { alert(humanizeError(e)); return; } document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load(); };
+      const setS = async (s) => { try { await setFormStatus(id, s); } catch (e) { toast(humanizeError(e)); return; } document.getElementById('cc-drawer-root')?.remove(); loadKpis(); load(); };
       if (f.status !== 'assigned') actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => setS('assigned') }, 'Mark assigned'));
       if (f.status !== 'closed') actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => setS('closed') }, 'Close'));
       if (f.status !== 'spam') actions.appendChild(el('button', { class: 'lb-btn lb-btn-secondary', onClick: () => setS('spam') }, 'Mark spam'));

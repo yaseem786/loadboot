@@ -115,10 +115,10 @@ export function renderWorkflowBuilder(host) {
       });
       try {
         const r = await workflowSave({ key: keyI.value.trim(), name: nameI.value.trim() || keyI.value.trim(), trigger_event: trigI.value.trim() || null, graph: g });
-        if (!r.ok) { alert('Validation: ' + (r.validation_errors || []).join('; ')); return; }
+        if (!r.ok) { toast('Validation: ' + (r.validation_errors || []).join('; ')); return; }
         toast('Saved (draft v bump) — simulate before publishing', 'success');
         document.getElementById('cc-drawer-root')?.remove(); load();
-      } catch (e) { alert(humanizeError(e)); }
+      } catch (e) { toast(humanizeError(e)); }
     } }, 'Save workflow');
     draw();
     openDrawer(w ? 'Edit — ' + w.name : 'New workflow', el('div', null, [
@@ -140,7 +140,7 @@ export function renderWorkflowBuilder(host) {
       el('label', { class: 'cc-field' }, [el('span', null, 'Sample event (JSON)'), ta]),
       el('div', { class: 'cc-drawer-actions', style: 'margin:10px 0' }, el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => {
         const _btn9 = ev.currentTarget;
-        let evt; try { evt = JSON.parse(ta.value); } catch (_) { alert('Invalid JSON'); return; }
+        let evt; try { evt = JSON.parse(ta.value); } catch (_) { toast('Invalid JSON'); return; }
         _btn9.disabled = true;
         try {
           const r = await workflowRun(w.id, evt, 'simulation');

@@ -15,7 +15,7 @@ const KIND_META = {
   form: { tone: 'violet', label: 'Lead' },
 };
 // where a queue item links, by its related entity
-const DESK = { emergency_sla: '#/safety-desk', pod_missing: '#/pod-review', claim_decision_stale: '#/exceptions', load_post_review: '#/partner-intake' };
+const DESK = { emergency_sla: '#/safety', pod_missing: '#/pod-review', claim_decision_stale: '#/exceptions', load_post_review: '#/partner-intake' };
 function linkFor(it) {
   if (it.kind === 'ticket') return '#/support' + (it.related_id ? '?id=' + it.related_id : '');
   if (it.kind === 'form') return '#/forms' + (it.related_id ? '?id=' + it.related_id : '');

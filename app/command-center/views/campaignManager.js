@@ -311,10 +311,10 @@ export function renderCampaignManager(host) {
     }
     openDrawer(c ? 'Edit campaign' : 'New campaign', form, { subtitle: 'Audience + template + channels' });
     async function save() {
-      if (!f.name.trim()) { alert('Campaign name is required.'); return; }
+      if (!f.name.trim()) { toast('Campaign name is required.'); return; }
       if (f.scheduledAt) f.scheduledAt = new Date(f.scheduledAt).toISOString();
       try { await cmpSave(f); toast('Campaign saved', 'success'); document.getElementById('cc-drawer-root')?.remove(); load(); }
-      catch (e) { alert(humanizeError(e)); }
+      catch (e) { toast(humanizeError(e)); }
     }
   }
 }

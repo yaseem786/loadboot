@@ -7,7 +7,7 @@ import { el, mount } from '../../shared/ui/dom.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, fmtDate } from '../../shared/ui/components.js';
 import { listRules, setRuleEnabled, runComplianceExpirySweep, runStaleBookreqSweep } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
 export function renderAutomationsAdmin(host) {
@@ -64,7 +64,7 @@ export function renderAutomationsAdmin(host) {
         el('td', null, r.requires_approval ? statusPill('pending') : el('span', { class: 'cc-sub' }, 'auto')),
         el('td', null, fmtDate(r.created_at)),
         el('td', null, manage
-          ? el('button', { class: 'cc-toggle' + (r.enabled ? ' on' : ''), onClick: async () => { try { await setRuleEnabled(r.key, !r.enabled); } catch (e) { alert(humanizeError(e)); return; } load(); } }, r.enabled ? 'On' : 'Off')
+          ? el('button', { class: 'cc-toggle' + (r.enabled ? ' on' : ''), onClick: async () => { try { await setRuleEnabled(r.key, !r.enabled); } catch (e) { toast(humanizeError(e)); return; } load(); } }, r.enabled ? 'On' : 'Off')
           : statusPill(r.enabled ? 'active' : 'paused')),
       ]))),
     ])));

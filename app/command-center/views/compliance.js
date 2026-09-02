@@ -146,7 +146,7 @@ export function renderCompliance(host) {
       const viewFile = r.document_id ? el('button', { class: 'cc-chip-btn', onClick: async (ev) => {
         const b0 = ev.currentTarget; b0.disabled = true; b0.textContent = 'Opening…';
         try { const f = await documentFile(r.document_id); const url = await signedDocumentUrl(f.file_path); window.open(url, '_blank'); }
-        catch (e) { alert((e && e.message) || 'Could not open the file.'); }
+        catch (e) { toast((e && e.message) || 'Could not open the file.'); }
         b0.disabled = false; b0.textContent = '📄 View file';
       } }, [icon('doc',15),' View file']) : '';
       return el('div', { class: 'cc-doc-item' }, [

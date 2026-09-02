@@ -11,7 +11,7 @@ import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
-import { humanizeError } from '../../shared/errors.js';
+import { humanizeError, toast } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 // 29 Aug 2026 — equipment_detail and notes used to be flattened into two 150px grid cells.
 // Same renderer the carrier portal can import, so both sides read one version of the truth.
@@ -601,13 +601,13 @@ export function renderCarrier360(host, orgId) {
       const verifyBtn = el('button', { class: 'cc-btn-sm ' + (pp.verified ? '' : 'cc-btn-green'), style: 'padding:7px 14px;border-radius:8px;font-weight:700;cursor:pointer;border:1px solid #cbd5e1;background:' + (pp.verified ? '#fff' : '#16a34a') + ';color:' + (pp.verified ? '#334155' : '#fff'), onClick: async (ev) => {
         const _btn9 = ev.currentTarget;
         _btn9.disabled = true; _btn9.textContent = pp.verified ? 'Revoking…' : 'Verifying…';
-        try { await verifyPaymentProfile(orgId, !pp.verified, pp.verified ? (await askReason('Reason for revoking (carrier sees this):') || null) : null); load(); } catch (e) { _btn9.disabled = false; alert(humanizeError(e)); }
+        try { await verifyPaymentProfile(orgId, !pp.verified, pp.verified ? (await askReason('Reason for revoking (carrier sees this):') || null) : null); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e)); }
       } }, pp.verified ? 'Revoke verification' : 'Verify bank details');
       const bankRejectBtn = !pp.verified ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', style: 'margin-left:8px', onClick: async (ev) => {
         const _btn9 = ev.currentTarget;
         const why = await askReason('Reject bank details \u2014 reason (carrier will be notified):'); if (!why) return;
         _btn9.disabled = true;
-        try { await verifyPaymentProfile(orgId, false, why); load(); } catch (e) { _btn9.disabled = false; alert(humanizeError(e)); }
+        try { await verifyPaymentProfile(orgId, false, why); load(); } catch (e) { _btn9.disabled = false; toast(humanizeError(e)); }
       } }, '\u2715 Reject with reason') : null;
       mount(payoutCard, [
         el('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, [el('h4', { class: 'cc-card-title' }, 'Payout & bank details'), statusPill(pp.verified ? 'approved' : 'pending')]),
@@ -635,8 +635,8 @@ export function renderCarrier360(host, orgId) {
             (fd.advance_pct || fd.fee_pct) ? kv('Advance / fee', (fd.advance_pct?fd.advance_pct+'% advance':'') + (fd.fee_pct?' · '+fd.fee_pct+'% fee':'')) : '',
             el('div', { class: 'cc-sub', style: 'margin-top:6px;line-height:1.5' }, 'When factoring is active + NOA verified, broker pay panels route to THIS remit-to — never the carrier bank.'),
             can('finance.approve') ? el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' }, [
-              pp.noa_status !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#7c3aed;border-color:#7c3aed', onClick: async (ev) => { const b = ev.currentTarget; if (!await askConfirm('Verify factoring NOA', { body: 'Verify this factoring NOA? Brokers will be routed to the factor remit-to (not the carrier bank) on every payment.' })) return; b.disabled = true; try { await ccFactoringVerify(orgId, true, null); alert('Factoring verified — broker payments now route to the factor.'); load(); } catch (e) { b.disabled = false; alert(humanizeError(e)); } } }, [icon('check',15),' Verify factoring / NOA']) : null,
-              pp.noa_status !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const why = prompt('Reject factoring NOA — reason (carrier sees this + gets an email):'); if (!why || !why.trim()) return; const b = ev.currentTarget; b.disabled = true; try { await ccFactoringVerify(orgId, false, why.trim()); load(); } catch (e) { b.disabled = false; alert(humanizeError(e)); } } }, [icon('x',15),' Reject NOA']) : null,
+              pp.noa_status !== 'verified' ? el('button', { class: 'lb-btn lb-btn-sm', style: 'background:#7c3aed;border-color:#7c3aed', onClick: async (ev) => { const b = ev.currentTarget; if (!await askConfirm('Verify factoring NOA', { body: 'Verify this factoring NOA? Brokers will be routed to the factor remit-to (not the carrier bank) on every payment.' })) return; b.disabled = true; try { await ccFactoringVerify(orgId, true, null); toast('Factoring verified — broker payments now route to the factor.'); load(); } catch (e) { b.disabled = false; toast(humanizeError(e)); } } }, [icon('check',15),' Verify factoring / NOA']) : null,
+              pp.noa_status !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-secondary', style: 'color:#b91c1c', onClick: async (ev) => { const why = prompt('Reject factoring NOA — reason (carrier sees this + gets an email):'); if (!why || !why.trim()) return; const b = ev.currentTarget; b.disabled = true; try { await ccFactoringVerify(orgId, false, why.trim()); load(); } catch (e) { b.disabled = false; toast(humanizeError(e)); } } }, [icon('x',15),' Reject NOA']) : null,
             ].filter(Boolean)) : null,
           ].filter(Boolean));
         })() : '',
@@ -728,15 +728,29 @@ export function renderCarrier360(host, orgId) {
           const b9 = ev.currentTarget; b9.disabled = true;
           try {
             const data9 = isW9 ? await carrierW9(orgId) : await carrierAgreementSignature(orgId);
-            if (!data9) { alert('No executed record on file yet.'); b9.disabled = false; return; }
-            const SKIP9 = ['id', 'carrier_id', 'created_by'];
+            if (!data9) { toast('No executed record on file yet.'); b9.disabled = false; return; }
+            // 30 Aug 2026: never render a raw taxpayer ID in this generic column dump. The same
+            // w9_submissions.tin column holds an EIN *or an SSN* (the form accepts both), and it was
+            // appearing on screen in full simply because a reviewer opened the record. tin_last4 is
+            // right beside it and is what a format check actually needs. The full number still
+            // reaches printExecutedW9 from the same object, so the printed original is unchanged —
+            // and printing is a deliberate act, which is where the full number belongs.
+            const SKIP9 = ['id', 'carrier_id', 'created_by', 'tin'];
+            // 30 Aug 2026: a DATE column has no time, so feeding signed_date ('2026-08-29') to
+            // fmtDateTime parsed it as midnight UTC and rendered it in local time — a W-9 signed
+            // on Aug 29 displayed as 'Aug 28, 5:00 PM', contradicting signed_at right beside it.
+            // Date-only values are built from their own parts so no timezone can move the day.
+            const fmtDateOnly9 = (s9) => { const m9 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s9); if (!m9) return s9;
+              return new Date(+m9[1], +m9[2] - 1, +m9[3]).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); };
             const rows9 = Object.entries(data9).filter(([k9, v9]) => v9 != null && SKIP9.indexOf(k9) < 0)
-              .map(([k9, v9]) => [k9.replace(/_/g, ' '), /(_at|date)$/.test(k9) && /\d{4}-\d{2}/.test(String(v9)) ? fmtDateTime(v9) : String(v9)]);
+              .map(([k9, v9]) => { const s9 = String(v9); let out9 = s9;
+                if (/(_at|date)$/.test(k9) && /\d{4}-\d{2}/.test(s9)) out9 = /^\d{4}-\d{2}-\d{2}$/.test(s9) ? fmtDateOnly9(s9) : fmtDateTime(v9);
+                return [k9.replace(/_/g, ' '), out9]; });
             const doPrint = async () => {
               try {
                 if (isW9) { const mW = await import('../../carrier/w9-form.js'); mW.printExecutedW9(data9); }
                 else { const mA = await import('../../carrier/dispatch-agreement.js'); mA.printExecutedAgreement({ approved: true, signer: data9.signer_name, date: data9.signed_date || (data9.signed_at ? fmtDateTime(data9.signed_at) : ''), carrier: d.name || (d.profile && d.profile.company) || '', mc: d.profile && d.profile.mc, dot: d.profile && d.profile.dot }); }
-              } catch (e9b) { alert(humanizeError(e9b)); }
+              } catch (e9b) { toast(humanizeError(e9b)); }
             };
             openDrawer((isW9 ? '\ud83e\uddfe Executed W-9' : '\u270d Dispatch Agreement \u2014 signature record'), [
               el('div', { style: 'display:flex;gap:8px;margin-bottom:10px' }, [
@@ -747,7 +761,7 @@ export function renderCarrier360(host, orgId) {
                 ? 'Check: legal name matches FMCSA, TIN format valid, classification sensible, signature name matches an officer. Wrong/incomplete? Use \u2699 Actions \u2192 reject \u2014 the carrier must redo the W-9.'
                 : 'Check: signer is an officer of the company and the name matches the FMCSA legal name. Not right? \u2699 Actions \u2192 reject \u2014 the carrier must re-sign.'),
             ]);
-          } catch (e9) { alert(humanizeError(e9)); }
+          } catch (e9) { toast(humanizeError(e9)); }
           b9.disabled = false;
         } }, '\ud83e\uddfe View executed') : null;
         const viewBtn = r.document_id ? el('button', { class: 'cc-chip-btn', onClick: async (ev) => {
@@ -774,7 +788,7 @@ export function renderCarrier360(host, orgId) {
             try { console.error('[carrier360] view document failed', r.key, r.document_id, e && e.code, e && e.message); } catch (_) {}
             const code9 = (e && e.code) ? ' [' + e.code + ']' : '';
             const raw9 = (e && e.message) ? ' — ' + e.message : '';
-            alert(humanizeError(e) + code9 + raw9 + '\n\nDocument ' + r.document_id + ' (' + r.key + ').');
+            toast(humanizeError(e) + code9 + raw9 + '\n\nDocument ' + r.document_id + ' (' + r.key + ').');
           }
           b0.disabled = false;
         } }, [icon('doc',15),' View']) : '';
@@ -786,7 +800,7 @@ export function renderCarrier360(host, orgId) {
             el('div', { class: 'cc-field' }, [el('span', null, 'Status'), st]),
             el('div', { class: 'cc-field' }, [el('span', null, 'Expiry date (from the document)'), ex]),
             el('div', { class: 'cc-field' }, [el('span', null, 'Note'), nt]),
-            el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => { const b1 = ev.currentTarget; if (st.value === 'rejected' && !nt.value.trim()) { alert('Rejection needs a written reason — the carrier sees it.'); return; } b1.disabled = true; try { await setCompliance({ carrier: orgId, requirement: r.key, status: st.value, expiry: ex.value || null, note: nt.value || null }); dr.close(); loadComp(); } catch (e) { alert(humanizeError(e)); b1.disabled = false; } } }, 'Save decision'),
+            el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => { const b1 = ev.currentTarget; if (st.value === 'rejected' && !nt.value.trim()) { toast('Rejection needs a written reason — the carrier sees it.'); return; } b1.disabled = true; try { await setCompliance({ carrier: orgId, requirement: r.key, status: st.value, expiry: ex.value || null, note: nt.value || null }); dr.close(); loadComp(); } catch (e) { toast(humanizeError(e)); b1.disabled = false; } } }, 'Save decision'),
           ]));
         } }, 'Verify') : '';
         const DOC_HINT = {
@@ -823,7 +837,7 @@ export function renderCarrier360(host, orgId) {
                   if (consVal === 'reject' || consVal === 'warn_reject') await setCompliance({ carrier: orgId, requirement: r.key, status: 'rejected', expiry: null, note: msg2 });
                   if (consVal === 'warn' || consVal === 'warn_reject') await issueViolation(orgId, 'document', 'warning', '[' + r.name + '] ' + msg2);
                   dr2.close(); loadComp();
-                } catch (e2) { alert(humanizeError(e2)); _b_.disabled = false; }
+                } catch (e2) { toast(humanizeError(e2)); _b_.disabled = false; }
               } }, 'Apply'),
               el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => dr2.close() }, 'Cancel'),
             ]),
@@ -834,8 +848,8 @@ export function renderCarrier360(host, orgId) {
           el('div', { style: 'min-width:0' }, [el('b', { style: 'font-size:.88rem' }, r.name), el('div', { class: 'cc-sub' }, (r.mandatory ? 'Required' : 'Optional') + exp + (r.note ? ' · ' + r.note : ''))]),
           el('div', { style: 'display:flex;gap:6px;align-items:center;flex:none' }, [el('span', { class: 'cc-pill cc-pill-' + tone }, r.status),
             (r.status !== 'valid') ? el('button', { class: 'cc-chip-btn', title: 'Email + in-app reminder for THIS document (6h cooldown)', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
-              try { const r9 = await ccOnboardingRemind(orgId, r.name || r.key); b9.textContent = '✓ Sent'; alert('Reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email + in-app, for: ' + (r.name || r.key)); }
-              catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, [icon('mail',15),' Remind']) : null,
+              try { const r9 = await ccOnboardingRemind(orgId, r.name || r.key); b9.textContent = '✓ Sent'; toast('Reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email + in-app, for: ' + (r.name || r.key)); }
+              catch (e9) { b9.disabled = false; toast(humanizeError(e9)); } } }, [icon('mail',15),' Remind']) : null,
             execBtn, viewBtn, verifyBtn, warnBtn].filter(Boolean)),
         ]);
       });
@@ -851,15 +865,15 @@ export function renderCarrier360(host, orgId) {
               if (!confirm(cur9 ? 'Remove this carrier from broker portals? Brokers will no longer see or match this profile.' : 'Publish this carrier to broker portals? Brokers will see the verified profile and can send direct requests.')) return;
               pubBtn.disabled = true;
               try { const r9 = await setBrokerVisibility(orgId, !cur9, null); pubBtn.dataset.vis = r9.broker_visible ? '1' : '0'; pubBtn.textContent = r9.broker_visible ? '\ud83d\ude48 Unpublish from brokers' : '\ud83d\udce2 Publish to brokers'; }
-              catch (e) { alert(humanizeError(e)); }
+              catch (e) { toast(humanizeError(e)); }
               pubBtn.disabled = false;
             };
             return el('div', { style: 'display:flex;gap:9px;margin-top:14px;align-items:center;justify-content:flex-start;flex-wrap:wrap;border-top:1px solid #eef2f7;padding-top:12px' }, [
               _isApproved
                 ? el('button', { class: 'lb-btn lb-btn-primary', disabled: 'disabled', style: 'opacity:.75', title: 'Account is approved \u2014 booking unlocked' }, '\u2713 Account approved')
-                : el('button', { class: 'lb-btn lb-btn-primary', disabled: allOk ? null : 'disabled', title: allOk ? '' : 'All mandatory documents must be valid first', onClick: async (ev) => { const _btn9 = ev.currentTarget; if (!await askConfirm('Please confirm', { body: 'Approve this carrier account? Booking unlocks. (Publishing to broker portals is the separate button.)', danger: true })) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'approve', null); alert('Approved \ud83c\udf89 Carrier notified \u00b7 booking unlocked. Use \u201cPublish to brokers\u201d when ready.'); loadComp(); } catch (e) { alert(humanizeError(e)); _btn9.disabled = false; } } }, '\u2713 Approve account'),
+                : el('button', { class: 'lb-btn lb-btn-primary', disabled: allOk ? null : 'disabled', title: allOk ? '' : 'All mandatory documents must be valid first', onClick: async (ev) => { const _btn9 = ev.currentTarget; if (!await askConfirm('Please confirm', { body: 'Approve this carrier account? Booking unlocks. (Publishing to broker portals is the separate button.)', danger: true })) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'approve', null); toast('Approved \ud83c\udf89 Carrier notified \u00b7 booking unlocked. Use \u201cPublish to brokers\u201d when ready.'); loadComp(); } catch (e) { toast(humanizeError(e)); _btn9.disabled = false; } } }, '\u2713 Approve account'),
               pubBtn,
-              el('button', { style: 'margin-left:auto;border:1px solid #fecaca;background:#fff;color:#b91c1c;font-weight:800;border-radius:10px;padding:10px 18px;cursor:pointer', onClick: async (ev) => { const _btn9 = ev.currentTarget; const why = prompt((_isApproved ? 'Revoke approval' : 'Rejection reason') + ' \u2014 reason (carrier sees this):'); if (!why || !why.trim()) return; if (_isApproved && !await askConfirm('Please confirm', { body: 'Revoke approval? Booking locks again, the account goes back to review, and the carrier is notified with your reason.', danger: true })) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'reject', why.trim()); loadComp(); } catch (e) { alert(humanizeError(e)); _btn9.disabled = false; } } }, _isApproved ? '\u2715 Revoke approval' : '\u2715 Reject application'),
+              el('button', { style: 'margin-left:auto;border:1px solid #fecaca;background:#fff;color:#b91c1c;font-weight:800;border-radius:10px;padding:10px 18px;cursor:pointer', onClick: async (ev) => { const _btn9 = ev.currentTarget; const why = prompt((_isApproved ? 'Revoke approval' : 'Rejection reason') + ' \u2014 reason (carrier sees this):'); if (!why || !why.trim()) return; if (_isApproved && !await askConfirm('Please confirm', { body: 'Revoke approval? Booking locks again, the account goes back to review, and the carrier is notified with your reason.', danger: true })) return; _btn9.disabled = true; try { await decideOnboarding(orgId, 'reject', why.trim()); loadComp(); } catch (e) { toast(humanizeError(e)); _btn9.disabled = false; } } }, _isApproved ? '\u2715 Revoke approval' : '\u2715 Reject application'),
             ]);
           })()
         : el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'Onboarding stage: ' + stage);
@@ -878,8 +892,8 @@ export function renderCarrier360(host, orgId) {
         const f9 = (x9) => x9 ? new Date(x9).toLocaleString() : 'never';
         mount(remindWrap9, el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%' }, [
           allOk ? null : el('button', { class: 'lb-btn', style: 'border:1px solid #0883F7;color:#0883F7;background:#fff;font-weight:800;border-radius:10px;padding:8px 16px;cursor:pointer', onClick: async (ev) => { const b9 = ev.currentTarget; b9.disabled = true;
-            try { const r9 = await ccOnboardingRemind(orgId, null); b9.textContent = '✓ Reminder sent'; alert('Overall onboarding reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email listing every missing item + in-app. Auto-nags keep running on their own schedule.'); }
-            catch (e9) { b9.disabled = false; alert(humanizeError(e9)); } } }, [icon('mail',15),' Send onboarding reminder (all missing)']),
+            try { const r9 = await ccOnboardingRemind(orgId, null); b9.textContent = '✓ Reminder sent'; toast('Overall onboarding reminder sent' + (r9 && r9.sent_to ? ' to ' + r9.sent_to : '') + ' — premium email listing every missing item + in-app. Auto-nags keep running on their own schedule.'); }
+            catch (e9) { b9.disabled = false; toast(humanizeError(e9)); } } }, [icon('mail',15),' Send onboarding reminder (all missing)']),
           el('span', { class: 'cc-sub', style: 'font-size:.76rem' }, st9 ? ('Last manual reminder: ' + f9(st9.last_manual) + (st9.last_auto ? ' · last auto: ' + f9(st9.last_auto) : '') + ' · auto engine runs on cron — these buttons are the extra human push') : ''),
         ].filter(Boolean)));
       })();
@@ -950,14 +964,14 @@ export function renderCarrier360(host, orgId) {
           ]),
           el('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
             el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev9) => { const _b_ = ev9.currentTarget;
-              if (!why9.value.trim()) { alert('Description is required \u2014 the carrier must know exactly what happened.'); return; }
+              if (!why9.value.trim()) { toast('Description is required \u2014 the carrier must know exactly what happened.'); return; }
               _b_.disabled = true; _b_.textContent = 'Issuing\u2026';
               if (rst9.sel.value !== 'none' && !confirm(rst9.sel.value === 'all' ? 'Freeze the ENTIRE account along with this strike?' : 'Pause booking along with this strike?')) return;
               try {
                 await issueViolation(orgId, 'conduct', sev9.value, (factorLabel ? '[' + factorLabel + '] ' : '') + cat9.value + ' \u2014 ' + why9.value.trim());
                 const ex9 = await rst9.apply((factorLabel ? '[' + factorLabel + '] ' : '') + 'Strike: ' + cat9.value + ' \u2014 ' + why9.value.trim());
-                dw9.close(); alert('\u26a0 Issued \u2014 points deducted, carrier notified' + ex9 + '.');
-              } catch (e9) { _b_.disabled = false; _b_.textContent = 'Issue warning'; alert(humanizeError(e9)); }
+                dw9.close(); toast('\u26a0 Issued \u2014 points deducted, carrier notified' + ex9 + '.');
+              } catch (e9) { _b_.disabled = false; _b_.textContent = 'Issue warning'; toast(humanizeError(e9)); }
             } }, 'Issue warning'),
             el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => dw9.close() }, 'Cancel'),
           ]),
@@ -1034,7 +1048,7 @@ export function renderCarrier360(host, orgId) {
                       el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev9) => { const _b_ = ev9.currentTarget;
                         const answers = picked(ansBox); const docs9 = picked(docBox); if (otherDoc.value.trim()) docs9.push(otherDoc.value.trim());
                         const qs9 = q9.value.split('\n').map((x9) => x9.trim()).filter(Boolean);
-                        if (!answers.length && !docs9.length && !qs9.length && !msg9.value.trim()) { alert('Select at least one requirement, ask a question, or write a message.'); return; }
+                        if (!answers.length && !docs9.length && !qs9.length && !msg9.value.trim()) { toast('Select at least one requirement, ask a question, or write a message.'); return; }
                         const note9 = [
                           'FROM: ' + teamP.value.toUpperCase(),
                           answers.length ? 'MUST ANSWER: ' + answers.join(' \u00b7 ') : null,
@@ -1049,8 +1063,8 @@ export function renderCarrier360(host, orgId) {
                         try {
                           await requestPoa(orgId, g.label, note9);
                           const extraP = await rstP.apply('[' + g.label + '] Plan of action demanded \u2014 ' + (msg9.value.trim() || 'answer required') + ' (restriction until answered/reinstated)');
-                          dr9.close(); alert('POA demanded \u2713 carrier notified + emailed with your exact requirements' + extraP + '.');
-                        } catch (e9) { _b_.disabled = false; _b_.textContent = 'Send demand'; alert(humanizeError(e9)); }
+                          dr9.close(); toast('POA demanded \u2713 carrier notified + emailed with your exact requirements' + extraP + '.');
+                        } catch (e9) { _b_.disabled = false; _b_.textContent = 'Send demand'; toast(humanizeError(e9)); }
                       } }, 'Send demand'),
                       el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => dr9.close() }, 'Cancel'),
                     ]),
@@ -1074,11 +1088,11 @@ export function renderCarrier360(host, orgId) {
                     el('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
                       el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev8) => { const _b8 = ev8.currentTarget;
                         const v8 = Number(pts9.value) || 0;
-                        if (!v8 || Math.abs(v8) > 40) { alert('Points must be a non-zero number between \u221240 and +40.'); return; }
-                        if (!why8.value.trim()) { alert('A written reason is required \u2014 the carrier must know why.'); return; }
-                        if (v8 < 0 && !fix8.value.trim()) { alert('For penalties, tell the carrier HOW to fix it \u2014 that is the deal.'); return; }
+                        if (!v8 || Math.abs(v8) > 40) { toast('Points must be a non-zero number between \u221240 and +40.'); return; }
+                        if (!why8.value.trim()) { toast('A written reason is required \u2014 the carrier must know why.'); return; }
+                        if (v8 < 0 && !fix8.value.trim()) { toast('For penalties, tell the carrier HOW to fix it \u2014 that is the deal.'); return; }
                         _b8.disabled = true; _b8.textContent = 'Applying\u2026';
-                        try { const r8 = await healthAdjust(orgId, g.label, v8, why8.value.trim(), fix8.value.trim() || null, exp8.value ? Number(exp8.value) : null); drA.close(); alert((v8 > 0 ? '+' : '') + v8 + ' applied \u2014 new score ' + r8.new_score + ' \u00b7 carrier notified + emailed with reason & fix.'); location.reload(); } catch (e8) { _b8.disabled = false; _b8.textContent = 'Apply adjustment'; alert(humanizeError(e8)); }
+                        try { const r8 = await healthAdjust(orgId, g.label, v8, why8.value.trim(), fix8.value.trim() || null, exp8.value ? Number(exp8.value) : null); drA.close(); toast((v8 > 0 ? '+' : '') + v8 + ' applied \u2014 new score ' + r8.new_score + ' \u00b7 carrier notified + emailed with reason & fix.'); location.reload(); } catch (e8) { _b8.disabled = false; _b8.textContent = 'Apply adjustment'; toast(humanizeError(e8)); }
                       } }, 'Apply adjustment'),
                       el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => drA.close() }, 'Cancel'),
                     ]),
@@ -1099,9 +1113,9 @@ export function renderCarrier360(host, orgId) {
                     el('label', { class: 'cc-sub', style: 'font-weight:700;margin-top:12px;display:block' }, 'Details (required)'), msgR,
                     el('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
                       el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev8) => { const _b8 = ev8.currentTarget;
-                        if (!msgR.value.trim()) { alert('Details are required \u2014 the carrier must know why points came back.'); return; }
+                        if (!msgR.value.trim()) { toast('Details are required \u2014 the carrier must know why points came back.'); return; }
                         _b8.disabled = true; _b8.textContent = 'Resetting\u2026';
-                        try { const r8 = await healthResetFactor(orgId, g.key, 'FROM: ' + teamR.value.toUpperCase() + ' \u2014 ' + catR.value + ': ' + msgR.value.trim()); drR.close(); alert('\u267b Reset done \u2014 restored ' + r8.restored + ' pts' + (r8.strikes_resolved ? ', resolved ' + r8.strikes_resolved + ' strike(s)' : '') + ' \u00b7 new score ' + r8.new_score + ' \u00b7 carrier notified.'); location.reload(); } catch (e8) { _b8.disabled = false; _b8.textContent = '\u267b Reset factor'; alert(/nothing to reset|already at full/i.test((e8 && e8.message) || '') ? 'Nothing to reset \u2014 this factor is already at full points (the view may be stale; refresh the page).' : humanizeError(e8)); }
+                        try { const r8 = await healthResetFactor(orgId, g.key, 'FROM: ' + teamR.value.toUpperCase() + ' \u2014 ' + catR.value + ': ' + msgR.value.trim()); drR.close(); toast('\u267b Reset done \u2014 restored ' + r8.restored + ' pts' + (r8.strikes_resolved ? ', resolved ' + r8.strikes_resolved + ' strike(s)' : '') + ' \u00b7 new score ' + r8.new_score + ' \u00b7 carrier notified.'); location.reload(); } catch (e8) { _b8.disabled = false; _b8.textContent = '\u267b Reset factor'; toast(/nothing to reset|already at full/i.test((e8 && e8.message) || '') ? 'Nothing to reset \u2014 this factor is already at full points (the view may be stale; refresh the page).' : humanizeError(e8)); }
                       } }, '\u267b Reset factor'),
                       el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => drR.close() }, 'Cancel'),
                     ]),
@@ -1111,7 +1125,7 @@ export function renderCarrier360(host, orgId) {
                   const why = await askReason('\u23f8 Pause BOOKING over \u201c' + g.label + '\u201d \u2014 reason (carrier sees this):'); if (!why) return;
                   if (!await askConfirm('Please confirm', { body: 'Pause booking now? Carrier gets urgent notification + email, and must request reinstatement.', danger: true })) return;
                   _b_.disabled = true;
-                  try { await pauseCarrier(orgId, 'pause', 'booking', '[' + g.label + '] ' + why); _b_.textContent = 'Booking paused \u2713'; } catch (e9) { _b_.disabled = false; alert(humanizeError(e9)); }
+                  try { await pauseCarrier(orgId, 'pause', 'booking', '[' + g.label + '] ' + why); _b_.textContent = 'Booking paused \u2713'; } catch (e9) { _b_.disabled = false; toast(humanizeError(e9)); }
                 } }, '\u23f8 Pause booking'),
               ]),
             ]) : null,
@@ -1170,10 +1184,10 @@ export function renderCarrier360(host, orgId) {
                 const tog = el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: () => { const on = conv.style.display !== 'none'; conv.style.display = on ? 'none' : 'block'; tog.textContent = on ? '\ud83d\udcac See conversation (' + evs.length + ')' : '\u25b4 Show less'; } }, '\ud83d\udcac See conversation (' + evs.length + ')');
                 const stc = latest.status === 'approved' ? ['#e7f9ee', '#12a150', '\u2713 Accepted'] : latest.status === 'rejected' ? ['#fee2e2', '#b91c1c', '\u2715 Declined'] : latest.status === 'in_review' ? ['#dbeafe', '#1d4ed8', '\u23f3 In review'] : latest.status === 'more_info' ? ['#fef3c7', '#b45309', '\u21a9 Awaiting more info'] : ['#fef3c7', '#b45309', '\u2022 New answer'];
                 const actRow = openReq ? el('div', { style: 'display:flex;gap:6px;margin-top:8px;flex-wrap:wrap' }, [
-                  openReq.status !== 'in_review' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev9) => { const _b_ = ev9.currentTarget; _b_.disabled = true; try { await reviewReinstatement(openReq.id, 'in_review', null); drawR(); } catch (e9) { _b_.disabled = false; alert(humanizeError(e9)); } } }, '\u23f3 In review') : null,
+                  openReq.status !== 'in_review' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: async (ev9) => { const _b_ = ev9.currentTarget; _b_.disabled = true; try { await reviewReinstatement(openReq.id, 'in_review', null); drawR(); } catch (e9) { _b_.disabled = false; toast(humanizeError(e9)); } } }, '\u23f3 In review') : null,
                   el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev9) => { const _b_ = ev9.currentTarget;
                     if (!confirm(openReq.kind === 'health_poa' ? 'Accept this plan of action? Carrier is notified.' : 'Approve \u2014 reinstates the carrier immediately. Continue?')) return;
-                    _b_.disabled = true; try { await reviewReinstatement(openReq.id, 'approve', null); drawR(); } catch (e9) { _b_.disabled = false; alert(humanizeError(e9)); }
+                    _b_.disabled = true; try { await reviewReinstatement(openReq.id, 'approve', null); drawR(); } catch (e9) { _b_.disabled = false; toast(humanizeError(e9)); }
                   } }, openReq.kind === 'health_poa' ? '\u2713 Accept' : '\u2713 Approve & reinstate'),
                   el('button', { class: 'lb-btn lb-btn-sm lb-btn-ghost', onClick: () => openMoreInfo9(openReq) }, '\u21a9 Need more info'),
                   el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: () => {
@@ -1190,15 +1204,15 @@ export function renderCarrier360(host, orgId) {
                       el('label', { class: 'cc-sub', style: 'font-weight:700;margin-top:12px;display:block' }, 'Account effect along with this decline'), rstD.sel,
                       el('div', { style: 'display:flex;gap:8px;margin-top:14px' }, [
                         el('button', { class: 'lb-btn lb-btn-primary', style: 'background:#b91c1c;border-color:#b91c1c', onClick: async (ev8) => { const _b8 = ev8.currentTarget;
-                          if (!msgD.value.trim()) { alert('A written note is required \u2014 the carrier must know why.'); return; }
+                          if (!msgD.value.trim()) { toast('A written note is required \u2014 the carrier must know why.'); return; }
                           if (rstD.sel.value !== 'none' && !confirm(rstD.sel.value === 'all' ? 'Freeze the ENTIRE account along with this decline?' : 'Pause booking along with this decline?')) return;
                           const ntD = ['RE: ' + ref9(openReq.id), 'FROM: ' + teamD.value.toUpperCase(), 'REASON: ' + catD.value, 'NOTE FROM ' + teamD.value.toUpperCase() + ': ' + msgD.value.trim()].join('\n');
                           _b8.disabled = true; _b8.textContent = 'Declining\u2026';
                           try {
                             await reviewReinstatement(openReq.id, 'reject', ntD);
                             const exD = await rstD.apply('Declined ' + ref9(openReq.id) + ' \u2014 ' + catD.value + ': ' + msgD.value.trim());
-                            drD.close(); drawR(); if (exD) alert('Declined' + exD + '.');
-                          } catch (e8) { _b8.disabled = false; _b8.textContent = 'Decline request'; alert(humanizeError(e8)); }
+                            drD.close(); drawR(); if (exD) toast('Declined' + exD + '.');
+                          } catch (e8) { _b8.disabled = false; _b8.textContent = 'Decline request'; toast(humanizeError(e8)); }
                         } }, 'Decline request'),
                         el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => drD.close() }, 'Cancel'),
                       ]),
@@ -1249,7 +1263,7 @@ export function renderCarrier360(host, orgId) {
                   el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev8) => { const _b8 = ev8.currentTarget;
                     const miss = Array.from(missBox.querySelectorAll('input:checked')).map((c8) => c8.dataset.val);
                     const qs8 = qM.value.split('\n').map((x8) => x8.trim()).filter(Boolean);
-                    if (!miss.length && !qs8.length && !docM.value.trim() && !msgM.value.trim()) { alert('Select what is missing, ask a question, or write a message.'); return; }
+                    if (!miss.length && !qs8.length && !docM.value.trim() && !msgM.value.trim()) { toast('Select what is missing, ask a question, or write a message.'); return; }
                     const nt8 = [
                       'RE: ' + ref9(r9.id),
                       'FROM: ' + teamM.value.toUpperCase(),
@@ -1260,7 +1274,7 @@ export function renderCarrier360(host, orgId) {
                       msgM.value.trim() ? 'NOTE FROM ' + teamM.value.toUpperCase() + ': ' + msgM.value.trim() : null,
                     ].filter(Boolean).join('\n');
                     _b8.disabled = true; _b8.textContent = 'Sending\u2026';
-                    try { await reviewReinstatement(r9.id, 'more_info', nt8); drM.close(); drawR(); } catch (e8) { _b8.disabled = false; _b8.textContent = 'Send back for more info'; alert(humanizeError(e8)); }
+                    try { await reviewReinstatement(r9.id, 'more_info', nt8); drM.close(); drawR(); } catch (e8) { _b8.disabled = false; _b8.textContent = 'Send back for more info'; toast(humanizeError(e8)); }
                   } }, 'Send back for more info'),
                   el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => drM.close() }, 'Cancel'),
                 ]),
@@ -1331,12 +1345,12 @@ export function renderCarrier360(host, orgId) {
 
     // ---- THIS CARRIER'S PAY CLAIMS — decide right here ----
     async function printClaimReport(claimId) {
-      let b = null; try { b = await claimBundle(claimId); } catch (e) { alert(humanizeError(e)); return; }
+      let b = null; try { b = await claimBundle(claimId); } catch (e) { toast(humanizeError(e)); return; }
       const c = (b && b.claim) || {}; const t = (b && b.trip) || {}; const dw = (b && b.gps_dwell) || []; const cxl = (b && b.cancellation_trail) || [];
       const esc9 = (x) => String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
       const rowsH = dw.map((e9) => '<tr><td>' + esc9(e9.stop) + '</td><td>' + (e9.arrived_at ? new Date(e9.arrived_at).toLocaleString() : '\u2014') + '</td><td>' + (e9.departed_at ? new Date(e9.departed_at).toLocaleString() : '\u2014') + '</td><td>' + (e9.held_minutes != null ? e9.held_minutes + ' min' : '\u2014') + '</td><td>' + (e9.free_minutes || 0) + ' min</td><td><b>' + (e9.detention_minutes != null ? e9.detention_minutes + ' min' : '\u2014') + '</b></td><td>' + (e9.gps ? esc9(Number(e9.gps.lat).toFixed(5)) + ', ' + esc9(Number(e9.gps.lng).toFixed(5)) + ' (' + Math.round(e9.gps.distance_m || 0) + ' m from stop) \u2014 <a href="' + (e9.stop_gps ? 'https://www.google.com/maps/dir/?api=1&origin=' + e9.gps.lat + ',' + e9.gps.lng + '&destination=' + e9.stop_gps.lat + ',' + e9.stop_gps.lng + '&travelmode=walking' : 'https://maps.google.com/?q=' + e9.gps.lat + ',' + e9.gps.lng) + '">verify: truck vs facility on map</a>' : 'no GPS') + '</td></tr>').join('');
       const cxlH = cxl.length ? '<h3>Cancellation trail (system record)</h3>' + cxl.map((x9) => '<div class="ln">' + new Date(x9.at).toLocaleString() + ' \u2014 ' + esc9(x9.what) + '</div>').join('') : '';
-      const w9 = window.open('', '_blank'); if (!w9) { alert('Allow popups to download the report.'); return; }
+      const w9 = window.open('', '_blank'); if (!w9) { toast('Allow popups to download the report.'); return; }
       w9.document.write('<html><head><title>' + esc9(c.ref) + ' \u2014 Evidence report</title><style>'
         + 'body{font-family:Segoe UI,Arial,sans-serif;color:#0f172a;margin:34px;font-size:13px}h1{font-size:20px;margin:0}h3{margin:18px 0 6px;font-size:14px}'
         + '.hd{display:flex;justify-content:space-between;border-bottom:3px solid #FC5305;padding-bottom:10px;margin-bottom:14px}.muted{color:#64748b}'
@@ -1416,10 +1430,10 @@ export function renderCarrier360(host, orgId) {
               el('label', { class: 'cc-sub', style: 'font-weight:700;margin-top:10px;display:block' }, 'Amount (USD) \u2014 suggested from evidence'), amtIn,
               el('label', { class: 'cc-sub', style: 'font-weight:700;margin-top:8px;display:block' }, 'Decision note'), noteIn,
               el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [
-                el('button', { class: 'lb-btn lb-btn-primary', onClick: async (e3) => { const n3 = Number(amtIn.value); if (!(n3 >= 0)) { alert('Enter a valid amount.'); return; } e3.currentTarget.disabled = true;
-                  try { const _ct1058 = e3.currentTarget; await reviewAccessorial(r.id, 'approve', n3, noteIn.value.trim() || null); dr3.close(); (after9 || function () {})(); } catch (e4) { alert(humanizeError(e4)); _ct1058.disabled = false; } } }, '\u2713 Approve $' ),
-                el('button', { class: 'lb-btn lb-btn-ghost', onClick: async (e3) => { if (!noteIn.value.trim()) { alert('Rejection needs a written reason \u2014 the carrier sees it.'); return; } e3.currentTarget.disabled = true;
-                  try { const _ct1060 = e3.currentTarget; await reviewAccessorial(r.id, 'reject', null, noteIn.value.trim()); dr3.close(); (after9 || function () {})(); } catch (e4) { alert(humanizeError(e4)); _ct1060.disabled = false; } } }, '\u2715 Reject'),
+                el('button', { class: 'lb-btn lb-btn-primary', onClick: async (e3) => { const n3 = Number(amtIn.value); if (!(n3 >= 0)) { toast('Enter a valid amount.'); return; } e3.currentTarget.disabled = true;
+                  try { const _ct1058 = e3.currentTarget; await reviewAccessorial(r.id, 'approve', n3, noteIn.value.trim() || null); dr3.close(); (after9 || function () {})(); } catch (e4) { toast(humanizeError(e4)); _ct1058.disabled = false; } } }, '\u2713 Approve $' ),
+                el('button', { class: 'lb-btn lb-btn-ghost', onClick: async (e3) => { if (!noteIn.value.trim()) { toast('Rejection needs a written reason \u2014 the carrier sees it.'); return; } e3.currentTarget.disabled = true;
+                  try { const _ct1060 = e3.currentTarget; await reviewAccessorial(r.id, 'reject', null, noteIn.value.trim()); dr3.close(); (after9 || function () {})(); } catch (e4) { toast(humanizeError(e4)); _ct1060.disabled = false; } } }, '\u2715 Reject'),
               ]),
             ].filter(Boolean));
           };
@@ -1484,11 +1498,11 @@ export function renderCarrier360(host, orgId) {
               el('div', { style: 'display:flex;gap:6px;align-items:center;flex:none;flex-wrap:wrap' }, [
                 el('span', { class: 'cc-pill cc-pill-' + (st8 === 'approved' ? 'green' : st8 === 'rejected' ? 'red' : 'amber') }, st8),
                 st8 !== 'approved' ? el('button', { class: 'lb-btn lb-btn-sm lb-btn-primary', onClick: async (ev8) => { const _b8 = ev8.currentTarget; _b8.disabled = true;
-                  try { await reviewDocument(x8.id, 'approved', null); x8.status = 'approved'; drawX(); } catch (e8) { _b8.disabled = false; alert(humanizeError(e8)); }
+                  try { await reviewDocument(x8.id, 'approved', null); x8.status = 'approved'; drawX(); } catch (e8) { _b8.disabled = false; toast(humanizeError(e8)); }
                 } }, '\u2713 Approve') : null,
                 st8 !== 'rejected' ? el('button', { class: 'lb-btn lb-btn-sm', style: 'border:1px solid #fca5a5;color:#b91c1c;background:#fff', onClick: async (ev8) => { const _b8 = ev8.currentTarget;
                   const nt8 = await askReason('Reject \u2014 reason (carrier sees this):'); if (!nt8) return; _b8.disabled = true;
-                  try { await reviewDocument(x8.id, 'rejected', nt8); x8.status = 'rejected'; x8.review_note = nt8; drawX(); } catch (e8) { _b8.disabled = false; alert(humanizeError(e8)); }
+                  try { await reviewDocument(x8.id, 'rejected', nt8); x8.status = 'rejected'; x8.review_note = nt8; drawX(); } catch (e8) { _b8.disabled = false; toast(humanizeError(e8)); }
                 } }, '\u2715 Reject') : null,
               ].filter(Boolean)),
             ]);

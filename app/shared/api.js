@@ -468,7 +468,12 @@ export const ccLcCannedDelete = (id) => rpc('cc_lc_canned_delete', { p_id: id })
 export const ccRetellCallback = (o) => rpc('cc_retell_callback', { p_to: o.to, p_name: o.name ?? null, p_topic: o.topic ?? null, p_role: o.role ?? null, p_context: o.context ?? null, p_when: o.when ?? null });
 export const ccLcCalls = () => rpc('cc_lc_calls', {});
 export const ccLcPresenceGet = () => rpc('cc_lc_presence_get', {});
-export const ccLcPresenceSet = (available, name, designation) => rpc('cc_lc_presence_set', { p_available: available, p_name: name ?? null, p_designation: designation ?? null });
+export const ccLcPresenceSet = (available, name, designation, alertEmail) => rpc('cc_lc_presence_set', { p_available: available, p_name: name ?? null, p_designation: designation ?? null, p_alert_email: alertEmail ?? null });
+// Live chat v2 (bl_lc_0312): presence heartbeat (45 s while the CC view is open), staff typing
+// signal (throttle 3 s), and "hand back to AI" after a human takeover.
+export const ccLcHeartbeat = () => rpc('cc_lc_heartbeat', {});
+export const ccLcTyping = (id) => rpc('cc_lc_typing', { p_id: id });
+export const ccLcBotResume = (id) => rpc('cc_lc_bot_resume', { p_id: id });
 export const reviewAccessorial = (id, action, amount, note) => rpc('cc_review_accessorial', { p_id: id, p_action: action, p_amount: amount ?? null, p_note: note ?? null });
 export const accessorialQueue = (limit) => rpc('cc_accessorial_queue', { p_limit: limit ?? 100 });
 export const tripDepart = (tripId, stop, lat, lng) => rpc('cc_trip_depart', { p_trip: tripId, p_stop: stop, p_lat: lat ?? null, p_lng: lng ?? null });
