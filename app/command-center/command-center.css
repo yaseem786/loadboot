@@ -977,6 +977,39 @@ textarea.cc-input { resize:vertical; font-family:inherit; }
   .lcx-m{max-width:90%}
 }
 
+/* Browser zoom turns a normal laptop into a short CSS viewport (for example,
+   150% zoom on a 1080px display is only about 650 CSS px tall). Keep every
+   operational control usable in that case instead of leaving the inbox rows,
+   newest message and final Details cards below nested scroll areas. */
+@media(max-height:760px) and (min-width:901px){
+  .lcx-root>.cc-section-head{margin-bottom:10px;align-items:center}
+  .lcx-root>.cc-section-head h2{font-size:1.15rem}
+  .lcx-root>.cc-section-head p{display:none}
+  .lcx-console{
+    height:calc(100vh - var(--lcx-head) - 52px);
+    height:calc(100dvh - var(--lcx-head) - 52px);
+  }
+  .lcx-inbox-head{padding:8px}
+  .lcx-pcard{padding:7px 8px}
+  .lcx-pfields,.lcx-palert{display:none}
+  .lcx-kpis{display:flex;gap:5px;overflow-x:auto;margin-top:6px;padding-bottom:2px;scrollbar-width:thin}
+  .lcx-kpi{flex:0 0 92px;padding:5px 6px}
+  .lcx-kpi-v{font-size:.9rem}
+  .lcx-kpi-s{display:none}
+  .lcx-inbox-tools{margin-top:6px}
+  .lcx-toolrow{margin-top:5px}
+  .lcx-chips{margin-top:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+  .lcx-chip{flex:0 0 auto}
+  .lcx-conv-head{padding:8px 10px}
+  .lcx-conv-actions .lb-btn{padding:5px 9px}
+  .lcx-msgs{padding:10px 12px;scrollbar-gutter:stable;scroll-padding-bottom:12px}
+  .lcx-composer{padding:7px 9px 8px}
+  .lcx-ctx-head{padding:8px 10px}
+  .lcx-ctx-body{padding:7px;gap:6px;scrollbar-gutter:stable}
+  .lcx-card-h{padding:5px 8px}
+  .lcx-card-b{padding:6px 8px;gap:4px}
+}
+
 /* --------------------------------------------------------------- dark mode
    Token-only overrides. Whichever selector the product settles on, one of these
    fires; none of them changes a rule, so light stays authoritative. */
