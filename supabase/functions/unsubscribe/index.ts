@@ -1,4 +1,4 @@
-// unsubscribe — the endpoint every outgoing email's footer link and List-Unsubscribe headers point at.
+// unsubscribe — the endpoint marketing/outreach footer links and List-Unsubscribe headers point at.
 // It existed in the email shell since v6 of delivery-worker but was never deployed (404) — recipients'
 // only working exit was "report spam". Deployed 2026-07-31 with verify_jwt = false.
 //
@@ -42,10 +42,11 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true }, { status: 200 });
     }
     if (out && out.ok) {
-      return html(200, "You're unsubscribed", "You won't receive any more of these emails from LoadBoot. That took effect immediately — no confirmation needed.");
+      return html(200, "You're unsubscribed", "You won't receive any more marketing or outreach emails from LoadBoot. Operational emails about your account, loads, documents, support, or payments can still be delivered.");
     }
-    return html(200, "Nothing to do", "This link has already been used, or the email it came from is no longer in our system. Either way, you will not be emailed.");
+    return html(400, "This link isn't valid", "We could not verify this unsubscribe link. Please use the link exactly as it appears in the email, or reply with the word <b>unsubscribe</b>.");
   } catch (_e) {
     return html(500, "Something went wrong", "Please try the link again in a minute, or reply to the email with the word <b>unsubscribe</b> and we'll take care of it by hand.");
   }
 });
+
