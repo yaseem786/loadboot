@@ -302,6 +302,7 @@ export function renderCarrier360(host, orgId) {
       const trailers = (fl && fl.trailers) || [];
       const coi = (fl && fl.coi) || {};
       const cts = (fl && fl.counts) || {};
+      const av = (fl && fl.availability) || {};
       const coiMode = String(coi.mode || 'unknown');
 
       // Self-styled pills so this card does not depend on which cc-pill-* colours exist.
@@ -430,6 +431,74 @@ export function renderCarrier360(host, orgId) {
         ]);
       };
 
+      // ---- 📍 Availability — where the truck says it is, and whether it is on the board.
+      // Until now nothing in Command Center read truck_postings, so a carrier could sit
+      // unposted for a week behind an all-green file and no one on this screen could tell.
+      // A posting left at status='active' whose end date has passed is NOT live: that is
+      // exactly the state a carrier lands in when they stop reposting, so it reads amber.
+      const avDate = (s0) => { const m0 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s0 || '')); if (!m0) return s0 || '—';
+        return new Date(+m0[1], +m0[2] - 1, +m0[3]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+      const avCts = av.counts || {};
+      const avPrefs = av.prefs || {};
+      const live = av.live || [];
+      const dark = av.days_dark;
+      const postRow = (q, isLive) => el('div', {
+        style: 'display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:7px 0;border-top:1px solid #eef2f7'
+      }, [
+        el('span', { style: 'font-weight:800;font-size:.84rem;color:' + (isLive ? '#0f172a' : '#64748b') },
+          (q.origin || 'origin not set')),
+        el('span', { class: 'cc-sub' }, avDate(q.available_from) + ' → ' + avDate(q.available_to)),
+        q.dest_pref ? el('span', { class: 'cc-sub' }, '→ ' + q.dest_pref) : null,
+        (q.equipment && q.equipment.length) ? el('span', { class: 'cc-sub' }, q.equipment.join(', ')) : null,
+        q.min_rpm != null ? el('span', { class: 'cc-sub' }, '$' + q.min_rpm + '/mi min') : null,
+        q.radius_miles != null ? el('span', { class: 'cc-sub' }, q.radius_miles + ' mi radius') : null,
+        q.unit_no ? tag('gray', 'Unit ' + q.unit_no) : (q.truck_id ? null : tag('amber', 'no truck attached')),
+        isLive ? tag('green', 'live') : tag('gray', q.status === 'paused' ? 'paused' : 'expired'),
+        tag(q.matches ? 'blue' : 'gray', (q.matches || 0) + ' match' + (q.matches === 1 ? '' : 'es')),
+      ].filter(Boolean));
+
+      const availBlock = el('div', { style: 'margin-top:14px;background:#f7fafd;border:1px solid #e6edf6;border-radius:12px;padding:11px 13px' }, [
+        el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [
+          el('span', { style: 'font-weight:800;font-size:.86rem' }, '📍 Availability'),
+          live.length ? tag('green', live.length + ' live posting' + (live.length === 1 ? '' : 's'))
+            : tag(trucks.length ? 'red' : 'gray', 'nothing on the board'),
+          avCts.total ? tag('gray', avCts.total + ' posted all-time') : null,
+          avCts.matches ? tag('blue', avCts.matches + ' load match' + (avCts.matches === 1 ? '' : 'es'))
+            : (avCts.total ? tag('amber', 'never matched a load') : null),
+          avPrefs.available === false ? tag('amber', 'carrier marked themselves unavailable') : null,
+        ].filter(Boolean)),
+
+        // The line that answers "is anyone going to notice this carrier went quiet".
+        (!live.length && trucks.length) ? el('div', {
+          style: TONE.red + ';border-radius:10px;padding:9px 12px;margin-top:9px;font-size:.84rem;font-weight:700'
+        }, dark == null
+            ? 'This carrier has a truck on file and has never posted availability — nothing can be matched to them.'
+            : '⛔ Not posted for ' + dark + ' day' + (dark === 1 ? '' : 's') + ' — last availability ended '
+              + avDate(av.last_available_to) + '. Nothing of theirs can be matched until they repost.') : null,
+
+        live.length ? el('div', { style: 'margin-top:6px' }, live.map((q) => postRow(q, true))) : null,
+
+        (av.recent && av.recent.length) ? el('div', { style: 'margin-top:9px' }, [
+          el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin-bottom:2px' },
+            'Earlier postings'),
+          el('div', null, av.recent.map((q) => postRow(q, false))),
+        ]) : null,
+
+        // Their own dispatch numbers, on the same card — a $2.10 floor with a 100-mile
+        // deadhead is a searchable-universe problem, and it belongs next to the postings.
+        (avPrefs.min_rpm != null || avPrefs.max_deadhead_miles != null || avPrefs.home_base) ? el('div', {
+          style: 'display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid #eef2f7'
+        }, [
+          avPrefs.home_base ? tag('gray', 'home ' + avPrefs.home_base) : null,
+          avPrefs.min_rpm != null ? tag('gray', '$' + avPrefs.min_rpm + '/mi floor') : null,
+          avPrefs.max_deadhead_miles != null ? tag('gray', avPrefs.max_deadhead_miles + ' mi deadhead') : null,
+          (avPrefs.preferred_lanes && avPrefs.preferred_lanes.length)
+            ? tag('gray', 'lanes: ' + avPrefs.preferred_lanes.join(', '))
+            : tag('amber', 'no preferred lanes set'),
+          avPrefs.weekly_operating_cost != null ? tag('gray', '$' + avPrefs.weekly_operating_cost + '/wk cost') : null,
+        ].filter(Boolean)) : null,
+      ].filter(Boolean));
+
       // One alarm line, above everything, when a truck is on the fleet that the policy
       // does not name. That is the condition that must never quietly reach dispatch.
       const uninsured = trucks.filter((t) => String(t.vin_state) === 'not_covered');
@@ -500,6 +569,7 @@ export function renderCarrier360(host, orgId) {
               el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'No trucks registered yet' + (p.truck_count ? ' — the carrier said they run ' + p.truck_count + ' at signup, so the fleet has not been entered.' : '.')),
               reminderHost,
             ]),
+        availBlock,
         trailers.length ? el('div', { style: 'margin-top:12px' }, [
           el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px' }, 'Trailers'),
           el('div', { class: 'cc-sub' }, trailers.map((x) => [x.unit_no, x.type, x.status].filter(Boolean).join(' · ')).join('  |  ')),

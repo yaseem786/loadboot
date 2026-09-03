@@ -157,7 +157,7 @@ export const partnerRateableTrips = (limit = 20) => rpc('cc_partner_rateable_tri
 export const postTruck = (o) => rpc('cc_post_truck', { p: o ?? {} });
 export const myTruckPostings = () => rpc('cc_my_truck_postings');
 export const truckPostingMatches = (id) => rpc('cc_truck_posting_matches', { p_posting: id });
-export const updateTruckPosting = (id, action) => rpc('cc_update_truck_posting', { p_id: id, p_action: action });
+export const updateTruckPosting = (id, action, patch = null) => rpc('cc_update_truck_posting', { p_id: id, p_action: action, p_patch: patch });
 export const scanTruckMatches = () => rpc('cc_scan_truck_matches');
 // Expense tracker v1
 export const expenseAdd = (o) => rpc('cc_expense_add', { p: o ?? {} });
