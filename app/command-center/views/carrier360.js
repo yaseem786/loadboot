@@ -10,7 +10,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccFleetTruckRemind, ccFleetTruckReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 // 29 Aug 2026 — equipment_detail and notes used to be flattened into two 150px grid cells.
@@ -294,9 +294,10 @@ export function renderCarrier360(host, orgId) {
     // compare the two themselves rather than taking our word that they agree.
     const fleetCard = card([el('h4', { class: 'cc-card-title' }, '🚛 Fleet'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Loading trucks…')]);
     (async () => {
-      let fl;
+      let fl; let fleetReminderStatus = null;
       try { fl = await ccCarrierFleet360(orgId); }
       catch (e) { mount(fleetCard, [el('h4', { class: 'cc-card-title' }, '🚛 Fleet'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, humanizeError(e))]); return; }
+      try { fleetReminderStatus = await ccFleetTruckReminderStatus(orgId); } catch (_) {}
       const trucks = (fl && fl.trucks) || [];
       const trailers = (fl && fl.trailers) || [];
       const coi = (fl && fl.coi) || {};
@@ -432,6 +433,53 @@ export function renderCarrier360(host, orgId) {
       // One alarm line, above everything, when a truck is on the fleet that the policy
       // does not name. That is the condition that must never quietly reach dispatch.
       const uninsured = trucks.filter((t) => String(t.vin_state) === 'not_covered');
+      const reminderHost = el('div');
+      const renderReminderStatus = (st) => {
+        const fTime = (x) => x ? fmtDateTime(x) : 'Never';
+        const hist = (st && st.history) || [];
+        const emailTone = (x) => ['delivered', 'sent'].includes(String(x)) ? 'green' : ['failed', 'bounced'].includes(String(x)) ? 'red' : 'gray';
+        const canSend = can('carriers.approve') || can('dispatch.manage');
+        const sendBtn = canSend ? el('button', {
+          class: 'lb-btn lb-btn-primary',
+          title: 'Send a premium in-app + email reminder (6-hour cooldown)',
+          onClick: async (ev) => {
+            const b = ev.currentTarget; b.disabled = true; b.textContent = 'Sending…';
+            try {
+              const sent = await ccFleetTruckRemind(orgId);
+              toast('First-truck reminder sent — in-app + email ' + (sent.email_status || 'not queued') + '.', 'success');
+              fleetReminderStatus = await ccFleetTruckReminderStatus(orgId);
+              renderReminderStatus(fleetReminderStatus);
+            } catch (e) { b.disabled = false; b.textContent = 'Send first-truck reminder'; toast(humanizeError(e), 'error'); }
+          },
+        }, [icon('mail', 15), ' Send first-truck reminder']) : null;
+        mount(reminderHost, el('div', { style: 'margin-top:12px;background:#fff8eb;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px' }, [
+          el('div', { style: 'display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap' }, [
+            el('div', null, [
+              el('b', { style: 'font-size:.88rem;color:#9a4a00' }, 'No truck on file — remind the carrier'),
+              el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'Sends a premium email and in-app alert with a direct link to Fleet → Add truck.'),
+            ]),
+            sendBtn,
+          ].filter(Boolean)),
+          el('div', { style: 'display:flex;gap:7px;flex-wrap:wrap;margin-top:10px' }, [
+            tag('amber', 'Last truck reminder: ' + fTime(st && st.last_manual)),
+            tag('gray', 'Manual sends: ' + ((st && st.manual_count) || 0)),
+            st && st.last_auto_onboarding ? tag('blue', 'Last auto onboarding: ' + fTime(st.last_auto_onboarding)) : tag('gray', 'Auto onboarding: none sent'),
+          ]),
+          el('div', { class: 'cc-sub', style: 'font-size:.76rem;margin-top:8px' },
+            'Automatic onboarding scan: daily at 14:00 UTC' + ((st && st.last_auto_onboarding_stage) ? ' · last stage ' + st.last_auto_onboarding_stage : '') + '. It chases documents; automatic first-truck reminders are not enabled, so this button is the truck-specific push.'),
+          hist.length ? el('details', { style: 'margin-top:9px' }, [
+            el('summary', { style: 'cursor:pointer;font-size:.78rem;font-weight:800;color:#475569' }, 'Reminder history (' + hist.length + ')'),
+            el('div', { style: 'margin-top:6px' }, hist.map((h) => el('div', { style: 'display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:6px 0;border-top:1px solid #fde7c7;font-size:.76rem' }, [
+              tag(h.source === 'manual_truck' ? 'amber' : 'blue', h.source === 'manual_truck' ? 'Manual truck' : 'Auto onboarding'),
+              el('b', null, fTime(h.sent_at)),
+              h.stage ? el('span', { class: 'cc-sub' }, h.stage) : null,
+              h.email_status ? tag(emailTone(h.email_status), 'email ' + h.email_status) : tag('gray', 'email status unavailable'),
+              tag('green', 'in-app ' + (h.in_app_status || 'sent')),
+            ].filter(Boolean)))),
+          ]) : null,
+        ].filter(Boolean)));
+      };
+      if (!trucks.length) renderReminderStatus(fleetReminderStatus || {});
       mount(fleetCard, el('div', null, [
         el('div', { class: 'cc-card-head' }, [
           el('h4', { class: 'cc-card-title' }, '🚛 Fleet (' + trucks.length + (trailers.length ? ' · ' + trailers.length + ' trailer(s)' : '') + ')'),
@@ -448,7 +496,10 @@ export function renderCarrier360(host, orgId) {
           cts.vin_problem ? tag('amber', cts.vin_problem + ' with a VIN problem') : null,
         ].filter(Boolean)) : null,
         trucks.length ? el('div', null, trucks.map(truckEl))
-          : el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'No trucks registered yet' + (p.truck_count ? ' — the carrier said they run ' + p.truck_count + ' at signup, so the fleet has not been entered.' : '.')),
+          : el('div', null, [
+              el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'No trucks registered yet' + (p.truck_count ? ' — the carrier said they run ' + p.truck_count + ' at signup, so the fleet has not been entered.' : '.')),
+              reminderHost,
+            ]),
         trailers.length ? el('div', { style: 'margin-top:12px' }, [
           el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px' }, 'Trailers'),
           el('div', { class: 'cc-sub' }, trailers.map((x) => [x.unit_no, x.type, x.status].filter(Boolean).join(' · ')).join('  |  ')),
