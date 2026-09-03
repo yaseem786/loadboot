@@ -12,6 +12,9 @@ import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { lookupCommodity, suggestCommodities } from './commodities.js';
 import { renderFmcsaOnly } from '../carrier/profile-view.js';
+import { mountBrokerTrust, kickoffScreening } from './broker-trust.js';
+import { mountBrokerAgents } from './broker-agents.js';
+import { partnerTrustStatus } from '../shared/api.js';
 import { renderMarketWidget } from '../shared/market-widget.js';
 import {
   partnerRegister, partnerOverview, fmcsaVerify,
@@ -633,7 +636,13 @@ function choosePartnerType(user) {
   const mc = h('input', { class: 'cp-in', type: 'text', placeholder: 'MC number (e.g. 123456)', inputmode: 'numeric', autocomplete: 'off' });
   const mcHint = h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#94a3b8' }, 'Your FMCSA broker authority number. We check it against FMCSA before your account is created.');
   const mcWrap = h('div', { style: 'display:none;margin-top:12px' }, [mc, mcHint]);
-  const showMc = (kind) => { mcWrap.style.display = (kind === 'broker') ? 'block' : 'none'; };
+  // bl_bp_0312 — agents post under a parent brokerage's authority (no own MC).
+  const agMc = h('input', { class: 'cp-in', type: 'text', placeholder: 'Brokerage MC number', inputmode: 'numeric', autocomplete: 'off' });
+  const agCo = h('input', { class: 'cp-in', type: 'text', placeholder: 'Brokerage legal name', style: 'margin-top:8px' });
+  const agEm = h('input', { class: 'cp-in', type: 'email', placeholder: 'Their compliance / ops email (optional)', style: 'margin-top:8px' });
+  const agentWrap = h('div', { style: 'display:none;margin-top:12px' }, [agMc, agCo, agEm,
+    h('div', { class: 'cp-row-s', style: 'margin-top:6px;color:#94a3b8' }, 'We screen the brokerage on FMCSA, then email their FMCSA-listed contact one link to confirm you. Loads you post show their name and MC.')]);
+  const showMc = (kind) => { mcWrap.style.display = (kind === 'broker') ? 'block' : 'none'; agentWrap.style.display = (kind === 'agent') ? 'block' : 'none'; };
   let mcAck = false;   // set once the carrier has seen and accepted a not-found warning
   let chosen = null;
   const cards = {};
@@ -679,8 +688,16 @@ function choosePartnerType(user) {
         mcAck = true;
       }
     }
+    let agentInfo = null;
+    if (chosen === 'agent') {
+      const pm = String(agMc.value || '').replace(/[^0-9]/g, '');
+      if (!pm) { err.textContent = 'Enter the MC number of the brokerage you post for.'; btn.disabled = false; return; }
+      if (!agCo.value.trim()) { err.textContent = 'Enter the brokerage legal name.'; btn.disabled = false; return; }
+      agentInfo = { parentMc: pm, parentCompany: agCo.value.trim(), contactEmail: agEm.value.trim() || null };
+    }
+    const regKind = chosen === 'agent' ? 'broker' : chosen;
     btn.disabled = true; btn.textContent = 'Setting up…';
-    try { await partnerRegister(chosen, company.value.trim(), mcDigits || null); appView(user); }
+    try { await partnerRegister(regKind, company.value.trim(), mcDigits || null); await kickoffScreening(regKind, mcDigits, agentInfo); appView(user); }
     catch (e) { err.textContent = (e && e.message) || 'Could not set up your account.'; btn.disabled = false; btn.textContent = 'Continue'; }
   } }, 'Continue');
   mount(root, h('div', { class: 'cp-auth' }, [
@@ -692,8 +709,9 @@ function choosePartnerType(user) {
         opt('broker', 'Freight Broker', 'Post loads to our carrier network and track them.'),
         opt('shipper', 'Shipper', 'Request freight, get it moved, and track shipments.'),
         opt('facility', 'Facility / Warehouse', 'Schedule dock appointments and manage check-ins.'),
+        opt('agent', 'Broker Agent', 'Post under the brokerage you work for — they confirm you with one click.'),
       ]),
-      mcWrap,
+      mcWrap, agentWrap,
       (function preselectFromSignup9() {
         try {
           var k9 = user && user.user_metadata && user.user_metadata.partner_kind;
@@ -1718,6 +1736,9 @@ function bookRequestsCard() {
 
 /* ---------- BROKER dashboard ---------- */
 async function brokerDash(user, ov) {
+  // bl_bp_0312: FMCSA-screened brokers post before the packet is verified.
+  let __trustCanPost = false;
+  if (ov.kind === 'broker' && !ov.onboarded) { try { const t9 = await partnerTrustStatus(); __trustCanPost = !!(t9 && t9.can_post); } catch (_) {} }
   try { window.__lbKindLabel = (ov.kind === 'shipper') ? 'Shipper' : 'Broker'; } catch (_) {}
   const kpis = h('div', { class: 'cp-kpis' }, [
     kpiCard('Loads submitted', ov.loads_submitted, 'all time', 'blue'),
@@ -4275,6 +4296,7 @@ function packetAgreementCards(skipPacket) {
     ['carriers', 'Carriers', 'loads'],
     ['rates', 'Market Rates', 'finance'],
     ['network', 'Network', 'user'],
+    ...(ov.kind === 'broker' ? [['agents', 'Agents & team', 'user']] : []),
     ['onboarding', 'Documents', 'dock'],
     ['invoices', 'Invoices', 'finance'],
     ['developers', 'API & Keys', 'zap'],
@@ -4306,7 +4328,9 @@ function packetAgreementCards(skipPacket) {
       ].filter(Boolean))),
     ]));
     else if (pk.complete) mount(obHero, mk('#16a34a', '🎉', '#e7f9ee', '#12a150', 'Approved — load posting is unlocked', '#12a150', 'Your packet is fully verified. Post loads, offer them to carriers, and track everything with GPS proof.', 'View packet'));
+    else if (ov.kind === 'broker' && __trustCanPost) mount(obHero, mk('#0883F7', '🛡', '#eff6ff', '#1d4ed8', 'Cleared to post — verification lifts your limits', '#1d4ed8', 'Your broker authority is verified live on FMCSA. Post now (limited open postings); the verification packet unlocks unlimited postings and instant booking for carriers.', 'Verification packet →'));
     else if (sub.length) mount(obHero, mk('#0883F7', '⏳', '#eff6ff', '#1d4ed8', 'Onboarding under review', '#1d4ed8', sub.length + ' item(s) with our team — you\u2019ll be notified as each is verified (usually within 1 business day).', 'Track status →'));
+    else if (ov.kind === 'broker') mount(obHero, mk('#0883F7', '⚡', '#eff6ff', '#1d4ed8', 'Post your first load in minutes', '#1d4ed8', 'Screen your broker authority live on FMCSA — no documents to start. The verification packet comes later, only where it matters.', 'Start →')); /* 'Finish onboarding to start posting' — bl_bp_0312 wording */
     else mount(obHero, mk('#d97706', '📋', '#fef3c7', '#b45309', 'Finish onboarding to start posting', '#b45309', 'A few required items are still missing — the guided steps take about 10 minutes.', 'Start →'));
   })();
   // ---- 💰 Payables: every dollar this broker owes right now (freight + approved claims),
@@ -4429,6 +4453,7 @@ function packetAgreementCards(skipPacket) {
     carriers: [brokerCarriersPage()],
     rates: [(() => { const hst = h('div'); renderMarketWidget(hst); return hst; })()],
     network: [approvedPartnersCard(), ratingCard(), referralCard()],
+    agents: ov.kind === 'broker' ? [h('div', { id: 'bd-agents' })] : [],  // mounted lazily on first visit (see brender)
     onboarding: [brokerOnboardingWizard()],
     invoices: [carrierInvoicesCard(), payablesCard(), invoicesCard()],
     account: [accountCard(), securityCard(), pnotifCard(), phelpCard(), plegalCard(), pdeleteCard()],
@@ -4783,10 +4808,12 @@ function packetAgreementCards(skipPacket) {
           h('div', { style: 'margin-top:6px' }, btns9), cm9, send9);
         bdRate9.appendChild(card9);
       })();
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(), bdKpis(), h('div', { id: 'bd-postload' }, [ov.onboarded ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : verifyGateCard(ov)]), myLoadsCard, bdNetwork(), bdActivity()]));
+      const trustGate = () => { const trustGateHost = h('div'); mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), myLoadsCard, bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));
+    if (btab === 'agents' && ov.kind === 'broker') { const ah = PAGES.agents[0]; if (ah && !ah.__mounted) { ah.__mounted = true; mountBrokerAgents(ah); } }
   }
   function bgo(id) {
     btab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);

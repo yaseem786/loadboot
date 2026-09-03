@@ -73,6 +73,7 @@ import { renderReferrals } from './views/referrals.js';
 import { renderBI } from './views/bi.js';
 import { renderCarrierScorecards } from './views/carrierScorecards.js';
 import { renderBrokerSla } from './views/brokerSla.js';
+import { renderBrokerTrust } from './views/brokerTrust.js';
 import { renderBrandKit } from './views/brandKit.js';
 import { renderPluginMarketplace } from './views/pluginMarketplace.js';
 import { renderFormBuilder } from './views/formBuilder.js';
@@ -249,6 +250,7 @@ async function boot() {
     ] },
     partners: { nav: '/partners', tabs: [
       { id: 'directory', label: 'Directory', path: '/partners', allowed: () => partnersEnabled && can('partners.view'), render: (h) => renderPartners(h) },
+      { id: 'trust', label: 'Broker trust', path: '/broker-trust', allowed: () => partnersEnabled && (can('partners.view') || can('dispatch.manage')), render: (h) => renderBrokerTrust(h) },
       { id: 'sla', label: 'Broker SLA', path: '/broker-sla', allowed: () => partnersEnabled && can('partners.view'), render: (h) => renderBrokerSla(h) },
     ] },
     team: { nav: '/dispatchers', tabs: [
@@ -359,6 +361,7 @@ async function boot() {
     '/referrals': tabbed('team', 'referrals'),
     '/bi': tabbed('bi', 'bi'),
     '/carrier-scorecards': tabbed('carriers', 'scorecards'),
+    '/broker-trust': tabbed('partners', 'trust'),
     '/broker-sla': tabbed('partners', 'sla'),
     '/brand-kit': tabbed('settings', 'brand'),
     '/plugins': tabbed('settings', 'plugins'),

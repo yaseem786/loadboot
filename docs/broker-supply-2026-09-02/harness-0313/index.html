@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Inter,Arial;background:#f5f7fb;padding:20px;max-width:900px}</style></head><body>
+<div id="trust"></div><hr><div id="agents"></div>
+<script type="module">
+import { mountBrokerTrust } from './app/partner/broker-trust.js';
+import { mountBrokerAgents } from './app/partner/broker-agents.js';
+window.__trust = mountBrokerTrust(document.getElementById('trust'), { goPacket(){}, goPost(){} });
+window.__agents = mountBrokerAgents(document.getElementById('agents'));
+</script></body></html>

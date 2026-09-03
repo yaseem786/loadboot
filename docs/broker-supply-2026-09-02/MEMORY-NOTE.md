@@ -1,0 +1,28 @@
+---
+name: broker-trust-2026-09-02
+description: The broker tiered-trust build (bl_bp_0312) — post in minutes on a live FMCSA authority check, documents later; agent-under-parent flow; STAGING vs repo state. Read before touching cc_partner_submit_load, cc_partner_set_status, enforce_partner_onboarded, partner_loads/loads triggers, partner portal signup/dashboard, or broker-facing marketing copy.
+type: project
+---
+(Copy of the project-memory note written when the device bridge was offline — file it as broker_trust_2026-09-02.md in project memory + index line in MEMORY.md.)
+
+- Tier derived live: app_private.broker_tier → verified|screened|agent_confirmed|agent_pending|hold|new. broker_can_post = the single posting rule (3 open → 10 after first delivery → unlimited when verified; needs broker_carrier agreement).
+- Gates: enforce_partner_onboarded delegates for brokers; cc_partner_submit_load + cc_partner_set_status patched by STRING SURGERY (abort if anchor missing). loads triggers trg_loads_zz_trust_label / trg_loads_zz_trust_gate: partial loads book only via request-to-book or broker offer.
+- Screening: partner_broker_screen → pg_net → fmcsa-verify → cron lb-broker-screen-collect (1 min) → broker_screen_collect. Carrier MC fails ("carrier, not a broker") — proven with MC 322451 = DKR Trucking (NOT TQL).
+- Agents: partner_agent_declare → parent screened → email to FMCSA-listed address → agent-confirm.html?t= → partner_agent_confirm_get/confirm (only 2 new anon RPCs). LoadBoot has NO broker MC → own 4 agents cannot post until a partner brokerage confirms them.
+- CC: cc_broker_trust_queue / cc_broker_trust_set; view at #/broker-trust.
+- STAGING has bl_bp_0312 + 0312a + 0312b, fmcsa_config seeded; 17-step rollback test PASS; anon SECDEF 30→32. PROD untouched (anon SECDEF 27 on 2 Sep). Staging lacks bl_soft_0279–0284 / bl_ob_0286 / fmcsa_config — 0312 is schema-agnostic for that.
+- Repo files built in a container clone of GitHub HEAD; apply the 4 idempotent patchers in docs/broker-supply-2026-09-02/ to DISK copies (never overwrite app.js from the clone). build_site.py BUILD OK, esbuild bundles clean, Playwright harness proved the flows.
+- Gotchas: staging cc_accept_agreement uses my_any_org (wrong org for multi-org test users); load_book_requests has a driver-compliance trigger (disable in test txn); harness stub must return false for is_my_org_agent.
+
+## 3 Sep — bl_bp_0313 identity layer (staging applied + rollback-tested; repo committed; prod pending "prod pe chalao")
+- New tier `unclaimed` between screening pass and `screened`: identity via domain match (auto, case-insensitive) | one-click from FMCSA-listed email (claim-confirm.html?t=, RPCs partner_claim_get/confirm = the only 2 new anon RPCs) | staff `verify_identity` (note required). Decline → hold + "IMPERSONATION?" staff alert.
+- One MC = one org: partial unique index organizations_one_partner_per_mc; partner_broker_screen RETURNS {outcome:'refused', error} (never raises — a raise rolled back the owner warning/staff alert/audit). USDOT screening supported: collector resolves MC from the FMCSA answer, writes org.mc_number, refuses a held MC.
+- Parent on LoadBoot: broker_trust.parent_org_id; confirmation routed to the parent OWNER (in-app + account email); parent RPCs partner_agents_list / partner_agent_decide(confirm|decline|revoke — revoke cancels open loads) / partner_agent_invite (auto-confirm on declare) / partner_agent_invite_revoke; portal tab "Agents & team" (app/partner/broker-agents.js, lazy-mounted). Agent loads: loads.broker = "<parent legal name> · MC-… (agent: <name>)".
+- Portal: identity card 1b in broker-trust.js (masked FMCSA email/phone, resend 10-min/5 limit, "ask our team to call" → staff notice), MC/USDOT toggle. CC: identity columns + Verify/Reject/Resend actions.
+- Staging migration names: bl_bp_0313_broker_identity (+ 0313a screen_refuse_return, 0313b identity_domain_ci, 0313c collector_dot_resolve — all folded into the single repo file). Prod order: 0312 → 0312b → 0312c → 0313.
+- Test pattern that works on staging: pg_temp helper functions (plpgsql has no nested procedures), set_config('role','authenticated') around RPCs, ALTER TABLE ... DISABLE TRIGGER USER only while role is postgres, cc_broker_trust_queue returns jsonb (not a table), override public.has_global_permission(p_perm text) keeping the param name.
+
+## 3 Sep later — bl_bp_0314 self-service voice OTP (staging applied + tested; prod pending)
+- Retell agent "LoadBoot Verify (automated OTP)" agent_1f87d0c74e873ffc8b17e883f3 / llm_acfc661d0ce2a0109c60a7e53853 (gpt-4.1-mini, temp 0, voice retell-Tamsin, IVR+voicemail → hangup, webhook → PROD retell_webhook). Created + published via API from SQL (net.http_post with retell_config.api_key — same account as Riley). begin_message uses {{company}} {{mc}} {{script}}; prompt reads {{code}} twice, never collects anything.
+- `retell_dial_verify(call, vars)` = retell_dial + override_agent_id + metadata; `partner_verify_call(purpose)` picks the FMCSA phone (identity: broker_identity.fmcsa_phone→screening.phone; parent: the agent's screening.phone IS the parent's record), 3/24h, 2-min gap, code hashed sha256(code:org); `partner_verify_code` 5 attempts/15 min → identity verified/phone or parent_confirmed_by phone code. pgcrypto lives in `extensions.` — qualify gen_random_bytes/digest (search_path is app_private, public). Alias `c` inside partner_trust_status clashes with the plpgsql record `c` — use `lc`.
+- Frontend: `voiceOtpBlock(st, purpose, refresh)` in broker-trust.js (identity card first, then email box; agent card while pending+pass); api.js partnerVerifyCall/partnerVerifyCode; CC label for method 'phone'; marketing copy on brokers/create-broker-account/faq/free-load-board.

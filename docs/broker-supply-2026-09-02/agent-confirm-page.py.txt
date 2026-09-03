@@ -1,0 +1,53 @@
+# ---- Agent confirmation page (bl_bp_0312) — the parent brokerage confirms or declines an agent by token ----
+_ac_body = ('<meta name="robots" content="noindex,nofollow">'
+ '<style>'
+ '.ac-fact{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin:14px 0}'
+ '@media(max-width:640px){.ac-fact{grid-template-columns:1fr}}'
+ '.ac-fact b{display:block;font:800 10.5px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}'
+ '.ac-fact div{color:#fff;font-size:.95rem}'
+ '.ac-in{width:100%;box-sizing:border-box;border:none;border-radius:12px;padding:13px 14px;font:500 15px Inter,Arial;margin-bottom:10px;background:#fff}'
+ '.ac-lbl{display:block;font:700 10.5px Inter,Arial;color:#9fb3cc;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}'
+ '.ac-btn{flex:1;min-width:200px;border:none;border-radius:13px;padding:15px;font:800 15.5px Inter,Arial;cursor:pointer;color:#fff}'
+ '.ac-btn:disabled{opacity:.55;cursor:default}'
+ '@keyframes acUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}.ac-anim{animation:acUp .35s ease}'
+ '</style>'
+ '<section><div class="wrap" style="max-width:720px">'
+ '<div id="acCard" class="ac-anim" style="background:linear-gradient(135deg,#0b1220,#12304f);border-radius:24px;padding:36px;color:#fff;box-shadow:0 30px 80px -30px rgba(2,12,30,.6)">'
+ '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="background:rgba(8,131,247,.2);color:#7cc0ff;font:800 11px Inter,Arial;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:999px">Agent confirmation</span></div>'
+ '<h1 style="color:#fff;font-size:1.75rem;margin:10px 0 6px;letter-spacing:-.01em">Does this person post freight under your authority?</h1>'
+ '<p style="color:#c7d5ea;font-size:.92rem;line-height:1.6;margin:0 0 6px">Someone signed up on LoadBoot as an <b style="color:#fff">agent of your brokerage</b>. Until you confirm, none of their postings can be booked. One click either way &mdash; no account needed. If you do not know this person, decline: that blocks them.</p>'
+ '<div id="acState" style="color:#c7d5ea;padding:10px 0">Loading&hellip;</div>'
+ '<div id="acForm" style="display:none;margin-top:8px">'
+ '<div id="acFacts" class="ac-fact"></div>'
+ '<label class="ac-lbl">Your name (recorded with your decision)</label><input id="acName" class="ac-in" placeholder="Full name">'
+ '<label class="ac-lbl">Note (optional)</label><input id="acNote" class="ac-in" placeholder="e.g. Yes, agent since 2024">'
+ '<div id="acErr" style="color:#fca5a5;font-size:.85rem;display:none;margin-bottom:8px"></div>'
+ '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">'
+ '<button id="acYes" class="ac-btn" style="background:linear-gradient(135deg,#16a34a,#15803d)">&#10003; Yes &mdash; this is our agent</button>'
+ '<button id="acNo" class="ac-btn" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25)">Not our agent</button>'
+ '</div>'
+ '<p style="color:#9fb3cc;font-size:.78rem;margin-top:12px">&#128274; Recorded with a timestamp. Every load this agent posts shows your brokerage name and MC; the rate confirmation must be on your paper. Questions: hello@loadboot.com</p>'
+ '</div></div></div></section>')
+_ac_js = ("<script>(function(){var api='https://" + APP_REF + ".supabase.co/rest/v1/rpc/',key='" + (APP_ANON or '') + "';"
+ "var t=new URLSearchParams(location.search).get('t');var st=document.getElementById('acState');"
+ "function esc(s){return (s==null?'':String(s)).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
+ "function call(fn,body){return fetch(api+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+key},body:JSON.stringify(body)}).then(function(r){return r.json()});}"
+ "if(!t){st.textContent='This link is missing its token — use the link from your email.';return;}"
+ "function done(ok,already){document.getElementById('acForm').innerHTML='<div class=\"ac-anim\" style=\"text-align:center;padding:14px 0\"><div style=\"font-size:2.4rem\">'+(ok?'🤝':'⛔')+'</div><h2 style=\"color:#fff;margin:8px 0 4px\">'+(ok?'Confirmed — thank you':'Declined — their posting is blocked')+'</h2><p style=\"color:#c7d5ea\">'+(already?'This decision was already recorded.':(ok?'They can post under your authority now. You can revoke this any time by emailing hello@loadboot.com.':'Nothing they post can be booked. If this was a mistake, email hello@loadboot.com.'))+'</p></div>';}"
+ "call('partner_agent_confirm_get',{p_token:t}).then(function(d){"
+ "if(!d||!d.ok){st.textContent=(d&&d.error)||'This link looks invalid.';return;}"
+ "st.style.display='none';document.getElementById('acForm').style.display='block';"
+ "document.getElementById('acFacts').innerHTML='<div><b>Agent</b><div>'+esc(d.agent_name)+'</div></div><div><b>Their email</b><div>'+esc(d.agent_email)+'</div></div><div><b>Your brokerage</b><div>'+esc(d.parent_legal_name||'—')+'</div></div><div><b>MC on file</b><div>MC-'+esc(d.parent_mc||'')+'</div></div>';"
+ "if(d.decided){done(!!d.confirmed,true);}"
+ "}).catch(function(){st.textContent='Connection hiccup — refresh to try again.';});"
+ "function decide(dec){var e=document.getElementById('acErr');e.style.display='none';var n=document.getElementById('acName').value.trim();"
+ "if(n.length<2){e.textContent='Please type your name first.';e.style.display='block';return;}"
+ "var y=document.getElementById('acYes'),x=document.getElementById('acNo');y.disabled=true;x.disabled=true;"
+ "call('partner_agent_confirm',{p_token:t,p_decision:dec,p_name:n,p_note:document.getElementById('acNote').value.trim()||null}).then(function(r){"
+ "if(r&&r.ok){done(!!r.confirmed,!!r.already);}else{e.textContent=(r&&(r.message||r.error))||'Something went wrong — try again';e.style.display='block';y.disabled=false;x.disabled=false;}});}"
+ "document.getElementById('acYes').onclick=function(){decide('confirm');};"
+ "document.getElementById('acNo').onclick=function(){if(confirm('Decline this person as your agent? Their LoadBoot posting will be blocked.'))decide('decline');};"
+ "})();</script>")
+page('agent-confirm.html', 'Confirm Your Agent | LoadBoot',
+     'A brokerage confirms or declines an agent who wants to post freight under its authority on LoadBoot.',
+     'brokers.html', _ac_body + _ac_js)
