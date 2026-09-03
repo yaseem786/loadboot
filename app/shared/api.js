@@ -1021,6 +1021,27 @@ export const listChat = (after = 0, limit = 100) => rpc('cc_list_chat', { p_afte
 // Self-scoping like the carrier pocket API: the server resolves the partner org from
 // the session (my_partner_org), so a partner only ever sees/writes its own records.
 export const partnerRegister = (kind, company, mc) => rpc('cc_partner_register', { p_kind: kind, p_company: company, p_mc: mc ?? null });
+// bl_bp_0312 — broker tiered trust (screen in seconds, documents later)
+export const partnerBrokerScreen = (mc, dot) => rpc('partner_broker_screen', { p_mc: mc ?? null, p_dot: dot ?? null });
+export const partnerAgentDeclare = (parentMc, parentCompany, contactEmail) => rpc('partner_agent_declare', { p_parent_mc: parentMc, p_parent_company: parentCompany ?? null, p_contact_email: contactEmail ?? null });
+export const partnerTrustStatus = () => rpc('partner_trust_status');
+export const partnerAgentConfirmGet = (token) => rpc('partner_agent_confirm_get', { p_token: token });
+export const partnerAgentConfirm = (token, decision, name, note) => rpc('partner_agent_confirm', { p_token: token, p_decision: decision, p_name: name ?? null, p_note: note ?? null });
+export const ccBrokerTrustQueue = () => rpc('cc_broker_trust_queue');
+export const ccBrokerTrustSet = (org, action, note) => rpc('cc_broker_trust_set', { p_org: org, p_action: action, p_note: note ?? null });
+// bl_bp_0313 — identity claim (own-MC brokers), parent-side agent management, claim-confirm page
+export const partnerIdentityResend = () => rpc('partner_identity_resend');
+export const partnerIdentityRequestCall = (phone, note) => rpc('partner_identity_request_call', { p_phone: phone ?? null, p_note: note ?? null });
+export const partnerAgentsList = () => rpc('partner_agents_list');
+export const partnerAgentDecide = (agentOrg, decision, note) => rpc('partner_agent_decide', { p_agent_org: agentOrg, p_decision: decision, p_note: note ?? null });
+export const partnerAgentInvite = (email, name) => rpc('partner_agent_invite', { p_email: email, p_name: name ?? null });
+export const partnerAgentInviteRevoke = (id) => rpc('partner_agent_invite_revoke', { p_id: id });
+export const partnerClaimGet = (token) => rpc('partner_claim_get', { p_token: token });
+export const partnerClaimConfirm = (token, decision, name, note) => rpc('partner_claim_confirm', { p_token: token, p_decision: decision, p_name: name ?? null, p_note: note ?? null });
+// bl_bp_0314 — self-service voice OTP to the FMCSA-listed phone (identity for own-MC brokers, parent confirmation for agents)
+export const partnerVerifyCall = (purpose) => rpc('partner_verify_call', { p_purpose: purpose });
+export const partnerVerifyCode = (code) => rpc('partner_verify_code', { p_code: code });
+
 export const partnerOverview = () => rpc('cc_partner_overview');
 // broker
 export const partnerPostLoad = (o = {}) => rpc('cc_partner_post_load', { p_origin: o.origin, p_destination: o.destination, p_equipment: o.equipment ?? null, p_rate: o.rate ?? null, p_miles: o.miles ?? null, p_pickup: o.pickup ?? null, p_weight: o.weight ?? null, p_commodity: o.commodity ?? null, p_notes: o.notes ?? null, p_idempotency_key: o.idempotencyKey ?? null, p_origin_full: o.originFull ?? null, p_destination_full: o.destinationFull ?? null, p_pickup_lat: o.pickupLat ?? null, p_pickup_lng: o.pickupLng ?? null, p_delivery_lat: o.deliveryLat ?? null, p_delivery_lng: o.deliveryLng ?? null });

@@ -1,0 +1,60 @@
+import { chromium } from 'playwright';
+import http from 'http'; import fs from 'fs'; import path from 'path';
+const root = '/tmp/harness/site';
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
+const srv = http.createServer((req, res) => { let p = decodeURIComponent(req.url.split('?')[0]); if (p.endsWith('/')) p += 'index.html'; const f = path.join(root, p); fs.readFile(f, (e, d) => { if (e) { res.writeHead(404); res.end(); return; } res.writeHead(200, { 'Content-Type': mime[path.extname(f)] || 'application/octet-stream' }); res.end(d); }); }).listen(8099);
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium/chrome-linux/chrome' }).catch(async () => chromium.launch());
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const page = await ctx.newPage();
+const errors = []; page.on('pageerror', (e) => errors.push(String(e))); page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+// block CDN + external
+await page.route(/^https?:\/\/(?!localhost)/, (r) => r.abort());
+const out = [];
+await page.goto('http://localhost:8099/app/partner/', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+out.push('hero: ' + (await page.locator('.bt-hero-t').first().textContent().catch(() => 'MISSING')));
+out.push('choice cards: ' + await page.locator('.bt-choice button').count());
+await page.screenshot({ path: '/tmp/harness/01-choice.png', fullPage: false });
+await page.locator('.bt-choice button').first().click();
+await page.waitForTimeout(300);
+await page.locator('.bt-in').first().fill('MC-1234567');
+await page.locator('.bt-btn').first().click();
+await page.waitForTimeout(800);
+out.push('after screen click: spinner=' + await page.locator('.bt-spin').count());
+await page.screenshot({ path: '/tmp/harness/02-screening.png' });
+await page.waitForTimeout(6500); // stub flips to pass after 1.5s; poll is 5s
+out.push('pill after pass: ' + (await page.locator('.bt-pill.ok').first().textContent().catch(() => 'MISSING')));
+out.push('steps done: ' + await page.locator('.bt-step.done').count());
+await page.screenshot({ path: '/tmp/harness/03-screened.png', fullPage: true });
+// accept agreement
+const agr = page.locator('.bt-btn.orange');
+out.push('agreement btn: ' + await agr.count());
+await agr.first().click();
+await page.waitForTimeout(1200);
+out.push('can post card: ' + (await page.locator('.bt-card h3').nth(2).textContent().catch(() => 'MISSING')));
+out.push('bd-postload after accept: ' + (await page.locator('#bd-postload').innerText()).replace(/\s+/g,' ').slice(0,160));
+await page.screenshot({ path: '/tmp/harness/04-canpost.png', fullPage: true });
+out.push('rpc names: ' + JSON.stringify([...new Set((await page.evaluate(() => window.__rpcCalls.map((c) => c.name))))]));
+out.push('screen args: ' + JSON.stringify(await page.evaluate(() => window.__rpcCalls.find((c) => c.name === 'partner_broker_screen'))));
+// agent path in a fresh page
+const p2 = await ctx.newPage(); p2.on('pageerror', (e) => errors.push('p2 ' + String(e)));
+await p2.route(/^https?:\/\/(?!localhost)/, (r) => r.abort());
+await p2.goto('http://localhost:8099/app/partner/', { waitUntil: 'networkidle' }); await p2.waitForTimeout(1200);
+await p2.evaluate(() => { window.__state.screening = null; window.__state.agreement = false; window.__state.agent = null; });
+await p2.reload({ waitUntil: 'networkidle' }); await p2.waitForTimeout(1200);
+await p2.locator('.bt-choice button').nth(1).click(); await p2.waitForTimeout(300);
+const ins = p2.locator('.bt-in'); await ins.nth(0).fill('777888'); await ins.nth(1).fill('Parent Freight LLC'); await ins.nth(2).fill('ops@parentfreight.test');
+await p2.locator('.bt-btn').first().click(); await p2.waitForTimeout(7000);
+out.push('agent status: ' + (await p2.locator('.bt-pill.warn').first().textContent().catch(() => 'MISSING')));
+out.push('agent declare args: ' + JSON.stringify(await p2.evaluate(() => window.__rpcCalls.find((c) => c.name === 'partner_agent_declare').args)));
+await p2.screenshot({ path: '/tmp/harness/05-agent.png', fullPage: true });
+// agent-confirm public page
+const p3 = await ctx.newPage(); p3.on('pageerror', (e) => errors.push('p3 ' + String(e)));
+await p3.route(/^https?:\/\/(?!localhost)/, (r) => { const u = r.request().url(); if (u.includes('partner_agent_confirm_get')) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, agent_name: 'Ali Agent Desk', agent_email: 'ali@test.com', parent_legal_name: 'PARENT FREIGHT LLC', parent_mc: '777888', decided: false }) }); if (u.includes('partner_agent_confirm')) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, confirmed: true }) }); r.abort(); });
+await p3.goto('http://localhost:8099/agent-confirm.html?t=11111111-1111-1111-1111-111111111111', { waitUntil: 'networkidle' }); await p3.waitForTimeout(800);
+out.push('confirm page facts: ' + (await p3.locator('#acFacts').textContent().catch(() => 'MISSING')).replace(/\s+/g, ' ').slice(0, 120));
+await p3.locator('#acName').fill('Jane Doe'); await p3.locator('#acYes').click(); await p3.waitForTimeout(600);
+out.push('confirm page after click: ' + (await p3.locator('#acForm h2').textContent().catch(() => 'MISSING')));
+await p3.screenshot({ path: '/tmp/harness/06-confirm.png', fullPage: true });
+console.log(out.join('\n')); console.log('ERRORS:', errors.length ? errors.join('\n') : 'none');
+await browser.close(); srv.close();
