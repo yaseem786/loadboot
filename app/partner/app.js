@@ -4147,13 +4147,26 @@ let lbPartnerToast = null;
 function packetDocRow(it, onAction) {
   const st = String(it.status || 'pending');
   const V = {
-    verified:  { di: '✓', dibg: '#e7f9ee', dic: '#12a150', pill: ['Approved', '#e7f9ee', '#12a150'], rs: 'Verified by LoadBoot ✓' },
+    verified:  { di: '✓', dibg: '#e7f9ee', dic: '#12a150', pill: ['Approved', '#e7f9ee', '#12a150'], rs: /^(Verified live on FMCSA|Master Broker Agreement)/.test(String(it.note || '')) ? it.note + ' ✓' : 'Verified by LoadBoot ✓' },
     waived:    { di: '–', dibg: '#f1f5f9', dic: '#64748b', pill: ['Waived', '#f1f5f9', '#64748b'], rs: it.note ? 'Waived — ' + it.note : 'Waived by LoadBoot' },
     submitted: { di: '⏳', dibg: '#eff6ff', dic: '#1d4ed8', pill: ['In review', '#dbeafe', '#1d4ed8'], rs: 'Submitted · LoadBoot team reviewing' },
     rejected:  { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Action', '#fee2e2', '#b91c1c'], rs: (it.note ? '✕ ' + it.note + ' — ' : '') + 'fix and resubmit' },
     pending:   { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Required', '#fef3c7', '#b45309'], rs: 'Required — not on file yet' },
   }[st] || { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: [st, '#f1f5f9', '#64748b'], rs: '' };
   if (st === 'pending' && String(it.tag || '').toLowerCase() === 'optional') { V.di = '–'; V.dibg = '#f1f5f9'; V.dic = '#64748b'; V.pill = ['Optional', '#f1f5f9', '#64748b']; V.rs = 'Recommended'; }
+  // bl_bp_0316: authority, bond and BOC-3 are read live from FMCSA on the dashboard screen (bl_bp_0315) — nothing to upload.
+  if (it.auto && (st === 'pending' || st === 'rejected')) {
+    V.di = '⟳'; V.dibg = '#eff6ff'; V.dic = '#1d4ed8'; V.pill = ['Auto', '#dbeafe', '#1d4ed8'];
+    V.rs = 'Filled in automatically from your live FMCSA screen — no upload. Run the screen on your dashboard (step 1).';
+    return h('div', { style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
+      h('div', { style: 'width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:' + V.dibg + ';color:' + V.dic }, V.di),
+      h('div', { style: 'flex:1;min-width:200px' }, [h('div', { style: 'font-weight:800;font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, V.rs)]),
+      h('div', { style: 'display:flex;gap:8px;align-items:center;flex:none;flex-wrap:wrap' }, [
+        h('span', { class: 'cp-pill', style: 'background:' + V.pill[1] + ';color:' + V.pill[2] + ';font-weight:800' }, V.pill[0]),
+        h('button', { class: 'cp-btn cp-btn-sm', onClick: () => bgo('dashboard') }, 'Run FMCSA screen →'),
+      ]),
+    ]);
+  }
   return h('div', { style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
     h('div', { style: 'width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:' + V.dibg + ';color:' + V.dic }, V.di),
     h('div', { style: 'flex:1;min-width:200px' }, [h('div', { style: 'font-weight:800;font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, V.rs)]),
@@ -4174,6 +4187,9 @@ function brokerOnboardingWizard() {
     let pk = { items: [] }; try { pk = await myOnboardingPacket() || { items: [] }; } catch (_) {}
     let prof = {}; try { prof = await partnerGetProfile() || {}; } catch (_) {}
     const items = pk.items || [];
+    const isBroker = pk.kind === 'broker';
+    // bl_bp_0316: for brokers the authority items are proven by the live FMCSA screen (bl_bp_0315), never uploaded
+    if (isBroker) items.forEach((it) => { if (['mc_authority', 'bmc84_bond', 'boc3'].indexOf(it.key) >= 0) it.auto = true; });
     const byTag = (t) => items.filter((it) => String(it.tag || '').toLowerCase() === t);
     const legal = byTag('legal');
     const docs = items.filter((it) => ['required', 'conditional'].indexOf(String(it.tag || '').toLowerCase()) >= 0);
@@ -4195,7 +4211,7 @@ function brokerOnboardingWizard() {
         h('div', { class: 'cp-wiz-actions' }, [back, next].filter(Boolean)),
       ]));
     };
-    const itemRow = (it) => packetDocRow(it, () => { const fin = (d) => { it.status = 'submitted'; if (d) { it.note = JSON.stringify(d); it.ref = (it.key === 'w9' ? 'W-9' : 'Agreement') + ' signed online · ' + d.signer; } draw(); }; if (it.key === 'w9') openBrokerW9(it, fin); else if (it.key === 'broker_agreement') openBrokerAgreementSign(it, fin); else openPacketSubmit(it, () => fin(null)); });
+    const itemRow = (it) => packetDocRow(it, () => { const fin = (d) => { it.status = (isBroker && it.key === 'broker_agreement' && d) ? 'verified' : 'submitted'; if (d) { it.note = JSON.stringify(d); it.ref = (it.key === 'w9' ? 'W-9' : 'Agreement') + ' signed online · ' + d.signer; } draw(); }; if (it.key === 'w9') openBrokerW9(it, fin); else if (it.key === 'broker_agreement') openBrokerAgreementSign(it, fin); else openPacketSubmit(it, () => fin(null)); });
     function draw() {
       drawChrome();
       const kids = [];
@@ -4215,22 +4231,37 @@ function brokerOnboardingWizard() {
           catch (e) { msg0.textContent = (e && e.message) || 'Could not save.'; ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue →'; }
         } }, 'Save & continue →'));
       } else if (step === 1) {
-        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, 'Your legal standing — FMCSA broker authority and the $75,000 bond protect every carrier who hauls for you.'));
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, isBroker
+          ? 'Your legal standing — read live from FMCSA. Authority, the $75,000 BMC-84/85 bond and the BOC-3 are confirmed from the federal record the moment you run the screen on your dashboard; there is nothing to upload here.'
+          : 'Your legal standing — FMCSA broker authority and the $75,000 bond protect every carrier who hauls for you.'));
+        if (isBroker && legal.some((it) => it.auto && it.status !== 'verified' && it.status !== 'waived')) {
+          kids.push(h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:10px 14px;margin-bottom:8px' }, [
+            h('div', { class: 'cp-sub', style: 'flex:1;min-width:220px;color:#1e3a8a' }, 'Run the FMCSA screen once (Dashboard → step 1, MC or USDOT). It takes about a minute and fills these three in.'),
+            h('button', { class: 'cp-btn cp-btn-sm', onClick: () => bgo('dashboard') }, 'Go to dashboard →'),
+          ]));
+        }
         legal.forEach((it) => kids.push(itemRow(it)));
 
       } else if (step === 2) {
-        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, 'Paperwork — PDF or clear photo. Every document is reviewed by the LoadBoot team; you are notified the moment each one is verified or needs a fix.'));
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, isBroker
+          ? 'Only what FMCSA cannot tell us — your W-9 (sign online), bank instructions for payables and a claims contact, plus a COI if it is requested. Signing the Master Broker Agreement online counts as the signed agreement. Posting does not wait on this; a complete packet removes your posting limit.'
+          : 'Paperwork — PDF or clear photo. Every document is reviewed by the LoadBoot team; you are notified the moment each one is verified or needs a fix.'));
         docs.forEach((it) => kids.push(itemRow(it)));
 
       } else {
         const nDone = items.filter(done).length; const nRej = items.filter((it) => it.status === 'rejected').length;
-        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Everything in one glance — submit whatever is missing, then our team reviews (usually within 1 business day).'));
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, isBroker
+          ? 'Everything in one glance. Posting opened with your FMCSA screen; finishing this packet lifts the posting limit (our team confirms the uploads, usually within 1 business day).'
+          : 'Everything in one glance — submit whatever is missing, then our team reviews (usually within 1 business day).'));
         items.forEach((it) => kids.push(itemRow(it)));
         const reqd = items.filter((x) => String(x.tag || '').toLowerCase() !== 'optional');
-        const missing = reqd.filter((x) => x.status === 'pending' || x.status === 'rejected');
+        const missing = reqd.filter((x) => (x.status === 'pending' || x.status === 'rejected') && !x.auto);
+        const autoLeft = reqd.filter((x) => x.auto && (x.status === 'pending' || x.status === 'rejected')).length;
+        if (autoLeft) kids.push(h('div', { class: 'cp-sub', style: 'margin-top:8px;color:#1e3a8a' }, autoLeft + ' authority item(s) fill in on their own once you run the FMCSA screen on your dashboard.'));
         kids.push(h('div', { style: 'margin-top:12px;background:' + (pk.complete ? '#e7f9ee' : nRej ? '#fee2e2' : '#eff6ff') + ';border-radius:12px;padding:12px 14px;font-size:.85rem;color:#334155' },
-          pk.complete ? '🎉 Packet complete — posting is unlocked. Anything you update goes back through review.'
+          pk.complete ? (isBroker ? '🎉 Packet complete — your posting limit is lifted. Anything you update goes back through review.' : '🎉 Packet complete — posting is unlocked. Anything you update goes back through review.')
           : nRej ? '⚠ ' + nRej + ' item(s) were rejected — open each one above, fix it and resubmit.'
+          : isBroker ? nDone + ' of ' + items.length + ' done. Posting is already open from your FMCSA screen; once everything is verified your posting limit is lifted and you are notified.'
           : nDone + ' of ' + items.length + ' submitted. Once ALL are verified, load posting unlocks automatically and you are notified.'));
         kids.push(missing.length
           ? h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%;opacity:.85', onClick: () => {
@@ -4238,7 +4269,7 @@ function brokerOnboardingWizard() {
             } }, '⛔ ' + missing.length + ' required item(s) left — complete them above')
           : h('div', { style: 'margin-top:12px' }, [
               h('div', { style: 'background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:12px 14px;text-align:center;font-weight:800;color:#1d4ed8;font-size:.95rem' },
-                pk.complete ? '🎉 ALL VERIFIED — POSTING IS LIVE' : '⏳ SUBMITTED — UNDER REVIEW'),
+                pk.complete ? (isBroker ? '🎉 ALL VERIFIED — NO POSTING LIMIT' : '🎉 ALL VERIFIED — POSTING IS LIVE') : '⏳ SUBMITTED — UNDER REVIEW'),
               h('div', { class: 'cp-sub', style: 'text-align:center;margin-top:4px' },
                 pk.complete ? 'Anything you update goes back through review.' : 'LoadBoot team reviews within 1 business day — you\u2019ll be notified of every decision here and by email.'),
               h('button', { class: 'cp-btn ghost', style: 'margin-top:8px;width:100%', onClick: () => bgo('dashboard') }, 'Track on dashboard →'),
