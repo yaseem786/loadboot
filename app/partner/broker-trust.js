@@ -324,7 +324,7 @@ function allowanceCard(st, goPacket, goPost) {
       st.can_post ? h('button', { class: 'bt-btn', onClick: goPost }, 'Post a load →') : null,
       h('button', { class: 'bt-btn ghost', onClick: goPacket }, (st.tier === 'verified' ? 'View verified packet' : 'Finish verification packet (' + done + '/' + tot + ')')),
     ]),
-    st.tier !== 'verified' ? h('div', { class: 'bt-note' }, '4 · Verification packet (W-9, bond certificate, agreement, bank instructions for payables) lifts the limit, turns on instant booking for carriers and moves your payables inside LoadBoot. Nothing in it is needed to post your first loads.') : null,
+    st.tier !== 'verified' ? h('div', { class: 'bt-note' }, '4 · Verification packet — only three things left for you: W-9, bank instructions for payables, and a claims contact. Your authority, bond and BOC-3 were filled in from the FMCSA screen, and the agreement from your click. It lifts the limit, turns on instant booking for carriers and moves your payables inside LoadBoot; nothing in it is needed to post your first loads.') : null,
   ]);
 }
 
