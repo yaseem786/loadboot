@@ -78,3 +78,11 @@ Subject: `2 trucks free this week — OH gooseneck + GA 26' box`
 > — Yaseen, LoadBoot dispatch · +1 (469) 253-7575
 
 (Fill the truck lines from live `truck_postings` each week; never send stale capacity.)
+
+## bl_bp_0316 — portal-aware org resolution (4 Sep, applied staging + prod)
+
+Symptom: broker portal → Documents showed the **carrier** packet for a user who owns both a carrier org and a broker org (accounts created before `partner_kind` metadata existed). Cause: `app_private.my_any_org()` was carrier-first for such users; ten RPCs use it (`cc_my_onboarding_packet`, `cc_onboarding_submit_item`, `cc_accept_agreement`, `cc_current_agreement`, `cc_my_rating`, `cc_org_rating`, `cc_partner_rateable_trips`, `cc_rate_counterparty`, `cc_book_request_carrier_packet`, `my_webhook_create`).
+
+Fix: `app/shared/supabaseClient.js` now sends `x-lb-app: <portal>/<build>` (`partner` | `carrier` | `command-center` | `site`, from `location.pathname`); `app_private.request_portal()` reads it from `request.headers`; `my_any_org()` is partner-first inside the partner portal, carrier-first inside the carrier portal, unchanged when the header is absent/old. Staging rollback test: 10 checks (no header → carrier, old header → carrier, partner → broker packet 8 items + agreement + W-9 submit lands on the broker org, carrier → carrier, partner header with carrier-only user → carrier, empty/mixed-case header safe). Prod smoke on the owner account: partner → broker packet (10 items, all pending until the MC is screened — 0315 autofill then verifies authority/bond/BOC-3).
+
+Deploy note: the header comes from `shared/supabaseClient.js`, which the partner PWA caches — clear the service worker after deploy or the old `command-center/…` header keeps the old behaviour.

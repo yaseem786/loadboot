@@ -21,6 +21,14 @@ async function importSupabase() {
   throw lastErr;
 }
 
+function portalName() {
+  const p = (typeof location !== 'undefined' && location.pathname) || '';
+  if (p.indexOf('/app/partner/') === 0) return 'partner';
+  if (p.indexOf('/app/carrier/') === 0) return 'carrier';
+  if (p.indexOf('/app/command-center/') === 0) return 'command-center';
+  return 'site';
+}
+
 let _clientPromise = null;
 
 export function getClient() {
@@ -35,7 +43,11 @@ export function getClient() {
           // confused with a production session in the same browser.
           storageKey: 'lb-auth-' + ENV.environment + '-' + ENV.projectId,
         },
-        global: { headers: { 'x-lb-app': 'command-center/' + ENV.buildId } },
+        // bl_bp_0316: the header names the portal this page is running in. Server-side,
+        // app_private.my_any_org() reads it so a user who owns BOTH a carrier org and a
+        // broker org gets the broker's packet/agreements inside the partner portal and the
+        // carrier's inside the carrier portal (previously always carrier-first).
+        global: { headers: { 'x-lb-app': portalName() + '/' + ENV.buildId } },
       })
     );
   }
