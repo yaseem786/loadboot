@@ -223,6 +223,8 @@ export const carrierFactoringRemitUpdate = (p) => rpc('carrier_factoring_remit_u
 export const ccFactoringVerify = (org, ok, note) => rpc('cc_factoring_verify', { p_org: org, p_ok: ok, p_note: note ?? null });
 export const ccOnboardingRemind = (org, doc) => rpc('cc_onboarding_remind', { p_org: org, p_doc: doc ?? null });
 export const ccOnboardingReminderStatus = (org) => rpc('cc_onboarding_reminder_status', { p_org: org });
+export const ccFleetTruckRemind = (org) => rpc('cc_fleet_truck_remind', { p_org: org });
+export const ccFleetTruckReminderStatus = (org) => rpc('cc_fleet_truck_reminder_status', { p_org: org });
 export const carrierFactoringPacket = (trip) => rpc('carrier_factoring_packet', { p_trip: trip });
 export const carrierFactoringBrokers = () => rpc('carrier_factoring_brokers');
 export const carrierFactoringBrokerSet = (broker, direct) => rpc('carrier_factoring_broker_set', { p_broker: broker, p_direct: direct });
