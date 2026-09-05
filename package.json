@@ -4,11 +4,13 @@
   "private": true,
   "description": "Local, pinned test dependencies for the Phase 2A test harness (service-worker functional test).",
   "scripts": {
-    "test:pwa": "node tests/sw_functional_test.mjs",
-    "test:all": "bash tests/run_all.sh",
     "test:personas": "playwright test tests/security/persona_matrix.spec.js --reporter=list,json,html",
     "test:pod": "playwright test tests/security/pod_workflow.spec.js --reporter=list,json,html",
-    "pw:install": "playwright install chromium"
+    "pw:install": "playwright install chromium",
+    "check:syntax": "bash scripts/check_esm_syntax.sh",
+    "check:imports": "python3 scripts/check_imports.py",
+    "check": "npm run check:syntax && npm run check:imports",
+    "build:staging": "CONTEXT=deploy-preview python3 build_site.py"
   },
   "devDependencies": {
     "@playwright/test": "1.56.0",

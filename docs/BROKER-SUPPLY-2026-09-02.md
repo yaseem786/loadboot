@@ -118,3 +118,85 @@ Yaseen: "jaise broker se pehle bahut kuch maang rahe the, shipper ka bhi yahi ho
 **Surfaces**: `app/partner/shipper-trust.js` (NEW: hero + 4-step ladder, states confirming / company-email + code / no-mail re-check / confirmed / hold; `shipperBadge()` for the broker inbox); shipperDash opens the request form on `ov.can_post` and shows the light "Before your first booking" packet card (`verifyGateCard` light mode, `#sh-packet`); wizard copy for shippers; broker inbox shows "✓ Business confirmed · domain" per request; CC brokerTrust view gains a **Shipper trust** section (`cc_shipper_trust_queue/_set`: hold/release/verify by hand/re-check); create-shipper-account page steps/docs/FAQ rewritten. `api.js` +5 wrappers.
 
 **Tests**: `test-0319-rollback.sql` on staging (company-email signup → pending → cannot post → fake domain-check answer → business_verified → post OK → status/overview/badge; Gmail signup → free_mail → gmail refused again → company address → code wrong/right → domain check → verified (no website noted); a later no-mail answer never un-verifies; hold blocks posting; release; CC queue). Prod: migration applied, backfill ran the REAL check — demo shipper (loadboot.com) verified by the cron within a minute; the Gmail test shipper sits at free_mail as designed. Playwright harness `harness-0319/` (screenshots `preview-0319-shipper-*.png`).
+
+## bl_ux_0320 — collapsible sidebar / icon rail (4 Sep 2026)
+
+Owner asked whether the portal sidebar should auto-collapse and expand on hover. Advice (accepted:
+"dekh lo jo tum mashwara do"): **pin/unpin icon rail, never hover-expand** — hover-expand flickers,
+shifts the workspace and steals focus; Linear / Notion / Slack / Front all use a pinned toggle.
+
+- `app/shared/ui/sideRail.js` — `mountSideRail(shellEl, { key, defaultCollapsed, onChange })`.
+  Toggle button at the top of the sidebar (`.cp-rail-tg`), `[` key toggles when no field is
+  focused. Choice remembered per portal in `localStorage.lb_side_<key>` (`rail` | `full`).
+  No choice yet → auto: expanded while onboarding (labels carry new users), collapsed once done
+  (`defaultCollapsed`), and always collapsed under 1280px. Under 900px the sidebar is hidden by
+  the existing CSS (burger/drawer + tab bar unchanged). Collapsed: 72px rail, tooltips (JS
+  positioned, fixed — not clipped by the sidebar's `overflow:auto`), `.cp-tab-badge` still shows
+  on the icon, brand mark only.
+- `app/carrier/carrier.css` — `.cp-shell--rail` rules + `.cp-rail-tg` + `.cp-railtip`
+  (partner portal loads carrier.css too, so one stylesheet covers all shells).
+- Wired: partner broker shell (`key: 'partner'`, collapsed by default once `ov.onboarded ||
+  __trustCanPost`), carrier shell (`key: 'carrier' | 'agent'`, collapsed once `ov.compliance_ok`),
+  dispatcher shell (`key: 'dispatcher'`, auto by width only). Shipper dashboard is single-column
+  (`cp-shell-1col`) — no sidebar, nothing to do.
+- Harness: `docs/broker-supply-2026-09-02/harness-0320/` (Playwright; verifies default, toggle,
+  tooltip, `[` key, persistence across reload, auto @1200/1440, hidden @800).
+  Previews: `preview-0320-sidebar-expanded.png`, `preview-0320-sidebar-rail.png`.
+- No DB change. Marketing site untouched (nothing user-facing to mirror).
+
+## Marketing-site audience link audit (4 Sep 2026)
+
+Built the site locally and checked every broker/shipper/agent-audience page for in-body links that
+land on carrier-audience pages (header nav and footer are shared and excluded). Fixed in
+`build_site.py` / `industry_pages_module.py`:
+
+- brokers.html + partners.html hero tertiary link "All Services →" went to `services.html` (the
+  carrier dispatch service list) → now "How it works →" (`how-it-works.html`, every role).
+- "How carriers get verified" button in the Carrier Network band (brokers, free-load-board,
+  shipper-solutions, ship-direct) went to `carriers.html` (carrier SALES page, "Flat 5%") → now
+  `compliance.html` (Compliance & Verification).
+- create-broker-account "How posting works" → `load-board.html` (Load Board for Truckers) → now
+  `how-it-works.html`; related card "Live Load Board" → "Free Load Board for Brokers".
+- create-shipper-account related "Live Load Board" → "Market Rates"; freight-shipping-by-industry
+  related "Live Load Board" → "Ship Direct to Carriers".
+- agriculture + food industry pages: related card "Reefer Dispatch" (carrier service) → "Reefer
+  Freight Rates" (carrier/broker/shipper page).
+- free-load-board-for-brokers: GPS card "Why fake loads cost you" (carrier subscription article) →
+  `gps-tracking.html`; offers card now deep-links `load-board.html#for-posters`; related card
+  "Live Load Board" → "Post by API". The ghost-load / subscription-cost links in the
+  "free vs paid board" comparison are the page's topic and stay.
+- index.html broker band still said "Authority and documents verified once" → "Your MC is read
+  live from FMCSA in seconds — no documents to start" (matches bl_bp_0312).
+
+Left as-is on purpose: accessorial policy links (detention / TONU / layover / lumper / FCFS) on
+shipper, industry and broker-claim pages — those are LoadBoot's published standards the
+poster pays, not carrier sales pages. Agent pages linking "For Carriers" (they refer carriers).
+
+## Premium demand-side landing pages (bl_site_0321, 4 Sep 2026)
+
+Owner: "the carrier home page is premium — brokers (free load board / post loads) and shippers need
+the same grade or better, SEO-focused." New module `partner_landing_module.py` (all sections,
+scoped `pl-` CSS, FAQ schema) wired into `build_site.py`:
+
+- `free-load-board-for-brokers.html` — title "Free Load Board for Brokers — Post Loads Free to
+  Verified Carriers". Hero with live-posting mock, 4 product-fact stats ($0 / seconds / 15-min
+  first-accept / 1 receipt), why-switch tiles, 5-step flow (MC → confirm → agreement → post →
+  request/approve), the **tiered posting allowance in the open (3 → 10 → unlimited, bl_bp_0312)**,
+  4 ways to post (wizard, loads@, API, app), shared carrier-network band, **2026 fraud-reality
+  section with sourced figures** (CargoNet 2025: $725M, $273,990 avg; FMCSA financial-responsibility
+  rule Jan 16 2026; Motus identity proofing), free-vs-paid comparison table, broker-agents section
+  (bl_bp_0318 multi-brokerage), 10-question FAQ (FAQPage schema), broker-only keep-reading, CTA.
+- `shipper-solutions.html` — title "Ship Freight With Verified Carriers — Truckload Quotes & GPS
+  Proof". Hero with in-transit shipment mock, stats (<1 min business check / 0 documents / 3 items
+  before first booking / $0), four-questions tiles, 4-step flow (**business check from company
+  email, bl_bp_0319**), visibility split with dock mock, sourced theft figures + protection,
+  accessorial standards grid (6 policies), rates & industry grid, carrier-network band, 10-question
+  FAQ schema, shipper-only keep-reading, CTA.
+- Fixed a pre-existing bug in `carrier_network_section()`: the dark band set `color:#fff`, so its
+  white cards had invisible white headings on brokers / free-load-board / shipper-solutions /
+  ship-direct. Ink now pinned.
+- Verified: builds clean (only local asset gaps), FAQ JSON-LD parses (10 items each), no carrier-
+  audience links in either body (integrations.html#email is the email-posting section), no
+  horizontal overflow at 390px. Previews `preview-0321-{broker,shipper}-{desktop,mobile}.png`.
+- Every figure is a product fact from the live build or an external figure with its source linked
+  in-section. Nothing invented. Old flb/sp blocks removed from build_site.py.
