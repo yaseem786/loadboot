@@ -40,6 +40,7 @@ import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDu
 import { enablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { brandLogo } from '../shared/ui/components.js';
+import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
 import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
 import { printDispatchSheet, openPrintable, openInvoicePdf } from '../shared/ui/printDoc.js';
 import { mountAvatarEditor } from '../shared/ui/avatar.js';
@@ -1776,6 +1777,7 @@ async function agentPortal(user) {
     tabbar,
   ]);
   mount(root, shell);
+  mountSideRail(shell, { key: 'dispatcher' });  // bl_ux_0320
   Object.entries(links).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
   Object.entries(tabLinks).forEach(([k9, a9]) => a9.classList.toggle('active', k9 === tab));
   const it0 = AGNAV.find((n) => n[0] === tab); titleEl.textContent = it0 ? it0[1] : 'Dashboard';
@@ -2061,6 +2063,9 @@ async function appView(user) {
     (mobileBar = sideNav(true)),
   ]);
   mount(root, shell);
+  // bl_ux_0320: pin/collapse sidebar. Labels stay while the account is still being set up; once
+  // compliant the rail collapses by default (the carrier can pin it open any time).
+  mountSideRail(shell, { key: window.__LB_AGENT ? 'agent' : 'carrier', defaultCollapsed: !!ov.compliance_ok });
   root.setAttribute('aria-busy', 'false');
   // Pull-to-refresh (big-brand standard): re-runs the current view + unread count.
   try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}

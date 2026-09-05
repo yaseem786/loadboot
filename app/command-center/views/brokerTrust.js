@@ -5,7 +5,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { sectionHead, statCard } from '../../shared/ui/components.js';
-import { ccBrokerTrustQueue, ccBrokerTrustSet } from '../../shared/api.js';
+import { ccBrokerTrustQueue, ccBrokerTrustSet, ccShipperTrustQueue, ccShipperTrustSet } from '../../shared/api.js';
 import { humanizeError } from '../../shared/errors.js';
 
 const TIER = {
@@ -28,12 +28,58 @@ export function renderBrokerTrust(host) {
   mount(host, el('div', null, [
     sectionHead('Broker trust', 'FMCSA-screened brokers post in minutes; the packet only lifts limits. Authority is read live from FMCSA; identity is claimed from the FMCSA-listed email/phone (or a domain match). This queue is every broker on the platform with the live posting rule applied — act on the amber and red rows.'),
     kpis, filters, body,
+    shipperSection(),  // bl_bp_0319
   ]));
   load();
 
   async function act(org, action, note) {
     try { await ccBrokerTrustSet(org, action, note); await load(); }
     catch (e) { alert(humanizeError(e)); }
+  }
+
+  // bl_bp_0319 — shippers: business confirmed from the company email domain (MX + website); quotes open on that,
+  // the packet gates the first booking. Staff step in only for free-mail / dead-domain signups.
+  function shipperSection() {
+    const wrap = el('div', { style: 'margin-top:28px' });
+    const list = el('div');
+    const STIER = { verified: ['green', 'Verified shipper'], business_verified: ['blue', 'Business confirmed · quotes open'], new: ['gray', 'Not confirmed'], hold: ['red', 'On hold'] };
+    async function sact(org, action, note) { try { await ccShipperTrustSet(org, action, note); await sload(); } catch (e) { alert(humanizeError(e)); } }
+    function srow(r) {
+      const [tone, label] = STIER[r.tier] || STIER.new;
+      const acts = [];
+      if (r.tier === 'hold') acts.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => sact(r.org_id, 'release', prompt('Note to the shipper (optional):') || null) }, 'Release hold'));
+      else acts.push(el('button', { class: 'cc-btn-sm', onClick: () => { const n = prompt('Reason (the shipper sees this):'); if (n) sact(r.org_id, 'hold', n); } }, 'Hold'));
+      if (r.tier === 'new') {
+        acts.push(el('button', { class: 'cc-btn-sm', onClick: () => sact(r.org_id, 'recheck') }, 'Re-check domain'));
+        acts.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => { const n = prompt('How did you verify the business? (called them, EIN letter, invoice… — recorded)'); if (n) sact(r.org_id, 'verify', n); } }, 'Verify by hand'));
+      }
+      return el('div', { class: 'cc-card', style: 'padding:14px 16px;margin-bottom:10px' }, [
+        el('div', { style: 'display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start' }, [
+          el('div', { style: 'flex:1;min-width:260px' }, [
+            el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [el('b', { style: 'font-size:.98rem' }, r.name || '?'), pill(tone, label)]),
+            el('div', { style: 'color:#64748b;font-size:.82rem;margin-top:2px' }, (r.owner_email || '') + ' · joined ' + ago(r.created_at) + ' · ' + (r.shipments || 0) + ' shipment' + (r.shipments === 1 ? '' : 's') + ' · packet ' + (r.packet_done || 0) + '/' + (r.packet_total || 0)),
+            el('div', { style: 'color:#334155;font-size:.84rem;margin-top:6px' }, [
+              el('b', null, 'Business: '),
+              r.verified_at ? '✓ ' + (r.verified_by || 'confirmed') + ' · ' + ago(r.verified_at)
+                : 'check ' + (r.check_outcome || 'not run') + (r.check_reason ? ' — ' + r.check_reason : '') + (r.domain ? ' · domain ' + r.domain : '') + (r.free_mail ? ' (personal email)' : '') + (r.company_email ? ' · company address ' + r.company_email + (r.email_verified_at ? ' ✓' : ' (code not entered)') : ''),
+              r.site_title ? el('div', { style: 'color:#64748b' }, 'Site: ' + r.site_title + (r.site_url ? ' · ' + r.site_url : '') + (r.name_match === true ? ' · company name on site' : r.name_match === false ? ' · ⚠ company name NOT found on site' : '')) : '',
+              r.reason ? el('div', { style: 'color:#b45309;margin-top:2px' }, r.reason) : '',
+              r.hold_reason ? el('div', { style: 'color:#b91c1c;margin-top:2px' }, 'HOLD: ' + r.hold_reason) : '',
+            ]),
+          ]),
+          el('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:360px' }, acts),
+        ]),
+      ]);
+    }
+    async function sload() {
+      showLoading(list, 'Loading shipper trust…');
+      let rows; try { rows = await ccShipperTrustQueue(); } catch (e) { showError(list, humanizeError(e), sload); return; }
+      rows = rows || [];
+      mount(list, rows.length ? rows.map(srow) : el('div', { class: 'cc-card', style: 'padding:24px;color:#64748b' }, 'No shippers yet.'));
+    }
+    mount(wrap, [sectionHead('Shipper trust', 'Business confirmed automatically from the company email domain (receives mail + website). Confirmed shippers request quotes right away; the short packet gates the first booking. Staff only for personal-email or dead-domain signups.'), list]);
+    sload();
+    return wrap;
   }
 
   function row(r) {
@@ -45,9 +91,10 @@ export function renderBrokerTrust(host) {
     else actions.push(el('button', { class: 'cc-btn-sm', onClick: () => { const n = prompt('Reason (the broker sees this):'); if (n) act(r.org_id, 'hold', n); } }, 'Hold'));
     if (scr && scr !== 'pass') actions.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => { const n = prompt('You checked FMCSA by hand — what did you see? (recorded)'); if (n) act(r.org_id, 'pass', n); } }, 'Pass by hand'));
     if (scr && scr !== 'pending') actions.push(el('button', { class: 'cc-btn-sm', onClick: () => act(r.org_id, 'rescreen') }, 'Re-screen'));
-    if (r.is_agent && !r.parent_confirmed_at) {
-      actions.push(el('button', { class: 'cc-btn-sm', onClick: () => act(r.org_id, 'resend_parent') }, 'Resend email'));
-      actions.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => { const n = prompt('How did the brokerage confirm? (phone / email — recorded)'); if (n) act(r.org_id, 'confirm_parent', n); } }, 'Confirm by phone'));
+    // bl_bp_0318: one agent, several brokerages — staff act on the newest undecided one
+    if (r.is_agent && (r.parents || []).some((p) => p.status === 'pending' || p.status === 'screening' || p.status === 'declined')) {
+      actions.push(el('button', { class: 'cc-btn-sm', onClick: () => act(r.org_id, 'resend_parent') }, 'Resend code email'));
+      actions.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => { const n = prompt('What did you check? (agent agreement, spoke with the brokerage… — recorded; confirms the newest undecided brokerage)'); if (n) act(r.org_id, 'confirm_parent', n); } }, 'Confirm brokerage'));
     }
     // bl_bp_0313 identity claim (own-MC brokers): staff can confirm by calling the FMCSA-listed phone, or reject
     if (!r.is_agent && scr === 'pass' && r.identity_status !== 'verified') {
@@ -82,7 +129,15 @@ export function renderBrokerTrust(host) {
             r.identity_signup_email ? el('div', { style: 'color:#7c8aa0;margin-top:2px' }, 'signup ' + r.identity_signup_email + ' · FMCSA ' + (r.identity_fmcsa_email || 'no email') + ' · ' + (r.identity_fmcsa_phone || r.fmcsa_phone || 'no phone')) : '',
             r.identity_note ? el('div', { style: 'color:#7c8aa0;margin-top:2px' }, r.identity_note) : '',
           ]) : '',
-          r.is_agent ? el('div', { style: 'color:#334155;font-size:.84rem;margin-top:6px' }, [
+          r.is_agent && (r.parents || []).length ? el('div', { style: 'color:#334155;font-size:.84rem;margin-top:6px' }, [
+            el('b', null, 'Brokerages (' + r.parents.length + '): '),
+            ...r.parents.map((p) => el('div', { style: 'margin:2px 0 0 10px' }, [
+              (p.status === 'confirmed' ? '✓ ' : p.status === 'pending' ? '⏳ ' : p.status === 'declined' ? '🚨 ' : p.status === 'revoked' ? '⛔ ' : '· ') + (p.name || '?') + ' · MC-' + (p.mc || '?') + ' · ' + p.status
+              + (p.on_loadboot ? ' · on LoadBoot' : '') + (p.screen && p.screen !== 'pass' ? ' · screen ' + p.screen + (p.screen_reason ? ' (' + p.screen_reason + ')' : '') : '')
+              + (p.sent_at ? ' · code emailed ' + ago(p.sent_at) + ' to ' + (p.sent_to || '?') + ' (' + (p.contact_source || '?') + ')' : (p.status === 'pending' ? ' · NO EMAIL ON FMCSA RECORD' + (p.contact_email ? ' · agent gave ' + p.contact_email + ' (other domain, ignored)' : '') : ''))
+              + (p.confirmed_at ? ' · confirmed ' + ago(p.confirmed_at) + ' by ' + (p.confirmed_by || '?') : '') + (p.declined_at ? ' · declined ' + ago(p.declined_at) : '') + (p.revoked_at ? ' · revoked ' + ago(p.revoked_at) : '') + (p.note ? ' — "' + p.note + '"' : ''),
+            ])),
+          ]) : r.is_agent ? el('div', { style: 'color:#334155;font-size:.84rem;margin-top:6px' }, [
             el('b', null, 'Parent: '),
             r.parent_org_id ? el('span', null, ['on LoadBoot as ', el('a', { href: '#/broker?id=' + r.parent_org_id }, r.parent_org_name || 'parent org'), ' · ']) : '',
             r.parent_confirmed_at ? '✓ confirmed ' + ago(r.parent_confirmed_at) + ' by ' + (r.parent_confirmed_by || '?')

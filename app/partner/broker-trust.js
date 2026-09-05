@@ -10,9 +10,11 @@
 //   2 Master Broker Agreement (one click)
 //   3 Post — up to 3 open loads until the first delivery, 10 after
 //   4 Verified packet → unlimited + instant booking for carriers
-// Agents (no own MC) declare the brokerage they post under; the brokerage confirms with
-// one click from the email address FMCSA has on file.
-import { partnerBrokerScreen, partnerAgentDeclare, partnerTrustStatus, currentAgreement, acceptAgreement, fmcsaVerify, partnerIdentityResend, partnerIdentityRequestCall, partnerVerifyCall, partnerVerifyCode } from '../shared/api.js';
+// Agents (no own MC) declare the brokerage(s) they post under (bl_bp_0318: one account, up to 10
+// brokerages). Each brokerage confirms on its own: a 6-digit code + link emailed to the address FMCSA
+// lists (or its LoadBoot owner, or an address on the same domain) — the brokerage hands the code to the
+// agent, the agent types it here. No calls, no LoadBoot staff. Loads post under ONE chosen brokerage.
+import { partnerBrokerScreen, partnerAgentDeclare, partnerTrustStatus, currentAgreement, acceptAgreement, fmcsaVerify, partnerIdentityResend, partnerIdentityRequestCall, partnerVerifyCall, partnerVerifyCode, partnerAgentParentRemove, partnerAgentParentResend } from '../shared/api.js';
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -80,6 +82,13 @@ const CSS = `
 .bt-seg button{border:0;background:transparent;padding:10px 14px;font-weight:800;font-size:.82rem;color:#64748b;cursor:pointer}
 .bt-seg button.on{background:#10223B;color:#fff}
 .bt-idbox{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:#fbfcfe;border:1px dashed #cbd5e1;margin-top:12px}
+.bt-par{border:1px solid #e6ebf3;border-radius:14px;padding:12px 14px;margin-top:12px;background:#fff}
+.bt-par.ok{border-color:#bbf7d0;background:#f6fef9}.bt-par.warn{border-color:#fcd34d;background:#fffbeb}.bt-par.bad{border-color:#fecaca;background:#fff5f5}.bt-par.muted{opacity:.75}
+.bt-par .h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bt-par .n{font-weight:800;color:#10223B;font-size:.95rem}.bt-par .mc{font-size:.8rem;color:#64748b;font-weight:700}
+.bt-par .acts{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.bt-btn.sm{padding:7px 11px;font-size:.78rem}.bt-btn.danger{color:#c62828;border-color:#fecaca;background:#fff}
+.bt-code{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe}
+.bt-code .m{font-weight:800;color:#1e3a8a;font-size:.85rem;flex:1 1 260px}
 .bt-idbox .m{font-weight:800;color:#10223B;letter-spacing:.02em}
 .bt-topbadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:.74rem;font-weight:800;border:1px solid transparent}
 `;
@@ -109,7 +118,7 @@ function stepState(st) {
   const scrOk = !!(st && st.screening && st.screening.outcome === 'pass');
   const agrOk = !!(st && st.agreement_ok);
   const verified = tier === 'verified';
-  const agentOk = !st.agent || !!(st.agent && st.agent.confirmed_at);
+  const agentOk = !st.agent || !!(st.agent && st.agent.confirmed_at) || !!((st.parents || []).some((p) => p.status === 'confirmed'));
   const idOk = !!st.agent || !st.identity || st.identity.status === 'verified';
   return {
     s1: verified || (scrOk && agentOk && idOk) ? 'done' : 'now',
@@ -124,7 +133,7 @@ function ladder(st) {
   const step = (n, cls, t, d) => h('div', { class: 'bt-step ' + cls }, [h('span', { class: 'bt-step-n' }, cls === 'done' ? '✓' : String(n)), h('div', { class: 'bt-step-t' }, t), h('div', { class: 'bt-step-d' }, d)]);
   const lim = st && st.posting_limit;
   return h('div', { class: 'bt-ladder' }, [
-    step(1, s.s1, 'FMCSA screen + identity', st && st.agent ? 'Your brokerage’s authority, checked live — then they confirm you.' : 'Your broker authority, checked live on FMCSA, then a code by automated call to your FMCSA-listed phone (or one click from the FMCSA-listed email). No uploads, no waiting.'),
+    step(1, s.s1, 'FMCSA screen + identity', st && st.agent ? 'Each brokerage’s authority, checked live on FMCSA — then they hand you a 6-digit code from the email we send them.' : 'Your broker authority, checked live on FMCSA, then a code by automated call to your FMCSA-listed phone (or one click from the FMCSA-listed email). No uploads, no waiting.'),
     step(2, s.s2, 'One-click agreement', 'The Master Broker Agreement — rate card, detention, TONU terms carriers see.'),
     step(3, s.s3, 'Post your first loads', (lim ? 'Up to ' + lim + ' open postings' : 'Unlimited postings') + ' · carriers request, you approve.'),
     step(4, s.s4, 'Verified brokerage', 'Packet verified → unlimited postings, instant booking, payables inside LoadBoot.'),
@@ -253,39 +262,134 @@ function identityCard(st, refresh) {
   ]);
 }
 
-/* ---------------- agent card (no own MC) ---------------- */
+/* ---------------- agent card (no own MC) — bl_bp_0318: one account, several brokerages ---------------- */
+// One row per brokerage. Each row is screened on FMCSA on its own and confirmed on its own:
+//   • brokerage on LoadBoot  → its owner approves under Agents & team (we also email them the code)
+//   • FMCSA-listed email     → link + 6-digit code; the brokerage gives the code to the agent, the agent types it here
+//   • same-domain address    → an address the agent supplies counts only on the FMCSA email's own domain
+//   • no FMCSA email at all  → the record is outdated: the brokerage fixes it on Ask FMCSA (MCS-150, free) and we re-check
+// No calls in this path. Loads post under ONE chosen brokerage (picker on the post form).
+let parNotice = {}; // parent id → { ok, text } — survives repaints
 function agentCard(st, refresh) {
-  const ag = st.agent;
+  const parents = st.parents || [];
+  const live = parents.filter((p) => p.status !== 'revoked');
   const err = h('div', { class: 'bt-err' });
-  const mc = h('input', { class: 'bt-in', placeholder: 'Brokerage MC number', inputmode: 'numeric', value: (ag && ag.parent_mc) || '' });
-  const co = h('input', { class: 'bt-in', placeholder: 'Brokerage legal name', value: (ag && ag.parent_legal_name) || '' });
-  const em = h('input', { class: 'bt-in', placeholder: 'Their compliance / ops email (optional)', type: 'email', value: (ag && ag.contact_email) || '' });
-  const btn = h('button', { class: 'bt-btn' }, ag ? 'Update & re-check' : 'Check the brokerage →');
+  const when = (ts) => ts ? new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+
+  async function act(id, fn, okText) {
+    parNotice[id] = null;
+    try { const r = await fn(); parNotice[id] = (r && r.ok === false) || (r && r.sent === false) ? { ok: false, text: (r && r.why) || 'Could not do that.' } : { ok: true, text: okText || '✓ Done.' }; }
+    catch (e) { parNotice[id] = { ok: false, text: (e && e.message) || 'Could not do that.' }; }
+    await refresh(true);
+  }
+
+  function codeBox(p) {
+    const code = h('input', { class: 'bt-in', placeholder: '6-digit code', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 12, style: 'flex:0 1 170px;letter-spacing:.2em;text-align:center' });
+    const ok = h('button', { class: 'bt-btn orange sm' }, 'Confirm code →');
+    ok.onclick = async () => {
+      const d = digits(code.value); if (d.length !== 6) { parNotice[p.id] = { ok: false, text: 'Enter the 6 digits from the email.' }; refresh(true); return; }
+      ok.disabled = true;
+      await act(p.id, () => partnerVerifyCode(d), '✓ Confirmed — you can post under ' + (p.name || 'this brokerage') + ' now.');
+    };
+    return h('div', { class: 'bt-code' }, [
+      h('div', { class: 'm' }, 'Ask ' + (p.name || 'the brokerage') + ' for the 6-digit code in that email and type it here — confirmed on the spot.'),
+      code, ok,
+    ]);
+  }
+
+  function noContactBox(p) {
+    const em = h('input', { class: 'bt-in', type: 'email', placeholder: p.fmcsa_domain ? 'someone@' + p.fmcsa_domain : 'ops@their-company-domain.com', style: 'flex:0 1 260px' });
+    const btn = h('button', { class: 'bt-btn sm' }, 'Re-check FMCSA →');
+    btn.onclick = async () => { btn.disabled = true; await act(p.id, () => partnerAgentDeclare(p.mc, p.name || '', em.value.trim() || null), 'Re-checking FMCSA — takes about a minute.'); };
+    return h('div', { class: 'bt-idbox', style: 'flex-direction:column;align-items:stretch;gap:8px;border-color:#fcd34d;background:#fffbeb' }, [
+      h('div', { class: 'm' }, '⚠ FMCSA lists no email for ' + (p.name || 'this brokerage') + ' — their record is out of date'),
+      h('div', { class: 'bt-note', style: 'margin:0' }, [
+        'We confirm agents only through the contact on the brokerage’s FMCSA record, so there are three ways forward: ',
+        h('b', null, '(1)'), ' the brokerage updates its email on ', h('a', { href: 'https://ask.fmcsa.dot.gov', target: '_blank', rel: 'noopener' }, 'Ask FMCSA'), ' (MCS-150 update — free, a few minutes; it shows up within a day or two) and you press Re-check; ',
+        h('b', null, '(2)'), ' the brokerage creates its own LoadBoot account and invites you from Agents & team; ',
+        h('b', null, '(3)'), ' last resort — email ', h('a', { href: 'mailto:hello@loadboot.com?subject=Agent%20confirmation%20' + encodeURIComponent('MC-' + (p.mc || '')) }, 'hello@loadboot.com'), ' with your signed agent agreement.',
+      ]),
+      p.fmcsa_domain ? h('div', { class: 'bt-row', style: 'margin-top:0' }, [em, btn]) : h('div', { class: 'bt-row', style: 'margin-top:0' }, [btn]),
+    ]);
+  }
+
+  function row(p) {
+    const n = parNotice[p.id];
+    const note = n ? h('div', { class: 'bt-err', style: n.ok ? 'color:#12a150' : '' }, n.text) : null;
+    const remove = (label) => h('button', { class: 'bt-btn sm danger', onClick: async () => {
+      if (p.status === 'confirmed' && !confirm('Leave ' + (p.name || 'this brokerage') + '? Your open postings under them will be cancelled.')) return;
+      await act(p.id, () => partnerAgentParentRemove(p.id), 'Removed.');
+    } }, label);
+    const resend = h('button', { class: 'bt-btn ghost sm', onClick: async () => { await act(p.id, () => partnerAgentParentResend(p.id), 'Sent again.'); } }, 'Resend email');
+    const recheck = h('button', { class: 'bt-btn sm', onClick: async () => { await act(p.id, () => partnerAgentDeclare(p.mc, p.name || '', null), 'Re-checking FMCSA — about a minute.'); } }, 'Re-check FMCSA');
+    let cls = 'muted', pill = null, body = null, acts = [];
+    if (p.status === 'confirmed') {
+      cls = 'ok'; pill = h('span', { class: 'bt-pill ok' }, '✓ confirmed ' + when(p.confirmed_at));
+      body = h('div', { class: 'bt-note', style: 'margin-top:6px' }, 'Confirmed by ' + (p.confirmed_by || 'the brokerage') + '. ' + (p.open ? p.open + ' open posting' + (p.open === 1 ? '' : 's') + ' under them. ' : '') + 'Every load you post under them shows their name and MC.');
+      acts = [remove('Leave')];
+    } else if (p.status === 'pending') {
+      cls = 'warn'; pill = h('span', { class: 'bt-pill warn' }, '⏳ waiting for their code');
+      const noContact = !p.sent_at && !p.has_fmcsa_email && !p.on_loadboot;
+      body = noContact ? noContactBox(p) : h('div', null, [
+        h('div', { class: 'bt-note', style: 'margin-top:6px' }, (p.on_loadboot
+          ? (p.loadboot_name || p.name || 'They') + ' already has a LoadBoot account — its owner sees you under Agents & team and can approve with one click. We also emailed them a code and link' + (p.sent_to ? ' (' + p.sent_to + ')' : '') + '.'
+          : 'Authority active on FMCSA. We emailed ' + (p.sent_to || 'the address on their FMCSA record') + ' a 6-digit code and a confirm link' + (p.sent_at ? ' on ' + new Date(p.sent_at).toLocaleString() : '') + (p.contact_source === 'domain' ? ' — including the company-domain address you gave us' : '') + '. Nothing you post under them can be booked until they decide.')),
+        p.code_live || p.sent_at ? codeBox(p) : null,
+      ]);
+      acts = [p.sent_at ? resend : null, remove('Remove')].filter(Boolean);
+    } else if (p.status === 'screening') {
+      cls = 'muted'; pill = h('span', { class: 'bt-pill info' }, [h('span', { class: 'bt-spin' }), ' checking FMCSA…']);
+      body = h('div', { class: 'bt-note', style: 'margin-top:6px' }, 'Reading their authority live — usually under a minute. The confirmation email goes out the moment it passes.');
+      acts = [remove('Remove')];
+    } else if (p.status === 'failed') {
+      cls = 'bad'; pill = h('span', { class: 'bt-pill bad' }, '✕ did not pass');
+      body = h('div', { class: 'bt-note', style: 'margin-top:6px' }, (p.screen_reason || 'FMCSA shows no active broker authority for this MC.') + ' Check the MC number with the brokerage.');
+      acts = [recheck, remove('Remove')];
+    } else if (p.status === 'needs_human') {
+      cls = 'warn'; pill = h('span', { class: 'bt-pill warn' }, 'FMCSA gave no clear answer');
+      body = h('div', { class: 'bt-note', style: 'margin-top:6px' }, (p.screen_reason || '') + ' Our team verifies the authority by hand — you will be notified.');
+      acts = [recheck, remove('Remove')];
+    } else if (p.status === 'declined') {
+      cls = 'bad'; pill = h('span', { class: 'bt-pill bad' }, '✕ said you are not their agent');
+      body = h('div', { class: 'bt-note', style: 'margin-top:6px' }, 'Declined ' + when(p.declined_at) + (p.note ? ' — “' + p.note + '”' : '') + '. If this is a mistake, contact hello@loadboot.com with your agent agreement.');
+    } else if (p.status === 'revoked') {
+      cls = 'muted'; pill = h('span', { class: 'bt-pill muted' }, 'access revoked ' + when(p.revoked_at));
+      body = h('div', { class: 'bt-note', style: 'margin-top:6px' }, (p.revoked_by === 'agent' ? 'You left this brokerage.' : 'The brokerage revoked your access.') + ' Open postings under them were cancelled.');
+      acts = [remove('Remove from list')];
+    }
+    return h('div', { class: 'bt-par ' + cls }, [
+      h('div', { class: 'h' }, [h('div', null, [h('div', { class: 'n' }, p.name || 'Brokerage'), h('div', { class: 'mc' }, 'MC-' + (p.mc || '?') + (p.on_loadboot ? ' · on LoadBoot' : ''))]), pill, h('div', { class: 'acts' }, acts)]),
+      body, note,
+    ]);
+  }
+
+  // add a brokerage
+  const mc = h('input', { class: 'bt-in', placeholder: 'Brokerage MC number', inputmode: 'numeric', style: 'flex:0 1 200px' });
+  const co = h('input', { class: 'bt-in', placeholder: 'Brokerage legal name', style: 'flex:1 1 220px' });
+  const em = h('input', { class: 'bt-in', placeholder: 'Their ops email on the company domain (optional)', type: 'email', style: 'flex:1 1 260px' });
+  const btn = h('button', { class: 'bt-btn' }, live.length ? '+ Add this brokerage →' : 'Check the brokerage →');
   btn.onclick = async () => {
     err.textContent = '';
     const d = digits(mc.value); if (!d) { err.textContent = 'Enter the brokerage’s MC number.'; return; }
     if (!co.value.trim()) { err.textContent = 'Enter the brokerage’s legal name.'; return; }
     btn.disabled = true; btn.innerHTML = '<span class="bt-spin"></span>&nbsp; Checking FMCSA…';
     try { await partnerAgentDeclare(d, co.value.trim(), em.value.trim() || null); await refresh(true); }
-    catch (e) { err.textContent = (e && e.message) || 'Could not save.'; btn.disabled = false; btn.textContent = 'Check the brokerage →'; }
+    catch (e) { err.textContent = (e && e.message) || 'Could not save.'; btn.disabled = false; btn.textContent = live.length ? '+ Add this brokerage →' : 'Check the brokerage →'; }
   };
-  const scr = st.screening;
-  let status = null;
-  if (ag && ag.confirmed_at) status = h('span', { class: 'bt-pill ok' }, '✓ ' + (ag.parent_legal_name || 'Your brokerage') + ' confirmed you on ' + new Date(ag.confirmed_at).toLocaleDateString());
-  else if (ag && ag.declined_at) status = h('span', { class: 'bt-pill bad' }, '✕ ' + (ag.parent_legal_name || 'The brokerage') + ' said you are not their agent — contact support with your agent agreement');
-  else if (ag && ag.sent_at && st.parent_on_loadboot) status = h('div', null, [h('span', { class: 'bt-pill warn' }, '⏳ Waiting for ' + (st.parent_org_name || ag.parent_legal_name || 'your brokerage') + ' to approve you'), h('div', { class: 'bt-note' }, 'Your brokerage already has a LoadBoot account — its owner sees you under Agents & team and approves with one click (we also emailed them). Fastest: the automated call below — ask whoever answers at the brokerage for the code.')]);
-  else if (ag && ag.sent_at) status = h('div', null, [h('span', { class: 'bt-pill warn' }, '⏳ Confirmation email sent to ' + (ag.contact_email || 'their FMCSA contact')), h('div', { class: 'bt-note' }, (ag.contact_source === 'fmcsa' ? 'That address comes from their FMCSA registration. ' : 'That is the address you gave us — our team double-checks it. ') + 'Posting unlocks the moment they click confirm. Faster: the automated call below — the brokerage hears a code and gives it to you.')]);
-  else if (scr && (scr.pending || scr.outcome === 'pending')) status = h('div', { class: 'bt-row' }, [h('span', { class: 'bt-spin' }), h('span', { class: 'bt-sub' }, 'Checking the brokerage on FMCSA…')]);
-  else if (scr && scr.outcome === 'fail') status = h('span', { class: 'bt-pill bad' }, '✕ ' + (scr.reason || ''));
-  else if (scr && scr.outcome === 'pass') status = h('span', { class: 'bt-pill info' }, st.parent_on_loadboot ? 'Brokerage authority active — asking ' + (st.parent_org_name || 'them') + ' to approve you…' : 'Brokerage authority active — sending them the confirmation…');
+  const canAdd = live.length < 10 && st.tier !== 'hold';
+  const confirmedN = live.filter((p) => p.status === 'confirmed').length;
   return h('div', { class: 'bt-card' }, [
-    h('h3', null, '1 · Post under your brokerage’s authority'),
-    h('div', { class: 'bt-sub' }, 'Agents post under the MC of the brokerage they work for. We screen that authority on FMCSA, then the brokerage confirms you — fastest is an automated call to their FMCSA-listed phone that reads a code they give you; or in their LoadBoot account if they have one, or one link to their FMCSA-listed email. Invited by your brokerage? Sign up with the invited email and you are confirmed instantly. Every load you post shows their name and MC, and the rate confirmation must be on their paper.'),
-    status ? h('div', { style: 'margin-top:12px' }, status) : null,
-    (ag && !ag.confirmed_at && scr && scr.outcome === 'pass') ? voiceOtpBlock(st, 'parent', refresh) : null,
-    (!ag || !ag.confirmed_at) ? h('div', null, [h('div', { class: 'bt-row' }, [mc, co]), h('div', { class: 'bt-row' }, [em, btn])]) : null,
+    h('h3', null, '1 · Post under your brokerage’s authority' + (live.length > 1 ? ' (' + live.length + ' brokerages)' : '')),
+    h('div', { class: 'bt-sub' }, 'Agents post under the MC of the brokerage they work for — one or several. We screen each authority live on FMCSA, then that brokerage confirms you: we email its FMCSA-listed address a 6-digit code and a link; they give you the code, you type it here. If the brokerage has a LoadBoot account, its owner approves you there instead. Every load shows their name and MC, and the rate confirmation must be on their paper.' + (confirmedN > 1 ? ' When you post, you pick which brokerage the load goes under.' : '')),
+    parents.length ? h('div', null, parents.map(row)) : null,
+    canAdd ? h('div', { style: 'margin-top:14px' }, [
+      live.length ? h('div', { class: 'bt-note', style: 'font-weight:800;color:#334155;margin-bottom:4px' }, 'Work with another brokerage too? Add it — each one confirms you separately.') : null,
+      h('div', { class: 'bt-row' }, [mc, co]),
+      h('div', { class: 'bt-row' }, [em, btn]),
+      h('div', { class: 'bt-note' }, 'The email is optional and only counts if it is on the same domain as the brokerage’s FMCSA-listed email — a Gmail typed here never confirms anything. Invited by a brokerage from Agents & team? Sign up with the invited email and you are confirmed the moment their MC passes.'),
+    ]) : null,
     err,
-    (!ag) ? h('div', { class: 'bt-note' }, ['Have your own broker MC? ', h('a', { href: '#', onClick: (ev) => { ev.preventDefault(); refresh(false, 'own'); } }, 'Screen it instead →')]) : null,
+    (!live.length) ? h('div', { class: 'bt-note' }, ['Have your own broker MC? ', h('a', { href: '#', onClick: (ev) => { ev.preventDefault(); refresh(false, 'own'); } }, 'Screen it instead →')]) : null,
   ]);
 }
 
@@ -352,11 +456,12 @@ export function mountBrokerTrust(host, opts = {}) {
         ? h('div', { class: 'bt-card' }, [h('h3', null, '1 · How do you post freight?'), h('div', { class: 'bt-sub' }, 'Both paths are screened live on FMCSA. Pick the one that matches you.'),
             h('div', { class: 'bt-choice' }, [
               h('button', { onClick: () => { mode = 'own'; paint(); } }, [h('div', { class: 't' }, '🏢 I hold my own broker MC'), h('div', { class: 'd' }, 'Licensed property broker with a BMC-84/85 on file. Screened in seconds.')]),
-              h('button', { onClick: () => { mode = 'agent'; paint(); } }, [h('div', { class: 't' }, '🤝 I’m an agent of a brokerage'), h('div', { class: 'd' }, 'You post under their authority. They confirm you with one click from their FMCSA-listed email.')]),
+              h('button', { onClick: () => { mode = 'agent'; paint(); } }, [h('div', { class: 't' }, '🤝 I’m an agent of a brokerage'), h('div', { class: 'd' }, 'You post under their authority — one or several brokerages. Each one confirms you with a 6-digit code we email to their FMCSA-listed address.')]),
             ])])
         : isAgent ? agentCard(st, refresh) : screenCard(st, refresh);
     if (st.tier !== 'unclaimed') idNotice = null;
     if (st.tier !== 'unclaimed' && st.tier !== 'agent_pending') otpNotice = null;
+    if (!(st.parents || []).length) parNotice = {};
     const identity = (st.tier === 'unclaimed' && !isAgent) ? identityCard(st, refresh) : null;
     mount(host, h('div', { class: 'bt-wrap' }, [hero, first, identity, (st.tier !== 'hold') ? agreementCard(st, refresh) : null, allowanceCard(st, opts.goPacket || (() => {}), opts.goPost || (() => {}))]));
   };
@@ -365,8 +470,8 @@ export function mountBrokerTrust(host, opts = {}) {
     try { const s = await partnerTrustStatus(); if (!alive) return; st = s; } catch (e) { if (!st) { mount(host, h('div', { class: 'bt-card' }, h('div', { class: 'bt-err' }, (e && e.message) || 'Could not load.'))); return; } }
     paint();
     try { opts.onStatus && opts.onStatus(st); } catch (_) {}
-    const pending = st && st.screening && (st.screening.pending || st.screening.outcome === 'pending');
-    const waiting = st && (st.tier === 'unclaimed' || st.tier === 'agent_pending');
+    const pending = st && ((st.screening && (st.screening.pending || st.screening.outcome === 'pending')) || (st.parents || []).some((p) => p.status === 'screening'));
+    const waiting = st && (st.tier === 'unclaimed' || st.tier === 'agent_pending' || (st.parents || []).some((p) => p.status === 'pending'));
     const want = pending ? 5000 : waiting ? 20000 : 0;
     if (timer && (!want || timerMs !== want)) { clearInterval(timer); timer = null; timerMs = 0; }
     if (want && !timer) { timer = setInterval(() => refresh(true), want); timerMs = want; }
