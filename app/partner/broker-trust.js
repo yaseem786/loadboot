@@ -32,68 +32,138 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': 
 const digits = (s) => String(s || '').replace(/[^0-9]/g, '');
 
 const CSS = `
-.bt-wrap{--bt-navy:#10223B;--bt-blue:#0883F7;--bt-orange:#FC5305;--bt-ok:#12a150;--bt-warn:#b45309;--bt-bad:#c62828;font-family:inherit}
-.bt-hero{position:relative;overflow:hidden;border-radius:20px;padding:22px 24px;color:#fff;
-  background:radial-gradient(520px 220px at 100% 0%,rgba(8,131,247,.35),transparent 60%),radial-gradient(420px 200px at 0% 100%,rgba(252,83,5,.18),transparent 55%),linear-gradient(135deg,#0a1526,#10223B 70%);
-  box-shadow:0 24px 50px -30px rgba(16,34,59,.6)}
-.bt-hero-k{font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd}
-.bt-hero-t{font-size:1.45rem;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:6px 0 4px}
-.bt-hero-s{color:#b6c3d6;font-size:.92rem;line-height:1.55;max-width:640px}
-.bt-ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.bt-wrap{--bt-navy:#10223B;--bt-blue:#0883F7;--bt-orange:#FC5305;--bt-ok:#12a150;--bt-warn:#b45309;--bt-bad:#c62828;--bt-ink:#0f1f38;--bt-mute:#64748b;--bt-line:#e6ebf3;font-family:inherit;display:flex;flex-direction:column;gap:14px}
+/* ---- hero: command strip ---- */
+.bt-hero{position:relative;overflow:hidden;border-radius:24px;padding:26px 28px 24px;color:#fff;isolation:isolate;
+  background:linear-gradient(135deg,#0a1526 0%,#10223B 55%,#0f2a4a 100%);
+  box-shadow:0 30px 70px -36px rgba(16,34,59,.75),inset 0 1px 0 rgba(255,255,255,.06)}
+.bt-hero::before{content:'';position:absolute;inset:-40% -20% auto auto;width:62%;height:160%;background:radial-gradient(closest-side,rgba(8,131,247,.42),transparent 70%);filter:blur(10px);z-index:-1;animation:btDrift 14s ease-in-out infinite alternate}
+.bt-hero::after{content:'';position:absolute;left:-15%;bottom:-70%;width:55%;height:140%;background:radial-gradient(closest-side,rgba(252,83,5,.22),transparent 70%);filter:blur(12px);z-index:-1;animation:btDrift 18s ease-in-out infinite alternate-reverse}
+@keyframes btDrift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-6%,4%,0)}}
+.bt-hero-top{display:flex;gap:22px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.bt-hero-k{font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8fc3ff;display:inline-flex;align-items:center;gap:8px}
+.bt-hero-k::before{content:'';width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.18)}
+.bt-hero-t{font-family:'Manrope',Inter,system-ui,sans-serif;font-size:clamp(1.35rem,2.2vw,1.7rem);font-weight:800;letter-spacing:-.025em;line-height:1.15;margin:8px 0 6px;color:#fff}
+.bt-hero-s{color:#b6c3d6;font-size:.93rem;line-height:1.6;max-width:600px}
+.bt-ring{--p:0;flex:none;width:112px;height:112px;border-radius:50%;display:grid;place-items:center;position:relative;
+  background:conic-gradient(#4EA6F9 calc(var(--p)*1%),rgba(255,255,255,.18) 0);transition:--p .6s ease}
+.bt-ring::before{content:'';position:absolute;inset:7px;border-radius:50%;background:#0f2038;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.bt-ring b{position:relative;font-family:'Manrope',Inter,sans-serif;font-size:1.35rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.bt-ring small{position:relative;display:block;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#93a7c4;margin-top:2px;text-align:center}
+.bt-ring.done{background:conic-gradient(#22c55e 100%,#22c55e 0)}
+/* ---- ladder: horizontal stepper ---- */
+.bt-ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px;position:relative}
 @media(max-width:820px){.bt-ladder{grid-template-columns:repeat(2,1fr)}}
-.bt-step{border-radius:14px;padding:12px 13px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);min-height:86px;position:relative;transition:transform .15s,background .15s}
-.bt-step.done{background:rgba(18,161,80,.16);border-color:rgba(74,222,128,.45)}
-.bt-step.now{background:rgba(8,131,247,.2);border-color:#4EA6F9;box-shadow:0 0 0 4px rgba(8,131,247,.15)}
-.bt-step.lock{opacity:.55}
-.bt-step-n{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;background:rgba(255,255,255,.12)}
-.bt-step.done .bt-step-n{background:#16a34a}
-.bt-step.now .bt-step-n{background:#0883F7}
-.bt-step-t{font-weight:800;font-size:.9rem;margin-top:8px}
-.bt-step-d{font-size:.76rem;color:#aab8cc;margin-top:2px;line-height:1.4}
-.bt-card{background:#fff;border:1px solid #e6ebf3;border-radius:18px;padding:18px 20px;margin-top:14px;box-shadow:0 1px 2px rgba(16,34,59,.04),0 12px 32px -24px rgba(16,34,59,.18)}
-.bt-card h3{margin:0 0 4px;font-size:1.02rem;font-weight:800;color:#0f1f38;letter-spacing:-.01em}
-.bt-sub{color:#64748b;font-size:.88rem;line-height:1.55}
-.bt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
-.bt-in{flex:1;min-width:200px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fbfcfe;padding:12px 14px;font-weight:700;font-size:1rem;color:#10223B;letter-spacing:.04em}
-.bt-in:focus{outline:none;border-color:#0883F7;background:#fff;box-shadow:0 0 0 4px rgba(8,131,247,.12)}
-.bt-btn{border:0;border-radius:12px;padding:12px 18px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(120deg,#0883F7,#0967d2);box-shadow:0 8px 20px -10px rgba(8,131,247,.65);transition:transform .12s,filter .12s}
-.bt-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
-.bt-btn:disabled{opacity:.55;transform:none;cursor:default}
-.bt-btn.ghost{background:#fff;color:#334155;border:1.5px solid #e2e8f0;box-shadow:none}
-.bt-btn.orange{background:linear-gradient(120deg,#FC5305,#e0480a);box-shadow:0 8px 20px -10px rgba(252,83,5,.6)}
-.bt-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-size:.76rem;font-weight:800}
+.bt-step{border-radius:16px;padding:14px 14px 13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);min-height:96px;position:relative;transition:transform .2s,background .2s,border-color .2s;backdrop-filter:blur(6px)}
+.bt-step:hover{transform:translateY(-2px);background:rgba(255,255,255,.08)}
+.bt-step.done{background:rgba(34,197,94,.12);border-color:rgba(74,222,128,.4)}
+.bt-step.now{background:rgba(8,131,247,.18);border-color:#4EA6F9;box-shadow:0 0 0 4px rgba(8,131,247,.14),0 18px 34px -24px rgba(8,131,247,.9)}
+.bt-step.now::after{content:'NEXT';position:absolute;top:12px;right:12px;font-size:.6rem;font-weight:800;letter-spacing:.14em;color:#dbeafe;background:rgba(8,131,247,.55);border-radius:999px;padding:3px 8px}
+.bt-step.lock{opacity:.5}
+.bt-step-n{width:26px;height:26px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:800;background:rgba(255,255,255,.12);font-family:'Manrope',Inter,sans-serif}
+.bt-step.done .bt-step-n{background:#16a34a;color:#fff}
+.bt-step.now .bt-step-n{background:#0883F7;color:#fff}
+.bt-step-t{font-weight:800;font-size:.9rem;margin-top:9px;letter-spacing:-.01em}
+.bt-step-d{font-size:.76rem;color:#aab8cc;margin-top:3px;line-height:1.45}
+/* ---- panels ---- */
+.bt-card{background:#fff;border:1px solid var(--bt-line);border-radius:20px;padding:20px 22px;margin:0;position:relative;box-shadow:0 1px 2px rgba(16,34,59,.04),0 18px 40px -30px rgba(16,34,59,.22);transition:box-shadow .2s,border-color .2s}
+.bt-card:hover{box-shadow:0 1px 2px rgba(16,34,59,.05),0 26px 48px -30px rgba(16,34,59,.3)}
+.bt-card[data-state=done]{border-color:#bbf7d0}
+.bt-card[data-state=now]{border-color:#93c5fd;box-shadow:0 0 0 4px rgba(8,131,247,.08),0 26px 48px -30px rgba(8,131,247,.35)}
+.bt-card[data-state=lock]{opacity:.72}
+.bt-card h3{margin:0 0 6px;font-size:1.04rem;font-weight:800;color:var(--bt-ink);letter-spacing:-.015em;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:'Manrope',Inter,system-ui,sans-serif}
+.bt-idx{flex:none;width:32px;height:32px;border-radius:10px;display:inline-grid;place-items:center;font-size:.78rem;font-weight:800;letter-spacing:.02em;color:#1d4ed8;background:#e8f1ff;font-family:'Manrope',Inter,sans-serif}
+.bt-card[data-state=done] .bt-idx{background:#dcfce7;color:#15803d}
+.bt-card[data-state=lock] .bt-idx{background:#f1f5f9;color:#94a3b8}
+.bt-state{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.bt-state.done{background:#e7f9ee;color:#12a150}.bt-state.now{background:#eff6ff;color:#1d4ed8}.bt-state.lock{background:#f1f5f9;color:#94a3b8}
+.bt-sub{color:var(--bt-mute);font-size:.9rem;line-height:1.6}
+.bt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.bt-in{flex:1;min-width:200px;border-radius:14px;border:1.5px solid #dfe6ef;background:#fbfcfe;padding:13px 16px;font-weight:700;font-size:1.02rem;color:var(--bt-navy);letter-spacing:.06em;font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s,background .15s}
+.bt-in::placeholder{font-weight:500;letter-spacing:0;color:#94a3b8}
+.bt-in:focus{outline:none;border-color:#0883F7;background:#fff;box-shadow:0 0 0 4px rgba(8,131,247,.14)}
+.bt-btn{border:0;border-radius:14px;padding:13px 20px;font-weight:800;font-size:.95rem;color:#fff;cursor:pointer;background:linear-gradient(120deg,#0883F7,#0967d2);box-shadow:0 10px 24px -12px rgba(8,131,247,.8),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .15s,filter .15s,box-shadow .15s;display:inline-flex;align-items:center;gap:8px;font-family:inherit}
+.bt-btn:hover{transform:translateY(-1px);filter:brightness(1.06);box-shadow:0 14px 28px -12px rgba(8,131,247,.9)}
+.bt-btn:active{transform:translateY(0)}
+.bt-btn:disabled{opacity:.55;transform:none;cursor:default;box-shadow:none}
+.bt-btn.ghost{background:#fff;color:#1e293b;border:1.5px solid #dfe6ef;box-shadow:none}
+.bt-btn.ghost:hover{border-color:#93c5fd;background:#f8fbff}
+.bt-btn.orange{background:linear-gradient(120deg,#FC5305,#e0480a);box-shadow:0 10px 24px -12px rgba(252,83,5,.75),inset 0 1px 0 rgba(255,255,255,.2)}
+.bt-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:.78rem;font-weight:800}
 .bt-pill.ok{background:#e7f9ee;color:#12a150}.bt-pill.warn{background:#fff4e6;color:#b45309}.bt-pill.bad{background:#fdecec;color:#c62828}.bt-pill.info{background:#eff6ff;color:#1d4ed8}.bt-pill.muted{background:#f1f5f9;color:#475569}
 .bt-spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(8,131,247,.25);border-top-color:#0883F7;animation:btspin .8s linear infinite;display:inline-block}
 @keyframes btspin{to{transform:rotate(360deg)}}
-.bt-fact{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin-top:12px}
+.bt-fact{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
 @media(max-width:640px){.bt-fact{grid-template-columns:1fr}}
-.bt-fact div{font-size:.84rem;color:#334155}.bt-fact b{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#7c8aa0;font-weight:800}
-.bt-meter{height:8px;border-radius:99px;background:#eef2f7;overflow:hidden;margin-top:8px}
-.bt-meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#4EA6F9)}
-.bt-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.bt-fact div{font-size:.9rem;color:#1e293b;font-weight:600;background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:10px 12px}
+.bt-fact b{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.1em;color:#7c8aa0;font-weight:800;margin-bottom:4px}
+.bt-meter{height:10px;border-radius:99px;background:#eef2f7;overflow:hidden;margin-top:12px;position:relative}
+.bt-meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0883F7,#4EA6F9);transition:width .6s cubic-bezier(.2,.8,.2,1);position:relative;overflow:hidden}
+.bt-meter i::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);animation:btShine 2.4s ease-in-out infinite}
+@keyframes btShine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.bt-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 @media(max-width:640px){.bt-choice{grid-template-columns:1fr}}
-.bt-choice button{text-align:left;border:1.5px solid #e2e8f0;background:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
-.bt-choice button:hover{border-color:#93c5fd}.bt-choice button.sel{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
-.bt-choice .t{font-weight:800;color:#10223B}.bt-choice .d{font-size:.84rem;color:#64748b;margin-top:3px;line-height:1.45}
+.bt-choice button{text-align:left;border:1.5px solid #dfe6ef;background:#fff;border-radius:16px;padding:16px 18px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;font-family:inherit}
+.bt-choice button:hover{border-color:#93c5fd;transform:translateY(-1px);box-shadow:0 16px 30px -24px rgba(8,131,247,.6)}.bt-choice button.sel{border-color:#0883F7;box-shadow:0 0 0 3px rgba(8,131,247,.14)}
+.bt-choice .t{font-weight:800;color:var(--bt-navy);font-size:.98rem}.bt-choice .d{font-size:.85rem;color:var(--bt-mute);margin-top:4px;line-height:1.5}
 .bt-err{color:#c62828;font-weight:700;font-size:.86rem;margin-top:8px;min-height:1em}
-.bt-note{margin-top:10px;font-size:.8rem;color:#7c8aa0;line-height:1.5}
-.bt-agr{max-height:220px;overflow:auto;border:1px solid #e6ebf3;border-radius:12px;padding:12px 14px;background:#fbfcfe;font-size:.84rem;line-height:1.55;color:#334155;white-space:pre-wrap;margin-top:10px}
-.bt-seg{display:inline-flex;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff}
-.bt-seg button{border:0;background:transparent;padding:10px 14px;font-weight:800;font-size:.82rem;color:#64748b;cursor:pointer}
-.bt-seg button.on{background:#10223B;color:#fff}
-.bt-idbox{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:#fbfcfe;border:1px dashed #cbd5e1;margin-top:12px}
-.bt-par{border:1px solid #e6ebf3;border-radius:14px;padding:12px 14px;margin-top:12px;background:#fff}
-.bt-par.ok{border-color:#bbf7d0;background:#f6fef9}.bt-par.warn{border-color:#fcd34d;background:#fffbeb}.bt-par.bad{border-color:#fecaca;background:#fff5f5}.bt-par.muted{opacity:.75}
-.bt-par .h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bt-par .n{font-weight:800;color:#10223B;font-size:.95rem}.bt-par .mc{font-size:.8rem;color:#64748b;font-weight:700}
+.bt-note{margin-top:12px;font-size:.81rem;color:#7c8aa0;line-height:1.55}
+.bt-note a{color:#0883F7;font-weight:700;text-decoration:none}.bt-note a:hover{text-decoration:underline}
+.bt-agr{max-height:220px;overflow:auto;border:1px solid var(--bt-line);border-radius:14px;padding:14px 16px;background:#fbfcfe;font-size:.84rem;line-height:1.6;color:#334155;white-space:pre-wrap;margin-top:12px;scrollbar-width:thin}
+.bt-seg{display:inline-flex;border:1.5px solid #dfe6ef;border-radius:14px;overflow:hidden;background:#fff;padding:3px;gap:2px}
+.bt-seg button{border:0;background:transparent;padding:9px 14px;font-weight:800;font-size:.82rem;color:#64748b;cursor:pointer;border-radius:10px;font-family:inherit;transition:background .15s,color .15s}
+.bt-seg button.on{background:var(--bt-navy);color:#fff}
+.bt-idbox{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;background:#fbfcfe;border:1px dashed #cbd5e1;margin-top:12px}
+.bt-par{border:1px solid var(--bt-line);border-radius:16px;padding:14px 16px;margin-top:12px;background:#fff;transition:box-shadow .2s}
+.bt-par:hover{box-shadow:0 14px 30px -26px rgba(16,34,59,.35)}
+.bt-par.ok{border-color:#bbf7d0;background:linear-gradient(180deg,#f6fef9,#fff)}.bt-par.warn{border-color:#fcd34d;background:linear-gradient(180deg,#fffbeb,#fff)}.bt-par.bad{border-color:#fecaca;background:#fff5f5}.bt-par.muted{opacity:.75}
+.bt-par .h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bt-par .n{font-weight:800;color:var(--bt-navy);font-size:.98rem}.bt-par .mc{font-size:.8rem;color:var(--bt-mute);font-weight:700;font-variant-numeric:tabular-nums}
 .bt-par .acts{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
-.bt-btn.sm{padding:7px 11px;font-size:.78rem}.bt-btn.danger{color:#c62828;border-color:#fecaca;background:#fff}
-.bt-code{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe}
-.bt-code .m{font-weight:800;color:#1e3a8a;font-size:.85rem;flex:1 1 260px}
-.bt-idbox .m{font-weight:800;color:#10223B;letter-spacing:.02em}
+.bt-btn.sm{padding:8px 12px;font-size:.78rem;border-radius:11px}.bt-btn.danger{color:#c62828;border-color:#fecaca;background:#fff}
+.bt-code{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border-radius:14px;background:#eff6ff;border:1px solid #bfdbfe}
+.bt-code .m{font-weight:800;color:#1e3a8a;font-size:.86rem;flex:1 1 260px}
+.bt-code .bt-in{letter-spacing:.35em;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.15rem;max-width:200px;min-width:160px;flex:0 1 200px}
+.bt-idbox .m{font-weight:800;color:var(--bt-navy);letter-spacing:.02em}
 .bt-topbadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:.74rem;font-weight:800;border:1px solid transparent}
+.bt-more{margin-top:8px}.bt-more summary{cursor:pointer;font-size:.8rem;font-weight:800;color:#0883F7;list-style:none;display:inline-flex;align-items:center;gap:6px}.bt-more summary::-webkit-details-marker{display:none}.bt-more summary::before{content:'';width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s;margin-right:2px}.bt-more[open] summary::before{transform:rotate(45deg)}.bt-more .bt-sub{margin-top:8px;font-size:.85rem}
+.bt-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.bt-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:.8rem;font-weight:700;color:#1e293b;background:#f1f5f9;border:1px solid #e6ebf3}.bt-chip::before{content:'';width:6px;height:6px;border-radius:50%;background:#0883F7}
+.bt-skel{height:12px;border-radius:6px;background:linear-gradient(90deg,#eef2f7 25%,#f8fafc 50%,#eef2f7 75%);background-size:200% 100%;animation:btSkel 1.2s linear infinite;margin-top:10px}
+@keyframes btSkel{to{background-position:-200% 0}}
+@media(prefers-reduced-motion:reduce){.bt-hero::before,.bt-hero::after,.bt-meter i::after,.bt-skel{animation:none}.bt-step,.bt-btn,.bt-card{transition:none}}
 `;
 let cssDone = false;
 export function ensureCss() { if (cssDone) return; cssDone = true; const s = document.createElement('style'); s.id = 'bt-css'; s.textContent = CSS; document.head.appendChild(s); }
+
+// Premium panel chrome (5 Sep 2026): "N · Title" headers become an index chip + title + state pill,
+// and the panel gets data-state=done|now|lock so the CSS can light the active step. Shared with shipper-trust.js.
+export function decorateCards(root, states) {
+  root.querySelectorAll('.bt-card > h3').forEach((h3) => {
+    if (h3.dataset.deco) return;
+    const m = /^\s*(\d+[a-z]?)\s*[·•]\s*(.+)$/.exec(h3.textContent || '');
+    if (!m) return;
+    const idx = m[1], title = m[2];
+    const key = 's' + idx.replace(/[a-z]/, '');
+    const state = states ? states[key] : null;
+    h3.textContent = '';
+    h3.appendChild(h('span', { class: 'bt-idx' }, idx.length > 2 ? idx : ('0' + idx).slice(-2)));
+    h3.appendChild(h('span', null, title));
+    if (state) { h3.appendChild(h('span', { class: 'bt-state ' + state }, state === 'done' ? '✓ Done' : state === 'now' ? 'In progress' : 'Up next')); h3.closest('.bt-card').dataset.state = state; }
+    h3.dataset.deco = '1';
+  });
+}
+
+// Progress ring for the hero: n of total steps done.
+export function progressRing(done, total, label) {
+  const pct = Math.round(done / total * 100);
+  const r = h('div', { class: 'bt-ring' + (done >= total ? ' done' : ''), style: '--p:' + pct }, [h('b', null, done >= total ? '✓' : (done + '/' + total)), h('small', null, label || 'steps done')]);
+  return r;
+}
+
+// Short line up front, the long explanation folded behind "Why this works" — the panel reads as UI, not prose.
+function subMore(short, long) {
+  return h('div', null, [h('div', { class: 'bt-sub' }, short), long ? h('details', { class: 'bt-more' }, [h('summary', null, 'Why this works'), h('div', { class: 'bt-sub' }, long)]) : null]);
+}
+function chips(items) { return h('div', { class: 'bt-chips' }, items.map((t) => h('span', { class: 'bt-chip' }, t))); }
 
 const TIER_LABEL = {
   new: ['muted', 'Not screened yet'],
@@ -133,10 +203,10 @@ function ladder(st) {
   const step = (n, cls, t, d) => h('div', { class: 'bt-step ' + cls }, [h('span', { class: 'bt-step-n' }, cls === 'done' ? '✓' : String(n)), h('div', { class: 'bt-step-t' }, t), h('div', { class: 'bt-step-d' }, d)]);
   const lim = st && st.posting_limit;
   return h('div', { class: 'bt-ladder' }, [
-    step(1, s.s1, 'FMCSA screen + identity', st && st.agent ? 'Each brokerage’s authority, checked live on FMCSA — then they hand you a 6-digit code from the email we send them.' : 'Your broker authority, checked live on FMCSA, then a code by automated call to your FMCSA-listed phone (or one click from the FMCSA-listed email). No uploads, no waiting.'),
-    step(2, s.s2, 'One-click agreement', 'The Master Broker Agreement — rate card, detention, TONU terms carriers see.'),
+    step(1, s.s1, 'FMCSA screen + identity', st && st.agent ? 'Each brokerage screened live on FMCSA, then confirmed with a 6-digit code.' : 'Authority read live from FMCSA, identity confirmed via the FMCSA-listed contact.'),
+    step(2, s.s2, 'One-click agreement', 'Rate card, detention and TONU terms carriers see.'),
     step(3, s.s3, 'Post your first loads', (lim ? 'Up to ' + lim + ' open postings' : 'Unlimited postings') + ' · carriers request, you approve.'),
-    step(4, s.s4, 'Verified brokerage', 'Packet verified → unlimited postings, instant booking, payables inside LoadBoot.'),
+    step(4, s.s4, 'Verified brokerage', 'Unlimited postings, instant booking, payables inside.'),
   ]);
 }
 
@@ -178,7 +248,7 @@ function screenCard(st, refresh) {
     : h('span', { class: 'bt-pill warn' }, '⏳ ' + (scr.reason || 'Our team is verifying this by hand'));
   return h('div', { class: 'bt-card' }, [
     h('h3', null, '1 · Screen your broker authority'),
-    h('div', { class: 'bt-sub' }, 'We read your authority straight from FMCSA — Licensing & Insurance, with the SAFER snapshot as backup. FMCSA only keeps broker authority active while a $75,000 BMC-84/85 bond is on file, so this one check covers both. Enter your MC or your USDOT — nothing to upload, nothing to photocopy.'),
+    subMore('Enter your MC or USDOT. Authority and bond are read live from FMCSA — nothing to upload.', 'We read your authority straight from FMCSA Licensing & Insurance, with the SAFER snapshot as backup. FMCSA only keeps broker authority active while a $75,000 BMC-84/85 bond is on file, so this one check covers both.'),
     status ? h('div', { style: 'margin-top:12px' }, status) : null,
     facts,
     (!scr || scr.outcome !== 'pass') ? h('div', { class: 'bt-row' }, [h('div', { class: 'bt-seg' }, [segMc, segDot]), mc, btn]) : null,
@@ -248,7 +318,7 @@ function identityCard(st, refresh) {
   const help = h('a', { href: '#', onClick: async (ev) => { ev.preventDefault(); try { await partnerIdentityRequestCall(null, 'no FMCSA phone/email usable'); idNotice = { ok: true, text: 'Logged — our team will reach out.' }; } catch (e) { idNotice = { ok: false, text: (e && e.message) || 'Could not log the request.' }; } await refresh(true); } }, 'ask our team to help →');
   return h('div', { class: 'bt-card', style: 'border-left:4px solid #b45309' }, [
     h('h3', null, '1b · Confirm it’s really your brokerage'),
-    h('div', { class: 'bt-sub' }, 'Your broker authority is active on FMCSA — now we make sure this account belongs to that brokerage, the same check the big load boards run. Freight fraud starts with someone typing a real MC into a signup form; this closes that door.'),
+    subMore('Authority confirmed. One click from the FMCSA-listed contact proves this account is really yours.', 'The same check the big load boards run: freight fraud starts with someone typing a real MC into a signup form, and confirming through the contact FMCSA lists closes that door.'),
     h('div', { class: 'bt-note', style: 'margin-top:10px;font-weight:800;color:#334155' }, 'Pick whichever is faster — both are automatic:'),
     voiceOtpBlock(st, 'identity', refresh),
     hasMail
@@ -380,7 +450,7 @@ function agentCard(st, refresh) {
   const confirmedN = live.filter((p) => p.status === 'confirmed').length;
   return h('div', { class: 'bt-card' }, [
     h('h3', null, '1 · Post under your brokerage’s authority' + (live.length > 1 ? ' (' + live.length + ' brokerages)' : '')),
-    h('div', { class: 'bt-sub' }, 'Agents post under the MC of the brokerage they work for — one or several. We screen each authority live on FMCSA, then that brokerage confirms you: we email its FMCSA-listed address a 6-digit code and a link; they give you the code, you type it here. If the brokerage has a LoadBoot account, its owner approves you there instead. Every load shows their name and MC, and the rate confirmation must be on their paper.' + (confirmedN > 1 ? ' When you post, you pick which brokerage the load goes under.' : '')),
+    subMore('Post under one or several brokerages. Each is screened live on FMCSA and confirms you with a 6-digit code.' + (confirmedN > 1 ? ' When you post, you pick which brokerage the load goes under.' : ''), 'We email the brokerage’s FMCSA-listed address a code and a link; they give you the code, you type it here. If the brokerage has a LoadBoot account, its owner approves you there instead. Every load shows their name and MC, and the rate confirmation must be on their paper.'),
     parents.length ? h('div', null, parents.map(row)) : null,
     canAdd ? h('div', { style: 'margin-top:14px' }, [
       live.length ? h('div', { class: 'bt-note', style: 'font-weight:800;color:#334155;margin-bottom:4px' }, 'Work with another brokerage too? Add it — each one confirms you separately.') : null,
@@ -405,7 +475,8 @@ function agreementCard(st, refresh) {
     btn.onclick = async () => { btn.disabled = true; btn.textContent = 'Recording…'; try { await acceptAgreement('broker_carrier'); await refresh(true); } catch (e) { err.textContent = (e && e.message) || 'Could not record.'; btn.disabled = false; btn.textContent = 'I agree — accept v' + a.version; } };
     mount(host, [
       h('h3', null, '2 · Master Broker Agreement'),
-      h('div', { class: 'bt-sub' }, 'One master agreement covers every load you post — the printed rate card (detention, layover, TONU, lumper), request-to-book, GPS proof and the payables procedure. Carriers see these terms on every posting, which is why they book without a phone call.'),
+      subMore('One agreement, every load — rate card, request-to-book, GPS proof, payables.', 'The printed rate card (detention, layover, TONU, lumper), request-to-book, GPS proof and the payables procedure. Carriers see these terms on every posting, which is why they book without a phone call.'),
+      chips(['Rate card printed', 'Request-to-book', 'GPS proof', 'One-receipt payables']),
       accepted ? h('div', { style: 'margin-top:12px' }, h('span', { class: 'bt-pill ok' }, '✓ Accepted · ' + (a.title || 'Master Broker Agreement') + ' v' + a.version))
         : h('div', null, [h('div', { class: 'bt-agr' }, a.body_md || ''), h('div', { class: 'bt-row' }, [btn]), err]),
     ]);
@@ -421,14 +492,14 @@ function allowanceCard(st, goPacket, goPost) {
   return h('div', { class: 'bt-card' }, [
     h('h3', null, st.can_post ? '3 · You can post now' : '3 · Posting'),
     h('div', { class: 'bt-sub' }, st.can_post
-      ? (lim ? 'Post up to ' + lim + ' open loads' + (st.first_delivered ? ' until your packet is verified.' : ' until your first load delivers, then 10.') + ' Each posting is reviewed by LoadBoot dispatch before it goes live, and carriers book through request-to-book — you approve within 30 minutes.' : 'Unlimited postings. Carriers can book instantly.')
+      ? (lim ? 'Up to ' + lim + ' open loads' + (st.first_delivered ? ' until your packet is verified.' : ' until your first load delivers, then 10.') + ' Carriers request, you approve.' : 'Unlimited postings. Carriers can book instantly.')
       : (st.reason || 'Finish the steps above to unlock posting.')),
     lim ? h('div', null, [h('div', { class: 'bt-meter' }, h('i', { style: 'width:' + pct + '%' })), h('div', { class: 'bt-note' }, act + ' of ' + lim + ' open postings in use')]) : null,
     h('div', { class: 'bt-row' }, [
       st.can_post ? h('button', { class: 'bt-btn', onClick: goPost }, 'Post a load →') : null,
       h('button', { class: 'bt-btn ghost', onClick: goPacket }, (st.tier === 'verified' ? 'View verified packet' : 'Finish verification packet (' + done + '/' + tot + ')')),
     ]),
-    st.tier !== 'verified' ? h('div', { class: 'bt-note' }, '4 · Verification packet — only three things left for you: W-9, bank instructions for payables, and a claims contact. Your authority, bond and BOC-3 were filled in from the FMCSA screen, and the agreement from your click. It lifts the limit, turns on instant booking for carriers and moves your payables inside LoadBoot; nothing in it is needed to post your first loads.') : null,
+    st.tier !== 'verified' ? h('div', null, [h('div', { class: 'bt-note', style: 'margin-top:14px;font-weight:800;color:#334155;letter-spacing:.06em;text-transform:uppercase;font-size:.68rem' }, 'Step 4 · lifts the limit'), chips(['W-9 — sign online', 'Bank instructions', 'Claims contact']), h('div', { class: 'bt-note' }, 'Authority, bond and BOC-3 already filled from the FMCSA screen. Nothing here is needed to post your first loads.')]) : null,
   ]);
 }
 
@@ -441,19 +512,25 @@ export function mountBrokerTrust(host, opts = {}) {
   let timer = null; let timerMs = 0; let st = null; let alive = true;
   const stop = () => { alive = false; if (timer) clearInterval(timer); };
   const paint = () => {
-    if (!st) { mount(host, h('div', { class: 'bt-wrap' }, h('div', { class: 'bt-card' }, h('div', { class: 'bt-sub' }, 'Loading your status…')))); return; }
+    if (!st) { mount(host, h('div', { class: 'bt-wrap' }, h('div', { class: 'bt-card' }, [h('div', { class: 'bt-skel', style: 'width:40%' }), h('div', { class: 'bt-skel', style: 'width:90%' }), h('div', { class: 'bt-skel', style: 'width:70%' })]))); return; }
     const isAgent = st.agent ? true : mode === 'agent';
     const [cls, label] = TIER_LABEL[st.tier] || TIER_LABEL.new;
+    const sst = stepState(st); const nDone = ['s1', 's2', 's3', 's4'].filter((k) => sst[k] === 'done').length;
     const hero = h('div', { class: 'bt-hero' }, [
-      h('div', { class: 'bt-hero-k' }, 'Broker onboarding · ' + label),
-      h('div', { class: 'bt-hero-t' }, st.tier === 'verified' ? 'You’re fully verified.' : st.can_post ? 'You’re cleared to post.' : st.tier === 'unclaimed' ? 'Authority confirmed — one click left.' : 'Post your first load in minutes — no documents to start.'),
-      h('div', { class: 'bt-hero-s' }, st.tier === 'verified' ? 'Unlimited postings, instant booking for carriers, payables inside LoadBoot.' : 'Your authority is read live from FMCSA instead of a PDF you upload. Documents come later, only where they matter — first booking and first payment.'),
+      h('div', { class: 'bt-hero-top' }, [
+        h('div', { style: 'flex:1;min-width:260px' }, [
+          h('div', { class: 'bt-hero-k' }, 'Broker onboarding · ' + label),
+          h('div', { class: 'bt-hero-t' }, st.tier === 'verified' ? 'You’re fully verified.' : st.can_post ? 'You’re cleared to post.' : st.tier === 'unclaimed' ? 'Authority confirmed — one click left.' : 'Post your first load in minutes — no documents to start.'),
+          h('div', { class: 'bt-hero-s' }, st.tier === 'verified' ? 'Unlimited postings, instant booking for carriers, payables inside LoadBoot.' : 'Authority read live from FMCSA — no PDFs. Documents only where they matter: first booking, first payment.'),
+        ]),
+        progressRing(nDone, 4, st.tier === 'verified' ? 'verified' : 'steps done'),
+      ]),
       ladder(st),
     ]);
     const first = st.tier === 'hold'
       ? h('div', { class: 'bt-card', style: 'border-left:4px solid #c62828' }, [h('h3', null, 'Posting is on hold'), h('div', { class: 'bt-sub' }, st.hold_reason || 'Contact support.')])
       : (!st.screening && !st.agent && !mode)
-        ? h('div', { class: 'bt-card' }, [h('h3', null, '1 · How do you post freight?'), h('div', { class: 'bt-sub' }, 'Both paths are screened live on FMCSA. Pick the one that matches you.'),
+        ? h('div', { class: 'bt-card' }, [h('h3', null, '1 · How do you post freight?'), h('div', { class: 'bt-sub' }, 'Pick the one that matches you.'),
             h('div', { class: 'bt-choice' }, [
               h('button', { onClick: () => { mode = 'own'; paint(); } }, [h('div', { class: 't' }, '🏢 I hold my own broker MC'), h('div', { class: 'd' }, 'Licensed property broker with a BMC-84/85 on file. Screened in seconds.')]),
               h('button', { onClick: () => { mode = 'agent'; paint(); } }, [h('div', { class: 't' }, '🤝 I’m an agent of a brokerage'), h('div', { class: 'd' }, 'You post under their authority — one or several brokerages. Each one confirms you with a 6-digit code we email to their FMCSA-listed address.')]),
@@ -464,6 +541,8 @@ export function mountBrokerTrust(host, opts = {}) {
     if (!(st.parents || []).length) parNotice = {};
     const identity = (st.tier === 'unclaimed' && !isAgent) ? identityCard(st, refresh) : null;
     mount(host, h('div', { class: 'bt-wrap' }, [hero, first, identity, (st.tier !== 'hold') ? agreementCard(st, refresh) : null, allowanceCard(st, opts.goPacket || (() => {}), opts.goPost || (() => {}))]));
+    const sstUi = Object.assign({}, sst, { s3: sst.s3 === 'lock' && st.posting_limit && (st.active_postings || 0) >= st.posting_limit ? 'now' : sst.s3 });
+    decorateCards(host, sstUi); const mo = new MutationObserver(() => decorateCards(host, sstUi)); mo.observe(host, { childList: true, subtree: true }); setTimeout(() => mo.disconnect(), 8000);
   };
   async function refresh(force, newMode) {
     if (newMode) { mode = newMode; paint(); return; }

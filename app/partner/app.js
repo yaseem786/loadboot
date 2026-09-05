@@ -1743,7 +1743,7 @@ function bookRequestsCard() {
 async function brokerDash(user, ov) {
   // bl_bp_0312: FMCSA-screened brokers post before the packet is verified.
   let __trustCanPost = false; let __trustSt = null;  // bl_bp_0318: status kept for the brokerage picker on the post form
-  if (ov.kind === 'broker') { try { const t9 = await partnerTrustStatus(); __trustSt = t9; if (!ov.onboarded) __trustCanPost = !!(t9 && t9.can_post); } catch (_) {} }
+  if (ov.kind === 'broker') { try { const t9 = await partnerTrustStatus(); __trustSt = t9; try { window.__lbTrustSt = t9; } catch (_) {} if (!ov.onboarded) __trustCanPost = !!(t9 && t9.can_post); } catch (_) {} }
   try { window.__lbKindLabel = (ov.kind === 'shipper') ? 'Shipper' : 'Broker'; } catch (_) {}
   const kpis = h('div', { class: 'cp-kpis' }, [
     kpiCard('Loads submitted', ov.loads_submitted, 'all time', 'blue'),
@@ -4180,6 +4180,8 @@ function packetDocRow(it, onAction) {
     pending:   { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Required', '#fef3c7', '#b45309'], rs: 'Required — not on file yet' },
   }[st] || { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: [st, '#f1f5f9', '#64748b'], rs: '' };
   if (st === 'pending' && String(it.tag || '').toLowerCase() === 'optional') { V.di = '–'; V.dibg = '#f1f5f9'; V.dic = '#64748b'; V.pill = ['Optional', '#f1f5f9', '#64748b']; V.rs = 'Recommended'; }
+  // bl_bp_0319: conditional items (shipper credit application, payment terms, hazmat) gate the first BOOKING, not the quote — say so instead of 'Required'.
+  if (st === 'pending' && String(it.tag || '').toLowerCase() === 'conditional') { V.di = '○'; V.dibg = '#eff6ff'; V.dic = '#1d4ed8'; V.pill = ['Before first booking', '#dbeafe', '#1d4ed8']; V.rs = 'Asked once, before your first booking'; }
   // bl_bp_0316: authority, bond and BOC-3 are read live from FMCSA on the dashboard screen (bl_bp_0315) — nothing to upload.
   if (it.auto && (st === 'pending' || st === 'rejected')) {
     V.di = '⟳'; V.dibg = '#eff6ff'; V.dic = '#1d4ed8'; V.pill = ['Auto', '#dbeafe', '#1d4ed8'];
@@ -4220,7 +4222,7 @@ function brokerOnboardingWizard() {
     const byTag = (t) => items.filter((it) => String(it.tag || '').toLowerCase() === t);
     const legal = byTag('legal');
     const docs = items.filter((it) => ['required', 'conditional'].indexOf(String(it.tag || '').toLowerCase()) >= 0);
-    const STEPS = ['Company', 'Authority & legal', 'Documents', 'Review & submit'];
+    const STEPS = pk.kind === 'shipper' ? ['Company', 'Authority & legal', 'Before your first booking', 'Review'] : ['Company', 'Authority & legal', 'Documents', 'Review & submit'];  // bl_bp_0319
     let step = 0;
     // resume where work is left: company done? -> legal pending? -> docs pending? -> review
     const done = (it) => ['submitted', 'verified'].indexOf(String(it.status || '')) >= 0;
@@ -4244,12 +4246,14 @@ function brokerOnboardingWizard() {
       const kids = [];
       if (step === 0) {
         const co = h('input', { class: 'cp-in', placeholder: 'Legal company name', value: prof.company || '' });
-        const mc = h('input', { class: 'cp-in', placeholder: 'MC number', value: prof.mc || '' });
+        // bl_bp_0322: brokers already screened their MC live on FMCSA — prefill it from the trust status.
+        const scrMc = (isBroker && window.__lbTrustSt && window.__lbTrustSt.screening && window.__lbTrustSt.screening.outcome === 'pass') ? (window.__lbTrustSt.screening.mc || '') : '';
+        const mc = h('input', { class: 'cp-in', placeholder: 'MC number', value: prof.mc || scrMc || '' });
         const ph = h('input', { class: 'cp-in', placeholder: 'Phone', value: prof.phone || '' });
         const cn = h('input', { class: 'cp-in', placeholder: 'Contact name', value: prof.contact_name || '' });
         const msg0 = h('div', { class: 'cp-err' });
         kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Who are we working with? This appears on rate confirmations and invoices.'));
-        kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700' }, 'Company *'), co, h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'MC number (optional here — verified with your authority letter in Documents)'), mc, h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'Contact name *'), cn, h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'Phone *'), ph, msg0);
+        kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700' }, 'Company *'), co); if (!isShipper) kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, (isBroker ? (scrMc ? 'MC number (screened live on FMCSA — prefilled)' : 'MC number (optional here — screened live on FMCSA from your dashboard)') : 'MC number (optional)')), mc); kids.push( h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'Contact name *'), cn, h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, 'Phone *'), ph, msg0);
         kids.push(h('button', { class: 'cp-btn', style: 'margin-top:12px', onClick: async (ev) => {
           if (!co.value.trim() || !ph.value.trim() || !cn.value.trim()) { msg0.textContent = 'Company, contact name and phone are required.'; return; }
 
@@ -4260,6 +4264,8 @@ function brokerOnboardingWizard() {
       } else if (step === 1) {
         kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, isBroker
           ? 'Your legal standing — read live from FMCSA. Authority, the $75,000 BMC-84/85 bond and the BOC-3 are confirmed from the federal record the moment you run the screen on your dashboard; there is nothing to upload here.'
+          : isShipper
+          ? 'No operating authority on your side — that is the carrier\u2019s and broker\u2019s job. Your business is confirmed from your company email domain (see the dashboard); every shipment moves under a licensed brokerage whose authority is read live from FMCSA.'  // bl_bp_0319
           : 'Your legal standing — FMCSA broker authority and the $75,000 bond protect every carrier who hauls for you.'));
         if (isBroker && legal.some((it) => it.auto && it.status !== 'verified' && it.status !== 'waived')) {
           kids.push(h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:10px 14px;margin-bottom:8px' }, [
@@ -4287,6 +4293,7 @@ function brokerOnboardingWizard() {
         items.forEach((it) => kids.push(itemRow(it)));
         const reqd = items.filter((x) => String(x.tag || '').toLowerCase() !== 'optional');
         const missing = reqd.filter((x) => (x.status === 'pending' || x.status === 'rejected') && !x.auto);
+        const condLeft = isShipper ? missing.filter((x) => String(x.tag || '').toLowerCase() === 'conditional').length : 0;  // bl_bp_0319
         const autoLeft = reqd.filter((x) => x.auto && (x.status === 'pending' || x.status === 'rejected')).length;
         if (autoLeft) kids.push(h('div', { class: 'cp-sub', style: 'margin-top:8px;color:#1e3a8a' }, autoLeft + ' authority item(s) fill in on their own once you run the FMCSA screen on your dashboard.'));
         kids.push(h('div', { style: 'margin-top:12px;background:' + (pk.complete ? '#e7f9ee' : nRej ? '#fee2e2' : '#eff6ff') + ';border-radius:12px;padding:12px 14px;font-size:.85rem;color:#334155' },
@@ -4298,7 +4305,7 @@ function brokerOnboardingWizard() {
         kids.push(missing.length
           ? h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%;opacity:.85', onClick: () => {
               alert('Still missing before you can submit:\n\n' + missing.map((x) => '• ' + x.label + (x.status === 'rejected' ? ' (rejected — fix it)' : '')).join('\n'));
-            } }, '⛔ ' + missing.length + ' required item(s) left — complete them above')
+            } }, isShipper ? ('📋 ' + (missing.length - condLeft) + ' required + ' + condLeft + ' before-first-booking item(s) left') : ('⛔ ' + missing.length + ' required item(s) left — complete them above'))
           : h('div', { style: 'margin-top:12px' }, [
               h('div', { style: 'background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:12px 14px;text-align:center;font-weight:800;color:#1d4ed8;font-size:.95rem' },
                 pk.complete ? (isBroker ? '🎉 ALL VERIFIED — NO POSTING LIMIT' : '🎉 ALL VERIFIED — POSTING IS LIVE') : '⏳ SUBMITTED — UNDER REVIEW'),
@@ -4309,7 +4316,7 @@ function brokerOnboardingWizard() {
       }
       mount(body, h('div', null, kids));
     }
-    mount(card, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Broker onboarding' + (pk.complete ? ' — complete ✓' : ''))]), chrome]);
+    mount(card, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, (isShipper ? 'Shipper onboarding' : 'Broker onboarding') + (pk.complete ? ' — complete ✓' : ''))]), chrome]);
     draw();
   })();
   return card;
@@ -4394,6 +4401,8 @@ function packetAgreementCards(skipPacket) {
     else if (ov.kind === 'broker' && __trustCanPost) mount(obHero, mk('#0883F7', '🛡', '#eff6ff', '#1d4ed8', 'Cleared to post — verification lifts your limits', '#1d4ed8', 'Your broker authority is verified live on FMCSA. Post now (limited open postings); the verification packet unlocks unlimited postings and instant booking for carriers.', 'Verification packet →'));
     else if (sub.length) mount(obHero, mk('#0883F7', '⏳', '#eff6ff', '#1d4ed8', 'Onboarding under review', '#1d4ed8', sub.length + ' item(s) with our team — you\u2019ll be notified as each is verified (usually within 1 business day).', 'Track status →'));
     else if (ov.kind === 'broker') mount(obHero, mk('#0883F7', '⚡', '#eff6ff', '#1d4ed8', 'Post your first load in minutes', '#1d4ed8', 'Screen your broker authority live on FMCSA — no documents to start. The verification packet comes later, only where it matters.', 'Start →')); /* 'Finish onboarding to start posting' — bl_bp_0312 wording */
+    else if (ov.kind === 'shipper' && ov.can_post) mount(obHero, mk('#0883F7', '🏢', '#eff6ff', '#1d4ed8', 'Business confirmed — request quotes now', '#1d4ed8', 'Quotes are open. Three items are asked once, before your first booking: the Shipper Agreement, a claims contact and billing instructions.', 'Before your first booking →')); /* bl_bp_0319 */
+    else if (ov.kind === 'shipper') mount(obHero, mk('#0883F7', '📧', '#eff6ff', '#1d4ed8', 'Confirm your business to request quotes', '#1d4ed8', 'We confirm it from your company email domain in under a minute — no documents. Signed up with a personal address? Enter your company email below.', 'Start →')); /* bl_bp_0319 */
     else mount(obHero, mk('#d97706', '📋', '#fef3c7', '#b45309', 'Finish onboarding to start posting', '#b45309', 'A few required items are still missing — the guided steps take about 10 minutes.', 'Start →'));
   })();
   // ---- 💰 Payables: every dollar this broker owes right now (freight + approved claims),
@@ -4872,7 +4881,12 @@ function packetAgreementCards(skipPacket) {
         bdRate9.appendChild(card9);
       })();
       const trustGate = () => { const trustGateHost = h('div'); mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9) __trustSt = s9; if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
-      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), myLoadsCard, bdNetwork(), bdActivity()]));
+      // bl_bp_0319 (fix 5 Sep): shippers run through brokerDash, so the business-check card mounts HERE —
+      // confirming / free-mail / no-mail states replace the old document gate; once can_post the request form
+      // opens and the light packet ("before your first booking") shows under Documents.
+      const shipperGate = () => { const gHost = h('div'); mountShipperTrust(gHost, { goPacket: () => bgo('onboarding'), onStatus: (s9) => { if (s9 && s9.can_post && !ov.can_post) { ov.can_post = true; brender(); } } }); return gHost; };
+      const canPostNow = ov.onboarded || (ov.kind === 'broker' && __trustCanPost) || (ov.kind === 'shipper' && ov.can_post);
+      mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(), bdKpis(), h('div', { id: 'bd-postload' }, [canPostNow ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : ov.kind === 'shipper' ? shipperGate() : verifyGateCard(ov))]), (ov.kind === 'shipper' && ov.can_post && !ov.onboarded) ? shipperGate() : null, myLoadsCard, bdNetwork(), bdActivity()]));
       return;
     }
     mount(bContent, h('div', null, PAGES[btab] || []));

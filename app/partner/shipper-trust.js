@@ -6,7 +6,7 @@
 // application come before the FIRST BOOKING; the packet is three items (agreement · claims contact · billing).
 // Self-contained (own h/mount); reuses the .bt-* styles from broker-trust.js.
 import { partnerShipperStatus, partnerShipperVerify, partnerShipperCompanyEmail, partnerVerifyCode } from '../shared/api.js';
-import { ensureCss as ensureTrustCss } from './broker-trust.js';
+import { ensureCss as ensureTrustCss, decorateCards, progressRing } from './broker-trust.js';
 
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
@@ -75,43 +75,59 @@ export function mountShipperTrust(host, opts = {}) {
     const step = (n, cls, t, d) => h('div', { class: 'bt-step ' + cls }, [h('span', { class: 'bt-step-n' }, cls === 'done' ? '✓' : String(n)), h('div', { class: 'bt-step-t' }, t), h('div', { class: 'bt-step-d' }, d)]);
     return h('div', { class: 'bt-ladder' }, [
       step(1, biz ? 'done' : 'now', 'Business confirmed', 'From your company email domain — no documents, under a minute.'),
-      step(2, s.tier === 'verified' ? 'done' : biz ? 'now' : 'lock', 'Request quotes', 'Post a shipment; brokers quote it. Quotes are non-binding — nothing to sign yet.'),
-      step(3, s.tier === 'verified' ? 'done' : biz ? 'now' : 'lock', 'Before your first booking', 'Shipper Agreement (one click), payment terms and a claims contact — asked once, when you accept a quote.'),
+      step(2, (s.tier === 'verified' || (biz && (s.shipments || 0) > 0)) ? 'done' : biz ? 'now' : 'lock', 'Request quotes', 'Post a shipment; brokers quote it. Quotes are non-binding — nothing to sign yet.'),
+      step(3, s.tier === 'verified' ? 'done' : (biz && (s.shipments || 0) > 0) ? 'now' : 'lock', 'Before your first booking', 'Shipper Agreement (one click), payment terms and a claims contact — asked once, when you accept a quote.'),
       step(4, s.tier === 'verified' ? 'done' : 'lock', 'Verified shipper', 'Full packet on file → brokers see the badge and quote faster.'),
     ]);
   }
 
   function paint() {
-    if (!st) { mount(host, h('div', { class: 'bt-wrap' }, h('div', { class: 'bt-card' }, h('div', { class: 'bt-sub' }, 'Loading your status…')))); return; }
+    if (!st) { mount(host, h('div', { class: 'bt-wrap' }, h('div', { class: 'bt-card' }, [h('div', { class: 'bt-skel', style: 'width:40%' }), h('div', { class: 'bt-skel', style: 'width:90%' }), h('div', { class: 'bt-skel', style: 'width:70%' })]))); return; }
     const [cls, label] = TIER[st.tier] || TIER.new;
     const chk = st.check || {};
     const err = notice ? h('div', { class: 'bt-err', style: notice.ok ? 'color:#12a150' : '' }, notice.text) : null;
+    const nDone = st.tier === 'verified' ? 4 : st.can_post ? ((st.shipments || 0) > 0 ? 2 : 1) : 0;
     const hero = h('div', { class: 'bt-hero' }, [
+      h('div', { class: 'bt-hero-top' }, [h('div', { style: 'flex:1;min-width:260px' }, [
       h('div', { class: 'bt-hero-k' }, 'Shipper onboarding · ' + label),
       h('div', { class: 'bt-hero-t' }, st.tier === 'verified' ? 'You’re a verified shipper.' : st.can_post ? 'You can request quotes now.' : 'Request your first quote in minutes — no documents to start.'),
-      h('div', { class: 'bt-hero-s' }, st.can_post ? 'Post a shipment and brokers quote it. The short packet (agreement, payment terms, claims contact) comes before your first booking, not before your first quote.' : 'We confirm your business from your company email instead of a stack of PDFs. Documents come later, only where they matter — your first booking.'),
+      h('div', { class: 'bt-hero-s' }, st.can_post ? 'Brokers quote your shipments. The short packet comes before your first booking, not before your first quote.' : 'Business confirmed from your company email — no PDFs. Documents only where they matter: your first booking.'),
+      ]), progressRing(nDone, 4, st.tier === 'verified' ? 'verified' : 'steps done')]),
       ladder(),
     ]);
     let body;
     if (st.tier === 'hold') {
       body = h('div', { class: 'bt-card', style: 'border-left:4px solid #c62828' }, [h('h3', null, 'Posting is on hold'), h('div', { class: 'bt-sub' }, st.hold_reason || 'Contact support.')]);
     } else if (st.can_post) {
-      body = h('div', { class: 'bt-card', style: 'border-left:4px solid #12a150' }, [
-        h('h3', null, '✓ ' + (st.company || 'Your company') + ' is confirmed'),
-        h('div', { class: 'bt-sub' }, 'Confirmed ' + (st.verified_at ? new Date(st.verified_at).toLocaleString() : '') + ' — ' + (st.verified_by || '') + '.' + (chk.site_title ? ' Website: “' + chk.site_title + '”.' : chk.site_ok === false ? ' No website found on ' + (st.domain || 'your domain') + ' — brokers see “business confirmed” without a site link; add one later if you have it.' : '')),
-        st.tier !== 'verified' ? h('div', { class: 'bt-note' }, ['Before your first booking you will be asked once for: ' + (st.packet || []).filter((p) => ['required', 'conditional'].includes(String(p.tag).toLowerCase()) && !['verified', 'waived'].includes(p.status)).map((p) => p.label.replace(' — before your first booking', '')).join(' · ') + '. ' + (st.packet_required_done || 0) + '/' + (st.packet_required_total || 0) + ' done — ', h('a', { href: '#', onClick: (ev) => { ev.preventDefault(); opts.goPacket && opts.goPacket(); } }, 'open the packet →')]) : null,
+      // Premium: facts as tiles, the pre-booking items as chips — no paragraph.
+      const pend = (st.packet || []).filter((p) => ['required', 'conditional'].includes(String(p.tag).toLowerCase()) && !['verified', 'waived'].includes(p.status)).map((p) => p.label.replace(' — before your first booking', ''));
+      const fact = (k, v) => h('div', null, [h('b', null, k), v || '—']);
+      body = h('div', { class: 'bt-card' }, [
+        h('h3', null, '1 · ' + (st.company || 'Your company') + ' is confirmed'),
+        h('div', { class: 'bt-sub' }, 'Business confirmed from your company domain — quotes are open.'),
+        h('div', { class: 'bt-fact' }, [
+          fact('Domain', st.domain || '—'),
+          fact('Receives mail', chk.mx === false ? 'No' : 'Yes'),
+          fact('Website', chk.site_title ? chk.site_title : chk.site_ok === false ? 'Not found (optional)' : (chk.site_ok ? 'Found' : '—')),
+          fact('Confirmed', st.verified_at ? new Date(st.verified_at).toLocaleString() : '—'),
+        ]),
+        st.tier !== 'verified' && pend.length ? h('div', null, [
+          h('div', { class: 'bt-note', style: 'margin-top:14px;font-weight:800;color:#334155;letter-spacing:.06em;text-transform:uppercase;font-size:.68rem' }, 'Before your first booking · asked once'),
+          h('div', { class: 'bt-chips' }, pend.map((t) => h('span', { class: 'bt-chip' }, t))),
+          h('div', { class: 'bt-row', style: 'margin-top:12px' }, [h('button', { class: 'bt-btn ghost', onClick: () => opts.goPacket && opts.goPacket() }, 'Open the packet (' + (st.packet_required_done || 0) + '/' + (st.packet_required_total || 0) + ') →')]),
+        ]) : null,
       ]);
     } else if (chk.pending || chk.outcome === 'pending' || !chk.outcome) {
       body = h('div', { class: 'bt-card' }, [
         h('h3', null, '1 · Confirming your business'),
         h('div', { class: 'bt-row' }, [h('span', { class: 'bt-spin' }), h('span', { class: 'bt-sub' }, 'Checking ' + (st.domain || 'your company domain') + ' — that it receives mail and has a website. Usually under a minute.')]),
-        h('div', { class: 'bt-note' }, 'We never ask a shipper for proof of a business we can read ourselves. Your signup address ' + (st.signup_email_masked || '') + ' is on ' + (st.domain || 'a company domain') + '; that is the check.'),
+        h('div', { class: 'bt-note' }, 'Your signup address is on ' + (st.domain || 'a company domain') + ' — that is the check. No documents.'),
         err,
       ]);
     } else if (chk.outcome === 'free_mail') {
       body = h('div', { class: 'bt-card', style: 'border-left:4px solid #b45309' }, [
         h('h3', null, '1 · Confirm your company email'),
-        h('div', { class: 'bt-sub' }, 'You signed up with a personal address (' + (st.signup_email_masked || 'Gmail/Yahoo') + '). A personal inbox cannot prove a business, so give us an address on your company’s domain — we email it a 6-digit code, you type it here, done. No documents.'),
+        h('div', { class: 'bt-sub' }, 'Personal inbox (' + (st.signup_email_masked || 'Gmail/Yahoo') + ') cannot prove a business. Enter your company address — we email it a 6-digit code.'),
         st.code_live ? codeBox() : companyEmailForm('Your company email'),
         st.code_live ? h('div', { class: 'bt-row', style: 'margin-top:6px' }, [h('button', { class: 'bt-btn ghost sm', onClick: () => { st.code_live = false; paint(); } }, 'Use a different address')]) : null,
         err,
@@ -129,6 +145,7 @@ export function mountShipperTrust(host, opts = {}) {
       ]);
     }
     mount(host, h('div', { class: 'bt-wrap' }, [hero, body]));
+    decorateCards(host, { s1: st.can_post ? 'done' : 'now' });
   }
 
   async function refresh() {

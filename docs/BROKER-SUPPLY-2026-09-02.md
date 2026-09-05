@@ -200,3 +200,33 @@ scoped `pl-` CSS, FAQ schema) wired into `build_site.py`:
   horizontal overflow at 390px. Previews `preview-0321-{broker,shipper}-{desktop,mobile}.png`.
 - Every figure is a product fact from the live build or an external figure with its source linked
   in-section. Nothing invented. Old flb/sp blocks removed from build_site.py.
+
+## Real screens on the demand-side pages + the bugs they exposed (bl_bp_0322/0323, 5 Sep 2026)
+
+Owner: "real screenshots of how the board works, documented, pixel-perfect (Amazon/Uber/Stripe grade)".
+Captured the LIVE partner portal build at 2× on staging demo accounts (see `harness-shots/README.md`) and
+added documented walkthrough sections ("Real screens · how the board works") to both landing pages —
+20 shots in `shots/pl-*.webp`, each in a browser-frame figure with alt text, caption and width/height.
+Broker page: dashboard → FMCSA screen → ladder → posting allowance → 5 wizard steps (lane, schedule,
+equipment + live market estimate, rate card, review) → my loads → documents (Auto rows, W-9 online) →
+agents & team (brokerage view + agent view with the 6-digit code box). Shipper page: business-confirmed
+ladder + card → dashboard → wizard steps 3/4 → my shipments → the light packet (3 required + 3 before
+first booking). Hero ghost button now jumps to `#how-it-works` on-page; RELATED lists cross-link brokers ↔
+free-load-board ↔ create-broker-account ↔ api / shipper-solutions ↔ create-shipper-account ↔ ship-direct ↔
+industry ↔ market-rates ↔ fraud guide.
+
+Doing this on the real product exposed real bugs — fixed:
+- **bl_bp_0323 (DB, prod+staging):** `cc_partner_submit_load` gated EVERY org with `assert_broker_can_post`,
+  but shippers use the same wizard (brokerDash is the live shipper UI; `shipperDash`/`cc_shipper_post_load`
+  is dead code). A business-confirmed shipper got "Enter your broker MC number". Now gates by org kind →
+  `assert_shipper_can_post` for shippers. `migrations/bl_bp_0323_submit_load_kind_aware.sql`.
+- **partner/app.js:** the bl_bp_0319 business-check card (`mountShipperTrust`) was only wired into the dead
+  `shipperDash`; now mounted in brokerDash for shippers (replaces the document gate until `can_post`, then
+  shows as the status card). Onboarding banner is shipper-aware ("Business confirmed — request quotes now" /
+  "Confirm your business to request quotes") instead of "Finish onboarding… 10 minutes".
+- **Documents wizard:** title "Shipper onboarding" for shippers, no MC field for shippers, step-2 copy
+  shipper-aware (no authority on your side), conditional items render "Before first booking" (not
+  "Required"), review footer counts "N required + M before-first-booking". Brokers: MC prefilled from the
+  live screen (`window.__lbTrustSt`), stale "verified with your authority letter" label replaced.
+- Demo data note: `packet_autofill_from_fmcsa` must run after a screening pass — the manual SQL seed had
+  skipped it, so Auto rows showed empty until called.
