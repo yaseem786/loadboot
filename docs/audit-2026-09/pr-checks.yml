@@ -1,0 +1,50 @@
+# PR checks (audit F18, Sprint 1 — 2026-09-05)
+# Read-only, staging-bound, no production credentials, no deploy, no messaging.
+# Runs: ESM syntax gate (node --check on every app JS), import-reference gate, and a
+# STAGING-bound python build that must print BUILD OK. Nothing here can touch prod.
+name: pr-checks
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+permissions:
+  contents: read
+concurrency:
+  group: pr-checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: ESM syntax gate (node --check, all app JS)
+        run: bash scripts/check_esm_syntax.sh
+      - name: Import-reference gate
+        run: python3 scripts/check_imports.py
+      - name: Staging-bound build must print BUILD OK
+        env:
+          CONTEXT: deploy-preview
+          # A real staging anon key is NOT required for a build check; any non-empty value satisfies the
+          # preview guard. Set the repo secret LOADBOOT_STAGING_ANON_KEY to build a usable preview.
+          LOADBOOT_STAGING_ANON_KEY: ${{ secrets.LOADBOOT_STAGING_ANON_KEY || 'ci-placeholder-not-a-key' }}
+        run: |
+          python3 build_site.py 2>&1 | tee build.log
+          grep -q "BUILD OK" build.log
+      - name: Build must not be production-bound
+        run: |
+          if grep -Rq "rwscphuhpjoudvljvmdk" site/app/env-config.js 2>/dev/null; then echo "PR build targets PRODUCTION — refusing"; exit 1; fi
+          echo "env-config is not production-bound"
+      - name: Keep only a tiny artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 3

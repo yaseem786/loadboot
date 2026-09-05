@@ -18,7 +18,10 @@ for f in glob.glob(os.path.join(ROOT, "app/**/*.js"), recursive=True):
     if f.endswith("shared/api.js"):
         continue
     s = open(f).read()
-    imported = set(re.findall(r'\b([A-Za-z0-9_]+)\b', ' '.join(re.findall(r'import\s*\{([^}]*)\}', s))))
+    # static `import { a, b } from` AND dynamic `const { a, b } = await import('…')` (audit F18, 2026-09-05:
+    # partnerIntake.js:258 destructures ccAskReschedule from a dynamic import and was a false positive)
+    imported = set(re.findall(r'\b([A-Za-z0-9_]+)\b', ' '.join(
+        re.findall(r'import\s*\{([^}]*)\}', s) + re.findall(r'\{([^}]*)\}\s*=\s*await\s+import\s*\(', s))))
     local = set(re.findall(r'(?:const|let|function)\s+([A-Za-z0-9_]+)', s))
     called = set(re.findall(r'(?<![.\w])([A-Za-z0-9_]+)\s*\(', s))
     missing = sorted(n for n in called if n in exports and n not in imported and n not in local and n not in BROWSER)

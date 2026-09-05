@@ -207,7 +207,7 @@ INDUSTRIES = [
    ('shipper-solutions.html', 'Shipper Solutions'),
    ('lumper-policy.html', 'Lumper Fee Policy'),
    ('detention-pay-policy.html', 'Detention Pay Policy'),
-   ('reefer-dispatch.html', 'Reefer Dispatch'),
+   ('reefer-freight-rates.html', 'Reefer Freight Rates'),
   ],
  ),
 
@@ -848,7 +848,7 @@ INDUSTRIES = [
   related=[
    ('reefer-freight-rates.html', 'Reefer Freight Rates'),
    ('flatbed-freight-rates.html', 'Flatbed Freight Rates'),
-   ('reefer-dispatch.html', 'Reefer Dispatch'),
+   ('reefer-freight-rates.html', 'Reefer Freight Rates'),
    ('detention-pay-policy.html', 'Detention Pay Policy'),
    ('fcfs-policy.html', 'FCFS &amp; Scheduling'),
    ('shipper-solutions.html', 'Shipper Solutions'),
@@ -1259,7 +1259,7 @@ def build_industry_index(eq_rates, faq_schema):
         related=[('shipper-solutions.html', 'Shipper Solutions'),
                  ('market-rates.html', 'All Market Rates'),
                  ('freight-market-reports.html', 'Weekly Market Reports'),
-                 ('load-board.html', 'Live Load Board'),
+                 ('ship-direct-to-carrier.html', 'Ship Direct to Carriers'),
                  ('free-load-board-for-brokers.html', 'Free Load Board for Brokers'),
                  ('create-shipper-account.html', 'Create a Shipper Account')],
     )
