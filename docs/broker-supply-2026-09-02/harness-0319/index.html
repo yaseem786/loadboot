@@ -1,0 +1,6 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Inter,Arial;background:#f5f7fb;padding:20px;max-width:900px}</style></head><body>
+<div id="ship"></div>
+<script type="module">
+import { mountShipperTrust } from './app/partner/shipper-trust.js';
+window.__ship = mountShipperTrust(document.getElementById('ship'), { goPacket(){ window.__went = true; } });
+</script></body></html>

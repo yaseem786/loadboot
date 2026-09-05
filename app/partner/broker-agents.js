@@ -45,7 +45,7 @@ export function mountBrokerAgents(host) {
   mount(host, h('div', { class: 'bt-wrap' }, [
     h('div', { class: 'bt-card' }, [
       h('h3', null, 'Agents & team'),
-      h('div', { class: 'bt-sub' }, 'Agents post loads under your MC. Every posting shows your legal name and MC, the rate confirmation has to be on your paper, and you can pull an agent’s access at any time — their open postings come down with it. Nothing an unconfirmed agent posts can be booked.'),
+      h('div', { class: 'bt-sub' }, 'Agents post loads under your MC. Every posting shows your legal name and MC, the rate confirmation has to be on your paper, and you can pull an agent’s access at any time — their open postings under you come down with it (loads they post for other brokerages are not yours and stay untouched). Nothing an unconfirmed agent posts can be booked. Agents who declare you also get a 6-digit code emailed to your FMCSA-listed address — approving here is the same thing, one click.'),
       banner,
     ]),
     body,
@@ -68,15 +68,16 @@ export function mountBrokerAgents(host) {
   }
 
   function agentRow(a) {
-    const pending = a.status === 'pending';
+    const pending = a.status === 'pending' || a.status === 'screening';
     const acts = [];
     if (pending) { acts.push(h('button', { class: 'ba-btn ok', onClick: () => decide(a, 'confirm') }, '✓ Approve')); acts.push(h('button', { class: 'ba-btn bad', onClick: () => decide(a, 'decline') }, 'Decline')); }
     else if (a.status === 'confirmed') acts.push(h('button', { class: 'ba-btn bad', onClick: () => decide(a, 'revoke') }, 'Revoke access'));
-    else acts.push(h('button', { class: 'ba-btn', onClick: () => decide(a, 'confirm') }, 'Approve after all'));
+    else acts.push(h('button', { class: 'ba-btn', onClick: () => decide(a, 'confirm') }, a.status === 'revoked' ? 'Restore access' : 'Approve after all'));
+    const pill = a.status === 'screening' ? ['info', '⏳ checking your MC on FMCSA…'] : pending ? ['warn', '⏳ wants to post under your MC'] : a.status === 'confirmed' ? ['ok', '✓ confirmed ' + when(a.confirmed_at)] : a.status === 'revoked' ? ['muted', 'revoked ' + when(a.revoked_at)] : ['bad', '✕ declined ' + when(a.declined_at)];
     return h('div', { class: 'ba-row' + (pending ? ' pending' : '') }, [
       h('div', { class: 'grow' }, [
-        h('div', { class: 'n' }, [a.name || '—', ' ', h('span', { class: 'bt-pill ' + (pending ? 'warn' : a.status === 'confirmed' ? 'ok' : 'bad') }, pending ? '⏳ wants to post under your MC' : a.status === 'confirmed' ? '✓ confirmed ' + when(a.confirmed_at) : '✕ declined ' + when(a.declined_at))]),
-        h('div', { class: 's' }, (a.email || '') + ' · joined ' + when(a.since) + ' · ' + (a.loads || 0) + ' load' + (a.loads === 1 ? '' : 's') + ' posted' + (a.open ? ' · ' + a.open + ' open' : '') + (TIER_TXT[a.tier] ? ' · ' + TIER_TXT[a.tier] : '')),
+        h('div', { class: 'n' }, [a.name || '—', ' ', h('span', { class: 'bt-pill ' + pill[0] }, pill[1])]),
+        h('div', { class: 's' }, (a.email || '') + ' · joined ' + when(a.since) + ' · ' + (a.loads || 0) + ' load' + (a.loads === 1 ? '' : 's') + ' posted under you' + (a.open ? ' · ' + a.open + ' open' : '') + (TIER_TXT[a.tier] ? ' · ' + TIER_TXT[a.tier] : '') + (a.other_brokerages ? ' · also posts for ' + a.other_brokerages + ' other brokerage' + (a.other_brokerages === 1 ? '' : 's') : '')),
       ]),
       h('div', { class: 'ba-acts' }, acts),
     ]);
@@ -108,7 +109,7 @@ export function mountBrokerAgents(host) {
     };
     return h('div', { class: 'bt-card' }, [
       h('h3', null, 'Invite an agent'),
-      h('div', { class: 'bt-sub' }, 'They get one email: create a LoadBoot account with that address, choose “Broker Agent”, enter your MC. Because you invited them, they are confirmed the moment they sign up — no waiting, no second email.'),
+      h('div', { class: 'bt-sub' }, 'They get one email: create a LoadBoot account with that address, choose “Broker Agent”, enter your MC. Because you invited them, they are confirmed the moment your MC passes the FMCSA check — no code, no second email.'),
       canInvite ? null : h('div', { class: 'bt-note', style: 'color:#b45309' }, 'Confirm your own brokerage first (Dashboard → step 1b), then you can invite agents.'),
       h('div', { class: 'bt-row' }, [em, nm, btn]),
       err,

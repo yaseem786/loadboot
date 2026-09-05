@@ -1038,6 +1038,15 @@ export const partnerAgentsList = () => rpc('partner_agents_list');
 export const partnerAgentDecide = (agentOrg, decision, note) => rpc('partner_agent_decide', { p_agent_org: agentOrg, p_decision: decision, p_note: note ?? null });
 export const partnerAgentInvite = (email, name) => rpc('partner_agent_invite', { p_email: email, p_name: name ?? null });
 export const partnerAgentInviteRevoke = (id) => rpc('partner_agent_invite_revoke', { p_id: id });
+// bl_bp_0318 — an agent account holds several brokerages; each row confirmed by email code / link / LoadBoot owner
+export const partnerAgentParentRemove = (id) => rpc('partner_agent_parent_remove', { p_id: id });
+export const partnerAgentParentResend = (id) => rpc('partner_agent_parent_resend', { p_id: id });
+// bl_bp_0319 — shipper business check (company email domain: MX + website), no documents to request a quote
+export const partnerShipperStatus = () => rpc('partner_shipper_status');
+export const partnerShipperVerify = () => rpc('partner_shipper_verify');
+export const partnerShipperCompanyEmail = (email) => rpc('partner_shipper_company_email', { p_email: email });
+export const ccShipperTrustQueue = () => rpc('cc_shipper_trust_queue');
+export const ccShipperTrustSet = (org, action, note) => rpc('cc_shipper_trust_set', { p_org: org, p_action: action, p_note: note ?? null });
 export const partnerClaimGet = (token) => rpc('partner_claim_get', { p_token: token });
 export const partnerClaimConfirm = (token, decision, name, note) => rpc('partner_claim_confirm', { p_token: token, p_decision: decision, p_name: name ?? null, p_note: note ?? null });
 // bl_bp_0314 — self-service voice OTP to the FMCSA-listed phone (identity for own-MC brokers, parent confirmation for agents)

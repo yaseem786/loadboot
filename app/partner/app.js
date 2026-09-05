@@ -8,12 +8,14 @@
 import ENV from '../shared/env.js';
 import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange, resetPassword, updateEmail, mfaListFactors, mfaEnrollTotp, mfaVerify, mfaUnenroll, mfaRequired, signOutEverywhere } from '../shared/session.js';
 import { brandLogo } from '../shared/ui/components.js';
+import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
 import { printExecutedW9 } from '../carrier/w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { lookupCommodity, suggestCommodities } from './commodities.js';
 import { renderFmcsaOnly } from '../carrier/profile-view.js';
 import { mountBrokerTrust, kickoffScreening } from './broker-trust.js';
 import { mountBrokerAgents } from './broker-agents.js';
+import { mountShipperTrust, shipperBadge } from './shipper-trust.js';  // bl_bp_0319
 import { partnerTrustStatus } from '../shared/api.js';
 import { renderMarketWidget } from '../shared/market-widget.js';
 import {
@@ -1235,11 +1237,14 @@ function referralCard() {
 /* ---------- verification gate (broker/shipper cannot post until onboarded) ---------- */
 function verifyGateCard(ov) {
   const pending = ov.onboarding_pending || 0;
-  const card = h('div', { class: 'cp-card', style: 'border-left:4px solid #d97706' }, [
-    h('div', { class: 'cp-cardhead' }, [icon('shield', 18), h('h3', null, 'Verification required to post loads')]),
-    h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'Your account is under verification. You can post loads once onboarding is complete \u2014 every required document must be reviewed and verified by our team. This protects carriers and keeps the marketplace trusted.'),
-    h('div', { class: 'cp-row', style: 'margin-top:10px' }, [h('span', { class: 'cp-row-t' }, 'Required documents still pending'), h('b', { style: 'color:#d97706;font-size:1.1rem' }, String(pending))]),
-    h('div', { class: 'cp-sub', style: 'margin:10px 0 4px;font-weight:700' }, 'Your onboarding packet'),
+  const light = ov.kind === 'shipper' && ov.can_post;  // bl_bp_0319: quotes are open; the packet only gates the first booking
+  const card = h('div', { class: 'cp-card', id: 'sh-packet', style: 'border-left:4px solid ' + (light ? '#0883F7' : '#d97706') }, [
+    h('div', { class: 'cp-cardhead' }, [icon('shield', 18), h('h3', null, light ? 'Before your first booking' : 'Verification required to post loads')]),
+    h('div', { class: 'cp-sub', style: 'margin-top:6px' }, light
+      ? 'Quotes are open — request as many as you like. These items are asked once, before your first booking is tendered: the Shipper Agreement (one click when published), payment terms, a claims contact and billing instructions. Cargo, facility and insurance details ride on each shipment form instead.'
+      : 'Your account is under verification. You can post loads once onboarding is complete \u2014 every required document must be reviewed and verified by our team. This protects carriers and keeps the marketplace trusted.'),
+    h('div', { class: 'cp-row', style: 'margin-top:10px' }, [h('span', { class: 'cp-row-t' }, light ? 'Items still open' : 'Required documents still pending'), h('b', { style: 'color:' + (light ? '#1d4ed8' : '#d97706') + ';font-size:1.1rem' }, String(pending))]),
+    h('div', { class: 'cp-sub', style: 'margin:10px 0 4px;font-weight:700' }, light ? 'Your short packet' : 'Your onboarding packet'),
   ]);
   const list = h('div', null, h('div', { class: 'cp-sub' }, 'Loading\u2026'));
   card.appendChild(list);
@@ -1251,7 +1256,7 @@ function verifyGateCard(ov) {
         : it.status === 'rejected' && it.note ? '\u2715 ' + it.note
         : it.status === 'submitted' ? 'In review'
         : it.status === 'verified' ? 'Verified \u2713'
-        : (String(it.tag || '').toLowerCase() === 'optional' ? 'Optional' : 'Required'))]),
+        : (String(it.tag || '').toLowerCase() === 'optional' ? 'Optional' : String(it.tag || '').toLowerCase() === 'conditional' ? 'Before first booking' : 'Required'))]),
       h('div', { style: 'display:flex;gap:6px;align-items:center' }, [pill(it.status),
         h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
           try { openPacketSubmit(it, () => alert('Submitted — our team will verify it. You can post loads once all required items are verified.')); }
@@ -1737,8 +1742,8 @@ function bookRequestsCard() {
 /* ---------- BROKER dashboard ---------- */
 async function brokerDash(user, ov) {
   // bl_bp_0312: FMCSA-screened brokers post before the packet is verified.
-  let __trustCanPost = false;
-  if (ov.kind === 'broker' && !ov.onboarded) { try { const t9 = await partnerTrustStatus(); __trustCanPost = !!(t9 && t9.can_post); } catch (_) {} }
+  let __trustCanPost = false; let __trustSt = null;  // bl_bp_0318: status kept for the brokerage picker on the post form
+  if (ov.kind === 'broker') { try { const t9 = await partnerTrustStatus(); __trustSt = t9; if (!ov.onboarded) __trustCanPost = !!(t9 && t9.can_post); } catch (_) {} }
   try { window.__lbKindLabel = (ov.kind === 'shipper') ? 'Shipper' : 'Broker'; } catch (_) {}
   const kpis = h('div', { class: 'cp-kpis' }, [
     kpiCard('Loads submitted', ov.loads_submitted, 'all time', 'blue'),
@@ -1772,6 +1777,24 @@ async function brokerDash(user, ov) {
         h('div', { class: 'cp-sub', style: 'grid-column:1/-1;font-weight:700;color:#10223B;margin-top:4px' }, 'Lane'),
         wi('Miles', 'miles', 'number'), wi('Reference (optional)', 'reference'),
       ]);
+      // bl_bp_0318: an agent with several confirmed brokerages picks which authority this load posts under
+      try {
+        const pars9 = ((__trustSt && __trustSt.parents) || []).filter((p9) => p9.status === 'confirmed');
+        if (__trustSt && __trustSt.agent && pars9.length) {
+          if (pars9.length === 1) w.agent_parent_id = pars9[0].id;
+          else if (w.agent_parent_id && !pars9.some((p9) => p9.id === w.agent_parent_id)) w.agent_parent_id = '';
+          const sel9 = h('select', { class: 'cp-in', style: 'width:100%' }, [
+            ...(pars9.length > 1 ? [h('option', { value: '' }, 'Choose the brokerage this load posts under…')] : []),
+            ...pars9.map((p9) => { const o9 = h('option', { value: p9.id }, (p9.name || 'Brokerage') + ' · MC-' + (p9.mc || '?') + (p9.open ? ' · ' + p9.open + ' open' : '')); if (w.agent_parent_id === p9.id) o9.selected = true; return o9; }),
+          ]);
+          sel9.onchange = () => { w.agent_parent_id = sel9.value; _plSave(); };
+          body.prepend(h('div', { style: 'grid-column:1/-1;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:10px 12px' }, [
+            h('div', { class: 'cp-sub', style: 'font-weight:800;color:#1e3a8a;margin-bottom:6px' }, 'Posting under' + (pars9.length > 1 ? ' — pick the brokerage' : '')),
+            sel9,
+            h('div', { class: 'cp-sub', style: 'margin-top:6px' }, 'The load shows that brokerage’s name and MC; the rate confirmation must be on their paper. Each brokerage has its own open-posting limit.'),
+          ]));
+        }
+      } catch (_) {}
       // Street suggestions fill city/state/ZIP + exact pin; driving miles auto-calc when both pins known.
       try {
         const ins = body.querySelectorAll('input');
@@ -2700,6 +2723,8 @@ async function brokerDash(user, ov) {
         ['doc_pu', 'doc_dn', 'doc_ac', 'doc_at', 'doc_bn', 'doc_be', 'doc_bp', '__billInit'].forEach(k => delete payload[k]);
         if (Object.keys(docs9).length) payload.docs = docs9;
         if (directCarrier) { payload.details.direct_carrier_id = directCarrier.id; payload.details.direct_carrier_name = directCarrier.name; payload.details.direct_wait_minutes = w.direct_wait_minutes || '15'; }
+        if (w.agent_parent_id) payload.details.agent_parent_id = w.agent_parent_id;  // bl_bp_0318
+        delete payload.agent_parent_id;
         await partnerSubmitLoad(payload);
         err.className = 'cp-err ok'; err.textContent = '✓ Load submitted' + (directCarrier ? ' \u2014 \ud83c\udfaf direct offer to ' + directCarrier.name + ' fires automatically when dispatch posts it' : '') + ' \u2014 our dispatch team will review it and generate the document checklist.'; directCarrier = null;
         for (const k in w) delete w[k]; w.appointment_required = false; w.tracking_required = false; step = 0; confirmDup = false; try { localStorage.removeItem('lb_pl_draft'); } catch (_) {} renderStep(); loadList(); try { pToast('\u2713 Load submitted \u2014 dispatch reviews it and posts it to carriers', 'ok'); haptic('success'); } catch (_) {}
@@ -3972,6 +3997,7 @@ async function brokerDash(user, ov) {
               r.quote_amount ? h('div', { class: 'cp-sub', style: 'color:#16a34a' }, 'Your quote: $' + r.quote_amount) : null,
             ].filter(Boolean)),
             h('div', { style: 'display:flex;gap:6px;align-items:center;flex-wrap:wrap' }, [
+              shipperBadge(r.shipper_trust),  // bl_bp_0319: who is asking
               r.open_pool ? h('span', { class: 'cp-pill blue' }, 'OPEN POOL') : pill(r.status),
               r.open_pool ? h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
                 ev.currentTarget.disabled = true;
@@ -4147,13 +4173,26 @@ let lbPartnerToast = null;
 function packetDocRow(it, onAction) {
   const st = String(it.status || 'pending');
   const V = {
-    verified:  { di: '✓', dibg: '#e7f9ee', dic: '#12a150', pill: ['Approved', '#e7f9ee', '#12a150'], rs: 'Verified by LoadBoot ✓' },
+    verified:  { di: '✓', dibg: '#e7f9ee', dic: '#12a150', pill: ['Approved', '#e7f9ee', '#12a150'], rs: /^(Verified live on FMCSA|Master Broker Agreement)/.test(String(it.note || '')) ? it.note + ' ✓' : 'Verified by LoadBoot ✓' },
     waived:    { di: '–', dibg: '#f1f5f9', dic: '#64748b', pill: ['Waived', '#f1f5f9', '#64748b'], rs: it.note ? 'Waived — ' + it.note : 'Waived by LoadBoot' },
     submitted: { di: '⏳', dibg: '#eff6ff', dic: '#1d4ed8', pill: ['In review', '#dbeafe', '#1d4ed8'], rs: 'Submitted · LoadBoot team reviewing' },
     rejected:  { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Action', '#fee2e2', '#b91c1c'], rs: (it.note ? '✕ ' + it.note + ' — ' : '') + 'fix and resubmit' },
     pending:   { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: ['Required', '#fef3c7', '#b45309'], rs: 'Required — not on file yet' },
   }[st] || { di: '!', dibg: '#fee2e2', dic: '#b91c1c', pill: [st, '#f1f5f9', '#64748b'], rs: '' };
   if (st === 'pending' && String(it.tag || '').toLowerCase() === 'optional') { V.di = '–'; V.dibg = '#f1f5f9'; V.dic = '#64748b'; V.pill = ['Optional', '#f1f5f9', '#64748b']; V.rs = 'Recommended'; }
+  // bl_bp_0316: authority, bond and BOC-3 are read live from FMCSA on the dashboard screen (bl_bp_0315) — nothing to upload.
+  if (it.auto && (st === 'pending' || st === 'rejected')) {
+    V.di = '⟳'; V.dibg = '#eff6ff'; V.dic = '#1d4ed8'; V.pill = ['Auto', '#dbeafe', '#1d4ed8'];
+    V.rs = 'Filled in automatically from your live FMCSA screen — no upload. Run the screen on your dashboard (step 1).';
+    return h('div', { style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
+      h('div', { style: 'width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:' + V.dibg + ';color:' + V.dic }, V.di),
+      h('div', { style: 'flex:1;min-width:200px' }, [h('div', { style: 'font-weight:800;font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, V.rs)]),
+      h('div', { style: 'display:flex;gap:8px;align-items:center;flex:none;flex-wrap:wrap' }, [
+        h('span', { class: 'cp-pill', style: 'background:' + V.pill[1] + ';color:' + V.pill[2] + ';font-weight:800' }, V.pill[0]),
+        h('button', { class: 'cp-btn cp-btn-sm', onClick: () => bgo('dashboard') }, 'Run FMCSA screen →'),
+      ]),
+    ]);
+  }
   return h('div', { style: 'display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eef2f7;flex-wrap:wrap' }, [
     h('div', { style: 'width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;background:' + V.dibg + ';color:' + V.dic }, V.di),
     h('div', { style: 'flex:1;min-width:200px' }, [h('div', { style: 'font-weight:800;font-size:.93rem' }, it.label), h('div', { class: 'cp-sub' }, V.rs)]),
@@ -4174,6 +4213,10 @@ function brokerOnboardingWizard() {
     let pk = { items: [] }; try { pk = await myOnboardingPacket() || { items: [] }; } catch (_) {}
     let prof = {}; try { prof = await partnerGetProfile() || {}; } catch (_) {}
     const items = pk.items || [];
+    const isBroker = pk.kind === 'broker';
+    const isShipper = pk.kind === 'shipper';  // bl_bp_0319: quotes are open on the business check; this packet gates the first booking
+    // bl_bp_0316: for brokers the authority items are proven by the live FMCSA screen (bl_bp_0315), never uploaded
+    if (isBroker) items.forEach((it) => { if (['mc_authority', 'bmc84_bond', 'boc3'].indexOf(it.key) >= 0) it.auto = true; });
     const byTag = (t) => items.filter((it) => String(it.tag || '').toLowerCase() === t);
     const legal = byTag('legal');
     const docs = items.filter((it) => ['required', 'conditional'].indexOf(String(it.tag || '').toLowerCase()) >= 0);
@@ -4195,7 +4238,7 @@ function brokerOnboardingWizard() {
         h('div', { class: 'cp-wiz-actions' }, [back, next].filter(Boolean)),
       ]));
     };
-    const itemRow = (it) => packetDocRow(it, () => { const fin = (d) => { it.status = 'submitted'; if (d) { it.note = JSON.stringify(d); it.ref = (it.key === 'w9' ? 'W-9' : 'Agreement') + ' signed online · ' + d.signer; } draw(); }; if (it.key === 'w9') openBrokerW9(it, fin); else if (it.key === 'broker_agreement') openBrokerAgreementSign(it, fin); else openPacketSubmit(it, () => fin(null)); });
+    const itemRow = (it) => packetDocRow(it, () => { const fin = (d) => { it.status = (isBroker && it.key === 'broker_agreement' && d) ? 'verified' : 'submitted'; if (d) { it.note = JSON.stringify(d); it.ref = (it.key === 'w9' ? 'W-9' : 'Agreement') + ' signed online · ' + d.signer; } draw(); }; if (it.key === 'w9') openBrokerW9(it, fin); else if (it.key === 'broker_agreement') openBrokerAgreementSign(it, fin); else openPacketSubmit(it, () => fin(null)); });
     function draw() {
       drawChrome();
       const kids = [];
@@ -4215,22 +4258,42 @@ function brokerOnboardingWizard() {
           catch (e) { msg0.textContent = (e && e.message) || 'Could not save.'; ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save & continue →'; }
         } }, 'Save & continue →'));
       } else if (step === 1) {
-        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, 'Your legal standing — FMCSA broker authority and the $75,000 bond protect every carrier who hauls for you.'));
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, isBroker
+          ? 'Your legal standing — read live from FMCSA. Authority, the $75,000 BMC-84/85 bond and the BOC-3 are confirmed from the federal record the moment you run the screen on your dashboard; there is nothing to upload here.'
+          : 'Your legal standing — FMCSA broker authority and the $75,000 bond protect every carrier who hauls for you.'));
+        if (isBroker && legal.some((it) => it.auto && it.status !== 'verified' && it.status !== 'waived')) {
+          kids.push(h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:10px 14px;margin-bottom:8px' }, [
+            h('div', { class: 'cp-sub', style: 'flex:1;min-width:220px;color:#1e3a8a' }, 'Run the FMCSA screen once (Dashboard → step 1, MC or USDOT). It takes about a minute and fills these three in.'),
+            h('button', { class: 'cp-btn cp-btn-sm', onClick: () => bgo('dashboard') }, 'Go to dashboard →'),
+          ]));
+        }
         legal.forEach((it) => kids.push(itemRow(it)));
 
       } else if (step === 2) {
-        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, 'Paperwork — PDF or clear photo. Every document is reviewed by the LoadBoot team; you are notified the moment each one is verified or needs a fix.'));
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:6px' }, isBroker
+          ? 'Only what FMCSA cannot tell us — your W-9 (sign online), bank instructions for payables and a claims contact, plus a COI if it is requested. Signing the Master Broker Agreement online counts as the signed agreement. Posting does not wait on this; a complete packet removes your posting limit.'
+          : isShipper
+          ? 'Your business is confirmed from your company email — quotes are open. These items are asked once, before your first booking: the Shipper Agreement (one click when published), payment terms, a claims contact and billing instructions. Cargo, facility and insurance details ride on each shipment form.'
+          : 'Paperwork — PDF or clear photo. Every document is reviewed by the LoadBoot team; you are notified the moment each one is verified or needs a fix.'));
         docs.forEach((it) => kids.push(itemRow(it)));
 
       } else {
         const nDone = items.filter(done).length; const nRej = items.filter((it) => it.status === 'rejected').length;
-        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, 'Everything in one glance — submit whatever is missing, then our team reviews (usually within 1 business day).'));
+        kids.push(h('div', { class: 'cp-sub', style: 'margin-bottom:8px' }, isBroker
+          ? 'Everything in one glance. Posting opened with your FMCSA screen; finishing this packet lifts the posting limit (our team confirms the uploads, usually within 1 business day).'
+          : isShipper
+          ? 'Everything in one glance. Quote requests are already open; this packet is what a broker needs before your first booking (our team confirms items within 1 business day).'
+          : 'Everything in one glance — submit whatever is missing, then our team reviews (usually within 1 business day).'));
         items.forEach((it) => kids.push(itemRow(it)));
         const reqd = items.filter((x) => String(x.tag || '').toLowerCase() !== 'optional');
-        const missing = reqd.filter((x) => x.status === 'pending' || x.status === 'rejected');
+        const missing = reqd.filter((x) => (x.status === 'pending' || x.status === 'rejected') && !x.auto);
+        const autoLeft = reqd.filter((x) => x.auto && (x.status === 'pending' || x.status === 'rejected')).length;
+        if (autoLeft) kids.push(h('div', { class: 'cp-sub', style: 'margin-top:8px;color:#1e3a8a' }, autoLeft + ' authority item(s) fill in on their own once you run the FMCSA screen on your dashboard.'));
         kids.push(h('div', { style: 'margin-top:12px;background:' + (pk.complete ? '#e7f9ee' : nRej ? '#fee2e2' : '#eff6ff') + ';border-radius:12px;padding:12px 14px;font-size:.85rem;color:#334155' },
-          pk.complete ? '🎉 Packet complete — posting is unlocked. Anything you update goes back through review.'
+          pk.complete ? (isBroker ? '🎉 Packet complete — your posting limit is lifted. Anything you update goes back through review.' : '🎉 Packet complete — posting is unlocked. Anything you update goes back through review.')
           : nRej ? '⚠ ' + nRej + ' item(s) were rejected — open each one above, fix it and resubmit.'
+          : isBroker ? nDone + ' of ' + items.length + ' done. Posting is already open from your FMCSA screen; once everything is verified your posting limit is lifted and you are notified.'
+          : isShipper ? nDone + ' of ' + items.length + ' done. Quotes are open now; a complete packet earns the Verified shipper badge brokers quote fastest.'
           : nDone + ' of ' + items.length + ' submitted. Once ALL are verified, load posting unlocks automatically and you are notified.'));
         kids.push(missing.length
           ? h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%;opacity:.85', onClick: () => {
@@ -4238,7 +4301,7 @@ function brokerOnboardingWizard() {
             } }, '⛔ ' + missing.length + ' required item(s) left — complete them above')
           : h('div', { style: 'margin-top:12px' }, [
               h('div', { style: 'background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:12px 14px;text-align:center;font-weight:800;color:#1d4ed8;font-size:.95rem' },
-                pk.complete ? '🎉 ALL VERIFIED — POSTING IS LIVE' : '⏳ SUBMITTED — UNDER REVIEW'),
+                pk.complete ? (isBroker ? '🎉 ALL VERIFIED — NO POSTING LIMIT' : '🎉 ALL VERIFIED — POSTING IS LIVE') : '⏳ SUBMITTED — UNDER REVIEW'),
               h('div', { class: 'cp-sub', style: 'text-align:center;margin-top:4px' },
                 pk.complete ? 'Anything you update goes back through review.' : 'LoadBoot team reviews within 1 business day — you\u2019ll be notified of every decision here and by email.'),
               h('button', { class: 'cp-btn ghost', style: 'margin-top:8px;width:100%', onClick: () => bgo('dashboard') }, 'Track on dashboard →'),
@@ -4808,7 +4871,7 @@ function packetAgreementCards(skipPacket) {
           h('div', { style: 'margin-top:6px' }, btns9), cm9, send9);
         bdRate9.appendChild(card9);
       })();
-      const trustGate = () => { const trustGateHost = h('div'); mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
+      const trustGate = () => { const trustGateHost = h('div'); mountBrokerTrust(trustGateHost, { goPacket: () => bgo('onboarding'), goPost: () => { __trustCanPost = true; postFoldOpen = true; brender(); }, onStatus: (s9) => { if (s9) __trustSt = s9; if (s9 && s9.can_post && !__trustCanPost) { __trustCanPost = true; brender(); } } }); return trustGateHost; };
       mount(bContent, h('div', null, [bdHero(), bdRate9, obHero, bdAttention(), payablesCard(), bdKpis(), h('div', { id: 'bd-postload' }, [(ov.onboarded || (ov.kind === 'broker' && __trustCanPost)) ? (postFoldOpen ? h('div', null, [h('div', { style: 'text-align:right;margin-bottom:6px' }, h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => { postFoldOpen = false; brender(); } }, '\u2715 Fold away')), form]) : postFoldBanner()) : (ov.kind === 'broker' ? trustGate() : verifyGateCard(ov))]), myLoadsCard, bdNetwork(), bdActivity()]));
       return;
     }
@@ -4866,6 +4929,8 @@ function packetAgreementCards(skipPacket) {
     bDrawer,
   ]);
   mount(root, bShell);
+  // bl_ux_0320: pin/collapse sidebar — expanded until onboarding is done, then an icon rail by default.
+  mountSideRail(bShell, { key: 'partner', defaultCollapsed: !!(ov.onboarded || __trustCanPost) });
   bgo(btab);
   root.setAttribute('aria-busy', 'false');
   loadList();
@@ -5005,7 +5070,16 @@ async function shipperDash(user, ov) {
       })));
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
-  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [h('div', { class: 'cp-grid2' }, [ov.onboarded ? form : verifyGateCard(ov), h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), approvedPartnersCard(), (() => { const hst = h('div'); renderMarketWidget(hst, { sub: 'What shipping costs right now \u2014 broker sell rates for your lanes, refreshed weekly.' }); return hst; })(), invoicesCard(), accountCard()])));
+  // bl_bp_0319: the request form opens on the automated business check; the packet no longer gates a quote request
+  const gateHost = h('div');
+  const showForm = () => { mount(gateHost, [form]); };
+  if (ov.onboarded || ov.can_post) showForm();
+  const goPacket = () => { const el = document.getElementById('sh-packet'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const packetHost = h('div');
+  const showPacket = () => { if (!ov.onboarded) mount(packetHost, [verifyGateCard(ov)]); };
+  if (ov.onboarded || ov.can_post) showPacket();
+  else mountShipperTrust(gateHost, { goPacket, onStatus: (s9) => { if (s9 && s9.can_post) { ov.can_post = true; showForm(); showPacket(); } } });
+  mount(root, shell(user, 'shipper', ov.company, kpis, h('div', null, [(!ov.onboarded && ov.can_post) ? (() => { const th = h('div'); mountShipperTrust(th, { goPacket }); return th; })() : null, h('div', { class: 'cp-grid2' }, [gateHost, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('ship', 18), h('h3', null, 'My shipments')]), listHost])]), packetHost, approvedPartnersCard(), (() => { const hst = h('div'); renderMarketWidget(hst, { sub: 'What shipping costs right now \u2014 broker sell rates for your lanes, refreshed weekly.' }); return hst; })(), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }

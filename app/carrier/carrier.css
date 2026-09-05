@@ -705,3 +705,35 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 *::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.6); }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- bl_ux_0320 (4 Sep 2026): collapsible sidebar / icon rail ----------
+   Pinned open (250px) or collapsed to a 72px icon rail via the toggle at the top of the
+   sidebar or the "[" key — never hover-expand. shared/ui/sideRail.js owns the state.
+   Below 900px the sidebar is hidden anyway (burger/drawer + tab bar take over). */
+.cp-shell { transition: grid-template-columns .2s cubic-bezier(.4,0,.2,1); }
+.cp-side { position: sticky; }
+.cp-rail-tg { position: absolute; top: 18px; right: 10px; width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.05); color: #8fa0bd; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; z-index: 3; transition: background .15s, color .15s; }
+.cp-rail-tg:hover, .cp-rail-tg:focus-visible { background: rgba(255,255,255,.12); color: #fff; outline: none; }
+.cp-side .cp-brandrow { padding-right: 40px; min-height: 30px; }
+.cp-shell--rail { grid-template-columns: 72px 1fr; }
+.cp-shell--rail .cp-side { padding: 18px 12px; align-items: center; gap: 12px; }
+.cp-shell--rail .cp-rail-tg { position: static; margin: 0 auto; order: 1; }
+.cp-shell--rail .cp-side .cp-brandrow { padding: 0; margin: 0; justify-content: center; order: 0; }
+.cp-shell--rail .cp-side .cp-brandrow .cc-brandrow > span + span { display: none !important; }   /* wordmark + descriptor (inline style) */
+.cp-shell--rail .cp-side .cp-brandrow .cc-brandrow > span:first-child svg { width: 26px; height: 27px; }
+.cp-shell--rail .cp-nav { order: 2; width: 100%; align-items: center; margin-top: 4px; }
+.cp-shell--rail .cp-navlink { width: 46px; height: 44px; padding: 0; justify-content: center; gap: 0; border-radius: 12px; }
+.cp-shell--rail .cp-navlink > span:not(.cp-ic):not(.cc-ico):not(.cp-tab-badge) { display: none; }
+.cp-shell--rail .cp-navlink .cp-tab-badge { top: 4px; right: 4px; }
+.cp-shell--rail .cp-side-foot { order: 3; width: 100%; display: flex; flex-direction: column; align-items: center; padding-top: 12px; }
+.cp-shell--rail .cp-side-foot .cp-carrier { display: none; }
+.cp-shell--rail .cp-side-out { width: 46px; height: 42px; padding: 0; margin-top: 0; border-radius: 12px; }
+.cp-shell--rail .cp-side-out > span:not(.cp-ic):not(.cc-ico) { display: none; }
+.cp-shell--rail .cp-side > * { flex: none; }
+.cp-shell--rail .cp-nav { flex: 1 1 auto; overflow-y: auto; scrollbar-width: none; }
+.cp-shell--rail .cp-nav::-webkit-scrollbar { display: none; }
+.cp-railtip { position: fixed; z-index: 1000; transform: translateY(-50%) translateX(-4px); background: #0f172a; color: #fff; font: 600 .78rem/1.2 var(--lb-body, system-ui, sans-serif); padding: 7px 11px; border-radius: 9px; white-space: nowrap; box-shadow: 0 10px 30px -10px rgba(15,23,42,.55); pointer-events: none; opacity: 0; transition: opacity .12s, transform .12s; }
+.cp-railtip::before { content: ''; position: absolute; left: -5px; top: 50%; width: 10px; height: 10px; background: inherit; transform: translateY(-50%) rotate(45deg); border-radius: 2px; }
+.cp-railtip.show { opacity: 1; transform: translateY(-50%) translateX(0); }
+@media (max-width: 900px) { .cp-rail-tg, .cp-railtip { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .cp-shell { transition: none; } }
