@@ -531,12 +531,12 @@ RELATED = {
  'new-authority-dispatch.html':[('how-to-get-loads-with-new-authority.html','Getting Loads with New Authority'),('owner-operator-dispatch.html','Owner-Operators'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('carriers.html','For Carriers'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'owner-operator-dispatch.html':[('owner-operator-dispatch-service-guide.html','Owner-Operator Guide'),('new-authority-dispatch.html','New Authority'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('load-score.html','Load Score Tool'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'carriers.html':           [('carrier-application.html','Apply as Carrier'),('services.html','All Services'),('pricing.html','Pricing'),('tools.html','Free Trucking Tools'),('faq.html','FAQ')],
- 'brokers.html':            [('partners.html','Partner Portal'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('how-it-works.html','How It Works')],
+ 'brokers.html':            [('free-load-board-for-brokers.html','Free Load Board for Brokers'),('create-broker-account.html','Create a Broker Account'),('shipper-solutions.html','Shipper Solutions'),('api.html','Developer API'),('security.html','Security & Trust'),('how-it-works.html','How It Works')],
  'shipper-solutions.html':  [('brokers.html','For Brokers'),('partners.html','Partner Portal'),('security.html','Security & Trust'),('contact.html','Contact'),('faq.html','FAQ')],
  'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools')],
  'pricing.html':            [('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('carriers.html','For Carriers')],
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
- 'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
+ 'partners.html':           [('brokers.html','For Brokers'),('free-load-board-for-brokers.html','Free Load Board for Brokers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('security.html','Security & Trust'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
  'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
@@ -7554,7 +7554,7 @@ page('command-center.html', 'Command Center — How the LoadBoot Operations Desk
 # 4 Sep 2026: premium, SEO-focused shipper landing page lives in partner_landing_module.py
 import partner_landing_module as _plm
 sp, _ship_schema = _plm.shipper_landing({'linkcard': linkcard, 'carrier_network_section': carrier_network_section})
-RELATED['shipper-solutions.html'] = [('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('compliance.html','Carrier Verification'),('detention-pay-policy.html','Accessorial Standards'),('contact.html','Contact')]
+RELATED['shipper-solutions.html'] = [('create-shipper-account.html','Create a Shipper Account'),('ship-direct-to-carrier.html','Ship Direct to Carriers'),('freight-shipping-by-industry.html','Freight Shipping by Industry'),('market-rates.html','Market Rates Per Mile'),('gps-tracking.html','GPS Tracking & Proof'),('protect-freight-from-loss-damage-and-fraud.html','Loss, Damage & Fraud Guide')]
 page('shipper-solutions.html', 'Ship Freight With Verified Carriers — Truckload Quotes & GPS Proof | LoadBoot', 'Shipper freight platform: truckload quotes from licensed brokers in minutes, FMCSA-verified carriers, live GPS with geofenced dock proof, published accessorial standards. Free for shippers, no documents to request a quote.', 'shipper-solutions.html', sp, _ship_schema)
 
 # ---- DEMAND-SIDE SEO #1: Free load board for brokers ----
@@ -7563,7 +7563,7 @@ page('shipper-solutions.html', 'Ship Freight With Verified Carriers — Truckloa
 # ghost loads + paid-software stack. Funnels to create-broker-account. Unique vs brokers.html
 # (that page is the product pitch; this one is the switch-from-a-paid-board pitch).
 flb, _flb_faq_sch = _plm.broker_landing({'linkcard': linkcard, 'carrier_network_section': carrier_network_section})
-RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('ship-direct-to-carrier.html','Ship Direct to Carriers'),('load-board-subscription-cost.html','Load Board Cost Guide'),('features.html','All Features'),('api.html','Post by API')]
+RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('market-rates.html','Market Rates Per Mile'),('gps-tracking.html','GPS Tracking & Proof'),('payments-settlements.html','Payments & Settlements'),('api.html','Post by API')]
 page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post Loads Free to Verified Carriers | LoadBoot',
      'Free load board for freight brokers: post loads at $0 with no subscription, MC screened live on FMCSA in seconds, FMCSA-verified carriers, first-accept-wins booking, live GPS and one-receipt payables built in.',
      'partners.html', flb, _flb_faq_sch)

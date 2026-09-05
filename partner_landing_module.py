@@ -109,7 +109,41 @@ PL_CSS = """<style>
 .pl-cta p{color:#cbd5e1;max-width:640px;margin:0 auto 26px;font-size:1.08rem;line-height:1.7}
 .pl-cta .btn-secondary{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.28)}
 .pl-tag{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#0b3d91;background:#e0f2fe;border-radius:999px;padding:4px 10px;margin-left:8px;vertical-align:middle}
+
+.pl-walk{display:grid;gap:44px}
+.pl-wstep{display:grid;grid-template-columns:minmax(260px,.85fr) 1.65fr;gap:34px;align-items:start}
+.pl-wstep.rev{grid-template-columns:1.65fr minmax(260px,.85fr)}.pl-wstep.rev .pl-wtext{order:2}
+@media(max-width:960px){.pl-wstep,.pl-wstep.rev{grid-template-columns:1fr}.pl-wstep.rev .pl-wtext{order:0}}
+.pl-wnum{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0883F7,#7c3aed);color:#fff;font-family:Manrope,Inter,sans-serif;font-weight:800;font-size:.95rem;margin-bottom:12px}
+.pl-wtext h3{font-size:1.25rem;line-height:1.25;margin:0 0 10px;letter-spacing:-.01em}
+.pl-wtext p{color:#475569;line-height:1.72;margin:0 0 10px;font-size:.98rem}
+.pl-wtext .pl-li{margin:8px 0;font-size:.95rem}
+.pl-shot{margin:0;border-radius:16px;overflow:hidden;background:#fff;border:1px solid #dde4ee;box-shadow:0 30px 60px -34px rgba(16,34,59,.45),0 2px 6px rgba(16,34,59,.06)}
+.pl-shot .bar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f1f5f9;border-bottom:1px solid #e2e8f0}
+.pl-shot .bar i{width:10px;height:10px;border-radius:50%;background:#cbd5e1;display:inline-block}
+.pl-shot .bar i:nth-child(1){background:#fca5a5}.pl-shot .bar i:nth-child(2){background:#fcd34d}.pl-shot .bar i:nth-child(3){background:#86efac}
+.pl-shot .bar span{margin-left:8px;flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:3px 10px;font-size:.74rem;color:#64748b;font-family:ui-monospace,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-shot img{display:block;width:100%;height:auto}
+.pl-shot figcaption{padding:10px 14px;background:#f8fafc;border-top:1px solid #eef2f7;color:#475569;font-size:.84rem;line-height:1.5}
+.pl-shot figcaption b{color:#10223B}
+.pl-shotgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+@media(max-width:800px){.pl-shotgrid{grid-template-columns:1fr}}
+.pl-demo{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0b3d91;background:#e0f2fe;border-radius:999px;padding:4px 10px}
 </style>"""
+
+
+# Real product screenshots (captured 5 Sep 2026 from the live partner portal build on demo accounts —
+# "Atlas Brokerage LLC", "Marcus Reed — Freight Agent", "Acme Manufacturing Co."; 2× device pixels).
+# w/h are CSS pixels (half the file's pixel size) so the browser reserves the box before the image loads.
+def _shot(name, w, h, alt, cap, url='loadboot.com/app/partner/'):
+    return ('<figure class="pl-shot reveal"><div class="bar"><i></i><i></i><i></i><span>%s</span></div>'
+            '<img src="/shots/%s.webp" width="%d" height="%d" alt="%s" loading="lazy" decoding="async" onerror="this.closest(\'figure\').style.display=\'none\'">'
+            '<figcaption>%s</figcaption></figure>') % (url, name, w, h, alt, cap)
+
+
+def _wstep(n, title, body_html, shots_html, rev=False):
+    return ('<div class="pl-wstep%s"><div class="pl-wtext"><span class="pl-wnum">%d</span><h3>%s</h3>%s</div><div>%s</div></div>'
+            % (' rev' if rev else '', n, title, body_html, shots_html))
 
 
 def _tiles(items, cols='pl-g3', dark=False):
@@ -140,7 +174,7 @@ def broker_landing(ctx):
           '<span class="pl-kicker reveal"><span class="dot"></span> For freight brokers &middot; $0 to post, forever</span>'
           '<h1 class="reveal d1">Free Load Board for Brokers &mdash; <span class="gradtext">post loads free, cover them with verified carriers</span></h1>'
           '<p class="lead reveal d2">No subscription, no per-post fee, no renewal hike. Enter your MC, we read your broker authority live from FMCSA in seconds, and your first posting reaches FMCSA-verified, health-scored carriers in minutes &mdash; with the rate card in writing, live GPS on the assigned truck and one-receipt payables built in.</p>'
-          '<div class="hero-btns reveal d3"><a href="/app/partner/" class="btn btn-primary">Post a load free &rarr;</a><a href="create-broker-account.html" class="btn btn-secondary">How the MC screen works</a><a href="how-it-works.html" class="btn btn-ghost">How it works &rarr;</a></div>'
+          '<div class="hero-btns reveal d3"><a href="/app/partner/" class="btn btn-primary">Post a load free &rarr;</a><a href="create-broker-account.html" class="btn btn-secondary">How the MC screen works</a><a href="#how-it-works" class="btn btn-ghost">See the real screens &darr;</a></div>'
           '<div class="pl-trust reveal d3"><span><i>&#10003;</i> Licensed brokers only &mdash; carrier MCs cannot post</span><span><i>&#10003;</i> Zero ghost loads policy</span><span><i>&#10003;</i> No documents to start</span></div>'
           '</div><div class="pl-mock reveal d2"><div class="pl-card">'
           '<div class="top"><strong>Posting #LB-4471</strong><span class="live"><b></b> Live &middot; offers open</span></div>'
@@ -177,6 +211,51 @@ def broker_landing(ctx):
           '<div class="pl-step"><span class="t">minutes</span><div class="num">4</div><h3>Post your load</h3><p>Exact pins arm the geofences; the full rate card &mdash; detention, TONU, layover &mdash; prints on the posting so disputes die young.</p></div>'
           '<div class="pl-step"><span class="t">15 min</span><div class="num">5</div><h3>Carriers request, you approve</h3><p>Verified carriers that fit the lane and equipment request to book; first acceptance wins and every other offer auto-closes.</p></div>'
           '</div><div style="text-align:center;margin-top:34px" class="reveal"><a href="create-broker-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.28)">See the full signup walkthrough &rarr;</a></div></div></section>')
+    # ---- REAL SCREENS — how the board works, documented step by step ----
+    b += ('<section class="pl-sec" id="how-it-works"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Real screens &middot; how the board works</div><h2>From your MC number to a covered load &mdash; every screen, documented</h2>'
+          '<p>These are the actual Partner Portal screens, captured on a demo brokerage account &mdash; not mock-ups. What you see here is what your team gets on day one.</p></div>'
+          '<div class="pl-walk">'
+          + _wstep(1, 'Your dashboard the moment you sign in',
+                   '<p>Post a load, browse the carrier network, review claims and open the packet from one command center. Live counters show what is on the board, booked, in transit and delivered, and <a href="payments-settlements.html">payables</a> group per trip with one PAY-BY date.</p><div class="pl-li"><span class="pl-tick">&#10003;</span><div>The onboarding ladder sits on the dashboard &mdash; four steps, and it tells you exactly which one is next.</div></div>',
+                   _shot('pl-broker-dashboard', 1200, 750, 'LoadBoot Partner Portal broker dashboard: Post a load, Browse carriers, Claims, Documents; live counters for loads on board, booked, delivered; payables card', '<b>Dashboard</b> &mdash; demo brokerage. Counters, quick actions and the payables card, with the sidebar collapsed to an icon rail if you prefer.'))
+          + _wstep(2, 'Step 1 &mdash; your broker authority, read live from FMCSA',
+                   '<p>Type your MC or USDOT. LoadBoot reads your broker authority from FMCSA Licensing &amp; Insurance (SAFER as backup). Because FMCSA only keeps authority active while the $75K BMC-84/85 is on file, this single check covers the bond too &mdash; <a href="compliance.html">how verification works</a>.</p><div class="pl-li"><span class="pl-tick">&#10003;</span><div>Legal name, authority status, source and timestamp are shown back to you and stamped on the packet.</div></div>',
+                   _shot('pl-broker-fmcsa-screen', 1158, 345, 'Screen your broker authority: broker authority active on FMCSA, bond on file, FMCSA legal name, source Licensing & Insurance (live), checked timestamp', '<b>1 &middot; Screen your broker authority</b> &mdash; result of the live FMCSA read. Nothing uploaded.') + '<div style="height:18px"></div>' + _shot('pl-broker-trust-ladder', 1158, 370, 'Broker onboarding ladder: FMCSA screen + identity done, one-click agreement done, post your first loads (up to 3 open postings), verified brokerage', '<b>The ladder</b> &mdash; screen &rarr; agreement &rarr; first loads &rarr; verified. Green means done.'), rev=True)
+          + _wstep(3, 'Posting allowance &mdash; in the open, on your dashboard',
+                   '<p>New brokerages start with 3 open postings; the allowance lifts to 10 after the first delivered load and to unlimited when the short packet is verified. The bar shows exactly where you stand &mdash; no support ticket to find out. Read the <a href="brokers.html">broker program</a> for how request-to-book works at each tier.</p>',
+                   _shot('pl-broker-posting-limit', 1158, 273, 'Posting allowance card: 3 open postings, limit is 3 until your first load delivers, progress bar, Finish verification packet button', '<b>3 &middot; Posting</b> &mdash; the allowance bar and the one button that lifts it.'))
+          + '</div></div></section>')
+    b += ('<section class="pl-sec soft"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Real screens &middot; the posting wizard</div><h2>Five steps, one posting a carrier can book without a phone call</h2>'
+          '<p>Exact pins arm the GPS geofences, the schedule is unambiguous, the market estimate keeps you honest on price, and the rate card prints on the load. Everything a carrier needs to say yes.</p></div>'
+          '<div class="pl-walk">'
+          + _wstep(1, 'Lane &mdash; exact facility addresses',
+                   '<p>Street address, city, state and ZIP for pickup and delivery. Carriers on the board see only City, ST; the full address goes on the rate confirmation after booking, and the pins power <a href="gps-tracking.html">geofenced arrive/depart proof</a>. Extra stops optional.</p>',
+                   _shot('pl-broker-post-step1', 1200, 842, 'Post a load step 1 of 5 Lane: pickup facility and delivery facility street address, city, state, ZIP, miles, reference, add extra stop', '<b>Step 1 &middot; Lane</b> &mdash; Laredo, TX &rarr; Chicago, IL, 1,416 mi, reference PO-88214.'))
+          + _wstep(2, 'Schedule &mdash; FCFS or appointment, in writing',
+                   '<p>Pick FCFS or a fixed appointment at each end, set the dock window and the on-site contact. This is what settles <a href="fcfs-policy.html">FCFS</a> and <a href="detention-pay-policy.html">detention</a> disputes later &mdash; both sides agreed before the truck rolled.</p>',
+                   _shot('pl-broker-post-step2', 1200, 761, 'Post a load step 2 of 5 Schedule: pickup FCFS or appointment, pickup date and window, delivery FCFS or appointment, delivery date and window, on-site contacts', '<b>Step 2 &middot; Schedule</b> &mdash; FCFS windows at both ends, dates and dock contacts.'), rev=True)
+          + _wstep(3, 'Equipment &amp; commodity &mdash; with a live market estimate',
+                   '<p>Equipment, load size, commodity, weight, pallets, cargo value (the carrier checks cargo insurance against it) and reefer temperature. The rate field shows a market estimate for the lane and equipment, hard-floored at the industry minimum &mdash; under-priced loads sit unbooked, so it warns you. Compare against the public <a href="market-rates.html">market rates per mile</a>.</p>',
+                   _shot('pl-broker-post-step3', 1200, 1000, 'Post a load step 3 of 5 Equipment and commodity: reefer, FTL, fresh produce, 42,000 lb, 26 pallets, rate with market estimate and lane rate low/avg/high, cargo value, temperature, loading and unloading method', '<b>Step 3 &middot; Equipment &amp; commodity</b> &mdash; the market estimate and TX&rarr;IL lane band appear as you type the rate.'))
+          + _wstep(4, 'Requirements &mdash; the rate card carriers see',
+                   '<p>Detention, layover, TONU, lumper and extra-stop terms are LoadBoot marketplace standards: you cannot post below them, you may offer above on a tough lane. Hazmat declaration, tracking and the <a href="emergency-rescheduling-policy.html">emergency rescheduling policy</a> are confirmed here. See the published standards: <a href="detention-pay-policy.html">detention</a>, <a href="tonu-policy.html">TONU</a>, <a href="layover-policy.html">layover</a>, <a href="lumper-policy.html">lumper</a>.</p>',
+                   _shot('pl-broker-post-step4', 1200, 1290, 'Post a load step 4 of 5 Requirements: carrier protections standard on every load, detention $60/hr after 2h, layover $250/day, TONU $250, lumper policy, standard marketplace terms summary, hazmat declaration, tracking required, emergency rescheduling policy acceptance', '<b>Step 4 &middot; Requirements</b> &mdash; the printed rate card and the standards you agree to on every load.'), rev=True)
+          + _wstep(5, 'Review &mdash; then it goes to dispatch',
+                   '<p>One screen with freight, schedule, rate card and services. Submit, and LoadBoot dispatch reviews the posting before it goes live to verified carriers &mdash; the zero-ghost-loads policy in practice. Delivery flips it into a payable with one receipt.</p>',
+                   _shot('pl-broker-post-step5', 1200, 717, 'Post a load step 5 of 5 Review: lane, miles, rate per mile all-in, freight, schedule, rate card the carrier can claim, services and handling, submit load', '<b>Step 5 &middot; Review</b> &mdash; ready to post: $4,400, $3.11/mi all-in, every term visible.'))
+          + '</div></div></section>')
+    b += ('<section class="pl-sec"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Real screens &middot; after you post</div><h2>Your loads, your packet, your agents</h2></div>'
+          '<div class="pl-walk">'
+          + _wstep(1, 'My loads &mdash; one row per posting, one status bar',
+                   '<p>Submitted &rarr; Posted &rarr; Booked &rarr; Delivered on every load. Track live, open the document checklist, send a direct offer to specific carriers, request a change or cancel. &ldquo;On load board&rdquo; means verified carriers can request it right now.</p>',
+                   _shot('pl-broker-my-loads', 1200, 692, 'My loads list: Laredo to Chicago reefer submitted, Dallas to Atlanta van posted on load board, Houston to Memphis flatbed posted; track live, docs, offer to specific carriers, cancel', '<b>My loads</b> &mdash; two postings live on the board, one under dispatch review.'))
+          + _wstep(2, 'Documents &mdash; the short packet, with the federal record filled in',
+                   '<p>Authority, bond and BOC-3 are filled in automatically from the FMCSA screen (the &ldquo;Auto&rdquo; rows). The agreement is your one click. What is left for you is the W-9 (signed online), bank instructions for payables and a claims contact &mdash; the three items that lift the posting limit and turn on instant booking.</p>',
+                   _shot('pl-broker-documents-packet', 1200, 328, 'Broker onboarding step 2 of 4 Authority & legal: active FMCSA broker authority and BMC-84 bond marked Auto, filled in automatically from the live FMCSA screen', '<b>Authority &amp; legal</b> &mdash; nothing to upload; the rows fill from the screen.') + '<div style="height:18px"></div>' + _shot('pl-broker-documents-step3', 1200, 505, 'Broker onboarding step 3 of 4 Documents: broker W-9 sign online, certificate of insurance before first booking, signed broker agreement approved, bank payment instructions, claims-handling procedure', '<b>Documents</b> &mdash; W-9 online, bank instructions, claims contact; COI only if requested.'), rev=True)
+          + _wstep(3, 'Agents &amp; team &mdash; who posts under your MC',
+                   '<p>Anyone who declares themselves your agent appears here for one-click approval (they also receive a 6-digit code emailed to your FMCSA-listed address). Decline someone you never heard of and their account goes on hold. Invite your own agents and they are confirmed the moment your MC passes. On the agent&rsquo;s side, the same brokerage shows as &ldquo;waiting for their code&rdquo; with the code box &mdash; see <a href="create-broker-account.html">the agent path</a>.</p>',
+                   _shot('pl-broker-agents', 1200, 583, 'Agents & team: agents under your authority list with pending approval, invite an agent by email', '<b>Agents &amp; team</b> (brokerage view) &mdash; approve, decline or invite.') + '<div style="height:18px"></div>' + _shot('pl-agent-brokerages', 1158, 586, 'Agent view: post under your brokerage authority, Atlas Brokerage LLC MC-700100 waiting for their code, 6-digit code box, add another brokerage', '<b>Agent view</b> &mdash; one account, several brokerages; each confirms you separately.'))
+          + '</div><p class="reveal" style="text-align:center;margin-top:34px"><span class="pl-demo">Demo accounts</span> <span style="color:#64748b;font-size:.9rem;margin-left:8px">Screens captured from the live Partner Portal build on demonstration brokerage, agent and shipper accounts. Company names and lanes are illustrative; the software is real.</span></p></div></section>')
     # ---- POSTING ALLOWANCE (bl_bp_0312 tiers — transparent) ----
     b += ('<section class="pl-sec"><div class="wrap"><div class="pl-head reveal"><div class="eyebrow">Tiered trust, in the open</div><h2>Your posting allowance grows with delivered loads &mdash; not with PDFs</h2>'
           '<p>This is how the board stays free of ghost loads without asking a new brokerage for a pile of documents on day one. Every tier is derived live from the federal record and your delivery history.</p></div>'
@@ -272,7 +351,7 @@ def shipper_landing(ctx):
           '<span class="pl-kicker reveal"><span class="dot"></span> For shippers &amp; facilities &middot; free to use</span>'
           '<h1 class="reveal d1">Ship Freight With Verified Carriers &mdash; <span class="gradtext">truckload quotes in minutes, GPS proof on every mile</span></h1>'
           '<p class="lead reveal d2">Request a shipment, get quotes from licensed brokers backed by FMCSA-verified carriers, and watch the truck on the same live map the carrier sees. Business confirmed from your company email in under a minute &mdash; no documents, no authority, no contract to request a quote.</p>'
-          '<div class="hero-btns reveal d3"><a href="/app/partner/" class="btn btn-primary">Request a quote &rarr;</a><a href="create-shipper-account.html" class="btn btn-secondary">What we ask for &mdash; and when</a><a href="how-it-works.html" class="btn btn-ghost">How it works &rarr;</a></div>'
+          '<div class="hero-btns reveal d3"><a href="/app/partner/" class="btn btn-primary">Request a quote &rarr;</a><a href="create-shipper-account.html" class="btn btn-secondary">What we ask for &mdash; and when</a><a href="#how-it-works" class="btn btn-ghost">See the real screens &darr;</a></div>'
           '<div class="pl-trust reveal d3"><span><i>&#10003;</i> Licensed brokerage on every move</span><span><i>&#10003;</i> Geofenced pickup &amp; delivery stamps</span><span><i>&#10003;</i> Published accessorial standards</span></div>'
           '</div><div class="pl-mock reveal d2"><div class="pl-card">'
           '<div class="top"><strong>Shipment #SH-2093</strong><span class="live"><b></b> In transit &middot; on time</span></div>'
@@ -306,6 +385,26 @@ def shipper_landing(ctx):
           '<div class="pl-step"><span class="t">1 click</span><div class="num">3</div><h3>Accept a quote &mdash; then the 3 items</h3><p>Shipper Agreement, a claims contact and billing instructions, asked once, when you accept your first quote. Payment terms are agreed at the same point.</p></div>'
           '<div class="pl-step"><span class="t">live</span><div class="num">4</div><h3>Watch it move, settle clean</h3><p>Live map, milestone timeline, ETA and document status. Delivery generates the paperwork trail; payments run receipt-verified with confirmations.</p></div>'
           '</div><div style="text-align:center;margin-top:34px" class="reveal"><a href="create-shipper-account.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.28)">See the signup walkthrough &rarr;</a></div></div></section>')
+    # ---- REAL SCREENS — the shipper flow, documented ----
+    b += ('<section class="pl-sec" id="how-it-works"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Real screens &middot; how it works for shippers</div><h2>From your company email to a quoted shipment &mdash; every screen, documented</h2>'
+          '<p>Actual Partner Portal screens captured on a demo shipper account. No mock-ups.</p></div>'
+          '<div class="pl-walk">'
+          + _wstep(1, 'Business confirmed &mdash; before you finish reading this',
+                   '<p>Sign up with a company email and LoadBoot confirms the business from the domain itself: it receives mail and it has a website that matches the company name. Under a minute, no document. Personal Gmail? Enter your company address and type the 6-digit code we email it. The ladder shows quotes are open and what comes before the first booking.</p>',
+                   _shot('pl-shipper-trust-ladder', 1158, 334, 'Shipper onboarding ladder: business confirmed from company email domain, request quotes, before your first booking, verified shipper', '<b>Shipper onboarding</b> &mdash; you can request quotes now.') + '<div style="height:18px"></div>' + _shot('pl-shipper-business-confirmed', 1158, 437, 'Business confirmed card: company domain receives mail, website matches company name; the three items asked once before your first booking', '<b>Confirmed</b> &mdash; the domain check result, and the short list asked before the first booking.'))
+          + _wstep(2, 'Your dashboard &mdash; request a shipment from the same command center',
+                   '<p>Counters, quick actions and the payables view, with the request form one click away. Brokers see a &ldquo;business confirmed&rdquo; badge on every request you post, so quotes come faster.</p>',
+                   _shot('pl-shipper-dashboard', 1200, 750, 'LoadBoot Partner Portal shipper dashboard: business confirmed, request quotes now, post a load, browse carriers, claims, documents, payables', '<b>Dashboard</b> &mdash; demo shipper, business confirmed, ready to request.'), rev=True)
+          + _wstep(3, 'Request the shipment &mdash; the same five-step form brokers use',
+                   '<p>Exact pins for pickup and delivery, FCFS or appointment windows, equipment and commodity with a live market estimate, and the published accessorial standards printed on the request. Compare your budget with the public <a href="market-rates.html">truckload rates per mile</a> before you ask.</p>',
+                   _shot('pl-broker-post-step3', 1200, 1000, 'Shipment request step 3 of 5 Equipment and commodity: reefer, full truckload, fresh produce, weight, pallets, rate with market estimate and lane rate band, cargo value, temperature', '<b>Step 3 &middot; Equipment &amp; commodity</b> &mdash; the market estimate for the lane appears as you type.') + '<div style="height:18px"></div>' + _shot('pl-broker-post-step4', 1200, 1290, 'Shipment request step 4 of 5 Requirements: detention, layover, TONU, lumper and extra-stop standards, hazmat declaration, tracking, emergency rescheduling policy', '<b>Step 4 &middot; Requirements</b> &mdash; detention, layover, TONU and lumper terms agreed before the truck rolls.'))
+          + _wstep(4, 'My shipments &mdash; one status bar per request',
+                   '<p>Submitted &rarr; Posted &rarr; Booked &rarr; Delivered, with live tracking, the document checklist and a direct-offer button on every row. Delivery generates the paperwork trail and the payables view.</p>',
+                   _shot('pl-shipper-my-loads', 1158, 343, 'My shipments: Fresno to Denver reefer request submitted, track live, docs, offer to specific carriers, cancel', '<b>My shipments</b> &mdash; Fresno, CA &rarr; Denver, CO, reefer, under review.'), rev=True)
+          + _wstep(5, 'Before your first booking &mdash; the short packet',
+                   '<p>Three required items (Shipper Agreement, claims contact, billing instructions), three asked before the first booking (credit application, payment terms, hazmat/food-grade declarations), three optional. Quote requests never wait on any of it.</p>',
+                   _shot('pl-shipper-packet', 1158, 921, 'Shipper onboarding review: credit application before first booking, signed shipper agreement required, payment terms before first booking, billing instructions required, cargo profile optional, claims contact required, facility rules optional, cargo insurance optional, hazmat declarations before first booking', '<b>Shipper onboarding &middot; Review</b> &mdash; 3 required + 3 before-first-booking items; quotes are already open.'))
+          + '</div><p class="reveal" style="text-align:center;margin-top:34px"><span class="pl-demo">Demo account</span> <span style="color:#64748b;font-size:.9rem;margin-left:8px">Screens captured from the live Partner Portal build on a demonstration shipper account. Company names and lanes are illustrative; the software is real.</span></p></div></section>')
     b += ('<section class="pl-sec"><div class="wrap"><div class="pl-split">'
           '<div class="reveal"><div class="eyebrow">Visibility that holds up in a dispute</div><h2 style="font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15;margin:0 0 14px">Live GPS, geofenced docks and a milestone timeline &mdash; included, not upsold</h2>'
           '<p style="color:#475569;line-height:1.75;font-size:1.05rem">Other platforms sell visibility as a separate subscription. On LoadBoot it is how the freight is run: the assigned truck reports position, your facility pins arm the geofences, and every arrival and departure is stamped server-side.</p>'

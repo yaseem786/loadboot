@@ -158,6 +158,9 @@ export const postTruck = (o) => rpc('cc_post_truck', { p: o ?? {} });
 export const myTruckPostings = () => rpc('cc_my_truck_postings');
 export const truckPostingMatches = (id) => rpc('cc_truck_posting_matches', { p_posting: id });
 export const updateTruckPosting = (id, action, patch = null) => rpc('cc_update_truck_posting', { p_id: id, p_action: action, p_patch: patch });
+// bl_avail_0320 (5 Sep 2026) — daily availability: one-tap "still available today" + the status the dashboard/board cards read.
+export const confirmTruckPosting = (id) => rpc('cc_confirm_truck_posting', { p_id: id });
+export const myAvailabilityStatus = () => rpc('cc_my_availability_status');
 export const scanTruckMatches = () => rpc('cc_scan_truck_matches');
 // Expense tracker v1
 export const expenseAdd = (o) => rpc('cc_expense_add', { p: o ?? {} });
