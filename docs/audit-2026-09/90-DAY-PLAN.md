@@ -2,6 +2,8 @@
 
 Phase 1 proposal · 5 September 2026 · No changes authorized or performed in this document
 
+**Verification update · 6 September 2026:** Sprint 1+2 deployments were independently reviewed; F32/F05 SQL tests pass, but F30 broker behavior, F01/F02 edge boundaries and F31 upload-source completeness remain open. See PHASE1-AUDIT.md, “Sprint 1+2 verification,” and HANDOFF.md for exact results and why no helper could restore the failed paths. This verification turn did not start week-1 copy work. The live-GSC ranking and page scopes below remain unchanged; F33 and WhatsApp remain design-only.
+
 ## Delivery sequence
 
 Day 1 begins only after Yaseen says “go.” Each sprint has one feature branch (`audit/<sprint>-<topic>`), a reviewable diff, migration files where applicable, original JS syntax checks, a staging-bound BUILD OK, a staging verification record and an explicit rollback. Each sprint can ship separately; production SQL still requires “apply to prod.” Legal, auth, DNS/email and payment decisions retain their separate approval requirements. No new CC navigation and no framework migration.
