@@ -28,7 +28,7 @@ import {
   carrierDashboard, myNotifications, markMyNotification, carrierLoadDetail,
   tripEmergencyRequest, tripMyEmergencies,
   rateCounterparty, myRating, carrierRateableTrips, pocketMarkAllNotificationsRead,
-  postTruck, myTruckPostings, truckPostingMatches, updateTruckPosting, scanTruckMatches, confirmTruckPosting, myAvailabilityStatus,
+  postTruck, myTruckPostings, truckPostingMatches, updateTruckPosting, scanTruckMatches, confirmTruckPosting, myAvailabilityStatus, updateTruckPostingPlace,
   expenseAdd, expenseList, expenseDelete,
   iftaSet, iftaSummary, truckSetMaintenance, fleetMaintenance,
   fleetServiceAdd, fleetServiceList, fleetServiceDelete,
@@ -52,7 +52,7 @@ import { initTelemetry } from '../shared/telemetry.js';
 import { initBackNav, pushLayer, popLayer } from '../shared/backnav.js';
 import { haptic, showSkeleton, attachPullToRefresh, setAppBadge, countUp, attachSwipeAction } from '../shared/ux.js';
 // 5 Sep 2026 — daily truck availability card (Dashboard + Load Board) and the dispatcher rule copy.
-import { renderAvailabilityCard, fleetGap, goFleet, freshnessLine, AVAIL_RULE } from './availability.js';
+import { renderAvailabilityCard, goFleet, expiryLine, fleetGateBody, buildPlacePicker, buildDestPicker, AVAIL_RULE } from './availability.js';
 import { showWhatsNew } from '../shared/whatsnew.js';
 import { initInstallPrompt } from '../shared/installprompt.js';
 import { renderFaq, CARRIER_FAQ } from '../shared/faq.js';
@@ -3517,45 +3517,58 @@ async function appView(user) {
     // was still sitting in the same place for another two days had exactly one way to
     // say so: post it again. That is how a single-truck carrier ended up with 18 rows.
     const openPostingForm = async (existing, kindPreset) => {
-      // Posting a truck is a sales document, not a form. Everything a broker
-      // decides on is pulled off the truck record we already hold, so the
-      // carrier picks a unit and we fill the rest in for them.
-          // Fleet gate (5 Sep 2026): no truck or no driver on file → send them to the exact
-          // Fleet step instead of letting them post a truck we cannot dispatch.
-          if (!existing) {
-            let st9 = null; try { st9 = await myAvailabilityStatus(); } catch (_) { st9 = null; }
-            const gap9 = fleetGap(st9);
-            if (gap9) { lbToast('Add your ' + gap9 + ' under Fleet first — we post trucks, not accounts. Taking you there now.', 'urgent', 'Fleet needed'); setTimeout(() => goFleet(st9 && st9.has_truck === false ? 'truck' : 'driver'), 900); return; }
+      // v2 (5 Sep 2026): availability is posted per TRUCK. Hard fleet gate (truck + driver on file,
+      // checked client-side from the fleet itself so it works even before the status RPC exists),
+      // State→City dropdowns + optional ZIP (ZIP = exact deadhead point for the matcher),
+      // destination chooser, EMPTY vs BACKHAUL, 24h expiry. Edits go through the same form.
+          let fleet9 = [], drivers9 = [];
+          try { [fleet9, drivers9] = await Promise.all([pocketTrucks().catch(() => []), pocketDrivers().catch(() => [])]); } catch (_) {}
+          fleet9 = (fleet9 || []).filter(t9 => String(t9.status || 'active') !== 'inactive');
+          drivers9 = (drivers9 || []).filter(d9 => String(d9.status || 'active') !== 'inactive');
+          if (!fleet9.length || !drivers9.length) {
+            const gateSt = { has_truck: fleet9.length > 0, has_driver: drivers9.length > 0 };
+            const closeGate = openModal('Post your availability', [fleetGateBody({ h, status: gateSt })]);
+            // the gate buttons navigate away — close the modal when the hash changes
+            window.addEventListener('hashchange', () => { try { closeGate(); } catch (_) {} }, { once: true });
+            return;
           }
-          let fleet9 = []; try { fleet9 = await pocketTrucks(); } catch (_) { fleet9 = []; }
-          // Situation: empty now, or booked and needing a backhaul from the delivery point.
+
           const kind = h('select', { class: 'cp-in' }, [
             h('option', { value: 'empty' }, 'Truck is EMPTY — post where it sits now'),
             h('option', { value: 'backhaul' }, 'Truck is BOOKED — post where it delivers, I need a backhaul'),
           ]);
           kind.value = (existing && existing.post_kind) || kindPreset || 'empty';
-          const pick = h('select', { class: 'cp-in' }, [h('option', { value: '' }, fleet9.length ? 'Which truck?…' : 'No trucks added yet — posting without one')]
-            .concat(fleet9.map(t9 => h('option', { value: t9.id }, 'Unit ' + (t9.unit_no || '?') + (t9.equipment ? ' · ' + t9.equipment : '') + (t9.vin ? ' · VIN …' + String(t9.vin).slice(-6) : '')))));
-          const org = h('input', { class: 'cp-in', placeholder: 'Truck location \u2014 City, ST *', value: (existing && existing.origin) || (_dp && _dp.home_base) || '' });
+
+          // Truck is required — no "posting without one".
+          const pick = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Which truck? *')]
+            .concat(fleet9.map(t9 => h('option', { value: t9.id }, 'Unit ' + (t9.unit_no || '?') + (t9.equipment ? ' · ' + t9.equipment : '') + (t9.vin ? ' · VIN …' + String(t9.vin).slice(-6) : ' · no VIN')))));
+          if (existing && existing.truck_id) pick.value = existing.truck_id;
+          else if (fleet9.length === 1) pick.value = fleet9[0].id;
+
+          const place = buildPlacePicker({ h, cities: US_CITIES, withZip: true,
+            value: existing ? { city: existing.origin_city, state: existing.origin_state, zip: existing.origin_zip, text: existing.origin } : {} });
           const rad = h('input', { class: 'cp-in', type: 'number', min: '25', step: '25', placeholder: 'Miles I will drive to pick up', value: (existing && existing.radius) || '150' });
-          const dest = h('input', { class: 'cp-in', placeholder: 'Where I want to end up (optional) \u2014 e.g. TX, or Dallas', value: (existing && existing.dest_pref) || '' });
+          const destPick = buildDestPicker({ h, cities: US_CITIES, value: (existing && existing.dest_pref) || '', allowAnywhere: true });
           const from = h('input', { class: 'cp-in', type: 'date', value: (existing && existing.from) || new Date().toISOString().slice(0, 10) });
           const to = h('input', { class: 'cp-in', type: 'date', value: (existing && existing.to) || new Date(Date.now() + 1 * 864e5).toISOString().slice(0, 10) });
-          const lblOrg = h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 -2px' }, 'Where it frees up');
-          const lblAvail = h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 -2px' }, 'Available');
-          const paintKind = () => {
-            const bh = kind.value === 'backhaul';
-            lblOrg.textContent = bh ? 'Where the truck DELIVERS (City, ST)' : 'Where the truck is / frees up (City, ST)';
-            org.placeholder = bh ? 'Delivery city — City, ST *' : 'Truck location — City, ST *';
-            dest.placeholder = bh ? 'Backhaul toward — home base / City, ST *' : 'Where I want to end up (optional) — e.g. TX, or Dallas';
-            lblAvail.textContent = bh ? 'Delivery date → how long you can wait for the reload' : 'Available from → until (posts expire daily; confirm each morning)';
-          };
-          kind.addEventListener('change', paintKind);
           const eq = h('input', { class: 'cp-in', placeholder: 'Equipment (e.g. Van, Reefer)', value: ((existing && existing.equipment) || (_dp && _dp.preferred_equipment) || []).join(', ') });
           const rpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi (optional)', value: (existing && existing.min_rpm) || (_dp && _dp.min_rpm) || '' });
           const notes = h('textarea', { class: 'cp-in', rows: '2', placeholder: 'Anything else a dispatcher should know (optional)' }); notes.value = (existing && existing.notes) || '';
           const specHost = h('div');
           const auto = h('input', { type: 'checkbox' }); auto.checked = !!(existing && existing.auto_request);
+
+          const lbl = (txt) => h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 -2px' }, txt);
+          const lblOrg = lbl('Where the truck is / frees up');
+          const lblDest = lbl('Where I want to end up');
+          const lblAvail = lbl('Available');
+          const paintKind = () => {
+            const bh = kind.value === 'backhaul';
+            lblOrg.textContent = bh ? 'Where the truck DELIVERS (state → city, ZIP if you know it)' : 'Where the truck is / frees up (state → city, ZIP if you know it)';
+            lblDest.textContent = bh ? 'Backhaul toward — home base or a market (required)' : 'Where I want to end up (optional)';
+            lblAvail.textContent = bh ? 'Delivery date → how long you can wait for the reload' : 'Available from → until · every post expires 24h after you last confirm it';
+            destPick.setAllowAnywhere(!bh);
+          };
+          kind.addEventListener('change', paintKind);
 
           // What the truck already tells us — shown so the carrier can see the posting
           // is complete, and so gaps are obvious while they can still fix them.
@@ -3563,10 +3576,9 @@ async function appView(user) {
             specHost.innerHTML = '';
             const t9 = fleet9.find(x => x.id === pick.value);
             if (!t9) return;
-            // On an edit the carrier's own values win: re-deriving them from the truck
-            // record would silently undo the change they opened the form to make.
             if (!existing) {
-              if (t9.domicile_city) org.value = t9.domicile_city + (t9.domicile_state ? ', ' + t9.domicile_state : '');
+              const cur = place.get();
+              if (!cur.city && t9.domicile_city) place.set({ city: t9.domicile_city, state: t9.domicile_state || '', zip: t9.domicile_zip || '' });
               if (t9.equipment) eq.value = t9.equipment;
               if (t9.min_rpm && !rpm.value) rpm.value = t9.min_rpm;
               if (t9.max_radius_miles) rad.value = t9.max_radius_miles;
@@ -3584,64 +3596,70 @@ async function appView(user) {
             if (t9.twic) bits.push('TWIC');
             if (t9.team_driven) bits.push('team');
             specHost.appendChild(h('div', { style: 'border:1px solid rgba(74,222,128,.22);background:rgba(74,222,128,.05);border-radius:11px;padding:9px 12px;margin:2px 0 4px;font-size:.83rem;line-height:1.6' }, [
-              h('div', { style: 'font-weight:800;color:#4ade80;margin-bottom:2px' }, 'Brokers will see'),
+              h('div', { style: 'font-weight:800;color:#4ade80;margin-bottom:2px' }, 'Your dispatcher and brokers will see'),
               h('div', { style: 'color:#94a3b8' }, bits.length ? bits.join(' · ') : 'No capacity details on this truck yet — add them and you will match far more loads.'),
               bits.length ? null : h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-top:6px', onClick: () => { try { _closePT(); } catch (_) {} truckForm(t9); } }, 'Add them now'),
             ]));
-            // The certificate decides what we can dispatch, so say it before they post.
-            if (t9.vin) {
-              try {
-                const cv = await vinCoverage(t9.vin);
-                if (cv && cv.state === 'not_covered') specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fca5a5' },
-                  'This truck is not listed on your certificate of insurance, so we cannot dispatch it. Ask your agent to add the VIN and upload the updated certificate — then post it.'));
-                else if (cv && cv.state === 'no_coi') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fcd34d' },
-                  'We do not have your certificate of insurance yet. You can post, but nothing can be dispatched until it is on file.'));
-              } catch (_) {}
+            if (!t9.vin || String(t9.vin).length !== 17) {
+              specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fca5a5' }, [
+                'This truck has no valid VIN on file — it cannot be posted until it does. ',
+                h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'margin-left:6px', onClick: () => { try { _closePT(); } catch (_) {} truckForm(t9); } }, 'Add VIN'),
+              ]));
+              return;
             }
+            // The certificate decides what we can dispatch, so say it before they post.
+            try {
+              const cv = await vinCoverage(t9.vin);
+              if (cv && cv.state === 'not_covered') specHost.appendChild(h('div', { style: 'border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fca5a5' },
+                'This truck is not listed on your certificate of insurance, so we cannot dispatch it. Ask your agent to add the VIN and upload the updated certificate — then post it.'));
+              else if (cv && cv.state === 'no_coi') specHost.appendChild(h('div', { style: 'border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:11px;padding:9px 12px;font-size:.83rem;line-height:1.6;color:#fcd34d' },
+                'We do not have your certificate of insurance yet. You can post, but nothing can be dispatched until it is on file.'));
+            } catch (_) {}
           };
-          if (existing && existing.truck_id) pick.value = existing.truck_id;
           pick.addEventListener('change', paintSpec);
 
           const save = h('button', { class: 'cp-btn', onClick: async (ev) => {
-            if (!org.value.trim()) { alert(kind.value === 'backhaul' ? 'Delivery city required (City, ST).' : 'Truck location required (City, ST).'); return; }
-            if (kind.value === 'backhaul' && !dest.value.trim()) { alert('Where do you want the backhaul to go? (City, ST or a state)'); return; }
-            if (to.value && from.value && to.value < from.value) { alert('The end date cannot be before the start date.'); return; }
-            ev.currentTarget.disabled = true; ev.currentTarget.textContent = existing ? 'Saving…' : 'Posting…';
+            const pl = place.get(); const bh = kind.value === 'backhaul';
+            if (!pick.value) { lbToast('Pick which truck you are posting.', 'urgent', 'Truck required'); pick.focus(); return; }
+            if (!pl.state) { lbToast('Pick the state first, then the city.', 'urgent', 'Where is the truck?'); place.focusState(); return; }
+            if (!pl.city) { lbToast('Pick the city (or choose "Other city" and type it).', 'urgent', 'City required'); return; }
+            if (pl.zip && !/^\d{5}$/.test(pl.zip)) { lbToast('ZIP must be 5 digits — or leave it blank.', 'urgent', 'ZIP'); return; }
+            if (!destPick.isValid() || (bh && !destPick.get())) { lbToast(bh ? 'Where do you want the backhaul to go? Pick a state or a city.' : 'Finish the destination, or choose Anywhere.', 'urgent', 'Destination'); return; }
+            if (to.value && from.value && to.value < from.value) { lbToast('The end date cannot be before the start date.', 'urgent', 'Dates'); return; }
+            const btn = ev.currentTarget; btn.disabled = true; btn.textContent = existing ? 'Saving…' : 'Posting…';
+            const common = { truck_id: pick.value, radius_miles: rad.value || null,
+              available_from: from.value, available_to: to.value,
+              equipment: eq.value.split(',').map(x => x.trim()).filter(Boolean),
+              min_rpm: rpm.value || null, notes: notes.value.trim() || null, auto_request: auto.checked };
             try {
               if (existing) {
-                const r2 = await updateTruckPosting(existing.id, 'edit', {
-                  truck_id: pick.value || null, origin: org.value.trim(), post_kind: kind.value,
-                  radius_miles: rad.value || null, dest_pref: dest.value.trim() || null,
-                  available_from: from.value, available_to: to.value,
-                  equipment: eq.value.split(',').map(x => x.trim()).filter(Boolean),
-                  min_rpm: rpm.value || null, notes: notes.value.trim() || null, auto_request: auto.checked });
+                const r2 = await updateTruckPosting(existing.id, 'edit', Object.assign({ origin: pl.text, dest_pref: destPick.get() || null, post_kind: kind.value }, common));
+                await updateTruckPostingPlace(existing.id, { origin_city: pl.city, origin_state: pl.state, origin_zip: pl.zip || null, post_kind: kind.value, dest_pref: destPick.get() || '' });
                 _closePT();
-                lbToast((r2 && r2.matches ? r2.matches + ' matching load(s) on the board right now.' : 'Posting updated.'), 'ok', '🚛 Posting updated');
+                lbToast((r2 && r2.matches ? r2.matches + ' matching load(s) on the board right now.' : 'Updated and confirmed for today.'), 'ok', '🚛 Availability updated');
                 loadLoads();
                 return;
               }
-              const r = await postTruck({ truck_id: pick.value || null, origin: org.value.trim(), post_kind: kind.value,
-                radius_miles: rad.value || null, dest_pref: dest.value.trim() || null,
-                available_from: from.value, available_to: to.value,
-                equipment: eq.value.split(',').map(x => x.trim()).filter(Boolean),
-                min_rpm: rpm.value || null, notes: notes.value.trim() || null, auto_request: auto.checked });
+              const r = await postTruck(Object.assign({ origin: pl.text, origin_city: pl.city, origin_state: pl.state, origin_zip: pl.zip || null,
+                post_kind: kind.value, dest_pref: destPick.get() || null }, common));
               _closePT();
-              lbToast((r.matches || 0) + ' matching load(s) on the board right now. Your dispatcher is working this post — confirm it again tomorrow morning.', 'ok', kind.value === 'backhaul' ? '🚛 Backhaul posted' : '🚛 Availability posted');
+              lbToast((r.matches || 0) + ' matching load(s) on the board right now. Your dispatcher is working this post — it expires in 24h, confirm it again tomorrow.' + (r.geocoded === false ? ' (Pinpointing your location — a minute.)' : ''), 'ok', bh ? '🚛 Backhaul posted' : '🚛 Availability posted');
               loadLoads();
             } catch (e) {
-              ev.currentTarget.disabled = false; ev.currentTarget.textContent = existing ? 'Save changes' : 'Post truck';
+              btn.disabled = false; btn.textContent = existing ? 'Save changes' : (bh ? 'Post backhaul' : 'Post availability');
               if (e && e.code === 'LB001') { lbToast('This truck is not on your certificate of insurance, so it cannot be posted for dispatch. Add the VIN to your policy schedule and upload the updated certificate — we verify it the same day.', 'urgent', 'Not on your insurance'); return; }
-              if (e && e.code === 'LB002') { lbToast('This truck has no VIN on file. Add it under Fleet first — brokers check the VIN before they release a load.', 'urgent', 'VIN required'); return; }
+              if (e && e.code === 'LB002') { lbToast('This truck has no valid VIN on file. Add it under Fleet first — brokers check the VIN before they release a load.', 'urgent', 'VIN required'); return; }
               if (e && (e.code === 'LB003' || e.code === 'LB004')) { _closePT(); lbToast(e.message || 'Add your truck and driver under Fleet first.', 'urgent', 'Fleet needed'); setTimeout(() => goFleet(e.code === 'LB003' ? 'truck' : 'driver'), 900); return; }
+              if (e && e.code === 'LB005') { lbToast('Pick which truck you are posting.', 'urgent', 'Truck required'); return; }
               lbToast((e && e.message) || 'Could not post.', 'urgent', 'Not posted');
             }
-          } }, existing ? 'Save changes' : 'Post truck');
-          const lbl = (txt) => h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 -2px' }, txt);
+          } }, existing ? 'Save changes' : 'Post availability');
           const _closePT = openModal(existing ? 'Edit availability' : 'Post your availability', [
             lbl('Situation'), kind,
-            lbl('Which truck'), pick, specHost,
-            lblOrg, org,
-            h('div', { class: 'cp-formrow2' }, [rad, dest]),
+            lbl('Which truck *'), pick, specHost,
+            lblOrg, place.el,
+            lbl('How far I will drive to pick up (miles)'), rad,
+            lblDest, destPick.el,
             lblAvail, h('div', { class: 'cp-formrow2' }, [from, to]),
             lbl('Equipment and floor rate'), eq, rpm,
             lbl('Notes'), notes,
@@ -3682,13 +3700,13 @@ async function appView(user) {
         return h('div', null, [h('div', { class: 'cp-row' }, [
           h('div', null, [
             h('div', { class: 'cp-row-t' }, [p.post_kind === 'backhaul' ? h('span', { class: 'cp-pill amber', style: 'margin-right:6px' }, 'BACKHAUL') : null, (p.post_kind === 'backhaul' ? 'Delivers ' : '') + p.origin + (p.dest_pref ? ' → ' + p.dest_pref : ' → anywhere')].filter(Boolean)),
-            h('div', { class: 'cp-row-s' }, String(p.from) + ' – ' + String(p.to) + ((p.equipment || []).length ? ' · ' + p.equipment.join('/') : '') + (p.min_rpm ? ' · min $' + p.min_rpm + '/mi' : '') + (p.auto_request ? ' · auto-request ON' : '') + (p.status === 'paused' ? ' · PAUSED' : '')),
+            h('div', { class: 'cp-row-s' }, (p.unit_no ? 'Unit ' + p.unit_no + ' · ' : '') + (p.origin_zip ? 'ZIP ' + p.origin_zip + ' · ' : '') + String(p.from) + ' – ' + String(p.to) + ((p.equipment || []).length ? ' · ' + p.equipment.join('/') : '') + (p.min_rpm ? ' · min $' + p.min_rpm + '/mi' : '') + (p.auto_request ? ' · auto-request ON' : '') + (p.status === 'paused' ? ' · PAUSED' : p.status === 'expired' ? ' · EXPIRED' : '')),
             // A posting past its end date is off the board even though nothing on screen
             // used to say so. Say it, and put the one-tap fix right next to it.
             (p.is_live === false && p.status !== 'paused')
               ? h('div', { class: 'cp-row-s', style: 'color:#fca5a5;font-weight:700;margin-top:2px' },
                   '\u26a0 Not on the board' + (p.days_ago ? ' — ended ' + p.days_ago + ' day' + (p.days_ago === 1 ? '' : 's') + ' ago' : '') + '. Extend it to go live again.')
-              : (p.is_live ? (freshnessLine(h, p) || h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700;margin-top:2px' }, '\u25cf Live on the board')) : null),
+              : (expiryLine(h, p) || (p.is_live ? h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700;margin-top:2px' }, '\u25cf Live on the board') : null)),
           ]),
           h('div', { style: 'display:flex;gap:6px;align-items:center' }, [
             h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => {
@@ -3707,11 +3725,11 @@ async function appView(user) {
                 } }, 'Request') : h('span', { class: 'cp-pill gray' }, 'gone')),
               ])));
             } }, p.matches + ' matches'),
-            (p.status !== 'paused' && !p.is_fresh) ? h('button', { class: 'cp-btn cp-btn-sm', title: 'Confirm this truck is still available today', onClick: async (ev) => {
+            (p.status !== 'paused' && !p.is_fresh) ? h('button', { class: 'cp-btn cp-btn-sm', title: p.status === 'expired' ? 'Repost this truck for today' : 'Confirm this truck is still available today', onClick: async (ev) => {
               const b = ev.currentTarget; b.disabled = true; b.textContent = '\u2026';
               try { await confirmTruckPosting(p.id); lbToast('Confirmed for today \u2014 your dispatcher is working it.', 'ok', '\u2713 Still available'); loadLoads(); }
-              catch (e) { b.disabled = false; b.textContent = '\u2713 Today'; alert((e && e.message) || 'Failed'); }
-            } }, '\u2713 Today') : null,
+              catch (e) { b.disabled = false; b.textContent = p.status === 'expired' ? 'Repost' : '\u2713 Today'; alert((e && e.message) || 'Failed'); }
+            } }, p.status === 'expired' ? 'Repost' : '\u2713 Today') : null,
             h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Keep this truck on the board for 3 more days', onClick: async (ev) => {
               const b = ev.currentTarget; b.disabled = true; const was = b.textContent; b.textContent = '…';
               try { const r = await updateTruckPosting(p.id, 'extend', { days: 3 });

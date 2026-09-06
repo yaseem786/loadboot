@@ -39,11 +39,13 @@ WHAT TO DO — 30 SECONDS, EVERY MORNING
 1. Open the LoadBoot app → Load Board → "Post your availability"
    https://loadboot.com/app/carrier/#loads
 2. Pick your situation:
-   • Truck is EMPTY — tell us the city it sits in and how far you will drive to pick up.
+   • Truck is EMPTY — pick the state, then the city, and how far you will drive to
+     pick up. Add the ZIP if you know it: that is what makes the deadhead miles exact.
    • Truck is BOOKED — tell us where it DELIVERS, the delivery date, and where you want the
      backhaul to go (home base, or a state). We start working the reload before you unload.
 3. Tomorrow morning, tap "✓ Still available today" if nothing changed, or update it if the
-   truck moved. Posts expire every 24 hours on purpose — a stale post is worse than none.
+   truck moved. Every post expires automatically 24 hours after you last confirmed it —
+   a stale post is worse than none. An expired post shows a "Repost" button.
 
 You will need at least one truck and one driver in your Fleet tab before you can post. If
 they are missing, the app takes you straight there.
