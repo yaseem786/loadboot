@@ -101,3 +101,126 @@ export function freshnessLine(h, p) {
   if (p.is_live) return h('div', { class: 'cp-row-s', style: 'color:#fbbf24;font-weight:700;margin-top:2px' }, '◐ Not confirmed today (' + agoText(p.hours_since_confirm) + ') — dispatcher paused until you confirm');
   return null;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Place pickers (5 Sep 2026 v2): State → City dropdowns from the offline US_CITIES list, free-text
+// "other city", optional ZIP. Returns { el, get(), set(v) }. get() → { city, state, zip, text }.
+// ---------------------------------------------------------------------------------------------
+export const US_STATES = [
+  ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],['CO','Colorado'],['CT','Connecticut'],
+  ['DE','Delaware'],['DC','District of Columbia'],['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],
+  ['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],
+  ['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],
+  ['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],
+  ['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],['TN','Tennessee'],
+  ['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
+];
+
+function citiesIn(all, st) {
+  const out = [];
+  (all || []).forEach((c) => { const i = c.lastIndexOf(', '); if (i > 0 && c.slice(i + 2) === st) out.push(c.slice(0, i)); });
+  return out;
+}
+
+// opts: { h, cities: US_CITIES, withZip: bool, value: {city,state,zip}, cityPlaceholder }
+export function buildPlacePicker(opts) {
+  const h = opts.h; const cities = opts.cities || [];
+  const stSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'State…')].concat(US_STATES.map((s) => h('option', { value: s[0] }, s[0] + ' — ' + s[1]))));
+  const citySel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'Pick a state first')]);
+  const cityTxt = h('input', { class: 'cp-in', placeholder: opts.cityPlaceholder || 'City name (e.g. Laredo)', style: 'display:none' });
+  const zip = opts.withZip ? h('input', { class: 'cp-in', inputmode: 'numeric', maxlength: '5', placeholder: 'ZIP (optional, e.g. 75201) — exact deadhead' }) : null;
+  const OTHER = '__other__';
+  const fillCities = (st, keep) => {
+    const list = citiesIn(cities, st);
+    citySel.innerHTML = '';
+    citySel.appendChild(h('option', { value: '' }, list.length ? 'City… (' + list.length + ' in ' + st + ')' : 'City…'));
+    list.forEach((c) => citySel.appendChild(h('option', { value: c }, c)));
+    citySel.appendChild(h('option', { value: OTHER }, 'Other city — type it'));
+    if (keep && list.indexOf(keep) >= 0) { citySel.value = keep; cityTxt.style.display = 'none'; }
+    else if (keep) { citySel.value = OTHER; cityTxt.value = keep; cityTxt.style.display = ''; }
+    else { cityTxt.style.display = 'none'; cityTxt.value = ''; }
+  };
+  stSel.addEventListener('change', () => fillCities(stSel.value, null));
+  citySel.addEventListener('change', () => { cityTxt.style.display = citySel.value === OTHER ? '' : 'none'; if (citySel.value === OTHER) cityTxt.focus(); });
+  if (zip) zip.addEventListener('input', () => { zip.value = zip.value.replace(/\D/g, '').slice(0, 5); });
+  const row = h('div', { class: 'cp-formrow2', style: 'grid-template-columns:1fr 1.4fr' }, [stSel, citySel]);
+  const el = h('div', null, [row, cityTxt, zip].filter(Boolean));
+  const api = {
+    el,
+    get() {
+      const state = stSel.value || '';
+      const city = (citySel.value === OTHER ? cityTxt.value : citySel.value || '').trim();
+      const z = zip ? zip.value.trim() : '';
+      return { city, state, zip: z, text: city && state ? city + ', ' + state : '' };
+    },
+    set(v) {
+      v = v || {};
+      let city = v.city || '', state = v.state || '';
+      if ((!city || !state) && v.text) { const i = String(v.text).lastIndexOf(', '); if (i > 0) { city = city || v.text.slice(0, i); state = state || v.text.slice(i + 2).toUpperCase(); } }
+      stSel.value = state || '';
+      fillCities(state || '', city || null);
+      if (zip) zip.value = v.zip || '';
+    },
+    focusState() { stSel.focus(); },
+  };
+  api.set(opts.value || {});
+  return api;
+}
+
+// Destination: Anywhere | A state | A city. get() → text for dest_pref ('' = anywhere).
+// opts: { h, cities, value: text, allowAnywhere: bool }
+export function buildDestPicker(opts) {
+  const h = opts.h;
+  const mode = h('select', { class: 'cp-in' }, [
+    opts.allowAnywhere !== false ? h('option', { value: 'any' }, 'Anywhere — best paying load wins') : null,
+    h('option', { value: 'state' }, 'Toward a state (e.g. TX)'),
+    h('option', { value: 'city' }, 'Toward a city (e.g. Dallas, TX)'),
+  ].filter(Boolean));
+  const stSel = h('select', { class: 'cp-in', style: 'display:none' }, [h('option', { value: '' }, 'State…')].concat(US_STATES.map((s) => h('option', { value: s[0] }, s[0] + ' — ' + s[1]))));
+  const place = buildPlacePicker({ h, cities: opts.cities, withZip: false, cityPlaceholder: 'City you want to reload toward' });
+  place.el.style.display = 'none';
+  const paint = () => { stSel.style.display = mode.value === 'state' ? '' : 'none'; place.el.style.display = mode.value === 'city' ? '' : 'none'; };
+  mode.addEventListener('change', paint);
+  const el = h('div', null, [mode, stSel, place.el]);
+  const api = {
+    el,
+    get() { if (mode.value === 'any') return ''; if (mode.value === 'state') return stSel.value || ''; const p = place.get(); return p.text || ''; },
+    set(text) {
+      text = (text || '').trim();
+      if (!text) { mode.value = opts.allowAnywhere !== false ? 'any' : 'state'; stSel.value = ''; place.set({}); }
+      else if (/^[A-Za-z]{2}$/.test(text)) { mode.value = 'state'; stSel.value = text.toUpperCase(); }
+      else if (text.indexOf(',') > 0) { mode.value = 'city'; place.set({ text }); }
+      else { mode.value = 'state'; const m = US_STATES.find((s) => s[1].toLowerCase() === text.toLowerCase()); stSel.value = m ? m[0] : ''; }
+      paint();
+    },
+    setAllowAnywhere(ok) { const o = mode.querySelector('option[value="any"]'); if (o) o.disabled = !ok; if (!ok && mode.value === 'any') { mode.value = 'state'; paint(); } },
+    isValid() { if (mode.value === 'any') return true; if (mode.value === 'state') return !!stSel.value; const p = place.get(); return !!(p.city && p.state); },
+  };
+  api.set(opts.value || '');
+  return api;
+}
+
+// Hard fleet gate modal body: explains and routes. opts: { h, status }
+export function fleetGateBody(opts) {
+  const h = opts.h; const s = opts.status || {}; const gap = fleetGap(s) || 'truck and driver';
+  return h('div', null, [
+    h('div', { style: 'border-left:4px solid #FC5305;background:rgba(252,83,5,.08);border-radius:12px;padding:12px 14px;margin-bottom:12px' }, [
+      h('div', { class: 'cp-row-t' }, 'Add your ' + gap + ' first'),
+      h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.55' }, 'Availability is posted per truck, and a dispatcher only sells a unit with a driver behind it. Add at least one truck (with its VIN) and one driver under Fleet — then come back here; it takes a minute.'),
+    ]),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+      (s.has_truck === false) ? h('button', { class: 'cp-btn', onClick: () => goFleet('truck') }, '+ Add truck') : null,
+      (s.has_driver === false) ? h('button', { class: 'cp-btn' + (s.has_truck === false ? ' ghost' : ''), onClick: () => goFleet('driver') }, '+ Add driver') : null,
+    ].filter(Boolean)),
+    h('div', { class: 'cp-row-s', style: 'margin-top:12px;font-size:.8rem;color:#94a3b8;line-height:1.5' }, AVAIL_RULE),
+  ]);
+}
+
+// Expiry line for a posting row (v2): counts down to expires_at; expired → red.
+export function expiryLine(h, p) {
+  if (!p || p.status === 'paused') return null;
+  if (p.status === 'expired' || (p.is_live === false && p.hours_left === 0)) return h('div', { class: 'cp-row-s', style: 'color:#fca5a5;font-weight:700;margin-top:2px' }, '⚠ Expired — dispatcher stopped. Tap Repost if the truck is still there, or post where it is now.');
+  if (p.is_fresh) return h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700;margin-top:2px' }, '● Live · expires in ' + (p.hours_left != null ? p.hours_left + 'h' : '24h') + ' · dispatcher working it' + (p.geocoded ? '' : ' · locating…'));
+  if (p.is_live) return h('div', { class: 'cp-row-s', style: 'color:#fbbf24;font-weight:700;margin-top:2px' }, '◐ Not confirmed today (' + agoText(p.hours_since_confirm) + ') — dispatcher paused until you confirm');
+  return null;
+}

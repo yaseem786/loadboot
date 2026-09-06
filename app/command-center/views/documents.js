@@ -1,4 +1,5 @@
 // lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
+// audit F31 2026-09-05: AI pre-check column + drawer card (cc_list_documents now returns ai_verdict, bl_cmp_0325b).
 // documents.js — Document review queue. Read cc_list_documents; approve/reject via
 // admin_review_document (documents.review, scope-checked + audited server-side).
 import { el, mount } from '../../shared/ui/dom.js';
@@ -10,6 +11,41 @@ import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { coiCoverageCard } from './coiCoverage.js';
 import { staffUploadCard } from './staffUpload.js';
+
+// audit F31 (bl_cmp_0325): the carrier portal's AI pre-check verdict now rides on the document row. It is ADVISORY —
+// recorded_by='carrier-client' means the carrier's own browser sent it (they can only hurt themselves with it),
+// 'doc-precheck'/'staff' means a server or a reviewer recorded it. Staff decision stays final.
+function aiPill(v) {
+  if (!v || !v.verdict) return el('span', { class: 'cc-sub', style: 'color:#94a3b8' }, '—');
+  const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : v.verdict === 'pass' ? '#16a34a' : '#64748b';
+  const label = v.verdict === 'reject' ? 'AI: reject' : v.verdict === 'warning' ? 'AI: warning' : v.verdict === 'pass' ? 'AI: pass' : 'AI: ' + v.verdict;
+  const first = (v.issues && v.issues[0] && v.issues[0].problem) ? String(v.issues[0].problem).slice(0, 70) : '';
+  return el('span', { title: (v.summary || '') + (v.overridden ? ' — carrier saw the reject and uploaded anyway.' : ''), style: 'display:inline-flex;flex-direction:column;gap:2px' }, [
+    el('span', { style: 'font-weight:800;font-size:.78rem;color:' + tone }, label + (v.overridden ? ' ⚠' : '')),
+    first ? el('span', { class: 'cc-sub', style: 'font-size:.72rem;color:#94a3b8' }, first) : '',
+  ]);
+}
+function aiCard(v) {
+  if (!v || !v.verdict) return '';
+  const src = v.recorded_by === 'carrier-client' ? 'carrier-side pre-check (advisory)' : v.recorded_by === 'doc-precheck' ? 'server pre-check' : (v.recorded_by || 'pre-check');
+  const tone = v.verdict === 'reject' ? '#ef4444' : v.verdict === 'warning' ? '#f59e0b' : '#16a34a';
+  return card([
+    el('div', { class: 'cc-field' }, [el('span', null, 'AI pre-check'), el('b', { style: 'color:' + tone }, String(v.verdict).toUpperCase() + (v.overridden ? ' — carrier uploaded anyway' : ''))]),
+    el('div', { class: 'cc-field' }, [el('span', null, 'Source'), el('b', null, src + (v.recorded_at ? ' · ' + fmtDate(v.recorded_at) : ''))]),
+    v.summary ? el('p', { class: 'cc-sub', style: 'margin:6px 0 0' }, v.summary) : '',
+    el('div', null, (v.issues || []).slice(0, 6).map(i => el('div', { style: 'border-left:3px solid ' + (i.severity === 'reject' ? '#ef4444' : '#f59e0b') + ';padding:6px 10px;margin:6px 0;border-radius:0 8px 8px 0;background:rgba(148,163,184,.08)' }, [
+      el('div', { style: 'font-weight:700;font-size:.85rem' }, i.problem || ''),
+      i.fix ? el('div', { class: 'cc-sub', style: 'font-size:.78rem;white-space:pre-line' }, 'Fix: ' + i.fix) : '',
+    ]))),
+    v.fields && (v.fields.certificate_holder || v.fields.expiry_date || v.fields.auto_liability || v.fields.cargo_limit)
+      ? el('div', { class: 'cc-sub', style: 'font-size:.78rem;margin-top:6px' }, ['Read by AI: ',
+          v.fields.certificate_holder ? 'holder "' + v.fields.certificate_holder + '" · ' : '',
+          v.fields.auto_liability ? 'auto ' + v.fields.auto_liability + ' · ' : '',
+          v.fields.cargo_limit ? 'cargo ' + v.fields.cargo_limit + ' · ' : '',
+          v.fields.expiry_date ? 'exp ' + v.fields.expiry_date : ''].join(''))
+      : '',
+  ], 'cc-fields');
+}
 
 const STATUSES = [
   { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' },
@@ -29,13 +65,14 @@ export function renderDocuments(host) {
     const table = el('table', { class: 'cc-table' }, [
       el('thead', null, el('tr', null, [
         el('th', null, 'Document'), el('th', null, 'Carrier'), el('th', null, 'Type'),
-        el('th', null, 'Submitted'), el('th', null, 'Status'), el('th', null, ''),
+        el('th', null, 'Submitted'), el('th', null, 'AI pre-check'), el('th', null, 'Status'), el('th', null, ''),
       ])),
       el('tbody', null, rows.map(d => el('tr', { class: 'cc-row', onClick: () => openDoc(d) }, [
         el('td', null, el('b', null, d.file_name || 'document')),
         el('td', null, d.company || '—'),
         el('td', null, d.type || '—'),
         el('td', null, fmtDate(d.created_at)),
+        el('td', null, aiPill(d.ai_verdict)),
         el('td', null, statusPill(d.status)),
         el('td', null, el('span', { class: 'cc-row-go' }, '›')),
       ]))),
@@ -81,6 +118,7 @@ export function renderDocuments(host) {
         el('div', { class: 'cc-field' }, [el('span', null, 'Type'), el('b', null, d.type || '—')]),
         el('div', { class: 'cc-field' }, [el('span', null, 'Submitted'), el('b', null, fmtDate(d.created_at))]),
       ], 'cc-fields'),
+      aiCard(d.ai_verdict),
       el('label', { class: 'cc-card-title', style: 'margin-top:16px;display:block' }, 'Document'),
       previewBox,
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [openBtn, dlBtn]),
