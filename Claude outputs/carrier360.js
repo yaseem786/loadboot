@@ -10,7 +10,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccFleetTruckRemind, ccFleetTruckReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 // 29 Aug 2026 — equipment_detail and notes used to be flattened into two 150px grid cells.
@@ -102,8 +102,6 @@ export function renderCarrier360(host, orgId) {
           F('Cost/mile', rpm(pr.cost_per_mile)),
           F('Operating radius', pr.operating_radius_miles ? pr.operating_radius_miles + ' mi from home' : null),
           F('Home time', pr.home_time || null),
-          // bl_haul_0323 — what the carrier told us about how they run; the matcher enforces it.
-          F('Haul types', (pr.haul_types && pr.haul_types.length) ? pr.haul_types.map(function (x) { return ({ local: 'Local (\u2264250 mi)', regional: 'Regional (250\u2013800 mi)', otr: 'OTR (800+ mi)' })[x] || x; }).join(' \u00b7 ') : 'Any length'),
           F('Load size', pr.load_size || null),
           F('Min total rate', pr.min_total_rate != null ? ('$' + Number(pr.min_total_rate).toLocaleString()) : null),
           Fc('Facility likes', pr.facility_likes),
@@ -296,10 +294,9 @@ export function renderCarrier360(host, orgId) {
     // compare the two themselves rather than taking our word that they agree.
     const fleetCard = card([el('h4', { class: 'cc-card-title' }, '🚛 Fleet'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Loading trucks…')]);
     (async () => {
-      let fl; let fleetReminderStatus = null;
+      let fl;
       try { fl = await ccCarrierFleet360(orgId); }
       catch (e) { mount(fleetCard, [el('h4', { class: 'cc-card-title' }, '🚛 Fleet'), el('div', { class: 'cc-sub', style: 'margin-top:6px' }, humanizeError(e))]); return; }
-      try { fleetReminderStatus = await ccFleetTruckReminderStatus(orgId); } catch (_) {}
       const trucks = (fl && fl.trucks) || [];
       const trailers = (fl && fl.trailers) || [];
       const coi = (fl && fl.coi) || {};
@@ -504,53 +501,6 @@ export function renderCarrier360(host, orgId) {
       // One alarm line, above everything, when a truck is on the fleet that the policy
       // does not name. That is the condition that must never quietly reach dispatch.
       const uninsured = trucks.filter((t) => String(t.vin_state) === 'not_covered');
-      const reminderHost = el('div');
-      const renderReminderStatus = (st) => {
-        const fTime = (x) => x ? fmtDateTime(x) : 'Never';
-        const hist = (st && st.history) || [];
-        const emailTone = (x) => ['delivered', 'sent'].includes(String(x)) ? 'green' : ['failed', 'bounced'].includes(String(x)) ? 'red' : 'gray';
-        const canSend = can('carriers.approve') || can('dispatch.manage');
-        const sendBtn = canSend ? el('button', {
-          class: 'lb-btn lb-btn-primary',
-          title: 'Send a premium in-app + email reminder (6-hour cooldown)',
-          onClick: async (ev) => {
-            const b = ev.currentTarget; b.disabled = true; b.textContent = 'Sending…';
-            try {
-              const sent = await ccFleetTruckRemind(orgId);
-              toast('First-truck reminder sent — in-app + email ' + (sent.email_status || 'not queued') + '.', 'success');
-              fleetReminderStatus = await ccFleetTruckReminderStatus(orgId);
-              renderReminderStatus(fleetReminderStatus);
-            } catch (e) { b.disabled = false; b.textContent = 'Send first-truck reminder'; toast(humanizeError(e), 'error'); }
-          },
-        }, [icon('mail', 15), ' Send first-truck reminder']) : null;
-        mount(reminderHost, el('div', { style: 'margin-top:12px;background:#fff8eb;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px' }, [
-          el('div', { style: 'display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap' }, [
-            el('div', null, [
-              el('b', { style: 'font-size:.88rem;color:#9a4a00' }, 'No truck on file — remind the carrier'),
-              el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'Sends a premium email and in-app alert with a direct link to Fleet → Add truck.'),
-            ]),
-            sendBtn,
-          ].filter(Boolean)),
-          el('div', { style: 'display:flex;gap:7px;flex-wrap:wrap;margin-top:10px' }, [
-            tag('amber', 'Last truck reminder: ' + fTime(st && st.last_manual)),
-            tag('gray', 'Manual sends: ' + ((st && st.manual_count) || 0)),
-            st && st.last_auto_onboarding ? tag('blue', 'Last auto onboarding: ' + fTime(st.last_auto_onboarding)) : tag('gray', 'Auto onboarding: none sent'),
-          ]),
-          el('div', { class: 'cc-sub', style: 'font-size:.76rem;margin-top:8px' },
-            'Automatic onboarding scan: daily at 14:00 UTC' + ((st && st.last_auto_onboarding_stage) ? ' · last stage ' + st.last_auto_onboarding_stage : '') + '. It chases documents; automatic first-truck reminders are not enabled, so this button is the truck-specific push.'),
-          hist.length ? el('details', { style: 'margin-top:9px' }, [
-            el('summary', { style: 'cursor:pointer;font-size:.78rem;font-weight:800;color:#475569' }, 'Reminder history (' + hist.length + ')'),
-            el('div', { style: 'margin-top:6px' }, hist.map((h) => el('div', { style: 'display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:6px 0;border-top:1px solid #fde7c7;font-size:.76rem' }, [
-              tag(h.source === 'manual_truck' ? 'amber' : 'blue', h.source === 'manual_truck' ? 'Manual truck' : 'Auto onboarding'),
-              el('b', null, fTime(h.sent_at)),
-              h.stage ? el('span', { class: 'cc-sub' }, h.stage) : null,
-              h.email_status ? tag(emailTone(h.email_status), 'email ' + h.email_status) : tag('gray', 'email status unavailable'),
-              tag('green', 'in-app ' + (h.in_app_status || 'sent')),
-            ].filter(Boolean)))),
-          ]) : null,
-        ].filter(Boolean)));
-      };
-      if (!trucks.length) renderReminderStatus(fleetReminderStatus || {});
       mount(fleetCard, el('div', null, [
         el('div', { class: 'cc-card-head' }, [
           el('h4', { class: 'cc-card-title' }, '🚛 Fleet (' + trucks.length + (trailers.length ? ' · ' + trailers.length + ' trailer(s)' : '') + ')'),
@@ -567,10 +517,7 @@ export function renderCarrier360(host, orgId) {
           cts.vin_problem ? tag('amber', cts.vin_problem + ' with a VIN problem') : null,
         ].filter(Boolean)) : null,
         trucks.length ? el('div', null, trucks.map(truckEl))
-          : el('div', null, [
-              el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'No trucks registered yet' + (p.truck_count ? ' — the carrier said they run ' + p.truck_count + ' at signup, so the fleet has not been entered.' : '.')),
-              reminderHost,
-            ]),
+          : el('div', { class: 'cc-sub', style: 'margin-top:10px' }, 'No trucks registered yet' + (p.truck_count ? ' — the carrier said they run ' + p.truck_count + ' at signup, so the fleet has not been entered.' : '.')),
         availBlock,
         trailers.length ? el('div', { style: 'margin-top:12px' }, [
           el('div', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px' }, 'Trailers'),
@@ -803,6 +750,59 @@ export function renderCarrier360(host, orgId) {
           el('div', { class: 'cc-sub', style: 'margin-top:9px' }, [(!hazOk ? '\u26a0 Carrier requested hazmat but FMCSA shows NOT authorized \u2014 do not approve hazmat docs without proof. ' : ''), 'Live from FMCSA census \u00b7 drivers on record: ' + (c0.total_drivers || '\u2014') + ' \u00b7 full profile in the carrier\u2019s My Profile tab.']),
         ]);
       } catch (_) { mount(fmcsaXCard, [el('h4', { class: 'cc-card-title' }, 'FMCSA cross-check'), el('div', { class: 'cc-sub', style: 'margin-top:8px' }, 'FMCSA unreachable right now \u2014 try again shortly.')]); }
+    })();
+    // ---- ⏳ AUTHORITY AGE — the single biggest reason a fully compliant carrier still
+    // cannot book. Most brokers gate on how old the FOR-HIRE authority is (90 days is the
+    // common floor, six months is not rare), and until now nothing on this screen said it,
+    // so "everything is green but no loads" had no visible explanation.
+    //
+    // Two different dates, deliberately shown separately:
+    //   registered_since — USDOT registration, refreshed live on every FMCSA authority check
+    //   authority_date   — MC for-hire authority grant, read off the certificate at approval
+    // A carrier holds the DOT number first; the gap runs from two weeks to several months.
+    // The age is computed HERE, on every render, so it is never a stale stored number.
+    // Neither date is ever guessed: unknown renders as unknown.
+    (() => {
+      const sf = d.safety || {};
+      const dOnly = (v) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+      const authD = dOnly(sf.authority_date);
+      const regD  = dOnly(sf.registered_since);
+      if (!authD && !regD) return;
+
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const days = (dt) => Math.floor((today - dt) / 864e5);
+      const human = (n) => {
+        if (n < 0) return 'dated in the future — check it';
+        if (n < 31) return n + ' day' + (n === 1 ? '' : 's');
+        const mo = Math.floor(n / 30.44);
+        if (mo < 24) return mo + ' month' + (mo === 1 ? '' : 's');
+        return (n / 365.25).toFixed(1) + ' years';
+      };
+      // Brokers gate on the for-hire authority, so that is what sets the tone.
+      const gateDays = authD ? days(authD) : days(regD);
+      const band = gateDays < 90 ? { t: 'red',   msg: 'Under 90 days. Most brokers will decline on authority age alone — this is not a reflection of the carrier.' }
+                 : gateDays < 183 ? { t: 'amber', msg: 'Under six months. Some brokers still gate here; expect a narrower pool than the file suggests.' }
+                 : gateDays < 365 ? { t: 'blue',  msg: 'Past the common 90-day and six-month gates. A few shippers hold out for a full year.' }
+                 : { t: 'green', msg: 'Past the usual broker gates on authority age.' };
+
+      const line = (label, dt, sub) => el('div', { style: 'display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:5px 0' }, [
+        el('span', { style: 'font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;min-width:132px' }, label),
+        dt ? el('b', { style: 'font-size:.9rem' }, human(days(dt))) : el('span', { class: 'cc-sub' }, 'not recorded'),
+        dt ? el('span', { class: 'cc-sub' }, 'since ' + dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })) : null,
+        sub ? el('span', { class: 'cc-sub' }, sub) : null,
+      ].filter(Boolean));
+
+      const TONE2 = { green: ['#e8f8ef', '#136c3c', '#a7e5c3'], blue: ['#e9f2fe', '#0b4c92', '#b6d6fb'],
+                      amber: ['#fff5e3', '#8a5300', '#ffd99b'], red: ['#fdecec', '#a31414', '#f6b9b9'] }[band.t];
+
+      fmcsaXCard.appendChild(el('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid ' + TONE2[2] + ';background:' + TONE2[0] }, [
+        el('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8' }, '⏳ Authority age'),
+        line('For-hire authority', authD, sf.authority_date_source ? '(' + sf.authority_date_source + ')' : null),
+        line('USDOT registered', regD, null),
+        el('div', { style: 'margin-top:5px;font-size:.84rem;font-weight:700;color:' + TONE2[1] }, band.msg),
+        !authD ? el('div', { class: 'cc-sub', style: 'margin-top:4px' },
+          'The MC grant date is not on the FMCSA feed we read — it comes off the operating-authority certificate. Until it is recorded, the age above is the USDOT date, which is always the older of the two.') : null,
+      ].filter(Boolean)));
     })();
     // ---- L&I AUTHORITY TYPES (v28): the census cannot tell a broker from a carrier — this can.
     // Appended as its own strip so it lands whether or not the census fetch above succeeded.

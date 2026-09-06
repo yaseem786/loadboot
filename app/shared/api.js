@@ -162,6 +162,8 @@ export const updateTruckPosting = (id, action, patch = null) => rpc('cc_update_t
 export const confirmTruckPosting = (id) => rpc('cc_confirm_truck_posting', { p_id: id });
 export const myAvailabilityStatus = () => rpc('cc_my_availability_status');
 export const updateTruckPostingPlace = (id, p) => rpc('cc_update_truck_posting_place', { p_id: id, p: p ?? {} });
+// bl_avail_0322 — carrier's own "Not available / Available" toggle on a posting.
+export const setTruckPostingAvailable = (id, available) => rpc('cc_set_truck_posting_available', { p_id: id, p_available: !!available });
 export const scanTruckMatches = () => rpc('cc_scan_truck_matches');
 // Expense tracker v1
 export const expenseAdd = (o) => rpc('cc_expense_add', { p: o ?? {} });

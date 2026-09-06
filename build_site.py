@@ -466,7 +466,7 @@ def footer():
 </div>
 <div class="links5">
 <div><div class="foot-h">Dispatch</div><a href="services.html">Load Booking</a><a href="services.html">Rate Negotiation</a><a href="services.html">Route Planning</a><a href="services.html">Dispatch Desk</a></div>
-<div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
+<div><div class="foot-h">By haul</div><a href="otr-dispatch.html">OTR</a><a href="regional-truck-dispatch.html">Regional</a><a href="local-truck-dispatch.html">Local</a></div><div><div class="foot-h">Freight</div><a href="reefer-dispatch.html">Reefer</a><a href="flatbed-dispatch.html">Flatbed</a><a href="dry-van-dispatch.html">Dry Van</a><a href="hotshot-dispatch.html">Hotshot</a><a href="power-only-dispatch.html">Power Only</a><a href="box-truck-dispatch.html">Box Truck</a></div>
 <div><div class="foot-h">Carriers</div><a href="carriers.html">For Carriers</a><a href="owner-operator-dispatch.html">Owner-Operators</a><a href="new-authority-dispatch.html">New Authority</a><a href="services.html">Small Fleets</a></div>
 <div><div class="foot-h">Partners</div><a href="brokers.html">For Brokers</a><a href="free-load-board-for-brokers.html">Free Load Board for Brokers</a><a href="shipper-solutions.html">Shipper Solutions</a><a href="ship-direct-to-carrier.html">Ship Direct to Carriers</a><a href="partners.html">Partner Portal</a><a href="freight-shipping-by-industry.html">Freight Shipping by Industry</a><a href="agents.html">Referral Partner Program (Earn 1%)</a><a href="careers.html">Careers &mdash; US Dispatcher</a></div>
 <div><div class="foot-h">Compliance</div><a href="compliance.html">Compliance &amp; Verification</a><a href="authority-dot-setup.html">Authority &amp; DOT Setup</a><a href="boc3-ucr.html">BOC-3 / UCR</a><a href="form-2290-hvut.html">Form 2290 (HVUT)</a><a href="ifta-fuel-tax.html">IFTA Fuel Tax</a></div>
@@ -522,6 +522,9 @@ def _breadcrumb(fname, title):
 # Deterministic map — every commercial page links onward to its cluster (service, audience, pricing,
 # a guide and an application/inquiry form). Appended before the footer by page(); no orphan pages.
 RELATED = {
+ 'otr-dispatch.html':       [('regional-truck-dispatch.html','Regional Dispatch'),('local-truck-dispatch.html','Local &amp; Short-Haul'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('carrier-application.html','Apply Now')],
+ 'regional-truck-dispatch.html':[('otr-dispatch.html','OTR Dispatch'),('local-truck-dispatch.html','Local &amp; Short-Haul'),('market-rates.html','Live Market Rates'),('carrier-application.html','Apply Now')],
+ 'local-truck-dispatch.html':[('regional-truck-dispatch.html','Regional Dispatch'),('otr-dispatch.html','OTR Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply Now')],
  'dry-van-dispatch.html':   [('reefer-dispatch.html','Reefer Dispatch'),('power-only-dispatch.html','Power Only'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'reefer-dispatch.html':    [('dry-van-dispatch.html','Dry Van Dispatch'),('flatbed-dispatch.html','Flatbed Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('load-score.html','Load Score Tool'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'flatbed-dispatch.html':   [('hotshot-dispatch.html','Hotshot Dispatch'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('reefer-dispatch.html','Reefer Dispatch'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('how-it-works.html','How It Works'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
@@ -531,12 +534,12 @@ RELATED = {
  'new-authority-dispatch.html':[('how-to-get-loads-with-new-authority.html','Getting Loads with New Authority'),('owner-operator-dispatch.html','Owner-Operators'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('carriers.html','For Carriers'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'owner-operator-dispatch.html':[('owner-operator-dispatch-service-guide.html','Owner-Operator Guide'),('new-authority-dispatch.html','New Authority'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('load-score.html','Load Score Tool'),('us-truck-dispatcher.html','US Truck Dispatch'),('careers.html','Become a Dispatcher')],
  'carriers.html':           [('carrier-application.html','Apply as Carrier'),('services.html','All Services'),('pricing.html','Pricing'),('tools.html','Free Trucking Tools'),('faq.html','FAQ')],
- 'brokers.html':            [('free-load-board-for-brokers.html','Free Load Board for Brokers'),('create-broker-account.html','Create a Broker Account'),('shipper-solutions.html','Shipper Solutions'),('api.html','Developer API'),('security.html','Security & Trust'),('how-it-works.html','How It Works')],
+ 'brokers.html':            [('partners.html','Partner Portal'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('how-it-works.html','How It Works')],
  'shipper-solutions.html':  [('brokers.html','For Brokers'),('partners.html','Partner Portal'),('security.html','Security & Trust'),('contact.html','Contact'),('faq.html','FAQ')],
  'services.html':           [('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools')],
  'pricing.html':            [('how-much-does-a-truck-dispatcher-cost.html','What a Dispatcher Costs'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('carriers.html','For Carriers')],
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
- 'partners.html':           [('brokers.html','For Brokers'),('free-load-board-for-brokers.html','Free Load Board for Brokers'),('shipper-solutions.html','Shipper Solutions'),('create-shipper-account.html','Create a Shipper Account'),('security.html','Security & Trust'),('agents.html','Referral Program')],
+ 'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
  'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
@@ -1199,6 +1202,36 @@ def svc_hero(h1,lead,tert_label='All Services',tert_href='services.html',
 <div class="hero-btns reveal d3"><a href="%s" class="btn btn-primary">%s</a><a href="%s" class="btn btn-secondary">%s</a><a href="%s" class="btn btn-ghost">%s &rarr;</a></div></div></section>''' % (h1,lead,cta_href,cta_label,cta2_href,cta2_label,tert_href,tert_label)
 
 EXTRA = {
+ "OTR": [
+  ("What over-the-road actually costs you &mdash; and where it pays",
+   ["OTR is the highest-revenue way to run a truck and the easiest way to lose a week. Industry guides put a typical over-the-road trip at roughly 250 to 2,500-plus miles, with drivers turning about 2,500&ndash;3,000 miles a week and staying out two to three weeks before a 2&ndash;4 day reset at home. Those miles only pay if the truck is loaded on both ends.",
+    "One cheap reload at the far end of a 1,800-mile run erases the premium you fought for on the head-haul. That is the whole job of an OTR dispatcher: protect the rate going out, and have the return already worked before you tip the trailer."],
+   ["Head-haul rate negotiated before you accept, never after","Reload worked while you are still under load, not after you empty","Deadhead counted into every rate we quote you","Multi-week trip planning so the truck ends up where you want to be","Detention, layover and TONU documented on long runs","Home-time targets built into the plan, not promised and forgotten"]),
+  ("The backhaul is where OTR money is won or lost",
+   ["Most owner-operators can find a good outbound load. The money leaks on the way back &mdash; sitting two days in a soft market, or taking whatever pays to avoid sitting. We work the return the moment your delivery is confirmed.",
+    "In the LoadBoot carrier app you post the truck as booked and tell us where it delivers and which direction you want the reload. Your dedicated dispatcher starts sourcing that backhaul before you unload, so the truck is not looking for freight from a standstill."],
+   None),
+ ],
+ "Regional": [
+  ("Regional is measured by the week, not by the trip",
+   ["Regional running usually means staying inside roughly 500&ndash;1,000 miles of your home base and turning about 1,500&ndash;2,200 miles a week, with most carriers home on weekends. The trips are shorter, so you book more of them &mdash; and every extra booking is another chance to sit, deadhead or get stuck at a dock.",
+    "That is why regional carriers live or die on utilization. DAT&rsquo;s dry van reporting puts the average length of haul at 439 miles for dry van, 610 for reefer and 330 for flatbed &mdash; in other words most truckload freight in America is regional-length freight, and there is plenty of it if someone is working the phones ahead of you."],
+   ["Back-to-back planning so the next load is booked before you deliver","Lane triangles instead of out-and-back deadhead","Home-base radius respected on every booking","Appointment and dock times checked before you accept","Weekend home time planned into the week, not hoped for","Detention documented at the shippers that habitually run long"]),
+  ("What we need from you to keep you regional",
+   ["A regional plan is only as good as the information behind it. Set your home base, the radius you will drive to pick up, and the states you do not want to see &mdash; then post your truck each morning in the app.",
+    "Your dedicated dispatcher works only trucks that are posted and confirmed within the last 24 hours, because a stale post is how a carrier ends up 900 miles from home on a Friday."],
+   None),
+ ],
+ "Local": [
+  ("The 150 air-mile rule is the whole local business model",
+   ["Local work is defined by a regulation, not a preference. Under the FMCSA short-haul exception in 49 CFR 395.1(e), a driver who operates within a 150 air-mile radius of the normal work reporting location (about 172.6 road miles) and is released from work within 14 consecutive hours does not have to keep records of duty status or run an ELD, and is not held to the 30-minute break requirement.",
+    "Read the limits carefully, because this is where carriers get themselves violated: the exception removes the paperwork, not the hours. The 11-hour driving limit, the 14-hour window and the 60/70-hour rule still apply, and the driver must return to the same work reporting location. Cross that radius or run past 14 hours and the day needs a log."],
+   ["Loads kept inside your air-mile radius so the exception holds","Return-to-terminal timing checked before you accept a run","Multi-stop and dock-time realities priced in, not assumed","Detention and lumper documented the same day it happens","Rates negotiated per load, invoiced by us, paid to you","No contract and no forced dispatch &mdash; you approve every load"]),
+  ("Local freight is priced by the day, not by the mile",
+   ["A 90-mile run with three stops and two hours at a dock is not a 90-mile job, and it should never be rated like one. Local and short-haul freight is really sold in truck-days: how many stops, how much waiting, how much handling.",
+    "We quote local work the way it actually runs &mdash; stops, wait time, driver assist and after-hours all on the confirmation before you accept &mdash; and our fee stays a flat 5% of the gross on loads we book, whichever way the load is priced."],
+   None),
+ ],
  "Reefer": [
   ("Reefer freight we dispatch across the USA",
    ["Temperature-controlled freight covers far more than just frozen food, and each type comes with its own rates, handling rules, and best-paying lanes. Our dispatchers know which reefer freight is worth chasing and which to leave on the board.",
@@ -1459,6 +1492,48 @@ serv_body += COMPARE + HOW + serv_hub_faq_html + final_cta()
 page('services.html','Truck Dispatch Services (Full List) | Loadboot',
      'Full-service truck dispatch: load booking, rate negotiation, authority setup, IFTA, factoring, compliance, and freight-specific dispatch. Flat 5%, no contracts.',
      'services.html', serv_body, serv_hub_faq_schema)
+
+# ---------------------------------------------------------------------------------------------
+# Haul-type cluster (6 Sep 2026, owner request). Carriers search by how they run &mdash; OTR,
+# regional, local &mdash; before they search by trailer. Each page carries its own frame, its own
+# meta description and its own facts (no shared template copy), because three near-identical
+# equipment pages is exactly the cannibalisation defect the SEO round already flagged.
+svc_page('otr-dispatch.html','OTR','OTR Dispatch Services 2026 — Over-the-Road Dispatcher for Owner-Operators, Flat 5% | LoadBoot',
+ 'OTR dispatch for owner-operators and small fleets: a dedicated over-the-road dispatcher who negotiates the head-haul, works your backhaul before you unload, and plans multi-week trips around the home time you asked for. Flat 5% of gross, no contract.',
+ 'OTR Dispatch Services Across the USA','Over-the-road freight booked both ways &mdash; head-haul negotiated, reload worked before you empty, and a trip plan that ends where you want to be.',
+ ["Over-the-road is the highest-mileage way to run, and the loneliest place to negotiate. You are 1,400 miles from home, the clock is running, and the broker knows it. A dedicated dispatcher changes that conversation.",
+  "We book your outbound, negotiate it before you accept, and start working the return while you are still under load &mdash; so an OTR week is two paid legs, not one good load and one salvage job."],
+ ['Long-haul load booking on the lanes you choose','Rate negotiated on every confirmation, deadhead included','Backhaul worked before you deliver, not after','Multi-week trip planning toward your home time','Broker setup, check calls and paperwork handled','Detention, layover and TONU documented and claimed'],
+ "OTR carriers do not need someone to find a load &mdash; loads are easy to find. They need someone protecting the rate at both ends of a long run and planning the trip so the truck comes home instead of drifting. That is what a dedicated LoadBoot dispatcher does, for a flat 5% of the gross on loads we book.",
+ [('What counts as OTR freight?','Long-haul truckload that crosses regions and state lines &mdash; commonly quoted in the industry as trips from roughly 250 to 2,500-plus miles, with drivers turning about 2,500&ndash;3,000 miles a week and staying out two to three weeks at a time.'),
+  ('Can you plan my OTR trip around home time?','Yes. Tell us your home base and the home time you want and we plan the trip toward it &mdash; the last leg is booked to bring you back, not to chase one more load.'),
+  ('Do you work my backhaul before I deliver?','That is the point. Post your truck as booked in the carrier app with the delivery city and where you want the reload, and your dispatcher sources the return while you are still under load.'),
+  ('What does OTR dispatch cost?','A flat 5% of gross on loads we book. No contract, no forced dispatch, cancel anytime.')])
+
+svc_page('regional-truck-dispatch.html','Regional','Regional Truck Dispatch 2026 — Home Weekly, Lanes Inside Your Radius | LoadBoot',
+ 'Regional truck dispatch for carriers who want to stay inside their home radius and be home weekly: back-to-back load planning, lane triangles instead of deadhead, and a dedicated dispatcher who respects the states you will not run. Flat 5% of gross.',
+ 'Regional Truck Dispatch Services','Freight that keeps you inside your radius and home on weekends &mdash; planned back-to-back so the next load is booked before you deliver the last one.',
+ ["Regional carriers do not lose money on rate. They lose it on gaps &mdash; the Tuesday afternoon spent hunting a reload, the empty 120 miles back to a dock, the Friday load that lands 700 miles from the house.",
+  "We plan your week as a sequence, not a series of one-off loads: shorter hauls, booked back-to-back, inside the radius you set, aimed at getting you home when you said you wanted to be home."],
+ ['Load booking inside the home-base radius you set','Back-to-back planning so you never start from a standstill','Lane triangles that cut the empty return','Avoid-states and facility preferences respected','Weekend home time planned into the week','Rate negotiated and detention documented on every load'],
+ "Regional running is a utilization game: more loads, shorter hauls, and no room for a dead afternoon. We keep the next load booked before the current one delivers, keep you inside your radius, and keep the week pointed at your home time &mdash; flat 5% of gross on loads we book, no contract.",
+ [('How far is regional?','Industry guides generally put regional inside roughly 500&ndash;1,000 miles of your home base, turning about 1,500&ndash;2,200 miles a week, with most carriers home on weekends. In practice we run to the radius you set in your profile.'),
+  ('Is there enough regional freight for a full week?','There is &mdash; most truckload freight is regional-length. DAT&rsquo;s dry van reporting puts the average length of haul around 439 miles for dry van, 610 for reefer and 330 for flatbed.'),
+  ('Can I block certain states or shippers?','Yes. Set avoid-states and facility dislikes in your dispatch preferences and we will not put you there.'),
+  ('What do you need from me to keep me regional?','Your home base, the radius you will drive to pick up, and a truck posting confirmed in the app each morning &mdash; we only source for trucks we know are free.')])
+
+svc_page('local-truck-dispatch.html','Local','Local Truck Dispatch 2026 — 150 Air-Mile Freight, Home Every Night | LoadBoot',
+ 'Local and short-haul truck dispatch: loads kept inside your 150 air-mile radius so the FMCSA short-haul exception holds, stops and dock time priced into the rate, and home every night. Flat 5% of gross, no contract.',
+ 'Local &amp; Short-Haul Truck Dispatch','Short-haul freight that keeps you inside your air-mile radius and home every night &mdash; with stops, wait time and driver assist priced in before you accept.',
+ ["Local work is the only kind of trucking with a regulation drawn around it. Stay inside 150 air miles, get released inside 14 hours, and the paperwork burden drops away. Step outside it by one run and the day needs a log.",
+  "So we dispatch local the way it has to be run: inside your radius, back to your reporting location in time, with the stops and the dock time on the confirmation instead of eating your afternoon for free."],
+ ['Loads kept inside your 150 air-mile radius','Return-to-terminal timing checked before you accept','Stops, wait time and driver assist priced into the rate','Detention and lumper documented the day it happens','Broker setup, check calls and paperwork handled','Invoicing and collection on every load we book'],
+ "Local carriers get squeezed twice &mdash; short miles rated like long miles, and hours burned at docks nobody paid for. We quote short-haul the way it actually runs and keep the radius intact so the short-haul exception still applies to your day. Flat 5% of the gross on loads we book, no contract.",
+ [('What is the 150 air-mile short-haul exception?','Under 49 CFR 395.1(e), a driver operating within a 150 air-mile radius (about 172.6 road miles) of the normal work reporting location who is released from work within 14 consecutive hours does not have to keep records of duty status or use an ELD, and is not held to the 30-minute break rule.'),
+  ('Does that mean hours of service do not apply?','No &mdash; and this is where carriers get violated. The exception removes the logging burden, not the limits: the 11-hour driving limit, the 14-hour window and the 60/70-hour rule still apply, and the driver must return to the same reporting location.'),
+  ('How is local freight priced?','By the day as much as by the mile &mdash; stops, wait time and handling drive it. We put those terms on the confirmation before you accept, and our fee stays a flat 5% of the gross either way.'),
+  ('Can you mix local and regional work?','Yes. Set your radius and home time in the app and post the truck daily; your dispatcher works whatever fits that day inside your rules.')])
+
 
 # ---------- ABOUT ----------
 # World-class About page (Uber/Amazon pattern) — sections live in about_module.py
@@ -4630,9 +4705,16 @@ bp += ('<section class="bg-soft"><div class="wrap"><div class="sec-head reveal">
  '<div class="card" style="text-align:center"><div style="font-weight:900;font-size:1.6rem;color:#0883F7">1</div><p>receipt can settle a whole trip &mdash; freight plus approved claims, confirmed by the carrier. <a href="payments-settlements.html">The payables rail</a>.</p></div>'
  '</div></div></section>') + _bfaq_html
 bp += m_gradcta('Already a broker partner?', 'Post loads, review documents and watch shipments move &mdash; live in your Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#0b1220 0%,#1e3a5f 60%,#312e81 100%)', btncolor='#60a5fa', btntext='#0b1220')
-page('brokers.html', 'Freight Broker Load Board — Verified Carriers | LoadBoot',
-     'Freight brokers post loads free on LoadBoot and cover them with FMCSA-verified carriers: live GPS visibility, clean documents and API integration.',
-     'partners.html', bp, _bfaq_sch)
+import partner_landing_module as _plm   # premium landing system (also imported later for the shipper page)
+# 6 Sep 2026 (owner request): brokers.html moves onto the premium partner-landing system —
+# the same aurora hero / live mock / stats / comparison vocabulary the shipper page already uses,
+# but with its own angle (the verified carrier network and the proof chain) so it does not
+# cannibalise free-load-board-for-brokers.html, which stays the switch-from-a-paid-board pitch.
+# The previous body is still built above as `bp`; it is no longer published, kept for reference.
+_bp2, _bfaq_sch2 = _plm.broker_product_landing({'linkcard': linkcard, 'carrier_network_section': carrier_network_section})
+page('brokers.html', 'Freight Broker Load Board — Verified Carriers, Proof on Every Load | LoadBoot',
+     'Freight brokers post loads free and cover them with carriers that pass four gates: live FMCSA authority, the dispatched VIN on the certificate of insurance, executed paperwork and an availability post confirmed in the last 24 hours. Live GPS, geofenced stamps, one settlement receipt, API.',
+     'partners.html', _bp2, _bfaq_sch2)
 
 # ---- Shipper Solutions page (Inc 58, directive #37) — INQUIRY/CONSULTATION ONLY.
 # HONESTY GUARD: LoadBoot is a dispatch service company. Freight from shippers requires a licensed
@@ -7554,7 +7636,7 @@ page('command-center.html', 'Command Center — How the LoadBoot Operations Desk
 # 4 Sep 2026: premium, SEO-focused shipper landing page lives in partner_landing_module.py
 import partner_landing_module as _plm
 sp, _ship_schema = _plm.shipper_landing({'linkcard': linkcard, 'carrier_network_section': carrier_network_section})
-RELATED['shipper-solutions.html'] = [('create-shipper-account.html','Create a Shipper Account'),('ship-direct-to-carrier.html','Ship Direct to Carriers'),('freight-shipping-by-industry.html','Freight Shipping by Industry'),('market-rates.html','Market Rates Per Mile'),('gps-tracking.html','GPS Tracking & Proof'),('protect-freight-from-loss-damage-and-fraud.html','Loss, Damage & Fraud Guide')]
+RELATED['shipper-solutions.html'] = [('create-shipper-account.html','Create a Shipper Account'),('gps-tracking.html','GPS Tracking & Proof'),('how-it-works.html','How It Works'),('compliance.html','Carrier Verification'),('detention-pay-policy.html','Accessorial Standards'),('contact.html','Contact')]
 page('shipper-solutions.html', 'Ship Freight With Verified Carriers — Truckload Quotes & GPS Proof | LoadBoot', 'Shipper freight platform: truckload quotes from licensed brokers in minutes, FMCSA-verified carriers, live GPS with geofenced dock proof, published accessorial standards. Free for shippers, no documents to request a quote.', 'shipper-solutions.html', sp, _ship_schema)
 
 # ---- DEMAND-SIDE SEO #1: Free load board for brokers ----
@@ -7563,7 +7645,7 @@ page('shipper-solutions.html', 'Ship Freight With Verified Carriers — Truckloa
 # ghost loads + paid-software stack. Funnels to create-broker-account. Unique vs brokers.html
 # (that page is the product pitch; this one is the switch-from-a-paid-board pitch).
 flb, _flb_faq_sch = _plm.broker_landing({'linkcard': linkcard, 'carrier_network_section': carrier_network_section})
-RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('market-rates.html','Market Rates Per Mile'),('gps-tracking.html','GPS Tracking & Proof'),('payments-settlements.html','Payments & Settlements'),('api.html','Post by API')]
+RELATED['free-load-board-for-brokers.html'] = [('brokers.html','For Brokers'),('create-broker-account.html','Create a Broker Account'),('ship-direct-to-carrier.html','Ship Direct to Carriers'),('load-board-subscription-cost.html','Load Board Cost Guide'),('features.html','All Features'),('api.html','Post by API')]
 page('free-load-board-for-brokers.html', 'Free Load Board for Brokers — Post Loads Free to Verified Carriers | LoadBoot',
      'Free load board for freight brokers: post loads at $0 with no subscription, MC screened live on FMCSA in seconds, FMCSA-verified carriers, first-accept-wins booking, live GPS and one-receipt payables built in.',
      'partners.html', flb, _flb_faq_sch)
@@ -8265,7 +8347,7 @@ for _p in _ACC_PAGES:
 # ---- HTML sitemap (user-facing; complements the XML sitemap) ----
 _SITEMAP_GROUPS = [
   ('Get started', [('get-started.html', 'Create an Account'), ('contact.html', 'Get a Quote / Contact'), ('carriers.html', 'For Carriers'), ('brokers.html', 'For Brokers'), ('shipper-solutions.html', 'Shipper Solutions'), ('carrier-application.html', 'Carrier Application'), ('login.html', 'Log in'), ('how-it-works.html', 'How It Works'), ('pricing.html', 'Pricing')]),
-  ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
+  ('Services', [('services.html', 'All Services'), ('owner-operator-dispatch.html', 'Owner-Operator'), ('otr-dispatch.html', 'OTR / Over-the-Road'), ('regional-truck-dispatch.html', 'Regional'), ('local-truck-dispatch.html', 'Local & Short-Haul'), ('dry-van-dispatch.html', 'Dry Van'), ('reefer-dispatch.html', 'Reefer'), ('flatbed-dispatch.html', 'Flatbed'), ('hotshot-dispatch.html', 'Hotshot'), ('power-only-dispatch.html', 'Power Only'), ('box-truck-dispatch.html', 'Box Truck'), ('new-authority-dispatch.html', 'New Authority')]),
   ('Resources', [('resources.html', 'Resources'), ('api.html', 'Developer API'), ('load-score.html', 'Load Score Tool'), ('freight-market-reports.html', 'Weekly Freight Market Reports'), ('dry-van-freight-rates.html', 'Dry Van Rates'), ('reefer-freight-rates.html', 'Reefer Rates'), ('flatbed-freight-rates.html', 'Flatbed Rates'), ('tools.html', 'Free Calculators'), ('cost-per-mile-calculator.html', 'Cost Per Mile Calculator'), ('blog.html', 'Blog'), ('ghost-loads-load-board-problems.html', 'Ghost Loads & Fake Freight'), ('faq.html', 'FAQ')]),
   ('Freight by industry', [('freight-shipping-by-industry.html', 'Freight Shipping by Industry'), ('food-and-beverage-freight-shipping.html', 'Food & Beverage'), ('building-materials-freight-shipping.html', 'Building Materials'), ('retail-and-ecommerce-freight-shipping.html', 'Retail & E-commerce'), ('manufacturing-and-industrial-freight-shipping.html', 'Manufacturing & Industrial'), ('agriculture-and-produce-freight-shipping.html', 'Agriculture & Produce'), ('metals-and-steel-freight-shipping.html', 'Metals & Steel'), ('shipper-solutions.html', 'Shipper Solutions')]),
   ('Company', [('about.html', 'About'), ('careers.html', 'Careers'), ('partners.html', 'Partner Program'), ('agents.html', 'Agent Program'), ('case-studies.html', 'Examples'), ('status.html', 'System Status'), ('market-rates.html', 'Market Rates'), ('detention-pay-policy.html', 'Detention Pay'), ('tonu-policy.html', 'TONU'), ('layover-policy.html', 'Layover'), ('lumper-policy.html', 'Lumper Fees'), ('driver-assist-policy.html', 'Driver Assist')]),

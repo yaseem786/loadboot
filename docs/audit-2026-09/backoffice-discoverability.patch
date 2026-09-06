@@ -1,0 +1,142 @@
+From d456805d32b87b3be136ee4f3ece5aa1a4b2a500 Mon Sep 17 00:00:00 2001
+From: Yaseen <20190myaseen@gmail.com>
+Date: Sun, 6 Sep 2026 11:05:24 +0000
+Subject: [PATCH] Back office discoverability: first-run card in the Finance
+ tab + a block in the carrier email
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Production check found the whole back office — payroll, expenses, IFTA, service log, accounting
+export and two-way QuickBooks sync — had never been used once by any carrier, while every part of
+it works (qbo_config is set on prod, both edge functions are ACTIVE, the redirect allowlist passes,
+all write RPCs are granted). Nothing to debug; carriers simply do not know it is there.
+
+- app/carrier/app.js: a first-run card at the top of Finance naming the four things and jumping to
+  the right section. Shows only while the carrier genuinely has nothing (no QBO connection, no
+  payroll entries, no expenses) and can be dismissed for good — anyone already keeping books never
+  sees it. Jumps drive the same sec/paint() state the section nav drives.
+- docs/CARRIER-EMAIL-DAILY-AVAILABILITY.md/.html: a 'while you're in there' block after the main
+  availability message, so the email that is going out anyway carries the introduction. Table
+  structure verified balanced and rendered.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NLBisLFyx9zVgJDMVRxc9M
+---
+ app/carrier/app.js                         | 38 ++++++++++++++++++++++
+ docs/CARRIER-EMAIL-DAILY-AVAILABILITY.html | 20 ++++++++++++
+ docs/CARRIER-EMAIL-DAILY-AVAILABILITY.md   | 16 +++++++++
+ 3 files changed, 74 insertions(+)
+
+diff --git a/app/carrier/app.js b/app/carrier/app.js
+index c192fa7..90b7fd4 100644
+--- a/app/carrier/app.js
++++ b/app/carrier/app.js
+@@ -6627,8 +6627,46 @@ function tripStepper(status) {
+       mount(secHost, h('div', null, f ? f[2]() : []));
+     };
+     paint();
++    // 6 Sep 2026 — production check found the whole back office (payroll, expenses, IFTA, service
++    // log, accounting export, QuickBooks sync) had never been used by a single carrier, while every
++    // piece of it works. That is a discoverability problem, so say once, in the Finance tab itself,
++    // what is in here. It only shows while the carrier genuinely has nothing yet, and it can be
++    // dismissed for good — a carrier already keeping books never sees it.
++    const bookIntro9 = h('div');
++    (async () => {
++      try { if (localStorage.getItem('lb:bookintro:off') === '1') return; } catch (_) {}
++      let qb9 = null, pr9 = null, ex9 = null;
++      try { [qb9, pr9, ex9] = await Promise.all([
++        qboStatus().catch(() => null), payrollList().catch(() => null), expenseList(null).catch(() => null)]); } catch (_) {}
++      const usingIt = !!((qb9 && qb9.connected)
++        || (pr9 && Array.isArray(pr9.entries) && pr9.entries.length)
++        || (ex9 && (Number(ex9.total) > 0 || Object.keys(ex9.by_category || {}).length)));
++      if (usingIt) return;
++      const jump9 = (sec9) => { sec = sec9; paint(); try { secHost.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {} };
++      const item9 = (ic9, t9, d9, go9) => h('button', { class: 'cp-rowbtn', style: 'text-align:left', onClick: go9 }, [
++        h('span', null, [h('span', { style: 'margin-right:8px' }, ic9), h('b', null, t9), h('span', { class: 'cp-row-s', style: 'display:block;margin-top:2px' }, d9)]),
++        h('span', { class: 'cp-go' }, '\u203a')]);
++      mount(bookIntro9, h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7;background:rgba(8,131,247,.06)' }, [
++        h('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:10px' }, [
++          h('div', null, [
++            h('div', { class: 'cp-row-s', style: 'color:#3b9dff;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.72rem' }, 'Your books live here too'),
++            h('div', { class: 'cp-row-t', style: 'margin-top:2px' }, 'You are already paying for this \u2014 most of it takes one minute'),
++            h('div', { class: 'cp-row-s', style: 'margin-top:4px;line-height:1.55' }, 'Every load you run already produces the numbers. Turn them into books your accountant can use at tax time, instead of a shoebox in March.'),
++          ]),
++          h('button', { class: 'cp-btn cp-btn-sm ghost', title: 'Hide this', onClick: () => { try { localStorage.setItem('lb:bookintro:off', '1'); } catch (_) {} bookIntro9.innerHTML = ''; } }, 'Hide'),
++        ]),
++        h('div', { style: 'margin-top:10px' }, [
++          item9('\ud83d\udfe2', 'Connect QuickBooks', 'Delivered-load invoices and every expense push across automatically, and payments pull back. Set it once.', () => jump9('acct')),
++          item9('\u26fd', 'Log an expense', 'Fuel, tolls, maintenance, lumper \u2014 30 seconds at the pump. This is also what feeds your real cost per mile.', () => jump9('cost')),
++          item9('\ud83d\uddfa', 'IFTA state miles', 'Enter miles per state as you run them and the quarter is already done when the filing is due.', () => jump9('tax')),
++          item9('\ud83d\udc65', 'Payroll', 'Track what you owe your drivers and what is already paid \u2014 no spreadsheet.', () => jump9('pay')),
++        ]),
++        h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;font-size:.78rem;line-height:1.5' }, 'Only you see any of this. LoadBoot staff can view it read-only for support \u2014 nobody can edit your books.'),
++      ]));
++    })();
+     mount(content, h('div', null, [
+       nav,
++      bookIntro9,
+       secHost,
+       factoringCard9,
+       h('div', { class: 'cp-card' }, [cardHead([icon('receipt',15),' LoadBoot fee invoices'], 'the flat 5% dispatch fee — nothing else'),
+diff --git a/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.html b/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.html
+index 6ba5e15..ee161d0 100644
+--- a/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.html
++++ b/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.html
+@@ -51,6 +51,26 @@
+       <tr><td style="padding:7px 12px;border-left:4px solid #FC5305;background:rgba(252,83,5,.08);border-radius:8px;font-size:14px;color:#e2e8f0"><strong style="color:#FC5305">Dispatcher paused</strong> — nothing posted</td></tr>
+     </table>
+     <p style="margin:0 0 18px;font-size:15.5px;line-height:1.65;color:#fff;font-weight:700">Post it this morning and your dispatcher starts on it today.</p>
++  </td></tr>
++
++  <tr><td style="padding:4px 32px 8px">
++    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(148,163,184,.07);border:1px solid rgba(148,163,184,.22);border-radius:14px">
++      <tr><td style="padding:18px 20px">
++        <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;font-weight:800;margin-bottom:6px">While you&rsquo;re in there</div>
++        <h2 style="margin:0 0 8px;font-size:17px;color:#fff">Your books are in the same app</h2>
++        <p style="margin:0 0 12px;font-size:14.5px;line-height:1.65;color:#cbd5e1">Most carriers don&rsquo;t know this is sitting in their account, so here it is plainly. Under <strong style="color:#fff">Finance</strong> you already have:</p>
++        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
++          <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#128994;</td><td style="font-size:14px;line-height:1.6;color:#e2e8f0;padding:5px 0"><strong>QuickBooks Online</strong> &mdash; connect once and every delivered-load invoice and expense pushes across on its own, and payments pull back. No double entry.</td></tr>
++          <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#9981;</td><td style="font-size:14px;line-height:1.6;color:#e2e8f0;padding:5px 0"><strong>Expenses</strong> &mdash; fuel, tolls, maintenance, lumper in about 30 seconds at the pump. It&rsquo;s also what makes your cost-per-mile real instead of a guess.</td></tr>
++          <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#128506;</td><td style="font-size:14px;line-height:1.6;color:#e2e8f0;padding:5px 0"><strong>IFTA</strong> &mdash; enter state miles as you run them and the quarter is already done when the filing is due, instead of a weekend of receipts.</td></tr>
++          <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#128101;</td><td style="font-size:14px;line-height:1.6;color:#e2e8f0;padding:5px 0"><strong>Payroll</strong> &mdash; what you owe your drivers and what&rsquo;s already paid, without a spreadsheet.</td></tr>
++        </table>
++        <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#94a3b8">Costs nothing extra and only you can edit it. Our staff can view it read-only if you ask for help &mdash; nobody can change your books.</p>
++      </td></tr>
++    </table>
++  </td></tr>
++
++  <tr><td style="padding:16px 32px 8px">
+     <p style="margin:0 0 4px;font-size:15px;line-height:1.6;color:#cbd5e1">The LoadBoot Dispatch Team<br><span style="color:#94a3b8">Dedicated dispatch for carriers · loadboot.com</span></p>
+   </td></tr>
+ 
+diff --git a/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.md b/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.md
+index 6bb763a..dafc34f 100644
+--- a/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.md
++++ b/docs/CARRIER-EMAIL-DAILY-AVAILABILITY.md
+@@ -63,6 +63,22 @@ Your Dashboard now shows one of three states so there is never any doubt:
+ 
+ Post it this morning and your dispatcher starts on it today.
+ 
++WHILE YOU ARE IN THERE — YOUR BOOKS ARE IN THE SAME APP
++
++Most carriers do not know this is sitting in their account, so here it is plainly. Under
++Finance you already have:
++
++  • QuickBooks Online — connect once and every delivered-load invoice and expense pushes
++    across on its own, and payments pull back. No double entry.
++  • Expenses — log fuel, tolls, maintenance and lumper in about 30 seconds at the pump.
++    This is also what makes your cost-per-mile number real instead of a guess.
++  • IFTA — enter state miles as you run them and the quarter is already done when the
++    filing is due, instead of a weekend of receipts.
++  • Payroll — what you owe your drivers and what is already paid, without a spreadsheet.
++
++It costs nothing extra, it is part of your account, and only you can edit it. Our staff can
++view it read-only if you ask us for help — nobody can change your books.
++
+ Reply to this email or message us if anything is unclear.
+ 
+ The LoadBoot Dispatch Team
+-- 
+2.43.0
+
