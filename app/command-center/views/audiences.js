@@ -38,6 +38,25 @@ export function renderAudiences(host) {
   function drawBuilder() {
     const typeSel = el('select', { class: 'cc-input' }, AUDIENCE_TYPES.map(([v, l]) => el('option', { value: v }, l)));
     const nameIn = el('input', { class: 'cc-input', placeholder: 'Save as… e.g. Active carriers — TX' });
+    // Manual list: an explicitly curated set of addresses. The built-in segments answer
+    // "everyone matching a rule"; this answers "these people". Consent still wins — an
+    // address that unsubscribed or is on the suppression list is dropped at send time.
+    const emailsIn = el('textarea', { class: 'cc-input', rows: '6',
+      placeholder: 'One email per line (or comma-separated).\nUnsubscribed and bounced addresses are removed automatically before sending.' });
+    const emailsField = el('label', { class: 'cc-field', style: 'grid-column:1/-1;display:none' },
+      [el('span', null, 'Addresses'), emailsIn]);
+    const parseEmails = () => Array.from(new Set(String(emailsIn.value || '')
+      .split(/[\s,;]+/).map(x => x.trim().toLowerCase())
+      .filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))));
+    const syncType = () => {
+      const manual = typeSel.value === 'manual_list';
+      emailsField.style.display = manual ? '' : 'none';
+      estimate.style.display = manual ? 'none' : '';
+      if (manual) result.textContent = parseEmails().length + ' valid address(es) pasted';
+      else result.textContent = '';
+    };
+    typeSel.addEventListener('change', syncType);
+    emailsIn.addEventListener('input', () => { if (typeSel.value === 'manual_list') syncType(); });
     const result = el('div', { class: 'cc-sub', style: 'margin-top:6px' });
     const estimate = el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
       const _btn9 = ev.currentTarget;
@@ -49,7 +68,10 @@ export function renderAudiences(host) {
     const saveBtn = manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async (ev) => {
       const _btn9 = ev.currentTarget;
       if (!nameIn.value.trim()) { toast('Give the audience a name.'); return; }
-      _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value }); toast('Audience saved', 'success'); nameIn.value = ''; loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
+      const manual = typeSel.value === 'manual_list';
+      const emails = manual ? parseEmails() : null;
+      if (manual && !emails.length) { toast('Paste at least one valid email address.', 'error'); return; }
+      _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value, filters: manual ? { emails } : {} }); toast(manual ? ('Audience saved — ' + emails.length + ' address(es)') : 'Audience saved', 'success'); nameIn.value = ''; emailsIn.value = ''; syncType(); loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
       _btn9.disabled = false;
     } }, 'Save audience') : null;
     mount(builder, [
@@ -57,10 +79,12 @@ export function renderAudiences(host) {
       el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px' }, [
         el('label', { class: 'cc-field' }, [el('span', null, 'Segment'), typeSel]),
         el('label', { class: 'cc-field' }, [el('span', null, 'Name'), nameIn]),
+        emailsField,
       ]),
       el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px' }, [estimate, saveBtn].filter(Boolean)),
       result,
     ]);
+    syncType();
   }
 
   async function loadList() {

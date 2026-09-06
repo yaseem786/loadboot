@@ -3591,40 +3591,14 @@ blog_body += final_cta()
 page('blog.html','Loadboot Blog: Dispatch Tips &amp; Guides | Carriers','Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.','blog.html', blog_body)
 
 # ---------- LEGAL PAGES ----------
-priv = svc_hero('Privacy Policy','How LoadBoot collects, uses, shares and protects your information &mdash; on loadboot.com, in the portals and in the LoadBoot app.')
-priv += """<section><div class="wrap prose reveal" style="max-width:800px">
-<p><em>Last updated: August 28, 2026.</em> This Privacy Policy explains how <b>LoadBoot LLC</b> ("LoadBoot", "we", "us") handles information when you use <b>loadboot.com</b>, the <b>LoadBoot web portals</b> (Carrier, Partner, Agent, Developer and Command Center) and the <b>LoadBoot Android app</b> published on Google Play as <i>LoadBoot Load Board &amp; Dispatch</i> (package <code>com.loadboot.app</code>) &mdash; together, the "Platform". The Android app is the same portal, packaged for your phone: everything below applies to it identically. It applies to carriers, brokers, shippers, agents and anyone who visits the site.</p>
-<h2>Information we collect</h2>
-<p>What we collect depends on which portal you use. We collect it from you directly, from your device with your permission, and from public regulatory sources.</p>
-<p><b>Everyone (account &amp; contact).</b> Name, email, phone, company, and a password handled by our authentication provider (we never see it in clear text). Messages you send us in-app, by chat, email or phone, and your communication preferences.</p>
-<p><b>Carriers and owner-operators.</b> Company and authority details (MC/DOT numbers, equipment, lanes, domicile, preferences and availability); documents you upload &mdash; operating authority, certificate of insurance, W-9 (which contains your EIN or SSN), dispatch agreement, notice of assignment, rate confirmations, BOLs, PODs and receipts &mdash; stored privately; settlement and payout details (bank or factoring information you enter for payment); photos you take for proof of delivery; and <b>precise location</b>, only if and while you consent to share it for load matching or active-load tracking (see below). We also read public FMCSA/SAFER records to verify your authority and insurance.</p>
-<p><b>Brokers and shippers.</b> Company, MC/bond details and contact people; the loads you post (origin, destination, dates, equipment, rate, references, notes); loads you send to <b>loads@loadboot.com</b> by email, including the sender address, signature block and attachments needed to post them; documents and messages exchanged on a load; and payment records for loads you pay through the Platform.</p>
-<p><b>Agents and referral partners.</b> Your referral link and the accounts that sign up through it, commission and payout records, and the tax and payment details needed to pay you.</p>
-<p><b>Automatically.</b> Device and app information (device type, OS, app version, language, push token if you enable notifications), log data (IP address, pages or screens viewed, timestamps, errors and crashes) and, on the public marketing pages only, aggregate analytics. We do <b>not</b> run advertising analytics or ad tracking inside the signed-in portals or the app.</p>
-<h2>How we use it</h2>
-<p>To run the Platform: verifying carriers, posting and matching loads, sending and accepting load offers, booking, dispatching, tracking trips, collecting and reviewing documents, calculating detention, accessorials and settlements, paying carriers and agents, and answering support. To keep the Platform safe: fraud, double-brokering and ghost-load prevention, security monitoring and legal compliance. To communicate with you about your loads, documents, account and (with your preferences) product news. To improve the Platform using aggregate, de-identified usage data. We do not sell your personal information and we do not use it for third-party advertising.</p>
-<h2>Precise location &mdash; consent based</h2>
-<p>Location sharing is <b>optional</b> and off by default; the Platform is fully usable without it. When you choose to share it &mdash; a one-time share, or sharing while a load is active &mdash; the app uses your device&rsquo;s GPS while it is open or, if you allow it, while a trip is running, so that arrival and departure can be stamped automatically. You can revoke sharing at any time from your dashboard or your device settings. We record your consent, keep only the location points needed for the active trip and its proof-of-service record, and stop collecting when you revoke it, sign out, or the trip ends. Location on an active load is visible to your assigned LoadBoot dispatcher and, as trip status and geofenced arrive/depart stamps, to the broker or shipper on that load.</p>
-<h2>How information is shared</h2>
-<p>We share information only as needed to provide the service you asked for, and we never sell it:</p>
-<p><b>Between the parties on a load, at your direction.</b> When a carrier books or requests a load, the broker or shipper sees the carrier&rsquo;s company name, MC/DOT, equipment, verification status, contact details and trip status; the carrier sees the broker&rsquo;s or shipper&rsquo;s company, contact and load details. Documents attached to a load (rate confirmation, BOL, POD) are visible to both sides of that load. Carrier financials, notes and other loads are never shown to brokers, and vice versa.</p>
-<p><b>Service providers acting for us</b> &mdash; hosting and database, authentication, email and SMS delivery, telephony, mapping and geocoding, document storage and payment processing. They may process data only on our instructions.</p>
-<p><b>Your factoring company or payment partner</b>, if you choose one, to the extent needed to pay you.</p>
-<p><b>Regulators and the law</b> &mdash; where required by law, to enforce our terms, or to protect the rights and safety of users and the public. In a merger or acquisition, information may transfer to the successor under this policy.</p>
-<h2>Data security</h2>
-<p>Data is encrypted in transit (TLS). Documents are kept in private storage with per-account access controls and time-limited links; access to records is restricted by server-enforced authorization so one company cannot access another&rsquo;s data. Sensitive tax documents are viewable only by the account owner and the LoadBoot staff who review them. No method of transmission or storage is perfectly secure, but we apply safeguards appropriate to the data we hold.</p>
-<h2>Retention</h2>
-<p>We keep account information while your account is open. Load, trip, document and settlement records are kept for as long as needed to complete the load, resolve disputes and meet tax, transportation and legal record-keeping obligations (generally up to seven years), then deleted or anonymized. Location data is minimized to what the trip record needs rather than a long history. Marketing analytics are aggregated.</p>
-<h2>Your rights and choices</h2>
-<p>You may access, correct or export your information, withdraw location consent, change your notification preferences, or <b>delete your account</b> at any time: in the app or portal go to <i>Settings &rarr; Account &rarr; Delete my account</i>, or email <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> from your account address. Our <a href="delete-account.html">account deletion page</a> explains exactly what is removed and what must be kept for legal reasons. Residents of California and other states with privacy laws have the rights those laws provide; we honour them for everyone.</p>
-<h2>Children</h2>
-<p>The Platform is for businesses and is not directed to anyone under 18. We do not knowingly collect information from children.</p>
-<h2>Changes</h2>
-<p>We will post any changes here with a new date, and notify account holders of material changes by email or in-app.</p>
-<h2>Contact</h2>
-<p>LoadBoot LLC &middot; <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> &middot; +1 (469) 253-7575 &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; or use our <a href="contact.html">contact page</a>.</p></div></section>"""
-priv += final_cta()
-page('privacy.html','Privacy Policy | LoadBoot','How LoadBoot collects, uses, shares and protects your information on loadboot.com, in the portals and in the LoadBoot Android app.','privacy.html',priv)
+# Privacy is a flagship page now, not a wall of text: built by privacy_module.py from what
+# the platform ACTUALLY does — the real document lists, the real storage rules, the real
+# sub-processors. See the header of that file before editing.
+import privacy_module as _pvm
+priv, priv_schema = _pvm.privacy_page({})
+page('privacy.html','Privacy Policy &amp; Data Practices | LoadBoot',
+     'Exactly what LoadBoot collects from carriers, brokers, shippers and agents, which documents we ask for, who can open each one, every outside company that touches your data, and how to delete your account.',
+     'privacy.html', priv, priv_schema)
 
 # ---------- ACCOUNT DELETION (required by Google Play for apps with sign-in) ----------
 # Play policy: the store listing must carry a link to a page that names the app, gives
@@ -3676,70 +3650,15 @@ dele += '''<section><div class="wrap prose reveal" style="max-width:800px">
 dele += final_cta()
 page('delete-account.html','Delete your account | LoadBoot','How to delete your LoadBoot account and personal data: the steps, what is deleted, what must be retained by law, and how long it takes.','delete-account.html',dele)
 
-terms = svc_hero('Terms of Service','The agreement that governs your use of the LoadBoot platform &mdash; written to be read, not just scrolled past.')
-terms += """<section><div class="wrap prose reveal" style="max-width:840px">
-<p><em>Last updated: July 2026.</em> These Terms of Service (&ldquo;Terms&rdquo;) are a binding agreement between you and LoadBoot (&ldquo;LoadBoot,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) governing your access to and use of loadboot.com, the LoadBoot portals and applications, and the services described below (together, the &ldquo;Platform&rdquo;). By creating an account, clicking &ldquo;I agree,&rdquo; or using the Platform, you accept these Terms on behalf of yourself and the company you represent.</p>
-
-<h2>1. What LoadBoot is</h2>
-<p>LoadBoot is an operating system for trucking: a technology platform that connects verified motor carriers, licensed freight brokers, and shippers, and provides dispatch support services to carriers. The Platform includes a verified load board, dispatch services, GPS-based shipment visibility, digital document workflows (rate confirmations, BOLs, PODs, W-9s, dispatch agreements), settlement records, and communication tools.</p>
-<p>LoadBoot acts as a <strong>dispatch service and technology provider</strong>. Unless expressly stated otherwise in writing: we are not a motor carrier, we do not take possession of freight, and when providing dispatch services we act as the carrier&rsquo;s authorized agent under 49 CFR Part 371, arranging freight <em>on behalf of the carrier and under the carrier&rsquo;s own operating authority</em>. We do not allocate traffic among carriers.</p>
-
-<h2>2. Accounts &amp; eligibility</h2>
-<p>You must be at least 18, able to form a binding contract, and authorized to act for the business you register. You are responsible for the accuracy of your information, for safeguarding your login, and for all activity under your account. One company may operate multiple authorized users; you remain responsible for each of them.</p>
-
-<h2>3. Verification</h2>
-<p>Access to core features requires verification appropriate to your role: carriers &mdash; active MC/USDOT operating authority, insurance meeting the levels stated on your account (typically $1M auto liability and $100K cargo), and a completed W-9 and dispatch agreement; brokers &mdash; active brokerage authority and the federal surety bond or trust (BMC-84/85); shippers &mdash; verified business identity. We verify against public federal records (including FMCSA data) and the documents you upload. If a required document lapses, the related features pause until it is current &mdash; that protection is a feature of the network, not a penalty.</p>
-
-<h2>4. Carrier terms</h2>
-<p>Every load is booked under the carrier&rsquo;s own authority. You approve every load before it is booked &mdash; there is no forced dispatch. You are solely responsible for safe and lawful operations, including hours of service, equipment condition, permits, and insurance. Written load terms (rate confirmation, and where applicable detention, TONU, layover, and lumper provisions) govern each shipment.</p>
-
-<h2>5. Broker &amp; shipper terms</h2>
-<p>Posting is free. You represent that every posted load is genuine, lawful, and yours to tender; that rate and load details are accurate; and that you will honor the written terms of every confirmed booking, including published accessorial policies. Ghost loads, bait-and-switch postings, re-brokering a LoadBoot-covered load without disclosure, and payment default are grounds for immediate removal and may be reported within the network.</p>
-
-<h2>6. Fees &amp; payment</h2>
-<p>Joining the Platform is free. Carriers pay a flat 5% dispatch fee, charged only on loads that are <strong>delivered and paid</strong> &mdash; if a load doesn&rsquo;t pay, no fee is due. Brokers and shippers post at no charge. LoadBoot never takes custody of freight payments: brokers and shippers pay carriers (or their factoring company) directly, and LoadBoot invoices its own fee separately. Fees are stated before you book and may change prospectively with notice; changes never apply retroactively.</p>
-
-<h2>7. Independent businesses</h2>
-<p>Carriers, brokers, shippers, and referral agents are independent businesses. Nothing in these Terms creates an employment, joint venture, or partnership relationship with LoadBoot, and no party may bind another except as expressly authorized in a signed dispatch agreement.</p>
-
-<h2>8. What you can expect from us &mdash; and what the market decides</h2>
-<p>We put real work behind every account: dispatchers who hunt and negotiate on your lanes, written protection on accessorials, GPS-verified records that make claims stick, and paperwork handled end to end. We commit to that standard of effort, tooling, and transparency on every load we touch.</p>
-<p>What no honest platform can promise is the freight market itself. Rates, load volume, and lane availability move with fuel, seasonality, capacity, and the broader economy &mdash; the same market every carrier, broker, and load board in America operates in. Specific rates, volumes, or income levels therefore aren&rsquo;t guaranteed by LoadBoot, just as they aren&rsquo;t by any reputable competitor. Our answer to a soft market is effort and information &mdash; live market rates, cost-per-mile tooling, and dispatchers who say &ldquo;no&rdquo; to freight that doesn&rsquo;t pay &mdash; never inflated promises.</p>
-
-<h2>9. Acceptable use</h2>
-<p>You agree not to: misrepresent your identity, authority, insurance, or documents; post false or misleading loads; harvest data, scrape, reverse engineer, or probe the Platform; interfere with other users or with Platform operation; use the Platform for any unlawful purpose; or circumvent verification, fees, or safety controls. We may suspend or remove accounts that put the network at risk, with notice where practicable.</p>
-
-<h2>10. Your content &amp; our platform</h2>
-<p>You retain ownership of documents and data you upload and grant LoadBoot a limited license to store, process, and display them as needed to operate the Platform. The Platform, its software, design, brand, and content are LoadBoot&rsquo;s property or its licensors&rsquo; and are protected by law; no rights are granted except as stated here.</p>
-
-<h2>11. Privacy</h2>
-<p>Our <a href="privacy.html">Privacy Policy</a> explains what we collect and how we use it, and forms part of these Terms. Summary: we use your data to run the Platform, we don&rsquo;t sell it, and communications preferences are always in your control.</p>
-
-<h2>12. Third-party services</h2>
-<p>The Platform interoperates with third-party services (for example FMCSA data, mapping, payment, factoring, and accounting integrations such as QuickBooks). Those services are governed by their own terms, and LoadBoot is not responsible for them.</p>
-
-<h2>13. Term &amp; termination</h2>
-<p>There is no minimum term and no cancellation fee &mdash; you may close your account at any time from your portal or by writing to hello@loadboot.com. Obligations already accrued (including fees on delivered-and-paid loads and the terms of confirmed bookings) survive termination, as do Sections 8&ndash;18. We may suspend or terminate accounts for material breach, fraud, safety risk, or extended inactivity.</p>
-
-<h2>14. Disclaimers</h2>
-<p>The Platform is provided &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; To the fullest extent permitted by law, LoadBoot disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. We verify counterparties diligently, but each user remains responsible for its own commercial decisions and counterparties&rsquo; performance.</p>
-
-<h2>15. Limitation of liability</h2>
-<p>To the fullest extent permitted by law: LoadBoot is not liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, revenue, cargo, or data; and LoadBoot&rsquo;s total aggregate liability arising out of the Platform is limited to the greater of (a) the dispatch fees you paid to LoadBoot in the six (6) months before the claim arose, or (b) one hundred U.S. dollars ($100). Some jurisdictions do not allow certain limitations, so parts of this section may not apply to you.</p>
-
-<h2>16. Indemnification</h2>
-<p>You will defend and hold harmless LoadBoot and its team from claims arising out of your freight operations, your breach of these Terms, your content, or your violation of law or third-party rights.</p>
-
-<h2>17. Governing law &amp; disputes</h2>
-<p>These Terms are governed by the laws of the State of Texas, without regard to conflict-of-law rules. Before filing any claim, you agree to contact us at hello@loadboot.com and give us thirty (30) days to work it out &mdash; most issues are resolved this way. Courts located in Texas will have exclusive jurisdiction over disputes not resolved informally, and each party waives trial by jury to the extent permitted.</p>
-
-<h2>18. Changes to these Terms</h2>
-<p>We may update these Terms as the Platform evolves. For material changes we will give notice (portal notice or email) before they take effect; continued use after the effective date constitutes acceptance. The &ldquo;Last updated&rdquo; date above always reflects the current version.</p>
-
-<h2>19. Contact</h2>
-<p>Questions about these Terms: <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>. Live chat and our 24/7 phone line are on the <a href="contact.html">contact page</a>.</p>
-</div></section>"""
-page('terms.html','Terms of Service | Loadboot','The terms governing your use of the Loadboot website and truck dispatch services.','terms.html',terms)
+# Terms is a flagship page now, matching privacy.html. Built by terms_module.py, which
+# reuses privacy_module's CSS so the two legal pages read as one family. The nineteen
+# numbered clauses are the CONTRACT — their substance is carried over verbatim from the
+# July 2026 Terms. See the header of that file before editing.
+import terms_module as _tmm
+terms, terms_schema = _tmm.terms_page({})
+page('terms.html','Terms of Service | LoadBoot',
+     'The agreement between you and LoadBoot LLC — fees, verification, carrier and broker obligations, liability and disputes, each clause with a plain-English explanation.',
+     'terms.html', terms, terms_schema)
 
 # ---------- FLAGSHIP: LOAD SCORE ("Should You Take This Load?") ----------
 ls_faqs = [

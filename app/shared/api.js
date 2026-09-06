@@ -592,7 +592,11 @@ export const moduleSummary = () => rpc('cc_module_summary');
 export const systemHealth = () => rpc('cc_system_health');
 // Campaign Manager (Phase 3C)
 export const cmpList = () => rpc('cc_cmp_list');
-export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id ?? null, p_name: o.name, p_objective: o.objective ?? null, p_audience: o.audienceId ?? null, p_template: o.templateKey ?? null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt ?? null, p_status: o.status ?? 'draft' });
+// `?? null` only replaces null/undefined, so an untouched Schedule or Audience field arrived as
+// '' and Postgres refused to cast it (22007 / 22P02) before cc_cmp_save could run — a campaign
+// could not be saved without a schedule. `|| null` sends a real null. The RPC now coerces empty
+// strings server-side too (bl_camp_0326), so both ends are safe.
+export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id || null, p_name: o.name, p_objective: o.objective || null, p_audience: o.audienceId || null, p_template: o.templateKey || null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt || null, p_status: o.status || 'draft' });
 export const cmpSetStatus = (id, status) => rpc('cc_cmp_set_status', { p_id: id, p_status: status });
 export const cmpMarkSent = (id, count) => rpc('cc_cmp_mark_sent', { p_id: id, p_count: count });
 // ---- Unified Delivery Engine (cvb/cvc/cvd) — preview → confirm → enqueue → claim → mark ----
@@ -635,7 +639,7 @@ export const audienceEstimate = (type) => rpc('cc_audience_estimate', { p_type: 
 export const listAudiences = () => rpc('cc_list_audiences');
 export const saveAudience = (o = {}) => rpc('cc_save_audience', { p_name: o.name, p_type: o.type, p_filters: o.filters ?? {} });
 export const deleteAudience = (id) => rpc('cc_delete_audience', { p_id: id });
-export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['newsletter', 'Newsletter subscribers'], ['form_submitters', 'Website form leads'], ['all_staff', 'All staff']];
+export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['newsletter', 'Newsletter subscribers'], ['form_submitters', 'Website form leads'], ['all_staff', 'All staff'], ['manual_list', 'Manual list — paste addresses']];
 // Template Studio (Phase 3A — marketing + transactional templates, variable allowlist)
 export const studioListTemplates = () => rpc('cc_studio_list_templates');
 export const studioSaveTemplate = (t = {}) => rpc('cc_studio_save_template', { p_key: t.key, p_name: t.name, p_category: t.category, p_channels: t.channels, p_subject: t.subject, p_preview: t.preview, p_body_html: t.bodyHtml, p_body_text: t.bodyText, p_status: t.status });
