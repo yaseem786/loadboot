@@ -39,6 +39,7 @@ import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } f
 import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
+import { docTrustBadge, mountDocTrust } from '../shared/ui/docTrust.js';
 import { brandLogo } from '../shared/ui/components.js';
 import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
 import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
@@ -1339,13 +1340,13 @@ async function agentPortal(user) {
                 i9.onchange = async () => { let f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…'; f9 = await lbShrink9(f9);
                   const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_id'); d.id_doc = m9.path; d.id_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
                   try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('ID upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — if this mentions size, retake at lower resolution or use a screenshot; otherwise check internet and retry'; } } };
-                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Government photo ID * (passport / CNIC / licence)'), i9, st9]); })(),
+                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Government photo ID * (passport / CNIC / licence)'), i9, st9, docTrustBadge('agent_id', { compact: true })]); })(),
               (() => { const i9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.8rem' });
                 const st9 = h('span', { class: 'cp-row-s' }, d.bank_doc ? '✓ uploaded' : '');
                 i9.onchange = async () => { let f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…'; f9 = await lbShrink9(f9);
                   const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_bank'); d.bank_doc = m9.path; d.bank_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
                   try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('bank-proof upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — if this mentions size, retake at lower resolution or use a screenshot; otherwise check internet and retry'; } } };
-                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9]); })(),
+                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9, docTrustBadge('agent_bank', { compact: true })]); })(),
             ]),
           ]),
           h('div', { style: 'margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;max-height:190px;overflow:auto;font-size:.82rem;line-height:1.7;color:#b9c6da' }, [
@@ -7008,7 +7009,10 @@ function tripStepper(status) {
     const fileIn = h('input', { class: 'cp-in', type: 'file' });
     const applyFmt = () => { const r = docFmt(typeSel.value); fileIn.accept = r.exts.map(e => '.' + e).join(','); fmtLine.textContent = '📌 Required format: ' + r.label; };
     const guideHost = h('div');
-    const renderGuide = () => { guideHost.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHost.appendChild(g9); };
+    // Who-can-open-this badge, swapped with the document type. People do not read a privacy
+    // policy before an upload; they read the line next to the button. See shared/ui/docTrust.js.
+    const trustHost = h('div');
+    const renderGuide = () => { guideHost.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHost.appendChild(g9); mountDocTrust(trustHost, typeSel.value); };
     typeSel.onchange = () => { applyFmt(); renderGuide(); }; applyFmt(); renderGuide();
     const msg = h('div', { class: 'cp-err' });
     const up = h('button', { class: 'cp-btn', onClick: async () => {
@@ -7200,23 +7204,12 @@ function tripStepper(status) {
       const d = latestDoc(r.doc_type || reqDocType(r.name)) || null;
       const fdate = (x) => x ? new Date(x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + new Date(x).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
       // Amazon-style verification tracker: Uploaded → In review → Approved (or Rejected w/ reason)
+      const stateIdx = r.status === 'valid' ? 3 : r.status === 'rejected' ? 2 : (r.status === 'pending' || d) ? 2 : 0;
       const rejected = r.status === 'rejected' || (d && d.status === 'rejected');
-      // A rejected requirement is a FINISHED journey, not a stalled one. It used to stop at
-      // step 2, so the tracker lit "In review" and left "Rejected" grey — the carrier saw a
-      // red pill above a bar that said nothing had happened yet. Light all three and make
-      // the last one red.
-      const stateIdx = r.status === 'valid' ? 3 : rejected ? 3 : (r.status === 'pending' || d) ? 2 : 0;
-      // The rejection reason is carrier-facing text (the rejection email carries the same
-      // string), so it is typeset as a document, not shouted. One accent colour, body at
-      // normal weight and real contrast — dark red on a dark panel was unreadable.
-      const _dk = document.documentElement.getAttribute('data-lbtheme') === 'dark';
-      const _C = _dk
-        ? { bg: 'rgba(248,113,113,.06)', bd: 'rgba(248,113,113,.26)', acc: '#f87171', tx: '#e6edf7', mut: '#9db0c8', box: 'rgba(2,6,23,.45)', boxbd: 'rgba(148,163,184,.22)', off: 'rgba(148,163,184,.22)' }
-        : { bg: '#fffafa', bd: '#f3d6d6', acc: '#dc2626', tx: '#243043', mut: '#64748b', box: '#ffffff', boxbd: '#e6ecf5', off: '#e2e8f0' };
       const STEPS = [['Uploaded', d ? fdate(d.created_at) : null], ['In review', stateIdx >= 2 && !rejected && r.status !== 'valid' ? 'dispatch team — usually a few hours' : (rejected ? fdate(d && d.reviewed_at) : null)], [rejected ? 'Rejected' : 'Approved', r.status === 'valid' ? fdate(d && d.reviewed_at) || '✓' : null]];
       const stepper = stateIdx > 0 ? h('div', { style: 'display:flex;gap:6px;margin:9px 0 2px' }, STEPS.map(([lbl, sub], si) => {
         const on = si < stateIdx; const isLast = si === 2;
-        const colr = isLast && rejected && on ? _C.acc : on ? (isLast && r.status === 'valid' ? '#16a34a' : '#0883F7') : _C.off;
+        const colr = isLast && rejected && on ? '#dc2626' : on ? (isLast && r.status === 'valid' ? '#16a34a' : '#0883F7') : '#e2e8f0';
         return h('div', { style: 'flex:1;text-align:center' }, [
           h('div', { style: 'height:5px;border-radius:99px;background:' + colr }),
           h('div', { style: 'font-size:10px;margin-top:4px;font-weight:' + (on ? '800' : '500') + ';color:' + (on ? colr : '#94a3b8') }, lbl),
@@ -7227,54 +7220,7 @@ function tripStepper(status) {
       // behind it — the W-9, the agreement — showed "Rejected" and nothing else. Fall back
       // to the requirement's own note, which cc_pocket_compliance now returns (bl_ob_0233).
       const whyTxt = (rejected && ((d && d.review_note) || r.note)) || '';
-      // Parse the note into prose / numbered steps / copyable blocks. Some review paths can
-      // flatten the newlines out of the note, so rebuild the shape when they are missing
-      // rather than rendering one 900-character paragraph.
-      let _raw = String(whyTxt).replace(/\r/g, '').trim();
-      if (_raw && _raw.indexOf('\n') < 0) _raw = _raw.replace(/([.:!?])\s{2,}/g, '$1\n\n').replace(/[ \t]+(?=\d{1,2}[.)]\s)/g, '\n');
-      const _blk = [];
-      _raw.split('\n').forEach((ln) => {
-        const t = ln.trim();
-        if (!t) return;
-        const m = t.match(/^(\d{1,2})[.)]\s+(.*)$/);
-        if (m) { _blk.push({ k: 'step', n: m[1], t: m[2] }); return; }
-        const prev = _blk[_blk.length - 1];
-        // A value to hand to someone — an address, an account name — is not prose, so it is
-        // lifted into its own copyable panel. Two ways to mark one, because nobody typing
-        // into a review box remembers a formatting rule: indent it, OR simply let it follow
-        // a line that ended in a colon. Prose after a colon ends in a full stop; a value
-        // does not, and that difference is what separates them.
-        const _isVal = !/[.!?]$/.test(t) && t.length <= 120;
-        const _afterColon = prev && (prev.k === 'step' || prev.k === 'p') && /:$/.test(prev.t);
-        if (prev && ((/^\s{2,}/.test(ln) && (prev.k === 'step' || prev.k === 'copy'))
-                     || (prev.k === 'copy' && _isVal)
-                     || (_afterColon && _isVal))) {
-          if (prev.k === 'copy') { prev.t += '\n' + t; return; }
-          _blk.push({ k: 'copy', t: t }); return;
-        }
-        _blk.push({ k: 'p', t: t });
-      });
-      const _copyBtn = (txt) => h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'flex:0 0 auto;font-size:11px;padding:5px 11px', onClick: (ev) => {
-        const b = ev.currentTarget;
-        Promise.resolve().then(() => navigator.clipboard.writeText(txt))
-          .then(() => { b.textContent = 'Copied ✓'; setTimeout(() => { b.textContent = 'Copy'; }, 1600); })
-          .catch(() => { b.textContent = 'Select it'; setTimeout(() => { b.textContent = 'Copy'; }, 1600); });
-      } }, 'Copy');
-      const _body = _blk.map((b) => b.k === 'p'
-        ? h('div', { style: 'margin:0 0 10px;color:' + _C.tx + ';font-size:13.5px;line-height:1.7;font-weight:500' }, b.t)
-        : b.k === 'step'
-        ? h('div', { style: 'display:flex;gap:10px;align-items:flex-start;margin:0 0 9px' }, [
-            h('div', { style: 'flex:0 0 auto;width:21px;height:21px;border-radius:99px;background:' + _C.acc + ';color:#fff;font-size:11px;font-weight:800;line-height:21px;text-align:center;margin-top:1px' }, b.n),
-            h('div', { style: 'min-width:0;color:' + _C.tx + ';font-size:13.5px;line-height:1.65;font-weight:500' }, b.t),
-          ])
-        : h('div', { style: 'display:flex;gap:9px;align-items:center;margin:-1px 0 11px 31px;padding:9px 12px;border-radius:10px;background:' + _C.box + ';border:1px solid ' + _C.boxbd }, [
-            h('div', { style: 'flex:1 1 auto;min-width:0;color:' + _C.tx + ';font-size:12.5px;font-weight:700;line-height:1.55;white-space:pre-wrap;word-break:break-word' }, b.t),
-            _copyBtn(b.t),
-          ]));
-      const note = whyTxt ? h('div', { style: 'margin-top:10px;border:1px solid ' + _C.bd + ';border-left:3px solid ' + _C.acc + ';border-radius:12px;padding:13px 15px 3px;background:' + _C.bg }, [
-        h('div', { style: 'font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:' + _C.acc + ';margin:0 0 10px' }, 'What needs changing'),
-        h('div', null, _body),
-      ]) : null;
+      const note = whyTxt ? h('div', { style: 'margin-top:6px;border-radius:9px;padding:8px 11px;background:rgba(220,38,38,.08);color:#b91c1c;font-size:12px;font-weight:700;line-height:1.6;white-space:pre-wrap' }, '\u2715 Reason: ' + whyTxt) : null;
       // Owner spec: LOCKED while in review — no replace until a decision comes back.
       const inReview = stateIdx >= 2 && !rejected && r.status !== 'valid';
       const actionable = r.status !== 'valid' && !inReview;
@@ -7316,7 +7262,7 @@ function tripStepper(status) {
           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
         sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
-      h('div', { class: 'cp-card' }, [cardHead('Upload an extra document', 'Anything not listed above \u2014 permits, lease agreements, references'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, guideHost, fileIn, msg, up]),
+      h('div', { class: 'cp-card' }, [cardHead('Upload an extra document', 'Anything not listed above \u2014 permits, lease agreements, references'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, guideHost, trustHost, fileIn, msg, up]),
       h('div', { class: 'cp-card' }, [cardHead('My uploads \u2014 review status', 'Every file you sent, incl. plan-of-action attachments'), listWrap]),
     ]));
     async function loadList() {
@@ -7605,7 +7551,8 @@ function tripStepper(status) {
       const msg = h('div', { class: 'cp-err' });
       let autoUp = false;
       const guideHostW = h('div');
-      const renderGuideW = () => { guideHostW.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHostW.appendChild(g9); };
+      const trustHostW = h('div');
+      const renderGuideW = () => { guideHostW.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHostW.appendChild(g9); mountDocTrust(trustHostW, typeSel.value); };
       typeSel.onchange = renderGuideW; renderGuideW();
       const reqHost = h('div');
       const hazHost = h('div');
@@ -7651,7 +7598,7 @@ function tripStepper(status) {
       refresh();
       const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Complete W-9 in-app');
       const agrBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'Agreement') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Sign dispatch agreement');
-      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), typeSel, guideHostW, h('div', { class: 'cp-inlineform', 'data-lb': 'doc-upload' }, [fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
+      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), typeSel, guideHostW, trustHostW, h('div', { class: 'cp-inlineform', 'data-lb': 'doc-upload' }, [fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
     }
     function reviewStep() {
       const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);
