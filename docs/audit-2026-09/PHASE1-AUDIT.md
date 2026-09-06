@@ -208,3 +208,75 @@ Define contribution per completed load as **collected dispatch fee − actual va
 Primary external sources checked on 5 September 2026: [FMCSA final guidance](https://www.federalregister.gov/documents/2023/06/16/2023-13080/definitions-of-broker-and-bona-fide-agents); [Google Search updates](https://developers.google.com/search/updates); [Google spam policies](https://developers.google.com/search/docs/essentials/spam-policies); [Supabase pricing](https://supabase.com/pricing); [Resend quotas](https://resend.com/docs/knowledge-base/account-quotas-and-limits); [Netlify credits](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/how-credits-work/); [Retell pricing](https://www.retellai.com/pricing).
 
 Companions: **LoadBoot-Competition-and-Wedge.md**, **LoadBoot-90-Day-Plan.md**, and **LoadBoot-Evidence-Index.md** with the evidence archive. No Phase 2 changes have been made. Stop here for your review.
+
+## Corrective round — PRODUCTION results (2026-09-06)
+
+Applied after the Sprint 1+2 verification pass. Staging first in every case, same test re-run on prod.
+
+- **A — `bl_cmp_0326_broker_precedence_fix` (prod `20260906125744`).** Fixes the F30 broker regression introduced
+  by my own `bl_cmp_0324`: fmcsa-verify's `authority` field is CARRIER authority only, so a broker-only docket
+  returns `authority='inactive'` with `authorityVerified=true`. 0324 applied that precedence to every org kind,
+  which would have expired a legitimate broker's onboarding item, paused the org and emailed the owner. 0326
+  moves the org-kind lookup above the classification and gates both precedence branches on `v_kind='carrier'`.
+  Prod rollback-txn test: **PASS on all three cases** — broker-only → active/no-pause/no-email; lapsed-broker →
+  inactive/paused/expired/emailed (the pre-0324 behaviour, byte-for-byte; this leg cannot run on staging because
+  `org_onboarding_items_status_check` there has no `'expired'` value); carrier verified-inactive →
+  inactive/no-pause/no-email. Post-check: `fix_live=true`, 0 items expired by the test, 0 emails.
+  Blast radius before the fix: **zero** — the only two brokers the 06:10 UTC prod dispatch reached both returned
+  `no_docket`.
+- **B — `load-mail` v9 (prod slot 7).** F01's DB guard closed direct RPC calls but moved the spoofing path one
+  layer up: `verify_jwt=true` accepts any valid project credential, including the PUBLIC anon key, and v8 then
+  relayed the caller's payload to the RPCs using the service key. v9 adds `isServiceCaller()` — the bearer must
+  either byte-match `SUPABASE_SERVICE_ROLE_KEY` (length-guarded constant-time compare, because this project's
+  service key is an opaque `sb_secret_…` string, not a JWT) or decode to `role=service_role`. Prod live check:
+  anon-key caller → **403 `{"error":"forbidden","code":"LB403"}`**.
+- **C — `domain-check` v3.** Two SSRF bypasses in v2's literal-IP check: `new URL("http://[::1]/").hostname`
+  keeps the brackets, so no IPv6 literal ever matched; and the parser normalises `::ffff:127.0.0.1` to
+  `::ffff:7f00:1`, so the v4-mapped branch missed it too. v3 strips brackets, expands the hex form, and refuses
+  anything it cannot classify. **Deployed and verified on STAGING only — NOT on prod.** Prod therefore still
+  carries both bypasses. Awaiting Yaseen's word.
+- **Not run on prod:** live check 5 (the full inbound-mail → load-mail chain). It ingests a real test-sender row.
+
+### Unreconciled observation (cause UNKNOWN)
+Codex reported at 07:30 UTC that "M Usman Farooq (Agent)" was pending with an expired authority item. My
+post-backfill queries found 0 items expired and 0 emails from the 0324 dispatch/backfill. Not explained yet; the
+row may pre-date the collector. Nobody should assume the collector caused it — query that org's
+`org_onboarding_items` history with timestamps first.
+
+### F02 follow-up — domain-check v4 (staging, 2026-09-06)
+
+Codex's verification pass found a third defect in the same function, and it is real: **link-local is
+`fe80::/10`, i.e. fe80 through febf**, but v3 tested `h.startsWith("fe80")`, which is only `fe80::/16`.
+`fe90::1`, `fea0::1`, `feaf::dead:beef` and `febf::1` were all classified public.
+
+v4 stops matching prefixes on the text form and parses the address instead (`v6Words` expands any RFC-4291
+spelling to 8 numeric words; anything it cannot parse is refused). The classifier is then numeric ranges:
+`fe80`–`febf` link-local, `fc00::/7` ULA, `ff00::/8` multicast, `::1` and `::` in any spelling, `::ffff:0:0/96`
+v4-mapped (dotted or the hex form the WHATWG URL parser produces), `::a.b.c.d` v4-compatible, and `2002::/16`
+6to4 plus `64:ff9b::/96` NAT64 resolved down to the IPv4 they embed. `%zone` suffixes are stripped in both
+`ipIsPrivate` and `hostIsSafe`. No response field or other behaviour changed.
+
+Evidence, `docs/audit-2026-09/tests/domain_check_v4_ip_cases.mjs` (30 cases, `node` exits 0). The file keeps v3
+next to v4 so the regression is demonstrated rather than asserted — **v3 gets 8 of the 30 wrong**, every one of
+them "public" when it is not:
+
+| case | v3 | v4 |
+|---|---|---|
+| `fe90::1`, `fea0::1`, `feaf::dead:beef`, `febf::1` | public ✗ | private ✓ |
+| `0:0:0:0:0:0:0:1`, `0:0:0:0:0:0:0:0` (uncompressed loopback / unspecified) | public ✗ | private ✓ |
+| `2002:7f00:1::1` (6to4 → 127.0.0.1), `64:ff9b::7f00:1` (NAT64 → 127.0.0.1) | public ✗ | private ✓ |
+| `fe7f::1`, `fec0::1`, `::ffff:8.8.8.8`, `2606:4700::1111` (negative controls) | public ✓ | public ✓ |
+
+Live staging checks (`tests/edge_fn_live_checks_2026-09-06.sql`, domain-check slot 5): `fe90--1.sslip.io` and
+`febf--1.sslip.io` → `refused: resolves to private address` (v3 let both through); `0--1.sslip.io`,
+`169.254.169.254.nip.io` and `0-0-0-0-0-ffff-7f00-1.sslip.io` → refused; `loadboot.com` → 200 with the response
+shape unchanged; and the control `2606-4700--1111.sslip.io` (public IPv6) → **not** refused, it reaches the
+fetch and fails there. sslip.io writes `:` as `-`, so the v4-mapped host has to be spelled out in full —
+`--ffff-7f00-1` is an invalid DNS label.
+
+**Not on prod.** Prod's `domain-check` is still v2 and therefore carries all three defects: the bracket bypass,
+the hex v4-mapped bypass and the fe80::/10 range bug. Awaiting Yaseen's explicit approval.
+
+### F03 — closed as a decision, not a defect
+Yaseen has decided the outreach engine stays **enabled**. No pause, no schedule change, nothing touched. The
+finding stands as recorded context (daily cap 600, cron `0 13,15,17,19 * * *`), not as an open action.

@@ -129,3 +129,85 @@ So: every claim below about *the branch's code* is UNKNOWN; every claim about *w
 
 ## R2.6 Staging test path (must all pass before "ready")
 1. `git push origin audit/carrier-legal-seo-hardening-v2` (no merge). 2. Apply `bl_pay_0120` + the two new migrations (GPS manual gate, fee-base split) to **staging only**. 3. Fresh carrier signup with clickwrap → row in `policy_acceptances`. 4. Sign agreement v3 → `dispatch_agreement_signatures` row with hash. 5. Book a load, choose `manual_checkin`, never grant geolocation. 6. Manual check-in at pickup/delivery + POD → `cc_pocket_advance_trip('delivered')` succeeds. 7. `fin_invoices` row = `draft`, **no** `fee.invoice_due` email in `email_queue`. 8. Broker `pay_trip_mark_sent` → carrier `pay_confirm_received(freight)` → invoice `sent`, due date set, email now. 9. Approve a detention accessorial → carrier payable +amount, `fee` unchanged, commission unchanged (linehaul base). 10. `referral_commissions` row = 1% of linehaul for L1. 11. Rollback: revert the three migrations on staging and re-run 6–8.
+
+---
+
+# ROUND 3 — Claude, 6 Sep 2026. Independent check of the pushed code + Codex's Sprint 1+2 verification
+
+## R3.0 What is actually on GitHub now (read directly, not from any handoff)
+
+`git ls-remote` + fetch of `origin`:
+
+| Ref | Head | Content |
+|---|---|---|
+| `main` | **7dc83e4** (was b44fbab at Round 2) | 4 new commits: 94a9ab5 (Sprint 1 + relay), 21aa3f1 (F32 P&L port), 2d0a1b6 (F30/F31 + Sprint 1 to prod), 78f700f (daily truck availability, haul types, brokers flagship page). 97 files, +14,380 lines. |
+| `audit/s1-s2-verification-20260906` | 9585231 | **Docs only**, 1 commit ahead of main: `PHASE1-AUDIT.md` (+92 lines), `HANDOFF.md`, `90-DAY-PLAN.md`. No code, no migrations. |
+| `audit/carrier-legal-seo-hardening-v2` | **DOES NOT EXIST** | Not on origin. `efc5f5d` / `6d50655` / `4adebcd` are still unreachable; `migrations/bl_pay_0120*` is still absent from the repo and from `supabase_migrations` on **both** databases. |
+
+So two different lanes are in play. The **A-to-Z audit lane (F01–F33)** is real, pushed and largely on prod. The **legal / marketplace-model / SEO hardening lane** has still never been pushed and remains entirely unverifiable.
+
+## R3.1 Legal/SEO lane — all seven Round-2 blockers re-tested on the NEW main (7dc83e4): still open
+
+| # | Blocker | Status on 7dc83e4 | Evidence |
+|---|---|---|---|
+| 1 | Fee invoice `sent` + emailed at delivery | **OPEN** | no `bl_pay_0120*` in `migrations/`; not in `schema_migrations` on staging or prod |
+| 2 | GPS auto-start + silent consent | **OPEN** | `app/carrier/app.js:5102` still reads `// MANDATORY tracking: auto-starts with the trip`; 4 `ensureLiveLoc` sites |
+| 3 | Manual check-in RPCs unused in UI | **OPEN** | `grep -c "tripSetTracking\|tripCheckin" app/carrier/app.js` = **0** |
+| 4 | No signup clickwrap | **OPEN** | `app/carrier/app.js:508` / `app/partner/app.js:551` still send only company/name/phone/partner_kind; 0 hits for `accepted_terms`/`acknowledged_privacy` |
+| 5 | Agreement: 180-day non-circumvention, "settlement deduction", "auto-booked" | **OPEN** | 3 hits in `app/carrier/dispatch-agreement.js` |
+| 6 | Accessorials added into `fin_invoices.gross` → commissions on accessorials | **OPEN** | `wa_0001` `gross = gross + a.amount` unchanged; `apply_accessorial_to_invoice` live on prod |
+| 7 | No CI gate | **OPEN** | `.github/` still absent; `pr-checks.yml` sits in `docs/audit-2026-09/`, where GitHub never runs it. Netlify still deploys every push to main. |
+
+## R3.2 Codex's Sprint 1+2 verification — independently re-checked. Its findings hold.
+
+I did not take the verification doc's word for anything below; each line was re-derived from the prod catalog or the pushed source.
+
+| Codex finding | My independent check | Verdict |
+|---|---|---|
+| **F30 — broker classifier changed** | Read prod `app_private.fmcsa_authority_collect` body directly. The `v_status := case …` block is evaluated **before** `select o.kind into v_kind`, and it places `authorityVerified='true' and authority='active' → active` / `…'inactive' → inactive` **above** the `allowedToOperate='N'` and `mcActive='false'` rules. The kind check comes after. | **CONFIRMED** |
+| **F30 — rollback helper does not restore it** | The migration's own header says: *"collect/dispatch keep the new bodies (they are supersets)"*, and `bl_cmp_0324_rollback()` returns *"dispatch/collect keep superset bodies"*. They are supersets for carriers, **not** for brokers, because the precedence changed. | **CONFIRMED** |
+| **F30 — real-world exposure** | Prod `authority_checks`: **44 carrier rows** (21 with `raw`), **2 broker rows, both `no_docket`, both `raw IS NULL`**, checked 06:10 today. So the changed classifier has **never yet run on a real broker HTTP response** — the regression is latent, not yet triggered. It fires the first time a broker with a docket is screened. | **CONFIRMED + narrowed (lower urgency than the doc implies, but must be fixed before broker screening runs)** |
+| **F31 — carrier upload wiring absent** | `app/shared/api.js:746` `carrierUploadDocument = async ({ type, fileName, filePath })` inserts exactly those three columns. `grep -rn "doc_set_ai_verdict\|docSetAiVerdict" app/` = **0 hits**. The four `lbAiPrecheck` sites (7035, 7093, 7589, 7664) compute `pv9` and never forward it. | **CONFIRMED — F31 is not closed end-to-end** |
+| **F01 — load-mail still promotes any caller to service_role** | `supabase/functions/load-mail/index.ts`: handler reads `from`/`subject`/`text` straight from `req.json()`, then calls `lb_email_ping_confirm_by_email` / `cc_mail_ingest` etc. with `Authorization: Bearer <SERVICE_ROLE_KEY>`. There is **no sender allowlist and no shared-secret check** anywhere in the handler. `verify_jwt=true` only proves the caller holds a project JWT — and the **anon key is public in the site bundle**. | **CONFIRMED — real, and worse than "open boundary": the anon key is enough to invoke it** |
+| **F02 — bracketed IPv6 bypass** | `hostIsSafe` passes `u.hostname` to `ipIsPrivate`. For a URL like `http://[::1]/`, WHATWG `URL.hostname` returns `[::1]` **with the brackets**, so `v6 === "::1"` is false, and none of the `fe80` / `fc` / `fd` / `ff` / `::ffff:` prefixes match → returns `false` → treated as public. Separately the link-local test is `startsWith("fe80")`, which misses the rest of `fe80::/10` (`fe90::`, `fea0::`, `feb0::`). | **CONFIRMED — two distinct defects in one function** |
+| **F32 P&L, F05 resend, F31 SQL/grants** | All six audit migrations are present on prod with the versions the doc states (`bl_fin_0322` 20260905214144 … `bl_bp_0321` 20260906065117). | **CONFIRMED present** (I did not re-run the rollback tests — Codex did, on both envs, and its method is sound) |
+
+**One extra thing I found that neither report flags as a live effect:** on prod, `M Usman Farooq (Agent)` — a **broker-kind org, one of LoadBoot's own agent orgs** — is now `status='pending'` with `authority_status='no_docket'`, `last_error='No MC or USDOT number on file to check against FMCSA.'`, checked 2026-09-06 06:10. `app_private.audit_logs` has **no** matching authority/org entry in the last 30 hours, so *which* process set it to `pending` is **UNKNOWN** — but the no-docket path is new today and this is a real internal account whose state changed. Two other brokers (`MC Logistics Broker LLC`, `TAB LLC`) are `pending` with **no** check row at all, so they were pending beforehand. Decide whether the agent org should be restored to `active`.
+
+## R3.3 Verdicts
+
+**Confirmed PASS**
+- Six audit migrations really are on prod, with the exact versions claimed; staging carries the same set plus its own `0321b`.
+- F32 P&L: six RPCs on prod, anon denied, authenticated/service_role allowed.
+- F31 SQL half: `doc_set_ai_verdict` write-once + stamp trigger + `cc_list_documents` returning `ai_verdict`, EXECUTE limited to postgres/authenticated/service_role, no anon grants on `public.documents`.
+- F01 SQL half: the three `lb_email_*` functions carry exactly one guard each and no anon/authenticated EXECUTE.
+- F05: narrow, reversible patch; both resend tests pass.
+- The relay discipline itself: Codex re-derived from the prod catalog rather than trusting the previous session, and refused to force a PASS when a staging fixture was missing. That is the right behaviour — keep it.
+
+**Partial**
+- F30: carrier path works and the backfill is real (22 checked, 21 `pending_review`, was 0 of 44) — but broker classification is changed and un-rollbackable with the supplied helper.
+- F31: server side done, client side missing → the AI verdict still never reaches the row from a carrier upload.
+- F01: database restriction is real; the edge boundary is not.
+
+**FAIL / blockers (do not close)**
+1. F30 broker classifier regression + incomplete rollback helper.
+2. F31 client wiring absent → feature not end-to-end.
+3. F01 load-mail caller authorization absent (anon key suffices).
+4. F02 bracketed-IPv6 and `fe80::/10` SSRF gaps.
+5. The entire legal/SEO hardening lane — seven blockers from Round 2, all still open, still unpushed.
+6. `pr-checks.yml` is not in `.github/workflows/`, so no CI runs and Netlify deploys main unguarded.
+
+**UNKNOWN (needs evidence nobody has yet)**
+- Production frontend deploy revision: source absence is not proof the deployed bundle lacks the F31 wiring. Get the live `app/shared/api.js` from loadboot.com and grep it.
+- Who set the agent broker org to `pending`.
+- Everything in the legal/SEO branch.
+- Whether any broker was ever classified by the new precedence before today (current rows are not an execution history).
+
+## R3.4 Recommended order of work
+
+1. **F30 fix first** (before any broker is screened): move the `v_status` CASE inside the `v_kind = 'carrier'` branch, keep the old precedence for non-carriers, and write a rollback helper that actually restores the old body. Staging → test → prod.
+2. **F02**: strip brackets before `ipIsPrivate`, and test `fe80::/10` by range, not prefix string. Add the missing `docs/audit-2026-09/tests/` file for it.
+3. **F01**: add a shared-secret header or a sender allowlist in the load-mail handler; `verify_jwt` alone is not authorization when the anon key is public.
+4. **F31**: forward `pv9` through `carrierUploadDocument` and call `doc_set_ai_verdict` at the four sites, or close F31 as "server-side only" and stop calling it done.
+5. Move `pr-checks.yml` into `.github/workflows/` and turn on branch protection.
+6. Only then return to the legal/SEO lane — and it still needs three migrations (fee timing, GPS manual-delivery gate, accessorial/commission base split) plus an acceptance ledger, not just copy edits.

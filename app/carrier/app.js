@@ -7200,12 +7200,23 @@ function tripStepper(status) {
       const d = latestDoc(r.doc_type || reqDocType(r.name)) || null;
       const fdate = (x) => x ? new Date(x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + new Date(x).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
       // Amazon-style verification tracker: Uploaded → In review → Approved (or Rejected w/ reason)
-      const stateIdx = r.status === 'valid' ? 3 : r.status === 'rejected' ? 2 : (r.status === 'pending' || d) ? 2 : 0;
       const rejected = r.status === 'rejected' || (d && d.status === 'rejected');
+      // A rejected requirement is a FINISHED journey, not a stalled one. It used to stop at
+      // step 2, so the tracker lit "In review" and left "Rejected" grey — the carrier saw a
+      // red pill above a bar that said nothing had happened yet. Light all three and make
+      // the last one red.
+      const stateIdx = r.status === 'valid' ? 3 : rejected ? 3 : (r.status === 'pending' || d) ? 2 : 0;
+      // The rejection reason is carrier-facing text (the rejection email carries the same
+      // string), so it is typeset as a document, not shouted. One accent colour, body at
+      // normal weight and real contrast — dark red on a dark panel was unreadable.
+      const _dk = document.documentElement.getAttribute('data-lbtheme') === 'dark';
+      const _C = _dk
+        ? { bg: 'rgba(248,113,113,.06)', bd: 'rgba(248,113,113,.26)', acc: '#f87171', tx: '#e6edf7', mut: '#9db0c8', box: 'rgba(2,6,23,.45)', boxbd: 'rgba(148,163,184,.22)', off: 'rgba(148,163,184,.22)' }
+        : { bg: '#fffafa', bd: '#f3d6d6', acc: '#dc2626', tx: '#243043', mut: '#64748b', box: '#ffffff', boxbd: '#e6ecf5', off: '#e2e8f0' };
       const STEPS = [['Uploaded', d ? fdate(d.created_at) : null], ['In review', stateIdx >= 2 && !rejected && r.status !== 'valid' ? 'dispatch team — usually a few hours' : (rejected ? fdate(d && d.reviewed_at) : null)], [rejected ? 'Rejected' : 'Approved', r.status === 'valid' ? fdate(d && d.reviewed_at) || '✓' : null]];
       const stepper = stateIdx > 0 ? h('div', { style: 'display:flex;gap:6px;margin:9px 0 2px' }, STEPS.map(([lbl, sub], si) => {
         const on = si < stateIdx; const isLast = si === 2;
-        const colr = isLast && rejected && on ? '#dc2626' : on ? (isLast && r.status === 'valid' ? '#16a34a' : '#0883F7') : '#e2e8f0';
+        const colr = isLast && rejected && on ? _C.acc : on ? (isLast && r.status === 'valid' ? '#16a34a' : '#0883F7') : _C.off;
         return h('div', { style: 'flex:1;text-align:center' }, [
           h('div', { style: 'height:5px;border-radius:99px;background:' + colr }),
           h('div', { style: 'font-size:10px;margin-top:4px;font-weight:' + (on ? '800' : '500') + ';color:' + (on ? colr : '#94a3b8') }, lbl),
@@ -7216,7 +7227,54 @@ function tripStepper(status) {
       // behind it — the W-9, the agreement — showed "Rejected" and nothing else. Fall back
       // to the requirement's own note, which cc_pocket_compliance now returns (bl_ob_0233).
       const whyTxt = (rejected && ((d && d.review_note) || r.note)) || '';
-      const note = whyTxt ? h('div', { style: 'margin-top:6px;border-radius:9px;padding:8px 11px;background:rgba(220,38,38,.08);color:#b91c1c;font-size:12px;font-weight:700;line-height:1.6;white-space:pre-wrap' }, '\u2715 Reason: ' + whyTxt) : null;
+      // Parse the note into prose / numbered steps / copyable blocks. Some review paths can
+      // flatten the newlines out of the note, so rebuild the shape when they are missing
+      // rather than rendering one 900-character paragraph.
+      let _raw = String(whyTxt).replace(/\r/g, '').trim();
+      if (_raw && _raw.indexOf('\n') < 0) _raw = _raw.replace(/([.:!?])\s{2,}/g, '$1\n\n').replace(/[ \t]+(?=\d{1,2}[.)]\s)/g, '\n');
+      const _blk = [];
+      _raw.split('\n').forEach((ln) => {
+        const t = ln.trim();
+        if (!t) return;
+        const m = t.match(/^(\d{1,2})[.)]\s+(.*)$/);
+        if (m) { _blk.push({ k: 'step', n: m[1], t: m[2] }); return; }
+        const prev = _blk[_blk.length - 1];
+        // A value to hand to someone — an address, an account name — is not prose, so it is
+        // lifted into its own copyable panel. Two ways to mark one, because nobody typing
+        // into a review box remembers a formatting rule: indent it, OR simply let it follow
+        // a line that ended in a colon. Prose after a colon ends in a full stop; a value
+        // does not, and that difference is what separates them.
+        const _isVal = !/[.!?]$/.test(t) && t.length <= 120;
+        const _afterColon = prev && (prev.k === 'step' || prev.k === 'p') && /:$/.test(prev.t);
+        if (prev && ((/^\s{2,}/.test(ln) && (prev.k === 'step' || prev.k === 'copy'))
+                     || (prev.k === 'copy' && _isVal)
+                     || (_afterColon && _isVal))) {
+          if (prev.k === 'copy') { prev.t += '\n' + t; return; }
+          _blk.push({ k: 'copy', t: t }); return;
+        }
+        _blk.push({ k: 'p', t: t });
+      });
+      const _copyBtn = (txt) => h('button', { class: 'cp-btn cp-btn-sm ghost', style: 'flex:0 0 auto;font-size:11px;padding:5px 11px', onClick: (ev) => {
+        const b = ev.currentTarget;
+        Promise.resolve().then(() => navigator.clipboard.writeText(txt))
+          .then(() => { b.textContent = 'Copied ✓'; setTimeout(() => { b.textContent = 'Copy'; }, 1600); })
+          .catch(() => { b.textContent = 'Select it'; setTimeout(() => { b.textContent = 'Copy'; }, 1600); });
+      } }, 'Copy');
+      const _body = _blk.map((b) => b.k === 'p'
+        ? h('div', { style: 'margin:0 0 10px;color:' + _C.tx + ';font-size:13.5px;line-height:1.7;font-weight:500' }, b.t)
+        : b.k === 'step'
+        ? h('div', { style: 'display:flex;gap:10px;align-items:flex-start;margin:0 0 9px' }, [
+            h('div', { style: 'flex:0 0 auto;width:21px;height:21px;border-radius:99px;background:' + _C.acc + ';color:#fff;font-size:11px;font-weight:800;line-height:21px;text-align:center;margin-top:1px' }, b.n),
+            h('div', { style: 'min-width:0;color:' + _C.tx + ';font-size:13.5px;line-height:1.65;font-weight:500' }, b.t),
+          ])
+        : h('div', { style: 'display:flex;gap:9px;align-items:center;margin:-1px 0 11px 31px;padding:9px 12px;border-radius:10px;background:' + _C.box + ';border:1px solid ' + _C.boxbd }, [
+            h('div', { style: 'flex:1 1 auto;min-width:0;color:' + _C.tx + ';font-size:12.5px;font-weight:700;line-height:1.55;white-space:pre-wrap;word-break:break-word' }, b.t),
+            _copyBtn(b.t),
+          ]));
+      const note = whyTxt ? h('div', { style: 'margin-top:10px;border:1px solid ' + _C.bd + ';border-left:3px solid ' + _C.acc + ';border-radius:12px;padding:13px 15px 3px;background:' + _C.bg }, [
+        h('div', { style: 'font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:' + _C.acc + ';margin:0 0 10px' }, 'What needs changing'),
+        h('div', null, _body),
+      ]) : null;
       // Owner spec: LOCKED while in review — no replace until a decision comes back.
       const inReview = stateIdx >= 2 && !rejected && r.status !== 'valid';
       const actionable = r.status !== 'valid' && !inReview;

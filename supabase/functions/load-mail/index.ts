@@ -1,3 +1,11 @@
+// load-mail v9 — v8 + the function itself now requires a SERVICE-ROLE caller (audit F01 follow-up, 2026-09-06).
+// WHY: bl_sec_0320 locked the three lb_email_* RPCs to service_role, but load-mail is deployed with
+// verify_jwt=true, and "a valid project JWT" includes the ANON key that ships in every visitor's browser.
+// So anyone could POST {from, subject, text} here and load-mail would faithfully relay it to those RPCs using
+// SUPABASE_SERVICE_ROLE_KEY — a confused deputy: the spoofing hole F01 set out to close had simply moved one
+// layer up. Found by Codex during the Sprint 1+2 verification pass.
+// The real chain is unaffected: inbound-mail v4 already calls us with `Authorization: Bearer ${SERVICE_KEY}`.
+// The gateway has already verified the SIGNATURE (verify_jwt=true); here we only read WHO it is.
 // load-mail v8 — v7 + Authorization: Bearer <service role> on the three lb_email_* RPC calls.
 // v7 sent `apikey` only; bl_sec_0320 (audit F01) makes those RPCs service-role-only, so the
 // Bearer header is now REQUIRED (cc_mail_ingest already carried it). No other change.
@@ -26,8 +34,37 @@ async function gem(key: string, prompt: string): Promise<{ text: string | null; 
 async function geocode(place: string): Promise<[number, number] | null> {
   try { const r = await fetch("https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(place + ", USA")); const d = await r.json(); const c = d?.features?.[0]?.geometry?.coordinates; return Array.isArray(c) ? [c[0], c[1]] : null; } catch { return null; }
 }
+// v9: is this caller the service role? TWO accepted proofs, because this project mixes key formats:
+//   (a) the bearer equals our own SUPABASE_SERVICE_ROLE_KEY. inbound-mail reads the SAME env var in the SAME
+//       project, so this matches by construction and works for the NEW `sb_secret_…` keys, which are opaque
+//       strings, not JWTs. The first cut of v9 only did (b) and broke the real chain in staging testing —
+//       the same "assume the key format" mistake that F02's exact-key comparison made in the other direction.
+//   (b) a legacy JWT whose payload role is service_role — kept so an older/rotated JWT-format key still works.
+// Both are checked against values we hold ourselves; nothing here trusts caller-supplied claims alone, and the
+// gateway (verify_jwt=true) has already rejected anything that is not a valid credential for this project.
+function isServiceCaller(auth: string): boolean {
+  const bearer = (auth || "").replace(/^Bearer\s+/i, "").trim();
+  if (!bearer) return false;
+  const svc = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (svc && bearer.length === svc.length) {                       // length-guarded constant-time compare
+    let diff = 0;
+    for (let i = 0; i < svc.length; i++) diff |= bearer.charCodeAt(i) ^ svc.charCodeAt(i);
+    if (diff === 0) return true;
+  }
+  const m = /^([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/.exec(bearer);
+  if (!m) return false;
+  try {
+    const b64 = m[2].replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - m[2].length % 4) % 4);
+    return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)))).role === "service_role";
+  } catch { return false; }
+}
+
 Deno.serve(async (req) => {
   try {
+    // v9: only the inbound-mail relay (service role) may reach the ingestion RPCs through us.
+    if (!isServiceCaller(req.headers.get("Authorization") || "")) {
+      return json({ error: "forbidden", code: "LB403" }, 403);
+    }
     const KEY = Deno.env.get("GEMINI_API_KEY") || "";
     const URL_ = Deno.env.get("SUPABASE_URL")!;
     const SVC = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
