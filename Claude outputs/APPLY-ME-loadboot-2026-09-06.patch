@@ -1,0 +1,1764 @@
+diff --git a/app/carrier/app.js b/app/carrier/app.js
+index 90b7fd4..bcabb2d 100644
+--- a/app/carrier/app.js
++++ b/app/carrier/app.js
+@@ -39,6 +39,7 @@ import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } f
+ import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
+ import { enablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
+ import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
++import { docTrustBadge, mountDocTrust } from '../shared/ui/docTrust.js';
+ import { brandLogo } from '../shared/ui/components.js';
+ import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
+ import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
+@@ -1339,13 +1340,13 @@ async function agentPortal(user) {
+                 i9.onchange = async () => { let f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…'; f9 = await lbShrink9(f9);
+                   const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_id'); d.id_doc = m9.path; d.id_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
+                   try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('ID upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — if this mentions size, retake at lower resolution or use a screenshot; otherwise check internet and retry'; } } };
+-                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Government photo ID * (passport / CNIC / licence)'), i9, st9]); })(),
++                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Government photo ID * (passport / CNIC / licence)'), i9, st9, docTrustBadge('agent_id', { compact: true })]); })(),
+               (() => { const i9 = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png,.webp', style: 'font-size:.8rem' });
+                 const st9 = h('span', { class: 'cp-row-s' }, d.bank_doc ? '✓ uploaded' : '');
+                 i9.onchange = async () => { let f9 = i9.files && i9.files[0]; if (!f9) return; st9.textContent = 'uploading…'; f9 = await lbShrink9(f9);
+                   const try9 = async () => { const m9 = await uploadDocument(f9, 'agent_bank'); d.bank_doc = m9.path; d.bank_doc_name = m9.fileName; st9.textContent = '✓ ' + m9.fileName; };
+                   try { await try9(); } catch (e9) { await new Promise((r9) => setTimeout(r9, 1500)); try { await try9(); } catch (e8) { console.error('bank-proof upload failed', e8); st9.textContent = '✕ ' + ((e8 && e8.message) || 'upload failed') + ' — if this mentions size, retake at lower resolution or use a screenshot; otherwise check internet and retry'; } } };
+-                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9]); })(),
++                return h('div', { style: 'flex:1;min-width:220px' }, [h('label', { class: 'cp-lbl' }, 'Bank proof * (voided check / statement header / Payoneer screenshot)'), i9, st9, docTrustBadge('agent_bank', { compact: true })]); })(),
+             ]),
+           ]),
+           h('div', { style: 'margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;max-height:190px;overflow:auto;font-size:.82rem;line-height:1.7;color:#b9c6da' }, [
+@@ -7008,7 +7009,10 @@ function tripStepper(status) {
+     const fileIn = h('input', { class: 'cp-in', type: 'file' });
+     const applyFmt = () => { const r = docFmt(typeSel.value); fileIn.accept = r.exts.map(e => '.' + e).join(','); fmtLine.textContent = '📌 Required format: ' + r.label; };
+     const guideHost = h('div');
+-    const renderGuide = () => { guideHost.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHost.appendChild(g9); };
++    // Who-can-open-this badge, swapped with the document type. People do not read a privacy
++    // policy before an upload; they read the line next to the button. See shared/ui/docTrust.js.
++    const trustHost = h('div');
++    const renderGuide = () => { guideHost.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHost.appendChild(g9); mountDocTrust(trustHost, typeSel.value); };
+     typeSel.onchange = () => { applyFmt(); renderGuide(); }; applyFmt(); renderGuide();
+     const msg = h('div', { class: 'cp-err' });
+     const up = h('button', { class: 'cp-btn', onClick: async () => {
+@@ -7258,7 +7262,7 @@ function tripStepper(status) {
+           c && c.mandatory_ok && !needAttention ? 'All required documents are in ✓'
+             : (needAttention ? needAttention + ' required item' + (needAttention > 1 ? 's' : '') + ' need' + (needAttention > 1 ? '' : 's') + ' attention' : 'Some documents still needed')),
+         sorted.length ? h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, sorted.map(reqRow)) : h('div', { class: 'cp-muted' }, 'No requirements listed.')]),
+-      h('div', { class: 'cp-card' }, [cardHead('Upload an extra document', 'Anything not listed above \u2014 permits, lease agreements, references'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, guideHost, fileIn, msg, up]),
++      h('div', { class: 'cp-card' }, [cardHead('Upload an extra document', 'Anything not listed above \u2014 permits, lease agreements, references'), h('p', { class: 'cp-row-s', style: 'margin-bottom:6px' }, 'PDF or photo, up to 25 MB. Stored privately; only you and LoadBoot staff can see it.'), typeSel, fmtLine, guideHost, trustHost, fileIn, msg, up]),
+       h('div', { class: 'cp-card' }, [cardHead('My uploads \u2014 review status', 'Every file you sent, incl. plan-of-action attachments'), listWrap]),
+     ]));
+     async function loadList() {
+@@ -7547,7 +7551,8 @@ function tripStepper(status) {
+       const msg = h('div', { class: 'cp-err' });
+       let autoUp = false;
+       const guideHostW = h('div');
+-      const renderGuideW = () => { guideHostW.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHostW.appendChild(g9); };
++      const trustHostW = h('div');
++      const renderGuideW = () => { guideHostW.innerHTML = ''; const g9 = lbDocGuideCard(typeSel.value); if (g9) guideHostW.appendChild(g9); mountDocTrust(trustHostW, typeSel.value); };
+       typeSel.onchange = renderGuideW; renderGuideW();
+       const reqHost = h('div');
+       const hazHost = h('div');
+@@ -7593,7 +7598,7 @@ function tripStepper(status) {
+       refresh();
+       const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Complete W-9 in-app');
+       const agrBtn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./dispatch-agreement.js').then((m) => m.openSignModal({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'Agreement') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Sign dispatch agreement');
+-      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), typeSel, guideHostW, h('div', { class: 'cp-inlineform', 'data-lb': 'doc-upload' }, [fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
++      return h('div', null, [reqHost, h('p', { class: 'cp-row-s' }, 'W-9 and the Dispatch Agreement are the only two you complete right here (tap Start W-9 / Sign \u2014 no file needed for these two). Every other document \u2014 insurance, authority, certificates \u2014 is a file upload from the checklist above, and agent-issued ones must be original PDFs.'), hazHost, h('p', { class: 'cp-row-s' }, 'Manual upload \u2014 pick the document type, then the file (up to 25 MB). Agent-issued documents must be the original PDF; photos are OK where noted.'), typeSel, guideHostW, trustHostW, h('div', { class: 'cp-inlineform', 'data-lb': 'doc-upload' }, [fileIn, up, msg]), h('div', { style: 'margin-top:10px' }, list)]);
+     }
+     function reviewStep() {
+       const row = (k, v) => h('div', { class: 'cp-row' }, [h('div', { class: 'cp-row-t' }, k), h('span', null, v || '—')]);
+diff --git a/app/command-center/cc-dark.css b/app/command-center/cc-dark.css
+index d4abbe1..387bf7d 100644
+--- a/app/command-center/cc-dark.css
++++ b/app/command-center/cc-dark.css
+@@ -45,6 +45,8 @@ body{background:var(--lb-bg);color:#eaf1fb}
+ .cc-tag-blue{background:rgba(8,131,247,.16);color:#3b9dff}
+ .cc-chip-btn{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#b9c6db}
+ .cc-chip-btn:hover{background:rgba(8,131,247,.14);color:#3b9dff}
++.cc-chip-btn.on,.cc-chip-btn.active{background:#0883F7;border-color:#0883F7;color:#fff}
++.cc-chip-btn.on:hover,.cc-chip-btn.active:hover{background:#3b9dff;border-color:#3b9dff;color:#0b1526}
+ .cc-chip-warn{background:rgba(217,119,6,.15);color:#fbbf24}
+ 
+ /* inputs / toolbar */
+diff --git a/app/command-center/command-center.css b/app/command-center/command-center.css
+index b60b9df..644f48d 100644
+--- a/app/command-center/command-center.css
++++ b/app/command-center/command-center.css
+@@ -383,6 +383,11 @@
+ .cc-status-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+ .cc-chip-btn{padding:7px 12px;border:1px solid #e2e8f0;border-radius:20px;background:#f8fafc;color:#334155;font-size:.8rem;font-weight:600;cursor:pointer;text-transform:capitalize}
+ .cc-chip-btn:hover{background:#eff6ff;border-color:#3b82f6;color:#0883F7}
++/* Selected state for toggle chips. campaignManager.js and templates.js toggle `.on`, and
++   integrations.js toggles `.active`, but neither class had a rule — so clicking a channel
++   chip changed the state and showed nothing, which reads as a dead button. */
++.cc-chip-btn.on,.cc-chip-btn.active{background:#0883F7;border-color:#0883F7;color:#fff}
++.cc-chip-btn.on:hover,.cc-chip-btn.active:hover{background:#0670d4;border-color:#0670d4;color:#fff}
+ .cc-chip-warn{display:inline-block;padding:2px 9px;border-radius:20px;background:#fef3c7;color:#92400e;font-size:.76rem;font-weight:600}
+ .cc-doclist{display:flex;flex-direction:column;gap:8px}
+ .cc-doc-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eef2f7;border-radius:10px;background:#fcfdff}
+diff --git a/app/command-center/views/audiences.js b/app/command-center/views/audiences.js
+index 4b0499b..93f7aa7 100644
+--- a/app/command-center/views/audiences.js
++++ b/app/command-center/views/audiences.js
+@@ -38,6 +38,25 @@ export function renderAudiences(host) {
+   function drawBuilder() {
+     const typeSel = el('select', { class: 'cc-input' }, AUDIENCE_TYPES.map(([v, l]) => el('option', { value: v }, l)));
+     const nameIn = el('input', { class: 'cc-input', placeholder: 'Save as… e.g. Active carriers — TX' });
++    // Manual list: an explicitly curated set of addresses. The built-in segments answer
++    // "everyone matching a rule"; this answers "these people". Consent still wins — an
++    // address that unsubscribed or is on the suppression list is dropped at send time.
++    const emailsIn = el('textarea', { class: 'cc-input', rows: '6',
++      placeholder: 'One email per line (or comma-separated).\nUnsubscribed and bounced addresses are removed automatically before sending.' });
++    const emailsField = el('label', { class: 'cc-field', style: 'grid-column:1/-1;display:none' },
++      [el('span', null, 'Addresses'), emailsIn]);
++    const parseEmails = () => Array.from(new Set(String(emailsIn.value || '')
++      .split(/[\s,;]+/).map(x => x.trim().toLowerCase())
++      .filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))));
++    const syncType = () => {
++      const manual = typeSel.value === 'manual_list';
++      emailsField.style.display = manual ? '' : 'none';
++      estimate.style.display = manual ? 'none' : '';
++      if (manual) result.textContent = parseEmails().length + ' valid address(es) pasted';
++      else result.textContent = '';
++    };
++    typeSel.addEventListener('change', syncType);
++    emailsIn.addEventListener('input', () => { if (typeSel.value === 'manual_list') syncType(); });
+     const result = el('div', { class: 'cc-sub', style: 'margin-top:6px' });
+     const estimate = el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
+       const _btn9 = ev.currentTarget;
+@@ -49,7 +68,10 @@ export function renderAudiences(host) {
+     const saveBtn = manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async (ev) => {
+       const _btn9 = ev.currentTarget;
+       if (!nameIn.value.trim()) { toast('Give the audience a name.'); return; }
+-      _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value }); toast('Audience saved', 'success'); nameIn.value = ''; loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
++      const manual = typeSel.value === 'manual_list';
++      const emails = manual ? parseEmails() : null;
++      if (manual && !emails.length) { toast('Paste at least one valid email address.', 'error'); return; }
++      _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value, filters: manual ? { emails } : {} }); toast(manual ? ('Audience saved — ' + emails.length + ' address(es)') : 'Audience saved', 'success'); nameIn.value = ''; emailsIn.value = ''; syncType(); loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
+       _btn9.disabled = false;
+     } }, 'Save audience') : null;
+     mount(builder, [
+@@ -57,10 +79,12 @@ export function renderAudiences(host) {
+       el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px' }, [
+         el('label', { class: 'cc-field' }, [el('span', null, 'Segment'), typeSel]),
+         el('label', { class: 'cc-field' }, [el('span', null, 'Name'), nameIn]),
++        emailsField,
+       ]),
+       el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px' }, [estimate, saveBtn].filter(Boolean)),
+       result,
+     ]);
++    syncType();
+   }
+ 
+   async function loadList() {
+diff --git a/app/partner/app.js b/app/partner/app.js
+index f48aaed..5fef416 100644
+--- a/app/partner/app.js
++++ b/app/partner/app.js
+@@ -11,6 +11,7 @@ import { brandLogo } from '../shared/ui/components.js';
+ import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
+ import { printExecutedW9 } from '../carrier/w9-form.js';
+ import { attachAddressSuggest } from '../shared/addr-suggest.js';
++import { docTrustBadge } from '../shared/ui/docTrust.js';
+ import { lookupCommodity, suggestCommodities } from './commodities.js';
+ import { renderFmcsaOnly } from '../carrier/profile-view.js';
+ import { mountBrokerTrust, kickoffScreening } from './broker-trust.js';
+@@ -477,6 +478,8 @@ function openPacketSubmit(it, onDone) {
+   fieldEls.forEach(([lbl, inp]) => { kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:8px' }, lbl)); kids.push(inp); });
+   if (spec.file) { kids.push(h('div', { class: 'cp-sub', style: 'font-weight:700;margin-top:10px' }, spec.fileHint || 'Document (PDF or photo)')); kids.push(h('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:4px' }, [pick, fIn])); kids.push(fMeta); }
+   if (spec.file) kids.push(fmtLine);
++  // Who can open this packet document — same source of truth as /privacy.html#documents.
++  kids.push(docTrustBadge(it.key));
+   const close = openModal('Submit — ' + it.label, [...kids, err,
+     h('button', { class: 'cp-btn', style: 'margin-top:12px;width:100%', onClick: async (ev) => {
+       const vals = fieldEls.map(([lbl, inp]) => inp.value.trim() ? (lbl + ': ' + inp.value.trim()) : null).filter(Boolean);
+diff --git a/app/shared/api.js b/app/shared/api.js
+index fbaaecc..8e6b35c 100644
+--- a/app/shared/api.js
++++ b/app/shared/api.js
+@@ -592,7 +592,11 @@ export const moduleSummary = () => rpc('cc_module_summary');
+ export const systemHealth = () => rpc('cc_system_health');
+ // Campaign Manager (Phase 3C)
+ export const cmpList = () => rpc('cc_cmp_list');
+-export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id ?? null, p_name: o.name, p_objective: o.objective ?? null, p_audience: o.audienceId ?? null, p_template: o.templateKey ?? null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt ?? null, p_status: o.status ?? 'draft' });
++// `?? null` only replaces null/undefined, so an untouched Schedule or Audience field arrived as
++// '' and Postgres refused to cast it (22007 / 22P02) before cc_cmp_save could run — a campaign
++// could not be saved without a schedule. `|| null` sends a real null. The RPC now coerces empty
++// strings server-side too (bl_camp_0326), so both ends are safe.
++export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id || null, p_name: o.name, p_objective: o.objective || null, p_audience: o.audienceId || null, p_template: o.templateKey || null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt || null, p_status: o.status || 'draft' });
+ export const cmpSetStatus = (id, status) => rpc('cc_cmp_set_status', { p_id: id, p_status: status });
+ export const cmpMarkSent = (id, count) => rpc('cc_cmp_mark_sent', { p_id: id, p_count: count });
+ // ---- Unified Delivery Engine (cvb/cvc/cvd) — preview → confirm → enqueue → claim → mark ----
+@@ -635,7 +639,7 @@ export const audienceEstimate = (type) => rpc('cc_audience_estimate', { p_type:
+ export const listAudiences = () => rpc('cc_list_audiences');
+ export const saveAudience = (o = {}) => rpc('cc_save_audience', { p_name: o.name, p_type: o.type, p_filters: o.filters ?? {} });
+ export const deleteAudience = (id) => rpc('cc_delete_audience', { p_id: id });
+-export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['newsletter', 'Newsletter subscribers'], ['form_submitters', 'Website form leads'], ['all_staff', 'All staff']];
++export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['newsletter', 'Newsletter subscribers'], ['form_submitters', 'Website form leads'], ['all_staff', 'All staff'], ['manual_list', 'Manual list — paste addresses']];
+ // Template Studio (Phase 3A — marketing + transactional templates, variable allowlist)
+ export const studioListTemplates = () => rpc('cc_studio_list_templates');
+ export const studioSaveTemplate = (t = {}) => rpc('cc_studio_save_template', { p_key: t.key, p_name: t.name, p_category: t.category, p_channels: t.channels, p_subject: t.subject, p_preview: t.preview, p_body_html: t.bodyHtml, p_body_text: t.bodyText, p_status: t.status });
+diff --git a/app/shared/ui/docTrust.js b/app/shared/ui/docTrust.js
+new file mode 100644
+index 0000000..8ebeee6
+--- /dev/null
++++ b/app/shared/ui/docTrust.js
+@@ -0,0 +1,127 @@
++// docTrust.js — the single place that tells a user who can open the document they are
++// about to upload.
++//
++// Why this exists: a carrier hands over a W-9 with their SSN on it, a voided check, and a
++// photo of a CDL, inside a modal whose only microcopy was the accepted file format. People
++// do not read a privacy policy before an upload — they read the sentence next to the
++// button, or they read nothing. So the sentence has to be there, and it has to be TRUE.
++//
++// Every line below matches the "Every document we ask for" table on /privacy.html#documents
++// and the access rules actually enforced in the database:
++//   • storage RLS puts each file under the uploader's own {auth.uid()}/ folder
++//   • doc_read_assigned_dispatcher whitelists exactly four types — authority, insurance,
++//     w9, noa — so a dispatcher genuinely cannot open a bank_check
++//   • documents are only ever served through short-lived signed links, never a public URL
++// If any of that changes, change it here and on the privacy page in the same commit.
++//
++// No framework: the carrier and partner apps each define their own local h(), so this
++// builds with plain DOM and works in both.
++
++const PRIVACY_URL = '/privacy.html#documents';
++
++// who: the one sentence shown in the badge. Keep it under ~140 chars — it is read standing
++// at a truck stop on a phone, not at a desk.
++export const DOC_TRUST = {
++  // ---- carrier ----
++  insurance:   { who: 'You, the LoadBoot staff who review it, and your assigned dispatcher — because a broker packet needs it.' },
++  authority:   { who: 'You, the LoadBoot staff who review it, and your assigned dispatcher — because a broker packet needs it.' },
++  mcs150:      { who: 'You and the LoadBoot staff who review it. Used to show brokers your filing is current.' },
++  safety:      { who: 'You and the LoadBoot staff who review it. Used to show brokers your safety standing.' },
++  w9:          { who: 'You, LoadBoot review staff and your dispatcher. Your EIN/SSN is stored encrypted and shown masked everywhere — including to us.', strong: true },
++  noa:         { who: 'You, LoadBoot staff, your dispatcher, and the broker on loads you run — that is the whole point of an NOA.' },
++  agreement:   { who: 'You and LoadBoot staff. You can download your copy any time.' },
++  bank_check:  { who: 'You and LoadBoot finance only. Your dispatcher can never open this — the database rule that grants dispatcher access does not list it.', strong: true },
++  hazmat_reg:  { who: 'You, LoadBoot review staff and your dispatcher. Only asked for because you told us you haul hazmat.' },
++  hazmat_h:    { who: 'You, LoadBoot review staff and your dispatcher. The photo is used to confirm the H endorsement and nothing else.' },
++  hazmat_coi:  { who: 'You, LoadBoot review staff and your dispatcher. Only asked for because you told us you haul hazmat.' },
++  rate_con:    { who: 'You, LoadBoot staff, and both sides of that one load. Not visible on any other load.' },
++  bol:         { who: 'You, LoadBoot staff, and both sides of that one load. Not visible on any other load.' },
++  pod:         { who: 'You, LoadBoot staff, and both sides of that one load. This is the proof that gets you paid.' },
++  payment_receipt: { who: 'You and LoadBoot finance only.' },
++  other:       { who: 'You and the LoadBoot staff who review it.' },
++
++  // ---- agent ----
++  agent_id:    { who: 'You and LoadBoot finance only. Payouts go only to a verified identity — that is what stops someone else claiming your commission.', strong: true },
++  agent_bank:  { who: 'You and LoadBoot finance only. It locks your commission to one destination that cannot be changed by an email.', strong: true },
++
++  // ---- broker / shipper packet ----
++  mc_authority:      { who: 'You and LoadBoot review staff. Carriers see your verification status, never the document.' },
++  bmc84_bond:        { who: 'You and LoadBoot review staff. Carriers see that you are bonded, never the certificate.' },
++  boc3:              { who: 'You and LoadBoot review staff.' },
++  ucr:               { who: 'You and LoadBoot review staff.' },
++  coi:               { who: 'You and LoadBoot review staff.' },
++  broker_agreement:  { who: 'You and LoadBoot review staff.' },
++  signed_agreement:  { who: 'You and LoadBoot review staff.' },
++  credit_application:{ who: 'You and LoadBoot finance only. No carrier ever sees it.', strong: true },
++  bank_instructions: { who: 'You and LoadBoot finance only — held to the same standard as a carrier’s bank details.', strong: true },
++  billing_instructions: { who: 'You and LoadBoot staff.' },
++  payment_terms:     { who: 'You and LoadBoot staff. Carriers never see your terms with us.' },
++  claims_procedure:  { who: 'You, LoadBoot staff, and the carrier on a load — so a driver knows who to call when something goes wrong.' },
++  claims_contact:    { who: 'You, LoadBoot staff, and the carrier on a load.' },
++  facility_rules:    { who: 'You, LoadBoot staff, and the carrier on a load — it helps them deliver.' },
++  cargo_profile:     { who: 'You and LoadBoot staff, and the carrier on a load where it affects the haul.' },
++  insurance_requirements: { who: 'You, LoadBoot staff, and carriers quoting your freight.' },
++  special_commodity: { who: 'You, LoadBoot staff, and the carrier on a load.' },
++  references:        { who: 'You and LoadBoot review staff. Optional — it just speeds up carrier trust.' },
++};
++
++const FALLBACK = 'You and the LoadBoot staff who review it.';
++
++// The two sentences true of EVERY upload, whatever it is.
++const ALWAYS = 'Stored privately under your own account and only ever opened through a short-lived link. Never sold, never used for advertising.';
++
++function elm(tag, attrs, kids) {
++  const n = document.createElement(tag);
++  if (attrs) for (const k in attrs) {
++    const v = attrs[k];
++    if (v == null || v === false) continue;
++    if (k === 'class') n.className = v; else n.setAttribute(k, v === true ? '' : String(v));
++  }
++  (Array.isArray(kids) ? kids : [kids]).forEach((c) => {
++    if (c == null || c === false || c === '') return;
++    n.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
++  });
++  return n;
++}
++
++/**
++ * A compact "who can open this" badge for a document upload.
++ * @param {string} key   document type key (see DOC_TRUST)
++ * @param {object} [opt] { compact:boolean } — compact drops the ALWAYS line
++ * @returns {HTMLElement}
++ */
++export function docTrustBadge(key, opt) {
++  const o = opt || {};
++  const spec = DOC_TRUST[key] || { who: FALLBACK };
++  const accent = spec.strong ? '#15803d' : '#0883F7';
++  const bg = spec.strong ? 'rgba(21,128,61,.06)' : 'rgba(8,131,247,.05)';
++  const kids = [
++    elm('div', { style: 'display:flex;gap:8px;align-items:flex-start' }, [
++      elm('span', { style: 'flex:0 0 auto;font-size:14px;line-height:1.4' }, spec.strong ? '🔒' : '👁'),
++      elm('div', null, [
++        elm('b', { style: 'display:block;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:' + accent }, 'Who can open this'),
++        elm('span', { style: 'display:block;margin-top:2px;line-height:1.55' }, spec.who),
++      ]),
++    ]),
++  ];
++  if (!o.compact) {
++    kids.push(elm('div', { style: 'margin-top:7px;padding-top:7px;border-top:1px solid rgba(100,116,139,.16);line-height:1.5;opacity:.85' }, [
++      ALWAYS + ' ',
++      elm('a', { href: PRIVACY_URL, target: '_blank', rel: 'noopener', style: 'color:' + accent + ';font-weight:700;white-space:nowrap' }, 'See the full list →'),
++    ]));
++  }
++  return elm('div', {
++    class: 'lb-doctrust',
++    style: 'margin-top:10px;padding:10px 12px;border-left:3px solid ' + accent + ';background:' + bg
++         + ';border-radius:0 10px 10px 0;font-size:.82rem;color:#334155',
++  }, kids);
++}
++
++/** Swap the badge inside a host element when the selected document type changes. */
++export function mountDocTrust(host, key, opt) {
++  if (!host) return;
++  while (host.firstChild) host.removeChild(host.firstChild);
++  host.appendChild(docTrustBadge(key, opt));
++}
++
++export default { DOC_TRUST, docTrustBadge, mountDocTrust };
+diff --git a/build_site.py b/build_site.py
+index a3e3bd4..eef3316 100644
+--- a/build_site.py
++++ b/build_site.py
+@@ -3591,40 +3591,14 @@ blog_body += final_cta()
+ page('blog.html','Loadboot Blog: Dispatch Tips &amp; Guides | Carriers','Practical truck dispatch guides for owner-operators and new-authority carriers: pricing, finding loads, dispatcher vs broker, and more.','blog.html', blog_body)
+ 
+ # ---------- LEGAL PAGES ----------
+-priv = svc_hero('Privacy Policy','How LoadBoot collects, uses, shares and protects your information &mdash; on loadboot.com, in the portals and in the LoadBoot app.')
+-priv += """<section><div class="wrap prose reveal" style="max-width:800px">
+-<p><em>Last updated: August 28, 2026.</em> This Privacy Policy explains how <b>LoadBoot LLC</b> ("LoadBoot", "we", "us") handles information when you use <b>loadboot.com</b>, the <b>LoadBoot web portals</b> (Carrier, Partner, Agent, Developer and Command Center) and the <b>LoadBoot Android app</b> published on Google Play as <i>LoadBoot Load Board &amp; Dispatch</i> (package <code>com.loadboot.app</code>) &mdash; together, the "Platform". The Android app is the same portal, packaged for your phone: everything below applies to it identically. It applies to carriers, brokers, shippers, agents and anyone who visits the site.</p>
+-<h2>Information we collect</h2>
+-<p>What we collect depends on which portal you use. We collect it from you directly, from your device with your permission, and from public regulatory sources.</p>
+-<p><b>Everyone (account &amp; contact).</b> Name, email, phone, company, and a password handled by our authentication provider (we never see it in clear text). Messages you send us in-app, by chat, email or phone, and your communication preferences.</p>
+-<p><b>Carriers and owner-operators.</b> Company and authority details (MC/DOT numbers, equipment, lanes, domicile, preferences and availability); documents you upload &mdash; operating authority, certificate of insurance, W-9 (which contains your EIN or SSN), dispatch agreement, notice of assignment, rate confirmations, BOLs, PODs and receipts &mdash; stored privately; settlement and payout details (bank or factoring information you enter for payment); photos you take for proof of delivery; and <b>precise location</b>, only if and while you consent to share it for load matching or active-load tracking (see below). We also read public FMCSA/SAFER records to verify your authority and insurance.</p>
+-<p><b>Brokers and shippers.</b> Company, MC/bond details and contact people; the loads you post (origin, destination, dates, equipment, rate, references, notes); loads you send to <b>loads@loadboot.com</b> by email, including the sender address, signature block and attachments needed to post them; documents and messages exchanged on a load; and payment records for loads you pay through the Platform.</p>
+-<p><b>Agents and referral partners.</b> Your referral link and the accounts that sign up through it, commission and payout records, and the tax and payment details needed to pay you.</p>
+-<p><b>Automatically.</b> Device and app information (device type, OS, app version, language, push token if you enable notifications), log data (IP address, pages or screens viewed, timestamps, errors and crashes) and, on the public marketing pages only, aggregate analytics. We do <b>not</b> run advertising analytics or ad tracking inside the signed-in portals or the app.</p>
+-<h2>How we use it</h2>
+-<p>To run the Platform: verifying carriers, posting and matching loads, sending and accepting load offers, booking, dispatching, tracking trips, collecting and reviewing documents, calculating detention, accessorials and settlements, paying carriers and agents, and answering support. To keep the Platform safe: fraud, double-brokering and ghost-load prevention, security monitoring and legal compliance. To communicate with you about your loads, documents, account and (with your preferences) product news. To improve the Platform using aggregate, de-identified usage data. We do not sell your personal information and we do not use it for third-party advertising.</p>
+-<h2>Precise location &mdash; consent based</h2>
+-<p>Location sharing is <b>optional</b> and off by default; the Platform is fully usable without it. When you choose to share it &mdash; a one-time share, or sharing while a load is active &mdash; the app uses your device&rsquo;s GPS while it is open or, if you allow it, while a trip is running, so that arrival and departure can be stamped automatically. You can revoke sharing at any time from your dashboard or your device settings. We record your consent, keep only the location points needed for the active trip and its proof-of-service record, and stop collecting when you revoke it, sign out, or the trip ends. Location on an active load is visible to your assigned LoadBoot dispatcher and, as trip status and geofenced arrive/depart stamps, to the broker or shipper on that load.</p>
+-<h2>How information is shared</h2>
+-<p>We share information only as needed to provide the service you asked for, and we never sell it:</p>
+-<p><b>Between the parties on a load, at your direction.</b> When a carrier books or requests a load, the broker or shipper sees the carrier&rsquo;s company name, MC/DOT, equipment, verification status, contact details and trip status; the carrier sees the broker&rsquo;s or shipper&rsquo;s company, contact and load details. Documents attached to a load (rate confirmation, BOL, POD) are visible to both sides of that load. Carrier financials, notes and other loads are never shown to brokers, and vice versa.</p>
+-<p><b>Service providers acting for us</b> &mdash; hosting and database, authentication, email and SMS delivery, telephony, mapping and geocoding, document storage and payment processing. They may process data only on our instructions.</p>
+-<p><b>Your factoring company or payment partner</b>, if you choose one, to the extent needed to pay you.</p>
+-<p><b>Regulators and the law</b> &mdash; where required by law, to enforce our terms, or to protect the rights and safety of users and the public. In a merger or acquisition, information may transfer to the successor under this policy.</p>
+-<h2>Data security</h2>
+-<p>Data is encrypted in transit (TLS). Documents are kept in private storage with per-account access controls and time-limited links; access to records is restricted by server-enforced authorization so one company cannot access another&rsquo;s data. Sensitive tax documents are viewable only by the account owner and the LoadBoot staff who review them. No method of transmission or storage is perfectly secure, but we apply safeguards appropriate to the data we hold.</p>
+-<h2>Retention</h2>
+-<p>We keep account information while your account is open. Load, trip, document and settlement records are kept for as long as needed to complete the load, resolve disputes and meet tax, transportation and legal record-keeping obligations (generally up to seven years), then deleted or anonymized. Location data is minimized to what the trip record needs rather than a long history. Marketing analytics are aggregated.</p>
+-<h2>Your rights and choices</h2>
+-<p>You may access, correct or export your information, withdraw location consent, change your notification preferences, or <b>delete your account</b> at any time: in the app or portal go to <i>Settings &rarr; Account &rarr; Delete my account</i>, or email <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> from your account address. Our <a href="delete-account.html">account deletion page</a> explains exactly what is removed and what must be kept for legal reasons. Residents of California and other states with privacy laws have the rights those laws provide; we honour them for everyone.</p>
+-<h2>Children</h2>
+-<p>The Platform is for businesses and is not directed to anyone under 18. We do not knowingly collect information from children.</p>
+-<h2>Changes</h2>
+-<p>We will post any changes here with a new date, and notify account holders of material changes by email or in-app.</p>
+-<h2>Contact</h2>
+-<p>LoadBoot LLC &middot; <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> &middot; +1 (469) 253-7575 &middot; 30 N Gould St Ste N, Sheridan, WY 82801 &middot; or use our <a href="contact.html">contact page</a>.</p></div></section>"""
+-priv += final_cta()
+-page('privacy.html','Privacy Policy | LoadBoot','How LoadBoot collects, uses, shares and protects your information on loadboot.com, in the portals and in the LoadBoot Android app.','privacy.html',priv)
++# Privacy is a flagship page now, not a wall of text: built by privacy_module.py from what
++# the platform ACTUALLY does — the real document lists, the real storage rules, the real
++# sub-processors. See the header of that file before editing.
++import privacy_module as _pvm
++priv, priv_schema = _pvm.privacy_page({})
++page('privacy.html','Privacy Policy &amp; Data Practices | LoadBoot',
++     'Exactly what LoadBoot collects from carriers, brokers, shippers and agents, which documents we ask for, who can open each one, every outside company that touches your data, and how to delete your account.',
++     'privacy.html', priv, priv_schema)
+ 
+ # ---------- ACCOUNT DELETION (required by Google Play for apps with sign-in) ----------
+ # Play policy: the store listing must carry a link to a page that names the app, gives
+@@ -3676,70 +3650,15 @@ dele += '''<section><div class="wrap prose reveal" style="max-width:800px">
+ dele += final_cta()
+ page('delete-account.html','Delete your account | LoadBoot','How to delete your LoadBoot account and personal data: the steps, what is deleted, what must be retained by law, and how long it takes.','delete-account.html',dele)
+ 
+-terms = svc_hero('Terms of Service','The agreement that governs your use of the LoadBoot platform &mdash; written to be read, not just scrolled past.')
+-terms += """<section><div class="wrap prose reveal" style="max-width:840px">
+-<p><em>Last updated: July 2026.</em> These Terms of Service (&ldquo;Terms&rdquo;) are a binding agreement between you and LoadBoot (&ldquo;LoadBoot,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) governing your access to and use of loadboot.com, the LoadBoot portals and applications, and the services described below (together, the &ldquo;Platform&rdquo;). By creating an account, clicking &ldquo;I agree,&rdquo; or using the Platform, you accept these Terms on behalf of yourself and the company you represent.</p>
+-
+-<h2>1. What LoadBoot is</h2>
+-<p>LoadBoot is an operating system for trucking: a technology platform that connects verified motor carriers, licensed freight brokers, and shippers, and provides dispatch support services to carriers. The Platform includes a verified load board, dispatch services, GPS-based shipment visibility, digital document workflows (rate confirmations, BOLs, PODs, W-9s, dispatch agreements), settlement records, and communication tools.</p>
+-<p>LoadBoot acts as a <strong>dispatch service and technology provider</strong>. Unless expressly stated otherwise in writing: we are not a motor carrier, we do not take possession of freight, and when providing dispatch services we act as the carrier&rsquo;s authorized agent under 49 CFR Part 371, arranging freight <em>on behalf of the carrier and under the carrier&rsquo;s own operating authority</em>. We do not allocate traffic among carriers.</p>
+-
+-<h2>2. Accounts &amp; eligibility</h2>
+-<p>You must be at least 18, able to form a binding contract, and authorized to act for the business you register. You are responsible for the accuracy of your information, for safeguarding your login, and for all activity under your account. One company may operate multiple authorized users; you remain responsible for each of them.</p>
+-
+-<h2>3. Verification</h2>
+-<p>Access to core features requires verification appropriate to your role: carriers &mdash; active MC/USDOT operating authority, insurance meeting the levels stated on your account (typically $1M auto liability and $100K cargo), and a completed W-9 and dispatch agreement; brokers &mdash; active brokerage authority and the federal surety bond or trust (BMC-84/85); shippers &mdash; verified business identity. We verify against public federal records (including FMCSA data) and the documents you upload. If a required document lapses, the related features pause until it is current &mdash; that protection is a feature of the network, not a penalty.</p>
+-
+-<h2>4. Carrier terms</h2>
+-<p>Every load is booked under the carrier&rsquo;s own authority. You approve every load before it is booked &mdash; there is no forced dispatch. You are solely responsible for safe and lawful operations, including hours of service, equipment condition, permits, and insurance. Written load terms (rate confirmation, and where applicable detention, TONU, layover, and lumper provisions) govern each shipment.</p>
+-
+-<h2>5. Broker &amp; shipper terms</h2>
+-<p>Posting is free. You represent that every posted load is genuine, lawful, and yours to tender; that rate and load details are accurate; and that you will honor the written terms of every confirmed booking, including published accessorial policies. Ghost loads, bait-and-switch postings, re-brokering a LoadBoot-covered load without disclosure, and payment default are grounds for immediate removal and may be reported within the network.</p>
+-
+-<h2>6. Fees &amp; payment</h2>
+-<p>Joining the Platform is free. Carriers pay a flat 5% dispatch fee, charged only on loads that are <strong>delivered and paid</strong> &mdash; if a load doesn&rsquo;t pay, no fee is due. Brokers and shippers post at no charge. LoadBoot never takes custody of freight payments: brokers and shippers pay carriers (or their factoring company) directly, and LoadBoot invoices its own fee separately. Fees are stated before you book and may change prospectively with notice; changes never apply retroactively.</p>
+-
+-<h2>7. Independent businesses</h2>
+-<p>Carriers, brokers, shippers, and referral agents are independent businesses. Nothing in these Terms creates an employment, joint venture, or partnership relationship with LoadBoot, and no party may bind another except as expressly authorized in a signed dispatch agreement.</p>
+-
+-<h2>8. What you can expect from us &mdash; and what the market decides</h2>
+-<p>We put real work behind every account: dispatchers who hunt and negotiate on your lanes, written protection on accessorials, GPS-verified records that make claims stick, and paperwork handled end to end. We commit to that standard of effort, tooling, and transparency on every load we touch.</p>
+-<p>What no honest platform can promise is the freight market itself. Rates, load volume, and lane availability move with fuel, seasonality, capacity, and the broader economy &mdash; the same market every carrier, broker, and load board in America operates in. Specific rates, volumes, or income levels therefore aren&rsquo;t guaranteed by LoadBoot, just as they aren&rsquo;t by any reputable competitor. Our answer to a soft market is effort and information &mdash; live market rates, cost-per-mile tooling, and dispatchers who say &ldquo;no&rdquo; to freight that doesn&rsquo;t pay &mdash; never inflated promises.</p>
+-
+-<h2>9. Acceptable use</h2>
+-<p>You agree not to: misrepresent your identity, authority, insurance, or documents; post false or misleading loads; harvest data, scrape, reverse engineer, or probe the Platform; interfere with other users or with Platform operation; use the Platform for any unlawful purpose; or circumvent verification, fees, or safety controls. We may suspend or remove accounts that put the network at risk, with notice where practicable.</p>
+-
+-<h2>10. Your content &amp; our platform</h2>
+-<p>You retain ownership of documents and data you upload and grant LoadBoot a limited license to store, process, and display them as needed to operate the Platform. The Platform, its software, design, brand, and content are LoadBoot&rsquo;s property or its licensors&rsquo; and are protected by law; no rights are granted except as stated here.</p>
+-
+-<h2>11. Privacy</h2>
+-<p>Our <a href="privacy.html">Privacy Policy</a> explains what we collect and how we use it, and forms part of these Terms. Summary: we use your data to run the Platform, we don&rsquo;t sell it, and communications preferences are always in your control.</p>
+-
+-<h2>12. Third-party services</h2>
+-<p>The Platform interoperates with third-party services (for example FMCSA data, mapping, payment, factoring, and accounting integrations such as QuickBooks). Those services are governed by their own terms, and LoadBoot is not responsible for them.</p>
+-
+-<h2>13. Term &amp; termination</h2>
+-<p>There is no minimum term and no cancellation fee &mdash; you may close your account at any time from your portal or by writing to hello@loadboot.com. Obligations already accrued (including fees on delivered-and-paid loads and the terms of confirmed bookings) survive termination, as do Sections 8&ndash;18. We may suspend or terminate accounts for material breach, fraud, safety risk, or extended inactivity.</p>
+-
+-<h2>14. Disclaimers</h2>
+-<p>The Platform is provided &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; To the fullest extent permitted by law, LoadBoot disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. We verify counterparties diligently, but each user remains responsible for its own commercial decisions and counterparties&rsquo; performance.</p>
+-
+-<h2>15. Limitation of liability</h2>
+-<p>To the fullest extent permitted by law: LoadBoot is not liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, revenue, cargo, or data; and LoadBoot&rsquo;s total aggregate liability arising out of the Platform is limited to the greater of (a) the dispatch fees you paid to LoadBoot in the six (6) months before the claim arose, or (b) one hundred U.S. dollars ($100). Some jurisdictions do not allow certain limitations, so parts of this section may not apply to you.</p>
+-
+-<h2>16. Indemnification</h2>
+-<p>You will defend and hold harmless LoadBoot and its team from claims arising out of your freight operations, your breach of these Terms, your content, or your violation of law or third-party rights.</p>
+-
+-<h2>17. Governing law &amp; disputes</h2>
+-<p>These Terms are governed by the laws of the State of Texas, without regard to conflict-of-law rules. Before filing any claim, you agree to contact us at hello@loadboot.com and give us thirty (30) days to work it out &mdash; most issues are resolved this way. Courts located in Texas will have exclusive jurisdiction over disputes not resolved informally, and each party waives trial by jury to the extent permitted.</p>
+-
+-<h2>18. Changes to these Terms</h2>
+-<p>We may update these Terms as the Platform evolves. For material changes we will give notice (portal notice or email) before they take effect; continued use after the effective date constitutes acceptance. The &ldquo;Last updated&rdquo; date above always reflects the current version.</p>
+-
+-<h2>19. Contact</h2>
+-<p>Questions about these Terms: <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>. Live chat and our 24/7 phone line are on the <a href="contact.html">contact page</a>.</p>
+-</div></section>"""
+-page('terms.html','Terms of Service | Loadboot','The terms governing your use of the Loadboot website and truck dispatch services.','terms.html',terms)
++# Terms is a flagship page now, matching privacy.html. Built by terms_module.py, which
++# reuses privacy_module's CSS so the two legal pages read as one family. The nineteen
++# numbered clauses are the CONTRACT — their substance is carried over verbatim from the
++# July 2026 Terms. See the header of that file before editing.
++import terms_module as _tmm
++terms, terms_schema = _tmm.terms_page({})
++page('terms.html','Terms of Service | LoadBoot',
++     'The agreement between you and LoadBoot LLC — fees, verification, carrier and broker obligations, liability and disputes, each clause with a plain-English explanation.',
++     'terms.html', terms, terms_schema)
+ 
+ # ---------- FLAGSHIP: LOAD SCORE ("Should You Take This Load?") ----------
+ ls_faqs = [
+diff --git a/docs/carrier-availability-email-fragment.html b/docs/carrier-availability-email-fragment.html
+new file mode 100644
+index 0000000..3bb1c62
+--- /dev/null
++++ b/docs/carrier-availability-email-fragment.html
+@@ -0,0 +1,52 @@
++<div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#FC5305;font-weight:800;margin-bottom:8px">Dispatch update</div>
++<h1 style="margin:0 0 16px;font-size:25px;line-height:1.28;color:#0f172a;font-weight:800">Your dispatcher can only sell a truck they can see.</h1>
++
++<p style="margin:0 0 14px">When we don&rsquo;t know where your truck is this morning &mdash; or where it delivers and when it frees up &mdash; we are guessing. Guessing loses loads to the carrier who told their dispatcher first.</p>
++
++<p style="margin:0 0 18px">So starting today, your dedicated LoadBoot dispatcher works your loads <strong>only while your truck&rsquo;s availability is posted and confirmed in the app within the last 24 hours.</strong> No fresh post, no sourcing. Same rule the best fleets already run internally.</p>
++
++<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f7ff;border:1px solid #cfe4ff;border-radius:14px;margin:0 0 20px">
++  <tr><td style="padding:18px 20px">
++    <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#0883F7;font-weight:800;margin-bottom:10px">30 seconds &middot; every morning</div>
++    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
++      <tr><td valign="top" style="width:28px;font-weight:800;color:#0883F7;font-size:16px;padding:5px 0">1</td><td style="font-size:14.5px;line-height:1.65;color:#0f172a;padding:5px 0">Open the app &rarr; <strong>Load Board &rarr; Post your availability</strong>.</td></tr>
++      <tr><td valign="top" style="width:28px;font-weight:800;color:#0883F7;font-size:16px;padding:5px 0">2</td><td style="font-size:14.5px;line-height:1.65;color:#0f172a;padding:5px 0"><strong>Empty?</strong> Pick the state, then the city, and how far you&rsquo;ll drive to pick up &mdash; add the ZIP for exact deadhead miles.<br><strong>Booked?</strong> Post where it <em>delivers</em>, the delivery date, and where you want the backhaul to go. We start on the reload before you unload.</td></tr>
++      <tr><td valign="top" style="width:28px;font-weight:800;color:#0883F7;font-size:16px;padding:5px 0">3</td><td style="font-size:14.5px;line-height:1.65;color:#0f172a;padding:5px 0">Tomorrow, tap <strong>&ldquo;&#10003; Still available today&rdquo;</strong> &mdash; or update it if the truck moved. Every post expires automatically 24h after you last confirmed it; an expired one shows a <strong>Repost</strong> button.</td></tr>
++    </table>
++  </td></tr>
++</table>
++
++<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 10px"><tr><td style="background:#FC5305;border-radius:999px">
++  <a class="lb-btn" href="https://loadboot.com/app/carrier/#loads" style="display:inline-block;padding:15px 30px;font-size:16px;font-weight:800;color:#ffffff !important;text-decoration:none;border-radius:999px"><span style="color:#ffffff !important;text-decoration:none">Post my truck now &rarr;</span></a>
++</td></tr></table>
++<p style="margin:0 0 22px;text-align:center;font-size:12.5px;color:#64748b">Needs at least one truck and one driver in your Fleet tab &mdash; the app takes you there if they&rsquo;re missing.</p>
++
++<h2 style="margin:0 0 8px;font-size:17px;color:#0f172a">Why the app, not WhatsApp or email</h2>
++<p style="margin:0 0 14px">By the time a message is read, the load is gone. A posted truck is matched against every load on our board the second it goes live, alerts you automatically, and puts your truck in front of your dispatcher <em>and</em> every shipper and broker posting into that lane.</p>
++
++<p style="margin:0 0 8px">Your Dashboard now shows exactly one of three states, so there&rsquo;s never a doubt:</p>
++<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 20px">
++  <tr><td style="padding:8px 12px;border-left:4px solid #16a34a;background:#f0fdf4;border-radius:8px;font-size:14px"><strong style="color:#15803d">Dispatcher working your loads</strong> &mdash; confirmed today</td></tr>
++  <tr><td style="height:6px"></td></tr>
++  <tr><td style="padding:8px 12px;border-left:4px solid #d97706;background:#fffbeb;border-radius:8px;font-size:14px"><strong style="color:#b45309">Confirm today</strong> &mdash; your post is over 24 hours old</td></tr>
++  <tr><td style="height:6px"></td></tr>
++  <tr><td style="padding:8px 12px;border-left:4px solid #FC5305;background:#fff5f0;border-radius:8px;font-size:14px"><strong style="color:#c2410c">Dispatcher paused</strong> &mdash; nothing posted</td></tr>
++</table>
++<p style="margin:0 0 22px;font-weight:700;color:#0f172a">Post it this morning and your dispatcher starts on it today.</p>
++
++<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;margin:0 0 18px">
++  <tr><td style="padding:18px 20px">
++    <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#64748b;font-weight:800;margin-bottom:6px">While you&rsquo;re in there</div>
++    <h2 style="margin:0 0 8px;font-size:17px;color:#0f172a">Your books are in the same app</h2>
++    <p style="margin:0 0 12px;font-size:14.5px;line-height:1.65">Most carriers don&rsquo;t know this is sitting in their account, so here it is plainly. Under <strong>Finance</strong> you already have:</p>
++    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
++      <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#128994;</td><td style="font-size:14px;line-height:1.6;padding:5px 0"><strong>QuickBooks Online</strong> &mdash; connect once and every delivered-load invoice and expense pushes across on its own, and payments pull back. No double entry.</td></tr>
++      <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#9981;</td><td style="font-size:14px;line-height:1.6;padding:5px 0"><strong>Expenses</strong> &mdash; fuel, tolls, maintenance, lumper in about 30 seconds at the pump. It&rsquo;s also what makes your cost-per-mile real instead of a guess.</td></tr>
++      <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#128506;</td><td style="font-size:14px;line-height:1.6;padding:5px 0"><strong>IFTA</strong> &mdash; enter state miles as you run them and the quarter is already done when the filing is due, instead of a weekend of receipts.</td></tr>
++      <tr><td valign="top" style="width:26px;font-size:15px;padding:5px 0">&#128101;</td><td style="font-size:14px;line-height:1.6;padding:5px 0"><strong>Payroll</strong> &mdash; what you owe your drivers and what&rsquo;s already paid, without a spreadsheet.</td></tr>
++    </table>
++    <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#64748b">Costs nothing extra and only you can edit it. Our staff can view it read-only if you ask for help &mdash; nobody can change your books.</p>
++  </td></tr>
++</table>
++
++<p style="margin:0">Reply to this email if anything is unclear.<br><strong>The LoadBoot Dispatch Team</strong></p>
+diff --git a/migrations/bl_camp_0325_manual_list_audience.sql b/migrations/bl_camp_0325_manual_list_audience.sql
+new file mode 100644
+index 0000000..7791106
+--- /dev/null
++++ b/migrations/bl_camp_0325_manual_list_audience.sql
+@@ -0,0 +1,235 @@
++-- bl_camp_0325_manual_list_audience.sql
++-- Adds a 'manual_list' audience type so a campaign can be sent to an explicitly
++-- curated set of email addresses (e.g. "the 30 real carriers", not "every row where
++-- profiles.status='active'"). Additive and reversible:
++--   * new 2-arg overload of resolve_audience_emails; the existing 1-arg function is
++--     untouched and still works, so nothing that calls it today changes behaviour.
++--   * cc_campaign_audience_preview / cc_campaign_enqueue now pass the audience's
++--     filters through. For every existing audience type filters are ignored, so the
++--     resolved recipient set for those is byte-for-byte what it was before.
++--   * cc_audience_estimate learns 'manual_list' instead of raising 'unknown audience
++--     type' (which would have made the Estimate button error out in the UI).
++-- Consent: an explicit opt-out ALWAYS wins. A manual list cannot resurrect someone who
++-- set marketing_email=false or unsubscribed_all=true, and the callers still subtract
++-- the suppression list on top of that.
++
++begin;
++
++-- 1) Resolution ---------------------------------------------------------------
++create or replace function app_private.resolve_audience_emails(p_type text, p_filters jsonb)
++returns table(recipient_user uuid, email text, opted_in boolean)
++language plpgsql stable security definer
++set search_path to 'app_private, public'
++as $function$
++begin
++  if p_type = 'manual_list' then
++    return query
++    with raw as (
++      select distinct lower(btrim(e)) as email
++      from jsonb_array_elements_text(coalesce(p_filters->'emails', '[]'::jsonb)) as e
++      where btrim(e) ~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'
++    )
++    select p.id,
++           raw.email,
++           (coalesce(cp.marketing_email, true) and not coalesce(cp.unsubscribed_all, false))
++    from raw
++    left join public.profiles p on lower(p.email) = raw.email
++    left join app_private.comm_preferences cp on cp.user_id = p.id;
++    return;
++  end if;
++  return query select r.recipient_user, r.email, r.opted_in
++               from app_private.resolve_audience_emails(p_type) r;
++end; $function$;
++
++revoke all on function app_private.resolve_audience_emails(text, jsonb) from public;
++
++-- 2) Preview ------------------------------------------------------------------
++create or replace function public.cc_campaign_audience_preview(p_campaign uuid)
++returns jsonb
++language plpgsql stable security definer
++set search_path to 'app_private, public'
++as $function$
++declare c record; v_aud int; v_opt int; v_supp int; v_final int; v_sample jsonb;
++begin
++  if not app_private.can_manage_comms() then raise exception 'not authorized' using errcode='42501'; end if;
++  select camp.*, a.type as audience_type, a.filters as audience_filters into c
++    from app_private.campaigns camp
++    left join app_private.audiences a on a.id = camp.audience_id
++   where camp.id = p_campaign;
++  if c.id is null then raise exception 'campaign not found' using errcode='22023'; end if;
++  with aud as (select recipient_user, lower(email) email, opted_in
++                 from app_private.resolve_audience_emails(coalesce(c.audience_type,''), coalesce(c.audience_filters,'{}'::jsonb))),
++       supp as (select lower(address) a from app_private.suppressions where channel='email')
++  select (select count(*) from aud),
++         (select count(*) from aud where opted_in),
++         (select count(*) from aud where opted_in and email in (select a from supp)),
++         (select count(distinct email) from aud where opted_in and email not in (select a from supp)),
++         (select coalesce(jsonb_agg(email),'[]'::jsonb) from (select distinct email from aud where opted_in and email not in (select a from supp) limit 5) s)
++    into v_aud, v_opt, v_supp, v_final, v_sample;
++  return jsonb_build_object('campaign',c.name,'channel','email','audience_total',v_aud,'after_consent',v_opt,
++    'suppressed',v_supp,'final_recipients',v_final,'sample',v_sample,'excluded_no_consent',v_aud-v_opt);
++end; $function$;
++
++-- 3) Enqueue ------------------------------------------------------------------
++create or replace function public.cc_campaign_enqueue(p_campaign uuid, p_confirm_count integer)
++returns jsonb
++language plpgsql security definer
++set search_path to 'app_private, public'
++as $function$
++declare c record; v_final int; v_ins int; v_sched timestamptz; v_subj text; v_html text; v_text text; v_nvar int;
++begin
++  if not app_private.can_manage_comms() then raise exception 'not authorized' using errcode='42501'; end if;
++  select camp.*, a.type as audience_type, a.filters as audience_filters into c
++    from app_private.campaigns camp
++    left join app_private.audiences a on a.id = camp.audience_id
++   where camp.id = p_campaign;
++  if c.id is null then raise exception 'campaign not found' using errcode='22023'; end if;
++  if c.approved_by is null then raise exception 'campaign is not approved — an approver must approve it before sending' using errcode='42501'; end if;
++  if not ('email' = any(coalesce(c.channels, array[]::text[]))) then raise exception 'campaign has no email channel' using errcode='22023'; end if;
++  select coalesce(t.subject, c.subject), coalesce(t.body, c.body), coalesce(t.body_text, t.body, c.body)
++    into v_subj, v_html, v_text
++    from (select 1) _ left join app_private.comm_templates t on t.key = c.template_key;
++  select count(*) into v_nvar from app_private.campaign_variants where campaign_id = c.id;
++  v_sched := coalesce(c.scheduled_at, now());
++
++  with rcpt as (select email, min(recipient_user::text)::uuid recipient_user from (
++      select lower(email) email, recipient_user
++        from app_private.resolve_audience_emails(coalesce(c.audience_type,''), coalesce(c.audience_filters,'{}'::jsonb))
++       where opted_in and lower(email) not in (select lower(address) from app_private.suppressions where channel='email')) x group by email)
++  select count(*) into v_final from rcpt;
++  if p_confirm_count is null or p_confirm_count <> v_final then
++    raise exception 'recipient count changed (expected %, now %) — re-preview and confirm', p_confirm_count, v_final using errcode='22023'; end if;
++
++  if v_nvar = 0 then
++    with rcpt as (select email, min(recipient_user::text)::uuid recipient_user from (
++        select lower(email) email, recipient_user
++          from app_private.resolve_audience_emails(coalesce(c.audience_type,''), coalesce(c.audience_filters,'{}'::jsonb))
++         where opted_in and lower(email) not in (select lower(address) from app_private.suppressions where channel='email')) x group by email),
++    ins as (insert into app_private.message_deliveries(org_id,source,campaign_id,template_key,channel,provider,recipient_user,recipient_email,idempotency_key,status,scheduled_at,meta)
++        select null,'campaign',c.id,c.template_key,'email','resend',r.recipient_user,r.email,c.id::text||':email:'||r.email,
++          case when v_sched>now() then 'scheduled' else 'queued' end, v_sched,
++          jsonb_build_object('subject',v_subj,'utm_campaign',c.utm_campaign,'body_html',v_html,'body_text',v_text)
++        from rcpt r on conflict (idempotency_key) do nothing returning 1)
++    select count(*) into v_ins from ins;
++  else
++    with rcpt as (select email, min(recipient_user::text)::uuid recipient_user from (
++        select lower(email) email, recipient_user
++          from app_private.resolve_audience_emails(coalesce(c.audience_type,''), coalesce(c.audience_filters,'{}'::jsonb))
++         where opted_in and lower(email) not in (select lower(address) from app_private.suppressions where channel='email')) x group by email),
++    vs as (select label,
++        coalesce(nullif(subject,''), v_subj) subject,
++        coalesce(nullif(body_html,''), v_html) body_html,
++        coalesce(nullif(body_text,''), v_text) body_text,
++        (sum(weight) over (order by created_at, id) - weight) lo,
++        sum(weight) over (order by created_at, id) hi
++      from app_private.campaign_variants where campaign_id=c.id),
++    tot as (select sum(weight) w from app_private.campaign_variants where campaign_id=c.id),
++    ins as (insert into app_private.message_deliveries(org_id,source,campaign_id,template_key,channel,provider,recipient_user,recipient_email,idempotency_key,status,scheduled_at,meta)
++        select null,'campaign',c.id,c.template_key,'email','resend',r.recipient_user,r.email,c.id::text||':email:'||r.email,
++          case when v_sched>now() then 'scheduled' else 'queued' end, v_sched,
++          jsonb_build_object('subject',v.subject,'utm_campaign',c.utm_campaign,'body_html',v.body_html,'body_text',v.body_text,'variant',v.label)
++        from rcpt r cross join tot
++        join vs v on ((hashtextextended(r.email,0) % tot.w) + tot.w) % tot.w >= v.lo
++                 and ((hashtextextended(r.email,0) % tot.w) + tot.w) % tot.w <  v.hi
++        on conflict (idempotency_key) do nothing returning 1)
++    select count(*) into v_ins from ins;
++  end if;
++
++  update app_private.campaigns set status = case when v_sched>now() then 'scheduled' else 'sending' end, updated_at = now() where id = c.id;
++  perform app_private.emit_event('campaign.enqueued','campaign',c.id::text, jsonb_build_object('final_recipients',v_final,'newly_queued',v_ins,'channel','email','variants',v_nvar));
++  perform app_private.log_audit('campaign.enqueue','campaign',c.id::text,null,format('enqueued %s email recipients (%s variants)',v_final,v_nvar), jsonb_build_object('newly_queued',v_ins));
++  return jsonb_build_object('final_recipients',v_final,'newly_queued',v_ins,'variants',v_nvar,'status',case when v_sched>now() then 'scheduled' else 'sending' end);
++end; $function$;
++
++-- 4) Estimate: teach it the new type so the UI's Estimate button does not error ----
++create or replace function public.cc_audience_estimate(p_type text)
++returns jsonb
++language plpgsql stable security definer
++set search_path to 'app_private, public'
++as $function$
++declare v_count bigint := 0; v_sample jsonb := '[]'::jsonb;
++begin
++  if not public.is_active_staff() then raise exception 'not authorized' using errcode='42501'; end if;
++  if p_type = 'all_carriers' then
++    select count(*) into v_count from public.organizations where kind='carrier';
++    select jsonb_agg(name) into v_sample from (select name from public.organizations where kind='carrier' order by created_at desc limit 5) s;
++  elsif p_type = 'active_carriers' then
++    select count(*) into v_count from public.organizations where kind='carrier' and status='active';
++    select jsonb_agg(name) into v_sample from (select name from public.organizations where kind='carrier' and status='active' order by created_at desc limit 5) s;
++  elsif p_type = 'pending_carriers' then
++    select count(*) into v_count from public.organizations where kind='carrier' and status <> 'active';
++  elsif p_type = 'onboarding_pending' then
++    select count(*) into v_count from app_private.carrier_onboarding where stage='submitted';
++  elsif p_type = 'carrier_owners' then
++    select count(*) into v_count from public.profiles where role='carrier';
++  elsif p_type = 'drivers' then
++    select count(*) into v_count from app_private.fleet_drivers;
++  elsif p_type = 'leads' then
++    select count(*) into v_count from app_private.crm_leads;
++  elsif p_type = 'newsletter' then
++    select count(distinct email) into v_count from app_private.form_submissions
++      where form_key='newsletter' and coalesce(spam_score,0) < 80 and email ~ '^[^@]+@[^@]+\.[^@]+$';
++  elsif p_type = 'form_submitters' then
++    select count(distinct email) into v_count from app_private.form_submissions
++      where coalesce(spam_score,0) < 80 and email ~ '^[^@]+@[^@]+\.[^@]+$';
++  elsif p_type = 'all_staff' then
++    select count(*) into v_count from app_private.staff_members where status='active';
++  elsif p_type = 'manual_list' then
++    -- The count lives in the saved audience's own filters, not in a global segment.
++    return jsonb_build_object('type', p_type, 'count', 0, 'sample', '[]'::jsonb,
++      'note', 'Paste the addresses when you save the audience — the exact recipient count is shown on the campaign preview before you confirm.');
++  else
++    raise exception 'unknown audience type' using errcode='22023';
++  end if;
++  return jsonb_build_object('type', p_type, 'count', v_count, 'sample', coalesce(v_sample, '[]'::jsonb));
++end; $function$;
++
++commit;
++
++-- 5) PRODUCTION BUG FIX --------------------------------------------------------
++-- app_private.campaigns.utm_campaign is NOT NULL *and* UNIQUE, with no default, but
++-- cc_cmp_save never set it. Every "New campaign" save therefore failed with
++--   23502 null value in column "utm_campaign" ... violates not-null constraint
++-- which is why app_private.campaigns has 0 rows on production: the Campaign manager
++-- has never been able to create a campaign. Fix: derive a slug from the name and
++-- append the new row's own id fragment so the UNIQUE index can never collide.
++-- On update utm_campaign is deliberately left alone, so links already in the wild
++-- keep resolving to the same UTM value.
++begin;
++
++create or replace function public.cc_cmp_save(p_id uuid, p_name text, p_objective text, p_audience uuid, p_template text, p_channels text[], p_subject text, p_body text, p_scheduled_at timestamp with time zone, p_status text)
++returns uuid
++language plpgsql security definer
++set search_path to 'app_private, public'
++as $function$
++declare v_id uuid; v_slug text;
++begin
++  if not (public.has_global_permission('campaigns.view') or public.has_global_permission('content.manage') or public.has_global_permission('settings.manage')) then
++    raise exception 'not authorized' using errcode='42501'; end if;
++  if p_name is null or btrim(p_name)='' then raise exception 'campaign name is required' using errcode='22023'; end if;
++  if p_status not in ('draft','scheduled','sent','paused') then raise exception 'invalid status' using errcode='22023'; end if;
++  if p_id is null then
++    v_id := gen_random_uuid();
++    v_slug := btrim(regexp_replace(lower(p_name), '[^a-z0-9]+', '-', 'g'), '-');
++    v_slug := left(coalesce(nullif(v_slug,''), 'campaign'), 48) || '-' || left(v_id::text, 8);
++    insert into app_private.campaigns(id, name, utm_campaign, objective, audience_id, template_key, channels, subject, body, scheduled_at, status, created_by)
++    values (v_id, p_name, v_slug, p_objective, p_audience, p_template, coalesce(p_channels,'{push}'), p_subject, p_body, p_scheduled_at, coalesce(p_status,'draft'), auth.uid())
++    returning id into v_id;
++  else
++    update app_private.campaigns set name=p_name, objective=p_objective, audience_id=p_audience, template_key=p_template,
++      channels=coalesce(p_channels,'{push}'), subject=p_subject, body=p_body, scheduled_at=p_scheduled_at, status=coalesce(p_status,'draft'), updated_at=now()
++    where id=p_id returning id into v_id;
++  end if;
++  perform app_private.log_audit('campaign.save','campaign', v_id::text, null, coalesce(p_status,'draft'), jsonb_build_object('name',p_name));
++  return v_id;
++end; $function$;
++
++commit;
++
++-- ---------------------------------------------------------------------------
++-- FOLLOW-UP: bl_camp_0326_cmp_save_empty_string_coercion.sql — see that file.
++-- Leaving Schedule blank in the New-campaign form sent '' (not null), which
++-- PostgREST cast to timestamptz and failed with 22007 before the function ran.
++-- Same for an unselected Audience ('' -> uuid, 22P02). p_audience and
++-- p_scheduled_at are now text and coerced with nullif() inside the function.
++-- ---------------------------------------------------------------------------
+diff --git a/migrations/bl_camp_0326_cmp_save_empty_string_coercion.sql b/migrations/bl_camp_0326_cmp_save_empty_string_coercion.sql
+new file mode 100644
+index 0000000..6d595ea
+--- /dev/null
++++ b/migrations/bl_camp_0326_cmp_save_empty_string_coercion.sql
+@@ -0,0 +1,57 @@
++-- bl_camp_0326_cmp_save_empty_string_coercion.sql
++-- Applied: staging 6 Sep 2026, production 6 Sep 2026.
++--
++-- Bug: the Campaign manager's New-campaign form could not be saved with the Schedule
++-- field left blank. save() does `if (f.scheduledAt) ...` so '' survives, and cmpSave does
++-- `?? null`, which only replaces null/undefined — so '' was sent. PostgREST then cast
++-- ''::timestamptz and raised 22007 (invalid_datetime_format) BEFORE the function body ran,
++-- surfacing in the UI as "Something went wrong. Please try again. (code 22007)".
++-- The same shape breaks on an unselected Audience: ''::uuid -> 22P02.
++--
++-- Fix: p_audience and p_scheduled_at become text and are coerced with nullif(btrim(...),'')
++-- inside the function, so the RPC tolerates an empty form field whatever the client sends.
++-- Blank objective/template are normalized to NULL too rather than stored as ''.
++-- Param types change, so this is a drop + recreate, not CREATE OR REPLACE.
++--
++-- NOTE: recreating a public function re-applies Supabase's default EXECUTE grant to anon.
++-- The explicit revoke below is required; without it the prod anon-executable SECURITY
++-- DEFINER count goes 32 -> 33. Verified back at 32 after applying.
++
++drop function if exists public.cc_cmp_save(uuid, text, text, uuid, text, text[], text, text, timestamp with time zone, text);
++
++create or replace function public.cc_cmp_save(p_id uuid, p_name text, p_objective text, p_audience text, p_template text, p_channels text[], p_subject text, p_body text, p_scheduled_at text, p_status text)
++returns uuid
++language plpgsql security definer
++set search_path to 'app_private, public'
++as $function$
++declare v_id uuid; v_slug text; v_aud uuid; v_sched timestamptz;
++begin
++  if not (public.has_global_permission('campaigns.view') or public.has_global_permission('content.manage') or public.has_global_permission('settings.manage')) then
++    raise exception 'not authorized' using errcode='42501'; end if;
++  if p_name is null or btrim(p_name)='' then raise exception 'campaign name is required' using errcode='22023'; end if;
++  if coalesce(p_status,'draft') not in ('draft','scheduled','sent','paused') then raise exception 'invalid status' using errcode='22023'; end if;
++
++  v_aud   := nullif(btrim(coalesce(p_audience,'')), '')::uuid;
++  v_sched := nullif(btrim(coalesce(p_scheduled_at,'')), '')::timestamptz;
++
++  if p_id is null then
++    v_id := gen_random_uuid();
++    v_slug := btrim(regexp_replace(lower(p_name), '[^a-z0-9]+', '-', 'g'), '-');
++    v_slug := left(coalesce(nullif(v_slug,''), 'campaign'), 48) || '-' || left(v_id::text, 8);
++    insert into app_private.campaigns(id, name, utm_campaign, objective, audience_id, template_key, channels, subject, body, scheduled_at, status, created_by)
++    values (v_id, p_name, v_slug, nullif(btrim(coalesce(p_objective,'')),''), v_aud, nullif(btrim(coalesce(p_template,'')),''),
++            coalesce(p_channels,'{push}'), p_subject, p_body, v_sched, coalesce(p_status,'draft'), auth.uid())
++    returning id into v_id;
++  else
++    update app_private.campaigns set name=p_name, objective=nullif(btrim(coalesce(p_objective,'')),''), audience_id=v_aud,
++      template_key=nullif(btrim(coalesce(p_template,'')),''), channels=coalesce(p_channels,'{push}'),
++      subject=p_subject, body=p_body, scheduled_at=v_sched, status=coalesce(p_status,'draft'), updated_at=now()
++    where id=p_id returning id into v_id;
++  end if;
++  perform app_private.log_audit('campaign.save','campaign', v_id::text, null, coalesce(p_status,'draft'), jsonb_build_object('name',p_name));
++  return v_id;
++end; $function$;
++
++revoke all on function public.cc_cmp_save(uuid, text, text, text, text, text[], text, text, text, text) from public;
++revoke execute on function public.cc_cmp_save(uuid, text, text, text, text, text[], text, text, text, text) from anon;
++grant execute on function public.cc_cmp_save(uuid, text, text, text, text, text[], text, text, text, text) to authenticated;
+diff --git a/migrations/bl_camp_0327_solo_operator_self_approval.sql b/migrations/bl_camp_0327_solo_operator_self_approval.sql
+new file mode 100644
+index 0000000..66dc310
+--- /dev/null
++++ b/migrations/bl_camp_0327_solo_operator_self_approval.sql
+@@ -0,0 +1,87 @@
++-- bl_camp_0327_solo_operator_self_approval.sql
++-- Applied: staging 6 Sep 2026, production 6 Sep 2026.
++--
++-- cc_campaign_approve refused self-approval (separation of duties), and production has exactly
++-- ONE active staff member with comms permission — so no campaign could ever be approved, and
++-- nothing could ever be sent. Yaseen chose to scope the control rather than delete it.
++--
++-- Maker-checker is unchanged whenever a second approver exists. The only change: when there is
++-- exactly one active staff member who can manage comms, there is no second pair of eyes to ask
++-- for, so that lone operator may approve their own campaign — and the approval is recorded as a
++-- DIFFERENT audit action ('campaign.approve.solo') carrying an explicit note that nobody else
++-- reviewed the send. The strict two-person rule returns BY ITSELF the moment a second approver is
++-- granted content.manage or settings.manage; there is nothing to remember to undo.
++--
++-- Staging-verified both branches: with 4 approvers self-approval was still refused; with 1 it
++-- succeeded, returned solo_self_approval:true and wrote campaign.approve.solo to audit_logs.
++
++create or replace function app_private.user_can_manage_comms(p_user uuid)
++returns boolean
++language sql stable security definer
++set search_path to 'app_private, public'
++as $function$
++  -- Mirrors public.has_global_permission() for an arbitrary user instead of auth.uid():
++  -- active staff, an explicit deny beats everything, otherwise a global role grant or a
++  -- direct allow grant on either comms permission.
++  select exists (select 1 from app_private.staff_members s where s.user_id = p_user and s.status = 'active')
++     and exists (
++       select 1 from unnest(array['content.manage','settings.manage']) k(perm)
++        where not exists (select 1 from app_private.user_permission_grants g
++                           where g.user_id = p_user and g.permission_key = k.perm and g.effect = 'deny')
++          and (exists (select 1 from app_private.user_role_assignments a
++                        join app_private.role_permissions rp on rp.role_id = a.role_id
++                        join app_private.permissions pm on pm.id = rp.permission_id
++                       where a.user_id = p_user and a.status = 'active'
++                         and (a.expires_at is null or a.expires_at > now())
++                         and a.scope_type = 'global' and pm.key = k.perm)
++            or exists (select 1 from app_private.user_permission_grants g
++                        where g.user_id = p_user and g.permission_key = k.perm and g.effect = 'allow'))
++     );
++$function$;
++
++revoke all on function app_private.user_can_manage_comms(uuid) from public;
++
++create or replace function app_private.comms_approver_count()
++returns int
++language sql stable security definer
++set search_path to 'app_private, public'
++as $function$
++  select count(*)::int from app_private.staff_members s
++   where s.status = 'active' and app_private.user_can_manage_comms(s.user_id);
++$function$;
++
++revoke all on function app_private.comms_approver_count() from public;
++
++create or replace function public.cc_campaign_approve(p_campaign uuid, p_approve boolean default true)
++returns jsonb
++language plpgsql security definer
++set search_path to 'app_private, public'
++as $function$
++declare c record; v_uid uuid; v_approvers int; v_solo boolean := false;
++begin
++  if not app_private.can_manage_comms() then raise exception 'not authorized' using errcode='42501'; end if;
++  v_uid := auth.uid();
++  select * into c from app_private.campaigns where id = p_campaign;
++  if c.id is null then raise exception 'campaign not found' using errcode='22023'; end if;
++  if p_approve then
++    if c.created_by is not null and c.created_by = v_uid then
++      v_approvers := app_private.comms_approver_count();
++      if v_approvers > 1 then
++        raise exception 'maker-checker: the campaign creator cannot approve their own campaign' using errcode='42501';
++      end if;
++      v_solo := true;
++    end if;
++    update app_private.campaigns set approved_by = v_uid, approved_at = now(), updated_at = now() where id = p_campaign;
++    if v_solo then
++      perform app_private.log_audit('campaign.approve.solo','campaign',p_campaign::text,null,
++        'SOLO SELF-APPROVAL — this account is the only active staff member who can manage comms, so no second person reviewed this send',
++        jsonb_build_object('approver', v_uid, 'comms_approvers', v_approvers, 'campaign_name', c.name));
++    else
++      perform app_private.log_audit('campaign.approve','campaign',p_campaign::text,null,'campaign approved for send',null);
++    end if;
++  else
++    update app_private.campaigns set approved_by = null, approved_at = null, updated_at = now() where id = p_campaign;
++    perform app_private.log_audit('campaign.unapprove','campaign',p_campaign::text,null,'campaign approval revoked',null);
++  end if;
++  return jsonb_build_object('approved', p_approve, 'approved_by', case when p_approve then v_uid else null end, 'solo_self_approval', v_solo);
++end; $function$;
+diff --git a/migrations/bl_camp_0328_analytics_count_engagement_by_timestamp.sql b/migrations/bl_camp_0328_analytics_count_engagement_by_timestamp.sql
+new file mode 100644
+index 0000000..734303e
+--- /dev/null
++++ b/migrations/bl_camp_0328_analytics_count_engagement_by_timestamp.sql
+@@ -0,0 +1,42 @@
++-- bl_camp_0328_analytics_count_engagement_by_timestamp.sql
++-- Applied: staging 6 Sep 2026, production 6 Sep 2026.
++--
++-- cc_campaign_analytics counted opens/clicks as `status in ('opened','clicked')`, but
++-- cc_delivery_worker_mark never sets those statuses — by design it stamps opened_at /
++-- clicked_at and leaves the row at 'delivered', so an engagement event cannot downgrade a
++-- terminal status. The Stats panel therefore reported 0 opens and 0 clicks even when the
++-- provider was reporting them. Count by the timestamp columns the worker actually writes.
++--
++-- Separate finding, NOT fixed here (needs a Resend dashboard change, or deploying the
++-- first-party mail-open pixel that already exists in supabase/functions/mail-open):
++-- across 18,382 emails, provider_events holds zero 'opened' and zero 'clicked' rows.
++-- Resend has never sent one — its open/click tracking is off, or the webhook endpoint is
++-- not subscribed to those event types. sent/delivered/bounced/complained all arrive fine.
++create or replace function public.cc_campaign_analytics(p_campaign uuid)
++returns jsonb
++language plpgsql stable security definer
++set search_path to 'app_private, public'
++as $function$
++declare v jsonb; v_total int; v_sent int; v_delivered int; v_opened int; v_clicked int; v_bounced int; v_failed int; v_dead int; v_pending int;
++begin
++  if not app_private.can_manage_comms() then raise exception 'not authorized' using errcode='42501'; end if;
++  select count(*),
++    count(*) filter (where status in ('sent','delivered','opened','clicked')),
++    count(*) filter (where status in ('delivered','opened','clicked')),
++    count(*) filter (where opened_at is not null),
++    count(*) filter (where clicked_at is not null),
++    count(*) filter (where status in ('bounced','complained')),
++    count(*) filter (where status='failed'),
++    count(*) filter (where status='dead_letter'),
++    count(*) filter (where status in ('queued','scheduled','claimed'))
++  into v_total,v_sent,v_delivered,v_opened,v_clicked,v_bounced,v_failed,v_dead,v_pending
++  from app_private.message_deliveries where campaign_id=p_campaign;
++  v := jsonb_build_object(
++    'total',v_total,'sent',v_sent,'delivered',v_delivered,'opened',v_opened,'clicked',v_clicked,
++    'bounced',v_bounced,'failed',v_failed,'dead_letter',v_dead,'pending',v_pending,
++    'delivery_rate', case when v_sent>0 then round(100.0*v_delivered/v_sent,1) else 0 end,
++    'open_rate',     case when v_delivered>0 then round(100.0*v_opened/v_delivered,1) else 0 end,
++    'click_rate',    case when v_opened>0 then round(100.0*v_clicked/v_opened,1) else 0 end,
++    'bounce_rate',   case when v_total>0 then round(100.0*v_bounced/v_total,1) else 0 end);
++  return v;
++end; $function$;
+diff --git a/privacy_module.py b/privacy_module.py
+new file mode 100644
+index 0000000..c26c8da
+--- /dev/null
++++ b/privacy_module.py
+@@ -0,0 +1,509 @@
++# privacy_module.py — the flagship Privacy & Data page.
++#
++# Written 6 Sep 2026. Everything here is derived from what the platform ACTUALLY does —
++# the document type lists in app/carrier/app.js and app/partner/app.js, the storage
++# contract in app/shared/storage.js, the RLS policies in migrations/, the edge functions
++# in supabase/functions/ and the sub-processors those functions call. A privacy policy
++# that describes an imagined system is worse than none: it is a promise you will break.
++# If the platform changes, this page changes with it.
++#
++# Structure follows how the best consumer-trust pages read (Uber's privacy centre, Amazon's
++# "Your data" hub, Apple's per-feature disclosures): a plain-English summary anyone can act
++# on, then the specifics, then the legal text — never legal text first.
++
++PV_CSS = '''<style>
++.pv-hero{position:relative;overflow:hidden;background:#0B1526;color:#fff;padding:96px 0 84px}
++.pv-hero:before{content:"";position:absolute;inset:-40% -10% auto -10%;height:150%;
++  background:radial-gradient(60% 55% at 20% 25%,rgba(8,131,247,.30),transparent 62%),
++             radial-gradient(50% 50% at 82% 18%,rgba(252,83,5,.24),transparent 60%),
++             radial-gradient(45% 45% at 60% 95%,rgba(125,211,252,.16),transparent 60%);
++  filter:blur(6px)}
++.pv-hero .wrap{position:relative;z-index:1}
++.pv-kick{display:inline-flex;align-items:center;gap:9px;padding:7px 15px;border-radius:999px;
++  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.20);font-size:12.5px;
++  font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#bfe0ff}
++.pv-kick .dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.20)}
++.pv-hero h1{font-size:clamp(2.1rem,5vw,3.5rem);line-height:1.08;margin:20px 0 16px;letter-spacing:-.02em;max-width:16ch}
++.pv-grad{background:linear-gradient(92deg,#7dd3fc,#0883F7 45%,#FC5305);-webkit-background-clip:text;background-clip:text;color:transparent}
++.pv-hero .pv-lead{font-size:clamp(1.02rem,1.9vw,1.2rem);line-height:1.65;color:#c6d4e6;max-width:62ch;margin:0 0 26px}
++.pv-chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px}
++.pv-chip{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;
++  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);font-size:13.5px;font-weight:600;color:#e2e8f0}
++.pv-chip b{color:#7dd3fc;font-weight:800}
++.pv-stamp{display:inline-block;margin-top:26px;padding:8px 15px;border-radius:10px;background:rgba(255,255,255,.06);
++  border:1px solid rgba(255,255,255,.14);font-size:13px;color:#a9bad0}
++.pv-stamp b{color:#fff}
++
++/* sticky section nav */
++.pv-nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
++  border-bottom:1px solid #e2e8f0}
++.pv-nav-in{display:flex;gap:4px;overflow-x:auto;padding:11px 0;scrollbar-width:none}
++.pv-nav-in::-webkit-scrollbar{display:none}
++.pv-nav a{flex:0 0 auto;padding:8px 14px;border-radius:999px;font-size:13.5px;font-weight:700;color:#475569;
++  text-decoration:none;white-space:nowrap;border:1px solid transparent}
++.pv-nav a:hover{background:#eff6ff;color:#0883F7;border-color:#bfdbfe}
++
++.pv-sec{padding:72px 0;scroll-margin-top:78px}
++.pv-sec.soft{background:#f6f9fc}
++.pv-sec.dark{background:#10223B;color:#e2e8f0}
++.pv-sec.dark h2{color:#fff}
++.pv-head{max-width:70ch;margin:0 0 34px}
++.pv-eye{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#0883F7;font-weight:800;margin-bottom:10px}
++.pv-sec.dark .pv-eye{color:#7dd3fc}
++.pv-head h2{font-size:clamp(1.6rem,3.1vw,2.3rem);line-height:1.18;margin:0 0 12px;letter-spacing:-.015em}
++.pv-head p{font-size:1.02rem;line-height:1.72;color:#475569;margin:0}
++.pv-sec.dark .pv-head p{color:#b7c6da}
++
++/* promise cards */
++.pv-grid{display:grid;gap:18px}
++.pv-g2{grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))}
++.pv-g3{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
++.pv-promise{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;position:relative;
++  transition:transform .18s ease,box-shadow .18s ease}
++.pv-promise:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(15,23,42,.09)}
++.pv-promise .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;
++  background:linear-gradient(135deg,#eff6ff,#dbeafe);margin-bottom:14px}
++.pv-promise h3{font-size:1.02rem;margin:0 0 8px;letter-spacing:-.01em}
++.pv-promise p{font-size:.93rem;line-height:1.65;color:#475569;margin:0}
++.pv-promise .no{color:#b91c1c;font-weight:800}
++.pv-promise .yes{color:#15803d;font-weight:800}
++
++/* role cards */
++.pv-role{background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden}
++.pv-role .rh{padding:20px 24px;background:linear-gradient(135deg,#10223B,#152e4d);color:#fff}
++.pv-role .rh .t{font-size:1.08rem;font-weight:800;letter-spacing:-.01em}
++.pv-role .rh .s{font-size:.85rem;color:#9fb4cd;margin-top:3px}
++.pv-role .rb{padding:20px 24px 24px}
++.pv-role dl{margin:0}
++.pv-role dt{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:#0883F7;font-weight:800;margin:16px 0 6px}
++.pv-role dt:first-child{margin-top:0}
++.pv-role dd{margin:0;font-size:.93rem;line-height:1.65;color:#334155}
++
++/* data tables */
++.pv-tw{overflow-x:auto;border:1px solid #e2e8f0;border-radius:16px;background:#fff}
++.pv-t{width:100%;border-collapse:collapse;min-width:720px;font-size:.9rem}
++.pv-t th{text-align:left;padding:14px 16px;background:#f1f5f9;font-size:11.5px;letter-spacing:.09em;
++  text-transform:uppercase;color:#475569;font-weight:800;border-bottom:1px solid #e2e8f0;white-space:nowrap}
++.pv-t td{padding:14px 16px;border-bottom:1px solid #eef2f7;vertical-align:top;line-height:1.6;color:#334155}
++.pv-t tr:last-child td{border-bottom:none}
++.pv-t td b{color:#0f172a}
++.pv-t .who{color:#475569}
++.pv-pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
++.pv-pill.you{background:#dcfce7;color:#15803d}
++.pv-pill.staff{background:#dbeafe;color:#1d4ed8}
++.pv-pill.load{background:#fef3c7;color:#92400e}
++.pv-pill.never{background:#fee2e2;color:#b91c1c}
++
++/* rights */
++.pv-right{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid #e2e8f0;
++  border-radius:14px;padding:20px}
++.pv-right .n{flex:0 0 34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;
++  background:#0883F7;color:#fff;font-size:15px}
++.pv-right h3{margin:0 0 6px;font-size:1rem}
++.pv-right p{margin:0;font-size:.92rem;line-height:1.65;color:#475569}
++.pv-right a{color:#0883F7;font-weight:700}
++
++.pv-faq details{background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:11px;overflow:hidden}
++.pv-faq summary{cursor:pointer;padding:17px 20px;font-weight:700;font-size:1rem;list-style:none;color:#0f172a}
++.pv-faq summary::-webkit-details-marker{display:none}
++.pv-faq summary:after{content:"+";float:right;color:#0883F7;font-weight:800;font-size:1.25rem;line-height:1}
++.pv-faq details[open] summary:after{content:"\\2013"}
++.pv-faq p{padding:0 20px 18px;margin:0;color:#475569;line-height:1.72;font-size:.95rem}
++
++.pv-note{border-left:4px solid #0883F7;background:#f1f7ff;padding:16px 20px;border-radius:0 12px 12px 0;
++  font-size:.93rem;line-height:1.68;color:#334155;margin:22px 0}
++.pv-note b{color:#0f172a}
++
++.pv-cta{background:linear-gradient(135deg,#10223B,#0b1a30);color:#fff;border-radius:22px;padding:52px 40px;text-align:center}
++.pv-cta h2{font-size:clamp(1.5rem,3vw,2.1rem);margin:0 0 12px;color:#fff}
++.pv-cta p{color:#b7c6da;max-width:56ch;margin:0 auto 26px;line-height:1.7}
++.pv-cta .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
++@media(max-width:640px){.pv-hero{padding:70px 0 60px}.pv-sec{padding:52px 0}.pv-cta{padding:38px 22px}}
++</style>'''
++
++
++def _promise(items):
++    out = []
++    for ic, t, d in items:
++        out.append('<div class="pv-promise"><div class="ic">%s</div><h3>%s</h3><p>%s</p></div>' % (ic, t, d))
++    return '<div class="pv-grid pv-g3">%s</div>' % ''.join(out)
++
++
++def _role(title, sub, rows):
++    dl = ''.join('<dt>%s</dt><dd>%s</dd>' % (k, v) for k, v in rows)
++    return ('<div class="pv-role"><div class="rh"><div class="t">%s</div><div class="s">%s</div></div>'
++            '<div class="rb"><dl>%s</dl></div></div>') % (title, sub, dl)
++
++
++def _table(cols, rows):
++    th = ''.join('<th>%s</th>' % c for c in cols)
++    tb = ''.join('<tr>%s</tr>' % ''.join('<td>%s</td>' % c for c in r) for r in rows)
++    return '<div class="pv-tw"><table class="pv-t"><thead><tr>%s</tr></thead><tbody>%s</tbody></table></div>' % (th, tb)
++
++
++def _sec(sid, eyebrow, h2, lead, inner, cls=''):
++    head = '<div class="pv-head"><div class="pv-eye">%s</div><h2>%s</h2>%s</div>' % (
++        eyebrow, h2, ('<p>%s</p>' % lead) if lead else '')
++    return '<section class="pv-sec %s" id="%s"><div class="wrap">%s%s</div></section>' % (cls, sid, head, inner)
++
++
++def privacy_page(ctx=None):
++    """Returns (body_html, faq_schema_html). ctx unused today; kept for parity with the
++    other landing modules so build_site.py calls all of them the same way."""
++    ctx = ctx or {}
++    U = '2026-09-06'
++    b = PV_CSS
++
++    # ---------- HERO ----------
++    b += '''<section class="pv-hero"><div class="wrap">
++<span class="pv-kick"><span class="dot"></span>LoadBoot Privacy Policy</span>
++<h1>Your paperwork is the most sensitive thing you own. <span class="pv-grad">Here is exactly who can see it.</span></h1>
++<p class="pv-lead">This is not a page of legal cover. It names every document we ask for, why we ask, which specific people can open it, how long we keep it, and every outside company that touches your data &mdash; for carriers, brokers, shippers, agents and dispatchers.</p>
++<div class="pv-chips">
++<span class="pv-chip"><b>Never</b> sold, ever</span>
++<span class="pv-chip"><b>No</b> ad tracking inside the portals</span>
++<span class="pv-chip"><b>Private</b> document storage</span>
++<span class="pv-chip"><b>Delete</b> your account yourself</span>
++</div>
++<div class="pv-stamp"><b>This page is the LoadBoot Privacy Policy.</b> Last updated <b>6 September 2026</b> &middot; LoadBoot LLC &middot; applies to loadboot.com, the Carrier, Partner, Agent and Developer portals, and the LoadBoot Android app</div>
++</div></section>'''
++
++    # ---------- STICKY NAV ----------
++    nav = [('short', 'The short version'), ('role', 'What we collect'), ('documents', 'Every document'),
++           ('sharing', 'Who sees what'), ('processors', 'Outside companies'), ('ai', 'AI &amp; automation'),
++           ('security', 'Security'), ('rights', 'Your rights'), ('retention', 'How long we keep it'),
++           ('faq', 'FAQ'), ('contact', 'Contact')]
++    b += '<div class="pv-nav"><div class="wrap"><nav class="pv-nav-in">%s</nav></div></div>' % ''.join(
++        '<a href="#%s">%s</a>' % (i, t) for i, t in nav)
++
++    # ---------- SHORT VERSION ----------
++    b += _sec('short', 'Read this if you read nothing else', 'Six promises, in plain English',
++        'Each one is a design decision in the product, not a sentiment. Where a promise is enforced by the database rather than by policy, we say so.',
++        _promise([
++            ('&#128683;', 'We never sell your data',
++             'Not to brokers, not to lead vendors, not to anyone. We have no advertising business, so there is nothing to sell it <i>for</i>. We also run no ad tracking inside the signed-in portals or the app.'),
++            ('&#128274;', 'Your documents are private by default',
++             'Every file you upload lands in a private store, inside a folder that belongs to your account. Access is enforced by database rules, not by a screen that hides a button. Files are only ever handed out through short-lived signed links, never a public URL.'),
++            ('&#128222;', 'Brokers never get your phone or email',
++             'On your public carrier profile a broker sees your company, MC/DOT, equipment and verification status. Your phone number and email address stay hidden &mdash; LoadBoot dispatch handles contact. That is why brokers cannot cold-call your drivers.'),
++            ('&#127974;', 'Dispatchers can never open your bank details',
++             'The rule that lets an assigned dispatcher read your documents names exactly four types: authority, insurance, W-9 and factoring NOA. Your voided check is not on that list, so the database refuses it &mdash; even to our own staff dispatcher.'),
++            ('&#128273;', 'Your TIN is encrypted and masked',
++             'Your EIN or SSN is stored encrypted on the server and shown masked everywhere it appears in the product, including to our own team. Payouts only ever go to the account you verified, so nobody can redirect your money.'),
++            ('&#128205;', 'Location is opt-in and stays off until you turn it on',
++             'The platform works completely without it. When you do share it, we keep only the points the active trip and its proof-of-delivery record need &mdash; not a movement history &mdash; and you can revoke it from the dashboard or your phone settings at any time.'),
++        ]))
++
++    # ---------- BY ROLE ----------
++    roles = ''.join([
++        _role('Carriers &amp; owner-operators', 'The account with the most at stake &mdash; and the most protection', [
++            ('What we collect', 'Company and authority details (MC/DOT, equipment, lanes, domicile, availability); the compliance and load documents listed below; settlement and payout details; photos you take for proof of delivery; and precise location <i>only</i> while you choose to share it.'),
++            ('Why', 'To verify you are a real, insured, authorised carrier, to match you to loads, to dispatch and track those loads, and to pay you.'),
++            ('Where some of it comes from', 'We read your public FMCSA/SAFER record to confirm authority and insurance. That is a one-way, read-only lookup on a government database &mdash; we send nothing about you to FMCSA.'),
++            ('What brokers never see', 'Your phone, your email, your finances, your other loads, your cost model, your payroll and your books.'),
++        ]),
++        _role('Brokers &amp; shippers', 'Posting freight and paying for it', [
++            ('What we collect', 'Company, MC and bond details, contact people; the loads you post (origin, destination, dates, equipment, rate, references, notes); loads you email to loads@loadboot.com, including the sender address, signature block and attachments we need to post them; the onboarding packet documents listed below; and payment records.'),
++            ('Why', 'To verify you can legally broker or tender freight, to post your loads to verified carriers, and to settle payment. The bond and BOC-3 exist so a carrier can be paid if something goes wrong &mdash; checking them is the whole point.'),
++            ('What carriers never see', 'Your credit application, your payment terms with us, your other loads and your internal notes.'),
++        ]),
++        _role('Agents &amp; referral partners', 'Paid on results, verified like anyone handling money', [
++            ('What we collect', 'Your referral link and the accounts that sign up through it, commission and payout records, a government photo ID, proof of the bank or payout account, and a signed W-9 or W-8BEN.'),
++            ('Why the ID', 'Because money moves. Payouts only ever go to a verified identity &mdash; that protects you as much as us. International agents give a W-8BEN instead of a W-9.'),
++            ('Per-load documents', 'If you source a load, we ask who really pays it: the source company name and MC/DOT, the rate confirmation from that source, and the billing contact. This is what stops double-brokering.'),
++        ]),
++        _role('Dispatchers', 'Our staff and contract dispatchers, working your loads', [
++            ('What they can see', 'Your availability, your loads and trips, and exactly four document types: operating authority, insurance certificate, W-9 and factoring NOA &mdash; the documents a broker packet requires.'),
++            ('What they cannot see', 'Your bank verification document, your books, your expenses, your payroll and your cost model. This is enforced in the database, not by hiding a button.'),
++            ('What we collect about them', 'Identity and right-to-work information, the loads they source and book, and the actions they take &mdash; every one of which is written to an audit trail.'),
++        ]),
++    ])
++    b += _sec('role', 'By who you are', 'What we collect, and why, for each kind of account',
++        'Nobody should have to read four pages that do not apply to them. Find yourself here.',
++        '<div class="pv-grid pv-g2">%s</div>' % roles, 'soft')
++    # ---------- EVERY DOCUMENT ----------
++    YOU = '<span class="pv-pill you">You</span>'
++    STAFF = '<span class="pv-pill staff">LoadBoot review staff</span>'
++    DISP = '<span class="pv-pill staff">Your dispatcher</span>'
++    LOAD = '<span class="pv-pill load">Both sides of that load</span>'
++    NEVER_D = '<span class="pv-pill never">Never your dispatcher</span>'
++
++    carrier_docs = _table(
++        ['Document', 'Why we ask for it', 'Who can open it', 'How long we keep it'],
++        [
++            ['<b>Operating authority</b><br><span class="who">MC / DOT letter</span>',
++             'Proof you are legally authorised to haul. No broker will tender a load without it, and we will not post your truck without it.',
++             YOU + ' ' + STAFF + ' ' + DISP,
++             'While your account is open, then up to 7 years'],
++            ['<b>Certificate of insurance (COI)</b><br><span class="who">ACORD 25, PDF from your agent</span>',
++             'Brokers require proof of auto liability and cargo cover. We also read the expiry date so we can warn you before it lapses and your loads stop.',
++             YOU + ' ' + STAFF + ' ' + DISP,
++             'While current, then up to 7 years'],
++            ['<b>W-9</b><br><span class="who">contains your EIN or SSN</span>',
++             'No money can move to you without it. Required by the IRS, and part of every broker packet.',
++             YOU + ' ' + STAFF + ' ' + DISP + '<br><span class="who">The TIN itself is stored encrypted and shown masked &mdash; including to us.</span>',
++             'Up to 7 years (tax record)'],
++            ['<b>Bank verification</b><br><span class="who">voided check or bank letter</span>',
++             'So your settlement money can only ever land in an account you personally verified. This is the single strongest protection you have against payment fraud.',
++             YOU + ' ' + '<span class="pv-pill staff">LoadBoot finance only</span> ' + NEVER_D,
++             'While the payout account is active, then 7 years'],
++            ['<b>Factoring notice of assignment (NOA)</b>',
++             'Tells brokers to pay your factoring company instead of you. Without it on file, invoices get paid to the wrong place.',
++             YOU + ' ' + STAFF + ' ' + DISP + ' <span class="who">+ the broker on loads you run</span>',
++             'While the factoring relationship is active, then 7 years'],
++            ['<b>Signed dispatch agreement</b>',
++             'The contract between you and LoadBoot. You should keep a copy too &mdash; you can download yours any time.',
++             YOU + ' ' + STAFF,
++             'Life of the agreement + 7 years'],
++            ['<b>MCS-150 &middot; FMCSA safety rating</b>',
++             'Biennial update and safety standing. Brokers check both; we would rather show them a current copy than have them guess.',
++             YOU + ' ' + STAFF + ' ' + DISP,
++             'While current, then up to 7 years'],
++            ['<b>Hazmat set</b><br><span class="who">PHMSA registration, CDL &ldquo;H&rdquo; endorsement, hazmat COI</span>',
++             'Only asked for if you tell us you haul hazmat. The CDL photo is used to confirm the endorsement and nothing else.',
++             YOU + ' ' + STAFF + ' ' + DISP,
++             'While current, then up to 7 years'],
++            ['<b>Rate confirmation &middot; BOL &middot; POD</b><br><span class="who">including delivery photos</span>',
++             'The paperwork that proves a specific load ran and was delivered &mdash; which is what gets you paid and what settles a dispute.',
++             YOU + ' ' + STAFF + ' ' + LOAD,
++             '7 years (transport record)'],
++        ])
++
++    partner_docs = _table(
++        ['Document', 'Why we ask for it', 'Who can open it', 'How long we keep it'],
++        [
++            ['<b>Broker authority &middot; BMC-84 bond &middot; BOC-3 &middot; UCR</b>',
++             'The four things that decide whether a carrier can actually get paid by you. The bond is the money a carrier claims against if a broker fails to pay; FMCSA will not keep your authority active without a BOC-3.',
++             YOU + ' ' + STAFF + '<br><span class="who">Verification status &mdash; not the documents &mdash; is shown to carriers.</span>',
++             'While your account is open, then up to 7 years'],
++            ['<b>W-9 &middot; certificate of insurance</b>',
++             'Tax form before settlement money moves; GL / E&amp;O / contingent cargo cover for the freight itself.',
++             YOU + ' ' + STAFF,
++             'Up to 7 years'],
++            ['<b>Bank / remittance instructions</b>',
++             'Where invoices go and how you pay. Held to the same standard as a carrier&rsquo;s bank details.',
++             YOU + ' <span class="pv-pill staff">LoadBoot finance only</span>',
++             'While active, then 7 years'],
++            ['<b>Signed broker or shipper agreement</b>',
++             'The contract between us. Shippers also give a credit application and payment terms before a first booking.',
++             YOU + ' ' + STAFF,
++             'Life of the agreement + 7 years'],
++            ['<b>Claims procedure &middot; facility rules &middot; cargo profile</b>',
++             'Optional, and purely operational: who a driver calls when something goes wrong, and what to expect at the dock.',
++             YOU + ' ' + STAFF + ' <span class="who">+ the carrier on a load, where it helps them deliver</span>',
++             'While your account is open'],
++        ])
++
++    agent_docs = _table(
++        ['Document', 'Why we ask for it', 'Who can open it', 'How long we keep it'],
++        [
++            ['<b>Government photo ID</b>',
++             'Because we are about to send you money. Payouts go only to a verified identity &mdash; that is what stops someone else claiming your commissions.',
++             YOU + ' <span class="pv-pill staff">LoadBoot finance only</span>',
++             'While your account is open, then 7 years'],
++            ['<b>Bank or payout proof</b><br><span class="who">voided check, statement header or payout-account screenshot</span>',
++             'To lock your commission to one verified destination that cannot be changed by an email.',
++             YOU + ' <span class="pv-pill staff">LoadBoot finance only</span>',
++             'While active, then 7 years'],
++            ['<b>W-9 or W-8BEN</b>',
++             'US agents sign a W-9; agents outside the US sign a W-8BEN. Both are tax requirements, not a preference of ours.',
++             YOU + ' <span class="pv-pill staff">LoadBoot finance only</span>',
++             'Up to 7 years (tax record)'],
++            ['<b>Per-load source documents</b>',
++             'If you source a load: who really pays it, the rate confirmation from that source, and the billing contact. This is the check that stops double-brokering.',
++             STAFF + ' ' + LOAD,
++             '7 years (transport record)'],
++        ])
++
++    b += _sec('documents', 'The part most policies skip', 'Every document we ask for &mdash; and exactly who can open it',
++        'If a document is not on this list, we are not asking you for it. If we ever need to add one, this table changes first.',
++        '<h3 style="margin:26px 0 12px;font-size:1.15rem">Carriers &amp; owner-operators</h3>' + carrier_docs +
++        '<div class="pv-note"><b>Read the fourth row again.</b> Your bank verification document is the one file even your assigned dispatcher cannot open. The database rule that grants dispatcher access lists four document types by name, and this is not one of them &mdash; so the request is refused at the data layer, not by a hidden button. A dispatcher who needs banking done goes to finance, the same as anyone else.</div>' +
++        '<h3 style="margin:34px 0 12px;font-size:1.15rem">Brokers &amp; shippers</h3>' + partner_docs +
++        '<h3 style="margin:34px 0 12px;font-size:1.15rem">Agents &amp; referral partners</h3>' + agent_docs)
++
++    # ---------- WHO SEES WHAT ----------
++    b += _sec('sharing', 'Sharing', 'Who sees what, and when',
++        'We share information in exactly four situations. There is no fifth.',
++        '<div class="pv-grid pv-g2">' +
++        '<div class="pv-promise"><div class="ic">&#129309;</div><h3>1. Between the two parties on a load &mdash; because you asked us to</h3>'
++        '<p>When you book or request a load, the broker or shipper sees your company name, MC/DOT, equipment, verification status and trip status. You see their company, contact and load details. The rate confirmation, BOL and POD attached to that load are visible to both sides. Your financials, your notes and your other loads are never shown &mdash; and neither are theirs to you.</p></div>'
++        '<div class="pv-promise"><div class="ic">&#127981;</div><h3>2. Companies that run parts of the service for us</h3>'
++        '<p>Hosting, database, email, SMS, the phone assistant and document processing. Every one is listed by name in the next section, with what it can actually see. They may only process data on our instructions, and none of them may use it for their own purposes.</p></div>'
++        '<div class="pv-promise"><div class="ic">&#127974;</div><h3>3. Your factoring company or payout partner</h3>'
++        '<p>Only if you choose one, and only to the extent needed to get you paid. You tell us who they are; we do not pick one for you.</p></div>'
++        '<div class="pv-promise"><div class="ic">&#9878;</div><h3>4. Regulators, and the law</h3>'
++        '<p>Where the law requires it, to enforce our terms, or to protect people from harm. If LoadBoot is ever acquired, information transfers to the successor under this same policy &mdash; it does not become a free-for-all.</p></div>'
++        '</div>'
++        '<div class="pv-note"><b>What is deliberately not on this list:</b> advertising networks, data brokers, lead-generation companies and &ldquo;partners&rdquo; who would like to email your carriers. We do not sell, rent or trade your information, and we do not run advertising analytics inside the signed-in portals or the app.</div>')
++
++    # ---------- SUB-PROCESSORS ----------
++    b += _sec('processors', 'Outside companies', 'Every third party that touches your data',
++        'Most policies say &ldquo;we use service providers&rdquo; and stop. Here is the actual list, what each one does, and what it can see. If we add one, this table is updated before it goes live.',
++        _table(['Company', 'What it does for us', 'What it can see'], [
++            ['<b>Supabase</b>', 'Database, sign-in, and the private store your documents live in.',
++             'All platform data. Encrypted in transit and at rest; access governed by row-level rules we write.'],
++            ['<b>Netlify</b>', 'Serves the public loadboot.com pages.',
++             'Public pages and standard web request logs. No account data and no documents pass through it.'],
++            ['<b>Resend</b>', 'Delivers our email.',
++             'Your name, email address and the content of the message we send you.'],
++            ['<b>Twilio</b>', 'Delivers SMS, including check-call texts.',
++             'Your phone number and the text of that message.'],
++            ['<b>Retell AI</b>', 'The 24/7 phone assistant, when you call us or ask us to call you.',
++             'That call &mdash; the audio and its transcript. Nothing else about your account.'],
++            ['<b>Google (Gemini API)</b>', 'Reads an uploaded document, a rate confirmation or a load email to pre-fill fields and flag obvious problems.',
++             'The content of the specific document, email or chat message being processed. See the next section.'],
++            ['<b>Google Analytics 4 &amp; Search Console</b>', 'Tells us which public marketing pages people find useful.',
++             'Aggregate visits to public pages only. Not loaded inside the signed-in portals or the app.'],
++            ['<b>Intuit QuickBooks Online</b>', 'Two-way accounting sync &mdash; <b>only if you connect it yourself</b>.',
++             'The invoices, expenses and payments you choose to sync. Disconnect any time and the sync stops.'],
++            ['<b>Your ELD provider</b><br><span class="who">Samsara, Motive, KeepTruckin, Geotab</span>', 'Pulls vehicle location and hours &mdash; <b>only if you connect it yourself</b>.',
++             'We hold a read-only token. LoadBoot never writes anything back to your ELD and never shares the token. Disconnect any time.'],
++            ['<b>FMCSA / SAFER</b>', 'Confirms authority, insurance and safety standing.',
++             'Nothing. This is a one-way read of a public government record &mdash; we send no information about you to FMCSA.'],
++        ]), 'soft')
++
++    # ---------- AI ----------
++    b += _sec('ai', 'AI &amp; automation', 'Where a machine reads your paperwork &mdash; and where a human still decides',
++        'Automation saves you re-typing a rate confirmation. It should never be the thing that quietly rejects your insurance certificate. Here is the line we draw.',
++        '<div class="pv-grid pv-g2">'
++        '<div class="pv-promise"><div class="ic">&#129302;</div><h3>What AI actually does here</h3>'
++        '<p><b>Document pre-check.</b> When you upload a COI or authority letter, the file is read so we can tell you immediately if it is the wrong document, expired, or missing a required field &mdash; instead of you finding out three days later.<br><br>'
++        '<b>Rate confirmation parsing.</b> Pulls the stops, dates and rate off a rate con so you do not re-type them.<br><br>'
++        '<b>Load emails.</b> Reads freight emailed to loads@loadboot.com so a broker can post by email.<br><br>'
++        '<b>Live chat.</b> Answers common questions on the website.</p></div>'
++        '<div class="pv-promise"><div class="ic">&#128100;</div><h3>What it does not do</h3>'
++        '<p><b>It never has the final word on compliance.</b> A LoadBoot compliance reviewer checks every AI verdict before it affects your account. If the machine flags your document, a person looks at it.<br><br>'
++        '<b>We do not use your documents to train our own models.</b><br><br>'
++        '<b>It does not read what it has no reason to read.</b> Only the specific file, email or message being processed is sent &mdash; not your account, your history or your other documents.<br><br>'
++        '<b>The processor is Google&rsquo;s Gemini API</b>, listed in the table above, working on our instructions.</p></div>'
++        '</div>')
++
++    # ---------- SECURITY ----------
++    b += _sec('security', 'Security', 'How the protection is actually built',
++        'The useful question is not &ldquo;is it encrypted&rdquo; &mdash; everything is. It is: what happens if someone tries to read data that is not theirs?',
++        '<div class="pv-grid pv-g3">' + ''.join(
++            '<div class="pv-promise"><div class="ic">%s</div><h3>%s</h3><p>%s</p></div>' % t for t in [
++            ('&#128451;', 'Your files live in your own folder',
++             'Every upload is stored under a path that belongs to your account. The storage rules check that path on every single read &mdash; there is no query that returns another company&rsquo;s file.'),
++            ('&#8987;', 'Links that expire',
++             'A document is never served from a public address. Viewing one mints a signed link that dies within minutes.'),
++            ('&#128272;', 'The server decides, not the screen',
++             'Your organisation is resolved from your session on the server. Hiding a button is not our access control; the database refusing the row is.'),
++            ('&#128179;', 'Two people for money',
++             'Money-moving actions use maker-checker: the person who creates one cannot be the person who approves it.'),
++            ('&#128220;', 'Everything leaves a trace',
++             'Bookings, payments, claims and document events are timestamped records. We can tell you who did what, and when.'),
++            ('&#128231;', 'We will never email you for a password',
++             'Our mail only comes from @loadboot.com. We never ask for your password and never change payment details by email. Forward anything suspicious to security@loadboot.com.'),
++        ]) + '</div>'
++        '<div class="pv-note"><b>One honest exception.</b> Your <i>company logo</i> is stored in a public bucket, because it is meant to be seen &mdash; it appears on your carrier profile and on documents. Everything else you upload is private. We would rather tell you that than let you assume it.</div>'
++        '<p style="margin-top:22px;color:#475569;line-height:1.72">Data is encrypted in transit with TLS and at rest. No system is perfectly secure, and anyone who tells you otherwise is selling something; what we can promise is that the safeguards match the sensitivity of what you have handed us, and that we will tell you promptly if that ever fails.</p>')
++
++    # ---------- RIGHTS ----------
++    rights = [
++        ('1', 'See everything we hold about you',
++         'Email <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> from your account address and ask for a copy. We will send it, or tell you honestly why some part cannot be released, within 30 days.'),
++        ('2', 'Correct anything that is wrong',
++         'Most of it you can fix yourself in your portal &mdash; company details, contacts, documents, preferences. If something is locked because it is verified, email us and we will correct it.'),
++        ('3', 'Delete your account',
++         'In the portal go to <i>Settings &rarr; Account &rarr; Delete my account</i>, or read our <a href="delete-account.html">account deletion page</a> first &mdash; it names exactly what is erased and the narrow set of records tax and transport law makes us keep.'),
++        ('4', 'Turn location off',
++         'From your dashboard, or from your phone&rsquo;s own settings. It stops immediately. Nothing else about your account stops working.'),
++        ('5', 'Stop marketing email',
++         'Every marketing email carries a one-click unsubscribe, and we honour it at the point of sending, not eventually. Operational mail about your own loads, documents and payments keeps coming &mdash; you need those.'),
++        ('6', 'Complain, and be taken seriously',
++         'Write to <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a>. If we cannot resolve it, residents of California and other states with privacy laws may also complain to their state authority. We extend those rights to every user, wherever they live, rather than only where a law forces us to.'),
++    ]
++    b += _sec('rights', 'Your rights', 'What you can make us do &mdash; and how, today',
++        'A right you cannot exercise in under five minutes is not really a right. Each of these has a real button or a real address behind it.',
++        '<div class="pv-grid pv-g2">%s</div>' % ''.join(
++            '<div class="pv-right"><div class="n">%s</div><div><h3>%s</h3><p>%s</p></div></div>' % r for r in rights), 'soft')
++
++    # ---------- RETENTION ----------
++    b += _sec('retention', 'Retention', 'How long each thing stays, and why',
++        'We do not keep data because storage is cheap. Where a period looks long, it is because a law or a dispute window requires it &mdash; and we say which.',
++        _table(['What', 'How long', 'Why that long'], [
++            ['Account and contact details', 'While your account is open, plus a short wind-down period',
++             'So you can come back, and so we can answer a question about a closed account.'],
++            ['Load, trip and settlement records', 'Up to 7 years',
++             'US tax and transportation record-keeping, and the window in which a freight claim or payment dispute can still be raised.'],
++            ['Compliance documents (authority, COI, W-9, NOA)', 'While current, then up to 7 years',
++             'Proof that you were authorised and insured <i>on the day a specific load ran</i> is what protects you if that load is ever questioned.'],
++            ['Proof of delivery, BOL, rate confirmations', 'Up to 7 years',
++             'They are the evidence a load was delivered and priced as agreed.'],
++            ['Precise location', 'Minimised to the active trip and its arrival/departure stamps',
++             'We keep the points the proof-of-service record needs, not a history of where your truck has been.'],
++            ['Support conversations and call transcripts', 'Up to 2 years',
++             'To keep context if an issue comes back, and to settle a disagreement about what was said.'],
++            ['Marketing analytics', 'Aggregated, not tied to you',
++             'We want to know which page helped, not which person read it.'],
++        ]))
++
++    # ---------- FAQ ----------
++    faqs = [
++        ('Do you sell my data to brokers or anyone else?',
++         'No. We have no advertising business and no data-sales business, so there is nothing for us to sell it for. We do not sell, rent or trade your personal information, and we do not run ad tracking inside the signed-in portals or the app.'),
++        ('Can a broker see my phone number or email address?',
++         'No. On your carrier profile a broker sees your company, MC/DOT, equipment and verification status. Your phone and email stay hidden and LoadBoot dispatch handles contact. That is deliberate &mdash; it is why brokers cannot cold-call your drivers off the board.'),
++        ('Can my LoadBoot dispatcher see my bank details?',
++         'No, and not by policy alone. The database rule that lets an assigned dispatcher read your documents names four types &mdash; authority, insurance, W-9 and factoring NOA. Your bank verification document is not one of them, so the request is refused at the data layer.'),
++        ('Why do you need my W-9 with my EIN or SSN on it?',
++         'Because no money can legally move to you without it, and every broker packet includes one. Your TIN is stored encrypted on the server and shown masked everywhere it appears in the product &mdash; including to our own team.'),
++        ('Is my document read by AI?',
++         'When you upload a compliance document it is sent to Google&rsquo;s Gemini API so we can tell you straight away if it is the wrong file, expired, or missing something. A LoadBoot compliance reviewer checks every AI verdict before it affects your account, and we do not use your documents to train our own models.'),
++        ('Do I have to share my location?',
++         'No. The platform works completely without it and it is off until you turn it on. When you do share it, we keep only what the active trip and its proof-of-delivery record need, and you can revoke it from your dashboard or your phone at any time.'),
++        ('What happens to my documents if I delete my account?',
++         'Your account, profile and preferences are removed. Records that tax and transportation law require us to keep &mdash; completed loads, settlements and the compliance documents that were in force when those loads ran &mdash; are retained for the legal period and then deleted. Our account deletion page lists this precisely.'),
++        ('Does connecting QuickBooks or my ELD give you access to everything?',
++         'No, and both are entirely optional. QuickBooks syncs only the invoices, expenses and payments you choose. Your ELD connection is read-only &mdash; LoadBoot never writes anything back to it and never shares the token. Disconnect either at any time.'),
++        ('I am an agent outside the US. Which rules apply to me?',
++         'The same ones. You sign a W-8BEN instead of a W-9, and we honour the access, correction and deletion rights on this page for every user regardless of where they live, rather than only where a law compels us.'),
++        ('Who do I contact if something looks wrong?',
++         'Privacy questions and requests: privacy@loadboot.com. Anything that looks like phishing or a security problem: security@loadboot.com. Both are read by a person.'),
++    ]
++    rows = ''.join('<details><summary>%s</summary><p>%s</p></details>' % (q, a) for q, a in faqs)
++    import json as _json, re as _re
++    def _plain(x):
++        x = _re.sub(r'<[^>]+>', '', x)
++        for a, c in [('&mdash;', '—'), ('&rsquo;', '’'), ('&ldquo;', '“'), ('&rdquo;', '”'),
++                     ('&amp;', '&'), ('&rarr;', '→'), ('&middot;', '·'), ('&nbsp;', ' ')]:
++            x = x.replace(a, c)
++        return x.strip()
++    schema = '<script type="application/ld+json">%s</script>' % _json.dumps({
++        '@context': 'https://schema.org', '@type': 'FAQPage',
++        'mainEntity': [{'@type': 'Question', 'name': _plain(q),
++                        'acceptedAnswer': {'@type': 'Answer', 'text': _plain(a)}} for q, a in faqs]},
++        ensure_ascii=False)
++    b += _sec('faq', 'Questions people actually ask', 'Straight answers', '',
++              '<div class="pv-faq">%s</div>' % rows, 'soft')
++
++    # ---------- CONTACT + LEGAL TAIL ----------
++    b += _sec('contact', 'Contact &amp; the formal bits', 'Who we are, and how to reach a person', '',
++        '<div class="pv-grid pv-g2">'
++        '<div class="pv-promise"><div class="ic">&#9993;</div><h3>Reach us</h3>'
++        '<p><b>LoadBoot LLC</b><br>30 N Gould St Ste N, Sheridan, WY 82801, USA<br><br>'
++        'Privacy requests: <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a><br>'
++        'Security reports: <a href="mailto:security@loadboot.com">security@loadboot.com</a><br>'
++        'Anything else: <a href="contact.html">our contact page</a> or +1 (469) 253-7575</p></div>'
++        '<div class="pv-promise"><div class="ic">&#128220;</div><h3>Scope, children and changes</h3>'
++        '<p>This policy covers loadboot.com, the Carrier, Partner, Agent, Developer and Command Center portals, and the LoadBoot Android app on Google Play (<code>com.loadboot.app</code>) &mdash; the app is the same portal packaged for your phone, so everything here applies to it identically.<br><br>'
++        'The Platform is for businesses and is not directed to anyone under 18; we do not knowingly collect information from children.<br><br>'
++        'When this policy changes we post it here with a new date, and we email account holders about anything material rather than hoping they notice.</p></div>'
++        '</div>'
++        '<div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">'
++        '<a class="btn btn-primary" href="delete-account.html">Delete your account</a>'
++        '<a class="btn btn-secondary" href="security.html">Security &amp; Trust</a>'
++        '<a class="btn btn-secondary" href="terms.html">Terms of Service</a>'
++        '<a class="btn btn-secondary" href="cookies.html">Cookie Policy</a>'
++        '</div>')
++
++    b += ('<section class="pv-sec"><div class="wrap"><div class="pv-cta">'
++          '<h2>Still not sure about something?</h2>'
++          '<p>Ask us. A person reads privacy@loadboot.com, and &ldquo;why do you need this?&rdquo; is a fair question we would rather answer than have you guess at.</p>'
++          '<div class="row"><a class="btn btn-primary" href="mailto:privacy@loadboot.com">Email privacy@loadboot.com</a>'
++          '<a class="btn btn-secondary" href="contact.html">Talk to a human</a></div>'
++          '</div></div></section>')
++
++    return b, schema
+diff --git a/terms_module.py b/terms_module.py
+new file mode 100644
+index 0000000..b80d828
+--- /dev/null
++++ b/terms_module.py
+@@ -0,0 +1,275 @@
++# terms_module.py — the flagship Terms of Service page.
++#
++# Written 6 Sep 2026, alongside privacy_module.py, so the two legal pages read as one family.
++# It reuses PV_CSS from privacy_module and adds only what Terms needs.
++#
++# RULE FOR ANYONE EDITING THIS FILE: the numbered sections below are the CONTRACT. Their
++# substance is carried over verbatim from the July 2026 Terms — the 5% fee on delivered-and-
++# paid loads only, no forced dispatch, no minimum term, the liability cap, Texas law and the
++# 30-day informal-resolution step. Restructure and explain them all you like; do not quietly
++# reword what a party is agreeing to. The "In plain English" glosses are commentary sitting
++# NEXT TO the clause, never a replacement for it — that is why each one is visually marked.
++
++from privacy_module import PV_CSS, _sec, _table
++
++TM_CSS = '''<style>
++.tm-clause{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:22px 24px;margin-bottom:14px;scroll-margin-top:80px}
++.tm-clause h3{margin:0 0 10px;font-size:1.06rem;letter-spacing:-.01em;display:flex;gap:10px;align-items:baseline}
++.tm-clause h3 .no{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:#10223B;color:#fff;
++  font-size:.78rem;display:grid;place-items:center;font-weight:800}
++.tm-clause p{margin:0 0 10px;line-height:1.72;color:#334155;font-size:.95rem}
++.tm-clause p:last-child{margin-bottom:0}
++.tm-plain{margin-top:12px;padding:12px 14px;border-left:3px solid #16a34a;background:#f0fdf4;border-radius:0 10px 10px 0}
++.tm-plain b{display:block;font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:#15803d;margin-bottom:4px}
++.tm-plain span{font-size:.92rem;line-height:1.62;color:#14532d}
++.tm-deal{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
++.tm-deal .d{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:22px}
++.tm-deal .d .big{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;color:#0883F7;margin-bottom:4px}
++.tm-deal .d h3{margin:0 0 6px;font-size:1rem}
++.tm-deal .d p{margin:0;font-size:.92rem;line-height:1.62;color:#475569}
++.tm-ex{background:#10223B;color:#e2e8f0;border-radius:16px;padding:24px 26px;margin-top:22px}
++.tm-ex h3{color:#fff;margin:0 0 14px;font-size:1.05rem}
++.tm-ex .l{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.10);font-size:.95rem}
++.tm-ex .l:last-of-type{border-bottom:none}
++.tm-ex .l b{color:#fff}
++.tm-ex .tot{margin-top:12px;padding-top:12px;border-top:2px solid rgba(255,255,255,.22);font-size:1.05rem;font-weight:800;color:#4ade80;display:flex;justify-content:space-between}
++</style>'''
++
++
++def _clause(no, title, paras, plain=None, anchor=None):
++    ps = ''.join('<p>%s</p>' % p for p in paras)
++    pl = ('<div class="tm-plain"><b>In plain English</b><span>%s</span></div>' % plain) if plain else ''
++    aid = anchor or ('s%s' % no)
++    return ('<div class="tm-clause" id="%s"><h3><span class="no">%s</span>%s</h3>%s%s</div>'
++            % (aid, no, title, ps, pl))
++
++
++def terms_page(ctx=None):
++    """Returns (body_html, faq_schema_html)."""
++    b = PV_CSS + TM_CSS
++
++    b += '''<section class="pv-hero"><div class="wrap">
++<span class="pv-kick"><span class="dot"></span>LoadBoot Terms of Service</span>
++<h1>The agreement, <span class="pv-grad">written to be read.</span></h1>
++<p class="pv-lead">Every clause that costs you money or limits what you can claim is on this page, in order, with a plain-English note beside it. Nothing is buried, and there is no separate document you have not seen.</p>
++<div class="pv-chips">
++<span class="pv-chip"><b>Free</b> to join</span>
++<span class="pv-chip"><b>5%</b> only on loads that pay</span>
++<span class="pv-chip"><b>No</b> forced dispatch</span>
++<span class="pv-chip"><b>No</b> minimum term or cancellation fee</span>
++</div>
++<div class="pv-stamp"><b>These are the LoadBoot Terms of Service.</b> Last updated <b>6 September 2026</b> &middot; a binding agreement between you and LoadBoot LLC &middot; read with our <a href="privacy.html" style="color:#7dd3fc">Privacy Policy</a>, which forms part of it</div>
++</div></section>'''
++
++    nav = [('deal', 'The deal'), ('fees', 'Fees'), ('roles', 'By your role'), ('market', 'What we promise'),
++           ('terms', 'The full terms'), ('liability', 'Liability &amp; disputes'), ('faq', 'FAQ'), ('contact', 'Contact')]
++    b += '<div class="pv-nav"><div class="wrap"><nav class="pv-nav-in">%s</nav></div></div>' % ''.join(
++        '<a href="#%s">%s</a>' % (i, t) for i, t in nav)
++
++    # ---------- THE DEAL ----------
++    b += _sec('deal', 'Before the legal text', 'The commercial deal, in six lines',
++        'These are the terms people actually want to know before they sign. Each one is a real clause below, not a marketing line.',
++        '<div class="tm-deal">' + ''.join(
++            '<div class="d"><div class="big">%s</div><h3>%s</h3><p>%s</p></div>' % t for t in [
++            ('$0', 'Joining costs nothing',
++             'No subscription, no setup fee, no per-seat charge. Brokers and shippers post freight free as well.'),
++            ('5%', 'Dispatch fee &mdash; and only when you get paid',
++             'A flat 5% on loads that are <b>delivered and paid</b>. If a load does not pay, no fee is due. The fee is shown before you book.'),
++            ('$0', 'To leave',
++             'No minimum term and no cancellation fee. Close your account from the portal or by email, whenever you want.'),
++            ('0', 'Loads booked without your approval',
++             'There is no forced dispatch. You approve every load before it is booked, on your own authority.'),
++            ('Never', 'We hold your freight money',
++             'Brokers and shippers pay you (or your factoring company) directly. LoadBoot invoices its own fee separately and never sits between you and your revenue.'),
++            ('Yours', 'Your documents and data',
++             'You keep ownership of everything you upload. We get a limited licence to store and display it so the platform can work &mdash; nothing more.'),
++        ]) + '</div>')
++
++    # ---------- FEES ----------
++    b += _sec('fees', 'Fees', 'What you pay, and when',
++        'One fee exists. Here it is, with the arithmetic done for you.',
++        _table(['Who you are', 'What you pay', 'When'], [
++            ['<b>Carrier / owner-operator</b>', 'Flat <b>5%</b> dispatch fee on the linehaul',
++             'Only after the load is <b>delivered and paid</b>. A load that never pays carries no fee.'],
++            ['<b>Broker</b>', '<b>Nothing.</b> Posting is free.', '&mdash;'],
++            ['<b>Shipper</b>', '<b>Nothing.</b> Posting is free.', '&mdash;'],
++            ['<b>Referral agent</b>', 'You are <b>paid</b>, not charged &mdash; 1% referral commission.',
++             'Per the agent programme terms, once the referred account&rsquo;s loads settle.'],
++        ]) +
++        '<div class="tm-ex"><h3>Worked example &mdash; one $2,400 load</h3>'
++        '<div class="l"><span>Load pays</span><b>$2,400.00</b></div>'
++        '<div class="l"><span>LoadBoot dispatch fee (5%)</span><b>&minus; $120.00</b></div>'
++        '<div class="l"><span>Paid to you, or to your factoring company</span><b>$2,280.00</b></div>'
++        '<div class="tot"><span>If that load never pays</span><span>$0 fee</span></div></div>'
++        '<div class="pv-note"><b>Fees can change, but never backwards.</b> We may change fees going forward with notice; a change never applies to a load you have already booked. The fee is stated before you book, every time.</div>', 'soft')
++
++    # ---------- ROLES ----------
++    from privacy_module import _role
++    b += _sec('roles', 'By who you are', 'What you are agreeing to',
++        'The same contract, but the parts that bind you differ by role.',
++        '<div class="pv-grid pv-g2">' + ''.join([
++            _role('Carriers &amp; owner-operators', 'Clauses 3, 4, 6, 13', [
++                ('You are agreeing to', 'Keep active MC/USDOT authority, insurance at the levels on your account (typically $1M auto liability and $100K cargo), a current W-9 and a signed dispatch agreement. Run safely and lawfully &mdash; hours of service, equipment, permits and insurance are yours alone.'),
++                ('We are agreeing to', 'Never book a load without your approval, act as your authorised agent under 49 CFR Part 371 on your own authority, and charge our 5% only on loads that deliver and pay.'),
++                ('If a document lapses', 'The features that depend on it pause until it is current again. That is the protection working, not a penalty &mdash; it is what stops the network tendering you freight you are not covered for.'),
++            ]),
++            _role('Brokers &amp; shippers', 'Clauses 3, 5, 6', [
++                ('You are agreeing to', 'That every load you post is genuine, lawful and yours to tender; that the rate and details are accurate; and that you will honour the written terms of every confirmed booking, including accessorials.'),
++                ('What gets you removed', 'Ghost loads, bait-and-switch postings, re-brokering a LoadBoot-covered load without disclosure, and payment default. Any of these can end the account immediately and may be reported within the network.'),
++                ('What you pay', 'Nothing. Posting is free, and it stays free.'),
++            ]),
++            _role('Referral agents', 'Clauses 7, 13', [
++                ('You are agreeing to', 'That you are an independent business, not an employee, and that you cannot bind LoadBoot or any carrier.'),
++                ('Getting paid', 'Commission follows the referred account&rsquo;s settled loads. Payouts go only to the identity and account you verified &mdash; which is why we ask for ID and bank proof.'),
++            ]),
++            _role('Everyone', 'Clauses 2, 9, 10, 18', [
++                ('Eligibility', 'You are 18 or over, able to form a binding contract, and authorised to act for the business you register. You are responsible for everything done under your account.'),
++                ('Acceptable use', 'No misrepresenting identity, authority, insurance or documents. No false loads. No scraping, reverse engineering or probing the platform. No circumventing verification, fees or safety controls.'),
++                ('Changes', 'For material changes we give notice before they take effect. Continued use after the effective date is acceptance. The date at the top is always the live version.'),
++            ]),
++        ]) + '</div>')
++    # ---------- WHAT WE PROMISE / WHAT THE MARKET DECIDES ----------
++    b += _sec('market', 'The honest part', 'What we promise &mdash; and what the market decides',
++        'This clause is unusual for a terms page. We keep it because it is the one most likely to be tested.',
++        '<div class="pv-grid pv-g2">'
++        '<div class="pv-promise"><div class="ic">&#9989;</div><h3>What we commit to on every load</h3>'
++        '<p>Dispatchers who hunt and negotiate on your lanes. Written protection on accessorials &mdash; detention, TONU, layover, lumper. GPS-verified records that make a claim stick. Paperwork handled end to end. That standard of effort, tooling and transparency is what you are buying, and we hold ourselves to it.</p></div>'
++        '<div class="pv-promise"><div class="ic">&#128202;</div><h3>What no honest platform can promise</h3>'
++        '<p>The freight market itself. Rates, load volume and lane availability move with fuel, seasonality, capacity and the wider economy &mdash; the same market every carrier, broker and load board in America works in. So specific rates, volumes or income levels are not guaranteed by LoadBoot, exactly as they are not by any reputable competitor. Our answer to a soft market is effort and information &mdash; live market rates, cost-per-mile tooling, and dispatchers who say no to freight that does not pay &mdash; never an inflated promise.</p></div>'
++        '</div>', 'soft')
++
++    # ---------- THE FULL TERMS ----------
++    C = []
++    C.append(_clause(1, 'What LoadBoot is', [
++        'LoadBoot is an operating system for trucking: a technology platform that connects verified motor carriers, licensed freight brokers and shippers, and provides dispatch support services to carriers. The Platform includes a verified load board, dispatch services, GPS-based shipment visibility, digital document workflows (rate confirmations, BOLs, PODs, W-9s, dispatch agreements), settlement records and communication tools.',
++        'LoadBoot acts as a dispatch service and technology provider. Unless expressly stated otherwise in writing: we are not a motor carrier, we do not take possession of freight, and when providing dispatch services we act as the carrier&rsquo;s authorised agent under 49 CFR Part 371, arranging freight on behalf of the carrier and under the carrier&rsquo;s own operating authority. We do not allocate traffic among carriers.'],
++        'We are not a trucking company and we never touch your freight. When we book, we are acting as your agent, on your authority &mdash; which is why every load is legally yours.'))
++    C.append(_clause(2, 'Accounts &amp; eligibility', [
++        'You must be at least 18, able to form a binding contract, and authorised to act for the business you register. You are responsible for the accuracy of your information, for safeguarding your login, and for all activity under your account. One company may operate multiple authorised users; you remain responsible for each of them.'],
++        'If someone on your team does something under your account, that is on you &mdash; so give logins carefully.'))
++    C.append(_clause(3, 'Verification', [
++        'Access to core features requires verification appropriate to your role: <b>carriers</b> &mdash; active MC/USDOT operating authority, insurance meeting the levels stated on your account (typically $1M auto liability and $100K cargo), and a completed W-9 and dispatch agreement; <b>brokers</b> &mdash; active brokerage authority and the federal surety bond or trust (BMC-84/85); <b>shippers</b> &mdash; verified business identity. We verify against public federal records (including FMCSA data) and the documents you upload. If a required document lapses, the related features pause until it is current &mdash; that protection is a feature of the network, not a penalty.'],
++        'Let your COI expire and your truck stops getting tendered until you replace it. We will warn you before it happens.'))
++    C.append(_clause(4, 'Carrier terms', [
++        'Every load is booked under the carrier&rsquo;s own authority. You approve every load before it is booked &mdash; there is no forced dispatch. You are solely responsible for safe and lawful operations, including hours of service, equipment condition, permits and insurance. Written load terms (rate confirmation, and where applicable detention, TONU, layover and lumper provisions) govern each shipment.'],
++        'Nobody can put a load on your truck without you saying yes. Everything about how you run that load stays your responsibility.'))
++    C.append(_clause(5, 'Broker &amp; shipper terms', [
++        'Posting is free. You represent that every posted load is genuine, lawful and yours to tender; that rate and load details are accurate; and that you will honour the written terms of every confirmed booking, including published accessorial policies. Ghost loads, bait-and-switch postings, re-brokering a LoadBoot-covered load without disclosure, and payment default are grounds for immediate removal and may be reported within the network.'],
++        'Post a load that is not real, or do not pay, and you are off the platform &mdash; and other members may hear about it.'))
++    C.append(_clause(6, 'Fees &amp; payment', [
++        'Joining the Platform is free. Carriers pay a flat 5% dispatch fee, charged only on loads that are delivered and paid &mdash; if a load does not pay, no fee is due. Brokers and shippers post at no charge. LoadBoot never takes custody of freight payments: brokers and shippers pay carriers (or their factoring company) directly, and LoadBoot invoices its own fee separately. Fees are stated before you book and may change prospectively with notice; changes never apply retroactively.'],
++        'Our money is downstream of yours. We get paid after you do, and never out of a payment we are holding &mdash; because we never hold one.'))
++    C.append(_clause(7, 'Independent businesses', [
++        'Carriers, brokers, shippers and referral agents are independent businesses. Nothing in these Terms creates an employment, joint venture or partnership relationship with LoadBoot, and no party may bind another except as expressly authorised in a signed dispatch agreement.'],
++        'You are not our employee and we are not your partner. We cannot sign anything on your behalf beyond what your dispatch agreement allows.'))
++    C.append(_clause(8, 'What you can expect from us &mdash; and what the market decides', [
++        'We put real work behind every account: dispatchers who hunt and negotiate on your lanes, written protection on accessorials, GPS-verified records that make claims stick, and paperwork handled end to end. We commit to that standard of effort, tooling and transparency on every load we touch.',
++        'What no honest platform can promise is the freight market itself. Rates, load volume and lane availability move with fuel, seasonality, capacity and the broader economy &mdash; the same market every carrier, broker and load board in America operates in. Specific rates, volumes or income levels therefore are not guaranteed by LoadBoot, just as they are not by any reputable competitor. Our answer to a soft market is effort and information &mdash; live market rates, cost-per-mile tooling, and dispatchers who say &ldquo;no&rdquo; to freight that does not pay &mdash; never inflated promises.'],
++        'We guarantee how hard we work, not what the market pays. Anyone guaranteeing you a rate per mile is either lucky or lying.'))
++    C.append(_clause(9, 'Acceptable use', [
++        'You agree not to: misrepresent your identity, authority, insurance or documents; post false or misleading loads; harvest data, scrape, reverse engineer or probe the Platform; interfere with other users or with Platform operation; use the Platform for any unlawful purpose; or circumvent verification, fees or safety controls. We may suspend or remove accounts that put the network at risk, with notice where practicable.'],
++        None))
++    C.append(_clause(10, 'Your content &amp; our platform', [
++        'You retain ownership of documents and data you upload and grant LoadBoot a limited licence to store, process and display them as needed to operate the Platform. The Platform, its software, design, brand and content are LoadBoot&rsquo;s property or its licensors&rsquo; and are protected by law; no rights are granted except as stated here.'],
++        'Your paperwork stays yours. We only get the permission we need to actually run the service &mdash; and the <a href="privacy.html#documents">Privacy Policy</a> lists exactly who can open each document.'))
++    C.append(_clause(11, 'Privacy', [
++        'Our <a href="privacy.html">Privacy Policy</a> explains what we collect and how we use it, and forms part of these Terms. In summary: we use your data to run the Platform, we do not sell it, and communication preferences are always in your control.'],
++        None))
++    C.append(_clause(12, 'Third-party services', [
++        'The Platform interoperates with third-party services (for example FMCSA data, mapping, payment, factoring and accounting integrations such as QuickBooks). Those services are governed by their own terms, and LoadBoot is not responsible for them.'],
++        'Every one of those companies is named, with what it can see, in the <a href="privacy.html#processors">Privacy Policy</a>.'))
++    C.append(_clause(13, 'Term &amp; termination', [
++        'There is no minimum term and no cancellation fee &mdash; you may close your account at any time from your portal or by writing to <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>. Obligations already accrued (including fees on delivered-and-paid loads and the terms of confirmed bookings) survive termination, as do Sections 8&ndash;18. We may suspend or terminate accounts for material breach, fraud, safety risk or extended inactivity.'],
++        'You can walk away whenever you like. Loads already running still have to finish, and fees already earned are still owed &mdash; but nothing locks you in.'))
++    C.append(_clause(14, 'Disclaimers', [
++        'The Platform is provided &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; To the fullest extent permitted by law, LoadBoot disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose and non-infringement. We verify counterparties diligently, but each user remains responsible for its own commercial decisions and counterparties&rsquo; performance.'],
++        'We check brokers hard, but we cannot guarantee one will pay. Running your own credit judgement is still your job.'))
++    C.append(_clause(15, 'Limitation of liability', [
++        'To the fullest extent permitted by law: LoadBoot is not liable for indirect, incidental, special, consequential or punitive damages, or for lost profits, revenue, cargo or data; and LoadBoot&rsquo;s total aggregate liability arising out of the Platform is limited to the greater of (a) the dispatch fees you paid to LoadBoot in the six (6) months before the claim arose, or (b) one hundred U.S. dollars ($100). Some jurisdictions do not allow certain limitations, so parts of this section may not apply to you.'],
++        '<b>Read this one twice.</b> If something goes badly wrong, the most you can recover from us is whatever you paid us in dispatch fees over the previous six months &mdash; or $100, whichever is larger. Cargo losses are what your cargo insurance is for.'))
++    C.append(_clause(16, 'Indemnification', [
++        'You will defend and hold harmless LoadBoot and its team from claims arising out of your freight operations, your breach of these Terms, your content, or your violation of law or third-party rights.'],
++        'If someone sues us over how you ran a load, you cover it.'))
++    C.append(_clause(17, 'Governing law &amp; disputes', [
++        'These Terms are governed by the laws of the State of Texas, without regard to conflict-of-law rules. Before filing any claim, you agree to contact us at <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> and give us thirty (30) days to work it out &mdash; most issues are resolved this way. Courts located in Texas will have exclusive jurisdiction over disputes not resolved informally, and each party waives trial by jury to the extent permitted.'],
++        'Talk to us first &mdash; you have to give us 30 days. After that it is Texas courts, and neither side gets a jury.'))
++    C.append(_clause(18, 'Changes to these Terms', [
++        'We may update these Terms as the Platform evolves. For material changes we will give notice (portal notice or email) before they take effect; continued use after the effective date constitutes acceptance. The &ldquo;Last updated&rdquo; date above always reflects the current version.'],
++        None))
++    C.append(_clause(19, 'Contact', [
++        'Questions about these Terms: <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>. Live chat and our 24/7 phone line are on the <a href="contact.html">contact page</a>. LoadBoot LLC, 30 N Gould St Ste N, Sheridan, WY 82801.'],
++        None))
++
++    b += _sec('terms', 'The agreement', 'The full terms, all nineteen clauses',
++        'Nothing is summarised away. The green notes beside a clause are our plain-English explanation of it &mdash; helpful, but the clause itself is what binds.',
++        ''.join(C))
++
++    # ---------- LIABILITY & DISPUTES, CALLED OUT ----------
++    b += _sec('liability', 'The two clauses that matter most in a bad week',
++        'If something goes wrong, this is where you will end up',
++        'Most people sign a terms page and never look at it again &mdash; until a claim. So here are those clauses on their own, in the open.',
++        '<div class="pv-grid pv-g2">'
++        '<div class="pv-promise"><div class="ic">&#9878;</div><h3>What you can recover from us</h3>'
++        '<p>Capped at the greater of the dispatch fees you paid us in the previous six months, or $100. We do not cover indirect or consequential loss, lost profit, or cargo.<br><br>'
++        '<b>What actually covers cargo:</b> your cargo policy, and for a broker&rsquo;s non-payment, their BMC-84 bond &mdash; which is exactly why we verify both before anyone books.</p></div>'
++        '<div class="pv-promise"><div class="ic">&#129309;</div><h3>How a dispute has to start</h3>'
++        '<p>Email <a href="mailto:hello@loadboot.com">hello@loadboot.com</a> and give us 30 days. That is not a formality &mdash; almost everything gets resolved there, and it is a required step before a claim.<br><br>'
++        'After that: Texas law, Texas courts, and both sides waive a jury trial.</p></div>'
++        '</div>', 'soft')
++
++    # ---------- FAQ ----------
++    faqs = [
++        ('Is there really no monthly fee?', 'No. Joining is free, there is no subscription and no per-seat charge. Carriers pay a flat 5% dispatch fee on loads that are delivered and paid. Brokers and shippers post for free.'),
++        ('What if a broker never pays me — do I still owe the 5%?', 'No. The fee applies only to loads that are delivered <i>and</i> paid. A load that does not pay carries no fee. We are downstream of your money, deliberately.'),
++        ('Can LoadBoot book a load without asking me?', 'No. There is no forced dispatch. Every load is approved by you before it is booked, and it runs under your own operating authority with us acting as your agent under 49 CFR Part 371.'),
++        ('Does LoadBoot hold my freight payment?', 'Never. Brokers and shippers pay you or your factoring company directly. We invoice our own fee separately and are never in the middle of your revenue.'),
++        ('Is there a contract term or cancellation fee?', 'Neither. Close your account any time from the portal or by emailing hello@loadboot.com. Loads already confirmed still have to be completed, and fees already earned are still owed.'),
++        ('What happens if my insurance or authority expires?', 'The features that depend on that document pause until it is current. We warn you before the expiry date. It is the same check that stops a broker tendering you freight you are not covered for.'),
++        ('How much can I claim from LoadBoot if something goes wrong?', 'The cap is the greater of the dispatch fees you paid us in the previous six months, or $100. Cargo loss is what your cargo insurance is for, and a broker&rsquo;s non-payment is what their BMC-84 bond is for.'),
++        ('Where would a dispute be heard?', 'You must email us first and allow 30 days to resolve it informally. If that fails, Texas law applies and Texas courts have exclusive jurisdiction; both sides waive a jury trial.'),
++        ('Do these Terms cover the Android app too?', 'Yes. The app is the same portal packaged for your phone, and both these Terms and the Privacy Policy apply to it identically.'),
++        ('What happens when the Terms change?', 'For anything material we notify account holders by portal notice or email before it takes effect, and the date at the top of the page always reflects the live version. Changes to fees never apply to a load you have already booked.'),
++    ]
++    rows = ''.join('<details><summary>%s</summary><p>%s</p></details>' % (q, a) for q, a in faqs)
++    import json as _json, re as _re
++    def _plain(x):
++        x = _re.sub(r'<[^>]+>', '', x)
++        for a, c in [('&mdash;', '—'), ('&rsquo;', '’'), ('&ldquo;', '“'), ('&rdquo;', '”'),
++                     ('&amp;', '&'), ('&rarr;', '→'), ('&middot;', '·'), ('&ndash;', '–'), ('&minus;', '−')]:
++            x = x.replace(a, c)
++        return x.strip()
++    schema = '<script type="application/ld+json">%s</script>' % _json.dumps({
++        '@context': 'https://schema.org', '@type': 'FAQPage',
++        'mainEntity': [{'@type': 'Question', 'name': _plain(q),
++                        'acceptedAnswer': {'@type': 'Answer', 'text': _plain(a)}} for q, a in faqs]},
++        ensure_ascii=False)
++    b += _sec('faq', 'Questions people actually ask', 'Straight answers', '',
++              '<div class="pv-faq">%s</div>' % rows)
++
++    # ---------- CONTACT ----------
++    b += _sec('contact', 'Contact', 'Who you are contracting with', '',
++        '<div class="pv-grid pv-g2">'
++        '<div class="pv-promise"><div class="ic">&#9993;</div><h3>LoadBoot LLC</h3>'
++        '<p>30 N Gould St Ste N, Sheridan, WY 82801, USA<br><br>'
++        'Questions about these Terms: <a href="mailto:hello@loadboot.com">hello@loadboot.com</a><br>'
++        'Privacy: <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a><br>'
++        'Security: <a href="mailto:security@loadboot.com">security@loadboot.com</a><br>'
++        '24/7: +1 (469) 253-7575</p></div>'
++        '<div class="pv-promise"><div class="ic">&#128220;</div><h3>The rest of the paperwork</h3>'
++        '<p>These Terms sit alongside a small set of other documents, all of which we keep current:</p>'
++        '<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">'
++        '<a class="btn btn-secondary" href="privacy.html">Privacy Policy</a>'
++        '<a class="btn btn-secondary" href="security.html">Security &amp; Trust</a>'
++        '<a class="btn btn-secondary" href="cookies.html">Cookie Policy</a>'
++        '<a class="btn btn-secondary" href="delete-account.html">Delete your account</a>'
++        '</div></div></div>'
++        '<div class="pv-note" style="margin-top:26px"><b>Your signed dispatch agreement still governs.</b> If you are a carrier working with a LoadBoot dispatcher, that agreement sits on top of these Terms and controls where the two differ. You can download your copy from your portal at any time.</div>')
++
++    b += ('<section class="pv-sec"><div class="wrap"><div class="pv-cta">'
++          '<h2>Something here you do not like?</h2>'
++          '<p>Tell us before you sign, not after. If a clause does not make sense for how you run, we would rather explain it &mdash; or hear that it is wrong &mdash; than have you agree to something you have not read.</p>'
++          '<div class="row"><a class="btn btn-primary" href="mailto:hello@loadboot.com">Ask about a clause</a>'
++          '<a class="btn btn-secondary" href="contact.html">Talk to a human</a></div>'
++          '</div></div></section>')
++
++    return b, schema
