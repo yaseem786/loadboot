@@ -145,6 +145,16 @@ export async function renderPremiumAccount(host, ctx) {
     return '<label class="acx-eqp' + (on ? ' on' : '') + '"><input type="checkbox" class="acx-eqc" value="' + o + '"' + (on ? ' checked' : '') + ' style="position:absolute;opacity:0;pointer-events:none"><span class="ic">' + (EQ_IC[o] || '🚛') + '</span>' + o + '<span class="ck">✓</span></label>';
   }).join('');
 
+  // 6 Sep 2026 (owner request): how the carrier RUNS, asked directly instead of inferred from
+  // home time and trip miles. Bands are LoadBoot's own and are printed on the chip, so the carrier
+  // knows exactly what they are agreeing to. Empty selection = no filter (we show everything).
+  const HAULS = [['local', '🏠 Local', 'up to 250 mi'], ['regional', '🗺️ Regional', '250–800 mi'], ['otr', '🛣️ OTR', '800+ mi']];
+  const haulSel = () => HAULS.map((o) => {
+    const on = (dp.haul_types || []).indexOf(o[0]) >= 0;
+    return '<label class="acx-eqp' + (on ? ' on' : '') + '"><input type="checkbox" class="acx-hlc" value="' + o[0] + '"' + (on ? ' checked' : '')
+      + ' style="position:absolute;opacity:0;pointer-events:none"><span>' + o[1] + '</span><span style="opacity:.65;font-weight:600">' + o[2] + '</span></label>';
+  }).join('');
+
   host.innerHTML = ''
     + '<div class="acx">'
     + '<div class="hero"><div class="glow g1"></div><div class="glow g2"></div>'
@@ -184,6 +194,9 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div class="acx-sub">🚛 Equipment — select all you run</div>'
     +   '<div id="acx-eq" style="display:flex;flex-wrap:wrap;gap:8px">' + eqSel() + '</div>'
     +   '<div class="acx-sub">📍 Lanes & distance</div>'
+    +   '<div class="field"><label>How do you run? (pick all that apply)</label>'
+    +     '<div id="acx-haul" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">' + haulSel() + '</div>'
+    +     '<div class="rs" style="margin-top:6px">Leave all three unticked and we show you everything. Tick one and we stop sending you the rest — that is the point.</div></div>'
     +   '<div class="grid2"><div class="field"><label>Home base</label><input id="acx-home" value="' + esc(dp.home_base || '') + '"></div><div class="field"><label>Max deadhead (mi)</label><input id="acx-dead" value="' + esc(dp.max_deadhead_miles || '') + '"></div>'
     +   '<div class="field"><label>Shortest trip (mi)</label><input id="acx-tripmin" value="' + esc(dp.min_trip_miles || '') + '"></div><div class="field"><label>Longest trip (mi)</label><input id="acx-tripmax" value="' + esc(dp.max_trip_miles || '') + '"></div></div>'
     +   '<div class="field"><label>Preferred lanes</label><input id="acx-lanes" placeholder="e.g. GA → FL, Southeast" value="' + esc((dp.preferred_lanes || []).join(', ')) + '"></div>'
@@ -359,6 +372,7 @@ export async function renderPremiumAccount(host, ctx) {
   root.querySelectorAll('[data-pref]').forEach((t) => t.addEventListener('click', async () => { t.classList.toggle('on'); const state = Object.assign({}, prefs); state[t.getAttribute('data-pref')] = t.classList.contains('on'); Object.assign(prefs, state); try { await pocketSavePreferences(state); toast('Preference saved'); } catch (e) { toast((e && e.message) || 'Could not save'); } }));
   // dispatch toggles (local) + save
   root.querySelectorAll('.acx-eqc').forEach((c9) => c9.addEventListener('change', () => { const p9 = c9.closest('.acx-eqp'); if (p9) p9.classList.toggle('on', c9.checked); }));
+  root.querySelectorAll('.acx-hlc').forEach((c9) => c9.addEventListener('change', () => { const p9 = c9.closest('.acx-eqp'); if (p9) p9.classList.toggle('on', c9.checked); }));
   const hazEl = root.querySelector('#acx-haz');
   if (hazEl && hazEl.classList.contains('on')) (async () => { try { const r = await myHazmatReadiness(); if (!(r && r.ready)) {
     hazEl.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
@@ -447,6 +461,7 @@ export async function renderPremiumAccount(host, ctx) {
         max_trip_miles: (root.querySelector('#acx-tripmax').value || '').trim() || null,
         min_notice_hours: (root.querySelector('#acx-notice').value || '').trim() || null,
         avoid_states: (root.querySelector('#acx-avoid').value || '').split(',').map((x) => x.trim()).filter(Boolean),
+        haul_types: Array.from(root.querySelectorAll('.acx-hlc:checked')).map((c9) => c9.value),
         hazmat: hazEl ? hazEl.classList.contains('on') : false,
         team_drivers: teamEl ? teamEl.classList.contains('on') : false,
         weekend_ok: wkVal === null ? null : wkVal === 'true',

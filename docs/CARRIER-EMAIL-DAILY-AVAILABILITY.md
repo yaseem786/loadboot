@@ -63,6 +63,22 @@ Your Dashboard now shows one of three states so there is never any doubt:
 
 Post it this morning and your dispatcher starts on it today.
 
+WHILE YOU ARE IN THERE — YOUR BOOKS ARE IN THE SAME APP
+
+Most carriers do not know this is sitting in their account, so here it is plainly. Under
+Finance you already have:
+
+  • QuickBooks Online — connect once and every delivered-load invoice and expense pushes
+    across on its own, and payments pull back. No double entry.
+  • Expenses — log fuel, tolls, maintenance and lumper in about 30 seconds at the pump.
+    This is also what makes your cost-per-mile number real instead of a guess.
+  • IFTA — enter state miles as you run them and the quarter is already done when the
+    filing is due, instead of a weekend of receipts.
+  • Payroll — what you owe your drivers and what is already paid, without a spreadsheet.
+
+It costs nothing extra, it is part of your account, and only you can edit it. Our staff can
+view it read-only if you ask us for help — nobody can change your books.
+
 Reply to this email or message us if anything is unclear.
 
 The LoadBoot Dispatch Team

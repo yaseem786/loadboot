@@ -54,8 +54,19 @@ export function renderAvailabilityCard(host, opts) {
     tone = { c: '#4ade80', bg: 'rgba(74,222,128,.07)', label: 'Dispatcher working your loads' };
     title = fresh + ' truck' + (fresh === 1 ? '' : 's') + ' posted · confirmed ' + agoText(hrs);
     body = 'Your dispatcher is sourcing against this post right now. It expires ' + (hrs != null ? 'in ' + Math.max(0, 24 - hrs) + 'h' : 'in 24h') + ' — confirm again tomorrow morning, or post the backhaul as soon as you are booked.';
+    if (Number(s.paused || 0) > 0) body += ' ' + s.paused + ' other truck' + (Number(s.paused) === 1 ? ' is' : 's are') + ' switched off.';
     actions = [
       h('button', { class: 'cp-btn cp-btn-sm', onClick: () => opts.onPost && opts.onPost('empty') }, '+ Post another truck'),
+      h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => opts.onPost && opts.onPost('backhaul') }, 'Booked — post backhaul'),
+    ];
+  } else if (Number(s.paused || 0) > 0 && live === 0) {
+    // The carrier switched the truck off themselves — say that, not "you forgot to post".
+    const np = Number(s.paused || 0);
+    tone = { c: '#94a3b8', bg: 'rgba(148,163,184,.08)', label: 'You marked it not available' };
+    title = np + ' truck' + (np === 1 ? '' : 's') + ' switched off — dispatcher stopped';
+    body = 'Nothing is being sourced for you right now, by your own choice. When the truck frees up, tap Available: everything you posted last time comes back, and you only enter today’s dates.';
+    actions = [
+      h('button', { class: 'cp-btn cp-btn-sm', onClick: () => opts.onReactivate ? opts.onReactivate() : (opts.onPost && opts.onPost('empty')) }, 'Available again'),
       h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => opts.onPost && opts.onPost('backhaul') }, 'Booked — post backhaul'),
     ];
   } else if (live > 0) {
@@ -218,7 +229,8 @@ export function fleetGateBody(opts) {
 
 // Expiry line for a posting row (v2): counts down to expires_at; expired → red.
 export function expiryLine(h, p) {
-  if (!p || p.status === 'paused') return null;
+  if (!p) return null;
+  if (p.status === 'paused') return h('div', { class: 'cp-row-s', style: 'color:#94a3b8;font-weight:700;margin-top:2px' }, '⏸ Not available — off the board, dispatcher stopped. Tap Available when the truck frees up.');
   if (p.status === 'expired' || (p.is_live === false && p.hours_left === 0)) return h('div', { class: 'cp-row-s', style: 'color:#fca5a5;font-weight:700;margin-top:2px' }, '⚠ Expired — dispatcher stopped. Tap Repost if the truck is still there, or post where it is now.');
   if (p.is_fresh) return h('div', { class: 'cp-row-s', style: 'color:#4ade80;font-weight:700;margin-top:2px' }, '● Live · expires in ' + (p.hours_left != null ? p.hours_left + 'h' : '24h') + ' · dispatcher working it' + (p.geocoded ? '' : ' · locating…'));
   if (p.is_live) return h('div', { class: 'cp-row-s', style: 'color:#fbbf24;font-weight:700;margin-top:2px' }, '◐ Not confirmed today (' + agoText(p.hours_since_confirm) + ') — dispatcher paused until you confirm');

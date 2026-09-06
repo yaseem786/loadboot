@@ -1,0 +1,339 @@
+From 7410417f849e00fe776483d38341571bdfffc467 Mon Sep 17 00:00:00 2001
+From: Yaseen <20190myaseen@gmail.com>
+Date: Sun, 6 Sep 2026 10:06:05 +0000
+Subject: [PATCH 1/3] Record bl_fix_0324 staging parity migration in the repo
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NLBisLFyx9zVgJDMVRxc9M
+---
+ migrations/bl_fix_0324_staging_loads_is_demo_parity.sql | 7 +++++++
+ 1 file changed, 7 insertions(+)
+ create mode 100644 migrations/bl_fix_0324_staging_loads_is_demo_parity.sql
+
+diff --git a/migrations/bl_fix_0324_staging_loads_is_demo_parity.sql b/migrations/bl_fix_0324_staging_loads_is_demo_parity.sql
+new file mode 100644
+index 0000000..50af7d7
+--- /dev/null
++++ b/migrations/bl_fix_0324_staging_loads_is_demo_parity.sql
+@@ -0,0 +1,7 @@
++-- bl_fix_0324 — STAGING PARITY REPAIR (found 6 Sep 2026 while testing bl_haul_0323).
++-- public.loads.is_demo exists on production (boolean not null default false) but was missing on
++-- staging, while app_private.tp_match_new_load() — called by the tg_load_posted_match trigger on
++-- every load insert — selects "... and not is_demo". Result: EVERY load insert on staging failed
++-- with 42703 column "is_demo" does not exist, so no broker/shipper load could be posted there.
++-- Applied to staging 6 Sep 2026. Production already has the column; this is a no-op there.
++alter table public.loads add column if not exists is_demo boolean not null default false;
+-- 
+2.43.0
+
+
+From eea27b4c38cba172283f2a316809b0d014aef2ed Mon Sep 17 00:00:00 2001
+From: Yaseen <20190myaseen@gmail.com>
+Date: Sun, 6 Sep 2026 10:20:46 +0000
+Subject: [PATCH 2/3] brokers.html: flagship rebuild on the premium
+ partner-landing system
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The shipper page already ran on the pl- design system (aurora hero, live product mock with
+floating proof chips, stats band, comparison table, dark step rail). brokers.html was still on
+the old generic template — a text-only hero and a three-card row. It now uses the same system
+with its own angle so it does not cannibalise free-load-board-for-brokers.html (which stays the
+switch-from-a-paid-board pitch):
+
+- Hero: live Load #LB-4471 card showing three real offer states — Accepted (authority active,
+  VIN on COI), Passed (posted 6h ago), Blocked (COI expired) — which tells the verification
+  story visually instead of claiming it in prose.
+- Stats: 15 min offer window / 0 trucks dispatchable without the VIN on the COI / 24 h max age
+  of the availability post behind an offer / 1 acceptance closes the load.
+- Four gates a carrier passes, the five-step proof chain, and a listing-vs-offer comparison
+  table (8 rows) that is the page's strongest asset.
+- Portal / email / API section, carrier-network section, 10-question FAQ with schema.
+
+Every claim is an existing product behaviour: the FMCSA authority read, assert_vin_dispatchable,
+the 24h availability confirmation shipped this week, first-accept-wins, geofenced stamps.
+Verified by rendering the built page in headless Chromium at 1440px and 390px — no horizontal
+overflow on mobile.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NLBisLFyx9zVgJDMVRxc9M
+---
+ build_site.py             |  13 +++-
+ partner_landing_module.py | 139 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 149 insertions(+), 3 deletions(-)
+
+diff --git a/build_site.py b/build_site.py
+index ab9f3a8..a3e3bd4 100644
+--- a/build_site.py
++++ b/build_site.py
+@@ -4705,9 +4705,16 @@ bp += ('<section class="bg-soft"><div class="wrap"><div class="sec-head reveal">
+  '<div class="card" style="text-align:center"><div style="font-weight:900;font-size:1.6rem;color:#0883F7">1</div><p>receipt can settle a whole trip &mdash; freight plus approved claims, confirmed by the carrier. <a href="payments-settlements.html">The payables rail</a>.</p></div>'
+  '</div></div></section>') + _bfaq_html
+ bp += m_gradcta('Already a broker partner?', 'Post loads, review documents and watch shipments move &mdash; live in your Partner Portal.', 'Open Partner Portal &rarr;', '/app/partner/', grad='linear-gradient(135deg,#0b1220 0%,#1e3a5f 60%,#312e81 100%)', btncolor='#60a5fa', btntext='#0b1220')
+-page('brokers.html', 'Freight Broker Load Board — Verified Carriers | LoadBoot',
+-     'Freight brokers post loads free on LoadBoot and cover them with FMCSA-verified carriers: live GPS visibility, clean documents and API integration.',
+-     'partners.html', bp, _bfaq_sch)
++import partner_landing_module as _plm   # premium landing system (also imported later for the shipper page)
++# 6 Sep 2026 (owner request): brokers.html moves onto the premium partner-landing system —
++# the same aurora hero / live mock / stats / comparison vocabulary the shipper page already uses,
++# but with its own angle (the verified carrier network and the proof chain) so it does not
++# cannibalise free-load-board-for-brokers.html, which stays the switch-from-a-paid-board pitch.
++# The previous body is still built above as `bp`; it is no longer published, kept for reference.
++_bp2, _bfaq_sch2 = _plm.broker_product_landing({'linkcard': linkcard, 'carrier_network_section': carrier_network_section})
++page('brokers.html', 'Freight Broker Load Board — Verified Carriers, Proof on Every Load | LoadBoot',
++     'Freight brokers post loads free and cover them with carriers that pass four gates: live FMCSA authority, the dispatched VIN on the certificate of insurance, executed paperwork and an availability post confirmed in the last 24 hours. Live GPS, geofenced stamps, one settlement receipt, API.',
++     'partners.html', _bp2, _bfaq_sch2)
+ 
+ # ---- Shipper Solutions page (Inc 58, directive #37) — INQUIRY/CONSULTATION ONLY.
+ # HONESTY GUARD: LoadBoot is a dispatch service company. Freight from shippers requires a licensed
+diff --git a/partner_landing_module.py b/partner_landing_module.py
+index 2ebcec2..b0b54e0 100644
+--- a/partner_landing_module.py
++++ b/partner_landing_module.py
+@@ -378,3 +378,142 @@ def shipper_landing(ctx):
+           '<p>Sign up with your company email, request a shipment, and watch verified carriers move it with proof at every mile.</p>'
+           '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><a href="/app/partner/" class="btn btn-primary">Request a quote &rarr;</a><a href="create-shipper-account.html" class="btn btn-secondary">Create a shipper account</a></div></div></div></section>')
+     return b, faq_schema
++
++
++# =====================================================================================
++# BROKER — brokers.html  (the PRODUCT pitch: the verified carrier network + the proof chain)
++#
++# Deliberately NOT the same page as free-load-board-for-brokers.html. That one is the
++# switch-from-a-paid-board pitch (price, ghost loads, tier ladder, agents). This one answers
++# the only question a broker actually loses sleep over: who is the truck, is it really free
++# today, and what will I be able to prove afterwards. Every claim below is a real product
++# behaviour — the FMCSA authority check, the VIN-must-be-on-the-COI dispatch gate, the 24-hour
++# availability confirmation, first-accept-wins, geofenced stamps, one settlement receipt.
++# =====================================================================================
++def broker_product_landing(ctx):
++    linkcard = ctx['linkcard']; cns = ctx['carrier_network_section']
++    b = PL_CSS
++
++    # ---- HERO -------------------------------------------------------------------------------
++    b += ('<section class="pl-hero"><div class="aurora"><span class="a1"></span><span class="a2"></span></div><div class="wrap pl-hero-grid"><div>'
++          '<span class="pl-kicker reveal"><span class="dot"></span> For freight brokers &middot; posting is free</span>'
++          '<h1 class="reveal d1">Cover It With a Truck You Can <span class="gradtext">Prove</span></h1>'
++          '<p class="lead reveal d2">Anyone can show you a list of trucks. LoadBoot only offers your load to a carrier whose authority is current, whose VIN is written on its own certificate of insurance, '
++          'and who confirmed that exact truck was free within the last 24 hours &mdash; then records the rest of the trip for you.</p>'
++          '<div class="hero-btns reveal d3"><a href="/app/partner/" class="btn btn-primary">Post a load free &rarr;</a>'
++          '<a href="compliance.html" class="btn btn-secondary">How carriers are verified</a></div>'
++          '<div class="pl-trust reveal d3"><span><i>&#10003;</i> Authority read live from FMCSA</span><span><i>&#10003;</i> VIN matched to the certificate of insurance</span>'
++          '<span><i>&#10003;</i> First acceptance closes the load for everyone</span></div>'
++          '</div><div class="pl-mock reveal d2"><div class="pl-card">'
++          '<div class="top"><strong>Load #LB-4471</strong><span class="live"><b></b> Covered</span></div>'
++          '<div class="row"><span>Lane</span><span>Laredo, TX &rarr; Memphis, TN</span></div>'
++          '<div class="row"><span>Equipment</span><span>Reefer &middot; 34&deg;F &middot; produce</span></div>'
++          '<div class="row"><span>Posted rate</span><span class="rate">$3,150 &middot; 1,062 mi</span></div>'
++          '<div class="row"><span>Offer window</span><span>15 min &middot; covered in 11</span></div>'
++          '<div class="offers"><div class="of"><span class="av">A</span>Unit 214 &middot; authority active &middot; VIN on COI<span class="ok">Accepted</span></div>'
++          '<div class="of"><span class="av">B</span>Unit 77 &middot; posted 6 h ago<span class="wait">Passed</span></div>'
++          '<div class="of"><span class="av">C</span>Unit 09 &middot; COI expired<span class="wait">Blocked</span></div></div>'
++          '</div><div class="pl-float pl-f1"><span class="ic">&#128737;</span> Authority verified 2 min ago</div>'
++          '<div class="pl-float pl-f2"><span class="ic">&#128663;</span> Truck confirmed free this morning</div></div></div></section>')
++
++    # ---- STATS ------------------------------------------------------------------------------
++    b += ('<div class="pl-stats"><div class="wrap">'
++          '<div class="pl-stat reveal"><div class="n">15<span style="font-size:1.2rem">min</span></div><div class="l">Offer window &mdash; verified carriers race it, and you approve the winner</div></div>'
++          '<div class="pl-stat reveal d1"><div class="n">0</div><div class="l">Trucks dispatchable without that VIN listed on the carrier&rsquo;s own certificate of insurance</div></div>'
++          '<div class="pl-stat reveal d2"><div class="n">24<span style="font-size:1.2rem">h</span></div><div class="l">Oldest an availability post can be before the truck stops being offered to you</div></div>'
++          '<div class="pl-stat reveal d3"><div class="n">1</div><div class="l">Acceptance closes the load for everyone &mdash; double-booking is not a thing here</div></div>'
++          '</div></div>')
++
++    # ---- WHO IS ON THE OTHER END ------------------------------------------------------------
++    b += ('<section class="pl-sec"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Who is on the other end of your load</div>'
++          '<h2>Four gates a carrier passes before your freight is ever offered to it</h2>'
++          '<p>Not a packet collected once at setup and never looked at again. These are checked continuously, and a carrier that falls out of compliance falls out of your offer pool the same day.</p></div>'
++          + _tiles([
++              ('&#127963;', 'Authority, read from the source',
++               'Operating authority and MC/DOT identity come from the federal record, not from a PDF the carrier emailed you. Authority that lapses removes the carrier from matching automatically.'),
++              ('&#128203;', 'Insurance matched to the actual truck',
++               'A certificate on file is not enough. The VIN of the unit being dispatched has to appear on that carrier&rsquo;s policy schedule &mdash; if it does not, the truck cannot be posted or booked at all.'),
++              ('&#9997;', 'Paperwork already executed',
++               'W-9, signed dispatch agreement, banking and factoring notice-of-assignment are on file and current before the carrier can take freight, so your first settlement is not a document chase.'),
++              ('&#128337;', 'Confirmed free today, not last week',
++               'Carriers post each truck&rsquo;s availability and re-confirm it every day. A post nobody confirmed within 24 hours expires and stops being offered &mdash; so you are not covering a load with a truck that has been silent since Tuesday.'),
++          ], 'pl-g4') + '</div></section>')
++
++    # ---- THE PROOF CHAIN --------------------------------------------------------------------
++    b += ('<section class="pl-sec dark"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">The proof chain</div>'
++          '<h2>Every milestone leaves a record you can hand to your customer</h2>'
++          '<p>Not a screenshot, not a driver&rsquo;s recollection. Positions, stamps and documents are written server-side as the trip happens, and they are the same record the carrier sees.</p></div>'
++          '<div class="pl-steps reveal">'
++          '<div class="pl-step"><span class="t">minutes</span><div class="num">1</div><h3>Post</h3><p>Exact pickup and delivery pins arm the geofences. Your full rate card &mdash; detention, TONU, layover, lumper &mdash; prints on the posting, so nothing is negotiated twice.</p></div>'
++          '<div class="pl-step"><span class="t">15 min</span><div class="num">2</div><h3>Offer</h3><p>Only carriers that fit the lane, the equipment and the four gates above see it. New brokers post to a controlled pool first and open up as the account establishes itself.</p></div>'
++          '<div class="pl-step"><span class="t">1 tap</span><div class="num">3</div><h3>Accept</h3><p>First acceptance closes the load for everybody else in the same instant. The rate confirmation generates itself from what was posted &mdash; no retyping, no version drift.</p></div>'
++          '<div class="pl-step"><span class="t">live</span><div class="num">4</div><h3>Track</h3><p>Live position and ETA, plus geofenced arrive and depart stamps recorded at both stops. A stale feed flags itself instead of quietly reassuring you.</p></div>'
++          '<div class="pl-step"><span class="t">on delivery</span><div class="num">5</div><h3>Settle</h3><p>POD, BOL and any accessorial claim arrive together with the GPS evidence behind them, so one receipt can close out the freight and the extras in a single approval.</p></div>'
++          '</div><div style="text-align:center;margin-top:34px" class="reveal"><a href="gps-tracking.html" class="btn btn-secondary" style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.22)">See what tracking records &rarr;</a></div>'
++          '</div></section>')
++
++    # ---- COMPARISON -------------------------------------------------------------------------
++    b += ('<section class="pl-sec soft"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">A listing vs an offer</div>'
++          '<h2>The difference between a truck that exists and a truck you can dispatch</h2>'
++          '<p>Both look identical in a search result. They stop looking identical the moment something goes wrong on the load.</p></div>'
++          '<div class="pl-cmp-wrap reveal"><table class="pl-cmp"><thead><tr><th style="width:26%">&nbsp;</th><th>A listing on a board</th><th class="hi">An offer on LoadBoot</th></tr></thead><tbody>'
++          '<tr><td>Is the truck real</td><td>A phone number and a claim</td><td class="hi">A unit with a VIN, tied to a carrier with live federal authority</td></tr>'
++          '<tr><td>Is it free today</td><td>Whenever the listing was last touched</td><td class="hi">Confirmed by the carrier within the last 24 hours, or it is not shown</td></tr>'
++          '<tr><td>Insurance</td><td>A certificate attached at signup</td><td class="hi">Tracked continuously, and the dispatched VIN must be on the policy schedule</td></tr>'
++          '<tr><td>Double-booking</td><td>Two people can say yes</td><td class="hi">First acceptance closes the load for everyone, in the same instant</td></tr>'
++          '<tr><td>Arrival time</td><td>Whatever the driver reports</td><td class="hi">Geofenced arrive and depart stamps written server-side at your pins</td></tr>'
++          '<tr><td>Detention dispute</td><td>Two stories and an invoice</td><td class="hi">A claim that arrives with its own GPS evidence attached</td></tr>'
++          '<tr><td>Paperwork</td><td>Chased by email after delivery</td><td class="hi">Rate confirmation generated from the posting; POD and BOL land in the same file</td></tr>'
++          '<tr><td>Cost to post</td><td>A subscription, per seat</td><td class="hi">Free, at every volume</td></tr>'
++          '</tbody></table></div></div></section>')
++
++    # ---- HOW IT REACHES YOUR DESK -----------------------------------------------------------
++    b += ('<section class="pl-sec"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Fits the desk you already run</div>'
++          '<h2>Post from the portal, from your inbox, or from your own system</h2></div>'
++          + _tiles([
++              ('&#128421;', 'Partner Portal', 'Post, watch and approve in one screen &mdash; loads, offers, tracking, documents and settlements, with your whole team on the same account.'),
++              ('&#9993;', 'Email &amp; bulk', 'Send loads the way your desk already sends them. Postings, offers and confirmations come back as clean, structured records rather than free text.'),
++              ('&#128295;', 'API', 'Push loads and pull status, positions and documents straight into your TMS. <a href="api.html" style="color:#0883F7;font-weight:700">Read the developer API &rarr;</a>'),
++          ], 'pl-g3') + '</div></section>')
++
++    b += cns('broker')
++
++    # ---- FAQ --------------------------------------------------------------------------------
++    faq_rows, faq_schema = _faq([
++        ('What does it cost a broker to post loads?',
++         'Nothing. Posting is free at every volume &mdash; there is no subscription and no per-seat licence. LoadBoot earns from the carrier side of the transaction, not from your posting.'),
++        ('How do you know a carrier&rsquo;s authority is genuine?',
++         'It is read from the federal record rather than from a document the carrier supplies. Identity is tied to the MC number, one MC maps to one account, and the account is claimed through the contact FMCSA already lists for that authority &mdash; so a stranger cannot register somebody else&rsquo;s MC.'),
++        ('What stops a carrier from hauling my load on a truck that is not insured?',
++         'The dispatch gate. Before a truck can be posted or booked, its VIN has to appear on that carrier&rsquo;s certificate of insurance. If the VIN is not on the policy schedule the unit simply cannot be dispatched &mdash; the carrier is told to have their agent add it and upload the updated certificate.'),
++        ('How current is the availability I am seeing?',
++         'Carriers post each truck and re-confirm it daily. A post that has not been confirmed in 24 hours expires and stops being matched, so an offer in front of you comes from a carrier who said that truck was free today &mdash; not from a listing that has been sitting there since last week.'),
++        ('Can two carriers accept the same load?',
++         'No. The first acceptance closes the load for everyone else at the same moment, so there is no race to phone the loser back. The rate confirmation is generated from exactly what was posted.'),
++        ('What visibility do I get without making check calls?',
++         'A live position and ETA on the trip, plus geofenced arrive and depart stamps recorded server-side at both of your pins. Positions that go stale are flagged rather than quietly left on screen.'),
++        ('How are detention and other accessorials handled?',
++         'Your rate card &mdash; detention, TONU, layover, lumper &mdash; prints on the posting itself, so the terms are agreed before anyone rolls. A claim then arrives with the GPS evidence behind it, and you approve documented time instead of an invented number.'),
++        ('Can I integrate LoadBoot with my TMS?',
++         'Yes. The API accepts postings and returns offers, status, positions and documents, so loads and their proof can live in your own system. The developer documentation is public.'),
++        ('I am a new brokerage. Can I still post?',
++         'Yes, and on the same day. New accounts start with a controlled posting allowance that opens up as the account establishes itself, which is what keeps the carrier side willing to trust a brand-new MC.'),
++        ('Do you work with shippers directly as well?',
++         'Yes &mdash; shippers and facilities use the same verified network and the same tracking record. Brokerage still runs the move where the law requires a licensed intermediary.'),
++    ])
++    b += ('<section class="pl-sec soft" id="faq"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Questions</div><h2>Brokers &amp; LoadBoot &mdash; FAQ</h2></div>'
++          '<div class="pl-faq reveal">%s</div></div></section>' % faq_rows)
++
++    # ---- KEEP READING -----------------------------------------------------------------------
++    b += ('<section class="pl-sec"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Keep reading</div><h2>Before you post your first load</h2></div><div class="grid g3 reveal">'
++          + linkcard('free-load-board-for-brokers.html', '&#128176;', 'Free load board for brokers', 'Why the subscription and the ghost-load problem disappear together when posting costs nothing.')
++          + linkcard('create-broker-account.html', '&#128221;', 'Create a broker account', 'MC screened live on FMCSA in seconds, one agreement to accept, then your first posting reaches verified carriers.')
++          + linkcard('gps-tracking.html', '&#128205;', 'GPS tracking &amp; proof', 'What is recorded at every stop, and what that record settles when a customer disputes a time.')
++          + '</div></div></section>')
++
++    # ---- FINAL CTA --------------------------------------------------------------------------
++    b += ('<section class="pl-sec" style="padding-top:0"><div class="wrap"><div class="pl-cta reveal"><h2>Post the load. Meet the truck that can prove itself.</h2>'
++          '<p>Free to post, verified on the other end, and a record of the trip you can hand straight to your customer.</p>'
++          '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><a href="/app/partner/" class="btn btn-primary">Post a load free &rarr;</a>'
++          '<a href="create-broker-account.html" class="btn btn-secondary">Create a broker account</a></div></div></div></section>')
++    return b, faq_schema
+-- 
+2.43.0
+
+
+From 9333113ac2243ee0eb699d0603a802518a1f2247 Mon Sep 17 00:00:00 2001
+From: Yaseen <20190myaseen@gmail.com>
+Date: Sun, 6 Sep 2026 10:26:18 +0000
+Subject: [PATCH 3/3] Capacity-by-length-of-haul section on the broker and
+ shipper pages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Answers the buyer's real question ('do you have that kind of capacity?') in the buyer's own
+vocabulary — local FTL / metro-to-metro corridor / cross-country — and links onward to the three
+new carrier pages. Deliberately a SECTION, not a page: 'OTR / regional / local trucking' is
+carrier-side search vocabulary, so a page here would miss buyer intent AND make three of our own
+pages compete with each other. Copy differs per audience.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NLBisLFyx9zVgJDMVRxc9M
+---
+ partner_landing_module.py | 50 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/partner_landing_module.py b/partner_landing_module.py
+index b0b54e0..f3fc1a2 100644
+--- a/partner_landing_module.py
++++ b/partner_landing_module.py
+@@ -129,6 +129,53 @@ def _faq(items):
+     return rows, '<script type="application/ld+json">%s</script>' % sch
+ 
+ 
++# =====================================================================================
++# CAPACITY BY LENGTH OF HAUL — reusable section for the broker and shipper pages.
++#
++# Deliberately a SECTION, not a page. "OTR / regional / local trucking" is CARRIER-side
++# vocabulary — the people typing it are drivers and owner-operators choosing how to run, which
++# is what otr-dispatch.html, regional-truck-dispatch.html and local-truck-dispatch.html are for.
++# Freight buyers use different words entirely ("local FTL carriers", "regional FTL carriers",
++# "FTL shipping near me", metro-to-metro, corridors, national capacity), so repeating the carrier
++# copy here would both miss their intent and make three of our own pages compete with each other.
++# What a buyer DOES want on this page is the answer to "do you have that kind of capacity" —
++# so this answers it in their language and links onward to the carrier pages for crawl depth.
++# =====================================================================================
++def capacity_by_haul_section(aud='broker'):
++    if aud == 'shipper':
++        eyebrow = 'Capacity by length of haul'
++        head = 'Local, regional and long-haul capacity in one network'
++        lead = ('You do not buy &ldquo;a truck&rdquo; &mdash; you buy a delivery window. A cross-dock run across town, a metro-to-metro corridor '
++                'and a cross-country move are three different pools of carriers, and asking one carrier to be all three is how service slips. '
++                'Every posting is matched against the carriers that actually run that length of haul.')
++        who = 'shipper'
++    else:
++        eyebrow = 'Capacity by length of haul'
++        head = 'Post a short run and a cross-country run to the same network'
++        lead = ('The carrier who wants your 180-mile drop is rarely the carrier who wants your 1,600-mile move, and the difference is not '
++                'preference &mdash; it is how their week is built. Carriers tell us which lengths they run and re-confirm the truck daily, so a '
++                'posting only reaches the pool that will actually take it.')
++        who = 'broker'
++    tiles = _tiles([
++        ('&#127968;', 'Local &mdash; up to 250 miles',
++         'Short runs and metro work, out and back inside the day. Many of these carriers run under the FMCSA short-haul rules, so their day is '
++         'built around returning to the same yard &mdash; dock time is the constraint, not distance. '
++         '<a href="local-truck-dispatch.html" style="color:#0883F7;font-weight:700">How local carriers run &rarr;</a>'),
++        ('&#128506;', 'Regional &mdash; 250 to 800 miles',
++         'Corridor and metro-to-metro freight, usually home on weekends. This is where most truckload volume in the country actually sits, so it '
++         'is the deepest pool and the easiest to cover repeatedly on the same lane. '
++         '<a href="regional-truck-dispatch.html" style="color:#0883F7;font-weight:700">How regional carriers run &rarr;</a>'),
++        ('&#128739;', 'Long-haul &mdash; 800 miles and up',
++         'Cross-country moves where the carrier is planning a reload before they even deliver. Give the delivery window room and the rate follows; '
++         'squeeze it and you are bidding against every other long-haul shipper that week. '
++         '<a href="otr-dispatch.html" style="color:#0883F7;font-weight:700">How OTR carriers run &rarr;</a>'),
++    ], 'pl-g3')
++    note = ('<p class="pl-src reveal" style="margin-top:22px">Bands are how LoadBoot matches a posting to capacity: a load&rsquo;s mileage decides its band, '
++            'and carriers pick which bands they take. Nothing is hidden from you &mdash; a carrier who takes every length still sees every posting.</p>')
++    return ('<section class="pl-sec"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">%s</div><h2>%s</h2><p>%s</p></div>%s%s</div></section>'
++            % (eyebrow, head, lead, tiles, note))
++
++
+ # =====================================================================================
+ # BROKER — free-load-board-for-brokers.html
+ # =====================================================================================
+@@ -355,6 +402,7 @@ def shipper_landing(ctx):
+           '<a href="fuel-surcharge-trucking.html"><b>Fuel surcharge</b><span>How FSC per mile is calculated and audited.</span><em>See the formula &rarr;</em></a>'
+           '<a href="how-to-ship-without-a-broker.html"><b>Shipping without a broker</b><span>What going direct really involves &mdash; and where licensed brokerage still protects you.</span><em>Read the guide &rarr;</em></a>'
+           '</div></div></section>')
++    b += capacity_by_haul_section('shipper')
+     b += cns('shipper')
+     faq_rows, faq_schema = _faq([
+         ('How fast can I get a truckload quote?', 'Minutes. Sign up with a company email and the business is confirmed automatically in under a minute (the domain receives mail and has a website); the request form opens right away and licensed brokers quote it. Signed up with Gmail? Enter your company address and type the 6-digit code we email it.'),
+@@ -467,6 +515,8 @@ def broker_product_landing(ctx):
+           '<tr><td>Cost to post</td><td>A subscription, per seat</td><td class="hi">Free, at every volume</td></tr>'
+           '</tbody></table></div></div></section>')
+ 
++    b += capacity_by_haul_section('broker')
++
+     # ---- HOW IT REACHES YOUR DESK -----------------------------------------------------------
+     b += ('<section class="pl-sec"><div class="wrap"><div class="pl-head center reveal"><div class="eyebrow">Fits the desk you already run</div>'
+           '<h2>Post from the portal, from your inbox, or from your own system</h2></div>'
+-- 
+2.43.0
+
