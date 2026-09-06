@@ -1,5 +1,7 @@
 # LoadBoot — 90-day implementation and operating plan
 
+> **2026-09-06 · Codex update:** main 7dc83e4; F31 client wiring restored on audit/s2-f31-client-verdict with isolated regression tests and staging-bound BUILD OK. Prior verification and owner-approved corrective scope are in PHASE1-AUDIT.md/HANDOFF.md: Claude owns F30/F01/F02 backend corrections; Codex D is not merged/deployed. No SEO or wedge implementation in this turn.
+
 Phase 1 proposal · 5 September 2026 · No changes authorized or performed in this document
 
 ## Delivery sequence

@@ -1,5 +1,7 @@
 # LoadBoot — competition and wedge decision
 
+> **2026-09-06 · Codex update:** main 7dc83e4; F31 client wiring restored on audit/s2-f31-client-verdict with isolated regression tests and staging-bound BUILD OK. Prior verification and owner-approved corrective scope are in PHASE1-AUDIT.md/HANDOFF.md: Claude owns F30/F01/F02 backend corrections; Codex D is not merged/deployed. No SEO or wedge implementation in this turn.
+
 5 September 2026 · Phase 1 proposal · Main `b44fbabe12ac1841b2b61c042eb042f760b8ae5f`
 
 ## Decision

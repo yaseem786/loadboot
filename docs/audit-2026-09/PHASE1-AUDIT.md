@@ -3,12 +3,140 @@
 5 September 2026 · For Muhammad Yaseen · Review required before Phase 2
 
 > **CHANGELOG**
+> - **2026-09-06 12:43 UTC · Codex · D client fix on audit/s2-f31-client-verdict from current main 7dc83e4.** Four upload verdict paths restored; narrow API insert extension; isolated regression/import/syntax checks and staging-bound BUILD OK. Prior Sprint 1+2 verification preserved below; corrective A/B/C assigned to Claude. Nothing merged/deployed; live UI verification UNKNOWN.
 > - **2026-09-05 23:00 UTC · Claude · SPRINT 1 + SPRINT 2 (F30, F31, F32) ARE LIVE ON PROD**, each applied to staging first, tested with a rollback-txn test, applied to prod and re-tested there: `bl_fin_0322` (P&L engine), `bl_cmp_0324` (carrier FMCSA collector + backfill — 22 carriers checked, 21 `carrier_verifications` pending_review, was 0 of 44), `bl_cmp_0325`/`0325b` (ai_verdict persisted + CC column), `bl_sec_0320` (email-ingest lockdown, after load-mail v8), `bl_bp_0321` (resend idempotency); edge fns `load-mail` v8, `domain-check` v2 verify_jwt=true, `doc-precheck` v5 (source now in repo + PDF forensics). Tests: `docs/audit-2026-09/tests/`. **F01, F02, F05, F30, F31, F32 → CLOSED pending Yaseen's UI smoke.** New finding **F33** below.
 > - **2026-09-05 22:2x UTC · Claude · F30 + F31 DESIGN NOTES added** (text only, below Sprint 2 prep table): F30 = reuse the broker `authority_checks` collector for carriers (prod: 44 carriers, 0 ever checked), replace the dead signup trigger body, collector writes `carrier_safety` + `carrier_verifications(source='auto')`; F31 = pass the `doc-precheck` verdict through the client insert first, then write-once `doc_set_ai_verdict` RPC + trigger stamp, source into repo, PDF forensics advisory. Housekeeping: prod `lb-tmp-keyread` is a dead 410 stub.
 > - **2026-09-05 22:00 UTC · Claude · F32 APPLIED TO PROD** on Yaseen's word (`bl_fin_0322_port_trip_pnl_engine`); prod rollback test RESULT PASS; carrier Earnings/P&L RPCs now exist on prod. F32 → closed pending Yaseen's UI smoke test.
 > - **2026-09-05 21:45 UTC · Claude · F32 port PREPARED + STAGING-VALIDATED.** `migrations/bl_fin_0322_port_trip_pnl_engine.sql` (wd_0032 + wd_0033 verbatim, explicit grants, ACL check); prod pre-flight clean (only the 4 new nullable `carrier_dispatch_prefs` columns missing); applied on staging; `docs/audit-2026-09/tests/bl_fin_0322_rollback_test.sql` → RESULT PASS. Prod untouched — waits for Yaseen. F32 row below: status → "ready for prod". (ChatGPT's parallel F32 attempt was lost to its usage limit before push; this supersedes it.)
 > - **2026-09-05 07:55 UTC · Claude · Sprint 1 built on staging; Sprint 2 prep findings (read-only) added below as F30–F32.** F01/F02/F05/F07/F18 details and prod steps: `HANDOFF.md`.
 > - 2026-09-05 06:30 UTC · Claude · F01 + F02 independently re-verified on prod (both real). F03 reclassified (outreach engine is approved platform email — not a conflict with Yaseen's personal-send rule; keep the Resend-quota point as P1). See `REPLY-TO-CHATGPT-phase1-review.md`.
+
+
+## 2026-09-06 12:43 UTC — Corrective scope and F31 client re-application
+
+**Owner-approved division of work:** Codex implements D (client wiring) and documentation only on a branch from current main. Claude owns A/B/C, their staging deployment and their tests. Nobody deploys to prod, runs a rollback/backfill, sends a carrier/broker message, or starts SEO/F33/WhatsApp without Yaseen's specific approval. The historical verification section below is preserved from commit 9585231e; its observations remain dated evidence, not a new live snapshot.
+
+**Re-sync:** main 7dc83e49f6a99f292082e7ecfd4addc98f8aabd5, four commits since 25e6e5b (PRs #171/#172 including availability, haul types, audit files and other-lane fixes). Current prod migration high-water 20260906120440 bl_camp_0325_manual_list_audience; staging 20260906123815 bl_camp_0326_cmp_save_empty_string_coercion. These campaign migrations and the intervening dispatcher/CC/availability/haul migrations are other lanes. At the initial inventory, load-mail slots remained prod 6 / staging 8, domain-check 2 / 3, doc-precheck 4 / 5, all verify_jwt=true. These slot numbers do not establish that A/B/C have since been deployed; Claude must record their own fresh source/test evidence.
+
+### Reviewed findings and responsibilities
+
+| Item | Accepted corrective scope | Owner / status at this checkpoint |
+|---|---|---|
+| A / F30 | bl_cmp_0326_broker_precedence_fix: move org-kind lookup before status classification; only carriers use authorityVerified precedence; brokers retain pre-0324 allowedToOperate/mcActive classification. Extend the existing collector test with broker + authorityVerified=true + brokerOnly=true, while preserving the old lapse effects and testing carrier isolation. | Claude; implementation and staging PASS not verified by Codex this turn. Target before next daily dispatch, 2026-09-07 06:10 UTC. Prod still needs explicit approval. |
+| B / F01 | load-mail v9: require service_role in the gateway-verified JWT before any AI/RPC work, 401 otherwise; preserve the legitimate inbound-mail service bearer and passing direct-RPC guards. | Claude; staging-first, no Codex edge edit/deploy. |
+| C / F02 | domain-check v3: normalize brackets for IPv6 literals; convert hex-form IPv4-mapped last two hextets into a dotted quad before private-v4 checks; add loopback/ULA/link-local/mapped and redirect cases. Retain the prior review's full link-local-range regression coverage. | Claude; staging-first, no Codex edge edit/deploy. |
+| D / F31 | Re-apply optional aiVerdict forwarding at the four current precheck upload paths and persist it in the existing document INSERT. Preserve the newer availability/haul work. | Codex; implemented and locally verified on audit/s2-f31-client-verdict from main 7dc83e4. Not merged or deployed. |
+
+**F30 root cause supplied by Claude/Yaseen:** fmcsa-verify's result.authority describes common/contract carrier authority. A broker-only L&I result can therefore legitimately say authority=inactive with authorityVerified=true. Treating it as broker authority can falsely expire a broker's onboarding item, pause posting and queue an owner email. This is consistent with the independently proven classification regression. Do not add brokerAuthority interpretation in A; that is a separate future decision.
+
+**Impact evidence remains qualified.** Claude/Yaseen reports zero blast radius and no real-docket broker collected yet. Codex's earlier 07:30 UTC read found M Usman Farooq (Agent) pending and an mc_authority expiry timestamp at 07:30:00.355233, with no inspected authlapse email/authority.lapsed notification; the cause was UNKNOWN. These statements may involve different baselines/windows, but are not reconciled. The earlier observation does not prove the new collector caused harm, and the owner report is not an independent Codex confirmation of “zero impact.” No new investigation or broker mutation was performed in D.
+
+**F02 additional mechanism:** stripping brackets alone does not fix WHATWG's normalized [::ffff:7f00:1]. The old mapped-v4 branch expects dotted decimal and misses the hex suffix. This explains the mapped variant already listed in the prior reproduction; C must test both textual forms. The literal fix alone must not be described as proof that every DNS/redirect scenario is safe.
+
+**F31 root-cause correction and urgency:** Claude/Yaseen reports the upload edits were written on 5 Sep around 22:55 UTC, then overwritten by another lane's app.js/api.js changes on 6 Sep. The current main confirms their absence and contains the later availability/haul changes; the exact lost disk revision is not available in git, so overwrite attribution is supplied history. “Missing from inspected refs” did not mean “never written.” This narrow replacement needs to land promptly after review to avoid another conflicting full-file copy. CC aiPill/aiCard, doc-precheck and the live SQL half are preserved.
+
+### D implementation, verification and rollback
+
+- app/shared/api.js: carrierUploadDocument now accepts optional aiVerdict and includes a copy in the same documents INSERT. Existing callers without AI keep the same payload, success result and error behavior. Null/unavailable/malformed non-object input does not manufacture a verdict. The existing DB trigger supplies carrier-client provenance; the client does not claim a trusted server source.
+- app/carrier/app.js: exactly four existing lbAiPrecheck → lbPrecheckGate → upload paths now pass aiVerdict: pv9 (Documents, checklist submission, onboarding manual upload, onboarding NOA). The gate remains before upload. A submitted reject result is marked overridden for the existing CC display; this is advisory, not staff approval. Other upload paths and availability/haul behavior are untouched.
+- No second RPC or duplicate insert is added. The existing doc_set_ai_verdict endpoint and DB write-once/stamp logic are unchanged. The document and advisory result are persisted together.
+- PASS: node --check for both edited JS sources; import-reference check; node --experimental-vm-modules docs/audit-2026-09/tests/f31_client_verdict_test.mjs. The test imports the actual API module with a fake Supabase client and checks pass/warning/reject/queued payloads, absent AI, unchanged input, insert failure propagation without retry, and all four gated call sites. No network or customer record is used.
+- PASS: CONTEXT=deploy-preview with current LOADBOOT_STAGING_ANON_KEY → python3 build_site.py → BUILD OK. Generated site/app/env-config.js includes staging and excludes prod; generated API/carrier files exactly equal the edited sources.
+- Live authenticated staging upload → DB → CC browser verification is **UNKNOWN / not run**. An upload can trigger notifications, so this turn used isolated tests and a staging-bound build; it did not send test documents through live customer workflows. The earlier rollback-transaction SQL PASS is historical evidence for the unchanged DB half.
+- **Rollback:** before merge, close/leave this branch unmerged. If an authorized deploy later needs reversal, revert only this D commit's client hunks in a new branch and stage/build it again; preserve subsequent unrelated changes and existing database verdicts. Do not call any SQL rollback helper for this client-only change and do not restore whole old app.js/api.js files.
+- **Handoff:** review this branch's small diff against latest main before landing; if either large file moved, rebase/merge the precise hunks onto it and re-run the test/build. Claude continues A/B/C separately. No merge or deployment was performed by Codex.
+
+
+## 2026-09-06 — Sprint 1+2 verification
+
+**Disposition: verification completed with findings; do not treat all six items as closed.** F32 and F05 passed their existing SQL rollback tests on both environments. F31's SQL, grants and advisory PDF behavior passed, but its carrier upload wiring is absent from the inspected pushed code. F01's SQL restriction passed while its edge caller boundary remains open. F02 still admits private IPv6 destinations in an isolated reproduction. F30's carrier test passed on prod, but the broker classification is changed and its rollback helper does not restore it. No remediation, deploy, backfill, persistent rollback or customer message was performed in this verification turn.
+
+### Re-sync and source provenance
+
+- Latest main, checked again before write-up: **25e6e5b8ab5b4f97206953dcea061e4e4c071e83** (PR #170); zero new main commits since this turn's initial checkpoint.
+- The later audit push is present on **feat/dispatcher-model at 2d0a1b69e7944153388402129af3c1de09f11ec0**, not main. Its existing migration files, tests and newer HANDOFF were read, without recreating or applying them. This docs-only review starts from that pushed revision to preserve Claude's latest entries. It does not merge the branch to main.
+- Prod: 724 migrations, newest 20260906071245 bl_disp_0304_dispatcher_id_verify. Then 20260906065117 bl_bp_0321_agent_confirm_resend_idem; 20260905224616 bl_sec_0320_email_ingest_service_only; 20260905223742 bl_cmp_0325b_cc_list_documents_ai_verdict; 20260905223411 bl_cmp_0325_doc_ai_verdict; 20260905222555 bl_cmp_0324_carrier_fmcsa_collector; 20260905214144 bl_fin_0322_port_trip_pnl_engine; bl_bp_0323_submit_load_kind_aware.
+- Staging: 698 migrations, newest 20260906071229 bl_disp_0304_dispatcher_id_verify. Then bl_avail_0321_availability_place_expiry; bl_cmp_0325b; bl_cmp_0325; bl_cmp_0324; bl_fin_0322; bl_avail_0320; bl_bp_0323; bl_bp_0321b. Earlier bl_sec_0320 is present. The staging bigint correction is 0321b; migration names/order are not identical between environments.
+- Dispatcher ID, availability and 0323 are other lanes, acknowledged by Yaseen and left untouched. Changed files on the unmerged branch include those lanes; the verification commit edits only audit documentation.
+- Both edge inventories and deployed sources were read. Source contents match between environments and match the pushed files, apart from the retrieval's trailing newline:
+
+| Function | Source version | Prod deployment slot | Staging deployment slot | verify_jwt |
+|---|---|---:|---:|---|
+| load-mail | v8 | 6 | 8 | true |
+| domain-check | v2 | 2 | 3 | true |
+| doc-precheck | v5, including pdfForensics/forensicIssues | 4 | 5 | true |
+
+Missing from main at this checkpoint: F30/F31 migration files, doc-precheck source, the CC verdict display changes, and the four newly added F30/F31/F01/F05 SQL test files. They were subsequently readable on 2d0a1b6. **Still missing as changes on both inspected refs:** the claimed verdict forwarding in app/shared/api.js and the four app/carrier/app.js upload call sites. These files exist, but their inspected contents do not contain that implementation. No F02 test file is present in docs/audit-2026-09/tests/. The current production frontend asset/deploy revision is **UNKNOWN**; source absence is not proof that an independently deployed frontend lacks the change.
+
+### Existing rollback-transaction tests re-run
+
+Tests were read before invocation and executed unchanged. Staging preceded prod. Each successful DO block deliberately raises RESULT PASS, so the tool's error envelope is expected and rolls back the transaction. SQL tests set request.jwt.claims while executing through the database connection; they are not real end-user gateway or complete RLS tests. Message delivery work stays in transactional outboxes; no customer message was sent. Sequence allocations can leave gaps even when application rows roll back.
+
+| Item / existing test | Staging, 6 Sep | Prod, 6 Sep | What this establishes |
+|---|---|---|---|
+| F32 / bl_fin_0322_rollback_test.sql | PASS; trip af8118e5…; net 2850→2960 | PASS; trip 55a9c732…; net 1450→1560 | Add 150 earning / 40 cost; remove; cost-model setter; validation and ownership checks; earnings response; ACL assertions |
+| F30 / bl_cmp_0324_rollback_test.sql | BLOCKED before writes: “no carrier org without a check found”; fixture count 0 | PASS; org 0c7b0039…; request 192039; collector read=1, failed=0, lapsed=0, carriers=1 | Carrier request/trigger, auth header, safety snapshot, one auto pending_review row, repeat-collect dedupe, inactive carrier not paused or owner-notified/emailed, internal ACL |
+| F31 / bl_cmp_0325_rollback_test.sql | PASS; synthetic doc 9e06346a… stamped carrier-client | PASS; synthetic doc 11726950… stamped carrier-client | Insert stamp, write-once RPC, owner/server provenance, cross-carrier refusal, anon grants revoked |
+| F01 / bl_sec_0320_rollback_test.sql | PASS | PASS | Authenticated ingestion and anon merge/ping yield LB403; refused callers add 0 email_loads rows; service_role merge reaches body and returns no_broker |
+| F05 / bl_bp_0321_rollback_test.sql | PASS; parent 707d5c4d…; 2 deliveries / 2 codes / 2 distinct keys / 1 live | PASS; parent c4fed94c…; same 2 / 2 / 2 / 1 | Deliberate resend gets its own key and only latest code remains live |
+| F02 | No existing file to re-run | No existing file to re-run | Prior owner-reported 200 / forged-JWT 401 / private-IPv4 refusal were not repeated as live HTTP tests this turn; mark these reruns UNKNOWN |
+
+The F30 staging fixture failure is not proof that the deployed carrier implementation failed. No fixture was fabricated or existing row removed to force a PASS. Prod had six eligible fixture rows and the existing test passed; the prior staging PASS remains owner-reported historical evidence, distinct from today's blocked staging rerun.
+
+Postchecks: prod finance rows remained 0; staging remained 14; cost preferences hashes remained 1484db2abf343cb90e83569c6216801d and 1f53458132bd23044afb7822f6b49d91 respectively. The prod F31 synthetic document and F30 queued request 192039 were absent after rollback. The synthetic F30 responses did not persist: response 192039 was absent; concurrently allocated 192040 was a real, non-test response. No recent F05 test deliveries remained.
+
+### Catalog versus migrations
+
+All comparisons used newly retrieved prod pg_get_functiondef, not a staging body copied over prod.
+
+- **F32:** all six public RPC bodies agree with bl_fin_0322; differences in cc_trip_pnl are comments only. Five bodies are byte-for-byte equal. All six exist with anon denied and authenticated/service_role allowed. The tested finance behavior passes; authenticated UI smoke remains UNKNOWN.
+- **F30:** org_docket, fmcsa_authority_request, dispatch, collect, signup trigger and rollback helper agree with the pushed 0324 code after accounting for comments/blank lines; backfill body is exact. The profile fallback, retriable no_docket, allowed safety source fmcsa and rating clamp are present. Agreement with the migration does not establish agreement with the required old broker behavior—see the regression below.
+- **F31:** doc_set_ai_verdict agrees except its inline comment; stamp trigger body is exact. The RPC only sets a NULL verdict and stamps non-admin input carrier-client. public.documents has no anon or PUBLIC table grants. cc_list_documents(text,integer) body exactly matches 0325b, returns ai_verdict, retains documents.view authorization, and EXECUTE grantees are **exactly postgres, authenticated, service_role**. The migration drops only that signature without CASCADE and re-grants it; no additional drop appears in the migration. A universal historical audit that no unrelated object ever lost a grant remains UNKNOWN.
+- **F01:** removing only the intended guard from each current prod definition reproduces the saved pre-deployment prod definition byte-for-byte: lb_email_load_ingest MD5 88732776e47b4ce3a2c96b29da6afa8c; lb_email_reply_merge 249095868f5f2e016a297ef2c9771c46; lb_email_ping_confirm_by_email ca45ab3ba230c630c75355d1e73c0a56. Each has exactly one guard and no anon/authenticated EXECUTE. Environment-specific bodies were preserved.
+- **F05:** each of the three new anchors appears exactly once (bigint v_vc, RETURNING id, code-ID idempotency key). Reversing those exact substitutions reproduces the saved old prod definition byte-for-byte, MD5 25f6889b74a48514ec992ffa9c75d077. This is a verified narrow patch, with both resend tests passing.
+- **F02:** there is no corresponding SQL migration/function body; the deployed edge source and JWT setting were compared directly.
+
+### Findings requiring review
+
+**F30 — broker behavior is not preserved.** The new authorityVerified/authority precedence is evaluated before the organization kind is selected, so it applies to brokers as well as carriers. The old broker side-effect sequence remains present—expire onboarding item, set an active non-carrier org to pending, notify, queue owner email—but the condition that reaches it has changed.
+
+The old collector was reconstructed from prod migration history bl_fmcsa_0231_poll_via_edge_function, and its full-definition MD5 53a27581c3be52f8510273d2eae61d98 matches the saved pre-0324 prod catalog. Read-only synthetic CASE comparisons gave:
+
+| Synthetic response fields | Old broker status | Current broker status | Consequence |
+|---|---|---|---|
+| authorityVerified=true, authority=active, allowedToOperate=N, mcActive=false | inactive | active | Previously reached lapse handling; now skips it |
+| authorityVerified=true, authority=inactive, allowedToOperate=Y, mcActive=true | active | inactive | Now reaches lapse handling that old code skipped |
+
+These are synthetic counterexamples, not invented customer outcomes. No broker was changed to exercise them. Even if the new precedence is preferred for carriers, applying it to brokers violates the explicit unchanged-broker requirement.
+
+Current carrier-path evidence is positive: the carrier-only branch writes safety/verification data, and its inactive path sends staff in-app notification only; the prod test checks that carrier status and owner messages do not change.
+
+**Backfill and cron evidence has limits.** The backfill helper filters kind=carrier. Current broker checks show zero checked_at timestamps between the 0324 deployment and the next daily dispatch, consistent with that restriction; current rows are not an immutable execution history, so exhaustive “no broker row was ever touched” proof is UNKNOWN. The 06:10 dispatcher run succeeded and the 18 observed collector runs from 06:10 through 07:30 succeeded. The two brokers' no_docket outcomes do not exercise an HTTP response through the changed collector classification.
+
+At the later read, Vertex Web Systems 2 remained active with no newly expired item, email or lapse notification. M Usman Farooq (Agent) was **pending**, with an mc_authority item expired at **07:30:00.355233 UTC**, note “Lapsed 2026-09-05 — re-verification required.” No authlapse email or authority.lapsed notification was found for that broker in the inspected window. This differs from the earlier owner snapshot. The responsible process is **UNKNOWN**; the note differs from the collector's FMCSA note, so do not attribute this change to the backfill or this verification.
+
+**F01 — SQL restriction passes; load-mail still promotes an ordinary caller to service_role.** The current v8 handler consumes caller-controlled from/text and makes privileged downstream RPC calls with the service key, without authenticating an authorized ingestion sender in the handler. Re-running the previously written isolated reproduction against freshly retrieved prod source, with every fetch mocked, reproduced that path. No real broker sender was spoofed against the live endpoint. verify_jwt=true verifies gateway JWTs but is not an ingestion-sender allowlist. Actual exploitation or unauthorized production writes are UNKNOWN. Keep F01 open for the edge boundary; do not undo the passing SQL restriction as a substitute.
+
+**F02 — IPv6 URL boundary still fails.** The existing isolated reproduction against current prod source showed a public redirect to http://[::1]/ reaching mocked fetch. Additional admitted private forms were [fd00::1], [::ffff:7f00:1] and fe90::1. The filter does not normalize bracketed IPv6 and checks fe80 rather than the complete link-local range. No private host was contacted. The previously reported nip.io IPv4 refusal and forged-JWT refusal do not cover these cases. Keep F02 open.
+
+**F31 — persistence wiring is not in the inspected pushed carrier code.** app/shared/api.js:carrierUploadDocument accepts only type/fileName/filePath and inserts only those fields. All four lbAiPrecheck call sites gate upload and then call that wrapper without forwarding pv9; no doc_set_ai_verdict call exists in those files. The CC display and SQL support are present. End-to-end closure waits for the owner's actual upload edits and a verified deploy/UI smoke; no replacement edits were written.
+
+**F31 PDF forensics — PASS, no finding on escalation.** Fresh deployed v5 was exercised through its handler using mocked authentication/AI/network and synthetic PDF incremental-update markers. AI pass became warning; warning remained warning; reject remained reject; unavailable-AI queued remained queued. Added forensic issues were warnings. Forensics did not independently manufacture a reject. This proves the tested advisory transition, not universal PDF tamper detection or the accuracy of an AI verdict.
+
+### Rollback disposition and next action
+
+**No persistent rollback was executed.** The supplied helpers do not restore the failed paths:
+
+- app_private.bl_cmp_0324_rollback explicitly leaves dispatch/collect as superset bodies. It disables the signup trigger and drops the backfill helper, but leaves the changed broker classifier in place. Calling it would remove working carrier behavior without restoring the required broker behavior.
+- bl_sec_0320_rollback removes SQL guards; it does not restore load-mail caller authorization. The SQL portion passed, so reverting it is not a rollback of the reproduced edge defect.
+- F02 has no matching database rollback helper. No reviewed previous edge source that both preserves the new authentication protection and resolves this URL defect was supplied.
+- F31's SQL passed; rolling it back cannot supply the missing client wiring. No 0325 helper exists in the inspected catalog.
+
+This is an explicit limitation of the requested helper-based rollback, not a claim that failed items were restored. Review the findings and provide/approve the corrective rollback scope before a staging-first implementation pass. Do not silently replace a function or redeploy an older edge slot.
+
+**NEXT ACTION:** Yaseen/Claude review the F30 broker regression and incomplete rollback, F01/F02 edge gaps, and confirm/push the actual F31 upload wiring. Re-sync latest main and both environments before further work. SEO week 1 was not started in this verification turn; retain the re-ranked GSC calendar and staging build requirement. F33 (no-docket carriers) and the WhatsApp toggle remain design-only.
+
+
 
 ## Sprint 2 prep — findings added 5 Sep (Claude, read-only, prod + staging + repo)
 

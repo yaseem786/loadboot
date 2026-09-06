@@ -7040,7 +7040,7 @@ function tripStepper(status) {
         }
         up.textContent = 'Uploading…';
         const meta = await uploadDocument(f, typeSel.value);
-        await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path });
+        await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path, aiVerdict: pv9 });
         fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded — in review. You will NOT be asked again; track it right here.';
         lbToast('✓ Document received — status is IN REVIEW. No need to upload it again.', 'success', 'Uploaded');
         // factored-but-not-set-up: NOA letter without a factoring profile can't route broker payments
@@ -7098,7 +7098,7 @@ function tripStepper(status) {
           }
           upBtn.textContent = 'Submitting…';
           const meta = await uploadDocument(file, typeSel2.value);
-          await carrierUploadDocument({ type: typeSel2.value, fileName: meta.fileName, filePath: meta.path });
+          await carrierUploadDocument({ type: typeSel2.value, fileName: meta.fileName, filePath: meta.path, aiVerdict: pv9 });
           msg2.className = 'cp-err ok'; msg2.textContent = '✓ Submitted — status is now IN REVIEW. You cannot change it until the review decision.';
           setTimeout(() => { close2(); loadDocuments(); }, 900);
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit for review'; msg2.className = 'cp-err'; msg2.textContent = (e && e.message) || 'Upload failed.'; }
@@ -7588,7 +7588,7 @@ function tripStepper(status) {
       const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { const file = fileIn.files && fileIn.files[0]; msg.textContent = ''; msg.className = 'cp-err'; if (!file) { msg.textContent = 'Choose a file.'; return; } { const rule = docFmt(typeSel.value); const ex = extOf(file); if (rule.exts.indexOf(ex) < 0) { const _m = 'This document must be ' + (rule.exts.length === 1 ? rule.exts[0].toUpperCase() : rule.exts.map((e) => e.toUpperCase()).join('/')) + ' \u2014 ' + rule.label + '.'; msg.textContent = _m; lbToast(_m, 'urgent', 'Wrong file format'); fileIn.value = ''; return; } } up.disabled = true; up.textContent = '🤖 Checking…';
         const pv9 = await lbAiPrecheck(file, typeSel.value);
         if (!(await lbPrecheckGate(pv9))) { up.disabled = false; up.textContent = 'Upload'; fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Nothing submitted — fix it first, then upload the corrected file.'; return; }
-        up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; lbToast('Document uploaded \u2014 sent for review. The checklist above now shows \u201cIn review\u201d.', 'success', 'Uploaded \u2713'); await refresh(); try { loadReqs(); } catch (_) {} } catch (e) { const _um = (e && e.message) || 'Upload failed.'; msg.className = 'cp-err'; msg.textContent = _um; lbToast(_um, 'urgent', 'Upload failed'); } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
+        up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path, aiVerdict: pv9 }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; lbToast('Document uploaded \u2014 sent for review. The checklist above now shows \u201cIn review\u201d.', 'success', 'Uploaded \u2713'); await refresh(); try { loadReqs(); } catch (_) {} } catch (e) { const _um = (e && e.message) || 'Upload failed.'; msg.className = 'cp-err'; msg.textContent = _um; lbToast(_um, 'urgent', 'Upload failed'); } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
       fileIn.addEventListener('change', () => { if (autoUp && fileIn.files && fileIn.files[0]) { autoUp = false; up.click(); } });
       refresh();
       const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Complete W-9 in-app');
@@ -7664,7 +7664,7 @@ function tripStepper(status) {
               const pv9 = await lbAiPrecheck(f9, 'noa');
               if (!(await lbPrecheckGate(pv9))) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#94a3b8'; st9.textContent = 'Nothing submitted — attach the corrected NOA when ready.'; return; }
               b9.textContent = 'Uploading\u2026';
-              try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
+              try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path, aiVerdict: pv9 }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
               catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#f87171'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }
             } }, 'Upload NOA');
             return h('div', { style: 'margin-top:10px' }, [
