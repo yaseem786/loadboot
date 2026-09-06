@@ -918,12 +918,26 @@ export function renderCarrier360(host, orgId) {
         const verifyBtn = can('compliance.verify') ? el('button', { class: 'cc-chip-btn', onClick: () => {
           const st = el('select', { class: 'cc-input' }, ['valid', 'pending', 'rejected', 'expired', 'waived'].map((x) => el('option', { value: x, selected: x === r.status ? 'selected' : null }, x)));
           const ex = el('input', { class: 'cc-input', type: 'date', value: r.expiry_date || '' });
-          const nt = el('input', { class: 'cc-input', placeholder: 'Note / reason (required on reject)', value: r.note || '' });
+          // This was a single-line <input>. Pasting a written reason into one makes the
+          // browser flatten every newline to a space, so a carefully laid-out rejection
+          // reached the carrier as one unbroken paragraph — and the server's 1000-char
+          // cap only announced itself as "That value is not allowed." after Save.
+          const nt = el('textarea', { class: 'cc-input', rows: '9', style: 'resize:vertical;line-height:1.6;font-family:inherit', placeholder: 'Note / reason (required on reject) — the carrier reads this in their portal and in the email we send them.\n\nBlank line = new paragraph.\n"1." at the start of a line = a numbered step.\nEnd a line with ":" and put a value on the next line to give them a copyable block.' });
+          nt.value = r.note || '';
+          const NT_MAX = 1000;
+          const ntCount = el('div', { class: 'cc-sub', style: 'text-align:right;margin-top:4px;font-variant-numeric:tabular-nums' });
+          const ntSync = () => {
+            const n = nt.value.length; const over = n > NT_MAX;
+            ntCount.textContent = n + ' / ' + NT_MAX + (over ? ' — too long by ' + (n - NT_MAX) : '');
+            ntCount.style.color = over ? '#dc2626' : (n > NT_MAX * 0.9 ? '#b45309' : '');
+            ntCount.style.fontWeight = over ? '800' : '';
+          };
+          nt.addEventListener('input', ntSync); ntSync();
           const dr = openDrawer('Verify: ' + r.name, el('div', { class: 'cc-form' }, [
             el('div', { class: 'cc-field' }, [el('span', null, 'Status'), st]),
             el('div', { class: 'cc-field' }, [el('span', null, 'Expiry date (from the document)'), ex]),
-            el('div', { class: 'cc-field' }, [el('span', null, 'Note'), nt]),
-            el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => { const b1 = ev.currentTarget; if (st.value === 'rejected' && !nt.value.trim()) { toast('Rejection needs a written reason — the carrier sees it.'); return; } b1.disabled = true; try { await setCompliance({ carrier: orgId, requirement: r.key, status: st.value, expiry: ex.value || null, note: nt.value || null }); dr.close(); loadComp(); } catch (e) { toast(humanizeError(e)); b1.disabled = false; } } }, 'Save decision'),
+            el('div', { class: 'cc-field' }, [el('span', null, 'Note'), nt, ntCount]),
+            el('button', { class: 'lb-btn lb-btn-primary', onClick: async (ev) => { const b1 = ev.currentTarget; if (st.value === 'rejected' && !nt.value.trim()) { toast('Rejection needs a written reason — the carrier sees it.'); return; } if (nt.value.length > NT_MAX) { toast('Note is ' + (nt.value.length - NT_MAX) + ' characters over the ' + NT_MAX + ' limit — trim it and save again.'); return; } b1.disabled = true; try { await setCompliance({ carrier: orgId, requirement: r.key, status: st.value, expiry: ex.value || null, note: nt.value || null }); dr.close(); loadComp(); } catch (e) { toast(humanizeError(e)); b1.disabled = false; } } }, 'Save decision'),
           ]));
         } }, 'Verify') : '';
         const DOC_HINT = {

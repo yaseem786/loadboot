@@ -1,0 +1,110 @@
+diff --git a/app/command-center/cc-dark.css b/app/command-center/cc-dark.css
+index d4abbe1..387bf7d 100644
+--- a/app/command-center/cc-dark.css
++++ b/app/command-center/cc-dark.css
+@@ -45,6 +45,8 @@ body{background:var(--lb-bg);color:#eaf1fb}
+ .cc-tag-blue{background:rgba(8,131,247,.16);color:#3b9dff}
+ .cc-chip-btn{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:#b9c6db}
+ .cc-chip-btn:hover{background:rgba(8,131,247,.14);color:#3b9dff}
++.cc-chip-btn.on,.cc-chip-btn.active{background:#0883F7;border-color:#0883F7;color:#fff}
++.cc-chip-btn.on:hover,.cc-chip-btn.active:hover{background:#3b9dff;border-color:#3b9dff;color:#0b1526}
+ .cc-chip-warn{background:rgba(217,119,6,.15);color:#fbbf24}
+ 
+ /* inputs / toolbar */
+diff --git a/app/command-center/command-center.css b/app/command-center/command-center.css
+index b60b9df..644f48d 100644
+--- a/app/command-center/command-center.css
++++ b/app/command-center/command-center.css
+@@ -383,6 +383,11 @@
+ .cc-status-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+ .cc-chip-btn{padding:7px 12px;border:1px solid #e2e8f0;border-radius:20px;background:#f8fafc;color:#334155;font-size:.8rem;font-weight:600;cursor:pointer;text-transform:capitalize}
+ .cc-chip-btn:hover{background:#eff6ff;border-color:#3b82f6;color:#0883F7}
++/* Selected state for toggle chips. campaignManager.js and templates.js toggle `.on`, and
++   integrations.js toggles `.active`, but neither class had a rule — so clicking a channel
++   chip changed the state and showed nothing, which reads as a dead button. */
++.cc-chip-btn.on,.cc-chip-btn.active{background:#0883F7;border-color:#0883F7;color:#fff}
++.cc-chip-btn.on:hover,.cc-chip-btn.active:hover{background:#0670d4;border-color:#0670d4;color:#fff}
+ .cc-chip-warn{display:inline-block;padding:2px 9px;border-radius:20px;background:#fef3c7;color:#92400e;font-size:.76rem;font-weight:600}
+ .cc-doclist{display:flex;flex-direction:column;gap:8px}
+ .cc-doc-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eef2f7;border-radius:10px;background:#fcfdff}
+diff --git a/app/command-center/views/audiences.js b/app/command-center/views/audiences.js
+index 4b0499b..93f7aa7 100644
+--- a/app/command-center/views/audiences.js
++++ b/app/command-center/views/audiences.js
+@@ -38,6 +38,25 @@ export function renderAudiences(host) {
+   function drawBuilder() {
+     const typeSel = el('select', { class: 'cc-input' }, AUDIENCE_TYPES.map(([v, l]) => el('option', { value: v }, l)));
+     const nameIn = el('input', { class: 'cc-input', placeholder: 'Save as… e.g. Active carriers — TX' });
++    // Manual list: an explicitly curated set of addresses. The built-in segments answer
++    // "everyone matching a rule"; this answers "these people". Consent still wins — an
++    // address that unsubscribed or is on the suppression list is dropped at send time.
++    const emailsIn = el('textarea', { class: 'cc-input', rows: '6',
++      placeholder: 'One email per line (or comma-separated).\nUnsubscribed and bounced addresses are removed automatically before sending.' });
++    const emailsField = el('label', { class: 'cc-field', style: 'grid-column:1/-1;display:none' },
++      [el('span', null, 'Addresses'), emailsIn]);
++    const parseEmails = () => Array.from(new Set(String(emailsIn.value || '')
++      .split(/[\s,;]+/).map(x => x.trim().toLowerCase())
++      .filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))));
++    const syncType = () => {
++      const manual = typeSel.value === 'manual_list';
++      emailsField.style.display = manual ? '' : 'none';
++      estimate.style.display = manual ? 'none' : '';
++      if (manual) result.textContent = parseEmails().length + ' valid address(es) pasted';
++      else result.textContent = '';
++    };
++    typeSel.addEventListener('change', syncType);
++    emailsIn.addEventListener('input', () => { if (typeSel.value === 'manual_list') syncType(); });
+     const result = el('div', { class: 'cc-sub', style: 'margin-top:6px' });
+     const estimate = el('button', { class: 'lb-btn lb-btn-sm', onClick: async (ev) => {
+       const _btn9 = ev.currentTarget;
+@@ -49,7 +68,10 @@ export function renderAudiences(host) {
+     const saveBtn = manage ? el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: async (ev) => {
+       const _btn9 = ev.currentTarget;
+       if (!nameIn.value.trim()) { toast('Give the audience a name.'); return; }
+-      _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value }); toast('Audience saved', 'success'); nameIn.value = ''; loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
++      const manual = typeSel.value === 'manual_list';
++      const emails = manual ? parseEmails() : null;
++      if (manual && !emails.length) { toast('Paste at least one valid email address.', 'error'); return; }
++      _btn9.disabled = true; try { await saveAudience({ name: nameIn.value.trim(), type: typeSel.value, filters: manual ? { emails } : {} }); toast(manual ? ('Audience saved — ' + emails.length + ' address(es)') : 'Audience saved', 'success'); nameIn.value = ''; emailsIn.value = ''; syncType(); loadList(); } catch (e) { toast(humanizeError(e), 'error'); }
+       _btn9.disabled = false;
+     } }, 'Save audience') : null;
+     mount(builder, [
+@@ -57,10 +79,12 @@ export function renderAudiences(host) {
+       el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px' }, [
+         el('label', { class: 'cc-field' }, [el('span', null, 'Segment'), typeSel]),
+         el('label', { class: 'cc-field' }, [el('span', null, 'Name'), nameIn]),
++        emailsField,
+       ]),
+       el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px' }, [estimate, saveBtn].filter(Boolean)),
+       result,
+     ]);
++    syncType();
+   }
+ 
+   async function loadList() {
+diff --git a/app/shared/api.js b/app/shared/api.js
+index fbaaecc..8e6b35c 100644
+--- a/app/shared/api.js
++++ b/app/shared/api.js
+@@ -592,7 +592,11 @@ export const moduleSummary = () => rpc('cc_module_summary');
+ export const systemHealth = () => rpc('cc_system_health');
+ // Campaign Manager (Phase 3C)
+ export const cmpList = () => rpc('cc_cmp_list');
+-export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id ?? null, p_name: o.name, p_objective: o.objective ?? null, p_audience: o.audienceId ?? null, p_template: o.templateKey ?? null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt ?? null, p_status: o.status ?? 'draft' });
++// `?? null` only replaces null/undefined, so an untouched Schedule or Audience field arrived as
++// '' and Postgres refused to cast it (22007 / 22P02) before cc_cmp_save could run — a campaign
++// could not be saved without a schedule. `|| null` sends a real null. The RPC now coerces empty
++// strings server-side too (bl_camp_0326), so both ends are safe.
++export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id || null, p_name: o.name, p_objective: o.objective || null, p_audience: o.audienceId || null, p_template: o.templateKey || null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt || null, p_status: o.status || 'draft' });
+ export const cmpSetStatus = (id, status) => rpc('cc_cmp_set_status', { p_id: id, p_status: status });
+ export const cmpMarkSent = (id, count) => rpc('cc_cmp_mark_sent', { p_id: id, p_count: count });
+ // ---- Unified Delivery Engine (cvb/cvc/cvd) — preview → confirm → enqueue → claim → mark ----
+@@ -635,7 +639,7 @@ export const audienceEstimate = (type) => rpc('cc_audience_estimate', { p_type:
+ export const listAudiences = () => rpc('cc_list_audiences');
+ export const saveAudience = (o = {}) => rpc('cc_save_audience', { p_name: o.name, p_type: o.type, p_filters: o.filters ?? {} });
+ export const deleteAudience = (id) => rpc('cc_delete_audience', { p_id: id });
+-export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['newsletter', 'Newsletter subscribers'], ['form_submitters', 'Website form leads'], ['all_staff', 'All staff']];
++export const AUDIENCE_TYPES = [['all_carriers', 'All carriers'], ['active_carriers', 'Active carriers'], ['pending_carriers', 'Pending carriers'], ['onboarding_pending', 'Onboarding — awaiting review'], ['carrier_owners', 'Carrier owners'], ['drivers', 'Drivers'], ['leads', 'Website leads'], ['newsletter', 'Newsletter subscribers'], ['form_submitters', 'Website form leads'], ['all_staff', 'All staff'], ['manual_list', 'Manual list — paste addresses']];
+ // Template Studio (Phase 3A — marketing + transactional templates, variable allowlist)
+ export const studioListTemplates = () => rpc('cc_studio_list_templates');
+ export const studioSaveTemplate = (t = {}) => rpc('cc_studio_save_template', { p_key: t.key, p_name: t.name, p_category: t.category, p_channels: t.channels, p_subject: t.subject, p_preview: t.preview, p_body_html: t.bodyHtml, p_body_text: t.bodyText, p_status: t.status });
