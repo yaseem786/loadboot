@@ -280,3 +280,272 @@ the hex v4-mapped bypass and the fe80::/10 range bug. Awaiting Yaseen's explicit
 ### F03 — closed as a decision, not a defect
 Yaseen has decided the outreach engine stays **enabled**. No pause, no schedule change, nothing touched. The
 finding stands as recorded context (daily cap 600, cron `0 13,15,17,19 * * *`), not as an open action.
+
+## F14 — first confirmed instance: `public.retell_webhook` is callable by anyone holding the anon key (2026-09-06)
+
+F14 was written as an inventory finding: 32 anon-executable SECURITY DEFINER advisories on prod, 35 on staging,
+with the explicit warning that those totals are **not** leak counts and that blanket revocation would break
+working RPCs. This is the first one worked end to end, and it shows both halves of that warning were right — it
+is a real hole, **and** the obvious fix would have broken a live revenue path.
+
+### The finding
+
+`public.retell_webhook(jsonb)` is SECURITY DEFINER with EXECUTE granted to PUBLIC, `anon` and `authenticated` on
+**both** environments. It takes a single **unnamed** parameter, which PostgREST exposes as a raw-body RPC, so it
+is reachable over plain HTTP.
+
+Two independent confirmations:
+- Codex, on staging, with a rollback-only DB probe: an anonymous caller can insert a synthetic `call_started`
+  row. All writes were rolled back by an exception; no real call data changed.
+- Claude, on staging, over HTTP: `POST /rest/v1/rpc/retell_webhook` carrying **only the public anon key** →
+  **HTTP 200** (pg_net req 193585). The response was `{"ok":true,"ignored":true}` solely because the probe used a
+  deliberately non-matching phone number; the function's first gate compares `from_number`/`to_number` against
+  `app_private.retell_config.from_number`, which is a **published** phone number.
+
+Reachable impact with the real number: an `app_private.lc_calls` insert, and on a crafted `call_ended` /
+`call_analyzed` payload — a `crm_contact`, a `crm_lead`, a `crm_activity`, an `automation_task` and staff
+`notifications`. The anon key is present in every browser that loads the site.
+
+### Why "REVOKE anon" is not the fix
+
+That grant **is** the live provider chain: Retell posts the webhook straight at PostgREST with the anon key.
+Prod evidence read this turn: **112 `app_private.lc_calls` rows, 65 of them in the last 30 days, and 8
+`crm_leads` with `source='voice-call'`.** Revoking would stop inbound voice reaching CC and CRM with no error
+anyone would see.
+
+### Why the signature cannot be verified in Postgres
+
+Retell signs `HMAC-SHA256(raw_body || timestamp, api_key)` and sends
+`X-Retell-Signature: v=<unix_ms>,d=<hex>`. Its documentation is explicit that the **raw** body must be used,
+because re-serialising JSON changes whitespace and key order. PostgREST hands a single-unnamed-jsonb-parameter
+function **already-parsed** jsonb — the exact bytes are gone. Verification therefore has to happen in an edge
+function, which is the only place the raw body still exists. This is a hard constraint, not a preference, and it
+is what shapes the whole fix.
+
+No secret was invented: the signer is the **existing** `app_private.retell_config.api_key`, populated on both
+envs, and the design keeps it inside the database.
+
+### The fix, built and tested on STAGING only
+
+| piece | what it does |
+|---|---|
+| `bl_sec_0329_retell_webhook_signed_only` | adds `retell_config.allow_unsigned_webhook boolean not null default **TRUE**` and anchor-guards a guard into `retell_webhook` that returns LB403 only when the caller is not `service_role` **and** the flag is off. Default TRUE means applying it changes nothing. `app_private.bl_sec_0329_rollback()` restores the saved definition and drops the column |
+| `bl_sec_0329b_retell_hook_verify` | `public.retell_hook_verify(raw, sig)` — service_role only, HMAC computed inside the DB, constant-length digest compare, 15-minute replay window, honest reasons (`api_key_not_configured`, `signature_header_unparsable`, `digest_mismatch`, `timestamp_outside_skew`, `signature_ok`) |
+| `bl_sec_0329c_retell_hook_log` | `app_private.retell_hook_log` — verdict only. No payload, no phone number, no transcript. 30-day retention |
+| `supabase/functions/retell-hook/index.ts` | reads the raw body once, asks the verifier, forwards as service_role. **Observe mode by default** |
+
+Observe mode is deliberate: the signature format above is taken from Retell's documentation, not from a delivery
+anyone here has seen. Observe forwards every delivery and records whether it verified, which is how the format
+gets confirmed against real traffic before enforcement depends on it.
+
+### Evidence (all run by Claude, on staging)
+
+- `tests/bl_sec_0329_rollback_test.sql` → **RESULT PASS**, 3 cases: flag TRUE → anon still works and still writes
+  (this is the case that proves applying the migration is a no-op); flag FALSE → anon **and** authenticated both
+  LB403 with **0 rows written**; flag FALSE → `service_role` still reaches the body and writes.
+- `tests/bl_sec_0329b_verify_test.sql` → **RESULT PASS**, 4 cases: a signature built with the **real configured
+  api_key** verifies; a forged digest, a body altered by a single space, and a missing header all return
+  `verified:false` with the correct reason; a 66-minute-old replay is refused; `anon` cannot call the verifier.
+- **Live end-to-end, enforce mode on:** unsigned POST to `/functions/v1/retell-hook` → **401
+  `{"error":"unauthorized","code":"LB401","reason":"signature_header_unparsable"}`**, nothing forwarded
+  (req 193595). Correctly signed POST → **200 `{"verified":true,"enforce":true,"reason":"signature_ok",
+  "forwarded":true,"upstream":{"ok":true}}`** (req 193596). Old PostgREST door with the anon key, flag off →
+  **LB403** (req 193599).
+- Staging then restored to observe mode and the three `bl0329-*` rows deleted — `lc_calls` back to 1 row.
+
+### Cutover — three steps, and the order is load-bearing
+
+1. deploy `retell-hook` to prod in **observe** mode (needs approval);
+2. **Yaseen** repoints the Retell dashboard webhook at `.../functions/v1/retell-hook` and watches
+   `app_private.retell_hook_log` verify real deliveries;
+3. only then `update app_private.retell_config set allow_unsigned_webhook = false`.
+
+Step 3 before step 2 silently stops inbound voice. Step 2 before step 1 loses calls. **Nothing is on prod.**
+
+### What this says about the rest of F14
+
+The method generalises: for each anon-executable SECURITY DEFINER routine, find the *real* caller first, work out
+what it can actually prove about itself, and only then close the door — in that order. The 32/35 advisory totals
+remain what they always were: a worklist, not a count of holes.
+
+## M Usman Farooq — discrepancy resolved (2026-09-06)
+
+Codex saw an expired `mc_authority` item and a delivered `lapsed:` message at 07:30 UTC; Claude's post-backfill
+queries found 0 items expired and 0 emails from the collector. **Both were true — they were different jobs.**
+
+- 2026-08-03 19:42 — item reviewed, `recheck_due` set to **2026-09-05** (a month before the collector existed).
+- 2026-08-06 / 08-26 / 09-02 — three reminders, keys `reval:…:mc_authority:2026-09-05:warn30 / :early / :final`.
+- 2026-09-06 **06:10:00.242** — `fmcsa_authority_collect` touches the org, records `no_docket` (no MC/DOT on
+  file anywhere), **writes no onboarding item and sends no email**.
+- 2026-09-06 **07:30:00.355** — `app_private.cron_packet_revalidation` expires the item, stamps `lapsed_at`,
+  queues `lapsed:e7676569…:mc_authority:2026-09-05`; delivered 07:30:02.
+
+`cron_packet_revalidation` is the only routine in the catalog that writes a `lapsed:` key; the collector's is
+`authlapse:`. Different job, 80 minutes apart, driven by a due date set five weeks earlier. **F30 is not
+implicated.** (This org is also one of the F33 no-docket cases, which is why the collector could do nothing.)
+
+## F14 — second confirmed instance: `public.retell_inbound` is a caller-identity oracle (2026-09-06/07)
+
+The first instance (`retell_webhook`) let an anonymous caller **write** a fake call event. This one lets them
+**read people**, which is worse.
+
+### The finding
+
+On **prod**, `public.retell_inbound(jsonb)` is SECURITY DEFINER with EXECUTE granted to `anon` and
+`authenticated`. It takes a single **unnamed** parameter, so PostgREST exposes it as a raw-body RPC. Its entire
+purpose is to turn a phone number into who that person is, so a caller holding only the PUBLIC anon key can POST
+any number and read back, branch by branch:
+
+| branch | what comes back |
+|---|---|
+| `public.profiles` match | contact name, company, role, **MC**, **DOT**, equipment, truck count, lanes, home base, account status |
+| `app_private.email_brokers` match | company, contact name, MC number |
+| `app_private.form_submissions` match | name, company, form key, and the **first 400 characters of what they wrote** |
+| no match | a NEW CALLER default — which still confirms the number is *not* known |
+
+The only gate is `to_number == retell_config.from_number`, and that number is published on the site. Numbers can
+be tried one after another, so this is an enumeration oracle, not an incidental leak.
+
+### Environment drift, stated rather than papered over
+
+**`public.retell_inbound` does not exist on staging.** It is prod-only. The staging work therefore does **not**
+port the vulnerable function here — doing so would replicate the hole in order to test a fix for it. Only the
+service-only replacement was created.
+
+### The fix, on STAGING only
+
+| piece | detail |
+|---|---|
+| `bl_sec_0330_retell_inbound_verified` | `public.retell_inbound_verified(jsonb)` — prod's body verbatim plus one caller check. Grants verified: `postgres:EXECUTE`, `service_role:EXECUTE`. No PUBLIC, no anon, no authenticated |
+| `bl_sec_0330b_..._strict_guard` | removes a broken escape hatch (see below) |
+| `bl_sec_0330c_claims_empty_string_safe` | an empty claims GUC now refuses cleanly instead of raising 22P02 |
+| `supabase/functions/retell-inbound-hook` v1 | `verify_jwt=false`, `ezbr_sha256 ce940e1ca8c20399e35fba352077e48a386d7d73189d26b2c32acba4b393ac3d`. Reads the raw body, verifies via `retell_hook_verify`, calls **only** the service-only RPC, returns Retell's `{"call_inbound": …}` envelope unchanged. **No observe mode**: this endpoint hands out personal data, so there is no forward-anyway path |
+| rollback | `select app_private.bl_sec_0330_rollback();` |
+
+**Equivalence proven, not asserted.** Prod's `pg_get_functiondef`, with the guard block inserted after the single
+`begin\n` and the name changed, hashes to **`9117e4e456e16e346dd7886b6f56c1e0`** — byte-identical to what staging
+returned for the function `bl_sec_0330` created. (0330b/0330c then altered the guard line only; current staging
+md5 `7aec5c56eb74702bb92aa3772098ee8e`.)
+
+### Evidence
+
+`tests/bl_sec_0330_rollback_test.sql` → **RESULT PASS**, 4 cases: `anon` / `authenticated` / empty-claims all
+refused with the empty `{"call_inbound":{}}` envelope and `LB403` (a refusal cannot even reveal whether the
+number is known); the four cheap contract branches match prod; the website-form branch returns the caller's own
+words; and the broker branch still takes **precedence** over a form submission for the same number.
+
+`tests/retell_inbound_hook_live_checks.sql`, live against the deployed function — i1 valid signature **200** with
+the full envelope (req 194834); i2 forged digest **401** `digest_mismatch` (194835); i3 missing header **401**
+`signature_header_unparsable` (194836); i4 stale-by-66-minutes **401** `timestamp_outside_skew` (194837); i5
+valid signature over a different body **401** `digest_mismatch` (194838); i6 verifier unable to answer **503**
+`verifier_verdict_incomplete` (194841). Every refusal returns the EMPTY envelope.
+
+i6 was produced by copying `retell_config.api_key` into a scratch table, setting it NULL, firing the request,
+then restoring from the copy and dropping the scratch table — verified afterwards: key restored, scratch table
+gone. **Do not run i6 on prod.**
+
+**Privacy check:** `app_private.retell_hook_log` was queried after the runs — it holds verdict, reason and event
+name only, and **zero rows contain a phone number**.
+
+**Not covered live:** the `body_not_json` → 400 branch. `pg_net`'s `http_post` accepts only a jsonb body, so a
+non-JSON raw body cannot be produced from Postgres. Code inspection only — **UNKNOWN** until exercised by a
+client that can post arbitrary bytes.
+
+### Two bugs the test caught in the guard — worth recording because both are general
+
+1. **A guard that could never fire.** `bl_sec_0330` had `and current_user not in ('postgres','service_role')` as
+   an escape hatch for internal callers. Inside a SECURITY DEFINER function `current_user` is the **function
+   owner**, so that clause was true for every caller. The rollback test's first case caught it: `anon` got the
+   full NEW CALLER payload instead of `LB403`. `0330b` removes the hatch — the verified JWT claim is now the only
+   thing that decides, which is safe because the edge function reaches the RPC through PostgREST with the service
+   key.
+2. **An empty claims GUC raised instead of refusing.** `current_setting('request.jwt.claims', true)::jsonb`
+   throws 22P02 on an empty string. Still fail-closed, but a 500 carrying a Postgres error string is a worse
+   answer than a clean refusal. `0330c` wraps it in `nullif(...,'')`.
+
+And a third, for every anchor-guarded patch in this audit: **count anchors with a literal string count, not
+`regexp_matches`.** `0330c`'s first attempt reported "anchor found 0 times" for an anchor plainly present,
+because `(` and `)` in `current_setting(...)` are regex metacharacters. It failed safe — a pattern that silently
+matched the *wrong* text would not have.
+
+### Cutover — Yaseen's, and the order is load-bearing
+
+1. deploy `retell-inbound-hook` + `bl_sec_0330/b/c` to prod;
+2. **Yaseen** repoints the Retell **phone-number inbound** webhook at `.../functions/v1/retell-inbound-hook` and
+   a real signed delivery is observed verifying in `retell_hook_log`;
+3. only then may revoking `anon`/`authenticated` on `public.retell_inbound` be **proposed**.
+
+Step 3 before step 2 removes the personalised greeting from every inbound call. Nothing is on prod: the prod
+function and its anon grant are exactly as they were.
+
+### What the two instances say about the remaining F14 worklist
+
+Both followed the same shape: **an unnamed single-parameter SECURITY DEFINER function, reachable through
+PostgREST with the anon key, standing in for an external provider that cannot send a Supabase JWT.** That
+signature — not the raw advisory count — is what the remaining ~30 should be triaged against first.
+
+## PRODUCTION deploy of the three signed-endpoint changes (2026-09-07)
+
+Approved by Yaseen. All three landed; **nothing was revoked and nothing was switched to enforce.** Prod is now
+in a state where the old doors still work and the new signed doors also work — which is exactly the state a
+cutover needs before the provider is repointed.
+
+| item | prod | hash |
+|---|---|---|
+| `domain-check` v5 | slot 3 | `9a2e429dd11263e323b79bdabe270205150ed5c691ab5089caa9531abdc3de67` |
+| `retell-hook` v2 | slot 1, `verify_jwt=false` | `1b0fbaa94a68d4f1922216e3bef1ee0f41832d75018f3414b2f487b8928fd0dd` |
+| `retell-inbound-hook` v1 | slot 1, `verify_jwt=false` | `c45b322eff1cfa1cc3d5b89c4a4275d1ad86a889d05585fc72affe1f4468e160` |
+| migrations | `bl_sec_0329`, `0329b`, `0329c`, `bl_sec_0330` | |
+
+### F02 — closed on prod
+
+Live checks: `loadboot.com` → 200 with the response shape unchanged (req 195107); `0--1.sslip.io`,
+`169.254.169.254.nip.io`, `fe90--1.sslip.io`, `febf--1.sslip.io` and `0-0-0-0-0-ffff-7f00-1.sslip.io` all
+`refused: resolves to private address` (195108–195112); and the control `2606-4700--1111.sslip.io` (public
+IPv6) **not** refused — it reached the network and failed on a TLS handshake (195113). The bracket bypass, the
+hex v4-mapped bypass and the fe80::/10 range bug are all closed on production.
+
+### F14 first instance — guarded on prod, switch still OFF
+
+`bl_sec_0329/b/c` applied with `allow_unsigned_webhook = TRUE`, so the guard is inert and the live Retell chain
+is untouched. One rollback-txn block returned **RESULT PASS** on four counts: flag TRUE → anon still works and
+still writes (the apply is a no-op); flag FALSE → anon **and** authenticated both LB403 with **0 rows written**;
+flag FALSE → service_role still reaches the body; and the verifier, tested against the **real prod api_key** —
+a correctly signed body verifies, a forged digest and a body altered by one space are rejected, `anon` gets
+LB403.
+
+The whole signed path was then proven on prod **without writing anything**: a correctly signed `call_started`
+whose from/to numbers deliberately do not match `retell_config.from_number` returned
+`{"ok":true,"verified":true,"enforce":false,"reason":"signature_ok","forwarded":true,"upstream":{"ok":true,"ignored":true}}`
+(req 195128).
+
+### F14 second instance — twin live on prod, original untouched
+
+`bl_sec_0330` was built on prod **from prod's own live definition**, not from a pasted copy. Verification:
+prod's `pg_get_functiondef(retell_inbound)` + the guard inserted after the single `begin\n` + the rename hashes
+to `43b69a2488ac4a99661bd74ad82f46f9`, and the created function hashes to the same value — **byte_identical =
+true**. Grants on the twin: `postgres:EXECUTE, service_role:EXECUTE`. Grants on `public.retell_inbound`:
+**unchanged** at `postgres, anon, authenticated, service_role`.
+
+Rollback test on prod → **RESULT PASS**, 4 cases. Live checks against the deployed hook: q1 valid signature
+**200** with the full envelope (195120); q2 forged digest **401** (195121); q3 missing header **401** (195122);
+q4 stale by 66 minutes **401** (195123); q5 valid signature over a different body **401** (195124). Every
+refusal returns the empty `{"call_inbound":{}}` envelope.
+
+### Prod hygiene after the run
+
+`app_private.lc_calls` = **112**, unchanged. **Zero** `bl0329-*` or `prodchain*` rows left behind.
+`allow_unsigned_webhook` still TRUE. `app_private.retell_hook_log` holds 6 verdict rows and **no phone numbers,
+no bodies, no context**.
+
+### The two switches that are still off, and what turns them on
+
+1. Yaseen repoints, in the Retell dashboard:
+   - the call webhook → `https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/retell-hook`
+   - the phone number's inbound-call webhook → `https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/retell-inbound-hook`
+2. Real deliveries are watched in `app_private.retell_hook_log` until they show `verified=true, reason='signature_ok'`.
+3. Then, separately and reversibly: `update app_private.retell_config set allow_unsigned_webhook = false;` and,
+   as a proposal, revoking `anon`/`authenticated` on `public.retell_inbound`.
+
+Rollbacks stay available throughout: `select app_private.bl_sec_0329_rollback();` and
+`select app_private.bl_sec_0330_rollback();`

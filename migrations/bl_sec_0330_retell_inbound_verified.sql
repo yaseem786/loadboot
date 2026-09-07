@@ -1,0 +1,74 @@
+-- bl_sec_0330 (+0330b, +0330c) — audit F14, SECOND instance: public.retell_inbound(jsonb).
+-- Applied to STAGING as three migrations on 2026-09-06:
+--   bl_sec_0330_retell_inbound_verified          creates the service-only twin
+--   bl_sec_0330b_retell_inbound_verified_strict_guard   removes a broken escape hatch the test caught
+--   bl_sec_0330c_claims_empty_string_safe        makes an empty claims GUC refuse cleanly instead of raising
+-- PROD: NOT APPLIED. public.retell_inbound on prod is UNCHANGED and still granted to anon/authenticated —
+-- deliberately, because the Retell phone-number inbound webhook may still be pointed at it.
+--
+-- THE FINDING. On PROD, public.retell_inbound(jsonb) is SECURITY DEFINER with EXECUTE granted to anon and
+-- authenticated. It takes a single UNNAMED parameter, so PostgREST exposes it as a raw-body RPC. Its whole job is
+-- to turn a phone number into who that person is, so anyone holding the PUBLIC anon key — which every browser
+-- that loads the site already has — can POST a number and read back:
+--   • a registered user's contact name, company, role, MC, DOT, equipment, truck count, lanes, home base and
+--     account status;
+--   • an email broker's company, contact name and MC number;
+--   • a website lead's name, company, form key and the first 400 characters of what they typed.
+-- The only gate is to_number == retell_config.from_number, and that number is PUBLISHED on the site. It is a
+-- caller-identity oracle that answers for any number the caller cares to try. This is worse than the
+-- retell_webhook instance (bl_sec_0329): that one lets an attacker WRITE, this one lets them READ people.
+--
+-- ENV DRIFT, stated rather than papered over: public.retell_inbound DOES NOT EXIST ON STAGING. It is prod-only.
+-- These migrations therefore do NOT copy the vulnerable function to staging — that would replicate the hole
+-- here. They create ONLY the service-only replacement, with the body taken verbatim from the PROD definition
+-- read via pg_get_functiondef on 2026-09-06.
+--
+-- EQUIVALENCE IS PROVEN, NOT ASSERTED. Taking prod's pg_get_functiondef, inserting the guard block after the
+-- single `begin\n`, and renaming retell_inbound → retell_inbound_verified produced md5
+-- 9117e4e456e16e346dd7886b6f56c1e0, which is exactly what staging's pg_get_functiondef returned for the function
+-- created by bl_sec_0330. (0330b and 0330c then changed the guard line only; current staging md5 is
+-- 7aec5c56eb74702bb92aa3772098ee8e.) Every branch, every string and every precedence rule is prod's.
+--
+-- GRANTS on staging, verified: postgres:EXECUTE, service_role:EXECUTE. No PUBLIC, no anon, no authenticated.
+--
+-- ROLLBACK:  select app_private.bl_sec_0330_rollback();   -- drops the twin; retell_inbound was never touched
+--
+-- CUTOVER — the order is load-bearing and step 2 is Yaseen's alone:
+--   1. deploy supabase/functions/retell-inbound-hook to prod (verify_jwt=false) + these migrations
+--   2. Yaseen repoints the Retell phone-number INBOUND webhook at .../functions/v1/retell-inbound-hook and a
+--      REAL signed delivery is observed verifying in app_private.retell_hook_log
+--   3. only then may revoking anon/authenticated on public.retell_inbound be PROPOSED
+-- Step 3 before step 2 removes the personalised greeting from every inbound call.
+--
+-- The full DDL as applied is reproduced below; see the migration history on staging for the exact three steps.
+-- Final state of the guard (after 0330c) is the only line that differs from prod's body:
+--
+--   if coalesce(nullif(current_setting('request.jwt.claims', true),'')::jsonb->>'role','') <> 'service_role' then
+--     return jsonb_build_object('call_inbound', jsonb_build_object(), 'code', 'LB403');
+--   end if;
+--
+-- followed, verbatim, by prod's body: wrong-event guard → to_number guard → withheld-number branch →
+-- 1) profiles → 2) app_private.email_brokers → 3) app_private.form_submissions → 4) NEW CALLER default.
+--
+-- TWO BUGS THE ROLLBACK TEST CAUGHT, both in the guard, neither in the copied body:
+--  1. 0330's guard had `and current_user not in ('postgres','service_role')` as an escape hatch for internal
+--     callers. Inside a SECURITY DEFINER function current_user is the FUNCTION OWNER, so that clause was true for
+--     every caller and the guard could never fire — the test's first case got the full NEW CALLER payload back
+--     as `anon`. 0330b removes the hatch: the verified JWT claim is now the only thing that decides. That is
+--     safe for the real caller, because the edge function reaches this RPC through PostgREST with the service
+--     key, so request.jwt.claims carries role=service_role.
+--  2. `current_setting('request.jwt.claims', true)::jsonb` raises 22P02 when the GUC is set but EMPTY. Still
+--     fail-closed, but a 500 carrying a Postgres error string is a worse answer than a clean refusal. 0330c
+--     wraps it in nullif(...,'').
+--
+-- A THIRD LESSON, for every anchor-guarded patch in this audit: count anchors with a LITERAL string count, not
+-- regexp_matches. 0330c's first attempt reported "anchor found 0 times" for an anchor that was plainly present,
+-- because '(' and ')' in current_setting(...) are regex metacharacters. It failed safe — but a pattern that
+-- silently matched the WRONG text would not have.
+create or replace function app_private.bl_sec_0330_rollback() returns text
+language plpgsql security definer set search_path to 'app_private, public' as $$
+begin
+  drop function if exists public.retell_inbound_verified(jsonb);
+  return 'bl_sec_0330 rolled back: retell_inbound_verified dropped. public.retell_inbound was never modified.';
+end $$;
+revoke all on function app_private.bl_sec_0330_rollback() from public, anon, authenticated;

@@ -8,94 +8,75 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 ---
 
-## CURRENT STATE  (rewrite this whole block every turn)
 
-- **Updated:** 2026-09-05 23:00 UTC by Claude
-- **Sprint 1 (boundaries) + Sprint 2 items 1–3: ALL BUILT, ALL TESTED, ALL ON PROD.** Yaseen said "go and complete all" at ~22:1x UTC after the F32 prod apply. Every item below was applied to STAGING first (or verified there earlier), tested with a rollback-txn test, then applied to PROD and the same test re-run there. No item is half-applied.
-- **Working branch:** none — Claude has no git. All files are on Yaseen's DISK, uncommitted (list at the bottom). Yaseen commits + pushes; ChatGPT must not recreate them.
-- **main at start of turn:** `d84e6d2` + Yaseen's F32 push (~22:10 UTC, sha not visible to Claude).
 
-### What is now live on PROD (all with a prod test PASS)
 
-| Item | Migration / deploy | Prod evidence |
+## CURRENT STATE — 2026-09-07 07:00 UTC (rewritten this turn)
+
+**Yaseen said "tyar sab karo" — all three prod deploys are DONE.** Nothing was revoked and nothing was switched
+to enforce. Prod is in the state where the old doors still work and the new signed doors also work.
+
+### PROD, after this turn
+
+| what | prod state | evidence |
 |---|---|---|
-| F32 P&L engine port | `bl_fin_0322_port_trip_pnl_engine` | test PASS (trip `55a9c732…` net 1450→1560); 6 carrier RPCs exist; `trip_finance_items` 0 rows; grants authenticated+service_role |
-| F30 carrier FMCSA auto-check | `bl_cmp_0324_carrier_fmcsa_collector` | test PASS; then a REAL backfill: **22 carriers now checked** (13 active, 3 inactive, 1 not-in-index error), **21 `carrier_verifications` rows `source='auto' status='pending_review'`**, 21 `carrier_safety` rows `source='fmcsa'`. Was 0 of 44 before today. |
-| F31 AI verdict persisted | `bl_cmp_0325_doc_ai_verdict` + `bl_cmp_0325b_cc_list_documents_ai_verdict` | test PASS; stamp trigger live; `doc_set_ai_verdict` write-once; anon lost all grants on `public.documents`; `cc_list_documents` returns `ai_verdict` and sorts AI-rejects first |
-| F31 client + CC + forensics | `app/shared/api.js`, `app/carrier/app.js` (4 call sites), `app/command-center/views/documents.js`, edge fn `doc-precheck` **v5** (prod slot v4, staging v5) | app.js/api.js syntax-checked; doc-precheck boots and still returns `not_authorized` to a non-user; PDF forensics unit-tested on synthetic clean/edited PDFs |
-| F01 email-ingest lockdown | edge fn `load-mail` **v8** (prod slot v6) deployed FIRST, then `bl_sec_0320_email_ingest_service_only` | test PASS: authenticated→LB403, anon→LB403, service_role→body reached, 0 rows written by refused callers, no anon/authenticated grants left |
-| F02 domain-check hardening | edge fn `domain-check` **v2**, `verify_jwt=true` (prod slot v2) | real caller (fmcsa_config anon key) → 200 full result; forged JWT → 401 at the gateway (`UNAUTHORIZED_LEGACY_JWT`); `169.254.169.254.nip.io` → `refused: resolves to private address` |
-| F05 agent-confirm resend | `bl_bp_0321_agent_confirm_resend_idem` | test PASS: 2 sends → 2 deliveries, 2 DISTINCT idempotency keys, 2 codes, exactly 1 live |
-| F07 / F18 (local build + CI) | on `main` since PR #169 | local behaviour only; CI yml still needs moving (below) |
+| `domain-check` | **v5 deployed**, slot 3, `ezbr_sha256 9a2e429dd11263e323b79bdabe270205150ed5c691ab5089caa9531abdc3de67` | live checks below |
+| `retell-hook` | **v2 deployed**, slot 1, `1b0fbaa94a68d4f1922216e3bef1ee0f41832d75018f3414b2f487b8928fd0dd`, `verify_jwt=false` | signed end-to-end chain below |
+| `bl_sec_0329` / `0329b` / `0329c` | **applied**. `allow_unsigned_webhook = TRUE` (observe) — the live Retell chain is untouched | test below |
+| `retell-inbound-hook` | **v1 deployed**, slot 1, `c45b322eff1cfa1cc3d5b89c4a4275d1ad86a889d05585fc72affe1f4468e160`, `verify_jwt=false` | live checks below |
+| `bl_sec_0330` | **applied**. `retell_inbound_verified` grants: `postgres:EXECUTE, service_role:EXECUTE` | md5 equivalence below |
+| `public.retell_inbound` | **UNCHANGED**, grants still `postgres, anon, authenticated, service_role` | deliberate — the Retell inbound webhook may still point at it |
+| `public.retell_webhook` | guarded, but the guard is inert while the flag is TRUE | |
 
-- **Migration high-water mark:** prod = `bl_bp_0321_agent_confirm_resend_idem` (newest) over `bl_sec_0320`, `bl_cmp_0325b`, `bl_cmp_0325`, `bl_cmp_0324`, `bl_fin_0322`. Staging carries the same six plus its own `bl_bp_0321b` and the other lanes' `bl_avail_0320` / `bl_bp_0323`.
-- **Edge fns:** prod `load-mail` v8 (slot 6), `domain-check` v2 (verify_jwt=true), `doc-precheck` v5 (slot 4) · staging `load-mail` v8, `domain-check` v3, `doc-precheck` v5.
-- **Three bugs the tests caught before prod (keep testing this way):**
-  1. `carrier_safety.source` has a CHECK constraint `in ('manual','fmcsa')` — `'fmcsa_auto'` was rejected on staging; the collector now writes `'fmcsa'` and clamps `safety_rating` to the allowed four values.
-  2. `org_docket()` looked at the org row, `carrier_safety` and the onboarding ref, but **carrier signup stores the docket on the OWNER'S PROFILE** — 6 of 44 prod carriers (EZHAUL, GABE, IRONCUBE, MKMI, Optimization Linx…) had it nowhere else. Added a profile fallback (2b) and made a `no_docket` row re-triable, then re-ran the backfill: +5 carriers.
-  3. The F05 throttle is on `agent_parents.sent_at`, not `verify_codes.created_at`; and `verify_codes` links via `parent_id` (no `ref_id`), emails live on `agent_parents.contact_email/fmcsa_email` (no `parent_emails`). Both noted in the test file header.
-- **New finding, not yet a fix — F33:** 27 of 44 prod carriers have **no MC/USDOT anywhere** (org, carrier_safety, owner profile, onboarding ref) — `authority_status='no_docket'`. Most look like abandoned or test signups ("Ahmed", "thomas", "Carrier Account"), but real-looking ones (GCA LOGISTICS, JB Hauling, MEDO ENTERPRISE, KST3) are in there too. They can never be auto-verified. Proposed: a CC filter "carriers with no docket on file" + a one-line ask in onboarding. Text only until Yaseen says go.
-- **Blocked on Yaseen:** commit + push the file list below; move `docs/audit-2026-09/pr-checks.yml` → `.github/workflows/`; smoke the carrier Earnings screen and the CC Documents queue in the live app; decide on deleting the dead prod edge fn `lb-tmp-keyread` (410 stub, nothing references it — Claude has no delete tool).
-- **Files on disk this turn (uncommitted):** `migrations/bl_cmp_0324_carrier_fmcsa_collector.sql`, `migrations/bl_cmp_0325_doc_ai_verdict.sql`, `migrations/bl_cmp_0325b_cc_list_documents_ai_verdict.sql`, `supabase/functions/doc-precheck/index.ts`, `app/shared/api.js`, `app/carrier/app.js`, `app/command-center/views/documents.js`, `docs/audit-2026-09/tests/bl_cmp_0324_rollback_test.sql`, `tests/bl_cmp_0325_rollback_test.sql`, `tests/bl_bp_0321_rollback_test.sql`, `tests/bl_sec_0320_rollback_test.sql`, this file, `PHASE1-AUDIT.md`, `90-DAY-PLAN.md`, `REPLY-TO-CHATGPT-continue-after-f32.md`.
-- **Do NOT touch:** other lanes' `migrations/bl_avail_0320_*`, `migrations/bl_bp_0323_*`, `docs/audit-2026-09/REVIEW-LEGAL-SEO-HARDENING-2026-09-05.md`.
-- **SEO (live GSC 08-06→09-03, pulled 09-05):** 60 clicks / 5,224 impr / pos 35.8 — best window on record; all 454 named non-brand queries have 0 clicks → position + snippets, not topics. Re-ranked calendar is in `90-DAY-PLAN.md`.
+**`bl_sec_0330` on prod was built from prod's OWN live definition**, not from a pasted copy. Verification:
+prod's `pg_get_functiondef(retell_inbound)` + the guard inserted after the single `begin
+` + the rename hashes
+to **`43b69a2488ac4a99661bd74ad82f46f9`**, and `pg_get_functiondef(retell_inbound_verified)` hashes to the same.
+**byte_identical = true.** Every branch, string and precedence rule is prod's own.
 
-## ⚠ BRANCH NOTE — read before editing this file
+### Prod evidence, all run this turn
 
-Codex committed its **"2026-09-06 — Sprint 1+2 verification"** section to branch
-`audit/s1-s2-verification-20260906` @ `9585231e18e8193a7f133617fc274a0186c38cc1`. That branch is NOT checked out
-here, so the working-tree copy of `HANDOFF.md` and `PHASE1-AUDIT.md` does not contain it. The corrective section
-below was written on the working-tree copy. **When that branch lands, MERGE the two — do not let either side
-overwrite the other.** Codex's verification findings are the reason this corrective round exists.
+**domain-check v5** — real caller `loadboot.com` → 200, response shape unchanged (req 195107).
+`0--1.sslip.io`, `169.254.169.254.nip.io`, `fe90--1.sslip.io`, `febf--1.sslip.io` and
+`0-0-0-0-0-ffff-7f00-1.sslip.io` all → `refused: resolves to private address` (195108–195112).
+Control `2606-4700--1111.sslip.io` (public IPv6) → **not refused**; it reached the network and failed on a TLS
+handshake (195113). All three former bypasses are closed on prod.
 
-## CORRECTIVE ROUND — 2026-09-06 (from Codex's verification findings) — STAGING DONE, PROD PENDING YASEEN
+**bl_sec_0329 + 0329b, one rollback-txn block → RESULT PASS on four counts:** flag TRUE → anon still works and
+still writes (proves the apply is a no-op for the live chain); flag FALSE → anon **and** authenticated both
+LB403 with **0 rows written**; flag FALSE → service_role still reaches the body; and the verifier, using the
+**real prod api_key** — a correctly signed body verifies, a forged digest and a one-space-altered body are
+rejected, `anon` gets LB403.
 
-Codex returned four findings. Claude verified all four independently against prod and the deployed sources:
-three confirmed, one had a different cause than it appeared, and a second bug was found inside F02.
+**retell-hook v2 end-to-end on prod, signed, with zero writes:** a correctly signed `call_started` whose
+from/to numbers deliberately do not match `retell_config.from_number` →
+`{"ok":true,"verified":true,"enforce":false,"reason":"signature_ok","forwarded":true,"upstream":{"ok":true,"ignored":true}}`
+(req 195128). The whole chain — verify, forward as service_role, upstream answer — works on prod **before**
+Yaseen repoints anything.
 
-| # | Finding | Verdict | Fix | Staging |
-|---|---|---|---|---|
-| A | **F30 broker regression — Claude's bug in bl_cmp_0324.** fmcsa-verify's `authority` is CARRIER authority only (`carrierAuthority = common \|\| contract`), so a broker-ONLY docket returns `authority='inactive'` + `authorityVerified=true` while operating legally. The 0324 precedence applied that to every org kind → a legitimate broker would be classified inactive → onboarding item expired, org paused, owner emailed. | CONFIRMED | `bl_cmp_0326_broker_precedence_fix` — precedence gated on `v_kind='carrier'`; the org-kind lookup moved above the classification; brokers fall through to the four pre-0324 branches unchanged | **applied + RESULT PASS** |
-| B | **F01 confused deputy.** `verify_jwt=true` accepts any valid project credential — including the PUBLIC anon key — and load-mail relayed the caller's payload to the RPCs with the service key. The guard closed direct RPC calls; the spoofing path moved one layer up. | CONFIRMED | `load-mail` **v9** — `isServiceCaller()` gate | **deployed (slot 10) + verified** |
-| C | **F02 IPv6 bypass.** `new URL("http://[::1]/").hostname === "[::1]"` — brackets never stripped, so no v6 literal ever matched. **Second bug Claude found while verifying:** the parser normalises `::ffff:127.0.0.1` → `::ffff:7f00:1`, so the v4-mapped branch missed it too. | CONFIRMED ×2 | `domain-check` **v3** — strip brackets, expand hex v4-mapped, refuse anything unclassifiable; 14 unit cases | **deployed (slot 4) + verified** |
-| D | **F31 client edits missing.** Not "never written" — written 5 Sep 22:55, then OVERWRITTEN by another lane's push (`app/carrier/app.js` on disk is now 775,865 bytes carrying the availability-card work). `documents.js` and `doc-precheck` survived. | CONFIRMED, different cause | Re-apply onto the CURRENT files — **assigned to Codex** (it has git; Claude does not, and these two files keep being clobbered) | not started |
+**bl_sec_0330 rollback test on prod → RESULT PASS, 4 cases:** anon / authenticated / empty-claims all refused
+with the empty `{"call_inbound":{}}` envelope; the four cheap branches match; the form branch returns the
+caller's own words; the broker branch keeps precedence over the form.
 
-**Blast radius of A: zero.** On prod the only two brokers the 06:10 UTC dispatch reached both returned
-`no_docket`; 0 items expired, 0 authlapse emails, 0 notifications, org statuses unchanged. No broker with a real
-docket has passed through the new collector. The race was the **06:10 UTC daily dispatch**.
+**retell-inbound-hook live on prod:** q1 valid signature → **200** with the full envelope (195120); q2 forged
+digest → **401** `digest_mismatch` (195121); q3 missing header → **401** `signature_header_unparsable` (195122);
+q4 stale by 66 minutes → **401** `timestamp_outside_skew` (195123); q5 valid signature over a different body →
+**401** `digest_mismatch` (195124). Every refusal returns the EMPTY envelope.
 
-**Staging evidence (2026-09-06):**
-- `tests/bl_cmp_0326_rollback_test.sql` → RESULT PASS: case1 broker-only = active / no pause / no email; case2 SKIPPED (env drift, below); case3 carrier verified-inactive = inactive / no pause / no email.
-- anon key → load-mail = **403 LB403** (before v9 it would have ingested). Real chain via inbound-mail = reached the function body (Gemini returned 503 on staging, an unrelated transient) — the point is it is no longer LB403.
-- domain-check: real caller 200, unchanged shape; `0--1.sslip.io` (→ ::1) and `169.254.169.254.nip.io` both `refused: resolves to private address`.
+**Prod left clean:** `lc_calls` = **112**, unchanged; **0** `bl0329-*` or `prodchain*` rows; flag still TRUE
+(observe); `retell_hook_log` holds 6 verdict rows and **no phone numbers, no bodies, no context**.
 
-**Two lessons, both of which cost a failed run today:**
-1. **Never assume a key format.** v9's first cut only accepted a legacy JWT and returned LB403 to the real
-   inbound-mail chain, because this project's `SUPABASE_SERVICE_ROLE_KEY` is an opaque `sb_secret_…` string.
-   v9 final accepts an exact match to our own env var OR a `role=service_role` JWT. Same class of mistake as
-   F02's exact-key comparison, in the opposite direction — the end-to-end chain test is what caught it.
-2. **Test every org kind a shared code path serves.** bl_cmp_0324's test covered only carriers; the broker case
-   was the regression. The 0326 test covers broker-only, lapsed-broker and carrier.
+### What is still OFF, and why
 
-**Env drift found (not ours to fix):** staging's `org_onboarding_items_status_check` has no `'expired'` value;
-prod's does. The broker-lapse branch therefore cannot run on staging at all (23514). The 0326 test detects this
-and skips that case rather than failing, so the same file runs on both envs.
+- `allow_unsigned_webhook` is **TRUE**. The old anon door to `retell_webhook` still works. That is intentional:
+  Retell is still posting there.
+- `public.retell_inbound` still has its `anon` / `authenticated` grants. Also intentional, same reason.
+- Neither can be closed until Yaseen repoints the two webhooks in the Retell dashboard and a real signed
+  delivery is seen verifying in `app_private.retell_hook_log`.
 
-
-### PROD status of the corrective round (2026-09-06, after Yaseen said "lagao")
-
-| | Prod state | Evidence |
-|---|---|---|
-| A | **APPLIED** — `bl_cmp_0326_broker_precedence_fix`, prod version `20260906125744` | pre-flight `anchor1_count=1, anchor2_count=1, already_applied=0, case2_will_run=true`; `tests/bl_cmp_0326_rollback_test.sql` on prod → **RESULT PASS: case1 broker-only = active/no-pause/no-email; case2 lapsed-broker = inactive/paused/expired/emailed (this is the leg staging cannot run); case3 carrier verified-inactive = inactive/no-pause/no-email.** Post-check `fix_live=true, items_expired_by_test=0, emails_by_test=0` |
-| B | **DEPLOYED + VERIFIED** — `load-mail` v9, prod slot 7, `ezbr_sha256 044eb611…2706e02` | live check 1 on prod: anon-key caller → HTTP **403 `{"error":"forbidden","code":"LB403"}`** (req id 192731). Check 5 (full inbound chain) NOT run on prod — it would ingest a real test-sender row; **awaiting Yaseen's yes/no** |
-| C | **NOT deployed to prod** — staging only (slot 4, verified) | held back: Codex's 2026-09-06 handoff message says no production deploy is authorized by it, which contradicts Yaseen's earlier "lagao". A and B were already on prod when that message arrived. **Prod still carries the domain-check v2 IPv6 bracket + hex v4-mapped bypass. Needs one word from Yaseen.** |
-| D | Codex — branch `audit/s2-f31-client-verdict` @ `1259d12b` (off main `7dc83e4`). Not merged, not deployed. Live upload → DB → CC verification UNKNOWN | do NOT re-edit `app/shared/api.js` / `app/carrier/app.js` |
-
-**Open discrepancy, cause UNKNOWN — do not assume a cause.** Codex observed at 07:30 UTC "M Usman Farooq (Agent)"
-pending with an EXPIRED authority item. My own post-backfill query found 0 items expired and 0 emails sent by the
-0324 dispatch/backfill, and both brokers it reached returned `no_docket`. These two observations are not yet
-reconciled; the row may pre-date the collector entirely. **Next person: query that org's
-`org_onboarding_items` history with timestamps before concluding anything.**
+### Still not covered anywhere
+The `body_not_json` → 400 branch of `retell-inbound-hook`: `pg_net` can only post a jsonb body, so a non-JSON
+raw body cannot be produced from Postgres. Code inspection only — **UNKNOWN**.
 
 
 ### Staging re-verification + domain-check v4 (2026-09-06, after Codex's fe80::/10 finding)
@@ -138,22 +119,28 @@ a decision, not as a defect — no pause, no schedule change. Nothing was touche
 ## NEXT ACTION  (one concrete step — the thing "continue" means)
 
 1. Re-sync header (main sha + new commits, `list_migrations` prod + staging, `list_edge_functions` both).
-   The campaign lane pushes several migrations a day — re-read every time.
-2. **Ask Yaseen for the prod word on C, and do nothing on prod until he answers.** Prod's `domain-check` is
-   still **v2**: it carries the bracket bypass, the hex v4-mapped bypass AND the fe80::/10 range bug. Staging
-   is on v4 and clean. When he says go: deploy `supabase/functions/domain-check/index.ts` to prod, then run
-   `tests/edge_fn_live_checks_2026-09-06.sql` checks 2,3,4,6,7,8,9 there.
-3. Also still unanswered: run live check 5 (inbound-mail → load-mail chain) on prod? It ingests one real
+2. **Waiting on Yaseen, in the Retell dashboard — this is the only thing blocking the two switches:**
+   a. point the **call / webhook** URL at `https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/retell-hook`
+   b. point the **phone number's inbound-call webhook** at
+      `https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/retell-inbound-hook`
+   Then watch: `select at, verified, reason, forwarded, event from app_private.retell_hook_log order by at desc limit 20;`
+   Real deliveries should appear with `verified=true, reason='signature_ok'`.
+3. **Only after real signed deliveries are seen** — and as two separate, reversible steps:
+   a. `update app_private.retell_config set allow_unsigned_webhook = false;`  (closes the old webhook door)
+   b. propose revoking `anon`/`authenticated` on `public.retell_inbound`      (closes the identity oracle)
+   Rollbacks: `select app_private.bl_sec_0329_rollback();` and `select app_private.bl_sec_0330_rollback();`
+4. Still unanswered from earlier: live check 5 (inbound-mail → load-mail chain) on prod — it ingests one real
    test-sender row.
-4. Reconcile the M Usman Farooq discrepancy (read-only query, no fix) — see the block above.
-5. D is Codex's: branch `audit/s2-f31-client-verdict` @ `1259d12b`. Reviewed, not edited. Do not touch
-   `app/shared/api.js` or `app/carrier/app.js`.
-6. Then, and only then, the SEO week-1 copy work from the re-ranked table in `90-DAY-PLAN.md`:
-   `market-rates.html` (meta description naming the equipment hubs, first-screen links to all 8 hubs, an
-   answer-first FTL/truckload-rates section — **do NOT retitle it**), a definition-first opener on
-   `tonu-policy.html`, a snippet fix on `ghost-loads-load-board-problems.html`. Build staging-bound.
-7. Still parked: F33 (27 carriers with no docket), the WhatsApp toggle, moving `pr-checks.yml` →
-   `.github/workflows/`, deleting the dead prod edge fn `lb-tmp-keyread`, merging Codex's two branches.
+5. Exercise the `body_not_json` → 400 branch of `retell-inbound-hook` with a client that can post arbitrary
+   bytes. Code-inspection only today.
+6. F08/F09/F18 are Codex's (branch `audit/remaining-gaps-20260906`); D is on `audit/s2-f31-client-verdict`.
+7. Then the SEO week-1 copy work from `90-DAY-PLAN.md`: `market-rates.html` (meta description naming the
+   equipment hubs, first-screen links to all 8 hubs, an answer-first FTL/truckload-rates section — **do NOT
+   retitle it**), a definition-first opener on `tonu-policy.html`, a snippet fix on
+   `ghost-loads-load-board-problems.html`. Build staging-bound.
+8. Parked: F33, WhatsApp toggle, F10 (needs the role/document matrix), deleting `lb-tmp-keyread`, merging
+   Codex's branches. Outreach stays ENABLED. The rest of F14: grep for the same shape — an unnamed
+   single-parameter SECURITY DEFINER function reachable through PostgREST with the anon key.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -169,3 +156,7 @@ a decision, not as a defect — no pause, no schedule change. Nothing was touche
 - 2026-09-06 13:00 UTC · Claude · CORRECTIVE ROUND on STAGING after Codex's verification pass (its section is on branch audit/s1-s2-verification-20260906 @ 9585231e — MERGE, do not overwrite). Verified all four findings independently: A (F30 broker precedence — my bug in bl_cmp_0324; would have paused and emailed a legitimate broker; blast radius zero; raced the 06:10 UTC cron), B (F01 load-mail confused deputy — the anon key is a valid project credential), C (F02 IPv6 bracket bypass PLUS a second bug I found: hex-normalised v4-mapped), D (F31 client edits overwritten by another lane, not missing — reassigned to Codex). Applied on staging: bl_cmp_0326 + a new 3-case test (PASS), load-mail v9 (slot 10), domain-check v3 (slot 4, 14 unit cases). v9's first cut broke the real chain by assuming a JWT key format — caught by the inbound-mail chain test, fixed to also accept the opaque sb_secret_ env value. PROD UNTOUCHED this turn.
 - 2026-09-06 13:0x UTC · Claude · PROD CORRECTIVE ROUND (Yaseen: "lagao"). A applied to prod (`bl_cmp_0326`, 20260906125744) — prod test RESULT PASS on all THREE cases including the lapsed-broker leg staging cannot run; post-check 0 items expired, 0 emails. B: load-mail v9 on prod slot 7, live check 1 → 403 LB403 (req 192731) — VERIFIED. C: domain-check v3 HELD at staging — Codex's handoff message (relayed by Yaseen mid-turn) says no prod deploy is authorized by it, which contradicts the earlier "lagao"; I stopped rather than guess, so **prod still has the IPv6 bracket bypass**. Check 5 on prod also still unanswered. Logged the unreconciled M Usman Farooq / expired-item discrepancy — cause UNKNOWN, do not assume. D reviewed only (branch audit/s2-f31-client-verdict @ 1259d12b), app.js/api.js untouched.
 - 2026-09-06 13:4x UTC · Claude · STAGING re-verification + domain-check **v4** (branch audit/s2-remaining-hardening). Re-synced: main 7dc83e4, bl_cmp_0326 on BOTH envs, staging edge fns load-mail 10 / doc-precheck 5 / domain-check now 5. A re-run on staging → RESULT PASS (case2 skipped, staging drift). B re-run on staging → RESULT PASS + live anon→load-mail 403 LB403 (req 192639). C: **Codex's fe80::/10 finding CONFIRMED and fixed** — v3's startsWith("fe80") covered only fe80::/16, so fe90/fea0/feaf/febf were all classified public. v4 replaces prefix matching with a real IPv6 parser + range checks; also fixes uncompressed loopback and adds 6to4/NAT64/v4-compatible/%zone handling. New `tests/domain_check_v4_ip_cases.mjs` — 30 cases PASS on v4, and it runs v3 alongside to show v3 getting **8 of them wrong**. Live staging: fe90--1 and febf--1 sslip hosts now refused (v3 let both through), public-IPv6 control NOT refused. Outreach left ENABLED per Yaseen's decision — recorded, untouched. **PROD UNTOUCHED: no deploy, migration, rollback, backfill or message.** Prod domain-check is still v2 and carries all three bypasses.
+- 2026-09-06 20:4x UTC · Claude · **F14 confirmed independently and fixed on staging.** Re-synced: main e2f0c75, prod newest bl_camp_0328, staging now bl_sec_0329c. Confirmed the anon-callable retell_webhook a SECOND way — plain HTTP POST with only the PUBLIC anon key returned 200 (req 193585). Established why a blind REVOKE is not available (that grant IS the live Retell chain: 112 prod lc_calls, 8 voice-call leads) and why Postgres cannot verify the signature (Retell signs the RAW body; PostgREST hands the RPC parsed jsonb). No secret invented — the signer is the existing retell_config.api_key and it never leaves the DB. Built on STAGING: bl_sec_0329 (allow_unsigned_webhook flag defaulting TRUE = no behaviour change + LB403 guard + rollback helper), bl_sec_0329b (retell_hook_verify, service_role only, 15-min replay window), bl_sec_0329c (verdict-only log), and edge fn retell-hook v1 (observe mode by default, because the signature format is doc-derived and no real delivery has been seen). Tests: bl_sec_0329_rollback_test PASS (3 cases incl. 'applying it changes nothing'), bl_sec_0329b_verify_test PASS (4 cases, real api_key), and LIVE end-to-end in enforce mode — unsigned → 401 LB401 nothing forwarded (193595), correctly signed → 200 verified:true forwarded (193596), old anon door → LB403 (193599). Staging restored to observe mode, test rows deleted. **M Usman Farooq discrepancy RESOLVED with timestamps: cron_packet_revalidation at 07:30 on a recheck_due set 2026-08-03; the collector's only touch was 06:10 and returned no_docket, wrote nothing, emailed nobody — both earlier reports were true. F30 not implicated.** Noted that Codex's reported domain-check v5 (slot 6) is NOT in the staging catalog — slot 5 is Claude's v4; flagged as UNKNOWN, not overwritten. F08/F09/F18/D left untouched. **PROD UNTOUCHED: no deploy, migration, rollback, backfill, real-sender test or message.**
+- 2026-09-07 06:0x UTC · Claude · **F14 second instance (public.retell_inbound) — service-only twin built and tested on STAGING.** Re-synced: main 6b120e9, prod newest bl_camp_0328 (unchanged), staging now bl_sec_0330c; Codex's retell-hook v2 slot 2 and domain-check v5 slot 6 both present, so the earlier version discrepancy is RESOLVED and I touched neither. Read prod's definition: it is an identity oracle — anon key + any phone number returns name/company/role/MC/DOT/equipment/trucks/lanes/home-base/status, or a broker's details, or 400 chars of what someone typed into a website form; the only gate is the PUBLISHED from_number. **Env drift: retell_inbound does not exist on staging**, so I did NOT copy the vulnerable function here — only the replacement. Built `public.retell_inbound_verified(jsonb)` (bl_sec_0330 + 0330b + 0330c), service_role-only grants, body PROVEN byte-identical to prod's by md5 (prod-def + guard + rename = 9117e4e456e16e346dd7886b6f56c1e0 = staging's own definition), plus edge fn `retell-inbound-hook` v1 (verify_jwt=false, ce940e1c…b4393ac3d) which fails CLOSED with no observe mode because this endpoint hands out personal data. Tests: bl_sec_0330_rollback_test PASS (4 cases incl. broker-over-form precedence and empty-claims refusal); live i1–i6 = 200 / 401 digest_mismatch / 401 unparsable / 401 stale / 401 tampered-body / 503 verifier-incomplete, every refusal returning the EMPTY envelope; retell_hook_log confirmed to hold zero phone numbers. i6 used a scratch-table key swap, restored and verified. **The test caught two real bugs in my own guard** — a current_user escape hatch that could never fire inside SECURITY DEFINER (anon got the full payload), and an empty claims GUC raising 22P02 instead of refusing; plus a third lesson: count anchors literally, not with regexp_matches, because '(' is a metacharacter. body_not_json→400 remains UNKNOWN live (pg_net cannot post non-JSON). **PROD UNTOUCHED: no deploy, migration, rollback, revoke, backfill, provider call or message; retell_inbound and its anon grant are exactly as they were.**
+- 2026-09-07 07:0x UTC · Claude · **ALL THREE PROD DEPLOYS DONE (Yaseen: "tyar sab karo"). Nothing revoked, nothing switched to enforce.** domain-check **v5** on prod (slot 3, 9a2e429d…3de67): real caller 200 unchanged shape, and 0--1 / 169.254.169.254 / fe90--1 / febf--1 / 0-0-0-0-0-ffff-7f00-1 all refused, public-IPv6 control NOT refused — all three bypasses closed on prod. retell-hook **v2** on prod (slot 1, 1b0fbaa9…fd0dd) + bl_sec_0329/b/c applied with allow_unsigned_webhook TRUE, so the live Retell chain is untouched; rollback test PASS on 4 counts incl. the verifier against the real prod api_key; and a SIGNED end-to-end chain call with deliberately non-matching numbers returned verified:true/forwarded:true/upstream ignored:true (req 195128) — the whole path works on prod with zero writes. retell-inbound-hook **v1** on prod (slot 1, c45b322e…8e160) + bl_sec_0330, built from PROD's OWN definition: prod-def + guard + rename md5 43b69a2488ac4a99661bd74ad82f46f9 == the created function's md5, **byte_identical=true**; grants postgres+service_role only; rollback test PASS (4 cases); live q1–q5 = 200 / 401 digest_mismatch / 401 unparsable / 401 stale / 401 tampered-body, every refusal the EMPTY envelope. Prod left clean: lc_calls still 112, 0 test rows, flag TRUE, retell_hook_log has 6 verdicts and no phone numbers. **public.retell_inbound and its anon grant are UNCHANGED** — deliberately, until Yaseen repoints the dashboard. Next: he repoints both webhooks, we watch retell_hook_log verify real traffic, THEN the two switches flip separately.
+- 2026-09-07 07:5x UTC · Claude · **URL-token fallback for the inbound hook, staging then prod.** Reason: prod's configured inbound webhook turned out to be `.../rest/v1/rpc/retell_inbound?apikey=<PUBLIC anon key>` — a secret in the URL where the secret is the public key every browser holds. So the endpoint IS live and in use, and Retell's docs still do not confirm whether the INBOUND webhook is signed. Rather than gamble on that with a fail-closed endpoint, `retell-inbound-hook` **v2** now accepts EITHER a valid signature OR `?t=<token>`; neither → 401 as before. `bl_sec_0331` adds `retell_config.inbound_hook_token` + `public.retell_inbound_token_ok(text)` (service_role only; the token never leaves the DB). **A real bug was caught on re-reading my own code and fixed by `bl_sec_0331b`:** the constant-time compare accumulated with XOR, which CANCELS — swapping any two characters of the real token would have been accepted. It now accumulates with OR, and the staging test swaps two characters specifically to prove it. Staging tests PASS (correct token 200, wrong token 401 token_mismatch, no token/no signature 401, good token + deliberately bad signature 200). Prod: bl_sec_0331 applied, a 48-char token generated, retell-inbound-hook v2 deployed (`ee72d417b8d0b9d85b843b6d4c74113485c01f7b979400b5a4a28c79e78d2ff7`), live r1/r2/r3 = 200 / 401 token_mismatch / 401. **The token is NOT written to any repo file** — it was handed to Yaseen in chat only. Rotation: update the column, change the URL, old token dies instantly. `public.retell_inbound` and its anon grant remain UNCHANGED.
