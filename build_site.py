@@ -421,7 +421,7 @@ PHONE_DISP = '+1 (469) 253-7575'
 PHONE_TEL = '+14692537575'
 # One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
 PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
- '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="+1 (928) 393-6198 on WhatsApp">' + PHONE_DISP + '</a>'
+ '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact="inline">' + PHONE_DISP + '</a>'
  '<span style="color:#94a3b8">&middot;</span>'
  '<a href="contact.html#call">or we call you &mdash; right now or scheduled &rarr;</a>'
  '</div></div></section>')
@@ -437,8 +437,8 @@ def header(active):
                       '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
-    mob = '<a href="tel:+14692537575" class="nav-mob" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="&#128172; WhatsApp us &mdash; +1 (928) 393-6198">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
-    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="&#128172; WhatsApp us&nbsp; +1 (928) 393-6198">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
+    mob = '<a href="tel:+14692537575" class="nav-mob" data-lb-contact="nav">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
+    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call" data-lb-contact="topbar">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
@@ -456,7 +456,7 @@ def footer():
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
-<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="&#128172; +1 (928) 393-6198 &middot; WhatsApp">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact="footer">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
@@ -512,21 +512,23 @@ HEADX = HEADX + _BEACON
 # The built HTML always ships the PHONE version, so search engines and the schema.org markup keep seeing the
 # number exactly as they do today. This script only rewrites the links when the live setting says "whatsapp",
 # and every element it touches carries its own replacement markup in data-lb-wa-* — the script never has to
-# guess how to rewrite a label. If the fetch fails, is slow, or JavaScript is off, the page simply stays on
+# build the label itself and writes it with textContent, so no markup can be broken by it. If the fetch
+# fails, is slow, or JavaScript is off, the page simply stays on
 # the phone version, which is the correct fallback rather than a broken one.
 # The setting is read from public.lb_contact_channel(): no parameters, no caller data, nothing that is not
 # already printed on every page.
 _CONTACT_SWITCH = ("<script>(function(){"
+  "var L={topbar:function(d){return '\\uD83D\\uDCAC WhatsApp  '+d;},"
+        "nav:function(d){return '\\uD83D\\uDCAC WhatsApp us \\u2014 '+d;},"
+        "footer:function(d){return '\\uD83D\\uDCAC '+d+' \\u00b7 WhatsApp';},"
+        "inline:function(d){return d+' on WhatsApp';}};"
   "function apply(c){try{"
-    "if(!c||c.channel!=='whatsapp')return;"
+    "if(!c||c.channel!=='whatsapp'||!c.whatsapp||!c.whatsapp.url)return;"
+    "var d=c.whatsapp.display||'',u=c.whatsapp.url;"
     "var els=document.querySelectorAll('[data-lb-contact]');"
-    "for(var i=0;i<els.length;i++){var e=els[i];"
-      "var h=e.getAttribute('data-lb-wa-href'),m=e.getAttribute('data-lb-wa-html');"
-      "if(c.whatsapp&&c.whatsapp.url)h=c.whatsapp.url;"
-      "if(h)e.setAttribute('href',h);"
-      "if(m)e.innerHTML=m;"
-      "e.setAttribute('rel','noopener');e.setAttribute('target','_blank');"
-    "}"
+    "for(var i=0;i<els.length;i++){var e=els[i];var f=L[e.getAttribute('data-lb-contact')]||L.inline;"
+      "e.setAttribute('href',u);e.setAttribute('rel','noopener');e.setAttribute('target','_blank');"
+      "e.textContent=f(d);}"
   "}catch(e){}}"
   "function go(){try{fetch('https://%s.supabase.co/rest/v1/rpc/lb_contact_channel',"
     "{method:'POST',headers:{'apikey':'%s','Content-Type':'application/json'},body:'{}'})"
@@ -649,7 +651,15 @@ def faq_block(items):
 PWA_JS = r'''
 if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;r=true;location.reload();});});}
 function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;max-width:92%';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){this.textContent='Updating…';if(w)w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
-(function(){var dp=null;function mk(){if(document.getElementById('pwaBtn'))return null;var b=document.createElement('button');b.id='pwaBtn';b.className='lb-float-ctl';b.innerHTML='&#11015; Install app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer;transition:opacity .2s ease,visibility .2s ease';b.onclick=function(){if(dp){dp.prompt();dp.userChoice.finally(function(){dp=null;});return;}location.href='/apps.html';};document.body.appendChild(b);try{if(window.lbFloatRegister)window.lbFloatRegister(b);}catch(e){}return b;}addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;mk();});/* Browsers that never fire beforeinstallprompt (iOS Safari, Firefox) still get the button -- it takes them to the install page instead of a prompt that will never come. */addEventListener('load',function(){setTimeout(function(){var b=mk();if(b&&!window.lbFloatRegister){/* dock not loaded: keep clear of the footer ourselves */addEventListener('scroll',function(){var f=document.querySelector('footer');if(!f)return;var r=f.getBoundingClientRect();b.style.opacity=(r.top<innerHeight)?'0':'1';b.style.visibility=(r.top<innerHeight)?'hidden':'visible';},{passive:true});}},1200);});})();
+(function(){function mk(){if(document.getElementById('pwaBtn'))return null;var b=document.createElement('button');b.id='pwaBtn';b.className='lb-float-ctl';b.setAttribute('aria-label','Get the LoadBoot app');b.innerHTML='&#11015; Get the app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer;transition:opacity .2s ease,visibility .2s ease';b.onclick=function(){location.href='/apps.html';};document.body.appendChild(b);try{if(window.lbFloatRegister)window.lbFloatRegister(b);}catch(e){}return b;}/* Chrome offers its own install prompt through beforeinstallprompt. We suppress the mini-infobar but never
+   fire an install from this button: nothing should download straight off the floating button. Its whole job is
+   to take the visitor to /apps.html, where the Google Play badge sits next to the iOS instructions and they can
+   see what they are getting before installing anything. */
+addEventListener('beforeinstallprompt',function(e){e.preventDefault();});addEventListener('load',function(){setTimeout(function(){var b=mk();if(!b)return;/* Keep clear of the footer ALWAYS, dock loaded or not. This used to be conditional on the float dock being
+   absent, and with the dock present nothing moved the button -- so it sat on top of the footer's legal links
+   (Terms, Delete account, Cookies, Accessibility) and hid them. Runs once on load too, not only on scroll,
+   so a short page that already shows the footer is correct before anyone scrolls. */
+function clr(){var f=document.querySelector('footer');if(!f)return;var r=f.getBoundingClientRect();var over=r.top<innerHeight;b.style.opacity=over?'0':'1';b.style.visibility=over?'hidden':'visible';}addEventListener('scroll',clr,{passive:true});addEventListener('resize',clr,{passive:true});clr();},1200);});})();
 '''
 MANIFEST = '{"name":"LoadBoot","short_name":"LoadBoot","description":"The Operating System for Trucking — sign in to your LoadBoot portal.","start_url":"/app/","scope":"/","display":"standalone","background_color":"#0F172A","theme_color":"#0F172A","icons":[{"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"/icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}'
 SW = r'''const CACHE='lb-v7';
@@ -5874,7 +5884,7 @@ def _hub_cta(portal_href, portal_label):
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="+1 (928) 393-6198 on WhatsApp">+1 (469) 253-7575</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none" data-lb-contact="inline">+1 (469) 253-7575</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div></div></section>')
 
