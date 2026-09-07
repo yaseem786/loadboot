@@ -421,7 +421,7 @@ PHONE_DISP = '+1 (469) 253-7575'
 PHONE_TEL = '+14692537575'
 # One consistent "call us / we call you" strip for decision-point pages (mobile-wraps).
 PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="call-strip">'
- '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '">' + PHONE_DISP + '</a>'
+ '&#128222; Questions? Call us 24/7: <a href="tel:' + PHONE_TEL + '" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="+1 (928) 393-6198 on WhatsApp">' + PHONE_DISP + '</a>'
  '<span style="color:#94a3b8">&middot;</span>'
  '<a href="contact.html#call">or we call you &mdash; right now or scheduled &rarr;</a>'
  '</div></div></section>')
@@ -437,8 +437,8 @@ def header(active):
                       '<div class="nav-dd-menu">%s</div></div>') % (href, 'active' if is_act else '', label, dd)
         else:
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
-    mob = '<a href="tel:+14692537575" class="nav-mob">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
-    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
+    mob = '<a href="tel:+14692537575" class="nav-mob" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="&#128172; WhatsApp us &mdash; +1 (928) 393-6198">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
+    return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="&#128172; WhatsApp us&nbsp; +1 (928) 393-6198">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
 <a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
@@ -456,7 +456,7 @@ def footer():
 <div class="foot-top">
 <div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
-<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
+<p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="&#128172; +1 (928) 393-6198 &middot; WhatsApp">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
 <div class="social"><a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9z"/></svg></a>
 <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
@@ -507,6 +507,34 @@ _BEACON = ("<script>(function(){try{"
   "window.lbSubmitLead=function(fk,d){var b=Object.assign({form_key:fk,anon_id:aid,page:location.pathname,referrer:ref,utm_source:q.get('utm_source'),utm_medium:q.get('utm_medium'),utm_campaign:q.get('utm_campaign'),oc:oc},d||{});return fetch(EP.replace('track_web_event','submit_web_form'),{method:'POST',headers:{'apikey':AK,'Content-Type':'application/json'},body:JSON.stringify({p:b})});};"
   "}catch(e){}})();</script>") % (APP_REF, APP_ANON)
 HEADX = HEADX + _BEACON
+
+# LB_CONTACT_SWITCH (2026-09-07) — one-click contact channel, no rebuild.
+# The built HTML always ships the PHONE version, so search engines and the schema.org markup keep seeing the
+# number exactly as they do today. This script only rewrites the links when the live setting says "whatsapp",
+# and every element it touches carries its own replacement markup in data-lb-wa-* — the script never has to
+# guess how to rewrite a label. If the fetch fails, is slow, or JavaScript is off, the page simply stays on
+# the phone version, which is the correct fallback rather than a broken one.
+# The setting is read from public.lb_contact_channel(): no parameters, no caller data, nothing that is not
+# already printed on every page.
+_CONTACT_SWITCH = ("<script>(function(){"
+  "function apply(c){try{"
+    "if(!c||c.channel!=='whatsapp')return;"
+    "var els=document.querySelectorAll('[data-lb-contact]');"
+    "for(var i=0;i<els.length;i++){var e=els[i];"
+      "var h=e.getAttribute('data-lb-wa-href'),m=e.getAttribute('data-lb-wa-html');"
+      "if(c.whatsapp&&c.whatsapp.url)h=c.whatsapp.url;"
+      "if(h)e.setAttribute('href',h);"
+      "if(m)e.innerHTML=m;"
+      "e.setAttribute('rel','noopener');e.setAttribute('target','_blank');"
+    "}"
+  "}catch(e){}}"
+  "function go(){try{fetch('https://%s.supabase.co/rest/v1/rpc/lb_contact_channel',"
+    "{method:'POST',headers:{'apikey':'%s','Content-Type':'application/json'},body:'{}'})"
+    ".then(function(r){return r.ok?r.json():null}).then(apply).catch(function(){});}catch(e){}}"
+  "if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',go);}else{go();}"
+  "})();</script>") % (APP_REF, APP_ANON)
+HEADX = HEADX + _CONTACT_SWITCH
+
 
 def _breadcrumb(fname, title):
     if fname == 'index.html':
@@ -621,7 +649,7 @@ def faq_block(items):
 PWA_JS = r'''
 if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){function n(w){if(w&&navigator.serviceWorker.controller)lbUpdBanner(w);}if(reg.waiting)n(reg.waiting);reg.addEventListener('updatefound',function(){var w=reg.installing;if(w)w.addEventListener('statechange',function(){if(w.state==='installed')n(w);});});setInterval(function(){reg.update();},60000);}).catch(function(){});var r=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(r)return;r=true;location.reload();});});}
 function lbUpdBanner(w){if(document.getElementById('lbUpd'))return;var b=document.createElement('div');b.id='lbUpd';b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#0b1220;color:#fff;border-radius:14px;padding:12px 14px 12px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -10px rgba(0,0,0,.5);font-family:Manrope,Arial,sans-serif;max-width:92%';b.innerHTML='<span style="font-size:14px;font-weight:600">&#128640; A new version of Loadboot is available.</span><button id="lbUpdBtn" style="background:#FC5305;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-family:inherit;font-size:13px;cursor:pointer">Update</button><button id="lbUpdX" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>';document.body.appendChild(b);document.getElementById('lbUpdBtn').onclick=function(){this.textContent='Updating…';if(w)w.postMessage({type:'SKIP_WAITING'});};document.getElementById('lbUpdX').onclick=function(){b.remove();};}
-(function(){var dp=null;addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;if(document.getElementById('pwaBtn'))return;var b=document.createElement('button');b.id='pwaBtn';b.innerHTML='&#11015; Install app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer';b.onclick=function(){dp.prompt();dp.userChoice.finally(function(){dp=null;b.remove();});};document.body.appendChild(b);});})();
+(function(){var dp=null;function mk(){if(document.getElementById('pwaBtn'))return null;var b=document.createElement('button');b.id='pwaBtn';b.className='lb-float-ctl';b.innerHTML='&#11015; Install app';b.style.cssText='position:fixed;bottom:20px;left:20px;z-index:90;background:#0883F7;color:#fff;border:none;border-radius:30px;padding:12px 18px;font-weight:700;font-family:Manrope,sans-serif;font-size:.9rem;box-shadow:0 12px 30px -8px rgba(37,99,235,.6);cursor:pointer;transition:opacity .2s ease,visibility .2s ease';b.onclick=function(){if(dp){dp.prompt();dp.userChoice.finally(function(){dp=null;});return;}location.href='/apps.html';};document.body.appendChild(b);try{if(window.lbFloatRegister)window.lbFloatRegister(b);}catch(e){}return b;}addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;mk();});/* Browsers that never fire beforeinstallprompt (iOS Safari, Firefox) still get the button -- it takes them to the install page instead of a prompt that will never come. */addEventListener('load',function(){setTimeout(function(){var b=mk();if(b&&!window.lbFloatRegister){/* dock not loaded: keep clear of the footer ourselves */addEventListener('scroll',function(){var f=document.querySelector('footer');if(!f)return;var r=f.getBoundingClientRect();b.style.opacity=(r.top<innerHeight)?'0':'1';b.style.visibility=(r.top<innerHeight)?'hidden':'visible';},{passive:true});}},1200);});})();
 '''
 MANIFEST = '{"name":"LoadBoot","short_name":"LoadBoot","description":"The Operating System for Trucking — sign in to your LoadBoot portal.","start_url":"/app/","scope":"/","display":"standalone","background_color":"#0F172A","theme_color":"#0F172A","icons":[{"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"/icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}'
 SW = r'''const CACHE='lb-v7';
@@ -3605,50 +3633,13 @@ page('privacy.html','Privacy Policy &amp; Data Practices | LoadBoot',
 # the steps to request deletion, and states what is deleted, what is kept and for how
 # long. Written to be accurate about what LoadBoot can and cannot erase — freight and
 # tax records carry legal retention duties that no request can override.
-dele = svc_hero('Delete your LoadBoot account',
-                'How to close your LoadBoot account and have your personal data deleted &mdash; what goes, what has to stay, and how long it takes.')
-dele += '''<section><div class="wrap prose reveal" style="max-width:800px">
-<p><em>Last updated: 2026.</em> This page applies to the <b>LoadBoot</b> app and to loadboot.com, both operated by <b>LoadBoot LLC</b>.</p>
-
-<h2>How to request deletion</h2>
-<p>You can request deletion in either of these ways. Both reach the same team and are handled identically.</p>
-<p><b>From the app or website:</b> sign in, open your portal, and go to <b>Settings &rarr; Account &rarr; Delete my account</b>. Confirm the request when prompted.</p>
-<p><b>By email:</b> write to <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> from the email address on your account, with the subject line <b>&ldquo;Delete my account&rdquo;</b>. Tell us your company name so we can locate the right record. If you write from a different address we will ask you to verify ownership of the account first &mdash; this protects you from someone else deleting your account.</p>
-<p>You do not need an active subscription, and there is no charge.</p>
-
-<h2>What gets deleted</h2>
-<p>Once your request is verified we permanently delete:</p>
-<ul>
-<li>Your sign-in credentials and account profile &mdash; name, email address, phone number and mailing address</li>
-<li>Documents you uploaded &mdash; operating authority, certificates of insurance, W-9, bank verification, identity documents and any other files in your compliance folder</li>
-<li>Your banking and payout details</li>
-<li>Location history recorded while you were sharing your position on an active load</li>
-<li>Driver and equipment records you entered</li>
-<li>Messages between you and LoadBoot dispatch or support</li>
-<li>Notification preferences and any saved searches</li>
-</ul>
-
-<h2>What we have to keep, and for how long</h2>
-<p>Some records cannot be erased on request because United States law requires us to retain them. We keep only what the law requires, and we do not use it for any other purpose.</p>
-<ul>
-<li><b>Completed load and trip records</b> &mdash; rate confirmations, bills of lading, proof of delivery and dispatch records. Federal motor carrier record-keeping rules require these to be retained; we hold them for <b>three years</b> from delivery.</li>
-<li><b>Financial and tax records</b> &mdash; invoices, settlements, commission payments and the tax forms attached to them. Retained for <b>seven years</b> to meet Internal Revenue Service requirements.</li>
-<li><b>Fraud and safety records</b> &mdash; where an account was suspended or removed for fraud, a minimal record is kept so the same party cannot simply re-register. Retained for <b>five years</b>.</li>
-</ul>
-<p>Where a record must be kept, we remove or replace the personal details inside it wherever the law allows, so what remains is the transaction rather than the person.</p>
-
-<h2>How long it takes</h2>
-<p>We acknowledge every request within <b>2 business days</b> and complete deletion within <b>30 days</b>. Backups are overwritten on their normal cycle, so a copy may persist in encrypted backup storage for up to <b>90 days</b> before it is gone entirely. Nobody can read or restore it from there in the ordinary course.</p>
-
-<h2>If you would rather not delete everything</h2>
-<p>You can close your account without deleting your history, or ask us to remove specific documents while keeping the account open. Tell us which you prefer and we will do that instead. If you simply want to stop hearing from us, every email we send carries a one-click unsubscribe.</p>
-
-<h2>Questions</h2>
-<p>Write to <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a> or call <b>+1 (469) 253-7575</b>. A person answers, any hour.</p>
-<p style="color:var(--muted);font-size:.9rem">See also our <a href="privacy.html">Privacy Policy</a> and <a href="terms.html">Terms of Service</a>.</p>
-</div></section>'''
-dele += final_cta()
-page('delete-account.html','Delete your account | LoadBoot','How to delete your LoadBoot account and personal data: the steps, what is deleted, what must be retained by law, and how long it takes.','delete-account.html',dele)
+# Flagship legal family (privacy / terms / security / cookies / delete-account) — see
+# legal_module.py. Claims there are checked against the real tags and the real controls.
+import legal_module as _lgm
+dele, dele_schema = _lgm.delete_account_page({})
+page('delete-account.html','Delete Your LoadBoot Account — What Is Erased and What Must Stay | LoadBoot',
+     'How to delete your LoadBoot account from the app or by email, exactly what is permanently erased, the records US law requires us to keep and for how long, and how long the whole process takes.',
+     'delete-account.html', dele, dele_schema)
 
 # Terms is a flagship page now, matching privacy.html. Built by terms_module.py, which
 # reuses privacy_module's CSS so the two legal pages read as one family. The nineteen
@@ -4893,29 +4884,13 @@ page('case-studies.html', 'Example Truck Dispatch Scenarios | Loadboot',
      'case-studies.html', cs)
 
 # ---- Security / Trust ----
-sec = svc_hero('Security &amp; Trust', 'How we protect your account, your documents and your data. Security is built into Loadboot, not bolted on.')
-sec += _sec('How we protect you', 'Security by design', _cards([
-    ('&#128274;', 'Least-privilege access', 'Every action is permission-checked on the server. Your data is scoped to your account &mdash; carriers can only ever see their own loads, trips and documents.'),
-    ('&#128193;', 'Private document storage', 'Documents live in a private store and are only ever shared through short-lived, signed links &mdash; never a public URL.'),
-    ('&#128221;', 'Full audit trail', 'Sensitive actions are recorded with a tamper-evident audit log and an event history for accountability.'),
-    ('&#127959;', 'Maker / checker on money', 'Payouts require separate people to create and approve &mdash; no single person can release funds alone.'),
-    ('&#128737;', 'Isolated environments', 'Staging and production are kept strictly separate; the public build never references internal systems.'),
-    ('&#128257;', 'Recoverable changes', 'Database changes are tracked and reversible, with documented rollback procedures.'),
-]))
-sec += _sec('How Loadboot contacts you &mdash; and what we never do',
-    'Phishing emails that fake our name do exist. Here is how to tell them apart in five seconds.', _cards([
-    ('&#128273;', 'We never ask for your password', 'Not by email, not by text, not on a call &mdash; ever. Loadboot staff cannot see your password and will never ask you to &ldquo;confirm&rdquo;, &ldquo;reactivate&rdquo;, &ldquo;re-sync&rdquo; or &ldquo;verify&rdquo; one.'),
-    ('&#9993;', 'Our mail only comes from @loadboot.com', 'Real Loadboot email ends in <b>@loadboot.com</b> &mdash; nothing else. Check the actual address, not the display name: anyone can put &ldquo;LoadBoot&rdquo; in front of a random Gmail address.'),
-    ('&#128279;', 'Never log in from an email link', 'If a message wants you to sign in, close it and type <b>loadboot.com</b> in your browser yourself, then use the portal. That single habit defeats almost every phishing attempt.'),
-    ('&#9888;', 'What we do email you about', 'Load offers, rate confirmations, documents, settlements and account notices. We never send &ldquo;your mailbox is full&rdquo;, &ldquo;your password expires today&rdquo; or &ldquo;your account will be deleted in 24 hours&rdquo; &mdash; those are always fake.'),
-    ('&#128176;', 'We never change payment details by email', 'Banking or factoring changes are only ever made by you inside the portal. An email asking you to update where your money goes is fraud, no matter who it looks like it is from.'),
-    ('&#128231;', 'Forward it, do not click it', 'Not sure? Forward the message to <a href="mailto:security@loadboot.com">security@loadboot.com</a> and we will tell you within the day. Never click the button first.'),
-]))
-sec += '<section><div class="wrap prose reveal" style="max-width:820px"><h2>What we do on our side</h2><p>Our domain publishes <b>SPF</b>, <b>DKIM</b> and a <b>DMARC</b> policy, so mail providers can detect and refuse email that forges a loadboot.com address. That stops most spoofing before it ever reaches you &mdash; but it cannot stop a lookalike domain or a fake display name, which is why the five rules above matter.</p></div></section>'
-sec += '<section class="bg-soft"><div class="wrap prose reveal center" style="text-align:center"><h2>Report a security concern</h2><p>Found something? Email <a href="mailto:security@loadboot.com">security@loadboot.com</a> and we will respond promptly.</p></div></section>'
-page('security.html', 'Security &amp; Trust at Loadboot | How We Protect Your Data',
-     'How Loadboot protects your account and documents: least-privilege access, private document storage, full audit trails and maker/checker payouts.',
-     'security.html', sec)
+# Flagship legal family (privacy / terms / security / cookies / delete-account) — see
+# legal_module.py. Claims here are checked against the real tags and the real controls.
+import legal_module as _lgm
+sec, sec_schema = _lgm.security_page({})
+page('security.html','Is LoadBoot Safe? Security, Fraud &amp; Phishing Protection | LoadBoot',
+     'How LoadBoot protects your documents, your account and your payouts — the specific controls, how to spot a fake LoadBoot email, and where to report anything suspicious.',
+     'security.html', sec, sec_schema)
 
 # ---- System Status ----
 st = svc_hero('System Status', 'Live status for the Loadboot website, carrier portal, driver app and API. We publish issues here honestly.')
@@ -5862,11 +5837,10 @@ if _IND_PAGES:
 
 
 # ---- Cookie Policy ----
-ck = svc_hero('Cookie Policy', 'How Loadboot uses cookies and similar technologies, and the choices you have.')
-ck += '<section><div class="wrap prose reveal"><h2>What cookies we use</h2><p>We use a small number of cookies and local-storage items to keep the site working and to understand, in aggregate, how it is used. These fall into two groups: <b>essential</b> items that make the site and your account function, and <b>analytics</b> items that help us improve pages and measure conversions.</p><h2>Analytics</h2><p>We use first-party analytics and Google Analytics to understand traffic and page performance. You can flag your browser as internal/excluded, and you can block analytics cookies in your browser settings without breaking the site.</p><h2>Your choices</h2><p>You can clear or block cookies in your browser at any time. Essential items are required for signed-in features (like your carrier account) to work. For questions, email <a href="mailto:privacy@loadboot.com">privacy@loadboot.com</a>.</p><p style="color:var(--muted);font-size:.9rem">See also our <a href="privacy.html">Privacy Policy</a>.</p></div></section>'
-page('cookies.html', 'Cookie Policy | Loadboot',
-     'How Loadboot uses essential and analytics cookies, and the choices you have to manage them.',
-     'cookies.html', ck)
+ck, ck_schema = _lgm.cookies_page({})
+page('cookies.html','Cookie Policy — Every Tag We Load, Named | LoadBoot',
+     'Every cookie and tracking tag on loadboot.com listed by name, what each stores and for how long, why the signed-in portals carry none of them, and how to switch any of it off.',
+     'cookies.html', ck, ck_schema)
 
 # ---- Accessibility ----
 acc = svc_hero('Accessibility', 'We want every carrier to be able to use Loadboot. Here is our commitment and how to reach us if something is not working for you.')
@@ -5900,7 +5874,7 @@ def _hub_cta(portal_href, portal_label):
             '<div class="hub-cta-t"><h3>Create your free account</h3>'
             '<p>Just the basics &mdash; about 2 minutes. Verification, documents and the rest of onboarding happen step-by-step inside your portal.</p>'
             '<div class="hub-cta-pills"><span>&#9201;&#65039; 2 minutes</span><span>&#128179; No card needed</span><span>&#128209; No contracts</span></div>'
-            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none">+1 (469) 253-7575</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
+            '<p style="color:#9fb3cc;font-size:.85rem;margin:12px 0 0">&#128222; Prefer to talk first? <a href="tel:+14692537575" style="color:#fff;font-weight:800;text-decoration:none" data-lb-contact data-lb-wa-href="https://wa.me/19283936198" data-lb-wa-html="+1 (928) 393-6198 on WhatsApp">+1 (469) 253-7575</a> &mdash; 24/7, or <a href="contact.html#call" style="color:#FC5305;font-weight:800">we call you &rarr;</a></p></div>'
             '<a href="' + portal_href + '" class="btn btn-primary hub-cta-btn">' + portal_label + '</a>'
             '</div></div></section>')
 

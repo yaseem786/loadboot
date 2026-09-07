@@ -1,5 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
+// domain-check v5 (audit F02, 2026-09-06): strict IPv6 syntax before classification.
+// Compression must replace at least one word; a dotted quad must be final and decimal.
+// The regression suite now evaluates this source instead of a copied implementation.
 // domain-check v4 (audit F02 follow-up, 2026-09-06) — completes the IPv6 classifier: link-local is fe80::/10
 //   (fe80 THROUGH febf) and v3 only matched fe80::/16, so fe90::1 / fea0::1 / febf::1 all passed as public.
 //   Found by Codex. v4 replaces prefix matching with a real address parser + numeric range checks, which also
@@ -56,6 +59,11 @@ function v6Words(h: string): number[] | null {
   // this is now a real parser instead of prefix matching.
   const parts = h.split("::");
   if (parts.length > 2) return null;
+  if (h.includes(".")) {
+    const dotted = h.slice(h.lastIndexOf(":") + 1);
+    if (!/^(?:0|[1-9]\d{0,2})(?:\.(?:0|[1-9]\d{0,2})){3}$/.test(dotted)) return null;
+    if (h.slice(0, h.lastIndexOf(":") + 1).includes(".")) return null;
+  }
   const expand = (arr: string[]): number[] | null => {
     const out: number[] = [];
     for (const g of arr) {
@@ -77,7 +85,7 @@ function v6Words(h: string): number[] | null {
   const tail = expand(parts[1] ? parts[1].split(":") : []);
   if (tail === null) return null;
   const fill = 8 - head.length - tail.length;
-  if (fill < 0) return null;
+  if (fill < 1) return null;
   return head.concat(new Array(fill).fill(0), tail);
 }
 function ipIsPrivate(ip: string): boolean {
