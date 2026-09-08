@@ -659,7 +659,12 @@ addEventListener('beforeinstallprompt',function(e){e.preventDefault();});addEven
    absent, and with the dock present nothing moved the button -- so it sat on top of the footer's legal links
    (Terms, Delete account, Cookies, Accessibility) and hid them. Runs once on load too, not only on scroll,
    so a short page that already shows the footer is correct before anyone scrolls. */
-function clr(){var f=document.querySelector('footer');if(!f)return;var r=f.getBoundingClientRect();var over=r.top<innerHeight;b.style.opacity=over?'0':'1';b.style.visibility=over?'hidden':'visible';}addEventListener('scroll',clr,{passive:true});addEventListener('resize',clr,{passive:true});clr();},1200);});})();
+/* Two rules decide whether the button is on screen, and the footer one always wins:
+   1. footer in view -> hidden, so it can never sit on top of the legal links again;
+   2. reading downwards -> hidden, because a fixed button parked over the middle of the page covers body
+      text (it was sitting on a card paragraph on the home page). Scrolling back up brings it straight back,
+      which is when someone is looking for a control rather than reading. Near the top it is always shown. */
+var lastY=window.pageYOffset||0,shown=true;function show(v){if(v===shown)return;shown=v;b.style.opacity=v?'1':'0';b.style.visibility=v?'visible':'hidden';}function clr(){var f=document.querySelector('footer');var y=window.pageYOffset||0,d=y-lastY;if(Math.abs(d)>4)lastY=y;if(f&&f.getBoundingClientRect().top<innerHeight){show(false);return;}if(y<80){show(true);return;}if(d>4){show(false);}else if(d<-4){show(true);}}addEventListener('scroll',clr,{passive:true});addEventListener('resize',clr,{passive:true});clr();},1200);});})();
 '''
 MANIFEST = '{"name":"LoadBoot","short_name":"LoadBoot","description":"The Operating System for Trucking — sign in to your LoadBoot portal.","start_url":"/app/","scope":"/","display":"standalone","background_color":"#0F172A","theme_color":"#0F172A","icons":[{"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"/icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}'
 SW = r'''const CACHE='lb-v7';

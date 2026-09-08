@@ -549,3 +549,64 @@ no bodies, no context**.
 
 Rollbacks stay available throughout: `select app_private.bl_sec_0329_rollback();` and
 `select app_private.bl_sec_0330_rollback();`
+
+## F34 (new, P3 latent) — the live-chat visitor key was a bearer secret guarded to two different standards
+
+Found while sweeping the rest of F14 on 2026-09-07.
+
+### The sweep first, because it bounds the problem
+The exact shape both F14 instances had — **SECURITY DEFINER, granted to anon, single UNNAMED parameter** (which
+is what makes PostgREST expose it as a raw-body RPC) — was queried across the whole prod catalog. It returns
+**exactly two functions: `retell_webhook` and `retell_inbound`**, both already handled. That shape is exhausted.
+
+Widening to *all* anon-executable SECURITY DEFINER functions gives **33**. Most are public by design (the load
+board, market rates, announcements, feature flags, web forms, tracking) or gated by an unguessable uuid token
+(`lb_email_claim_get`, `lb_email_ping_get`, `partner_claim_get`, `partner_agent_confirm*`, `outreach_unsubscribe`,
+`eld_ingest`). The interesting group is the live-chat family, which is gated not by a token but by a
+**visitor key the browser mints for itself**.
+
+### The finding
+
+That key is a bearer secret — present it and you get that visitor's data:
+
+| function | returns | key check |
+|---|---|---|
+| `lc_history(p_visitor_key)` | last 10 conversations + first-message previews | length **16–64** |
+| `lc_ob_get(p_visitor_key)` | onboarding record: role, step, free-form `data`, `docs`, **`account_email`** | length **≥ 8** |
+
+Eight characters is not a secret, and the weaker guard sits on the more personal record.
+
+The key itself was also weaker than it looked. `build_site.py` minted it with `Math.random()`, and the
+storage-failure path returned:
+
+```
+'novkey' + Date.now().toString(36) + 'xxxxxxxx'
+```
+
+which is **fully predictable from the clock** — no randomness at all. A browser with localStorage blocked
+(private windows, some corporate policies) got that key, and anyone who knew roughly when that visitor used the
+site could enumerate it and read their chat history and onboarding record.
+
+### Evidence that this is latent, not an incident
+
+Prod, read-only, 2026-09-07: **67 `lc_conversations` and 1 `lc_onboarding` row; ZERO with a `novkey` prefix; the
+shortest `visitor_key` in use is 26 characters.** The predictable path has never been taken in production. That
+is why this is filed P3 latent rather than as an exposure — and it is also why raising the floor locks out
+nobody who exists today.
+
+### The fix (staging, plus the site change)
+
+- `bl_sec_0334` — `lc_ob_get`'s floor goes 8 → **16–64**, matching `lc_history`, and the `novkey` prefix is
+  refused outright so a key minted by the old fallback can never be replayed. Nothing else about the function
+  changes. **Staging applied; prod not applied.**
+- `build_site.py` — the key now comes from `crypto.getRandomValues` (24 bytes → 192 bits, hex, 49 chars) and the
+  storage-failure path **stays random** instead of falling back to a fixed pattern. Verified: 49 chars (inside
+  the 16–64 window), charset `v[0-9a-f]{48}`, 5000 generated keys all unique.
+- `tests/bl_sec_0334_rollback_test.sql` → **RESULT PASS**, 4 cases. Case 1 is deliberately first: a real,
+  properly-minted key must still work — a guard that locks out the people it protects is not a fix.
+
+### What is NOT changed, and why
+`lc_history`'s own 16–64 floor was already correct and is untouched. The other live-chat functions
+(`lc_send`, `lc_poll`, `lc_rate`, `lc_ob_save`, `lc_start`) take the same key but write rather than read a
+profile; they were not part of this change and have not been reviewed against this standard yet — that is the
+next slice of F14, and it is open.

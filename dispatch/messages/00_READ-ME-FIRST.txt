@@ -1,0 +1,60 @@
+MUNSTER DISPATCH - MESSAGE FILES
+======================================================================
+
+Why these exist: a spreadsheet cell that holds several lines does not
+copy cleanly - Excel and Google Sheets wrap it in quote marks, or paste
+it as a table. These plain text files do not have that problem.
+
+HOW TO USE
+  1. Double-click the file you need. It opens in Notepad.
+  2. Ctrl+A, then Ctrl+C.
+  3. Paste into your email or the 123Loadboard message box.
+  4. Replace anything in [SQUARE BRACKETS].
+
+Files ending 1-MESSAGE are the board message or the phone script.
+Files ending 2-EMAIL carry the TO address and SUBJECT at the top.
+
+Nothing here has been sent to any broker. You send all of it.
+
+FILES
+----------------------------------------------------------------------
+01_L10_Freightwatch-LLC_1-MESSAGE.txt
+    L10 - Freightwatch, LLC - board message / phone script
+01_L10_Freightwatch-LLC_2-EMAIL.txt
+    L10 - Freightwatch, LLC - email
+02_L3-FINAL_Venture-Connect-LLC_1-MESSAGE.txt
+    L3 FINAL - Venture Connect LLC - board message / phone script
+02_L3-FINAL_Venture-Connect-LLC_2-EMAIL.txt
+    L3 FINAL - Venture Connect LLC - email
+03_L4-FINAL_Venture-Connect-LLC_1-MESSAGE.txt
+    L4 FINAL - Venture Connect LLC - board message / phone script
+03_L4-FINAL_Venture-Connect-LLC_2-EMAIL.txt
+    L4 FINAL - Venture Connect LLC - email
+04_L2_Warren-Transport-Inc_1-MESSAGE.txt
+    L2 - Warren Transport, Inc. - board message / phone script
+04_L2_Warren-Transport-Inc_2-EMAIL.txt
+    L2 - Warren Transport, Inc. - email
+05_L8_Whitewater-Freight-Inc_1-MESSAGE.txt
+    L8 - Whitewater Freight Inc - board message / phone script
+05_L8_Whitewater-Freight-Inc_2-EMAIL.txt
+    L8 - Whitewater Freight Inc - email
+06_L5_Fenichey-LLC_1-MESSAGE.txt
+    L5 - Fenichey LLC - board message / phone script
+06_L5_Fenichey-LLC_2-EMAIL.txt
+    L5 - Fenichey LLC - email
+07_L6_Fifth-Wheel-Freight_1-MESSAGE.txt
+    L6 - Fifth Wheel Freight - board message / phone script
+07_L6_Fifth-Wheel-Freight_2-EMAIL.txt
+    L6 - Fifth Wheel Freight - email
+08_L9_Fifth-Wheel-Freight_1-MESSAGE.txt
+    L9 - Fifth Wheel Freight - board message / phone script
+08_L9_Fifth-Wheel-Freight_2-EMAIL.txt
+    L9 - Fifth Wheel Freight - email
+09_L1_Transportation-Express_1-MESSAGE.txt
+    L1 - Transportation Express American Motorways Inc. - board message / phone script
+09_L1_Transportation-Express_2-EMAIL.txt
+    L1 - Transportation Express American Motorways Inc. - email
+10_L7_Joe-Tex-Inc_1-MESSAGE.txt
+    L7 - Joe Tex, Inc. - board message / phone script
+10_L7_Joe-Tex-Inc_2-EMAIL.txt
+    L7 - Joe Tex, Inc. - email

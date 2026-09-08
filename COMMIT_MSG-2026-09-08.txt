@@ -1,0 +1,72 @@
+Carrier reminders: one decision tree, a manual push button in CC, and a nightly job
+
+Every active carrier now resolves to exactly one reminder, decided server-side in
+app_private.reminder_for_carrier(). The checks run hardest-blocker-first, so the
+rule that matters is structural rather than incidental: a carrier who added a
+DRIVER first and still has no truck gets the truck email and can never receive
+the driver email.
+
+  onboarding not finished  -> nothing (cc_run_onboarding_reminders owns them)
+  no truck                 -> truck_continue (draft open) / truck_add
+  trucks but none usable   -> truck_continue   (no VIN / no payload)
+  usable truck, no driver  -> driver_add
+  fleet ready              -> avail_confirm / avail_continue / avail_start
+  confirmed in last 24h    -> nothing
+
+Verified on staging with a 14-case truth table before production. Two real
+defects were found by that test and are fixed here:
+
+* The fleet-ready branch ran BEFORE the incomplete-truck branch, so a carrier
+  whose only truck had no VIN and no payload was told to go post availability —
+  a truck that cannot be dispatched. Reordered.
+
+* The audience joined organization_memberships without collapsing to one person
+  per carrier, so a carrier with two members appeared twice and the actual
+  recipient was decided by join order. A driver account could end up being the
+  one person told to go fix the fleet. The idempotency key hid it: one email
+  went out, just not reliably to the right person. Now exactly one recipient per
+  carrier, preferring the account owner.
+
+Measured on production first (46 active carriers): 30 are 'not_started' in
+document onboarding with no verified COI. trg_fleet_truck_coi_gate refuses to
+insert a truck without a verified COI (LB004), so "add your first truck" would
+have sent those 30 to a form that turns them away — while the 14:00 UTC
+onboarding cron is already emailing them about documents. They are now silent
+here. Real target set: 10 carriers.
+
+Sender identity is pinned in meta.category rather than inferred: the keys are
+carrier.reminder.*, and delivery-worker's DISPATCH_RE matches both "carrier" and
+"driver", which is the same trap its own v10 note describes.
+
+Guard rails on both the button and the cron, because they call one function:
+marketing opt-out, suppression list, cadence (availability once a day; onboarding
+stops after 4 nudges, 3 days apart), one queue per carrier per reminder per day,
+and a missing template SKIPS the carrier instead of sending something wrong.
+
+The nightly job lb-carrier-reminders (15:00 UTC, an hour after the onboarding
+cron) is registered on both databases and left DISABLED. Nothing reaches a real
+carrier until the six emails have been reviewed and it is switched on:
+  select cron.alter_job(
+    (select jobid from cron.job where jobname='lb-carrier-reminders'), active := true);
+
+Frontend
+  app/command-center/views/carrierReminders.js   new — Templates > Carrier reminders
+  app/command-center/app.js                      tab + route
+  app/shared/api.js                              reminder + form-progress wrappers
+  app/carrier/app.js                             abandoned-form telemetry on the
+                                                 availability, truck and driver forms
+                                                 (fire-and-forget, rate limited, can
+                                                 never block a form)
+
+Migrations (applied to staging and production)
+  bl_rem_0330  form_progress, reminder_log, cadence, cc_form_progress_ping/done
+  bl_rem_0331a app_private.html_to_text — derives the text/plain half from the HTML
+  bl_rem_0331  the six carrier.reminder.* templates
+  bl_rem_0332  the decision tree
+  bl_rem_0333_0334  reminder_dispatch / cc_reminder_send / cc_reminder_targets /
+                    reminder_cron, one recipient per carrier
+  bl_rem_0336  pin the sender identity (recorded in Supabase as bl_rem_0335,
+               renumbered in the repo because bl_mail_0335 already exists)
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NLBisLFyx9zVgJDMVRxc9M

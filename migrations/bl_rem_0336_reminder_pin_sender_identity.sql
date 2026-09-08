@@ -1,0 +1,28 @@
+-- bl_rem_0336_reminder_pin_sender_identity
+--
+-- delivery-worker picks the sender identity from the template key when meta.category
+-- is not set. Our keys are 'carrier.reminder.*', and DISPATCH_RE contains both
+-- "carrier" and "driver" — so these would land on dispatch@loadboot.com by accident
+-- rather than by decision. That is the same class of bug the worker's own v10 note
+-- describes (outreach.carrier.1 matching "carrier" and going out from dispatch@).
+--
+-- dispatch@ IS the right identity here: these are operational nudges to a signed-up,
+-- verified carrier, and the copy signs off as "The LoadBoot Dispatch Team". They are
+-- not cold acquisition, so they must not use the marketing subdomain.
+--
+-- So: state it. meta.category = 'dispatch' is checked first by categoryOf(), which
+-- means a future edit to DISPATCH_RE cannot silently move these emails to a
+-- different From address.
+--
+-- The unsubscribe footer is unaffected and stays: source = 'campaign' still marks
+-- these as opt-outable, which is correct — reminder_dispatch already honours
+-- comm_preferences.marketing_email before queueing anything.
+--
+-- The full function body is the one in bl_rem_0333_0334, which now carries the
+-- pinned category. This file exists so the two databases have the same migration
+-- history; applying either one leaves the same function in place.
+--
+-- Numbering note: this was applied to both databases under the name
+-- bl_rem_0335 before bl_mail_0335 was noticed in the repo. The sequence is
+-- global across feature prefixes, so the FILE is 0336 and the Supabase
+-- migration history still reads bl_rem_0335. Same SQL, one name.

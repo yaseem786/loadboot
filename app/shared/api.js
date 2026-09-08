@@ -571,6 +571,24 @@ export const createTrip = (o = {}) => rpc('cc_create_trip', {
 export const advanceTrip = (tripId, status, note, location) => rpc('cc_advance_trip', { p_trip: tripId, p_status: status, p_note: note ?? null, p_location: location ?? null });
 export const addTripNote = (tripId, note, location) => rpc('cc_add_trip_note', { p_trip: tripId, p_note: note, p_location: location ?? null });
 
+// ---- Shared mailbox (bl_mail_0335) ----
+// Inbound mail ingested by cc_mail_ingest, surfaced in the CC Mailbox (#mailbox).
+// NOTE ON SENDING: mailDraftSave only ever writes a draft — it never puts mail on the wire.
+// mailSend is the single call that does, and the server gates it on comm.manage. Do not
+// "simplify" these two into one function.
+export const mailStats = () => rpc('cc_mail_stats');
+export const mailList = (o = {}) => rpc('cc_mail_list', {
+  p_limit: o.limit ?? 50,
+  p_mailbox: o.mailbox ?? null,
+  p_search: o.search ?? null,
+  p_before: o.before ?? null,
+});
+export const mailThread = (thread, markRead = true) => rpc('cc_mail_thread', { p_thread: thread, p_mark_read: markRead !== false });
+export const mailMark = (thread, read = true) => rpc('cc_mail_mark', { p_thread: thread, p_read: read !== false });
+export const mailDraftSave = (thread, bodyHtml) => rpc('cc_mail_draft_save', { p_thread: thread, p_body_html: bodyHtml });
+export const mailDraftDiscard = (thread) => rpc('cc_mail_draft_discard', { p_thread: thread });
+export const mailSend = (draftId) => rpc('cc_mail_send', { p_draft_id: draftId });
+
 // ---- Wave 4 Communications (flag: comms_enabled) ----
 export const commOverview = () => rpc('cc_comm_overview');
 export const listThreads = (o = {}) => rpc('cc_list_threads', { p_status: o.status ?? null, p_search: o.search ?? null, p_limit: o.limit ?? 200 });
@@ -599,6 +617,20 @@ export const cmpList = () => rpc('cc_cmp_list');
 export const cmpSave = (o = {}) => rpc('cc_cmp_save', { p_id: o.id || null, p_name: o.name, p_objective: o.objective || null, p_audience: o.audienceId || null, p_template: o.templateKey || null, p_channels: o.channels ?? ['push'], p_subject: o.subject ?? null, p_body: o.body ?? null, p_scheduled_at: o.scheduledAt || null, p_status: o.status || 'draft' });
 export const cmpSetStatus = (id, status) => rpc('cc_cmp_set_status', { p_id: id, p_status: status });
 export const cmpMarkSent = (id, count) => rpc('cc_cmp_mark_sent', { p_id: id, p_count: count });
+// ---- Carrier reminders (bl_rem_0330..0336) ----
+// One server-side decision tree per carrier: no truck -> finish/add truck; truck not
+// usable -> finish truck; usable truck but no driver -> add driver; fleet ready ->
+// post or confirm availability. The truck branches are checked first, which is why a
+// carrier who added a driver first and still has no truck never gets the driver email.
+export const reminderTargets = () => rpc('cc_reminder_targets');
+// keys: null = every reminder type. dryRun true returns who WOULD be mailed and sends nothing.
+// ignoreCadence bypasses the 20h / 3-day gaps — reserve it for a deliberate one-off.
+export const reminderSend = (keys = null, dryRun = true, ignoreCadence = false) =>
+  rpc('cc_reminder_send', { p_keys: keys, p_dry_run: dryRun, p_ignore_cadence: ignoreCadence });
+// Carrier-side telemetry: which multi-field forms were opened and abandoned.
+export const formProgressPing = (form, fields = 0) => rpc('cc_form_progress_ping', { p_form: form, p_fields: fields });
+export const formProgressDone = (form) => rpc('cc_form_progress_done', { p_form: form });
+
 // ---- Unified Delivery Engine (cvb/cvc/cvd) — preview → confirm → enqueue → claim → mark ----
 // Dry-run: returns { campaign, channel, audience_total, after_consent, suppressed, final_recipients, sample, excluded_no_consent }.
 export const campaignAudiencePreview = (campaignId) => rpc('cc_campaign_audience_preview', { p_campaign: campaignId });

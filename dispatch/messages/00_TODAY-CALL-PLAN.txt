@@ -1,0 +1,77 @@
+MUNSTER - TUESDAY 8 SEPTEMBER - CALL PLAN
+======================================================================
+
+WHY NOBODY ANSWERED AT 05:40
+Brokerage desks run roughly 8 AM to 5 PM local. At 05:40 Eastern the Ohio
+and Michigan offices were shut, and Joe Tex (Texas) and Transportation
+Express (Nebraska) were rung at 04:40 their time. Nothing is broken.
+
+Only ONE opening time below is confirmed - Venture Connect told you on the
+phone to call after 7 AM. Every other time is inferred from the area code
+and normal broker hours, so treat them as best guesses.
+
+----------------------------------------------------------------------
+07:00 ET   VENTURE CONNECT        (317) 854-5027      [CONFIRMED]
+----------------------------------------------------------------------
+  The decision call. An AI screens the line first, so when you reach a
+  person say straight away: "I need someone who can change an appointment
+  and quote me a fine amount - the front desk last night couldn't."
+
+  Two questions, in this order:
+    1. What is the AMOUNT of the late-delivery fine? (Asked 4 times by
+       email, never answered. No number = no load.)
+    2. Can the L4 Selmer pickup be at the 1100 end of your window?
+
+  Then: "$1,025 and it's covered." Do not go below that.
+  On L3 Stanhope: only if they move the pickup to 1100 or the delivery
+  to 1100-1200. Otherwise it cannot be run legally. Let it go.
+
+----------------------------------------------------------------------
+07:30 ET   FREIGHTWATCH           (419) 845-5250      [inferred, OH]
+----------------------------------------------------------------------
+  The best load on the board and STILL UNTOUCHED. Send the board message
+  and place the $1,300 bid BEFORE you dial, so all three channels are live.
+
+  FIRST QUESTION: what is the overall LENGTH of the steel stair system?
+  The posting leaves it blank. Over 30 ft = automatic no, stop there.
+  Then $1,300. Picks up tomorrow, so it is not on today's clock.
+
+----------------------------------------------------------------------
+08:00 ET   FIFTH WHEEL FREIGHT    (616) 965-7277      [inferred, MI]
+----------------------------------------------------------------------
+  ext 8530 for L6 at $1,300, then ext 8550 for L9 at $2,000 - SAME call,
+  do not ring twice. The real goal is getting the truck on their list.
+
+08:00 ET   WHITEWATER FREIGHT     (812) 637-1720      [inferred, IN]
+  Not about today's load. Get on their partial-freight list.
+
+----------------------------------------------------------------------
+09:00 ET   TRANSPORTATION EXPRESS (402) 564-6375      [inferred, NE 08:00]
+----------------------------------------------------------------------
+  The repair call. Open by owning the missed 24 Aug callback. Then ask
+  the rate on L1 - it is not posted.
+
+09:00 ET   JOE TEX                (903) 537-7100      [inferred, TX 08:00]
+  Ask for ANGIE by name. Two calls have died in their IVR.
+
+09:00 ET   WARREN TRANSPORT       (800) 206-7980      [inferred, IA 08:00]
+  Low priority. Only: what length and weight is ref 1181425 really?
+
+======================================================================
+DEPARTURE DEADLINES - when Justin has to be rolling
+======================================================================
+  Leave 08:50  ->  loads 1100  ->  L4 Selmer, full HOS margin. Best case.
+  Leave 09:50  ->  loads 1200  ->  L4 still fine. L3 only if clock moves.
+  Leave 10:50  ->  loads 1300  ->  L4, split run now mandatory.
+  Leave 11:50  ->  loads 1400  ->  LAST CHANCE. Window shuts.
+
+  Deadhead New Richmond OH -> Shelbyville IN is 92 mi, about 2 hours.
+
+======================================================================
+AND THIS IS WHY NONE OF IT IS WORTH PANICKING OVER
+======================================================================
+  Freightwatch (L10) picks up TOMORROW. It is ranked first, pays about
+  $400 more than L4 over near-identical miles, and carries no fine.
+
+  If Venture never comes good today, nothing has actually been lost.
+  Do not accept a bad number just because the clock is running.

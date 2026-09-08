@@ -37,6 +37,7 @@ const NAV = [
   { group: 'Money & Customers', items: [
     { path: '/finance', label: 'Finance', icon: 'doc', perm: 'finance.view', flag: 'finance' },
     { path: '/live-chat', label: 'Live chat', icon: 'bell', perm: 'any:comm.view,support.view,dispatch.manage' },
+    { path: '/mailbox', label: 'Mailbox', icon: 'doc', perm: 'comm.view' },
     { path: '/support', label: 'Support tickets', icon: 'bell', perm: 'support.view', flag: 'support' },
     { path: '/crm', label: 'CRM & outreach', icon: 'trend', perm: 'crm.view', flag: 'crm' },
     { path: '/forms', label: 'Forms', icon: 'bell', perm: 'forms.view', flag: 'forms' },
