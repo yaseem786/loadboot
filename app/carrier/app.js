@@ -36,10 +36,56 @@ import {
   laneRate, fuelPricesGet, deviceSeen, myDevices, facilityReviewSubmit, facilityRatings,
 } from '../shared/api.js';
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
+import { setPostingHos } from '../shared/api.js';
+import { formProgressPing, formProgressDone } from '../shared/api.js';
 import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
 import { docTrustBadge, mountDocTrust } from '../shared/ui/docTrust.js';
+import { attachDraft, attachDraftToContainer, draftBanner } from '../shared/ui/formDraft.js';
+
+// ---- abandoned-form telemetry (bl_rem_0330) --------------------------------
+// The reminder decision tree needs to tell "never started" apart from "started and
+// walked away", because those two deserve different emails. The draft in
+// localStorage only lives on this device, so the fact that a form was OPENED is
+// pinged to the server as well. Deliberately fire-and-forget and rate limited:
+// telemetry must never slow down, block or break a form the carrier is filling in.
+const _fpSeen = Object.create(null);
+function fpPing(formKey, fields) {
+  const now = Date.now();
+  if (_fpSeen[formKey] && now - _fpSeen[formKey] < 30000) return;   // at most once every 30s
+  _fpSeen[formKey] = now;
+  try { formProgressPing(formKey, fields || 0).catch(() => {}); } catch (_) {}
+}
+function fpDone(formKey) {
+  _fpSeen[formKey] = 0;
+  try { formProgressDone(formKey).catch(() => {}); } catch (_) {}
+}
+// Counts only fields the carrier actually put something in, so "fields_filled" means
+// how far they got rather than how big the form is.
+function fpFilled(nodes) {
+  let n = 0;
+  nodes.forEach((node) => {
+    if (!node || !node.tagName) return;
+    if (node.type === 'checkbox' || node.type === 'radio') { if (node.checked) n++; return; }
+    if (typeof node.value === 'string' && node.value.trim() !== '') n++;
+  });
+  return n;
+}
+// Watch a set of form controls (or one container) and ping on first real input.
+function fpWatch(formKey, target) {
+  let nodes = [];
+  if (target && target.tagName) nodes = Array.prototype.slice.call(target.querySelectorAll('input,select,textarea'));
+  else if (target && typeof target === 'object') nodes = Object.keys(target).map((k) => target[k]).filter((v) => v && v.tagName);
+  if (!nodes.length) return;
+  const onEdit = () => fpPing(formKey, fpFilled(nodes));
+  if (target && target.tagName) {
+    target.addEventListener('input', onEdit, true);
+    target.addEventListener('change', onEdit, true);
+  } else {
+    nodes.forEach((node) => { node.addEventListener('input', onEdit); node.addEventListener('change', onEdit); });
+  }
+}
 import { brandLogo } from '../shared/ui/components.js';
 import { mountSideRail } from '../shared/ui/sideRail.js';  // bl_ux_0320 collapsible sidebar
 import { geo, roadMiles, isStateFallback, tollEstimate } from '../shared/usGeo.js';
@@ -402,7 +448,8 @@ const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width=
 // A7 live chat (owner decision 2026-07-02): WhatsApp deep-link. Set the business number
 // in E.164 digits (e.g. '15551234567') — the chat button stays HIDDEN until it is set,
 // so no fake/unreachable contact is ever shown.
-const WHATSAPP_NUMBER = '';
+// Carrier support WhatsApp. Digits only — wa.me rejects punctuation.
+const WHATSAPP_NUMBER = '19283936198';
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'The Operating System for Trucking';
 const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (dark ? '/logo-icon-dark.png' : '/icon-512.png') + '" width="34" height="34" alt="LoadBoot" style="display:block">' });
@@ -3562,18 +3609,27 @@ async function appView(user) {
           const eq = h('input', { class: 'cp-in', placeholder: 'Equipment (e.g. Van, Reefer)', value: ((existing && existing.equipment) || (_dp && _dp.preferred_equipment) || []).join(', ') });
           const rpm = h('input', { class: 'cp-in', type: 'number', step: '0.05', placeholder: 'Min $/mi (optional)', value: (existing && existing.min_rpm) || (_dp && _dp.min_rpm) || '' });
           const notes = h('textarea', { class: 'cp-in', rows: '2', placeholder: 'Anything else a dispatcher should know (optional)' }); notes.value = (existing && existing.notes) || '';
+          // Drive hours left. This is the number a dispatcher plans the NEXT load from — a truck
+          // in Dallas with 9 hours and one with 1 hour are not the same truck. FMCSA 395.3(a)(3)
+          // caps driving at 11h after 10 consecutive off-duty, so the input is capped there.
+          const hos = h('input', { class: 'cp-in', type: 'number', min: '0', max: '11', step: '0.5',
+            placeholder: 'Drive hours left today (0–11)', value: (existing && existing.hos_drive_left_h != null) ? existing.hos_drive_left_h : '' });
+          const hosNote = h('div', { class: 'cp-row-s', style: 'margin-top:4px;font-size:.8rem;line-height:1.5' },
+            (existing && existing.hos_source === 'eld')
+              ? 'Filled from your connected ELD — edit it if the clock has moved since.'
+              : 'Optional, but it is the first thing a dispatcher checks before offering you a long run.');
           const specHost = h('div');
           const auto = h('input', { type: 'checkbox' }); auto.checked = !!(existing && existing.auto_request);
 
           const lbl = (txt) => h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 -2px' }, txt);
-          const lblOrg = lbl('Where the truck is / frees up');
+          const lblOrg = lbl('Where the truck is / frees up *');
           const lblDest = lbl('Where I want to end up');
-          const lblAvail = lbl('Available');
+          const lblAvail = lbl('Available *');
           const paintKind = () => {
             const bh = kind.value === 'backhaul';
-            lblOrg.textContent = bh ? 'Where the truck DELIVERS (state → city, ZIP if you know it)' : 'Where the truck is / frees up (state → city, ZIP if you know it)';
-            lblDest.textContent = bh ? 'Backhaul toward — home base or a market (required)' : 'Where I want to end up (optional)';
-            lblAvail.textContent = bh ? 'Delivery date → how long you can wait for the reload' : 'Available from → until · every post expires 24h after you last confirm it';
+            lblOrg.textContent = bh ? 'Where the truck DELIVERS * (state → city, ZIP if you know it)' : 'Where the truck is / frees up * (state → city, ZIP if you know it)';
+            lblDest.textContent = bh ? 'Backhaul toward * — home base or a market' : 'Where I want to end up (optional)';
+            lblAvail.textContent = bh ? 'Delivery date → how long you can wait for the reload *' : 'Available from → until * · every post expires 24h after you last confirm it';
             destPick.setAllowAnywhere(!bh);
           };
           kind.addEventListener('change', paintKind);
@@ -3636,6 +3692,10 @@ async function appView(user) {
             if (!from.value || !to.value) { lbToast(bh ? 'Enter the delivery date and how long you can wait for the reload.' : 'Enter the dates this truck is available — we never reuse an old window.', 'urgent', 'Dates needed'); (from.value ? to : from).focus(); return; }
             if (to.value < from.value) { lbToast('The end date cannot be before the start date.', 'urgent', 'Dates'); return; }
             if (to.value < new Date().toISOString().slice(0, 10)) { lbToast('That window has already passed — pick today or later.', 'urgent', 'Dates'); return; }
+            const hosV = String(hos.value).trim();
+            if (hosV !== '' && (isNaN(Number(hosV)) || Number(hosV) < 0 || Number(hosV) > 11)) {
+              lbToast('Drive hours left must be between 0 and 11 — FMCSA caps driving at 11 hours after 10 off duty.', 'urgent', 'Hours look wrong'); hos.focus(); return;
+            }
             const btn = ev.currentTarget; btn.disabled = true; btn.textContent = existing ? 'Saving…' : 'Posting…';
             const common = { truck_id: pick.value, radius_miles: rad.value || null,
               available_from: from.value, available_to: to.value,
@@ -3648,6 +3708,8 @@ async function appView(user) {
                 const r2 = await updateTruckPostingPlace(existing.id, Object.assign({
                   origin_city: pl.city, origin_state: pl.state, origin_zip: pl.zip || null,
                   post_kind: kind.value, dest_pref: destPick.get() || '' }, common));
+                try { await setPostingHos(existing.id, hosV === '' ? null : Number(hosV), 'carrier'); } catch (_) {}
+                draft9.clear(); fpDone('availability');
                 _closePT();
                 lbToast((r2 && r2.matches ? r2.matches + ' matching load(s) on the board right now.' : 'Posted for today — your dispatcher is working it again.'), 'ok',
                   existing.status === 'paused' ? '🚛 Available again' : '🚛 Availability updated');
@@ -3656,6 +3718,9 @@ async function appView(user) {
               }
               const r = await postTruck(Object.assign({ origin: pl.text, origin_city: pl.city, origin_state: pl.state, origin_zip: pl.zip || null,
                 post_kind: kind.value, dest_pref: destPick.get() || null }, common));
+              // The posting engine does not take this field (see bl_avail_0329) — set it after.
+              if (hosV !== '' && r && r.id) { try { await setPostingHos(r.id, Number(hosV), 'carrier'); } catch (_) {} }
+              draft9.clear(); fpDone('availability');
               _closePT();
               lbToast((r.matches || 0) + ' matching load(s) on the board right now. Your dispatcher is working this post — it expires in 24h, confirm it again tomorrow.' + (r.geocoded === false ? ' (Pinpointing your location — a minute.)' : ''), 'ok', bh ? '🚛 Backhaul posted' : '🚛 Availability posted');
               loadLoads();
@@ -3668,7 +3733,21 @@ async function appView(user) {
               lbToast((e && e.message) || 'Could not post.', 'urgent', 'Not posted');
             }
           } }, existing ? (existing.status === 'paused' ? 'Post availability' : 'Save changes') : 'Post availability');
+          const reqNoteP9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:#94a3b8' }, 'Fields marked * are required — we will not post a truck a dispatcher cannot act on.');
+          // Unfinished-post recovery. 60 minutes only: this form describes where the truck is
+          // RIGHT NOW, and restoring an hours-old answer would quietly reintroduce exactly the
+          // stale window bl_avail_0322 exists to prevent.
+          const draftHost9 = h('div');
+          const dkey9 = 'avail:' + (existing ? existing.id : 'new');
+          const draft9 = attachDraft(dkey9, {
+            kind: kind, truck: pick, radius: rad, from: from, to: to, eq: eq, rpm: rpm,
+            hos: hos, notes: notes, auto: auto,
+            place: { get: () => place.get(), set: (v) => { try { place.set(v); } catch (_) {} } },
+            dest: { get: () => destPick.get(), set: (v) => { try { destPick.set(v); } catch (_) {} } },
+          }, { ttlMinutes: 60 });
+          fpWatch('availability', { kind: kind, truck: pick, radius: rad, from: from, to: to, eq: eq, rpm: rpm, hos: hos, notes: notes, auto: auto });
           const _closePT = openModal(existing ? (existing.status === 'paused' ? 'Available again — check and post' : 'Edit availability') : 'Post your availability', [
+            reqNoteP9, draftHost9,
             lbl('Situation'), kind,
             lbl('Which truck *'), pick, specHost,
             lblOrg, place.el,
@@ -3676,12 +3755,20 @@ async function appView(user) {
             lblDest, destPick.el,
             lblAvail, h('div', { class: 'cp-formrow2' }, [from, to]), dateHint,
             lbl('Equipment and floor rate'), eq, rpm,
+            lbl('Drive hours left'), hos, hosNote,
             lbl('Notes'), notes,
             h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.88rem' }, [auto, 'Auto-request matching loads (broker still approves every booking)']),
             h('div', { class: 'cp-row-s', style: 'margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(252,83,5,.08);border:1px solid rgba(252,83,5,.25);font-size:.8rem;line-height:1.5;color:#cbd5e1' }, AVAIL_RULE),
             h('div', { style: 'height:8px' }), save]);
           paintKind();
           paintSpec();
+          // Restore last, so paintSpec()'s truck defaults do not overwrite what they typed.
+          setTimeout(() => {
+            const m9 = draft9.restore();
+            if (m9) { paintKind(); draftHost9.appendChild(draftBanner(m9, () => {
+              draft9.clear(); try { _closePT(); } catch (_) {} openPostingForm(existing, kindPreset);
+            })); }
+          }, 60);
       };
 
     // 5 Sep 2026 — the availability status card sits above the postings list on the board too,
@@ -5332,7 +5419,7 @@ function tripStepper(status) {
       } catch (e) { alert((e && e.message) || 'Could not create invite.'); }
     }
     function driverForm(d) {
-      const name = h('input', { class: 'cp-in', placeholder: 'Driver name', value: (d && d.name) || '' });
+      const name = h('input', { class: 'cp-in', placeholder: 'Driver name *', value: (d && d.name) || '' });
       const phone = h('input', { class: 'cp-in', placeholder: 'Phone', value: (d && d.phone) || '' });
       const email = h('input', { class: 'cp-in', placeholder: 'Email', value: (d && d.email) || '' });
       const lic = h('input', { class: 'cp-in', placeholder: 'License #', value: (d && d.license_no) || '' });
@@ -5340,12 +5427,12 @@ function tripStepper(status) {
       const lexp = h('input', { class: 'cp-in', type: 'date', value: (d && d.license_exp) || '' });
       const mexp = h('input', { class: 'cp-in', type: 'date', value: (d && d.medical_exp) || '' });
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
-        if (!name.value.trim()) { alert('Driver name is required.'); return; }
+        if (!name.value.trim()) { lbToast('A driver needs a name — it is what the broker packet and the HOS clock are matched on.', 'urgent', 'Driver name required'); name.focus(); return; }
         if (!lbFutureDate(lexp, 'License expiry') || !lbFutureDate(mexp, 'Medical expiry')) return;
         // FMCSA sanity — catches typos and fake entries at the door:
         const licV9 = lic.value.trim();
-        if (licV9 && !/^[A-Za-z0-9-]{4,20}$/.test(licV9)) { alert('License # looks wrong \u2014 CDL numbers are 4\u201320 letters/digits. Copy it exactly from the card.'); return; }
-        if (licV9 && !/^[A-Za-z]{2}$/.test(st.value.trim())) { alert('License STATE is required with the license # (2 letters, e.g. TX) \u2014 CDLs are state-issued and verified against the issuing state.'); return; }
+        if (licV9 && !/^[A-Za-z0-9-]{4,20}$/.test(licV9)) { lbToast('License # looks wrong \u2014 CDL numbers are 4\u201320 letters/digits. Copy it exactly from the card.', 'urgent', 'Check the license #'); lic.focus(); return; }
+        if (licV9 && !/^[A-Za-z]{2}$/.test(st.value.trim())) { lbToast('License STATE is required with the license # (2 letters, e.g. TX) \u2014 CDLs are state-issued and verified against the issuing state.', 'urgent', 'State required'); st.focus(); return; }
         if (mexp.value) { const mx9 = new Date(mexp.value); const max9 = new Date(); max9.setMonth(max9.getMonth() + 24);
           if (mx9 > max9) { alert('DOT medical certificates are valid for a MAXIMUM of 24 months (FMCSA rule) \u2014 an expiry more than 2 years out cannot be real. Check the med card date.'); return; } }
         if (lexp.value) { const lx9 = new Date(lexp.value); const lmax9 = new Date(); lmax9.setFullYear(lmax9.getFullYear() + 10);
@@ -5354,11 +5441,23 @@ function tripStepper(status) {
         try {
           await pocketUpsertDriver({ id: d && d.id, name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(), licenseNo: lic.value.trim(), licenseState: st.value.trim().toUpperCase(), licenseExp: lexp.value || null, medicalExp: mexp.value || null });
           drivers = await pocketDrivers(); renderDrivers();
+          try { draftD9.clear(); } catch (_) {}
+          fpDone('driver');
           try { closeD9(); } catch (_) {}
           lbToast('\ud83d\udc64 Driver saved \u2014 valid license & medical unlock booking.', 'ok', 'Fleet updated');
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not save.'); }
       } }, 'Save');
-      const closeD9 = openModal((d ? 'Edit driver' : 'Add driver'), [name, phone, email, h('div', { class: 'cp-formrow2' }, [lic, st]), h('label', { class: 'cp-row-s' }, 'License expiry'), lexp, h('label', { class: 'cp-row-s' }, 'Medical expiry'), mexp, save]);
+      const reqNote9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:#94a3b8' }, 'Fields marked * are required.');
+      const draftHostD9 = h('div');
+      const closeD9 = openModal((d ? 'Edit driver' : 'Add driver'), [reqNote9, draftHostD9, name, phone, email, h('div', { class: 'cp-formrow2' }, [lic, st]), h('label', { class: 'cp-row-s' }, 'License expiry'), lexp, h('label', { class: 'cp-row-s' }, 'Medical expiry'), mexp, save]);
+      const dkeyD9 = 'driver:' + ((d && d.id) || 'new');
+      const draftD9 = attachDraft(dkeyD9, { name: name, phone: phone, email: email, lic: lic, st: st, lexp: lexp, mexp: mexp },
+        { ttlMinutes: 60 * 24 * 7 });
+      fpWatch('driver', { name: name, phone: phone, email: email, lic: lic, st: st, lexp: lexp, mexp: mexp });
+      setTimeout(() => {
+        const mD9 = draftD9.restore();
+        if (mD9) draftHostD9.appendChild(draftBanner(mD9, () => { draftD9.clear(); closeD9(); driverForm(d); }));
+      }, 60);
     }
     // ---- Add / edit a truck -------------------------------------------------
     // Everything a dispatcher would otherwise have to chase over WhatsApp is asked
@@ -5578,7 +5677,7 @@ function tripStepper(status) {
         // single carrier.truck.upsert entry, so the click was never reaching the database.
         // Nothing in this form is allowed to fail in silence again.
         try {
-        if (!unit.value.trim()) { alert('Unit number is required.'); return; }
+        if (!unit.value.trim()) { lbToast('Every truck needs a unit number — it is how you, your dispatcher and the broker all refer to this truck.', 'urgent', 'Unit number required'); unit.focus(); return; }
         if (!lbFutureDate(insp, 'Inspection expiry')) return;
         const ww = numOf(wWell), cw = numOf(cWid);
         if (ww !== null && cw !== null && ww > cw) {
@@ -5636,6 +5735,8 @@ function tripStepper(status) {
           const saved = t && t.id ? t : trucks.find(x => x.unit_no === unit.value.trim());
           if (saved && saved.id && (svc.value || insp.value)) { try { await truckSetMaintenance(saved.id, svc.value || null, insp.value || null); } catch (_) {} }
           renderTrucks();
+          try { draftT9.clear(); } catch (_) {}
+          fpDone('truck');
           try { closeT9(); } catch (_) {}
           lbToast('🚛 Truck saved' + (vinInfo.textContent.indexOf('✓') === 0 ? ' — VIN verified with U.S. DOT' : '')
             + (coiState === 'covered' ? ' and matched to your certificate of insurance' : '') + '. Matching loads unlock on the board.', 'success', 'Fleet updated');
@@ -5704,7 +5805,11 @@ function tripStepper(status) {
         }
       } }, 'Save truck');
 
-      const closeT9 = openModal((t ? 'Edit truck' : 'Add truck'), [
+      const reqNoteT9 = h('div', { class: 'cp-row-s', style: 'margin-bottom:8px;font-size:.8rem;color:#94a3b8' }, 'Fields marked * are required. Everything else makes you match more loads.');
+      // ~30 fields. Losing them to a phone call is the fastest way to make someone give up on
+      // the fleet tab, so the whole modal is drafted to this device for 7 days.
+      const draftHostT9 = h('div');
+      const bodyT9 = h('div', null, [reqNoteT9, draftHostT9,
         sec('The truck', 'Unit number is how we call it out on a dispatch sheet.'),
         row2(unit, plate), eq,
         sec('VIN and insurance', 'We check the VIN against U.S. DOT and against your certificate of insurance as you type.'),
@@ -5729,6 +5834,15 @@ function tripStepper(status) {
         h('label', { class: 'cp-row-s' }, 'Annual inspection expires'), insp,
         h('div', { style: 'height:10px' }), postReady, save,
       ]);
+      const closeT9 = openModal((t ? 'Edit truck' : 'Add truck'), [bodyT9]);
+      const dkeyT9 = 'truck:' + ((t && t.id) || 'new');
+      const draftT9 = attachDraftToContainer(dkeyT9, bodyT9, { ttlMinutes: 60 * 24 * 7 });
+      fpWatch('truck', bodyT9);
+      setTimeout(() => {
+        const mT9 = draftT9.restore();
+        if (mT9) { draftHostT9.appendChild(draftBanner(mT9, () => { draftT9.clear(); closeT9(); truckForm(t); }));
+          try { readyCheck(); } catch (_) {} }
+      }, 60);
       readyCheck();
     }
 

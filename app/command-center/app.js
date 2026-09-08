@@ -37,6 +37,7 @@ import { renderSystemHealth } from './views/systemHealth.js';
 import { renderTemplates } from './views/templates.js';
 import { renderAudiences } from './views/audiences.js';
 import { renderCampaignManager } from './views/campaignManager.js';
+import { renderCarrierReminders } from './views/carrierReminders.js';
 import { renderDeliveryHealth } from './views/deliveryHealth.js';
 import { renderMarketingIntel } from './views/marketingIntel.js';
 import { renderOutreach } from './views/outreach.js';
@@ -66,6 +67,7 @@ import { renderRateStandards } from './views/rateStandards.js';
 import { renderVerificationCenter } from './views/verificationCenter.js';
 import { renderPodReview } from './views/podReview.js';
 import { renderLoadIntake } from './views/loadIntake.js';
+import { renderMailbox } from './views/mailbox.js';
 import { renderControlTower } from './views/controlTower.js';
 import { renderExceptionCenter } from './views/exceptionCenter.js';
 import { renderWorkflowBuilder } from './views/workflowBuilder.js';
@@ -285,6 +287,7 @@ async function boot() {
       { id: 'studio', label: 'Template Studio', path: '/templates', allowed: () => can('content.view'), render: (h) => renderTemplates(h) },
       { id: 'builder', label: 'Email builder', path: '/email-builder', allowed: () => can('content.view') || can('content.manage'), render: (h) => renderEmailBuilder(h) },
       { id: 'campaigns', label: 'Campaign manager', path: '/campaign-manager', allowed: () => can('content.view'), render: (h) => renderCampaignManager(h) },
+      { id: 'reminders', label: 'Carrier reminders', path: '/carrier-reminders', allowed: () => can('content.view') || can('comm.view') || can('comm.send'), render: (h) => renderCarrierReminders(h) },
       { id: 'audiences', label: 'Audiences', path: '/audiences', allowed: () => can('content.view'), render: (h) => renderAudiences(h) },
       { id: 'announcements', label: 'Announcements', path: '/announcements', allowed: () => announcementsEnabled && can('announce.view'), render: (h) => renderAnnouncements(h) },
     ] },
@@ -328,6 +331,9 @@ async function boot() {
     '/compliance': tabbed('compliance', 'onboarding'),
     '/trips': tabbed('loads', 'trips'),
     '/comms': () => { setActive('/live-chat'); if (commsEnabled && can('comm.view')) renderComms(content); else denied(); },
+    // The dead link cc_mail_ingest has been pointing notifications at since bl_mail_loads_0176.
+    // Deep link: #mailbox?thread=<thread_key> opens that conversation without marking it read.
+    '/mailbox': ({ query }) => { setActive('/mailbox'); if (can('comm.view')) renderMailbox(content, query.get('thread')); else denied(); },
     '/finance': tabbed('finance', 'invoices'),
     '/finance-analytics': tabbed('finance', 'analytics'),
     '/health': tabbed('settings', 'health'),
@@ -335,6 +341,7 @@ async function boot() {
     '/templates': tabbed('templates', 'studio'),
     '/audiences': tabbed('templates', 'audiences'),
     '/campaign-manager': tabbed('templates', 'campaigns'),
+    '/carrier-reminders': tabbed('templates', 'reminders'),
     '/delivery': tabbed('crm', 'delivery'),
     '/account-health': tabbed('compliance', 'health'),
     '/marketing-intel': tabbed('web', 'intel'),

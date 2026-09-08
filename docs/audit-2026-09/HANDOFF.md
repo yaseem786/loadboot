@@ -119,28 +119,30 @@ a decision, not as a defect — no pause, no schedule change. Nothing was touche
 ## NEXT ACTION  (one concrete step — the thing "continue" means)
 
 1. Re-sync header (main sha + new commits, `list_migrations` prod + staging, `list_edge_functions` both).
-2. **Waiting on Yaseen, in the Retell dashboard — this is the only thing blocking the two switches:**
-   a. point the **call / webhook** URL at `https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/retell-hook`
-   b. point the **phone number's inbound-call webhook** at
-      `https://rwscphuhpjoudvljvmdk.supabase.co/functions/v1/retell-inbound-hook`
-   Then watch: `select at, verified, reason, forwarded, event from app_private.retell_hook_log order by at desc limit 20;`
-   Real deliveries should appear with `verified=true, reason='signature_ok'`.
-3. **Only after real signed deliveries are seen** — and as two separate, reversible steps:
-   a. `update app_private.retell_config set allow_unsigned_webhook = false;`  (closes the old webhook door)
-   b. propose revoking `anon`/`authenticated` on `public.retell_inbound`      (closes the identity oracle)
-   Rollbacks: `select app_private.bl_sec_0329_rollback();` and `select app_private.bl_sec_0330_rollback();`
-4. Still unanswered from earlier: live check 5 (inbound-mail → load-mail chain) on prod — it ingests one real
-   test-sender row.
-5. Exercise the `body_not_json` → 400 branch of `retell-inbound-hook` with a client that can post arbitrary
-   bytes. Code-inspection only today.
-6. F08/F09/F18 are Codex's (branch `audit/remaining-gaps-20260906`); D is on `audit/s2-f31-client-verdict`.
-7. Then the SEO week-1 copy work from `90-DAY-PLAN.md`: `market-rates.html` (meta description naming the
-   equipment hubs, first-screen links to all 8 hubs, an answer-first FTL/truckload-rates section — **do NOT
-   retitle it**), a definition-first opener on `tonu-policy.html`, a snippet fix on
-   `ghost-loads-load-board-problems.html`. Build staging-bound.
-8. Parked: F33, WhatsApp toggle, F10 (needs the role/document matrix), deleting `lb-tmp-keyread`, merging
-   Codex's branches. Outreach stays ENABLED. The rest of F14: grep for the same shape — an unnamed
-   single-parameter SECURITY DEFINER function reachable through PostgREST with the anon key.
+   As of 2026-09-07 09:30 UTC — prod newest `bl_web_0333_contact_channel_switch` (`20260907082942`);
+   staging newest `bl_sec_0334_lc_ob_get_key_floor` (`20260907092609`), i.e. staging is ONE ahead: 0334 only.
+2. **Finish the F14 live-chat slice — this is the next real audit work.** `lc_ob_get` is done (bl_sec_0334,
+   staging). The same visitor key gates **`lc_send`, `lc_poll`, `lc_rate`, `lc_ob_save`, `lc_start`** and those
+   have NOT been reviewed against the same standard. For each: what does an anonymous caller need to know, and
+   what do they get or change if they guess it? Read-only first; propose staging-first fixes, do not apply to
+   prod.
+3. **Three prod decisions still parked with Yaseen** (do not act without his word):
+   a. `bl_sec_0334` to prod (floor 8 → 16–64 on `lc_ob_get`, refuse the `novkey` prefix). Inert for every key
+      in use today — prod evidence: shortest key in use is 26 chars, 0 rows with a `novkey` prefix.
+   b. `allow_unsigned_webhook = false` — closes the old anon door to `retell_webhook`. Only AFTER a real signed
+      delivery is seen verifying in `app_private.retell_hook_log`.
+   c. revoking `anon`/`authenticated` on `public.retell_inbound` — only after the same, on the inbound side.
+   Retell credit is empty and the last real call was 2026-09-03, so (b) and (c) cannot be verified until Yaseen
+   tops up. Nothing is urgent; nothing is exposed that was not exposed before.
+4. **Yaseen still owes one SQL line**, in the Supabase SQL editor on prod, pasting the key named
+   **"Secret Key Webhook"** from the Retell dashboard:
+   `update app_private.retell_config set webhook_signing_key = '<paste>' where id = 1;`
+   Until then real deliveries log `digest_mismatch` (harmless — observe mode forwards them anyway).
+5. Open from the original 33: F04 (legal copy gate, counsel), F06 (RPC drift), F08/F09 (Codex's branch),
+   F10 (every active staff account can read W-9 / identity documents — needs the role-by-document-type matrix
+   before any policy change), F15 (leaked-password protection off), F16/F17, and the P2/P3 measurement set.
+6. Parked: F33 (27 carriers with no docket), the WhatsApp toggle is BUILT and live but left on `phone`,
+   SEO week 1, deleting `lb-tmp-keyread`, merging Codex's two branches. Outreach stays ENABLED.
 
 ## LOG  (append one line per turn; newest last)
 

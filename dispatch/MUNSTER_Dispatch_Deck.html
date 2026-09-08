@@ -1,0 +1,565 @@
+<title>Munster Dispatch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F5F7FA; --surface:#FFFFFF; --surface-2:#EEF2F7;
+  --ink:#10223B; --ink-2:#3C4E66; --muted:#6B7C92; --line:#D7DEE8;
+  --accent:#0883F7; --accent-soft:#E7F1FE;
+  --alert:#FC5305; --alert-soft:#FEEEE6;
+  --go:#1B7F4B; --go-soft:#E4F3EA;
+  --stop:#B3261E; --stop-soft:#FBEAE8;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0A1420; --surface:#12202F; --surface-2:#182A3C;
+    --ink:#E9EFF6; --ink-2:#BCCBDB; --muted:#8698AC; --line:#25384D;
+    --accent:#4EA8FF; --accent-soft:#12314F;
+    --alert:#FF7A3D; --alert-soft:#3A2013;
+    --go:#4BC98A; --go-soft:#102F22;
+    --stop:#FF6F63; --stop-soft:#3A1815;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0A1420; --surface:#12202F; --surface-2:#182A3C;
+  --ink:#E9EFF6; --ink-2:#BCCBDB; --muted:#8698AC; --line:#25384D;
+  --accent:#4EA8FF; --accent-soft:#12314F;
+  --alert:#FF7A3D; --alert-soft:#3A2013;
+  --go:#4BC98A; --go-soft:#102F22;
+  --stop:#FF6F63; --stop-soft:#3A1815;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font-family:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.55;margin:0;padding:0 16px 80px}
+.wrap{max-width:920px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}
+a{color:var(--accent)}
+
+header.top{padding:26px 0 18px;border-bottom:2px solid var(--ink);margin-bottom:22px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:clamp(26px,5vw,36px);font-weight:700;letter-spacing:-.02em;margin:6px 0 8px}
+.sub{color:var(--ink-2);font-size:14px;max-width:64ch}
+.spec{margin-top:14px;padding:10px 12px;background:var(--surface-2);border-left:3px solid var(--accent);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;line-height:1.6;color:var(--ink-2);
+  overflow-x:auto}
+
+.fillbar{position:sticky;top:0;z-index:20;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:12px 14px;margin:0 0 26px;box-shadow:0 2px 14px rgba(16,34,59,.07)}
+.fillbar h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:9px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.field input{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;
+  background:var(--ground);color:var(--ink)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.fillnote{margin-top:9px;font-size:12px;color:var(--muted)}
+
+section.load{margin:0 0 30px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.lhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;padding:13px 16px;
+  border-bottom:1px solid var(--line);border-left:5px solid var(--muted)}
+.lhead.go{border-left-color:var(--go)}
+.lhead.warn{border-left-color:var(--alert)}
+.lhead.stop{border-left-color:var(--stop)}
+.lid{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:500;color:var(--muted)}
+.lname{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.llane{font-size:13.5px;color:var(--ink-2)}
+.pill{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  padding:3px 8px;border-radius:20px;white-space:nowrap}
+.pill.go{background:var(--go-soft);color:var(--go)}
+.pill.warn{background:var(--alert-soft);color:var(--alert)}
+.pill.stop{background:var(--stop-soft);color:var(--stop)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+.facts{display:flex;flex-wrap:wrap;gap:0 22px;padding:10px 16px;background:var(--surface-2);
+  font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.facts b{color:var(--ink);font-weight:600}
+.why{padding:12px 16px;font-size:13.5px;color:var(--ink-2);border-bottom:1px solid var(--line)}
+
+.block{border-top:1px solid var(--line)}
+.bhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px}
+.btitle{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+button.copy{font:inherit;font-size:13px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--accent);background:var(--accent);color:#fff;white-space:nowrap}
+button.copy:hover{filter:brightness(1.08)}
+button.copy:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+button.copy.done{background:var(--go);border-color:var(--go)}
+pre.txt{margin:0;padding:0 16px 16px;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12.5px;line-height:1.62;white-space:pre-wrap;word-wrap:break-word;color:var(--ink)}
+.warnline{margin:0 16px 14px;padding:9px 11px;background:var(--alert-soft);border-left:3px solid var(--alert);
+  font-size:12.5px;color:var(--ink)}
+.warnline.stop{background:var(--stop-soft);border-left-color:var(--stop)}
+
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Munster Logistics LLC &middot; MC-84057665 &middot; USDOT 7555217</div>
+  <h1>Dispatch Deck</h1>
+  <p class="sub">Every broker message, email and phone script for the 8&ndash;9 Sep board, ready to copy. Nothing here has been sent &mdash; you send all of it.</p>
+  <div class="spec">30 ft gooseneck deck (25+5) &middot; 102 in wide &middot; ~34 in deck height &middot; <b>9,000 lb max payload</b>
+Flat tarps, Grade 80 chains &amp; binders, straps, mega ramps on board &middot; $1M auto / $100k cargo
+Domicile New Richmond, OH 45157 &middot; Authority granted 7 Aug 2026 &rarr; 180-day mark ~3 Feb 2027
+HARD REJECT: anything over 30 ft or over 9,000 lb</div>
+</header>
+
+<div class="fillbar">
+  <h2>Fill once &mdash; it drops into every message you copy</h2>
+  <div class="fields">
+    <div class="field"><label for="f-name">Your name</label><input id="f-name" placeholder="Yaseen"></div>
+    <div class="field"><label for="f-phone">Your phone</label><input id="f-phone" placeholder="(555) 123-4567"></div>
+    <div class="field"><label for="f-email">Your email</label><input id="f-email" placeholder="dispatch@loadboot.com"></div>
+  </div>
+  <p class="fillnote">Blanks stay as <code>[YOUR NAME]</code> so you can spot them. Saved in this browser only.</p>
+</div>
+
+<!-- ============ L10 FREIGHTWATCH ============ -->
+<section class="load">
+  <div class="lhead go">
+    <span class="lid">L10</span><span class="lname">Freightwatch, LLC</span>
+    <span class="llane">Lexington, OH &rarr; Channahon, IL</span>
+    <span class="pill go">Do all three &middot; untouched</span>
+  </div>
+  <div class="facts"><span><b>Pickup Sep 9</b> &mdash; the only one that matches his availability</span><span>146 DH + 367 loaded = <b>513 mi</b></span><span>Posted <b>$800</b> &middot; Rate Check <b>$1,287</b></span><span>Ask <b>$1,300</b> &middot; walk $1,050</span><span>4,700 lb</span></div>
+  <div class="why">Highest-ranked load on the board: no rolling risk, Chicago-metro backhaul, no fine, no tracking requirement. <b>One unknown decides it &mdash; the posting leaves LENGTH blank on a steel stair system.</b> Ask that before you talk price; over 30 ft is an automatic no.</div>
+  <div class="warnline">Send the board <b>Message</b>, place the <b>Bid at $1,300</b>, and <b>call (419) 845-5250</b>. All three cost nothing &mdash; whoever answers first, you win the load.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">123Loadboard message</span><button class="copy">Copy</button></div>
+<pre class="txt">Ref 111676 - Lexington OH to Channahon IL, steel stair system.
+
+Munster Logistics LLC - MC-84057665 / USDOT 7555217. 30 ft gooseneck deck (25+5), 102 in wide, 9,000 lb max payload. Flat tarps, Grade 80 chains and binders, straps and mega ramps on board. $1M auto liability / $100k cargo. Based New Richmond, OH 45157.
+
+We are empty and 146 mi out - can be on site Wed 9/9 morning and deliver 9/10.
+
+Two questions before we commit:
+1) What is the overall LENGTH of the stair system? Your posting shows it blank and our deck is 30 ft.
+2) Do you run a new-authority rule, and how many days? Our MC was granted 7 Aug 2026.
+
+We can cover it at $1,300. Call or text [YOUR PHONE].</pre></div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Email &rarr; quotes+123lb@freightwatchlogistics.com</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: Ref 111676 Lexington OH &gt; Channahon IL - 30 ft hotshot available Wed 9/9 - Munster Logistics MC-84057665
+
+Hi,
+
+We can cover your ref 111676, Lexington OH to Channahon IL (steel stair system, 4,700 lbs), picking up Wednesday 9 September and delivering 9/10.
+
+Equipment: Munster Logistics LLC - MC-84057665 / USDOT 7555217. 30 ft gooseneck deck (25+5), 102 in wide, 9,000 lb max payload. Flat tarps, Grade 80 chains and binders, straps and mega ramps on board. $1M auto liability / $100k cargo.
+
+Before we confirm, two things your posting does not answer:
+  1. What is the overall LENGTH of the stair system? The length field is blank and our deck is 30 ft. If it runs longer than that we are not your truck and I would rather tell you now.
+  2. Do you run a new-authority rule, and how many days? Our MC authority was granted 7 August 2026.
+
+Rate: your posting shows $800. Lexington is 146 empty miles from us, so that is 513 total miles on the truck. We can do it at $1,300, which is in line with the $1,287 your own board's Rate Check shows on this lane.
+
+Happy to send our carrier packet, W-9 and certificate of insurance straight over.
+
+Thanks,
+[YOUR NAME]
+Munster Logistics LLC
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Phone &mdash; (419) 845-5250</span><button class="copy">Copy</button></div>
+<pre class="txt">Hi, this is [YOUR NAME] with Munster Logistics, MC 84057665 - 30 foot hotshot gooseneck out of New Richmond, Ohio.
+
+Two quick things before I take your time: do you run a new-authority rule, and how many days? Ours was granted 7 August.
+
+I'm on reference 111676, Lexington Ohio to Channahon Illinois, the steel stair system. Your posting has the length blank. What is the overall length of the piece?
+
+[IF OVER 30 FT: thank them and stop. That is the automatic reject - do not argue it. 4,700 lbs is fine either way.]
+
+It's posted at $800. Lexington is 146 miles from me, so I'm running 513 total miles for that - $1.56 a mile, and I can't cover the truck at that. Your own board's rate check on this lane says $1,287. I'll take it at $1,300 and I can be on site Wednesday morning.
+
+[WALK AWAY AT $1,050.]
+
+Send me the rate confirmation with the pickup and delivery appointments on it. Do you need tarps on a stair system? We carry flat tarps, Grade 80 chains and binders, and straps.</pre></div>
+</section>
+
+<!-- ============ L4 VENTURE SELMER ============ -->
+<section class="load">
+  <div class="lhead warn">
+    <span class="lid">L4</span><span class="lname">Venture Connect LLC</span>
+    <span class="llane">Shelbyville, IN &rarr; Selmer, TN</span>
+    <span class="pill warn">Live &mdash; bot held at $900</span>
+  </div>
+  <div class="facts"><span>Pickup <b>Sep 8, 1100&ndash;1400 EDT</b></span><span>Deliver <b>Sep 9, 0800&ndash;1000 CDT</b></span><span>92 DH + 417 loaded = <b>509 mi</b></span><span>Their $900 = <b>$1.77/mi</b></span><span>Break-even <b>$1,025</b></span></div>
+  <div class="why"><b>The clock on this one works</b> &mdash; a three-hour pickup window, 8h50m of driving, and Central time gives an hour back. Total driving with deadhead is 10h47m, only 13 minutes under the 11-hour limit in one shift, so plan the split: 8 h, 10 h off, finish in the morning and land ~0635 CDT. No tracking requirement on this posting.</div>
+  <div class="warnline stop">The fine amount has now been asked <b>four times across both loads and never answered.</b> Do not accept $900 or any other number until someone names it &mdash; an uncapped penalty on a jobsite can swallow the whole load.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Final email &mdash; $1,025 + the fine question</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: RE: Ref 2178262-2099817 - $1,025 and it's yours, but I need the fine amount
+
+Hi,
+
+I'll meet you close: $1,025 and it is covered, loading at the front of your 1100-1400 window.
+
+That is not a negotiating number - it is what the truck breaks even at. Shelbyville is 92 deadhead miles from us, so 509 total miles turn for this load. $900 is $1.77 a mile before fuel.
+
+And I still need one answer before I can commit at any price: what is the AMOUNT of the late-delivery fine? I have asked four times now across your two loads and not had it. I am not able to accept a penalty I have not been told the size of. Put the figure on the rate confirmation with the TRANSCOR pickup number and I will sign it today.
+
+Munster Logistics LLC, MC-84057665 / USDOT 7555217. 30 ft gooseneck deck, 9,000 lb max, $1M auto / $100k cargo. No tarps, TRANSCOR check-in, hard hat / high-viz / closed-toe shoes - all understood.
+
+If $1,025 is not workable, no hard feelings - please still put us on your list for 20-30 ft hotshot freight out of Indiana and Ohio. Your own system has told me four times that is the equipment you are looking for.
+
+Thanks,
+[YOUR NAME]
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Phone &mdash; (317) 854-5027, if you want a real answer</span><button class="copy">Copy</button></div>
+<pre class="txt">Hi, this is [YOUR NAME] with Munster Logistics, MC 84057665 - 30 ft hotshot gooseneck out of Cincinnati. I've been going back and forth with your email system on ref 2178262-2099817 and it keeps quoting me a price without answering my question, so I wanted a person.
+
+Two things and I'll be quick:
+
+1) What is the AMOUNT of the late-delivery fine? I've asked four times by email across your two loads and never had it. I can't accept a penalty I haven't been told the size of.
+
+2) $1,025. That's exactly what the truck breaks even at on this run - 92 deadhead miles into Shelbyville plus 417 loaded is 509 miles for your $900, which is $1.77 a mile.
+
+[IF THEY NAME A SMALL, CAPPED FINE AND HOLD AT $900: it is a defensible first load - your call.]
+[IF THEY WILL NOT NAME THE FINE: walk.]
+
+Whatever happens on this one - your system has told me four times you're looking for 20 to 30 ft hotshot. That's exactly what this truck is. Get us on your list.</pre></div>
+</section>
+
+<!-- ============ L3 VENTURE STANHOPE ============ -->
+<section class="load">
+  <div class="lhead stop">
+    <span class="lid">L3</span><span class="lname">Venture Connect LLC</span>
+    <span class="llane">Shelbyville, IN &rarr; Stanhope, NJ</span>
+    <span class="pill stop">Stop emailing &mdash; phone or walk</span>
+  </div>
+  <div class="facts"><span>Pickup <b>Sep 8, 1200 EDT</b> fixed</span><span>Deliver <b>Sep 9, 0800&ndash;1000 EDT</b></span><span>92 DH + 655 loaded = <b>747 mi</b></span><span>Their $1,400 = <b>$1.87/mi</b></span><span>Hold <b>$1,600</b> &middot; walk $1,500</span></div>
+  <div class="why"><b>The schedule cannot be run legally by a solo driver.</b> 655 loaded miles is 12.4 h of driving at the ~53 mph 123Loadboard's own postings imply &mdash; over the 11-hour limit, so it splits with a 10-hour break, and arrival lands at roughly pickup + 23 h = about 1050. Their window shuts at 1000. It only works if the pickup moves to 1100 or the delivery moves to 1100&ndash;1200.</div>
+  <div class="warnline stop">Three replies, three identical auto-confirmations, zero answers. That address runs on Parade, a broker automation platform &mdash; it negotiates price and nothing else. It cannot move an appointment. <b>Do not bid against yourself</b> when it asks &ldquo;can you do any better?&rdquo;</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Short final email &mdash; hold at $1,600</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: RE: Ref 2177463-2099008 - holding at $1,600, and the clock question is still open
+
+Hi,
+
+No, I can't do better than $1,600 - and the rate is not actually what is blocking this.
+
+I have asked twice now and not had an answer: with a 1200 pickup at Shelbyville, a solo driver cannot legally cover 655 miles and deliver Stanhope inside an 0800-1000 window. It needs the pickup at 1100, or the delivery at 1100-1200. And I still need the AMOUNT of the late-delivery fine in writing.
+
+Answer those two and I'll cover it at $1,600 today. If the system there can't move an appointment, please have someone call me on [YOUR PHONE].
+
+Either way, send me ref 2178262-2099817 (Shelbyville IN to Selmer TN) and put us on your list - you have told me three times you want a 30 FT HOTSHOT, and that is exactly what we are. Munster Logistics LLC, MC-84057665 / USDOT 7555217.
+
+Thanks,
+[YOUR NAME]
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+</section>
+
+<!-- ============ L6 FIFTH WHEEL ============ -->
+<section class="load">
+  <div class="lhead warn">
+    <span class="lid">L6</span><span class="lname">Fifth Wheel Freight</span>
+    <span class="llane">Huntington, WV &rarr; Sparrows Point, MD</span>
+    <span class="pill warn">Phone only &middot; ext 8530</span>
+  </div>
+  <div class="facts"><span>106 DH + 417 loaded = <b>523 mi</b></span><span>Posted <b>$900</b> = $1.72/mi</span><span>Ask <b>$1,300</b> &middot; walk $1,075</span><span>11 ft, 6,000 lb</span><span>MacroPoint required</span></div>
+  <div class="why">The relationship worth the most on this board &mdash; as of 22 Aug they post more Munster-sized hotshot freight than anyone else, and two of the ten loads are theirs. <b>The real goal of this call is getting the truck registered with them</b>, not this one load. No Message button and no email on the posting; the email below is the follow-up, after someone gives you an address.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Phone &mdash; (616) 965-7277 ext 8530</span><button class="copy">Copy</button></div>
+<pre class="txt">Hi, extension 8530 please.
+
+Hi, this is [YOUR NAME] with Munster Logistics, MC 84057665, 30 foot hotshot out of Cincinnati. Quick one first - do you run a new-authority rule, and how many days? Ours was granted 7 August.
+
+I'm on your reference 758397, Huntington West Virginia to Sparrows Point Maryland, 11 feet and 6,000 pounds. Is it still open, and can it load tomorrow Wednesday the 9th instead of today?
+
+It's posted at $900. I've got 106 miles of deadhead just to reach Huntington, so at $900 I'm running 523 total miles - that's $1.72 a mile all-in and I can't make that work. At $1,300 I'll take it right now.
+
+[WALK AWAY AT $1,075.]
+
+Yes, we'll accept MacroPoint - confirm the number it should go to.
+
+One more thing before I let you go - can I get our truck registered with you? 30 foot deck, 102 wide, 9,000 pounds, tarps and Grade 80 on board, empty out of Cincinnati most weekday mornings. You post a lot of freight that is exactly this size and I'd rather you call me than me chase the board.</pre></div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Follow-up email &mdash; send after the call</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: Ref 758397 Huntington WV &gt; Sparrows Point MD - 30 ft hotshot confirmation - Munster Logistics MC-84057665
+
+Hi [NAME],
+
+Thanks for your time on the phone. Confirming what we discussed on ref 758397, Huntington WV to Sparrows Point MD (11 ft, 6,000 lbs):
+
+  Rate agreed: $[AGREED]
+  Pickup: [DATE / TIME]
+  Delivery: [DATE / TIME]
+  MacroPoint: accepted - send the tracking request to [YOUR PHONE]
+
+Equipment: Munster Logistics LLC - MC-84057665 / USDOT 7555217. 30 ft gooseneck deck (25+5), 102 in wide, 9,000 lb max payload. Flat tarps, Grade 80 chains and binders, straps and mega ramps on board. $1M auto liability / $100k cargo.
+
+Please send the rate confirmation. Our carrier packet, W-9 and certificate of insurance are attached.
+
+And separately - please keep us on your list. You post a lot of freight sized exactly to this deck and we are empty out of Cincinnati most weekday mornings.
+
+Thanks,
+[YOUR NAME]
+Munster Logistics LLC
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+</section>
+
+<!-- ============ L1 TRANSPORTATION EXPRESS ============ -->
+<section class="load">
+  <div class="lhead warn">
+    <span class="lid">L1</span><span class="lname">Transportation Express American Motorways</span>
+    <span class="llane">Piqua, OH &rarr; Pineville, NC</span>
+    <span class="pill warn">Phone only &middot; repair call</span>
+  </div>
+  <div class="facts"><span>82 DH + 499 loaded = <b>581 mi</b></span><span>Rate <b>not posted</b> &mdash; ask for it</span><span>Ask <b>$1,300</b> &middot; walk $1,150</span><span>Only 4 ft, 2,900 lb</span><span>Lowest deadhead on the board</span></div>
+  <div class="why">On 24 Aug a human here answered and said, word for word, <i>&ldquo;Can you have a live person call me?&rdquo;</i> A callback was promised in ten minutes and never made. <b>Open by owning that</b> &mdash; it is the whole reason this call works. The load uses 4 ft of a 30 ft deck, so ask what else they have going the same way.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Phone &mdash; (402) 564-6375</span><button class="copy">Copy</button></div>
+<pre class="txt">Hi, this is [YOUR NAME] with Munster Logistics. Back on the 24th of August someone there asked us to have a live person call - and that call never came. That's on us, and I'm the live person. I'm sorry it took this long.
+
+Before anything else - do you have a new-authority rule, and how many days? Ours was granted 7 August.
+
+You've got Piqua Ohio to Pineville North Carolina, flatbed or step deck, 4 feet and 2,900 pounds. Is it still open for a Wednesday pickup? There's no rate on the posting - what are you paying on it?
+
+[LET THEM ANSWER FIRST. Then:]
+
+That's only 4 feet of my deck. I've got a 30 foot gooseneck, so if you've got a second partial going the same direction I'll take both on the same run and it's cheaper for you than two trucks. Piqua is only 82 miles from me, so I can be there early.
+
+[TARGET $1,300. WALK AWAY AT $1,150. If they push back, ask what a second partial alongside it would be worth.]</pre></div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Follow-up email &mdash; send after the call</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: Following up on our call - Munster Logistics MC-84057665, 30 ft hotshot out of Cincinnati
+
+Hi [NAME],
+
+Thanks for taking the call, and again - sorry it took us this long to get a live person back to you after 24 August.
+
+On your Piqua OH to Pineville NC load: [RATE DISCUSSED / STATUS].
+
+Equipment: Munster Logistics LLC - MC-84057665 / USDOT 7555217. 30 ft gooseneck deck (25+5), 102 in wide, 9,000 lb max payload. Flat tarps, Grade 80 chains and binders, straps and mega ramps on board. $1M auto liability / $100k cargo.
+
+Worth knowing: that load only uses 4 ft of our 30 ft deck. If you have a second partial heading the same direction we can take both on one truck, which is cheaper for you than two carriers. Piqua is only 82 miles from us so we can be there early.
+
+Please keep us on your list - we are empty out of Cincinnati most weekday mornings.
+
+Thanks,
+[YOUR NAME]
+Munster Logistics LLC
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+</section>
+
+<!-- ============ L7 JOE TEX ============ -->
+<section class="load">
+  <div class="lhead warn">
+    <span class="lid">L7</span><span class="lname">Joe Tex, Inc.</span>
+    <span class="llane">Muncie, IN &rarr; Decatur, IL</span>
+    <span class="pill warn">Phone only &middot; ask for Angie</span>
+  </div>
+  <div class="facts"><span>109 DH + 215 loaded = <b>324 mi</b></span><span>Rate <b>not posted</b></span><span>Ask <b>$850</b> &middot; walk $675</span><span>20 ft, <b>8,000 lb</b> &mdash; near the ceiling</span></div>
+  <div class="why">Two calls to this number have died in the IVR without reaching a person &mdash; the menu is &ldquo;press one for brokerage dispatch&rdquo;. The board now gives a name. <b>Asking for Angie by name is the whole unlock.</b> Confirm 8,000 lb is real; the hard ceiling is 9,000.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Phone &mdash; (903) 537-7100</span><button class="copy">Copy</button></div>
+<pre class="txt">Hi, could I speak with Angie please?
+
+Hi Angie, this is [YOUR NAME] with Munster Logistics, MC 84057665, 30 foot hotshot deck out of Cincinnati. Quick question first - do you have a new-authority rule, and how many days?
+
+I'm looking at your reference 519281, Muncie Indiana to Decatur Illinois, 20 feet and 8,000 pounds. Two things: is it still open for a Wednesday pickup, and is 8,000 pounds the real weight? My hard ceiling is 9,000, so I need that confirmed before I commit.
+
+There's no rate on the posting - what are you paying? ... It's 109 miles of deadhead for me to get to Muncie and 215 loaded, so 324 total. I need $850 to make that work.
+
+[WALK AWAY AT $675.]
+
+One admin point - our records show a "Joe Tex LLC" from a call in August and the board says "Joe Tex, Inc." Same company?</pre></div>
+</section>
+
+<!-- ============ L9 FIFTH WHEEL KS ============ -->
+<section class="load">
+  <div class="lhead warn">
+    <span class="lid">L9</span><span class="lname">Fifth Wheel Freight</span>
+    <span class="llane">Fort Wayne, IN &rarr; Cedar Point, KS</span>
+    <span class="pill warn">Same call as L6 &middot; ext 8550</span>
+  </div>
+  <div class="facts"><span>153 DH + 758 loaded = <b>911 mi</b></span><span>Posted <b>$1,400</b> = $1.54/mi</span><span>Ask <b>$2,000</b> &middot; walk $1,850</span><span>14 ft, 6,033 lb</span></div>
+  <div class="why">Only on the list because it is Fifth Wheel. Cedar Point is rural Kansas, so the empty run out of there is on Justin. <b>One call, both loads &mdash; do not ring them twice.</b> If the rate does not move, spend the time asking what else they have going east or south out of Indiana and Ohio.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Phone &mdash; (616) 965-7277 ext 8550</span><button class="copy">Copy</button></div>
+<pre class="txt">Extension 8550 please.
+
+Hi, [YOUR NAME] with Munster Logistics. Your reference 757767, Fort Wayne to Cedar Point Kansas. I want to help you but $1,400 doesn't work - that's 153 miles of deadhead just to reach Fort Wayne, and Cedar Point is going to leave me empty a long way. At $2,000 I'll cover it.
+
+[WALK AWAY AT $1,850.]
+
+If that doesn't work, no problem - what else do you have moving east or south out of Indiana and Ohio this week? That's our lane and I'd rather build the list than chase one load.</pre></div>
+</section>
+
+<!-- ============ L2 WARREN ============ -->
+<section class="load">
+  <div class="lhead">
+    <span class="lid">L2</span><span class="lname">Warren Transport, Inc.</span>
+    <span class="llane">Union City, IN &rarr; Heyburn, ID</span>
+    <span class="pill info">Info request only</span>
+  </div>
+  <div class="facts"><span>92 DH + 1,775 loaded</span><span>Market <b>$4,818</b> &mdash; best gross on the board</span><span>Length &amp; weight <b>blank</b></span><span>Breaks the weekend-home rule</span></div>
+  <div class="why">Not the same company as WARREN&rsquo;S COURIER AGENCY &mdash; that is a LoadBoot carrier, do not mix them up. The Idaho run cannot get Justin home by Saturday, and a TL flatbed at 15 pieces is almost certainly a 48/53 ft trailer load. <b>This is a question, not an offer.</b></div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Email &rarr; loads@warrentransport.com</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: Ref 1181425 - length and weight? Plus 30 ft hotshot capacity out of Ohio / Indiana
+
+Hi,
+
+Your posting 1181425 (Union City IN to Heyburn ID, flatbed, qty 15) does not show a length or a weight. Could you confirm both?
+
+We run a 30 ft gooseneck deck at 9,000 lb max payload, so we can only take it if it genuinely fits that - I would rather ask than waste your time.
+
+Equipment: Munster Logistics LLC - MC-84057665 / USDOT 7555217. 30 ft gooseneck deck (25+5), 102 in wide, 9,000 lb max payload. Flat tarps, Grade 80 chains and binders, straps and mega ramps on board. $1M auto liability / $100k cargo. Based New Richmond, OH 45157.
+
+Separately: do you post shorter regional flatbed freight out of Indiana and Ohio? That is our lane and we would like to be on your list. Also, do you run a new-authority rule, and if so how many days?
+
+Thanks,
+[YOUR NAME]
+Munster Logistics LLC
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+</section>
+
+<!-- ============ L8 WHITEWATER ============ -->
+<section class="load">
+  <div class="lhead">
+    <span class="lid">L8</span><span class="lname">Whitewater Freight Inc</span>
+    <span class="llane">Pandora, OH &rarr; Easton, ME</span>
+    <span class="pill info">Capacity intro, not a bid</span>
+  </div>
+  <div class="facts"><span>139 DH + 1,122 loaded</span><span>Posted <b>$1,850</b> = $1.47/mi</span><span>Would need <b>$2,525</b> to reach floor</span><span>Easton ME = dead-end backhaul</span></div>
+  <div class="why">The load is priced wrong and goes to one of the worst backhaul markets in the country. But this broker posts <b>partials specifically</b>, which is exactly the freight a 30 ft deck at 9,000 lb wants. Play the relationship, not the load.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Email &rarr; loads@whitewaterfreight.com</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: 30 ft hotshot deck for your partial freight - Munster Logistics MC-84057665
+
+Hi,
+
+I saw you post partial flatbed freight regularly and wanted to put our truck on your list rather than only catching you on the board.
+
+Equipment: Munster Logistics LLC - MC-84057665 / USDOT 7555217. 30 ft gooseneck deck (25+5), 102 in wide, 9,000 lb max payload. Flat tarps, Grade 80 chains and binders, straps and mega ramps on board. $1M auto liability / $100k cargo. Based New Richmond, OH 45157.
+
+Partials of 10-30 ft and up to 9,000 lbs are exactly what this truck is built for. Midwest, Mid-Atlantic and South-East lanes work best for us, and we are empty out of the Cincinnati area most weekday mornings.
+
+On your current ref 0640725 (Pandora OH to Easton ME) - at $1,850 we cannot cover it; with 139 empty miles to Pandora and the run home out of northern Maine we would need $2,525. If that is workable, tell me. If not, no problem - I would still like to be on the list for your Midwest partials.
+
+Two questions: do you run a new-authority rule, and how many days? And what does your setup packet need?
+
+Thanks,
+[YOUR NAME]
+Munster Logistics LLC
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+</section>
+
+<!-- ============ L5 FENICHEY ============ -->
+<section class="load">
+  <div class="lhead stop">
+    <span class="lid">L5</span><span class="lname">Fenichey LLC</span>
+    <span class="llane">Louisville, KY &rarr; Newington, CT</span>
+    <span class="pill stop">Do not bid</span>
+  </div>
+  <div class="facts"><span>97 DH + 868 loaded</span><span>Posted <b>$2,900</b> = $3.34/mi</span><span>Needs a <b>48 or 53 ft stepdeck</b></span><span>Full tarping</span></div>
+  <div class="why">Pays the best per mile on the board, for a truck Munster does not own. Hard reject on equipment. <b>An honest &ldquo;not our truck&rdquo; note is what gets remembered</b> &mdash; it costs one minute and it buys a place on their list.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Email &rarr; boardresponse+123lb@fenichey.com</span><button class="copy">Copy</button></div>
+<pre class="txt">Subject: Not a fit on ref 140339 - but do you post 30 ft partials? Munster Logistics MC-84057665
+
+Hi,
+
+Your ref 140339 (Louisville KY to Newington CT) calls for a dedicated 48 or 53 ft stepdeck with full tarping. We run a 30 ft gooseneck deck at 9,000 lb max payload, so we are not your truck on that one and I will not waste your time bidding it.
+
+What I would like is to be on your list for the smaller freight. Equipment: Munster Logistics LLC - MC-84057665 / USDOT 7555217. 30 ft gooseneck deck (25+5), 102 in wide, 9,000 lb max payload. Flat tarps, Grade 80 chains and binders, straps and mega ramps on board. $1M auto liability / $100k cargo.
+
+Do you post 30 ft / 9,000 lb partials? We are empty out of the Cincinnati area most weekday mornings and we run into the north-east regularly.
+
+Also, do you run a new-authority rule, and how many days?
+
+Thanks,
+[YOUR NAME]
+Munster Logistics LLC
+[YOUR PHONE] | [YOUR EMAIL]</pre></div>
+</section>
+
+<!-- ============ UNIVERSAL ============ -->
+<section class="load">
+  <div class="lhead go">
+    <span class="lid">ALL</span><span class="lname">Use on every call</span>
+    <span class="pill go">Opener + voicemail</span>
+  </div>
+  <div class="why"><b>Ask the new-authority question in the first thirty seconds.</b> On 24 Aug, Sureway/ATS took four minutes of hold before saying &ldquo;we have a hundred and eighty day rule of new authority, and it was granted 8-7-2026&rdquo; &mdash; and that a Highway packet does not roll over for a new authority. Asking up front turns four minutes into ten seconds.</div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Universal opener</span><button class="copy">Copy</button></div>
+<pre class="txt">Hi, this is [YOUR NAME] calling for Munster Logistics, MC 84057665 - we run a 30 foot hotshot gooseneck out of New Richmond, Ohio.
+
+Before I take up your time - do you have a new-authority rule, and how many days is it? Our authority was granted 7 August this year.
+
+[IF 180 DAYS: "Understood, thank you - that puts us at early February. Can I send you our packet now so we are already set up when that date hits?" Then log it and hang up. Do not argue it.]
+
+I'm calling on your load [REF #] from [ORIGIN] to [DESTINATION]. Two things: is it still available, and can it pick up tomorrow, Wednesday the 9th? My truck is empty from tomorrow morning.
+
+Munster Logistics, MC eight four zero five seven six six five. Thirty foot gooseneck deck, one hundred and two inches wide, nine thousand pounds max payload. Tarps, Grade eighty chains and binders, straps and mega ramps on board. One million auto liability, one hundred thousand cargo. Based New Richmond, Ohio.
+
+[RATE POSTED: "I can do it at [TARGET]. That covers the [DH] miles of deadhead to get to you plus the loaded run."]
+[NO RATE POSTED: "What are you paying on it?" - then stay quiet and let them answer first.]
+
+[EVEN ON A NO:] Understood. Can I email you our capacity so I'm on your list? We're a 30 foot deck, 9,000 pounds, based in Cincinnati - we do a lot of partials, and we're empty most weekday mornings.</pre></div>
+
+  <div class="block"><div class="bhead"><span class="btitle">Voicemail &mdash; say all of it, not half</span><button class="copy">Copy</button></div>
+<pre class="txt">Hi, this is [YOUR NAME] with Munster Logistics, MC 84057665. I'm calling on your load reference [REF #], [ORIGIN] to [DESTINATION].
+
+We're a 30 foot gooseneck deck, 102 inches wide, 9,000 pounds max, with tarps, Grade 80 chains and straps on board. Fully insured, one million auto and one hundred thousand cargo. We're empty out of Cincinnati tomorrow morning.
+
+We can do that load at [TARGET ASK]. Call me back on [YOUR PHONE], or email me at [YOUR EMAIL] and I'll send our packet straight over. Again that's [YOUR NAME], Munster Logistics, [YOUR PHONE]. Thank you.</pre></div>
+</section>
+
+<footer>
+Built from the 123Loadboard pulls of 8&ndash;9 Sep 2026 and the recorded 22&ndash;25 Aug broker calls. Rates shown are targets, not agreements. Nothing on this page has been sent to any broker.
+</footer>
+</div>
+
+<script>
+(function(){
+  var F=[["name","f-name","[YOUR NAME]"],["phone","f-phone","[YOUR PHONE]"],["email","f-email","[YOUR EMAIL]"]];
+  function load(){
+    F.forEach(function(f){
+      var el=document.getElementById(f[1]); if(!el) return;
+      try{ var v=localStorage.getItem("munster."+f[0]); if(v) el.value=v; }catch(e){}
+      el.addEventListener("input",function(){
+        try{ localStorage.setItem("munster."+f[0], el.value); }catch(e){}
+      });
+    });
+  }
+  function fill(t){
+    F.forEach(function(f){
+      var el=document.getElementById(f[1]);
+      var v=el && el.value ? el.value.trim() : "";
+      if(v) t = t.split(f[2]).join(v);
+    });
+    return t;
+  }
+  function copy(text,btn){
+    var done=function(){
+      var old=btn.textContent; btn.textContent="Copied"; btn.classList.add("done");
+      setTimeout(function(){ btn.textContent=old; btn.classList.remove("done"); },1600);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ legacy(text,done,btn); });
+    } else { legacy(text,done,btn); }
+  }
+  function legacy(text,done,btn){
+    var ta=document.createElement("textarea");
+    ta.value=text; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.top="0"; ta.style.left="0"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,ta.value.length);
+    var ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+    if(ok){ done(); } else { btn.textContent="Select manually"; }
+  }
+  load();
+  Array.prototype.forEach.call(document.querySelectorAll("button.copy"),function(btn){
+    btn.addEventListener("click",function(){
+      var block=btn.closest(".block");
+      var pre=block && block.querySelector("pre.txt");
+      if(!pre) return;
+      copy(fill(pre.textContent),btn);
+    });
+  });
+})();
+</script>
