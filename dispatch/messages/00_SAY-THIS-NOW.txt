@@ -1,0 +1,140 @@
+MUNSTER  -  SAY THIS, IN THIS ORDER  -  Tue 8 Sep 2026
+========================================================================
+
+
+------------------------------------------------------------------------
+CALL 1  -  VENTURE CONNECT   (317) 854-5027   -   DO THIS FIRST
+------------------------------------------------------------------------
+>> An AI answers first. Do not negotiate with it.
+   why: The email thread and the night-time front desk both proved it: the automated layer only moves price. Get past it.
+
+"I need to speak with a person about load reference 2178262-2099817."
+   why: A reference number is the one thing that gets a screener to transfer you.
+
+If it asks who is calling: "Yaseen, Munster Logistics, MC 84057665."
+   why: Short and businesslike. Do not explain the load to the AI.
+
+
+------------------------------------------------------------------------
+WHEN A HUMAN PICKS UP
+------------------------------------------------------------------------
+"Hi, this is Yaseen with Munster Logistics, MC 84057665 - we run a 30 foot hotshot gooseneck out of New Richmond, Ohio."
+   why: Name, authority number, equipment. Three seconds, and they know you are a real carrier.
+
+"I called last night and got your AI, then a front desk who said they didn't have the information and to call after 7."
+   why: Says why you are calling again without complaining. It also tells them the low-level answer already failed.
+
+"So before we go further - are you the person who can change an appointment time and tell me a fine amount? If not, who is?"
+   why: THE most important sentence of the call. Last night you spent the whole call on someone with no authority. Never do that twice.
+
+
+------------------------------------------------------------------------
+QUESTION 1  -  THE FINE  (this decides the load, not the rate)
+------------------------------------------------------------------------
+"I'm on reference 2178262-2099817, Shelbyville to Selmer Tennessee. Your posting says there are fines for late delivery. What is the amount of that fine?"
+   why: Their posting threatens a penalty but never names it. You cannot price a risk you have not been told the size of.
+
+"I've asked this four times by email across your two loads and never got a number. I'm not able to accept a penalty when I don't know how big it is."
+   why: Four unanswered asks is a fact, not an accusation. Stating it makes it hard to brush off a fifth time.
+
+   [ IF THEY GIVE A NUMBER and it is small or capped  ->  carry on to question 2. ]
+   why: A known, capped fine is a normal business risk. An unknown one is not.
+
+   [ IF THEY WILL NOT SAY  ->  "Then I have to pass on it. Send me the figure in writing and I'll look again." Then move on. ]
+   why: One bad morning on a jobsite with an uncapped fine can swallow the entire load. Do not argue - just decline.
+
+
+------------------------------------------------------------------------
+QUESTION 2  -  THE PICKUP TIME
+------------------------------------------------------------------------
+"Second thing - your pickup window is 1100 to 1400. Can I load at the 1100 end?"
+   why: Loading three hours earlier is three more hours of margin on the delivery.
+
+"I'm 92 miles out, and the earlier I load the more margin I have on your 0800 to 1000 delivery in Selmer."
+   why: Justin may legally drive 11 hours. Deadhead plus loaded is 10 hours 47 minutes - thirteen minutes of slack. An 1100 load removes the squeeze.
+
+
+------------------------------------------------------------------------
+QUESTION 3  -  THE RATE
+------------------------------------------------------------------------
+"On rate - $1,025 and it's covered."
+   why: Say the number plainly and stop talking. Do not soften it.
+
+"That's not a negotiating number, that's what the truck breaks even at."
+   why: It reframes you from haggling to explaining. Brokers argue with haggles, not with arithmetic.
+
+"Shelbyville is 92 deadhead miles from me, so I turn 509 miles for your $900. That's $1.77 a mile before fuel."
+   why: Their $900 only counts the 417 loaded miles. The empty 92 miles to reach the shipper are real and they are yours to pay for.
+
+   [ IF THEY HOLD AT $900 and the fine is small and capped  ->  your call. It is a deliberate first-load decision, not a mistake. ]
+   why: A first delivery on the record with a broker who wants this exact truck has value beyond the rate. But go in knowing it nets about $712.
+
+   [ NEVER GO BELOW $1,025. ]
+   why: At $1,025 you are at $2.00 a mile all-in - exactly break-even. Below that you are paying to haul their freight.
+
+
+------------------------------------------------------------------------
+THE STANHOPE LOAD  -  one line, then let it go
+------------------------------------------------------------------------
+"And on the Stanhope one - I can only run that if the pickup moves to 1100, or the delivery window moves to 1100 to 1200."
+   why: This is the only thing that would make it workable. It is not a bargaining position.
+
+"With a noon pickup a solo driver can't legally cover 655 miles by 1000 the next morning. If neither can move, take me off it."
+   why: 655 miles is over the 11-hour limit, so it splits with a 10-hour break and arrival lands around 1050 - fifty minutes late, with fines attached and live tracking watching.
+
+
+------------------------------------------------------------------------
+BEFORE YOU HANG UP  -  say this no matter how the call went
+------------------------------------------------------------------------
+"Last thing - your system has told me four times you're looking for a 20 to 30 foot hotshot. That's exactly what this truck is."
+   why: They said it themselves, four times. You are not pitching, you are pointing at what they already wrote.
+
+"Put us on your list - we're empty out of Cincinnati most weekday mornings."
+   why: One load is one day's money. A place on their list is every week's money. This sentence is worth more than the load.
+
+
+
+------------------------------------------------------------------------
+CALL 2  -  FREIGHTWATCH   (419) 845-5250
+------------------------------------------------------------------------
+>> Send the board MESSAGE and place the $1,300 BID before you dial.
+   why: Three channels open at once costs nothing. Whichever they answer first, you win the load.
+
+"Hi, this is Yaseen with Munster Logistics, MC 84057665 - 30 foot hotshot gooseneck out of New Richmond, Ohio."
+   why: Same opener. It works.
+
+"Quick one first: do you run a new-authority rule, and how many days? Ours was granted 7 August."
+   why: On 24 Aug, Sureway spent four minutes of hold before saying they have a 180-day rule. Asking first turns that into a ten-second answer.
+
+"I'm on reference 111676, Lexington Ohio to Channahon Illinois - the steel stair system. Your posting has the length blank. What's the overall length of the piece?"
+   why: ASK THIS BEFORE THE RATE. The deck is 30 feet and steel stair systems are often longer. If it does not fit, the price never mattered.
+
+   [ IF OVER 30 FEET  ->  "Then I'm not your truck on this one - thanks for the straight answer." End the call politely. ]
+   why: An honest early no is remembered well. Arguing about it is not.
+
+"It's posted at $800, and Lexington is 146 miles from me, so I'm running 513 total miles for that - $1.56 a mile."
+   why: Same arithmetic, same reason: the empty miles are real.
+
+"Your own board's rate check on this lane says $1,287. I'll take it at $1,300."
+   why: You are not asking for more than the market - their own screen says so. That is very hard to argue with.
+
+"I can be on site tomorrow morning and deliver the 10th. Send me the rate confirmation with both appointments on it."
+   why: This load picks up on the 9th, which is exactly when Justin is free. No rolling, no clock problem.
+
+"Do you need tarps on a stair system? I carry flat tarps, Grade 80 chains and binders, and straps."
+   why: Asking rather than assuming avoids a surprise at the shipper, and it shows you have the right securement.
+
+   [ WALK AWAY AT $1,050. ]
+   why: Below that it stops clearing $2.00 a mile all-in.
+
+
+
+------------------------------------------------------------------------
+AFTER EVERY CALL  -  write down three things
+------------------------------------------------------------------------
+>> Who you spoke to  ·  what they actually said  ·  what number they gave.
+   why: Send those three and the sheet gets updated and the maths redone straight away.
+
+>> AND REMEMBER: Freightwatch picks up TOMORROW.
+   why: If Venture never comes good today, nothing has been lost. Do not take a bad number because the clock is running.
+

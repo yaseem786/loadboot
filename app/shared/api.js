@@ -628,6 +628,12 @@ export const reminderTargets = () => rpc('cc_reminder_targets');
 export const reminderSend = (keys = null, dryRun = true, ignoreCadence = false) =>
   rpc('cc_reminder_send', { p_keys: keys, p_dry_run: dryRun, p_ignore_cadence: ignoreCadence });
 // Carrier-side telemetry: which multi-field forms were opened and abandoned.
+// One carrier at a time, for the Carrier 360 record card. Same decision tree as the
+// list screen and the nightly job — the engine is asked, not re-implemented.
+export const reminderCarrier = (org) => rpc('cc_reminder_carrier', { p_org: org });
+// ignoreCadence: a person looking at one carrier may have a reason to push again today.
+export const reminderSendCarrier = (org, ignoreCadence = false) =>
+  rpc('cc_reminder_send_carrier', { p_org: org, p_ignore_cadence: ignoreCadence });
 export const formProgressPing = (form, fields = 0) => rpc('cc_form_progress_ping', { p_form: form, p_fields: fields });
 export const formProgressDone = (form) => rpc('cc_form_progress_done', { p_form: form });
 

@@ -287,7 +287,6 @@ async function boot() {
       { id: 'studio', label: 'Template Studio', path: '/templates', allowed: () => can('content.view'), render: (h) => renderTemplates(h) },
       { id: 'builder', label: 'Email builder', path: '/email-builder', allowed: () => can('content.view') || can('content.manage'), render: (h) => renderEmailBuilder(h) },
       { id: 'campaigns', label: 'Campaign manager', path: '/campaign-manager', allowed: () => can('content.view'), render: (h) => renderCampaignManager(h) },
-      { id: 'reminders', label: 'Carrier reminders', path: '/carrier-reminders', allowed: () => can('content.view') || can('comm.view') || can('comm.send'), render: (h) => renderCarrierReminders(h) },
       { id: 'audiences', label: 'Audiences', path: '/audiences', allowed: () => can('content.view'), render: (h) => renderAudiences(h) },
       { id: 'announcements', label: 'Announcements', path: '/announcements', allowed: () => announcementsEnabled && can('announce.view'), render: (h) => renderAnnouncements(h) },
     ] },
@@ -341,7 +340,10 @@ async function boot() {
     '/templates': tabbed('templates', 'studio'),
     '/audiences': tabbed('templates', 'audiences'),
     '/campaign-manager': tabbed('templates', 'campaigns'),
-    '/carrier-reminders': tabbed('templates', 'reminders'),
+    // Carrier reminders is a daily carrier-ops screen, not a template. It sat as a tab
+    // under Insights & Admin > Templates, where nobody looking after carriers would find
+    // it. Own nav item under Carriers now.
+    '/carrier-reminders': () => { setActive('/carrier-reminders'); guard(['content.view', 'comm.view', 'comm.send'], () => renderCarrierReminders(content))(); },
     '/delivery': tabbed('crm', 'delivery'),
     '/account-health': tabbed('compliance', 'health'),
     '/marketing-intel': tabbed('web', 'intel'),

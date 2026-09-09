@@ -28,6 +28,7 @@ const NAV = [
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
     { path: '/compliance', label: 'Compliance', icon: 'shield', perm: 'compliance.view', flag: 'compliance' },
     { path: '/documents', label: 'Document review', icon: 'doc', perm: 'any:documents.view,documents.review', badge: 'docs' },
+    { path: '/carrier-reminders', label: 'Carrier reminders', icon: 'bell', perm: 'any:content.view,comm.view,comm.send' },
   ] },
   { group: 'Partners & People', items: [
     { path: '/partners', label: 'Brokers & shippers', icon: 'users', perm: 'partners.view', flag: 'partners' },

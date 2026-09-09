@@ -10,7 +10,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { showError } from '../../shared/loading.js';
 import { sectionHead, statCard, statusPill, card, money, fmtDate, fmtDateTime, openDrawer, askReason, askConfirm } from '../../shared/ui/components.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
-import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccFleetTruckRemind, ccFleetTruckReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360 } from '../../shared/api.js';
+import { carrier360, fmcsaVerify, carrierScorecard, carrierPaymentProfile, verifyPaymentProfile, ccFactoringVerify, getCarrierCompliance, setCompliance, decideOnboarding, issueViolation, documentFile, accountHealth, accessorialQueue, reviewAccessorial, getTrip, carrierW9, carrierAgreementSignature, setBrokerVisibility, getBrokerVisibility, pauseCarrier, requestPoa, carrierReinstatements, reviewReinstatement, carrierPoaDemands, healthAdjust, healthResetFactor, reviewDocument, tripAccessorials, claimBundle, ccOnboardingRemind, ccOnboardingReminderStatus, ccFleetTruckRemind, ccFleetTruckReminderStatus, ccCarrierBackoffice, ccCarrierPrefs, ccCarrierFleet360, reminderCarrier, reminderSendCarrier } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 // 29 Aug 2026 — equipment_detail and notes used to be flattened into two 150px grid cells.
@@ -18,6 +18,7 @@ import { fmcsaRiskFlags } from '../../shared/fmcsa-flags.js';
 import { equipmentDetailCard, carrierNotesCard } from '../../shared/ui/carrierDetail.js';
 import { staffUploadCard } from './staffUpload.js';
 import { can } from '../../shared/permissions.js';
+import { META as REMINDER_META } from './carrierReminders.js';
 
 export function renderCarrier360(host, orgId) {
   mount(host, el('div', { class: 'cc-view' }, [
@@ -509,25 +510,17 @@ export function renderCarrier360(host, orgId) {
         const fTime = (x) => x ? fmtDateTime(x) : 'Never';
         const hist = (st && st.history) || [];
         const emailTone = (x) => ['delivered', 'sent'].includes(String(x)) ? 'green' : ['failed', 'bounced'].includes(String(x)) ? 'red' : 'gray';
-        const canSend = can('carriers.approve') || can('dispatch.manage');
-        const sendBtn = canSend ? el('button', {
-          class: 'lb-btn lb-btn-primary',
-          title: 'Send a premium in-app + email reminder (6-hour cooldown)',
-          onClick: async (ev) => {
-            const b = ev.currentTarget; b.disabled = true; b.textContent = 'Sending…';
-            try {
-              const sent = await ccFleetTruckRemind(orgId);
-              toast('First-truck reminder sent — in-app + email ' + (sent.email_status || 'not queued') + '.', 'success');
-              fleetReminderStatus = await ccFleetTruckReminderStatus(orgId);
-              renderReminderStatus(fleetReminderStatus);
-            } catch (e) { b.disabled = false; b.textContent = 'Send first-truck reminder'; toast(humanizeError(e), 'error'); }
-          },
-        }, [icon('mail', 15), ' Send first-truck reminder']) : null;
+        // bl_rem_0341: the send moved to the "Next reminder" card at the top of this
+        // page. That card asks the reminder engine what this carrier actually needs —
+        // truck, driver, documents, availability — instead of assuming it is a truck.
+        // This block keeps the history, which lives in a different log and is still
+        // worth seeing. cc_fleet_truck_remind is untouched in the database.
+        const sendBtn = null;
         mount(reminderHost, el('div', { style: 'margin-top:12px;background:#fff8eb;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px' }, [
           el('div', { style: 'display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap' }, [
             el('div', null, [
               el('b', { style: 'font-size:.88rem;color:#9a4a00' }, 'No truck on file — remind the carrier'),
-              el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'Sends a premium email and in-app alert with a direct link to Fleet → Add truck.'),
+              el('div', { class: 'cc-sub', style: 'margin-top:3px' }, 'Use the “Next reminder” card at the top of this page to send — it picks the right email for whatever is actually blocking them.'),
             ]),
             sendBtn,
           ].filter(Boolean)),
@@ -1619,8 +1612,118 @@ export function renderCarrier360(host, orgId) {
         ]))) : el('div', { class: 'cc-sub' }, 'No service records.'),
       ]));
     })();
+    // Self-styled pills, same palette the fleet card uses. Declared here because that
+    // one lives inside its own async block and its `tag` is not in scope out here.
+    const R_TONE = {
+      green: 'background:#e8f8ef;color:#136c3c;border:1px solid #a7e5c3',
+      red:   'background:#fdecec;color:#a31414;border:1px solid #f6b9b9',
+      amber: 'background:#fff5e3;color:#8a5300;border:1px solid #ffd99b',
+      gray:  'background:#f1f5f9;color:#475569;border:1px solid #dbe3ec',
+      blue:  'background:#e9f2fe;color:#0b4c92;border:1px solid #b6d6fb',
+    };
+    const rtag = (tone, txt) => el('span', { style: (R_TONE[tone] || R_TONE.gray) + ';border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:800;white-space:nowrap' }, txt);
+
+    // ---- Next reminder ---------------------------------------------------
+    // One card, every stage. Asks app_private.reminder_for_carrier what THIS carrier
+    // is actually blocked on — email not confirmed, a rejected document, no truck, no
+    // driver, no availability — and sends the matching premium email through the same
+    // engine as the bulk screen and the nightly job. Before this, the page only had a
+    // "no truck" button, so a carrier with a truck and no driver had nothing at all.
+    const remCard = card([el('h4', { class: 'cc-card-title' }, '\u23f0 Next reminder'),
+                          el('div', { class: 'cc-sub', style: 'margin-top:6px' }, 'Working out what this carrier needs\u2026')]);
+    const loadReminder = async () => {
+      let r;
+      try { r = await reminderCarrier(orgId); }
+      catch (e) { mount(remCard, [el('h4', { class: 'cc-card-title' }, '\u23f0 Next reminder'),
+                                  el('div', { class: 'cc-sub', style: 'margin-top:6px' }, humanizeError(e))]); return; }
+
+      const key = r && r.reminder;
+      const m = (key && REMINDER_META[key]) || null;
+
+      // Nothing owed is a real answer, and it has two very different meanings.
+      if (!key) {
+        const waitingOnUs = ['awaiting_review', 'ready_not_activated'].includes(String(r && r.onboarding));
+        mount(remCard, el('div', null, [
+          el('div', { class: 'cc-card-head' }, [
+            el('h4', { class: 'cc-card-title' }, '\u23f0 Next reminder'),
+            el('span', { class: 'cc-pill cc-pill-green' }, 'nothing owed'),
+          ]),
+          el('div', { class: 'cc-sub', style: 'margin-top:8px;line-height:1.6' }, waitingOnUs
+            ? (String(r.onboarding) === 'awaiting_review'
+                ? 'Their documents are with our compliance team. The ball is on our side \u2014 chasing them for something already on our desk is how you teach people to ignore your email.'
+                : 'Every required document is verified and this account is waiting on an activation decision from us, not on them.')
+            : 'Nothing is blocking this carrier right now. Either they are fully set up and their availability is confirmed today, or onboarding was declined.'),
+        ]));
+        return;
+      }
+
+      const blocked = !r.reachable ? 'no email address on file'
+                    : r.suppressed ? 'on the suppression list \u2014 they bounced or complained'
+                    : !r.opted_in  ? 'opted out of marketing email'
+                    : null;
+      const canSend = r.can_send && !blocked;
+
+      const doSend = async (ev, ignoreCadence) => {
+        const b = ev.currentTarget; const label = b.textContent;
+        b.disabled = true; b.textContent = 'Sending\u2026';
+        try {
+          const res = await reminderSendCarrier(orgId, ignoreCadence);
+          if ((res && res.queued) > 0) toast('Reminder queued to ' + (r.email || 'the carrier') + ' \u2014 ' + (m ? m.label.toLowerCase() : key) + '.', 'success');
+          else toast('Nothing was queued \u2014 already sent today, or the cadence has not cleared. Use \u201cSend anyway\u201d to override.', 'info');
+          await loadReminder();
+        } catch (e) { b.disabled = false; b.textContent = label; toast(humanizeError(e), 'error'); }
+      };
+
+      mount(remCard, el('div', null, [
+        el('div', { class: 'cc-card-head' }, [
+          el('h4', { class: 'cc-card-title' }, '\u23f0 Next reminder'),
+          el('span', { class: 'cc-pill cc-pill-' + ((m && m.tone) || 'gray') }, (m && m.label) || key),
+        ]),
+        el('div', { style: 'margin-top:8px;line-height:1.6;font-size:.9rem;color:#334155' }, (m && m.why) || ''),
+
+        r.missing ? el('div', { style: 'margin-top:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 13px;font-size:.85rem;font-weight:700;color:#9a3412' },
+          (key === 'docs_fix' ? 'Rejected: ' : 'Still needed: ') + r.missing) : null,
+
+        r.subject ? el('div', { class: 'cc-sub', style: 'margin-top:10px' },
+          ['They will receive: ', el('b', null, '\u201c' + r.subject + '\u201d')]) : null,
+
+        !r.template_ready ? el('div', { style: 'margin-top:10px;color:#b91c1c;font-size:.85rem;font-weight:700' },
+          'No template registered for this stage, so nothing would send. Apply the reminder template migrations.') : null,
+
+        el('div', { style: 'display:flex;gap:7px;flex-wrap:wrap;margin-top:12px' }, [
+          rtag(r.last_sent ? 'blue' : 'gray', 'Last sent: ' + (r.last_sent ? fmtDateTime(r.last_sent) : 'never')),
+          rtag('gray', 'Sent before: ' + (r.sent_before || 0)),
+          blocked ? rtag('red', blocked)
+                  : rtag(r.due ? 'green' : 'amber', r.due ? 'due now' : 'not due yet'),
+        ]),
+
+        blocked ? el('div', { class: 'cc-sub', style: 'margin-top:10px' },
+          'No email can be sent to this carrier while that is true \u2014 reach them another way.') : null,
+
+        canSend ? el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px' }, [
+          r.due ? el('button', { class: 'lb-btn lb-btn-primary', onClick: (ev) => doSend(ev, false) },
+                    [icon('mail', 15), ' Send this reminder']) : null,
+          !r.due ? el('button', {
+            class: 'lb-btn',
+            title: 'Overrides the normal gap between reminders. The nightly job can never do this.',
+            onClick: async (ev) => {
+              const ok = await askConfirm('Send it anyway?', {
+                body: 'The cadence says this carrier is not due yet' + (r.last_sent ? ' (last sent ' + fmtDateTime(r.last_sent) + ')' : '')
+                    + '. Sending again now overrides that. It is still capped at one email per carrier per reminder per day, and it is recorded in the audit log under your name.',
+                confirmLabel: 'Yes, send anyway',
+              });
+              if (ok) doSend(ev, true);
+            },
+          }, [icon('mail', 15), ' Send anyway']) : null,
+        ].filter(Boolean)) : (r.can_send ? null : el('div', { class: 'cc-sub', style: 'margin-top:12px' },
+          'You do not have permission to send carrier email.')),
+      ].filter(Boolean)));
+    };
+    loadReminder();
+
     mount(body, el('div', null, [
       head, kpis,
+      el('div', { style: 'margin-top:16px' }, remCard),
       el('div', { style: 'margin-top:16px' }, prefsCard),
       el('div', { style: 'margin-top:16px' }, compCard),
       el('div', { style: 'margin-top:16px' }, (() => {
