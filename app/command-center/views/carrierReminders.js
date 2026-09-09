@@ -1,5 +1,9 @@
 // carrierReminders.js — Carrier reminders (manual push + what the nightly job would do).
 //
+// Covers the WHOLE onboarding funnel since bl_rem_0337: email confirmation and the
+// document stages as well as fleet and availability. One screen, one row per carrier,
+// one answer — instead of two systems that each knew half the story.
+//
 // One decision tree decides what each carrier is owed, server-side, in
 // app_private.reminder_for_carrier(). This screen shows you that decision for
 // every active carrier, lets you dry-run it, and lets you push it by hand on a
@@ -23,9 +27,19 @@ import { reminderTargets, reminderSend, studioListTemplates } from '../../shared
 import { humanizeError, toast } from '../../shared/errors.js';
 import { can } from '../../shared/permissions.js';
 
-const KEYS = ['truck_add', 'truck_continue', 'driver_add', 'avail_start', 'avail_continue', 'avail_confirm'];
+// Ordered as the funnel is actually walked, so the chip row reads like the journey:
+// activate the account -> get verified -> build the fleet -> post availability.
+const KEYS = ['confirm_email', 'docs_start', 'docs_finish', 'docs_fix',
+              'truck_add', 'truck_continue', 'driver_add',
+              'avail_start', 'avail_continue', 'avail_confirm'];
 
-const META = {
+// Exported so Carrier 360 shows the same label and the same reason for the same key.
+// One place to change the words in.
+export const META = {
+  confirm_email:  { label: 'Confirm email',        tone: 'gray',  why: 'Signed up but never clicked the confirmation link, so they cannot even sign in yet.' },
+  docs_start:     { label: 'Start verification',   tone: 'amber', why: 'Signed in, no verification documents uploaded at all. Invisible to brokers.' },
+  docs_finish:    { label: 'Finish verification',  tone: 'amber', why: 'Some documents verified, some still outstanding. Partial counts as unverified.' },
+  docs_fix:       { label: 'Document rejected',    tone: 'gray',  why: 'A document was reviewed and turned down. They usually think this one is already done.' },
   truck_add:      { label: 'Add first truck',      tone: 'amber', why: 'Signed up, no truck on file. Nothing for a dispatcher to sell.' },
   truck_continue: { label: 'Finish the truck',     tone: 'amber', why: 'Started the Add Truck form, or the truck has no VIN / no payload, so it cannot be posted.' },
   driver_add:     { label: 'Add a driver',         tone: 'blue',  why: 'Usable truck on file but nobody assigned to it. Only ever sent when a truck already exists.' },
@@ -34,7 +48,13 @@ const META = {
   avail_confirm:  { label: 'Confirm availability', tone: 'green', why: 'Posted before, the post passed its 24-hour mark.' },
 };
 
-const CADENCE = 'Availability reminders go at most once a day (20h gap). Onboarding nudges stop after 4 sends, 3 days apart. Opt-outs and the suppression list are always honoured.';
+const CADENCE = 'Availability reminders go at most once a day (20h gap). Every other reminder — email confirmation, documents, fleet — stops after 4 sends, 3 days apart. Opt-outs and the suppression list are always honoured.';
+
+// Stages where the carrier owes us nothing and the engine stays silent on purpose:
+// documents sitting in our review queue, and a fully verified carrier waiting on
+// activation. Nagging somebody for something already on our desk is how you teach
+// people to ignore your email.
+const SILENT = 'A carrier waiting on US — documents in review, or verified and awaiting activation — is deliberately not listed here.';
 
 export function renderCarrierReminders(host) {
   const manage = can('comm.manage') || can('comm.send') || can('content.manage') || can('settings.manage');
@@ -46,16 +66,18 @@ export function renderCarrierReminders(host) {
 
   mount(host, el('div', null, [
     sectionHead('Carrier reminders',
-      'What each active carrier is owed right now, decided server-side. Dry-run it, then push it by hand — or leave it to the nightly job.',
+      'Every active carrier, from signup to a truck on the board — what each one is missing right now, decided server-side. Dry-run it, then push it by hand, or leave it to the nightly job.',
       manage ? el('div', { class: 'cc-head-actions' }, [
         el('button', { class: 'lb-btn lb-btn-sm', onClick: () => runSend(true) }, 'Dry run'),
         el('button', { class: 'lb-btn lb-btn-primary lb-btn-sm', onClick: () => runSend(false) }, 'Send now'),
       ]) : null),
     el('div', { class: 'lb-note', style: 'margin:0 0 14px;font-size:13px;line-height:1.6;color:#475569;background:#f6f9fd;border:1px solid #e3edfa;border-radius:12px;padding:12px 14px' }, [
-      el('b', null, 'How the target is chosen: '),
+      el('b', null, 'How the target is chosen — hardest blocker first: '),
+      'email not confirmed → activate the account · documents rejected → fix that one · no documents → start verification · partly verified → finish it · ',
       'no truck → finish/add truck · truck not usable → finish truck · truck but no driver → add driver · fleet ready → post or confirm availability. ',
       el('b', null, 'A carrier who added a driver first and still has no truck gets the truck email, never the driver email.'),
       el('div', { style: 'margin-top:6px' }, CADENCE),
+      el('div', { style: 'margin-top:6px' }, SILENT),
     ]),
     kpis, bar, body,
   ]));
