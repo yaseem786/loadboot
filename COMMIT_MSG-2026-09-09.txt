@@ -1,0 +1,91 @@
+Carrier reminders: cover the whole onboarding funnel, and put the button where the work happens
+
+Yesterday's engine only knew the second half of the funnel — truck, driver,
+availability. The document half and email confirmation were owned by a different
+system with no screen, no preview and no manual button. Measured on production
+(47 active carriers), that meant the new screen could see 11 of them and was blind
+to the other 36.
+
+One decision tree now answers for every stage, hardest blocker first:
+
+  email never confirmed   -> confirm_email     (they cannot even sign in)
+  a document rejected     -> docs_fix          (named, because they think it is done)
+  no documents at all     -> docs_start
+  documents partly done   -> docs_finish       ("2 of 4 verified", names the rest)
+  no truck                -> truck_add / truck_continue
+  usable truck, no driver -> driver_add
+  fleet ready             -> avail_start / avail_continue / avail_confirm
+
+It stays SILENT in two states on purpose: documents sitting in our review queue,
+and a fully verified carrier waiting on an activation decision from us. The ball is
+on our side there. Chasing somebody for something already on our desk is how you
+teach people to ignore your email.
+
+The document emails name the actual documents. delivery-worker does no merge-field
+substitution by design, so {{MISSING_LIST}} and {{DOC_PROGRESS}} are filled at queue
+time from carrier_onboarding_state, the plain-text half is rebuilt from the
+substituted HTML so the two can never disagree, and any unfilled token is stripped
+before queueing — a carrier must never receive a literal {{...}}.
+
+Carrier 360 had a "Send first-truck reminder" button and nothing else, so a carrier
+with a truck and no driver had no button at all. Replaced with one "Next reminder"
+card that asks the same engine what THIS carrier is blocked on and sends the matching
+email. It shows the subject that will go out, the documents by name, when it last
+went, how many times, and whether the carrier is reachable at all (no email / opted
+out / suppressed are three different answers). When the cadence says not due, the
+button becomes "Send anyway" behind a confirm — an override only a person gets; the
+nightly job can never take it.
+
+Two systems could have emailed the same carrier on the same day, so the old cron's
+two carrier nags are retired. It keeps the "your documents are with our compliance
+team" reassurance, the staff activation alert, the in-app bell, and the entire agent
+loop. That edit rewrites the function from its own source rather than restating 200
+lines of it.
+
+Things this caught along the way:
+
+* 'if not v_confirmed then' occurs TWICE in cc_run_onboarding_reminders — once in the
+  carrier loop, once in the agent loop. The obvious guard would have silently killed
+  agent activation emails. The migration counts its anchors and aborts rather than guess.
+
+* Adding p_org to reminder_dispatch created an OVERLOAD, not a replacement. The old
+  4-argument version survived with the old body and every existing caller kept
+  resolving to it as the exact match. Dropped explicitly.
+
+* Carrier reminders was a tab under Insights & Admin > Templates, where nobody looking
+  after carriers would ever find it. It is a daily carrier-ops screen, so it now has
+  its own nav item under Carriers.
+
+Also promoted bl_mail_0335 (CC Mailbox hardening) to production. It had been applied
+to staging only, so the merged Mailbox UI was calling cc_mail_stats and a 4-argument
+cc_mail_list that did not exist here — which is exactly the PGRST202 the screen showed.
+Verified function-for-function against staging after applying.
+
+The nightly job (lb-carrier-reminders, 15:00 UTC) stays DISABLED on both databases.
+Nothing reaches a real carrier until the ten emails have been reviewed:
+  select cron.alter_job(
+    (select jobid from cron.job where jobname='lb-carrier-reminders'), active := true);
+
+Frontend
+  app/command-center/views/carrier360.js         the Next reminder card; old truck-only
+                                                 send retired, its history kept
+  app/command-center/views/carrierReminders.js   four new stages; META exported so both
+                                                 screens use the same words
+  app/command-center/views/shell.js              Carrier reminders in the Carriers nav
+  app/command-center/app.js                      standalone route, no longer a tab
+  app/shared/api.js                              per-carrier reminder wrappers
+
+Migrations (staging, then production)
+  bl_rem_0337  the full-funnel decision tree + reminder_doc_list
+  bl_rem_0338  confirm_email / docs_start / docs_finish / docs_fix templates
+  bl_rem_0339  fill the document tokens at queue time
+  bl_rem_0340  retire the old cron's two carrier nags
+  bl_rem_0341  per-carrier read + send, p_org filter, drop the stale overload
+  bl_mail_0335 promoted to production (file was already in the repo)
+
+Verified on staging with a 16-case truth table covering every branch, including the
+two silent states and the case Yaseen asked for: a carrier who added a DRIVER first
+and still has no truck gets the truck email and can never receive the driver email.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NLBisLFyx9zVgJDMVRxc9M
