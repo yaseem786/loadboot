@@ -1623,6 +1623,28 @@ export function renderCarrier360(host, orgId) {
     };
     const rtag = (tone, txt) => el('span', { style: (R_TONE[tone] || R_TONE.gray) + ';border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:800;white-space:nowrap' }, txt);
 
+    // The whole funnel, every step, done or not. Only ONE of them is emailed today —
+    // the one marked current — but staff should not have to guess what else is open.
+    const funnelList = (rows) => el('div', { style: 'margin-top:14px;border-top:1px solid #eef2f7;padding-top:10px' }, [
+      el('div', { style: 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800;margin-bottom:8px' },
+        'Everything this carrier still owes'),
+      el('div', null, (rows || []).map((c) => el('div', {
+        style: 'display:flex;gap:9px;align-items:flex-start;padding:6px 0'
+        + (c.current ? ';background:#fff8eb;border-radius:8px;padding-left:8px;padding-right:8px;margin:0 -8px' : ''),
+      }, [
+        el('span', { style: 'flex:none;width:16px;text-align:center;font-size:.9rem;line-height:1.5;color:' + (c.done ? '#16a34a' : '#b45309') },
+          c.done ? '\u2713' : '\u25cb'),
+        el('div', { style: 'min-width:0;flex:1' }, [
+          el('div', { style: 'font-size:.86rem;font-weight:' + (c.done ? '600' : '800') + ';color:' + (c.done ? '#64748b' : '#0f172a') }, [
+            c.label,
+            c.current ? el('span', { style: 'margin-left:8px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#9a4a00' }, 'sending this one') : null,
+          ].filter(Boolean)),
+          el('div', { class: 'cc-sub', style: 'font-size:.78rem;margin-top:1px' }, c.detail || ''),
+        ]),
+      ]))),
+    ]);
+
+
     // ---- Next reminder ---------------------------------------------------
     // One card, every stage. Asks app_private.reminder_for_carrier what THIS carrier
     // is actually blocked on — email not confirmed, a rejected document, no truck, no
@@ -1653,6 +1675,7 @@ export function renderCarrier360(host, orgId) {
                 ? 'Their documents are with our compliance team. The ball is on our side \u2014 chasing them for something already on our desk is how you teach people to ignore your email.'
                 : 'Every required document is verified and this account is waiting on an activation decision from us, not on them.')
             : 'Nothing is blocking this carrier right now. Either they are fully set up and their availability is confirmed today, or onboarding was declined.'),
+          funnelList(r && r.checklist),
         ]));
         return;
       }
@@ -1697,6 +1720,7 @@ export function renderCarrier360(host, orgId) {
                   : rtag(r.due ? 'green' : 'amber', r.due ? 'due now' : 'not due yet'),
         ]),
 
+        funnelList(r && r.checklist),
         blocked ? el('div', { class: 'cc-sub', style: 'margin-top:10px' },
           'No email can be sent to this carrier while that is true \u2014 reach them another way.') : null,
 

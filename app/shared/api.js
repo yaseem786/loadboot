@@ -164,6 +164,16 @@ export const myAvailabilityStatus = () => rpc('cc_my_availability_status');
 export const updateTruckPostingPlace = (id, p) => rpc('cc_update_truck_posting_place', { p_id: id, p: p ?? {} });
 // bl_avail_0322 — carrier's own "Not available / Available" toggle on a posting.
 export const setTruckPostingAvailable = (id, available) => rpc('cc_set_truck_posting_available', { p_id: id, p_available: !!available });
+// bl_avail_0329 — hours-of-service left on an availability post. The posting engine
+// (cc_post_truck) does not take this field, so the carrier app sets it in a second call
+// right after the post is created. FMCSA caps driving at 11 hours after 10 off duty, and
+// the server enforces the 0-11 range; '' and undefined both mean "they did not say",
+// which must reach the server as NULL rather than 0 — 0 hours left is a real answer.
+export const setPostingHos = (id, hours, source) => rpc('cc_set_posting_hos', {
+  p_id: id,
+  p_hours: (hours === '' || hours == null) ? null : Number(hours),
+  p_source: source || 'carrier',
+});
 export const scanTruckMatches = () => rpc('cc_scan_truck_matches');
 // Expense tracker v1
 export const expenseAdd = (o) => rpc('cc_expense_add', { p: o ?? {} });
