@@ -81,8 +81,12 @@ pastes that into the new session. Never make him reconstruct context from memory
 
 ## 4. Non-negotiables
 
-- **The anon-executable SECURITY DEFINER count in `public` is 27.** Check it after every
-  migration. If it changed, something opened a door.
+- **The anon-executable SECURITY DEFINER surface in `public` is 33 on prod** (32 on staging; the
+  two differ only by feature revision). Check it after every migration and **compare the NAMES, not just the
+  count** - two changes that cancel out leave the count unmoved. The full list, what each name
+  is for, and the query are in `docs/audit-2026-09/anon-secdef-baseline.md`. If a name appears
+  that is not on that list, something opened a door. (This said "27" until 9 Sep 2026; neither
+  database had read 27 for some time, and a stale number is worse than none - it gets ignored.)
 - Never run a diagnostic against a live customer account. A probe against a real agent
   once fired a real "your payout was approved" notification that could not be recalled.
 - Never enter his identity documents, payment details, API keys or passwords into any

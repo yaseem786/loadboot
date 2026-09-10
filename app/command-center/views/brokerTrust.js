@@ -16,6 +16,10 @@ const TIER = {
   agent_pending:   ['amber', 'Agent · awaiting parent'],
   new:             ['gray',  'Not screened'],
   hold:            ['red',   'On hold'],
+  // bl_bp_0343 — authority re-screen. authority_fail = FMCSA said no twice in a row.
+  // authority_stale = we could not get an answer for 14 days; that is OUR lookup, not a finding.
+  authority_fail:  ['red',   'FMCSA authority failed ×2'],
+  authority_stale: ['amber', 'Authority unconfirmed · our lookup'],
 };
 const pill = (tone, txt) => el('span', { class: 'cc-pill cc-pill-' + tone }, [el('i', { class: 'cc-pill-dot' }), txt]);
 const ago = (ts) => { if (!ts) return '—'; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
@@ -90,6 +94,9 @@ export function renderBrokerTrust(host) {
     if (r.tier === 'hold') actions.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => act(r.org_id, 'release', prompt('Note to the broker (optional):') || null) }, 'Release hold'));
     else actions.push(el('button', { class: 'cc-btn-sm', onClick: () => { const n = prompt('Reason (the broker sees this):'); if (n) act(r.org_id, 'hold', n); } }, 'Hold'));
     if (scr && scr !== 'pass') actions.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => { const n = prompt('You checked FMCSA by hand — what did you see? (recorded)'); if (n) act(r.org_id, 'pass', n); } }, 'Pass by hand'));
+    // bl_bp_0343: on authority_fail/authority_stale the stored outcome can still read 'pass', so the
+    // button above never appears — and the stale alert tells staff to clear it here. This is that button.
+    if (r.tier === 'authority_fail' || r.tier === 'authority_stale') actions.push(el('button', { class: 'cc-btn-sm', style: 'background:#0883F7;color:#fff;border-color:#0883F7', onClick: () => { const n = prompt(r.tier === 'authority_stale' ? 'You checked FMCSA by hand and the authority IS active — what did you see? (recorded; clears the pause and un-flags their open loads)' : 'You checked FMCSA by hand — what did you see? (recorded; clears the strikes, restores posting and un-flags their open loads)'); if (n) act(r.org_id, 'pass', n); } }, 'Verify by hand'));
     if (scr && scr !== 'pending') actions.push(el('button', { class: 'cc-btn-sm', onClick: () => act(r.org_id, 'rescreen') }, 'Re-screen'));
     // bl_bp_0318: one agent, several brokerages — staff act on the newest undecided one
     if (r.is_agent && (r.parents || []).some((p) => p.status === 'pending' || p.status === 'screening' || p.status === 'declined')) {
@@ -158,17 +165,19 @@ export function renderBrokerTrust(host) {
 
   const needsHuman = (r) => ['unknown', 'not_found', 'error'].includes(r.screening)
     || (r.is_agent && !r.parent_confirmed_at && !r.parent_declined_at && r.screening === 'pass')
-    || (!r.is_agent && r.screening === 'pass' && r.identity_status !== 'verified' && ((!r.identity_fmcsa_email && !(r.identity_fmcsa_phone || r.fmcsa_phone)) || r.identity_status === 'declined' || (r.identity_note || '').includes('call requested')));
+    || (!r.is_agent && r.screening === 'pass' && r.identity_status !== 'verified' && ((!r.identity_fmcsa_email && !(r.identity_fmcsa_phone || r.fmcsa_phone)) || r.identity_status === 'declined' || (r.identity_note || '').includes('call requested')))
+    || r.tier === 'authority_stale';   // bl_bp_0343: nobody can clear this but a person
   async function load() {
     showLoading(body, 'Loading broker trust queue…');
     let rows; try { rows = await ccBrokerTrustQueue(); } catch (e) { showError(body, humanizeError(e), load); return; }
     rows = rows || [];
     const n = (t) => rows.filter((r) => r.tier === t).length;
+    const authFail = (r) => r.tier === 'authority_fail';        // bl_bp_0343
     mount(kpis, [
       statCard({ icon: 'users', label: 'Brokers', value: String(rows.length), sub: 'non-demo, not archived', accent: 'blue' }),
       statCard({ icon: 'check', label: 'Can post now', value: String(rows.filter((r) => r.can_post).length), sub: n('verified') + ' verified · ' + (n('screened') + n('agent_confirmed')) + ' limited', accent: 'green', onClick: () => { filter = 'can'; paint(); } }),
       statCard({ icon: 'clock', label: 'Needs a human', value: String(rows.filter(needsHuman).length), sub: 'screen by hand / declined identity / no FMCSA contact at all', accent: 'amber', onClick: () => { filter = 'human'; paint(); } }),
-      statCard({ icon: 'alert', label: 'Failed / on hold', value: String(rows.filter((r) => r.screening === 'fail' || r.tier === 'hold').length), sub: 'carrier MCs, revoked, declined', accent: 'red', onClick: () => { filter = 'bad'; paint(); } }),
+      statCard({ icon: 'alert', label: 'Failed / on hold', value: String(rows.filter((r) => r.screening === 'fail' || r.tier === 'hold' || authFail(r)).length), sub: 'carrier MCs, revoked, declined, authority lost', accent: 'red', onClick: () => { filter = 'bad'; paint(); } }),
     ]);
     const mkF = (k, l) => el('button', { class: 'cc-btn-sm', style: filter === k ? 'background:#10223B;color:#fff;border-color:#10223B' : '', onClick: () => { filter = k; paint(); } }, l);
     function paint() {
@@ -176,7 +185,7 @@ export function renderBrokerTrust(host) {
       const f = rows.filter((r) => filter === 'all' ? true
         : filter === 'can' ? r.can_post
         : filter === 'human' ? needsHuman(r)
-        : filter === 'bad' ? (r.screening === 'fail' || r.tier === 'hold')
+        : filter === 'bad' ? (r.screening === 'fail' || r.tier === 'hold' || authFail(r))
         : filter === 'new' ? !r.screening : true);
       mount(body, f.length ? f.map(row) : el('div', { class: 'cc-card', style: 'padding:24px;color:#64748b' }, 'Nothing in this bucket.'));
     }
