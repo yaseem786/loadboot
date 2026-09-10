@@ -173,7 +173,40 @@ const TIER_LABEL = {
   agent_confirmed: ['info', 'Confirmed agent · limited posting'],
   verified: ['ok', 'Verified brokerage · unlimited'],
   hold: ['bad', 'Posting on hold'],
+  // bl_bp_0343 — authority re-screen. These outrank 'verified': a complete packet is not an
+  // answer to a suspended authority. 'stale' is OUR lookup failing, and says so.
+  authority_fail: ['bad', 'FMCSA authority not confirmed'],
+  authority_stale: ['warn', 'Authority not re-confirmed yet'],
 };
+
+// bl_bp_0343 — the card a broker sees when posting is paused on authority rather than paperwork.
+// The two states are deliberately worded differently: a fail is something FMCSA told us, staleness
+// is something we could not read. Neither is ever dressed up as the other.
+function authorityCard(st, refresh) {
+  const fail = st.tier === 'authority_fail';
+  const mc = (st.screening && st.screening.mc_number) || st.mc_number || '';
+  const subject = encodeURIComponent((fail ? 'Broker authority — please verify by hand' : 'Authority re-check failed on your side') + (mc ? ' · MC-' + String(mc).replace(/^MC-?/i, '') : ''));
+  return h('div', { class: 'bt-card', style: 'border-left:4px solid ' + (fail ? '#c62828' : '#d97706') }, [
+    h('h3', null, fail ? 'New posting is paused — FMCSA authority' : 'We have not been able to re-confirm your authority'),
+    h('div', { class: 'bt-sub' }, st.reason || (fail
+      ? 'FMCSA no longer shows active broker authority for this MC on our two most recent checks.'
+      : 'Our FMCSA lookup has not returned a successful check recently. This is usually our side, not yours.')),
+    h('div', { class: 'bt-note', style: 'margin-top:10px' }, fail
+      ? 'Nothing already booked was cancelled. Trips, tracking, invoices and payments keep running. Loads still on the board are request-to-book only.'
+      : 'Nothing was cancelled and this is not a finding against your brokerage. Loads still on the board are request-to-book only until a check succeeds.'),
+    chips(fail
+      ? ['Booked trips unaffected', 'Open loads → request-to-book', 'Restored the same day we see an active record']
+      : ['Booked trips unaffected', 'Open loads → request-to-book', 'Usually a LoadBoot lookup problem']),
+    h('div', { class: 'bt-choice', style: 'margin-top:12px' }, [
+      h('a', { href: 'mailto:hello@loadboot.com?subject=' + subject, style: 'text-decoration:none' },
+        [h('div', { class: 't' }, '📬 Verify by hand'), h('div', { class: 'd' }, fail
+          ? 'Send us your current FMCSA record and we will check it ourselves and restore posting the same day.'
+          : 'Ask us to confirm your authority by hand. We check FMCSA directly and clear the pause.')]),
+      h('button', { onClick: () => refresh(true) },
+        [h('div', { class: 't' }, '↻ Check again now'), h('div', { class: 'd' }, 'Re-reads your current status. The automatic re-check also runs every night.')]),
+    ]),
+  ]);
+}
 
 // Small badge for the top bar / dashboard hero.
 export function trustBadge(st) {
@@ -515,19 +548,22 @@ export function mountBrokerTrust(host, opts = {}) {
     if (!st) { mount(host, h('div', { class: 'bt-wrap' }, h('div', { class: 'bt-card' }, [h('div', { class: 'bt-skel', style: 'width:40%' }), h('div', { class: 'bt-skel', style: 'width:90%' }), h('div', { class: 'bt-skel', style: 'width:70%' })]))); return; }
     const isAgent = st.agent ? true : mode === 'agent';
     const [cls, label] = TIER_LABEL[st.tier] || TIER_LABEL.new;
+    const authBlocked = st.tier === 'authority_fail' || st.tier === 'authority_stale';  // bl_bp_0343
     const sst = stepState(st); const nDone = ['s1', 's2', 's3', 's4'].filter((k) => sst[k] === 'done').length;
     const hero = h('div', { class: 'bt-hero' }, [
       h('div', { class: 'bt-hero-top' }, [
         h('div', { style: 'flex:1;min-width:260px' }, [
           h('div', { class: 'bt-hero-k' }, 'Broker onboarding · ' + label),
-          h('div', { class: 'bt-hero-t' }, st.tier === 'verified' ? 'You’re fully verified.' : st.can_post ? 'You’re cleared to post.' : st.tier === 'unclaimed' ? 'Authority confirmed — one click left.' : 'Post your first load in minutes — no documents to start.'),
-          h('div', { class: 'bt-hero-s' }, st.tier === 'verified' ? 'Unlimited postings, instant booking for carriers, payables inside LoadBoot.' : 'Authority read live from FMCSA — no PDFs. Documents only where they matter: first booking, first payment.'),
+          h('div', { class: 'bt-hero-t' }, st.tier === 'authority_fail' ? 'New posting is paused.' : st.tier === 'authority_stale' ? 'We could not re-confirm your authority.' : st.tier === 'verified' ? 'You’re fully verified.' : st.can_post ? 'You’re cleared to post.' : st.tier === 'unclaimed' ? 'Authority confirmed — one click left.' : 'Post your first load in minutes — no documents to start.'),
+          h('div', { class: 'bt-hero-s' }, st.tier === 'authority_fail' ? 'FMCSA no longer shows active broker authority for this MC. Booked trips, tracking, invoices and payments are untouched — see below.' : st.tier === 'authority_stale' ? 'Our FMCSA lookup has not succeeded recently, so we will not claim a verification we do not have. Nothing was cancelled — see below.' : st.tier === 'verified' ? 'Unlimited postings, instant booking for carriers, payables inside LoadBoot.' : 'Authority read live from FMCSA — no PDFs. Documents only where they matter: first booking, first payment.'),
         ]),
         progressRing(nDone, 4, st.tier === 'verified' ? 'verified' : 'steps done'),
       ]),
       ladder(st),
     ]);
-    const first = st.tier === 'hold'
+    const first = authBlocked
+      ? authorityCard(st, refresh)     // bl_bp_0343
+      : st.tier === 'hold'
       ? h('div', { class: 'bt-card', style: 'border-left:4px solid #c62828' }, [h('h3', null, 'Posting is on hold'), h('div', { class: 'bt-sub' }, st.hold_reason || 'Contact support.')])
       : (!st.screening && !st.agent && !mode)
         ? h('div', { class: 'bt-card' }, [h('h3', null, '1 · How do you post freight?'), h('div', { class: 'bt-sub' }, 'Pick the one that matches you.'),

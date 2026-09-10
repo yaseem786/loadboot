@@ -735,5 +735,21 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 .cp-railtip { position: fixed; z-index: 1000; transform: translateY(-50%) translateX(-4px); background: #0f172a; color: #fff; font: 600 .78rem/1.2 var(--lb-body, system-ui, sans-serif); padding: 7px 11px; border-radius: 9px; white-space: nowrap; box-shadow: 0 10px 30px -10px rgba(15,23,42,.55); pointer-events: none; opacity: 0; transition: opacity .12s, transform .12s; }
 .cp-railtip::before { content: ''; position: absolute; left: -5px; top: 50%; width: 10px; height: 10px; background: inherit; transform: translateY(-50%) rotate(45deg); border-radius: 2px; }
 .cp-railtip.show { opacity: 1; transform: translateY(-50%) translateX(0); }
-@media (max-width: 900px) { .cp-rail-tg, .cp-railtip { display: none !important; } }
+@media (max-width: 900px) {
+  .cp-rail-tg, .cp-railtip { display: none !important; }
+  /* bl_ux_0320 FIX, 2026-09-10 — the rail is a DESKTOP layout only.
+     This block already hid the rail's toggle on phones, but the track itself was missed:
+     `.cp-shell--rail` above sits LATER in this file than the `@media (max-width:900px)`
+     responsive block that sets `.cp-shell{grid-template-columns:1fr}`, and both are a single
+     class, so the rail's `72px 1fr` won on source order. `.cp-side` is display:none here, so
+     `.cp-main` was auto-placed INTO the empty 72px track.
+     Measured at 360px before this fix: grid "72px 288px", .cp-main 72px wide, and
+     .cp-top-right (left 26 → right 182) drawn straight over .cp-top-title (left 53 → 158) —
+     the overlapping top bar and the one-word-per-line cards the phone was showing. */
+  .cp-shell--rail { grid-template-columns: 1fr; }
+  /* The title is an <h1 class="cp-top-title">, which never got the shrink treatment the
+     `.cp-title` variant has above — without this a long tab name pushes the bell and avatar
+     off the right edge instead of ellipsing. */
+  .cp-top-title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
 @media (prefers-reduced-motion: reduce) { .cp-shell { transition: none; } }

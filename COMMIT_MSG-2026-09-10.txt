@@ -1,0 +1,113 @@
+Broker authority is re-checked, not remembered — and the migration that does it can now actually apply
+
+bl_bp_0312 screened a broker's FMCSA authority once, stored the answer, and
+broker_tier() read that stored row forever. A brokerage screened in March still
+read "pass" in September. FMCSA's 16 Jan 2026 rule gives a broker seven days
+after their BMC-84/85 surety drops below $75,000 before the authority is
+suspended, so the window we were relying on is a week, not six months.
+
+bl_bp_0343 + 0343a are already live on prod (applied 9 Sep, 38/38 rollback-txn
+test, anon-executable SECURITY DEFINER surface unchanged at 33 before and after).
+This commit carries the file fix that made that possible, the frontend copy for
+the two new tiers, and the documentation the next session needs.
+
+THE MIGRATION FIX — one line, moved
+
+  revoke all on function app_private.bl_bp_0343_rollback() from public, anon;
+
+sat at line 765, inside the §10 revoke block. The function it names is created at
+line 785, in §12. On staging that was invisible, because an earlier partial run
+had already created the function. On any database seeing this migration for the
+first time it aborts:
+
+  42883: function app_private.bl_bp_0343_rollback() does not exist
+
+That was proved against prod before applying, not guessed. The revoke now follows
+the create. The §0/§13 notices also stopped printing "prod invariant is 27",
+which was a number neither database had read for some time.
+
+The lesson is worth more than the line: a green staging run does not prove a
+migration applies to a database that has never seen it. Verify anchors against
+the TARGET, not the rehearsal. Staging has since been resynced so all eighteen
+functions bl_bp_0343 touches are byte-identical across both environments
+(combined md5 5c4374907aed03cbad2b196f3962c16d on each).
+
+WHAT THE ENGINE DOES, IN ONE PARAGRAPH
+
+Authority is re-checked at post time when the last successful check is over 24h
+old, and swept nightly at 07:00 UTC. A broker that has passed before needs TWO
+consecutive definite fails before posting stops — FMCSA has been wrong on a
+single read (Warren's Courier, Munster). unknown / not_found / error never move
+the verdict at all; the facts land, last_pass_at does not advance. Fourteen days
+with no successful check pauses posting as authority_stale, unless no broker
+anywhere has passed in 48 hours — in which case the thing that is broken is our
+lookup, and the gate does not fire. Nothing is ever cancelled: open loads drop to
+request-to-book, booked trips, tracking, invoices and payments are untouched.
+
+0343a exists because the test found that broker_screen_request() writes
+outcome='pending' on conflict. Harmless when it only ever ran once per broker;
+under nightly re-screening it would have dropped every passing brokerage to
+'pending' -> tier 'new' -> posting blocked, for the minute each check was in
+flight and permanently if a response never came. The verdict must move on
+ANSWERS, never on the act of asking.
+
+THE FRONTEND — two tiers, and an honest way out
+
+authority_fail and authority_stale outrank 'verified', so a broker with a
+complete document packet can still be paused. Until now both fell through to a
+default branch and the portal cheerfully told them to "post your first load in
+minutes" while broker_can_post refused.
+
+  app/partner/broker-trust.js  new authorityCard() takes the first-card slot, with
+                               a "Verify by hand" mailto and a re-check button;
+                               the hero no longer claims a live FMCSA verification
+                               we do not have.
+  app/partner/app.js           two onboarding-hero branches ahead of the
+                               "cleared to post" one. (This file does not switch on
+                               tier anywhere else — it delegates to broker-trust.js.)
+  app/command-center/views/
+    brokerTrust.js             a "Verify by hand" button on both tiers. The existing
+                               "Pass by hand" only appears when screening <> 'pass',
+                               and on these tiers the stored outcome can still read
+                               'pass' — so staff had no button at all, while the
+                               stale alert told them to use one. authority_fail
+                               joins the Failed/hold bucket; authority_stale joins
+                               "needs a human", because nobody else can clear it.
+
+The two states are worded differently on purpose. A fail is something FMCSA told
+us. Staleness is something we could not read, and the copy says so rather than
+implying a finding against the brokerage.
+
+CLAUDE.md §4 — a stale invariant replaced by names
+
+§4 said the anon-executable SECURITY DEFINER count in public was 27. Prod reads
+33 and staging 32, they hold different sets, and which six the 27 excluded could
+not be reconstructed. A number nobody can reproduce gets ignored, which is worse
+than no number at all. docs/audit-2026-09/anon-secdef-baseline.md now lists every
+name grouped by the flow that needs anon, and §4 says to compare NAMES — two
+changes that cancel out leave a count unmoved.
+
+That list immediately earned itself: staging had cc_cmp_save and cc_set_coi_limits
+anon-executable and prod did not. Command Center is a staff surface. Nothing was
+reachable — both authorise on their first statement via has_global_permission, so
+anon already got 42501 — but it was a missing layer and an environment
+disagreement, and it is now revoked on staging.
+
+docs/audit-2026-09/HANDOFF.md — the baton, re-synced
+
+Its header was stale by about forty migrations across three lanes. Its NEXT ACTION
+asked for the F14 live-chat slice; reading staging live shows another lane already
+did it (bl_sec_0335 + 0336, 8 Sep), so it was recorded, not redone. Prod has none
+of those three and still gates lc_ob_* on length < 8 — latent, not live: 70
+conversations, zero keys under 16, shortest 26, zero novkey rows. Parked for a
+prod decision, with the evidence attached.
+
+One new finding, F36: lc_ob_save computes v_saves and never reads it, and
+lc_onboarding.visitor_key carries a UNIQUE index — so that "daily save limit" is
+0-or-1 by construction and throttles nothing on either environment. Left unfixed
+deliberately; the throttle number is a decision, not a fix.
+
+Applied to prod: bl_bp_0343, bl_bp_0343a (9 Sep).
+Applied to staging: the same two, plus the resync and the cc_* revoke.
+Nothing in this commit changes production behaviour on its own — the database
+already carries it. The frontend needs a build and a service-worker refresh.
