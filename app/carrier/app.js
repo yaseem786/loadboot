@@ -19,7 +19,7 @@ import {
   pocketGetProfile, pocketSaveProfile, pocketSubmitOnboarding,
   pocketGetPreferences, pocketSavePreferences,
   pocketAvailableLoads, pocketBookLoad, requestBookLoad, carrierBestLoads, getDispatchPrefs, setDispatchPrefs, tripArrive, tripArriveGps, tripDepart, carrierOffers, offerRespond,
-  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus,
+  isFlagEnabled, myReferral, claimReferral, myReferralEarnings, referralRequestPayout, myPayoutRequests, agentChainStatus, agentCarrierDirectory, partnerPostLoad, offerSend, partnerUpdatePickup, partnerCarrierReviews, agentFeed, agentOnboardingStatus, agentSaveOnboarding, agentPayoutCenter, agentRequestPayout, agentConfirmPayoutReceived, agentSendInvite, agentMsgSend, agentMsgList, agentClaimUpline, dispatcherApply, dispatcherMyStatus, dispatcherSubmitId,
   setMyPaymentProfile, myPaymentProfile, carrierViewPoster, accountHealth, myTrustProfile, myApprovedPartners, setMyServices, myServices, dispatchSheet, myRateConfirmation, acknowledgeRC, deliveryDocPack, prebookCheck, myOnboardingPacket, onboardingSubmitItem, carrierRequestAccessorial, tripAccessorials,
   carrierPnl, carrierAddExpense, carrierExpenses, carrierDeleteExpense,
   pocketNotifications, pocketMarkNotificationRead, carrierFactoringSet, carrierFactoringRemitUpdate, carrierFactoringPacket, carrierFactoringBrokers, carrierFactoringBrokerSet,
@@ -914,7 +914,14 @@ async function agentPortal(user) {
     };
     const inp = (ph, type) => h('input', { class: 'cp-in', placeholder: ph, type: type || 'text' });
     const sel = (opts) => h('select', { class: 'cp-in' }, opts.map(([v9, l9]) => h('option', { value: v9 }, l9)));
-    const checks = (arr) => { const map = {}; const box = h('div', { style: 'display:flex;gap:9px;flex-wrap:wrap;margin:4px 0 8px' }, arr.map((b9) => { const c9 = h('input', { type: 'checkbox' }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
+    // bl_disp_0305: `exclusive` marks an option that cannot be true together with the others —
+    // "No own access" ticked alongside "DAT (own login)" made three of the first five applications
+    // self-contradictory, and every one of them cost an e-mail to resolve.
+    const checks = (arr, exclusive) => { const map = {}; const box = h('div', { style: 'display:flex;gap:9px;flex-wrap:wrap;margin:4px 0 8px' }, arr.map((b9) => { const c9 = h('input', { type: 'checkbox', onChange: () => {
+      if (!exclusive || !c9.checked) return;
+      if (b9 === exclusive) { arr.forEach((o9) => { if (o9 !== exclusive) map[o9].checked = false; }); }
+      else if (map[exclusive]) { map[exclusive].checked = false; }
+    } }); map[b9] = c9; return h('label', { style: 'display:flex;gap:5px;align-items:center;font-size:.85rem;color:#cbd5e1' }, [c9, b9]); })); return { box, map, values: () => arr.filter((x9) => map[x9].checked) }; };
     // ---- premium / educational blocks (keep the dispatcher engaged) ----
     const dHero = () => h('div', { style: 'border-radius:18px;padding:22px 22px;margin-bottom:14px;background:linear-gradient(135deg,#10223B 0%,#0d2a4d 55%,#0b1f3d 100%);border:1px solid rgba(8,131,247,.35);position:relative;overflow:hidden' }, [
       h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#7cc0ff' }, 'LOADBOOT DISPATCH ACADEMY'),
@@ -978,7 +985,7 @@ async function agentPortal(user) {
         linkedin: inp('LinkedIn or résumé link'),
       };
       const boards = checks(['DAT', 'Truckstop', 'Amazon Relay', 'Newtrul', '123Loadboard', 'Other']);
-      const ownBoards = checks(['DAT (own login)', 'Truckstop (own login)', 'Other board (own login)', 'No own access']);
+      const ownBoards = checks(['DAT (own login)', 'Truckstop (own login)', 'Other board (own login)', 'No own access'], 'No own access');
       const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck']);
       // ---- CV / résumé + optional ID document upload ----
       const docState = { cv: null, cvName: null, idd: null, iddName: null };
@@ -1066,21 +1073,70 @@ async function agentPortal(user) {
         h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => go('earnings') }, 'See how earnings work'),
       ]),
     ]) : null;
+    // bl_disp_0304 — IDENTITY VERIFICATION AFTER SUBMISSION.
+    // The application form's ID upload is optional and most candidates skip it; once the profile
+    // leaves status 'applied' the form is gone, so there was no way to supply it later. LoadBoot
+    // verifies the candidate's country and identity so someone who fails the skills test cannot
+    // simply re-apply from a fresh account. Writes through dispatcher_submit_id(), which merges
+    // into skills server-side — nothing else on the profile is touched.
+    const idOnFile = !!((prof.skills || {}).id_doc);
+    const idVerifyCard = idOnFile ? null : (function () {
+      const st = h('div', { class: 'cp-row-s', style: 'margin-top:8px;color:#94a3b8;line-height:1.6' }, 'Passport, national ID or driver\u2019s licence \u00b7 PDF or photo \u00b7 up to 25 MB. Stored privately \u2014 only LoadBoot staff can open it.');
+      const file = h('input', { type: 'file', accept: '.pdf,.jpg,.jpeg,.png', class: 'cp-in', style: 'margin-top:10px', onChange: async (e9) => {
+        const f9 = e9.target.files && e9.target.files[0]; if (!f9) return;
+        file.disabled = true; st.style.color = '#94a3b8'; st.textContent = 'Uploading\u2026';
+        try {
+          const up = await uploadDocument(f9, 'dispatcher_id');
+          const r9 = await dispatcherSubmitId(up.path, up.fileName);
+          if (r9 && r9.error) throw new Error(r9.error);
+          prof.skills = Object.assign({}, prof.skills || {}, { id_doc: up.path, id_name: up.fileName });
+          st.style.color = '#4ade80';
+          st.textContent = '\u2713 ' + up.fileName + ' received. Verification usually completes within one business day.';
+        } catch (e10) {
+          file.disabled = false; st.style.color = '#f87171';
+          st.textContent = 'Upload failed \u2014 ' + ((e10 && e10.message) || 'please try again') + '.';
+        }
+      } });
+      return h('div', { style: 'border-radius:18px;padding:20px 22px;margin-bottom:14px;background:linear-gradient(135deg,rgba(251,146,60,.14),rgba(239,68,68,.08));border:1.5px solid rgba(251,146,60,.5)' }, [
+        h('div', { style: 'font-size:.72rem;font-weight:900;letter-spacing:.12em;color:#fdba74' }, 'ACTION NEEDED \u2014 IDENTITY VERIFICATION'),
+        h('div', { style: 'font-size:1.1rem;font-weight:900;color:#fff;margin:6px 0 4px' }, 'Upload a government ID to continue'),
+        h('div', { class: 'cp-row-s', style: 'line-height:1.7' }, 'Every LoadBoot dispatcher is verified before a carrier account is handed over \u2014 you will hold that carrier\u2019s authority documents and speak to brokers in their name. We check that the name and country on your application match your ID. Applications without a verified ID are not moved to the skills test.'),
+        file, st,
+      ]);
+    })();
     const cards = [agCard('🧑‍✈️ Your dispatcher status', [
       h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1])]),
       prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
       prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : '',
     ])];
+    const statusCard = cards[0]; // keep a stable handle: the unshifts below change cards[0]
     if (referralUpsell) cards.unshift(referralUpsell);
     if (waitBanner) cards.unshift(waitBanner);
+    if (idVerifyCard) cards.unshift(idVerifyCard);
     const asg = (d.assignments || []).filter((a9) => a9.status !== 'ended');
     // Dispatcher Workspace (bl_disp_0288): once hired (trial/verified/active) the dashboard IS the
     // workspace — trucks, availability, bookings + RC, commission, thread, packet. Loaded as its own
     // module so the application form / referral code above stays untouched. Falls back to the
     // read-only cards below if the module fails to load (old SW cache, offline).
+    // bl_disp_0306: a candidate at skills_test gets the TEST itself here, not a status pill. The
+    // e-mail we send is only a button into this screen; the clock and the questions live on the server.
+    if (prof.status === 'skills_test') {
+      const tHost = h('div', { id: 'dw-test' }, h('div', { class: 'cp-muted' }, 'Opening your test\u2026'));
+      mount(host, h('div', null, [idVerifyCard || '', tHost]));
+      try {
+        const mod = await import('../agent/skills-test.js');
+        await mod.mountSkillsTest(tHost);
+        return;
+      } catch (e9) {
+        try { console.warn('[skills-test] failed to load', e9); } catch (_) {}
+        mount(host, h('div', null, [idVerifyCard || '', statusCard,
+          agCard('\ud83d\udcdd Skills test', [h('div', { class: 'cp-row-s' }, 'Your test could not be opened here (' + ((e9 && e9.message) || 'load error') + '). Refresh the page, or clear the app cache and sign in again \u2014 your answers are saved on our side.')])]));
+        return;
+      }
+    }
     if (['trial', 'verified', 'active'].includes(prof.status)) {
       const wsHost = h('div', { id: 'dw-host' }, h('div', { class: 'cp-muted' }, 'Opening your workspace…'));
-      mount(host, h('div', null, [cards[0], wsHost]));
+      mount(host, h('div', null, [idVerifyCard || '', statusCard, wsHost]));
       try {
         const mod = await import('../agent/dispatcher-workspace.js');
         await mod.mountDispatcherWorkspace(wsHost, {});

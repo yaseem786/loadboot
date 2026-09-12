@@ -401,6 +401,18 @@ export const ccAgentPayoutRequestDetails = (user, fields, note) => rpc('cc_agent
 export const ccAgentPayoutApproveMethod = (user, note) => rpc('cc_agent_payout_approve_method', { p_user: user, p_note: note ?? null });
 // ---- Dispatcher (salaried) operational system ----
 export const dispatcherApply = (p, submit) => rpc('dispatcher_apply', { p, p_submit: !!submit });
+// bl_disp_0304: identity document supplied AFTER the application was submitted (the form is gone by then).
+// Merges into skills server-side so nothing else on the profile is overwritten.
+export const dispatcherSubmitId = (path, name) => rpc('dispatcher_submit_id', { p_path: path, p_name: name || null });
+// bl_disp_0306 — the skills test is a timed, in-portal assessment. The clock, the single attempt and
+// the answer key all live on the server; the client only renders and reports what the candidate did.
+export const dispatcherTestMy = () => rpc('dispatcher_test_my', {});
+export const dispatcherTestStart = () => rpc('dispatcher_test_start', {});
+export const dispatcherTestSave = (q, answer, seconds, paste) => rpc('dispatcher_test_save', { p_question: q, p_answer: answer, p_seconds: seconds || 0, p_paste: paste || 0 });
+export const dispatcherTestSubmit = (integrity) => rpc('dispatcher_test_submit', { p_integrity: integrity || {} });
+export const ccDispatcherTestInvite = (user, minutes, startHours) => rpc('cc_dispatcher_test_invite', { p_user: user, p_minutes: minutes || 45, p_start_hours: startHours || 48 });
+export const ccDispatcherTestReview = (user) => rpc('cc_dispatcher_test_review', { p_user: user });
+export const ccDispatcherTestScore = (attempt, scores, decision, note) => rpc('cc_dispatcher_test_score', { p_attempt: attempt, p_scores: scores || {}, p_decision: decision || null, p_note: note || null });
 export const dispatcherMyStatus = () => rpc('dispatcher_my_status', {});
 export const ccDispatchersList = () => rpc('cc_dispatchers_list', {});
 export const ccDispatcher360 = (user) => rpc('cc_dispatcher_360', { p_user: user });
