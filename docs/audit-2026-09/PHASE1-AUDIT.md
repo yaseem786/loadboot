@@ -619,3 +619,10 @@ Recovered applied 0338/0339/0341/0342/0343/0344 source from staging history. Ear
 F36 client saves now run in order with bounded rate-limit retries, conversation checks after asynchronous auth, explicit HTTP/result validation and persistent failure feedback. Completion does not claim a successful save before acknowledgement. F11 unknown MX renders “Not checked”; badges describe domain/onboarding checks and manual-review instructions point to arranging secure submission.
 
 20 current actual-source tests PASS. Syntax/import checks and staging build PASS; browser local preview blocked with ERR_BLOCKED_BY_CLIENT. Local source only, no new DB/production/public deployment or messages. Full audit remains open. Exact evidence, recovery hashes and remaining gates: `REVIEW-RECOVERY-SAVE-FEEDBACK-2026-09-12.md`.
+
+
+## 2026-09-12 remaining batch — staged versus local versus open
+
+F08/F09/F18/F31 code reconstructed on current main; custom lb-auth token cleanup, per-tab update consent, owner/expiry-bound share cache and four AI-verdict insert paths. F06 report failures now visible; two-function/nullable-column promotion package tested with missing-schema, reapply, authorization and guarded rollback cases. 40 UI/privacy + 30 actual-source IP checks PASS; 158 syntax/import checks and staging build PASS. Browser/native upload and CI activation remain open.
+
+F14 permission follow-up: seven new dispatcher-test RPCs appeared on both anonymous SECDEF lists. Their internal guards refused anonymous calls in staging probes; this is an unnecessary-grant finding, not a proven data disclosure. Staging ACL-only fix applied 20260912190639, source and authenticated/service grants unchanged, 39→32 exact-name delta tested. Prod still 40; no prod modification. See REVIEW-REMAINING-BATCH-2026-09-12.md for hashes/source packages, rollback, approval scope and remaining gates.
