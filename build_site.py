@@ -324,7 +324,7 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 const cu=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const el=e.target,t=+el.dataset.count;let n=0;const s=Math.max(1,Math.ceil(t/40));const tick=()=>{n+=s;if(n>=t){el.textContent=t}else{el.textContent=n;requestAnimationFrame(tick)}};tick();cu.unobserve(el)}})},{threshold:.6});
 document.querySelectorAll('[data-count]').forEach(el=>cu.observe(el));
 const hdr=document.getElementById('hdr');addEventListener('scroll',()=>{hdr&&hdr.classList.toggle('scrolled',scrollY>10)});
-function toggleMenu(){document.getElementById('nav').classList.toggle('open')}
+function toggleMenu(){var n=document.getElementById('nav'),b=document.querySelector('.menu-btn'),o=n.classList.toggle('open');if(b){b.setAttribute('aria-expanded',o?'true':'false');b.setAttribute('aria-label',o?'Close menu':'Open menu')}}
 var st=document.getElementById('scrollTruck');if(st){var road=st.parentElement;function mv(){var r=road.getBoundingClientRect();var p=(innerHeight-r.top)/(innerHeight+r.height);p=Math.max(0,Math.min(1,p));st.style.transform='translate('+(p*(road.clientWidth-188))+'px,-60%)';}addEventListener('scroll',mv,{passive:true});addEventListener('resize',mv);mv();}'''
 
 ARW = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
@@ -439,10 +439,10 @@ def header(active):
             links += '<a href="%s" class="%s">%s</a>' % (href, 'active' if is_act else '', label)
     mob = '<a href="tel:+14692537575" class="nav-mob" data-lb-contact="nav">&#128222; Call us 24/7 &mdash; +1 (469) 253-7575</a><a href="/app/carrier/" class="nav-mob nav-mob-login">Log in</a><a href="contact.html" class="nav-mob nav-mob-go">Get Started</a>'
     return '''<div class="topbar"><span class="tb-tag">&#128666; The Operating System for Trucking</span><span class="tb-right"><a href="tel:+14692537575" class="tb-call" data-lb-contact="topbar">&#128222; 24/7&nbsp; +1 (469) 253-7575</a><a href="contact.html#call" class="tb-cb">or we call you &rarr;</a></span></div><header id="hdr"><div class="wrap nav">
-<a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" height="36" style="display:block;height:36px;width:auto"></a>
+<a class="logo" href="index.html" aria-label="LoadBoot home"><img src="/logo-full.png" alt="LoadBoot" width="165" height="36" fetchpriority="high" decoding="async" style="display:block;height:36px;width:auto"></a>
 <nav class="nav-links" id="nav">%s%s</nav>
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
-<button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+<button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu" aria-expanded="false"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
 </div></header>''' % (links, mob, ARW)
 
 
@@ -454,7 +454,7 @@ AI_RESEARCH_JS = '<script>(function(){var host=document.getElementById(\'aiBtns\
 def footer():
     return '''<footer><div class="wrap">
 <div class="foot-top">
-<div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" height="32" style="display:block;height:32px;width:auto"></div>
+<div><div class="logo"><img src="/logo-full-dark.png" alt="LoadBoot" width="146" height="32" decoding="async" style="display:block;height:32px;width:auto"></div>
 <div style="color:#94a3b8;font-weight:500;font-size:.92rem;margin-top:10px;letter-spacing:.02em">The Operating System for Trucking</div>
 <p style="margin-top:10px;max-width:380px">Professional truck dispatch services for owner-operators, fleets, and new-authority carriers across all 48 states. Higher-paying loads, less deadhead, no contracts.</p><div class="foot-call-row"><a class="foot-call" href="tel:+14692537575" data-lb-contact="footer">&#128222; +1 (469) 253-7575 &middot; 24/7</a><a class="foot-cb" href="contact.html#call">We call you &rarr;</a></div>
 <div class="foot-h" style="margin-top:16px">Company</div><div style="font-size:.9rem;line-height:1.95;color:#94a3b8"><div><b style="color:#cbd5e1">General &amp; support:</b> <a href="mailto:hello@loadboot.com">hello@loadboot.com</a></div><div><b style="color:#cbd5e1">Dispatch &amp; loads:</b> <a href="mailto:dispatch@loadboot.com">dispatch@loadboot.com</a></div><div><b style="color:#cbd5e1">Billing &amp; settlements:</b> <a href="mailto:billing@loadboot.com">billing@loadboot.com</a></div><div style="margin-top:8px">LoadBoot &mdash; truck dispatch marketplace. Serving owner-operators &amp; fleets across the United States (all 48 states).</div></div>
@@ -619,7 +619,7 @@ def page(fname, title, desc, active, body, schema=''):
     if 'BreadcrumbList' not in schema:  # don't double up when a caller supplies its own breadcrumb
         schema = schema + _breadcrumb(fname, title)
     body = body + photo_band(fname) + related_block(fname)
-    doc = '''<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    doc = '''<!DOCTYPE html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%s</title><meta name="description" content="%s"><link rel="canonical" href="https://loadboot.com/%s">
 <meta property="og:title" content="%s"><meta property="og:description" content="%s"><meta property="og:type" content="website"><meta property="og:url" content="https://loadboot.com/%s"><meta property="og:image" content="https://loadboot.com/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="LoadBoot — the load board with zero ghost loads, plus dispatch, GPS proof and payments"><meta property="og:image" content="https://loadboot.com/og-image-square.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200"><meta property="og:site_name" content="LoadBoot"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="%s"><meta name="twitter:description" content="%s"><meta name="twitter:image" content="https://loadboot.com/og-image.png"><meta name="twitter:image:alt" content="LoadBoot — the load board with zero ghost loads"><meta name="theme-color" content="#10223B">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2"><link rel="icon" href="/favicon.ico?v=2"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Loadboot">
@@ -833,7 +833,161 @@ table.cmp tbody,table.accx-cmp tbody,table.ftx-cmp tbody,table.mr-t tbody,.art-b
 }
 """
 
-with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS + RESP_CSS))
+# ---------- MOBILE FIXES (2026-09-12 audit: docs/MOBILE-AUDIT-2026-09-12.md) ----------
+# Additive + reversible: delete MOBILE_FIX_CSS (and its use below) to roll back.
+MOBILE_FIX_CSS = """
+/* ==========================================================================
+   LB-MOBILE-FIXES v1 (12 Sep 2026) — additive, CSS-only, reversible.
+   Source: docs/MOBILE-AUDIT-2026-09-12.md. Remove this block to roll back.
+   ========================================================================== */
+
+/* C1 — header breaks between 881px and ~1050px: extend the hamburger layout to 1120px */
+@media(min-width:881px) and (max-width:1120px){
+  .nav-links{position:fixed;inset:74px 0 auto 0;background:#fff;flex-direction:column;padding:18px 24px;gap:14px;border-bottom:1px solid var(--border);display:none;max-height:calc(100vh - 74px);overflow:auto;align-items:stretch}
+  .nav-links.open{display:flex}
+  .menu-btn{display:block}
+  .hd-btn{display:none}
+  .nav-dd{flex-direction:column;align-items:stretch}
+  .nav-dd::before{display:none}
+  .nav-dd .nav-dd-menu{display:flex;position:static;box-shadow:none;border:0;border-left:2px solid #e6ebf3;border-radius:0;padding:4px 0 4px 14px;margin:8px 0 0 4px;min-width:0}
+  .nav-caret{display:none}
+  .nav-dd-item{white-space:normal;padding:7px 8px}
+  .nav-mob{display:block;font-weight:700}
+  .nav-mob-login{color:var(--blue)}
+  .nav-mob-go{color:var(--orange)}
+  .nav-cta{gap:0}
+}
+
+/* C4 — hamburger tap target 26x29 -> 44x44 */
+.menu-btn{min-width:44px;min-height:44px;display:none;align-items:center;justify-content:center;padding:0;margin-right:-8px;border-radius:10px}
+@media(max-width:1120px){.menu-btn{display:inline-flex}}
+.menu-btn:active{background:#eef2f7}
+
+/* M5 — mobile menu: 44px rows, section headings readable, close affordance via aria state */
+@media(max-width:1120px){
+  .nav-links a,.nav-links .nav-dd-item,.nav-links .nav-mob{display:flex;align-items:center;min-height:44px;padding:4px 8px;font-size:1rem}
+  .nav-links .nav-dd>a,.nav-links .nav-dd>span{font-weight:700;color:var(--navy)}
+  .nav-links .nav-dd-menu{gap:0}
+  .menu-btn[aria-expanded="true"] svg{transform:rotate(90deg);transition:.2s}
+}
+
+/* C2 — rate & industry tables were clipped by body{overflow-x:hidden}: make each table scroll on its own
+   (display:block on <table> keeps thead/tbody in one anonymous table box, so columns stay aligned) */
+@media(max-width:760px){
+  table.eqr-t,table.ind-t,table.accx-cmp,.prose table:not(.mr-t){display:block;width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-collapse:collapse}
+  table.eqr-t th,table.eqr-t td,table.ind-t th,table.ind-t td,table.accx-cmp th,table.accx-cmp td,.prose table:not(.mr-t) th,.prose table:not(.mr-t) td{min-width:120px}
+  table.eqr-t td:first-child,table.ind-t td:first-child,table.eqr-t th:first-child,table.ind-t th:first-child{min-width:140px}
+}
+
+/* C3 — api.html <code>/<pre> ran 586px wide */
+.prose pre,.prose code,pre code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;max-width:100%}
+.prose pre{overflow-x:auto}
+
+/* H1 — top bar links: 21px / 30px tall -> 40px tap rows */
+.topbar a,.topbar .tb-call,.topbar .tb-cb{display:inline-flex;align-items:center;min-height:40px;padding:0 6px}
+@media(max-width:520px){
+  .topbar{padding:0 6px;gap:0;font-size:.78rem;justify-content:center}
+  .topbar .tb-tag{display:none}
+  .topbar .tb-right{width:100%;justify-content:center;flex-wrap:nowrap;gap:0 4px}
+  .topbar a{padding:0 4px}
+}
+@media(max-width:340px){.topbar .tb-right{flex-wrap:wrap}.topbar a{min-height:34px}}
+
+/* H2 — footer link columns: 24px rows -> 40px, block-level (phones + tablets) */
+@media(max-width:900px){
+  .links5 a{display:block;padding:9px 0;min-height:40px;line-height:1.35}
+  .links5{gap:20px 18px}
+  .foot-top a{display:inline-block;padding:6px 0;min-height:36px}
+  .foot-bottom a{display:inline-block;padding:8px 2px}
+}
+
+/* M8 — "Ask AI" chips 28px -> 40px */
+#aiBtns a{min-height:40px;display:inline-flex;align-items:center;padding:0 12px}
+
+/* M6/M7/M9 — breadcrumbs, hub chips, FAQ inline links, call strip */
+nav.crumbs a,nav.accx-crumbs a{display:inline-block;padding:8px 4px;margin:-4px 0}
+.mr-hubs a,.eqr-other a,.ind-other a,.mr-nav a{min-height:44px;display:inline-flex;align-items:center;padding:10px 14px}
+.fq-a a,.mr-card a,.ind-eqcard a,footer .wrap>a{display:inline-block;padding:8px 0}
+.call-strip a{display:inline-flex;align-items:center;min-height:44px;padding:0 8px}
+a[href^="tel:"]{display:inline-flex;align-items:center;min-height:40px}
+
+/* H5 — H1 too large / 5-6 lines on 320-390px screens */
+@media(max-width:480px){
+  h1{font-size:clamp(26px,7.6vw,31px)!important;line-height:1.16!important;letter-spacing:-.02em}
+  .hero h1,.eqr-hero h1,.mr-hero h1{font-size:clamp(26px,7.6vw,31px)!important}
+}
+@media(min-width:481px) and (max-width:640px){h1{font-size:clamp(30px,6.4vw,36px)!important;line-height:1.16}}
+
+/* H6 — text under 12px on phones/tablets: tables, badges, chips, stat labels */
+@media(max-width:900px){
+  table.mr-t th,table.eqr-t th,table.ind-t th,table.accx-cmp th,.prose table th{font-size:12px!important;letter-spacing:.02em}
+  .accx-stat span,.accx-fld label,.who,.eqr-c .who,.ftx-chip,.mr-kicker,.eqr-badge,#eqrAsOf,.accx-fresh,.eqr-n b,.pdc-tile span,.pdc-tile i,.art-fig text{font-size:12px!important}
+  small,.small,.muted-xs,span.badge,.lab,.disc,.wk,span.tag,.eyebrow{font-size:12px}
+  svg text{font-size:12px}
+}
+
+/* M1 — blog cards fixed 320px overflow on 320px screens */
+@media(max-width:480px){.bloggrid{grid-template-columns:1fr}.blogcard{width:auto!important;min-width:0;max-width:100%}}
+
+/* M2 — how-it-works band link */
+.hw2-band a{max-width:100%;white-space:normal;box-sizing:border-box}
+
+/* M3 — referral.html (and any page with inline-padded .wrap): restore side gutter on phones */
+@media(max-width:640px){.wrap[style*="padding"]{padding-left:18px!important;padding-right:18px!important}}
+
+/* M4 — sticky chrome on short phones: slimmer bottom CTA bar */
+@media(max-height:640px) and (max-width:640px){
+  .mcta{padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}
+  .mcta .btn{padding:11px 16px}
+  footer{padding-bottom:calc(30px + 62px + env(safe-area-inset-bottom,0px))}
+}
+
+/* H3 — home "Coast to coast" section: ~800px of empty dark space on phones */
+@media(max-width:640px){
+  .scroll-road-sec{padding:48px 0 32px}
+  .scroll-road{height:90px;margin-top:16px}
+}
+
+/* H4 — hero CTA overload on phones: keep 1 primary + 1 secondary as full-width buttons;
+   3rd+ becomes a compact underlined text link. NOT display:none — the link must stay
+   visible and crawlable (SEO rule: no real navigation hidden from mobile). */
+@media(max-width:640px){
+  .hero-btns .btn:nth-child(n+3){
+    background:none!important;border:0!important;box-shadow:none!important;
+    width:auto!important;align-self:flex-start;justify-content:flex-start!important;
+    padding:8px 0!important;min-height:40px;font-size:.95rem;font-weight:600;
+    text-decoration:underline;text-underline-offset:3px}
+  .hero .pill,.hero .badge{white-space:normal;font-size:.72rem;line-height:1.3}
+}
+
+/* Page length on phones (home ~34,000px): tighten vertical rhythm only.
+   No content, heading, link or URL is removed — SEO-safe. section 66->48, hero 74->56.
+   (Sections that hard-code padding via inline style are unaffected by design.) */
+@media(max-width:640px){
+  section{padding:48px 0}
+  .hero{padding:56px 0 60px}
+  .sec-head{margin-bottom:26px}
+}
+
+/* M10 — horizontally scrolling chip rows: show a fade so the cut-off is obvious */
+@media(max-width:640px){
+  .chips-scroll,.seg-scroll,[data-scroll-x]{position:relative}
+  .chips-scroll::after,.seg-scroll::after,[data-scroll-x]::after{content:"";position:absolute;top:0;right:0;bottom:0;width:36px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),#fff)}
+}
+
+/* L2 — .reveal animation must not leave content invisible when scripting is unavailable */
+@media(scripting:none){.reveal{opacity:1!important;transform:none!important}}
+.no-js .reveal{opacity:1;transform:none}
+
+/* Generic: 44px minimum for all real buttons on touch screens */
+@media(pointer:coarse){
+  .btn,button:not(.menu-btn),input[type=submit],[role=button]{min-height:44px}
+  summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+}
+/* ===================== end LB-MOBILE-FIXES v1 ===================== */
+"""
+
+with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS + RESP_CSS + MOBILE_FIX_CSS))
 with open(os.path.join(OUT,'app.js'),'w',encoding='utf-8') as f: f.write(JS + PWA_JS)
 with open(os.path.join(OUT,'manifest.webmanifest'),'w',encoding='utf-8') as f: f.write(MANIFEST)
 with open(os.path.join(OUT,'sw.js'),'w',encoding='utf-8') as f: f.write(SW)
@@ -2717,7 +2871,7 @@ def blog_card(fn,title,excerpt,read):
     # Optional real photo: only referenced if thumb-<slug>.jpg is actually present in SRC,
     # otherwise the branded SVG thumbnail is used (no broken/missing image reference).
     img=('<img src="thumb-'+slug+'.jpg" alt="'+title.replace('"','')+'" loading="lazy" decoding="async">') if asset_exists('thumb-'+slug+'.jpg') else ''
-    ov='<div class="bc-ov"></div><span class="bc-brand" style="padding:6px 10px"><img src="logo-full-dark.png" alt="LoadBoot" style="height:15px;width:auto;display:block" loading="lazy" decoding="async"></span>'
+    ov='<div class="bc-ov"></div><span class="bc-brand" style="padding:6px 10px"><img src="logo-full-dark.png" alt="LoadBoot" width="69" height="15" style="height:15px;width:auto;display:block" loading="lazy" decoding="async"></span>'
     return ('<a class="blogcard" href="'+fn+'"><div class="bc-thumb">'+thumb+img+ov+'</div><div class="bc-body">'
             '<div class="bc-meta">Guide &middot; '+str(read)+' min read</div><h3>'+title+'</h3><p>'+excerpt
             +'</p><span class="bc-link">Read guide &rarr;</span></div></a>')
@@ -8359,7 +8513,7 @@ with open(os.path.join(OUT,'_redirects'),'w',encoding='utf-8') as f: f.write(RED
 
 # ---------- BRANDED 404 (noindex; Netlify serves automatically) ----------
 NOTFOUND = (
-'<!doctype html><html lang="en"><head><meta charset="utf-8">'
+'<!doctype html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="utf-8">'
 '<meta name="viewport" content="width=device-width,initial-scale=1">'
 '<meta name="robots" content="noindex,follow">'
 '<title>Page not found &mdash; Loadboot</title>'
@@ -8696,7 +8850,7 @@ post('submit_web_form',{p:payload}).then(function(r){if(r.ok){host.innerHTML='<d
 _forms_body = ('<div class="lbf-wrap"><div class="lbf-card" id="lbf">Loading…</div>'
     '<p style="text-align:center;color:#94a3b8;font-size:.8rem;margin-top:16px">Powered by LoadBoot</p></div>'
     + ('<script>' + _FORMS_JS + '</script>' if IS_PRODUCTION_CTX else '<script>document.getElementById("lbf").textContent="Hosted forms are disabled in this preview environment.";</script>'))
-_forms_html = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+_forms_html = ('<!doctype html><html lang="en" class="no-js"><head><script>document.documentElement.classList.remove("no-js")</script><meta charset="utf-8">'
     '<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">'
     '<title>LoadBoot — Form</title><link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">'
