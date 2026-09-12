@@ -1,7 +1,6 @@
 // shipper-trust.js — Shipper "request a quote in minutes" onboarding (bl_bp_0319).
-// A shipper has no FMCSA authority to read, so the business is confirmed from the COMPANY EMAIL DOMAIN:
-// signup on a company domain that receives mail (MX) → verified in under a minute; website on the domain is a
-// bonus signal brokers see. Signed up with Gmail? enter the company address → a 6-digit code goes there.
+// This check covers the company email domain and optional website signals.
+// It does not establish legal identity, creditworthiness or payment capacity. Signed up with Gmail? enter the company address → a 6-digit code goes there.
 // Quotes are non-binding, so a business-verified shipper posts requests right away; payment terms / credit
 // application come before the FIRST BOOKING; the packet is three items (agreement · claims contact · billing).
 // Self-contained (own h/mount); reuses the .bt-* styles from broker-trust.js.
@@ -22,15 +21,15 @@ const h = (tag, attrs, kids) => {
 const mount = (el, kids) => { el.innerHTML = ''; (Array.isArray(kids) ? kids : [kids]).forEach(c => c && el.appendChild(c)); };
 const digits = (s) => String(s || '').replace(/[^0-9]/g, '');
 
-const TIER = { new: ['info', 'Confirming your business'], business_verified: ['ok', 'Business confirmed'], verified: ['ok', 'Verified shipper'], hold: ['bad', 'On hold'] };
+const TIER = { new: ['info', 'Checking company domain'], business_verified: ['ok', 'Company-domain check passed'], verified: ['ok', 'Onboarding reviewed'], hold: ['bad', 'On hold'] };
 
 export function shipperBadge(t) {
   // used by the broker inbox: t = row.shipper_trust
   if (!t) return null;
   const tier = t.tier || 'new';
   const cls = tier === 'verified' ? 'green' : tier === 'business_verified' ? 'blue' : tier === 'hold' ? 'red' : 'gray';
-  const txt = tier === 'verified' ? '✓ Verified shipper' : tier === 'business_verified' ? '✓ Business confirmed' + (t.domain ? ' · ' + t.domain : '') : tier === 'hold' ? 'On hold' : 'Business not confirmed';
-  const el = h('span', { class: 'cp-pill ' + cls, title: (t.verified_by || '') + (t.site_title ? ' · site: ' + t.site_title : '') }, txt);
+  const txt = tier === 'verified' ? '✓ Onboarding reviewed' : tier === 'business_verified' ? '✓ Company-domain check passed' + (t.domain ? ' · ' + t.domain : '') : tier === 'hold' ? 'On hold' : 'Company domain not checked';
+  const el = h('span', { class: 'cp-pill ' + cls, title: 'Domain and onboarding checks do not establish creditworthiness or payment capacity.' }, txt);
   return el;
 }
 
@@ -57,7 +56,7 @@ export function mountShipperTrust(host, opts = {}) {
     ok.onclick = async () => {
       const d = digits(code.value); if (d.length !== 6) { notice = { ok: false, text: 'Enter the 6 digits from the email.' }; paint(); return; }
       ok.disabled = true; notice = null;
-      try { const r = await partnerVerifyCode(d); notice = r && r.ok ? { ok: true, text: '✓ Address confirmed — checking the domain now (under a minute).' } : { ok: false, text: (r && r.why) || 'That code did not match.' }; }
+      try { const r = await partnerVerifyCode(d); notice = r && r.ok ? { ok: true, text: '✓ Address confirmed — checking the domain now.' } : { ok: false, text: (r && r.why) || 'That code did not match.' }; }
       catch (e) { notice = { ok: false, text: (e && e.message) || 'Could not check the code.' }; }
       await refresh();
     };
@@ -65,7 +64,7 @@ export function mountShipperTrust(host, opts = {}) {
   }
   function recheckBtn(label) {
     const b = h('button', { class: 'bt-btn ghost sm' }, label || 'Re-check');
-    b.onclick = async () => { b.disabled = true; notice = null; try { const r = await partnerShipperVerify(); notice = r && r.queued ? { ok: true, text: 'Checking again — under a minute.' } : { ok: false, text: (r && (r.note || r.outcome)) || 'Could not start.' }; } catch (e) { notice = { ok: false, text: (e && e.message) || 'Could not start.' }; } await refresh(); };
+    b.onclick = async () => { b.disabled = true; notice = null; try { const r = await partnerShipperVerify(); notice = r && r.queued ? { ok: true, text: 'Checking again.' } : { ok: false, text: (r && (r.note || r.outcome)) || 'Could not start.' }; } catch (e) { notice = { ok: false, text: (e && e.message) || 'Could not start.' }; } await refresh(); };
     return b;
   }
 
@@ -74,10 +73,10 @@ export function mountShipperTrust(host, opts = {}) {
     const biz = s.tier === 'business_verified' || s.tier === 'verified';
     const step = (n, cls, t, d) => h('div', { class: 'bt-step ' + cls }, [h('span', { class: 'bt-step-n' }, cls === 'done' ? '✓' : String(n)), h('div', { class: 'bt-step-t' }, t), h('div', { class: 'bt-step-d' }, d)]);
     return h('div', { class: 'bt-ladder' }, [
-      step(1, biz ? 'done' : 'now', 'Business confirmed', 'From your company email domain — no documents, under a minute.'),
+      step(1, biz ? 'done' : 'now', 'Company-domain check passed', 'Checks the company email domain; website signals are optional.'),
       step(2, (s.tier === 'verified' || (biz && (s.shipments || 0) > 0)) ? 'done' : biz ? 'now' : 'lock', 'Request quotes', 'Post a shipment; brokers quote it. Quotes are non-binding — nothing to sign yet.'),
       step(3, s.tier === 'verified' ? 'done' : (biz && (s.shipments || 0) > 0) ? 'now' : 'lock', 'Before your first booking', 'Shipper Agreement (one click), payment terms and a claims contact — asked once, when you accept a quote.'),
-      step(4, s.tier === 'verified' ? 'done' : 'lock', 'Verified shipper', 'Full packet on file → brokers see the badge and quote faster.'),
+      step(4, s.tier === 'verified' ? 'done' : 'lock', 'Onboarding reviewed', 'Required onboarding packet reviewed; this is not a credit assessment.'),
     ]);
   }
 
@@ -90,9 +89,9 @@ export function mountShipperTrust(host, opts = {}) {
     const hero = h('div', { class: 'bt-hero' }, [
       h('div', { class: 'bt-hero-top' }, [h('div', { style: 'flex:1;min-width:260px' }, [
       h('div', { class: 'bt-hero-k' }, 'Shipper onboarding · ' + label),
-      h('div', { class: 'bt-hero-t' }, st.tier === 'verified' ? 'You’re a verified shipper.' : st.can_post ? 'You can request quotes now.' : 'Request your first quote in minutes — no documents to start.'),
-      h('div', { class: 'bt-hero-s' }, st.can_post ? 'Brokers quote your shipments. The short packet comes before your first booking, not before your first quote.' : 'Business confirmed from your company email — no PDFs. Documents only where they matter: your first booking.'),
-      ]), progressRing(nDone, 4, st.tier === 'verified' ? 'verified' : 'steps done')]),
+      h('div', { class: 'bt-hero-t' }, st.tier === 'verified' ? 'Your onboarding has been reviewed.' : st.can_post ? 'You can request quotes now.' : 'Request your first quote in minutes — no documents to start.'),
+      h('div', { class: 'bt-hero-s' }, st.can_post ? 'Brokers quote your shipments. The short packet comes before your first booking, not before your first quote.' : 'We check your company email domain. Required booking documents are collected before your first booking.'),
+      ]), progressRing(nDone, 4, st.tier === 'verified' ? 'reviewed' : 'steps done')]),
       ladder(),
     ]);
     let body;
@@ -103,11 +102,11 @@ export function mountShipperTrust(host, opts = {}) {
       const pend = (st.packet || []).filter((p) => ['required', 'conditional'].includes(String(p.tag).toLowerCase()) && !['verified', 'waived'].includes(p.status)).map((p) => p.label.replace(' — before your first booking', ''));
       const fact = (k, v) => h('div', null, [h('b', null, k), v || '—']);
       body = h('div', { class: 'bt-card' }, [
-        h('h3', null, '1 · ' + (st.company || 'Your company') + ' is confirmed'),
-        h('div', { class: 'bt-sub' }, 'Business confirmed from your company domain — quotes are open.'),
+        h('h3', null, '1 · ' + (st.company || 'Your company') + ' — check details'),
+        h('div', { class: 'bt-sub' }, 'Quote requests are open. Available domain-check results are shown below.'),
         h('div', { class: 'bt-fact' }, [
           fact('Domain', st.domain || '—'),
-          fact('Receives mail', chk.mx === false ? 'No' : 'Yes'),
+          fact('Receives mail', chk.mx === true ? 'Yes' : chk.mx === false ? 'No' : 'Not checked'),
           fact('Website', chk.site_title ? chk.site_title : chk.site_ok === false ? 'Not found (optional)' : (chk.site_ok ? 'Found' : '—')),
           fact('Confirmed', st.verified_at ? new Date(st.verified_at).toLocaleString() : '—'),
         ]),
@@ -119,8 +118,8 @@ export function mountShipperTrust(host, opts = {}) {
       ]);
     } else if (chk.pending || chk.outcome === 'pending' || !chk.outcome) {
       body = h('div', { class: 'bt-card' }, [
-        h('h3', null, '1 · Confirming your business'),
-        h('div', { class: 'bt-row' }, [h('span', { class: 'bt-spin' }), h('span', { class: 'bt-sub' }, 'Checking ' + (st.domain || 'your company domain') + ' — that it receives mail and has a website. Usually under a minute.')]),
+        h('h3', null, '1 · Checking company domain'),
+        h('div', { class: 'bt-row' }, [h('span', { class: 'bt-spin' }), h('span', { class: 'bt-sub' }, 'Checking ' + (st.domain || 'your company domain') + ' — checking mail records and optional website signals.')]),
         h('div', { class: 'bt-note' }, 'Your signup address is on ' + (st.domain || 'a company domain') + ' — that is the check. No documents.'),
         err,
       ]);
@@ -131,7 +130,7 @@ export function mountShipperTrust(host, opts = {}) {
         st.code_live ? codeBox() : companyEmailForm('Your company email'),
         st.code_live ? h('div', { class: 'bt-row', style: 'margin-top:6px' }, [h('button', { class: 'bt-btn ghost sm', onClick: () => { st.code_live = false; paint(); } }, 'Use a different address')]) : null,
         err,
-        h('div', { class: 'bt-note' }, 'No company domain at all? Email hello@loadboot.com with your EIN letter or a recent freight invoice — our team confirms by hand.'),
+        h('div', { class: 'bt-note' }, 'No company domain at all? Contact hello@loadboot.com to ask about manual review and the secure document-submission process.'),
       ]);
     } else {
       // no_mail / error
@@ -141,7 +140,7 @@ export function mountShipperTrust(host, opts = {}) {
         st.code_live ? codeBox() : companyEmailForm('An address on your company’s real domain'),
         h('div', { class: 'bt-row', style: 'margin-top:6px' }, [recheckBtn('Re-check ' + (st.domain || 'the domain'))]),
         err,
-        h('div', { class: 'bt-note' }, 'Still stuck? Email hello@loadboot.com with your EIN letter or a recent freight invoice — our team confirms by hand.'),
+        h('div', { class: 'bt-note' }, 'Still stuck? Contact hello@loadboot.com to ask about manual review and the secure document-submission process.'),
       ]);
     }
     mount(host, h('div', { class: 'bt-wrap' }, [hero, body]));

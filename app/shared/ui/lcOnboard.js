@@ -34,6 +34,7 @@
     '.lbo-btn.blue{background:linear-gradient(135deg,#0883F7,#065fb8);box-shadow:0 8px 20px rgba(8,131,247,.3)}',
     '.lbo-btn.ghost{background:#fff;color:#0883F7;border:1.5px solid #cfe3fb;box-shadow:none;font-weight:700}',
     '.lbo-err{color:#dc2626;font-size:12px;display:none}',
+    '.lbo-save-status{margin:4px 0 4px 36px;max-width:84%;font:600 12px/1.5 Inter,Arial;color:#334155}',
     '.lbo-note{color:#94a3b8;font-size:10.5px;text-align:center}',
     '.lbo-co{background:#0d1f3a;background:linear-gradient(135deg,#10223B,#153055);border-radius:13px;padding:13px;color:#fff}',
     '.lbo-co b{font-size:14px;display:block;margin-bottom:6px}',
@@ -93,6 +94,27 @@
   };
 
   var ob = null, host = null, saveT = null;
+  var saveQueuePromise = null, saveQueueIdentity = null, saveStatusNode = null;
+  var saveModuleUrl = new URL('onboarding-save-queue.js', document.currentScript && document.currentScript.src || new URL('/app/shared/ui/lcOnboard.js', location.href)).href;
+
+  function chatIdentity() {
+    var c = H().ctx();
+    return JSON.stringify([c.cfg.url, c.vKey, c.convId || null]);
+  }
+  function showSaveStatus(status) {
+    if (!saveStatusNode || !saveStatusNode.isConnected) {
+      saveStatusNode = el('div', 'lbo-save-status');
+      saveStatusNode.setAttribute('role', 'status');
+      saveStatusNode.setAttribute('aria-live', 'polite');
+      H().insertNode(saveStatusNode);
+    }
+    saveStatusNode.textContent = {
+      saving: 'Saving progress…',
+      retrying: 'Saving is busy. Your progress is waiting here; keep this tab open.',
+      error: 'Some progress could not be saved. Keep this tab open and contact support before leaving.',
+      saved: 'Progress saved.'
+    }[status];
+  }
 
   function H() { return window.LBChat && window.LBChat._ob; }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -103,14 +125,40 @@
     return ob;
   }
 
-  async function rpc(fn, args) {
+  async function rpcRequest(fn, args, identity) {
     var c = H().ctx();
+    var token = c.cfg.getToken ? await c.cfg.getToken() : null;
+    // Authentication may yield; recheck the conversation before sending its data.
+    if (identity && chatIdentity() !== identity) throw new Error('Chat changed before saving');
     var r = await fetch(c.cfg.url + '/rest/v1/rpc/' + fn, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon, Authorization: 'Bearer ' + c.cfg.anon },
+      headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon, Authorization: 'Bearer ' + (token || c.cfg.anon) },
       body: JSON.stringify(args)
     });
-    return r.json();
+    var result = await r.json();
+    if (!r.ok) throw new Error('Chat request failed');
+    return result;
+  }
+  function rpc(fn, args) {
+    if (fn !== 'lc_ob_save') return rpcRequest(fn, args).catch(function () { return { error: 'request_failed' }; });
+    var identity = chatIdentity(), payload = JSON.parse(JSON.stringify(args));
+    if (!saveQueuePromise || saveQueueIdentity !== identity) {
+      saveQueueIdentity = identity;
+      saveQueuePromise = import(saveModuleUrl).then(function (module) {
+        return module.createOnboardingSaveQueue({
+          send: function (body, expected) { return rpcRequest('lc_ob_save', body, expected); },
+          getIdentity: chatIdentity,
+          onStatus: function (status) { if (chatIdentity() === identity) showSaveStatus(status); }
+        });
+      });
+    }
+    return saveQueuePromise.then(function (queue) {
+      if (chatIdentity() !== identity) throw new Error('Chat changed before saving');
+      return queue.enqueue(payload);
+    }).catch(function () {
+      if (chatIdentity() === identity) showSaveStatus('error');
+      return { error: 'save_failed' };
+    });
   }
 
   function save(patch, note) {
@@ -753,11 +801,17 @@
     if (s.data.contact_name || s.data.email) {
       try { rpc('lc_identify', { p_id: c.convId, p_visitor_key: c.vKey, p_name: s.data.contact_name || null, p_email: s.data.email || null }); } catch (e) {}
     }
-    try { rpc('lc_ob_save', { p_visitor_key: c.vKey, p_conversation_id: c.convId || null, p_role: s.role, p_step_key: 'done', p_patch: null, p_note: '🎉 Onboarding COMPLETED in chat — ' + (s.data.contact_name || '') + ' (' + (s.role || '') + '). Review docs & follow up.', p_account_email: null, p_account_created: null, p_completed: true }); } catch (e) {}
+    var completionSave = rpc('lc_ob_save', { p_visitor_key: c.vKey, p_conversation_id: c.convId || null, p_role: s.role, p_step_key: 'done', p_patch: null, p_note: '🎉 Onboarding COMPLETED in chat — ' + (s.data.contact_name || '') + ' (' + (s.role || '') + '). Review docs & follow up.', p_account_email: null, p_account_created: null, p_completed: true });
+    var completionQueue = saveQueuePromise, completionIdentity = chatIdentity();
     var portal = (ROLES[s.role] && ROLES[s.role].portal) || '/app/carrier/';
     var portalName = portal === '/app/partner/' ? 'Broker & shipper portal' : portal === '/app/agent/' ? 'Agent portal' : 'Carrier portal';
     var n = card();
-    prog(n, 100, 'Complete 🎉');
+    prog(n, 100, 'Saving final step…');
+    completionSave.then(async function (result) {
+      var queue = await completionQueue.catch(function () { return null; });
+      if (chatIdentity() !== completionIdentity) return;
+      n.querySelector('.lbo-prog-t').textContent = result.ok === true && queue && queue.isHealthy() ? 'Progress saved ✓' : 'Save needs attention';
+    });
     var d = el('div', 'lbo-done');
     d.appendChild(el('div', 'big', '🎉'));
     d.appendChild(el('b', null, (s.data.contact_name ? esc(s.data.contact_name.split(' ')[0]) + ', you' : 'You') + "'re in!"));
@@ -776,7 +830,7 @@
     d.appendChild(a);
     n.appendChild(d);
     n.appendChild(el('div', 'lbo-note', 'Forgot it later? Just type "reset my password" here and I\'ll sort it out.'));
-    n.appendChild(el('div', 'lbo-note', 'Questions any time — just type below. This chat stays saved for you. 💬'));
+    n.appendChild(el('div', 'lbo-note', 'Questions any time — just type below. Check the save status before leaving. 💬'));
   }
 
   // ---------- password reset (self-serve, also reachable via LBChatOnboard.reset) ----------
@@ -968,7 +1022,7 @@
         setTimeout(function () {
           if (document.querySelector('.lbo-card,.lbo-resume')) return;
           var n = el('div', 'lbo-resume');
-          n.innerHTML = '<div><b>▶ Ready when you are</b><i>Your setup is saved at step ' + stepNum(s.role, s.step) + '.</i></div><span class="go">Resume</span>';
+          n.innerHTML = '<div><b>▶ Ready when you are</b><i>You can continue from step ' + stepNum(s.role, s.step) + '.</i></div><span class="go">Resume</span>';
           n.onclick = function () { n.remove(); stepFor(s.step)(); };
           H().insertNode(n);
         }, 900);

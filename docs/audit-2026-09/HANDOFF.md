@@ -11,205 +11,21 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-10 04:00 UTC (rewritten this turn)
+## CURRENT STATE — 2026-09-12 (fresh recovery)
 
-### Re-sync, read live this turn (the numbers below were STALE in the 2026-09-07 header)
+Current branch `audit/recovery-20260912` is based on GitHub main `90ccaff`. Prior scratch audit checkouts were removed by cleanup. Six applied SQL migrations recovered from staging history; prior local frontend/PWA commits are not assumed recovered.
 
-| | prod `rwscphuhpjoudvljvmdk` | staging `snslhvmkjusozgjelghi` |
-|---|---|---|
-| newest migration | `bl_bp_0343a_rescreen_must_not_clobber_verdict` (`20260909115519`) | `bl_audit_0342_account_request_boundaries` (`20260910034654`) |
-| anon-executable SECDEF in `public` | **33** | **32** |
-| `anon` USAGE on `app_private` | false | false |
+Fresh re-sync: staging `20260912071944 / bl_disp_0308b_sweep_count_fix`; prod `20260912072013 / bl_disp_0308_skills_test_sweep`. Staging `lc_ob_save` still matches 0344 MD5 `f08b898a2309f1403bb74f7df6205289`. Production has a different definition; untouched this turn.
 
-The 2026-09-07 header said "prod newest `bl_web_0333`, staging newest `bl_sec_0334`". Both moved a long
-way since, in **three different lanes**, none of them this file's audit lane:
-- **broker-supply lane** — `bl_bp_0343` + `0343a` (broker FMCSA re-screen) applied to PROD 9 Sep and
-  resynced onto staging; see project memory `broker_rescreen_2026-09-09.md`.
-- **live-chat security lane** — `bl_sec_0335_livechat_visitor_boundaries` (`20260908045736`) and
-  `bl_sec_0336_chat_remaining_boundaries` (`20260908052009`) on STAGING. **These already did NEXT
-  ACTION item 2 below** (see the next block).
-- **account-deletion lane** — `bl_audit_0339`, `0341`, `0342` on STAGING, the last one 2026-09-10
-  03:46 UTC, i.e. that lane may still be mid-flight. Not touched.
+F36 frontend save queue and F11 domain-check presentation reconstructed locally. 20 actual-source tests PASS, 156 JS syntax checks and import gate PASS, staging build PASS. Browser local preview BLOCKED (`ERR_BLOCKED_BY_CLIENT`); no frontend deployment. Historical database test counts are not newly rerun results.
 
-### F14 live-chat slice — ALREADY DONE ON STAGING by another lane; prod is the gap
+See `REVIEW-RECOVERY-SAVE-FEEDBACK-2026-09-12.md` for exact recovered files, hashes, test commands and remaining gates. Prior CURRENT STATE is preserved in `HANDOFF-ARCHIVE-2026-09-10.md` as historical evidence only. Do not label all findings closed.
 
-The previous NEXT ACTION asked for `lc_send` / `lc_poll` / `lc_rate` / `lc_ob_save` / `lc_start` to be
-reviewed against the `lc_history` standard. Read live this turn: **staging already enforces it.** Its
-`lc_send` guard now reads
+## NEXT ACTION
 
-```
-elsif coalesce(length(p_visitor_key),0) not between 16 and 64 or p_visitor_key like 'novkey%'
-   or v_conv.visitor_key is distinct from p_visitor_key then
-```
-
-and `lc_poll`, `lc_rate`, `lc_ob_get`, `lc_ob_save`, `lc_ob_doc_log` all carry the 16–64 floor and the
-`novkey` refusal too. Nothing was re-done here. **PROD has none of it** — `lc_ob_get`, `lc_ob_save` and
-`lc_ob_doc_log` still gate on `length(p_visitor_key) < 8`, and `lc_send` / `lc_poll` / `lc_rate` still
-have no length floor at all.
-
-How exposed prod actually is, read this turn — **latent, not live**: 70 conversations, **0** rows with
-both `user_id` and `visitor_key` null, **0** keys shorter than 16 (shortest 26); 1 onboarding row,
-shortest key 28, **0** `novkey` rows, 0 rows carrying an `account_email`. So the weak floors are real
-but nothing in the data is currently reachable through them.
-
-Worth stating precisely, because it changes the priority: `lc_send` / `lc_poll` / `lc_rate` also require
-the conversation **uuid** and an **equality** match on the stored key, so a length floor is defence in
-depth there. `lc_ob_get` / `lc_ob_save` / `lc_ob_doc_log` are keyed on the visitor key **alone** — that
-is where the floor is load-bearing, and `lc_ob_save` is the **write** side (it can overwrite a
-visitor's role, step, merged data, `account_email` and `completed_at`).
-
-### 🆕 F36 — `lc_ob_save` has a rate limit that cannot limit anything (both envs)
-
-```sql
-declare v_id uuid; v_saves int;
-  select count(*) into v_saves from app_private.lc_onboarding
-    where visitor_key = p_visitor_key and updated_at > now() - interval '1 day';
-```
-
-`v_saves` is assigned and then **never read** — so nothing is throttled. And it could not work even if
-it were wired: `lc_onboarding_visitor_key_key` is a **UNIQUE index on `visitor_key`**, so that count is
-0 or 1, forever. A reader would reasonably believe onboarding saves are capped per day. They are not,
-on either environment. Not fixed this turn — see NEXT ACTION 2; the throttle number is Yaseen's call
-and the account-deletion lane was mid-flight on staging.
-
----
-
-### The 2026-09-07 prod deploys — still true, unchanged since
-
-**Yaseen said "tyar sab karo" — all three prod deploys are DONE.** Nothing was revoked and nothing was switched
-to enforce. Prod is in the state where the old doors still work and the new signed doors also work.
-
-### PROD, after this turn
-
-| what | prod state | evidence |
-|---|---|---|
-| `domain-check` | **v5 deployed**, slot 3, `ezbr_sha256 9a2e429dd11263e323b79bdabe270205150ed5c691ab5089caa9531abdc3de67` | live checks below |
-| `retell-hook` | **v2 deployed**, slot 1, `1b0fbaa94a68d4f1922216e3bef1ee0f41832d75018f3414b2f487b8928fd0dd`, `verify_jwt=false` | signed end-to-end chain below |
-| `bl_sec_0329` / `0329b` / `0329c` | **applied**. `allow_unsigned_webhook = TRUE` (observe) — the live Retell chain is untouched | test below |
-| `retell-inbound-hook` | **v1 deployed**, slot 1, `c45b322eff1cfa1cc3d5b89c4a4275d1ad86a889d05585fc72affe1f4468e160`, `verify_jwt=false` | live checks below |
-| `bl_sec_0330` | **applied**. `retell_inbound_verified` grants: `postgres:EXECUTE, service_role:EXECUTE` | md5 equivalence below |
-| `public.retell_inbound` | **UNCHANGED**, grants still `postgres, anon, authenticated, service_role` | deliberate — the Retell inbound webhook may still point at it |
-| `public.retell_webhook` | guarded, but the guard is inert while the flag is TRUE | |
-
-**`bl_sec_0330` on prod was built from prod's OWN live definition**, not from a pasted copy. Verification:
-prod's `pg_get_functiondef(retell_inbound)` + the guard inserted after the single `begin
-` + the rename hashes
-to **`43b69a2488ac4a99661bd74ad82f46f9`**, and `pg_get_functiondef(retell_inbound_verified)` hashes to the same.
-**byte_identical = true.** Every branch, string and precedence rule is prod's own.
-
-### Prod evidence, all run this turn
-
-**domain-check v5** — real caller `loadboot.com` → 200, response shape unchanged (req 195107).
-`0--1.sslip.io`, `169.254.169.254.nip.io`, `fe90--1.sslip.io`, `febf--1.sslip.io` and
-`0-0-0-0-0-ffff-7f00-1.sslip.io` all → `refused: resolves to private address` (195108–195112).
-Control `2606-4700--1111.sslip.io` (public IPv6) → **not refused**; it reached the network and failed on a TLS
-handshake (195113). All three former bypasses are closed on prod.
-
-**bl_sec_0329 + 0329b, one rollback-txn block → RESULT PASS on four counts:** flag TRUE → anon still works and
-still writes (proves the apply is a no-op for the live chain); flag FALSE → anon **and** authenticated both
-LB403 with **0 rows written**; flag FALSE → service_role still reaches the body; and the verifier, using the
-**real prod api_key** — a correctly signed body verifies, a forged digest and a one-space-altered body are
-rejected, `anon` gets LB403.
-
-**retell-hook v2 end-to-end on prod, signed, with zero writes:** a correctly signed `call_started` whose
-from/to numbers deliberately do not match `retell_config.from_number` →
-`{"ok":true,"verified":true,"enforce":false,"reason":"signature_ok","forwarded":true,"upstream":{"ok":true,"ignored":true}}`
-(req 195128). The whole chain — verify, forward as service_role, upstream answer — works on prod **before**
-Yaseen repoints anything.
-
-**bl_sec_0330 rollback test on prod → RESULT PASS, 4 cases:** anon / authenticated / empty-claims all refused
-with the empty `{"call_inbound":{}}` envelope; the four cheap branches match; the form branch returns the
-caller's own words; the broker branch keeps precedence over the form.
-
-**retell-inbound-hook live on prod:** q1 valid signature → **200** with the full envelope (195120); q2 forged
-digest → **401** `digest_mismatch` (195121); q3 missing header → **401** `signature_header_unparsable` (195122);
-q4 stale by 66 minutes → **401** `timestamp_outside_skew` (195123); q5 valid signature over a different body →
-**401** `digest_mismatch` (195124). Every refusal returns the EMPTY envelope.
-
-**Prod left clean:** `lc_calls` = **112**, unchanged; **0** `bl0329-*` or `prodchain*` rows; flag still TRUE
-(observe); `retell_hook_log` holds 6 verdict rows and **no phone numbers, no bodies, no context**.
-
-### What is still OFF, and why
-
-- `allow_unsigned_webhook` is **TRUE**. The old anon door to `retell_webhook` still works. That is intentional:
-  Retell is still posting there.
-- `public.retell_inbound` still has its `anon` / `authenticated` grants. Also intentional, same reason.
-- Neither can be closed until Yaseen repoints the two webhooks in the Retell dashboard and a real signed
-  delivery is seen verifying in `app_private.retell_hook_log`.
-
-### Still not covered anywhere
-The `body_not_json` → 400 branch of `retell-inbound-hook`: `pg_net` can only post a jsonb body, so a non-JSON
-raw body cannot be produced from Postgres. Code inspection only — **UNKNOWN**.
-
-
-### Staging re-verification + domain-check v4 (2026-09-06, after Codex's fe80::/10 finding)
-
-Working branch `audit/s2-remaining-hardening`; main `7dc83e4`; F31 client branch `audit/s2-f31-client-verdict` @ `1259d12b` (reviewed, NOT edited).
-Staging newest migration `bl_camp_0328_analytics_count_engagement_by_timestamp` (campaign lane); prod newest `bl_camp_0327_solo_operator_self_approval`. `bl_cmp_0326_broker_precedence_fix` is on BOTH (staging `20260906123949`, prod `20260906125744`).
-
-| | Staging evidence, re-run this turn |
-|---|---|
-| **A** | `tests/bl_cmp_0326_rollback_test.sql` → **RESULT PASS**: case1 broker-only = active/no-pause/no-email; case2 SKIPPED (staging's `org_onboarding_items_status_check` has no `'expired'`); case3 carrier verified-inactive = inactive/no-pause/no-email. Prod ran all three, case2 included. |
-| **B** | `tests/bl_sec_0320_rollback_test.sql` → **RESULT PASS**: authenticated=LB403, anon=LB403, service_role reached the body (`{"merged":false,"reason":"no_broker"}`), 0 rows written by refused callers, no anon/authenticated grants remain. Live: anon key → load-mail = **403 LB403** (req 192639). load-mail staging slot 10, prod slot 7. |
-| **C** | **`domain-check` v4 deployed to staging (slot 5), `ezbr_sha256 1c2a6af6…d29af4fe`.** Codex was right: link-local is `fe80::/10` (fe80 **through** febf) and v3's `startsWith("fe80")` only covered `fe80::/16`. |
-
-**What v4 changes.** Every IPv6 prefix test is replaced by a real address parser (`v6Words`) plus numeric range
-checks, so the classifier no longer depends on how an address happens to be spelled:
-`fe80–febf` link-local, `fc00::/7` ULA, `ff00::/8` multicast, `::1`/`::` in any spelling, `::ffff:0:0/96`
-v4-mapped (dotted **or** the hex form the URL parser produces), `::a.b.c.d` v4-compatible, `2002::/16` 6to4 and
-`64:ff9b::/96` NAT64 resolved down to the IPv4 they embed, `%zone` stripped, anything unparsable refused.
-
-**Regression evidence — `tests/domain_check_v4_ip_cases.mjs`, 30 cases, `node` exits 0.** The file carries v3
-alongside v4 so the fix is demonstrated, not asserted: **v3 gets 8 of the 30 wrong**, all of them "public" when
-they are not — `fe90::1`, `fea0::1`, `feaf::dead:beef`, `febf::1` (the range bug), `0:0:0:0:0:0:0:1` and
-`0:0:0:0:0:0:0:0` (uncompressed loopback/unspecified), `2002:7f00:1::1` and `64:ff9b::7f00:1` (6to4 and NAT64
-smuggling 127.0.0.1). Negative controls in the same file: `fe7f::1` and `fec0::1` stay public, `::ffff:8.8.8.8`
-and `2606:4700::1111` stay public.
-
-**Live staging checks (`tests/edge_fn_live_checks_2026-09-06.sql`), all as expected:**
-`fe90--1.sslip.io` and `febf--1.sslip.io` → `refused: resolves to private address` (**v3 let both through**);
-`0--1.sslip.io`, `169.254.169.254.nip.io`, `0-0-0-0-0-ffff-7f00-1.sslip.io` → refused;
-`loadboot.com` → 200 with the response shape unchanged (mx, title, name_match, matched_tokens all present);
-and the control, `2606-4700--1111.sslip.io` (public IPv6) → **not** refused, it reaches the fetch and fails
-there. Test-authoring note: sslip.io writes `:` as `-`, so `--ffff-7f00-1` is an invalid DNS label (a label
-cannot start with `-`) — the v4-mapped case must be spelled `0-0-0-0-0-ffff-7f00-1`.
-
-**Recorded, not acted on:** Yaseen has decided the outreach engine stays **enabled**. F03 is therefore closed as
-a decision, not as a defect — no pause, no schedule change. Nothing was touched.
-
-**Prod untouched this turn.** No deploy, no migration, no rollback, no backfill, no message.
-
-## NEXT ACTION  (one concrete step — the thing "continue" means)
-
-1. Re-sync header (main sha + new commits, `list_migrations` prod + staging, `list_edge_functions` both).
-   The live numbers as of 2026-09-10 04:00 UTC are in the CURRENT STATE block above — **do not trust any
-   migration name written here in an earlier turn**, three other lanes have moved both databases since.
-2. **F36 (above) — decide the `lc_ob_save` throttle, then fix it on staging.** Two concrete options, so this
-   is a one-word decision: (a) **delete** the dead `v_saves` query — zero behaviour change, removes a line
-   that lies to the next reader, and the gap gets recorded instead of half-implemented; or (b) **wire a real
-   one** by counting saves rather than rows, e.g. `lc_onboarding.updated_at` bumps per call → cap at N per
-   visitor per day. If (b), Yaseen picks N. Staging-first either way, and check the account-deletion lane has
-   landed before touching staging.
-3. **The whole F14 live-chat slice is parked for prod.** Staging has `bl_sec_0334` + `0335` + `0336`; prod has
-   none of the three. Prod evidence says latent, not live (0 short keys, 0 novkey rows, 0 null-pairs), so this
-   is a considered decision, not an emergency. Needs Yaseen's "apply to prod".
-4. **Three prod decisions still parked with Yaseen** (do not act without his word):
-   a. `bl_sec_0334` to prod (floor 8 → 16–64 on `lc_ob_get`, refuse the `novkey` prefix). Inert for every key
-      in use today — prod evidence: shortest key in use is 26 chars, 0 rows with a `novkey` prefix.
-   b. `allow_unsigned_webhook = false` — closes the old anon door to `retell_webhook`. Only AFTER a real signed
-      delivery is seen verifying in `app_private.retell_hook_log`.
-   c. revoking `anon`/`authenticated` on `public.retell_inbound` — only after the same, on the inbound side.
-   Retell credit is empty and the last real call was 2026-09-03, so (b) and (c) cannot be verified until Yaseen
-   tops up. Nothing is urgent; nothing is exposed that was not exposed before.
-5. **Yaseen still owes one SQL line**, in the Supabase SQL editor on prod, pasting the key named
-   **"Secret Key Webhook"** from the Retell dashboard:
-   `update app_private.retell_config set webhook_signing_key = '<paste>' where id = 1;`
-   Until then real deliveries log `digest_mismatch` (harmless — observe mode forwards them anyway).
-6. Open from the original 33: F04 (legal copy gate, counsel), F06 (RPC drift), F08/F09 (Codex's branch),
-   F10 (every active staff account can read W-9 / identity documents — needs the role-by-document-type matrix
-   before any policy change), F15 (leaked-password protection off), F16/F17, and the P2/P3 measurement set.
-7. Parked: F33 (27 carriers with no docket), the WhatsApp toggle is BUILT and live but left on `phone`,
-   SEO week 1, deleting `lb-tmp-keyread`, merging Codex's two branches. Outreach stays ENABLED.
+1. Re-sync current main and both projects before edits. Compare current PWA/share/AI-verdict/CI code against the remaining F08/F09/F18/F31 requirements and reconstruct only missing changes; old local patches are absent.
+2. Obtain an accessible staging preview for the queued-save and shipper display browser checks. Do not bypass the browser network block or substitute a production deploy.
+3. Recover the remaining migration rollback/test artifacts before proposing a production batch. Production changes, Retell cutover, real sender tests and personal messages remain explicit-approval gates. F10 requires intended role access; SEO/F33/WhatsApp remain parked, outreach enabled.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -232,3 +48,5 @@ a decision, not as a defect — no pause, no schedule change. Nothing was touche
 - 2026-09-07 08:1x UTC · Claude · **Change 1 is live and observe mode immediately earned itself.** Yaseen repointed the Riley Inbound agent's call webhook at prod `retell-hook`. A REAL delivery arrived 07:53:40 UTC — `event=call_started, verified=false, reason=digest_mismatch, forwarded=true`. Nothing broke (that is what observe mode is for), but the signature did not verify. Instead of assuming a format problem I asked Yaseen to compare his dashboard keys against a FINGERPRINT of the stored one (first 4 / last 4 / length — the key itself never crossed the chat). The stored key matched **"loadboot-cc"**, the general API key; his dashboard also holds a second key named **"Secret Key Webhook"**. **Root cause: Retell signs with a separate webhook key; we were verifying with the wrong one.** `bl_sec_0332` (staging + prod) adds `retell_config.webhook_signing_key`, tries it FIRST in `retell_hook_verify`, falls back to `api_key`, and reports `key_used` in the verdict so the log answers the question next time. While the column is NULL behaviour is unchanged. Staging tests PASS on 4 cases (signing key verifies and names itself; api_key still verifies via fallback; an unrelated key refused; NULL column = old behaviour). **Yaseen sets the key himself in the Supabase SQL editor** — Claude never types it and it never passes through a chat. Change 2 also done: the inbound webhook now points at `retell-inbound-hook?t=<token>`; the token path was already proven live on prod (200 / 401 token_mismatch / 401). Old doors still open on purpose — no revoke until a real call verifies. Retell credit is empty and the last real call was 2026-09-03, so there is no inbound traffic to verify against right now; flagged to Yaseen that the published number may effectively be dead until he tops up.
 - 2026-09-07 09:xx UTC · Claude · **Website fixes verified live, then F14 sweep → new finding F34.** Verified on the deployed site with a browser (not just the deploy status): top bar clean, footer legal links no longer covered, the floating button reads "Get the app" and clicking it lands on /apps.html. Also fixed the button covering body text mid-page — it now hides while reading downwards and returns on scroll-up, with the footer rule always winning; behaviour proven with a stubbed DOM (top=visible, down=hidden, up=visible, footer=hidden even when scrolling up). **F14 sweep:** the exact shape of both instances (SECURITY DEFINER + anon + single UNNAMED parameter) returns EXACTLY the two functions already handled — that shape is exhausted. Widening to all anon-executable SECURITY DEFINER functions gives 33; most are public by design or uuid-token-gated. **F34 (P3 latent):** the live-chat visitor key is a bearer secret, but `lc_ob_get` required only length ≥8 while `lc_history` requires 16–64 — and the weaker guard returns the more personal record (role, data, docs, account_email). The key was also minted with Math.random(), and its storage-failure path returned 'novkey'+Date.now().toString(36)+'xxxxxxxx' — fully predictable from the clock. **Prod evidence it is latent, not live: 67 conversations, 1 onboarding row, ZERO with a novkey prefix, shortest key in use 26 chars.** Fixed: `bl_sec_0334` on STAGING (floor 8→16–64 + refuse the novkey prefix) and build_site.py now uses crypto.getRandomValues (192-bit, 49 chars) with a still-random failure path. Test PASS on 4 cases, case 1 being that a real key must keep working. **Prod not touched for F34.** Open next: lc_send / lc_poll / lc_rate / lc_ob_save / lc_start take the same key and have not been reviewed against this standard.
 - 2026-09-10 04:0x UTC · Claude · **Re-synced the baton after three other lanes moved both databases; NEXT ACTION item 2 turned out to be already done.** The 2026-09-07 header was stale by ~40 migrations: prod is now `bl_bp_0343a` (broker FMCSA re-screen, applied to PROD 9 Sep with a 38/38 rollback-txn test and the anon SECDEF surface unchanged at 33), staging is `bl_audit_0342` with an account-deletion lane still mid-flight. **F14 live-chat slice: staging already enforces the 16–64 + `novkey` standard on lc_send / lc_poll / lc_rate / lc_ob_get / lc_ob_save / lc_ob_doc_log via `bl_sec_0335` + `0336` (another lane, 8 Sep) — I read it live and did NOT redo it.** Prod has none of the three and still gates lc_ob_* on `length < 8`; prod evidence says latent not live (70 conversations, 0 keys under 16, shortest 26; 1 onboarding row, key 28, 0 novkey, 0 account_email; 0 rows with user_id AND visitor_key both null, which is also the `is distinct from` NULL-pair trap I checked for and did not find). Recorded the priority distinction that lc_send/poll/rate need the conversation uuid AND an equality match so their floor is defence-in-depth, while lc_ob_* are keyed on the visitor key alone and lc_ob_save is the WRITE side. **New finding F36:** `lc_ob_save` computes `v_saves` and never reads it, and `lc_onboarding.visitor_key` carries a UNIQUE index, so that 'daily save limit' is 0-or-1 by construction and throttles nothing on either env — left unfixed on purpose (the throttle number is Yaseen's, and staging had a lane mid-flight). Also this turn, outside this file's lane: staging resynced to prod byte-for-byte on all 18 bl_bp_0343 functions (combined md5 5c4374907aed03cbad2b196f3962c16d both sides), and two stray staging anon grants on `cc_cmp_save` / `cc_set_coi_limits` revoked (staff functions; prod never had them; both already authorised internally, so nothing was reachable) — staging 34 → 32. CLAUDE.md §4's "27" replaced by `docs/audit-2026-09/anon-secdef-baseline.md`, which lists names rather than a count. **PROD UNTOUCHED THIS TURN: no deploy, migration, revoke, backfill or message.**
+
+- **2026-09-12 — Codex:** Recovered six applied audit migration sources after scratch cleanup; rebuilt F36 save queue and F11 domain-check presentation on main 90ccaff. 20 actual-source tests PASS, syntax/import checks and staging build PASS; browser preview blocked. No DB mutations, production changes, public push or messages. Prior local PWA/CI/verdict patches absent; NEXT ACTION records reconstruction and remaining gates.

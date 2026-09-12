@@ -610,3 +610,12 @@ nobody who exists today.
 (`lc_send`, `lc_poll`, `lc_rate`, `lc_ob_save`, `lc_start`) take the same key but write rather than read a
 profile; they were not part of this change and have not been reviewed against this standard yet — that is the
 next slice of F14, and it is open.
+
+
+## 2026-09-12 recovery — F36 save feedback and F11 display
+
+Recovered applied 0338/0339/0341/0342/0343/0344 source from staging history. Earlier local branches were removed by scratch cleanup, so old PWA/CI/verdict patches and prior test files are not claimed present. Historical DB PASS counts remain historical.
+
+F36 client saves now run in order with bounded rate-limit retries, conversation checks after asynchronous auth, explicit HTTP/result validation and persistent failure feedback. Completion does not claim a successful save before acknowledgement. F11 unknown MX renders “Not checked”; badges describe domain/onboarding checks and manual-review instructions point to arranging secure submission.
+
+20 current actual-source tests PASS. Syntax/import checks and staging build PASS; browser local preview blocked with ERR_BLOCKED_BY_CLIENT. Local source only, no new DB/production/public deployment or messages. Full audit remains open. Exact evidence, recovery hashes and remaining gates: `REVIEW-RECOVERY-SAVE-FEEDBACK-2026-09-12.md`.

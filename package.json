@@ -10,7 +10,8 @@
     "check:syntax": "bash scripts/check_esm_syntax.sh",
     "check:imports": "python3 scripts/check_imports.py",
     "check": "npm run check:syntax && npm run check:imports",
-    "build:staging": "CONTEXT=deploy-preview python3 build_site.py"
+    "build:staging": "CONTEXT=deploy-preview python3 build_site.py",
+    "test:audit-ui": "node --experimental-vm-modules --test tests/onboarding_save_queue_test.mjs tests/shipper_trust_render_test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.0",
