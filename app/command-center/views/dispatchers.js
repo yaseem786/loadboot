@@ -18,6 +18,7 @@ import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAss
          ccDispatcherUnassign, getCarriersDirectory, ccCarrierPrefs,
          ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide, ccDispatcherCommissionStatus, ccDispatcherCommissionList,
          ccDispatcherCommissionPay, ccDispatcherQueue, ccDispatcherResendIntro,
+         ccDispatcherTestInvite, ccDispatcherTestReview, ccDispatcherTestScore,
          dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead, ccDispatcherKpis } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
@@ -251,6 +252,7 @@ export function renderDispatchers(host) {
     const q = state.queue || {};
     const ap = q.awaiting_approval || [], rc = q.awaiting_rc || [], mv = q.moving || [];
     const ut = (q.unread_threads || []).filter((t) => Number(t.unread) > 0), te = q.trials_ending || [];
+    const ts = q.tests_to_score || [];   // bl_disp_0307: a submitted skills test waiting for a human
     const stale = mv.filter((b) => Number(b.last_touch_min) > 240);
     const unread = ut.reduce((s, t) => s + Number(t.unread || 0), 0);
     const toPay = dqSum('approved'), toApprove = dqSum('draft');
@@ -265,6 +267,7 @@ export function renderDispatchers(host) {
       ['unread', String(unread), 'Unread', unread ? 'warm' : 'cool'],
       ['pay', toPay ? money(toPay) : String(Number(q.commission_to_pay || 0)), 'To pay out', toPay ? 'hot' : 'cool'],
       ['trials', String(te.length), 'Trial ends ≤3 d', te.length ? 'warm' : 'cool'],
+      ['tests', String(ts.length), 'Tests to score', ts.length ? 'warm' : 'cool'],
     ];
     const strip = el('div', { class: 'dq-triage' }, cells.map(([k, n, l, tone]) => el('button', {
       class: 'dq-t ' + tone + (state.dq === k ? ' sel' : ''), type: 'button',
@@ -344,6 +347,15 @@ export function renderDispatchers(host) {
       list = te.map((t) => el('div', { class: 'dq-rc' }, [
         el('div', { class: 'dq-c1' }, [el('div', { class: 'dq-lane' }, t.name || '—'), el('div', { class: 'dq-meta' }, 'trial ends ' + t.trial_end + ' · ' + t.days_left + ' d left')]),
         el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(t.user_id) }, 'Open')]),
+      ]));
+    } else if (state.dq === 'tests') {
+      head = 'Skills tests submitted — the answers do not read themselves';
+      list = ts.map((t) => el('div', { class: 'dq-rc' }, [
+        el('div', { class: 'dq-c1' }, [
+          el('div', { class: 'dq-lane' }, (t.name || 'candidate') + (t.attempt_no > 1 ? ' · attempt ' + t.attempt_no : '')),
+          el('div', { class: 'dq-meta' }, 'submitted ' + Math.round(t.waiting_hours) + ' h ago · auto ' + (t.auto_score != null ? t.auto_score : '—') + '/' + (t.max_score || '—')),
+        ]),
+        el('div', { class: 'dq-act' }, [el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => byUser(t.user_id) }, 'Score it')]),
       ]));
     }
 
@@ -454,10 +466,14 @@ export function renderDispatchers(host) {
           s.note ? kv('Why hire', s.note) : '',
           el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [
             s.cv_doc ? docBtn('📄 CV / résumé' + (s.cv_name ? ' (' + s.cv_name + ')' : ''), s.cv_doc) : el('span', { class: 'cc-sub' }, 'No CV uploaded'),
-            s.id_doc ? docBtn('🪪 Government ID', s.id_doc) : '',
+            // bl_disp_0304: identity is what stops a rejected candidate re-applying from a fresh
+            // account, so its absence has to be visible, not silent.
+            s.id_doc ? docBtn('🪪 Government ID' + (s.id_uploaded_at ? ' (sent after applying)' : ''), s.id_doc)
+                     : el('span', { class: 'cc-sub', style: 'color:#b45309;font-weight:700' }, '⚠ No ID on file — identity and country unverified'),
           ]),
           pp.review_note ? kv('Last note', pp.review_note) : '',
         ]); })(),
+        testSection(dd),
         pipeline(pp),
         assignSection(dd),
         kpiSection(dd),
@@ -467,6 +483,118 @@ export function renderDispatchers(host) {
         threadSection(dd),
       ]);
     }
+    // ---- bl_disp_0306: the skills test lives in the portal; this is where it is read and scored. ----
+    // Loaded lazily so opening a dispatcher does not pay for a review the staffer may not want.
+    function testSection(dd) {
+      const host = el('div');
+      const body = el('div', { class: 'cc-sub' }, 'Loading skills test…');
+      const head = el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px' }, [
+        el('div', { style: 'font-weight:700;flex:1' }, 'Skills test'),
+      ]);
+      mount(host, card([head, body]));
+      (async () => {
+        const t = await ccDispatcherTestReview(x.user_id).catch((e) => ({ error: humanizeError(e) }));
+        if (!t || t.error) { mount(body, el('div', { class: 'cc-sub' }, 'Could not load: ' + ((t && t.error) || 'error'))); return; }
+        paintTest(host, head, body, t, dd);
+      })();
+      return host;
+    }
+
+    function inviteBtn(label, again) {
+      return el('button', { class: 'lb-btn', onClick: async () => {
+        const ok = await askConfirm(again ? 'Send another skills test?' : 'Send the skills test?', {
+          body: (again ? 'This issues a fresh attempt — the previous one stays on the record, and the new one is numbered so you can see it was a second go. ' : '')
+              + 'The candidate gets a short e-mail with one button into their portal: 45 minutes once they press Start, and they must start within 48 hours.',
+          confirmLabel: 'Send it',
+        });
+        if (!ok) return;
+        const r = await ccDispatcherTestInvite(x.user_id, 45, 48).catch((e) => ({ error: humanizeError(e) }));
+        if (r && r.error) { toast(r.error); return; }
+        toast('✓ Skills test sent'); rerender();
+      } }, label);
+    }
+
+    function paintTest(host, head, body, t, dd) {
+      const st = t.state || 'none';
+      const tone = st === 'submitted' ? 'cc-pill-amber' : st === 'scored' ? 'cc-pill-green' : st === 'expired' ? 'cc-pill-red' : '';
+      mount(head, [
+        el('div', { style: 'font-weight:700;flex:1' }, 'Skills test'),
+        st === 'none' ? '' : el('span', { class: 'cc-pill ' + tone }, st.replace('_', ' ') + (t.attempt_no > 1 ? ' · attempt ' + t.attempt_no : '')),
+        (st === 'none' || st === 'expired' || st === 'scored') ? inviteBtn(st === 'none' ? 'Send skills test' : 'Send another', st !== 'none') : '',
+      ]);
+
+      if (st === 'none') { mount(body, el('div', { class: 'cc-sub' }, 'Not sent yet. The candidate gets a short e-mail with one button into the test screen in their portal.')); return; }
+      if (st === 'invited') { mount(body, el('div', { class: 'cc-sub' }, 'Invited ' + fmtDateTime(t.invited_at) + ' — not started yet. Must start by ' + fmtDateTime(t.start_by) + ' (' + t.minutes + ' minutes once started).')); return; }
+      if (st === 'in_progress') { mount(body, el('div', { class: 'cc-sub' }, 'In progress — started ' + fmtDateTime(t.started_at) + ', clock ends ' + fmtDateTime(t.ends_at) + '.')); return; }
+      if (st === 'expired') { mount(body, el('div', { class: 'cc-sub' }, 'Expired without a submission. Send another only if there was a real reason — a lapsed invite is itself a signal.')); return; }
+
+      const ig = t.integrity || {};
+      const scored = (t.staff_score != null ? t.staff_score : t.auto_score);
+      const inputs = {};
+      const rows = (t.questions || []).map((q) => {
+        const given = (q.answer || '').trim();
+        const pts = el('input', { class: 'lb-in', type: 'number', min: '0', max: String(q.max_points), step: '0.5',
+          style: 'width:72px', value: (q.staff_points != null ? q.staff_points : (q.auto_points != null ? q.auto_points : '')) });
+        inputs[q.id] = pts;
+        return el('div', { style: 'border-top:1px solid var(--cc-line,#e5e7eb);padding:10px 0' }, [
+          el('div', { style: 'display:flex;gap:8px;align-items:flex-start' }, [
+            el('div', { style: 'flex:1' }, [
+              el('div', { style: 'font-weight:700;font-size:.9rem' }, q.seq + '. ' + q.prompt),
+              el('div', { class: 'cc-sub', style: 'margin-top:2px' },
+                q.section + ' · ' + Math.round((q.seconds || 0)) + 's spent' +
+                (q.paste_count ? ' · ' + q.paste_count + ' paste' + (q.paste_count > 1 ? 's' : '') : '') +
+                (q.auto_points != null ? ' · auto ' + q.auto_points + '/' + q.max_points : '')),
+            ]),
+            el('div', { style: 'display:flex;gap:5px;align-items:center' }, [pts, el('span', { class: 'cc-sub' }, '/ ' + q.max_points)]),
+          ]),
+          el('div', { style: 'margin-top:7px;padding:9px 11px;border-radius:9px;background:rgba(15,23,42,.05);white-space:pre-wrap;font-size:.88rem;line-height:1.6' },
+            given || '(left blank)'),
+          q.answer_key ? el('details', { style: 'margin-top:6px' }, [
+            el('summary', { class: 'cc-sub', style: 'cursor:pointer;font-weight:700' }, 'What a good answer looks like'),
+            el('div', { class: 'cc-sub', style: 'margin-top:5px;line-height:1.6' }, q.answer_key),
+          ]) : '',
+        ]);
+      });
+
+      const note = el('textarea', { class: 'lb-in', style: 'min-height:60px;width:100%', placeholder: 'Note for the record (optional)' });
+      if (t.review_note) note.value = t.review_note;
+      const save = async (decision) => {
+        const scores = {};
+        (t.questions || []).forEach((q) => { const v = inputs[q.id].value; if (v !== '') scores[q.id] = { points: Number(v) }; });
+        if (decision && !(await askConfirm(decision === 'pass' ? 'Mark this test as passed?' : 'Mark this test as failed?', {
+          body: decision === 'pass' ? 'The candidate stays in the pipeline — next is the broker call, then the paid trial. This does not move their status on its own.'
+                                    : 'This records the decision on the test. It does not reject the application — use Reject for that.',
+          confirmLabel: decision === 'pass' ? 'Mark passed' : 'Mark failed', danger: decision === 'fail',
+        }))) return;
+        const r = await ccDispatcherTestScore(t.attempt, scores, decision || null, note.value.trim() || null).catch((e) => ({ error: humanizeError(e) }));
+        if (r && r.error) { toast(r.error); return; }
+        toast('✓ Scored ' + r.score + '/' + r.max); rerender();
+      };
+
+      mount(body, el('div', null, [
+        el('div', { class: 'cc-sub', style: 'line-height:1.7' },
+          'Submitted ' + fmtDateTime(t.submitted_at) + ' · took ' + (ig.used_minutes != null ? ig.used_minutes : '?') + ' of ' + t.minutes + ' minutes · ' +
+          (ig.answered != null ? ig.answered : '?') + ' of ' + (t.questions || []).length + ' answered' +
+          (ig.auto_submitted ? ' · ran out of time' : '')),
+        el('div', { class: 'cc-sub', style: 'margin-top:3px' },
+          'Left the tab ' + (ig.blur || 0) + ' time' + ((ig.blur || 0) === 1 ? '' : 's') +
+          (ig.away_seconds ? ' (' + Math.round(ig.away_seconds) + 's away)' : '') +
+          ' · ' + (ig.pastes || 0) + ' paste' + ((ig.pastes || 0) === 1 ? '' : 's') +
+          ' — signals, not proof. The broker call is the real check.'),
+        el('div', { style: 'margin-top:10px;font-weight:800;font-size:1.05rem' },
+          'Score ' + (scored != null ? scored : '—') + ' / ' + (t.max_score || '—') +
+          (t.auto_score != null ? '   (auto ' + t.auto_score + ' on the number questions)' : '') +
+          (t.decision ? '   · ' + t.decision.toUpperCase() : '')),
+        el('div', null, rows),
+        el('div', { style: 'margin-top:12px' }, note),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:9px' }, [
+          el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save(null) }, 'Save scores'),
+          el('button', { class: 'lb-btn', onClick: () => save('pass') }, '✓ Passed'),
+          el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save('fail') }, '✕ Failed'),
+        ]),
+      ]));
+    }
+
     function kv(k, v) { return el('div', { style: 'display:flex;gap:8px;padding:3px 0;font-size:.9rem' }, [el('span', { class: 'cc-sub', style: 'min-width:120px' }, k), el('span', null, v == null || v === '' ? '—' : String(v))]); }
     function docBtn(label, path) { return el('button', { class: 'lb-btn lb-btn-ghost', onClick: async () => { try { const u = await signedDocumentUrl(path, 600); window.open(u, '_blank', 'noopener'); } catch (e) { toast(humanizeError(e)); } } }, label); }
 

@@ -243,3 +243,184 @@ Legend: ✅ linked (live) · ➖ deliberately NOT linked · ⬜ not applicable
 
 ### 8.5 Carrier intro e-mail + acknowledgement model (`bl_disp_0302`, 29 Aug)
 The carrier already signed the Dispatch Service Agreement (§4 limited authorization), so assigning a named dispatcher needs **no second consent** and nothing blocks on it. What the carrier gets is a branded "Meet <dispatcher>" e-mail (rendered by `app_private.disp_assign_email_html`, wrapped by delivery-worker's shell): what they do, how a load moves (group OK → RC to LoadBoot → approval → driver rolls), what they can/cannot see, the SOP rules, the one-channel rule, a one-tap **Got it** link (`/app/carrier/?ack=<assignment>` → `carrier_dispatcher_ack`, idempotent, survives the in-app login via `sessionStorage`). `ack_state` = `confirmed` | `pending` (< 72 h since notice) | `notified` (72 h passed — the card collapses to one line, the dispatcher's Today queue stops nagging). Staff can (re)send from the 360 (`cc_dispatcher_resend_intro`). The e-mail pulls `sop.min_rate_note` verbatim — keep that note durable, not "this week".
+
+## 8.6 — Identity verification after submission (bl_disp_0304, 6 Sep 2026)
+
+**Gap found.** The dispatcher application form has a *Government ID (optional)* upload, but the whole
+form only renders while `status = 'applied'`. The moment `dispatcher_apply(p, true)` moves the profile
+to `screening`, the form disappears and the candidate sees only the status page — so a candidate who
+skipped the ID had **no way to supply it later**, and staff had to collect it over WhatsApp, off-record.
+5 of the 8 most recent applicants in prod have `skills.id_doc = null`.
+
+Why it matters: LoadBoot needs the candidate's country and identity on file so that someone who fails
+the skills test cannot simply re-apply from a fresh account, and because a hired dispatcher holds the
+carrier's authority documents and speaks to brokers in the carrier's name.
+
+**Backend — `public.dispatcher_submit_id(p_path text, p_name text default null)`**
+`dispatcher_apply()` could not be reused: it does `skills = coalesce(excluded.skills, d.skills)` (and the
+same for `load_boards` / `refs`), so a partial call from the client would silently wipe the rest of the
+application. The new RPC merges `id_doc` / `id_name` / `id_uploaded_at` into `skills` server-side with
+`||`, touches nothing else, never changes `status`, and raises a staff in-app notification
+(`dispatcher.id_uploaded`, deep-linked to `#/dispatchers?user=<uid>`). Verified on staging inside a
+rolled-back `DO` block: rpc `{"ok": true}`, all 18 pre-existing `skills` keys intact. Applied to prod.
+
+**Dispatcher portal** (`app/carrier/app.js`) — an amber *ACTION NEEDED — IDENTITY VERIFICATION* card sits
+at the top of the status page whenever `skills.id_doc` is absent, for every post-application status
+including hired dispatchers (the workspace path renders it above the workspace). Upload goes to the
+candidate's own storage folder via `uploadDocument(file, 'dispatcher_id')`, then the RPC. Headless render
+test covers all three paths: storage failure and RPC error re-enable the input with the reason shown;
+success locks the input and confirms. Also fixed there: the workspace path rendered `cards[0]`, which the
+unshifts had already turned into the referral upsell — it now renders the status card it meant to.
+
+**Command Center** (`views/dispatchers.js`) — a missing ID is no longer silent: it shows
+`⚠ No ID on file — identity and country unverified` in the 360 drawer; an ID sent after applying is
+labelled as such.
+
+**Still open (not changed here):** the applicant-facing page still advertises the role as **salaried**
+("base + per-truck + performance bonus", `dSalary()`, "How should we pay your salary?"), which contradicts
+the commission model now on `/careers` and in the LinkedIn ad. Needs the owner's commission terms before
+the copy can be rewritten.
+
+## 8.7 — Two hiring-pipeline bugs (bl_disp_0305, 12 Sep 2026)
+
+**A. "No own access" was not exclusive.** The application's *Do you have your OWN load-board access
+right now?* question is a checkbox group, so a candidate could tick `DAT (own login)` **and**
+`No own access` at the same time. Three of the first five applications came back self-contradictory
+(Frohar Niazai: "Other board (own login)" + "No own access"; Mirian Valdez: "DAT (own login)" +
+"needs board access"; Sean Suba: "needs board access" + "No own access"), and each one cost an e-mail
+to resolve — on the single most important screening question we have. `checks()` now takes an optional
+`exclusive` option: ticking it clears the others, ticking any other clears it. Verified headless across
+five tick sequences.
+
+**B. "Send skills test" sent nothing.** The button called `cc_dispatcher_decide(user,'skills_test')`,
+which set the status and wrote an in-app notification whose body was literally `Status: skills_test.`
+**No e-mail was sent** — the notify call's e-mail flag is `v_new in ('trial','verified','active',
+'rejected','suspended')`, which omits `skills_test`. And there was no test anywhere in the product:
+no questions, no link, no attachment. Candidates sat in `skills_test` with nothing to answer.
+
+Fixed by making the test a real artefact:
+- `app_private.system_settings` gains **`dispatch.skills_test_body`** (the test itself, plain text,
+  blank line = new paragraph) and **`dispatch.skills_test_hours`** (default 48). Both are registered in
+  `system_setting_defs`, so the test is edited in CC → Settings with no deploy.
+- `app_private.disp_skills_test_html(uuid)` renders it as the branded inner body (heading, amber
+  deadline box, the questions, transactional footer). `categoryOf()` in the delivery worker matches
+  `dispatcher.skills_test` → sent as **LoadBoot Dispatch**, replies land on dispatch@.
+- `cc_dispatcher_decide` now sends that e-mail when the new status is `skills_test`, inside its own
+  `begin … exception when others then null` so a mail failure can never roll back the status change.
+  The in-app title also changed to "Next step: skills test — check your e-mail".
+
+Verified on staging in a rolled-back `DO` block: rpc `{"ok":true,"status":"skills_test"}`, one row
+queued in `message_deliveries` addressed to the candidate, subject *LoadBoot Dispatcher — skills test
+(please reply within 48 hours)*. Applied to prod. BUILD OK.
+
+## 8.8 — The skills test becomes a real assessment (bl_disp_0306, 12 Sep 2026)
+
+bl_disp_0305 put the nine questions in the e-mail body. Yaseen, same day: *"portal mn test design karo
+jesy real company test leti hain … email mn sirf ye email jay jaha CTA portal mn test screen pe le
+jay."* He was right — an e-mail full of questions is a homework sheet: no clock, no single attempt, no
+record of what the candidate actually did, and nothing stopping two candidates comparing answers.
+
+**Decisions (Yaseen, 12 Sep):** 45 minutes once started · 48 hours to start from the invite · one
+attempt, staff can issue another · numeric answers auto-scored, everything else scored by a person,
+and **no auto-reject** — the score informs the decision, it never makes it.
+
+**Schema** — `app_private.skills_test_questions` (9 seeded, 100 points, each with an `answer_key` and,
+for the two numeric ones, `expect: {values, tol}`), `skills_test_attempts` (status, minutes, start_by,
+started_at, ends_at, scores, decision, integrity) and `skills_test_answers` (answer, seconds,
+paste_count, auto/staff points). `app_private` is not exposed through PostgREST, so every read and
+write goes through a security-definer RPC — a candidate can never reach `answer_key` or another
+attempt.
+
+**What lives on the server, not the browser:** the clock (`ends_at`), the single attempt, which
+questions exist, and the key. The countdown the candidate sees is cosmetic — every autosave re-reads
+`remaining` from the server, and a save or submit after time-up is refused there. Closing the tab
+pauses nothing.
+
+**Candidate RPCs** — `dispatcher_test_my` (questions only while `in_progress`), `dispatcher_test_start`
+(stamps `ends_at`), `dispatcher_test_save` (autosave, guarded), `dispatcher_test_submit` (locks,
+auto-scores the numeric questions, alerts staff). **Staff RPCs** — `cc_dispatcher_test_invite` (refuses
+a second live attempt), `cc_dispatcher_test_review` (answers + key + integrity + attempt history),
+`cc_dispatcher_test_score` (per-question points, pass/fail, note). `cc_dispatcher_decide('skills_test')`
+now creates the attempt and sends the short CTA invite instead of mailing the questions; clicking it
+twice does not create a second attempt.
+
+**Portal** (`app/agent/skills-test.js`, lazy-loaded when `status = 'skills_test'`) — briefing page with
+the rules and an explicit Start, then the test: sticky timer, section headings, per-question point
+badges, autosave on blur plus every 20s, a per-question *Saved* indicator, submit confirmation that
+names how many are unanswered, auto-submit at zero, and a receipt screen. **Command Center** — a Skills
+test card in the 360 drawer: submitted/took/answered line, integrity counts, score, every answer beside
+a collapsible "what a good answer looks like", a points box per question pre-filled from auto-scoring,
+and Save / Passed / Failed.
+
+**Integrity, deliberately modest:** tab-blur count and time away, paste events per question, seconds
+per question, and whether it auto-submitted. Shown to staff as counts with the line *"signals, not
+proof"*. No webcam snapshots, no full-screen lock, no devtools detection — disproportionate for a
+commission trial, and the 15-minute broker call is what actually exposes a borrowed answer.
+(TestGorilla's own guidance says these signals should never decide a hire on their own.)
+
+**Verified on staging**, all inside rolled-back `DO` blocks: invite → second invite refused → questions
+hidden before Start → Start returns 9 questions and 2700 seconds → save → submit (auto-score 22/22 on
+the two numeric questions) → save after submit refused → staff review shows the key and integrity →
+scoring totals 64/100. Separately: a candidate calling any `cc_dispatcher_test_*` gets *not authorized*,
+and `dispatcher_test_start` without an invite gets *no test has been assigned to you*. Headless renders
+of all four portal states plus a full type → save → confirm → submit run with no page errors, and the CC
+review card rendered from mock data. BUILD OK.
+
+### 8.8.1 — Submitted tests surface in the queue (bl_disp_0307)
+
+A submitted test only showed inside that candidate's drawer, so scoring depended on someone happening
+to open them. `cc_dispatcher_queue()` now returns `tests_to_score` (name, attempt number, submitted_at,
+auto score, hours waiting) and the CC queue card shows an amber **n tests to score** chip with the
+names and how long each has been waiting. Verified on staging with a seeded submitted attempt; rendered
+headless in the CC harness.
+
+### 8.8.2 — The sweeper the test was missing (bl_disp_0308)
+
+Review found two holes that only appear when a candidate does nothing, which is exactly when nobody is
+watching:
+
+**Abandoned attempt.** `disp_test_expire` only ran when the candidate called start or save — which an
+absent candidate never does. Someone who started, answered seven questions and closed the laptop left
+the attempt at `in_progress` forever: the answers were saved, but the attempt never became `submitted`,
+so it never entered the queue and nobody ever read it. Real work, permanently invisible.
+
+**Stale invite.** An invite whose `start_by` had passed still showed as `invited` in the CC drawer, so a
+lapsed candidate looked like one who might still start.
+
+`app_private.skills_test_sweep()` (cron `lb-skills-test-sweep`, every 10 minutes) now: auto-submits and
+scores any expired `in_progress` attempt that has at least one answer — stamped
+`integrity.abandoned = true` and `submitted_at = ends_at` so the reviewer sees why it is short — and
+expires one with nothing typed; expires lapsed invites; and sends exactly one reminder e-mail ~12 hours
+before an unstarted invite closes (guarded by a new `reminded_at` column, so a second sweep sends
+nothing). Verified on staging across all five paths, including that a second run is a no-op.
+
+### 8.8.3 — Hardening pass before the first candidate (bl_disp_0309)
+
+Yaseen, before sending the first real invite: *"skill check kar lo us mn koi bug ya gap to nie."* Five
+defects found and fixed; four of them only bite a real candidate, never a test run.
+
+1. **The clock drifted in a background tab.** `setInterval` is throttled to about once a minute when
+   the tab is hidden, so the decrementing counter showed twenty minutes left when two remained — and
+   the candidate was cut off mid-sentence with no warning. The countdown is now computed from an
+   absolute deadline, so throttling cannot affect it.
+2. **Returning to the tab did not correct the clock.** Re-anchoring happened only on a save, and a
+   save only fires when something is dirty — so someone who left the tab and typed nothing came back
+   to a clock that was minutes fast. `visibilitychange` now re-reads `remaining` from the server.
+3. **Seconds per question only counted on blur.** The question someone worked on for twenty minutes
+   and then submitted from was recorded as `0s` — exactly the number a reviewer would misread.
+4. **Listeners leaked on SPA navigation.** Leaving the test for another tab of the portal left the
+   interval running and the `beforeunload` handler bound, so the browser asked "leave site?" long
+   after the test screen was gone. The host now tears itself down once it is detached.
+5. **`dispatcher_test_start` race.** Two concurrent calls could each read `invited`; the second UPDATE
+   re-stamped `started_at`/`ends_at` and handed out a fresh 45 minutes. The guard now sits in the
+   UPDATE (`and status = 'invited'`). Verified: a second start leaves `ends_at` unchanged.
+
+Also checked and left alone: the auto-scorer, against ten realistic answers — both numbers right 12/12,
+one of two 6/12, the question copied back 0, `$157.50` (missed the 5-hour cap) 0, `$175` and `175.00`
+full marks, `1750` zero. One known limitation: a European decimal comma (`2,28`) scores 0. Staff score
+every question anyway and see the answer, so it is a hint that stays wrong-side-safe.
+
+**Prod smoke test** (rolled back, prod left with 0 attempts and 0 e-mails sent): invite → duplicate
+invite blocked → questions hidden before Start → Start gives 9 questions and 2700s → save → submit →
+edit after submit refused → staff review shows the key → the attempt appears in the queue → scored
+71/100. Mobile re-checked at 390px: no horizontal scroll, full-width question text. BUILD OK.
