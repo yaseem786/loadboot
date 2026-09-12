@@ -3,12 +3,25 @@
 // Auth is owned by Supabase Auth. MFA truth = AAL from Auth (addendum §11): we read
 // the assurance level from Auth, never from a duplicated profile column.
 import { getClient } from './supabaseClient.js';
+import { syncShareOwner, clearSharedFiles } from './share-inbox.js';
+let logoutInProgress = false, authRevision = 0;
+// A manual token purge must also invalidate reads already running in sibling tabs.
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('storage', event => {
+  if (event.newValue === null && event.key && (event.key.startsWith('lb-auth-') || (event.key.startsWith('sb-') && event.key.includes('auth-token')))) {
+    logoutInProgress = true; authRevision++;
+    clearSharedFiles().catch(() => {});
+  }
+});
 
 export async function getSession() {
+  const revision = authRevision;
   const sb = await getClient();
   const { data, error } = await sb.auth.getSession();
-  if (error) return null;
-  return data.session || null;
+  if (logoutInProgress || revision !== authRevision) return null;
+  const session = error ? null : data.session || null;
+  try { await syncShareOwner(session?.user?.id); } catch (_) {}
+  if (logoutInProgress || revision !== authRevision) return null;
+  return session;
 }
 
 export async function getUser() {
@@ -74,9 +87,9 @@ export async function mfaRequired() {
 
 // Sign out on EVERY device (revokes all refresh tokens server-side), then local purge.
 export async function signOutEverywhere() {
-  const sb = await getClient();
-  try { await Promise.race([sb.auth.signOut({ scope: 'global' }), new Promise((r) => setTimeout(r, 4000))]); } catch (_) {}
-  await signOut();
+  const result = await signOut('global');
+  if (!result.remoteRevoked && typeof window !== 'undefined') window.alert('Signed out on this device. Other devices could not be signed out; reconnect and try again.');
+  return result;
 }
 
 export async function signInWithPassword(email, password) {
@@ -136,18 +149,26 @@ export async function updateEmail(newEmail) {
   return sb.auth.updateUser({ email: newEmail }); // confirmation links go to BOTH addresses
 }
 
-export async function signOut() {
-  const sb = await getClient();
+export async function signOut(scope = 'global') {
+  logoutInProgress = true; authRevision++;
+  try { await clearSharedFiles(); } catch (_) {
+    if (typeof window !== 'undefined') window.alert('Temporary shared files could not be cleared. Clear LoadBoot site data on this device before another person signs in.');
+  }
   // Never let a slow/failed server call keep the user "stuck signed in": race a 3s timeout,
   // then force-purge the local auth tokens so the session dies locally regardless.
-  try { await Promise.race([sb.auth.signOut(), new Promise(res => setTimeout(res, 3000))]); } catch (_) {}
+  let remoteRevoked = false, timeout;
   try {
+    const result = await Promise.race([(async () => { const sb = await getClient(); return sb.auth.signOut({ scope: typeof scope === 'string' ? scope : 'global' }); })(), new Promise(resolve => { timeout = setTimeout(() => resolve(null), 3000); })]);
+    remoteRevoked = !!result && !result.error;
+  } catch (_) {} finally { clearTimeout(timeout); }
+  for (const storeName of ['localStorage', 'sessionStorage']) try {
+    const authStore = window[storeName];
     const kill = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.indexOf('sb-') === 0 && k.indexOf('auth-token') !== -1) kill.push(k);
+    for (let i = 0; i < authStore.length; i++) {
+      const k = authStore.key(i);
+      if (k && (k.indexOf('lb-auth-') === 0 || (k.indexOf('sb-') === 0 && k.indexOf('auth-token') !== -1))) kill.push(k);
     }
-    kill.forEach(k => localStorage.removeItem(k));
+    kill.forEach(k => authStore.removeItem(k));
   } catch (_) {}
   // Purge any app caches on logout so no private view survives a session — both
   // directly and via the controlling service worker (LB_PURGE).
@@ -157,14 +178,20 @@ export async function signOut() {
     }
     if ('caches' in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k.indexOf('lb-app') === 0).map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k.indexOf('lb-app') === 0 || k === 'lb-share-inbox' || k === 'lb-share-owner').map(k => caches.delete(k)));
     }
   } catch (_) {}
+  return { remoteRevoked };
 }
 
 export async function onAuthChange(cb) {
   const sb = await getClient();
-  const { data } = sb.auth.onAuthStateChange((_event, session) => cb(session));
+  const { data } = sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN') { logoutInProgress = false; authRevision++; }
+    if (event === 'SIGNED_OUT') authRevision++;
+    syncShareOwner(logoutInProgress ? null : session?.user?.id).catch(() => {});
+    cb(session);
+  });
   return () => { try { data.subscription.unsubscribe(); } catch (_) {} };
 }
 

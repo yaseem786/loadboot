@@ -1,0 +1,31 @@
+name: Pull request checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm run check
+      - run: npm run test:audit-ui
+      - run: node docs/audit-2026-09/tests/domain_check_v4_ip_cases.mjs
+      - name: Build against staging
+        env:
+          CONTEXT: deploy-preview
+          LOADBOOT_STAGING_ANON_KEY: ${{ vars.LOADBOOT_STAGING_ANON_KEY }}
+        run: |
+          test -n "$LOADBOOT_STAGING_ANON_KEY" || { echo 'Configure the staging publishable/anon key repository variable.'; exit 1; }
+          python3 build_site.py
+      - run: node --experimental-vm-modules --test tests/audit_pwa_privacy_test.mjs

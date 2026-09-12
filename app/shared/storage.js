@@ -11,12 +11,13 @@ const safeName = (n) => (n || 'file').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 
 const rand = () => Math.random().toString(36).slice(2, 10);
 
 // Upload a File/Blob; returns { path, fileName, contentType, size } for the metadata RPC.
-export async function uploadDocument(file, kind) {
+export async function uploadDocument(file, kind, expectedOwner = null) {
   if (!file) throw new Error('No file selected.');
   if (file.size > 25 * 1024 * 1024) throw new Error('File is larger than 25 MB.');
   const sb = await getClient();
   const user = await getUser();
   if (!user) throw new Error('Please sign in again.');
+  if (expectedOwner && user.id !== expectedOwner) throw new Error('The account changed. Share this file again.');
   const path = `${user.id}/${kind || 'other'}/${Date.now()}-${rand()}-${safeName(file.name)}`;
   const { error } = await sb.storage.from(BUCKET).upload(path, file, {
     contentType: file.type || 'application/octet-stream', upsert: false,

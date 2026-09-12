@@ -1,3 +1,4 @@
+import { validSharedResponse } from '../shared/share-inbox.js';
 // lb-cdn-bump 2026-08-15: force fresh Netlify blob upload (corrupt-deploy recovery) — no code changes.
 // app.js — LoadBoot Carrier Portal. A full, responsive carrier-facing web app:
 // desktop shows a sidebar dashboard; mobile collapses to a bottom tab bar. Carriers
@@ -7203,6 +7204,7 @@ function tripStepper(status) {
     // 2026-08 audit: Web Share Target inbox — a file shared from the phone's gallery/apps
     // lands in the 'lb-share-inbox' cache (see sw.js); offer to upload it here.
     const shareBanner9 = h('div');
+    if (new URLSearchParams(location.search).get('share') === 'retry') shareBanner9.textContent = 'The shared file was not saved. Open LoadBoot while signed in, then share the file again (maximum 25 MB).';
     (async () => {
       try {
         if (!('caches' in window)) return;
@@ -7211,18 +7213,20 @@ function tripStepper(status) {
         if (!keys9.length) return;
         const res9 = await c9.match(keys9[keys9.length - 1]);
         if (!res9) return;
-        const name9 = res9.headers.get('x-name') || 'shared-file';
+        const owner9 = (await getSession())?.user?.id;
+        if (!(await validSharedResponse(res9, owner9))) { await Promise.all(keys9.map(k => c9.delete(k))); return; }
+        const name9 = decodeURIComponent(res9.headers.get('x-name') || 'shared-file');
         const type9 = res9.headers.get('content-type') || 'application/octet-stream';
         const blob9 = await res9.blob();
         const file9 = new File([blob9], name9, { type: type9 });
         const st9 = h('div', { class: 'cp-row-s' });
         shareBanner9.appendChild(h('div', { class: 'cp-card', style: 'border-color:rgba(8,131,247,.5)' }, [
           h('div', { class: 'cp-row-t' }, '📥 File shared to LoadBoot'),
-          h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, name9 + ' · ' + Math.round(blob9.size / 1024) + ' KB — upload it to your documents?'),
+          h('div', { class: 'cp-row-s', style: 'margin:4px 0 8px' }, name9 + ' · ' + Math.round(blob9.size / 1024) + ' KB — temporary copy, expires within 15 minutes and is removed on sign out. Upload it to your documents?'),
           h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
             h('button', { class: 'cp-btn cp-btn-sm', onClick: async (e9) => {
               const b9 = e9.currentTarget; b9.disabled = true; b9.textContent = 'Uploading…';
-              try { const m9 = await uploadDocument(file9, 'other'); await carrierUploadDocument({ type: 'other', fileName: m9.fileName, filePath: m9.path }); await Promise.all(keys9.map(k9 => c9.delete(k9))); haptic('success'); lbToast('Shared file uploaded — dispatch will review it.', 'success'); loadDocuments(); }
+              try { const current9 = (await getSession())?.user?.id; if (current9 !== owner9 || !(await validSharedResponse(res9, current9))) { await Promise.all(keys9.map(k => c9.delete(k))); shareBanner9.innerHTML = ''; throw new Error('This shared file expired or the account changed. Share it again while signed in.'); } const m9 = await uploadDocument(file9, 'other', owner9); if ((await getSession())?.user?.id !== owner9) throw new Error('The account changed during upload.'); await carrierUploadDocument({ type: 'other', fileName: m9.fileName, filePath: m9.path }); await Promise.all(keys9.map(k9 => c9.delete(k9))); haptic('success'); lbToast('Shared file uploaded — dispatch will review it.', 'success'); loadDocuments(); }
               catch (er9) { st9.textContent = (er9 && er9.message) || 'Upload failed.'; b9.disabled = false; b9.textContent = 'Upload to Documents'; }
             } }, 'Upload to Documents'),
             h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: async () => { try { await Promise.all(keys9.map(k9 => c9.delete(k9))); } catch (_) {} shareBanner9.innerHTML = ''; } }, 'Dismiss'),
@@ -7320,7 +7324,7 @@ function tripStepper(status) {
         }
         up.textContent = 'Uploading…';
         const meta = await uploadDocument(f, typeSel.value);
-        await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path });
+        await carrierUploadDocument({ type: typeSel.value, fileName: meta.fileName, filePath: meta.path, aiVerdict: pv9 });
         fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded — in review. You will NOT be asked again; track it right here.';
         lbToast('✓ Document received — status is IN REVIEW. No need to upload it again.', 'success', 'Uploaded');
         // factored-but-not-set-up: NOA letter without a factoring profile can't route broker payments
@@ -7378,7 +7382,7 @@ function tripStepper(status) {
           }
           upBtn.textContent = 'Submitting…';
           const meta = await uploadDocument(file, typeSel2.value);
-          await carrierUploadDocument({ type: typeSel2.value, fileName: meta.fileName, filePath: meta.path });
+          await carrierUploadDocument({ type: typeSel2.value, fileName: meta.fileName, filePath: meta.path, aiVerdict: pv9 });
           msg2.className = 'cp-err ok'; msg2.textContent = '✓ Submitted — status is now IN REVIEW. You cannot change it until the review decision.';
           setTimeout(() => { close2(); loadDocuments(); }, 900);
         } catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Submit for review'; msg2.className = 'cp-err'; msg2.textContent = (e && e.message) || 'Upload failed.'; }
@@ -7869,7 +7873,7 @@ function tripStepper(status) {
       const up = h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { const file = fileIn.files && fileIn.files[0]; msg.textContent = ''; msg.className = 'cp-err'; if (!file) { msg.textContent = 'Choose a file.'; return; } { const rule = docFmt(typeSel.value); const ex = extOf(file); if (rule.exts.indexOf(ex) < 0) { const _m = 'This document must be ' + (rule.exts.length === 1 ? rule.exts[0].toUpperCase() : rule.exts.map((e) => e.toUpperCase()).join('/')) + ' \u2014 ' + rule.label + '.'; msg.textContent = _m; lbToast(_m, 'urgent', 'Wrong file format'); fileIn.value = ''; return; } } up.disabled = true; up.textContent = '🤖 Checking…';
         const pv9 = await lbAiPrecheck(file, typeSel.value);
         if (!(await lbPrecheckGate(pv9))) { up.disabled = false; up.textContent = 'Upload'; fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = 'Nothing submitted — fix it first, then upload the corrected file.'; return; }
-        up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; lbToast('Document uploaded \u2014 sent for review. The checklist above now shows \u201cIn review\u201d.', 'success', 'Uploaded \u2713'); await refresh(); try { loadReqs(); } catch (_) {} } catch (e) { const _um = (e && e.message) || 'Upload failed.'; msg.className = 'cp-err'; msg.textContent = _um; lbToast(_um, 'urgent', 'Upload failed'); } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
+        up.textContent = 'Uploading…'; try { const m = await uploadDocument(file, typeSel.value); await carrierUploadDocument({ type: typeSel.value, fileName: m.fileName, filePath: m.path, aiVerdict: pv9 }); fileIn.value = ''; msg.className = 'cp-err ok'; msg.textContent = '✓ Uploaded.'; lbToast('Document uploaded \u2014 sent for review. The checklist above now shows \u201cIn review\u201d.', 'success', 'Uploaded \u2713'); await refresh(); try { loadReqs(); } catch (_) {} } catch (e) { const _um = (e && e.message) || 'Upload failed.'; msg.className = 'cp-err'; msg.textContent = _um; lbToast(_um, 'urgent', 'Upload failed'); } up.disabled = false; up.textContent = 'Upload'; } }, 'Upload');
       fileIn.addEventListener('change', () => { if (autoUp && fileIn.files && fileIn.files[0]) { autoUp = false; up.click(); } });
       refresh();
       const w9Btn = h('button', { class: 'cp-btn cp-btn-sm', onClick: () => import('./w9-form.js').then((m) => m.openW9Wizard({ openModal: openModal, toast: (msg) => lbToast(msg, 'success', 'W-9') }, { carrier: f.company }, () => { refresh(); try { loadReqs(); } catch (_) {} })) }, 'Complete W-9 in-app');
@@ -7945,7 +7949,7 @@ function tripStepper(status) {
               const pv9 = await lbAiPrecheck(f9, 'noa');
               if (!(await lbPrecheckGate(pv9))) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#94a3b8'; st9.textContent = 'Nothing submitted — attach the corrected NOA when ready.'; return; }
               b9.textContent = 'Uploading\u2026';
-              try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
+              try { const m9 = await uploadDocument(f9, 'noa'); await carrierUploadDocument({ type: 'noa', fileName: m9.fileName, filePath: m9.path, aiVerdict: pv9 }); f.noa_uploaded = true; f.noa_path = m9.path; st9.style.color = '#4ade80'; st9.textContent = '✓ NOA letter attached — LoadBoot verifies it against your remit-to'; b9.textContent = '✓ Uploaded'; }
               catch (e9) { b9.disabled = false; b9.textContent = 'Upload NOA'; st9.style.color = '#f87171'; st9.textContent = (e9 && e9.message) || 'Upload failed.'; }
             } }, 'Upload NOA');
             return h('div', { style: 'margin-top:10px' }, [

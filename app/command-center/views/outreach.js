@@ -277,8 +277,12 @@ export function renderOutreach(host) {
 
   // -------------------------------------------------- cold-list reach + runway
   async function loadCompare() {
-    let a; try { a = await ccOutreachAudience(S.days || 3650); } catch (e) { return; }
-    if (!a || a.error || !a.audiences) return;
+    const unavailable = () => {
+      S.audience = null;
+      for (const target of [reachHost, cmpHost]) mount(target, el('div', { class: 'lb-card', role: 'alert' }, 'Audience report could not be loaded. Refresh to retry; these totals are unavailable.'));
+    };
+    let a; try { a = await ccOutreachAudience(S.days || 3650); } catch (e) { unavailable(); return; }
+    if (!a || a.error || !Array.isArray(a.audiences)) { unavailable(); return; }
     const rows = a.audiences;
     S.audience = rows;
 

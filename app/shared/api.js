@@ -838,10 +838,10 @@ export const pocketSaveProfile = (p = {}) => rpc('update_my_carrier_profile', {
 });
 // Carrier document self-service (legacy `documents` table; RLS-scoped to the carrier,
 // trigger sets carrier_id=auth.uid() + status='pending' for staff review).
-export const carrierUploadDocument = async ({ type, fileName, filePath }) => {
+export const carrierUploadDocument = async ({ type, fileName, filePath, aiVerdict = null }) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
-  const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath });
+  const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath, ...(aiVerdict && typeof aiVerdict === 'object' && !Array.isArray(aiVerdict) ? { ai_verdict: aiVerdict } : {}) });
   if (error) throw new Error(error.message || 'Could not save the document.');
   return true;
 };

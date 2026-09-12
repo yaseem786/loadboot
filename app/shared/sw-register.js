@@ -18,13 +18,14 @@ export function registerAppSW() {
     // updateViaCache:'none' — ALWAYS revalidate sw.js against the network when checking
     // for updates, so a new deploy is detected even if the browser cached the old sw.js.
     // Without this, installed PWAs can serve a stale build until the user clears data.
+    let updateApproved = false;
     navigator.serviceWorker.register('/app/sw.js', { scope: '/app/', updateViaCache: 'none' }).then((reg) => {
       // Actively look for a newer SW: right now, and every 60s while the app is open,
       // so an installed PWA picks up new deploys without a manual reinstall.
       reg.update().catch(() => {});
       setInterval(() => reg.update().catch(() => {}), 60000);
       function promptReload(worker) {
-        if (!worker || document.getElementById('lb-sw-update')) return;
+        if (document.getElementById('lb-sw-update')) return;
         const bar = document.createElement('div');
         bar.id = 'lb-sw-update';
         bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:99999;background:#0883F7;color:#fff;padding:12px 16px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;font:600 14px system-ui,sans-serif;box-shadow:0 12px 30px -8px rgba(8,131,247,.6)';
@@ -33,7 +34,12 @@ export function registerAppSW() {
         const btn = document.createElement('button');
         btn.textContent = 'Update';
         btn.style.cssText = 'background:#fff;color:#0883F7;border:none;border-radius:9px;padding:8px 16px;font-weight:800;cursor:pointer;flex:none';
-        btn.onclick = () => { btn.textContent = 'Updating...'; worker.postMessage({ type: 'SKIP_WAITING' }); };
+        btn.onclick = () => {
+          if (!window.confirm('Update and reload this tab? Save any unfinished work first.')) return;
+          updateApproved = true; btn.textContent = 'Updating...';
+          if (!worker || worker.state === 'activated') location.reload();
+          else worker.postMessage({ type: 'SKIP_WAITING' });
+        };
         bar.appendChild(msg); bar.appendChild(btn);
         document.body.appendChild(bar);
       }
@@ -49,7 +55,9 @@ export function registerAppSW() {
       document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
       let reloaded = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloaded) return; reloaded = true; location.reload();
+        if (reloaded) return;
+        if (!updateApproved) { promptReload(null); return; }
+        reloaded = true; location.reload();
       });
     }).catch(() => {});
   });
