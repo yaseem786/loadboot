@@ -647,3 +647,10 @@ This corrects one false-success path. Storage bytes, durable suppression, retent
 Applied `20260913212633 / audit_deletion_outreach_suppression`: existing private suppression marker written atomically before deleting contact rows; queued/claimed/scheduled marketing cancelled. Added missing service-only final eligibility helper and corrected claim/system/staff enqueue scope so marketing-only email opt-out preserves ordinary transactional eligibility. Stronger/manual/null and SMS blocks remain enforced. Candidate/deployed 78 runtime assertions PASS; rollback/reapply restores all five function hashes. Exact anonymous inventory remains 32, six advisor identities unchanged. No actual sender, contact backfill or production changes.
 
 Claim tests use the actual body with a temporary delivery table, not live queue rows. Re-import/positive controls and suppression failure rollback covered. Full storage/session erasure remains open; stage footer unsubscribe and remaining notification consumers still need parity/scope review. See `REVIEW-DELETION-SUPPRESSION-2026-09-13.md` and exact before/after JSON.
+
+
+## September 13 — unsubscribe entrypoints completed on staging
+
+Old no-contact footer success without a durable marker and old token-path rewrite of delivered operational history reproduced with synthetic rollback fixtures. Applied `20260913214311 / audit_unsubscribe_entrypoints` to staging only: durable opt-out, token failure refusal, normalized/scheduled marketing cancellation, stronger suppression and operational/history preservation. Candidate/deployed 73 runtime assertions and rollback/reapply PASS; exact anon names/args remain 32, helper and six advisor notices unchanged, zero fixtures left.
+
+Merged latest main 515f4f6 preserving other lanes; 61 UI/privacy tests, 30 IP cases, 160 syntax/import checks and staging build freshly PASS. No production mutation or real sender/provider call. Full account-erasure storage/session lifecycle, notification-consumer/edge parity, F10 decision and browser/CI/Retell gates remain open. Exact evidence in `REVIEW-UNSUBSCRIBE-2026-09-13.md`.
