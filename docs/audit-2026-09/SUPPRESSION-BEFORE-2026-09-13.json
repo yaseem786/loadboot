@@ -1,0 +1,172 @@
+{
+  "anon": [
+    {
+      "args": "",
+      "name": "all_flags"
+    },
+    {
+      "args": "p_key text",
+      "name": "cc_get_public_form"
+    },
+    {
+      "args": "p_path text, p_name text",
+      "name": "dispatcher_submit_id"
+    },
+    {
+      "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+      "name": "eld_ingest"
+    },
+    {
+      "args": "",
+      "name": "get_active_public_announcements"
+    },
+    {
+      "args": "p_limit integer",
+      "name": "get_public_load_opportunities"
+    },
+    {
+      "args": "",
+      "name": "get_public_market_rates"
+    },
+    {
+      "args": "",
+      "name": "lb_contact_channel"
+    },
+    {
+      "args": "p_token uuid",
+      "name": "lb_email_claim_get"
+    },
+    {
+      "args": "p_token uuid, p_name text, p_email text, p_signature text",
+      "name": "lb_email_claim_sign"
+    },
+    {
+      "args": "p_token uuid, p jsonb",
+      "name": "lb_email_ping_confirm"
+    },
+    {
+      "args": "p_token uuid",
+      "name": "lb_email_ping_get"
+    },
+    {
+      "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+      "name": "lc_brain_write"
+    },
+    {
+      "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+      "name": "lc_chat_request_call"
+    },
+    {
+      "args": "p_visitor_key text",
+      "name": "lc_history"
+    },
+    {
+      "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+      "name": "lc_identify"
+    },
+    {
+      "args": "p_visitor_key text",
+      "name": "lc_ob_get"
+    },
+    {
+      "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+      "name": "lc_ob_save"
+    },
+    {
+      "args": "p_visitor_key text, p_conversation_id uuid",
+      "name": "lc_ob_upload_check"
+    },
+    {
+      "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+      "name": "lc_poll"
+    },
+    {
+      "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+      "name": "lc_rate"
+    },
+    {
+      "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+      "name": "lc_request_call"
+    },
+    {
+      "args": "p_id uuid, p_visitor_key text, p_body text",
+      "name": "lc_send"
+    },
+    {
+      "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+      "name": "lc_start"
+    },
+    {
+      "args": "p_email text, p_token text",
+      "name": "outreach_unsubscribe"
+    },
+    {
+      "args": "p_token uuid, p_decision text, p_name text, p_note text",
+      "name": "partner_agent_confirm"
+    },
+    {
+      "args": "p_token uuid",
+      "name": "partner_agent_confirm_get"
+    },
+    {
+      "args": "p_token uuid, p_decision text, p_name text, p_note text",
+      "name": "partner_claim_confirm"
+    },
+    {
+      "args": "p_token uuid",
+      "name": "partner_claim_get"
+    },
+    {
+      "args": "jsonb",
+      "name": "retell_webhook"
+    },
+    {
+      "args": "p jsonb",
+      "name": "submit_web_form"
+    },
+    {
+      "args": "p jsonb",
+      "name": "track_web_event"
+    }
+  ],
+  "latest": {
+    "name": "bl_disp_0311b_review_email_stamps",
+    "version": "20260913201837"
+  },
+  "fixtures": 0,
+  "triggers": 0,
+  "functions": [
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "args": "p_id bigint, p_action text, p_note text",
+      "hash": "98259dd3b5c3f3d5dca8aae02743730c",
+      "name": "cc_account_deletion_process",
+      "schema": "public",
+      "source": "CREATE OR REPLACE FUNCTION public.cc_account_deletion_process(p_id bigint, p_action text, p_note text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog'\nAS $function$\ndeclare r app_private.account_deletion_requests; v_done jsonb := '{}'::jsonb; n int;\nbegin\n  if not (public.has_global_permission('carriers.approve') or public.has_global_permission('finance.approve')) then\n    raise exception 'not authorized' using errcode='42501';\n  end if;\n  if p_action IS NULL OR p_action NOT IN ('reject','complete') then\n    raise exception 'unknown action' using errcode='22023';\n  end if;\n  select * into r from app_private.account_deletion_requests where id = p_id FOR UPDATE;\n  if r.id is null then raise exception 'request not found' using errcode='22023'; end if;\n  if r.status <> 'requested' then raise exception 'request already %', r.status using errcode='22023'; end if;\n\n  if p_action = 'reject' then\n    if coalesce(trim(coalesce(p_note,'')),'') = '' then\n      raise exception 'a reason is required to reject' using errcode='22023';\n    end if;\n    update app_private.account_deletion_requests\n       set status='rejected', processed_at=now(), processed_by=auth.uid(), note=p_note where id=p_id;\n    return jsonb_build_object('ok', true, 'status','rejected');\n  end if;\n\n\n  -- 1) contact details\n  update public.profiles\n     set email = 'deleted+' || r.user_id::text || '@deleted.invalid',\n         contact_name = null, phone = null, company = 'Deleted account'\n   where id = r.user_id;\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('profile', n);\n\n  -- 2) agent payout + tax + address block (holds IBAN, wallet, DOB, ID doc refs)\n  update app_private.agent_profiles\n     set full_name='Deleted account', phone=null, street=null, zip=null, city=null,\n         state=null, country=null, payout_details='{}'::jsonb, tax_id_last4=null\n   where user_id = r.user_id;\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('agent_profile', n);\n\n  -- 3) banking for every org this user owns\n  update app_private.org_payment_profiles p\n     set account_number='', bank_name='', account_title='',\n         verified=false, verified_by=null, verified_at=null,\n         routing_number=null, tax_id=null, swift_bic=null,\n         bank_address=null, beneficiary_address=null, remittance_email=null, bank_phone=null\n   where exists (select 1 from public.organizations o\n                  where o.id = p.org_id and o.owner_user_id = r.user_id);\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('payment_profiles', n);\n\n  -- 4) document metadata belongs to profiles(id), not organizations(id).\n  -- Storage objects and retained transaction records require separate lifecycle handling.\n  delete from public.documents d where d.carrier_id = r.user_id;\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('documents', n);\n\n  -- 5) conversations and messages\n  update app_private.lc_conversations set email=null, name=null where user_id = r.user_id;\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('chats', n);\n  delete from app_private.agent_messages where user_id = r.user_id;\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('agent_messages', n);\n\n  -- 6) matching marketing/CRM rows only. A missing email must not match blank contacts.\n  -- Durable suppression and complete erasure remain separate audit work.\n  -- Cleanup failures must abort the transaction, never report partial erasure as completed.\n  delete from app_private.crm_contacts where lower(email) = lower(nullif(btrim(r.email),''));\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('crm_contacts', n);\n  delete from app_private.outreach_contacts where lower(email) = lower(nullif(btrim(r.email),''));\n  get diagnostics n = row_count; v_done := v_done || jsonb_build_object('outreach_contacts', n);\n\n  -- 7) close the login. The auth row is kept (not dropped) so the retained financial\n  --    records keep a stable foreign key — but it can never be signed into again.\n  update auth.users\n     set encrypted_password = extensions.crypt(gen_random_uuid()::text, extensions.gen_salt('bf')),\n         email = 'deleted+' || r.user_id::text || '@deleted.invalid',\n         phone = null, raw_user_meta_data = '{}'::jsonb,\n         banned_until = 'infinity', updated_at = now()\n   where id = r.user_id;\n\n  update app_private.account_deletion_requests\n     set status='completed', processed_at=now(), processed_by=auth.uid(),\n         note = coalesce(p_note,'') || ' | erased: ' || v_done::text\n   where id = p_id;\n\n  return jsonb_build_object('ok', true, 'status','completed', 'erased', v_done);\nend $function$\n"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_limit integer, p_channel text",
+      "hash": "5e7d3aa1aaf2e7394d9b6e25b4983ab9",
+      "name": "cc_delivery_worker_claim",
+      "schema": "public",
+      "source": "CREATE OR REPLACE FUNCTION public.cc_delivery_worker_claim(p_limit integer DEFAULT 50, p_channel text DEFAULT 'email'::text)\n RETURNS SETOF app_private.message_deliveries\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\nbegin\n  return query with claimed as (select id from app_private.message_deliveries\n      where status='queued' and channel=p_channel and coalesce(scheduled_at,now())<=now()\n      order by scheduled_at nulls first for update skip locked limit least(greatest(coalesce(p_limit,50),1),500))\n    update app_private.message_deliveries m set status='claimed', claimed_at=now(), attempts=attempts+1, updated_at=now()\n    from claimed where m.id=claimed.id returning m.*;\nend; $function$\n"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "args": "p_channel text, p_email text, p_template_key text, p_subject text, p_idem text, p_meta jsonb, p_scheduled_at timestamp with time zone",
+      "hash": "58fb0ca17ee9a213051a6b3f310fb4ca",
+      "name": "cc_enqueue_transactional",
+      "schema": "public",
+      "source": "CREATE OR REPLACE FUNCTION public.cc_enqueue_transactional(p_channel text, p_email text, p_template_key text DEFAULT NULL::text, p_subject text DEFAULT NULL::text, p_idem text DEFAULT NULL::text, p_meta jsonb DEFAULT '{}'::jsonb, p_scheduled_at timestamp with time zone DEFAULT NULL::timestamp with time zone)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_key text; v_sched timestamptz; v_id uuid; v_ins int; v_provider text; v_addr text;\nbegin\n  if not app_private.can_manage_comms() then raise exception 'not authorized' using errcode='42501'; end if;\n  if p_channel not in ('email','sms') then raise exception 'invalid channel' using errcode='22023'; end if;\n  if p_channel='email' then\n    if p_email is null or p_email !~ '^[^@]+@[^@]+\\.[^@]+$' then raise exception 'invalid email recipient' using errcode='22023'; end if;\n    v_addr := lower(p_email); v_provider := 'resend';\n  else\n    if p_email is null or p_email !~ '^\\+?[0-9]{7,15}$' then raise exception 'invalid sms recipient' using errcode='22023'; end if;\n    v_addr := p_email; v_provider := 'twilio';\n  end if;\n  if exists (select 1 from app_private.suppressions where channel=p_channel and lower(address)=lower(v_addr)) then\n    return jsonb_build_object('queued',false,'reason','suppressed'); end if;\n  v_sched := coalesce(p_scheduled_at, now());\n  v_key := coalesce(p_idem, 'txn:'||p_channel||':'||lower(v_addr)||':'||coalesce(p_template_key,'')||':'||extract(epoch from v_sched)::bigint::text);\n  insert into app_private.message_deliveries(source,channel,provider,recipient_email,recipient_phone,idempotency_key,status,scheduled_at,template_key,meta)\n  values ('transactional',p_channel,v_provider,\n    case when p_channel='email' then v_addr else null end,\n    case when p_channel='sms'   then v_addr else null end,\n    v_key, case when v_sched>now() then 'scheduled' else 'queued' end, v_sched, p_template_key,\n    coalesce(p_meta,'{}'::jsonb) || jsonb_build_object('subject',p_subject))\n  on conflict (idempotency_key) do nothing returning id into v_id;\n  get diagnostics v_ins = row_count;\n  return jsonb_build_object('queued', v_ins>0, 'delivery_id', v_id, 'idempotency_key', v_key, 'channel', p_channel,\n    'status', case when v_ins=0 then 'duplicate' when v_sched>now() then 'scheduled' else 'queued' end);\nend; $function$\n"
+    },
+    {
+      "acl": null,
+      "args": "p_to text, p_template text, p_subject text, p_html text, p_text text, p_idem text",
+      "hash": "c6e59e54b670a24dfd0301d2a07a1d78",
+      "name": "sys_email",
+      "schema": "app_private",
+      "source": "CREATE OR REPLACE FUNCTION app_private.sys_email(p_to text, p_template text, p_subject text, p_html text, p_text text DEFAULT NULL::text, p_idem text DEFAULT NULL::text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\nbegin\n  if p_to is null or p_to !~ '^[^@]+@[^@]+\\.[^@]+$' then return; end if;\n  if exists (select 1 from app_private.suppressions where channel='email' and address=lower(p_to)) then return; end if;\n  insert into app_private.message_deliveries(source,channel,provider,recipient_email,idempotency_key,status,scheduled_at,template_key,meta)\n  values ('transactional','email','resend',lower(p_to),\n    coalesce(p_idem, 'sys:'||p_template||':'||lower(p_to)||':'||extract(epoch from now())::bigint::text),\n    'queued', now(), p_template,\n    jsonb_build_object('subject',p_subject,'body_html',p_html,'body_text',coalesce(p_text,p_subject),'category','transactional'))\n  on conflict (idempotency_key) do nothing;\nend; $function$\n"
+    }
+  ]
+}
