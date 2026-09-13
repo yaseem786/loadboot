@@ -21,7 +21,7 @@ os.makedirs(OUT, exist_ok=True)          # recreate
 _NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','motifs_module.py','netlify.toml',
                'runtime.txt','README.md','content-queue.md','.gitignore',
                'market_reports_module.py','refresh_rate_snapshot.py','rate_snapshots.json',
-               'industry_pages_module.py'}
+               'industry_pages_module.py','broker_growth_module.py'}
 _ASSET_EXTS = ('.webp','.png','.jpg','.jpeg','.avif','.ico','.svg','.gif')
 def asset_exists(name):
     """True if a referenced local asset is present in SRC (so the page can reference it)."""
@@ -3369,6 +3369,14 @@ rich_article('load-board-subscription-cost.html',
  LB_TOC, LB_BODY, LB_FAQ, feat_svg=LB_FEAT)
 THUMBS['load-board-subscription-cost.html']=LB_FEAT
 READTIME['load-board-subscription-cost.html']=9
+# --- broker growth cluster (13 Sep 2026) — additive; pages live in broker_growth_module.py ---
+from broker_growth_module import BROKER_GROWTH_ARTICLES, BROKER_GROWTH_RELATED
+for _bg in BROKER_GROWTH_ARTICLES:
+    BLOGPOSTS.append((_bg['fname'], _bg['title'], _bg['desc'], _bg['deck'], ''))
+    PREMIUM_ARTICLES.add(_bg['fname']); PUB_DATES[_bg['fname']]=_bg['pub']
+    RELATED[_bg['fname']]=BROKER_GROWTH_RELATED.get(_bg['fname'],[])
+    rich_article(**_bg)
+    THUMBS[_bg['fname']]=_bg['feat_svg']; READTIME[_bg['fname']]=_bg['read_min']
 
 # ===== DEMAND-SIDE GUIDE #3 : Ship without a broker (shipper) =====
 SW_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="swg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#134e4a"/></linearGradient></defs><rect width="400" height="200" fill="url(#swg)"/><circle cx="90" cy="100" r="22" fill="#0883F7"/><text x="78" y="106" font-family="Manrope,Arial" font-weight="800" font-size="18" fill="#fff">S</text><circle cx="310" cy="100" r="22" fill="#FC5305"/><text x="299" y="106" font-family="Manrope,Arial" font-weight="800" font-size="18" fill="#fff">C</text><path d="M116 100 H284" stroke="#34d399" stroke-width="7" stroke-linecap="round"/><path d="M284 88 L306 100 L284 112 Z" fill="#34d399"/><text x="150" y="150" font-family="Manrope,Arial" font-weight="800" font-size="17" fill="#94a3b8">no middleman</text></svg>')
