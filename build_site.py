@@ -2,6 +2,11 @@
 import os, sys, shutil, re, sys, json
 from tools_module import TOOLS_CSS, TOOLS_HTML, TOOLS_JS
 from load_score_module import LS_CSS, LS_HTML, LS_JS
+# --- 13 Sep 2026: header v2 (mega-menu) + six redesigned home sections. Additive; flip a flag to roll back.
+from home_v2_module import (LBH_CSS, HS_CSS, header_v2, STANDARD_V2, COMPARE_V2, BRIDGE_V2,
+                            CARRIER_FLOW_V2, PARTNER_FLOW_V2, REFTEASER_V2)
+HEADER_V2 = True   # False -> previous header()/topbar markup
+HOME_V2 = True     # False -> previous NETWORKS band, COMPARE, BRIDGE, CARRIER_FLOW, PARTNER_FLOW, REFTEASER on the home page
 from motifs_module import mi, m_rail, m_timeline, m_split, m_dark, m_zigzag, m_statband, m_gradcta
 from market_reports_module import build_market_reports   # workstream 01 layer 2: dated weekly reports
 from industry_pages_module import (build_industry_pages, build_industry_index,
@@ -21,7 +26,7 @@ os.makedirs(OUT, exist_ok=True)          # recreate
 _NO_PUBLISH = {'build_site.py','tools_module.py','load_score_module.py','motifs_module.py','netlify.toml',
                'runtime.txt','README.md','content-queue.md','.gitignore',
                'market_reports_module.py','refresh_rate_snapshot.py','rate_snapshots.json',
-               'industry_pages_module.py','broker_growth_module.py'}
+               'industry_pages_module.py','broker_growth_module.py','home_v2_module.py'}
 _ASSET_EXTS = ('.webp','.png','.jpg','.jpeg','.avif','.ico','.svg','.gif')
 def asset_exists(name):
     """True if a referenced local asset is present in SRC (so the page can reference it)."""
@@ -426,7 +431,7 @@ PHONE_STRIP = ('<section style="padding:14px 0 0"><div class="wrap"><div class="
  '<a href="contact.html#call">or we call you &mdash; right now or scheduled &rarr;</a>'
  '</div></div></section>')
 
-def header(active):
+def header_v1(active):
     links = ''
     for label, href, subs in NAV_MENU:
         child_active = bool(subs) and any(h == active for h, _t in subs)
@@ -444,6 +449,9 @@ def header(active):
 <div class="nav-actions"><a href="/app/carrier/" class="btn btn-secondary hd-btn hd-login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Log in</a><a href="get-started.html" class="btn btn-primary hd-btn">Get Started %s</a>
 <button class="menu-btn" onclick="toggleMenu()" aria-label="Open menu" aria-expanded="false"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#10223B" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
 </div></header>''' % (links, mob, ARW)
+
+def header(active):
+    return header_v2(active) if HEADER_V2 else header_v1(active)
 
 
 # WEB-4: 'Research LoadBoot with AI' footer. Owner-flippable build switch (True = rendered).
@@ -987,7 +995,7 @@ a[href^="tel:"]{display:inline-flex;align-items:center;min-height:40px}
 /* ===================== end LB-MOBILE-FIXES v1 ===================== */
 """
 
-with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS + RESP_CSS + MOBILE_FIX_CSS))
+with open(os.path.join(OUT,'styles.css'),'w',encoding='utf-8') as f: f.write(_mincss(CSS + TOOLS_CSS + LS_CSS + LOADBOARD_CSS + SPLASH_CSS + ART_CSS + RESP_CSS + MOBILE_FIX_CSS + LBH_CSS + HS_CSS))
 with open(os.path.join(OUT,'app.js'),'w',encoding='utf-8') as f: f.write(JS + PWA_JS)
 with open(os.path.join(OUT,'manifest.webmanifest'),'w',encoding='utf-8') as f: f.write(MANIFEST)
 with open(os.path.join(OUT,'sw.js'),'w',encoding='utf-8') as f: f.write(SW)
@@ -1113,7 +1121,7 @@ def _networks():
     grid=('<div class="grid g3 reveal" style="margin-top:26px">'
       + ''.join('<a class="linkcard" href="'+u+'"><div class="icon">'+ic+'</div><h3>'+t+'</h3><p>'+d+'</p><span class="arw">'+lk+' &rarr;</span></a>' for ic,t,d,u,lk in cards)
       + '</div>')
-    band=('<div class="reveal" style="margin-top:24px;background:#10223B;border-radius:18px;padding:22px 24px;color:#e2e8f0">'
+    band = STANDARD_V2 if HOME_V2 else ('<div class="reveal" style="margin-top:24px;background:#10223B;border-radius:18px;padding:22px 24px;color:#e2e8f0">'
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;text-align:center">'
       '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Rate card first</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Detention, TONU and layover terms printed on every posting &mdash; before you accept.</div></div>'
       '<div><div style="font-weight:900;font-size:1.35rem;color:#4ade80">Zero ghost loads</div><div style="font-size:.82rem;color:#94a3b8;margin-top:3px">Stale postings auto-close and late cancels carry TONU exposure &mdash; fakes cost money here.</div></div>'
@@ -1379,7 +1387,11 @@ ROLEBAND = ('<section style="padding:26px 0 8px"><div class="wrap"><div class="g
  '<a class="linkcard reveal" href="shipper-solutions.html"><div class="icon">&#127981;</div><h3>I own the freight</h3><p>Vetted carriers under licensed brokerage, live GPS on every shipment, dock-level proof at your own facilities.</p><span class="arw">For shippers &rarr;</span></a>'
  '</div><div class="reveal" style="text-align:center;margin-top:12px;font-size:.86rem;color:#64748b">Bring the people instead? <a href="agents.html">The referral program pays 1% of every load &mdash; forever</a>.</div></div></section>')
 
-home_body = HERO+ROLEBAND+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+PARTNER_FLOW+CARRIER_FLOW+BRIDGE+WHOSERVE+COMPARE+HOW+LSBAND+TOOLSPROMO+REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
+if HOME_V2:
+    _COMPARE, _BRIDGE, _CARRIER_FLOW, _PARTNER_FLOW, _REFTEASER = COMPARE_V2, BRIDGE_V2, CARRIER_FLOW_V2, PARTNER_FLOW_V2, REFTEASER_V2
+else:
+    _COMPARE, _BRIDGE, _CARRIER_FLOW, _PARTNER_FLOW, _REFTEASER = COMPARE, BRIDGE, CARRIER_FLOW, PARTNER_FLOW, REFTEASER
+home_body = HERO+ROLEBAND+STATS+SCROLLBAND+ROUTE+WHYUS+PHOTOS+FREIGHT_CARDS+NETWORKS+LIVEBOARD+HOME_RATES+HOME_RATES_JS+_PARTNER_FLOW+_CARRIER_FLOW+_BRIDGE+WHOSERVE+_COMPARE+HOW+LSBAND+TOOLSPROMO+_REFTEASER+PROMISE+BLOGHOME+home_faq_html+final_cta()
 home_body += '<script>' + LS_JS + LIVEBOARD_JS + '</script>'
 page('index.html','Truck Dispatch & Verified Load Board for Carriers | LoadBoot',
      'Truck dispatch and a verified load board with zero ghost loads on one platform. Flat 5% for carriers, free posting for brokers, live GPS tracking.',
