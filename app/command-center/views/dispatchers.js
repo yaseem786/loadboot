@@ -514,7 +514,7 @@ export function renderDispatchers(host) {
       } }, label);
     }
 
-    function paintTest(host, head, body, t, dd) {
+    function paintTest(host, head, body, t, dd, flash) {
       const st = t.state || 'none';
       const tone = st === 'submitted' ? 'cc-pill-amber' : st === 'scored' ? 'cc-pill-green' : st === 'expired' ? 'cc-pill-red' : '';
       mount(head, [
@@ -557,18 +557,81 @@ export function renderDispatchers(host) {
       });
 
       const note = el('textarea', { class: 'lb-in', style: 'min-height:60px;width:100%', placeholder: 'Note for the record (optional)' });
-      if (t.review_note) note.value = t.review_note;
+      const noteAtLoad = t.review_note || '';
+      note.value = noteAtLoad;
+
+      const NOEMAIL = ' Nothing is e-mailed to the candidate — they see no score and no verdict in their portal.';
+      const saveBtn = el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save(null) }, t.decision ? 'Update scores' : 'Save scores');
+      const passBtn = el('button', { class: 'lb-btn', onClick: () => save('pass') }, '✓ Passed');
+      const failBtn = el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save('fail') }, '✕ Failed');
+      const decisionRow = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' });
+      let busy = false;
+
+      const setBusy = (b) => {
+        busy = b;
+        [saveBtn, passBtn, failBtn].forEach((n) => { n.disabled = b; n.style.opacity = b ? '.55' : ''; n.style.pointerEvents = b ? 'none' : ''; });
+      };
+
+      const paintDecision = (editing) => {
+        if (t.decision && !editing) {
+          const ok = t.decision === 'pass';
+          mount(decisionRow, [
+            el('span', { class: 'cc-pill ' + (ok ? 'cc-pill-green' : 'cc-pill-red'), style: 'font-weight:800' },
+              (ok ? '✓ Passed' : '✕ Failed') + ' · ' + (t.staff_score != null ? t.staff_score : '—') + ' / ' + (t.max_score || '—')),
+            el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => paintDecision(true) }, 'Change'),
+          ]);
+        } else {
+          mount(decisionRow, [passBtn, failBtn]);
+        }
+      };
+      paintDecision(false);
+
       const save = async (decision) => {
+        if (busy) return;
         const scores = {};
-        (t.questions || []).forEach((q) => { const v = inputs[q.id].value; if (v !== '') scores[q.id] = { points: Number(v) }; });
+        (t.questions || []).forEach((q) => {
+          const v = inputs[q.id].value;
+          if (v === '') return;
+          const n = Number(v);
+          if (!isFinite(n)) return;
+          scores[q.id] = { points: Math.min(Math.max(0, n), Number(q.max_points) || n) };
+        });
         if (decision && !(await askConfirm(decision === 'pass' ? 'Mark this test as passed?' : 'Mark this test as failed?', {
-          body: decision === 'pass' ? 'The candidate stays in the pipeline — next is the broker call, then the paid trial. This does not move their status on its own.'
-                                    : 'This records the decision on the test. It does not reject the application — use Reject for that.',
+          body: (decision === 'pass' ? 'The candidate stays in the pipeline — next is the broker call, then the paid trial. This does not move their status on its own.'
+                                     : 'This records the decision on the test. It does not reject the application — use Reject for that.') + NOEMAIL,
           confirmLabel: decision === 'pass' ? 'Mark passed' : 'Mark failed', danger: decision === 'fail',
         }))) return;
-        const r = await ccDispatcherTestScore(t.attempt, scores, decision || null, note.value.trim() || null).catch((e) => ({ error: humanizeError(e) }));
-        if (r && r.error) { toast(r.error); return; }
-        toast('✓ Scored ' + r.score + '/' + r.max); rerender();
+
+        const dirty = note.value.trim() !== noteAtLoad.trim();
+        setBusy(true);
+        const wasLabel = saveBtn.textContent;
+        if (!decision) saveBtn.textContent = 'Saving…';
+
+        // Only touch the note when it was actually edited here, and never clobber a note
+        // someone (or something) changed while this drawer sat open.
+        if (dirty) {
+          const cur = await ccDispatcherTestReview(x.user_id).catch(() => null);
+          if (cur && !cur.error && (cur.review_note || '').trim() !== noteAtLoad.trim()) {
+            const go = await askConfirm('The note changed since you opened this', {
+              body: 'Someone else saved a different note on this attempt. Saving now replaces it with what is in the box.',
+              confirmLabel: 'Replace it', danger: true,
+            });
+            if (!go) { setBusy(false); saveBtn.textContent = wasLabel; return; }
+          }
+        }
+
+        const r = await ccDispatcherTestScore(t.attempt, scores, decision || null, dirty ? note.value.trim() : null)
+          .catch((e) => ({ error: humanizeError(e) }));
+        if (!r || r.error) { setBusy(false); saveBtn.textContent = wasLabel; toast((r && r.error) || 'Could not save'); return; }
+
+        const fresh = await ccDispatcherTestReview(x.user_id).catch(() => null);
+        setBusy(false);
+        if (fresh && !fresh.error) {
+          paintTest(host, head, body, fresh, dd, decision ? (decision === 'pass' ? '✓ Passed' : '✕ Failed') : '✓ Saved');
+          return;
+        }
+        saveBtn.textContent = '✓ Saved';
+        toast('✓ Saved ' + r.score + ' / ' + r.max);
       };
 
       mount(body, el('div', null, [
@@ -587,12 +650,20 @@ export function renderDispatchers(host) {
           (t.decision ? '   · ' + t.decision.toUpperCase() : '')),
         el('div', null, rows),
         el('div', { style: 'margin-top:12px' }, note),
-        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:9px' }, [
-          el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save(null) }, 'Save scores'),
-          el('button', { class: 'lb-btn', onClick: () => save('pass') }, '✓ Passed'),
-          el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save('fail') }, '✕ Failed'),
-        ]),
+        el('div', { class: 'cc-sub', style: 'margin-top:5px' }, 'Saving is private to Command Center.' + NOEMAIL),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;align-items:center' }, [saveBtn, decisionRow]),
       ]));
+
+      if (flash) {
+        const back = 'Update scores';
+        saveBtn.textContent = '✓ Saved';
+        saveBtn.style.fontWeight = '800';
+        setTimeout(() => {
+          if (!document.body.contains(saveBtn)) return;
+          saveBtn.textContent = back; saveBtn.style.fontWeight = '';
+        }, 2400);
+        toast(flash + ' · ' + (t.staff_score != null ? t.staff_score : '—') + ' / ' + (t.max_score || '—'));
+      }
     }
 
     function kv(k, v) { return el('div', { style: 'display:flex;gap:8px;padding:3px 0;font-size:.9rem' }, [el('span', { class: 'cc-sub', style: 'min-width:120px' }, k), el('span', null, v == null || v === '' ? '—' : String(v))]); }
