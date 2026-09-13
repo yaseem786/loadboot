@@ -637,8 +637,14 @@
   function mount(c) {
     cfg = c || {};
     if (!cfg.url || !cfg.anon || document.getElementById('lbc-fab')) return;
-    vKey = lsGet('lb_lc_key');
-    if (!vKey) { vKey = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 10); lsSet('lb_lc_key', vKey); }
+    try { vKey = window.LBVisitorIdentity.getKey(); }
+    catch (_) {
+      var warning = document.createElement('div');
+      warning.setAttribute('role', 'alert');
+      warning.textContent = 'Chat could not start securely. Refresh this page or email hello@loadboot.com.';
+      document.body.appendChild(warning);
+      return;
+    }
     convId = lsGet('lb_lc_conv') || null;
     lastId = 0;
 

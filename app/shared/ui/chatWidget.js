@@ -4,6 +4,7 @@
 // Center is skipped (staff answer chats in CC → Live chat instead of chatting with
 // themselves). The widget itself lives in liveChatCore.js (window.LBChat) so the
 // exact same code also runs on the marketing site via /lc-init.js.
+import './visitor-key.js';
 import './liveChatCore.js';
 import ENV from '../env.js';
 import { getSession } from '../session.js';

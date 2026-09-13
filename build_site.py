@@ -639,7 +639,7 @@ def page(fname, title, desc, active, body, schema=''):
 %s
 <script>%s</script>
 <script src="app.js?v=6"></script>
-<script defer src="/app/shared/ui/backToTop.js?v=1"></script><script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=4"></script><script defer src="/app/shared/ui/lcOnboard.js?v=3"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
+<script defer src="/app/shared/ui/backToTop.js?v=1"></script><script defer src="/app/shared/ui/iosInstall.js?v=1"></script><script defer src="/app/shared/ui/visitor-key.js?v=1"></script><script defer src="/app/shared/ui/liveChatCore.js?v=5"></script><script defer src="/app/shared/ui/lcOnboard.js?v=3"></script><script defer src="/lc-init.js?v=2"></script></body></html>''' % (title, desc, ('' if fname=='index.html' else fname), title, desc, ('' if fname=='index.html' else fname), title, desc, (HEADX+schema), header(active), body, footer(), (ANNOUNCE_JS + CONFIRM_JS))
     with open(os.path.join(OUT, fname), 'w', encoding='utf-8') as f:
         f.write(deglyph(doc))
 
@@ -1903,7 +1903,7 @@ call_section = ("""<section class="bg-soft" id="call"><div class="wrap" style="m
 <p id="cwMsg" style="text-align:center;margin-top:12px;font-size:.92rem;color:var(--muted)">By requesting a call you agree to receive one call from LoadBoot at this number.</p>
 </div></div></div></section>
 <script>(function(){
-function vkey(){try{var k=localStorage.getItem('lb_lc_key');if(!k){k='v'+Date.now().toString(36)+Math.random().toString(36).slice(2,14)+Math.random().toString(36).slice(2,10);localStorage.setItem('lb_lc_key',k);}return k;}catch(e){return 'novkey'+Date.now().toString(36)+'xxxxxxxx';}}
+function vkey(){return window.LBVisitorIdentity.getKey();}
 var roles=document.querySelectorAll('input[name=cwrole]');var gate=document.getElementById('cwGate');var main=document.getElementById('cwMain');
 roles.forEach(function(r){r.addEventListener('change',function(){var v=document.querySelector('input[name=cwrole]:checked').value;var dis=(v==='dispatcher');gate.hidden=!dis;main.hidden=dis;});});
 var sel=document.getElementById('cwWhenSel');var ww=document.getElementById('cwWhenWrap');function lDT(d){function p(n){return('0'+n).slice(-2)}return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());}sel.addEventListener('change',function(){ww.hidden=sel.value!=='later';if(sel.value==='later'){var w=document.getElementById('cwWhen');if(!w.value){w.value=lDT(new Date(Date.now()+30*60000));}w.min=lDT(new Date(Date.now()+3*60000));}});
@@ -1913,8 +1913,9 @@ var role=(document.querySelector('input[name=cwrole]:checked')||{}).value;if(!ro
 var name=document.getElementById('cwName').value.trim();var phone=document.getElementById('cwPhone').value.trim();
 if(!name||!phone){msg.textContent='Please enter your name and US phone number.';msg.style.color='#dc2626';return;}
 var when=null;if(sel.value==='later'){var wv=document.getElementById('cwWhen').value;if(!wv){msg.textContent='Pick a date and time, or choose Call me right now.';msg.style.color='#dc2626';return;}when=new Date(wv).toISOString();}
+var visitorKey;try{visitorKey=vkey();}catch(e){msg.textContent='Could not start this request securely. Refresh this page or email hello@loadboot.com.';msg.style.color='#dc2626';return;}
 btn.disabled=true;btn.textContent='Requesting…';
-fetch('https://""" + APP_REF + """.supabase.co/rest/v1/rpc/lc_request_call',{method:'POST',headers:{'Content-Type':'application/json','apikey':'""" + (APP_ANON or '') + """','Authorization':'Bearer """ + (APP_ANON or '') + """'},body:JSON.stringify({p_visitor_key:vkey(),p_name:name,p_phone:phone,p_role:role,p_topic:document.getElementById('cwTopic').value.trim()||null,p_when:when})})
+fetch('https://""" + APP_REF + """.supabase.co/rest/v1/rpc/lc_request_call',{method:'POST',headers:{'Content-Type':'application/json','apikey':'""" + (APP_ANON or '') + """','Authorization':'Bearer """ + (APP_ANON or '') + """'},body:JSON.stringify({p_visitor_key:visitorKey,p_name:name,p_phone:phone,p_role:role,p_topic:document.getElementById('cwTopic').value.trim()||null,p_when:when})})
 .then(function(r){return r.json();}).then(function(d){
 if(d&&d.error){msg.textContent=d.error;msg.style.color='#dc2626';btn.disabled=false;btn.textContent='📞 Call me';return;}
 btn.textContent='✅ Done!';msg.style.color='#16a34a';msg.textContent=d&&d.scheduled?'Scheduled! Riley will call you at your picked time.':'Riley is calling you right now — your phone should ring in ~30 seconds!';

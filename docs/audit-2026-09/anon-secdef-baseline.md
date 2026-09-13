@@ -94,3 +94,8 @@ public to anon` — so check this list after any migration that runs one.
 Fresh observed counts were production **40**, staging **39**. The seven additions on both were `cc_dispatcher_test_invite`, `cc_dispatcher_test_review`, `cc_dispatcher_test_score`, `dispatcher_test_my`, `dispatcher_test_save`, `dispatcher_test_start`, `dispatcher_test_submit`. All had PUBLIC and explicit anon EXECUTE; their existing sign-in/staff guards refused anonymous staging probes. This is not approval to expand the production baseline.
 
 Staging migration `20260912190639 / audit_dispatcher_test_execute_boundary` revoked only PUBLIC/anon on those seven, preserving exact bodies and authenticated/service grants. Staging is back to **32**; name-level before/after comparison and rollback/reapply rehearsal PASS. Production remains **40**, with the seven pending explicit promotion approval. No other lane's bodies were changed.
+
+
+## 13 September 2026 — approved production dispatcher restriction
+
+Production is now **33**, staging **32**. Production before/after catalog name arrays prove that exactly the seven dispatcher names listed above were removed and none added. All seven bodies and authenticated/service grants match current staging, including the 0309 race guard on `dispatcher_test_start`. Production migration `20260913111246 / audit_dispatcher_test_execute_prod`; report migration `20260913111048` adds no anonymous surface. Earlier pending-approval status is historical. See `PROD-BEFORE-2026-09-13.json` and `PROD-AFTER-2026-09-13.json`.

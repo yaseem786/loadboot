@@ -35,7 +35,7 @@ Tests use synthetic fixtures and isolated source/DOM/cache models, not real cust
 
 Apply these independently with the migration tool, never the old broad outreach batch:
 
-1. `supabase/migrations/20260912185723_audit_outreach_reports_recovery.sql`
+1. `supabase/migrations/20260913111048_audit_outreach_reports_recovery.sql` (originally 20260912185723; filename aligned after approved September 13 production apply)
    - Adds the nullable `app_private.outreach_contacts.opened_at` column; no backfill.
    - Creates only `cc_outreach_audience(integer)` and `cc_outreach_log_page(text,text,integer,text,integer,integer)` from fresh staging definitions, retains permission guards, grants authenticated/service access and denies PUBLIC/anon.
    - Fresh production catalog: both function names absent, column absent.
@@ -87,3 +87,5 @@ Official Auth semantics checked: https://supabase.com/docs/reference/javascript/
 ## Faida aur risk
 
 Form doosre tab ke update se achanak reload nahi hoga. Logout par asal login keys aur temporary shared files saaf hongi; file doosre account ko upload nahi hogi. Reviewer ko upload ke waqt ka AI result milega. Missing report zero/blank ka dhoka nahi degi. Browser/native-upload verification abhi baqi hai; production aur complete account-deletion protection ka daawa nahi hai.
+
+September 13 update: both specifically approved production packages are now applied and independently verified. See `REVIEW-PROD-AND-VISITOR-KEY-2026-09-13.md`; approval-pending statements above describe the September 12 checkpoint.

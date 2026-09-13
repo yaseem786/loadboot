@@ -11,21 +11,23 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-12 19:11 UTC
+## CURRENT STATE — 2026-09-13
 
-Branch `audit/recovery-20260912`, main base `90ccaff`. F08/F09/F18/F31 missing frontend patches have now been reconstructed; F36 save feedback and F11 badge work from prior commit remain intact. 40 current UI/privacy tests + 30 actual-source IP cases PASS; 158 syntax/import checks and final staging build PASS. Browser/native-share/upload verification remains blocked/unverified. Frontend not deployed, GitHub not pushed, CI not activated.
+Branch `audit/recovery-20260912` merged latest main `4bb1c6f` at local merge `c009a10`. Mobile and dispatcher work preserved. Yaseen explicitly approved the two narrow production packages and requested continued audit fixes.
 
-F06 two-report promotion/rollback package recovered and staging transaction tested (including missing opened_at, missing functions, reapply, role guards and rollback). Zero synthetic users remain. No persistent F06 migration applied; production approval pending.
+PRODUCTION APPLIED AND INDEPENDENTLY VERIFIED:
+- `20260913111048 / audit_outreach_reports_recovery`: two read-only report functions plus nullable `outreach_contacts.opened_at`; no backfill, sender/settings changes or messages.
+- `20260913111246 / audit_dispatcher_test_execute_prod`: PUBLIC/anon EXECUTE removed from seven dispatcher-test RPCs. Authenticated/service grants and all bodies preserved, including newer 0309 start-race guard. All nine function hashes/ACLs match staging. Exact anon name comparison: 40 → 33, only intended seven removed, none added. Safe production role checks rolled back; no customer writes.
 
-New dispatcher-test grants: seven functions had both PUBLIC and anon EXECUTE on BOTH projects. Existing guards refused anonymous callers. ACL-only hardening applied to STAGING as `20260912190639 / audit_dispatcher_test_execute_boundary`; signed-in/service grants and bodies preserved, rollback/reapply rehearsal PASS. Staging anon SECDEF count 32, production 40 (the same seven extra functions remain there pending approval). Prod latest `20260912072013 / bl_disp_0308_skills_test_sweep`, unchanged this turn.
+Local F34 visitor-key frontend fix now joins reconstructed F08/F09/F18/F31 and F36 changes. Chat and callback share 192-bit secure randomness, preserve valid legacy keys and stop on unavailable crypto. Storage failure uses the same tab's random key. 61 actual-source/generated-output UI/privacy tests, 30 actual-source IP cases, 160 JS syntax checks, import check and staging build PASS. Browser/native-share/upload verification remains unverified (prior preview blocked). Frontend not deployed, public GitHub push still blocked, CI not activated.
 
-Review and exact two-migration approval scope: `REVIEW-REMAINING-BATCH-2026-09-12.md`. Password-protection warnings remain on both; prod last-24h cron snapshot 15,613 successes / zero failures is not a full operations sign-off. Retell/F10/account-deletion/legal/recovery/browser gates remain open. SEO/F33/WhatsApp parked, outreach enabled.
+Exact before/after catalogs, current-source staging ACL rehearsal and rollback are saved beside `REVIEW-PROD-AND-VISITOR-KEY-2026-09-13.md`. Historical migration-source filenames are mapped there. Retell/F10/account-deletion/legal/recovery/password/browser gates remain open. SEO/F33/WhatsApp parked; outreach enabled. No other production change is authorized by this two-package approval.
 
 ## NEXT ACTION
 
-1. Re-sync before edits. Obtain explicit production approval for ONLY the two tested migrations listed in `REVIEW-REMAINING-BATCH-2026-09-12.md`; until then neither may be applied to prod.
-2. Complete accessible staging browser/native-share/upload verification and repository publication/CI activation when access/approval permits. Do not bypass prior public-disclosure or browser blocks.
-3. Continue account-deletion erasure/session/suppression design and F10 intended role-by-document access matrix. No production deletion, blind policy revocation, real provider calls or personal messages. Keep remaining items open until individually verified.
+1. Re-sync. Continue account-deletion erasure/session/suppression design and recover the intended F10 role-by-document matrix for review. Existing SQL corrections do not establish complete erasure or appropriate storage access.
+2. Complete accessible staging browser/native-share/upload verification, then seek the specific outstanding publication/deployment approvals with concrete tested artifacts. Do not bypass prior public-disclosure or browser blocks.
+3. Retell real-provider proof and subsequent cutover, live-chat backend promotion, password settings and business/retention decisions remain separate gates. No real provider calls, deletion, backfill, policy revoke or personal messages without required authorization.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -52,3 +54,5 @@ Review and exact two-migration approval scope: `REVIEW-REMAINING-BATCH-2026-09-1
 - **2026-09-12 — Codex:** Recovered six applied audit migration sources after scratch cleanup; rebuilt F36 save queue and F11 domain-check presentation on main 90ccaff. 20 actual-source tests PASS, syntax/import checks and staging build PASS; browser preview blocked. No DB mutations, production changes, public push or messages. Prior local PWA/CI/verdict patches absent; NEXT ACTION records reconstruction and remaining gates.
 
 - **2026-09-12 19:11 — Codex:** Reconstructed F08/F09/F18/F31; 40 UI/privacy + 30 actual-source IP checks and 158 syntax/import checks PASS, final staging build PASS. F06 promotion/rollback rehearsal PASS with zero synthetic users left. Narrowed seven dispatcher-test PUBLIC/anon grants on staging (190639); exact bodies/auth/service grants preserved, deployed rollback rehearsal PASS. Production untouched; two concrete DB packages await explicit approval. Full audit remains open.
+
+- **2026-09-13 — Codex:** On explicit approval, deployed ONLY report recovery (111048) and seven dispatcher ACL restrictions (111246) to prod. Exact nine bodies/ACLs match staging; anon names 40→33 with only intended removals; safe role checks ROLLBACK. Preserved 0309 race guard and merged main 4bb1c6f. Added shared secure visitor keys: 61 UI/privacy tests + 30 IP cases, 160 syntax/import checks and staging build PASS. Frontend remains local; remaining audit gates documented; no messages/backfill or public push.
