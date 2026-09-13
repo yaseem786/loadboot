@@ -94,20 +94,46 @@ function briefing(host, d, reload) {
 }
 
 function receipt(host, d) {
+  // bl_disp_0312: `result` / `score` arrive ONLY after staff pressed Passed / E-mail score — the same
+  // once-only stamps as the e-mails — so this card can never show a verdict before the candidate is told.
+  const passed = d.result === 'pass';
+  const hasScore = d.score != null;
+  const pct = hasScore ? Math.round((Number(d.score) / (Number(d.max_score) || 100)) * 100) : null;
+  const ring = hasScore ? h('div', { style: 'position:relative;width:118px;height:118px;flex:none;border-radius:50%;background:conic-gradient(#4ade80 ' + pct + '%,rgba(255,255,255,.08) 0);display:grid;place-items:center' }, [
+    h('div', { style: 'width:92px;height:92px;border-radius:50%;background:#0d2240;display:grid;place-items:center;text-align:center' }, [
+      h('div', null, [h('div', { style: 'font-size:1.7rem;font-weight:900;color:#fff;line-height:1' }, String(d.score)),
+                      h('div', { style: 'font-size:.68rem;font-weight:800;letter-spacing:.1em;color:#7cc0ff;margin-top:3px' }, '/ ' + (d.max_score || 100))]),
+    ]),
+  ]) : null;
+  const next = passed ? [
+    h('div', null, '1. We agree the truck with you — you see the carrier, the equipment and the lanes before anything starts.'),
+    h('div', null, '2. Then the paid trial begins on that live account: 10 working days, commission on every load you deliver.'),
+    h('div', { style: 'margin-top:8px;opacity:.85' }, 'We will message you with the truck details. Nothing else is needed from you right now.'),
+  ] : [
+    h('div', null, '1. We read every answer ourselves — this is not machine-marked.'),
+    h('div', null, '2. If it looks right, you negotiate one real load with us — we play the broker.'),
+    h('div', null, '3. After that comes the paid trial on a live carrier account.'),
+    h('div', { style: 'margin-top:8px;opacity:.85' }, 'You will hear from us by e-mail. Nothing else is needed from you right now.'),
+  ];
   mount(host, h('div', null, [
-    hero('Test submitted', 'LOADBOOT DISPATCH', 'Thank you — your answers are with us.', 'rgba(74,222,128,.45)'),
+    passed
+      ? hero('You passed the skills test', 'LOADBOOT DISPATCH · RESULT', 'Your written test is approved' + (d.result_at ? ' on ' + whenET(d.result_at) : '') + '. Welcome to the next step.', 'rgba(74,222,128,.55)')
+      : hero('Test submitted', 'LOADBOOT DISPATCH', 'Thank you — your answers are with us.', 'rgba(74,222,128,.45)'),
     h('div', { style: CARD }, [
-      h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap' }, [
-        h('span', { class: 'cp-pill', style: 'font-weight:800;color:#4ade80' }, '✓ Submitted'),
-        d.submitted_at ? h('span', { class: 'cp-row-s' }, whenET(d.submitted_at)) : null,
+      h('div', { style: 'display:flex;gap:18px;align-items:center;flex-wrap:wrap' }, [
+        ring,
+        h('div', { style: 'flex:1;min-width:200px' }, [
+          h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap' }, [
+            h('span', { class: 'cp-pill', style: 'font-weight:800;color:#4ade80' }, passed ? '✓ Passed' : '✓ Submitted'),
+            d.submitted_at ? h('span', { class: 'cp-row-s' }, 'submitted ' + whenET(d.submitted_at)) : null,
+          ]),
+          hasScore ? h('div', { class: 'cp-row-s', style: 'margin-top:8px;line-height:1.6' }, 'Your score: ' + d.score + ' of ' + (d.max_score || 100) + ' points (' + pct + '%). Every answer was read by a person, not a machine.')
+                   : (passed ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Your score will appear here once it is released.') : null),
+        ]),
       ]),
-      h('div', { class: 'cp-row-s', style: 'margin-top:12px;line-height:1.8' }, [
+      h('div', { class: 'cp-row-s', style: 'margin-top:14px;line-height:1.8' }, [
         h('div', { style: 'font-weight:800;color:#fff;margin-bottom:4px' }, 'What happens next'),
-        h('div', null, '1. We read every answer ourselves — this is not machine-marked.'),
-        h('div', null, '2. If it looks right, we book a 15-minute call: you negotiate one real load, we play the broker.'),
-        h('div', null, '3. After that call comes the paid trial on a live carrier account.'),
-        h('div', { style: 'margin-top:8px;opacity:.85' }, 'You will hear from us by e-mail. Nothing else is needed from you right now.'),
-      ]),
+      ].concat(next)),
     ]),
   ]));
 }
