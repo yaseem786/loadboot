@@ -1,0 +1,290 @@
+{
+  "buckets": [
+    {
+      "id": "documents",
+      "public": false
+    }
+  ],
+  "helpers": [
+    {
+      "name": "is_admin",
+      "schema": "public",
+      "source": "CREATE OR REPLACE FUNCTION public.is_admin()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');\n$function$\n"
+    },
+    {
+      "name": "pay_can_read_receipt",
+      "schema": "public",
+      "source": "CREATE OR REPLACE FUNCTION public.pay_can_read_receipt(p_name text)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\n  select exists (\n    select 1 from app_private.pay_transfers tr\n    where tr.receipt_path = p_name\n      and (tr.payee_org = app_private.my_carrier_org()\n           or tr.payer_org in (app_private.my_carrier_org(), app_private.my_partner_org()))\n  );\n$function$\n"
+    },
+    {
+      "name": "partner_can_read_stop_doc",
+      "schema": "public",
+      "source": "CREATE OR REPLACE FUNCTION public.partner_can_read_stop_doc(p_name text)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\n  select exists (\n    select 1 from app_private.document_files df\n    join app_private.trips t on t.id::text = df.owner_id\n    join public.loads l on l.id = t.load_id\n    where df.owner_type = 'trip' and df.bucket = 'documents' and df.path = p_name\n      and df.kind in ('pod','bol_signed','pod_signed','lumper_receipt','gate_ticket','stop_photo')\n      and l.broker_org = app_private.my_partner_org()\n  );\n$function$\n"
+    },
+    {
+      "name": "dispatcher_can_read_doc",
+      "schema": "app_private",
+      "source": "CREATE OR REPLACE FUNCTION app_private.dispatcher_can_read_doc(p_object_name text)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\n  select exists (\n    select 1\n      from public.organizations o\n      join app_private.dispatcher_assignments a on a.carrier_org_id = o.id\n     where o.kind = 'carrier'\n       and o.owner_user_id::text = (storage.foldername(p_object_name))[1]\n       and a.dispatcher_user_id = auth.uid()\n       and a.status = 'active'\n  );\n$function$\n"
+    }
+  ],
+  "policies": [
+    {
+      "cmd": "ALL",
+      "permissive": "PERMISSIVE",
+      "policyname": "docs_admin",
+      "qual": "is_admin()",
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "public",
+      "tablename": "documents",
+      "with_check": "is_admin()"
+    },
+    {
+      "cmd": "INSERT",
+      "permissive": "PERMISSIVE",
+      "policyname": "docs_insert",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "public",
+      "tablename": "documents",
+      "with_check": "(carrier_id = auth.uid())"
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "docs_read",
+      "qual": "((carrier_id = auth.uid()) OR is_admin())",
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "public",
+      "tablename": "documents",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "doc_read",
+      "qual": "((bucket_id = 'documents'::text) AND (((storage.foldername(name))[1] = (auth.uid())::text) OR is_admin() OR has_global_permission('documents.view'::text)))",
+      "roles": [
+        "public"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "doc_read_assigned_dispatcher",
+      "qual": "((bucket_id = 'documents'::text) AND ((storage.foldername(name))[2] = ANY (ARRAY['authority'::text, 'insurance'::text, 'w9'::text, 'noa'::text])) AND app_private.dispatcher_can_read_doc(name))",
+      "roles": [
+        "public"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "doc_read_by_documents_row",
+      "qual": "((bucket_id = 'documents'::text) AND (EXISTS ( SELECT 1\n   FROM documents d\n  WHERE ((d.file_path = objects.name) AND (d.carrier_id = auth.uid()) AND (d.status = 'approved'::text)))))",
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "permissive": "PERMISSIVE",
+      "policyname": "doc_upload",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": "((bucket_id = 'documents'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "cmd": "INSERT",
+      "permissive": "PERMISSIVE",
+      "policyname": "doc_upload_staff_on_behalf",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": "((bucket_id = 'documents'::text) AND has_global_permission('documents.review'::text))"
+    },
+    {
+      "cmd": "UPDATE",
+      "permissive": "PERMISSIVE",
+      "policyname": "org logos own update",
+      "qual": "((bucket_id = 'org-logos'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "permissive": "PERMISSIVE",
+      "policyname": "org logos own upload",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": "((bucket_id = 'org-logos'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "org logos public read",
+      "qual": "(bucket_id = 'org-logos'::text)",
+      "roles": [
+        "public"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "partner read claim stop documents",
+      "qual": "((bucket_id = 'documents'::text) AND partner_can_read_stop_doc(name))",
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "payment receipt read",
+      "qual": "((bucket_id = 'documents'::text) AND pay_can_read_receipt(name))",
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "permissive": "PERMISSIVE",
+      "policyname": "staff read documents",
+      "qual": "((bucket_id = 'documents'::text) AND is_active_staff())",
+      "roles": [
+        "authenticated"
+      ],
+      "schemaname": "storage",
+      "tablename": "objects",
+      "with_check": null
+    }
+  ],
+  "role_permissions": [
+    {
+      "permission": "documents.view",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "707c6942-7a3c-49e3-be8e-01ffea7a9449",
+        "is_system": true,
+        "key": "owner",
+        "name": "Owner / Super Admin"
+      }
+    },
+    {
+      "permission": "documents.review",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "707c6942-7a3c-49e3-be8e-01ffea7a9449",
+        "is_system": true,
+        "key": "owner",
+        "name": "Owner / Super Admin"
+      }
+    },
+    {
+      "permission": "documents.view",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "b77dd638-b501-45ee-a8d3-2daa073889dd",
+        "is_system": false,
+        "key": "operations_admin",
+        "name": "Operations Admin"
+      }
+    },
+    {
+      "permission": "documents.review",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "b77dd638-b501-45ee-a8d3-2daa073889dd",
+        "is_system": false,
+        "key": "operations_admin",
+        "name": "Operations Admin"
+      }
+    },
+    {
+      "permission": "documents.view",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "322ee3df-0980-4ef4-ab4d-81c0f94fbe09",
+        "is_system": false,
+        "key": "compliance_reviewer",
+        "name": "Compliance Reviewer"
+      }
+    },
+    {
+      "permission": "documents.review",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "322ee3df-0980-4ef4-ab4d-81c0f94fbe09",
+        "is_system": false,
+        "key": "compliance_reviewer",
+        "name": "Compliance Reviewer"
+      }
+    },
+    {
+      "permission": "documents.view",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "d6c859c0-0923-4927-afee-f4787bbbddfd",
+        "is_system": false,
+        "key": "support",
+        "name": "Support"
+      }
+    },
+    {
+      "permission": "documents.view",
+      "role": {
+        "created_at": "2026-06-30T02:53:55.125841+00:00",
+        "description": null,
+        "id": "5315d552-9e05-47b3-a018-80ae34348ff5",
+        "is_system": false,
+        "key": "auditor",
+        "name": "Read-only Auditor"
+      }
+    }
+  ]
+}

@@ -11,23 +11,21 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-13
+## CURRENT STATE — 2026-09-13, account-deletion continuation
 
-Branch `audit/recovery-20260912` merged latest main `4bb1c6f` at local merge `c009a10`. Mobile and dispatcher work preserved. Yaseen explicitly approved the two narrow production packages and requested continued audit fixes.
+Branch `audit/recovery-20260912`; latest main remains `4bb1c6f`, already merged at `c009a10`. Prior local batch `624fab4` intact. Production newest remains `20260913111246 / audit_dispatcher_test_execute_prod`; the two previously approved production packages are verified and need no repeat approval. No production changes this continuation.
 
-PRODUCTION APPLIED AND INDEPENDENTLY VERIFIED:
-- `20260913111048 / audit_outreach_reports_recovery`: two read-only report functions plus nullable `outreach_contacts.opened_at`; no backfill, sender/settings changes or messages.
-- `20260913111246 / audit_dispatcher_test_execute_prod`: PUBLIC/anon EXECUTE removed from seven dispatcher-test RPCs. Authenticated/service grants and all bodies preserved, including newer 0309 start-race guard. All nine function hashes/ACLs match staging. Exact anon name comparison: 40 → 33, only intended seven removed, none added. Safe production role checks rolled back; no customer writes.
+NEW STAGING FIX: `20260913113248 / audit_deletion_cleanup_atomic`. Current cc_account_deletion_process swallowed CRM/outreach cleanup errors and falsely returned completed. Baseline synthetic rollback probe reproduced it. Removed only error swallowing and added deletion counts; failures now roll back the complete function call and leave the request requested. Candidate and deployed tests each PASS on 36 runtime assertions; rollback/reapply rehearsal PASS. After hash `98259dd3b5c3f3d5dca8aae02743730c`; existing authenticated/service grants preserved, exact anon list remains 32. Zero synthetic users/triggers remain. Security advisors unchanged (six notices, including password protection).
 
-Local F34 visitor-key frontend fix now joins reconstructed F08/F09/F18/F31 and F36 changes. Chat and callback share 192-bit secure randomness, preserve valid legacy keys and stop on unavailable crypto. Storage failure uses the same tab's random key. 61 actual-source/generated-output UI/privacy tests, 30 actual-source IP cases, 160 JS syntax checks, import check and staging build PASS. Browser/native-share/upload verification remains unverified (prior preview blocked). Frontend not deployed, public GitHub push still blocked, CI not activated.
+F10 current-access and proposed role/document matrix recovered from production catalog, including blanket staff, documents.view, assigned-dispatcher, approved owner metadata, partner trip and payment receipt paths. No policy changed or intended permission decision silently made. See `F10-DOCUMENT-ACCESS-MATRIX-2026-09-13.md`.
 
-Exact before/after catalogs, current-source staging ACL rehearsal and rollback are saved beside `REVIEW-PROD-AND-VISITOR-KEY-2026-09-13.md`. Historical migration-source filenames are mapped there. Retell/F10/account-deletion/legal/recovery/password/browser gates remain open. SEO/F33/WhatsApp parked; outreach enabled. No other production change is authorized by this two-package approval.
+Prior frontend checkpoint remains: 61 UI/privacy tests, 30 IP cases, 160 syntax/import checks and staging build PASS from previous continuation; not rerun for this SQL/docs-only change. F08/F09/F18/F31/F34/F36 frontend local, not deployed/public-pushed; browser/native-share/upload and CI activation still open. Retell, full account erasure, F10 decisions, password setting, legal/recovery gates remain open. SEO/F33/WhatsApp parked; outreach enabled. Full audit is not closed.
 
 ## NEXT ACTION
 
-1. Re-sync. Continue account-deletion erasure/session/suppression design and recover the intended F10 role-by-document matrix for review. Existing SQL corrections do not establish complete erasure or appropriate storage access.
-2. Complete accessible staging browser/native-share/upload verification, then seek the specific outstanding publication/deployment approvals with concrete tested artifacts. Do not bypass prior public-disclosure or browser blocks.
-3. Retell real-provider proof and subsequent cutover, live-chat backend promotion, password settings and business/retention decisions remain separate gates. No real provider calls, deletion, backfill, policy revoke or personal messages without required authorization.
+1. Re-sync. Design resumable account erasure with a pre-deletion storage manifest, supported session revocation, durable suppression and final completion gate; retention choices must be explicit. Current atomic cleanup correction does not prove full erasure and is staging-only.
+2. Review proposed F10 role/type access with Yaseen before narrowing every independent access path in a staging transaction. Matrix now exists; do not reconstruct it again from memory or remove only one blanket policy.
+3. Complete accessible staging browser/native-share/upload checks and permitted publication/CI setup. Prior public-disclosure/browser blocks remain. Retell proof/cutover and outstanding production promotions need their separate specific approvals. No real account deletion, messages, provider calls or backfills.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -56,3 +54,5 @@ Exact before/after catalogs, current-source staging ACL rehearsal and rollback a
 - **2026-09-12 19:11 — Codex:** Reconstructed F08/F09/F18/F31; 40 UI/privacy + 30 actual-source IP checks and 158 syntax/import checks PASS, final staging build PASS. F06 promotion/rollback rehearsal PASS with zero synthetic users left. Narrowed seven dispatcher-test PUBLIC/anon grants on staging (190639); exact bodies/auth/service grants preserved, deployed rollback rehearsal PASS. Production untouched; two concrete DB packages await explicit approval. Full audit remains open.
 
 - **2026-09-13 — Codex:** On explicit approval, deployed ONLY report recovery (111048) and seven dispatcher ACL restrictions (111246) to prod. Exact nine bodies/ACLs match staging; anon names 40→33 with only intended removals; safe role checks ROLLBACK. Preserved 0309 race guard and merged main 4bb1c6f. Added shared secure visitor keys: 61 UI/privacy tests + 30 IP cases, 160 syntax/import checks and staging build PASS. Frontend remains local; remaining audit gates documented; no messages/backfill or public push.
+
+- **2026-09-13 — Codex, deletion continuation:** Re-synced main/staging/prod; production unchanged. Reproduced swallowed CRM cleanup error with synthetic rollback probe, applied atomic cleanup correction only to staging (113248). Candidate/deployed 36 assertions and rollback/reapply PASS; zero fixtures/triggers remain; anon names and six advisor notices unchanged. Recovered current F10 access and proposed role/type matrix; no policy changed. Full erasure and deployment/decision gates stay open.
