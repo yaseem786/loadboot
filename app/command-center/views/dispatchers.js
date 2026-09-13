@@ -19,10 +19,13 @@ import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAss
          ccDispatcherSetTerms, ccDispatcherBookings, ccDispatcherBookingDecide, ccDispatcherCommissionStatus, ccDispatcherCommissionList,
          ccDispatcherCommissionPay, ccDispatcherQueue, ccDispatcherResendIntro,
          ccDispatcherTestInvite, ccDispatcherTestReview, ccDispatcherTestScore,
+        ccDispatcherTestSendScore,
          dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead, ccDispatcherKpis } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { dispatchLiveJoin } from '../../shared/dispatch-live.js';
+import { renderRoster } from './dispatchers-roster.js';           // bl_disp_0313 — paged roster
+import { ccDispatchersPage } from '../../shared/api.js';
 
 const PIPE = ['applied', 'screening', 'skills_test', 'trial', 'verified', 'active', 'suspended', 'rejected'];
 const STPILL = {
@@ -121,6 +124,8 @@ export function renderDispatchers(host) {
   const presenceBox = el('div');
   const feedBox = el('div');
   let dqTimer = null, dqTicks = 0;
+  let roster = null;                               // bl_disp_0313 — the paged roster (replaces paint()'s in-memory list)
+  const fetchOne = async (uid) => { const r = await ccDispatchersPage({ user: uid, limit: 1 }).catch(() => null); return (r && r.rows && r.rows[0]) || null; };
   dqStyle();
   mount(host, el('div', { class: 'cc-view' }, [
     sectionHead('Dispatchers', 'The verified dispatch workforce — hiring pipeline, carrier assignment + SOP, rate-confirmation approvals, per-load commission and payout. One dedicated dispatcher per carrier; nothing moves until LoadBoot approves the RC.'),
@@ -206,21 +211,17 @@ export function renderDispatchers(host) {
   }
 
   async function load() {
-    mount(body, el('div', { class: 'lb-state lb-loading' }, 'Loading dispatchers…'));
-    let rows;
-    try { rows = await ccDispatchersList(); } catch (e) { mount(body, el('div', { class: 'lb-state lb-error' }, humanizeError(e))); return; }
-    if (rows && rows.error) { mount(body, el('div', { class: 'lb-state lb-error' }, rows.error)); return; }
-    state.rows = Array.isArray(rows) ? rows : [];
-    paint();
+    // bl_disp_0313: the roster pages itself from the server; state.rows only mirrors what is on screen.
+    roster = renderRoster(body, { open360, pill, signals: rowSignals, onRows: (rows) => { state.rows = rows; } });
     paintQueue();
     // deep link from a staff notification: #/dispatchers?booking=<id> | ?assignment=<id> | ?user=<id>
     try {
       const q = new URLSearchParams((location.hash.split('?')[1] || ''));
       const bid = q.get('booking'), aid = q.get('assignment'), uid = q.get('user');
-      if (uid) { const x = state.rows.find((r) => r.user_id === uid); if (x) open360(x); }
+      if (uid) { const x = await fetchOne(uid); if (x) open360(x); }
       else if (bid || aid) { const qq = state.queue || await ccDispatcherQueue().catch(() => null); state.queue = qq;
         const hit = bid ? [...(qq && qq.awaiting_approval || []), ...(qq && qq.awaiting_rc || []), ...(qq && qq.moving || [])].find((b) => b.id === bid) : (qq && qq.unread_threads || []).find((a) => a.assignment_id === aid);
-        const uid2 = hit && hit.dispatcher_user_id; const x = uid2 && state.rows.find((r) => r.user_id === uid2);
+        const uid2 = hit && hit.dispatcher_user_id; const x = uid2 && await fetchOne(uid2);
         if (x) open360(x, bid || null); else if (bid) { const all = await ccDispatcherBookings({ limit: 300 }).catch(() => []); const b = (Array.isArray(all) ? all : []).find((r) => r.id === bid); const x2 = b && state.rows.find((r) => r.user_id === b.dispatcher_user_id); if (x2) open360(x2, bid); }
       }
     } catch (_) { /* deep link is best-effort */ }
@@ -238,7 +239,7 @@ export function renderDispatchers(host) {
     if (state.comm === null) {
       const c = await ccDispatcherCommissionList(null).catch(() => []);
       state.comm = Array.isArray(c) ? c : [];
-      paint();                                   // roster rows show "owed" once commissions land
+      if (roster) roster.repaint();             // roster rows show "owed" once commissions land (no refetch)
     }
     paintQueueBody();
   }
@@ -256,7 +257,7 @@ export function renderDispatchers(host) {
     const stale = mv.filter((b) => Number(b.last_touch_min) > 240);
     const unread = ut.reduce((s, t) => s + Number(t.unread || 0), 0);
     const toPay = dqSum('approved'), toApprove = dqSum('draft');
-    const byUser = (uid, bid) => { const x = state.rows.find((r) => r.user_id === uid); if (x) open360(x, bid || null); };
+    const byUser = async (uid, bid) => { const x = await fetchOne(uid); if (x) open360(x, bid || null); };
     const decideQuick = async (b) => { const ok = await approveFlow(b); if (ok) { state.comm = null; paintQueue(); } };
 
     const cells = [
@@ -400,38 +401,20 @@ export function renderDispatchers(host) {
     toast('✓ approved' + (r.trip ? ' · trip created' : '')); return true;
   }
 
-  function paint() {
-    const q = state.q.toLowerCase();
-    const list = state.rows.filter((x) => (state.st === 'all' || x.status === state.st)
-      && (!q || ((x.name || '') + ' ' + (x.email || '') + ' ' + (x.country || '')).toLowerCase().includes(q)));
-    const qIn = el('input', { class: 'lb-input', placeholder: '🔍 name / email / country', value: state.q, style: 'max-width:240px',
-      onInput: (e) => { state.q = e.target.value; paint(); } });
-    const stSel = el('select', { class: 'lb-input', style: 'max-width:180px', onChange: (e) => { state.st = e.target.value; paint(); } },
-      [['all', 'All statuses']].concat(PIPE.map((s) => [s, (STPILL[s] || [s])[0]])).map(([v, l]) => el('option', { value: v, selected: state.st === v ? '' : undefined }, l)));
-    mount(body, el('div', null, [
-      el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center' }, [qIn, stSel,
-        el('span', { class: 'cc-sub' }, list.length + ' of ' + state.rows.length + ' dispatchers')]),
-      card([el('div', { class: 'cc-doclist' }, list.length ? list.map(row) : [el('div', { class: 'cc-sub' }, 'No dispatchers match.')])]),
-    ]));
+  // bl_disp_0313: paint() used to filter state.rows in memory. It now asks the paged roster to refresh
+  // (first page + stats) so a decision / payout is reflected without ever holding the whole workforce.
+  function paint() { if (roster) roster.refresh(); }
+
+  // Signal pills that only the live queue knows (unread threads, trial-ending, money owed).
+  function rowSignals(x) {
+    const q = state.queue; const uid = x.user_id; const out = [];
+    const nUn = q ? (q.unread_threads || []).filter((t) => t.dispatcher_user_id === uid).reduce((s, t) => s + Number(t.unread || 0), 0) : 0;
+    const owed = dqSum('approved', uid);
+    if (nUn) out.push(el('span', { class: 'cc-pill cc-pill-amber' }, nUn + ' unread'));
+    if (owed) out.push(el('span', { class: 'cc-pill cc-pill-amber' }, money(owed) + ' to pay'));
+    return out;
   }
 
-  function row(x) {
-    const q = state.queue; const uid = x.user_id;
-    const nAp = q ? (q.awaiting_approval || []).filter((b) => b.dispatcher_user_id === uid).length : 0;
-    const nUn = q ? (q.unread_threads || []).filter((t) => t.dispatcher_user_id === uid).reduce((s, t) => s + Number(t.unread || 0), 0) : 0;
-    const tr = q ? (q.trials_ending || []).find((t) => t.user_id === uid) : null;
-    const owed = dqSum('approved', uid);
-    return el('div', { class: 'cc-row', style: 'display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:10px 0;border-bottom:1px solid #eef2f7;cursor:pointer', onClick: () => open360(x) }, [
-      el('div', { style: 'flex:1;min-width:220px' }, [
-        el('div', { style: 'font-weight:700' }, (x.name || '(no name)') + ' · ' + (x.email || '')),
-        el('div', { class: 'cc-sub' }, (x.country || '—') + ' · ' + (x.years_exp || 0) + ' yrs exp · applied ' + fmtDate(x.applied_at) + (x.commission_pct != null && Number(x.commission_pct) > 0 ? ' · ' + x.commission_pct + '%' : '')),
-      ]),
-      nAp ? el('span', { class: 'cc-pill cc-pill-red' }, nAp + ' RC to approve') : '', nUn ? el('span', { class: 'cc-pill cc-pill-amber' }, nUn + ' unread') : '', tr ? el('span', { class: 'cc-pill cc-pill-amber' }, 'trial ends in ' + tr.days_left + ' d') : '',
-      owed ? el('span', { class: 'cc-pill cc-pill-amber' }, money(owed) + ' to pay') : '',
-      Number(x.carriers) ? el('span', { class: 'cc-pill cc-pill-green' }, (x.carriers) + ' carrier' + (x.carriers > 1 ? 's' : '') + ' · ' + (x.active_trucks || 0) + ' trucks') : '',
-      pill(x.status),
-    ]);
-  }
 
   async function open360(x, focusBooking) {
     let d;
@@ -560,16 +543,36 @@ export function renderDispatchers(host) {
       const noteAtLoad = t.review_note || '';
       note.value = noteAtLoad;
 
-      const NOEMAIL = ' Nothing is e-mailed to the candidate — they see no score and no verdict in their portal.';
+      const MAILS = ' This sends the candidate one e-mail: you passed, a coordinator will be in touch with the carrier and truck details, and the paid trial starts once they agree. It does not move their status and it does not start the trial.';
+      const NOMAIL = ' Nothing is e-mailed to the candidate — they see no score and no verdict in their portal.';
       const saveBtn = el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save(null) }, t.decision ? 'Update scores' : 'Save scores');
       const passBtn = el('button', { class: 'lb-btn', onClick: () => save('pass') }, '✓ Passed');
       const failBtn = el('button', { class: 'lb-btn lb-btn-ghost', onClick: () => save('fail') }, '✕ Failed');
       const decisionRow = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' });
+      const mailBtn = el('button', { class: 'lb-btn lb-btn-ghost', onClick: async () => {
+        if (busy) return;
+        const sc = (t.staff_score != null ? t.staff_score : null);
+        if (sc == null) { toast('Score the test first — there is nothing to send'); return; }
+        const again = !!t.score_email_at;
+        if (!(await askConfirm(again ? 'Send the score again?' : 'E-mail the score to the candidate?', {
+          body: 'They get one e-mail with the number only — ' + sc + ' out of ' + (t.max_score || '—') +
+                '. Your notes, the per-question marks and the answer key are never included.' +
+                (again ? ' You already sent a score on ' + fmtDateTime(t.score_email_at) + '; the same number will not be delivered twice.' : ''),
+          confirmLabel: 'Send the score',
+        }))) return;
+        setBusy(true);
+        const r = await ccDispatcherTestSendScore(t.attempt).catch((e) => ({ error: humanizeError(e) }));
+        if (!r || r.error) { setBusy(false); toast((r && r.error) || 'Could not send'); return; }
+        const fresh = await ccDispatcherTestReview(x.user_id).catch(() => null);
+        setBusy(false);
+        if (fresh && !fresh.error) { paintTest(host, head, body, fresh, dd); }
+        toast('✓ Score e-mailed · ' + r.score + ' / ' + r.max);
+      } }, t.score_email_at ? 'Re-send score e-mail' : 'E-mail score to candidate');
       let busy = false;
 
       const setBusy = (b) => {
         busy = b;
-        [saveBtn, passBtn, failBtn].forEach((n) => { n.disabled = b; n.style.opacity = b ? '.55' : ''; n.style.pointerEvents = b ? 'none' : ''; });
+        [saveBtn, passBtn, failBtn, mailBtn].forEach((n) => { n.disabled = b; n.style.opacity = b ? '.55' : ''; n.style.pointerEvents = b ? 'none' : ''; });
       };
 
       const paintDecision = (editing) => {
@@ -597,8 +600,8 @@ export function renderDispatchers(host) {
           scores[q.id] = { points: Math.min(Math.max(0, n), Number(q.max_points) || n) };
         });
         if (decision && !(await askConfirm(decision === 'pass' ? 'Mark this test as passed?' : 'Mark this test as failed?', {
-          body: (decision === 'pass' ? 'The candidate stays in the pipeline — next is the broker call, then the paid trial. This does not move their status on its own.'
-                                     : 'This records the decision on the test. It does not reject the application — use Reject for that.') + NOEMAIL,
+          body: (decision === 'pass' ? 'The candidate stays in the pipeline — next is the truck details, then the paid trial.' + MAILS
+                                     : 'This records the decision on the test. It does not reject the application — use Reject for that.' + NOMAIL),
           confirmLabel: decision === 'pass' ? 'Mark passed' : 'Mark failed', danger: decision === 'fail',
         }))) return;
 
@@ -650,8 +653,11 @@ export function renderDispatchers(host) {
           (t.decision ? '   · ' + t.decision.toUpperCase() : '')),
         el('div', null, rows),
         el('div', { style: 'margin-top:12px' }, note),
-        el('div', { class: 'cc-sub', style: 'margin-top:5px' }, 'Saving is private to Command Center.' + NOEMAIL),
-        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;align-items:center' }, [saveBtn, decisionRow]),
+        el('div', { class: 'cc-sub', style: 'margin-top:5px' }, 'Saving is private — the candidate sees nothing. Passed e-mails them the result (no number). The score goes only when you press E-mail score. Failed e-mails nothing.'),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;align-items:center' }, [saveBtn, mailBtn, decisionRow]),
+        (t.score_email_at || t.passed_email_at) ? el('div', { class: 'cc-sub', style: 'margin-top:6px' },
+          [t.passed_email_at ? 'Pass e-mail sent ' + fmtDateTime(t.passed_email_at) : null,
+           t.score_email_at ? 'Score e-mailed ' + fmtDateTime(t.score_email_at) : null].filter(Boolean).join(' · ')) : '',
       ]));
 
       if (flash) {
