@@ -1,0 +1,21 @@
+COMMIT_MSG-2026-09-13.txt — broker growth: drip v2 + first new-broker SEO page
+
+1) Broker outreach drip d1–d7 rewritten (docs/outreach/broker-drip-v2-2026-09-13.sql, preview
+   BROKER-DRIP-V2-PREVIEW-2026-09-13.html). APPLIED ON PROD 13 Sep — one broker problem per email,
+   the solution only LoadBoot gives (four-gate vetting, GPS milestone link, detention from the GPS
+   clock, $0 board, verified network day one, post via portal/API). No TMS-replacement claim, no
+   invented prices, loads@ cc door removed (inbound engine dead since July). Backup of the old rows:
+   app_private.outreach_templates_bak_20260913. Render check passed for all 7 with a real contact.
+
+2) New module broker_growth_module.py + 9 additive lines in build_site.py: the full new-broker SEO
+   cluster, SIX pages (each with TOC, FAQ, blog card, sitemap entry, cross-links):
+   freight-broker-software-cost, how-new-freight-brokers-find-carriers, how-to-become-a-freight-broker,
+   where-freight-brokers-get-loads, freight-broker-startup-checklist, freight-agent-vs-freight-broker. Grounded in live GSC (13 Sep): no page on the site covered "freight broker software /
+   how to become a broker / find carriers" intents; only signal was "freight broker software quickbooks".
+   Build verified: LOADBOOT_CONTEXT=production python3 build_site.py → BUILD OK.
+
+After deploy: request indexing in Search Console for the six URLs (list in chat / project memory).
+
+git add broker_growth_module.py build_site.py docs/outreach/broker-drip-v2-2026-09-13.sql docs/outreach/BROKER-DRIP-V2-PREVIEW-2026-09-13.html COMMIT_MSG-2026-09-13.txt
+git commit -F COMMIT_MSG-2026-09-13.txt
+git push
