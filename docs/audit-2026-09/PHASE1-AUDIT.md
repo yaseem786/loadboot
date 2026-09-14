@@ -654,3 +654,10 @@ Claim tests use the actual body with a temporary delivery table, not live queue 
 Old no-contact footer success without a durable marker and old token-path rewrite of delivered operational history reproduced with synthetic rollback fixtures. Applied `20260913214311 / audit_unsubscribe_entrypoints` to staging only: durable opt-out, token failure refusal, normalized/scheduled marketing cancellation, stronger suppression and operational/history preservation. Candidate/deployed 73 runtime assertions and rollback/reapply PASS; exact anon names/args remain 32, helper and six advisor notices unchanged, zero fixtures left.
 
 Merged latest main 515f4f6 preserving other lanes; 61 UI/privacy tests, 30 IP cases, 160 syntax/import checks and staging build freshly PASS. No production mutation or real sender/provider call. Full account-erasure storage/session lifecycle, notification-consumer/edge parity, F10 decision and browser/CI/Retell gates remain open. Exact evidence in `REVIEW-UNSUBSCRIBE-2026-09-13.md`.
+
+
+## September 14 — checkpoint for September 13 staged erasure inventory guard
+
+Staging 20260913220810 captures private append-only candidate file references before destructive cleanup and returns ERASURE_REVIEW_REQUIRED while references remain. Client API rejects incomplete/structured refusal results. Candidate/deployed 35 runtime assertions, empty rollback/reapply, 2 populated rollback-refusal assertions, 71 UI/privacy tests, staging build and 160 syntax/import checks passed Sept 13; anonymous names/args and six advisor identities unchanged. On Sept 14 live hashes independently match saved evidence, and 10 actual-source API tests rerun PASS. Production unchanged.
+
+Inventory is NOT full erasure: actual Storage removal/retention proof, indirect reference coverage, concurrent upload freeze, stale-session access and final completion remain open. No-file completion is still limited SQL cleanup. See REVIEW-ERASURE-INVENTORY-2026-09-13.md for exact source, rollback refusal conditions and dated evidence.

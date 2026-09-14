@@ -398,7 +398,16 @@ export const requestAccountDeletion = (reason) => rpc('request_account_deletion'
 export const cancelAccountDeletion = () => rpc('cancel_account_deletion');
 export const myAccountDeletionStatus = () => rpc('my_account_deletion_status');
 export const ccAccountDeletionQueue = () => rpc('cc_account_deletion_queue');
-export const ccAccountDeletionProcess = (id, action, note) => rpc('cc_account_deletion_process', { p_id: id, p_action: action, p_note: note ?? null });
+export const ccAccountDeletionProcess = async (id, action, note) => {
+  const result = await rpc('cc_account_deletion_process', { p_id: id, p_action: action, p_note: note ?? null });
+  const expectedStatus = action === 'reject' ? 'rejected' : 'completed';
+  if (!result || result.ok !== true || result.error || result.status !== expectedStatus) {
+    const error = new Error(result?.error || 'Account deletion was not completed.');
+    error.code = result?.code || 'ACCOUNT_DELETION_INCOMPLETE';
+    throw error;
+  }
+  return result;
+};
 export const ccAgentPayoutVerify = (user, ok, note) => rpc('cc_agent_payout_verify', { p_user: user, p_ok: ok, p_reason: note ?? null });
 // Alternative ("Other") payout methods: ask the agent for the exact missing receiving
 // fields, and record a reviewer's assessment of the rail itself (separate from verifying

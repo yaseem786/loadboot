@@ -11,7 +11,7 @@
     "check:imports": "python3 scripts/check_imports.py",
     "check": "npm run check:syntax && npm run check:imports",
     "build:staging": "CONTEXT=deploy-preview python3 build_site.py",
-    "test:audit-ui": "node --experimental-vm-modules --test tests/onboarding_save_queue_test.mjs tests/shipper_trust_render_test.mjs"
+    "test:audit-ui": "node --experimental-vm-modules --test tests/onboarding_save_queue_test.mjs tests/shipper_trust_render_test.mjs tests/account_deletion_result_test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.0",

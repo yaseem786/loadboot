@@ -11,21 +11,22 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-13 21:43 UTC, unsubscribe entrypoints
+## CURRENT STATE — 2026-09-14, erasure inventory checkpoint
 
-Branch `audit/recovery-20260912`; latest main `515f4f6` merged at `d5beaeb`, preserving dispatcher/website work and prior local fixes. Other lane deployed `bl_disp_0312_test_result_in_portal` to both environments before this batch. Production unchanged by Codex this continuation; latest observed prod 20260913213616.
+Branch `audit/recovery-20260912`; main 515f4f6 was merged at d5beaeb. Fresh fetch now sees main b73a854; inspect and reconcile its changes after saving this batch. Production unchanged this continuation; latest read-only migration is 20260913214706 / bl_disp_0314_score_email_on_save.
 
-NEW STAGING `20260913214311 / audit_unsubscribe_entrypoints`: footer and service-token paths retain durable marketing opt-out for missing/deleted/re-imported contacts, normalize matching and cancel scheduled pending marketing. Missing/invalid/unavailable token verification refuses. Operational email and delivered history preserved; stronger existing suppressions not overwritten; SMS scope retained. Candidate and deployed **73 assertions PASS**; rollback/reapply restores both hashes. Exact anonymous names/args remain 32, six advisor notices and signing helper unchanged. Zero synthetic delivery/contact/suppression/test-trigger rows remain.
+STAGING `20260913220810 / audit_erasure_inventory_gate` was applied September 13 and independently rechecked September 14: processor hash 3fe3cbac599f19e28d6f4a41109e82ad, capture helper d6fd7d1c2e24a3a9d81ff763f49e089f. Private append-only candidate file inventory is captured before destructive cleanup. Any saved references return ERASURE_REVIEW_REQUIRED and leave the request open. No-file cleanup/rejection preserved. The client wrapper rejects incomplete/failure results; local frontend only.
 
-Footer hash `61f99e7275bf65f27e6ed11b2396a676`; worker token hash `0090e4226dd14f8cddf2268c5b451f94`. Source snapshots/tests/rollback in `REVIEW-UNSUBSCRIBE-2026-09-13.md`. Prior deletion suppression and atomic cleanup remain applied. No real worker/provider invocation, backfill, customer message or public push.
+September 13 evidence: 35 candidate + 35 deployed rollback assertions PASS; empty rollback/reapply PASS; populated rollback refusal 2 PASS; 71 UI/privacy tests, staging build and 160 syntax/import checks PASS. Exact anonymous names/args unchanged at 32; six advisor identities unchanged; zero fixtures left. September 14: live hashes confirmed and 10 actual-source API tests rerun PASS. Historical results remain dated, not presented as new runs. Exact package, limits and rollback in REVIEW-ERASURE-INVENTORY-2026-09-13.md.
 
-Merged-source checks rerun: 61 UI/privacy tests + 30 IP cases, 160 syntax/import checks and staging build PASS. Frontend still local, browser/native-sharing/upload unverified, CI not activated. F10 proposed matrix exists; decision pending. Full storage/session erasure, final completion, notification-consumer parity, password/Retell/legal/recovery gates stay open. Outreach enabled; SEO/F33/WhatsApp parked.
+Prior staged atomic cleanup, durable deletion suppression and unsubscribe entrypoints remain intact. Only reports and dispatcher ACL packages were explicitly approved/applied to prod Sept 13. No new production authorization. Frontend/browser/native-sharing/upload verification and CI activation remain pending. F10 proposed matrix is not approved. Full erasure, session access, notification parity, Retell/password/legal/recovery gates remain open. Outreach enabled; SEO/F33/WhatsApp parked. Public push remains blocked.
 
 ## NEXT ACTION
 
-1. Re-sync. Continue account-erasure object-manifest/session/final-completion design. Do not delete metadata before inventory or claim a ban invalidates outstanding JWTs. Retention decisions require owner input.
-2. Review remaining fire_comm_trigger/reminder/notification suppression consumers and deployed edge-source parity with positive controls and no actual sends. Footer and delivery-token database paths are now fixed on staging; do not redo them from old source.
-3. Use F10 matrix for intended role/type decision; complete accessible staging browser/native-share/upload checks and permitted publication/CI setup. Prior disclosure/browser blocks remain. Additional production promotion, actual erasure, provider calls and messages require their specific authorizations.
+1. Reconcile fetched main b73a854 preserving current audit fixes. Verify stale-session access after account closure using synthetic staging rollback probes; then stage a narrow access guard with legitimate-user positive controls. Do not equate a ban with JWT invalidation.
+2. Continue erasure coverage, upload freeze, supported session revocation and final-completion design. File references require reviewed retention/removal proof; do not delete inventory to bypass the guard. Actual object erasure requires specific approval.
+3. Review remaining fire_comm_trigger/reminder/notification suppression consumers and edge-source parity without actual sends. Do not redo fixed footer/token paths.
+4. F10 role/type decision, browser/native upload verification and publication/CI gates remain. Production promotion, actual erasure, provider calls and messages require their specific authorizations.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -60,3 +61,5 @@ Merged-source checks rerun: 61 UI/privacy tests + 30 IP cases, 160 syntax/import
 - **2026-09-13 21:26 — Codex:** Continued deletion suppression; applied five-function package only to staging (212633). Candidate/deployed 78 assertions and rollback/reapply PASS; suppression survives re-import, pending marketing cancels, ordinary email transactions remain eligible while stronger/SMS blocks remain. Exact anon names/args and six advisors unchanged; all fixtures rollback-only. Production/sender/settings untouched. Footer parity, storage/session and browser/provider gates remain open.
 
 - **2026-09-13 21:43 — Codex:** Re-synced both DBs/new 0312 and merged main 515f4f6. Applied only staging unsubscribe entrypoints (214311), candidate/deployed 73 assertions and rollback/reapply PASS. Exact anon names/args, helper and six advisor notices unchanged; zero fixtures left. Merged 61 UI/privacy +30 IP and 160 syntax/import/staging build PASS. No production changes, sender calls or public push. Full storage/session and remaining verification/decision gates stay open.
+
+- **2026-09-14 — Codex:** Completed Sept 13 staging inventory handoff; live processor/helper hashes rechecked and 10 actual-source API tests rerun PASS. Sept 13 candidate/deployed 35-assertion suites, rollback safety, 71 UI tests and build/check evidence preserved as historical. No production changes. Fresh main b73a854 awaits reconciliation; stale-session access is next.
