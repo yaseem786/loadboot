@@ -1,0 +1,361 @@
+{
+  "date": "2026-09-14",
+  "preflight": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid",
+        "name": "lc_ob_upload_check"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "fixtures": 0,
+    "latest": {
+      "name": "audit_erasure_inventory_gate",
+      "version": "20260913220810"
+    }
+  },
+  "postflight": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid",
+        "name": "lc_ob_upload_check"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "fixture_events": 0,
+    "fixture_orgs": 0,
+    "fixture_users": 0,
+    "hashes": [
+      {
+        "hash": "6855c85926b517ec183a148223bef411",
+        "name": "cc_set_my_payment_profile"
+      },
+      {
+        "hash": "710d7ce85c0277eef6c14572801a6b70",
+        "name": "cc_my_payment_profile"
+      },
+      {
+        "hash": "3fe3cbac599f19e28d6f4a41109e82ad",
+        "name": "cc_account_deletion_process"
+      },
+      {
+        "hash": "18344c1e6ac6a2b76e2dae5ee7659334",
+        "name": "assert_payment_session"
+      }
+    ]
+  },
+  "advisors": {
+    "after_groups": [
+      {
+        "count": 98,
+        "name": "rls_enabled_no_policy"
+      },
+      {
+        "count": 86,
+        "name": "function_search_path_mutable"
+      },
+      {
+        "count": 1,
+        "name": "extension_in_public"
+      },
+      {
+        "count": 32,
+        "name": "anon_security_definer_function_executable"
+      },
+      {
+        "count": 824,
+        "name": "authenticated_security_definer_function_executable"
+      },
+      {
+        "count": 1,
+        "name": "auth_leaked_password_protection"
+      }
+    ],
+    "before_groups": [
+      {
+        "count": 98,
+        "name": "rls_enabled_no_policy"
+      },
+      {
+        "count": 86,
+        "name": "function_search_path_mutable"
+      },
+      {
+        "count": 1,
+        "name": "extension_in_public"
+      },
+      {
+        "count": 32,
+        "name": "anon_security_definer_function_executable"
+      },
+      {
+        "count": 824,
+        "name": "authenticated_security_definer_function_executable"
+      },
+      {
+        "count": 1,
+        "name": "auth_leaked_password_protection"
+      }
+    ],
+    "new_ids": [],
+    "removed_ids": []
+  },
+  "verification": {
+    "baseline": "7 assertions PASS using exact pre-fix source restored only inside rollback transaction",
+    "candidate": "44 behavioral/ACL assertions plus count guard PASS",
+    "deployed": "44 behavioral/ACL assertions plus count guard PASS",
+    "rollback_reapply": "Same full suite PASS; deployed hashes restored",
+    "local_api_ui": "30 tests PASS",
+    "merged_syntax_import": "PASS; see npm run check"
+  },
+  "migration": {
+    "name": "audit_payment_session_guard",
+    "version": "20260914064813"
+  }
+}

@@ -11,22 +11,22 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-14, erasure inventory checkpoint
+## CURRENT STATE — 2026-09-14 06:48 UTC, payment session guard
 
-Branch `audit/recovery-20260912`; main 515f4f6 was merged at d5beaeb. Fresh fetch now sees main b73a854; inspect and reconcile its changes after saving this batch. Production unchanged this continuation; latest read-only migration is 20260913214706 / bl_disp_0314_score_email_on_save.
+Branch `audit/recovery-20260912`; latest fetched main b73a854 merged at 520b561. Prior inventory checkpoint committed d6d0d92. Dispatcher roster/test changes and prior audit fixes preserved. Production unchanged this continuation; latest observed migration 20260913214706 / bl_disp_0314_score_email_on_save.
 
-STAGING `20260913220810 / audit_erasure_inventory_gate` was applied September 13 and independently rechecked September 14: processor hash 3fe3cbac599f19e28d6f4a41109e82ad, capture helper d6fd7d1c2e24a3a9d81ff763f49e089f. Private append-only candidate file inventory is captured before destructive cleanup. Any saved references return ERASURE_REVIEW_REQUIRED and leave the request open. No-file cleanup/rejection preserved. The client wrapper rejects incomplete/failure results; local frontend only.
+NEW STAGING `20260914064813 / audit_payment_session_guard`: current-session/account validation added to cc_my_payment_profile and cc_set_my_payment_profile. Synthetic baseline confirmed banned read/write and removed-session read. Candidate/deployed 44 behavior/ACL checks plus count guard PASS; rollback/reapply PASS. Valid carrier/broker/shipper paths preserved, failed access leaves payment data unchanged. Private invoker helper; existing endpoint ACLs preserved. Exact anon names/args unchanged at 32; advisor finding identities unchanged across six categories; zero synthetic users/orgs/events. Details/source/rollback in REVIEW-PAYMENT-SESSIONS-2026-09-14.md.
 
-September 13 evidence: 35 candidate + 35 deployed rollback assertions PASS; empty rollback/reapply PASS; populated rollback refusal 2 PASS; 71 UI/privacy tests, staging build and 160 syntax/import checks PASS. Exact anonymous names/args unchanged at 32; six advisor identities unchanged; zero fixtures left. September 14: live hashes confirmed and 10 actual-source API tests rerun PASS. Historical results remain dated, not presented as new runs. Exact package, limits and rollback in REVIEW-ERASURE-INVENTORY-2026-09-13.md.
+Merged-source 30 API/UI tests +161 JS syntax/import checks PASS. These are local checks, not browser/Auth HTTP/native-upload verification; frontend remains local and CI is not activated. No new staging build claimed this continuation. Prior inventory tests/build from September 13 remain dated evidence in REVIEW-ERASURE-INVENTORY-2026-09-13.md.
 
-Prior staged atomic cleanup, durable deletion suppression and unsubscribe entrypoints remain intact. Only reports and dispatcher ACL packages were explicitly approved/applied to prod Sept 13. No new production authorization. Frontend/browser/native-sharing/upload verification and CI activation remain pending. F10 proposed matrix is not approved. Full erasure, session access, notification parity, Retell/password/legal/recovery gates remain open. Outreach enabled; SEO/F33/WhatsApp parked. Public push remains blocked.
+Stage inventory, atomic cleanup, deletion suppression and unsubscribe fixes remain intact. Only reports and dispatcher ACL packages had specific Sept13 production approval. No further production authorization. F10 proposed matrix unapproved; full erasure/session revocation, remaining sensitive endpoints, notification parity, Retell/password/legal/recovery and browser/publication gates stay open. Outreach enabled; SEO/F33/WhatsApp parked. Public push remains blocked.
 
 ## NEXT ACTION
 
-1. Reconcile fetched main b73a854 preserving current audit fixes. Verify stale-session access after account closure using synthetic staging rollback probes; then stage a narrow access guard with legitimate-user positive controls. Do not equate a ban with JWT invalidation.
-2. Continue erasure coverage, upload freeze, supported session revocation and final-completion design. File references require reviewed retention/removal proof; do not delete inventory to bypass the guard. Actual object erasure requires specific approval.
-3. Review remaining fire_comm_trigger/reminder/notification suppression consumers and edge-source parity without actual sends. Do not redo fixed footer/token paths.
-4. F10 role/type decision, browser/native upload verification and publication/CI gates remain. Production promotion, actual erasure, provider calls and messages require their specific authorizations.
+1. Re-sync and continue sensitive-session coverage: agent payout center/request and referral payout functions, staff payment reads/review, direct payment-table RLS and document/Storage paths. Current guard covers ONLY two self-service bank-profile RPCs; do not mark all stale-JWT access closed. Review caller contracts before expanding the helper or globally changing has_global_permission.
+2. Complete erasure inventory coverage, supported Auth session revocation, upload freeze and final-removal-proof workflow. Candidate file references need retention/removal decisions; do not remove inventory to bypass the guard. Actual object/account erasure requires specific approval.
+3. Review remaining fire_comm_trigger/reminder/notification suppression consumers and edge parity without actual sends; preserve already-fixed footer/token paths.
+4. F10 role/type decision, actual browser/native upload verification, Retell proof and publication/CI gates remain. Additional production promotion, provider calls, actual erasure and personal messages require their specific authorizations.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -63,3 +63,5 @@ Prior staged atomic cleanup, durable deletion suppression and unsubscribe entryp
 - **2026-09-13 21:43 — Codex:** Re-synced both DBs/new 0312 and merged main 515f4f6. Applied only staging unsubscribe entrypoints (214311), candidate/deployed 73 assertions and rollback/reapply PASS. Exact anon names/args, helper and six advisor notices unchanged; zero fixtures left. Merged 61 UI/privacy +30 IP and 160 syntax/import/staging build PASS. No production changes, sender calls or public push. Full storage/session and remaining verification/decision gates stay open.
 
 - **2026-09-14 — Codex:** Completed Sept 13 staging inventory handoff; live processor/helper hashes rechecked and 10 actual-source API tests rerun PASS. Sept 13 candidate/deployed 35-assertion suites, rollback safety, 71 UI tests and build/check evidence preserved as historical. No production changes. Fresh main b73a854 awaits reconciliation; stale-session access is next.
+
+- **2026-09-14 06:48 — Codex:** Merged main b73a854 at 520b561. Confirmed stale-session bank-profile access with seven synthetic baseline assertions; deployed current-session/account guard ONLY to staging (064813). Candidate/deployed 44 behavior/ACL checks plus count guard and rollback/reapply PASS. Exact anon names/args and advisor identities unchanged; zero fixtures. 30 API/UI and 161 syntax/import checks PASS. Production/senders unchanged; remaining sensitive-session and erasure workflow gates recorded.
