@@ -3492,7 +3492,7 @@ async function brokerDash(user, ov) {
                 : ''),
             ]),
             h('div', { style: 'display:flex;gap:8px;align-items:center' }, [
-              liveOk ? h('span', { class: 'lt-live' }, [h('span', { class: 'dot' }), 'LIVE \u00b7 ' + ago(t.last_loc_at)]) :
+              liveOk ? h('span', { class: 'lt-live', title: t.tracking_source ? 'Position reported by the truck’s ' + (t.tracking_source === 'ELD' ? 'ELD' : 'driver app') : '' }, [h('span', { class: 'dot' }), 'LIVE \u00b7 ' + ago(t.last_loc_at) + (t.tracking_source ? ' \u00b7 ' + t.tracking_source : '')]) :
               t ? h('span', { class: 'lt-live', style: 'background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.3)' }, [h('span', { class: 'dot', style: 'background:#94a3b8;animation:none' }), (String(t.status || '') === 'delivered') ? '\ud83c\udfc1 Delivered \u2014 tracking ended' : (t.last_loc_at ? 'GPS ' + ago(t.last_loc_at) : 'GPS pending')]) : null,
               h('span', { style: 'font-weight:800;color:#7cc0ff;font-size:1.05rem' }, ld.rate ? '$' + Number(ld.rate).toLocaleString() : ''),
             ].filter(Boolean)),

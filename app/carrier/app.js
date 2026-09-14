@@ -10,7 +10,7 @@ import { getSession, getUser, signInWithPassword, signUp, signOut, onAuthChange,
 import {
   requestAccountDeletion, cancelAccountDeletion, myAccountDeletionStatus,
   myCarrierOrg, pocketOverview, pocketTrips, pocketInvoices, tripPnl, tripFinanceAdd, tripFinanceRemove, carrierEarnings, getCostModel, setCostModel, pocketCompliance, pocketConfirmTrip,
-  pocketSetConsent, pocketPostLocation, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
+  pocketSetConsent, pocketPostLocation, tripSetDriving, pocketRaiseIssue, pocketMyIssues, pocketAnnouncements,
   pocketReportIssue, pocketDisputeInvoice, publicLoadOpportunities, pocketUploadPod, pocketTripPods, pocketTripDocs, requestPacketCopies,
   pocketDrivers, pocketUpsertDriver, pocketTrucks, pocketUpsertTruck, coiVehicles, vinCoverage, fleetFmcsaCheck, setLegalOwner, truckLoadingProfiles, pocketTeam, pocketSetMember, carrierInviteDriver, myCapacity,
   pocketFleetAlerts, pocketStatement, pocketTripTimeline, pocketMyExceptions, pocketAssignTrip, pocketAdvanceTrip,
@@ -103,6 +103,7 @@ import { renderAvailabilityCard, goFleet, expiryLine, fleetGateBody, buildPlaceP
 import { showWhatsNew } from '../shared/whatsnew.js';
 import { initInstallPrompt } from '../shared/installprompt.js';
 import { renderFaq, CARRIER_FAQ } from '../shared/faq.js';
+import { myDriverContext } from '../shared/api.js';   // bl_drv_0344 driver mode
 initTelemetry();  // real-user error + Core Web Vitals capture
 
 // Agent portal runs the SAME bundle as the carrier app, told apart only by URL path.
@@ -133,6 +134,20 @@ registerAppSW(); // /app/sw.js — includes Web Push handlers
 const root = document.getElementById('lb-app');
 
 /* ---------- tiny DOM helper ---------- */
+const _notDriving = new Set();   // trips where the server told this device: the assigned driver's phone reports the truck
+async function postLoc(trip, lat, lng, label) {
+  if (_notDriving.has(trip)) return false;
+  try { await postLoc(trip, lat, lng, label); return true; }
+  catch (e) {
+    const m = (e && e.message) || '';
+    if (/their phone reports the truck|owner marked this load as driven by them/i.test(m)) {
+      _notDriving.add(trip);
+      try { if (window.__lbStopLive) window.__lbStopLive(trip); } catch (_) {}
+      try { lbToast(m, 'action', /owner marked/i.test(m) ? 'Owner is driving this load' : 'Tracking is on the driver’s phone'); } catch (_) {}
+    }
+    return false;
+  }
+}
 const h = (tag, attrs, kids) => {
   const e = document.createElement(tag);
   if (attrs) for (const k in attrs) {
@@ -512,8 +527,24 @@ function authScreen() {
   const phone = h('input', { class: 'cp-in', type: 'tel', placeholder: 'Mobile number', autocomplete: 'tel' });
   const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, window.__LB_AGENT ? 'Agency / company (optional)' : 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
   const err = h('div', { class: 'cp-err' });
+  // bl_drv_0344f: the same login serves drivers (invited by a carrier, role=driver). A driver arrives with ?role=driver
+  // (Driver App links, welcome email, sign-out) or with the hint we store once they have joined. In driver mode the
+  // screen says Driver, explains the invite rule, and hides "Create an account" — a driver must never mint a carrier org.
+  const _roleHint = (function () { try { return localStorage.getItem('lb_role_hint') || ''; } catch (_) { return ''; } })();
+  let ROLE = window.__LB_AGENT ? 'carrier' : (/[?&#]role=driver\b|#driver\b/.test(location.href) ? 'driver' : /[?&#]role=oo\b/.test(location.href) ? 'oo' : (_roleHint === 'driver' || _roleHint === 'oo') ? _roleHint : 'carrier');
+  let DRVH = ROLE === 'driver';
+  const ROLE_COPY = {
+    carrier: 'Sign in to your carrier portal.',
+    driver: 'Driver sign-in — use the email and password you set when your carrier invited you.',
+    oo: 'Owner-operator — sign in with your carrier login. It already covers the driving side (trips, GPS check-in, POD); never create a separate driver account for yourself.',
+  };
+  const descr = h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : ROLE === 'driver' ? 'Driver' : ROLE === 'oo' ? 'Owner-operator' : 'Carrier');
+  const _urlRole = /[?&#]role=(driver|oo|carrier)\b/.exec(location.href);
+  let roleChosen = !!window.__LB_AGENT || !!_urlRole || /#signup\b/.test(location.hash);
+  const chooser = window.__LB_AGENT ? null : h('div', { class: 'cp-rolechoose' });
+  const changeRole = window.__LB_AGENT ? null : h('button', { type: 'button', class: 'cp-rolechange' }, '‹ Change role');
   const title = h('h1', null, 'Welcome back');
-  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : 'Sign in to your carrier portal.');
+  const sub = h('p', { class: 'cp-auth-sub' }, window.__LB_AGENT ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : ROLE_COPY[ROLE]);
   const btn = h('button', { class: 'cp-btn cp-btn-lg' }, 'Sign in');
   const toggle = h('p', { class: 'cp-auth-toggle' });
   const forgot = h('p', { class: 'cp-auth-toggle', style: 'margin-top:8px' },
@@ -536,12 +567,32 @@ function authScreen() {
     const AG = !!window.__LB_AGENT;
     title.textContent = s ? (AG ? 'Apply as a LoadBoot Dispatcher' : 'Create your account') : 'Welcome back';
     sub.textContent = s ? (AG ? 'Create your account, then apply to dispatch for US carriers — salaried, base + per-truck + performance.' : 'Set up your carrier profile — it’s free.')
-                        : (AG ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : 'Sign in to your carrier portal.');
+                        : (AG ? 'Sign in to your dispatcher portal — your assigned carriers, loads and salary.' : ROLE_COPY[ROLE]);
     extra.style.display = s ? 'block' : 'none';
     btn.textContent = s ? 'Create account' : 'Sign in';
     err.textContent = ''; err.className = 'cp-err';
     mount(toggle, s ? [document.createTextNode('Already have an account? '), h('a', { onClick: () => setMode(false) }, 'Sign in')]
+      : DRVH ? [document.createTextNode('New driver? Your carrier invites you from their Fleet page — the invite email sets up your login. Not a driver? Pick your role above.')]
       : [document.createTextNode(AG ? 'New here? ' : 'New carrier? '), h('a', { onClick: () => setMode(true) }, AG ? 'Create your account' : 'Create an account')]);
+  };
+  // bl_drv_0344f: explicit role picker — Carrier owner / Driver / I own & drive. The choice is remembered per device.
+  const ROLES = [
+    ['carrier', 'Carrier owner', 'Run the company — loads, trips, fleet, documents & finance', 'rgba(252,83,5,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FC5305" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>'],
+    ['driver', 'Driver', 'Invited by a carrier — your loads, GPS check-in, POD', 'rgba(8,131,247,.16)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.6 1.7-2.3 3-2.3s2.4.7 3 2.3M14 10h4M14 13h4"/></svg>'],
+    ['oo', 'I own & drive', 'Owner-operator — same carrier login, no separate driver account needed', 'rgba(34,197,94,.14)', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3v6.5M4 14l5.8-1.5M20 14l-5.8-1.5"/></svg>'],
+  ];
+  const showStep = () => { if (!chooser) return; chooser.style.display = roleChosen ? 'none' : ''; formWrap.style.display = roleChosen ? '' : 'none'; descr.style.visibility = roleChosen ? '' : 'hidden'; };
+  const paintRoles = () => { if (!chooser) return; mount(chooser, [
+    h('h1', null, 'Sign in'), h('p', { class: 'cp-auth-sub' }, 'Who are you signing in as?'),
+    ...ROLES.map(([k, l, s, bg, svg]) => h('button', { type: 'button', class: 'cp-rolecard' + (_roleHint === k ? ' last' : ''), onClick: () => setRole(k) }, [
+      h('span', { class: 'ic', style: 'background:' + bg, html: svg }), h('span', { class: 'tx' }, [h('b', null, l), h('span', null, s)]), _roleHint === k ? h('em', null, 'Last time') : null, h('span', { class: 'chev', html: '›' }),
+    ].filter(Boolean))),
+  ]); };
+  const setRole = (k) => {
+    ROLE = k; DRVH = k === 'driver'; roleChosen = true;
+    try { localStorage.setItem('lb_role_hint', k); } catch (_) {}
+    descr.textContent = k === 'driver' ? 'Driver' : k === 'oo' ? 'Owner-operator' : 'Carrier';
+    setMode(false); showStep(); try { email.focus({ preventScroll: true }); } catch (_) {}
   };
   btn.onclick = async () => {
     err.textContent = ''; err.className = 'cp-err';
@@ -607,6 +658,10 @@ function authScreen() {
     + '</div>'
     + '<div style="margin-top:12px;font-size:12px;font-weight:600;color:#8ea2c3;letter-spacing:.01em">Salaried &nbsp;·&nbsp; per-truck &nbsp;·&nbsp; performance bonus &nbsp;·&nbsp; or refer &amp; earn 1%</div>'
     + '<div style="margin-top:20px;color:#94a3b8;font-weight:500;font-size:13px;letter-spacing:.02em">The Operating System for Trucking</div>';
+  const formWrap = h('div', null, [changeRole, title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), passWrap, extra, err, btn, toggle, forgot,
+    h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')])].filter(Boolean));
+  if (changeRole) changeRole.onclick = () => { roleChosen = false; paintRoles(); showStep(); };
+  paintRoles(); showStep();
   const brandPanel = window.__LB_AGENT ? h('div', { class: 'cpx-auth-brand', html: AGENT_BRAND }) : h('div', { class: 'cpx-auth-brand', html:
     '<svg viewBox="0 0 300 90" style="width:100%;max-width:300px;overflow:visible" aria-hidden="true">'
     + '<path d="M8 74 C 80 74, 90 18, 170 18 S 282 52, 292 30" fill="none" stroke="rgba(148,163,184,.35)" stroke-width="2.5" stroke-dasharray="1 9" stroke-linecap="round"/>'
@@ -636,9 +691,9 @@ function authScreen() {
     h('div', { class: 'cpx-auth-split' }, [brandPanel,
     h('div', { class: 'cp-auth-card' }, [
       h('a', { href: '/app/?choose=1', style: 'display:inline-flex;align-items:center;gap:6px;color:#8ea2c3;font-weight:700;font-size:.82rem;text-decoration:none;margin:-4px 0 12px;padding:4px 0', html: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>All portals</span>' }),
-      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), h('span', { style: "font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px" }, window.__LB_AGENT ? 'Agent' : 'Carrier')]),
-      title, sub, h('label', { class: 'cp-lbl' }, 'Email'), email, h('label', { class: 'cp-lbl' }, 'Password'), passWrap, extra, err, btn, toggle, forgot,
-      h('div', { class: 'cp-staff' }, [document.createTextNode('Staff member? '), h('a', { href: '/app/command-center/' }, 'Open the Command Center →')]),
+      h('div', { class: 'cp-auth-brand', style: 'display:flex;align-items:flex-start;gap:4px;margin-bottom:18px' }, [h('img', { src: '/logo-full-dark.png', alt: 'LoadBoot', style: 'height:34px;width:auto;display:block' }), descr]),
+      chooser,
+      formWrap,
     ]),
     ]),
   ]));
@@ -1997,7 +2052,7 @@ function notCarrier() {
 }
 
 /* ---------- main app ---------- */
-const NAV = [
+let NAV = [
   ['dashboard', 'Dashboard', 'dash'], ['health', 'Ratings', 'shield'], ['loads', 'Load Board', 'loads'], ['trips', 'My Loads', 'trips'],
   ['profile', 'My Profile', 'idcard'], ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
   ['rates', 'Market Rates', 'finance'],
@@ -2014,8 +2069,27 @@ async function appView(user) {
     try { await claimReferral(code); } catch (_) {}
     try { localStorage.removeItem('lb_ref'); } catch (_) {}
   })();
-  let ov; try { ov = await pocketOverview(); }
+  // bl_drv_0344 — DRIVER MODE. A driver member never calls cc_pocket_overview (owner-only); the shell is
+  // built from cc_my_driver_context() + the owner's permissions. Everything below that is owner-only is
+  // guarded with `if (DRV)`; the server denies it anyway.
+  let DRV = null; let DM = null;
+  try { const dctx = await myDriverContext(); if (dctx && dctx.role === 'driver') DRV = dctx; } catch (_) {}
+  window.__lbDriver = DRV;
+  try { if (DRV) localStorage.setItem('lb_role_hint', 'driver'); } catch (_) {}
+  window.__lbUI = { h, mount, openModal, lbToast, icon, cardHead };
+  let ov;
+  if (DRV) {
+    try { DM = await import('./driver-mode.js'); } catch (e) { mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [h('h1', null, 'Could not load'), h('p', { class: 'cp-auth-sub' }, 'Please refresh and try again.')]))); return; }
+    if (DRV.membership_status === 'suspended' || !DRV.fleet_driver) { DM.renderBlocked(root, DRV, user); root.setAttribute('aria-busy', 'false'); return; }
+    if (DM.installGate(root, DRV, user)) { root.setAttribute('aria-busy', 'false'); return; }
+    NAV = DM.driverNav(DRV);
+    ov = { carrier: DRV.carrier, compliance_ok: true, driver_mode: true, org_id: DRV.org_id };
+    DM.startHeartbeat(DRV);
+    DM.subscribe(DRV, () => location.reload());
+  } else {
+  try { ov = await pocketOverview(); }
   catch (e) { if (/carrier account/i.test((e && e.message) || '')) { notCarrier(); return; } mount(root, h('div', { class: 'cp-auth' }, h('div', { class: 'cp-auth-card' }, [h('h1', null, 'Could not load'), h('p', { class: 'cp-auth-sub' }, 'Please refresh and try again.'), h('button', { class: 'cp-btn cp-btn-lg', onClick: () => boot() }, 'Retry')]))); return; }
+  }
 
   const EXTRA_TABS = ['onboarding', 'notifications', 'settings', 'reinstate'];
   let tab = (location.hash || '').replace('#', '') || 'dashboard';
@@ -2025,7 +2099,7 @@ async function appView(user) {
   const navLinks = {};
 
   // ---- Customizable bottom tab bar: the carrier picks their own 5 shortcuts (Settings → Customize).
-  const TABBAR_DEFAULT = ['dashboard', 'health', 'loads', 'trips', 'fleet'];
+  const TABBAR_DEFAULT = DRV ? DM.DRIVER_TABBAR : ['dashboard', 'health', 'loads', 'trips', 'fleet'];
   function tabPrefs() {
     try { const v = JSON.parse(localStorage.getItem('lb_tabs') || 'null'); if (Array.isArray(v) && v.length) { const ok = v.filter(id => NAV.some(n => n[0] === id)).slice(0, 5); if (ok.length) return ok; } } catch (_) {}
     return TABBAR_DEFAULT;
@@ -2054,7 +2128,7 @@ async function appView(user) {
   function setAvailUI(on) { availPill.textContent = on ? 'Online' : 'Offline'; availPill.classList.toggle('on', !!on); availPill.classList.toggle('off', !on); }
   // NOTE: even if prefs fail to load, the toggle must stay ALIVE — previous version left _dp null
   // on error which made the Online button permanently dead. Default to { available: true }.
-  (async () => { try { _dp = (await getDispatchPrefs()) || {}; } catch (_) { _dp = { available: true }; } setAvailUI(_dp.available !== false); })();
+  (async () => { if (DRV) { _dp = { available: true }; return; } try { _dp = (await getDispatchPrefs()) || {}; } catch (_) { _dp = { available: true }; } setAvailUI(_dp.available !== false); })();
   async function toggleAvail() {
     if (!_dp) _dp = { available: true };
     const next = !(_dp.available !== false);
@@ -2093,6 +2167,7 @@ async function appView(user) {
     const dStat = (label, goto) => { const b = h('button', { class: 'cpx-d-stat', onClick: () => { close(); go(goto); } }, [h('b', null, '—'), h('span', null, label)]); return b; };
     const sTrips = dStat('Active trips', 'trips'), sDeliv = dStat('Delivered · week', 'trips'), sRev = dStat('Revenue · week', 'finance');
     (async () => { try {
+      if (DRV) return;
       if (!_dashK) _dashK = await carrierDashboard();
       const k = (_dashK && _dashK.kpis) || {};
       sTrips.firstChild.textContent = String(k.active_trips ?? 0);
@@ -2129,7 +2204,7 @@ async function appView(user) {
 
   const shell = h('div', { class: 'cp-shell' }, [
     h('aside', { class: 'cp-side' }, [
-      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: window.__LB_AGENT ? 'Agent' : 'Carrier' })),
+      h('div', { class: 'cp-brandrow' }, brandLogo({ dark: true, sub: DRV ? 'Driver' : window.__LB_AGENT ? 'Agent' : 'Carrier' })),
       sideNav(false),
       h('div', { class: 'cp-side-foot' }, [
         h('div', { class: 'cp-carrier' }, [h('div', { class: 'cp-carrier-name' }, ov.carrier || 'Carrier'), h('div', { class: 'cp-carrier-mail' }, (user && user.email) || '')]),
@@ -2169,6 +2244,7 @@ async function appView(user) {
     (mobileBar = sideNav(true)),
   ]);
   mount(root, shell);
+  if (DRV) { try { availPill.hidden = true; shell.querySelectorAll('.cp-top-right .cp-chip-btn, .cp-top-right [title="Settings"]').forEach((x) => { x.hidden = true; }); } catch (_) {} }
   // bl_ux_0320: pin/collapse sidebar. Labels stay while the account is still being set up; once
   // compliant the rail collapses by default (the carrier can pin it open any time).
   mountSideRail(shell, { key: window.__LB_AGENT ? 'agent' : 'carrier', defaultCollapsed: !!ov.compliance_ok });
@@ -2190,6 +2266,14 @@ async function appView(user) {
   initBackNav({ goHome: () => { if (tab !== 'dashboard') { go('dashboard'); return true; } return false; } });
 
   function render() {
+    if (DRV) {   // bl_drv_0344: driver views replace the owner ones; the rest (trips, loads, alerts, safety, support, rates) are shared and server-scoped
+      const api = { go };
+      if (tab === 'dashboard' || tab === 'onboarding' || tab === 'reinstate' || tab === 'health') { DM.renderToday(content, DRV, api); return; }
+      if (tab === 'account' || tab === 'settings' || tab === 'profile') { DM.renderMe(content, DRV, api); return; }
+      if (tab === 'finance') { DM.renderEarnings(content, DRV); return; }
+      if (tab === 'documents') { DM.renderDocsStatus(content, DRV); return; }
+      if (tab === 'fleet') { DM.renderFleetReadOnly(content, DRV); return; }
+    }
     if (tab === 'settings') { loadSettings(); return; }
     if (tab === 'loads') loadLoads();
     else if (tab === 'trips') loadTrips();
@@ -5233,27 +5317,38 @@ function tripStepper(status) {
       }
       const dSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'No change / unassigned')].concat(drivers.map(d => h('option', { value: d.id }, d.name))));
       const tSel = h('select', { class: 'cp-in' }, [h('option', { value: '' }, 'No change / unassigned')].concat(trucks.map(tr => h('option', { value: tr.id }, 'Unit ' + tr.unit_no + (tr.equipment ? ' · ' + tr.equipment : '')))));
+      // bl_drv_0345a: who is at the wheel decides whose phone reports the truck (owner phone is refused otherwise).
+      const whoMe = h('input', { type: 'radio', name: 'lb-who', value: 'me' }), whoDrv = h('input', { type: 'radio', name: 'lb-who', value: 'driver' });
+      (t.driven_by_owner ? whoMe : whoDrv).checked = true;
+      const who = h('div', { class: 'cp-who' }, [
+        h('label', null, [whoDrv, h('span', null, [h('b', null, 'A driver from my fleet'), h('small', null, 'Their phone reports the truck; the owner portal does not track this load')])]),
+        h('label', null, [whoMe, h('span', null, [h('b', null, 'Me — I’m driving this load myself'), h('small', null, 'Your phone reports the truck (owner-operator)')])]),
+      ]);
       const save = h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => {
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
-        try { await pocketAssignTrip({ trip: t.id, driver: dSel.value || null, truck: tSel.value || null }); loadTrips(); }
+        try { await pocketAssignTrip({ trip: t.id, driver: dSel.value || null, truck: tSel.value || null }); try { await tripSetDriving(t.id, whoMe.checked); } catch (_) {} _notDriving.delete(t.id); loadTrips(); }
         catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.textContent = 'Save'; alert((e && e.message) || 'Could not assign.'); }
       } }, 'Save');
-      openModal('Assign driver / truck', [h('label', { class: 'cp-row-s' }, 'Driver'), dSel, h('label', { class: 'cp-row-s' }, 'Truck'), tSel, save]);
+      openModal('Assign driver / truck', [h('label', { class: 'cp-row-s' }, 'Who is driving?'), who, h('label', { class: 'cp-row-s' }, 'Driver'), dSel, h('label', { class: 'cp-row-s' }, 'Truck'), tSel, save]);
     }
   }
   let _liveWatch = null, _liveTrip = null;
+  window.__lbStopLive = (trip) => { if (_liveWatch != null && (_liveTrip === trip || trip == null)) { try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {} _liveWatch = null; _liveTrip = null; } };
   function ensureLiveLoc(tripId) {
+    // bl_drv_0345a: the server refuses an owner phone for a trip whose linked driver is at the wheel (OWNER_NOT_DRIVING).
+    // Remember it per trip, stop the watcher, tell the owner once — instead of retrying every few seconds.
     // MANDATORY tracking: auto-starts with the trip, survives reloads, stops only at delivery.
     if (!navigator.geolocation) return;
     if (_liveWatch != null && _liveTrip === tripId) return;
     if (_liveWatch != null) { try { navigator.geolocation.clearWatch(_liveWatch); } catch (_) {} _liveWatch = null; }
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try { await pocketSetConsent(tripId, true); } catch (_) {}
-      if (!window.__lbSimOn) { try { await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); } catch (_) {} }
+      if (!window.__lbSimOn) { try { await postLoc(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); } catch (_) {} }
+      if (_notDriving.has(tripId)) return;
       _liveTrip = tripId;
       _liveWatch = navigator.geolocation.watchPosition(async (p9) => {
         if (window.__lbSimOn) return; // simulator owns the trip position while running
-        try { await pocketPostLocation(tripId, p9.coords.latitude, p9.coords.longitude, 'portal'); } catch (_) {}
+        try { await postLoc(tripId, p9.coords.latitude, p9.coords.longitude, 'portal'); } catch (_) {}
       }, () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
       try { lbToast('Live tracking started automatically \u2014 it stays on until delivery (required by the rate confirmation).', 'success', '\ud83d\udef0 Tracking ON'); } catch (_) {}
     }, () => {}, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
@@ -5275,7 +5370,7 @@ function tripStepper(status) {
     if (document.visibilityState !== 'visible' || !_liveTrip || window.__lbSimOn) return;
     try {
       navigator.geolocation.getCurrentPosition((p9) => {
-        try { pocketPostLocation(_liveTrip, p9.coords.latitude, p9.coords.longitude, 'portal-resume').catch(() => {}); } catch (_) {}
+        try { postLoc(_liveTrip, p9.coords.latitude, p9.coords.longitude, 'portal-resume'); } catch (_) {}
       }, () => {}, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
     } catch (_) {}
   });
@@ -5293,10 +5388,10 @@ function tripStepper(status) {
     btn.disabled = true; btn.textContent = 'Starting…';
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try { await pocketSetConsent(tripId, true); } catch (_) {}
-      try { await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); } catch (_) {}
+      try { await postLoc(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); } catch (_) {}
       _liveTrip = tripId;
       _liveWatch = navigator.geolocation.watchPosition(async (p) => {
-        try { await pocketPostLocation(tripId, p.coords.latitude, p.coords.longitude, 'portal'); } catch (_) {}
+        try { await postLoc(tripId, p.coords.latitude, p.coords.longitude, 'portal'); } catch (_) {}
       }, () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
       btn.disabled = false; btn.textContent = '🛰 Tracking ON — tap to stop'; btn.classList.add('on');
     }, () => { btn.disabled = false; btn.textContent = 'Permission denied'; }, { enableHighAccuracy: true, timeout: 10000 });
@@ -5304,7 +5399,7 @@ function tripStepper(status) {
   function shareLoc(ev, tripId) {
     const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Locating…';
     if (!navigator.geolocation) { btn.textContent = 'GPS not available'; return; }
-    navigator.geolocation.getCurrentPosition(async (pos) => { try { await pocketSetConsent(tripId, true); await pocketPostLocation(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); btn.textContent = '📍 Shared ✓'; } catch (x) { btn.textContent = 'Could not share'; btn.disabled = false; } }, () => { btn.textContent = 'Permission denied'; btn.disabled = false; }, { enableHighAccuracy: true, timeout: 10000 });
+    navigator.geolocation.getCurrentPosition(async (pos) => { try { await pocketSetConsent(tripId, true); await postLoc(tripId, pos.coords.latitude, pos.coords.longitude, 'portal'); btn.textContent = '📍 Shared ✓'; } catch (x) { btn.textContent = 'Could not share'; btn.disabled = false; } }, () => { btn.textContent = 'Permission denied'; btn.disabled = false; }, { enableHighAccuracy: true, timeout: 10000 });
   }
 
   /* ----- Proof of delivery (desktop: drag-and-drop; mobile: file/camera picker) ----- */
@@ -5421,11 +5516,14 @@ function tripStepper(status) {
 
     const driverList = h('div');
     const truckList = h('div');
-    const renderDrivers = () => mount(driverList, drivers.length ? h('div', null, drivers.map(d => h('div', { class: 'cp-trip' }, [
+    // bl_drv_0344: invite / permissions / live status live in driver-access.js; the legacy list below is only the fallback if the module fails to load.
+    let _daMounted = false;
+    const renderDrivers = () => { if (_daMounted) return; _daMounted = true; import('./driver-access.js').then((m) => m.mountDriverAccess(driverList, { drivers, onEdit: driverForm, carrier: ov.carrier, orgId: ov.org_id || null })).catch(() => { _daMounted = false; renderDriversLegacy(); }); };
+    const renderDriversLegacy = () => mount(driverList, drivers.length ? h('div', null, drivers.map(d => h('div', { class: 'cp-trip' }, [
       h('div', { class: 'cp-trip-head' }, [
         h('div', null, [h('div', { class: 'cp-row-t' }, d.name), h('div', { class: 'cp-row-s' }, [d.phone, d.license_no ? 'Lic ' + d.license_no + (d.license_state ? ' (' + d.license_state + ')' : '') : null].filter(Boolean).join(' · ') || '—')]),
         h('div', { style: 'display:flex;gap:6px' }, [
-          d.id ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => inviteDriverToApp(d) }, d.user_id ? '\u2713 In app' : '\ud83d\udcf2 Invite to app') : null,
+          d.id ? h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => inviteDriverToApp(d) }, d.user_id ? '\u2713 In app' : 'Invite & set permissions') : null,
           h('button', { class: 'cp-btn cp-btn-sm ghost', onClick: () => driverForm(d) }, 'Edit'),
         ].filter(Boolean)),
       ]),
@@ -5496,7 +5594,7 @@ function tripStepper(status) {
         ev.currentTarget.disabled = true; ev.currentTarget.textContent = 'Saving…';
         try {
           await pocketUpsertDriver({ id: d && d.id, name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(), licenseNo: lic.value.trim(), licenseState: st.value.trim().toUpperCase(), licenseExp: lexp.value || null, medicalExp: mexp.value || null });
-          drivers = await pocketDrivers(); renderDrivers();
+          drivers = await pocketDrivers(); _daMounted = false; renderDrivers();
           try { draftD9.clear(); } catch (_) {}
           fpDone('driver');
           try { closeD9(); } catch (_) {}
@@ -6001,7 +6099,7 @@ function tripStepper(status) {
       h('div', { class: 'cp-card', style: 'border-left:4px solid #0883F7' }, [
         h('div', { class: 'cp-row-t' }, '\ud83d\ude9a Capacity: ' + Math.max(trucks.length, 1) + ' load' + (Math.max(trucks.length, 1) === 1 ? '' : 's') + ' at a time'),
         h('div', { class: 'cp-row-s', style: 'margin-top:4px' }, trucks.length <= 1
-          ? 'You can run ONE load at a time. Add another truck so a second load can be booked while the first is still rolling \u2014 each truck runs its own load, with its own driver. Add the truck below, add its driver, then tap \u201cInvite to app\u201d so their phone tracks that load.'
+          ? 'You can run ONE load at a time. Add another truck so a second load can be booked while the first is still rolling \u2014 each truck runs its own load, with its own driver. Add the truck below, add its driver, then tap \u201cInvite & set permissions\u201d so their phone tracks that load.'
           : 'Each of your ' + trucks.length + ' trucks can carry its own load at the same time (' + trucks.length + ' concurrent loads). Invite each driver to the app so every truck is tracked separately.'),
       ]),
       h('div', { class: 'cp-card', 'data-lb': 'drivers-card' }, [

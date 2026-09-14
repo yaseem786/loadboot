@@ -6238,17 +6238,18 @@ page('get-started.html', 'Create Your LoadBoot Account — Carrier, Broker, Ship
      'get-started.html', hub)
 
 # ---- Login portal chooser ----
-lg = svc_hero('Log in to Loadboot', 'Choose your portal. Not sure which one you need? Carriers and drivers use the Carrier Portal below.')
+lg = svc_hero('Log in to Loadboot', 'Choose your portal. Carrier owners use the Carrier Portal; drivers invited by their carrier use the Driver App.')
 lg += _sec('Choose your portal', 'Where do you want to go?', _cards([
     ('&#128667;', 'Carrier Portal', 'Manage loads, trips, documents, finance and your team. <a href="/app/carrier/">Open Carrier Portal &rarr;</a>'),
+    ('&#128241;', 'Driver App', 'Invited by your carrier? Sign in with the email and password from your invite &mdash; your loads, GPS check-in, POD. <a href="/app/carrier/?role=driver">Driver sign-in &rarr;</a> &middot; <a href="apps.html">Get the app</a>'),
     ('&#129309;', 'Partner Portal', 'Brokers, shippers and facilities. <a href="/app/partner/">Open Partner Portal &rarr;</a>'),
     ('&#129297;', 'Agent Portal', 'Independent dispatchers &amp; agents &mdash; your referrals, earnings and payouts. <a href="/app/agent/">Open Agent Portal &rarr;</a>'),
     ('&#128104;&#8205;&#128187;', 'Developers &amp; API', 'API keys, docs and integrations. <a href="/app/developer/">Open Developer Portal &rarr;</a>'),
     ('&#127970;', 'Command Center (Staff)', 'Loadboot team operations console. <a href="/app/command-center/">Open Command Center &rarr;</a>'),
     ('&#10067;', 'Need an account?', 'New to Loadboot? Create an account for your role in minutes. <a href="get-started.html">Create an account &rarr;</a>'),
 ], 'g3'))
-page('login.html', 'Log in to LoadBoot — Carrier, Partner & Developer Portals',
-     'Log in to your LoadBoot portal: Carrier, Partner, Agent, Developer API or Command Center. New here? Create a carrier account with flat 5% dispatch.',
+page('login.html', 'Log in to LoadBoot — Carrier, Driver, Partner & Developer Portals',
+     'Log in to your LoadBoot portal: Carrier, Driver App, Partner, Agent, Developer API or Command Center. New here? Create a carrier account with flat 5% dispatch.',
      'login.html', lg)
 
 # ============================================================================

@@ -14,6 +14,8 @@ const TABS = [{ value: 'drivers', label: 'Drivers' }, { value: 'trucks', label: 
 export function renderFleet(host) {
   let tab = 'drivers';
   const kpiHost = el('div');
+  const adoptHost = el('div');   // bl_drv_0344 driver-app adoption
+  import('./driverAccess.js').then((m) => m.mountAdoptionKpis(adoptHost)).catch(() => {});
   const bodyHost = el('div', { class: 'cc-table-wrap' });
 
   async function loadKpis() {
@@ -32,6 +34,7 @@ export function renderFleet(host) {
     return el('div', null, [
       sectionHead('Fleet & execution', 'Drivers and trucks per carrier. License & medical expiry feed the compliance automation.', actions),
       kpiHost,
+      adoptHost,
       toolbar([ segmented(TABS, tab, (v) => { tab = v; route(); }) ]),
     ]);
   }

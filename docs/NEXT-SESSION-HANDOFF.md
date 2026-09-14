@@ -1,5 +1,65 @@
 # LoadBoot — NEXT-SESSION HANDOFF (read this FIRST)
 
+## 🚚 2026-09-15 SESSION — DRIVER ACCESS (bl_drv_0344 + 0344f + 0345a) — BACKEND LIVE ON PROD (start here)
+
+### ⚡ Already LIVE (server-side, prod + staging)
+- **bl_drv_0344 — Driver Access.** A `driver` member is now fail-closed across all carrier RPCs: `my_carrier_org()`
+  reads the calling RPC from PG_CONTEXT and allows it only if `driver_rpc_policy` maps it to a permission the owner
+  granted (122 policy rows; 11 core + 19 optional perms, 4 presets). 19 trip RPCs assert the trip is assigned to the
+  driver; rates hidden unless `loads.see_rates`. Invite v2 (preset/perms/via, resend, revoke, peek), accept v2,
+  grants get/set, pause/resume/remove, driver CDL/medical upload + owner review, heartbeat, my earnings/settlements,
+  realtime `public.driver_access_events`, CC `cc_carrier_driver_access` + `cc_driver_adoption_kpis`.
+- **0344f — join hardening.** Emailed invite link carries `&c=<email_code>`; edge fn **`driver-join`** (verify_jwt=false,
+  deployed prod + staging) creates a CONFIRMED user when token+code+email match — no "check your inbox". Shared link
+  → normal confirm. Owner login can never become a driver. Drivers never get the carrier welcome (`driver.welcome`
+  after join). `notify_org` skips drivers; trip alerts reach owner/managers + the assigned driver only.
+- **0345a — who is driving / whose phone reports.** `trips.driven_by_owner`; `cc_pocket_post_location` rewritten
+  (driver → `driver_app`, refused `OWNER_TOOK_OVER`; owner → refused `OWNER_NOT_DRIVING` when an app-linked driver is
+  assigned; ELD point in last 10 min wins; `created_by` recorded). `cc_trip_set_driving(trip, owner_driving)`
+  owner/manager only. `trg_trip_default_driver` assigns driver-booked loads to that driver on every creation path.
+  `cc_staff_track_load` + `tracking_label`; `cc_partner_track_load` + `tracking_source` (ELD / Driver app only).
+- anon-executable SECURITY DEFINER surface: **33 on prod, names identical to `docs/audit-2026-09/anon-secdef-baseline.md`**;
+  `cc_driver_invite_verify` (service_role only) and `cc_trip_set_driving` are NOT anon.
+
+### 🛠 Prod drift found while applying (fixed inside `migrations/bl_drv_0344_driver_access.sql`)
+- Prod's `cc_pocket_post_location` body was ONE LINE (no `\nbegin`) — the trip-patch loop now tolerates that. Rule:
+  never anchor a prod patch on `\nbegin` alone; prod function bodies may be one-liners.
+- Prod's `cc_trip_notify_parties` routes through `notify_org` (staging has an explicit member loop). A second DO block
+  adds the assigned driver back via `notify_user`. Both shapes handled, idempotent.
+- `app_private.trip_geofence_tick` does NOT exist on prod (staging-only). The call is exception-wrapped → harmless,
+  but port it or drop it in 0345b.
+- Migration files carry `begin;`/`commit;` — strip them before `apply_migration` (MCP wraps its own txn).
+
+### 📦 FRONTEND — on disk, NOT yet pushed (owner: build → check → commit → push)
+- `app/carrier/driver-access.js` (new, Fleet driver cards + invite/manage), `app/carrier/driver-mode.js` (new, driver
+  shell: Today/Me/Earnings/Docs), `app/carrier/driver-invite.html` (platform-aware join), `app/carrier/app.js`
+  (driver branch, role chooser login: Carrier owner / Driver / I own & drive, `?role=driver|oo`, `#signup` skip;
+  Assign modal "Who is driving?", `postLoc()` wrapper stops the watcher on refusal, `window.__lbStopLive`; fleet
+  owner-operator self-detection), `app/partner/app.js` (Live tracking badge shows source),
+  `app/command-center/views/loadTracker.js` (label + "Owner phone, but <driver> is assigned" warning) and
+  `views/driverAccess.js` (new), `app/shared/{api,session,whatsnew}.js`, `app/shared/ui/components.js`,
+  `build_site.py`, marketing `login.html` Driver App card.
+- Commit message ready: `COMMIT_MSG-2026-09-14.txt` → `git add -A && git commit -F COMMIT_MSG-2026-09-14.txt && git push`.
+- After push: Supabase Auth → Redirect URLs (both projects) `https://loadboot.com/app/carrier/driver-invite.html*`
+  (+ `http://localhost:8080/app/carrier/driver-invite.html*` on staging) → live smoke test with a throwaway driver
+  (incognito, not the owner's email) → remove test driver → carrier update email (owner sends).
+
+### 🔜 0345 follow-ups (not started)
+`cc_pocket_trips` should return `driven_by_owner` (Assign modal can't preselect "Me"); owner trip card tracking label;
+opsMap / controlTower / dispatcher_trip tracking source; driver notification on owner takeover; `driver_my_dispatcher`
+RPC + `team.view_dispatcher`; dispatcher feed gets driver app_status/online/current trip; pending-invite "edit
+permissions"; env-aware invite links (emails hardcode loadboot.com); OO "Today" card; `/app/driver` →
+`/app/carrier/?role=driver` redirect (Netlify `_redirects`); `dev_server.py` `Cache-Control: no-store`; geofence tick
+on prod.
+
+### 🧷 Gotchas (this feature)
+Local build needs `set LOADBOOT_STAGING_ANON_KEY=...` in the same cmd window; dev servers serve `site/` — rebuild
+after every change; Chrome caches dev-server JS → Ctrl+Shift+R; PWA service worker caches JS. LF files:
+driver-access.js, driver-mode.js, api.js, migrations. CRLF: app.js (carrier+partner), carrier.css, driver-invite.html,
+components.js, session.js, whatsnew.js, build_site.py, CC views. `organizations.status` is 'active' from signup for
+every carrier — never use it as "verified" (use `carrier_onboarding.decided_at`). First staging driver: Ali,
+quickfreights@outlook.com. Full state: project memory `driver_access_2026-09-14.md`.
+
 ## 🟢 2026-08-16 SESSION — LIVE CHAT AI + MOBILE FIXES + EMAIL SPOOFING (start here)
 
 ### ⚡ Already LIVE (server-side, nothing to deploy)
