@@ -1,0 +1,400 @@
+{
+  "authorization": "User Sept14 requested repo publication and continuing verified prod fixes; no main merge, actual erasure, messages or Retell cutover authorized.",
+  "before": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_doc jsonb, p_note text",
+        "name": "lc_ob_doc_log"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_inbound"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "dependencies": [
+      {
+        "column": "status",
+        "schema": "app_private",
+        "table": "account_deletion_requests",
+        "type": "text"
+      },
+      {
+        "column": "user_id",
+        "schema": "app_private",
+        "table": "account_deletion_requests",
+        "type": "uuid"
+      },
+      {
+        "column": "id",
+        "schema": "auth",
+        "table": "sessions",
+        "type": "uuid"
+      },
+      {
+        "column": "not_after",
+        "schema": "auth",
+        "table": "sessions",
+        "type": "timestamp with time zone"
+      },
+      {
+        "column": "user_id",
+        "schema": "auth",
+        "table": "sessions",
+        "type": "uuid"
+      },
+      {
+        "column": "banned_until",
+        "schema": "auth",
+        "table": "users",
+        "type": "timestamp with time zone"
+      },
+      {
+        "column": "deleted_at",
+        "schema": "auth",
+        "table": "users",
+        "type": "timestamp with time zone"
+      },
+      {
+        "column": "id",
+        "schema": "auth",
+        "table": "users",
+        "type": "uuid"
+      }
+    ],
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "",
+        "hash": "e94a8f8b04878514d5d3fdc1f9da2c0a",
+        "name": "cc_my_payment_profile",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_my_payment_profile()\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'app_private', 'public'\nAS $function$\ndeclare v_org uuid; r app_private.org_payment_profiles;\nbegin\n  v_org := app_private.my_carrier_org();\n  if v_org is null then v_org := app_private.my_partner_org('broker'); end if;\n  if v_org is null then raise exception 'carrier or broker account required' using errcode='42501'; end if;\n  select * into r from app_private.org_payment_profiles where org_id = v_org;\n  if r.org_id is null then return jsonb_build_object('exists', false); end if;\n  return jsonb_build_object('exists', true, 'bank_name', r.bank_name, 'account_title', r.account_title,\n    'account_last4', right(r.account_number,4), 'routing_last4', right(r.routing_number,4),\n    'account_type', r.account_type, 'payment_method', r.payment_method, 'bank_address', r.bank_address,\n    'remittance_email', r.remittance_email, 'factoring_company', r.factoring_company, 'factoring_noa', r.factoring_noa,\n    'noa_status', coalesce(r.noa_status,'none'),\n    'factor_remit', jsonb_build_object('account_title', r.factor_details->>'account_title', 'bank_name', r.factor_details->>'bank_name',\n      'account_last4', right(r.factor_details->>'account_number',4), 'routing_last4', right(r.factor_details->>'routing_number',4),\n      'remittance_email', r.factor_details->>'remittance_email', 'remit_to', r.factor_details->>'remit_to',\n      'has_ach', coalesce(r.factor_details->>'account_number','') <> '' and coalesce(r.factor_details->>'routing_number','') <> '',\n      'remit_verified', case when r.factor_details ? 'remit_verified' then (r.factor_details->>'remit_verified')::boolean else null end),\n    'fee_collection', r.fee_collection, 'ach_debit_consent', r.ach_debit_consent, 'ach_debit_consent_at', r.ach_debit_consent_at,\n    'verified', r.verified, 'updated_at', r.updated_at);\nend $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p jsonb",
+        "hash": "75d78f9fb61762ddfe9458c634f18a1d",
+        "name": "cc_set_my_payment_profile",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_set_my_payment_profile(p jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_org uuid; v_fee text; v_consent boolean;\nbegin\n  v_org := app_private.my_carrier_org();\n  if v_org is null then v_org := app_private.my_partner_org('broker'); end if;\n  if v_org is null then raise exception 'carrier or broker account required' using errcode='42501'; end if;\n  if coalesce(trim(p->>'bank_name'),'')='' or coalesce(trim(p->>'account_title'),'')=''\n     or coalesce(trim(p->>'account_number'),'')='' or coalesce(trim(p->>'routing_number'),'')='' then\n    raise exception 'Bank name, account title, account number and routing number are all required.' using errcode='22023';\n  end if;\n  perform app_private.assert_bank_numbers(p->>'account_number', p->>'routing_number');\n  v_fee := nullif(trim(p->>'fee_collection'),'');\n  if v_fee is not null and v_fee not in ('settlement_deduction','ach_autodebit') then\n    raise exception 'fee_collection must be settlement_deduction or ach_autodebit' using errcode='22023';\n  end if;\n  v_consent := coalesce((p->>'ach_debit_consent')::boolean, false);\n  if v_fee = 'ach_autodebit' and not v_consent then\n    raise exception 'ACH auto-debit consent is required to collect dispatch fees by bank debit.' using errcode='22023';\n  end if;\n  insert into app_private.org_payment_profiles(org_id, bank_name, account_title, account_number, routing_number,\n      account_type, payment_method, bank_address, swift_bic, beneficiary_address, remittance_email, bank_phone,\n      tax_id, factoring_company, factoring_noa, fee_collection, ach_debit_consent, ach_debit_consent_at, updated_by)\n    values (v_org, trim(p->>'bank_name'), trim(p->>'account_title'), trim(p->>'account_number'), trim(p->>'routing_number'),\n      coalesce(nullif(trim(p->>'account_type'),''),'checking'), nullif(trim(p->>'payment_method'),''), nullif(trim(p->>'bank_address'),''), nullif(trim(p->>'swift_bic'),''),\n      nullif(trim(p->>'beneficiary_address'),''), nullif(trim(p->>'remittance_email'),''), nullif(trim(p->>'bank_phone'),''),\n      nullif(trim(p->>'tax_id'),''), nullif(trim(p->>'factoring_company'),''), coalesce((p->>'factoring_noa')::boolean,false),\n      v_fee, v_consent, case when v_consent then now() else null end, auth.uid())\n  on conflict (org_id) do update set bank_name=excluded.bank_name, account_title=excluded.account_title,\n    account_number=excluded.account_number, routing_number=excluded.routing_number, account_type=excluded.account_type,\n    payment_method=excluded.payment_method, bank_address=excluded.bank_address, swift_bic=excluded.swift_bic,\n    beneficiary_address=excluded.beneficiary_address, remittance_email=excluded.remittance_email, bank_phone=excluded.bank_phone,\n    tax_id=excluded.tax_id, factoring_company=excluded.factoring_company, factoring_noa=excluded.factoring_noa,\n    fee_collection=coalesce(excluded.fee_collection, app_private.org_payment_profiles.fee_collection),\n    ach_debit_consent=excluded.ach_debit_consent,\n    ach_debit_consent_at=case when excluded.ach_debit_consent then coalesce(app_private.org_payment_profiles.ach_debit_consent_at, now()) else null end,\n    verified=false, verified_by=null, verified_at=null, updated_by=auth.uid(), updated_at=now();\n  perform app_private.log_audit('payments.profile_set','org',v_org::text,null,'bank profile set/updated (verification reset)',\n    jsonb_build_object('fee_collection', v_fee, 'ach_debit_consent', v_consent));\n  return jsonb_build_object('ok',true,'verified',false,'note','a person verifies bank details before any payout references them');\nend; $function$\n"
+      }
+    ]
+  },
+  "after": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_doc jsonb, p_note text",
+        "name": "lc_ob_doc_log"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_inbound"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres}",
+        "hash": "18344c1e6ac6a2b76e2dae5ee7659334",
+        "name": "assert_payment_session"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "hash": "710d7ce85c0277eef6c14572801a6b70",
+        "name": "cc_my_payment_profile"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "hash": "6855c85926b517ec183a148223bef411",
+        "name": "cc_set_my_payment_profile"
+      }
+    ],
+    "latest": {
+      "name": "audit_payment_session_guard",
+      "version": "20260914072602"
+    }
+  },
+  "advisors": {
+    "groups": [
+      {
+        "count": 96,
+        "name": "rls_enabled_no_policy"
+      },
+      {
+        "count": 80,
+        "name": "function_search_path_mutable"
+      },
+      {
+        "count": 1,
+        "name": "extension_in_public"
+      },
+      {
+        "count": 33,
+        "name": "anon_security_definer_function_executable"
+      },
+      {
+        "count": 828,
+        "name": "authenticated_security_definer_function_executable"
+      },
+      {
+        "count": 1,
+        "name": "auth_leaked_password_protection"
+      }
+    ],
+    "new_ids": [],
+    "removed_ids": []
+  },
+  "tests": {
+    "staging": "44 behavioral/ACL checks + count/presence guards PASS after driver lane 0344a",
+    "production": "6 role/no-session refusals PASS, no user/bank rows written",
+    "source": "Production 3 function hashes and grants match tested staging",
+    "browser": "Not rerun; no new browser or native verification claimed"
+  },
+  "source_migration": "supabase/migrations/20260914064813_audit_payment_session_guard.sql",
+  "applied_prod_version": "20260914072602"
+}

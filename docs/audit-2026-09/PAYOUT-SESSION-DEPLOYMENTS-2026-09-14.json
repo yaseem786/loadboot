@@ -1,0 +1,449 @@
+{
+  "date": "2026-09-14",
+  "staging": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid",
+        "name": "lc_ob_upload_check"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "fixture_referrers": 0,
+    "fixture_users": 0,
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres}",
+        "args": "",
+        "hash": "18344c1e6ac6a2b76e2dae5ee7659334",
+        "name": "assert_payment_session",
+        "schema": "app_private",
+        "source": "CREATE OR REPLACE FUNCTION app_private.assert_payment_session()\n RETURNS void\n LANGUAGE plpgsql\n STABLE\n SET search_path TO 'pg_catalog'\nAS $function$\nDECLARE actor uuid:=auth.uid(); claims jsonb:=auth.jwt(); sid uuid;\nBEGIN\n IF actor IS NULL OR claims->>'role' IS DISTINCT FROM 'authenticated'\n    OR coalesce(claims->>'is_anonymous','false') <> 'false' THEN\n  RAISE EXCEPTION 'A current signed-in session is required' USING ERRCODE='42501';\n END IF;\n BEGIN sid := nullif(claims->>'session_id','')::uuid;\n EXCEPTION WHEN invalid_text_representation THEN sid:=NULL;\n END;\n IF sid IS NULL OR NOT EXISTS (\n  SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id=s.user_id\n  WHERE s.id=sid AND s.user_id=actor AND u.deleted_at IS NULL\n    AND (u.banned_until IS NULL OR u.banned_until <= now())\n    AND (s.not_after IS NULL OR s.not_after > now())\n ) OR EXISTS (\n  SELECT 1 FROM app_private.account_deletion_requests r\n  WHERE r.user_id=actor AND r.status='completed'\n ) THEN\n  RAISE EXCEPTION 'A current signed-in session is required' USING ERRCODE='42501';\n END IF;\nEND $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "",
+        "hash": "41b30aadb2649acdf85021308d642507",
+        "name": "agent_payout_center",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.agent_payout_center()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_ref app_private.referrers; v_prof app_private.agent_profiles;\n        v_payable numeric; v_accrued numeric; v_paid numeric; v_next timestamptz;\n        v_reasons jsonb := '[]'::jsonb; v_min numeric := 100;\n        v_pair boolean; v_has_carrier boolean; v_missing text;\nbegin\n  perform app_private.assert_payment_session();\n  v_ref := app_private.agent_referrer_for(auth.uid());\n  if v_ref.id is null then return jsonb_build_object('has_code', false); end if;\n  select * into v_prof from app_private.agent_profiles where user_id = auth.uid();\n  select coalesce(sum(amount) filter (where status = 'payable'), 0),\n         coalesce(sum(amount) filter (where status = 'accrued'), 0),\n         coalesce(sum(amount) filter (where status = 'paid'), 0),\n         min(payable_at) filter (where status = 'accrued')\n    into v_payable, v_accrued, v_paid, v_next\n    from app_private.referral_commissions where referrer_id = v_ref.id;\n  if v_prof.status is distinct from 'approved' then\n    v_reasons := v_reasons || jsonb_build_object('icon','🛡','text','Verification incomplete — payouts unlock after LoadBoot approves your agent application (Get Verified tab).');\n  end if;\n  if coalesce(v_prof.payout_method,'') = '' then\n    v_reasons := v_reasons || jsonb_build_object('icon','🏦','text','No payout account on file — add your bank/Payoneer in Get Verified step 3.');\n  end if;\n  -- bl_agent_0307: name the pair-hold instead of letting the clearing date pass in silence.\n  if v_prof.status = 'approved' and v_accrued > 0 then\n    v_pair := app_private.referrer_pair_active(v_ref.id);\n    if not v_pair then\n      select exists (select 1 from app_private.referral_edges e join public.organizations o on o.id = e.child_org\n                      where e.referrer_id = v_ref.id and o.kind = 'carrier') into v_has_carrier;\n      v_missing := case when not v_has_carrier then 'a CARRIER (any trucking company)' else 'the FREIGHT side (a broker or shipper — or post a load yourself)' end;\n      v_reasons := v_reasons || jsonb_build_object('icon','🔗',\n        'text','$' || v_accrued || ' is earned and safe, but held — your chain is not paired yet. Bring ' || v_missing || ' through your link and it releases on its normal 15-day schedule. Nothing you earned is ever lost.');\n    end if;\n  end if;\n  if v_payable < v_min then\n    v_reasons := v_reasons || jsonb_build_object('icon','💵','text','Payable balance $' || v_payable || ' is below the $' || v_min || ' minimum' ||\n      case when v_accrued > 0 then ' — $' || v_accrued || ' more is clearing' || case when v_next is not null then ' (next release ' || to_char(v_next,'Mon DD') || ')' else '' end else '' end || '.');\n  end if;\n  if exists (select 1 from app_private.referral_payout_requests r where r.referrer_id = v_ref.id and r.status in ('requested','approved')) then\n    v_reasons := v_reasons || jsonb_build_object('icon','⏳','text','A payout request is already in progress — track it below.');\n  end if;\n  return jsonb_build_object(\n    'has_code', true,\n    'payable', v_payable, 'accrued', v_accrued, 'paid', v_paid,\n    'next_clearing', v_next, 'min_required', v_min,\n    'eligible', (v_prof.status = 'approved' and coalesce(v_prof.payout_method,'') <> '' and v_payable >= v_min\n                 and not exists (select 1 from app_private.referral_payout_requests r where r.referrer_id = v_ref.id and r.status in ('requested','approved'))),\n    'reasons', v_reasons,\n    'bank', case when v_prof.user_id is null then null else jsonb_build_object(\n      'method', v_prof.payout_method,\n      'title', v_prof.payout_details->>'account_title',\n      'bank_name', v_prof.payout_details->>'bank_name',\n      'last4', right(coalesce(v_prof.payout_details->>'account', v_prof.payout_details->>'iban', v_prof.payout_details->>'email', ''), 4),\n      'docs_ok', (v_prof.payout_details ? 'id_doc') and (v_prof.payout_details ? 'bank_doc'),\n      'verified', v_prof.status = 'approved') end,\n    'requests', coalesce((select jsonb_agg(jsonb_build_object(\n        'id', r.id, 'amount', r.amount, 'status', r.status, 'note', r.note,\n        'requested_at', r.requested_at, 'decided_at', r.decided_at,\n        'bank_name', r.payout_details->>'bank_name',\n        'last4', right(coalesce(r.payout_details->>'account', r.payout_details->>'iban', r.payout_details->>'email', ''), 4)\n      ) order by r.requested_at desc)\n      from app_private.referral_payout_requests r where r.referrer_id = v_ref.id), '[]'::jsonb));\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "",
+        "hash": "243bac4c5a5105fea83bb1684db21931",
+        "name": "agent_request_payout",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.agent_request_payout()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_ref app_private.referrers; v_prof app_private.agent_profiles; v_payable numeric; v_id uuid; v_email text;\nbegin\n  perform app_private.assert_payment_session();\n  v_ref := app_private.agent_referrer_for(auth.uid());\n  if v_ref.id is null then raise exception 'no agent account' using errcode='42501'; end if;\n  select * into v_prof from app_private.agent_profiles where user_id = auth.uid();\n  if v_prof.status is distinct from 'approved' then raise exception 'verification incomplete — payouts unlock after approval' using errcode='22023'; end if;\n  if coalesce(v_prof.payout_method,'') = '' then raise exception 'no payout account on file — add it in Get Verified' using errcode='22023'; end if;\n  select coalesce(sum(amount) filter (where status = 'payable'), 0) into v_payable\n    from app_private.referral_commissions where referrer_id = v_ref.id;\n  if v_payable < 100 then raise exception 'payable balance $% is below the $100 minimum', v_payable using errcode='22023'; end if;\n  if exists (select 1 from app_private.referral_payout_requests r where r.referrer_id = v_ref.id and r.status in ('requested','approved')) then\n    raise exception 'a payout request is already in progress' using errcode='22023';\n  end if;\n  insert into app_private.referral_payout_requests (referrer_id, requested_by, amount, payout_details, status)\n  values (v_ref.id, auth.uid(), v_payable,\n          coalesce(v_prof.payout_details, '{}'::jsonb) || jsonb_build_object('method', v_prof.payout_method, 'account_title', coalesce(v_prof.payout_details->>'account_title', v_prof.full_name)),\n          'requested')\n  returning id into v_id;\n  begin\n    insert into app_private.notifications(recipient_role, channel, template_key, payload)\n    values ('staff', 'in_app', 'agent.payout_requested',\n      jsonb_build_object('title', '💸 Agent payout requested', 'body', coalesce(v_prof.full_name,'Agent') || ' — $' || v_payable || ' to ' || v_prof.payout_method, 'request', v_id));\n  exception when others then null; end;\n  begin\n    insert into app_private.notifications(recipient_user, channel, template_key, payload, status, sent_at)\n    values (auth.uid(), 'in_app', 'agent.payout_requested_self', jsonb_build_object(\n      'title', '💸 Payout request received — $' || v_payable,\n      'body', 'A person reviews it, then the transfer goes out to your ' || v_prof.payout_method || ' account. Bank transfers typically land 3–5 business days after SENT. Track it in Payouts.',\n      'tone', 'info', 'url', '/app/agent/#payouts'), 'sent', now());\n  exception when others then null; end;\n  begin\n    select email into v_email from auth.users where id = auth.uid();\n    if v_email is not null then\n      perform app_private.sys_email(v_email, 'agent.payout_requested_self', 'LoadBoot: payout request received — $' || v_payable,\n        '<div style=\"font-family:Inter,Arial,sans-serif\"><h2>💸 Your payout request is in</h2>'\n        || '<p><b>$' || v_payable || '</b> → your ' || v_prof.payout_method || ' account. A person reviews every payout, then the transfer goes out. '\n        || 'Bank transfers typically land <b>3–5 business days after SENT</b>.</p>'\n        || '<p>Track every step: <a href=\"https://loadboot.com/app/agent/#payouts\">Payout Center</a></p></div>',\n        null, 'agentpayoutreq:' || v_id::text);\n    end if;\n  exception when others then null; end;\n  return jsonb_build_object('ok', true, 'id', v_id, 'amount', v_payable,\n    'note', 'Payout requested — a person reviews it, then the transfer goes out. Bank transfers typically land in 3–5 business days after SENT.');\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "",
+        "hash": "d2acf2190856a32576c5f3374b54e101",
+        "name": "cc_my_payout_requests",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_my_payout_requests()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_uid uuid; v_ref uuid;\nbegin\n  perform app_private.assert_payment_session();\n  v_uid := auth.uid(); if v_uid is null then raise exception 'not authenticated' using errcode='42501'; end if;\n  select id into v_ref from app_private.referrers where user_id = v_uid;\n  if v_ref is null then return '[]'::jsonb; end if;\n  return coalesce((select jsonb_agg(jsonb_build_object(\n      'id', r.id, 'amount', r.amount, 'status', r.status, 'note', r.note,\n      'requested_at', r.requested_at, 'decided_at', r.decided_at,\n      'bank_name', r.payout_details->>'bank_name',\n      'account_last4', right(coalesce(r.payout_details->>'account_number',''), 4)\n    ) order by r.requested_at desc)\n    from app_private.referral_payout_requests r where r.referrer_id = v_ref), '[]'::jsonb);\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_details jsonb",
+        "hash": "e8f0b430c9a4e49aec92bea59bac4694",
+        "name": "cc_referral_request_payout",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_referral_request_payout(p_details jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_uid uuid; v_ref app_private.referrers; v_bal numeric; v_id uuid;\nbegin\n  perform app_private.assert_payment_session();\n  v_uid := auth.uid(); if v_uid is null then raise exception 'not authenticated' using errcode='42501'; end if;\n  select * into v_ref from app_private.referrers where user_id = v_uid;\n  if v_ref.id is null then raise exception 'join the referral program first' using errcode='22023'; end if;\n  if coalesce(trim(p_details->>'account_title'),'') = '' or coalesce(trim(p_details->>'bank_name'),'') = ''\n     or coalesce(trim(p_details->>'account_number'),'') = '' then\n    raise exception 'bank_name, account_title and account_number are required' using errcode='22023';\n  end if;\n  select coalesce(sum(amount),0) into v_bal from app_private.referral_commissions\n    where referrer_id = v_ref.id and status = 'payable';\n  if v_bal <= 0 then raise exception 'no payable balance yet — commissions clear a 15-day hold first' using errcode='22023'; end if;\n  if exists (select 1 from app_private.referral_payout_requests\n             where referrer_id = v_ref.id and status in ('requested','approved')) then\n    raise exception 'you already have an open payout request' using errcode='22023';\n  end if;\n  insert into app_private.referral_payout_requests(referrer_id, requested_by, amount, payout_details)\n    values (v_ref.id, v_uid, v_bal, jsonb_build_object(\n      'bank_name', trim(p_details->>'bank_name'),\n      'account_title', trim(p_details->>'account_title'),\n      'account_number', trim(p_details->>'account_number')))\n    returning id into v_id;\n  perform app_private.log_audit('referral.payout_requested','payout_request',v_id::text,null,\n    format('payout of $%s requested', v_bal), null);\n  return jsonb_build_object('ok',true,'id',v_id,'amount',v_bal,'status','requested',\n    'note','a person reviews every payout; money moves through the normal payment rail');\nend; $function$\n"
+      }
+    ],
+    "latest": {
+      "name": "bl_disp_0315_reject_email",
+      "version": "20260914074506"
+    }
+  },
+  "production": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_doc jsonb, p_note text",
+        "name": "lc_ob_doc_log"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_inbound"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "fixture_referrers": 0,
+    "fixture_users": 0,
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres}",
+        "args": "",
+        "hash": "18344c1e6ac6a2b76e2dae5ee7659334",
+        "name": "assert_payment_session",
+        "schema": "app_private",
+        "source": "CREATE OR REPLACE FUNCTION app_private.assert_payment_session()\n RETURNS void\n LANGUAGE plpgsql\n STABLE\n SET search_path TO 'pg_catalog'\nAS $function$\nDECLARE actor uuid:=auth.uid(); claims jsonb:=auth.jwt(); sid uuid;\nBEGIN\n IF actor IS NULL OR claims->>'role' IS DISTINCT FROM 'authenticated'\n    OR coalesce(claims->>'is_anonymous','false') <> 'false' THEN\n  RAISE EXCEPTION 'A current signed-in session is required' USING ERRCODE='42501';\n END IF;\n BEGIN sid := nullif(claims->>'session_id','')::uuid;\n EXCEPTION WHEN invalid_text_representation THEN sid:=NULL;\n END;\n IF sid IS NULL OR NOT EXISTS (\n  SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id=s.user_id\n  WHERE s.id=sid AND s.user_id=actor AND u.deleted_at IS NULL\n    AND (u.banned_until IS NULL OR u.banned_until <= now())\n    AND (s.not_after IS NULL OR s.not_after > now())\n ) OR EXISTS (\n  SELECT 1 FROM app_private.account_deletion_requests r\n  WHERE r.user_id=actor AND r.status='completed'\n ) THEN\n  RAISE EXCEPTION 'A current signed-in session is required' USING ERRCODE='42501';\n END IF;\nEND $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "",
+        "hash": "23b39690b180a730141c31d6aa3ff0a0",
+        "name": "agent_payout_center",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.agent_payout_center()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_ref app_private.referrers; v_prof app_private.agent_profiles;\n        v_payable numeric; v_accrued numeric; v_paid numeric; v_next timestamptz;\n        v_reasons jsonb := '[]'::jsonb; v_min numeric := 100;\n        v_pair boolean; v_has_carrier boolean; v_missing text;\nbegin\n  perform app_private.assert_payment_session();\n  v_ref := app_private.agent_referrer_for(auth.uid());\n  if v_ref.id is null then return jsonb_build_object('has_code', false); end if;\n  select * into v_prof from app_private.agent_profiles where user_id = auth.uid();\n  select coalesce(sum(amount) filter (where status = 'payable'), 0),\n         coalesce(sum(amount) filter (where status = 'accrued'), 0),\n         coalesce(sum(amount) filter (where status = 'paid'), 0),\n         min(payable_at) filter (where status = 'accrued')\n    into v_payable, v_accrued, v_paid, v_next\n    from app_private.referral_commissions where referrer_id = v_ref.id;\n  if v_prof.status is distinct from 'approved' then\n    v_reasons := v_reasons || jsonb_build_object('icon','🛡','text','Verification incomplete — payouts unlock after LoadBoot approves your agent application (Get Verified tab).');\n  end if;\n  if coalesce(v_prof.payout_method,'') = '' then\n    v_reasons := v_reasons || jsonb_build_object('icon','🏦','text','No payout account on file — add your bank/Payoneer in Get Verified step 3.');\n  end if;\n  if v_prof.status = 'approved' and v_accrued > 0 then\n    v_pair := app_private.referrer_pair_active(v_ref.id);\n    if not v_pair then\n      select exists (select 1 from app_private.referral_edges e join public.organizations o on o.id = e.child_org\n                      where e.referrer_id = v_ref.id and o.kind = 'carrier') into v_has_carrier;\n      v_missing := case when not v_has_carrier then 'a CARRIER (any trucking company)' else 'the FREIGHT side (a broker or shipper — or post a load yourself)' end;\n      v_reasons := v_reasons || jsonb_build_object('icon','🔗',\n        'text','$' || v_accrued || ' is earned and safe, but held — your chain is not paired yet. Bring ' || v_missing || ' through your link and it releases on its normal 15-day schedule. Nothing you earned is ever lost.');\n    end if;\n  end if;\n  if v_payable < v_min then\n    v_reasons := v_reasons || jsonb_build_object('icon','💵','text','Payable balance $' || v_payable || ' is below the $' || v_min || ' minimum' ||\n      case when v_accrued > 0 then ' — $' || v_accrued || ' more is clearing' || case when v_next is not null then ' (next release ' || to_char(v_next,'Mon DD') || ')' else '' end else '' end || '.');\n  end if;\n  if exists (select 1 from app_private.referral_payout_requests r where r.referrer_id = v_ref.id and r.status in ('requested','approved')) then\n    v_reasons := v_reasons || jsonb_build_object('icon','⏳','text','A payout request is already in progress — track it below.');\n  end if;\n  return jsonb_build_object(\n    'has_code', true,\n    'payable', v_payable, 'accrued', v_accrued, 'paid', v_paid,\n    'next_clearing', v_next, 'min_required', v_min,\n    'eligible', (v_prof.status = 'approved' and coalesce(v_prof.payout_method,'') <> '' and v_payable >= v_min\n                 and not exists (select 1 from app_private.referral_payout_requests r where r.referrer_id = v_ref.id and r.status in ('requested','approved'))),\n    'reasons', v_reasons,\n    'bank', case when v_prof.user_id is null then null else jsonb_build_object(\n      'method', v_prof.payout_method,\n      'title', v_prof.payout_details->>'account_title',\n      'bank_name', v_prof.payout_details->>'bank_name',\n      'last4', right(coalesce(v_prof.payout_details->>'account', v_prof.payout_details->>'iban', v_prof.payout_details->>'email', ''), 4),\n      'docs_ok', (v_prof.payout_details ? 'id_doc') and (v_prof.payout_details ? 'bank_doc'),\n      'verified', v_prof.status = 'approved') end,\n    'requests', coalesce((select jsonb_agg(jsonb_build_object(\n        'id', r.id, 'amount', r.amount, 'status', r.status, 'note', r.note,\n        'requested_at', r.requested_at, 'decided_at', r.decided_at,\n        'bank_name', r.payout_details->>'bank_name',\n        'last4', right(coalesce(r.payout_details->>'account', r.payout_details->>'iban', r.payout_details->>'email', ''), 4)\n      ) order by r.requested_at desc)\n      from app_private.referral_payout_requests r where r.referrer_id = v_ref.id), '[]'::jsonb));\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "",
+        "hash": "243bac4c5a5105fea83bb1684db21931",
+        "name": "agent_request_payout",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.agent_request_payout()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_ref app_private.referrers; v_prof app_private.agent_profiles; v_payable numeric; v_id uuid; v_email text;\nbegin\n  perform app_private.assert_payment_session();\n  v_ref := app_private.agent_referrer_for(auth.uid());\n  if v_ref.id is null then raise exception 'no agent account' using errcode='42501'; end if;\n  select * into v_prof from app_private.agent_profiles where user_id = auth.uid();\n  if v_prof.status is distinct from 'approved' then raise exception 'verification incomplete — payouts unlock after approval' using errcode='22023'; end if;\n  if coalesce(v_prof.payout_method,'') = '' then raise exception 'no payout account on file — add it in Get Verified' using errcode='22023'; end if;\n  select coalesce(sum(amount) filter (where status = 'payable'), 0) into v_payable\n    from app_private.referral_commissions where referrer_id = v_ref.id;\n  if v_payable < 100 then raise exception 'payable balance $% is below the $100 minimum', v_payable using errcode='22023'; end if;\n  if exists (select 1 from app_private.referral_payout_requests r where r.referrer_id = v_ref.id and r.status in ('requested','approved')) then\n    raise exception 'a payout request is already in progress' using errcode='22023';\n  end if;\n  insert into app_private.referral_payout_requests (referrer_id, requested_by, amount, payout_details, status)\n  values (v_ref.id, auth.uid(), v_payable,\n          coalesce(v_prof.payout_details, '{}'::jsonb) || jsonb_build_object('method', v_prof.payout_method, 'account_title', coalesce(v_prof.payout_details->>'account_title', v_prof.full_name)),\n          'requested')\n  returning id into v_id;\n  begin\n    insert into app_private.notifications(recipient_role, channel, template_key, payload)\n    values ('staff', 'in_app', 'agent.payout_requested',\n      jsonb_build_object('title', '💸 Agent payout requested', 'body', coalesce(v_prof.full_name,'Agent') || ' — $' || v_payable || ' to ' || v_prof.payout_method, 'request', v_id));\n  exception when others then null; end;\n  begin\n    insert into app_private.notifications(recipient_user, channel, template_key, payload, status, sent_at)\n    values (auth.uid(), 'in_app', 'agent.payout_requested_self', jsonb_build_object(\n      'title', '💸 Payout request received — $' || v_payable,\n      'body', 'A person reviews it, then the transfer goes out to your ' || v_prof.payout_method || ' account. Bank transfers typically land 3–5 business days after SENT. Track it in Payouts.',\n      'tone', 'info', 'url', '/app/agent/#payouts'), 'sent', now());\n  exception when others then null; end;\n  begin\n    select email into v_email from auth.users where id = auth.uid();\n    if v_email is not null then\n      perform app_private.sys_email(v_email, 'agent.payout_requested_self', 'LoadBoot: payout request received — $' || v_payable,\n        '<div style=\"font-family:Inter,Arial,sans-serif\"><h2>💸 Your payout request is in</h2>'\n        || '<p><b>$' || v_payable || '</b> → your ' || v_prof.payout_method || ' account. A person reviews every payout, then the transfer goes out. '\n        || 'Bank transfers typically land <b>3–5 business days after SENT</b>.</p>'\n        || '<p>Track every step: <a href=\"https://loadboot.com/app/agent/#payouts\">Payout Center</a></p></div>',\n        null, 'agentpayoutreq:' || v_id::text);\n    end if;\n  exception when others then null; end;\n  return jsonb_build_object('ok', true, 'id', v_id, 'amount', v_payable,\n    'note', 'Payout requested — a person reviews it, then the transfer goes out. Bank transfers typically land in 3–5 business days after SENT.');\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "",
+        "hash": "d2acf2190856a32576c5f3374b54e101",
+        "name": "cc_my_payout_requests",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_my_payout_requests()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_uid uuid; v_ref uuid;\nbegin\n  perform app_private.assert_payment_session();\n  v_uid := auth.uid(); if v_uid is null then raise exception 'not authenticated' using errcode='42501'; end if;\n  select id into v_ref from app_private.referrers where user_id = v_uid;\n  if v_ref is null then return '[]'::jsonb; end if;\n  return coalesce((select jsonb_agg(jsonb_build_object(\n      'id', r.id, 'amount', r.amount, 'status', r.status, 'note', r.note,\n      'requested_at', r.requested_at, 'decided_at', r.decided_at,\n      'bank_name', r.payout_details->>'bank_name',\n      'account_last4', right(coalesce(r.payout_details->>'account_number',''), 4)\n    ) order by r.requested_at desc)\n    from app_private.referral_payout_requests r where r.referrer_id = v_ref), '[]'::jsonb);\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_details jsonb",
+        "hash": "e8f0b430c9a4e49aec92bea59bac4694",
+        "name": "cc_referral_request_payout",
+        "schema": "public",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_referral_request_payout(p_details jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_uid uuid; v_ref app_private.referrers; v_bal numeric; v_id uuid;\nbegin\n  perform app_private.assert_payment_session();\n  v_uid := auth.uid(); if v_uid is null then raise exception 'not authenticated' using errcode='42501'; end if;\n  select * into v_ref from app_private.referrers where user_id = v_uid;\n  if v_ref.id is null then raise exception 'join the referral program first' using errcode='22023'; end if;\n  if coalesce(trim(p_details->>'account_title'),'') = '' or coalesce(trim(p_details->>'bank_name'),'') = ''\n     or coalesce(trim(p_details->>'account_number'),'') = '' then\n    raise exception 'bank_name, account_title and account_number are required' using errcode='22023';\n  end if;\n  select coalesce(sum(amount),0) into v_bal from app_private.referral_commissions\n    where referrer_id = v_ref.id and status = 'payable';\n  if v_bal <= 0 then raise exception 'no payable balance yet — commissions clear a 15-day hold first' using errcode='22023'; end if;\n  if exists (select 1 from app_private.referral_payout_requests\n             where referrer_id = v_ref.id and status in ('requested','approved')) then\n    raise exception 'you already have an open payout request' using errcode='22023';\n  end if;\n  insert into app_private.referral_payout_requests(referrer_id, requested_by, amount, payout_details)\n    values (v_ref.id, v_uid, v_bal, jsonb_build_object(\n      'bank_name', trim(p_details->>'bank_name'),\n      'account_title', trim(p_details->>'account_title'),\n      'account_number', trim(p_details->>'account_number')))\n    returning id into v_id;\n  perform app_private.log_audit('referral.payout_requested','payout_request',v_id::text,null,\n    format('payout of $%s requested', v_bal), null);\n  return jsonb_build_object('ok',true,'id',v_id,'amount',v_bal,'status','requested',\n    'note','a person reviews every payout; money moves through the normal payment rail');\nend; $function$\n"
+      }
+    ],
+    "latest": {
+      "name": "audit_payout_session_guard",
+      "version": "20260914093644"
+    }
+  },
+  "prod_before": {
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres}",
+        "hash": "18344c1e6ac6a2b76e2dae5ee7659334",
+        "name": "assert_payment_session",
+        "schema": "app_private"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "hash": "d66f2db1a0bb3adad43dc720bedeed40",
+        "name": "agent_payout_center",
+        "schema": "public"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "hash": "004edd969fe466a507386af5d1190b8d",
+        "name": "agent_request_payout",
+        "schema": "public"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "hash": "c81543b69d0fbfa7b067ed5c836f2d13",
+        "name": "cc_my_payout_requests",
+        "schema": "public"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "hash": "5e3ae9b903ab33888f5b42a81bac72b5",
+        "name": "cc_referral_request_payout",
+        "schema": "public"
+      }
+    ],
+    "latest": {
+      "name": "bl_disp_0315_reject_email",
+      "version": "20260914074611"
+    }
+  },
+  "prod_advisors": {
+    "groups": [
+      {
+        "count": 96,
+        "name": "rls_enabled_no_policy"
+      },
+      {
+        "count": 80,
+        "name": "function_search_path_mutable"
+      },
+      {
+        "count": 1,
+        "name": "extension_in_public"
+      },
+      {
+        "count": 33,
+        "name": "anon_security_definer_function_executable"
+      },
+      {
+        "count": 828,
+        "name": "authenticated_security_definer_function_executable"
+      },
+      {
+        "count": 1,
+        "name": "auth_leaked_password_protection"
+      }
+    ],
+    "new_ids": [],
+    "removed_ids": []
+  },
+  "tests": {
+    "candidate": "53 behavior/source/ACL checks + count guard PASS",
+    "production_source_variant_on_staging": "53 checks + count guard PASS; all writes rolled back",
+    "deployed_staging": "53 checks + count guard PASS",
+    "rollback_reapply_staging": "53 checks + count guard PASS on resumed turn",
+    "production": "12 no-session role refusals PASS; no bank/payout/customer writes",
+    "browser": "NOT RUN",
+    "stage_advisor_note": "Current post-deployment scan includes other-lane driver changes; no claim of full before/after advisor identity comparison for this stage batch."
+  },
+  "source_migration": "supabase/migrations/20260914073221_audit_payout_session_guard.sql",
+  "versions": {
+    "staging": "20260914073221",
+    "prod": "20260914093644"
+  }
+}
