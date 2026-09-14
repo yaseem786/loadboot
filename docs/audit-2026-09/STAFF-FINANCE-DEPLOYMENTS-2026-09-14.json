@@ -1,0 +1,739 @@
+{
+  "date": "2026-09-14",
+  "source_migration": "supabase/migrations/20260914120308_audit_staff_finance_session_guard.sql",
+  "stage_before": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid",
+        "name": "lc_ob_upload_check"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "latest": {
+      "name": "bl_disp_0315_reject_email",
+      "version": "20260914074506"
+    }
+  },
+  "prod_before": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_doc jsonb, p_note text",
+        "name": "lc_ob_doc_log"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_inbound"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "latest": {
+      "name": "audit_payout_session_guard",
+      "version": "20260914093644"
+    }
+  },
+  "stage_applied": {
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_org uuid",
+        "hash": "0accf614ee85da6432cc5407f6e7528c",
+        "name": "cc_carrier_payment_profile",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_carrier_payment_profile(p_org uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare r app_private.org_payment_profiles;\nbegin\n  perform app_private.assert_payment_session();\n  if not public.has_global_permission('finance.view') then raise exception 'not authorized' using errcode='42501'; end if;\n  select * into r from app_private.org_payment_profiles where org_id = p_org;\n  if r.org_id is null then return jsonb_build_object('exists', false); end if;\n  return jsonb_build_object('exists', true, 'bank_name', r.bank_name, 'account_title', r.account_title,\n    'account_number', r.account_number, 'routing_number', r.routing_number, 'account_type', r.account_type,\n    'payment_method', r.payment_method, 'bank_address', r.bank_address, 'swift_bic', r.swift_bic,\n    'beneficiary_address', r.beneficiary_address, 'remittance_email', r.remittance_email, 'bank_phone', r.bank_phone,\n    'tax_id', r.tax_id, 'factoring_company', r.factoring_company, 'factoring_noa', r.factoring_noa,\n    'factor_details', r.factor_details, 'noa_status', r.noa_status, 'noa_doc', r.noa_doc,\n    'direct_brokers', r.direct_brokers,\n    'verified', r.verified, 'verified_at', r.verified_at, 'updated_at', r.updated_at);\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_status text",
+        "hash": "df10f596cd366173a6dc461e0dcba6f0",
+        "name": "cc_payment_profiles_queue",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_payment_profiles_queue(p_status text DEFAULT 'unverified'::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\nbegin\n  perform app_private.assert_payment_session();\n  if not public.has_global_permission('finance.view') then raise exception 'not authorized' using errcode='42501'; end if;\n  return coalesce((select jsonb_agg(jsonb_build_object('org_id', pp.org_id, 'org', o.name, 'kind', o.kind,\n      'bank_name', pp.bank_name, 'account_title', pp.account_title, 'account_number', pp.account_number,\n      'verified', pp.verified, 'updated_at', pp.updated_at) order by pp.updated_at)\n    from app_private.org_payment_profiles pp join public.organizations o on o.id = pp.org_id\n    where case when p_status = 'unverified' then not pp.verified else true end), '[]'::jsonb);\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_id uuid, p_action text, p_note text",
+        "hash": "63fd9206e1202df0a6ecca3b5e6ae671",
+        "name": "cc_referral_payout_decide",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_referral_payout_decide(p_id uuid, p_action text, p_note text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\ndeclare v_commission_ids uuid[]; v_locked_total numeric; v_req app_private.referral_payout_requests; v_n int := 0; v_user uuid; v_email text; v_title text; v_body text; v_subj text; v_html text;\nbegin\n  perform app_private.assert_payment_session();\n  if not public.has_global_permission('finance.approve') then raise exception 'not authorized' using errcode='42501'; end if;\n  if p_action is null or p_action not in ('approve','reject','paid') then raise exception 'action must be approve, reject or paid' using errcode='22023'; end if;\n  select * into v_req from app_private.referral_payout_requests where id = p_id for update;\n  if v_req.id is null then raise exception 'payout request not found' using errcode='22023'; end if;\n  if v_req.requested_by = auth.uid() then raise exception 'requester cannot decide their own payout' using errcode='42501'; end if;\n  if p_action = 'approve' then\n    if v_req.status <> 'requested' then raise exception 'only a requested payout can be approved' using errcode='22023'; end if;\n    update app_private.referral_payout_requests set status='approved', decided_by=auth.uid(), decided_at=now(), note=coalesce(p_note,note) where id=p_id;\n  elsif p_action = 'reject' then\n    if v_req.status not in ('requested','approved') then raise exception 'only an open payout can be rejected' using errcode='22023'; end if;\n    update app_private.referral_payout_requests set status='rejected', decided_by=auth.uid(), decided_at=now(), note=coalesce(p_note,note) where id=p_id;\n  else\n    if v_req.status <> 'approved' then raise exception 'approve the payout before marking it paid' using errcode='22023'; end if;\n    -- Capture/lock the exact payable rows; never sweep commissions arriving later.\n    select array_agg(c.id), coalesce(sum(c.amount),0) into v_commission_ids, v_locked_total\n      from (select id,amount from app_private.referral_commissions\n             where referrer_id=v_req.referrer_id and status='payable'\n             order by id for update) c;\n    if v_locked_total is distinct from v_req.amount then\n      raise exception 'Payable balance changed since this payout was requested; review the request before marking it paid' using errcode='22023';\n    end if;\n    update app_private.referral_commissions set status='paid', paid_at=now(), paid_by=auth.uid()\n      where id=any(v_commission_ids) and referrer_id=v_req.referrer_id and status='payable';\n    get diagnostics v_n = row_count;\n    update app_private.referral_payout_requests set status='paid', decided_by=auth.uid(), decided_at=now(), note=coalesce(p_note,note) where id=p_id;\n  end if;\n  perform app_private.log_audit('referral.payout_'||p_action,'payout_request',p_id::text,null,\n    format('%s ($%s, %s commissions)', p_action, v_req.amount, v_n), null);\n  select r.user_id into v_user from app_private.referrers r where r.id = v_req.referrer_id;\n  if v_user is not null then\n    select email into v_email from auth.users where id = v_user;\n    if p_action = 'approve' then\n      v_title := '✅ Payout APPROVED — $' || v_req.amount;\n      v_body  := 'Your payout was approved. The transfer goes out next — bank transfers typically land 3–5 business days after SENT.';\n      v_subj  := 'LoadBoot: payout approved — $' || v_req.amount;\n    elsif p_action = 'reject' then\n      v_title := '✕ Payout request not approved';\n      v_body  := coalesce(nullif(trim(p_note),''), 'See the note in your Payout Center — your balance stays payable and you can request again.');\n      v_subj  := 'LoadBoot: payout request update';\n    else\n      v_title := '💸 Payout SENT — $' || v_req.amount || ' is on the way';\n      v_body  := 'The transfer to your ' || coalesce(v_req.payout_details->>'method','payout') || ' account went out. Bank transfers typically land in 3–5 business days. Tap \"✓ Received\" in the Payout Center when it arrives.';\n      v_subj  := 'LoadBoot: 💸 $' || v_req.amount || ' payout SENT — arriving in 3–5 business days';\n    end if;\n    begin\n      insert into app_private.notifications(recipient_user, channel, template_key, payload, status, sent_at)\n      values (v_user, 'in_app', 'agent.payout_' || p_action, jsonb_build_object(\n        'title', v_title, 'body', v_body, 'tone', case when p_action='reject' then 'warning' else 'success' end, 'url', '/app/agent/#payouts'), 'sent', now());\n    exception when others then null; end;\n    begin\n      if v_email is not null then\n        v_html := '<div style=\"font-family:Inter,Arial,sans-serif\"><h2>' || v_title || '</h2><p>' || v_body || '</p>'\n          || '<p><a href=\"https://loadboot.com/app/agent/#payouts\" style=\"background:#0883F7;color:#fff;padding:11px 20px;border-radius:9px;text-decoration:none;font-weight:800\">Open Payout Center →</a></p></div>';\n        perform app_private.sys_email(v_email, 'agent.payout_' || p_action, v_subj, v_html, null, 'agentpayout:' || p_id::text || ':' || p_action);\n      end if;\n    exception when others then null; end;\n  end if;\n  return jsonb_build_object('ok',true,'id',p_id,'action',p_action,'commissions_paid',v_n,\n    'note','this records the decision only; transfer money through the normal payment rail');\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_status text",
+        "hash": "bd426088ee0296fe48ebc4cbf01dcb7e",
+        "name": "cc_referral_payout_queue",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_referral_payout_queue(p_status text DEFAULT 'open'::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private, public'\nAS $function$\nbegin\n  perform app_private.assert_payment_session();\n  if not public.has_global_permission('finance.view') then raise exception 'not authorized' using errcode='42501'; end if;\n  return coalesce((select jsonb_agg(jsonb_build_object(\n      'id', r.id, 'amount', r.amount, 'status', r.status, 'note', r.note,\n      'requested_at', r.requested_at, 'decided_at', r.decided_at,\n      'payout_details', r.payout_details,\n      'referrer_code', f.code, 'referrer_kind', f.kind, 'referrer_name', coalesce(f.display_name, f.code),\n      'payable_now', coalesce((select sum(c.amount) from app_private.referral_commissions c\n                               where c.referrer_id = f.id and c.status='payable'),0)\n    ) order by r.requested_at)\n    from app_private.referral_payout_requests r\n    join app_private.referrers f on f.id = r.referrer_id\n    where case when p_status = 'open' then r.status in ('requested','approved') else true end), '[]'::jsonb);\nend; $function$\n"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_org uuid, p_ok boolean, p_note text",
+        "hash": "d65ba5a254bb8b1486ef3941084c42eb",
+        "name": "cc_verify_payment_profile",
+        "source": "CREATE OR REPLACE FUNCTION public.cc_verify_payment_profile(p_org uuid, p_ok boolean, p_note text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'app_private', 'public'\nAS $function$\nbegin\n  perform app_private.assert_payment_session();\n  if not public.has_global_permission('finance.approve') then raise exception 'not authorized' using errcode='42501'; end if;\n  if coalesce(p_ok,false) = false and coalesce(trim(p_note),'') = '' then\n    raise exception 'a written reason is required when rejecting/revoking bank details' using errcode='22023';\n  end if;\n  update app_private.org_payment_profiles set verified = coalesce(p_ok, false),\n    verified_by = case when coalesce(p_ok,false) then auth.uid() else null end,\n    verified_at = case when coalesce(p_ok,false) then now() else null end\n    where org_id = p_org;\n  if not found then raise exception 'no payment profile for that org' using errcode='22023'; end if;\n  begin\n    insert into app_private.notifications(recipient_user, channel, template_key, payload)\n    select m.user_id, 'in_app', 'bank.' || case when coalesce(p_ok,false) then 'verified' else 'rejected' end,\n           jsonb_build_object('title', case when coalesce(p_ok,false) then 'Bank details verified ✓' else 'Bank details need attention' end,\n                              'body', coalesce(p_note, 'Your payout bank details were verified by LoadBoot.'), 'url', '/app/carrier/#account')\n    from public.organization_memberships m where m.org_id = p_org and m.status='active' limit 3;\n  exception when others then null; end;\n  perform app_private.log_audit('payments.profile_verify','org',p_org::text,null,\n    case when coalesce(p_ok,false) then 'bank profile VERIFIED' else 'bank verification REJECTED/revoked: ' || coalesce(p_note,'') end, null);\n  return jsonb_build_object('ok',true,'org',p_org,'verified',coalesce(p_ok,false));\nend; $function$\n"
+      }
+    ],
+    "latest": {
+      "name": "audit_staff_finance_session_guard",
+      "version": "20260914120308"
+    }
+  },
+  "stage_after": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid",
+        "name": "lc_ob_upload_check"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "fixture_orgs": 0,
+    "fixture_users": 0,
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_org uuid",
+        "hash": "0accf614ee85da6432cc5407f6e7528c",
+        "name": "cc_carrier_payment_profile"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_status text",
+        "hash": "df10f596cd366173a6dc461e0dcba6f0",
+        "name": "cc_payment_profiles_queue"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_id uuid, p_action text, p_note text",
+        "hash": "63fd9206e1202df0a6ecca3b5e6ae671",
+        "name": "cc_referral_payout_decide"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_status text",
+        "hash": "bd426088ee0296fe48ebc4cbf01dcb7e",
+        "name": "cc_referral_payout_queue"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_org uuid, p_ok boolean, p_note text",
+        "hash": "d65ba5a254bb8b1486ef3941084c42eb",
+        "name": "cc_verify_payment_profile"
+      }
+    ],
+    "latest": {
+      "name": "audit_staff_finance_session_guard",
+      "version": "20260914120308"
+    }
+  },
+  "prod_after": {
+    "anon": [
+      {
+        "args": "",
+        "name": "all_flags"
+      },
+      {
+        "args": "p_key text",
+        "name": "cc_get_public_form"
+      },
+      {
+        "args": "p_path text, p_name text",
+        "name": "dispatcher_submit_id"
+      },
+      {
+        "args": "p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone",
+        "name": "eld_ingest"
+      },
+      {
+        "args": "",
+        "name": "get_active_public_announcements"
+      },
+      {
+        "args": "p_limit integer",
+        "name": "get_public_load_opportunities"
+      },
+      {
+        "args": "",
+        "name": "get_public_market_rates"
+      },
+      {
+        "args": "",
+        "name": "lb_contact_channel"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_claim_get"
+      },
+      {
+        "args": "p_token uuid, p_name text, p_email text, p_signature text",
+        "name": "lb_email_claim_sign"
+      },
+      {
+        "args": "p_token uuid, p jsonb",
+        "name": "lb_email_ping_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "lb_email_ping_get"
+      },
+      {
+        "args": "p_token uuid, p_reply text, p_escalate boolean, p_source text",
+        "name": "lc_brain_write"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone",
+        "name": "lc_chat_request_call"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_history"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_name text, p_email text",
+        "name": "lc_identify"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_doc jsonb, p_note text",
+        "name": "lc_ob_doc_log"
+      },
+      {
+        "args": "p_visitor_key text",
+        "name": "lc_ob_get"
+      },
+      {
+        "args": "p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean",
+        "name": "lc_ob_save"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean",
+        "name": "lc_poll"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean",
+        "name": "lc_rate"
+      },
+      {
+        "args": "p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone",
+        "name": "lc_request_call"
+      },
+      {
+        "args": "p_id uuid, p_visitor_key text, p_body text",
+        "name": "lc_send"
+      },
+      {
+        "args": "p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text",
+        "name": "lc_start"
+      },
+      {
+        "args": "p_email text, p_token text",
+        "name": "outreach_unsubscribe"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_agent_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_agent_confirm_get"
+      },
+      {
+        "args": "p_token uuid, p_decision text, p_name text, p_note text",
+        "name": "partner_claim_confirm"
+      },
+      {
+        "args": "p_token uuid",
+        "name": "partner_claim_get"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_inbound"
+      },
+      {
+        "args": "jsonb",
+        "name": "retell_webhook"
+      },
+      {
+        "args": "p jsonb",
+        "name": "submit_web_form"
+      },
+      {
+        "args": "p jsonb",
+        "name": "track_web_event"
+      }
+    ],
+    "fixture_orgs": 0,
+    "fixture_users": 0,
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_org uuid",
+        "hash": "0accf614ee85da6432cc5407f6e7528c",
+        "name": "cc_carrier_payment_profile"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_status text",
+        "hash": "df10f596cd366173a6dc461e0dcba6f0",
+        "name": "cc_payment_profiles_queue"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_id uuid, p_action text, p_note text",
+        "hash": "63fd9206e1202df0a6ecca3b5e6ae671",
+        "name": "cc_referral_payout_decide"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_status text",
+        "hash": "bd426088ee0296fe48ebc4cbf01dcb7e",
+        "name": "cc_referral_payout_queue"
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "args": "p_org uuid, p_ok boolean, p_note text",
+        "hash": "d65ba5a254bb8b1486ef3941084c42eb",
+        "name": "cc_verify_payment_profile"
+      }
+    ],
+    "latest": {
+      "name": "audit_staff_finance_session_guard",
+      "version": "20260914120413"
+    }
+  },
+  "advisor_delta": {
+    "staging": {
+      "groups": [
+        {
+          "count": 98,
+          "name": "rls_enabled_no_policy"
+        },
+        {
+          "count": 90,
+          "name": "function_search_path_mutable"
+        },
+        {
+          "count": 1,
+          "name": "extension_in_public"
+        },
+        {
+          "count": 32,
+          "name": "anon_security_definer_function_executable"
+        },
+        {
+          "count": 847,
+          "name": "authenticated_security_definer_function_executable"
+        },
+        {
+          "count": 1,
+          "name": "auth_leaked_password_protection"
+        }
+      ],
+      "new_ids": [],
+      "removed_ids": []
+    },
+    "production": {
+      "groups": [
+        {
+          "count": 96,
+          "name": "rls_enabled_no_policy"
+        },
+        {
+          "count": 80,
+          "name": "function_search_path_mutable"
+        },
+        {
+          "count": 1,
+          "name": "extension_in_public"
+        },
+        {
+          "count": 33,
+          "name": "anon_security_definer_function_executable"
+        },
+        {
+          "count": 828,
+          "name": "authenticated_security_definer_function_executable"
+        },
+        {
+          "count": 1,
+          "name": "auth_leaked_password_protection"
+        }
+      ],
+      "new_ids": [],
+      "removed_ids": []
+    }
+  },
+  "tests": {
+    "baseline": "Synthetic 120 request/145 paid ledger + banned staff read/paid mutation CONFIRMED; transaction rolled back.",
+    "candidate": "Full staff/session/RBAC/bank/payout suite PASS",
+    "deployed_staging": "Full suite PASS",
+    "rollback_reapply": "Full suite PASS; exact body/ACL restoration guarded",
+    "production": "15 role/no-session refusals PASS; no target account/bank/payout rows written",
+    "queue_positive_controls": "Actual deployed queue bodies mapped temporarily to synthetic-only tables; exact original queue source restored within rollback transaction",
+    "concurrency": "Rows locked and exact selected IDs updated; no multi-connection concurrency test or real transfer executed",
+    "browser": "Not tested"
+  }
+}

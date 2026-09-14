@@ -11,24 +11,24 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-14 09:36 UTC, session production promotion
+## CURRENT STATE — 2026-09-14 12:04 UTC, staff finance session/accounting batch
 
-User-selected working branch `feat/dispatcher-model`, retaining recovery history and main b73a854 merged at 520b561. Remote target last fetched d127c1c; no main merge/deploy and no public push succeeded. User authorized continuing verified production audit fixes and asked all pending code/docs be put on this branch. Do NOT ask production authorization again for these completed packages.
+Working branch feat/dispatcher-model; last fetched remote d127c1c and main b73a854 unchanged. Local recovery history and prior audit commits preserved. No main merge/deploy or public push this continuation. Yaseen's existing authority covers continuing reviewed production audit fixes; actual transfers/erasure, messages, Retell cutover and business decisions retain specific gates.
 
-PRODUCTION applied and verified: `20260914072602 / audit_payment_session_guard` (bank-profile read/save) and `20260914093644 / audit_payout_session_guard` (agent center/request + referral history/request). Staging versions 20260914064813 and 20260914073221. Bank suite 44 checks + guards, payout candidate/prod-source-on-stage/deployed/rollback-reapply 53 checks + guard PASS. Production six bank +12 payout no-session role refusals PASS, with no user/bank/payout writes. Existing bodies/ACLs preserved apart from added session checks; payout-center comment differs between envs intentionally. Exact anon stage32/prod33 lists unchanged; production advisor identities unchanged. Sources, hashes, applied receipts and rollback in REVIEW-SESSION-PROMOTION-2026-09-14.md.
+NEW STAGE20260914120308 / PROD20260914120413 `audit_staff_finance_session_guard`: five staff bank/payout read/queue/verify/decision RPCs now call existing current-session guard while retaining finance.view/approve checks. Baseline also confirmed a $120 request marking $145 ledger paid. Paid branch now locks/captures exact payable IDs, refuses sum mismatch and updates only captured IDs; NULL actions rejected upfront. Candidate, deployed staging and rollback/reapply suites PASS; production15 missing-session refusals PASS without bank/payout/customer writes. Five sources/grants match across envs; exact anon stage32/prod33 sets and full advisor identities unchanged; zero synthetic users/orgs remain. Review/evidence in REVIEW-STAFF-FINANCE-2026-09-14.md.
 
-Staging newest observed other-lane bl_disp_0315_reject_email 20260914074506; prod had 20260914074611 before this promotion. Staged driver 0344a/e work preserved. Stage inventory/atomic-cleanup/deletion-suppression/unsubscribe packages are NOT promoted by this turn. Session protection covers six selected RPCs, not all table/Storage/RLS paths or full erasure.
+Prior bank and user payout packages remain production-applied at072602 and093644. Eleven selected RPCs now check current sessions; this is not global JWT/session invalidation or full Storage/erasure coverage. Stage inventory/atomic cleanup/deletion suppression/unsubscribe packages remain unpromoted this turn. Driver and dispatcher other-lane work preserved.
 
-PUBLIC PUSH BLOCKED: automatic approval review rejected pushing security docs/migrations to the public repo because explicit public-disclosure authorization was not clear enough. No workaround used; 96-file patch loadboot-audit-pending-20260914.patch and matching file/command manifest prepared; git apply --check passed on a clean d127c1c checkout. A separate temporary usage-limit failure earlier prevented a rollback/prod call; both operations resumed successfully after continue. Publication needs explicit acknowledgment that security code and audit reports become public. This does not undo standing authorization to keep working locally/staging or on reviewed prod fixes.
+PUBLIC PUSH remains blocked by automatic review for insufficiently explicit public-security disclosure authorization. Do not retry via another route. New code/tests/docs are local on requested branch; refresh exact patch/manifest after committing this batch. Existing patch target base d127c1c; user controls public publishing/main merge.
 
-Earlier local frontend checks: 30 API/UI and161 syntax/import PASS; browser/native uploads and CI activation remain unverified. F10 matrix unapproved, Retell proof/cutover, actual erasure, messages and business decisions keep their specific gates. Outreach enabled; SEO/F33/WhatsApp parked.
+No new frontend build/browser/native verification claimed. F10 intended matrix still unapproved, CI activation and Retell/password/recovery/legal gates open. Outreach enabled; SEO/F33/WhatsApp parked.
 
 ## NEXT ACTION
 
-1. Resolve public-disclosure approval, then refresh feat/dispatcher-model and push preserved history without force; no main merge. Until then use the exact local patch/manifest and keep new work committed locally on this branch.
-2. Continue sensitive-session review for staff payment/payout read/review, direct table policies and document/Storage paths. Six user RPCs are now protected on both environments. Do not globally alter has_global_permission or backend caller semantics without positive controls.
-3. Finish erasure inventory coverage, supported Auth revocation, upload freeze and retention/removal-proof/final completion. Do not remove evidence to bypass the guard. Actual erasure and Retell cutover retain separate gates.
-4. Remaining notification consumers/edge parity, F10 role/type decision, browser/native verification, CI and password/recovery/legal gates remain open; no actual messages/sender/provider calls.
+1. Continue current-session/document access review: remaining agent-bank review methods and document/Storage authorization, views and direct policies. Do not mark broader access closed based on eleven RPCs. Current private finance table grant check covers only those three tables.
+2. Complete supported Auth revocation, upload freeze, inventory coverage and retention/removal-proof/final erasure; no actual object deletion or broad policy decision without required authorization. Do not delete inventory to bypass review.
+3. Resolve public-disclosure approval before pushing feat/dispatcher-model; otherwise keep commits/patch current. Preserve new remote changes, no force push or main merge.
+4. Remaining notification-consumer/edge parity, F10 role/type decision, actual browser/native verification, CI and Retell/password/recovery/legal gates remain. No real messages/provider calls.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -73,3 +73,5 @@ Earlier local frontend checks: 30 API/UI and161 syntax/import PASS; browser/nati
 - **2026-09-14 09:36 — Codex:** User-selected feat/dispatcher-model; automatic review blocked public security-doc/code push, exact local handoff prepared. On explicit production authority applied bank session guard 072602 and payout guard 093644, after staging 44/53 checks and payout rollback/reapply. Production 6+12 no-session refusals PASS; source/grants preserved, anon names and production advisor identities unchanged. No real customer/payout/file/send operation. All source/docs saved locally; remaining scope recorded.
 
 - **2026-09-14 — Codex, publication handoff:** All 96 pending changed files packaged in loadboot-audit-pending-20260914.patch; credential-pattern scan has no matches; clean target-branch apply check PASS. Local commit history complete, remote still unmodified because public-disclosure approval review rejected the push.
+
+- **2026-09-14 12:04 — Codex:** Confirmed banned staff access and $120/$145 paid-ledger mismatch in synthetic rollback baseline. Applied five-function session/accounting fix stage120308 then prod120413 on standing authorization. Candidate/deployed/rollback-reapply suites PASS; production15 no-session checks PASS; sources/ACLs match, exact anon/advisor identities unchanged, zero fixtures. No real transfer/sender/customer operation. Local branch + patch updated; public push block remains.
