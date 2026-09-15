@@ -9,7 +9,13 @@ async function rpc(name, args) {
   const { data, error } = await sb.rpc(name, args || {});
   if (error) {
     const e = new Error(error.message || ('rpc ' + name + ' failed'));
-    e.code = error.code; e.details = error.details; e.rpc = name;
+    e.code = error.code; e.details = error.details; e.rpc = name; e.hint = error.hint;
+    // bl_drv_0344: the server's driver gate answers 42501 with hint DRIVER_DENIED[:perm]. Tag the error so the
+    // UI can show the owner-worded message, and report it (fire-and-forget) so the owner/CC can see what was tried.
+    if (typeof error.hint === 'string' && error.hint.indexOf('DRIVER_DENIED') === 0) {
+      e.driverDenied = true; e.perm = error.hint.split(':')[1] || null;
+      try { if (name !== 'cc_driver_log_denial') sb.rpc('cc_driver_log_denial', { p_rpc: name, p_perm: e.perm }).then(() => {}, () => {}); } catch (_) {}
+    }
     throw e;
   }
   return data;
@@ -833,9 +839,7 @@ export const pocketUploadPod = (o = {}) => rpc('cc_pocket_upload_pod', { p_trip:
 export const pocketTripPods = (trip) => rpc('cc_pocket_trip_pods', { p_trip: trip });
 // carrier-facing fleet self-service (own drivers + trucks) — migration cuq_carrier_self_fleet
 export const pocketDrivers = () => rpc('cc_pocket_drivers');
-export const carrierInviteDriver = (fleetDriver, email, phone) => rpc('cc_carrier_invite_driver', { p_fleet_driver: fleetDriver, p_email: email ?? null, p_phone: phone ?? null });
 export const carrierLinkDriver = (fleetDriver, user) => rpc('cc_carrier_link_driver', { p_fleet_driver: fleetDriver, p_user: user });
-export const acceptDriverInvite = (token) => rpc('cc_accept_driver_invite', { p_token: token });
 export const pocketUpsertDriver = (o = {}) => rpc('cc_pocket_upsert_driver', { p_id: o.id ?? null, p_name: o.name, p_phone: o.phone ?? null, p_email: o.email ?? null, p_license_no: o.licenseNo ?? null, p_license_state: o.licenseState ?? null, p_license_exp: o.licenseExp ?? null, p_medical_exp: o.medicalExp ?? null });
 export const pocketTrucks = () => rpc('cc_pocket_trucks');
 export const coiVehicles = () => rpc('cc_coi_vehicles');
@@ -949,6 +953,8 @@ export const carrierStatement = (carrier) => rpc('cc_carrier_statement', { p_car
 // ---- EC: Tracking ----
 export const pocketSetConsent = (trip, consent) => rpc('cc_pocket_set_consent', { p_trip: trip, p_consent: consent });
 export const pocketPostLocation = (trip, lat, lng, label) => rpc('cc_pocket_post_location', { p_trip: trip, p_lat: lat, p_lng: lng, p_label: label ?? null });
+// bl_drv_0345a: owner/manager declares who is at the wheel — true = "I'm driving this myself" (owner phone reports), false = the assigned driver's phone reports.
+export const tripSetDriving = (trip, ownerDriving) => rpc('cc_trip_set_driving', { p_trip: trip, p_owner_driving: !!ownerDriving });
 export const tripLocations = (trip, limit) => rpc('cc_trip_locations', { p_trip: trip, p_limit: limit ?? 50 });
 
 // ---- EC: Intelligence + Documents ----
@@ -1245,3 +1251,28 @@ export const staffTrackLoad = (loadId) => rpc('cc_staff_track_load', { p_load: l
 
 // bl_fleet_0234: full fleet view for CC Carrier 360 (restored after a parallel-session merge dropped it)
 export const ccCarrierFleet360 = (orgId) => rpc('cc_carrier_fleet_360', { p_org: orgId });
+
+// ---- bl_drv_0344: driver access — invite, permissions, driver mode, CC visibility ----
+export const driverPermissionCatalog = () => rpc('cc_driver_permission_catalog');
+export const driverAccessList = () => rpc('cc_driver_access_list');
+// replaces the 3-arg signature: perms null = preset's perms; via = ['email'] | ['link'] | ['email','whatsapp'] (email is the only server-sent channel)
+export const carrierInviteDriver = (fleetDriver, email, phone, perms, preset, via) => rpc('cc_carrier_invite_driver', { p_fleet_driver: fleetDriver, p_email: email ?? null, p_phone: phone ?? null, p_perms: perms ?? null, p_preset: preset || 'driver', p_via: via || ['email'] });
+export const driverInviteResend = (inviteId) => rpc('cc_driver_invite_resend', { p_invite: inviteId });
+export const driverInviteRevoke = (inviteId) => rpc('cc_driver_invite_revoke', { p_invite: inviteId });
+export const driverInvitePeek = (token) => rpc('cc_driver_invite_peek', { p_token: token });
+export const acceptDriverInvite = (token, platform) => rpc('cc_accept_driver_invite', { p_token: token, p_platform: platform ?? null });
+export const driverGrantsGet = (userId) => rpc('cc_driver_grants_get', { p_user: userId });
+export const driverGrantsSet = (userId, perms, preset) => rpc('cc_driver_grants_set', { p_user: userId, p_perms: perms || [], p_preset: preset ?? null });
+export const driverSetStatus = (userId, status) => rpc('cc_driver_set_status', { p_user: userId, p_status: status });
+export const driverOrgSettings = (requireAndroidApp) => rpc('cc_driver_org_settings', { p_require_android_app: requireAndroidApp ?? null });
+export const driverDocsForOwner = (fleetDriver) => rpc('cc_driver_docs_for_owner', { p_fleet_driver: fleetDriver ?? null });
+export const driverDocReview = (docId, status, note) => rpc('cc_driver_doc_review', { p_doc: docId, p_status: status, p_note: note ?? null });
+export const myDriverContext = () => rpc('cc_my_driver_context');
+export const driverHeartbeat = (o = {}) => rpc('cc_driver_heartbeat', { p_platform: o.platform ?? null, p_standalone: o.standalone ?? null, p_device: o.device ?? null, p_location_on: o.locationOn ?? null });
+export const driverUpdateMyProfile = (o = {}) => rpc('cc_driver_update_my_profile', { p_phone: o.phone ?? null, p_avatar_path: o.avatarPath ?? null });
+export const driverMyDocs = () => rpc('cc_driver_my_docs');
+export const driverDocUpload = (o = {}) => rpc('cc_driver_doc_upload', { p_kind: o.kind, p_path: o.path, p_file_name: o.fileName ?? null, p_content_type: o.contentType ?? null, p_size: o.size ?? null, p_expires_on: o.expiresOn ?? null });
+export const driverMyEarnings = (days) => rpc('cc_driver_my_earnings', { p_days: days ?? 30 });
+export const driverMySettlements = () => rpc('cc_driver_my_settlements');
+export const ccCarrierDriverAccess = (orgId) => rpc('cc_carrier_driver_access', { p_org: orgId });
+export const ccDriverAdoptionKpis = () => rpc('cc_driver_adoption_kpis');

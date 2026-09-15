@@ -133,7 +133,9 @@ export function openLoadTracker(loadRow) {
         el('div', { class: 'cct-tile' }, [el('div', { class: 'k' }, 'Rate'), el('div', { class: 'v' }, ld.rate ? '$' + Number(ld.rate).toLocaleString() : '—')]),
         el('div', { class: 'cct-tile' }, [el('div', { class: 'k' }, 'Miles'), el('div', { class: 'v' }, (remainMi != null && !done) ? remainMi + ' left / ' + (ld.miles || '—') : String(ld.miles || '—'))]),
         el('div', { class: 'cct-tile' }, [el('div', { class: 'k' }, 'Last ping'), el('div', { class: 'v' }, t && t.last_loc_at ? ago(t.last_loc_at) : '—')]),
-        el('div', { class: 'cct-tile' }, [el('div', { class: 'k' }, 'Tracking'), el('div', { class: 'v' }, (t && t.tracking_method) || '—')]),
+        // bl_drv_0345a: say WHOSE device is reporting, and flag an owner phone on a load that has an app driver assigned.
+        el('div', { class: 'cct-tile' }, [el('div', { class: 'k' }, 'Tracking'), el('div', { class: 'v' }, (t && (t.tracking_label || t.tracking_method)) || '—'),
+          t && t.driven_by_owner ? el('div', { class: 'k', style: 'margin-top:4px;color:#fbbf24' }, 'Owner is driving this load') : (t && t.tracking_method === 'owner_app' && t.driver_name) ? el('div', { class: 'k', style: 'margin-top:4px;color:#f87171' }, 'Owner phone, but ' + t.driver_name + ' is assigned — verify who is at the wheel') : null].filter(Boolean)),
       ]),
       progPct != null ? el('div', { class: 'cct-prog' }, el('i', { style: 'width:' + progPct + '%' })) : '',
       stops.length ? el('div', { style: 'margin-top:12px' }, [

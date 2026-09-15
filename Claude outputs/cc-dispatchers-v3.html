@@ -1,0 +1,89 @@
+<!doctype html><html><head><meta charset="utf-8"><title>CC · Dispatchers v3 preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--n:#10223B;--b:#0883F7;--o:#FC5305;--ink:#0f172a;--mut:#64748b;--line:#e5e9f0;--bg:#f5f7fa;--ok:#12803c;--warn:#b45309;--bad:#b91c1c}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:13.5px;-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.side{background:var(--n);color:#c7d3e3;padding:18px 14px}.side .brand{font-weight:800;color:#fff;font-size:15px;margin-bottom:22px}.side .brand span{color:var(--b)}
+.side h6{font-size:10px;letter-spacing:.12em;color:#6f86a3;margin:16px 10px 6px}.side a{display:block;padding:8px 10px;border-radius:8px;color:#c7d3e3;text-decoration:none;font-weight:500}.side a.on{background:rgba(8,131,247,.18);color:#fff}
+main{padding:0 28px 40px;min-width:0}.tw{overflow-x:auto}table{min-width:1080px}
+.top{display:flex;align-items:center;gap:14px;height:60px;border-bottom:1px solid var(--line);margin:0 -28px 20px;padding:0 28px;background:#fff;position:sticky;top:0;z-index:5}
+.top input{flex:1;max-width:520px;border:1px solid var(--line);border-radius:8px;padding:8px 12px 8px 34px;font:inherit;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") 10px 50%/16px no-repeat}
+.kbd{border:1px solid var(--line);border-radius:5px;padding:2px 6px;font-size:11px;color:var(--mut);background:#f8fafc;font-family:ui-monospace,monospace}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 13px;font:inherit;font-weight:600;cursor:pointer;color:var(--ink)}.btn.p{background:var(--n);color:#fff;border-color:var(--n)}.btn.o{background:var(--o);color:#fff;border-color:var(--o)}
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}.hdr h1{font-size:22px;margin:0;font-weight:800;letter-spacing:-.01em}.hdr p{margin:4px 0 0;color:var(--mut)}
+.tabs{display:flex;gap:2px;background:#e9edf3;padding:3px;border-radius:9px}.tabs b{padding:6px 14px;border-radius:7px;font-weight:600;color:var(--mut);cursor:pointer}.tabs b.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;position:relative}.kpi small{display:block;color:var(--mut);font-weight:600;font-size:11.5px;letter-spacing:.02em}.kpi b{display:block;font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}.kpi em{font-style:normal;font-size:11.5px;font-weight:600;color:var(--ok)}.kpi em.d{color:var(--bad)}.kpi em.m{color:var(--mut)}
+.kpi.hot{border-color:#fdba74;background:#fff8f3}.kpi.hot b{color:var(--o)}
+.pipe{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.pipe .row{display:flex;gap:6px}.stg{flex:1;padding:10px 12px;border-radius:8px;background:#f8fafc;border:1px solid var(--line);position:relative;cursor:pointer}.stg.on{border-color:var(--b);background:#f0f7ff}
+.stg small{color:var(--mut);font-weight:600;font-size:11px}.stg b{display:block;font-size:20px;font-weight:800;margin-top:2px}.stg small{display:flex;justify-content:space-between;gap:6px}.stg i{font-style:normal;font-size:11px;color:var(--mut);font-weight:500;white-space:nowrap}
+.stg:after{content:"›";position:absolute;right:-9px;top:50%;transform:translateY(-50%);color:#c3ccd8;font-size:16px}.stg:last-child:after{display:none}
+.need{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}.card h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;color:var(--mut);text-transform:uppercase;display:flex;justify-content:space-between}.card h4 span{color:var(--o)}
+.it{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #f1f4f8}.it:first-of-type{border-top:0}.it .av{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:11px}.it b{font-weight:600;display:block}.it small{color:var(--mut)}.it .btn{margin-left:auto;padding:5px 10px;font-size:12px}
+.filters{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-weight:600;font-size:12.5px;color:var(--ink);cursor:pointer}.chip.on{background:var(--n);color:#fff;border-color:var(--n)}.chip.x{color:var(--mut)}
+.filters .r{margin-left:auto;color:var(--mut)}
+table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:700;padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid #f1f4f8;vertical-align:middle;white-space:nowrap}td:nth-child(2){white-space:normal;min-width:240px}tr:last-child td{border-bottom:0}tbody tr{cursor:pointer}tbody tr:hover td{background:#f6f9ff}
+.who{display:flex;gap:10px;align-items:center}.who .av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;flex:none}.who b{display:block;font-weight:700}.who small{color:var(--mut)}
+.st{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px;padding:4px 10px;border-radius:999px;background:#f1f5f9;color:#334155}.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.scr{background:#fff7ed;color:#b45309}.st.tst{background:#f3e8ff;color:#6d28d9}.st.tri{background:#e8f2ff;color:#0b5cad}.st.act{background:#e7f6ec;color:var(--ok)}.st.rej{background:#fee2e2;color:var(--bad)}
+.sc{display:inline-flex;align-items:center;gap:8px;font-weight:700}.ring{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:800}.ring i{width:22px;height:22px;border-radius:50%;background:#fff;display:grid;place-items:center;font-style:normal}
+.sigs{display:flex;flex-direction:column;gap:3px}.sig{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;white-space:nowrap;color:#334155}.sig:before{content:'';width:6px;height:6px;border-radius:50%;background:#94a3b8;flex:none}.sig.r:before{background:var(--bad)}.sig.a:before{background:#d97706}.sig.g:before{background:var(--ok)}.sig.b:before{background:var(--b)}
+.mut{color:var(--mut)}.act{opacity:0;display:flex;gap:6px;justify-content:flex-end}tr:hover .act{opacity:1}.act .btn{padding:5px 9px;font-size:12px}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;color:var(--mut);background:#fff;border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px}.foot .pg{display:flex;gap:4px}.foot .pg b{padding:5px 9px;border:1px solid var(--line);border-radius:6px;font-weight:600;background:#fff}.foot .pg b.on{background:var(--n);color:#fff;border-color:var(--n)}
+table{border-radius:12px 12px 0 0}
+</style></head><body><div class="app">
+<aside class="side"><div class="brand">▮ Load<span>Boot</span> Command Center</div>
+<h6>HOME</h6><a>Today</a><a>Task queue</a><h6>LOADS</h6><a>Loads &amp; trips</a><a>Market rates</a><a>Rate standards</a><h6>CARRIERS</h6><a>Carriers</a><a>Compliance</a><a>Document review</a><h6>PEOPLE</h6><a class="on">Dispatchers &amp; agents</a><a>Referral partners</a></aside>
+<main>
+<div class="top"><input placeholder="Search dispatchers by name, e-mail, country, MC…"><span class="kbd">/</span><span style="flex:1"></span><button class="btn">Export CSV</button><button class="btn p">+ Invite dispatcher</button></div>
+<div class="hdr"><div><h1>Dispatchers</h1><p>Hiring pipeline → live workforce. One dispatcher per carrier; nothing moves until the RC is approved.</p></div>
+<div class="tabs"><b class="on">Roster</b><b>Pipeline board</b><b>Work queue</b><b>Payouts</b></div></div>
+
+<div class="kpis">
+<div class="kpi"><small>TOTAL DISPATCHERS</small><b>38</b><em>+6 this week</em></div>
+<div class="kpi"><small>IN PIPELINE</small><b>36</b><em class="m">35 screening · 1 test</em></div>
+<div class="kpi"><small>ON TRIAL</small><b>1</b><em class="m">ends in 6 days</em></div>
+<div class="kpi"><small>ACTIVE ON CARRIERS</small><b>0</b><em class="m">0 trucks covered</em></div>
+<div class="kpi hot"><small>NEEDS YOU NOW</small><b>2</b><em class="d">1 test result · 1 trial to set up</em></div>
+<div class="kpi"><small>COMMISSION OWED</small><b>$0</b><em class="m">nothing approved</em></div>
+</div>
+
+<div class="pipe"><div style="display:flex;justify-content:space-between;margin-bottom:10px"><b style="font-size:12px;letter-spacing:.06em;color:var(--mut)">PIPELINE · click a stage to filter</b><span class="mut">conversion applied → active: 0% · median time in screening 4 d</span></div>
+<div class="row">
+<div class="stg"><small>APPLIED<i>—</i></small><b>0</b></div>
+<div class="stg on"><small>SCREENING<i>92%</i></small><b>35</b></div>
+<div class="stg"><small>SKILLS TEST<i>1 passed</i></small><b>1</b></div>
+<div class="stg"><small>TRIAL<i>10 wd</i></small><b>1</b></div>
+<div class="stg"><small>VERIFIED</small><b>0</b></div>
+<div class="stg"><small>ACTIVE</small><b>0</b></div>
+<div class="stg" style="flex:.6;background:#fff5f5"><small>REJECTED</small><b>1</b></div>
+</div></div>
+
+<div class="need">
+<div class="card"><h4>Tests to review <span>1 waiting</span></h4>
+<div class="it"><div class="av" style="background:#0e7490">AS</div><div><b>Abdul Aziz Shinwari</b><small>79 / 100 · passed · candidate told</small></div><button class="btn">Set up trial</button></div></div>
+<div class="card"><h4>RC approvals <span>0 open</span></h4><div class="it mut">Nothing waiting — every rate confirmation is approved.</div></div>
+<div class="card"><h4>Trials ending <span>1</span></h4>
+<div class="it"><div class="av" style="background:#7c3aed">AL</div><div><b>Asim Latif</b><small>trial · day 4 of 10 · 0 loads delivered</small></div><button class="btn">Review</button></div></div>
+</div>
+
+<div class="filters"><span class="chip on">All stages · 38</span><span class="chip">Screening 35</span><span class="chip">Skills test 1</span><span class="chip">Trial 1</span><span class="chip">Active 0</span><span class="chip x">Country ▾</span><span class="chip x">Has RC open</span><span class="chip x">Applied · 7 d</span><span class="r">Sorted by newest · <span class="kbd">↑↓</span> move · <span class="kbd">↵</span> open</span></div>
+
+<div class="tw"><table><thead><tr><th style="width:30px"><input type="checkbox"></th><th>Dispatcher</th><th>Location · exp</th><th>Stage</th><th>Skills test</th><th>Signals</th><th>Applied</th><th>Last activity</th><th></th></tr></thead><tbody>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#0e7490">AS</div><div><b>Abdul Aziz Shinwari</b><small>abdulazizshinwari6@gmail.com</small></div></div></td><td>Afghanistan<br><small class="mut">3 yrs</small></td><td><span class="st tst">Skills test</span></td><td><span class="sc"><span class="ring" style="background:conic-gradient(#12803c 79%,#e5e9f0 0)"><i>79</i></span><span style="color:#12803c">Pass</span></span></td><td><div class="sigs"><span class="sig g">Result e-mailed</span></div></td><td>Sep 12</td><td class="mut">2 min ago</td><td><div class="act"><button class="btn o">Move to trial</button><button class="btn">Open</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#7c3aed">AL</div><div><b>Asim Latif</b><small>asimmr749@gmail.com</small></div></div></td><td>Pakistan<br><small class="mut">2 yrs</small></td><td><span class="st tri">Trial</span></td><td class="mut">—</td><td><div class="sigs"><span class="sig a">0 loads delivered</span><span class="sig b">1 carrier · 1 truck</span></div></td><td>Sep 10</td><td class="mut">Yesterday</td><td><div class="act"><button class="btn">Open</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#b45309">MI</div><div><b>Mohammad Inaam Azizii</b><small>inaamazizi28@gmail.com</small></div></div></td><td>Afghanistan<br><small class="mut">0 yrs</small></td><td><span class="st scr">Screening</span></td><td class="mut">not invited</td><td class="mut">—</td><td>Sep 11</td><td class="mut">2 d ago</td><td><div class="act"><button class="btn o">Send test</button><button class="btn">Reject</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#0b5cad">MV</div><div><b>Mirian Valdez</b><small>mirianvilla20@gmail.com</small></div></div></td><td>United States<br><small class="mut">1 yr</small></td><td><span class="st scr">Screening</span></td><td class="mut">not invited</td><td class="mut">—</td><td>Sep 10</td><td class="mut">3 d ago</td><td><div class="act"><button class="btn o">Send test</button><button class="btn">Reject</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#0e7490">JC</div><div><b>Jack Daniel Cartano</b><small>jackdanielcarta@gmail.com</small></div></div></td><td>Philippines<br><small class="mut">0 yrs</small></td><td><span class="st scr">Screening</span></td><td class="mut">not invited</td><td class="mut">—</td><td>Sep 10</td><td class="mut">3 d ago</td><td><div class="act"><button class="btn o">Send test</button><button class="btn">Reject</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#7c3aed">SS</div><div><b>Sean Wood Suba</b><small>seansuba17@gmail.com</small></div></div></td><td>Philippines<br><small class="mut">3 yrs</small></td><td><span class="st scr">Screening</span></td><td class="mut">not invited</td><td class="mut">—</td><td>Sep 7</td><td class="mut">6 d ago</td><td><div class="act"><button class="btn o">Send test</button><button class="btn">Reject</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#b45309">YM</div><div><b>Yusuf Madadov</b><small>ym7710169@gmail.com</small></div></div></td><td>United States<br><small class="mut">1 yr</small></td><td><span class="st scr">Screening</span></td><td class="mut">not invited</td><td class="mut">—</td><td>Sep 6</td><td class="mut">7 d ago</td><td><div class="act"><button class="btn o">Send test</button><button class="btn">Reject</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#0b5cad">MJ</div><div><b>Maria Jasmin Villarba</b><small>mariajasminvillarba@gmail.com</small></div></div></td><td>Philippines<br><small class="mut">0 yrs</small></td><td><span class="st scr">Screening</span></td><td class="mut">not invited</td><td class="mut">—</td><td>Sep 1</td><td class="mut">12 d ago</td><td><div class="act"><button class="btn o">Send test</button><button class="btn">Reject</button></div></td></tr>
+<tr><td><input type="checkbox"></td><td><div class="who"><div class="av" style="background:#0e7490">MN</div><div><b>Monicah Njenga</b><small>monicanjenga54@gmail.com</small></div></div></td><td>Kenya<br><small class="mut">0 yrs</small></td><td><span class="st scr">Screening</span></td><td class="mut">not invited</td><td class="mut">—</td><td>Aug 30</td><td class="mut">14 d ago</td><td><div class="act"><button class="btn o">Send test</button><button class="btn">Reject</button></div></td></tr>
+</tbody></table></div>
+<div class="foot"><span>Showing 1–9 of 38 · 50 per page · server-side search &amp; paging (1M-ready)</span><div class="pg"><b class="on">1</b><b>2</b><b>›</b></div></div>
+</main></div></body></html>

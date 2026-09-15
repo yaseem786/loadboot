@@ -64,6 +64,23 @@ export async function uploadPodDocument(file, tripId) {
   return { path, fileName: file.name, contentType: file.type, size: file.size };
 }
 
+// bl_drv_0344: a driver's own CDL / medical card. Own-folder path so the existing doc_upload RLS accepts it;
+// the owner reads it through doc_read_driver_uploads_by_owner. Returns { path, fileName, contentType, size }.
+export async function uploadDriverOwnDoc(file, kind) {
+  if (!file) throw new Error('No file selected.');
+  if (!POD_ALLOWED.includes(file.type)) throw new Error('Unsupported file type. Allowed: PDF, JPG, PNG, WEBP.');
+  if (file.size <= 0) throw new Error('That file is empty.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB.');
+  const sb = await getClient();
+  const user = await getUser();
+  if (!user) throw new Error('Please sign in again.');
+  const ext = POD_EXTMAP[file.type] || 'bin';
+  const path = `${user.id}/driver-docs/${kind}-${Date.now()}-${rand()}.${ext}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw new Error(error.message || 'Upload failed.');
+  return { path, fileName: file.name, contentType: file.type, size: file.size };
+}
+
 const AVATAR_ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const AVATAR_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
 // Upload a profile avatar image under {auth.uid()}/avatar/... (own-folder RLS). Returns { path }.

@@ -109,7 +109,16 @@ export async function signUp(email, password, meta = {}) {
 // provisioning; the caller then runs cc_accept_driver_invite to join the inviter's org.
 export async function signUpDriver(email, password, token, meta = {}) {
   const sb = await getClient();
-  return sb.auth.signUp({ email, password, options: { data: { role: 'driver', invite_token: token || '', name: meta.name || '' } } });
+  // bl_drv_0344f: emailRedirectTo = the invite page itself, so a confirmation click lands back on the join flow.
+  const options = { data: { role: 'driver', invite_token: token || '', name: meta.name || '' } };
+  if (meta.redirectTo) options.emailRedirectTo = meta.redirectTo;
+  return sb.auth.signUp({ email, password, options });
+}
+
+// bl_drv_0344f: re-send the signup confirmation (driver signed up via a shared link, mail got lost).
+export async function resendSignupConfirmation(email, redirectTo) {
+  const sb = await getClient();
+  return sb.auth.resend({ type: 'signup', email, options: redirectTo ? { emailRedirectTo: redirectTo } : undefined });
 }
 
 export async function resetPassword(email) {

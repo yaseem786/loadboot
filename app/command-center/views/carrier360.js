@@ -278,13 +278,15 @@ export function renderCarrier360(host, orgId) {
     ]);
 
     const drivers = d.drivers || [];
-    const driversCard = card([
-      el('h4', { class: 'cc-card-title' }, 'Drivers (' + drivers.length + ')'),
-      drivers.length ? el('table', { class: 'cc-table cc-table-tight' }, [
-        el('thead', null, el('tr', null, [el('th', null, 'Name'), el('th', null, 'Phone'), el('th', null, 'License exp'), el('th', null, 'Medical exp')])),
-        el('tbody', null, drivers.map(x => el('tr', null, [el('td', null, el('b', null, x.name)), el('td', null, x.phone || '—'), el('td', null, fmtDate(x.license_exp)), el('td', null, fmtDate(x.medical_exp))]))),
-      ]) : el('div', { class: 'cc-sub' }, 'No drivers recorded.'),
-    ]);
+    // bl_drv_0344: app status / permissions / presence per driver — rendered by driverAccess.js (cc_carrier_driver_access)
+    const driversCard = card([el('h4', { class: 'cc-card-title' }, 'Drivers (' + drivers.length + ')'), el('div', { class: 'cc-sub' }, 'Loading app status…')]);
+    import('./driverAccess.js').then((m) => m.mountDriverAccessCard(driversCard, orgId, drivers)).catch(() => {
+      mount(driversCard, [el('h4', { class: 'cc-card-title' }, 'Drivers (' + drivers.length + ')'),
+        drivers.length ? el('table', { class: 'cc-table cc-table-tight' }, [
+          el('thead', null, el('tr', null, [el('th', null, 'Name'), el('th', null, 'Phone'), el('th', null, 'License exp'), el('th', null, 'Medical exp')])),
+          el('tbody', null, drivers.map(x => el('tr', null, [el('td', null, el('b', null, x.name)), el('td', null, x.phone || '—'), el('td', null, fmtDate(x.license_exp)), el('td', null, fmtDate(x.medical_exp))]))),
+        ]) : el('div', { class: 'cc-sub' }, 'No drivers recorded.')]);
+    });
 
     // ---- 🚛 Fleet — the truck exactly as the carrier described it, checked against the COI ----
     // Until now the only fleet fact on this screen was profile.truck_count: a number the

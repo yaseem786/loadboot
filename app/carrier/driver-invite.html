@@ -21,18 +21,30 @@
   input:focus{border-color:#0883F7}
   .btn{width:100%;margin-top:16px;background:linear-gradient(135deg,#0883F7,#0967d2);color:#fff;border:0;border-radius:12px;padding:13px;font-weight:800;font-size:1rem;cursor:pointer;font-family:inherit}
   .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);margin-top:10px}
+  a.btn{display:block;text-align:center;text-decoration:none;box-sizing:border-box}
+  .step .btn{margin-top:10px;padding:12px}
+  .step .hint{margin-top:10px}
   .btn:disabled{opacity:.6;cursor:default}
   #msg{margin-top:12px;font-size:.86rem;line-height:1.5;min-height:1.2em}
   .feat{margin-top:16px;font-size:.8rem;color:#93a4bd;line-height:1.7}
   .brand{display:flex;align-items:center;gap:9px;margin-bottom:16px;font-weight:800;letter-spacing:.02em}
   .brand span{color:#FC5305}
+  .steps{display:grid;gap:8px;margin-top:14px}
+  .step{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 13px;background:rgba(255,255,255,.03)}
+  .step.on{border-color:#0883F7}
+  .step.done{opacity:.6}
+  .step b{display:block;font-size:.92rem}
+  .step span{display:block;font-size:.8rem;color:#93a4bd;margin-top:2px;line-height:1.5}
+  .btn.play{background:#fff;color:#0f172a}
+  .hint{font-size:.78rem;color:#93a4bd;margin-top:10px;line-height:1.5}
+  .ok{color:#4ade80}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="brand">Load<span>Boot</span> · Driver</div>
+  <div class="brand" style="display:flex;align-items:flex-start;gap:4px"><img src="/logo-full-dark.png" alt="LoadBoot" style="height:34px;width:auto;display:block"><span style="font-size:12px;font-weight:600;color:#FB923C;line-height:1;margin-top:7px">Driver</span></div>
   <h1>Join your carrier on LoadBoot</h1>
-  <p class="sub">Your phone becomes your truck’s tracker. You’ll see only your assigned loads — check in/out with GPS, upload the POD, and report detention or lumper in one tap.</p>
+  <p class="sub" id="sub">Your phone becomes your truck’s tracker. You’ll see only your assigned loads — check in/out with GPS, upload the POD, and report detention or lumper in one tap. No paperwork, about a minute.</p>
   <div id="form">
     <label for="name">Your name</label>
     <input id="name" type="text" autocomplete="name" placeholder="Full name">
@@ -48,16 +60,91 @@
 </div>
 <script type="module">
 import { signUpDriver, signInWithPassword, getUser } from '../shared/session.js';
+import { getClient } from '../shared/supabaseClient.js';
+// resend lives here (not imported from session.js) so a service-worker-cached OLD session.js can never break this page's module graph.
+async function resendSignupConfirmation(email, redirectTo) { const sb = await getClient(); return sb.auth.resend({ type: 'signup', email, options: redirectTo ? { emailRedirectTo: redirectTo } : undefined }); }
 import { acceptDriverInvite } from '../shared/api.js';
+import ENV from '../shared/env.js';
 
-const token = new URLSearchParams(location.search).get('t') || '';
+const _qs = new URLSearchParams(location.search);
+const token = _qs.get('t') || '';
+// bl_drv_0344f: `c` is only ever in the EMAILED link. With it (and the invite's own email) the driver has proven
+// the inbox, so driver-join creates the account pre-confirmed. Shared links (copy / WhatsApp) have no `c` and go
+// through normal email confirmation.
+const code = _qs.get('c') || '';
+const HERE = location.origin + location.pathname + '?t=' + encodeURIComponent(token) + (code ? '&c=' + encodeURIComponent(code) : '');
 const $ = (id) => document.getElementById(id);
 function msg(t, ok) { const m = $('msg'); m.textContent = t; m.style.color = ok ? '#4ade80' : '#f87171'; }
+const ua = navigator.userAgent || '';
+const isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+const isAndroid = /Android/i.test(ua);
+const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const inApp = standalone || /android-app:\/\//.test(document.referrer || '');
+const platform = isIOS ? 'ios' : isAndroid ? 'android' : 'web';
+const PLAY = 'https://play.google.com/store/apps/details?id=com.loadboot.app&referrer=' + encodeURIComponent('drv_' + token);
+const INTENT = 'intent://loadboot.com/app/carrier/#Intent;scheme=https;package=com.loadboot.app;S.browser_fallback_url=' + encodeURIComponent(PLAY) + ';end';
+
+// After joining: platform-aware install guide. Android drivers get the Play Store app (same Chrome storage → already
+// signed in inside it); iPhone drivers add the PWA to the Home Screen (separate storage → one more sign-in, said honestly).
+const LOGIN_URL = 'https://loadboot.com/app/carrier/?role=driver';
+// The driver login link, visible + one-tap copy — never make anyone copy it out of the address bar.
+function linkBox() {
+  const box = document.createElement('div'); box.style.cssText = 'display:flex;gap:8px;margin-top:10px';
+  const inp = document.createElement('input'); inp.readOnly = true; inp.value = LOGIN_URL; inp.style.cssText = 'min-width:0;font-size:.86rem'; inp.onclick = () => inp.select();
+  const cp = document.createElement('button'); cp.className = 'btn'; cp.style.cssText = 'width:auto;margin:0;padding:0 16px;flex:none'; cp.textContent = 'Copy';
+  cp.onclick = async () => { try { await navigator.clipboard.writeText(LOGIN_URL); } catch (_) { inp.select(); try { document.execCommand('copy'); } catch (__) {} } cp.textContent = 'Copied ✓'; setTimeout(() => { cp.textContent = 'Copy'; }, 2000); };
+  box.appendChild(inp); box.appendChild(cp); return box;
+}
+function waSelf() {
+  const wa = document.createElement('a'); wa.className = 'btn ghost'; wa.target = '_blank'; wa.rel = 'noopener';
+  wa.href = 'https://wa.me/?text=' + encodeURIComponent('LoadBoot Driver — sign in here: ' + LOGIN_URL + '\nAndroid app: ' + PLAY);
+  wa.textContent = 'Send this link to my phone (WhatsApp)'; return wa;
+}
+function joined(r) {
+  $('form').style.display = 'none';
+  const carrier = (r && r.carrier) || 'your carrier';
+  document.querySelector('h1').textContent = 'You’re in — driving for ' + carrier;
+  $('sub').textContent = 'Your login is linked to ' + carrier + '’s verified LoadBoot account. Nothing else to fill in.';
+  const el = document.createElement('div'); el.className = 'steps';
+  const step = (cls, b, t, extra) => { const d = document.createElement('div'); d.className = 'step ' + cls; d.innerHTML = '<b>' + b + '</b><span>' + t + '</span>'; if (extra) d.appendChild(extra); return d; };
+  el.appendChild(step('done', '1 · Password set ✓', 'Sign in any time with ' + ((r && r.email) || 'your email') + '.'));
+  if (isAndroid && !inApp) {
+    const a = document.createElement('a'); a.className = 'btn play'; a.href = PLAY; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '▶ Get it on Google Play';
+    const o = document.createElement('a'); o.className = 'btn ghost'; o.href = INTENT; o.textContent = 'Already installed? Open the app';
+    const wrap = document.createElement('div'); wrap.appendChild(a); wrap.appendChild(o);
+    el.appendChild(step('on', '2 · Install the LoadBoot app', 'Required on Android — GPS check-in and live tracking only work in the app. You stay signed in.', wrap));
+    el.appendChild(step('', '3 · Open the app and allow Location + Notifications', 'Dispatch sees your truck on active loads only.'));
+  } else if (isIOS && !inApp) {
+    el.appendChild(step('on', '2 · Add LoadBoot to your Home Screen', 'Tap <b style="display:inline">Share ⎋</b> at the bottom of Safari → <b style="display:inline">Add to Home Screen</b> → Add.'));
+    el.appendChild(step('', '3 · Open LoadBoot from your Home Screen', 'Sign in once more inside it (iPhone keeps app storage separate), then allow Location + Notifications.'));
+    const go = document.createElement('a'); go.className = 'btn'; go.href = '/app/carrier/?role=driver'; go.textContent = 'Or continue in Safari for now'; el.appendChild(go);
+    el.appendChild(linkBox());
+  } else {
+    const go = document.createElement('a'); go.className = 'btn'; go.href = '/app/carrier/?role=driver'; go.textContent = 'Open LoadBoot →'; el.appendChild(go);
+    if (!isAndroid && !isIOS) {
+      // Desktop: we cannot know which phone the driver carries, so offer both — a direct Play Store link for Android,
+      // the Home-Screen guide for iPhone — plus the login link itself (copy / WhatsApp-to-self) so nothing is retyped.
+      const a = document.createElement('a'); a.className = 'btn play'; a.href = PLAY; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '▶ Android · Get it on Google Play';
+      const ios = document.createElement('div'); ios.className = 'hint'; ios.innerHTML = '<b style="display:inline;color:#e5edf8">iPhone:</b> open the link below in <b style="display:inline;color:#e5edf8">Safari</b> → tap <b style="display:inline;color:#e5edf8">Share ⎋</b> → <b style="display:inline;color:#e5edf8">Add to Home Screen</b> → sign in with this email once.';
+      const wrap = document.createElement('div'); wrap.appendChild(a); wrap.appendChild(ios); wrap.appendChild(linkBox()); wrap.appendChild(waSelf());
+      el.appendChild(step('on', '2 · Put LoadBoot on your phone', 'GPS check-in and live tracking only work on the phone. Pick yours:', wrap));
+    }
+  }
+  $('msg').after(el);
+  msg('', true);
+}
 
 async function finish() {
   msg('Joining your carrier…', true);
-  try { await acceptDriverInvite(token); location.href = '/app/carrier/'; }
-  catch (e) { msg((e && e.message) || 'Could not join — ask the carrier to resend the invite.'); }
+  try { localStorage.setItem('lb_role_hint', 'driver'); } catch (_) {}
+  try { const r = await acceptDriverInvite(token, platform); joined(r); }
+  catch (e) {
+    const m = (e && e.message) || '';
+    if (/already owns a carrier account/i.test(m)) msg('This email already owns a carrier account on LoadBoot. Ask your carrier to invite a different email for driving.');
+    else if (/expired/i.test(m)) msg('This invite expired — ask the carrier to resend it (one tap on their Fleet page).');
+    else if (/accepted/i.test(m)) { msg('This invite was already used. Opening the app…', true); setTimeout(() => { location.href = '/app/carrier/?role=driver'; }, 900); }
+    else msg(m || 'Could not join — ask the carrier to resend the invite.');
+  }
 }
 
 async function init() {
@@ -66,31 +153,54 @@ async function init() {
 }
 
 $('signupBtn').onclick = async () => {
-  const name = $('name').value.trim(), email = $('email').value.trim(), pw = $('pw').value;
+  const name = $('name').value.trim(), email = $('email').value.trim().toLowerCase(), pw = $('pw').value;
   if (!email || pw.length < 8) { msg('Enter your email and a password of at least 8 characters.'); return; }
   $('signupBtn').disabled = true; msg('Creating your driver account…', true);
   try {
-    const { data, error } = await signUpDriver(email, pw, token, { name });
-    if (error) throw error;
-    // Supabase returns success with an empty identities array when the address is
-    // already registered — it will not error, and no email is sent. Without this the
-    // user is told a confirmation link is on the way and waits for mail that never comes.
-    if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-      msg('That email already has a LoadBoot account. Enter your password above and tap Sign in to join this carrier.');
-      $('signupBtn').disabled = false;
-      return;
+    // Fast path — arrived from the invite email with this very address: no confirmation step.
+    if (code) {
+      const r = await fetch(ENV.supabaseUrl + '/functions/v1/driver-join', { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': ENV.supabaseAnonKey, 'Authorization': 'Bearer ' + ENV.supabaseAnonKey },
+        body: JSON.stringify({ token, code, email, password: pw, name, platform }) });
+      const j = await r.json().catch(() => ({}));
+      if (j && j.ok) { const { error } = await signInWithPassword(email, pw); if (error) throw error; await finish(); return; }
+      if (j && j.error === 'exists') { existsMsg(email); return; }
+      if (j && j.error === 'email_mismatch') msg('This invite was emailed to a different address, so we’ll confirm ' + email + ' first…', true);
+      // any other answer (code expired, invite reissued) → normal signup below
     }
+    const { data, error } = await signUpDriver(email, pw, token, { name, redirectTo: HERE });
+    if (error) throw error;
+    if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) { existsMsg(email); return; }
     if (data && data.session) { await finish(); }
-    else { msg('Check your email to confirm your address, then open this same link again to finish joining.', true); $('signupBtn').disabled = false; }
-  } catch (e) { $('signupBtn').disabled = false; msg((e && e.message) || 'Sign up failed.'); }
+    else { pendingConfirm(email); }
+  } catch (e) { $('signupBtn').disabled = false; const m = (e && e.message) || 'Sign up failed.'; if (/already registered|already exists/i.test(m)) existsMsg(email); else msg(m); }
 };
+function existsMsg(email) {
+  $('signupBtn').disabled = false;
+  msg(email + ' already has a LoadBoot login. Enter that password and tap “I already have an account — sign in” — it joins this carrier with your existing account.');
+  $('pw').value = ''; $('pw').focus();
+}
+function pendingConfirm(email) {
+  $('signupBtn').disabled = false;
+  msg('We emailed a confirmation link to ' + email + '. Tap it on this phone — it brings you straight back here and joins you automatically. Not there in a minute? Check spam, or tap Resend below.', true);
+  resendBtn(email);
+}
+function resendBtn(email) {
+  let b = $('resendBtn');
+  if (!b) { b = document.createElement('button'); b.id = 'resendBtn'; b.className = 'btn ghost'; b.textContent = 'Resend confirmation email'; $('form').appendChild(b); }
+  b.onclick = async () => { b.disabled = true; try { const { error } = await resendSignupConfirmation(email, HERE); if (error) throw error; msg('Sent again to ' + email + '. Tap the link in that email on this phone.', true); } catch (e) { msg((e && e.message) || 'Could not resend — try again in a minute.'); } setTimeout(() => { b.disabled = false; }, 30000); };
+}
 
 $('signinBtn').onclick = async () => {
   const email = $('email').value.trim(), pw = $('pw').value;
   if (!email || !pw) { msg('Enter your email and password to sign in.'); return; }
   $('signinBtn').disabled = true; msg('Signing in…', true);
   try { const { error } = await signInWithPassword(email, pw); if (error) throw error; await finish(); }
-  catch (e) { $('signinBtn').disabled = false; msg((e && e.message) || 'Sign in failed.'); }
+  catch (e) {
+    $('signinBtn').disabled = false; const m = (e && e.message) || 'Sign in failed.';
+    if (/not confirmed/i.test(m)) { msg('This email isn’t confirmed yet. Tap the confirmation link we emailed you (it brings you back here), or resend it below.'); resendBtn(email.toLowerCase()); }
+    else if (/invalid login/i.test(m)) msg('Wrong email or password. New here? Use “Create driver account & join” above instead.');
+    else msg(m);
+  }
 };
 
 init();

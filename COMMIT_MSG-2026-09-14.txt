@@ -1,0 +1,69 @@
+feat(driver-access): owner invites drivers, plain-language permissions, driver mode, CC visibility (bl_drv_0344)
+
+WHY
+- A driver who accepted an invite got the FULL carrier app: the 'driver' role was stored but never enforced
+  across ~170 carrier RPCs (all gate on my_carrier_org() only). Finance, payment profile, documents, team — all open.
+- cc_pocket_drivers never returned user_id, so "Invite to app" never flipped to "Joined".
+- cc_carrier_invite_driver called gen_random_bytes() without the extensions schema: every invite errored.
+- notify_org emailed drivers every owner notification (payment approved, etc.).
+
+BACKEND (migrations/bl_drv_0344_driver_access.sql — applied to STAGING, PROD pending owner)
+- Central fail-closed gate: my_carrier_org() (plpgsql) reads the calling RPC from PG_CONTEXT; a 'driver' member
+  passes only if driver_rpc_policy maps that RPC to a permission the owner granted. Unknown RPC = deny.
+  can_touch_trip() gated the same way. Owners/managers/dispatchers unchanged.
+- Catalog of 30 permissions (11 core always-on + 19 optional) in 7 groups, 4 presets; grants per (org,user).
+- Row scoping: cc_pocket_trips + 20 trip RPCs assert the trip is assigned to the driver; rate hidden unless loads.see_rates;
+  assign_trip: driver may only move own trip's truck.
+- Invite v2 (preset/perms/via, one live invite per driver, premium email), resend, revoke, peek; accept v2 applies
+  grants, records platform, notifies owner; grants get/set (audit diff + in-app notice to driver); pause/resume/remove;
+  owner setting require_android_app; driver's own CDL/medical upload + owner review (auto-updates expiries);
+  heartbeat (last seen, device, location on/off); my earnings / settlements (own trips only); denial log.
+- Realtime: public.driver_access_events (RLS via definer helper, in supabase_realtime publication).
+- CC: cc_carrier_driver_access(org), cc_driver_adoption_kpis(). Storage policy: owners read driver uploads.
+- notify_user() helper; notify_org skips drivers unless template is trip./driver.
+- anon-executable SECURITY DEFINER surface unchanged (32 staging); all new RPCs authenticated-only.
+
+FRONTEND
+- app/carrier/driver-access.js (new): Fleet driver cards with live status (not invited / invited / joined / online /
+  paused), invite modal (presets, grouped toggles, "what they will see"), resend/copy/WhatsApp/revoke, manage access,
+  pause/resume/remove, driver docs review, Android-required setting, bulk invite, realtime refresh, deep links
+  #fleet/driver/<id>[/access|/docs], #fleet/invite/<id>.
+- app/carrier/driver-mode.js (new): driver shell in the same app — nav from permissions, Today, Me (phone, own docs),
+  Earnings, read-only Documents/Fleet, Android install wall (owner setting), iPhone home-screen hint, heartbeat,
+  realtime grant changes (toast + refresh), access-paused screen.
+- app/carrier/app.js: driver branch in appView, render overrides, owner controls hidden for drivers, Fleet drivers
+  list delegated to driver-access.js (legacy list kept as fallback). NAV is now `let`.
+- app/carrier/driver-invite.html: platform-aware join flow (Play Store step / Home Screen guide), honest iOS note.
+- app/shared/api.js: 24 wrappers + DRIVER_DENIED tagging/reporting; storage.js: uploadDriverOwnDoc.
+- CC: views/driverAccess.js (new) — Carrier 360 Drivers card (app status, access, location, device, trips, docs,
+  denials, events, untracked trucks) + adoption KPIs on the Fleet view.
+
+
+0344f — JOIN HARDENING (in the same migration file)
+- Emailed invite link carries email_code → edge fn supabase/functions/driver-join (verify_jwt=false) creates a CONFIRMED user
+  (email proven by the link); shared/WhatsApp link = normal confirm with emailRedirectTo; existing email → "sign in";
+  an owner login can never become a driver. Drivers never get the carrier welcome (driver.welcome after join instead).
+- notify_org skips drivers entirely; trip alerts reach owner/managers + the assigned driver only (both shapes of
+  cc_trip_notify_parties: explicit loop = staging, notify_org = prod).
+- "Verified carrier" badge = carrier_onboarding.decided_at set AND org active (organizations.status is 'active' from signup).
+- Trip-scoped patch loop tolerates one-line function bodies (prod's cc_pocket_post_location).
+
+0345a — WHO IS DRIVING / WHOSE PHONE REPORTS (migrations/bl_drv_0345a_tracking_source.sql, apply after 0344)
+- Root cause: owner portal auto-started tracking on any device; every point was source='carrier'.
+- trips.driven_by_owner; cc_pocket_post_location rewritten (driver → driver_app, refused OWNER_TOOK_OVER; owner → refused
+  OWNER_NOT_DRIVING when an app-linked driver is assigned; ELD point in last 10 min wins; created_by recorded).
+- trg_trip_default_driver: a trip created by an app-linked driver is assigned to that driver on every creation path.
+- cc_trip_set_driving(trip, owner_driving) — owner/manager only. cc_staff_track_load + driven_by_owner/tracking_label;
+  cc_partner_track_load + tracking_source (ELD / Driver app only — broker never learns whose phone).
+- Owner app: Assign modal asks "Who is driving?"; postLoc() stops the watcher on refusal (window.__lbStopLive).
+  CC loadTracker shows the label + "Owner phone, but <driver> is assigned" warning. Partner Live badge shows the source.
+
+LOGIN / ONBOARDING (14 Sep)
+- Login = role chooser (Carrier owner / Driver / I own & drive, LAST TIME badge) → role form; ?role=driver|oo and #signup
+  skip it; driver mode hides Create account. Fleet owner-operator self-detection ("Looks like this is you") + invite
+  modal blocks the owner's own email. Driver Me → App card is platform-aware (installed / Play / iPhone / desktop).
+- whatsnew.js: never for drivers, never on non-production builds, once per device. marketing login.html: Driver App card.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01V9z8uWYJPy5q4nD67LF2Tg
+Claude-Session: https://claude.ai/code/session_017MM57WnMMAMt69hjjd2kgY

@@ -166,7 +166,7 @@ export function brandLogo(opts = {}) {
   // Official brand-kit product-family lockup: same icon, same wordmark — only the
   // descriptor changes (kit section 06). Blue = ops/dev, orange = carrier-side, slate = partners.
   const ink = dark ? '#FFFFFF' : '#0F172A';
-  const FAMILY = { 'command center': '#60A5FA', 'carrier': '#FB923C', 'pocket': '#FB923C',
+  const FAMILY = { 'command center': '#60A5FA', 'carrier': '#FB923C', 'pocket': '#FB923C', 'driver': '#FB923C',
     'marketplace': '#FB923C', 'partner': '#94A3B8', 'developer': '#60A5FA', 'developers': '#60A5FA' };
   // Official kit crop (16 14 68 72) — never redraw or recolor the mark.
   const iconSvg = '<svg width="21" height="22" viewBox="16 14 68 72" role="img" aria-label="LoadBoot">'
