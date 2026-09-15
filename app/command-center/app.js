@@ -32,6 +32,7 @@ import { renderCompliance } from './views/compliance.js';
 import { renderTrips } from './views/trips.js';
 import { renderComms } from './views/comms.js';
 import { renderFinance } from './views/finance.js';
+import { renderFeeApprovals } from './views/feeApprovals.js';
 import { renderFinanceAnalytics } from './views/financeAnalytics.js';
 import { renderSystemHealth } from './views/systemHealth.js';
 import { renderTemplates } from './views/templates.js';
@@ -262,6 +263,7 @@ async function boot() {
     ] },
     finance: { nav: '/finance', tabs: [
       { id: 'invoices', label: 'Invoices & settlements', path: '/finance', allowed: () => financeEnabled && can('finance.view'), render: (h, q) => renderFinance(h, q.get('id')) },
+      { id: 'approvals', label: 'Fee approvals', path: '/fee-approvals', allowed: () => financeEnabled && can('finance.view'), render: (h) => renderFeeApprovals(h) },
       { id: 'analytics', label: 'Finance analytics', path: '/finance-analytics', allowed: () => financeEnabled && can('finance.view'), render: (h) => renderFinanceAnalytics(h) },
     ] },
     crm: { nav: '/crm', tabs: [
@@ -334,6 +336,7 @@ async function boot() {
     // Deep link: #mailbox?thread=<thread_key> opens that conversation without marking it read.
     '/mailbox': ({ query }) => { setActive('/mailbox'); if (can('comm.view')) renderMailbox(content, query.get('thread')); else denied(); },
     '/finance': tabbed('finance', 'invoices'),
+    '/fee-approvals': tabbed('finance', 'approvals'),
     '/finance-analytics': tabbed('finance', 'analytics'),
     '/health': tabbed('settings', 'health'),
     '/webhooks': () => { setActive('/integrations'); if (integrationsEnabled && can('integrations.view')) renderIntegrations(content); else denied(); }, // retired: Integrations has the Webhooks tab

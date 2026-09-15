@@ -571,6 +571,22 @@ export const tripRevert = (id, toStatus, reason) => rpc('cc_trip_revert', { p_tr
 export const agentSuspend = (userId, suspend, reason) => rpc('cc_agent_suspend', { p_user: userId, p_suspend: suspend, p_reason: reason });
 export const invoiceSendReminder = (id, note) => rpc('cc_invoice_send_reminder', { p_invoice: id, p_note: note ?? null });
 export const invoiceLookup = (no) => rpc('cc_invoice_lookup', { p_no: no });
+// fee-invoice approval queue (bl_stripe_0346) — drafts wait here until the owner approves.
+export const feeInvoiceQueue = () => rpc('cc_fee_invoice_queue');
+export const feeInvoiceApprove = (id, note) => rpc('cc_fee_invoice_approve', { p_invoice: id, p_note: note ?? null });
+export const feeInvoiceReject = (id, reason) => rpc('cc_fee_invoice_reject', { p_invoice: id, p_reason: reason });
+
+// carrier auto-pay (bl_stripe_0348). The bank authorisation itself happens on a Stripe-hosted
+// page — LoadBoot never handles the account numbers.
+export const payAutopayStatus = () => rpc('pay_autopay_status');
+export const payAutopayDisable = () => rpc('pay_autopay_disable');
+export async function payAutopayStart() {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('stripe-autopay', { body: {} });
+  if (error) throw new Error(error.message || 'Could not start bank authorisation');
+  if (!data || !data.url) throw new Error((data && data.error) || 'Stripe did not return a setup link');
+  return data.url;
+}
 export const tripNotifyParties = (tripId, target, note) => rpc('cc_trip_notify_parties', { p_trip: tripId, p_target: target ?? 'both', p_note: note ?? null });
 export const automationHealth = () => rpc('cc_automation_health');
 
