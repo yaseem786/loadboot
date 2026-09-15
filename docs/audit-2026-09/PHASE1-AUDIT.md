@@ -682,3 +682,8 @@ Public GitHub push rejected by automatic approval review for insufficiently expl
 Five staff finance read/queue/verify/decision RPCs lacked current-session checks. Synthetic baseline additionally confirmed $145 payable ledger marked paid for a $120 approved request. Stage20260914120308 and prod20260914120413 now enforce existing private session guard plus unchanged finance permissions, reject NULL actions, capture/lock payable IDs and require sum=request amount before marking those IDs paid. Larger/smaller mismatch leaves request/ledger unchanged; existing valid approval/rejection/self-approval rules preserved.
 
 Candidate/deployed/rollback-reapply suites PASS; actual queue bodies use synthetic-only table copies for positive controls. Production15 absent-session role checks PASS, no customer/account/payout writes. Five deployed sources/grants match; anonymous names and full advisor identities unchanged both envs. Eleven selected RPCs now protected; document/Storage, remaining bank review, session revocation/full erasure and F10/verification/publication gates stay open. See REVIEW-STAFF-FINANCE-2026-09-14.md.
+
+
+### 2026-09-15 — Agent payout review continuation
+
+Staging-only session/NULL-decision correction for three agent bank-review RPCs; see REVIEW-AGENT-PAYOUT-2026-09-15.md. 24+24 isolated source assertions PASS (auth/email mocked), actual no-identity refusals and rollback/reapply PASS, source/grant/anon/advisor identities checked. Production attempt was blocked by automatic approval review for exact money-related migration authorization and was not executed. No real sends/payouts. Full audit remains open; GitHub publishing held until complete per user.

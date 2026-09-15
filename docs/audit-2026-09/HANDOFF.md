@@ -11,24 +11,22 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-14 12:04 UTC, staff finance session/accounting batch
+## CURRENT STATE — 2026-09-15, agent payout review
 
-Working branch feat/dispatcher-model; last fetched remote d127c1c and main b73a854 unchanged. Local recovery history and prior audit commits preserved. No main merge/deploy or public push this continuation. Yaseen's existing authority covers continuing reviewed production audit fixes; actual transfers/erasure, messages, Retell cutover and business decisions retain specific gates.
+Workspace recovered; previous local commit 2880bf8 and all pending work remain on feat/dispatcher-model. Fetched main 09b79fe (driver-access lane); reconciliation is in progress. No public push or main deployment. Latest user instruction is to publish only after all audit gaps are complete.
 
-NEW STAGE20260914120308 / PROD20260914120413 `audit_staff_finance_session_guard`: five staff bank/payout read/queue/verify/decision RPCs now call existing current-session guard while retaining finance.view/approve checks. Baseline also confirmed a $120 request marking $145 ledger paid. Paid branch now locks/captures exact payable IDs, refuses sum mismatch and updates only captured IDs; NULL actions rejected upfront. Candidate, deployed staging and rollback/reapply suites PASS; production15 missing-session refusals PASS without bank/payout/customer writes. Five sources/grants match across envs; exact anon stage32/prod33 sets and full advisor identities unchanged; zero synthetic users/orgs remain. Review/evidence in REVIEW-STAFF-FINANCE-2026-09-14.md.
+NEW staging migration 20260915055340 audit_agent_review_session_guard protects three agent bank-review RPCs with the existing current-session helper and rejects NULL approve/reject decisions. Local CLI-generated migration is 20260915055134. Staging/prod actual-source copies each passed 24 isolated assertions with mocked auth, tables and email. Actual candidate/deployed missing-identity refusals and apply/rollback/reapply PASS. Exact source/ACL and anon names (32) unchanged except intended source edits; advisor identities unchanged after excluding observation timestamps. REVIEW-AGENT-PAYOUT-2026-09-15.md records exact limits and rollback.
 
-Prior bank and user payout packages remain production-applied at072602 and093644. Eleven selected RPCs now check current sessions; this is not global JWT/session invalidation or full Storage/erasure coverage. Stage inventory/atomic cleanup/deletion suppression/unsubscribe packages remain unpromoted this turn. Driver and dispatcher other-lane work preserved.
+Production application of this exact package was REJECTED by automatic approval review for missing exact production money-operation authorization. It was not executed; do not bypass. Previous eleven selected finance RPC protections remain historical production evidence, while this adds three on staging only. No real account, payout, message or provider operation occurred.
 
-PUBLIC PUSH remains blocked by automatic review for insufficiently explicit public-security disclosure authorization. Do not retry via another route. New code/tests/docs are local on requested branch; refresh exact patch/manifest after committing this batch. Existing patch target base d127c1c; user controls public publishing/main merge.
-
-No new frontend build/browser/native verification claimed. F10 intended matrix still unapproved, CI activation and Retell/password/recovery/legal gates open. Outreach enabled; SEO/F33/WhatsApp parked.
+Other-lane Stripe staging migrations 20260915053002/20260915053021 observed and preserved. Production notification wording differs from staging; candidate preserves each source. Full real-session positive integration/browser testing was not performed in this batch.
 
 ## NEXT ACTION
 
-1. Continue current-session/document access review: remaining agent-bank review methods and document/Storage authorization, views and direct policies. Do not mark broader access closed based on eleven RPCs. Current private finance table grant check covers only those three tables.
-2. Complete supported Auth revocation, upload freeze, inventory coverage and retention/removal-proof/final erasure; no actual object deletion or broad policy decision without required authorization. Do not delete inventory to bypass review.
-3. Resolve public-disclosure approval before pushing feat/dispatcher-model; otherwise keep commits/patch current. Preserve new remote changes, no force push or main merge.
-4. Remaining notification-consumer/edge parity, F10 role/type decision, actual browser/native verification, CI and Retell/password/recovery/legal gates remain. No real messages/provider calls.
+1. Finish latest-main reconciliation and save all pending work locally on feat/dispatcher-model. GitHub publishing waits for complete audit per user; no force push/main merge.
+2. Ask exact production approval for audit_agent_review_session_guard (three named RPCs); automatic review blocked this package. Recheck source/helper hashes and anon names before any approved promotion; use deployed refusal tests and advisors afterward.
+3. Continue document/Storage session and access review; fourteen staged guarded RPCs do not protect every endpoint. Complete supported Auth revocation, upload freeze, inventory coverage and retention/removal proof; actual erasure remains specifically gated.
+4. F10 intended role/type matrix decision, notification/edge parity, browser/native verification, CI activation, Retell/password/recovery/legal gates remain. Outreach stays enabled; SEO/F33/WhatsApp parked.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -75,3 +73,5 @@ No new frontend build/browser/native verification claimed. F10 intended matrix s
 - **2026-09-14 — Codex, publication handoff:** All 96 pending changed files packaged in loadboot-audit-pending-20260914.patch; credential-pattern scan has no matches; clean target-branch apply check PASS. Local commit history complete, remote still unmodified because public-disclosure approval review rejected the push.
 
 - **2026-09-14 12:04 — Codex:** Confirmed banned staff access and $120/$145 paid-ledger mismatch in synthetic rollback baseline. Applied five-function session/accounting fix stage120308 then prod120413 on standing authorization. Candidate/deployed/rollback-reapply suites PASS; production15 no-session checks PASS; sources/ACLs match, exact anon/advisor identities unchanged, zero fixtures. No real transfer/sender/customer operation. Local branch + patch updated; public push block remains.
+
+- **2026-09-15 — Codex:** Workspace recovered and source/test/rollback package saved. Agent review staging migration055340 applied; 24+24 isolated source assertions, candidate/deployed three refusals and rollback/reapply PASS. Sources/ACLs and anon/advisor identities checked. Production apply rejected by automatic review for exact money-operation authorization; not executed. GitHub remains held until all audit gaps complete.
