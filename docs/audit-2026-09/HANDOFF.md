@@ -13,7 +13,7 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 ## CURRENT STATE — 2026-09-15, agent payout review
 
-Workspace recovered; previous local commit 2880bf8 and all pending work remain on feat/dispatcher-model. Fetched main 09b79fe (driver-access lane); reconciliation is in progress. No public push or main deployment. Latest user instruction is to publish only after all audit gaps are complete.
+Workspace recovered; previous local commit 2880bf8 and all pending work remain on feat/dispatcher-model. Merged main 09b79fe (driver-access lane) locally at 2eb5ddd, preserving prior audit fixes. 71 regression tests, 164 JS syntax checks, imports and staging build PASS. No public push or main deployment. Latest user instruction is to publish only after all audit gaps are complete.
 
 NEW staging migration 20260915055340 audit_agent_review_session_guard protects three agent bank-review RPCs with the existing current-session helper and rejects NULL approve/reject decisions. Local CLI-generated migration is 20260915055134. Staging/prod actual-source copies each passed 24 isolated assertions with mocked auth, tables and email. Actual candidate/deployed missing-identity refusals and apply/rollback/reapply PASS. Exact source/ACL and anon names (32) unchanged except intended source edits; advisor identities unchanged after excluding observation timestamps. REVIEW-AGENT-PAYOUT-2026-09-15.md records exact limits and rollback.
 
@@ -23,7 +23,7 @@ Other-lane Stripe staging migrations 20260915053002/20260915053021 observed and 
 
 ## NEXT ACTION
 
-1. Finish latest-main reconciliation and save all pending work locally on feat/dispatcher-model. GitHub publishing waits for complete audit per user; no force push/main merge.
+1. Local main reconciliation and checks are complete. Keep pending work on feat/dispatcher-model; refreshed Sept 15 patch targets main 09b79fe. GitHub publishing waits for complete audit per user; no force push or merge into main.
 2. Ask exact production approval for audit_agent_review_session_guard (three named RPCs); automatic review blocked this package. Recheck source/helper hashes and anon names before any approved promotion; use deployed refusal tests and advisors afterward.
 3. Continue document/Storage session and access review; fourteen staged guarded RPCs do not protect every endpoint. Complete supported Auth revocation, upload freeze, inventory coverage and retention/removal proof; actual erasure remains specifically gated.
 4. F10 intended role/type matrix decision, notification/edge parity, browser/native verification, CI activation, Retell/password/recovery/legal gates remain. Outreach stays enabled; SEO/F33/WhatsApp parked.
@@ -75,3 +75,5 @@ Other-lane Stripe staging migrations 20260915053002/20260915053021 observed and 
 - **2026-09-14 12:04 — Codex:** Confirmed banned staff access and $120/$145 paid-ledger mismatch in synthetic rollback baseline. Applied five-function session/accounting fix stage120308 then prod120413 on standing authorization. Candidate/deployed/rollback-reapply suites PASS; production15 no-session checks PASS; sources/ACLs match, exact anon/advisor identities unchanged, zero fixtures. No real transfer/sender/customer operation. Local branch + patch updated; public push block remains.
 
 - **2026-09-15 — Codex:** Workspace recovered and source/test/rollback package saved. Agent review staging migration055340 applied; 24+24 isolated source assertions, candidate/deployed three refusals and rollback/reapply PASS. Sources/ACLs and anon/advisor identities checked. Production apply rejected by automatic review for exact money-operation authorization; not executed. GitHub remains held until all audit gaps complete.
+
+- **2026-09-15 — Codex, repository checkpoint:** Agent fix committed a7f071f; latest main09b79fe merged locally at2eb5ddd. 71 regression tests, 164 syntax checks, imports and real-key staging build PASS. No browser check or frontend deployment claimed. Sept15 patch/manifest refreshed against main09b79fe; production agent-review migration remains approval-blocked.

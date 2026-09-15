@@ -44,3 +44,7 @@ GitHub publishing stays held until all audit gaps are complete, per Yaseen's lat
 
 Reference: [PostgreSQL CREATE FUNCTION](https://www.postgresql.org/docs/current/sql-createfunction.html) documents preservation of ownership/permissions with CREATE OR REPLACE; the migration also asserts the actual ACL.
 
+
+## Repository reconciliation
+
+Agent package commit a7f071f; main09b79fe merged locally at2eb5ddd. Driver-access changes preserved with prior audit work. 71 regression tests, 164 JavaScript syntax checks, imports and staging build using the actual publishable staging key PASS. Browser verification and frontend deployment remain unperformed. Updated Sept15 patch targets main09b79fe; do not apply the old Sept14 patch over these changes.
