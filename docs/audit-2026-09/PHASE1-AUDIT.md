@@ -687,3 +687,8 @@ Candidate/deployed/rollback-reapply suites PASS; actual queue bodies use synthet
 ### 2026-09-15 — Agent payout review continuation
 
 Staging-only session/NULL-decision correction for three agent bank-review RPCs; see REVIEW-AGENT-PAYOUT-2026-09-15.md. 24+24 isolated source assertions PASS (auth/email mocked), actual no-identity refusals and rollback/reapply PASS, source/grant/anon/advisor identities checked. Production attempt was blocked by automatic approval review for exact money-related migration authorization and was not executed. No real sends/payouts. Full audit remains open; GitHub publishing held until complete per user.
+
+
+### 2026-09-15 — User-approved production promotions
+
+Agent review, six-function marketing opt-out and consolidated deletion inventory guard are now production-applied at060906/061541/061849. Prior gate for these packages resolved by explicit user instruction. Fresh stage source/rollback tests and production catalog/ACL/anon checks recorded in PROMOTION-RESULTS-2026-09-15.json. Existing driver-detach step preserved. Full erasure is still open; no actual account erased or real send invoked. Live-chat source/edge parity and frontend promotion remain next.

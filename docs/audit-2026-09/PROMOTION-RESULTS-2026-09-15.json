@@ -1,0 +1,215 @@
+{
+  "production": [
+    {
+      "signature": "app_private.assert_payment_session()",
+      "hash": "18344c1e6ac6a2b76e2dae5ee7659334",
+      "acl": "{postgres=X/postgres}"
+    },
+    {
+      "signature": "app_private.capture_account_erasure_inventory(bigint)",
+      "hash": "d6fd7d1c2e24a3a9d81ff763f49e089f",
+      "acl": "{postgres=X/postgres}"
+    },
+    {
+      "signature": "app_private.sys_email(text,text,text,text,text,text)",
+      "hash": "49e378917ea2803d0cf11b65aa30ea7d",
+      "acl": null
+    },
+    {
+      "signature": "cc_account_deletion_process(bigint,text,text)",
+      "hash": "bc38da2b07e0606095b291df91041eb6",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "cc_agent_payout_approve_method(uuid,text)",
+      "hash": "a24dabda4463b26163e8b6a338cc15a1",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "cc_agent_payout_request_details(uuid,text[],text)",
+      "hash": "a143b69a27f288d3c75b2846b36f5041",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "cc_agent_payout_verify(uuid,boolean,text)",
+      "hash": "be6c30c00840e8ebaf42f9b18af7cfea",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "cc_delivery_worker_claim(integer,text)",
+      "hash": "d887937ce27f925e88cb96515e34971e",
+      "acl": "{postgres=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "cc_delivery_worker_marketing_allowed(uuid)",
+      "hash": "e80dba03fa4c09881c280d48e39b69dc",
+      "acl": "{postgres=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "cc_delivery_worker_unsubscribe(uuid)",
+      "hash": "0090e4226dd14f8cddf2268c5b451f94",
+      "acl": "{postgres=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "cc_enqueue_transactional(text,text,text,text,text,jsonb,timestamp with time zone)",
+      "hash": "040e6eacccb65d567fcda499c25401e8",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "outreach_unsubscribe(text,text)",
+      "hash": "61f99e7275bf65f27e6ed11b2396a676",
+      "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    }
+  ],
+  "migrations": [
+    {
+      "version": "20260915061849",
+      "name": "audit_erasure_guard_promotion"
+    },
+    {
+      "version": "20260915061541",
+      "name": "audit_marketing_optout_promotion"
+    },
+    {
+      "version": "20260915060906",
+      "name": "audit_agent_review_session_guard"
+    },
+    {
+      "version": "20260915051242",
+      "name": "bl_disp_0316_roster_v3_data"
+    },
+    {
+      "version": "20260914181526",
+      "name": "bl_drv_0345b_carrier_lifecycle"
+    },
+    {
+      "version": "20260914141216",
+      "name": "bl_drv_0345a_tracking_source"
+    },
+    {
+      "version": "20260914141117",
+      "name": "bl_drv_0344_driver_access"
+    },
+    {
+      "version": "20260914120413",
+      "name": "audit_staff_finance_session_guard"
+    }
+  ],
+  "anon": [
+    {
+      "signature": "all_flags()"
+    },
+    {
+      "signature": "cc_get_public_form(p_key text)"
+    },
+    {
+      "signature": "dispatcher_submit_id(p_path text, p_name text)"
+    },
+    {
+      "signature": "eld_ingest(p_token uuid, p_lat double precision, p_lng double precision, p_speed double precision, p_at timestamp with time zone)"
+    },
+    {
+      "signature": "get_active_public_announcements()"
+    },
+    {
+      "signature": "get_public_load_opportunities(p_limit integer)"
+    },
+    {
+      "signature": "get_public_market_rates()"
+    },
+    {
+      "signature": "lb_contact_channel()"
+    },
+    {
+      "signature": "lb_email_claim_get(p_token uuid)"
+    },
+    {
+      "signature": "lb_email_claim_sign(p_token uuid, p_name text, p_email text, p_signature text)"
+    },
+    {
+      "signature": "lb_email_ping_confirm(p_token uuid, p jsonb)"
+    },
+    {
+      "signature": "lb_email_ping_get(p_token uuid)"
+    },
+    {
+      "signature": "lc_brain_write(p_token uuid, p_reply text, p_escalate boolean, p_source text)"
+    },
+    {
+      "signature": "lc_chat_request_call(p_id uuid, p_visitor_key text, p_phone text, p_role text, p_name text, p_email text, p_when timestamp with time zone)"
+    },
+    {
+      "signature": "lc_history(p_visitor_key text)"
+    },
+    {
+      "signature": "lc_identify(p_id uuid, p_visitor_key text, p_name text, p_email text)"
+    },
+    {
+      "signature": "lc_ob_doc_log(p_visitor_key text, p_conversation_id uuid, p_doc jsonb, p_note text)"
+    },
+    {
+      "signature": "lc_ob_get(p_visitor_key text)"
+    },
+    {
+      "signature": "lc_ob_save(p_visitor_key text, p_conversation_id uuid, p_role text, p_step_key text, p_patch jsonb, p_note text, p_account_email text, p_account_created boolean, p_completed boolean)"
+    },
+    {
+      "signature": "lc_poll(p_id uuid, p_visitor_key text, p_after bigint, p_typing boolean)"
+    },
+    {
+      "signature": "lc_rate(p_id uuid, p_visitor_key text, p_score integer, p_comment text, p_email_transcript boolean, p_close boolean)"
+    },
+    {
+      "signature": "lc_request_call(p_visitor_key text, p_name text, p_phone text, p_role text, p_topic text, p_when timestamp with time zone)"
+    },
+    {
+      "signature": "lc_send(p_id uuid, p_visitor_key text, p_body text)"
+    },
+    {
+      "signature": "lc_start(p_visitor_key text, p_origin text, p_page text, p_name text, p_email text, p_body text)"
+    },
+    {
+      "signature": "outreach_unsubscribe(p_email text, p_token text)"
+    },
+    {
+      "signature": "partner_agent_confirm(p_token uuid, p_decision text, p_name text, p_note text)"
+    },
+    {
+      "signature": "partner_agent_confirm_get(p_token uuid)"
+    },
+    {
+      "signature": "partner_claim_confirm(p_token uuid, p_decision text, p_name text, p_note text)"
+    },
+    {
+      "signature": "partner_claim_get(p_token uuid)"
+    },
+    {
+      "signature": "retell_inbound(jsonb)"
+    },
+    {
+      "signature": "retell_webhook(jsonb)"
+    },
+    {
+      "signature": "submit_web_form(p jsonb)"
+    },
+    {
+      "signature": "track_web_event(p jsonb)"
+    }
+  ],
+  "advisorDiff": {
+    "added": [
+      {
+        "name": "rls_enabled_no_policy",
+        "detail": "Table \\`app_private.account_erasure_inventories\\` has RLS enabled, but no policies exist"
+      }
+    ],
+    "removed": []
+  },
+  "checks": {
+    "agentRefusals": 3,
+    "optoutRehearsal": "PASS (73 runtime assertions, staging rollback)",
+    "senderCopies": "62 assertions PASS, temp tables only",
+    "erasureRehearsal": "35 assertions PASS; apply/rollback/reapply; staging rollback"
+  },
+  "authorization": "User explicitly approved all remaining pending production fixes on 2026-09-15; no actual erasure/send/test-customer operation authorized or executed."
+}

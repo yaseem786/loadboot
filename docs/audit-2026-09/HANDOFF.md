@@ -11,20 +11,20 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-15, agent payout review
+## CURRENT STATE — 2026-09-15, approved production promotions
 
-Workspace recovered; previous local commit 2880bf8 and all pending work remain on feat/dispatcher-model. Merged main 09b79fe (driver-access lane) locally at 2eb5ddd, preserving prior audit fixes. 71 regression tests, 164 JS syntax checks, imports and staging build PASS. No public push or main deployment. Latest user instruction is to publish only after all audit gaps are complete.
+User explicitly authorized all pending production audit fixes this turn. Production agent review 20260915060906, marketing opt-out 20260915061541 and erasure guard 20260915061849 are applied. Prior approval-review gate on these packages is resolved. No actual account erasure, real message, transfer, sender invocation or backfill was performed.
 
-NEW staging migration 20260915055340 audit_agent_review_session_guard protects three agent bank-review RPCs with the existing current-session helper and rejects NULL approve/reject decisions. Local CLI-generated migration is 20260915055134. Staging/prod actual-source copies each passed 24 isolated assertions with mocked auth, tables and email. Actual candidate/deployed missing-identity refusals and apply/rollback/reapply PASS. Exact source/ACL and anon names (32) unchanged except intended source edits; advisor identities unchanged after excluding observation timestamps. REVIEW-AGENT-PAYOUT-2026-09-15.md records exact limits and rollback.
+Agent missing-identity refusals PASS on deployed production. Opt-out: fresh production-source-on-staging apply/rollback/reapply and 73 unsubscribe assertions PASS; 62 isolated sender/claim/eligibility assertions PASS. Erasure guard: current staged 35-assertion suite and fresh production-source apply/rollback/reapply PASS, all fixtures rolled back. Production catalog hashes/ACLs match expected packages; current driver-detach code preserved. Anonymous names/arguments unchanged at33. Only added security notice is the intentionally private, RLS-enabled/no-client-grants inventory table with no policies. Exact snapshots, migrations and results are saved in PROMOTION-RESULTS-2026-09-15.json and associated source/test/rollback files.
 
-Production application of this exact package was REJECTED by automatic approval review for missing exact production money-operation authorization. It was not executed; do not bypass. Previous eleven selected finance RPC protections remain historical production evidence, while this adds three on staging only. No real account, payout, message or provider operation occurred.
+Deletion guard promotion consolidates NULL/ownership/bank-cleanup/atomic-cleanup/suppression/inventory fixes; it is not full Storage erasure, global session invalidation or retention/removal proof. A file-bearing account stays requested with ERASURE_REVIEW_REQUIRED. Existing no-file path remains; no production completion was invoked.
 
-Other-lane Stripe staging migrations 20260915053002/20260915053021 observed and preserved. Production notification wording differs from staging; candidate preserves each source. Full real-session positive integration/browser testing was not performed in this batch.
+Repository remains local feat/dispatcher-model, main09b79fe merged. Most recent merged frontend verification:71 tests,164 syntax checks,imports,staging build PASS from earlier Sept15 continuation. No frontend deploy/browser/native verification this turn. GitHub publishing remains held until all audit gaps complete per user.
 
 ## NEXT ACTION
 
 1. Local main reconciliation and checks are complete. Keep pending work on feat/dispatcher-model; refreshed Sept 15 patch targets main 09b79fe. GitHub publishing waits for complete audit per user; no force push or merge into main.
-2. Ask exact production approval for audit_agent_review_session_guard (three named RPCs); automatic review blocked this package. Recheck source/helper hashes and anon names before any approved promotion; use deployed refusal tests and advisors afterward.
+2. Continue remaining live-chat source/edge production parity and staged promotion; use fresh source/schema checks and rollback tests. The three Sept15 production packages are applied and no longer approval-blocked.
 3. Continue document/Storage session and access review; fourteen staged guarded RPCs do not protect every endpoint. Complete supported Auth revocation, upload freeze, inventory coverage and retention/removal proof; actual erasure remains specifically gated.
 4. F10 intended role/type matrix decision, notification/edge parity, browser/native verification, CI activation, Retell/password/recovery/legal gates remain. Outreach stays enabled; SEO/F33/WhatsApp parked.
 
@@ -77,3 +77,5 @@ Other-lane Stripe staging migrations 20260915053002/20260915053021 observed and 
 - **2026-09-15 — Codex:** Workspace recovered and source/test/rollback package saved. Agent review staging migration055340 applied; 24+24 isolated source assertions, candidate/deployed three refusals and rollback/reapply PASS. Sources/ACLs and anon/advisor identities checked. Production apply rejected by automatic review for exact money-operation authorization; not executed. GitHub remains held until all audit gaps complete.
 
 - **2026-09-15 — Codex, repository checkpoint:** Agent fix committed a7f071f; latest main09b79fe merged locally at2eb5ddd. 71 regression tests, 164 syntax checks, imports and real-key staging build PASS. No browser check or frontend deployment claimed. Sept15 patch/manifest refreshed against main09b79fe; production agent-review migration remains approval-blocked.
+
+- **2026-09-15 — Codex, explicit production approval:** Promoted agent review060906, opt-out061541 and erasure guard061849. Fresh staging 73/62/35 checks and rollback/reapply PASS; production source/ACL/anon checks PASS. Added only expected private inventory no-policy notice. No real deletion, email or payout. Pending live-chat/frontend/F10/erasure-completion gates remain.
