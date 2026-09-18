@@ -52,7 +52,7 @@ jobs:
 
       - name: Storage objects (carrier documents) -> encrypt -> R2  [weekly]
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://rwscphuhpjoudvljvmdk.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OUT_DIR: storage-dump
         run: |
