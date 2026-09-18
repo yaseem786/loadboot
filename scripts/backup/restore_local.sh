@@ -21,7 +21,7 @@ pg_restore --no-owner --no-privileges --no-acl -d "$URL" "$DUMP" || true
 
 echo "==> row counts in the restored copy:"
 psql "$URL" -c "select 'profiles' t, count(*) from public.profiles
-  union all select 'fleet_trucks', count(*) from public.fleet_trucks
+  union all select 'fleet_trucks', count(*) from app_private.fleet_trucks
   union all select 'auth.users', count(*) from auth.users
   union all select 'storage.objects', count(*) from storage.objects;"
 

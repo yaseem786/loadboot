@@ -47,7 +47,7 @@ fi
 echo "==> table of contents (plain, no data) for automated verification"
 TOC="$WORK/loadboot-prod-$STAMP.toc.txt"
 pg_restore --list "$DUMP" > "$TOC"
-for t in public.profiles public.fleet_trucks auth.users storage.objects; do
+for t in public.profiles app_private.fleet_trucks auth.users storage.objects; do
   s="${t%%.*}"; n="${t##*.}"
   grep -qi "TABLE DATA $s $n" "$TOC" || { echo "FATAL: $t missing from dump" >&2; exit 1; }
 done
