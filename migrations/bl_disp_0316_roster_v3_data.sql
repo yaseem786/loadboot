@@ -1,0 +1,10 @@
+-- bl_disp_0316 — the data the v3 Dispatchers console needs (15 Sep 2026, staging + prod).
+-- cc_dispatchers_stats: + trials_ending_3d, tests_scored_untold, active_trucks, carriers_covered,
+--   owed_total, paid_30d, delivered_loads, conversion_pct, median_days_screening.
+-- cc_dispatchers_page: same signature, + stage_since, delivered, owed, last_activity
+--   (greatest of last sign-in, last booking touch, last dispatcher message, last test submission)
+--   and a richer test object (submitted_at, start_by).
+-- cc_dispatchers_board(p_per_stage): newest N cards per stage for the Pipeline board tab.
+-- cc_dispatcher_payouts(p_status,p_limit): commission lines + totals for the Payouts tab.
+-- All four are staff-gated, authenticated-only, anon revoked. Anon SECURITY DEFINER surface: 33.
+-- The applied SQL is identical to the migration recorded in Supabase under this name.

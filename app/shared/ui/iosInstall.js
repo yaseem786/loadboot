@@ -5,6 +5,7 @@
 (function () {
   try {
     if (typeof window === 'undefined') return;
+    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return; // store app shell
     var ua = navigator.userAgent || '';
     var isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
     var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;

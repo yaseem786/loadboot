@@ -16,6 +16,7 @@ import { createRouter } from '../shared/router.js';
 import { renderShell } from './views/shell.js';
 import { renderTabbed } from './views/_tabbed.js';
 import { renderDispatch } from './views/dispatch.js';
+import { renderDispatcher360 } from './views/dispatcher-360.js';   // bl_disp_0317 — Dispatcher 360 page
 import { renderCarriers } from './views/carriers.js';
 import { renderLoads } from './views/loads.js';
 import { renderDocuments } from './views/documents.js';
@@ -317,6 +318,7 @@ async function boot() {
     '/radar': () => { setActive('/'); renderRadar(content); },
     '/agents': tabbed('team', 'agents'),
     '/dispatchers': tabbed('team', 'dispatchers'),
+    '/dispatcher': ({ query }) => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage'], () => renderDispatcher360(content, query))(); },   // bl_disp_0317
     '/fleet': tabbed('carriers', 'fleet'),
     '/fleet-expiry': tabbed('compliance', 'expiry'),
     '/partner-compliance': tabbed('compliance', 'partners'),

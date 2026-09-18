@@ -1,0 +1,33 @@
+{
+  "name": "loadboot-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LoadBoot iOS shell (Capacitor 8). Loads https://loadboot.com/app/ in an app-bound WKWebView and bridges APNs push, camera, GPS, deep links and the system browser. The web app itself lives in ../../app and deploys via Netlify — this shell only changes when native code changes.",
+  "scripts": {
+    "assets": "capacitor-assets generate --ios --iconBackgroundColor '#0F172A' --iconBackgroundColorDark '#0F172A' --splashBackgroundColor '#0F172A' --splashBackgroundColorDark '#0F172A'",
+    "ios:add": "cap add ios",
+    "ios:config": "bash scripts/apply-ios-config.sh",
+    "ios:sync": "cap sync ios",
+    "ios:prepare": "npm run ios:add && npm run ios:config && npm run assets && npm run ios:sync",
+    "ios:open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/push-notifications": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

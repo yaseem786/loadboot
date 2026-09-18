@@ -11,6 +11,7 @@
 // needs a written reason, overlap needs "override"; commissions are PAID through one dialog that records
 // what actually left the account (amount, currency, FX, reference). Salary UI removed — pay is per load.
 // Deep links: #/dispatchers?booking=<id> and ?assignment=<id> (from staff notifications) open the owner.
+// bl_disp_0317: the 360 drawer moved to its own page — views/dispatcher-360.js (#/dispatcher?id=…&tab=…).
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { money, fmtDate, fmtDateTime, card, sectionHead, askReason, askConfirm, openDrawer } from '../../shared/ui/components.js';
@@ -127,11 +128,9 @@ export function renderDispatchers(host) {
   let roster = null;                               // bl_disp_0313 — the paged roster (replaces paint()'s in-memory list)
   const fetchOne = async (uid) => { const r = await ccDispatchersPage({ user: uid, limit: 1 }).catch(() => null); return (r && r.rows && r.rows[0]) || null; };
   dqStyle();
-  mount(host, el('div', { class: 'cc-view' }, [
-    sectionHead('Dispatchers', 'The verified dispatch workforce — hiring pipeline, carrier assignment + SOP, rate-confirmation approvals, per-load commission and payout. One dedicated dispatcher per carrier; nothing moves until LoadBoot approves the RC.'),
-    presenceBox,
-    el('div', { class: 'dq-grid' }, [el('div', null, [queueBox, body]), el('div', null, [feedBox])]),
-  ]));
+  // bl_disp_0316 (v3): the roster module owns the whole screen — its own title, tabs and KPIs.
+  // presenceBox / queueBox / feedBox stay as detached nodes, mounted inside the Work queue tab.
+  mount(host, el('div', { class: 'cc-view' }, [body]));
   load();
 
   // ---------------------------------------------------------------- realtime (shared/dispatch-live.js)
@@ -212,7 +211,12 @@ export function renderDispatchers(host) {
 
   async function load() {
     // bl_disp_0313: the roster pages itself from the server; state.rows only mirrors what is on screen.
-    roster = renderRoster(body, { open360, pill, signals: rowSignals, onRows: (rows) => { state.rows = rows; } });
+    roster = renderRoster(body, {
+      open360, pill, signals: rowSignals,
+      onRows: (rows) => { state.rows = rows; },
+      queueNodes: { presence: presenceBox, queue: queueBox, feed: feedBox },
+      refreshQueue: () => { paintQueue(); paintFeed(); },
+    });
     paintQueue();
     // deep link from a staff notification: #/dispatchers?booking=<id> | ?assignment=<id> | ?user=<id>
     try {
@@ -416,7 +420,15 @@ export function renderDispatchers(host) {
   }
 
 
-  async function open360(x, focusBooking) {
+  // bl_disp_0317 (17 Sep 2026): the drawer is retired. A dispatcher opens on the full 360 PAGE
+  // (views/dispatcher-360.js) at #/dispatcher?id=…&tab=…, so every card, queue row and notification
+  // can deep-link to the exact tab. open360Drawer below is kept only as a fallback and can be deleted
+  // once the page has run for a while.
+  function open360(x, focusBooking, tab) {
+    const id = x && (x.user_id || x.id); if (!id) return;
+    location.hash = '#/dispatcher?id=' + encodeURIComponent(id) + '&tab=' + (tab || (focusBooking ? 'loads' : 'overview')) + (focusBooking ? '&booking=' + encodeURIComponent(focusBooking) : '');
+  }
+  async function open360Drawer(x, focusBooking) {
     let d;
     try { d = await ccDispatcher360(x.user_id); } catch (e) { toast(humanizeError(e)); return; }
     if (!d || d.error) { toast((d && d.error) || 'Could not load'); return; }

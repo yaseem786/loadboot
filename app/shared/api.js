@@ -425,6 +425,10 @@ export const ccDispatchersList = () => rpc('cc_dispatchers_list', {});
 // bl_disp_0313 — roster at scale: server-side search / stage / keyset paging + one stats call.
 export const ccDispatchersPage = (o = {}) => rpc('cc_dispatchers_page', { p_q: o.q || null, p_status: o.status || null, p_before: o.before || null, p_before_id: o.beforeId || null, p_limit: o.limit || 50, p_user: o.user || null });
 export const ccDispatchersStats = () => rpc('cc_dispatchers_stats', {});
+// dispatchers-roster.js (15 Sep) needs these two; RPCs exist on staging + prod.
+export const ccDispatchersBoard = (perStage) => rpc('cc_dispatchers_board', { p_per_stage: perStage || 14 });
+export const ccDispatcherPayouts = (status, limit) => rpc('cc_dispatcher_payouts', { p_status: status ?? null, p_limit: limit || 200 });
+export const ccDispatcherActivity = (user, limit) => rpc('cc_dispatcher_activity', { p_user: user, p_limit: limit || 40 });   // bl_disp_0317 — Dispatcher 360 timeline
 export const ccDispatcher360 = (user) => rpc('cc_dispatcher_360', { p_user: user });
 export const ccDispatcherDecide = (user, action, note) => rpc('cc_dispatcher_decide', { p_user: user, p_action: action, p_note: note ?? null });
 export const ccDispatcherAssign = (dispatcher, carrierOrg, sop) => rpc('cc_dispatcher_assign', { p_dispatcher: dispatcher, p_carrier_org: carrierOrg, p_sop: sop ?? {} });
