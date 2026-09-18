@@ -21,8 +21,10 @@ jobs:
       # carries the '.us.' segment. A plain <account>.r2.cloudflarestorage.com
       # endpoint will NOT find this bucket.
       R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.us.r2.cloudflarestorage.com
-      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      # Raw values; the install step exports trimmed AWS_* (secrets pasted into
+      # GitHub sometimes carry a trailing space/newline, which breaks SigV4).
+      R2_ACCESS_KEY_ID_RAW: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY_RAW: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
       AWS_REQUEST_CHECKSUM_CALCULATION: when_required
       AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
@@ -42,6 +44,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17 age
           pg_dump --version && age --version
+          echo "AWS_ACCESS_KEY_ID=$(printf %s "$R2_ACCESS_KEY_ID_RAW" | tr -d '[:space:]')" >> "$GITHUB_ENV"
+          echo "AWS_SECRET_ACCESS_KEY=$(printf %s "$R2_SECRET_ACCESS_KEY_RAW" | tr -d '[:space:]')" >> "$GITHUB_ENV"
+          aws configure set default.s3.multipart_threshold 512MB
           # The repo is edited on Windows; strip CR so bash/python never see CRLF.
           sed -i 's/\r$//' scripts/backup/backup_db.sh scripts/backup/backup_storage.py
 
