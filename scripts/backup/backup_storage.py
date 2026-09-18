@@ -9,8 +9,12 @@ Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OUT_DIR
 import os, sys, pathlib, urllib.parse
 import urllib.request, json
 
-URL = os.environ["SUPABASE_URL"].rstrip("/")
-KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+if not URL.startswith("https://"):
+    sys.exit("FATAL: SUPABASE_URL is empty or not https:// - check the secret")
+if len(KEY) < 40:
+    sys.exit(f"FATAL: SUPABASE_SERVICE_ROLE_KEY looks wrong (len={len(KEY)})")
 OUT = pathlib.Path(os.environ.get("OUT_DIR", "storage"))
 H = {"Authorization": f"Bearer {KEY}", "apikey": KEY}
 
