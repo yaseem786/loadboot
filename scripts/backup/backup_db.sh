@@ -63,6 +63,9 @@ echo "==> encrypt (age, public-key: CI can encrypt but never decrypt)"
 age -r "$BACKUP_AGE_PUBKEY" -o "$DUMP.age" "$DUMP"
 rm -f "$DUMP"
 
+# Secrets pasted into GitHub sometimes carry a trailing space/newline. Strip it.
+export AWS_ACCESS_KEY_ID="$(printf %s "$AWS_ACCESS_KEY_ID" | tr -d "[:space:]")"
+export AWS_SECRET_ACCESS_KEY="$(printf %s "$AWS_SECRET_ACCESS_KEY" | tr -d "[:space:]")"
 # --- R2 diagnostics (never prints secret values) ---
 # A real R2 Access Key ID is 32 hex chars; the Secret Access Key is 64 hex chars.
 # The "Token value" (40 chars, mixed case) is NOT the secret - a common paste mistake.
