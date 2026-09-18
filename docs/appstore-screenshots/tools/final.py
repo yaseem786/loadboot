@@ -1,0 +1,17 @@
+from lb import *
+with sync_playwright() as p:
+    b, ctx, page = browser(p, hgt=902)
+    goto(page, 'dashboard', 7000); rm(page, 'One step left on factoring', 'dispatch fees due'); shot(page, 'f1-dashboard')
+    goto(page, 'loads', 12000)
+    page.evaluate("[...document.querySelectorAll('button')].find(x=>/Filters/.test(x.textContent)).scrollIntoView({block:'start'})"); page.wait_for_timeout(800)
+    page.evaluate("window.scrollBy(0,-14)"); page.wait_for_timeout(500); shot(page, 'f2-loads')
+    goto(page, 'trips', 7000); shot(page, 'f3-trips')
+    page.evaluate("[...document.querySelectorAll('button')].find(x=>/Continue live trip/i.test(x.textContent)).click()"); page.wait_for_timeout(1500)
+    page.evaluate("[...document.querySelectorAll('button')].find(x=>/LoadBoot live map/i.test(x.textContent)).click()"); page.wait_for_timeout(12000)
+    page.evaluate("(()=>{const g=[...document.querySelectorAll('button')].find(x=>/Got it/.test(x.textContent)); if(g) g.click();})()"); page.wait_for_timeout(800); shot(page, 'f4-tripmap')
+    goto(page, 'finance', 7000); shot(page, 'f5-finance')
+    goto(page, 'rates', 7000); shot(page, 'f6-rates')
+    goto(page, 'fleet', 7000); rm(page, 'FMCSA shows 9 power units'); shot(page, 'f7-fleet')
+    goto(page, 'profile', 20000); rm(page, 'Turn on location'); shot(page, 'f8-profile')
+    goto(page, 'documents', 7000); rm(page, 'Upload your factor', 'Factoring NOA (Notice of Assignment)'); shot(page, 'f9-docs')
+    b.close()
