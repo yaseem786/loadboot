@@ -63,7 +63,17 @@ echo "==> encrypt (age, public-key: CI can encrypt but never decrypt)"
 age -r "$BACKUP_AGE_PUBKEY" -o "$DUMP.age" "$DUMP"
 rm -f "$DUMP"
 
+# --- R2 diagnostics (never prints secret values) ---
+# A real R2 Access Key ID is 32 hex chars; the Secret Access Key is 64 hex chars.
+# The "Token value" (40 chars, mixed case) is NOT the secret - a common paste mistake.
+echo "==> R2 cred shape: key_id len=${#AWS_ACCESS_KEY_ID}, secret len=${#AWS_SECRET_ACCESS_KEY}"
+case "$AWS_SECRET_ACCESS_KEY" in
+  *[!0-9a-f]*) echo "!! secret contains non-hex chars - looks like the Token value, not the Secret Access Key" ;;
+esac
+# Avoid multipart for our ~26 MB files: a single PUT is simpler on R2.
+aws configure set default.s3.multipart_threshold 512MB
 S3="aws s3 --endpoint-url $R2_ENDPOINT"
+if $S3 ls "s3://$R2_BUCKET/" >/dev/null 2>&1; then echo "==> R2 list OK"; else echo "!! R2 list FAILED (credentials/endpoint/bucket)"; fi
 PREFIX="daily/$STAMP"
 echo "==> upload to r2://$R2_BUCKET/$PREFIX/"
 $S3 cp "$DUMP.age" "s3://$R2_BUCKET/$PREFIX/" --only-show-errors
