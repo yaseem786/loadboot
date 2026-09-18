@@ -1,6 +1,6 @@
 # LoadBoot — Backup & Restore Runbook
 
-Last verified: **17 Sep 2026**
+Last verified: **18 Sep 2026** — first successful run (#11) of the nightly workflow.
 
 ## Why this exists
 
@@ -16,6 +16,26 @@ Production, measured 17 Sep 2026:
 | Postgres database | 432 MB on disk |
 | Storage objects (carrier COI / W-9 / authority PDFs) | 259 files, 141 MB |
 | auth.users | 155 |
+
+## What the first successful run measured (18 Sep 2026)
+
+- DB dump (custom format, compressed): **26.3 MB** per night.
+- Storage archive: **267 objects, 152 MB** (buckets `documents` and `org-logos`),
+  taken Sundays, the 1st, and on manual runs.
+- Whole run: ~2.5 minutes.
+
+Things that bit us on the way to the first green run, all now handled in the
+scripts/workflow so they do not recur:
+
+- The pooler username is `postgres.<project-ref>`, not `postgres`; the password
+  must be URL-safe (letters/digits only is easiest).
+- The runner ships Postgres 16 client tools; `backup_db.sh` forces the v17 binaries.
+- Files edited on Windows arrive with CRLF; the workflow strips `\r` before running.
+- `fleet_trucks` lives in `app_private`, not `public`.
+- A trailing space in a pasted GitHub secret breaks R2's signature check; the
+  workflow trims `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` before use. The
+  Secret Access Key is 64 hex chars — not the 40-char "Token value".
+- `SUPABASE_URL` falls back to the production URL if the secret is missing.
 
 ## Retention and the R2 free tier
 
@@ -81,7 +101,13 @@ backup is unreadable**. Store it in a password manager *and* on a USB stick.
 ## Step 1 — Cloudflare R2 bucket
 
 1. Cloudflare dashboard → **R2** → **Create bucket** → name `loadboot-backups`,
-   location Automatic. (Same account that already proxies loadboot.com.)
+   jurisdiction **United States**, storage class **Standard**. (Same account that
+   already proxies loadboot.com.)
+
+   The jurisdiction cannot be changed after creation, and it changes the S3
+   endpoint to `https://<ACCOUNT_ID>.us.r2.cloudflarestorage.com` — the workflow
+   is already set to that. A plain `<ACCOUNT_ID>.r2.cloudflarestorage.com`
+   endpoint will not find this bucket.
 2. R2 → **Manage API tokens** → **Create API token**
    - Permission: **Object Read & Write**
    - Scope: only the `loadboot-backups` bucket
