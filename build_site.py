@@ -1020,6 +1020,23 @@ os.makedirs(_wk, exist_ok=True)
 with open(os.path.join(_wk, 'assetlinks.json'), 'w', encoding='utf-8') as f:
     f.write('[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.loadboot.app","sha256_cert_fingerprints":["A6:5D:53:C0:27:9A:1C:C6:93:37:43:EB:64:AF:B8:05:21:01:0E:98:8B:AC:49:82:33:85:B5:5F:E9:28:6E:06","A7:F2:AA:FE:A3:00:CE:25:43:BD:5D:F0:E1:9D:17:97:73:51:4D:B7:34:2A:7B:78:26:94:2F:3C:EE:91:F1:48","BA:6D:94:58:1C:98:59:6D:50:23:D0:AA:E7:8E:A3:8A:5A:50:DE:16:F7:04:89:56:EF:24:14:3E:DC:54:AB:25"]}}]')
 
+# 2026-09-17 iOS App Store shell (tools/ios): Universal Links. Apple fetches
+# /.well-known/apple-app-site-association (served as application/json, see HEADERS) and
+# opens https://loadboot.com/app/* inside the app when installed. TEAM ID comes from the
+# Apple Developer account (Membership details) — set APPLE_TEAM_ID in Netlify env vars;
+# until then the file is not written and links simply keep opening in Safari.
+APPLE_TEAM_ID = (os.environ.get('APPLE_TEAM_ID') or '').strip()
+if APPLE_TEAM_ID:
+    with open(os.path.join(_wk, 'apple-app-site-association'), 'w', encoding='utf-8') as f:
+        f.write(json.dumps({
+            "applinks": {"apps": [], "details": [{"appIDs": [APPLE_TEAM_ID + ".com.loadboot.app"],
+                          "components": [{"/": "/app/*", "comment": "LoadBoot portals"}]}]},
+            "webcredentials": {"apps": [APPLE_TEAM_ID + ".com.loadboot.app"]}
+        }, separators=(',', ':')))
+    print('AASA written for team', APPLE_TEAM_ID)
+else:
+    print('AASA skipped (APPLE_TEAM_ID not set)')
+
 ROAD = '''<section class="road-sec"><div class="wrap">
 <div class="sec-head reveal"><div class="eyebrow">Always Moving</div><h2>Your truck, loaded and rolling &mdash; coast to coast</h2><p class="lead">We keep freight moving across all 48 states, day and night.</p></div>
 <div class="road reveal"><div class="lane"></div><div class="tk">&#128666;</div><div class="hill"></div></div></div></section>'''
@@ -8504,6 +8521,9 @@ APP_HEADERS = (
 # keep running an old build (stale sw.js means new deploys are never detected). These
 # more-specific rules sit AFTER /app/* so Netlify applies them on top.
 SW_NOCACHE_HEADERS = (
+  "\n/.well-known/apple-app-site-association\n"
+  "  Content-Type: application/json\n"
+  "  Cache-Control: public, max-age=3600\n"
   "\n/app/sw.js\n"
   "  Cache-Control: no-cache, no-store, must-revalidate\n"
   "\n/app/env-config.js\n"

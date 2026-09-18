@@ -425,6 +425,10 @@ export const ccDispatchersList = () => rpc('cc_dispatchers_list', {});
 // bl_disp_0313 — roster at scale: server-side search / stage / keyset paging + one stats call.
 export const ccDispatchersPage = (o = {}) => rpc('cc_dispatchers_page', { p_q: o.q || null, p_status: o.status || null, p_before: o.before || null, p_before_id: o.beforeId || null, p_limit: o.limit || 50, p_user: o.user || null });
 export const ccDispatchersStats = () => rpc('cc_dispatchers_stats', {});
+// dispatchers-roster.js (15 Sep) needs these two; RPCs exist on staging + prod.
+export const ccDispatchersBoard = (perStage) => rpc('cc_dispatchers_board', { p_per_stage: perStage || 14 });
+export const ccDispatcherPayouts = (status, limit) => rpc('cc_dispatcher_payouts', { p_status: status ?? null, p_limit: limit || 200 });
+export const ccDispatcherActivity = (user, limit) => rpc('cc_dispatcher_activity', { p_user: user, p_limit: limit || 40 });   // bl_disp_0317 — Dispatcher 360 timeline
 export const ccDispatcher360 = (user) => rpc('cc_dispatcher_360', { p_user: user });
 export const ccDispatcherDecide = (user, action, note) => rpc('cc_dispatcher_decide', { p_user: user, p_action: action, p_note: note ?? null });
 export const ccDispatcherAssign = (dispatcher, carrierOrg, sop) => rpc('cc_dispatcher_assign', { p_dispatcher: dispatcher, p_carrier_org: carrierOrg, p_sop: sop ?? {} });
@@ -571,6 +575,22 @@ export const tripRevert = (id, toStatus, reason) => rpc('cc_trip_revert', { p_tr
 export const agentSuspend = (userId, suspend, reason) => rpc('cc_agent_suspend', { p_user: userId, p_suspend: suspend, p_reason: reason });
 export const invoiceSendReminder = (id, note) => rpc('cc_invoice_send_reminder', { p_invoice: id, p_note: note ?? null });
 export const invoiceLookup = (no) => rpc('cc_invoice_lookup', { p_no: no });
+// fee-invoice approval queue (bl_stripe_0346) — drafts wait here until the owner approves.
+export const feeInvoiceQueue = () => rpc('cc_fee_invoice_queue');
+export const feeInvoiceApprove = (id, note) => rpc('cc_fee_invoice_approve', { p_invoice: id, p_note: note ?? null });
+export const feeInvoiceReject = (id, reason) => rpc('cc_fee_invoice_reject', { p_invoice: id, p_reason: reason });
+
+// carrier auto-pay (bl_stripe_0348). The bank authorisation itself happens on a Stripe-hosted
+// page — LoadBoot never handles the account numbers.
+export const payAutopayStatus = () => rpc('pay_autopay_status');
+export const payAutopayDisable = () => rpc('pay_autopay_disable');
+export async function payAutopayStart() {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('stripe-autopay', { body: {} });
+  if (error) throw new Error(error.message || 'Could not start bank authorisation');
+  if (!data || !data.url) throw new Error((data && data.error) || 'Stripe did not return a setup link');
+  return data.url;
+}
 export const tripNotifyParties = (tripId, target, note) => rpc('cc_trip_notify_parties', { p_trip: tripId, p_target: target ?? 'both', p_note: note ?? null });
 export const automationHealth = () => rpc('cc_automation_health');
 

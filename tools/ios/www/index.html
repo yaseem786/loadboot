@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LoadBoot</title>
+<style>
+  html,body{margin:0;height:100%;background:#0F172A;color:#e2e8f0;font-family:-apple-system,system-ui,sans-serif}
+  .c{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center}
+  h1{font-size:20px;margin:0}
+  p{color:#94a3b8;font-size:14px;line-height:1.6;margin:0;max-width:320px}
+  button{background:#0883F7;color:#fff;border:0;border-radius:12px;padding:12px 22px;font-weight:700;font-size:15px}
+</style>
+</head>
+<body>
+<!-- Offline / bootstrap fallback. Capacitor normally never shows this page: server.url
+     points the WebView at https://loadboot.com/app/. It appears only if the first load
+     fails (no network on a cold start). -->
+<div class="c">
+  <h1>LoadBoot</h1>
+  <p>You appear to be offline. Connect to the internet and try again — your loads, trips and documents are waiting.</p>
+  <button onclick="location.href='https://loadboot.com/app/'">Retry</button>
+</div>
+</body>
+</html>

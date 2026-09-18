@@ -5,6 +5,7 @@
 (function () {
   try {
     if (typeof window === 'undefined') return;
+    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return; // store app shell
     var ua = navigator.userAgent || '';
     if (!/Android/i.test(ua)) return;
     var standalone = window.matchMedia('(display-mode: standalone)').matches

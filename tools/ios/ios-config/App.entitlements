@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- APNs. Xcode/CI flips this to "production" automatically for App Store builds. -->
+	<key>aps-environment</key>
+	<string>development</string>
+	<!-- Universal Links: https://loadboot.com/app/... opens inside the app
+	     (served by /.well-known/apple-app-site-association from build_site.py). -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:loadboot.com</string>
+	</array>
+</dict>
+</plist>

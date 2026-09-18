@@ -262,7 +262,7 @@ export function renderFinance(host, focusId) {
     const eligible = (trips || []).filter(t => t.status === 'delivered' || t.status === 'invoiced');
     if (!eligible.length) { mount(drawer.body, el('div', { class: 'cc-sub' }, 'No delivered trips to invoice yet.')); return; }
     mount(drawer.body, el('div', { class: 'cc-doclist' }, eligible.map(t => el('div', { class: 'cc-doc-item cc-row', onClick: async () => {
-      try { const id = await createInvoice(t.id, 15); toast('Invoice created', 'success'); drawer.close(); loadInvoices(); loadKpis(); openInvoice(id); }
+      try { const id = await createInvoice(t.id, 30); toast('Invoice created', 'success'); drawer.close(); loadInvoices(); loadKpis(); openInvoice(id); }
       catch (e) { toast(humanizeError(e), 'error'); }
     } }, [ el('div', null, [el('b', null, (t.origin || '?') + ' → ' + (t.destination || '?')), el('div', { class: 'cc-sub' }, (t.carrier || '—') + ' · ' + money(t.rate || 0))]), el('span', { class: 'cc-row-go' }, '›') ]))));
   }

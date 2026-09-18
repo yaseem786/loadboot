@@ -6,6 +6,7 @@ import { printExecutedW9 } from './w9-form.js';
 import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { uploadDocument } from '../shared/storage.js';
 import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, myHazmatReadiness, carrierRequestReverify, carrierAgreementSignature, setMyAvatar, myAvatar, requestAccountAction } from '../shared/api.js';
+import { payAutopayStatus, payAutopayDisable, payAutopayStart } from '../shared/api.js';
 
 function sic(n) {
   var P = {
@@ -47,11 +48,12 @@ export async function renderPremiumAccount(host, ctx) {
   const user = ctx.user || {};
   host.innerHTML = '<div class="acx"><div style="padding:40px;text-align:center;color:#9aa7bd">Loading your account…</div></div>';
 
-  const [health, comp, prefs, pay, trust, prof] = await Promise.all([
+  const [health, comp, prefs, pay, autopay, trust, prof] = await Promise.all([
     accountHealth().catch(() => null),
     pocketCompliance().catch(() => ({ requirements: [] })),
     pocketGetPreferences().catch(() => ({})),
     myPaymentProfile().catch(() => null),
+    payAutopayStatus().catch(() => null),
     myTrustProfile().catch(() => null),
     (await import('../shared/api.js')).pocketGetProfile().catch(() => ({})),
   ]);
@@ -238,6 +240,10 @@ export async function renderPremiumAccount(host, ctx) {
     +   (pay && pay.exists
         ? '<div class="row"><div><div class="rt">Payout method</div><div class="rs">' + esc([pay.bank_name, (pay.account_type || '') + ' ···' + (pay.account_last4 || '')].filter(Boolean).join(' · ')) + '</div></div><span class="pill ' + (pay.verified ? 'p-green">Verified' : 'p-blue">Pending') + '</span></div>'
         : '<div class="row"><div><div class="rt">Payout method</div><div class="rs">Not set — add your bank so settlements reach you</div></div><span class="pill p-red">Add</span></div>')
+    +   (autopay && autopay.enabled
+        ? '<div class="row"><div><div class="rt">Auto-pay dispatch fees</div><div class="rs">On \u2014 ' + esc([autopay.bank_name, autopay.bank_last4 ? '\u00b7\u00b7\u00b7' + autopay.bank_last4 : ''].filter(Boolean).join(' ')) + ' is charged on each invoice due date</div></div><span class="pill p-green">On</span></div>'
+        : '<div class="row"><div><div class="rt">Auto-pay dispatch fees</div><div class="rs">Off \u2014 authorise your bank once and each invoice settles itself on its due date</div></div><span class="pill p-blue">Off</span></div>')
+    +   '<div style="margin-top:9px"><button class="btn sec sm block" id="acx-autopay">' + (autopay && autopay.enabled ? 'Turn auto-pay off' : 'Set up auto-pay') + '</button></div>'
     +   '<div style="margin-top:11px;display:flex;flex-direction:column;gap:8px"><button class="btn sm block" id="acx-addpay">' + (pay && pay.exists ? 'Update payout details' : 'Add payout details') + '</button><button class="btn sec sm block" data-go="finance">Open finance &amp; statements</button></div></div>'
     + '<div class="card" id="s-support"><div class="sec-h"><div class="sec-ico ic-slate">' + sic('headset') + '</div><div class="sec-t">Support</div></div><div class="sec-s">Real people, fast replies.</div>'
     +   '<a class="btn block" style="text-decoration:none;margin-bottom:9px" href="https://wa.me/19283936198" target="_blank" rel="noopener">&#128172; WhatsApp us</a>'
@@ -328,6 +334,33 @@ export async function renderPremiumAccount(host, ctx) {
     };
     layout(); let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { lastN = -1; layout(); }, 180); });
   })();
+  // Auto-pay: authorise once on Stripe's hosted page, revoke instantly from here.
+  (function () {
+    const b = root.querySelector('#acx-autopay'); if (!b) return;
+    const isOn = !!(autopay && autopay.enabled);
+    b.addEventListener('click', async () => {
+      if (isOn) {
+        const ok = await lbConfirm('Turn auto-pay off?', 'Your dispatch-fee invoices will stop paying themselves. You will still get each invoice by email and can pay it by bank transfer or card.\n\nYour bank authorisation is withdrawn immediately.', 'Turn it off');
+        if (!ok) return;
+        b.disabled = true; b.textContent = 'Turning off…';
+        try { await payAutopayDisable(); toast('Auto-pay is off — your bank authorisation was withdrawn'); setTimeout(() => location.reload(), 900); }
+        catch (e) { b.disabled = false; b.textContent = 'Turn auto-pay off'; toast((e && e.message) || 'Could not turn it off — please contact support'); }
+        return;
+      }
+      const ok = await lbConfirm('Set up auto-pay?', 'You will authorise your bank on a secure Stripe page — LoadBoot never sees your account number.\n\nAfter that, each dispatch-fee invoice is charged on its due date (30 days after it is issued). You can cancel the authorisation here at any time.', 'Continue to Stripe');
+      if (!ok) return;
+      b.disabled = true; b.textContent = 'Opening Stripe…';
+      try { const url = await payAutopayStart(); location.href = url; }
+      catch (e) { b.disabled = false; b.textContent = 'Set up auto-pay'; toast((e && e.message) || 'Could not open the authorisation page'); }
+    });
+    // coming back from Stripe
+    try {
+      const h = String(location.hash || '');
+      if (h.indexOf('autopay=ok') >= 0) toast('Bank authorised — auto-pay is on from your next invoice');
+      else if (h.indexOf('autopay=cancelled') >= 0) toast('Authorisation cancelled — nothing changed');
+    } catch (_) {}
+  })();
+
   // Business profile: credibility fields locked; Change -> disclaimer -> editable; Save -> re-verify if changed
   (function () {
     const credIds = ['acx-entity', 'acx-mc', 'acx-dot'];
