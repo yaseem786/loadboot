@@ -6,6 +6,14 @@ set -Eeuo pipefail
 : "${SUPABASE_DB_URL:?missing}"; : "${BACKUP_AGE_PUBKEY:?missing}"
 : "${R2_BUCKET:?missing}"; : "${R2_ENDPOINT:?missing}"
 
+# The runner ships Postgres 16 client tools on PATH; the server is 17, and
+# pg_dump refuses to dump a newer server. Put the v17 binaries first.
+for d in /usr/lib/postgresql/*/bin; do
+  case "$d" in */17/*) PATH="$d:$PATH" ;; esac
+done
+export PATH
+echo "==> using $(command -v pg_dump): $(pg_dump --version)"
+
 STAMP="$(date -u +%Y-%m-%d)"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 DUMP="$WORK/loadboot-prod-$STAMP.dump"
