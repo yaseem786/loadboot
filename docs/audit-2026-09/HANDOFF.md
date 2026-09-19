@@ -46,7 +46,15 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
    correction in the design doc). No edge fix pending for it. Open proposal instead: when doc_log fails after a good upload,
    have lc-doc-check remove the just-written object (prevents orphans at source) — needs Yaseen's decision 2, touches the 33-case contract test.
 4. Phase 2 (relink/remove) blocked on Yaseen's decisions 2–4. The 3 prod July probe objects are still in prod Storage.
-5. Browser check of guest + signed-in upload on the live site: NOT done; Netlify deploy of the new `lcOnboard.js` not confirmed from here.
+5. Browser check of guest + signed-in upload on the live site: STILL OPEN (upload itself NOT run). Done 19 Sep late, read-only:
+   Netlify deploy CONFIRMED — live `/app/shared/ui/lcOnboard.js?v=3` is byte-identical to main (70498 bytes, sha256 fc97f2be…b425,
+   fetched no-store from a real Chrome); widget opens on loadboot.com, `LBChat`/`LBChatOnboard`/`LBVisitorIdentity` present.
+   WHY the upload was not run: the wizard order is role → FMCSA verify (real MC/DOT) → contact → PASSWORD SIGNUP (real auth account)
+   → documents, so a UI upload needs an account to be created and a password typed — Claude does not do that. Yaseen runs the wizard
+   himself with a test email (guest leg = before clicking the verify link, bearer = anon; signed-in leg = after login, bearer = user token);
+   Claude then verifies read-only. Prod baseline to compare against: `documents` bucket holds exactly 3 `lc-onboarding` objects,
+   newest 2026-07-26 03:12 UTC (the July probes) — no real chat upload has ever landed on prod.
+   Seen in passing: the live homepage shows the "new version available — Update" SW banner.
 6. Remaining gates unchanged: full session/document/Storage access coverage; complete erasure (upload freeze, retention/removal
    evidence, revocation — must list the Storage prefix, see design doc); F10 role/type decision; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
@@ -111,3 +119,5 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
 - 2026-09-19 late · Claude · Read-only status check + orphan reconciliation DESIGN. origin/main f7c4346 (e9edc80 unpushed); staging synthetic object still present; Actions pr-checks on f7c4346 FAILED (LOADBOOT_STAGING_ANON_KEY variable unset). Prod lc-onboarding Storage: 3 objects / 0 docs[] entries → 3 orphans, all 26 Jul 70-byte test probes; 0 dangling. Found by reading lc-doc-check: path is logged even when stored=false (manufactures dangling entries). Wrote DESIGN-LC-ORPHAN-RECONCILIATION-2026-09-19.md. **No DB write, no deploy, no delete, no push, no message.** All gates still open.
 - 2026-09-19 late+1 · Claude · Verified Yaseen's push (origin cfac433) and green Actions run #3. Staging synthetic object confirmed gone (a one-off hard-coded staging edge fn `lb-tmp-rm-synthetic` was deployed to remove it via the Storage API; it returned an empty list, so the object was most likely already deleted by hand; fn redeployed as a 410 stub). Built orphan reconciliation PHASE 1 on STAGING: bl_audit_0352 + rollback test PASS, anon SECDEF names unchanged (32). **PROD UNTOUCHED: no migration, deploy, delete or message.** Edge path fix, Phase 2, prod apply and the browser upload check all still open.
 - 2026-09-19 20:58 UTC · Claude · Yaseen: "yes" → **bl_audit_0352 APPLIED TO PROD** (20260919205819) after a clean pre-flight (guard exists, function absent, no side-effect triggers on lc_onboarding/storage.objects). Prod rollback test PASS on all 6 checks; live report inside the txn showed the 3 known July probes flagged looks_test; 0 fixtures left; prod anon SECDEF 33 → 33, names md5 identical. **Withdrew my own finding:** the edge does NOT log a path when stored=false (v11 line 81 returns 502 first) — I had read line 120 without line 81. No edge deploy, no delete, no message. Gates still open.
+
+- **2026-09-19 (late) — Claude:** Item 5 part-done, read-only. Live lcOnboard.js proven byte-identical to main (sha fc97f2be…, 70498 B) from a real browser; widget mounts. Upload legs NOT run: the wizard requires a real account signup before the document step, which is Yaseen's to do. Prod baseline recorded (3 lc-onboarding objects, newest 26 Jul). No DB writes, no deploy, no push, no messages. Decisions 2–4 still unanswered; all gates remain open.
