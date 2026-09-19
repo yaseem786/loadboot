@@ -60,3 +60,14 @@ an erasure request. Recorded here so the erasure gate picks it up.
 2. Orphan with an ob row: relink for review, or delete?
 3. Orphan with no ob row and no conversation: delete after how many days?
 4. The 3 prod July probes + 1 staging synthetic: delete by hand from the Storage UI (recommended — they are ours).
+
+## Yaseen's answers — 2026-09-19 (late), given in chat
+- Decision 1 (grace period): NOT asked this turn — still open; Phase 1 keeps its current default.
+- Decision 2: orphan WITH an ob row → **relink for staff review** (do not delete).
+- Decision 3: orphan with no ob row and no conversation → **delete after 7 days**.
+- Decision 4: Yaseen deletes our own test objects by hand in the Storage UI. Prod `documents` bucket, exact names:
+  `lc-onboarding/debugtest/probeA.png`, `lc-onboarding/debugtest/probeB.png`,
+  `lc-onboarding/lbtest_visitor_001/1785035521370-final-test.png`.
+  Staging: a query for `%ZZsynthetic%` in storage.objects returned 0 rows on 19 Sep late — the synthetic object is already gone (who removed it: unknown).
+- Still undecided: the "remove the just-written object when doc_log fails" edge proposal (HANDOFF item 3) — not asked, not approved.
+
