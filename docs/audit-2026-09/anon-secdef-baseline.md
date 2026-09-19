@@ -31,8 +31,9 @@ which is why it is anon-executable; that is the test to apply to any new name th
 `all_flags`, `cc_get_public_form`, `get_active_public_announcements`,
 `get_public_load_opportunities`, `get_public_market_rates`, `submit_web_form`, `track_web_event`
 
-**Live chat + guided onboarding widget, `lc_*` (11)**
-`lc_brain_write`, `lc_chat_request_call`, `lc_history`, `lc_identify`, `lc_ob_doc_log`,
+**Live chat + guided onboarding widget, `lc_*` (12)** — since 19 Sep 2026 `lc_ob_doc_log` is service_role-only
+and `lc_ob_upload_check` (caller-scoped upload preflight) took its place; count unchanged, names not.
+`lc_brain_write`, `lc_chat_request_call`, `lc_history`, `lc_identify`, `lc_ob_upload_check`,
 `lc_ob_get`, `lc_ob_save`, `lc_poll`, `lc_rate`, `lc_request_call`, `lc_send`, `lc_start`
 
 **Email claim / ping links, `lb_email_*` (4)** — the F01 email work
@@ -53,7 +54,7 @@ which is why it is anon-executable; that is the test to apply to any new name th
 
 | | on prod only | on staging only |
 |---|---|---|
-| chat-widget onboarding | `lc_ob_doc_log` | `lc_ob_upload_check` |
+| chat-widget onboarding | — (parity since 19 Sep 2026: `lc_ob_upload_check` on both, `lc_ob_doc_log` service-only on both) | — |
 | inbound call webhook | `retell_inbound` | — |
 
 Both databases keep `has_schema_privilege('anon','app_private','usage')` = **false**.
@@ -99,3 +100,7 @@ Staging migration `20260912190639 / audit_dispatcher_test_execute_boundary` revo
 ## 13 September 2026 — approved production dispatcher restriction
 
 Production is now **33**, staging **32**. Production before/after catalog name arrays prove that exactly the seven dispatcher names listed above were removed and none added. All seven bodies and authenticated/service grants match current staging, including the 0309 race guard on `dispatcher_test_start`. Production migration `20260913111246 / audit_dispatcher_test_execute_prod`; report migration `20260913111048` adds no anonymous surface. Earlier pending-approval status is historical. See `PROD-BEFORE-2026-09-13.json` and `PROD-AFTER-2026-09-13.json`.
+
+### 19 Sep 2026 — live-chat package promoted to prod (bl_sec_0335 / bl_sec_0336 / bl_audit_0344)
+
+Production migrations `20260919195205`, `20260919195240`, `20260919195311`. Prod count **33 → 33** but the NAME set changed exactly as designed: `lc_ob_doc_log` lost anon+authenticated (service_role only, and its body now refuses any non-service JWT with 42501) and `lc_ob_upload_check(text,uuid)` was added (anon/authenticated/service_role). Full 33-name catalog after: all_flags, cc_get_public_form, dispatcher_submit_id, eld_ingest, get_active_public_announcements, get_public_load_opportunities, get_public_market_rates, lb_contact_channel, lb_email_claim_get, lb_email_claim_sign, lb_email_ping_confirm, lb_email_ping_get, lc_brain_write, lc_chat_request_call, lc_history, lc_identify, lc_ob_get, lc_ob_save, lc_ob_upload_check, lc_poll, lc_rate, lc_request_call, lc_send, lc_start, outreach_unsubscribe, partner_agent_confirm, partner_agent_confirm_get, partner_claim_confirm, partner_claim_get, retell_inbound, retell_webhook, submit_web_form, track_web_event. Staging remains 32 (no `retell_inbound`). See `REVIEW-LIVECHAT-PROMOTION-2026-09-19.md`.

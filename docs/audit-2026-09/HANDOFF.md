@@ -11,22 +11,41 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-19, main publication and upload continuation
+## CURRENT STATE — 2026-09-19 (late), Codex patch reconciled on main; live-chat package LIVE on prod
 
-Latest user instruction explicitly supersedes the old publication hold: put all accumulated code/tests/migrations/docs on main and provide Claude a handoff. Latest fetched main d977d5d is merged locally; all historical audit commits preserved. Local working branch is now main, per current CLAUDE.md. Local completed-work commit dd2ec59 is NOT pushed. Automatic approval review rejected git push origin main, citing public disclosure of still-open security findings and the old complete-audit-first condition despite the new publish-now request. Do not bypass via another transport. Preserve exact patch against remote d977d5d and request explicit approval to publish the open audit reports/code publicly before audit closure.
+Codex's 19 Sep work (20 patches, 134 files, +15780/−336, sha256 5ae173a0…) was applied with `git am --3way` onto local main
+d977d5d (== origin/main) with the dialer/iOS lane's uncommitted edits stashed and restored; the diffstat matched Codex's exactly and
+no conflicts occurred. New hashes differ from Codex's (55978b1 → b5bc71c locally). All Codex checks re-run locally after the merge:
+npm run check PASS, test:audit-ui 30/30, domain IP cases 30/30, pwa/visitor 41/41, lc-doc contract 33/33.
 
-September15 production promotions remain recorded in PROMOTION-RESULTS-2026-09-15.json: agent review060906, opt-out061541 and erasure guard061849. September19 read-only check reconfirms deletion processor bc38da2b07e0606095b291df91041eb6 and agent review be6c30c00840e8ebaf42f9b18af7cfea on prod. Production newest observed migration20260919112413 bl_disp_0318_reapply; staging20260919184534 bl_dial_0351_dispatcher_dialer_part2_rpcs. Preserve these other lanes.
+**Live-chat DB + edge package promoted to PRODUCTION this turn** (details + evidence: `REVIEW-LIVECHAT-PROMOTION-2026-09-19.md`):
+prod migrations 20260919195205 bl_sec_0335, 20260919195240 bl_sec_0336, 20260919195311 bl_audit_0344 (0335/0336 recovered
+byte-exact from staging's stored statements into `migrations/`); 12/14 lc_* bodies now hash-identical to staging, the other two
+(lc_identify, lc_request_call) differ only because 0336 patches each env's own copy. `lc_ob_upload_check(text,uuid)` exists on prod;
+`lc_ob_doc_log` is service_role-only on prod. Anon SECDEF prod 33→33 with the expected name swap (baseline doc updated).
+15-case rollback-txn rehearsal PASS on staging AND prod, zero fixtures left. lc-doc-check v11 deployed staging (v13) then prod
+(v12, ezbr 479aff19…); negatives PASS on both, a synthetic positive PASS on staging only (one 70-byte object left in staging
+Storage under `lc-onboarding/ZZsynthetic_v11_test_2026_09_19_k1/` — delete from the Storage UI). Rollback package:
+`ROLLBACK-LIVECHAT-2026-09-19.sql` + v10 edge snapshot.
 
-NEW LOCAL upload candidate in supabase/functions/lc-doc-check/index.ts: caller-scoped preflight, strict success, checked storage/metadata, unique non-overwriting path and generic errors. Client sends signed-in token and guards conversation changes/ambiguous success. 33 new actual-source tests PASS with mocked external calls. Candidate not edge-deployed this turn; production still lacks lc_ob_upload_check(text,uuid), so coordinated DB/edge promotion is required. September15 edge snapshots returned v10 source; do not rely on older claimed v11 deployment without re-reading current source.
-
-Merged verification September19:104 regression/upload tests,30 current-source domain IP tests,169 JS syntax/import checks and actual-key staging build PASS. Browser local preview returned ERR_BLOCKED_BY_CLIENT; browser/native integration is NOT PASS. Workflow now covers pushes to main and the upload tests, but repository variable and successful hosted CI run still need verification. It does not gate Netlify.
+Publication: this session pushed NOTHING and never ran `git push`. However, at the end of the turn `origin/main` was observed at
+f7c4346 — it now CONTAINS Codex's 20 commits (b5bc71c is an ancestor) plus two other-lane commits made while this session ran
+(b911bbf CC Live chat v3, f7c4346 bl_disp_0319). So the audit work IS on GitHub, pushed by the owner/another session (GitHub Desktop),
+not by this one. Only this turn's commit (1b38ecc) is ahead of origin. Other lanes' uncommitted edits (dialer/telnyx, iOS
+screenshots, dispatcher-workspace) are still on disk, untouched.
 
 ## NEXT ACTION
 
-1. Publication BLOCKED by automatic approval review. Ask explicit public disclosure approval for all pending code and still-open audit reports now, before full audit closure. Do not bypass. Local main and exact September19 patch contain work; remote main does not yet. Follow REVIEW-PUBLICATION-2026-09-19.md and CLAUDE-CONTINUE-2026-09-19.md.
-2. Finish coordinated live-chat RPC/schema/edge promotion with fresh source, ownership/ACL tests and rollback. No blind replay of stage-only setup migrations or deployment before required RPC exists. Metadata-failure orphan reconciliation remains needed.
-3. Complete remaining session/document/Storage review and erasure workflow (upload freeze, retention/removal proof, supported revocation). Inventory refusal is not full erasure. F10 role/type decision, notification parity, browser/native tests, hosted CI, Retell proof, password/recovery/legal gates remain open.
-4. Continue tested production fixes under existing user authorization. Do not invoke real erasure, transfer, personal messaging or provider tests without the specific authority. Outreach enabled; SEO/F33/WhatsApp remain outside this lane.
+1. Yaseen: push 1b38ecc (this turn) from GitHub Desktop when ready; the Codex commits are already on origin/main (see above).
+2. Yaseen: delete the synthetic staging object above; set the repo variable LOADBOOT_STAGING_ANON_KEY and confirm one green
+   Actions run (cannot be checked from here — no GitHub access in the cloud session).
+3. Orphan reconciliation: a storage object whose doc_log fails is unlinked. Design = list `documents/lc-onboarding/<key>/` vs
+   `lc_onboarding.docs[].path`, staff-only, dry-run first. Not started.
+4. After the site deploys the new `lcOnboard.js` (user token): browser check of a guest upload AND a signed-in upload on the live
+   site (synthetic PNG, then delete). Until then signed-in account-chat uploads get 403 (accepted trade-off).
+5. Remaining gates unchanged: full session/document/Storage access coverage; complete erasure (upload freeze, retention/removal
+   evidence, revocation); F10 role/type decision; notification/edge parity; Retell real-signature proof; password/recovery/legal.
+   SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -83,3 +102,5 @@ Merged verification September19:104 regression/upload tests,30 current-source do
 - **2026-09-19 — Codex:** User requested publication on main and Claude handoff. Merged latest main d977d5d, moved working tree to main, recovered outstanding snapshots and implemented upload candidate/client guards. 104+30 tests,169 syntax/import checks and staging build PASS. Local browser blocked; edge not deployed because prod preflight RPC is missing. Exact remaining work in CLAUDE-CONTINUE-2026-09-19.md.
 
 - **2026-09-19 — publication result:** git push origin main rejected by automatic approval review (still-open security report disclosure / earlier completion condition). No successful push claimed. Local main commit dd2ec59 preserved; updated patch and Claude continuation distinguish local work from GitHub.
+
+- **2026-09-19 (late) — Claude:** Codex 19 Sep patch (20 commits/134 files) applied on main via git am --3way, other lanes stashed/restored, all 134+30 tests + check PASS. Recovered bl_sec_0335/0336 byte-exact from staging's stored statements; applied 0335 → 0336 → 0344 to PROD (195205/195240/195311) after guard-hash preflight; parity hashes recorded; anon SECDEF 33→33 with the designed name swap; 15-case rollback-txn rehearsal PASS staging + prod. lc-doc-check v11 deployed staging (v13) → prod (v12); negatives PASS both, synthetic positive PASS staging (one leftover test object to delete from Storage UI). ROLLBACK-LIVECHAT-2026-09-19.sql written. No push, no real customer/document/provider call on prod.
