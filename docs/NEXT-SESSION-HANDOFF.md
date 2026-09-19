@@ -1,3 +1,5 @@
+> **BRANCH RULE (19 Sep 2026): all work on `main` only. Feature branches are merged and retired. Never `git checkout` another branch. See CLAUDE.md §0.**
+
 # LoadBoot — NEXT-SESSION HANDOFF (read this FIRST)
 
 ## 🚚 2026-09-15 SESSION — DRIVER ACCESS (bl_drv_0344 + 0344f + 0345a) — BACKEND LIVE ON PROD (start here)

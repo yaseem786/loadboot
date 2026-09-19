@@ -7,6 +7,18 @@ difficulty: **save tokens everywhere it does not cost quality, and nowhere it do
 
 ---
 
+## 0. Git branch rule (set 19 Sep 2026) — read before any commit
+
+- **All work is committed on `main`.** Do NOT create or switch to feature branches
+  (`feat/*`, `stripe-fee-billing`, `seo/*`, etc.) — those are all fully merged and retired.
+- Never run `git checkout <branch>`. The working tree stays on `main`; the owner pushes
+  from GitHub Desktop, and every session shares this one working tree.
+- Commit only your own files (`git add <paths>`), never `git add -A`.
+- If you truly need a branch (risky experiment), create it, merge it back to `main` the
+  same session, and return to `main` before finishing.
+
+---
+
 ## 1. Model routing — decide this yourself, do not ask
 
 The owner does not want to choose models. Classify the work and route it. He is on the
