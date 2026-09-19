@@ -26,6 +26,7 @@ import { ccLcList, ccLcGet, ccLcReply, ccLcSetStatus, ccLcStats, ccLcMisses, ccL
          ccLcHeartbeat, ccLcTyping, ccLcBotResume } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { richText, parseDirectives } from '../../shared/ui/chatText.js';
+import { renderLiveChatV3 } from './liveChatV3.js';
 
 const ORIGIN_ICON = { website: '🌐', carrier: '🚚', partner: '🏢', agent: '🤝' };
 
@@ -142,6 +143,9 @@ function clock(v) {
 /* ------------------------------------------------------------------- view */
 
 export function renderLiveChat(host) {
+  // 19 Sep 2026: the v3 console is the default. This v2 screen stays reachable at #/live-chat?v=2
+  // until v3 has run a week in production; then this file can go.
+  if (!/[?&]v=2(?:&|$)/.test(location.hash)) return renderLiveChatV3(host);
   // One state object so a refresh never loses the filter, the selection or the scroll.
   const S = {
     filter: 'open', search: '', activeId: null,
