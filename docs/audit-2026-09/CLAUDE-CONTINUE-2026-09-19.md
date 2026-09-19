@@ -1,6 +1,6 @@
-Continue LoadBoot's audit from the current GitHub main. Do not restart or restore stale files.
+Continue LoadBoot's audit. IMPORTANT: Codex's accumulated work is LOCAL on main (completed-work commit dd2ec59), not on GitHub: automatic approval review blocked the public push. Obtain the September19 patch/checkpoint first; do not assume git pull contains it. Patch base is remote main d977d5d; preserve any newer work and use git apply --check before applying. Do not restart or restore stale files.
 
-First read CLAUDE.md, docs/audit-2026-09/HANDOFF.md and docs/audit-2026-09/REVIEW-PUBLICATION-2026-09-19.md. Re-sync main and both Supabase projects. All new work stays on main under the September 19 repo rule.
+After recovering the patch, first read CLAUDE.md, docs/audit-2026-09/HANDOFF.md and docs/audit-2026-09/REVIEW-PUBLICATION-2026-09-19.md. Re-sync main and both Supabase projects. All new work stays on main under the September 19 repo rule.
 
 Yaseen explicitly authorized tested pending production audit fixes on September 15, and publishing all accumulated work to main on September 19. Preserve other lanes' Stripe, iOS, backup, dispatcher and dialer work. Outreach stays enabled; SEO/F33/WhatsApp remain outside this audit lane. No real customer diagnostic, personal message, transfer, real document erasure or provider call without its specific authority.
 
@@ -30,3 +30,5 @@ Fresh local verification after merging remote main d977d5d:
 
 Before stopping: rewrite CURRENT STATE and NEXT ACTION, append LOG, record exact source/hash/migration/test/deployment state, and commit only your files on main. Do not mark the whole audit complete while those gates remain.
 
+
+Do not work around the publication rejection by another tool/transport. Yaseen must explicitly confirm public publication of the code and open security reports before audit closure, or publish the reviewed patch himself.

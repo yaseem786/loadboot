@@ -13,7 +13,7 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 ## CURRENT STATE — 2026-09-19, main publication and upload continuation
 
-Latest user instruction explicitly supersedes the old publication hold: put all accumulated code/tests/migrations/docs on main and provide Claude a handoff. Latest fetched main d977d5d is merged locally; all historical audit commits preserved. Local working branch is now main, per current CLAUDE.md. Publication outcome must be verified from the remote before claiming pushed.
+Latest user instruction explicitly supersedes the old publication hold: put all accumulated code/tests/migrations/docs on main and provide Claude a handoff. Latest fetched main d977d5d is merged locally; all historical audit commits preserved. Local working branch is now main, per current CLAUDE.md. Local completed-work commit dd2ec59 is NOT pushed. Automatic approval review rejected git push origin main, citing public disclosure of still-open security findings and the old complete-audit-first condition despite the new publish-now request. Do not bypass via another transport. Preserve exact patch against remote d977d5d and request explicit approval to publish the open audit reports/code publicly before audit closure.
 
 September15 production promotions remain recorded in PROMOTION-RESULTS-2026-09-15.json: agent review060906, opt-out061541 and erasure guard061849. September19 read-only check reconfirms deletion processor bc38da2b07e0606095b291df91041eb6 and agent review be6c30c00840e8ebaf42f9b18af7cfea on prod. Production newest observed migration20260919112413 bl_disp_0318_reapply; staging20260919184534 bl_dial_0351_dispatcher_dialer_part2_rpcs. Preserve these other lanes.
 
@@ -23,7 +23,7 @@ Merged verification September19:104 regression/upload tests,30 current-source do
 
 ## NEXT ACTION
 
-1. Complete requested main push and verify remote commit; do not claim success from a local commit. Follow REVIEW-PUBLICATION-2026-09-19.md and give user CLAUDE-CONTINUE-2026-09-19.md.
+1. Publication BLOCKED by automatic approval review. Ask explicit public disclosure approval for all pending code and still-open audit reports now, before full audit closure. Do not bypass. Local main and exact September19 patch contain work; remote main does not yet. Follow REVIEW-PUBLICATION-2026-09-19.md and CLAUDE-CONTINUE-2026-09-19.md.
 2. Finish coordinated live-chat RPC/schema/edge promotion with fresh source, ownership/ACL tests and rollback. No blind replay of stage-only setup migrations or deployment before required RPC exists. Metadata-failure orphan reconciliation remains needed.
 3. Complete remaining session/document/Storage review and erasure workflow (upload freeze, retention/removal proof, supported revocation). Inventory refusal is not full erasure. F10 role/type decision, notification parity, browser/native tests, hosted CI, Retell proof, password/recovery/legal gates remain open.
 4. Continue tested production fixes under existing user authorization. Do not invoke real erasure, transfer, personal messaging or provider tests without the specific authority. Outreach enabled; SEO/F33/WhatsApp remain outside this lane.
@@ -81,3 +81,5 @@ Merged verification September19:104 regression/upload tests,30 current-source do
 - **2026-09-15 — Codex, explicit production approval:** Promoted agent review060906, opt-out061541 and erasure guard061849. Fresh staging 73/62/35 checks and rollback/reapply PASS; production source/ACL/anon checks PASS. Added only expected private inventory no-policy notice. No real deletion, email or payout. Pending live-chat/frontend/F10/erasure-completion gates remain.
 
 - **2026-09-19 — Codex:** User requested publication on main and Claude handoff. Merged latest main d977d5d, moved working tree to main, recovered outstanding snapshots and implemented upload candidate/client guards. 104+30 tests,169 syntax/import checks and staging build PASS. Local browser blocked; edge not deployed because prod preflight RPC is missing. Exact remaining work in CLAUDE-CONTINUE-2026-09-19.md.
+
+- **2026-09-19 — publication result:** git push origin main rejected by automatic approval review (still-open security report disclosure / earlier completion condition). No successful push claimed. Local main commit dd2ec59 preserved; updated patch and Claude continuation distinguish local work from GitHub.

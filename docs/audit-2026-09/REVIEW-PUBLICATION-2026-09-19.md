@@ -25,3 +25,7 @@ See CLAUDE-CONTINUE-2026-09-19.md for the exact continuation prompt and HANDOFF.
 
 Git push result and remote commit must be verified before claiming published.
 
+
+## Publication result
+
+git push origin main was rejected by automatic approval review: public disclosure of internal code/still-open security findings and the earlier publish-after-completion condition were cited despite the latest user request to publish now. Commit dd2ec59 is local only. No bypass or alternate publication transport attempted. Ask explicit approval to publish these open audit reports and code publicly now. The September19 patch is against remote main d977d5d; merge subsequent remote work before applying it.
