@@ -1,6 +1,8 @@
 # DESIGN — live-chat onboarding document orphan reconciliation (19 Sep 2026)
 
-Status: **Phase 1 built and tested on STAGING only (bl_audit_0352, guard = app_private.lc_cc_ok()). Not on prod. Edge fix and Phase 2 not started.** Gate stays OPEN.
+Status: **Phase 1 LIVE on staging AND prod (bl_audit_0352, guard = app_private.lc_cc_ok()); rollback test PASS on both; anon SECDEF names unchanged (32 / 33). Phase 2 not started.** Gate stays OPEN.
+
+**CORRECTION (19 Sep, Claude):** the "edge logs path even when stored=false" claim below was WRONG. lc-doc-check v11 line 81 returns 502 `storage_failed` before doc_log is ever called, so the edge cannot manufacture a dangling entry. I read line 120 without line 81. No edge fix is needed for that. Dangling entries can still come from an object removed by hand. The real remaining source of ORPHANS is unchanged: upload OK, then doc_log fails (line 122 returns 502 and leaves the object).
 
 ## Problem
 `lc-doc-check` writes the file to Storage (`documents/lc-onboarding/<visitor_key>/<file>`) and THEN calls
