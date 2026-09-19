@@ -1,6 +1,6 @@
 # DESIGN — live-chat onboarding document orphan reconciliation (19 Sep 2026)
 
-Status: **DESIGN ONLY. Nothing built, nothing applied, no object deleted.** Gate stays OPEN.
+Status: **Phase 1 built and tested on STAGING only (bl_audit_0352, guard = app_private.lc_cc_ok()). Not on prod. Edge fix and Phase 2 not started.** Gate stays OPEN.
 
 ## Problem
 `lc-doc-check` writes the file to Storage (`documents/lc-onboarding/<visitor_key>/<file>`) and THEN calls
