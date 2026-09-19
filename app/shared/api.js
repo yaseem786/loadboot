@@ -421,6 +421,7 @@ export const ccDispatcherTestReview = (user) => rpc('cc_dispatcher_test_review',
 export const ccDispatcherTestScore = (attempt, scores, decision, note) => rpc('cc_dispatcher_test_score', { p_attempt: attempt, p_scores: scores || {}, p_decision: decision || null, p_note: note || null });
 export const ccDispatcherTestSendScore = (attempt) => rpc('cc_dispatcher_test_send_score', { p_attempt: attempt });
 export const dispatcherMyStatus = () => rpc('dispatcher_my_status', {});
+export const dispatcherReapply = (check) => rpc('dispatcher_reapply', { p_check: !!check }); // bl_disp_0318
 export const ccDispatchersList = () => rpc('cc_dispatchers_list', {});
 // bl_disp_0313 — roster at scale: server-side search / stage / keyset paging + one stats call.
 export const ccDispatchersPage = (o = {}) => rpc('cc_dispatchers_page', { p_q: o.q || null, p_status: o.status || null, p_before: o.before || null, p_before_id: o.beforeId || null, p_limit: o.limit || 50, p_user: o.user || null });
