@@ -627,19 +627,24 @@
       var mime = f.type === 'application/pdf' || /^image\/(jpeg|png|webp)$/.test(f.type) ? f.type : null;
       if (!mime) { err.textContent = 'PDF, JPG or PNG only'; err.style.display = 'block'; return; }
       if (f.size > 8 * 1024 * 1024) { err.textContent = 'Max 8 MB — ask your agent for the PDF original'; err.style.display = 'block'; return; }
+      var uploadIdentity = chatIdentity();
       drop.innerHTML = '⏳ Reading your ' + doc.label + '…<br><span style="font-weight:400;font-size:11px;color:#64748b">AI check in progress — usually under 15 seconds</span>';
       var rd = new FileReader();
       rd.onload = async function () {
         var b64 = String(rd.result).split(',')[1];
         var c = H().ctx();
         try {
+          if (chatIdentity() !== uploadIdentity) throw new Error('Chat changed while reading file');
+          var uploadToken = c.cfg.getToken ? await c.cfg.getToken() : null;
+          if (chatIdentity() !== uploadIdentity) throw new Error('Chat changed before upload');
           var r = await fetch(c.cfg.url + '/functions/v1/lc-doc-check', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon, Authorization: 'Bearer ' + c.cfg.anon },
+            headers: { 'Content-Type': 'application/json', apikey: c.cfg.anon, Authorization: 'Bearer ' + (uploadToken || c.cfg.anon) },
             body: JSON.stringify({ visitor_key: c.vKey, conv_id: c.convId || null, doc_type: doc.key, filename: f.name, mime: mime, data_b64: b64, context: s.data.fmcsa ? { legal_name: s.data.fmcsa.legal_name, mc: s.data.fmcsa.mc, dot: s.data.fmcsa.dot, power_units: s.data.fmcsa.trucks } : {} })
           });
           var d = await r.json();
-          if (!r.ok || d.error) throw new Error(d.detail || d.error || 'check failed');
+          if (chatIdentity() !== uploadIdentity) throw new Error('Chat changed during upload');
+          if (!r.ok || d.error || d.ok !== true || d.stored !== true || !d.verdict) throw new Error(d.detail || d.error || 'check failed');
           renderVerdict(doc, idx, d.verdict);
         } catch (e) {
           drop.innerHTML = '📎 Tap to choose a file<br><span style="font-weight:400;font-size:11px;color:#64748b">PDF, JPG or PNG · max 8 MB</span>';

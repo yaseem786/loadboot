@@ -1,4 +1,4 @@
-// lc-doc-check v10 — STRICT AI document pre-check for the live-chat onboarding flow.
+// lc-doc-check v11 — caller-scoped preflight and confirmed storage/metadata saves.
 // v10: the certificate holder is quoted as a finished four-line block. "Name LoadBoot"
 // was never enough — the agent needs the legal entity AND the registered office, or the
 // certificate comes back wrong a second time and the carrier blames us for the delay.
@@ -42,12 +42,18 @@ async function callGemini(key: string, payload: unknown): Promise<{ ok: boolean;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   try {
     const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY") || "";
     const URL_ = Deno.env.get("SUPABASE_URL")!;
     const SVC = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const caller = req.headers.get("authorization");
+    if (!URL_ || !SVC || !ANON) return json({ error: "service_unavailable" }, 503);
+    if (!caller || !/^Bearer \S+$/i.test(caller)) return json({ error: "not_authorized" }, 401);
 
     const b = await req.json().catch(() => ({}));
+    if (!b || typeof b !== "object" || Array.isArray(b)) return json({ error: "bad_request" }, 400);
     const vkey = String(b.visitor_key || "");
     const convId = b.conv_id ? String(b.conv_id) : null;
     const docType = ["coi", "w9", "authority", "other"].includes(b.doc_type) ? b.doc_type : "other";
@@ -55,18 +61,24 @@ Deno.serve(async (req) => {
     const dataB64 = String(b.data_b64 || "");
     const fname = String(b.filename || "document").replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 80);
     const ctx = b.context || {};
-    if (vkey.length < 8 || !dataB64) return json({ error: "bad_request" }, 400);
+    if (!/^[A-Za-z0-9_-]{16,64}$/.test(vkey) || vkey.startsWith("novkey") || !dataB64) return json({ error: "bad_request" }, 400);
+    if (convId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(convId)) return json({ error: "bad_request" }, 400);
     if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(mime)) return json({ error: "unsupported_type", detail: "PDF, JPG or PNG only" }, 400);
     if (dataB64.length > 11_000_000) return json({ error: "too_large", detail: "Max 8 MB" }, 400);
 
-    const q = await fetch(`${URL_}/rest/v1/rpc/lc_ob_get`, { method: "POST", headers: { apikey: SVC, "Content-Type": "application/json" }, body: JSON.stringify({ p_visitor_key: vkey }) });
+    const q = await fetch(`${URL_}/rest/v1/rpc/lc_ob_upload_check`, { method: "POST", headers: { apikey: ANON, Authorization: caller, "Content-Type": "application/json" }, body: JSON.stringify({ p_visitor_key: vkey, p_conversation_id: convId }) });
     const st = await q.json().catch(() => null);
-    if (!st || st.error) return json({ error: "not_authorized" }, 403);
+    if (!q.ok) return json({ error: q.status >= 500 ? "service_unavailable" : "not_authorized" }, q.status >= 500 ? 503 : 403);
+    if (!st || st.ok !== true || st.error) return json({ error: "not_authorized" }, 403);
 
-    const path = `lc-onboarding/${vkey}/${Date.now()}-${fname}`;
-    const bytes = Uint8Array.from(atob(dataB64), (c) => c.charCodeAt(0));
-    const up = await fetch(`${URL_}/storage/v1/object/documents/${path}`, { method: "POST", headers: { apikey: SVC, "Content-Type": mime, "x-upsert": "true" }, body: bytes });
+    const path = `lc-onboarding/${vkey}/${crypto.randomUUID()}-${fname}`;
+    let bytes: Uint8Array;
+    try { bytes = Uint8Array.from(atob(dataB64), (c) => c.charCodeAt(0)); }
+    catch { return json({ error: "bad_request" }, 400); }
+    if (!bytes.length || bytes.length > 8 * 1024 * 1024) return json({ error: "too_large" }, 400);
+    const up = await fetch(`${URL_}/storage/v1/object/documents/${path}`, { method: "POST", headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": mime, "x-upsert": "false" }, body: bytes });
     const stored = up.ok;
+    if (!stored) return json({ error: "storage_failed" }, 502);
 
     let verdict: any = null;
     let aiDown = false;
@@ -105,11 +117,12 @@ Deno.serve(async (req) => {
 
     const emoji = verdict.verdict === "pass" ? "✅" : verdict.verdict === "queued" ? "📥" : verdict.verdict === "warning" ? "⚠️" : "❌";
     const note = `${emoji} Onboarding doc — ${docType.toUpperCase()} "${fname}": ${String(verdict.verdict).toUpperCase()}${(verdict.issues || []).length ? " — " + (verdict.issues || []).map((i: any) => i.problem).join("; ").slice(0, 300) : ""}${verdict.verdict === "queued" ? " (AI offline — needs MANUAL review)" : ""} (stored: ${stored ? path : "UPLOAD FAILED"})`;
-    await fetch(`${URL_}/rest/v1/rpc/lc_ob_doc_log`, { method: "POST", headers: { apikey: SVC, "Content-Type": "application/json" }, body: JSON.stringify({ p_visitor_key: vkey, p_conversation_id: convId, p_doc: { t: docType, f: fname, path: stored ? path : null, verdict: verdict.verdict, ts: new Date().toISOString() }, p_note: note }) });
+    const logged = await fetch(`${URL_}/rest/v1/rpc/lc_ob_doc_log`, { method: "POST", headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_visitor_key: vkey, p_conversation_id: convId, p_doc: { t: docType, f: fname, path, verdict: verdict.verdict, ts: new Date().toISOString() }, p_note: note }) });
+    const saved = await logged.json().catch(() => null);
+    if (!logged.ok || !saved || saved.ok !== true || saved.error) return json({ error: "document_save_failed" }, 502);
 
     return json({ ok: true, stored, doc_type: docType, verdict, holder: { name: HOLDER_NAME, address: HOLDER_ADDRESS, block: HOLDER_LINES } });
   } catch (e) {
-    return json({ error: "server_error", detail: String(e instanceof Error ? e.message : e).slice(0, 200) }, 500);
+    return json({ error: "server_error" }, 500);
   }
 });
-

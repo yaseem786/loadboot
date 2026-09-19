@@ -1,5 +1,7 @@
 name: Pull request checks
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -29,3 +31,4 @@ jobs:
           test -n "$LOADBOOT_STAGING_ANON_KEY" || { echo 'Configure the staging publishable/anon key repository variable.'; exit 1; }
           python3 build_site.py
       - run: node --experimental-vm-modules --test tests/audit_pwa_privacy_test.mjs tests/visitor_key_test.mjs
+      - run: node --test tests/lc_doc_check_contract_test.mjs

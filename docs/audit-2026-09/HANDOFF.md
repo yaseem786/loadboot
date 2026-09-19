@@ -11,22 +11,22 @@ Both assistants follow the same guardrails (`docs/CHATGPT-AUDIT-PROMPT.md`), the
 
 
 
-## CURRENT STATE — 2026-09-15, approved production promotions
+## CURRENT STATE — 2026-09-19, main publication and upload continuation
 
-User explicitly authorized all pending production audit fixes this turn. Production agent review 20260915060906, marketing opt-out 20260915061541 and erasure guard 20260915061849 are applied. Prior approval-review gate on these packages is resolved. No actual account erasure, real message, transfer, sender invocation or backfill was performed.
+Latest user instruction explicitly supersedes the old publication hold: put all accumulated code/tests/migrations/docs on main and provide Claude a handoff. Latest fetched main d977d5d is merged locally; all historical audit commits preserved. Local working branch is now main, per current CLAUDE.md. Publication outcome must be verified from the remote before claiming pushed.
 
-Agent missing-identity refusals PASS on deployed production. Opt-out: fresh production-source-on-staging apply/rollback/reapply and 73 unsubscribe assertions PASS; 62 isolated sender/claim/eligibility assertions PASS. Erasure guard: current staged 35-assertion suite and fresh production-source apply/rollback/reapply PASS, all fixtures rolled back. Production catalog hashes/ACLs match expected packages; current driver-detach code preserved. Anonymous names/arguments unchanged at33. Only added security notice is the intentionally private, RLS-enabled/no-client-grants inventory table with no policies. Exact snapshots, migrations and results are saved in PROMOTION-RESULTS-2026-09-15.json and associated source/test/rollback files.
+September15 production promotions remain recorded in PROMOTION-RESULTS-2026-09-15.json: agent review060906, opt-out061541 and erasure guard061849. September19 read-only check reconfirms deletion processor bc38da2b07e0606095b291df91041eb6 and agent review be6c30c00840e8ebaf42f9b18af7cfea on prod. Production newest observed migration20260919112413 bl_disp_0318_reapply; staging20260919184534 bl_dial_0351_dispatcher_dialer_part2_rpcs. Preserve these other lanes.
 
-Deletion guard promotion consolidates NULL/ownership/bank-cleanup/atomic-cleanup/suppression/inventory fixes; it is not full Storage erasure, global session invalidation or retention/removal proof. A file-bearing account stays requested with ERASURE_REVIEW_REQUIRED. Existing no-file path remains; no production completion was invoked.
+NEW LOCAL upload candidate in supabase/functions/lc-doc-check/index.ts: caller-scoped preflight, strict success, checked storage/metadata, unique non-overwriting path and generic errors. Client sends signed-in token and guards conversation changes/ambiguous success. 33 new actual-source tests PASS with mocked external calls. Candidate not edge-deployed this turn; production still lacks lc_ob_upload_check(text,uuid), so coordinated DB/edge promotion is required. September15 edge snapshots returned v10 source; do not rely on older claimed v11 deployment without re-reading current source.
 
-Repository remains local feat/dispatcher-model, main09b79fe merged. Most recent merged frontend verification:71 tests,164 syntax checks,imports,staging build PASS from earlier Sept15 continuation. No frontend deploy/browser/native verification this turn. GitHub publishing remains held until all audit gaps complete per user.
+Merged verification September19:104 regression/upload tests,30 current-source domain IP tests,169 JS syntax/import checks and actual-key staging build PASS. Browser local preview returned ERR_BLOCKED_BY_CLIENT; browser/native integration is NOT PASS. Workflow now covers pushes to main and the upload tests, but repository variable and successful hosted CI run still need verification. It does not gate Netlify.
 
 ## NEXT ACTION
 
-1. Local main reconciliation and checks are complete. Keep pending work on feat/dispatcher-model; refreshed Sept 15 patch targets main 09b79fe. GitHub publishing waits for complete audit per user; no force push or merge into main.
-2. Continue remaining live-chat source/edge production parity and staged promotion; use fresh source/schema checks and rollback tests. The three Sept15 production packages are applied and no longer approval-blocked.
-3. Continue document/Storage session and access review; fourteen staged guarded RPCs do not protect every endpoint. Complete supported Auth revocation, upload freeze, inventory coverage and retention/removal proof; actual erasure remains specifically gated.
-4. F10 intended role/type matrix decision, notification/edge parity, browser/native verification, CI activation, Retell/password/recovery/legal gates remain. Outreach stays enabled; SEO/F33/WhatsApp parked.
+1. Complete requested main push and verify remote commit; do not claim success from a local commit. Follow REVIEW-PUBLICATION-2026-09-19.md and give user CLAUDE-CONTINUE-2026-09-19.md.
+2. Finish coordinated live-chat RPC/schema/edge promotion with fresh source, ownership/ACL tests and rollback. No blind replay of stage-only setup migrations or deployment before required RPC exists. Metadata-failure orphan reconciliation remains needed.
+3. Complete remaining session/document/Storage review and erasure workflow (upload freeze, retention/removal proof, supported revocation). Inventory refusal is not full erasure. F10 role/type decision, notification parity, browser/native tests, hosted CI, Retell proof, password/recovery/legal gates remain open.
+4. Continue tested production fixes under existing user authorization. Do not invoke real erasure, transfer, personal messaging or provider tests without the specific authority. Outreach enabled; SEO/F33/WhatsApp remain outside this lane.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -79,3 +79,5 @@ Repository remains local feat/dispatcher-model, main09b79fe merged. Most recent 
 - **2026-09-15 — Codex, repository checkpoint:** Agent fix committed a7f071f; latest main09b79fe merged locally at2eb5ddd. 71 regression tests, 164 syntax checks, imports and real-key staging build PASS. No browser check or frontend deployment claimed. Sept15 patch/manifest refreshed against main09b79fe; production agent-review migration remains approval-blocked.
 
 - **2026-09-15 — Codex, explicit production approval:** Promoted agent review060906, opt-out061541 and erasure guard061849. Fresh staging 73/62/35 checks and rollback/reapply PASS; production source/ACL/anon checks PASS. Added only expected private inventory no-policy notice. No real deletion, email or payout. Pending live-chat/frontend/F10/erasure-completion gates remain.
+
+- **2026-09-19 — Codex:** User requested publication on main and Claude handoff. Merged latest main d977d5d, moved working tree to main, recovered outstanding snapshots and implemented upload candidate/client guards. 104+30 tests,169 syntax/import checks and staging build PASS. Local browser blocked; edge not deployed because prod preflight RPC is missing. Exact remaining work in CLAUDE-CONTINUE-2026-09-19.md.

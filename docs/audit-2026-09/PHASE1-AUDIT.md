@@ -692,3 +692,8 @@ Staging-only session/NULL-decision correction for three agent bank-review RPCs; 
 ### 2026-09-15 — User-approved production promotions
 
 Agent review, six-function marketing opt-out and consolidated deletion inventory guard are now production-applied at060906/061541/061849. Prior gate for these packages resolved by explicit user instruction. Fresh stage source/rollback tests and production catalog/ACL/anon checks recorded in PROMOTION-RESULTS-2026-09-15.json. Existing driver-detach step preserved. Full erasure is still open; no actual account erased or real send invoked. Live-chat source/edge parity and frontend promotion remain next.
+
+
+### 2026-09-19 — Main reconciliation and upload candidate
+
+Current main d977d5d merged, prior audit work preserved and working branch changed to main under user/repo instructions. Upload preflight/storage/logging and client token guards have 33 new mocked actual-source tests; full local suite104 plus30 IP cases,169 syntax/import checks and staging build PASS. No edge deployment; prod upload-check RPC is still missing. Local browser blocked with ERR_BLOCKED_BY_CLIENT. Full audit remains open; see CLAUDE-CONTINUE-2026-09-19.md.
