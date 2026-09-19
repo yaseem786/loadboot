@@ -234,6 +234,45 @@
      "source": "National industry benchmarks (Aug 2026)"
     }
    }
+  },
+  {
+   "as_of": "2026-09-18",
+   "iso_year": 2026,
+   "iso_week": 38,
+   "rates": {
+    "Box Truck": {
+     "rpm": 2.52,
+     "source": "National industry benchmarks (Sep 2026)"
+    },
+    "Conestoga": {
+     "rpm": 3.64,
+     "source": "National industry benchmarks (Sep 2026)"
+    },
+    "Dry Van": {
+     "rpm": 2.97,
+     "source": "National industry benchmarks (Sep 2026)"
+    },
+    "Flatbed": {
+     "rpm": 3.54,
+     "source": "National industry benchmarks (Sep 2026)"
+    },
+    "Hotshot": {
+     "rpm": 2.35,
+     "source": "National industry benchmarks (Sep 2026)"
+    },
+    "Power Only": {
+     "rpm": 2.52,
+     "source": "National industry benchmarks (Sep 2026)"
+    },
+    "Reefer": {
+     "rpm": 3.56,
+     "source": "National industry benchmarks (Sep 2026)"
+    },
+    "Step Deck": {
+     "rpm": 3.59,
+     "source": "National industry benchmarks (Sep 2026)"
+    }
+   }
   }
  ]
 }
