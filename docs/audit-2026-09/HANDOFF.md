@@ -31,21 +31,26 @@ Storage under `lc-onboarding/ZZsynthetic_v11_test_2026_09_19_k1/` — delete fro
 Publication: this session pushed NOTHING and never ran `git push`. However, at the end of the turn `origin/main` was observed at
 f7c4346 — it now CONTAINS Codex's 20 commits (b5bc71c is an ancestor) plus two other-lane commits made while this session ran
 (b911bbf CC Live chat v3, f7c4346 bl_disp_0319). So the audit work IS on GitHub, pushed by the owner/another session (GitHub Desktop),
-not by this one. Only this turn's commit (1b38ecc) is ahead of origin. Other lanes' uncommitted edits (dialer/telnyx, iOS
+not by this one. Only that turn's commit (e9edc80; first written as 1b38ecc before an amend) is ahead of origin. Other lanes' uncommitted edits (dialer/telnyx, iOS
 screenshots, dispatcher-workspace) are still on disk, untouched.
 
 ## NEXT ACTION
 
-1. Yaseen: push 1b38ecc (this turn) from GitHub Desktop when ready; the Codex commits are already on origin/main (see above).
-2. Yaseen: delete the synthetic staging object above; set the repo variable LOADBOOT_STAGING_ANON_KEY and confirm one green
-   Actions run (cannot be checked from here — no GitHub access in the cloud session).
-3. Orphan reconciliation: a storage object whose doc_log fails is unlinked. Design = list `documents/lc-onboarding/<key>/` vs
-   `lc_onboarding.docs[].path`, staff-only, dry-run first. Not started.
+Checked 19 Sep ~late (Claude, read-only): origin/main still f7c4346 (local e9edc80 ahead 1, NOT pushed); staging synthetic
+object STILL present; Actions "Pull request checks" on f7c4346 = FAILURE (repo variable not set), no green run yet.
+
+1. Yaseen: push e9edc80 (+ this turn's docs commit) from GitHub Desktop. (The "1b38ecc" named earlier is e9edc80.)
+2. Yaseen: delete the synthetic staging object; set repo VARIABLE (not secret) LOADBOOT_STAGING_ANON_KEY; re-run
+   "Pull request checks" and confirm green. Public repo, so runs are readable at api.github.com/repos/yaseem786/loadboot/actions/runs.
+3. Orphan reconciliation: DESIGNED, not built — `DESIGN-LC-ORPHAN-RECONCILIATION-2026-09-19.md`. Prod today: 3 orphans, all
+   70-byte July test probes, 0 dangling, no real customer doc orphaned. Blocked on Yaseen's 4 decisions in that file; then build
+   Phase 1 (report-only `cc_lc_doc_reconcile`) on staging with the 6-case test.
 4. After the site deploys the new `lcOnboard.js` (user token): browser check of a guest upload AND a signed-in upload on the live
-   site (synthetic PNG, then delete). Until then signed-in account-chat uploads get 403 (accepted trade-off).
+   site (synthetic PNG, then delete). BLOCKED until the push + Netlify deploy happen. Until then signed-in account-chat uploads
+   get 403 (accepted trade-off).
 5. Remaining gates unchanged: full session/document/Storage access coverage; complete erasure (upload freeze, retention/removal
-   evidence, revocation); F10 role/type decision; notification/edge parity; Retell real-signature proof; password/recovery/legal.
-   SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
+   evidence, revocation — must list the Storage prefix, see design doc); F10 role/type decision; notification/edge parity;
+   Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
 
 ## LOG  (append one line per turn; newest last)
 
@@ -104,3 +109,4 @@ screenshots, dispatcher-workspace) are still on disk, untouched.
 - **2026-09-19 — publication result:** git push origin main rejected by automatic approval review (still-open security report disclosure / earlier completion condition). No successful push claimed. Local main commit dd2ec59 preserved; updated patch and Claude continuation distinguish local work from GitHub.
 
 - **2026-09-19 (late) — Claude:** Codex 19 Sep patch (20 commits/134 files) applied on main via git am --3way, other lanes stashed/restored, all 134+30 tests + check PASS. Recovered bl_sec_0335/0336 byte-exact from staging's stored statements; applied 0335 → 0336 → 0344 to PROD (195205/195240/195311) after guard-hash preflight; parity hashes recorded; anon SECDEF 33→33 with the designed name swap; 15-case rollback-txn rehearsal PASS staging + prod. lc-doc-check v11 deployed staging (v13) → prod (v12); negatives PASS both, synthetic positive PASS staging (one leftover test object to delete from Storage UI). ROLLBACK-LIVECHAT-2026-09-19.sql written. No push, no real customer/document/provider call on prod.
+- 2026-09-19 late · Claude · Read-only status check + orphan reconciliation DESIGN. origin/main f7c4346 (e9edc80 unpushed); staging synthetic object still present; Actions pr-checks on f7c4346 FAILED (LOADBOOT_STAGING_ANON_KEY variable unset). Prod lc-onboarding Storage: 3 objects / 0 docs[] entries → 3 orphans, all 26 Jul 70-byte test probes; 0 dangling. Found by reading lc-doc-check: path is logged even when stored=false (manufactures dangling entries). Wrote DESIGN-LC-ORPHAN-RECONCILIATION-2026-09-19.md. **No DB write, no deploy, no delete, no push, no message.** All gates still open.
