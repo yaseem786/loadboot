@@ -35,3 +35,7 @@ tools/ios/package-lock.json.bak
 # Apple secrets — NEVER commit
 *.p8
 AuthKey_*.p8
+
+# Session scratch + personal docs (never commit)
+Claude outputs/
+docs/apple/*.docx
