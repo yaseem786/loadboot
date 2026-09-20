@@ -483,6 +483,7 @@ two CTAs above the player, chapters tucked away.
   (`Failed to deserialize params.clip.scale`) — live re-capture of portal screens was not possible.
 
 ## DISPATCHER DIALER (Telnyx) — state 20 Sep 2026  (full guide: docs/DIALER-SETUP.md)
+- **UPDATE 20 Sep (later): PRODUCTION IS LIVE** — DB applied, 4 functions deployed, secrets set, Telnyx webhooks repointed to prod (staging calls no longer work), dialer ON, +14695272754 → Asim Latif. SMS still OFF. The lines below that say "PRODUCTION: untouched" are superseded. Full state + open problems + next steps: project doc `claude/DIALER-GOLIVE-HANDOFF.md`.
 - STAGING: live and call-tested (outbound, inbound→browser ring, two-way audio, recording, play/pause). Line +1 469 527 2754 → agent@lb.test.
   Not yet tested with a real call: voicemail chain, push + 35 s wait/claim, dispatcher's own forward number, mobile. SMS built, switched OFF.
 - PRODUCTION: untouched. One-paste apply file = docs/PROD-APPLY-dialer-0351-0352.sql (9 migrations in order; every in-place patch anchor
