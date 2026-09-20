@@ -66,7 +66,7 @@ Browser softphone ki fitri limit: phone lock ya tab background mein ho to browse
 Project → Edge Functions → Secrets:
 - `TELNYX_API_KEY` = step 1
 - `TELNYX_PUBLIC_KEY` = step 2 (base64 string)
-Production par: migrations `bl_dial_0351` → `0351a` → `0351b` → `0351c` → `0351d` → `0351e` (isi order mein) apply + teenon functions deploy (`telnyx-hook` verify_jwt = **false**, baqi true).
+Production par: migrations `bl_dial_0351` → `0351a` → `0351b` → `0351c` → `0351d` → `0351e` → `0351f` → `0351g` (isi order mein) apply + teenon functions deploy (`telnyx-hook` verify_jwt = **false**, baqi true).
 
 ## Staging test (go-live se pehle)
 1. CC (staging) → Phones → settings: connection id daalein, dialer ON, number assign.

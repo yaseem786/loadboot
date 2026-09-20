@@ -171,7 +171,7 @@ const CSS = `
 .lbd-note{margin:0 14px 10px;padding:9px 12px;border-radius:12px;font-size:12.5px;background:rgba(245,158,11,.12);color:#fde68a;display:flex;gap:8px;align-items:flex-start}
 .lbd-note.bad{background:rgba(239,68,68,.13);color:#fecaca}
 .lbd-toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147483001;background:#0b1830;border:1px solid var(--ln);color:#fff;padding:10px 16px;border-radius:12px;font:600 13px Inter,system-ui,sans-serif;box-shadow:0 12px 30px rgba(0,0,0,.5)}
-.lbd-audio{display:none}
+.lbd-audio{position:fixed;width:0;height:0;opacity:0;pointer-events:none}
 @media (max-width:560px){
  .lbd{right:88px;bottom:calc(84px + env(safe-area-inset-bottom))}
  .lbd.open{left:0;right:0;bottom:0}
@@ -289,6 +289,9 @@ function createDialer() {
     if (!S.call || S.call.sdk !== sdk) { if (S.call && sdk.direction === 'inbound' && st === 'ringing') { try { sdk.hangup(); } catch (_) {} } return; }   // busy: second call is declined → voicemail
     const c = S.call; c.state = st;
     if (st === 'early' || (st === 'ringing' && c.dir === 'out')) report('ringing');
+    // make sure the far side is actually audible: bind the remote stream ourselves and start playback (the SDK's own
+    // remoteElement hook can miss it, and a paused <audio> stays silent) — one-way audio seen in the first live test
+    if (st === 'early' || st === 'active') { try { const rs = sdk.remoteStream; if (rs && audio.srcObject !== rs) audio.srcObject = rs; audio.muted = false; audio.volume = 1; const p = audio.play(); if (p && p.catch) p.catch(() => {}); } catch (_) {} }
     if (st === 'active') { ringStop(); if (!c.since) { c.since = Date.now(); report('active'); say('Call connected'); startTick(); wakeOn(); } c.held = false; }
     if (st === 'held') c.held = true;
     if (st === 'hangup' || st === 'destroy' || st === 'purge') { finish(sdk); return; }
