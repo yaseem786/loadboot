@@ -1,6 +1,6 @@
 # DESIGN — live-chat onboarding document orphan reconciliation (19 Sep 2026)
 
-Status: **Phase 1 LIVE on staging AND prod (bl_audit_0352, guard = app_private.lc_cc_ok()); rollback test PASS on both; anon SECDEF names unchanged (32 / 33). Phase 2a (relink, bl_audit_0353) on STAGING only, test 8/8 PASS; Phase 2b (remove) not built.** Gate stays OPEN.
+Status: **Phase 1 LIVE on staging AND prod (bl_audit_0352, guard = app_private.lc_cc_ok()); rollback test PASS on both; anon SECDEF names unchanged (32 / 33). Phase 2a (relink, bl_audit_0353) LIVE on staging AND prod (20 Sep), test 8/8 PASS on both; lc-doc-check v12 (cleanup at source) LIVE on both; Phase 2b (remove) DESIGNED below, NOT built.** Gate stays OPEN.
 
 **CORRECTION (19 Sep, Claude):** the "edge logs path even when stored=false" claim below was WRONG. lc-doc-check v11 line 81 returns 502 `storage_failed` before doc_log is ever called, so the edge cannot manufacture a dangling entry. I read line 120 without line 81. No edge fix is needed for that. Dangling entries can still come from an object removed by hand. The real remaining source of ORPHANS is unchanged: upload OK, then doc_log fails (line 122 returns 502 and leaves the object).
 
@@ -70,4 +70,28 @@ an erasure request. Recorded here so the erasure gate picks it up.
   `lc-onboarding/lbtest_visitor_001/1785035521370-final-test.png`.
   Staging: a query for `%ZZsynthetic%` in storage.objects returned 0 rows on 19 Sep late — the synthetic object is already gone (who removed it: unknown).
 - Still undecided: the "remove the just-written object when doc_log fails" edge proposal (HANDOFF item 3) — not asked, not approved.
+
+## Phase 2b — REMOVE (design only, 20 Sep; NOT built — needs Yaseen's "haan")
+Rule (decision 3): delete an object only when ALL hold — bucket `documents`, name `lc-onboarding/<key>/<file>`, no `docs[].path`
+equals it, NO `lc_onboarding` row for `<key>`, NO `lc_conversations` row for `<key>`, and `created_at < now() - 7 days`.
+An orphan WITH an ob row is never deleted here — it goes to relink (decision 2).
+
+Pieces:
+1. `public.cc_lc_doc_remove_candidates(p_min_age interval default '7 days')` — staff-only (`lc_cc_ok`) OR service_role, read-only,
+   returns the exact list above. `p_min_age` below 7 days is clamped UP to 7 days (the function cannot be talked into less).
+2. Edge fn `lc-doc-purge` (verify_jwt=true). Caller must be staff: the edge forwards the caller's JWT to
+   `cc_lc_doc_remove_candidates` (so the DB, not the edge, decides who is staff and what is eligible). Body `{dry_run:true|false,
+   max:int<=25}`; default dry_run=true. For each candidate: re-check it is still in the candidate list, DELETE via the Storage API
+   with the service key, then write one `lc_doc_recon_log` row (action `remove`, result `removed|storage_failed|skipped`).
+   The edge never accepts a path from the caller — it only acts on what the DB lists, so it cannot be aimed at a real document.
+3. No cron in the first version. Staff runs dry-run, reads the list, then runs it for real. A weekly cron is a later, separate decision.
+4. Log write needs a service-only `app_private`-backed RPC `lc_doc_recon_log_add(...)` (service_role only, NOT anon, NOT authenticated).
+
+Safety: permanent delete, so — dry-run default, 25-per-call cap, 7-day floor enforced in SQL, every delete logged with actor,
+candidates computed in the DB at delete time (not from a stale list). Anon SECDEF names must stay 32/33.
+Tests: rollback-txn for the candidate function (each of the 5 conditions flips eligibility; 6d23h not eligible, 7d1m eligible;
+non-staff 42501); contract test for the edge (never deletes on dry_run, never deletes a path not in the list, caps at 25, a
+Storage failure is logged and does not stop the rest); one live staging run on a synthetic object with zero residue.
+Erasure gate note: a per-visitor erasure is a DIFFERENT path (lists the prefix for one key regardless of age) — not covered here.
+What it would delete on prod today: the 3 July probe objects (no ob row, no conversation, >7 days) — nothing else.
 

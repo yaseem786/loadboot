@@ -36,7 +36,7 @@ screenshots, dispatcher-workspace) are still on disk, untouched.
 
 ## NEXT ACTION
 
-Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it: 20260919195355 bl_disp_0319, another lane).
+Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it: 20260919195355 bl_disp_0319, another lane).
 
 1. Yaseen: push the local audit commits from GitHub Desktop. Optional: delete the dead staging edge stub `lb-tmp-rm-synthetic` (410).
 2. Orphan reconciliation PHASE 1 is LIVE on staging AND prod (`public.cc_lc_doc_reconcile(interval)`, report-only). Test
@@ -47,15 +47,15 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
    just wrote; ambiguous outcomes (5xx, unreadable 2xx body, thrown fetch) keep the object for cc_lc_doc_reconcile. Reply unchanged
    (502 document_save_failed). Contract test now 45 cases (33 + 12 new) PASS. LIVE staging race proof: fixture ob row → upload via
    pg_net (req 239074) → row deleted while the object existed (objs=1) → reply 502 → objs=0, ob rows=0, nothing left.
-   Success path on staging NOT re-run live (would leave an object). **Prod still v11 — needs Yaseen's "apply to prod".**
+   Success path on staging NOT re-run live (would leave an object). **PROD: v12 deployed 20 Sep on Yaseen's "apply prod" (prod slot 13, ezbr f88e8051…, verify_jwt true). Prod success path proven live: second guest upload → ndocs 2, objects 2, every docs[].path has its object.** The cleanup branch itself was live-proven on staging only (no race was staged on prod).
    (The earlier "edge logs path when stored=false" finding stays withdrawn.) Staging synthetic object: gone — a temp edge fn
    `lb-tmp-rm-synthetic` (slot 5, 19 Sep) exists on staging and is the likely remover; it is dead weight, delete it from the dashboard.
 4. Phase 2a RELINK built — **STAGING ONLY** (20260919 `bl_audit_0353_lc_doc_relink`): `public.cc_lc_doc_relink(p_path, p_dry_run default true)`
    + `app_private.lc_doc_recon_log` (RLS on, no grants). Staff-only (`lc_cc_ok`), one path per call, never deletes, refuses
    fresh (<1h) / already-linked / no-ob-row / 40-doc-limit / bad path. `tests/bl_audit_0353_rollback_test.sql` 8/8 PASS on staging,
    0 fixtures, 0 log rows left; anon SECDEF names unchanged (32, md5 6a7bd230… by THIS turn's formula — name(identity args), not
-   the older b711d9e6 formula). **Prod NOT applied — needs Yaseen's "apply to prod".** No CC button calls it yet.
-   Phase 2b REMOVE (decision 3: 7 days, no ob row + no conversation) NOT built: needs a service-role edge function using the
+   the older b711d9e6 formula). **PROD APPLIED 20 Sep on Yaseen's "apply prod"**: pre-flight clean, rollback test 8/8 PASS on prod, 0 fixtures/0 log rows, anon SECDEF names unchanged (33, md5 8736b2d7… same before/after, this turn's formula), function body md5 275a61ac… identical on staging and prod. No CC button calls it yet.
+   Phase 2b REMOVE: DESIGN written (design doc, "Phase 2b" section) and shown to Yaseen; NOT built, waiting for his yes. Was: needs a service-role edge function using the
    Storage API; permanent deletion, so design + Yaseen's go first. Decision 1 (grace) and the item-3 edge proposal still unanswered.
 5. Browser check on the live site — **GUEST leg PASS (20 Sep), SIGNED-IN leg still OPEN.**
    CORRECTION: the earlier note "a UI upload needs an account" was WRONG — the carrier password step has
@@ -66,7 +66,15 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
    conversation b31e5c21-bd4d-40fc-98c5-badedb25c307 (user_id null), ob row step `docs`, account_created false, docs[0]
    verdict reject t=coi, docs[0].path == the Storage object name, bucket `documents`, size 1455, application/pdf, owner null.
    **Test residue left on prod on purpose (Yaseen removes or keeps): that conversation + ob row + 1 object under the 49-char key.**
-   Signed-in leg: needs Yaseen to log in (Claude does not type passwords); then Claude uploads and verifies the user-token path.
+   Signed-in leg: **NOT TESTABLE THROUGH THE UI AS DEPLOYED — finding, 20 Sep.** Yaseen logged into the carrier portal in the same
+   Chrome; on loadboot.com the wizard's `cfg.getToken` is `undefined` (only `app/shared/ui/chatWidget.js`, i.e. the portals, passes
+   getToken, and no portal loads lcOnboard.js). So every wizard upload goes out with the anon bearer even when a portal session
+   exists, and the conversation stays user_id null (verified on prod after the second upload). The user-token branch in
+   lcOnboard.js/lc-doc-check is covered only by the contract test + the 15-case DB rehearsal, never by a real browser.
+   Not a security hole (preflight still scopes by visitor key), but the "signed-in upload" gate cannot be closed by a browser run
+   until a portal mounts the wizard or the site passes a token. Decision for Yaseen/Codex: accept as N/A, or wire getToken on the site.
+   Also seen: after leaving and returning, opening the chat did not offer to resume at the docs step; `LBChatOnboard.begin()` restarted
+   at the role card (contact fields were prefilled). Resume behaviour NOT investigated — unknown whether by design.
    Seen in passing (not fixed, not audited): (a) typing "USDOT 53467" is resolved as MC 53467 (a different, 1-truck company) —
    the wizard strips the prefix and tries MC first; (b) the chat FMCSA card shows "Authority unknown" for Schneider;
    (c) homepage shows the SW "new version — Update" banner.
@@ -139,3 +147,4 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
 - **2026-09-19 (late) — Claude:** Recorded Yaseen's decisions 2–4 in the design doc (relink; 7 days; he removes the 3 prod probe objects himself — exact names listed). Staging synthetic object already absent (0 rows). Yaseen says the earlier 2 commits were pushed — NOT verified from here (local origin ref is stale). Docs only; no DB writes, no push.
 - **2026-09-19 (late) — Claude:** Phase 2a relink built and applied to STAGING only (bl_audit_0353); rollback test 8/8 PASS, zero fixtures, anon SECDEF names unchanged (32). Prod untouched. Remove (2b) not built. Item 5 upload legs still waiting on Yaseen's test email + MC/DOT. No push, no messages.
 - **2026-09-20 — Claude:** (1) lc-doc-check v12 orphan-cleanup built, 45/45 contract cases, deployed STAGING slot 17, live race proof PASS with zero residue. (2) Item 5 GUEST leg PASS on the live site and verified on prod read-only (path==object, guest conv, 1455 B); corrected my own wrong claim that a guest upload needs an account. Test residue on prod listed in NEXT ACTION 5. Signed-in leg, prod promotion of 0353 + v12, Phase 2b remove, decision 1 all still open. No push, no messages, no prod DB/edge change.
+- **2026-09-20 — Claude:** On Yaseen's "apply prod": bl_audit_0353 applied to PROD (8/8 rollback test, anon names unchanged 33, body identical to staging) and lc-doc-check v12 deployed to PROD (slot 13); prod success path proven with a second guest upload (2 docs / 2 objects, all paths resolve). Signed-in leg found NOT reachable via UI (site never passes getToken) — recorded as a finding, gate stays open. Phase 2b remove DESIGNED only. Temp edge fn lb-tmp-rm-synthetic: Claude has no delete tool — steps given to Yaseen. No push, no messages.
