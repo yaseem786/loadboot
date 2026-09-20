@@ -55,7 +55,16 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    fresh (<1h) / already-linked / no-ob-row / 40-doc-limit / bad path. `tests/bl_audit_0353_rollback_test.sql` 8/8 PASS on staging,
    0 fixtures, 0 log rows left; anon SECDEF names unchanged (32, md5 6a7bd230… by THIS turn's formula — name(identity args), not
    the older b711d9e6 formula). **PROD APPLIED 20 Sep on Yaseen's "apply prod"**: pre-flight clean, rollback test 8/8 PASS on prod, 0 fixtures/0 log rows, anon SECDEF names unchanged (33, md5 8736b2d7… same before/after, this turn's formula), function body md5 275a61ac… identical on staging and prod. No CC button calls it yet.
-   Phase 2b REMOVE: DESIGN written (design doc, "Phase 2b" section) and shown to Yaseen; NOT built, waiting for his yes. Was: needs a service-role edge function using the
+   Phase 2b REMOVE BUILT — **STAGING ONLY** (Yaseen "bna do", 20 Sep): migration `bl_audit_0354_lc_doc_remove_candidates`
+   (`cc_lc_doc_remove_candidates(interval)` staff-only, 7-day floor clamped in SQL; `lc_doc_recon_log_add(...)` service_role-only) +
+   edge fn `lc-doc-purge` v1 (staging slot 1, verify_jwt true, ezbr f912f4d6…). DB test `tests/bl_audit_0354_rollback_test.sql` PASS
+   (11 cases + c9b; first run showed c9=false — a TEST bug, a scalar subquery inside one plpgsql expression cannot see rows the same
+   expression just inserted; split into its own statement, then PASS). Edge contract test `tests/lc_doc_purge_contract_test.mjs`
+   28/28. Live staging: anon caller with dry_run=false → 403 not_authorized, 0 log rows, nothing deleted (req 239181). Anon SECDEF
+   names unchanged (32, 6a7bd230…). **NOT proven live: a real STAFF run (dry-run or real) — Claude has no staff JWT and does not mint
+   one; needs Yaseen from a logged-in CC session (no CC button exists yet).** Prod NOT applied. No cron.
+   `lb-tmp-rm-synthetic`: Yaseen says he deleted it (20 Sep) — not re-listed by Claude.
+   Earlier note — DESIGN written (design doc, "Phase 2b" section) and shown to Yaseen; NOT built, waiting for his yes. Was: needs a service-role edge function using the
    Storage API; permanent deletion, so design + Yaseen's go first. Decision 1 (grace) and the item-3 edge proposal still unanswered.
 5. Browser check on the live site — **GUEST leg PASS (20 Sep), SIGNED-IN leg still OPEN.**
    CORRECTION: the earlier note "a UI upload needs an account" was WRONG — the carrier password step has
@@ -148,3 +157,4 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-19 (late) — Claude:** Phase 2a relink built and applied to STAGING only (bl_audit_0353); rollback test 8/8 PASS, zero fixtures, anon SECDEF names unchanged (32). Prod untouched. Remove (2b) not built. Item 5 upload legs still waiting on Yaseen's test email + MC/DOT. No push, no messages.
 - **2026-09-20 — Claude:** (1) lc-doc-check v12 orphan-cleanup built, 45/45 contract cases, deployed STAGING slot 17, live race proof PASS with zero residue. (2) Item 5 GUEST leg PASS on the live site and verified on prod read-only (path==object, guest conv, 1455 B); corrected my own wrong claim that a guest upload needs an account. Test residue on prod listed in NEXT ACTION 5. Signed-in leg, prod promotion of 0353 + v12, Phase 2b remove, decision 1 all still open. No push, no messages, no prod DB/edge change.
 - **2026-09-20 — Claude:** On Yaseen's "apply prod": bl_audit_0353 applied to PROD (8/8 rollback test, anon names unchanged 33, body identical to staging) and lc-doc-check v12 deployed to PROD (slot 13); prod success path proven with a second guest upload (2 docs / 2 objects, all paths resolve). Signed-in leg found NOT reachable via UI (site never passes getToken) — recorded as a finding, gate stays open. Phase 2b remove DESIGNED only. Temp edge fn lb-tmp-rm-synthetic: Claude has no delete tool — steps given to Yaseen. No push, no messages.
+- **2026-09-20 — Claude:** Phase 2b remove built on STAGING only: bl_audit_0354 (candidates + service-only log RPC) and edge lc-doc-purge v1; DB test PASS, edge contract 28/28, live anon negative 403 with zero writes; anon names unchanged. Staff-run live proof and prod promotion still open. No push, no messages, prod untouched this step.
