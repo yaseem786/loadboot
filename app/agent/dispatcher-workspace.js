@@ -207,6 +207,9 @@ const CSS = `
 .dw-more-row .c{color:#7f92b3;font-size:1.3rem;line-height:1}
 @media(max-width:900px){
 .cp-tabbar.dw-bar .cp-navlink{position:relative;min-height:50px;justify-content:center}
+/* rail mode (.cp-shell--rail) shrinks navlinks to 46x44 and hides their spans - undo that inside our bar */
+.cp-tabbar.dw-bar .cp-navlink{width:auto!important;height:auto!important;padding:6px 4px!important;gap:3px!important}
+.cp-tabbar.dw-bar .cp-navlink>span{display:inline-flex!important}
 .cp-tabbar.dw-bar .cp-navlink.active:before{content:'';position:absolute;top:-6px;left:30%;right:30%;height:3px;border-radius:0 0 4px 4px;background:#0883F7}
 .cp-tabbar.dw-bar .dw-ic{line-height:0}
 }
