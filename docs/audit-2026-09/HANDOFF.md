@@ -101,6 +101,22 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    Codex's 35-assertion suite was NOT re-run against the new body. STILL OPEN in this gate: upload freeze while a request is open
    (lc_ob_upload_check / document uploads do not look at deletion requests), actual Storage removal + retention decision + removal
    evidence, auth session revocation, indirect invoice/load/payment references, browser UI of the deletion flow.
+5c. ERASURE gate — two more slices LIVE on staging AND prod (20 Sep, Yaseen: "suggest and implement"); gate still OPEN.
+   **bl_audit_0356 upload freeze:** helper `public.my_uploads_frozen()` (authenticated/service only, anon names unchanged 32/33) +
+   RESTRICTIVE policies `erasure_freeze_documents` (public.documents INSERT), `erasure_freeze_uploads_insert/_update`
+   (storage.objects) + md5-guarded patch of `lc_ob_upload_check` (b517e2e8… → 106cccc9…, identical on both envs) returning
+   `{error:'frozen'}` when the caller, or the email on the chat row, has an open deletion request. 13/13 on staging and prod incl.
+   "a normal user still uploads" and "cancel lifts it at once". First staging run showed c8=false — my TEST expectation was wrong
+   (a logged-in frozen user is frozen on every chat row), function unchanged. Not frozen by design: staff-on-behalf, service_role.
+   UI shows the generic upload error for a frozen user — no friendly message yet.
+   **bl_audit_0357 session revoke:** on a COMPLETED deletion the processor now deletes that user's auth.refresh_tokens + auth.sessions
+   (bc38da2b… → 3037026e…, identical on both envs). 7/7 on both: erased user 0 sessions/tokens incl. a legacy token, a user held for
+   review keeps theirs, other users untouched. Honest limit: an already-issued access JWT lives until expiry (<= 1h).
+   Env drift seen: a bare postgres insert into public.documents fails 23502 on PROD only (carrier_id taken from the caller) — test adapted.
+   Rollbacks: ROLLBACK-ERASURE-UPLOAD-FREEZE / -REVOKE-SESSIONS-2026-09-20.sql (freeze one rehearsed on staging, byte-exact; the
+   sessions one NOT rehearsed). Codex's two erasure rollbacks check OLD hashes — run these three 20-Sep rollbacks first.
+   **Retention:** `RETENTION-PROPOSAL-2026-09-20.md` — proposal only, not legal advice, nothing removed; real file removal stays blocked
+   on Yaseen's decisions there. Browser check of the deletion flow: NOT done (needs a throwaway account and Yaseen's login).
 6. Remaining gates unchanged: full session/document/Storage access coverage; complete erasure (upload freeze, retention/removal
    evidence, revocation — must list the Storage prefix, see design doc); F10 role/type decision; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
@@ -174,3 +190,4 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-20 — Claude:** Phase 2b remove built on STAGING only: bl_audit_0354 (candidates + service-only log RPC) and edge lc-doc-purge v1; DB test PASS, edge contract 28/28, live anon negative 403 with zero writes; anon names unchanged. Staff-run live proof and prod promotion still open. No push, no messages, prod untouched this step.
 - **2026-09-20 — Claude:** Yaseen asked whether ChatGPT/Codex's work reached prod. Checked by FUNCTION BODY HASH, staging vs prod (24 functions from the staging-only-by-name audit migrations): SAME on prod = account deletion (0339/0341/atomic cleanup), outreach suppression, unsubscribe entrypoints, erasure inventory, agent payout parity 0338 (prod carries them under other names: audit_marketing_optout_promotion, audit_erasure_guard_promotion etc.), plus the four session guards, dispatcher ACL, reports recovery, 0335/0336/0344. retell_inbound_token_ok on prod is the FIXED (OR-accumulate) version. DIFFERENT on prod = only bl_audit_0342 (4 fns) and bl_audit_0343 (6 fns) — both files say "STAGING ONLY … restore missing RPCs", i.e. staging-parity repairs, not prod fixes; NOT applied to prod, not diffed line by line (unknown whether prod's bodies are older or just another lane's). Also applied 0354 + lc-doc-purge to prod (see item 4). No push, no messages.
 - **2026-09-20 — Claude:** Erasure gate slice: bl_audit_0355 on staging then prod — erasure inventory now finds guest chat uploads by typed email / visitor_key and lists the whole lc-onboarding/<key>/ Storage prefix (orphans included). 9/9 on both envs, identical body md5 3e252812…, byte-exact rollback rehearsed, anon names unchanged. Gate remains open (upload freeze, real removal, session revocation, UI). No push, no messages, nothing deleted.
+- **2026-09-20 — Claude:** Erasure gate: bl_audit_0356 upload freeze (13/13) and bl_audit_0357 session revoke on completion (7/7) applied staging then prod, bodies identical across envs, anon names unchanged, zero fixtures; rollbacks written; retention PROPOSAL written (no removal). Gate still open: real removal + retention decision, deletion-flow browser check, frozen-user UI message. No push, no messages, no real account touched.
