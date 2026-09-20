@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import webpush from "npm:web-push@3.6.7";
 
-// telnyx-hook v3 (bl_dial_0351 + 0351b + 0351c) — the signed front door for every Telnyx voice webhook (both the WebRTC
+// telnyx-hook v5 (bl_dial_0351 + 0351b + 0351c + 0352) — the signed front door for every Telnyx voice webhook (both the WebRTC
 // credential connection and the Voice-API application that owns the dispatcher numbers point here).
 // verify_jwt = false (Telnyx cannot send a Supabase JWT) — authenticity comes from the Ed25519 signature:
 //   telnyx-signature-ed25519: base64(sig)   telnyx-timestamp: unix seconds   message = `${timestamp}|${rawBody}`
@@ -13,6 +13,8 @@ import webpush from "npm:web-push@3.6.7";
 // v3 (bl_dial_0351c): action 'wait' — the dispatcher's portal is closed and no mobile forward is set. The caller is left
 // ringing, the push goes out, and a background timer asks the database after N seconds whether anyone claimed the call
 // (telnyx-token {claim:true} does that when their phone registers); if not, the normal fallback runs.
+// v4: record_start retries on 422 "Call not answered yet".
+// v5 (bl_dial_0352): message.* events (the messaging profile points here too) go to public.dialer_sms_hook; an inbound text pushes to the dispatcher.
 // iOS App Store shell (apns: endpoints) is skipped here — push-send owns APNs; add it when the iOS app ships.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -44,6 +46,15 @@ async function hookEvent(data: unknown) {
   return await r.json();
 }
 
+async function smsEvent(data: unknown) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/dialer_sms_hook`, {
+    method: "POST", headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ p: data }),
+  });
+  if (!r.ok) throw new Error("dialer_sms_hook " + r.status + " " + (await r.text()).slice(0, 200));
+  return await r.json();
+}
+
 const cmd = (ccid: string, action: string, body: Record<string, unknown>) => fetch(`${TX}/calls/${encodeURIComponent(ccid)}/actions/${action}`, {
   method: "POST", headers: { Authorization: `Bearer ${TELNYX_KEY}`, "Content-Type": "application/json", Accept: "application/json" },
   body: JSON.stringify(body),
@@ -61,7 +72,7 @@ async function notify(n: any): Promise<void> {
     if (!tr.ok) return;
     const subs: { endpoint: string; p256dh: string; auth: string }[] = await tr.json();
     webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") || "mailto:support@loadboot.com", pub, priv);
-    const payload = JSON.stringify({ title: n.title, body: n.body, url: n.url || "/app/agent/", tag: "lb-call" });
+    const payload = JSON.stringify({ title: n.title, body: n.body, url: n.url || "/app/agent/", tag: n.tag || "lb-call" });
     await Promise.all(subs.filter((s) => !s.endpoint.startsWith("apns:")).map((s) =>
       webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 45, urgency: "high" }).catch(() => {})));
   } catch (e) { console.error("notify", e); }
@@ -121,7 +132,13 @@ Deno.serve(async (req: Request) => {
   try {
     const body = JSON.parse(raw);
     const data = body?.data;
-    if (!data?.event_type || !String(data.event_type).startsWith("call.")) return new Response("ignored");
+    const et = String(data?.event_type || "");
+    if (et.startsWith("message.")) {                     // v5 (bl_dial_0352): text messages — inbound texts + delivery receipts
+      const r = await smsEvent(data);
+      if (r?.notify) await notify({ ...r.notify, tag: "lb-sms" });
+      return new Response("ok");
+    }
+    if (!et.startsWith("call.")) return new Response("ignored");
     const res = await hookEvent(data);
     await Promise.all([res?.action ? run(res.action) : Promise.resolve(), res?.notify ? notify(res.notify) : Promise.resolve()]);
   } catch (e) {

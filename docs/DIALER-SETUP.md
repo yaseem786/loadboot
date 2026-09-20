@@ -66,7 +66,7 @@ Browser softphone ki fitri limit: phone lock ya tab background mein ho to browse
 Project → Edge Functions → Secrets:
 - `TELNYX_API_KEY` = step 1
 - `TELNYX_PUBLIC_KEY` = step 2 (base64 string)
-Production par: migrations `bl_dial_0351` → `0351a` → `0351b` → `0351c` → `0351d` → `0351e` → `0351f` → `0351g` (isi order mein) apply + teenon functions deploy (`telnyx-hook` verify_jwt = **false**, baqi true).
+Production par: migrations `bl_dial_0351` → `0351a` → `0351b` → `0351c` → `0351d` → `0351e` → `0351f` → `0351g` → `0352` (isi order mein) apply + chaaron functions deploy (`telnyx-token`, `telnyx-hook`, `telnyx-recording`, `telnyx-sms`) (`telnyx-hook` verify_jwt = **false**, baqi true).
 
 ## Staging test (go-live se pehle)
 1. CC (staging) → Phones → settings: connection id daalein, dialer ON, number assign.
@@ -81,6 +81,25 @@ rollback-test se pass hai (outbound, inbound→transfer, no-answer→voicemail�
 Pehli real call par yeh 3 cheezein confirm karni hain: (a) credential-connection webhooks `client_state` wapas bhejte hain,
 (b) `record_start` WebRTC leg par chalta hai, (c) `sip:<gencred…>@sip.telnyx.com` transfer browser ko ring karta hai.
 Jo na chale uska fix `dialer_hook_event` / `telnyx-hook` mein chhota hoga — UI aur tables nahi badlenge.
+
+## Text messages (SMS) — bl_dial_0352
+- Dock → **Texts** tab: har broker / carrier / driver ka ek thread, dispatcher ke apne number se. Templates, unread badge, push alert,
+  call rows par "Text" button. CC → Phones → neeche **Text messages** log + search. Har text `app_private.dialer_messages` mein.
+- Guards: US/Canada only, toll-fraud list, 1000 chars, hourly cap (60), STOP → `dialer_sms_optout` (START se wapas). Telnyx bhi STOP/HELP auto-reply karta hai.
+- **Default OFF** (`dialer_config.sms_enabled = false`). ON sirf tab: 10DLC campaign **approved** + har dispatcher number us campaign par assigned.
+- Owner steps (Telnyx): Messaging → Messaging Profiles → Create "LoadBoot Dispatch" → **Inbound webhook URL = wahi `…/functions/v1/telnyx-hook`** (API v2) →
+  number(s) ko is profile par assign → 10DLC campaign par number assign. Phir CC → Phone settings → "Text messages switched on" + messaging profile id.
+- 19–20 Sep 2026: 10DLC brand VERIFIED, campaign submitted (Pending). Privacy (#sms) + Terms clause 11 + signup consent line live.
+- Live-test NAHI hua (campaign approval ke baghair mumkin nahi): Telnyx message payload shape (`from.phone_number`, `to[0].status`) docs ke mutabiq likha hai — pehle real text par `dialer_webhook_log`/function logs dekhna.
+
+## Live test results (19–20 Sep 2026, staging)
+Outbound ✓, inbound → browser ring ✓ ("Only from my Connections" theek), two-way audio ✓ (remote stream ab khud bind hota hai), recording ✓ (0351f + 0351g ke baad), Play/Pause ✓.
+Seekha: `call.bridged` ≠ answered (ringing par aata hai); browser webhook se pehle 'active' likh deta hai → recording guard `rec_requested`.
+Abhi asal call se test nahi: voicemail chain, push + 35s wait/claim, dispatcher forward number, mobile.
+
+## Spam-label protection
+- Free Caller Registry: +1 469 527 2754 registered 20 Sep 2026 — Feedback ID `FCRFE09202026120308603` (First Orion, Hiya, TNS email separately). Har naya dispatcher number yahan add karein (20 per form).
+- CNAM Listing: owner ne 20 Sep 2026 ko Telnyx portal mein set kar diya (propagation kuch din). "CNAM Caller ID lookup" alag cheez hai (inbound) — OFF.
 
 ## Legal
 Recording: kuch US states all-party consent maangti hain. Default = beep ON. Lawyer se confirm karein; main lawyer nahi hoon.

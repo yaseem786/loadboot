@@ -1344,6 +1344,16 @@ export async function dialerRecordingBlob(callId) {
 }
 export const ccDialerOverview = () => rpc('cc_dialer_overview', {});
 export const ccDialerCalls = (p) => rpc('cc_dialer_calls', { p: p ?? {} });
+// bl_dial_0352 — dispatcher text messages (same line as their calls). Sending goes through the telnyx-sms edge function.
+export const dialerSmsThreads = () => rpc('dialer_sms_threads', {});
+export const dialerSmsThread = (number, before) => rpc('dialer_sms_thread', { p_number: number, p_before: before ?? null });
+export async function dialerSmsSend(to, body) {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('telnyx-sms', { body: { to, body } });
+  if (error) throw await _fnError(error, 'Could not send that text');
+  return data;
+}
+export const ccDialerSms = (p) => rpc('cc_dialer_sms', { p: p ?? {} });
 export const ccDialerLineUpsert = (p) => rpc('cc_dialer_line_upsert', { p: p ?? {} });
 export const ccDialerLineRelease = (lineId) => rpc('cc_dialer_line_release', { p_line: lineId });
 export const ccDialerConfigSet = (p) => rpc('cc_dialer_config_set', { p: p ?? {} });

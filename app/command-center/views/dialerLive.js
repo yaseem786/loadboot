@@ -8,7 +8,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
-import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerConfigSet, dialerRecordingBlob } from '../../shared/api.js';
+import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
 const ET = 'America/New_York';
@@ -61,7 +61,7 @@ const CSS = `
 export async function renderDialerLive(host) {
   if (!document.getElementById('dl-css')) { const s = document.createElement('style'); s.id = 'dl-css'; s.textContent = CSS; document.head.appendChild(s); }
   const root = el('div', { class: 'dl' });
-  const boardEl = el('div'), warnEl = el('div'), linesEl = el('div'), logEl = el('div');
+  const boardEl = el('div'), warnEl = el('div'), linesEl = el('div'), logEl = el('div'), smsEl = el('div');
   mount(host, root);
   let ov = null, rows = [], timer = null, tick = null, busy = false;
   const F = { dispatcher: '', direction: '', status: '', q: '', days: '7' };
@@ -69,7 +69,7 @@ export async function renderDialerLive(host) {
   root.append(
     sectionHead('Phones & live calls', 'Every dispatcher has one dedicated US number. Every call they make or receive is recorded here — live.',
       [el('button', { class: 'dl-btn', onClick: () => settings() }, [icon('cog', 16), 'Phone settings'])]),
-    warnEl, boardEl, linesEl, logEl);
+    warnEl, boardEl, linesEl, logEl, smsEl);
 
   async function load(quiet) {
     if (busy) return; busy = true;
@@ -83,7 +83,35 @@ export async function renderDialerLive(host) {
   async function loadLog() {
     try { const r = await ccDialerCalls({ dispatcher: F.dispatcher, direction: F.direction, status: F.status, q: F.q, days: F.days, limit: 100 }); if (r && r.error) throw new Error(r.error); rows = r.rows || []; }
     catch (e) { rows = []; toast(humanizeError(e), 'error'); }
-    paintLog();
+    paintLog(); loadSms();
+  }
+
+  // ---- text messages log (bl_dial_0352): every text a dispatcher sent or received, newest first
+  let smsRows = [], smsQ = '', smsT = null;
+  async function loadSms() {
+    try { const r = await ccDialerSms({ dispatcher: F.dispatcher, q: smsQ, limit: 100 }); if (r && r.error) throw new Error(r.error); smsRows = (r && r.messages) || []; }
+    catch (e) { smsRows = []; }
+    paintSms();
+  }
+  function paintSms() {
+    const SS = { queued: ['sending', 'a'], sent: ['sent', 'b'], delivered: ['delivered', 'g'], failed: ['not sent', 'r'], received: ['received', 'm'] };
+    const keep = document.activeElement && document.activeElement.id === 'dl-smsq';
+    mount(smsEl, el('div', { class: 'dl-card', style: 'margin-top:14px' }, [
+      el('div', { class: 'dl-filters' }, [
+        el('b', { style: 'align-self:center;margin-right:6px' }, 'Text messages'),
+        el('input', { class: 'dl-in', id: 'dl-smsq', type: 'search', placeholder: 'Search number, name or text', 'aria-label': 'Search texts', value: smsQ, style: 'flex:1;min-width:180px', onInput: (e) => { smsQ = e.target.value; clearTimeout(smsT); smsT = setTimeout(loadSms, 350); } }),
+      ]),
+      smsRows.length ? el('div', { style: 'overflow-x:auto' }, el('table', { class: 'dl-tbl' }, [
+        el('thead', null, el('tr', null, ['When', 'Dispatcher', '', 'Who', 'Message', 'Status'].map((x) => el('th', null, x)))),
+        el('tbody', null, smsRows.map((m) => { const st = SS[m.status] || [m.status, 'm']; return el('tr', null, [
+          el('td', { style: 'white-space:nowrap' }, et(m.at)), el('td', null, m.dispatcher || '—'), el('td', { title: m.direction }, m.direction === 'inbound' ? '↙' : '↗'),
+          el('td', null, [el('b', null, m.contact_name || pretty(m.number)), el('div', { style: 'font-size:12px;opacity:.7' }, [m.contact_name ? pretty(m.number) : '', m.contact_kind ? ' · ' + m.contact_kind : ''].join(''))]),
+          el('td', { style: 'max-width:420px;white-space:pre-wrap' }, m.body || (m.media ? '[picture]' : '')),
+          el('td', null, [el('span', { class: 'dl-pill ' + st[1] }, st[0]), m.error ? el('div', { style: 'font-size:12px;opacity:.75;max-width:220px' }, m.error) : null]),
+        ]); })),
+      ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, smsQ ? 'No texts match that search.' : 'No text messages yet.'),
+    ]));
+    if (keep) { const i = smsEl.querySelector('#dl-smsq'); if (i) { i.focus(); try { i.setSelectionRange(i.value.length, i.value.length); } catch (_) {} } }
   }
 
   function paintWarn() {
@@ -154,17 +182,28 @@ export async function renderDialerLive(host) {
           el('td', null, el('span', { class: 'dl-pill ' + s[1] }, s[0])), el('td', null, c.duration_sec ? mmss(c.duration_sec) : '—'),
           el('td', null, c.outcome ? el('span', { class: 'dl-pill b' }, c.outcome) : (c.answered_at ? el('span', { class: 'dl-pill a' }, 'untagged') : '—')),
           el('td', { style: 'max-width:280px' }, c.note || ''),
-          el('td', null, c.has_recording ? el('button', { class: 'dl-btn sm', 'aria-label': 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, [icon('play', 14), 'Play']) : null),
+          el('td', null, c.has_recording ? el('button', { class: 'dl-btn sm', 'data-rec': c.id, 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => play(c.id, e.currentTarget) }, [icon(isPlaying(c.id) ? 'pause' : 'play', 14), isPlaying(c.id) ? 'Pause' : 'Play']) : null),
         ]); })),
       ])) : el('div', { style: 'opacity:.7;padding:8px 0' }, 'No calls match these filters.'),
     ]));
   }
 
   let playing = null;
+  const isPlaying = (id) => !!(playing && playing.id === id && !playing.a.paused);
+  function stopPlaying() { if (!playing) return; try { playing.a.pause(); URL.revokeObjectURL(playing.u); } catch (_) {} playing = null; }
+  function syncPlayBtns() {
+    root.querySelectorAll('[data-rec]').forEach((b) => { const on = isPlaying(b.getAttribute('data-rec')); b.setAttribute('aria-label', on ? 'Pause recording' : 'Play recording'); mount(b, [icon(on ? 'pause' : 'play', 14), on ? 'Pause' : 'Play']); });
+  }
+  // one recording at a time: the same row toggles pause / resume, another row stops the first and starts its own
   async function play(id, btn) {
-    if (playing) { try { playing.a.pause(); URL.revokeObjectURL(playing.u); } catch (_) {} const same = playing.id === id; playing = null; if (same) return; }
-    try { btn.disabled = true; const blob = await dialerRecordingBlob(id); const u = URL.createObjectURL(blob); const a = new Audio(u); playing = { a, u, id }; a.onended = () => { try { URL.revokeObjectURL(u); } catch (_) {} if (playing && playing.a === a) playing = null; }; await a.play(); }
-    catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; }
+    if (playing && playing.id === id) { try { if (playing.a.paused) await playing.a.play(); else playing.a.pause(); } catch (_) {} syncPlayBtns(); return; }
+    stopPlaying(); syncPlayBtns();
+    try {
+      btn.disabled = true; const blob = await dialerRecordingBlob(id); stopPlaying();
+      const u = URL.createObjectURL(blob); const a = new Audio(u); playing = { a, u, id };
+      a.onended = () => { try { URL.revokeObjectURL(u); } catch (_) {} if (playing && playing.a === a) playing = null; syncPlayBtns(); };
+      await a.play();
+    } catch (e) { toast(humanizeError(e), 'error'); } finally { btn.disabled = false; syncPlayBtns(); }
   }
 
   function assign(d) {
@@ -198,11 +237,13 @@ export async function renderDialerLive(host) {
     const fb = el('input', { class: 'dl-in', type: 'tel', value: c.fallback_number || '', placeholder: 'empty = voicemail · or Riley’s number' });
     const vm = el('textarea', { class: 'dl-in', rows: '3' }, c.voicemail_greeting || '');
     const cap = el('input', { class: 'dl-in', type: 'number', min: '1', max: '500', value: String(c.max_calls_per_hour || 60) });
+    const sms = chk(c.sms_enabled);
+    const mprof = el('input', { class: 'dl-in', value: c.telnyx_messaging_profile_id || '', placeholder: 'optional — Telnyx messaging profile id' });
     const err = el('div', { style: 'color:#b91c1c;font-size:13px' });
     const save = el('button', { class: 'dl-btn p', onClick: async () => {
       save.disabled = true; err.textContent = '';
       try {
-        const r = await ccDialerConfigSet({ enabled: en.checked, telnyx_connection_id: conn.value, record_calls: rec.checked, recording_notice: beep.checked, ring_timeout_secs: Number(ring.value) || 25, fallback_number: fb.value, voicemail_greeting: vm.value, max_calls_per_hour: Number(cap.value) || 60, allow_international: intl.checked });
+        const r = await ccDialerConfigSet({ sms_enabled: sms.checked, telnyx_messaging_profile_id: mprof.value, enabled: en.checked, telnyx_connection_id: conn.value, record_calls: rec.checked, recording_notice: beep.checked, ring_timeout_secs: Number(ring.value) || 25, fallback_number: fb.value, voicemail_greeting: vm.value, max_calls_per_hour: Number(cap.value) || 60, allow_international: intl.checked });
         if (r && r.error) throw new Error(r.error); dr.close(); toast('Phone settings saved'); await load();
       } catch (e) { err.textContent = humanizeError(e); save.disabled = false; }
     } }, 'Save settings');
@@ -212,6 +253,8 @@ export async function renderDialerLive(host) {
       el('label', { class: 'row' }, [rec, el('span', null, ['Record calls ', el('small', null, '— dual-channel mp3, kept in Telnyx')])]),
       el('label', { class: 'row' }, [beep, el('span', null, ['Play a beep when recording starts ', el('small', null, '— some US states require all parties to know a call is recorded; keep this on unless your lawyer says otherwise')])]),
       el('label', null, ['Ring the dispatcher for (seconds)', ring]),
+      el('label', { class: 'row' }, [sms, el('span', null, ['Text messages (SMS) switched on ', el('small', null, '— only after the 10DLC campaign is APPROVED and every dispatcher number is attached to it; before that carriers block the texts')])]),
+      el('label', null, ['Telnyx messaging profile id', mprof, el('small', null, 'Telnyx portal → Messaging → Messaging Profiles → “LoadBoot Dispatch” → its id. Not a secret. Its inbound webhook must point to the same telnyx-hook URL as the voice apps.')]),
       el('label', null, ['If the dispatcher does not answer, send the caller to', fb, el('small', null, 'Leave empty for voicemail. Either way the dispatcher gets a callback task.')]),
       el('label', null, ['Voicemail greeting (spoken)', vm]),
       el('label', null, ['Max outgoing calls per dispatcher per hour', cap]),

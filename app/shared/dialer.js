@@ -18,7 +18,7 @@ import { pushSupported, enablePush, isPushEnabled } from './push.js';
 import {
   dialerBootstrap, dialerHeartbeat, dialerLookup, dialerCallStart, dialerCallUpdate, dialerCallTag,
   dialerCallbackSet, dialerHistory, dialerToken, dialerClaimWaiting, dialerRecordingBlob,
- dialerForwardSet,
+ dialerForwardSet, dialerSmsThreads, dialerSmsThread, dialerSmsSend,
 } from './api.js';
 
 const h = el;
@@ -40,6 +40,9 @@ const SVG = {
   back: '<path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/>',
   out: '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/>',
   inc: '<line x1="17" y1="7" x2="7" y2="17"/><polyline points="16 17 7 17 7 8"/>',
+  msg: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  back: '<polyline points="15 18 9 12 15 6"/>',
   miss: '<polyline points="22 8 22 2 16 2"/><line x1="16" y1="8" x2="22" y2="2"/><path d="M3 12c5-5 13-5 18 0"/>',
   x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   min: '<polyline points="6 9 12 15 18 9"/>',
@@ -107,7 +110,8 @@ const CSS = `
 @keyframes lbdShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
 @keyframes lbdUp{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 .lbd-panel{width:372px;max-height:min(680px,calc(100vh - 40px));display:flex;flex-direction:column;border-radius:22px;overflow:hidden;border:1px solid var(--ln);
- background:linear-gradient(180deg,#12284a 0%,#0b1830 46%,#08111f 100%);box-shadow:0 30px 80px rgba(2,8,20,.7),inset 0 1px 0 rgba(255,255,255,.07);animation:lbdUp .18s ease}
+ background:linear-gradient(180deg,#12284a 0%,#0b1830 46%,#08111f 100%);box-shadow:0 30px 80px rgba(2,8,20,.7),inset 0 1px 0 rgba(255,255,255,.07)}
+.lbd-panel.in{animation:lbdUp .18s ease}
 .lbd-hd{display:flex;align-items:center;gap:10px;padding:14px 14px 10px 16px}
 .lbd-hd .who{flex:1;min-width:0}
 .lbd-hd .who b{display:block;font-size:15px;letter-spacing:.2px}
@@ -116,6 +120,18 @@ const CSS = `
 .lbd-dot.ok{background:var(--ok);box-shadow:0 0 8px rgba(34,197,94,.8)}.lbd-dot.warn{background:#f59e0b}.lbd-dot.bad{background:var(--bad)}
 .lbd-ib{width:34px;height:34px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--mu);display:grid;place-items:center;cursor:pointer}
 .lbd-ib:hover{background:rgba(255,255,255,.06);color:#fff}
+.lbd-ib.on{color:#fff;background:var(--bl)}
+.lbd-tabs .lbd-tab{font-size:12px;gap:5px;padding:0 4px}
+.lbd-th{display:flex;align-items:center;gap:8px;margin-bottom:8px}.lbd-th .who{flex:1;min-width:0}.lbd-th .who b{display:block;color:#fff;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lbd-th .who span{font-size:11.5px;color:var(--mu)}
+.lbd-msgs{display:flex;flex-direction:column;gap:6px;max-height:300px;min-height:140px;overflow-y:auto;padding:4px 2px 8px}
+.lbd-bub{max-width:82%;padding:8px 11px;border-radius:14px;font-size:13px;line-height:1.4;white-space:pre-wrap;word-break:break-word;background:rgba(255,255,255,.08);color:#e8eefc;align-self:flex-start;border-bottom-left-radius:4px}
+.lbd-bub.out{align-self:flex-end;background:var(--bl);color:#fff;border-radius:14px;border-bottom-right-radius:4px}
+.lbd-bub.fail{background:rgba(239,68,68,.22);color:#fecaca}
+.lbd-bub small{display:block;margin-top:3px;font-size:10px;opacity:.7}
+.lbd-comp{display:flex;gap:8px;align-items:flex-end;margin-top:8px}.lbd-comp textarea{flex:1;min-height:42px;max-height:120px;resize:none}
+.lbd-send{width:44px;height:42px;border-radius:12px;border:0;background:var(--bl);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}.lbd-send[disabled]{opacity:.45;cursor:not-allowed}
+.lbd-tpl{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}.lbd-tpl button{flex:none;border:1px solid var(--ln);background:rgba(255,255,255,.04);color:#dbe6fb;border-radius:999px;padding:5px 10px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+.lbd-dotn{width:8px;height:8px;border-radius:50%;background:var(--or);flex:none}
 .lbd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:0 14px 10px;border-radius:12px;overflow:hidden;background:var(--ln)}
 .lbd-stats div{background:rgba(8,17,31,.75);padding:7px 4px;text-align:center}
 .lbd-stats b{display:block;font-size:14px}.lbd-stats span{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.6px}
@@ -199,7 +215,7 @@ function createDialer() {
     connMsg: '', number: '', look: null, lookSeq: 0,
     call: null,                                                      // { sdk, row, dir, state, muted, held, pad, since, note, name, number, ctx }
     wrap: null,                                                      // after-call disposition { row, outcome, note, … }
-    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, pushOn: null,
+    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false,
   };
   let client = null, SDK = null, hbTimer = null, tickTimer = null, retry = 0, retryTimer = null, lockRelease = null;
 
@@ -209,9 +225,19 @@ function createDialer() {
   // ------------------------------------------------------------ data
   async function refresh() {
     try { const b = await dialerBootstrap(); if (b && !b.error) { S.boot = b; } } catch (_) {}
+    try { const t = await dialerSmsThreads(); if (t && !t.error) S.sms = t; } catch (_) {}
     paint();
   }
-  async function loadHistory() { try { S.history = await dialerHistory(80, null, S.histQ || null); } catch (_) { S.history = S.history || []; } paint(); }
+  // never leave S.history null after a load (an empty result used to come back null → vRecent asked again on every paint →
+  // an endless load/paint loop: the dock blinked and hammered the API), and never run two loads at once
+  let histBusy = false;
+  async function loadHistory() {
+    if (histBusy) return; histBusy = true;
+    try { const r = await dialerHistory(80, null, S.histQ || null); S.history = Array.isArray(r) ? r : (r && Array.isArray(r.calls) ? r.calls : []); }
+    catch (_) { S.history = S.history || []; }
+    finally { histBusy = false; }
+    paint();
+  }
 
   // ------------------------------------------------------------ Telnyx connection
   async function connect(force) {
@@ -483,7 +509,8 @@ function createDialer() {
       h('div', { class: 'd' + (missed ? ' miss' : c.direction === 'inbound' ? ' in' : ''), title: c.direction }, ic(missed ? 'miss' : c.direction === 'inbound' ? 'inc' : 'out', 16)),
       h('div', { class: 'm' }, [h('b', null, c.contact_name || pretty(c.number)), h('span', null, sub)]),
       c.outcome ? h('span', { class: 'lbd-pill' }, c.outcome) : (c.answered_at ? h('button', { class: 'lbd-btn ghost sm', onClick: () => { S.wrap = { id: c.id, number: c.number, name: c.contact_name, dur: c.duration_sec, answered: true, dir: c.direction, outcome: '', note: c.note || '', known: !!c.broker_contact_id || ['carrier', 'driver'].includes(c.contact_kind), broker: '', rep: '', save: false, cb: '' }; paint(); } }, 'Tag') : null),
-      c.has_recording ? h('button', { class: 'lbd-ib', 'aria-label': 'Play recording', onClick: (e) => playRecording(c.id, e.currentTarget) }, ic('play', 16)) : null,
+      c.has_recording ? h('button', { class: 'lbd-ib' + (isPlaying(c.id) ? ' on' : ''), 'aria-label': isPlaying(c.id) ? 'Pause recording' : 'Play recording', onClick: (e) => playRecording(c.id, e.currentTarget) }, ic(isPlaying(c.id) ? 'pause' : 'play', 16)) : null,
+      h('button', { class: 'lbd-ib', 'aria-label': 'Text ' + pretty(c.number), onClick: () => openThread(c.number, c.contact_name || '') }, ic('msg', 16)),
       h('button', { class: 'lbd-ib', 'aria-label': 'Call ' + pretty(c.number), onClick: () => dial(c.number, { source: 'history', contact_name: c.contact_name || '' }) }, ic('phone', 17)),
     ]);
   }
@@ -495,6 +522,91 @@ function createDialer() {
       rows.length ? h('div', { style: 'margin-top:6px' }, rows.map(callRow)) : h('div', { class: 'lbd-empty' }, S.histQ ? 'No calls match that search.' : 'No calls yet. Your call log builds itself as you dial.'),
     ]);
   }
+  // ------------------------------------------------------------ text messages (bl_dial_0352)
+  const SMS_TPL = ['Hi, this is LoadBoot dispatch following up on our call.', 'Please send the rate confirmation when you can. Thank you!', 'Can you share the pickup number and address?', 'Driver is on the way — I will send an ETA shortly.', 'Delivered. Please confirm and send the signed POD. Thank you!'];
+  let smsTimer = null;
+  function closeThread() { if (smsTimer) { clearInterval(smsTimer); smsTimer = null; } S.smsTo = null; S.smsThread = null; }
+  async function loadThread(quiet) {
+    if (!S.smsTo) return;
+    try {
+      const t = await dialerSmsThread(S.smsTo);
+      if (!t || t.error || !S.smsTo) return;
+      const had = S.smsThread && S.smsThread.messages ? S.smsThread.messages.length : -1;
+      const sig = (x) => (x && x.messages ? x.messages.map((m) => m.id + m.status).join() : '');
+      const changed = sig(t) !== sig(S.smsThread);
+      S.smsThread = t;
+      if (!quiet) { paint(); return; }
+      if (changed) { paintMsgs(t.messages.length !== had); dialerSmsThreads().then((r) => { if (r && !r.error) S.sms = r; }).catch(() => {}); }   // only the bubbles: the composer keeps its focus and caret
+    } catch (_) {}
+  }
+  function openThread(number, name) {
+    closeThread();
+    S.tab = 'texts'; S.open = true; S.showSettings = false; S.smsTo = number; S.smsName = name || ''; S.smsThread = null; S.smsDraft = '';
+    paint(); loadThread(false);
+    smsTimer = setInterval(() => { if (S.open && S.tab === 'texts' && S.smsTo && document.visibilityState === 'visible') loadThread(true); }, 8000);
+  }
+  function bubble(m) {
+    const st = m.direction === 'outbound' ? ({ queued: 'Sending…', sent: 'Sent', delivered: 'Delivered', failed: 'Not sent' + (m.error ? ' — ' + m.error : '') })[m.status] || '' : '';
+    return h('div', { class: 'lbd-bub' + (m.direction === 'outbound' ? ' out' : '') + (m.status === 'failed' ? ' fail' : '') }, [m.body || (m.media ? '[picture]' : ''), h('small', null, [ago(m.at), st ? ' · ' + st : ''].join(''))]);
+  }
+  function paintMsgs(toEnd) {
+    const box = root.querySelector('[data-smslist]'); if (!box) return;
+    const ms = (S.smsThread && S.smsThread.messages) || [];
+    const near = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    mount(box, ms.length ? ms.map(bubble) : h('div', { class: 'lbd-empty' }, S.smsThread ? 'No messages yet. Say hello.' : 'Loading…'));
+    if (toEnd || near) box.scrollTop = box.scrollHeight;
+  }
+  async function sendText() {
+    const body = (S.smsDraft || '').trim(); if (!body || S.smsBusy || !S.smsTo) return;
+    S.smsBusy = true; paint();
+    try {
+      const r = await dialerSmsSend(S.smsTo, body);
+      if (r && r.ok) { S.smsDraft = ''; } else toast((r && r.error) || 'Could not send that text.');
+    } catch (e) { toast((e && e.message) || 'Could not send that text.'); }
+    S.smsBusy = false; await loadThread(false);
+    const ta = root.querySelector('#lbd-sms'); if (ta) ta.focus();
+  }
+  function vTexts() {
+    const sm = S.sms || { enabled: false, threads: [] };
+    const off = !sm.enabled ? h('div', { class: 'lbd-note', style: 'margin:0 0 10px' }, 'Text messaging switches on once LoadBoot’s carrier registration (10DLC) is approved. Texts people send you still arrive here.') : null;
+    if (S.smsTo) {
+      const t = S.smsThread; const name = (t && t.match && t.match.contact_name) || S.smsName || '';
+      const out = t && t.opted_out;
+      const view = h('div', null, [
+        h('div', { class: 'lbd-th' }, [
+          h('button', { class: 'lbd-ib', 'aria-label': 'Back to all texts', onClick: () => { closeThread(); refresh(); } }, ic('back', 18)),
+          h('div', { class: 'who' }, [h('b', null, name || pretty(S.smsTo)), h('span', null, name ? pretty(S.smsTo) : 'Text message')]),
+          h('button', { class: 'lbd-ib', 'aria-label': 'Call ' + pretty(S.smsTo), onClick: () => dial(S.smsTo, { source: 'texts', contact_name: name }) }, ic('phone', 17)),
+        ]),
+        off,
+        h('div', { class: 'lbd-msgs', 'data-smslist': '1', role: 'log', 'aria-live': 'polite' }),
+        out ? h('div', { class: 'lbd-note', style: 'margin:6px 0 0' }, 'This number replied STOP. It cannot be texted until it sends START.') : [
+          h('div', { class: 'lbd-tpl' }, SMS_TPL.map((x) => h('button', { type: 'button', onClick: () => { S.smsDraft = (S.smsDraft ? S.smsDraft.replace(/\s*$/, ' ') : '') + x; const ta = root.querySelector('#lbd-sms'); if (ta) { ta.value = S.smsDraft; ta.focus(); } paintSend(); } }, x.length > 34 ? x.slice(0, 32) + '…' : x))),
+          h('div', { class: 'lbd-comp' }, [
+            h('textarea', { class: 'lbd-in', id: 'lbd-sms', rows: '2', maxlength: '1000', placeholder: 'Write a text…', 'aria-label': 'Message', onInput: (e) => { S.smsDraft = e.target.value; paintSend(); }, onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } } }, S.smsDraft),
+            h('button', { class: 'lbd-send', 'data-smssend': '1', 'aria-label': 'Send text', disabled: S.smsBusy || !(S.smsDraft || '').trim() || !sm.enabled, onClick: sendText }, ic('send', 17)),
+          ]),
+        ],
+      ]);
+      setTimeout(() => paintMsgs(true), 0);
+      return view;
+    }
+    const rows = sm.threads || [];
+    const start = h('div', { class: 'lbd-comp', style: 'margin:0 0 8px' }, [
+      h('input', { class: 'lbd-in', id: 'lbd-smsnew', type: 'tel', inputmode: 'tel', placeholder: 'Text a new number…', 'aria-label': 'Number to text', onKeydown: (e) => { if (e.key === 'Enter') { const v = digits(e.target.value); if (v.length >= 10) openThread(e.target.value, ''); } } }),
+      h('button', { class: 'lbd-send', 'aria-label': 'Start text', onClick: () => { const el2 = root.querySelector('#lbd-smsnew'); const v = el2 ? el2.value : ''; if (digits(v).length >= 10) openThread(v, ''); else toast('Enter a 10-digit US number.'); } }, ic('msg', 17)),
+    ]);
+    return h('div', null, [off, start,
+      rows.length ? h('div', null, rows.map((r) => h('div', { class: 'lbd-row', style: 'cursor:pointer', role: 'button', tabindex: '0', onClick: () => openThread(r.number, r.contact_name || ''), onKeydown: (e) => { if (e.key === 'Enter') openThread(r.number, r.contact_name || ''); } }, [
+        h('div', { class: 'd' + (r.direction === 'inbound' ? ' in' : '') }, ic('msg', 16)),
+        h('div', { class: 'm' }, [h('b', null, r.contact_name || pretty(r.number)), h('span', null, (r.direction === 'outbound' ? 'You: ' : '') + (r.body || '[picture]'))]),
+        h('span', { style: 'font-size:11px;color:var(--mu);flex:none' }, ago(r.at)),
+        r.unread ? h('span', { class: 'lbd-badge' }, String(r.unread)) : null,
+      ]))) : h('div', { class: 'lbd-empty' }, 'No texts yet. Brokers, carriers and drivers you text show up here, one thread each.'),
+    ]);
+  }
+  function paintSend() { const b = root.querySelector('[data-smssend]'); if (b) b.disabled = S.smsBusy || !(S.smsDraft || '').trim() || !(S.sms && S.sms.enabled); }
+
   function vCallbacks() {
     const rows = (S.boot && S.boot.callbacks) || [];
     if (!rows.length) return h('div', { class: 'lbd-empty' }, 'Nothing waiting. Missed calls, voicemails and the reminders you set land here.');
@@ -503,22 +615,30 @@ function createDialer() {
       return h('div', { class: 'lbd-row' }, [
         h('div', { class: 'd ' + (b.reason === 'scheduled' ? '' : 'miss') }, ic(b.reason === 'voicemail' ? 'vm' : b.reason === 'scheduled' ? 'clock' : 'miss', 16)),
         h('div', { class: 'm' }, [h('b', null, b.contact_name || pretty(b.number)), h('span', null, [b.reason === 'scheduled' ? (due ? 'Due now' : 'Due ' + whenET(b.due_at)) : ({ missed: 'Missed call', voicemail: 'Left a voicemail', forwarded: 'Riley took the call' }[b.reason]) + ' · ' + ago(b.due_at), b.note ? ' · ' + b.note : ''])]),
-        (b.reason === 'voicemail' && b.call_id) ? h('button', { class: 'lbd-ib', 'aria-label': 'Play voicemail', onClick: (e) => playRecording(b.call_id, e.currentTarget) }, ic('play', 16)) : null,
+        (b.reason === 'voicemail' && b.call_id) ? h('button', { class: 'lbd-ib' + (isPlaying(b.call_id) ? ' on' : ''), 'aria-label': isPlaying(b.call_id) ? 'Pause voicemail' : 'Play voicemail', onClick: (e) => playRecording(b.call_id, e.currentTarget) }, ic(isPlaying(b.call_id) ? 'pause' : 'play', 16)) : null,
         h('button', { class: 'lbd-ib', 'aria-label': 'Mark done', onClick: async () => { await dialerCallbackSet(b.id, 'done').catch(() => {}); refresh(); } }, ic('check', 17)),
         h('button', { class: 'lbd-btn or sm', onClick: async () => { dialerCallbackSet(b.id, 'done').catch(() => {}); dial(b.number, { source: 'callback', contact_name: b.contact_name || '' }); } }, 'Call back'),
       ]);
     }));
   }
   let playing = null;
+  const isPlaying = (id) => !!(playing && playing.id === id && !playing.a.paused);
+  function stopPlaying() { if (!playing) return; try { playing.a.pause(); URL.revokeObjectURL(playing.u); } catch (_) {} playing = null; }
+  // one recording at a time: the same row toggles pause / resume, another row stops the first and starts its own
   async function playRecording(callId, btn) {
-    if (playing) { try { playing.a.pause(); URL.revokeObjectURL(playing.u); } catch (_) {} const same = playing.id === callId; playing = null; if (same) return; }
+    if (playing && playing.id === callId) {
+      try { if (playing.a.paused) await playing.a.play(); else playing.a.pause(); } catch (_) {}
+      paint(); return;
+    }
+    stopPlaying();
     try {
       if (btn) btn.disabled = true;
       const blob = await dialerRecordingBlob(callId);
+      stopPlaying();                                   // another row may have been tapped while this one was loading
       const u = URL.createObjectURL(blob); const a = new Audio(u); playing = { a, u, id: callId };
-      a.onended = () => { try { URL.revokeObjectURL(u); } catch (_) {} if (playing && playing.a === a) playing = null; };
+      a.onended = () => { try { URL.revokeObjectURL(u); } catch (_) {} if (playing && playing.a === a) playing = null; paint(); };
       await a.play();
-    } catch (e) { toast('Recording is not ready yet — try again in a minute.'); } finally { if (btn) btn.disabled = false; }
+    } catch (e) { toast('Recording is not ready yet — try again in a minute.'); } finally { if (btn) btn.disabled = false; paint(); }
   }
   async function loadMics() { try { const d = await navigator.mediaDevices.enumerateDevices(); S.mics = d.filter((x) => x.kind === 'audioinput'); } catch (_) { S.mics = []; } }
   function vSettings() {
@@ -546,18 +666,21 @@ function createDialer() {
   }
 
   // ------------------------------------------------------------ paint
+  let wasOpen = false;
   function paint() {
     const b = S.boot;
     if (!b || b.reason === 'off' || b.reason === 'not_active') { mount(root, null); root.className = 'lbd'; return; }
     root.className = 'lbd' + (S.open ? ' open' : '');
+    const justOpened = S.open && !wasOpen; wasOpen = !!S.open;
     const cbN = (b.callbacks || []).length;
+    const smsN = (S.sms && S.sms.unread) || 0;
     const c = S.call; const ringing = c && c.dir === 'in' && c.state === 'ringing';
     if (!S.open) {
       const cls = ringing ? ' ring' : c ? ' live' : (S.conn === 'ready' ? '' : ' off');
       mount(root, [live, h('button', { class: 'lbd-fab' + cls, 'aria-label': 'Open phone', onClick: () => { S.open = true; audioCtx(); paint(); } }, [
         h('span', { class: 'orb' }, ic('phone', 17)),
         h('span', { class: 't' }, [h('b', null, c ? (c.name || pretty(c.number)) : (b.line ? pretty(b.line.number) : 'Phone')), h('span', null, c ? (ringing ? 'Incoming call' : c.since ? 'On call' : 'Calling…') : (b.line ? connLine()[1] : 'No line yet'))]),
-        cbN && !c ? h('span', { class: 'lbd-badge', 'aria-label': cbN + ' callbacks' }, String(cbN)) : null,
+        (cbN + smsN) && !c ? h('span', { class: 'lbd-badge', 'aria-label': cbN + ' callbacks, ' + smsN + ' unread texts' }, String(cbN + smsN)) : null,
       ])]);
       return;
     }
@@ -574,12 +697,12 @@ function createDialer() {
     else if (S.pushOn === false && pushSupported() && !sessionStorage.getItem('lbd_nopush')) note = h('div', { class: 'lbd-note' }, ['Turn on call alerts so a call reaches you when this tab is in the background. ', h('button', { class: 'lbd-btn sm', style: 'margin-left:auto;flex:none', onClick: async () => { try { await enablePush('Dispatcher phone'); S.pushOn = true; toast('Call alerts are on.'); } catch (err) { try { sessionStorage.setItem('lbd_nopush', '1'); } catch (_) {} toast((err && err.message) || 'Could not turn on alerts.'); } paint(); } }, 'Turn on')]);
     else if ((S.conn === 'error' || S.conn === 'offline') && S.connMsg) note = h('div', { class: 'lbd-note bad' }, S.connMsg);
     else if (S.connMsg && /icrophone/.test(S.connMsg)) note = h('div', { class: 'lbd-note bad' }, S.connMsg);
-    const body = S.showSettings ? vSettings() : c ? vCall() : S.wrap ? vWrap() : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
+    const body = S.showSettings ? vSettings() : c ? vCall() : S.wrap ? vWrap() : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
     const showChrome = !c && !S.wrap && !S.showSettings && b.line;
-    mount(root, [live, h('div', { class: 'lbd-panel', role: 'dialog', 'aria-label': 'LoadBoot phone' }, [
+    mount(root, [live, h('div', { class: 'lbd-panel' + (justOpened ? ' in' : ''), role: 'dialog', 'aria-label': 'LoadBoot phone' }, [
       head, note,
       showChrome ? h('div', { class: 'lbd-stats' }, [['calls', 'Calls'], ['connected', 'Connected'], ['talk_sec', 'Talk'], ['missed', 'Missed']].map(([k, l]) => h('div', null, [h('b', null, k === 'talk_sec' ? talk(t[k]) : String(t[k] || 0)), h('span', null, l)]))) : null,
-      showChrome ? h('div', { class: 'lbd-tabs', role: 'tablist' }, [['keypad', 'Keypad', 'pad'], ['recent', 'Recent', 'clock'], ['callbacks', 'Callbacks', 'miss']].map(([id, l, i]) => h('button', { class: 'lbd-tab' + (S.tab === id ? ' on' : ''), role: 'tab', 'aria-selected': String(S.tab === id), onClick: () => { S.tab = id; if (id === 'recent') S.history = null; paint(); } }, [ic(i, 14), l, id === 'callbacks' && cbN ? h('span', { class: 'lbd-badge' }, String(cbN)) : null]))) : null,
+      showChrome ? h('div', { class: 'lbd-tabs', role: 'tablist' }, [['keypad', 'Keypad', 'pad'], ['recent', 'Recent', 'clock'], ['texts', 'Texts', 'msg'], ['callbacks', 'Callbacks', 'miss']].map(([id, l, i]) => h('button', { class: 'lbd-tab' + (S.tab === id ? ' on' : ''), role: 'tab', 'aria-selected': String(S.tab === id), onClick: () => { S.tab = id; if (id === 'recent') S.history = null; if (id !== 'texts') closeThread(); paint(); } }, [ic(i, 14), l, id === 'callbacks' && cbN ? h('span', { class: 'lbd-badge' }, String(cbN)) : null, id === 'texts' && S.sms && S.sms.unread ? h('span', { class: 'lbd-badge' }, String(S.sms.unread)) : null]))) : null,
       h('div', { class: 'lbd-body' }, body),
     ])]);
     if (showChrome && S.tab === 'keypad' && window.matchMedia('(min-width:561px)').matches) { const i = root.querySelector('.lbd-num'); if (i && document.activeElement !== i && !root.contains(document.activeElement)) { try { i.focus({ preventScroll: true }); } catch (_) {} } }
