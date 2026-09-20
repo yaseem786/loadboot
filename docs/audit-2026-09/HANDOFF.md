@@ -87,6 +87,20 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    Seen in passing (not fixed, not audited): (a) typing "USDOT 53467" is resolved as MC 53467 (a different, 1-truck company) —
    the wizard strips the prefix and tries MC first; (b) the chat FMCSA card shows "Authority unknown" for Schneider;
    (c) homepage shows the SW "new version — Update" banner.
+5b. ERASURE gate — one slice closed 20 Sep, gate still OPEN. `bl_audit_0355_erasure_inventory_chat_prefix` LIVE on staging AND prod
+   (Yaseen: "Karo" + standing "fix karte jao, prod par apply bhi"). Finding: the inventory matched chat onboarding rows only by
+   conversation.user_id / lc_onboarding.account_email and walked docs[] only — but website chats ALWAYS have user_id NULL (proven on
+   prod 20 Sep) and account_email is set only for in-chat signups, so a guest who uploaded in chat and later signed up in the portal
+   was invisible to an erasure request, and an orphan object was invisible to all of them. Fix: also match by the typed email
+   (lc_onboarding.data->>'email', lc_conversations.email, case/space-insensitive) and by visitor_key, and list EVERY Storage object
+   under lc-onboarding/<matched key>/ (new source `onboarding_storage_prefix`). Only ADDS review items; deletes nothing.
+   Applied by patching the live body under an md5 guard (d6fd7d1c… → 3e252812… on BOTH envs, identical). Test
+   `tests/bl_audit_0355_rollback_test.sql` 9/9 PASS on staging and prod, zero fixtures, 0 inventory rows, 0 open deletion requests on
+   prod; anon names unchanged (32 / 33); ACL still postgres-only. Rollback `ROLLBACK-ERASURE-CHAT-PREFIX-2026-09-20.sql` rehearsed on
+   staging (restores byte-exact). NOTE: Codex's two erasure rollback scripts check the OLD capture hash — run the 0355 rollback first.
+   Codex's 35-assertion suite was NOT re-run against the new body. STILL OPEN in this gate: upload freeze while a request is open
+   (lc_ob_upload_check / document uploads do not look at deletion requests), actual Storage removal + retention decision + removal
+   evidence, auth session revocation, indirect invoice/load/payment references, browser UI of the deletion flow.
 6. Remaining gates unchanged: full session/document/Storage access coverage; complete erasure (upload freeze, retention/removal
    evidence, revocation — must list the Storage prefix, see design doc); F10 role/type decision; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
@@ -159,3 +173,4 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-20 — Claude:** On Yaseen's "apply prod": bl_audit_0353 applied to PROD (8/8 rollback test, anon names unchanged 33, body identical to staging) and lc-doc-check v12 deployed to PROD (slot 13); prod success path proven with a second guest upload (2 docs / 2 objects, all paths resolve). Signed-in leg found NOT reachable via UI (site never passes getToken) — recorded as a finding, gate stays open. Phase 2b remove DESIGNED only. Temp edge fn lb-tmp-rm-synthetic: Claude has no delete tool — steps given to Yaseen. No push, no messages.
 - **2026-09-20 — Claude:** Phase 2b remove built on STAGING only: bl_audit_0354 (candidates + service-only log RPC) and edge lc-doc-purge v1; DB test PASS, edge contract 28/28, live anon negative 403 with zero writes; anon names unchanged. Staff-run live proof and prod promotion still open. No push, no messages, prod untouched this step.
 - **2026-09-20 — Claude:** Yaseen asked whether ChatGPT/Codex's work reached prod. Checked by FUNCTION BODY HASH, staging vs prod (24 functions from the staging-only-by-name audit migrations): SAME on prod = account deletion (0339/0341/atomic cleanup), outreach suppression, unsubscribe entrypoints, erasure inventory, agent payout parity 0338 (prod carries them under other names: audit_marketing_optout_promotion, audit_erasure_guard_promotion etc.), plus the four session guards, dispatcher ACL, reports recovery, 0335/0336/0344. retell_inbound_token_ok on prod is the FIXED (OR-accumulate) version. DIFFERENT on prod = only bl_audit_0342 (4 fns) and bl_audit_0343 (6 fns) — both files say "STAGING ONLY … restore missing RPCs", i.e. staging-parity repairs, not prod fixes; NOT applied to prod, not diffed line by line (unknown whether prod's bodies are older or just another lane's). Also applied 0354 + lc-doc-purge to prod (see item 4). No push, no messages.
+- **2026-09-20 — Claude:** Erasure gate slice: bl_audit_0355 on staging then prod — erasure inventory now finds guest chat uploads by typed email / visitor_key and lists the whole lc-onboarding/<key>/ Storage prefix (orphans included). 9/9 on both envs, identical body md5 3e252812…, byte-exact rollback rehearsed, anon names unchanged. Gate remains open (upload freeze, real removal, session revocation, UI). No push, no messages, nothing deleted.
