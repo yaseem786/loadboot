@@ -9,7 +9,10 @@ import { ImapFlow } from "npm:imapflow@1.0.164";
 import nodemailer from "npm:nodemailer@6.9.14";
 import PostalMime from "npm:postal-mime@2.2.7";
 
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-dmail-secret", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+// supabase-js sends x-supabase-api-version (and x-region); a header missing from this list fails the preflight and the
+// browser then never sends the POST at all — the portal shows "Failed to send a request to the Edge Function".
+// Same shape as telnyx-token: a superset list, and the preflight echoes back exactly what the browser asked for.
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-supabase-api-version, x-region, x-dmail-secret", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Max-Age": "86400" };
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const ROLES = ["inbox", "sent", "spam", "trash"] as const;
 type Role = typeof ROLES[number];
@@ -19,7 +22,11 @@ type Any = any;
 
 // LOGOUT can hang forever in the edge runtime (socket close never fires) — cap it, then hard-close.
 const bye = async (c: Any) => { await Promise.race([c.logout().catch(() => {}), new Promise((r) => setTimeout(r, 3000))]); try { c.close(); } catch (_) { /* ignore */ } };
-const imapFor = (a: Any) => new ImapFlow({ host: a.imap_host, port: a.imap_port, secure: true, auth: { user: a.username, pass: a.password }, logger: false, socketTimeout: 90000 });
+// A mail server that drops the TLS socket without close_notify raises a late socket error. With no listener that is an
+// uncaught "event loop error" which kills the worker and turns the NEXT request into a 503 — so always listen, and never let a stray rejection be fatal.
+const imapFor = (a: Any) => { const c: Any = new ImapFlow({ host: a.imap_host, port: a.imap_port, secure: true, auth: { user: a.username, pass: a.password }, logger: false, socketTimeout: 90000 }); c.on("error", (e: Any) => console.warn("dmail imap socket:", String(e?.message || e).slice(0, 160))); return c; };
+globalThis.addEventListener("unhandledrejection", (e: Any) => { e.preventDefault(); console.warn("dmail unhandled:", String(e?.reason?.message || e?.reason).slice(0, 160)); });
+globalThis.addEventListener("error", (e: Any) => { e.preventDefault(); console.warn("dmail late error:", String(e?.message || e?.error).slice(0, 160)); });
 const addrs = (v: Any): { email: string; name: string }[] => (Array.isArray(v) ? v : v ? [v] : []).flatMap((x: Any) => x?.group ? addrs(x.group) : x?.address ? [{ email: String(x.address).toLowerCase(), name: x.name || "" }] : []);
 const strip = (h: string) => h.replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
 const b64 = (u8: Uint8Array) => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
@@ -66,7 +73,6 @@ async function syncAccount(svc: SupabaseClient, acc: Any) {
     const paths = await rolePaths(client, folders);
     for (const role of ROLES) {
       const path = paths[role]; if (!path) continue;
-      console.log("dmail sync", acc.address, role, path);
       const lock = await client.getMailboxLock(path);
       try {
         const mb: Any = client.mailbox; const uv = Number(mb.uidValidity); const uidNext = Number(mb.uidNext || 1);
@@ -94,7 +100,6 @@ async function syncAccount(svc: SupabaseClient, acc: Any) {
         folders[role] = { path, uidvalidity: uv, last_uid: last };
       } finally { lock.release(); }
     }
-    console.log("dmail sync folders done", acc.address, added);
     await bye(client);
     await svc.rpc("dmail_sync_done", { p_account: acc.id, p_folders: folders, p_error: null });
     return { ok: true, added };
@@ -197,7 +202,7 @@ async function actDelete(svc: SupabaseClient, acc: Any, b: Any) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method === "OPTIONS") { const asked = req.headers.get("access-control-request-headers"); return new Response("ok", { headers: asked ? { ...CORS, "Access-Control-Allow-Headers": asked } : CORS }); }
   const URL_ = Deno.env.get("SUPABASE_URL")!, SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
   const svc = createClient(URL_, SERVICE, { auth: { persistSession: false } });
   const b: Any = await req.json().catch(() => ({}));
