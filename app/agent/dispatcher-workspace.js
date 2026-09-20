@@ -24,6 +24,7 @@ import { el, mount, clear } from '../shared/ui/dom.js';
 import { roadMiles } from '../shared/usGeo.js';
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
+import { mountDialer } from '../shared/dialer.js';   // bl_dial_0351 — softphone dock; also turns every tel: link into click-to-call
 
 // Line icons (Lucide-style, stroke=currentColor) — shared set + a few extras this module needs.
 const XP = {
@@ -114,6 +115,7 @@ const DONE = ['delivered', 'invoiced', 'paid', 'cancelled', 'rejected'];
 const pill = (s) => { const m = STATUS[s] || [s, '#cbd5e1']; return h('span', { class: 'dw-pill', style: 'color:' + m[1] + ';border-color:' + m[1] + '55' }, m[0]); };
 
 const CSS = `
+.dw-tel{color:#9fc3ff;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}.dw-tel:hover{text-decoration:underline}
 .dw{--dw-line:rgba(255,255,255,.09);--dw-line2:rgba(255,255,255,.16);--dw-panel:rgba(255,255,255,.045);--dw-panel2:rgba(255,255,255,.07);--dw-ink:#eaf1fb;--dw-ink2:#c3d1e6;--dw-muted:#7f92b3;--dw-blue:#4EA6F9;--dw-orange:#FC5305;color:var(--dw-ink);font-family:Manrope,system-ui,sans-serif}
 .dw *{box-sizing:border-box}
 .dw-clock{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:.78rem;color:var(--dw-muted);font-weight:800;letter-spacing:.04em;margin:0 0 10px;padding:0 4px}
@@ -199,6 +201,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   const root = h('div', { class: 'dw' });
   if (!document.getElementById('dw-css')) { const s = document.createElement('style'); s.id = 'dw-css'; s.textContent = CSS; document.head.appendChild(s); }
   mount(host, root);
+  try { mountDialer(); } catch (_) {}   // idempotent singleton; shows nothing unless the dialer is on and a line is assigned
   let feed = null; let tab = (opts.tab) || (sessionStorage.getItem('dw_tab') || 'today');
   const clockEl = h('div', { class: 'dw-clock' });
   const body = h('div');
@@ -424,7 +427,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('span', { class: 'dw-pill', style: 'color:' + (a.carrier_ack_at ? '#4ade80' : a.ack_state === 'notified' ? '#94a3b8' : '#fbbf24') + ';border-color:currentColor' }, a.carrier_ack_at ? 'CONFIRMED YOU' : a.ack_state === 'notified' ? 'INTRO SENT' : 'NOT CONFIRMED YET'),
         h('span', { class: 'dw-pill', style: 'color:' + (c.broker_visible ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, c.broker_visible ? 'LIVE TO BROKERS' : 'NOT YET VISIBLE')])]),
       h('div', { class: 'dw-grid' }, [
-        f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone), f('WhatsApp', c.whatsapp), f('Email', c.email),
+        f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone ? tel(c.phone, { name: c.contact_name || c.name }) : null), f('WhatsApp', c.whatsapp), f('Email', c.email),
         f('Home base', c.home_base), f('Carrier min $/mi', c.min_rpm != null ? '$' + Number(c.min_rpm).toFixed(2) : null), f('Max deadhead', c.max_deadhead != null ? c.max_deadhead + ' mi' : null),
         f('Avoid states', c.avoid_states), f('Weekends', yn(c.weekend_ok)), f('Factoring', c.factoring_company ? c.factoring_company + (c.factoring_status ? ' · ' + c.factoring_status : '') : null),
       ]),
@@ -434,9 +437,10 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         s.min_rate ? h('div', null, ['Min rate/mile: ', h('b', { style: 'color:#fff' }, '$' + Number(s.min_rate).toFixed(2)), s.min_rate_note ? ' — ' + s.min_rate_note : '']) : null,
         s.equipment ? h('div', null, 'Equipment: ' + s.equipment) : null, s.home_time ? h('div', null, 'Home time: ' + s.home_time) : null, s.rules ? h('div', null, 'Rules: ' + s.rules) : null,
       ])]) : null,
-      (a.drivers || []).length ? h('div', { style: 'margin-top:10px' }, [h('div', { class: 'dw-f' }, [h('div', { class: 'k' }, 'Drivers on file'), h('div', { class: 'v' }, a.drivers.map((d) => (d.name || '?') + (d.phone ? ' · ' + d.phone : '')).join('  |  '))])]) : null,
+      (a.drivers || []).length ? h('div', { style: 'margin-top:10px' }, [h('div', { class: 'dw-f' }, [h('div', { class: 'k' }, 'Drivers on file'), h('div', { class: 'v' }, a.drivers.map((d, i) => h('span', null, [i ? '  |  ' : '', d.name || '?', d.phone ? [' · ', tel(d.phone, { name: (d.name || 'Driver') + ' (driver)' })] : null])))])]) : null,
     ]);
   }
+  function tel(n, d) { d = d || {}; return h('a', { href: 'tel:' + n, class: 'dw-tel', 'data-name': d.name || null, 'data-broker': d.broker || null, 'data-booking': d.booking || null, title: 'Call with your LoadBoot phone' }, [ic('phone', 13), ' ' + n]); }
   function f(k, v) { return h('div', { class: 'dw-f' }, [h('div', { class: 'k' }, k), h('div', { class: 'v' }, v == null || v === '' ? '—' : (typeof v === 'string' || typeof v === 'number') ? String(v) : v)]); }
   function truckCard(t) {
     const av = t.availability || {}; const act = activeFor(t.id).filter((b) => MOVING.includes(b.status)); const pend = activeFor(t.id).length - act.length;
@@ -452,7 +456,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
             f('Status', (av.status || 'empty').toUpperCase()), f('Empty at', av.empty_location ? av.empty_location + (av.empty_zip ? ' ' + av.empty_zip : '') : null), f('Empty from', av.empty_at ? when(av.empty_at) : null),
             f('Must be home by', av.must_be_home_by ? whenDay(av.must_be_home_by) + (av.home_location ? ' · ' + av.home_location : '') : null),
             f('Overnight weekdays', yn(av.overnight_weekdays)), f('Overnight weekends', yn(av.overnight_weekends)),
-            f('HOS drive left', av.hos_drive_left_h != null ? av.hos_drive_left_h + ' h' + (av.hos_note ? ' · ' + av.hos_note : '') : (av.hos_note || null)), f('Driver', av.driver_name ? av.driver_name + (av.driver_phone ? ' · ' + av.driver_phone : '') : null),
+            f('HOS drive left', av.hos_drive_left_h != null ? av.hos_drive_left_h + ' h' + (av.hos_note ? ' · ' + av.hos_note : '') : (av.hos_note || null)), f('Driver', av.driver_name ? h('span', null, [av.driver_name, av.driver_phone ? [' · ', tel(av.driver_phone, { name: av.driver_name + ' (driver)' })] : null]) : null),
             gps ? f('Last GPS', h('a', { href: 'https://www.google.com/maps?q=' + gps.lat + ',' + gps.lng, target: '_blank', rel: 'noopener', style: 'color:#7cc0ff' }, Number(gps.lat).toFixed(3) + ', ' + Number(gps.lng).toFixed(3) + ' · ' + ago(gps.at))) : null,
           ]),
           av.note ? h('div', { class: 'dw-muted', style: 'margin-top:6px' }, av.note) : null,
@@ -580,7 +584,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       h('div', { class: 'dw-row', style: 'justify-content:space-between;margin-bottom:8px' }, [pill(b.status), b.below_min ? h('span', { class: 'dw-warn', style: 'padding:4px 10px' }, 'Below the carrier’s floor rate') : null, b.source === 'loadboot' ? h('span', { class: 'dw-chip' }, 'LoadBoot board') : null]),
       b.decision_note ? h('div', { class: b.status === 'rejected' ? 'dw-warn' : 'dw-info', style: 'margin-bottom:8px' }, 'LoadBoot: ' + b.decision_note) : null,
       b.carrier_ack ? h('div', { class: /PROBLEM/.test(b.carrier_ack) ? 'dw-warn' : 'dw-ok', style: 'margin-bottom:8px' }, b.carrier_ack) : null,
-      h('div', { class: 'dw-grid' }, [f('Truck', t ? 'Unit ' + (t.unit_no || '?') + ' · ' + (t.equipment || '') : null), f('Broker', b.broker + (b.broker_mc ? ' · MC ' + b.broker_mc : '')), f('Rep', [b.broker_rep, b.broker_phone, b.broker_email].filter(Boolean).join(' · ')), f('Gross', money(b.gross)), f('$/mile', rpm ? '$' + rpm.toFixed(2) : null), f('Miles', b.miles), f('Deadhead', b.deadhead), f('Pickup', whenDay(b.pickup_at)), f('Delivery', whenDay(b.delivery_at)), f('Commodity', b.commodity), f('Weight', b.weight_lbs ? num(b.weight_lbs) + ' lb' : null), f('Equipment', b.equipment), f('RC #', b.rc_number), f('Logged', when(b.created_at)), b.approved_at ? f('Approved', when(b.approved_at)) : null, b.trip_status ? f('Trip', String(b.trip_status).replace('_', ' ') + (b.pod_count ? ' · POD ×' + b.pod_count : '')) : null]),
+      h('div', { class: 'dw-grid' }, [f('Truck', t ? 'Unit ' + (t.unit_no || '?') + ' · ' + (t.equipment || '') : null), f('Broker', b.broker + (b.broker_mc ? ' · MC ' + b.broker_mc : '')), f('Rep', (b.broker_rep || b.broker_phone || b.broker_email) ? h('span', null, [b.broker_rep || '', b.broker_phone ? [b.broker_rep ? ' · ' : '', tel(b.broker_phone, { name: b.broker + (b.broker_rep ? ' · ' + b.broker_rep : ''), booking: b.id })] : null, b.broker_email ? ' · ' + b.broker_email : '']) : null), f('Gross', money(b.gross)), f('$/mile', rpm ? '$' + rpm.toFixed(2) : null), f('Miles', b.miles), f('Deadhead', b.deadhead), f('Pickup', whenDay(b.pickup_at)), f('Delivery', whenDay(b.delivery_at)), f('Commodity', b.commodity), f('Weight', b.weight_lbs ? num(b.weight_lbs) + ' lb' : null), f('Equipment', b.equipment), f('RC #', b.rc_number), f('Logged', when(b.created_at)), b.approved_at ? f('Approved', when(b.approved_at)) : null, b.trip_status ? f('Trip', String(b.trip_status).replace('_', ' ') + (b.pod_count ? ' · POD ×' + b.pod_count : '')) : null]),
       stops.length ? h('div', { style: 'margin:8px 0' }, [h('div', { class: 'dw-f' }, [h('div', { class: 'k' }, 'Stops'), h('div', { class: 'v' }, stops.map((s, i) => h('div', null, (i + 1) + '. ' + String(s.kind || '').toUpperCase() + ' · ' + (s.location || '') + (s.at ? ' · ' + whenDay(s.at) : '') + (s.note ? ' — ' + s.note : ''))))])]) : null,
       b.rc_doc_path ? h('div', { style: 'margin:8px 0' }, h('button', { class: 'dw-btn sm ghost', onClick: async () => { try { const u = await signedDocumentUrl(b.rc_doc_path, 600); window.open(u, '_blank'); } catch (x) { e.textContent = x.message; } } }, [ic('doc', 14), 'Open RC · ' + (b.rc_doc_name || 'file')])) : null,
       b.notes ? h('div', { class: 'dw-muted', style: 'margin:6px 0;white-space:pre-wrap' }, b.notes) : null,
@@ -646,7 +650,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       });
       mount(box, [
         h('div', { class: 'dw-row', style: 'justify-content:space-between' }, [h('b', { style: 'color:#7cc0ff' }, [ic('navigation', 16), ' Trip · ' + String(t.status || '').replace('_', ' ').toUpperCase()]), h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh trip', onClick: paint }, ic('refresh', 14))]),
-        h('div', { class: 'dw-grid', style: 'margin-top:6px' }, [f('Driver', t.driver_name ? t.driver_name + (t.driver_phone ? ' · ' + t.driver_phone : '') : null), f('Truck', t.truck_no), f('Tracking', t.tracking_method), f('Last location', t.last_lat != null ? h('a', { href: 'https://www.google.com/maps?q=' + t.last_lat + ',' + t.last_lng, target: '_blank', rel: 'noopener', style: 'color:#7cc0ff' }, Number(t.last_lat).toFixed(3) + ', ' + Number(t.last_lng).toFixed(3) + ' · ' + ago(t.last_loc_at)) : null), f('Pickup risk', t.pickup_risk), f('POD', pods.length ? pods.length + ' file' + (pods.length > 1 ? 's' : '') + ' · ' + pods[0].status : 'not uploaded — ask the driver for the signed BOL photo')]),
+        h('div', { class: 'dw-grid', style: 'margin-top:6px' }, [f('Driver', t.driver_name ? h('span', null, [t.driver_name, t.driver_phone ? [' · ', tel(t.driver_phone, { name: t.driver_name + ' (driver)' })] : null]) : null), f('Truck', t.truck_no), f('Tracking', t.tracking_method), f('Last location', t.last_lat != null ? h('a', { href: 'https://www.google.com/maps?q=' + t.last_lat + ',' + t.last_lng, target: '_blank', rel: 'noopener', style: 'color:#7cc0ff' }, Number(t.last_lat).toFixed(3) + ', ' + Number(t.last_lng).toFixed(3) + ' · ' + ago(t.last_loc_at)) : null), f('Pickup risk', t.pickup_risk), f('POD', pods.length ? pods.length + ' file' + (pods.length > 1 ? 's' : '') + ' · ' + pods[0].status : 'not uploaded — ask the driver for the signed BOL photo')]),
         stops.length ? h('div', { class: 'dw-muted', style: 'margin-top:6px' }, stops.map((s0) => (s0.kind || '') + ': ' + (s0.location || '') + (s0.scheduled_at ? ' · ' + when(s0.scheduled_at) : '')).join('  →  ')) : null,
         h('div', { style: 'margin-top:8px' }, stopBtns),
         h('div', { class: 'dw-form', style: 'margin-top:8px' }, [h('label', { class: 'wide' }, ['Note', note])]),
@@ -749,7 +753,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const rows = (feed.brokers || []).slice().sort((a, b) => Number(b.bookings || 0) - Number(a.bookings || 0) || String(a.broker).localeCompare(String(b.broker)));
     const list = h('div', { class: 'dw-tablewrap' });
     const paintRows = () => mount(list, rows.length ? h('table', { class: 'dw-table' }, [h('thead', null, h('tr', null, ['Broker', 'MC', 'Rep', 'Contact', 'Lanes / equipment', 'New MC ok?', 'Loads · gross', 'Last', ''].map((x) => h('th', null, x)))),
-      h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, [h('b', { style: 'color:#fff' }, r.broker), r.rating ? stars(r.rating) : null]), h('td', null, r.mc || '—'), h('td', null, r.rep || '—'), h('td', null, [r.phone ? h('div', null, h('a', { href: 'tel:' + r.phone, style: 'color:inherit' }, r.phone)) : null, r.email ? h('div', null, h('a', { href: 'mailto:' + r.email, style: 'color:inherit' }, r.email)) : null]), h('td', null, [r.lanes ? h('div', null, r.lanes) : null, r.equipment ? h('div', { class: 'dw-muted' }, r.equipment) : null]), h('td', null, yn(r.new_authority_ok)), h('td', null, Number(r.bookings || 0) ? r.bookings + ' · ' + money(r.gross) : '—'), h('td', null, [r.last_contact_at ? ago(r.last_contact_at) : '—', r.last_outcome ? h('div', { class: 'dw-muted' }, r.last_outcome) : null]),
+      h('tbody', null, rows.map((r) => h('tr', null, [h('td', null, [h('b', { style: 'color:#fff' }, r.broker), r.rating ? stars(r.rating) : null]), h('td', null, r.mc || '—'), h('td', null, r.rep || '—'), h('td', null, [r.phone ? h('div', null, tel(r.phone, { name: r.broker + (r.rep ? ' · ' + r.rep : ''), broker: r.id })) : null, r.email ? h('div', null, h('a', { href: 'mailto:' + r.email, style: 'color:inherit' }, r.email)) : null]), h('td', null, [r.lanes ? h('div', null, r.lanes) : null, r.equipment ? h('div', { class: 'dw-muted' }, r.equipment) : null]), h('td', null, yn(r.new_authority_ok)), h('td', null, Number(r.bookings || 0) ? r.bookings + ' · ' + money(r.gross) : '—'), h('td', null, [r.last_contact_at ? ago(r.last_contact_at) : '—', r.last_outcome ? h('div', { class: 'dw-muted' }, r.last_outcome) : null]),
         h('td', null, h('div', { class: 'dw-row', style: 'flex-wrap:nowrap' }, [h('button', { class: 'dw-btn sm ghost', onClick: () => brokerForm(r) }, 'Edit'), h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Remove ' + r.broker, onClick: async () => { if (!(await confirmBox('Remove ' + r.broker + '?', 'Only the contact card is removed — bookings stay.', 'Remove', true))) return; await dispatcherBrokerDelete(r.id); toast('Removed'); await load(); } }, ic('x', 14))]))])))]) : h('div', { class: 'dw-muted' }, 'No brokers yet. Every booking you log adds its broker here automatically — or add the ones you already know.'));
     paintRows();
     if (openAction === 'new-broker') { openAction = null; setTimeout(() => brokerForm(null), 0); }

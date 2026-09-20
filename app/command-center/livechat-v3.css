@@ -138,6 +138,10 @@
 .lcv-playbar{display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line2);background:var(--card2);overflow-x:auto;scrollbar-width:none;align-items:center}
 .lcv-playbar::-webkit-scrollbar{display:none}
 .lcv-lbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:2px;white-space:nowrap}
+/* scroll fix 19 Sep: the wrapper was display:block so .lcv-msgs never got a bounded height */
+.lcv-conv-live{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;position:relative;overflow-y:auto}
+.lcv-conv-live>*{flex-shrink:0}
+.lcv-conv-live>.lcv-msgs{flex:1 0 220px}
 .lcv-msgs{flex:1;overflow-y:auto;padding:16px 16px 6px;background:radial-gradient(900px 420px at 60% -10%,rgba(8,131,247,.045),transparent 70%)}
 .lcv-day{text-align:center;margin:12px 0}
 .lcv-day span{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:2px 12px;font-size:11px;font-weight:700;color:var(--muted)}

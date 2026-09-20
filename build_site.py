@@ -8635,7 +8635,7 @@ HEADERS = (
 "  X-Frame-Options: DENY\n"
 "  X-Content-Type-Options: nosniff\n"
 "  Referrer-Policy: strict-origin-when-cross-origin\n"
-"  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()\n"
+"  Permissions-Policy: geolocation=(self), camera=(), microphone=(self), payment=(), usb=()\n"   # microphone=(self): the dispatcher dialer (bl_dial_0351) — same-origin only, the browser still asks the user
 "  Strict-Transport-Security: max-age=31536000; includeSubDomains\n"
 "  Cross-Origin-Opener-Policy: same-origin\n"
 )
@@ -8660,7 +8660,7 @@ _APP_CSP = (
   "worker-src 'self'; "
   "manifest-src 'self'; "
   "media-src 'self' blob: https://*.cloudfront.net https://*.retellai.com; "   # Riley call recordings (Retell serves via CloudFront)
-  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://photon.komoot.io https://data.transportation.gov https://router.project-osrm.org https://vpic.nhtsa.dot.gov"
+  "connect-src 'self' https://%s.supabase.co wss://%s.supabase.co wss://rtc.telnyx.com https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://photon.komoot.io https://data.transportation.gov https://router.project-osrm.org https://vpic.nhtsa.dot.gov"
 ) % (_CSP_REF, _CSP_REF, _CSP_REF, _CSP_REF)
 APP_HEADERS = (
   "\n/app/*\n"

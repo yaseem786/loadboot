@@ -1306,3 +1306,44 @@ export const driverMyEarnings = (days) => rpc('cc_driver_my_earnings', { p_days:
 export const driverMySettlements = () => rpc('cc_driver_my_settlements');
 export const ccCarrierDriverAccess = (orgId) => rpc('cc_carrier_driver_access', { p_org: orgId });
 export const ccDriverAdoptionKpis = () => rpc('cc_driver_adoption_kpis');
+
+// ---- Dispatcher Dialer (bl_dial_0351) — Telnyx WebRTC softphone. Access is decided server-side; the Telnyx key never reaches the browser.
+export const dialerBootstrap = () => rpc('dialer_bootstrap', {});
+export const dialerHeartbeat = () => rpc('dialer_heartbeat', {});
+export const dialerForwardSet = (number) => rpc('dialer_forward_set', { p_number: number ?? '' });   // bl_dial_0351e — dispatcher's own US/CA forward mobile
+export const dialerLookup = (number) => rpc('dialer_lookup', { p_number: number });
+export const dialerCallStart = (p) => rpc('dialer_call_start', { p: p ?? {} });
+export const dialerCallUpdate = (id, p) => rpc('dialer_call_update', { p_id: id, p: p ?? {} });
+export const dialerCallTag = (id, p) => rpc('dialer_call_tag', { p_id: id, p: p ?? {} });
+export const dialerCallbackSet = (id, status) => rpc('dialer_callback_set', { p_id: id, p_status: status });
+export const dialerHistory = (limit, before, q) => rpc('dialer_history', { p_limit: limit ?? 50, p_before: before ?? null, p_q: q ?? null });
+async function _fnError(error, fallback) {
+  let msg = (error && error.message) || fallback;
+  try { const j = error && error.context && typeof error.context.json === 'function' ? await error.context.json() : null; if (j && j.error) msg = j.error; } catch (_) {}
+  return new Error(msg);
+}
+export async function dialerToken() {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('telnyx-token', { body: {} });
+  if (error) throw await _fnError(error, 'Could not reach the phone service');
+  return data;
+}
+// bl_dial_0351c: the phone just registered — if a caller is still ringing for this dispatcher (they came from the push), take the call.
+export async function dialerClaimWaiting() {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('telnyx-token', { body: { claim: true } });
+  if (error) return { claimed: false };
+  return data || { claimed: false };
+}
+export async function dialerRecordingBlob(callId) {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('telnyx-recording', { body: { call_id: callId } });
+  if (error) throw await _fnError(error, 'Recording not available');
+  if (!(data instanceof Blob)) throw new Error((data && data.error) || 'Recording not available');
+  return new Blob([data], { type: 'audio/mpeg' });
+}
+export const ccDialerOverview = () => rpc('cc_dialer_overview', {});
+export const ccDialerCalls = (p) => rpc('cc_dialer_calls', { p: p ?? {} });
+export const ccDialerLineUpsert = (p) => rpc('cc_dialer_line_upsert', { p: p ?? {} });
+export const ccDialerLineRelease = (lineId) => rpc('cc_dialer_line_release', { p_line: lineId });
+export const ccDialerConfigSet = (p) => rpc('cc_dialer_config_set', { p: p ?? {} });

@@ -172,9 +172,10 @@ def terms_page(ctx=None):
     C.append(_clause(10, 'Your content &amp; our platform', [
         'You retain ownership of documents and data you upload and grant LoadBoot a limited licence to store, process and display them as needed to operate the Platform. The Platform, its software, design, brand and content are LoadBoot&rsquo;s property or its licensors&rsquo; and are protected by law; no rights are granted except as stated here.'],
         'Your paperwork stays yours. We only get the permission we need to actually run the service &mdash; and the <a href="privacy.html#documents">Privacy Policy</a> lists exactly who can open each document.'))
-    C.append(_clause(11, 'Privacy', [
-        'Our <a href="privacy.html">Privacy Policy</a> explains what we collect and how we use it, and forms part of these Terms. In summary: we use your data to run the Platform, we do not sell it, and communication preferences are always in your control.'],
-        None))
+    C.append(_clause(11, 'Privacy &amp; text messages', [
+        'Our <a href="privacy.html">Privacy Policy</a> explains what we collect and how we use it, and forms part of these Terms. In summary: we use your data to run the Platform, we do not sell it, and communication preferences are always in your control.',
+        '<b>Text messages (SMS).</b> By giving us your mobile number in the portal, asking a LoadBoot dispatcher to text you, or texting a LoadBoot number, you agree to receive one-to-one operational text messages from LoadBoot about loads and dispatch: load details, pickup and delivery information, check-call and status updates, paperwork requests and replies to your messages. We do not send marketing texts. Message frequency varies. Message and data rates may apply. Reply STOP to opt out at any time, START to opt back in, and HELP for help, or contact <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>. Consent to receive texts is not a condition of any purchase. Mobile carriers are not liable for delayed or undelivered messages. Mobile numbers and opt-in data are not shared with third parties for marketing &mdash; see the <a href="privacy.html#sms">Privacy Policy</a>.'],
+        'We text you about your loads. STOP ends it, any time.'))
     C.append(_clause(12, 'Third-party services', [
         'The Platform interoperates with third-party services (for example FMCSA data, mapping, payment, factoring and accounting integrations such as QuickBooks). Those services are governed by their own terms, and LoadBoot is not responsible for them.'],
         'Every one of those companies is named, with what it can see, in the <a href="privacy.html#processors">Privacy Policy</a>.'))

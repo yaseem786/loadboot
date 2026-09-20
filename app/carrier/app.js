@@ -526,7 +526,9 @@ function authScreen() {
   const ccSel = h('select', { class: 'cp-in', style: 'width:112px;flex:none' }, CC_LIST.map(([n9, c9]) => h('option', { value: c9, title: n9 }, c9 + '  ' + n9.split(' ')[0])));
   ccSel.value = '+1';
   const phone = h('input', { class: 'cp-in', type: 'tel', placeholder: 'Mobile number', autocomplete: 'tel' });
-  const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, window.__LB_AGENT ? 'Agency / company (optional)' : 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone])]);
+  const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, window.__LB_AGENT ? 'Agency / company (optional)' : 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone]),
+    // 10DLC opt-in disclosure: shown where the mobile number is collected (create-account only)
+    h('p', { style: 'margin:6px 0 0;font-size:11.5px;line-height:1.45;opacity:.75' }, ['By giving your mobile number you agree to receive text messages from LoadBoot about your loads and account (dispatch updates, check calls, paperwork). Message frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. See our ', h('a', { href: '/terms.html#s11', target: '_blank', rel: 'noopener' }, 'Terms'), ' and ', h('a', { href: '/privacy.html#sms', target: '_blank', rel: 'noopener' }, 'Privacy Policy'), '.'])]);
   const err = h('div', { class: 'cp-err' });
   // bl_drv_0344f: the same login serves drivers (invited by a carrier, role=driver). A driver arrives with ?role=driver
   // (Driver App links, welcome email, sign-out) or with the hint we store once they have joined. In driver mode the

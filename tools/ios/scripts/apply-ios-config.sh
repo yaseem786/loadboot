@@ -26,6 +26,7 @@ set_bool() { # key true|false
 # ---- 1. Info.plist ----------------------------------------------------------
 set_str CFBundleDisplayName "LoadBoot"
 set_str NSCameraUsageDescription "LoadBoot uses the camera to photograph proof-of-delivery, bills of lading and compliance documents you choose to upload."
+set_str NSMicrophoneUsageDescription "LoadBoot uses the microphone only while you are on a phone call you placed or answered in the dispatcher phone."
 set_str NSPhotoLibraryUsageDescription "LoadBoot lets you pick existing photos of documents (BOL, POD, insurance) to attach to a load or your carrier file."
 set_str NSPhotoLibraryAddUsageDescription "LoadBoot can save rate confirmations and settlement PDFs you export to your photo library."
 set_str NSLocationWhenInUseUsageDescription "LoadBoot uses your location only while you are running a load you accepted, to show live tracking and GPS-stamped pickup and delivery proof to the broker or shipper."

@@ -170,7 +170,7 @@ def privacy_page(ctx=None):
 
     # ---------- STICKY NAV ----------
     nav = [('short', 'The short version'), ('role', 'What we collect'), ('documents', 'Every document'),
-           ('sharing', 'Who sees what'), ('processors', 'Outside companies'), ('ai', 'AI &amp; automation'),
+           ('sharing', 'Who sees what'), ('processors', 'Outside companies'), ('sms', 'Text messages'), ('ai', 'AI &amp; automation'),
            ('security', 'Security'), ('rights', 'Your rights'), ('retention', 'How long we keep it'),
            ('faq', 'FAQ'), ('contact', 'Contact')]
     b += '<div class="pv-nav"><div class="wrap"><nav class="pv-nav-in">%s</nav></div></div>' % ''.join(
@@ -347,8 +347,8 @@ def privacy_page(ctx=None):
              'Public pages and standard web request logs. No account data and no documents pass through it.'],
             ['<b>Resend</b>', 'Delivers our email.',
              'Your name, email address and the content of the message we send you.'],
-            ['<b>Twilio</b>', 'Delivers SMS, including check-call texts.',
-             'Your phone number and the text of that message.'],
+            ['<b>Telnyx</b>', 'Carries our dispatchers&rsquo; phone calls and text messages (SMS), including check-call texts.',
+             'Your phone number, the text of that message, and &mdash; for a call with a dispatcher &mdash; the call itself, which may be recorded for quality and dispute records.'],
             ['<b>Retell AI</b>', 'The 24/7 phone assistant, when you call us or ask us to call you.',
              'That call &mdash; the audio and its transcript. Nothing else about your account.'],
             ['<b>Google (Gemini API)</b>', 'Reads an uploaded document, a rate confirmation or a load email to pre-fill fields and flag obvious problems.',
@@ -362,6 +362,15 @@ def privacy_page(ctx=None):
             ['<b>FMCSA / SAFER</b>', 'Confirms authority, insurance and safety standing.',
              'Nothing. This is a one-way read of a public government record &mdash; we send no information about you to FMCSA.'],
         ]), 'soft')
+
+    # ---------- SMS (10DLC disclosure) ----------
+    b += _sec('sms', 'Text messages (SMS)', 'When we text you, and what happens to your number',
+        'Our dispatchers text carriers, drivers and brokers about real loads &mdash; nothing else.',
+        '<p><b>What we send.</b> One-to-one operational messages: load details, pickup and delivery times and addresses, check-call and status updates, requests for paperwork, and replies to texts you send us. We do not send marketing or promotional texts.</p>'
+        '<p><b>How you opt in.</b> Carriers and drivers give their mobile number and agree to operational texts when they register in the LoadBoot portal. Brokers opt in by asking a dispatcher to text them during a call, or by texting our number first. Consent to receive texts is not a condition of buying anything.</p>'
+        '<p><b>Your number is not shared for marketing.</b> Mobile numbers, text-message opt-in data and consent are never sold, rented or shared with third parties or affiliates for their marketing or promotional purposes. The only outside company that handles them is the carrier service that delivers the message, named in the table above.</p>'
+        '<p><b>Frequency and cost.</b> Message frequency varies with your loads. Message and data rates may apply, depending on your mobile plan.</p>'
+        '<p><b>Stopping and help.</b> Reply <b>STOP</b> to any text to opt out &mdash; you will get one confirmation and nothing further. Reply <b>START</b> to opt back in. Reply <b>HELP</b>, or write to <a href="mailto:hello@loadboot.com">hello@loadboot.com</a>, for help.</p>')
 
     # ---------- AI ----------
     b += _sec('ai', 'AI &amp; automation', 'Where a machine reads your paperwork &mdash; and where a human still decides',
