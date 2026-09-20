@@ -10,6 +10,7 @@ import { icon } from '../../shared/ui/icons.js';
 import { sectionHead, openDrawer, askConfirm } from '../../shared/ui/components.js';
 import { ccDialerOverview, ccDialerCalls, ccDialerLineUpsert, ccDialerLineRelease, ccDialerConfigSet, dialerRecordingBlob, ccDialerSms } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
+import { getClient } from '../../shared/supabaseClient.js';
 
 const ET = 'America/New_York';
 const digits = (s) => String(s || '').replace(/[^0-9]/g, '');
@@ -71,12 +72,19 @@ export async function renderDialerLive(host) {
       [el('button', { class: 'dl-btn', onClick: () => settings() }, [icon('cog', 16), 'Phone settings'])]),
     warnEl, boardEl, linesEl, logEl, smsEl);
 
+  let terms = null;
+  async function setTermsGate(on) {
+    try { const sb = await getClient(); const r = await sb.rpc('cc_dialer_terms_required', { p_required: !!on }); if (r.error || !r.data || r.data.error) throw new Error((r.data && r.data.error) || (r.error && r.error.message) || 'failed'); toast(on ? 'Phone Terms gate is ON — a line connects only after the dispatcher accepts.' : 'Phone Terms gate is OFF.'); load(true); } catch (e) { toast(humanizeError(e)); }
+  }
   async function load(quiet) {
     if (busy) return; busy = true;
     try {
       const r = await ccDialerOverview();
       if (r && r.error) throw new Error(r.error);
-      ov = r; paintWarn(); paintBoard(); paintLines();
+      ov = r;
+      // bl_dial_0362: Phone Terms acceptance per dispatcher (current version) + whether the gate is enforced
+      try { const sb = await getClient(); const t = await sb.rpc('cc_dialer_terms_status'); if (t.data && t.data.ok) terms = t.data; } catch (_) {}
+      paintWarn(); paintBoard(); paintLines();
     } catch (e) { if (!quiet) mount(boardEl, el('div', { class: 'dl-card' }, humanizeError(e))); }
     busy = false;
   }
@@ -144,10 +152,11 @@ export async function renderDialerLive(host) {
     mount(linesEl, el('div', { class: 'dl-card' }, [
       el('h3', null, 'Dispatcher lines & today’s scorecard'),
       el('p', { class: 'hint' }, 'One number per dispatcher. The number belongs to LoadBoot — if a dispatcher leaves, release the line and the brokers’ callbacks stay with you.'),
+      terms ? el('p', { class: 'hint', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, ['Phone Terms v' + terms.version + ' — gate is ', el('b', null, terms.required ? 'ON' : 'OFF'), terms.required ? ' (a line connects only after the dispatcher accepts)' : ' (dispatchers are not asked yet)', el('button', { class: 'dl-btn sm', onClick: () => setTermsGate(!terms.required) }, terms.required ? 'Switch off' : 'Switch on')]) : null,
       ds.length ? el('div', { class: 'dl-tw' }, el('table', { class: 'dl-t' }, [
         el('thead', null, el('tr', null, ['Dispatcher', 'Number', 'Phone', 'Calls', 'Connected', 'Talk', 'Missed', 'Untagged', 'Callbacks', ''].map((x) => el('th', null, x)))),
         el('tbody', null, ds.map((d) => el('tr', null, [
-          el('td', null, [el('b', null, d.name || '—'), el('div', { style: 'font-size:12px;opacity:.7' }, d.status)]),
+          el('td', null, [el('b', null, d.name || '—'), el('div', { style: 'font-size:12px;opacity:.7' }, d.status), terms && d.number ? el('div', { style: 'font-size:12px;color:' + (terms.accepted[d.user_id] ? '#4ade80' : '#fbbf24') }, terms.accepted[d.user_id] ? 'Terms accepted: ' + new Date(terms.accepted[d.user_id]).toLocaleDateString() : 'Terms not accepted yet') : null]),
           el('td', null, d.number ? [el('b', null, pretty(d.number)), (d.label || d.forward_number) ? el('div', { style: 'font-size:12px;opacity:.7' }, [d.label || '', d.forward_number ? (d.label ? ' · ' : '') + '→ mobile ' + d.forward_number : '']) : null] : el('span', { class: 'dl-pill m' }, 'no line')),
           el('td', null, d.number ? [el('i', { class: 'dl-dot' + (d.online ? ' on' : '') }), d.online ? 'Online' : (d.ready ? 'Offline' : 'Never connected')] : '—'),
           el('td', null, String(d.calls || 0)), el('td', null, String(d.connected || 0) + (d.calls ? ' (' + Math.round(100 * d.connected / d.calls) + '%)' : '')), el('td', null, talk(d.talk_sec)),

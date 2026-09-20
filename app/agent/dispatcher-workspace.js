@@ -685,7 +685,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const c = a.carrier || {}; const s = a.sop || {};
     return h('div', { class: 'dw-card' }, [
       h('h3', null, [h('span', null, [ic('building'), ' ' + (c.name || 'Carrier')]), h('div', { class: 'dw-row', style: 'gap:6px' }, [
-        h('span', { class: 'dw-pill', style: 'color:' + (a.carrier_ack_at ? '#4ade80' : a.ack_state === 'notified' ? '#94a3b8' : '#fbbf24') + ';border-color:currentColor' }, a.carrier_ack_at ? 'CONFIRMED YOU' : a.ack_state === 'notified' ? 'INTRO SENT' : 'NOT CONFIRMED YET'),
+        h('span', { class: 'dw-pill', style: 'color:#4ade80;border-color:currentColor' }, 'ASSIGNED'),
         h('span', { class: 'dw-pill', style: 'color:' + (c.broker_visible ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, c.broker_visible ? 'LIVE TO BROKERS' : 'NOT YET VISIBLE')])]),
       h('div', { class: 'dw-grid' }, [
         f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone ? tel(c.phone, { name: c.contact_name || c.name }) : null), f('WhatsApp', c.whatsapp), f('Email', c.email, 'wide'),

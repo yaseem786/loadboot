@@ -1,10 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// telnyx-recording v1 (bl_dial_0351) — streams one call recording to the signed-in user. verify_jwt = true.
+// telnyx-recording v2 (bl_dial_0351) — streams one call recording to the signed-in user. verify_jwt = true.
 // Access is decided in Postgres AS THE CALLER (public.dialer_recording_ref: own call, or CC staff). Telnyx
 // download links are short-lived and need the API key, so the audio is proxied: the browser gets bytes, never
 // a Telnyx URL or key. Body: { call_id }.
 // Served as application/octet-stream on purpose: supabase-js functions.invoke() only hands back a Blob for that type.
+// v2: CORS preflight echoes the requested headers.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";

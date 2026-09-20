@@ -7,6 +7,7 @@ import { attachAddressSuggest } from '../shared/addr-suggest.js';
 import { uploadDocument } from '../shared/storage.js';
 import { accountHealth, pocketCompliance, getDispatchPrefs, setDispatchPrefs, pocketGetPreferences, pocketSavePreferences, myPaymentProfile, setMyPaymentProfile, myTrustProfile, myHazmatReadiness, carrierRequestReverify, carrierAgreementSignature, setMyAvatar, myAvatar, requestAccountAction } from '../shared/api.js';
 import { payAutopayStatus, payAutopayDisable, payAutopayStart } from '../shared/api.js';
+import { getClient } from '../shared/supabaseClient.js';
 
 function sic(n) {
   var P = {
@@ -206,6 +207,8 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div class="acx-sub">💰 Money & load limits</div>'
     +   '<div class="grid2"><div class="field"><label>Min rate ($/mi)</label><input id="acx-minrpm" value="' + esc(dp.min_rpm || '') + '"></div><div class="field"><label>Target rate ($/mi)</label><input id="acx-target" value="' + esc(dp.target_rpm || '') + '"></div>'
     +   '<div class="field"><label>Max weight capacity (lbs)</label><input id="acx-weight" type="number" placeholder="e.g. 12000" value="' + esc(dp.max_weight_lbs || '') + '"></div><div class="field"><label>Min notice (hrs)</label><input id="acx-notice" value="' + esc(dp.min_notice_hours || '') + '"></div></div>'
+    +   '<div class="grid2"><div class="field"><label>Your min rate counts…</label><select id="acx-rpmbasis"><option value="">Not set</option><option value="loaded"' + (dp.min_rpm_basis === 'loaded' ? ' selected' : '') + '>Loaded miles only</option><option value="all"' + (dp.min_rpm_basis === 'all' ? ' selected' : '') + '>All miles (deadhead included)</option></select></div>'
+    +   '<div class="field"><label>Can your dispatcher use a DAT seat for you?</label><select id="acx-datseat"><option value="">Not set</option><option value="yes"' + (dp.dat_seat === 'yes' ? ' selected' : '') + '>Yes</option><option value="paid"' + (dp.dat_seat === 'paid' ? ' selected' : '') + '>Yes — the seat has a cost</option><option value="no"' + (dp.dat_seat === 'no' ? ' selected' : '') + '>No</option></select></div></div>'
     +   '<div class="acx-sub">⚙ Operations</div>'
     +   '<div class="row"><div><div class="rt">Haul hazmat</div><div class="rs">Requires endorsement on file</div></div><div class="tg' + (dp.hazmat ? ' on' : '') + '" id="acx-haz"></div></div>'
     +   '<div class="row"><div><div class="rt">Team drivers</div><div class="rs">Two drivers, longer runs</div></div><div class="tg' + (dp.team_drivers ? ' on' : '') + '" id="acx-team"></div></div>'
@@ -499,6 +502,8 @@ export async function renderPremiumAccount(host, ctx) {
         team_drivers: teamEl ? teamEl.classList.contains('on') : false,
         weekend_ok: wkVal === null ? null : wkVal === 'true',
       });
+      // bl_disp_0360: rate-floor basis + DAT seat ('' clears back to not set)
+      try { const b9 = root.querySelector('#acx-rpmbasis'), d9 = root.querySelector('#acx-datseat'); if (b9 && d9) { const sb = await getClient(); const r9 = await sb.rpc('cc_set_dispatch_terms', { p_min_rpm_basis: b9.value, p_dat_seat: d9.value }); if (r9.error || (r9.data && r9.data.error)) throw new Error((r9.data && r9.data.error) || r9.error.message); } } catch (e9) { toast((e9 && e9.message) || 'Could not save the rate basis / DAT seat'); }
       saveDisp.textContent = 'Saved ✓'; toast('Dispatch preferences saved'); setTimeout(() => { saveDisp.disabled = false; saveDisp.textContent = 'Save preferences'; }, 1400);
     } catch (e) { saveDisp.disabled = false; saveDisp.textContent = 'Save preferences'; toast((e && e.message) || 'Could not save'); }
   });

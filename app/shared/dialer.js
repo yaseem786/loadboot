@@ -217,6 +217,7 @@ function createDialer() {
     connMsg: '', number: '', look: null, lookSeq: 0,
     call: null,                                                      // { sdk, row, dir, state, muted, held, pad, since, note, name, number, ctx }
     wrap: null,                                                      // after-call disposition { row, outcome, note, … }
+    terms: null, termsTick: false, termsBusy: false,                 // bl_dial_0362: LoadBoot Phone Terms gate { version, required, accepted, points, consent }
     history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false,
   };
   let client = null, SDK = null, hbTimer = null, tickTimer = null, retry = 0, retryTimer = null, lockRelease = null;
@@ -256,6 +257,8 @@ function createDialer() {
       if (!got) { S.conn = 'elsewhere'; paint(); return; }
     }
     if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    // bl_dial_0362: the line does not connect until the current Phone Terms are accepted (the server refuses the token too)
+    if (!S.terms || !S.terms.accepted) { await loadTerms(); if (S.terms && S.terms.required && !S.terms.accepted) { teardown(true); S.conn = 'terms'; S.open = true; paint(); return; } }
     S.conn = 'connecting'; S.connMsg = ''; paint();
     try {
       if (!SDK) SDK = await import('./vendor/telnyx-webrtc.js');
@@ -276,7 +279,37 @@ function createDialer() {
       client.on('telnyx.socket.error', () => { if (client !== me) return; S.conn = 'offline'; paint(); scheduleRetry(); });
       client.on('telnyx.notification', (n) => { if (client === me) onNotification(n); });
       client.connect();
-    } catch (e) { S.conn = 'error'; S.connMsg = String((e && e.message) || e); paint(); scheduleRetry(); }
+    } catch (e) {
+      if (/terms not accepted/i.test(String((e && e.message) || e))) { S.terms = null; await loadTerms(); if (S.terms && !S.terms.accepted) { S.conn = 'terms'; S.open = true; paint(); return; } }
+      S.conn = 'error'; S.connMsg = String((e && e.message) || e); paint(); scheduleRetry();
+    }
+  }
+  async function loadTerms() {
+    try { const sb = await getClient(); const { data } = await sb.rpc('dialer_terms_status'); if (data && data.ok) S.terms = data; } catch (_) {}
+  }
+  async function acceptTerms() {
+    if (!S.terms || !S.termsTick || S.termsBusy) return;
+    S.termsBusy = true; paint();
+    try {
+      const sb = await getClient();
+      const { data, error } = await sb.rpc('dialer_terms_accept', { p_version: S.terms.version, p_device: (navigator.userAgent || '').slice(0, 300) });
+      if (error || !data || data.error) { toast((data && data.error) || 'Could not save your acceptance — try again.'); if (data && data.version) { S.terms = null; await loadTerms(); } }
+      else { S.terms.accepted = true; S.terms.accepted_at = data.accepted_at; S.conn = 'idle'; S.termsBusy = false; paint(); connect(true); return; }
+    } catch (_) { toast('Could not save your acceptance — try again.'); }
+    S.termsBusy = false; paint();
+  }
+  function vTerms() {
+    const T = S.terms || {};
+    return h('div', { style: 'padding:4px 2px' }, [
+      h('div', { style: 'font-size:17px;font-weight:800;color:#fff' }, T.title || 'LoadBoot Phone Terms'),
+      h('div', { style: 'color:#8ea2c3;font-size:12.5px;margin:2px 0 10px' }, 'Version ' + (T.version || 1) + ' · read once, then your line connects'),
+      h('div', { style: 'max-height:46vh;overflow:auto;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;background:rgba(8,17,31,.6);font-size:13.5px;line-height:1.55', tabindex: '0' },
+        (T.points || []).map((p, i) => h('p', { style: 'margin:0 0 10px' }, [h('b', { style: 'color:#fff' }, (i + 1) + '. ' + p.t + ' '), p.b]))),
+      h('label', { style: 'display:flex;gap:10px;align-items:flex-start;margin:12px 0 0;font-size:13px;cursor:pointer' }, [
+        h('input', { type: 'checkbox', checked: S.termsTick ? 'checked' : null, style: 'margin-top:3px;width:18px;height:18px;flex:none', onChange: (ev) => { S.termsTick = !!ev.target.checked; paint(); } }),
+        h('span', null, T.consent || 'I have read and accept the LoadBoot Phone Terms.')]),
+      h('button', { class: 'lbd-btn', disabled: (!S.termsTick || S.termsBusy) ? 'disabled' : null, style: 'margin-top:14px;width:100%;height:48px;border-radius:14px;background:#FC5305;color:#fff;font-weight:800;border:0;opacity:' + (S.termsTick && !S.termsBusy ? '1' : '.55'), onClick: acceptTerms }, S.termsBusy ? 'Saving…' : 'Accept and connect my phone'),
+    ]);
   }
   function teardown(keepLock) {
     try { if (client) { client.off && client.off('telnyx.notification'); client.disconnect(); } } catch (_) {}
@@ -448,7 +481,7 @@ function createDialer() {
   // ------------------------------------------------------------ views
   const initial = (name, num) => { const s = String(name || '').trim(); return s ? s[0].toUpperCase() : (digits(num).slice(-2) || '#'); };
   function connLine() {
-    const m = { ready: ['ok', 'Ready'], connecting: ['warn', 'Connecting…'], offline: ['bad', 'Reconnecting…'], error: ['bad', 'Not connected'], elsewhere: ['warn', 'Active in another tab'], idle: ['', 'Idle'] }[S.conn] || ['', ''];
+    const m = { ready: ['ok', 'Ready'], connecting: ['warn', 'Connecting…'], offline: ['bad', 'Reconnecting…'], error: ['bad', 'Not connected'], elsewhere: ['warn', 'Active in another tab'], idle: ['', 'Idle'], terms: ['warn', 'Accept the Phone Terms to connect'] }[S.conn] || ['', ''];
     return [h('i', { class: 'lbd-dot ' + m[0] }), m[1]];
   }
   function paintMatch() {
@@ -717,8 +750,9 @@ function createDialer() {
     else if (S.pushOn === false && pushSupported() && !sessionStorage.getItem('lbd_nopush')) note = h('div', { class: 'lbd-note' }, ['Turn on call alerts so a call reaches you when this tab is in the background. ', h('button', { class: 'lbd-btn sm', style: 'margin-left:auto;flex:none', onClick: async () => { try { await enablePush('Dispatcher phone'); S.pushOn = true; toast('Call alerts are on.'); } catch (err) { try { sessionStorage.setItem('lbd_nopush', '1'); } catch (_) {} toast((err && err.message) || 'Could not turn on alerts.'); } paint(); } }, 'Turn on')]);
     else if ((S.conn === 'error' || S.conn === 'offline') && S.connMsg) note = h('div', { class: 'lbd-note bad' }, S.connMsg);
     else if (S.connMsg && /icrophone/.test(S.connMsg)) note = h('div', { class: 'lbd-note bad' }, S.connMsg);
-    const body = S.showSettings ? vSettings() : c ? vCall() : S.wrap ? vWrap() : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
-    const showChrome = !c && !S.wrap && !S.showSettings && b.line;
+    const gate = S.conn === 'terms' && !c;
+    const body = gate ? vTerms() : S.showSettings ? vSettings() : c ? vCall() : S.wrap ? vWrap() : !b.line ? h('div', { class: 'lbd-empty' }, 'No phone line yet.') : S.tab === 'recent' ? vRecent() : S.tab === 'texts' ? vTexts() : S.tab === 'callbacks' ? vCallbacks() : vKeypad();
+    const showChrome = !gate && !c && !S.wrap && !S.showSettings && b.line;
     mount(root, [live, h('div', { class: 'lbd-panel' + (justOpened ? ' in' : ''), role: 'dialog', 'aria-label': 'LoadBoot phone' }, [
       head, note,
       showChrome ? h('div', { class: 'lbd-stats' }, [['calls', 'Calls'], ['connected', 'Connected'], ['talk_sec', 'Talk'], ['missed', 'Missed']].map(([k, l]) => h('div', null, [h('b', null, k === 'talk_sec' ? talk(t[k]) : String(t[k] || 0)), h('span', null, l)]))) : null,

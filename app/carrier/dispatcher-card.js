@@ -114,29 +114,8 @@ export async function mountDispatcherCard(host) {
     const e4 = h('div', { class: 'cp-err', style: 'display:none' });
     if (paused) { mount(ackBox, [h('div', { style: 'background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.45);border-radius:12px;padding:10px 12px;font-weight:700' }, 'This dispatcher assignment is PAUSED — no new loads are being booked for you. LoadBoot dispatch covers your truck meanwhile.'),
       h('div', { style: 'display:flex;gap:8px;margin-top:8px' }, [h('button', { class: 'cp-btn cp-btn-sm', onClick: async () => { try { const r = await carrierDispatcherPause(a.assignment_id, false, null); if (r && r.error) throw new Error(r.error); location.reload(); } catch (x) { fail(e4, x); } } }, 'Resume dispatcher')]), e4]); return; }
-    if ((a.ack_state || ackState) === 'notified') {
-      mount(ackBox, h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [h('span', { class: 'cp-row-s' }, 'Intro e-mailed ' + when(a.carrier_notified_at || a.assigned_at) + ' — under your Dispatch Service Agreement this assignment is in effect. '), h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: () => { a.ack_state = 'pending'; paintAck(); } }, 'Read what they can see'), h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: pauseFlow }, 'Pause dispatcher'), e4]));
-      return;
-    }
-    if (!a.carrier_ack_at) {
-      a.ack_state = 'pending';
-      mount(ackBox, [h('div', { style: 'background:rgba(8,131,247,.12);border:1px solid rgba(8,131,247,.4);border-radius:12px;padding:10px 12px' }, [
-        h('div', { style: 'font-weight:900;color:#fff' }, 'Your dispatcher — what they can and cannot see'),
-        h('div', { class: 'cp-row-s' }, 'Nothing new to sign: this runs under the Dispatch Service Agreement you already have with LoadBoot. One tap below just tells us you read it.'),
-        h('div', { class: 'cp-row-s', style: 'line-height:1.7;margin-top:4px' }, [
-          '✅ Truck specs, driver name and phone, where the truck is empty and your home-time rules', h('br'),
-          '✅ Your approved authority (MC), COI, W-9 and factoring NOA — to set you up with brokers', h('br'),
-          '✅ This thread and the loads they book under your MC', h('br'),
-          '❌ Your bank details, voided check, settlements or LoadBoot fees — never', h('br'),
-          '❌ They cannot move your driver: every load is approved by LoadBoot from the rate confirmation first', h('br'),
-          'They use their own load-board login, never yours. You can pause them any time from this card.']),
-        h('div', { style: 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap' }, [
-          h('button', { class: 'cp-btn cp-btn-sm', onClick: async (ev) => { ev.target.disabled = true; try { const r = await carrierDispatcherAck(a.assignment_id); if (r && r.error) throw new Error(r.error); a.carrier_ack_at = new Date().toISOString(); a.ack_state = 'confirmed'; paintAck(); paint(); } catch (x) { fail(e4, x); ev.target.disabled = false; } } }, 'Got it — confirm'),
-          h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: pauseFlow }, 'Not now — pause'),
-        ]), e4])]);
-      return;
-    }
-    mount(ackBox, h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [ackParam ? h('span', { style: 'color:#4ade80;font-weight:800' }, '✓ Thanks — dispatcher confirmed.') : null, h('span', { class: 'cp-row-s' }, 'Confirmed ' + when(a.carrier_ack_at) + ' · '), h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: pauseFlow }, 'Pause dispatcher'), e4]));
+    // bl_disp_0361: no confirm step — the carrier already signed the Dispatch Service Agreement, so an assignment is simply in effect.
+    mount(ackBox, h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [h('span', { style: 'color:#4ade80;font-weight:800' }, '✓ Assigned'), h('span', { class: 'cp-row-s' }, 'since ' + when(a.assigned_at) + ' · nothing for you to confirm · '), h('button', { class: 'cp-btn-ghost cp-btn-sm', onClick: pauseFlow }, 'Request a change'), e4]));
   }
   function pauseFlow() {
     const e5 = h('div', { class: 'cp-err', style: 'display:none' });

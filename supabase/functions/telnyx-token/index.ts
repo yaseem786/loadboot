@@ -1,12 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-// telnyx-token v2 (bl_dial_0351 + 0351c) — mints a short-lived Telnyx WebRTC login token for the signed-in dispatcher.
+// telnyx-token v3 (bl_dial_0351 + 0351c) — mints a short-lived Telnyx WebRTC login token for the signed-in dispatcher.
 // The Telnyx API key lives ONLY here (env TELNYX_API_KEY). The browser never sees it; it gets a JWT that can
 // register one SIP credential — the one bound to this dispatcher's line. verify_jwt = true.
 // Body { claim: true } (0351c): the dispatcher's phone has just registered — if a caller is still ringing for them
 // (portal was closed, they came from the push), hand that call to their browser now. No token is minted on a claim.
 // Flow: user JWT → auth user id → dialer_token_context (service role; checks dialer on, dispatcher active, line
 // assigned) → create the on-demand telephony credential once (saved on the line) → POST …/token → return it.
+// v3: CORS preflight echoes the requested headers (newer supabase-js sends extra x-* headers; a fixed list blocked the POST).
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SVC = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -15,8 +16,9 @@ const TX = "https://api.telnyx.com/v2";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-region",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
@@ -35,13 +37,16 @@ const tx = (path: string, body?: unknown) => fetch(TX + path, {
 async function createCredential(ctx: { connection_id: string; name: string; line_id: string }) {
   const r = await tx("/telephony_credentials", { connection_id: ctx.connection_id, name: ctx.name });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j?.data?.id) throw new Error("telnyx credential " + r.status);
+  if (!r.ok || !j?.data?.id) throw new Error("telnyx credential " + r.status + " " + JSON.stringify(j?.errors || "").slice(0, 300));
   await rpc("dialer_line_set_credential", { p_line: ctx.line_id, p_credential_id: j.data.id, p_sip_username: j.data.sip_username });
   return j.data.id as string;
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") { const asked = req.headers.get("access-control-request-headers"); return new Response("ok", { headers: asked ? { ...cors, "Access-Control-Allow-Headers": asked } : cors }); }
+  if (req.method === "OPTIONS") {
+    const asked = req.headers.get("access-control-request-headers");
+    return new Response("ok", { headers: asked ? { ...cors, "Access-Control-Allow-Headers": asked } : cors });
+  }
   if (req.method !== "POST") return json({ error: "method" }, 405);
   if (!TELNYX_KEY) return json({ error: "The phone service is not configured yet (TELNYX_API_KEY)." }, 503);
   try {
