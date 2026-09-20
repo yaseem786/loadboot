@@ -1357,3 +1357,24 @@ export const ccDialerSms = (p) => rpc('cc_dialer_sms', { p: p ?? {} });
 export const ccDialerLineUpsert = (p) => rpc('cc_dialer_line_upsert', { p: p ?? {} });
 export const ccDialerLineRelease = (lineId) => rpc('cc_dialer_line_release', { p_line: lineId });
 export const ccDialerConfigSet = (p) => rpc('cc_dialer_config_set', { p: p ?? {} });
+
+// ---- Dispatcher Mailbox (bl_dmail_0356) — a real IMAP/SMTP mailbox inside the portal. The password lives in Vault; IMAP/SMTP work happens in the `dmail` edge function.
+export const dmailBootstrap = (account) => rpc('dmail_bootstrap', { p_account: account ?? null });
+export const dmailList = (p) => rpc('dmail_list', { p: p ?? {} });
+export const dmailThread = (account, thread, folder) => rpc('dmail_thread', { p_account: account, p_thread: thread, p_folder: folder ?? null });
+export const dmailDraftSave = (p) => rpc('dmail_draft_save', { p: p ?? {} });
+export const dmailDraftDiscard = (id) => rpc('dmail_draft_discard', { p_id: id });
+export const dmailPoll = (account) => rpc('dmail_poll', { p_account: account });
+export const dmailContacts = (account, q) => rpc('dmail_contacts', { p_account: account, p_q: q ?? '' });
+// action: sync | verify | send | mark | move | delete | attachment (attachment answers with a Blob)
+export async function dmailAct(body) {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('dmail', { body });
+  if (error) throw await _fnError(error, 'The mail service is unreachable');
+  if (data && !(data instanceof Blob) && data.error) throw new Error(data.error);
+  return data;
+}
+export const ccDmailOverview = () => rpc('cc_dmail_overview', {});
+export const ccDmailAccountSave = (p) => rpc('cc_dmail_account_save', { p: p ?? {} });
+export const ccDmailAssign = (account, user) => rpc('cc_dmail_assign', { p_account: account, p_user: user ?? null });
+export const ccDmailSetStatus = (account, status) => rpc('cc_dmail_set_status', { p_account: account, p_status: status });
