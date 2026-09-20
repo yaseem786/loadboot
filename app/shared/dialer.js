@@ -32,6 +32,7 @@ const OUTCOMES = [
 const SVG = {
   phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
   hang: '<path d="M10.7 13.3a16 16 0 0 1-2.6-3.4l1.3-1.3a2 2 0 0 0 .4-2.1c-.3-.9-.6-1.8-.7-2.8A2 2 0 0 0 7.1 2h-3a2 2 0 0 0-2 2.2 19.8 19.8 0 0 0 3.1 8.6"/><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1"/><line x1="22" y1="2" x2="2" y2="22"/>',
+  spk: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
   mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>',
   micoff: '<line x1="2" y1="2" x2="22" y2="22"/><path d="M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.7-1.3"/><path d="M19 10v2a7 7 0 0 1-.6 2.9M5 10v2a7 7 0 0 0 11 5.7"/><line x1="12" y1="19" x2="12" y2="22"/>',
   pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
@@ -136,6 +137,7 @@ const CSS = `
 .lbd-stats div{background:rgba(8,17,31,.75);padding:7px 4px;text-align:center}
 .lbd-stats b{display:block;font-size:14px}.lbd-stats span{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.6px}
 .lbd-tabs{display:flex;gap:4px;padding:0 14px 8px}
+.lbd-stats,.lbd-tabs{flex:none}.lbd-stats span{display:block;line-height:1.3}
 .lbd-tab{flex:1;height:34px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--mu);font-weight:600;font-size:12.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 .lbd-tab.on{background:rgba(8,131,247,.14);color:#fff;border-color:rgba(8,131,247,.35)}
 .lbd-body{flex:1;overflow:auto;padding:4px 14px 16px;scrollbar-width:thin}
@@ -162,7 +164,7 @@ const CSS = `
 @keyframes lbdBlink{50%{opacity:.25}}
 .lbd-ctx{margin:10px 0 0;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.04);font-size:12.5px;color:var(--mu);text-align:left}
 .lbd-ctx b{color:#fff}
-.lbd-ctrls{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 4px}
+.lbd-ctrls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0 4px}
 .lbd-ctrl{height:64px;border-radius:18px;border:1px solid var(--ln);background:rgba(255,255,255,.04);color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:11.5px;font-weight:600}
 .lbd-ctrl.on{background:rgba(8,131,247,.22);border-color:rgba(8,131,247,.5)}.lbd-ctrl:disabled{opacity:.4;cursor:not-allowed}
 .lbd-two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
@@ -373,6 +375,23 @@ function createDialer() {
   }
   function answer() { const c = S.call; if (!c || !c.sdk) return; ringStop(); audioCtx(); try { const o = { remoteElement: 'lbd-remote' }; if (S.micId) o.micId = S.micId; c.sdk.answer(o); } catch (e) { toast('Could not answer: ' + ((e && e.message) || e)); } }
   function hangup() { const c = S.call; if (!c) return; c.byMe = true; ringStop(); try { c.sdk && c.sdk.hangup(); } catch (_) {} if (!c.sdk) { S.call = null; paint(); } }
+  // Speaker / audio output. Browsers only allow this where HTMLMediaElement.setSinkId exists (Chrome desktop + recent Chrome Android;
+  // NOT iOS Safari). Phone with a speakerphone + earpiece pair → a true toggle; otherwise step through the outputs (headset, speakers…).
+  async function toggleSpeaker() {
+    if (typeof audio.setSinkId !== 'function') { toast('This browser does not let a web page switch the speaker. Use the phone\u2019s volume keys, or a headset.'); return; }
+    let outs = [];
+    try { outs = (await navigator.mediaDevices.enumerateDevices()).filter((x) => x.kind === 'audiooutput' && x.deviceId); } catch (_) {}
+    if (outs.length < 2) { toast('Only one audio output is available on this device.'); return; }
+    const loud = outs.find((x) => /speaker/i.test(x.label) && !/earpiece|handset/i.test(x.label));
+    const ear = outs.find((x) => /earpiece|handset/i.test(x.label));
+    const cur = audio.sinkId || 'default';
+    let next;
+    if (loud && ear) next = (S.spkOn ? ear : loud);
+    else { const real = outs.filter((x) => x.deviceId !== 'default' && x.deviceId !== 'communications'); const list = real.length > 1 ? real : outs; const i = list.findIndex((x) => x.deviceId === cur); next = list[(i + 1) % list.length]; }
+    try { await audio.setSinkId(next.deviceId); S.spkOn = loud ? next === loud : !S.spkOn; toast('Sound: ' + (next.label || 'next output')); }
+    catch (e) { toast('Could not switch the speaker: ' + ((e && e.message) || e)); }
+    paint();
+  }
   function toggleMute() { const c = S.call; if (!c || !c.sdk) return; try { c.muted ? c.sdk.unmuteAudio() : c.sdk.muteAudio(); c.muted = !c.muted; } catch (_) {} paint(); }
   function toggleHold() { const c = S.call; if (!c || !c.sdk) return; try { c.held ? c.sdk.unhold() : c.sdk.hold(); c.held = !c.held; } catch (_) {} paint(); }
   function press(k) {
@@ -478,6 +497,7 @@ function createDialer() {
             h('button', { class: 'lbd-ctrl' + (c.muted ? ' on' : ''), disabled: !c.since, 'aria-pressed': String(!!c.muted), onClick: toggleMute }, [ic(c.muted ? 'micoff' : 'mic', 20), c.muted ? 'Unmute' : 'Mute']),
             h('button', { class: 'lbd-ctrl' + (c.pad ? ' on' : ''), disabled: !c.since, 'aria-pressed': String(!!c.pad), onClick: () => { c.pad = !c.pad; paint(); } }, [ic('pad', 20), 'Keypad']),
             h('button', { class: 'lbd-ctrl' + (c.held ? ' on' : ''), disabled: !c.since, 'aria-pressed': String(!!c.held), onClick: toggleHold }, [ic(c.held ? 'play' : 'pause', 20), c.held ? 'Resume' : 'Hold']),
+            h('button', { class: 'lbd-ctrl' + (S.spkOn ? ' on' : ''), 'aria-pressed': String(!!S.spkOn), onClick: toggleSpeaker }, [ic('spk', 20), 'Speaker']),
           ]),
           c.pad ? h('div', { class: 'lbd-keys' }, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((k) => h('button', { class: 'lbd-key', 'aria-label': 'Send ' + k, onClick: () => press(k) }, h('b', null, k))))
             : [h('label', { class: 'lbd-lbl', for: 'lbd-livenote' }, 'Call notes (saved with the call)'), h('textarea', { class: 'lbd-ta', id: 'lbd-livenote', placeholder: 'Rate, pickup, reference #, who you spoke to…', onInput: (e) => { c.note = e.target.value; } }, c.note || '')],
@@ -720,3 +740,73 @@ function createDialer() {
   window.LBDialer = api;
   return api;
 }
+
+// ---------------------------------------------------------------- hover tooltips (desktop / mouse only)
+// One floating label for every control inside the dock. Delegated on document, so repaint-proof and additive:
+// text = data-tip → TIPS[visible label] → aria-label → title. Keypad digits are skipped. Touch devices never see it.
+const TIPS = {
+  'Call': 'Call this number from your LoadBoot line',
+  'Answer': 'Answer the incoming call',
+  'Decline': 'Decline — the caller goes to your mobile, Riley or voicemail',
+  'End call': 'Hang up',
+  'Mute': 'Mute your microphone — the other side cannot hear you',
+  'Unmute': 'Turn your microphone back on',
+  'Hold': 'Put the caller on hold',
+  'Speaker': 'Switch the sound: loudspeaker, earpiece or headset',
+  'Resume': 'Take the caller off hold',
+  'Keypad': 'Dial a number, or send digits during a call (menus, extensions)',
+  'Recent': 'Your call history — redial, text, play recordings',
+  'Texts': 'Text messages from your LoadBoot number',
+  'Callbacks': 'Missed calls, voicemails and call-back reminders',
+  'Call back': 'Call this number now and clear the reminder',
+  'Skip': 'Close without saving an outcome',
+  'Reconnect phone': 'Re-register this browser as your phone',
+  'Done': 'Close settings',
+  'Use it here': 'Move the phone from the other tab to this one',
+  'Open phone': 'Open your phone',
+  'Minimise phone': 'Minimise — calls still ring',
+  'Phone settings': 'Microphone, call alerts, ring my mobile',
+  'Copy my number': 'Copy your LoadBoot number — give it to brokers and load boards',
+  'Mark done': 'Mark this callback as done',
+  'Play recording': 'Play the call recording',
+  'Pause recording': 'Pause the recording',
+  'Play voicemail': 'Play the voicemail',
+  'Pause voicemail': 'Pause the voicemail',
+  'Delete last digit': 'Delete the last digit',
+  'Send text': 'Send (Enter)',
+  'Start text': 'Start a text to this number',
+  'Back to all texts': 'Back to all conversations',
+};
+(function installTips() {
+  if (typeof window === 'undefined' || window.__lbdTips || !window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  window.__lbdTips = true;
+  let tip = null, cur = null, timer = 0;
+  const hide = () => { clearTimeout(timer); cur = null; if (tip) tip.style.opacity = '0'; };
+  const textFor = (b) => {
+    if (b.title) { b.setAttribute('data-tip', b.title); b.removeAttribute('title'); }   // never show the native tooltip as well
+    const d = b.getAttribute('data-tip'); if (d) return d;
+    const lbl = (b.textContent || '').trim(), a = b.getAttribute('aria-label') || '';
+    return TIPS[lbl] || TIPS[a] || a || '';
+  };
+  const show = (b) => {
+    const t = textFor(b); if (!t || !b.isConnected) return;
+    if (!tip) {
+      tip = document.createElement('div'); tip.setAttribute('role', 'tooltip');
+      tip.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;max-width:240px;padding:6px 10px;border-radius:8px;background:#0A1628;color:#F3F6FA;font:500 12px/1.35 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.10);opacity:0;transition:opacity .12s';
+      document.body.appendChild(tip);
+    }
+    tip.textContent = t;
+    const r = b.getBoundingClientRect(), w = tip.offsetWidth, hh = tip.offsetHeight;
+    let top = r.top - hh - 8; if (top < 6) top = r.bottom + 8;
+    const left = Math.min(Math.max(6, r.left + r.width / 2 - w / 2), window.innerWidth - w - 6);
+    tip.style.top = top + 'px'; tip.style.left = left + 'px'; tip.style.opacity = '1';
+  };
+  document.addEventListener('mouseover', (e) => {
+    const b = e.target && e.target.closest ? e.target.closest('.lbd button, .lbd [data-tip]') : null;
+    if (b === cur) return;
+    hide();
+    if (!b || b.classList.contains('lbd-key')) return;
+    cur = b; timer = setTimeout(() => { if (cur === b) show(b); }, 350);
+  }, true);
+  ['mousedown', 'keydown', 'wheel', 'blur'].forEach((ev) => window.addEventListener(ev, hide, true));
+})();

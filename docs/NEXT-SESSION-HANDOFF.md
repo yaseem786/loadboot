@@ -481,3 +481,17 @@ two CTAs above the player, chapters tucked away.
 - Audit round 2 remainder: Partner + Agent portal click-through, marketing-site mobile pass.
 - Chrome extension screenshot API is broken in this environment
   (`Failed to deserialize params.clip.scale`) — live re-capture of portal screens was not possible.
+
+## DISPATCHER DIALER (Telnyx) — state 20 Sep 2026  (full guide: docs/DIALER-SETUP.md)
+- STAGING: live and call-tested (outbound, inbound→browser ring, two-way audio, recording, play/pause). Line +1 469 527 2754 → agent@lb.test.
+  Not yet tested with a real call: voicemail chain, push + 35 s wait/claim, dispatcher's own forward number, mobile. SMS built, switched OFF.
+- PRODUCTION: untouched. One-paste apply file = docs/PROD-APPLY-dialer-0351-0352.sql (9 migrations in order; every in-place patch anchor
+  statically verified against the base file). Then: deploy 4 edge functions (telnyx-hook verify_jwt=false), owner adds TELNYX_API_KEY +
+  TELNYX_PUBLIC_KEY secrets on prod, repoints both Telnyx webhooks to the prod telnyx-hook URL, CC → Phones: connection id + dialer ON + assign.
+  Repointing the webhooks stops staging calls (one number → one place) — buy a $1 test number if staging must keep working.
+- Telnyx: account verified; outbound profile "LoadBoot Dispatch" (US+CA, $20/day); credential connection "LoadBoot WebRTC"
+  (id 3052648375838050073, SIP URI calls = only my connections); Voice-API app "LoadBoot Inbound"; CNAM + Free Caller Registry done.
+- 10DLC: brand VERIFIED, campaign submitted 19 Sep (Pending). When approved: messaging profile (inbound webhook = telnyx-hook) →
+  number on profile + campaign → CC Phone settings: SMS ON + profile id. A rejected campaign costs $15 per resubmit — fix the reason first.
+- Lessons: Telnyx call.bridged fires while still ringing (only call.answered = answered); the browser marks a call 'active' before the webhook
+  lands (recording guard = rec_requested); localhost has NO service worker — stale JS there is Chrome's HTTP cache → use tools/serve_local.py.
