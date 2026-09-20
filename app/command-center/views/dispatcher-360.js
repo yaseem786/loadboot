@@ -43,8 +43,10 @@ function style() {
   if (document.getElementById('d360-css')) return;
   const s = document.createElement('style'); s.id = 'd360-css';
   s.textContent = `
-.d3{--n:var(--lb-navy,#10223B);--b:var(--lb-blue,#0883F7);--o:var(--lb-orange,#FC5305);--ink:#0b1626;--ink2:#334155;--mut:#6b7a90;--faint:#9aa8ba;--line:#e6eaf0;--line2:#eef1f5;--bg:#f6f8fb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--vio:#7c3aed;
-  margin:-18px -22px 0;color:var(--ink);font-family:var(--lb-font,Inter,system-ui,sans-serif);font-size:13.5px;line-height:1.5}
+/* openDrawer() appends to document.body, OUTSIDE .d3 — without this the drawer's
+   .d3-btn.p had an unresolved var(--b): transparent background + white text = invisible button. */
+.d3,#cc-drawer-root{--n:var(--lb-navy,#10223B);--b:var(--lb-blue,#0883F7);--o:var(--lb-orange,#FC5305);--ink:#0b1626;--ink2:#334155;--mut:#6b7a90;--faint:#9aa8ba;--line:#e6eaf0;--line2:#eef1f5;--bg:#f6f8fb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--vio:#7c3aed}
+.d3{margin:-18px -22px 0;color:var(--ink);font-family:var(--lb-font,Inter,system-ui,sans-serif);font-size:13.5px;line-height:1.5}
 .d3 h1,.d3 h2,.d3 h3{margin:0;font-family:var(--lb-head,var(--lb-font,inherit));font-weight:800;letter-spacing:-.02em}
 .d3 a{color:inherit;text-decoration:none}
 .d3 .cc-ico{display:inline-flex;vertical-align:-3px;flex:none}
@@ -301,17 +303,22 @@ export async function renderDispatcher360(host, query) {
     const today = new Date().toISOString().slice(0, 10);
     const ts = el('input', { class: 'd3-in', type: 'date', value: pp.trial_start || today });
     const te = el('input', { class: 'd3-in', type: 'date', value: pp.trial_end || addWorkingDays(today, 10) });
+    // app_private.disp_trial_email renders p_note as the orange "A note from LoadBoot" block.
+    const note = el('textarea', { class: 'd3-in', rows: '3', style: 'width:100%;resize:vertical',
+      placeholder: 'Optional — e.g. Start with GABE LOGISTICS (2 dry vans). First check-in call Monday 9am CT.' });
     const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px' });
     const goBtn = btn('Start the trial', async () => {
       const p = Number(pct.value); if (!(p > 0 && p <= 5)) { err.textContent = 'Commission must be above 0 and at most 5%.'; return; }
       if (!ts.value || !te.value || te.value < ts.value) { err.textContent = 'Set a valid trial window.'; return; }
       const r = await ccDispatcherSetTerms(id, p, ts.value, te.value).catch((e) => ({ error: humanizeError(e) }));
       if (r && r.error) { err.textContent = r.error; return; }
-      dr.close(); await decide('trial', null);
+      dr.close(); await decide('trial', note.value.trim() || null);
     }, 'p', 'play');
     const dr = openDrawer('Trial terms — ' + (pp.full_name || ''), el('div', { class: 'cc-form' }, [
       el('p', { class: 'cc-sub', style: 'margin:0 0 10px;line-height:1.6' }, 'Commission-only trial: the dispatcher earns this % of gross on every load they book that reaches Delivered inside the window. LoadBoot keeps 5% from the carrier, so the cap is 5. Ten working days is the standard. The dispatcher is e-mailed the terms and the workspace opens once a carrier is assigned.'),
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' }, [el('span', { class: 'cc-sub' }, '% of gross'), pct, el('span', { class: 'cc-sub' }, 'from'), ts, el('span', { class: 'cc-sub' }, 'to'), te]),
+      el('div', { class: 'cc-sub', style: 'margin:13px 0 5px' }, 'A note from LoadBoot — optional. Whatever you write here is printed in the trial e-mail as its own block.'),
+      note,
       err, el('div', { style: 'display:flex;gap:8px;margin-top:12px' }, [goBtn, btn('Cancel', () => dr.close())]),
     ]), { subtitle: 'Recorded in the terms log · the dispatcher is notified' });
   }
