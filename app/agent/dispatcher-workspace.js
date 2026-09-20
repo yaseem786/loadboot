@@ -69,7 +69,7 @@ async function readRateCon(file) {
 const stars = (n) => h('span', { class: 'dw-stars', title: n + '/5' }, Array.from({ length: 5 }, (_, i) => h('span', { style: 'opacity:' + (i < n ? 1 : .25) }, ic('star', 12))));
 
 const h = el;
-const money = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const money = (v) => { const n = Number(v || 0); return '$' + n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); };
 const num = (v) => (v == null || v === '' ? '—' : Number(v).toLocaleString('en-US'));
 const yn = (v) => (v === true ? 'Yes' : v === false ? 'No' : '—');
 const inches = (v) => (v == null ? '—' : v + '"');
@@ -195,6 +195,156 @@ const CSS = `
 .dw-toast.bad{border-color:rgba(248,113,113,.6);color:#fca5a5}
 .dw-stop{display:grid;grid-template-columns:90px 1fr 150px 32px;gap:6px;align-items:center;margin:4px 0}
 @media(max-width:640px){.dw-stop{grid-template-columns:1fr 1fr;grid-auto-rows:auto}}
+/* ---- 20 Sep 2026 · mobile pass (phone-first, app-grade). Desktop rules above are untouched. ---- */
+.dw-btn,.dw-tab,.dw-x,.dw-book,.dw-q,.dw-more-row{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.dw-btn:active:not(:disabled),.dw-tab:active,.dw-more-row:active{transform:scale(.98)}
+.dw-bn{position:absolute;top:2px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 5px;border-radius:99px;background:#FC5305;color:#fff;font-size:.62rem;font-weight:800;font-style:normal;line-height:17px;text-align:center;box-shadow:0 0 0 2px #0e1830}
+.dw-more-h{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dw-muted,#7f92b3);font-weight:800;margin:14px 2px 6px}
+.dw-more-row{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:8px 12px;margin:0 0 6px;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.045);color:#eaf1fb;font:inherit;font-weight:800;font-size:.95rem;text-align:left;cursor:pointer}
+.dw-more-row .i{width:36px;height:36px;border-radius:11px;background:rgba(8,131,247,.14);color:#4EA6F9;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.dw-more-row .t{flex:1;min-width:0}
+.dw-more-row .n{background:#FC5305;color:#fff;border-radius:99px;font-size:.7rem;padding:1px 8px}
+.dw-more-row .c{color:#7f92b3;font-size:1.3rem;line-height:1}
+@media(max-width:900px){
+.cp-tabbar.dw-bar .cp-navlink{position:relative;min-height:50px;justify-content:center}
+.cp-tabbar.dw-bar .cp-navlink.active:before{content:'';position:absolute;top:-6px;left:30%;right:30%;height:3px;border-radius:0 0 4px 4px;background:#0883F7}
+.cp-tabbar.dw-bar .dw-ic{line-height:0}
+}
+@media(max-width:760px){
+.dw-clock{flex-wrap:nowrap;gap:12px;font-size:.72rem;margin:0 0 8px;padding:0 2px;white-space:nowrap;overflow:hidden}
+.dw-clock-note{display:none}
+.dw-tabs{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:var(--dw-top,0px);z-index:15;margin:0 -14px 12px;padding:8px 14px;gap:8px;border-radius:0;border-width:0 0 1px;background:rgba(11,18,32,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.dw-tabs::-webkit-scrollbar{display:none}
+.dw-tab{flex:0 0 auto;min-height:40px;white-space:nowrap;border-radius:99px;padding:8px 14px;font-size:.84rem;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07)}
+.dw-tab.on{border-color:transparent}
+.dw-card{padding:14px;border-radius:16px;margin-bottom:12px}
+.dw-card h3{font-size:.98rem;line-height:1.3}
+.dw-card h3 select.dw-in{width:100%!important}
+.dw-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.dw-kpi{padding:10px 10px 9px;border-radius:13px;min-width:0}
+.dw-kpi b{font-size:1.06rem;line-height:1.2;overflow-wrap:anywhere}
+.dw-kpi span{display:block;font-size:.58rem;letter-spacing:.05em;line-height:1.3;margin-top:3px}
+.dw-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
+.dw-f.wide{grid-column:1/-1}
+.dw-filter{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dw-filter>span{grid-column:1/-1}
+.dw-filter .dw-in{width:100%!important}
+.dw-filter .dw-in:last-child{grid-column:1/-1}
+.dw-f .v{overflow-wrap:anywhere;word-break:normal;font-size:.92rem}
+.dw select.dw-in{text-overflow:ellipsis;padding-right:30px}
+.dw .dw-in{font-size:16px;min-height:46px;border-radius:12px}
+.dw textarea.dw-in{min-height:72px}
+.dw-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.dw-btn.sm{min-height:40px;padding:8px 12px}
+.dw-x{min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+.dw-tel{padding:9px 0;min-height:40px}
+.dw-q{padding:13px 0;min-height:56px}
+.dw-book{padding:14px 0}
+.dw-lane{font-size:.98rem;line-height:1.35}
+.dw-msg{max-width:88%}
+.dw-thread{max-height:calc(100dvh - 430px)!important;min-height:220px}
+.dw-kbd{display:none}
+.dw-send .dw-btn:first-child{flex:1}
+.dw-tablewrap{overflow:visible}
+.dw-table,.dw-table tbody,.dw-table tr,.dw-table td{display:block;width:100%}
+.dw-table thead{display:none}
+.dw-table tr{border:1px solid var(--dw-line);border-radius:14px;padding:6px 12px;margin:0 0 10px;background:rgba(255,255,255,.03)}
+.dw-table tr:has(th){display:none}
+.dw-table td{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:8px 0;border-bottom:1px solid var(--dw-line);text-align:right;overflow-wrap:anywhere}
+.dw-table td:last-child{border-bottom:0}
+.dw-table td:empty{display:none}
+.dw-table td[data-l]:before{content:attr(data-l);flex:0 0 auto;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dw-muted);font-weight:800;text-align:left}
+.dw-table td[data-l='']:before{display:none}
+.dw-table td:first-child{font-size:1rem;font-weight:900;color:#fff}
+.dw-stop{grid-template-columns:minmax(0,1fr) 44px!important;gap:8px;padding:10px;margin:8px 0;border:1px solid var(--dw-line);border-radius:14px;background:rgba(255,255,255,.03)}
+.dw-stop>:nth-child(1){grid-area:1/1}
+.dw-stop>:nth-child(4){grid-area:1/2;align-self:stretch}
+.dw-stop>:nth-child(2){grid-area:2/1/3/3}
+.dw-stop>:nth-child(3){grid-area:3/1/4/3}
+.dw-stop>:nth-child(5){grid-area:4/1/5/3}
+.dw-modal .box{max-height:92dvh;padding:8px 16px calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain;animation:dwSheet .22s cubic-bezier(.2,.8,.2,1)}
+.dw-modal .box:before{content:'';display:block;width:40px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);margin:2px auto 6px}
+.dw-modal h3{position:sticky;top:-8px;z-index:3;background:#0b1220;margin:0 -16px 10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-size:1.02rem}
+.dw-toast{bottom:calc(84px + env(safe-area-inset-bottom));width:max-content}
+}
+@media(max-width:350px){.dw-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ---- 20 Sep 2026 · premium phone header + drawer (scoped to .dw-head / .dw-dr; shell CSS untouched) ---- */
+.dw-ava{display:none}
+@media(max-width:900px){
+.cp-top.dw-head{padding:10px 14px;gap:10px;background:linear-gradient(180deg,rgba(16,34,59,.97),rgba(11,18,32,.94))!important;-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);border-bottom:0!important;box-shadow:0 10px 30px -18px rgba(0,0,0,.9)}
+.cp-top.dw-head:before{content:'';position:absolute;left:-40px;top:-60px;width:220px;height:140px;background:radial-gradient(closest-side,rgba(8,131,247,.28),transparent);pointer-events:none}
+.cp-top.dw-head:after{content:'';position:absolute;left:0;right:0;bottom:0;height:1.5px;background:linear-gradient(90deg,#0883F7 0%,rgba(8,131,247,.25) 45%,rgba(252,83,5,.55) 100%)}
+.cp-top.dw-head .cp-top-left{gap:12px;position:relative}
+.cp-top.dw-head .cpx-burger,.cp-top.dw-head .cp-iconbtn{width:42px;height:42px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:13px;background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.1)!important;color:#eaf1fb!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);-webkit-tap-highlight-color:transparent;flex:none}
+.cp-top.dw-head .cpx-burger:active,.cp-top.dw-head .cp-iconbtn:active,.dw-ava:active{transform:scale(.94);background:rgba(8,131,247,.2)!important}
+.cp-top.dw-head .cp-top-title{font-size:1.12rem;font-weight:900;letter-spacing:-.01em;line-height:1.15;color:#fff}
+.cp-top.dw-head .cp-top-title:before{content:'LOADBOOT · DISPATCH';display:block;font-size:.56rem;font-weight:800;letter-spacing:.18em;color:#4EA6F9;margin-bottom:2px}
+.cp-top.dw-head .cp-top-right{gap:8px;position:relative}
+.dw-ava{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;border:0;padding:0;font:800 .86rem Manrope,system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#0883F7,#0a5fc0);box-shadow:0 0 0 2px #0b1220,0 0 0 3.5px rgba(8,131,247,.55);cursor:pointer;position:relative;flex:none;-webkit-tap-highlight-color:transparent}
+.dw-ava:after{content:'';position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#22c55e;border:2px solid #0b1220}
+}
+@media(max-width:760px){
+.dw-clock{gap:8px!important;margin:2px 0 10px!important}
+.dw-clock{gap:6px!important;overflow-x:auto!important;scrollbar-width:none;letter-spacing:0!important}
+.dw-clock::-webkit-scrollbar{display:none}
+.dw-clock>span{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:.64rem;flex:none}
+.dw-clock>span.et{background:rgba(8,131,247,.12);border-color:rgba(8,131,247,.3)}
+}
+.dw-dr-scrim{position:fixed;inset:0;z-index:9100;background:rgba(2,6,23,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .22s}
+.dw-dr-scrim.show{opacity:1}
+.dw-dr{position:fixed;top:0;bottom:0;left:0;z-index:9101;width:min(86vw,340px);display:flex;flex-direction:column;background:linear-gradient(180deg,#10223B 0%,#0b1220 38%,#080e1a 100%);border-right:1px solid rgba(255,255,255,.09);box-shadow:30px 0 80px -20px rgba(0,0,0,.8);transform:translateX(-102%);transition:transform .26s cubic-bezier(.2,.8,.2,1);color:#eaf1fb;font-family:Manrope,system-ui,sans-serif;padding-top:env(safe-area-inset-top)}
+.dw-dr.show{transform:none}
+.dw-dr-head{position:relative;overflow:hidden;padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.dw-dr-head:before{content:'';position:absolute;right:-60px;top:-70px;width:220px;height:200px;background:radial-gradient(closest-side,rgba(8,131,247,.32),transparent);pointer-events:none}
+.dw-dr-head:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1.5px;background:linear-gradient(90deg,#0883F7,rgba(252,83,5,.6))}
+.dw-dr-who{display:flex;align-items:center;gap:13px;position:relative}
+.dw-dr-who .a{width:54px;height:54px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.15rem;color:#fff;background:linear-gradient(135deg,#0883F7,#0a5fc0);box-shadow:0 0 0 2px #10223B,0 0 0 4px rgba(8,131,247,.5)}
+.dw-dr-who .nm{font-weight:900;font-size:1.04rem;color:#fff;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dw-dr-who .rl{display:inline-flex;align-items:center;gap:6px;margin-top:5px;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#86efac;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:99px;padding:3px 9px}
+.dw-dr-who .rl i{width:6px;height:6px;border-radius:50%;background:#22c55e}
+.dw-dr-x{position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.dw-dr-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px;position:relative}
+.dw-dr-stats div{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:9px 8px;text-align:center}
+.dw-dr-stats b{display:block;font-size:1rem;font-weight:900;color:#fff}
+.dw-dr-stats span{display:block;font-size:.54rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#7f92b3;margin-top:2px;line-height:1.3}
+.dw-dr-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 10px 10px}
+.dw-dr-h{font-size:.6rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#64789a;margin:14px 10px 6px}
+.dw-dr-it{position:relative;display:flex;align-items:center;gap:13px;width:100%;min-height:50px;padding:7px 10px;border:0;border-radius:14px;background:none;color:#dbe6f5;font:inherit;font-weight:800;font-size:.93rem;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-dr-it .i{width:36px;height:36px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.055);color:#9fb3d1}
+.dw-dr-it .t{flex:1;min-width:0}
+.dw-dr-it .n{background:#FC5305;color:#fff;border-radius:99px;font-size:.68rem;padding:1px 8px}
+.dw-dr-it:active{background:rgba(255,255,255,.06)}
+.dw-dr-it.on{background:linear-gradient(90deg,rgba(8,131,247,.2),rgba(8,131,247,.04));color:#fff}
+.dw-dr-it.on:before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:#0883F7}
+.dw-dr-it.on .i{background:linear-gradient(135deg,#0883F7,#0a6fd6);color:#fff;box-shadow:0 8px 18px -8px rgba(8,131,247,.7)}
+.dw-dr-foot{padding:10px 12px calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08)}
+.dw-dr-out{width:100%;min-height:46px;border-radius:13px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);color:#fca5a5;font:inherit;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.dw-dr-site{text-align:center;font-size:.6rem;color:#4b5d7c;font-weight:700;letter-spacing:.04em;margin-top:9px}
+@media(prefers-reduced-motion:reduce){.dw-dr,.dw-dr-scrim{transition:none}}
+.dw-fold{display:none}
+@media(max-width:760px){
+.dw-grid:not(.show-empty)>.dw-f.empty{display:none}
+.dw-fold{display:block;grid-column:1/-1;min-height:40px;margin-top:4px;padding:8px 12px;border-radius:11px;border:1px dashed rgba(255,255,255,.16);background:transparent;color:#9fb3d1;font:inherit;font-size:.78rem;font-weight:800;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-statuscard{padding:0!important;margin-bottom:10px!important;border-radius:14px!important;overflow:hidden}
+.dw-statuscard .cp-cardhead{margin:0!important;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-statuscard .cp-cardhead h3{font-size:.86rem!important}
+.dw-statuscard .cp-cardhead:after{content:'';width:8px;height:8px;border-right:2px solid #7f92b3;border-bottom:2px solid #7f92b3;transform:rotate(45deg);transition:transform .2s;flex:none;margin:-3px 4px 0 10px}
+.dw-statuscard.open .cp-cardhead:after{transform:rotate(-135deg);margin-top:4px}
+.dw-statuscard:not(.open)>*:not(.cp-cardhead){display:none!important}
+.dw-statuscard.open>*:not(.cp-cardhead){margin-left:14px;margin-right:14px}
+.dw-statuscard.open>*:last-child{margin-bottom:14px}
+}
+.dw-acc{display:none}
+@media(max-width:760px){
+.dw-clock>span.dw-clock-note{display:none}
+.dw-acc{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin-top:10px;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.045);color:#dbe6f5;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dw-acc .dw-ic{color:#4EA6F9;margin-right:4px}
+.dw-acc i{width:8px;height:8px;border-right:2px solid #7f92b3;border-bottom:2px solid #7f92b3;transform:rotate(45deg);transition:transform .2s;margin:-3px 4px 0 0}
+.dw-acc.open i{transform:rotate(-135deg);margin-top:4px}
+.dw-acc:not(.open)+.dw-grid,.dw-acc:not(.open)~.dw-chips{display:none}
+}
+@keyframes dwSheet{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.dw-modal .box{animation:none}.dw-btn:active,.dw-tab:active,.dw-more-row:active{transform:none}}
 `;
 
 export async function mountDispatcherWorkspace(host, opts = {}) {
@@ -207,10 +357,30 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   const body = h('div');
   const tabsEl = h('div', { class: 'dw-tabs', role: 'tablist' });
   root.append(clockEl, tabsEl, body);
-  const paintClock = () => mount(clockEl, [h('span', { class: 'et' }, [ic('globe', 13), ' US Eastern ', h('b', null, clock(ET))]), h('span', null, ['Pakistan ', h('b', null, clock(PKT))]), h('span', { style: 'opacity:.75' }, 'All times in this workspace are ET — brokers, RCs and appointments use it.')]);
+  // phones: every data table becomes a stack of labelled cards (CSS reads td[data-l]); re-labelled on every repaint
+  const labelTables = () => { try { body.querySelectorAll('.dw-table').forEach((tb) => { const hs = Array.from(tb.querySelectorAll('th')).map((x) => (x.textContent || '').trim()); tb.querySelectorAll('tr').forEach((tr) => Array.from(tr.children).forEach((td, i) => { if (td.tagName === 'TD' && hs[i] != null && !td.hasAttribute('data-l')) td.setAttribute('data-l', hs[i]); })); }); } catch (_) {} };
+  const foldGrids = () => { try { body.querySelectorAll('.dw-grid:not([data-fold])').forEach((g) => {
+    g.setAttribute('data-fold', '1'); const n = g.querySelectorAll(':scope > .dw-f.empty').length; if (!n) return;
+    const b = h('button', { class: 'dw-fold', type: 'button', 'aria-expanded': 'false' }, '');
+    const paint = () => { const open = g.classList.contains('show-empty'); b.textContent = open ? 'Hide empty fields' : '+ ' + n + ' field' + (n === 1 ? '' : 's') + ' not on file'; b.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+    b.addEventListener('click', (e) => { e.stopPropagation(); g.classList.toggle('show-empty'); paint(); }); paint(); g.appendChild(b);
+  }); } catch (_) {} };
+  // phones: a truck card leads with status + availability + actions; the spec sheet is one tap away
+  const foldSpecs = () => { try { body.querySelectorAll('.dw-card[data-truck]:not([data-acc])').forEach((cd) => {
+    const g = cd.querySelector(':scope > .dw-grid'); if (!g) return; cd.setAttribute('data-acc', '1');
+    const b = h('button', { class: 'dw-acc', type: 'button', 'aria-expanded': 'false' }, [h('span', null, [ic('truck', 16), ' Truck specs & equipment']), h('i', null, '')]);
+    b.addEventListener('click', (e) => { e.stopPropagation(); const o = b.classList.toggle('open'); b.setAttribute('aria-expanded', o ? 'true' : 'false'); });
+    cd.insertBefore(b, g);
+  }); } catch (_) {} };
+  try { new MutationObserver(foldSpecs).observe(body, { childList: true, subtree: true }); } catch (_) {}
+  try { new MutationObserver(foldGrids).observe(body, { childList: true, subtree: true }); } catch (_) {}
+  // the shell's "Your dispatcher status" card sits above the workspace: on phones it folds to one line
+  try { const sc = host.previousElementSibling; if (sc && sc.classList && sc.classList.contains('cp-card') && !sc.classList.contains('dw-statuscard')) { sc.classList.add('dw-statuscard'); const hd = sc.querySelector('.cp-cardhead'); if (hd) { hd.setAttribute('role', 'button'); hd.setAttribute('tabindex', '0'); const tg = () => { if (isPhone()) sc.classList.toggle('open'); }; hd.addEventListener('click', tg); hd.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tg(); } }); } } } catch (_) {}
+  try { new MutationObserver(labelTables).observe(body, { childList: true, subtree: true }); } catch (_) {}
+  const paintClock = () => mount(clockEl, [h('span', { class: 'et' }, [ic('globe', 13), ' US Eastern ', h('b', null, clock(ET))]), h('span', null, ['Pakistan ', h('b', null, clock(PKT))]), h('span', { class: 'dw-clock-note', style: 'opacity:.75' }, 'All times in this workspace are ET — brokers, RCs and appointments use it.')]);
   paintClock(); const clockTimer = setInterval(paintClock, 30000);
   // stop timers when the host is unmounted (tab switch in the shell)
-  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { clearInterval(clockTimer); stopThreadPoll(); try { dwLive.leave(); } catch (_) {} try { window.removeEventListener('hashchange', dwHash); } catch (_) {} mo.disconnect(); } });
+  const mo = new MutationObserver(() => { if (!document.body.contains(root)) { restoreChrome(); clearInterval(clockTimer); stopThreadPoll(); try { dwLive.leave(); } catch (_) {} try { window.removeEventListener('hashchange', dwHash); } catch (_) {} mo.disconnect(); } });
   mo.observe(document.body, { childList: true, subtree: true });
   // ---- realtime wire to the Command Center (shared/dispatch-live.js).
   // Fire-and-forget: every send is a "refetch now" HINT, never data, and every method no-ops
@@ -372,10 +542,98 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     if (!feed || feed.error) { mount(body, h('div', { class: 'dw-card' }, [h('h3', null, 'Dispatcher workspace'), h('div', { class: 'dw-muted' }, (feed && feed.error) || 'Loading…')])); return; }
     const k = feed.kpi || {}; const unread = A().reduce((s, a) => s + Number(a.unread || 0), 0);
     const TABS = [['today', 'Today', 'clipboard', queue().filter((x) => x.hot).length], ['board', 'Board', 'search', 0], ['trucks', 'Trucks', 'truck', 0], ['bookings', 'Bookings', 'package', Number(k.awaiting_rc || 0) + Number(k.approved || 0)], ['brokers', 'Brokers', 'phone', 0], ['money', 'Money', 'dollar', 0], ['messages', 'Messages', 'chat', unread], ['packet', 'Packet', 'paperclip', 0], ['kpis', 'My KPIs', 'chart', 0]];
-    TABS.forEach(([id, label, icn, n]) => tabsEl.appendChild(h('button', { class: 'dw-tab' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': tab === id ? 'true' : 'false', onClick: () => { tab = id; try { sessionStorage.setItem('dw_tab', id); } catch (_) {} try { dwLive.setTab(id); } catch (_) {} render(); } }, [ic(icn, 16), label, n ? h('span', { class: 'n', 'aria-label': n + ' items' }, String(n)) : null])));
+    TABS.forEach(([id, label, icn, n]) => tabsEl.appendChild(h('button', { class: 'dw-tab' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': tab === id ? 'true' : 'false', onClick: () => setTab(id) }, [ic(icn, 16), label, n ? h('span', { class: 'n', 'aria-label': n + ' items' }, String(n)) : null])));
+    paintChrome(TABS);
     if (tab !== 'messages') stopThreadPoll();
     const view = { today: vToday, board: vBoard, trucks: vTrucks, bookings: vBookings, brokers: vBrokers, money: vMoney, messages: vMessages, packet: vPacket, kpis: vKpis }[tab] || vToday;
     mount(body, view());
+  }
+
+  // ---- MOBILE CHROME (20 Sep 2026): on phones the shell's bottom bar becomes the dispatcher's work nav
+  // (Today · Board · Bookings · Messages · More), the tab strip is one swipeable sticky row and the
+  // header names the open tab. The shell's own links are kept and restored on unmount, and stay
+  // reachable under More — nothing in carrier/app.js changes.
+  const isPhone = () => { try { return window.matchMedia('(max-width: 900px)').matches; } catch (_) { return false; } };
+  function setTab(id) {
+    tab = id; try { sessionStorage.setItem('dw_tab', id); } catch (_) {} try { dwLive.setTab(id); } catch (_) {}
+    render(); if (isPhone()) { try { window.scrollTo(0, 0); } catch (_) {} }
+  }
+  let shellBar = null, shellBarKids = null, shellTitle = null, shellTitleText = null;
+  let headEl = null, avaEl = null, lastTabs = [];
+  // Premium phone header + drawer: the burger opens the DISPATCHER's menu (workspace first, account second).
+  const onBurger = (e) => { try { if (!isPhone() || !e.target.closest || !e.target.closest('.cpx-burger')) return; e.preventDefault(); e.stopImmediatePropagation(); openDrawer(); } catch (_) {} };
+  function openDrawer() {
+    if (document.querySelector('.dw-dr')) return;
+    const p = (feed && feed.profile) || {}; const k = (feed && feed.kpi) || {}; const c = (feed && feed.commission) || {};
+    const nm = p.full_name || 'Dispatcher'; const ini = nm.trim().split(/\s+/).slice(0, 2).map((x) => x.charAt(0).toUpperCase()).join('') || 'D';
+    const scrim = h('div', { class: 'dw-dr-scrim' }); let dr = null;
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    function close(then) { scrim.classList.remove('show'); dr.classList.remove('show'); document.removeEventListener('keydown', onKey); setTimeout(() => { scrim.remove(); dr.remove(); if (then) then(); }, 240); }
+    const it = (icn, label, n, on, fn) => h('button', { class: 'dw-dr-it' + (on ? ' on' : ''), onClick: () => close(fn) }, [h('span', { class: 'i' }, ic(icn, 19)), h('span', { class: 't' }, label), n ? h('span', { class: 'n' }, String(n)) : null]);
+    const acct = Array.from(document.querySelectorAll('.cp-side .cp-nav .cp-navlink')).slice(1);
+    const out = document.querySelector('.cp-side .cp-side-out');
+    dr = h('aside', { class: 'dw-dr', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Menu' }, [
+      h('button', { class: 'dw-dr-x', 'aria-label': 'Close menu', onClick: () => close() }, ic('x', 16)),
+      h('div', { class: 'dw-dr-head' }, [
+        h('div', { class: 'dw-dr-who' }, [h('div', { class: 'a' }, ini), h('div', { style: 'min-width:0;padding-right:40px' }, [h('div', { class: 'nm' }, nm), h('div', { class: 'rl' }, [h('i'), 'Dispatcher' + (p.status ? ' · ' + p.status : '')])])]),
+        h('div', { class: 'dw-dr-stats' }, [['Loads moving', k.active == null ? '—' : String(k.active)], ['Awaiting RC', k.awaiting_rc == null ? '—' : String(k.awaiting_rc)], ['Commission pending', money(Number(c.pending || 0) + Number(c.approved || 0))]].map(([l, v]) => h('div', null, [h('b', null, v), h('span', null, l)]))),
+      ]),
+      h('div', { class: 'dw-dr-body' }, [
+        h('div', { class: 'dw-dr-h' }, 'Workspace'),
+        ...lastTabs.map(([id, label, icn, n]) => it(icn, label, n, tab === id, () => setTab(id))),
+        acct.length ? h('div', { class: 'dw-dr-h' }, 'Your account') : null,
+        ...acct.map((a) => it(/setting/i.test(a.textContent) ? 'cog' : /verif/i.test(a.textContent) ? 'shield' : /earn|payout/i.test(a.textContent) ? 'dollar' : 'user', (a.textContent || '').trim(), 0, false, () => { try { a.click(); } catch (_) {} })),
+      ]),
+      h('div', { class: 'dw-dr-foot' }, [
+        out ? h('button', { class: 'dw-dr-out', onClick: () => close(() => { try { out.click(); } catch (_) {} }) }, [ic('logout', 16), 'Sign out']) : null,
+        h('div', { class: 'dw-dr-site' }, 'loadboot.com · The Operating System for Trucking'),
+      ]),
+    ]);
+    scrim.onclick = () => close();
+    document.body.append(scrim, dr); document.addEventListener('keydown', onKey);
+    requestAnimationFrame(() => { scrim.classList.add('show'); dr.classList.add('show'); });
+  }
+  function restoreChrome() {
+    try { if (shellBar && shellBarKids) { shellBar.replaceChildren(...shellBarKids); shellBar.classList.remove('dw-bar'); } } catch (_) {}
+    try { if (shellTitle && shellTitleText != null && shellTitle.dataset.dw) { shellTitle.textContent = shellTitleText; delete shellTitle.dataset.dw; } } catch (_) {}
+    shellBarKids = null;
+    try { if (headEl) { headEl.classList.remove('dw-head'); headEl.removeEventListener('click', onBurger, true); } if (avaEl) avaEl.remove(); document.querySelectorAll('.dw-dr,.dw-dr-scrim').forEach((x) => x.remove()); } catch (_) {}
+    headEl = null; avaEl = null;
+  }
+  function openMore(TABS) {
+    const rest = TABS.filter(([id]) => !['today', 'board', 'bookings', 'messages'].includes(id));
+    let m = null;
+    const row = (icn, label, n, fn) => h('button', { class: 'dw-more-row', onClick: () => { if (m) m.close(); fn(); } }, [h('span', { class: 'i' }, ic(icn, 20)), h('span', { class: 't' }, label), n ? h('span', { class: 'n' }, String(n)) : null, h('span', { class: 'c' }, '›')]);
+    const portal = (shellBarKids || []).filter((k) => k && k.nodeType === 1 && !/^(Home|Dashboard)$/i.test((k.textContent || '').trim()));
+    m = modal('More', h('div', null, [
+      h('div', { class: 'dw-more-h' }, 'Workspace'), ...rest.map(([id, label, icn, n]) => row(icn, label, n, () => setTab(id))),
+      portal.length ? h('div', { class: 'dw-more-h' }, 'Your account') : null,
+      ...portal.map((k) => row('user', (k.textContent || '').trim(), 0, () => { try { k.click(); } catch (_) {} })),
+    ]), { narrow: true });
+  }
+  function paintChrome(TABS) {
+    try {
+      root.style.setProperty('--dw-top', ((document.querySelector('.cp-top') || {}).offsetHeight || 0) + 'px');
+      requestAnimationFrame(() => { const on = tabsEl.querySelector('.on'); if (on && tabsEl.scrollWidth > tabsEl.clientWidth) tabsEl.scrollLeft = on.offsetLeft - (tabsEl.clientWidth - on.offsetWidth) / 2; });
+      if (!shellBar) shellBar = document.querySelector('.cp-tabbar');
+      if (shellBar) {
+        if (!shellBarKids) shellBarKids = Array.from(shellBar.childNodes);
+        const by = {}; TABS.forEach((t) => { by[t[0]] = t; });
+        const moreN = TABS.filter(([id]) => !['today', 'board', 'bookings', 'messages'].includes(id)).reduce((s0, t) => s0 + Number(t[3] || 0), 0);
+        const item = (id, label, icn, n, fn, on) => h('a', { class: 'cp-navlink' + (on ? ' active' : ''), href: '#' + id, 'aria-current': on ? 'page' : null, onClick: (e) => { e.preventDefault(); fn(); } }, [ic(icn, 21), h('span', null, label), n ? h('i', { class: 'dw-bn', 'aria-label': n + ' items' }, n > 9 ? '9+' : String(n)) : null]);
+        const main = ['today', 'board', 'bookings', 'messages'];
+        shellBar.classList.add('dw-bar');
+        shellBar.replaceChildren(...main.map((id) => item(id, by[id][1], by[id][2], by[id][3], () => setTab(id), tab === id)),
+          item('more', 'More', 'more', moreN, () => openMore(TABS), !main.includes(tab)));
+      }
+      lastTabs = TABS;
+      if (!headEl) { headEl = document.querySelector('.cp-top'); if (headEl) { headEl.classList.add('dw-head'); headEl.addEventListener('click', onBurger, true); const right = headEl.querySelector('.cp-top-right'); if (right) { const nm0 = ((feed && feed.profile && feed.profile.full_name) || 'D').trim(); avaEl = h('button', { class: 'dw-ava', 'aria-label': 'Open menu', onClick: () => openDrawer() }, nm0.split(/\s+/).slice(0, 2).map((x) => x.charAt(0).toUpperCase()).join('')); right.appendChild(avaEl); } } }
+      if (!shellTitle) { shellTitle = document.querySelector('.cp-top-title'); if (shellTitle) shellTitleText = shellTitle.textContent; }
+      if (shellTitle) {
+        if (isPhone()) { const t = TABS.find((x) => x[0] === tab); shellTitle.textContent = t ? t[1] : 'Today'; shellTitle.dataset.dw = '1'; }
+        else if (shellTitle.dataset.dw) { shellTitle.textContent = shellTitleText; delete shellTitle.dataset.dw; }
+      }
+    } catch (_) {}
   }
 
   function kpis() {
@@ -427,9 +685,9 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         h('span', { class: 'dw-pill', style: 'color:' + (a.carrier_ack_at ? '#4ade80' : a.ack_state === 'notified' ? '#94a3b8' : '#fbbf24') + ';border-color:currentColor' }, a.carrier_ack_at ? 'CONFIRMED YOU' : a.ack_state === 'notified' ? 'INTRO SENT' : 'NOT CONFIRMED YET'),
         h('span', { class: 'dw-pill', style: 'color:' + (c.broker_visible ? '#4ade80' : '#fbbf24') + ';border-color:currentColor' }, c.broker_visible ? 'LIVE TO BROKERS' : 'NOT YET VISIBLE')])]),
       h('div', { class: 'dw-grid' }, [
-        f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone ? tel(c.phone, { name: c.contact_name || c.name }) : null), f('WhatsApp', c.whatsapp), f('Email', c.email),
+        f('MC', c.mc), f('USDOT', c.dot), f('Contact', c.contact_name), f('Phone', c.phone ? tel(c.phone, { name: c.contact_name || c.name }) : null), f('WhatsApp', c.whatsapp), f('Email', c.email, 'wide'),
         f('Home base', c.home_base), f('Carrier min $/mi', c.min_rpm != null ? '$' + Number(c.min_rpm).toFixed(2) : null), f('Max deadhead', c.max_deadhead != null ? c.max_deadhead + ' mi' : null),
-        f('Avoid states', c.avoid_states), f('Weekends', yn(c.weekend_ok)), f('Factoring', c.factoring_company ? c.factoring_company + (c.factoring_status ? ' · ' + c.factoring_status : '') : null),
+        f('Avoid states', Array.isArray(c.avoid_states) ? c.avoid_states.join(', ') : c.avoid_states), f('Weekends', yn(c.weekend_ok)), f('Factoring', c.factoring_company ? c.factoring_company + (c.factoring_status ? ' · ' + c.factoring_status : '') : null),
       ]),
       (s.scope_value || s.lanes || s.rules || s.min_rate || s.min_rate_note) ? h('div', { class: 'dw-avail' }, [h('b', { style: 'color:#7cc0ff' }, [ic('scale', 16), ' Your SOP for this carrier (set by LoadBoot)']), h('div', { class: 'dw-muted', style: 'line-height:1.8;margin-top:4px' }, [
         s.scope_value ? h('div', null, 'Scope: ' + s.scope_value + ' — only source loads inside this scope.') : null,
@@ -441,7 +699,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     ]);
   }
   function tel(n, d) { d = d || {}; return h('a', { href: 'tel:' + n, class: 'dw-tel', 'data-name': d.name || null, 'data-broker': d.broker || null, 'data-booking': d.booking || null, title: 'Call with your LoadBoot phone' }, [ic('phone', 13), ' ' + n]); }
-  function f(k, v) { return h('div', { class: 'dw-f' }, [h('div', { class: 'k' }, k), h('div', { class: 'v' }, v == null || v === '' ? '—' : (typeof v === 'string' || typeof v === 'number') ? String(v) : v)]); }
+  function f(k, v, cls) { return h('div', { class: 'dw-f' + (cls ? ' ' + cls : '') + (v == null || v === '' ? ' empty' : '') }, [h('div', { class: 'k' }, k), h('div', { class: 'v' }, v == null || v === '' ? '—' : (typeof v === 'string' || typeof v === 'number') ? String(v) : v)]); }
   function truckCard(t) {
     const av = t.availability || {}; const act = activeFor(t.id).filter((b) => MOVING.includes(b.status)); const pend = activeFor(t.id).length - act.length;
     const chips = [['Dock-high', t.dock_high], ['Liftgate' + (t.liftgate && t.liftgate_cap_lbs ? ' ' + num(t.liftgate_cap_lbs) + ' lb' : ''), t.liftgate], ['Pallet jack', t.has_pallet_jack], ['Ramp', t.has_ramp], ['Straps', t.has_straps], ['Chains', t.has_chains], ['Tarps', t.has_tarps], ['E-track', t.has_etrack], ['Load bars', t.has_load_bars], ['Blankets', t.has_blankets], ['Team', t.team_driven], ['Hazmat', t.hazmat_placarded]].filter(([, v]) => v != null);
@@ -505,7 +763,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         f('Domicile', [t.domicile_city, t.domicile_state, t.domicile_zip].filter(Boolean).join(', ')), f('Floor $/mile', min != null ? '$' + min.toFixed(2) + (t.effective_min_rpm != null && t.min_rpm != null && Number(t.effective_min_rpm) !== Number(t.min_rpm) ? ' (SOP)' : '') : null),
         f('Max radius', t.max_radius_miles != null ? t.max_radius_miles + ' mi' : null), f('Home time', t.home_time), f('Temp control', t.temp_control), f('Inspection exp', t.inspection_exp),
       ]),
-      chips.length ? h('div', { style: 'margin-top:10px' }, chips.map(([l, v]) => h('span', { class: 'dw-chip' + (v ? '' : ' no') }, [ic(v ? 'check' : 'x', 12), ' ' + l]))) : null,
+      chips.length ? h('div', { class: 'dw-chips', style: 'margin-top:10px' }, chips.map(([l, v]) => h('span', { class: 'dw-chip' + (v ? '' : ' no') }, [ic(v ? 'check' : 'x', 12), ' ' + l]))) : null,
       t.spec_note ? h('div', { class: 'dw-warn', style: 'margin-top:10px' }, [ic('alert', 16), ' ' + t.spec_note]) : null,
       t.capacity_note ? h('div', { class: 'dw-muted', style: 'margin-top:8px;line-height:1.7' }, t.capacity_note) : null,
       availBox,
@@ -793,7 +1051,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const as = A(); if (!as.length) return h('div', { class: 'dw-card' }, [h('h3', null, 'Messages'), h('div', { class: 'dw-muted' }, 'No carrier assigned yet.')]);
     const wrap = h('div'); let cur = (openThreadId && as.find((a) => a.id === openThreadId)) || as.find((a) => Number(a.unread || 0) > 0) || as[0]; openThreadId = null; let lastId = null;
     const sel = h('select', { class: 'dw-in', style: 'width:auto', 'aria-label': 'Carrier thread', onChange: () => { cur = as.find((a) => a.id === sel.value); lastId = null; paintThread(true); } }, as.map((a) => h('option', { value: a.id, selected: a.id === cur.id }, ((a.carrier && a.carrier.name) || 'Carrier') + (Number(a.unread || 0) ? ' (' + a.unread + ')' : ''))));
-    const thread = h('div', { style: 'max-height:52vh;overflow:auto;padding:6px 2px', role: 'log', 'aria-live': 'polite' });
+    const thread = h('div', { class: 'dw-thread', style: 'max-height:52vh;overflow:auto;padding:6px 2px', role: 'log', 'aria-live': 'polite' });
     const who = h('div', { class: 'dw-muted', style: 'margin-bottom:6px' });
     const inp = h('textarea', { class: 'dw-in', rows: 2, placeholder: 'Message the carrier + LoadBoot… (everyone in this thread sees it)' });
     const e = h('div', { class: 'dw-err' });
@@ -814,7 +1072,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     inp.addEventListener('keydown', (ev) => { if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); send({ target: sendBtn }); } });
     const sendBtn = h('button', { class: 'dw-btn', onClick: send }, 'Send');
     mount(wrap, h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('chat'), ' Thread with ' + ((cur.carrier && cur.carrier.name) || 'carrier') + ' + LoadBoot']), as.length > 1 ? sel : null]),
-      who, thread, inp, e, h('div', { class: 'dw-row', style: 'margin-top:8px' }, [sendBtn, h('button', { class: 'dw-btn ghost', 'aria-label': 'Refresh thread', onClick: () => paintThread(false) }, ic('refresh', 14)), h('span', { class: 'dw-muted' }, 'Ctrl+Enter sends · refreshes every 30 s')])]));
+      who, thread, inp, e, h('div', { class: 'dw-row dw-send', style: 'margin-top:8px' }, [sendBtn, h('button', { class: 'dw-btn ghost', 'aria-label': 'Refresh thread', onClick: () => paintThread(false) }, ic('refresh', 14)), h('span', { class: 'dw-muted dw-kbd' }, 'Ctrl+Enter sends · refreshes every 30 s')])]));
     return wrap;
   }
 
@@ -833,7 +1091,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     const wrap = h('div', null, [
       h('div', { class: 'dw-card' }, [h('h3', null, [h('span', null, [ic('search'), ' LoadBoot board — ' + ((cur.carrier && cur.carrier.name) || '')]), h('div', { class: 'dw-row' }, [as.length > 1 ? sel : null, h('button', { class: 'dw-btn sm ghost', 'aria-label': 'Refresh board', onClick: () => paint(true) }, ic('refresh', 14)), h('button', { class: 'dw-btn sm', onClick: () => postForm(cur) }, [ic('plus', 16), 'Post the truck'])])]),
         h('div', { class: 'dw-muted', style: 'margin-bottom:8px' }, 'Loads posted on LoadBoot by brokers and shippers, ranked for this carrier’s truck. Requesting a load sends the broker a 30-minute booking request under the carrier’s MC; when the broker accepts, the booking appears under Bookings automatically. Your own DAT/Truckstop finds still go through “Log a booking”.'),
-        h('div', { class: 'dw-row', style: 'margin-bottom:8px' }, [h('span', { class: 'dw-muted' }, 'Filter:'), fMin, fDh, fEq]),
+        h('div', { class: 'dw-row dw-filter', style: 'margin-bottom:8px' }, [h('span', { class: 'dw-muted' }, 'Filter:'), fMin, fDh, fEq]),
         body]),
     ]);
     function paintRows() {
