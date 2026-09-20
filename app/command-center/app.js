@@ -16,7 +16,8 @@ import { createRouter } from '../shared/router.js';
 import { renderShell } from './views/shell.js';
 import { renderTabbed } from './views/_tabbed.js';
 import { renderDispatch } from './views/dispatch.js';
-import { renderDialerLive } from './views/dialerLive.js';           // bl_dial_0351 — Phones & live calls
+import { renderDialerLive } from './views/dialerLive.js';
+import { renderDispatcherMail } from './views/dispatcherMail.js';   // bl_dmail_0356 — Dispatcher email (company mailbox, no login)           // bl_dial_0351 — Phones & live calls
 import { renderDispatcher360 } from './views/dispatcher-360.js';   // bl_disp_0317 — Dispatcher 360 page
 import { renderCarriers } from './views/carriers.js';
 import { renderLoads } from './views/loads.js';
@@ -261,6 +262,7 @@ async function boot() {
     team: { nav: '/dispatchers', tabs: [
       { id: 'dispatchers', label: 'Dispatchers', path: '/dispatchers', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatchers(h) },
       { id: 'phones', label: 'Phones & live calls', path: '/phones', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDialerLive(h) },
+      { id: 'dmail', label: 'Dispatcher email', path: '/dispatcher-email', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderDispatcherMail(h) },
       { id: 'agents', label: 'Referral partners & payouts', path: '/agents', allowed: () => anyOf('carriers.approve', 'dispatch.manage'), render: (h) => renderAgents(h) },
       { id: 'referrals', label: 'Referral program', path: '/referrals', allowed: () => referralProgramEnabled && can('finance.view'), render: (h) => renderReferrals(h) },
     ] },
@@ -321,6 +323,7 @@ async function boot() {
     '/agents': tabbed('team', 'agents'),
     '/dispatchers': tabbed('team', 'dispatchers'),
     '/phones': tabbed('team', 'phones'),
+    '/dispatcher-email': tabbed('team', 'dmail'),
     '/dispatcher': ({ query }) => { setActive('/dispatchers'); guard(['carriers.approve', 'dispatch.manage'], () => renderDispatcher360(content, query))(); },   // bl_disp_0317
     '/fleet': tabbed('carriers', 'fleet'),
     '/fleet-expiry': tabbed('compliance', 'expiry'),

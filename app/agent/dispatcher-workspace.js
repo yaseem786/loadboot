@@ -24,6 +24,7 @@ import { el, mount, clear } from '../shared/ui/dom.js';
 import { roadMiles } from '../shared/usGeo.js';
 import { icon as sharedIcon } from '../shared/ui/icons.js';
 import { dispatchLiveJoin } from '../shared/dispatch-live.js';
+import { mountDispatcherMail } from '../shared/dmail.js';   // bl_dmail_0356 — company mailbox assigned from the Command Center; no login here
 import { mountDialer } from '../shared/dialer.js';   // bl_dial_0351 — softphone dock; also turns every tel: link into click-to-call
 
 // Line icons (Lucide-style, stroke=currentColor) — shared set + a few extras this module needs.
@@ -399,7 +400,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
   //   #messages/<assignmentId> · #board/<assignmentId> · #brokers/new · #today · #money · #packet · #kpis
   // An unknown tab, or an id that is not in the feed, is IGNORED: the tab still opens and nothing
   // breaks — old links keep working forever.
-  const DW_TABS = ['today', 'board', 'trucks', 'bookings', 'brokers', 'money', 'messages', 'packet', 'kpis'];
+  const DW_TABS = ['today', 'board', 'trucks', 'bookings', 'brokers', 'money', 'messages', 'email', 'packet', 'kpis'];
   const DW_ALIAS = { queue: 'today', home: 'today', loads: 'board', search: 'board',
     fleet: 'trucks', truck: 'trucks', availability: 'trucks', booking: 'bookings', rc: 'bookings',
     thread: 'messages', chat: 'messages', message: 'messages', commission: 'money', pay: 'money',
@@ -539,16 +540,35 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     return q.sort((a, b) => (b.hot ? 1 : 0) - (a.hot ? 1 : 0));
   }
 
+  // ---------------------------------------------------------------- email (bl_dmail_0356)
+  // ONE persistent inbox instance: the tab can be left and re-entered without losing the open thread or a half-written
+  // draft, and the unread badge stays live while the dispatcher works elsewhere. The tab only exists once LoadBoot has
+  // assigned a mailbox (dmail_bootstrap decides, server-side).
+  let mailOn = false, mailUnread = 0, mailHost = null, mailInst = null;
+  function vEmail() {
+    if (!mailHost) {
+      mailHost = h('div', { class: 'dw-mailhost' });
+      mailInst = mountDispatcherMail(mailHost, { onUnread: (n) => { if (n !== mailUnread) { mailUnread = n; if (tab !== 'email') render(); } } });
+      const mo2 = new MutationObserver(() => { if (!document.body.contains(root)) { try { mailInst && mailInst.destroy(); } catch (_) {} mo2.disconnect(); } });
+      mo2.observe(document.body, { childList: true, subtree: true });
+    }
+    return mailHost;
+  }
+  import('../shared/api.js').then((m) => m.dmailBootstrap(null)).then((b) => {
+    if (b && (b.enabled || b.reason === 'paused')) { mailOn = true; mailUnread = Number((b.counts || {}).inbox || 0); if (feed) render(); }
+  }).catch(() => {});
+
   // ---------------------------------------------------------------- render
   function render() {
     clear(tabsEl);
     if (!feed || feed.error) { mount(body, h('div', { class: 'dw-card' }, [h('h3', null, 'Dispatcher workspace'), h('div', { class: 'dw-muted' }, (feed && feed.error) || 'Loading…')])); return; }
     const k = feed.kpi || {}; const unread = A().reduce((s, a) => s + Number(a.unread || 0), 0);
-    const TABS = [['today', 'Today', 'clipboard', queue().filter((x) => x.hot).length], ['board', 'Board', 'search', 0], ['trucks', 'Trucks', 'truck', 0], ['bookings', 'Bookings', 'package', Number(k.awaiting_rc || 0) + Number(k.approved || 0)], ['brokers', 'Brokers', 'phone', 0], ['money', 'Money', 'dollar', 0], ['messages', 'Messages', 'chat', unread], ['packet', 'Packet', 'paperclip', 0], ['kpis', 'My KPIs', 'chart', 0]];
+    const TABS = [['today', 'Today', 'clipboard', queue().filter((x) => x.hot).length], ['board', 'Board', 'search', 0], ['trucks', 'Trucks', 'truck', 0], ['bookings', 'Bookings', 'package', Number(k.awaiting_rc || 0) + Number(k.approved || 0)], ['brokers', 'Brokers', 'phone', 0], ['money', 'Money', 'dollar', 0], ['messages', 'Messages', 'chat', unread], ...(mailOn ? [['email', 'Email', 'mail', mailUnread]] : []), ['packet', 'Packet', 'paperclip', 0], ['kpis', 'My KPIs', 'chart', 0]];
     TABS.forEach(([id, label, icn, n]) => tabsEl.appendChild(h('button', { class: 'dw-tab' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': tab === id ? 'true' : 'false', onClick: () => setTab(id) }, [ic(icn, 16), label, n ? h('span', { class: 'n', 'aria-label': n + ' items' }, String(n)) : null])));
     paintChrome(TABS);
     if (tab !== 'messages') stopThreadPoll();
-    const view = { today: vToday, board: vBoard, trucks: vTrucks, bookings: vBookings, brokers: vBrokers, money: vMoney, messages: vMessages, packet: vPacket, kpis: vKpis }[tab] || vToday;
+    const view = { today: vToday, board: vBoard, trucks: vTrucks, bookings: vBookings, brokers: vBrokers, money: vMoney, messages: vMessages, email: vEmail, packet: vPacket, kpis: vKpis }[tab] || vToday;
+    if (tab === 'email' && mailHost && mailHost.parentNode === body) return;   // the inbox is live — a feed refresh must not re-attach it (that would reload the open email)
     mount(body, view());
   }
 

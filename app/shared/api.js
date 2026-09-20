@@ -1369,12 +1369,20 @@ export const dmailContacts = (account, q) => rpc('dmail_contacts', { p_account: 
 // action: sync | verify | send | mark | move | delete | attachment (attachment answers with a Blob)
 export async function dmailAct(body) {
   const sb = await getClient();
+  if (body && body.action === 'attachment') {   // binary: functions.invoke would decode a PDF as text and corrupt it, so fetch it raw
+    const { data: { session } } = await sb.auth.getSession();
+    const r = await fetch(sb.supabaseUrl + '/functions/v1/dmail', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: sb.supabaseKey, Authorization: 'Bearer ' + ((session && session.access_token) || '') }, body: JSON.stringify(body) });
+    if (!r.ok) { let m = 'Could not download that file'; try { m = (await r.json()).error || m; } catch (_) {} throw new Error(m); }
+    return await r.blob();
+  }
   const { data, error } = await sb.functions.invoke('dmail', { body });
   if (error) throw await _fnError(error, 'The mail service is unreachable');
   if (data && !(data instanceof Blob) && data.error) throw new Error(data.error);
   return data;
 }
 export const ccDmailOverview = () => rpc('cc_dmail_overview', {});
+export const ccDmailActivity = (p) => rpc('cc_dmail_activity', { p: p ?? {} });   // bl_dmail_0357 — every email in/out across all dispatcher mailboxes
 export const ccDmailAccountSave = (p) => rpc('cc_dmail_account_save', { p: p ?? {} });
-export const ccDmailAssign = (account, user) => rpc('cc_dmail_assign', { p_account: account, p_user: user ?? null });
+export const ccDmailAssign = (account, user, name) => rpc('cc_dmail_assign', { p_account: account, p_user: user ?? null, p_name: name ?? null });   // bl_dmail_0359: assigning also sets From name + brand signature
+export const ccDmailIdentityApply = (account, name) => rpc('cc_dmail_identity_apply', { p_account: account, p_name: name ?? null });
 export const ccDmailSetStatus = (account, status) => rpc('cc_dmail_set_status', { p_account: account, p_status: status });
