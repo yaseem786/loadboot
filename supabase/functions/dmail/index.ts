@@ -144,9 +144,10 @@ async function actSend(svc: SupabaseClient, acc: Any, uid: string, b: Any) {
     ...(answered?.message_id ? { inReplyTo: answered.message_id, references: refs } : {}) };
   const built: Any = await new Promise((res, rej) => nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "windows" }).sendMail(mail, (er: Any, info: Any) => er ? rej(er) : res(info)));
   const rawMsg: Uint8Array = built.message; const messageId: string = built.messageId;
-  const smtp = nodemailer.createTransport({ host: acc.smtp_host, port: acc.smtp_port, secure: acc.smtp_port === 465, auth: { user: acc.username, pass: acc.password } });
+  const smtp = nodemailer.createTransport({ host: acc.smtp_host, port: acc.smtp_port, secure: acc.smtp_port === 465, auth: { user: acc.username, pass: acc.password }, connectionTimeout: 20000, greetingTimeout: 20000, socketTimeout: 60000 });
   try { await smtp.sendMail({ envelope: { from: acc.address, to: [...to, ...cc, ...bcc].map((x) => x.email) }, raw: rawMsg }); }
   catch (e) { return { error: "Could not send: " + String((e as Any)?.response || (e as Any)?.message || e).slice(0, 240) }; }
+  finally { try { smtp.close(); } catch (_) { /* ignore */ } }
   // The mail is on the wire. Everything below is bookkeeping and must never turn a sent mail into an "error".
   let ap: Any = null;
   try { ap = await withFolder(acc, "sent", async (c, paths) => {
@@ -224,8 +225,12 @@ Deno.serve(async (req) => {
       case "sync": return json(await syncAccount(svc, acc));
       case "verify": {
         if (!ax.staff) return json({ error: "not authorized" }, 403);
-        try { await nodemailer.createTransport({ host: acc.smtp_host, port: acc.smtp_port, secure: acc.smtp_port === 465, auth: { user: acc.username, pass: acc.password } }).verify(); }
+        // Explicit timeouts: nodemailer defaults are 2 min connect / 10 min socket, so a throttled or silent mail server
+        // made "Test connection" hang until the gateway gave up with a 504 instead of showing a real error.
+        const tx = nodemailer.createTransport({ host: acc.smtp_host, port: acc.smtp_port, secure: acc.smtp_port === 465, auth: { user: acc.username, pass: acc.password }, connectionTimeout: 12000, greetingTimeout: 12000, socketTimeout: 15000 });
+        try { await tx.verify(); }
         catch (e) { const msg = (e as Any)?.code === "EAUTH" ? "Login failed — check the mailbox password" : "SMTP: " + String((e as Any)?.message || e).slice(0, 200); await svc.rpc("dmail_sync_done", { p_account: acc.id, p_folders: null, p_error: msg }); return json({ ok: false, error: msg }); }
+        finally { try { tx.close(); } catch (_) { /* ignore */ } }
         return json(await syncAccount(svc, acc));
       }
       case "send": return json(await actSend(svc, acc, ax.uid, b));
