@@ -16,6 +16,7 @@ async function run(options={}) {
     fetch:async(url,init)=>{
       calls.push({url,init});
       if(url.endsWith('/lc_ob_upload_check')) return options.preflight ? options.preflight() : reply({ok:true});
+      if(url.includes('/storage/') && init && init.method==='DELETE') return options.cleanup ? options.cleanup() : reply({message:'deleted'});
       if(url.includes('/storage/')) return options.storage ? options.storage() : reply({Key:'synthetic'});
       if(url.endsWith('/lc_ob_doc_log')) return options.log ? options.log() : reply({ok:true});
       throw Error('Unexpected external request: '+url);
@@ -42,6 +43,17 @@ test('storage failure stops AI and document logging',async()=>{const r=await run
 for(const value of [null,{},[],{ok:false},{error:'limit'},{ok:true,error:'bad key'}]) test('unconfirmed metadata save cannot return success: '+JSON.stringify(value),async()=>{
  const r=await run({log:()=>reply(value)});assert.equal(r.status,502);assert.equal(r.data.ok,undefined);
 });
+const dels=r=>r.calls.filter(c=>c.init&&c.init.method==='DELETE');
+for(const value of [{},{ok:false},{error:'limit'},{ok:true,error:'bad key'}]) test('v12 definite metadata refusal removes the just-written object: '+JSON.stringify(value),async()=>{
+ const r=await run({log:()=>reply(value)});assert.equal(r.status,502);const d=dels(r);assert.equal(d.length,1);
+ assert.ok(d[0].url.includes('/storage/v1/object/documents/lc-onboarding/'+'a'.repeat(26)+'/'));assert.equal(d[0].init.headers.Authorization,'Bearer test-service');
+ const put=r.calls.find(c=>c.url.includes('/storage/')&&c.init.method==='POST');assert.equal(d[0].url,put.url);
+});
+test('v12 metadata HTTP 403 removes the object',async()=>{const r=await run({log:()=>reply({message:'denied'},403)});assert.equal(r.status,502);assert.equal(dels(r).length,1);});
+for(const st of [500,502,504]) test('v12 ambiguous metadata HTTP '+st+' keeps the object',async()=>{const r=await run({log:()=>reply({ok:false},st)});assert.equal(r.status,502);assert.equal(dels(r).length,0);});
+for(const value of [null,[]]) test('v12 ambiguous 2xx metadata body keeps the object: '+JSON.stringify(value),async()=>{const r=await run({log:()=>reply(value)});assert.equal(r.status,502);assert.equal(dels(r).length,0);});
+test('v12 cleanup failure never changes the reply',async()=>{const r=await run({log:()=>reply({ok:false}),cleanup:()=>{throw Error('private');}});assert.equal(r.status,502);assert.equal(r.data.error,'document_save_failed');assert.equal(r.data.detail,undefined);});
+test('v12 success path never deletes',async()=>{const r=await run();assert.equal(r.status,200);assert.equal(dels(r).length,0);});
 test('failed metadata HTTP cannot return success',async()=>{const r=await run({log:()=>reply({ok:true},500)});assert.equal(r.status,502);});
 for(const visitor_key of ['short','novkey'+'x'.repeat(20),'x'.repeat(65),'../../'+'x'.repeat(20)]) test('invalid key refused before fetch: '+visitor_key,async()=>{
  const r=await run({body:{...body,visitor_key}});assert.equal(r.status,400);assert.equal(r.calls.length,0);

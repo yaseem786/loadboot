@@ -42,9 +42,14 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
 2. Orphan reconciliation PHASE 1 is LIVE on staging AND prod (`public.cc_lc_doc_reconcile(interval)`, report-only). Test
    `tests/bl_audit_0352_rollback_test.sql` PASS on both, 0 fixtures left; anon SECDEF names unchanged (staging 32 md5 b711d9e6…,
    prod 33 md5 7d665aef…). No CC screen calls it yet — staff can run it from an authenticated session only.
-3. The "edge logs path when stored=false" finding was WRONG and is withdrawn (v11 returns 502 before doc_log; see the
-   correction in the design doc). No edge fix pending for it. Open proposal instead: when doc_log fails after a good upload,
-   have lc-doc-check remove the just-written object (prevents orphans at source) — needs Yaseen's decision 2, touches the 33-case contract test.
+3. Orphans-at-source fix BUILT — **STAGING ONLY**: lc-doc-check **v12** (staging slot 17, ezbr 0c29b1b8…, repo file sha256
+   2560a677…). When doc_log gives a DEFINITE refusal (HTTP 4xx, or a parsed 2xx body that is not ok) the edge DELETEs the object it
+   just wrote; ambiguous outcomes (5xx, unreadable 2xx body, thrown fetch) keep the object for cc_lc_doc_reconcile. Reply unchanged
+   (502 document_save_failed). Contract test now 45 cases (33 + 12 new) PASS. LIVE staging race proof: fixture ob row → upload via
+   pg_net (req 239074) → row deleted while the object existed (objs=1) → reply 502 → objs=0, ob rows=0, nothing left.
+   Success path on staging NOT re-run live (would leave an object). **Prod still v11 — needs Yaseen's "apply to prod".**
+   (The earlier "edge logs path when stored=false" finding stays withdrawn.) Staging synthetic object: gone — a temp edge fn
+   `lb-tmp-rm-synthetic` (slot 5, 19 Sep) exists on staging and is the likely remover; it is dead weight, delete it from the dashboard.
 4. Phase 2a RELINK built — **STAGING ONLY** (20260919 `bl_audit_0353_lc_doc_relink`): `public.cc_lc_doc_relink(p_path, p_dry_run default true)`
    + `app_private.lc_doc_recon_log` (RLS on, no grants). Staff-only (`lc_cc_ok`), one path per call, never deletes, refuses
    fresh (<1h) / already-linked / no-ob-row / 40-doc-limit / bad path. `tests/bl_audit_0353_rollback_test.sql` 8/8 PASS on staging,
@@ -52,15 +57,19 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
    the older b711d9e6 formula). **Prod NOT applied — needs Yaseen's "apply to prod".** No CC button calls it yet.
    Phase 2b REMOVE (decision 3: 7 days, no ob row + no conversation) NOT built: needs a service-role edge function using the
    Storage API; permanent deletion, so design + Yaseen's go first. Decision 1 (grace) and the item-3 edge proposal still unanswered.
-5. Browser check of guest + signed-in upload on the live site: STILL OPEN (upload itself NOT run). Done 19 Sep late, read-only:
-   Netlify deploy CONFIRMED — live `/app/shared/ui/lcOnboard.js?v=3` is byte-identical to main (70498 bytes, sha256 fc97f2be…b425,
-   fetched no-store from a real Chrome); widget opens on loadboot.com, `LBChat`/`LBChatOnboard`/`LBVisitorIdentity` present.
-   WHY the upload was not run: the wizard order is role → FMCSA verify (real MC/DOT) → contact → PASSWORD SIGNUP (real auth account)
-   → documents, so a UI upload needs an account to be created and a password typed — Claude does not do that. Yaseen runs the wizard
-   himself with a test email (guest leg = before clicking the verify link, bearer = anon; signed-in leg = after login, bearer = user token);
-   Claude then verifies read-only. Prod baseline to compare against: `documents` bucket holds exactly 3 `lc-onboarding` objects,
-   newest 2026-07-26 03:12 UTC (the July probes) — no real chat upload has ever landed on prod.
-   Seen in passing: the live homepage shows the "new version available — Update" SW banner.
+5. Browser check on the live site — **GUEST leg PASS (20 Sep), SIGNED-IN leg still OPEN.**
+   CORRECTION: the earlier note "a UI upload needs an account" was WRONG — the carrier password step has
+   "Skip for now → documents first", so a guest reaches the document step with no signup. Guest run from a real Chrome on
+   loadboot.com: role carrier → MC 133655 (Schneider National — deliberately an obvious non-customer) → contact
+   "ZZ TEST Audit Upload Check" / 20190myaseen+lctest@gmail.com / 4695550100 → call offer declined → password SKIPPED →
+   uploaded a 1455-byte "ZZ TEST" PDF as COI. UI showed the AI reject verdict (correct: not an ACORD 25). Prod verified read-only:
+   conversation b31e5c21-bd4d-40fc-98c5-badedb25c307 (user_id null), ob row step `docs`, account_created false, docs[0]
+   verdict reject t=coi, docs[0].path == the Storage object name, bucket `documents`, size 1455, application/pdf, owner null.
+   **Test residue left on prod on purpose (Yaseen removes or keeps): that conversation + ob row + 1 object under the 49-char key.**
+   Signed-in leg: needs Yaseen to log in (Claude does not type passwords); then Claude uploads and verifies the user-token path.
+   Seen in passing (not fixed, not audited): (a) typing "USDOT 53467" is resolved as MC 53467 (a different, 1-truck company) —
+   the wizard strips the prefix and tries MC first; (b) the chat FMCSA card shows "Authority unknown" for Schneider;
+   (c) homepage shows the SW "new version — Update" banner.
 6. Remaining gates unchanged: full session/document/Storage access coverage; complete erasure (upload freeze, retention/removal
    evidence, revocation — must list the Storage prefix, see design doc); F10 role/type decision; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
@@ -129,3 +138,4 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
 - **2026-09-19 (late) — Claude:** Item 5 part-done, read-only. Live lcOnboard.js proven byte-identical to main (sha fc97f2be…, 70498 B) from a real browser; widget mounts. Upload legs NOT run: the wizard requires a real account signup before the document step, which is Yaseen's to do. Prod baseline recorded (3 lc-onboarding objects, newest 26 Jul). No DB writes, no deploy, no push, no messages. Decisions 2–4 still unanswered; all gates remain open.
 - **2026-09-19 (late) — Claude:** Recorded Yaseen's decisions 2–4 in the design doc (relink; 7 days; he removes the 3 prod probe objects himself — exact names listed). Staging synthetic object already absent (0 rows). Yaseen says the earlier 2 commits were pushed — NOT verified from here (local origin ref is stale). Docs only; no DB writes, no push.
 - **2026-09-19 (late) — Claude:** Phase 2a relink built and applied to STAGING only (bl_audit_0353); rollback test 8/8 PASS, zero fixtures, anon SECDEF names unchanged (32). Prod untouched. Remove (2b) not built. Item 5 upload legs still waiting on Yaseen's test email + MC/DOT. No push, no messages.
+- **2026-09-20 — Claude:** (1) lc-doc-check v12 orphan-cleanup built, 45/45 contract cases, deployed STAGING slot 17, live race proof PASS with zero residue. (2) Item 5 GUEST leg PASS on the live site and verified on prod read-only (path==object, guest conv, 1455 B); corrected my own wrong claim that a guest upload needs an account. Test residue on prod listed in NEXT ACTION 5. Signed-in leg, prod promotion of 0353 + v12, Phase 2b remove, decision 1 all still open. No push, no messages, no prod DB/edge change.

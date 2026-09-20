@@ -1,4 +1,4 @@
-// lc-doc-check v11 — caller-scoped preflight and confirmed storage/metadata saves.
+// lc-doc-check v12 (v11 + orphan cleanup on a definite metadata refusal) — caller-scoped preflight and confirmed storage/metadata saves.
 // v10: the certificate holder is quoted as a finished four-line block. "Name LoadBoot"
 // was never enough — the agent needs the legal entity AND the registered office, or the
 // certificate comes back wrong a second time and the carrier blames us for the delay.
@@ -119,7 +119,16 @@ Deno.serve(async (req) => {
     const note = `${emoji} Onboarding doc — ${docType.toUpperCase()} "${fname}": ${String(verdict.verdict).toUpperCase()}${(verdict.issues || []).length ? " — " + (verdict.issues || []).map((i: any) => i.problem).join("; ").slice(0, 300) : ""}${verdict.verdict === "queued" ? " (AI offline — needs MANUAL review)" : ""} (stored: ${stored ? path : "UPLOAD FAILED"})`;
     const logged = await fetch(`${URL_}/rest/v1/rpc/lc_ob_doc_log`, { method: "POST", headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_visitor_key: vkey, p_conversation_id: convId, p_doc: { t: docType, f: fname, path, verdict: verdict.verdict, ts: new Date().toISOString() }, p_note: note }) });
     const saved = await logged.json().catch(() => null);
-    if (!logged.ok || !saved || saved.ok !== true || saved.error) return json({ error: "document_save_failed" }, 502);
+    if (!logged.ok || !saved || saved.ok !== true || saved.error) {
+      // v12: a DEFINITE refusal (HTTP 4xx = the RPC raised and rolled back, or a parsed body that is not ok) means no docs[] entry
+      // points at the object we just wrote -> remove it so no orphan is left. An unreadable 2xx body is AMBIGUOUS (the entry
+      // may exist) and so is any 5xx (a gateway timeout can hide a commit) -> leave the object for cc_lc_doc_reconcile. Best-effort: a failed cleanup never changes the reply.
+      const definite = (logged.status >= 400 && logged.status < 500) || (logged.ok && saved && typeof saved === "object" && !Array.isArray(saved) && (saved.ok !== true || saved.error));
+      if (stored && definite) {
+        try { await fetch(`${URL_}/storage/v1/object/documents/${path}`, { method: "DELETE", headers: { apikey: SVC, Authorization: `Bearer ${SVC}` } }); } catch (_) { /* reconcile will list it */ }
+      }
+      return json({ error: "document_save_failed" }, 502);
+    }
 
     return json({ ok: true, stored, doc_type: docType, verdict, holder: { name: HOLDER_NAME, address: HOLDER_ADDRESS, block: HOLDER_LINES } });
   } catch (e) {
