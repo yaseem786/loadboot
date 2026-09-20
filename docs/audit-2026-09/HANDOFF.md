@@ -45,7 +45,13 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
 3. The "edge logs path when stored=false" finding was WRONG and is withdrawn (v11 returns 502 before doc_log; see the
    correction in the design doc). No edge fix pending for it. Open proposal instead: when doc_log fails after a good upload,
    have lc-doc-check remove the just-written object (prevents orphans at source) — needs Yaseen's decision 2, touches the 33-case contract test.
-4. Phase 2 (relink/remove) UNBLOCKED for design: decisions 2–4 answered 19 Sep (relink / 7 days / Yaseen deletes test objects by hand — see the design doc's answers section). Not built yet; decision 1 and the item-3 edge proposal still unanswered. The 3 prod July probe objects are still in prod Storage.
+4. Phase 2a RELINK built — **STAGING ONLY** (20260919 `bl_audit_0353_lc_doc_relink`): `public.cc_lc_doc_relink(p_path, p_dry_run default true)`
+   + `app_private.lc_doc_recon_log` (RLS on, no grants). Staff-only (`lc_cc_ok`), one path per call, never deletes, refuses
+   fresh (<1h) / already-linked / no-ob-row / 40-doc-limit / bad path. `tests/bl_audit_0353_rollback_test.sql` 8/8 PASS on staging,
+   0 fixtures, 0 log rows left; anon SECDEF names unchanged (32, md5 6a7bd230… by THIS turn's formula — name(identity args), not
+   the older b711d9e6 formula). **Prod NOT applied — needs Yaseen's "apply to prod".** No CC button calls it yet.
+   Phase 2b REMOVE (decision 3: 7 days, no ob row + no conversation) NOT built: needs a service-role edge function using the
+   Storage API; permanent deletion, so design + Yaseen's go first. Decision 1 (grace) and the item-3 edge proposal still unanswered.
 5. Browser check of guest + signed-in upload on the live site: STILL OPEN (upload itself NOT run). Done 19 Sep late, read-only:
    Netlify deploy CONFIRMED — live `/app/shared/ui/lcOnboard.js?v=3` is byte-identical to main (70498 bytes, sha256 fc97f2be…b425,
    fetched no-store from a real Chrome); widget opens on loadboot.com, `LBChat`/`LBChatOnboard`/`LBVisitorIdentity` present.
@@ -122,3 +128,4 @@ Prod newest migration: 20260919205819 bl_audit_0352_lc_doc_reconcile (before it:
 
 - **2026-09-19 (late) — Claude:** Item 5 part-done, read-only. Live lcOnboard.js proven byte-identical to main (sha fc97f2be…, 70498 B) from a real browser; widget mounts. Upload legs NOT run: the wizard requires a real account signup before the document step, which is Yaseen's to do. Prod baseline recorded (3 lc-onboarding objects, newest 26 Jul). No DB writes, no deploy, no push, no messages. Decisions 2–4 still unanswered; all gates remain open.
 - **2026-09-19 (late) — Claude:** Recorded Yaseen's decisions 2–4 in the design doc (relink; 7 days; he removes the 3 prod probe objects himself — exact names listed). Staging synthetic object already absent (0 rows). Yaseen says the earlier 2 commits were pushed — NOT verified from here (local origin ref is stale). Docs only; no DB writes, no push.
+- **2026-09-19 (late) — Claude:** Phase 2a relink built and applied to STAGING only (bl_audit_0353); rollback test 8/8 PASS, zero fixtures, anon SECDEF names unchanged (32). Prod untouched. Remove (2b) not built. Item 5 upload legs still waiting on Yaseen's test email + MC/DOT. No push, no messages.
