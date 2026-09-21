@@ -216,6 +216,35 @@ export function renderShell(root, user, flags) {
   const collapseBtn = el('button', { class: 'cc-iconbtn cc-collapse-btn', title: 'Collapse / expand menu',
     html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>' });
 
+  // bl_ui_0389 — Command Center had NO phone navigation. At <=780px the sidebar collapses
+  // into 21 ungrouped chips that wrap across the top, so a phone user scrolls past the whole
+  // menu before reaching any content. These five are real routes; More opens the full menu as
+  // a drawer, so nothing is lost. Desktop is untouched — the bar only exists under 780px.
+  const TAB_PATHS = ['/', '/carriers', '/live-chat', '/finance'];
+  const tabEls = {};
+  const moreBadge = el('span', { class: 'cc-tab-badge', hidden: true });
+  const tabbar = el('nav', { class: 'cc-tabbar', 'aria-label': 'Main' }, [
+    ...TAB_PATHS.map((path) => {
+      const it = FLAT.find((n) => n.path === path);
+      if (!it) return '';
+      const a = el('a', { href: '#' + path, class: 'cc-tab', dataset: { path } },
+        [icon(it.icon, 21), el('span', null, it.label)]);
+      tabEls[path] = a;
+      return a;
+    }),
+    (() => {
+      const b = el('button', { class: 'cc-tab cc-tab-more', type: 'button' },
+        [icon('more', 21), el('span', null, 'More'), moreBadge]);
+      b.addEventListener('click', () => {
+        const open = shell.classList.toggle('cc-nav-open');
+        b.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      return b;
+    })(),
+  ]);
+  const scrim = el('div', { class: 'cc-nav-scrim' });
+  scrim.addEventListener('click', () => shell.classList.remove('cc-nav-open'));
+
   const shell = el('div', { class: 'cc-shell' }, [
     el('aside', { class: 'cc-side' }, [
       el('div', { class: 'cc-brand' }, [
@@ -228,6 +257,8 @@ export function renderShell(root, user, flags) {
         el('div', null, ['Build ', el('b', null, ENV.buildId)]),
       ]),
     ]),
+    scrim,
+    tabbar,
     el('main', { class: 'cc-main' }, [
       el('header', { class: 'cc-top' }, [
         collapseBtn,
@@ -271,6 +302,9 @@ export function renderShell(root, user, flags) {
   function setActive(path) {
     FLAT.forEach(n => { const a = linkEls[n.path]; if (a) a.classList.toggle('active', n.path === path); });
     const _pw = childParent[path]; if (_pw) _pw.classList.add('open');
+    TAB_PATHS.forEach((p9) => { const t = tabEls[p9]; if (t) t.classList.toggle('active', p9 === path); });
+    shell.classList.toggle('cc-tab-other', !TAB_PATHS.includes(path));
+    shell.classList.remove('cc-nav-open');
     const item = FLAT.find(n => n.path === path);
     const title = document.getElementById('cc-title');
     const crumb = document.getElementById('cc-crumb');
@@ -282,6 +316,15 @@ export function renderShell(root, user, flags) {
     if (!b) return;
     if (count && count > 0) { b.textContent = String(count); b.hidden = false; }
     else b.hidden = true;
+    // the badged routes all live behind More on a phone, so surface the count there too
+    try {
+      const total = Object.keys(badgeEls).reduce((s9, k9) => {
+        const e9 = badgeEls[k9];
+        return s9 + (e9 && !e9.hidden ? (Number(e9.textContent) || 0) : 0);
+      }, 0);
+      if (total > 0) { moreBadge.textContent = String(total); moreBadge.hidden = false; }
+      else moreBadge.hidden = true;
+    } catch (_) {}
   }
   return { content, setActive, setBadge, nav: FLAT };
 }

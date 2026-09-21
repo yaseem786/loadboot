@@ -331,12 +331,66 @@
 
 /* ---------- responsive ---------- */
 @media(max-width:980px){.cc-grid-2{grid-template-columns:1fr}}
+/* Desktop default: no bar, no scrim. These must come BEFORE the 780px block — same
+   specificity, so whichever is written last wins, and the bar would never appear. */
+.cc-tabbar{display:none}
+.cc-nav-scrim{display:none}
+
+/* bl_ui_0389 — phone navigation for the Command Center.
+   Before this, <=780px dropped the 21-item sidebar on top of the page as wrapping chips, so
+   every screen began with the whole menu. Now the menu is a drawer behind a bottom bar that
+   carries the four routes CC is actually opened on, matching the other four portals. */
 @media(max-width:780px){
   .cc-shell{grid-template-columns:1fr}
-  .cc-side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
-  .cc-nav-group{display:none}.cc-nav{flex-direction:row;flex-wrap:wrap;gap:4px}
-  .cc-nav a{padding:8px 10px}.cc-env{margin:0;border:0;width:100%}
-  .cc-content{padding:16px}
+  .cc-content{padding:16px 16px 84px}
+
+  /* the full menu becomes a left drawer, opened from More */
+  .cc-side{
+    position:fixed;top:0;bottom:0;left:0;width:min(86vw,300px);z-index:70;
+    height:100dvh;overflow-y:auto;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:4px;
+    transform:translateX(-102%);transition:transform .22s ease;
+    box-shadow:8px 0 32px -12px rgba(2,6,23,.6);
+  }
+  .cc-shell.cc-nav-open .cc-side{transform:translateX(0)}
+  .cc-nav-group{display:block}
+  .cc-nav{flex-direction:column;flex-wrap:nowrap;gap:2px}
+  .cc-nav a{padding:10px 12px}
+  .cc-env{margin-top:auto;border:0;width:100%}
+
+  .cc-nav-scrim{
+    display:block;position:fixed;inset:0;z-index:69;background:rgba(2,6,23,.55);
+    opacity:0;pointer-events:none;transition:opacity .22s ease;
+  }
+  .cc-shell.cc-nav-open .cc-nav-scrim{opacity:1;pointer-events:auto}
+
+  .cc-tabbar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:71;
+    background:#0e1830;border-top:1px solid rgba(150,180,225,.16);
+    padding:7px 4px calc(9px + env(safe-area-inset-bottom,0px));
+    justify-content:space-around;box-shadow:0 -8px 24px -16px rgba(2,6,23,.6);
+  }
+  .cc-tab{
+    flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 2px;border-radius:12px;position:relative;cursor:pointer;border:0;background:none;
+    color:#6B7F9C;font:700 .63rem/1.2 inherit;text-align:center;text-decoration:none;
+    transition:background-color .16s ease,color .16s ease;
+  }
+  .cc-tab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .cc-tab svg{flex:none}
+  .cc-tab.active{background:rgba(8,131,247,.15);color:#4FA9FF}
+  .cc-tab:active{transform:scale(.96)}
+  .cc-tab:focus-visible{outline:2px solid #0883F7;outline-offset:-2px}
+  /* on a screen that is not one of the four, More is where the user came from */
+  .cc-shell.cc-tab-other .cc-tab-more{color:#4FA9FF}
+  .cc-tab-badge{
+    position:absolute;top:1px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 5px;
+    border-radius:999px;background:#FC5305;color:#fff;font-size:.6rem;font-weight:700;
+    display:grid;place-items:center;border:2px solid #0e1830;font-variant-numeric:tabular-nums;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .cc-side,.cc-nav-scrim,.cc-tab{transition:none}
+  .cc-tab:active{transform:none}
 }
 
 /* ===== Command Center V1 supplemental layout (overview, carriers, loads, dispatch, documents) ===== */
