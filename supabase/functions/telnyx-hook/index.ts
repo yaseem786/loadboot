@@ -1,8 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import webpush from "npm:web-push@3.6.7";
 
-// telnyx-hook v5 (bl_dial_0351 + 0351b + 0351c + 0352) — the signed front door for every Telnyx voice webhook (both the WebRTC
-// credential connection and the Voice-API application that owns the dispatcher numbers point here).
+// telnyx-hook v6 (bl_dial_0351 + 0351b + 0351c + 0352 + bl_wa_0367) — the signed front door for every Telnyx webhook
+// (the WebRTC credential connection, the Voice-API application that owns the dispatcher numbers, and the messaging
+// profiles — SMS and WhatsApp — all point here).
 // verify_jwt = false (Telnyx cannot send a Supabase JWT) — authenticity comes from the Ed25519 signature:
 //   telnyx-signature-ed25519: base64(sig)   telnyx-timestamp: unix seconds   message = `${timestamp}|${rawBody}`
 // With no TELNYX_PUBLIC_KEY configured the function REFUSES everything (503): an unsigned door is never open.
@@ -15,12 +16,20 @@ import webpush from "npm:web-push@3.6.7";
 // (telnyx-token {claim:true} does that when their phone registers); if not, the normal fallback runs.
 // v4: record_start retries on 422 "Call not answered yet".
 // v5 (bl_dial_0352): message.* events (the messaging profile points here too) go to public.dialer_sms_hook; an inbound text pushes to the dispatcher.
+// v6 (bl_wa_0367): WhatsApp. A message.* event is WhatsApp when payload.type is 'whatsapp', the event name starts with
+//   'whatsapp.', or the payload carries a whatsapp_message/whatsapp object — those go to public.wa_hook instead of the
+//   SMS hook. Telnyx does NOT document the inbound WhatsApp payload, so wa_hook stores every raw event; the first real
+//   message is what tells us the true shape. Nothing here guesses on Telnyx's behalf.
+//   WA_CAPTURE=1 (a secret, set only for a short debugging window): an UNSIGNED body that looks like a WhatsApp event is
+//   passed to wa_hook with p_verified=false — which LOGS IT AND DOES NOTHING ELSE — and the request is still answered 401.
+//   That is how we find out whether Telnyx signs WhatsApp webhooks with the same key, without ever opening the door.
 // iOS App Store shell (apns: endpoints) is skipped here — push-send owns APNs; add it when the iOS app ships.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SVC = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const TELNYX_KEY = Deno.env.get("TELNYX_API_KEY") || "";
 const PUBKEY_B64 = Deno.env.get("TELNYX_PUBLIC_KEY") || "";
+const WA_CAPTURE = Deno.env.get("WA_CAPTURE") === "1";
 const TX = "https://api.telnyx.com/v2";
 const TOLERANCE_S = 300;
 
@@ -37,22 +46,25 @@ async function verify(raw: string, sig: string | null, ts: string | null): Promi
   } catch (_) { return false; }
 }
 
-async function hookEvent(data: unknown) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/dialer_hook_event`, {
+async function rpc(fn: string, body: Record<string, unknown>) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: "POST", headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ p: data, p_verified: true }),
+    body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error("dialer_hook_event " + r.status + " " + (await r.text()).slice(0, 200));
+  if (!r.ok) throw new Error(fn + " " + r.status + " " + (await r.text()).slice(0, 200));
   return await r.json();
 }
 
-async function smsEvent(data: unknown) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/dialer_sms_hook`, {
-    method: "POST", headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ p: data }),
-  });
-  if (!r.ok) throw new Error("dialer_sms_hook " + r.status + " " + (await r.text()).slice(0, 200));
-  return await r.json();
+const hookEvent = (data: unknown) => rpc("dialer_hook_event", { p: data, p_verified: true });
+const smsEvent = (data: unknown) => rpc("dialer_sms_hook", { p: data });
+const waEvent = (data: unknown, verified = true) => rpc("wa_hook", { p: data, p_verified: verified });
+
+// deno-lint-ignore no-explicit-any
+function isWhatsApp(data: any): boolean {
+  const et = String(data?.event_type || "").toLowerCase();
+  const pl = data?.payload || {};
+  const pt = String(pl?.type || "").toLowerCase();
+  return et.startsWith("whatsapp.") || pt === "whatsapp" || pt.startsWith("whatsapp") || !!pl?.whatsapp_message || !!pl?.whatsapp;
 }
 
 const cmd = (ccid: string, action: string, body: Record<string, unknown>) => fetch(`${TX}/calls/${encodeURIComponent(ccid)}/actions/${action}`, {
@@ -128,14 +140,20 @@ Deno.serve(async (req: Request) => {
   if (!PUBKEY_B64 || !TELNYX_KEY) return new Response("not configured", { status: 503 });
   const raw = await req.text();
   const ok = await verify(raw, req.headers.get("telnyx-signature-ed25519"), req.headers.get("telnyx-timestamp"));
-  if (!ok) return new Response("bad signature", { status: 401 });
+  if (!ok) {
+    // v6: log-only capture of an unsigned WhatsApp-looking body, and ONLY while WA_CAPTURE is set. Still refused.
+    if (WA_CAPTURE && raw.length < 20000) {
+      try { const d = JSON.parse(raw)?.data; if (d && isWhatsApp(d)) await waEvent(d, false); } catch (_) { /* ignore */ }
+    }
+    return new Response("bad signature", { status: 401 });
+  }
   try {
     const body = JSON.parse(raw);
     const data = body?.data;
     const et = String(data?.event_type || "");
-    if (et.startsWith("message.")) {                     // v5 (bl_dial_0352): text messages — inbound texts + delivery receipts
-      const r = await smsEvent(data);
-      if (r?.notify) await notify({ ...r.notify, tag: "lb-sms" });
+    if (et.startsWith("message.") || et.startsWith("whatsapp.")) {   // messaging profiles: SMS (v5) and WhatsApp (v6)
+      const r = isWhatsApp(data) ? await waEvent(data) : await smsEvent(data);
+      if (r?.notify) await notify({ ...r.notify, tag: isWhatsApp(data) ? "lb-wa" : "lb-sms" });
       return new Response("ok");
     }
     if (!et.startsWith("call.")) return new Response("ignored");

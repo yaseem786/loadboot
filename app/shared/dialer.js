@@ -19,7 +19,9 @@ import {
   dialerBootstrap, dialerHeartbeat, dialerLookup, dialerCallStart, dialerCallUpdate, dialerCallTag,
   dialerCallbackSet, dialerHistory, dialerToken, dialerClaimWaiting, dialerRecordingBlob,
  dialerForwardSet, dialerSmsThreads, dialerSmsThread, dialerSmsSend,
+  waInbox, waThread, waClaim, waStart, waSend, waMediaBlob, waUploadMedia,
 } from './api.js';
+import { createWaPanel } from './dialer-wa.js';
 
 const h = el;
 const ET = 'America/New_York';
@@ -219,16 +221,26 @@ function createDialer() {
     wrap: null,                                                      // after-call disposition { row, outcome, note, … }
     terms: null, termsTick: false, termsBusy: false,                 // bl_dial_0362: LoadBoot Phone Terms gate { version, required, accepted, points, consent }
     history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false,
+    chan: 'sms', wa: null, waId: null, waThread: null, waDraft: '', waBusy: false, waTpl: null, waVars: [],   // bl_wa_0367
   };
   let client = null, SDK = null, hbTimer = null, tickTimer = null, retry = 0, retryTimer = null, lockRelease = null;
 
   const toast = (msg) => { const t = h('div', { class: 'lbd-toast', role: 'status' }, msg); document.body.appendChild(t); setTimeout(() => t.remove(), 3600); };
   const say = (msg) => { live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 30); };
 
+  // bl_wa_0367 — the WhatsApp channel of the Texts tab lives in its own module and is handed the dock's helpers.
+  const waPanel = createWaPanel({
+    h, mount, ic, ago, pretty, digits, toast, S,
+    paint: () => paint(), rootOf: () => root,
+    api: { waInbox, waThread, waClaim, waStart, waSend, waMediaBlob, waUploadMedia },
+    onCall: (n, c) => dial(n, c),
+  });
+
   // ------------------------------------------------------------ data
   async function refresh() {
     try { const b = await dialerBootstrap(); if (b && !b.error) { S.boot = b; } } catch (_) {}
     try { const t = await dialerSmsThreads(); if (t && !t.error) S.sms = t; } catch (_) {}
+    waPanel.load(true);
     paint();
   }
   // never leave S.history null after a load (an empty result used to come back null → vRecent asked again on every paint →
@@ -619,7 +631,20 @@ function createDialer() {
     S.smsBusy = false; await loadThread(false);
     const ta = root.querySelector('#lbd-sms'); if (ta) ta.focus();
   }
+  function vChan() {   // bl_wa_0367 — SMS and WhatsApp are two channels of the same tab
+    const waN = waPanel.unread();
+    return h('div', { class: 'lbd-tpl', style: 'margin:0 0 8px', role: 'tablist' }, [['sms', 'Texts', (S.sms && S.sms.unread) || 0], ['wa', 'WhatsApp', waN]].map(([id, label, n]) =>
+      h('button', { type: 'button', role: 'tab', 'aria-selected': String(S.chan === id),
+        style: S.chan === id ? 'border-color:var(--bl);background:rgba(8,131,247,.18);color:#fff' : '',
+        onClick: () => { S.chan = id; if (id === 'sms') waPanel.close(); else closeThread(); paint(); } },
+        [label, n ? h('span', { class: 'lbd-badge', style: 'margin-left:6px' }, String(n)) : null]))
+      .concat([h('button', { type: 'button', class: 'lbd-tab', style: 'margin-left:auto',
+        'aria-label': waPanel.isMax() ? 'Shrink the phone' : 'Open full screen',
+        title: waPanel.isMax() ? 'Shrink' : 'Full screen',
+        onClick: () => { waPanel.setMax(!waPanel.isMax()); paint(); } }, waPanel.isMax() ? 'Shrink' : 'Full screen')]));
+  }
   function vTexts() {
+    if (S.chan === 'wa') return h('div', null, [vChan(), waPanel.view()]);
     const sm = S.sms || { enabled: false, threads: [] };
     const off = !sm.enabled ? h('div', { class: 'lbd-note', style: 'margin:0 0 10px' }, 'Text messaging switches on once LoadBoot’s carrier registration (10DLC) is approved. Texts people send you still arrive here.') : null;
     if (S.smsTo) {
@@ -649,7 +674,7 @@ function createDialer() {
       h('input', { class: 'lbd-in', id: 'lbd-smsnew', type: 'tel', inputmode: 'tel', placeholder: 'Text a new number…', 'aria-label': 'Number to text', onKeydown: (e) => { if (e.key === 'Enter') { const v = digits(e.target.value); if (v.length >= 10) openThread(e.target.value, ''); } } }),
       h('button', { class: 'lbd-send', 'aria-label': 'Start text', onClick: () => { const el2 = root.querySelector('#lbd-smsnew'); const v = el2 ? el2.value : ''; if (digits(v).length >= 10) openThread(v, ''); else toast('Enter a 10-digit US number.'); } }, ic('msg', 17)),
     ]);
-    return h('div', null, [off, start,
+    return h('div', null, [vChan(), off, start,
       rows.length ? h('div', null, rows.map((r) => h('div', { class: 'lbd-row', style: 'cursor:pointer', role: 'button', tabindex: '0', onClick: () => openThread(r.number, r.contact_name || ''), onKeydown: (e) => { if (e.key === 'Enter') openThread(r.number, r.contact_name || ''); } }, [
         h('div', { class: 'd' + (r.direction === 'inbound' ? ' in' : '') }, ic('msg', 16)),
         h('div', { class: 'm' }, [h('b', null, r.contact_name || pretty(r.number)), h('span', null, (r.direction === 'outbound' ? 'You: ' : '') + (r.body || '[picture]'))]),
@@ -726,7 +751,7 @@ function createDialer() {
     root.className = 'lbd' + (S.open ? ' open' : '');
     const justOpened = S.open && !wasOpen; wasOpen = !!S.open;
     const cbN = (b.callbacks || []).length;
-    const smsN = (S.sms && S.sms.unread) || 0;
+    const smsN = ((S.sms && S.sms.unread) || 0) + waPanel.unread();
     const c = S.call; const ringing = c && c.dir === 'in' && c.state === 'ringing';
     if (!S.open) {
       const cls = ringing ? ' ring' : c ? ' live' : (S.conn === 'ready' ? '' : ' off');
@@ -756,7 +781,7 @@ function createDialer() {
     mount(root, [live, h('div', { class: 'lbd-panel' + (justOpened ? ' in' : ''), role: 'dialog', 'aria-label': 'LoadBoot phone' }, [
       head, note,
       showChrome ? h('div', { class: 'lbd-stats' }, [['calls', 'Calls'], ['connected', 'Connected'], ['talk_sec', 'Talk'], ['missed', 'Missed']].map(([k, l]) => h('div', null, [h('b', null, k === 'talk_sec' ? talk(t[k]) : String(t[k] || 0)), h('span', null, l)]))) : null,
-      showChrome ? h('div', { class: 'lbd-tabs', role: 'tablist' }, [['keypad', 'Keypad', 'pad'], ['recent', 'Recent', 'clock'], ['texts', 'Texts', 'msg'], ['callbacks', 'Callbacks', 'miss']].map(([id, l, i]) => h('button', { class: 'lbd-tab' + (S.tab === id ? ' on' : ''), role: 'tab', 'aria-selected': String(S.tab === id), onClick: () => { S.tab = id; if (id === 'recent') S.history = null; if (id !== 'texts') closeThread(); paint(); } }, [ic(i, 14), l, id === 'callbacks' && cbN ? h('span', { class: 'lbd-badge' }, String(cbN)) : null, id === 'texts' && S.sms && S.sms.unread ? h('span', { class: 'lbd-badge' }, String(S.sms.unread)) : null]))) : null,
+      showChrome ? h('div', { class: 'lbd-tabs', role: 'tablist' }, [['keypad', 'Keypad', 'pad'], ['recent', 'Recent', 'clock'], ['texts', 'Texts', 'msg'], ['callbacks', 'Callbacks', 'miss']].map(([id, l, i]) => h('button', { class: 'lbd-tab' + (S.tab === id ? ' on' : ''), role: 'tab', 'aria-selected': String(S.tab === id), onClick: () => { S.tab = id; if (id === 'recent') S.history = null; if (id !== 'texts') { closeThread(); waPanel.close(); } paint(); } }, [ic(i, 14), l, id === 'callbacks' && cbN ? h('span', { class: 'lbd-badge' }, String(cbN)) : null, id === 'texts' && S.sms && S.sms.unread ? h('span', { class: 'lbd-badge' }, String(S.sms.unread)) : null]))) : null,
       h('div', { class: 'lbd-body' }, body),
     ])]);
     if (showChrome && S.tab === 'keypad' && window.matchMedia('(min-width:561px)').matches) { const i = root.querySelector('.lbd-num'); if (i && document.activeElement !== i && !root.contains(document.activeElement)) { try { i.focus({ preventScroll: true }); } catch (_) {} } }
