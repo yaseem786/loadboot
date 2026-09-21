@@ -179,7 +179,18 @@ textarea.cp-in { resize: vertical; }
   .cp-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff; border-top: 1px solid var(--lb-border, #e6ebf3); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); justify-content: space-around; box-shadow: 0 -8px 24px -16px rgba(2,6,23,.3); }
   .cp-tabbar .cp-navlink { flex-direction: column; gap: 3px; padding: 6px 4px; font-size: .64rem; font-weight: 700; color: #64748b; background: none; flex: 1; text-align: center; border-radius: 10px; }
   .cp-tabbar .cp-navlink span { white-space: nowrap; }
-  .cp-tabbar .cp-navlink.active { background: none; color: var(--lb-blue, #0883F7); box-shadow: none; }
+  /* bl_ui_0387 — variant B, the Uber/Amazon pattern: the active tab sits in a soft pill so
+     the touch target reads as a real object. Presentational only — no tab, route or count
+     changes. The dispatcher bar (.dw-bar) overrides this with its own rule in
+     app/agent/dispatcher-workspace.js; that override is removed there so all four portals
+     share one active state. */
+  .cp-tabbar .cp-navlink { transition: background-color .16s ease, color .16s ease; }
+  .cp-tabbar .cp-navlink.active { background: rgba(8,131,247,.11); color: var(--lb-blue, #0883F7); box-shadow: none; }
+  .cp-tabbar .cp-navlink:active { transform: scale(.96); }
+  @media (prefers-reduced-motion: reduce) {
+    .cp-tabbar .cp-navlink { transition: none; }
+    .cp-tabbar .cp-navlink:active { transform: none; }
+  }
   /* show only the 5 most important tabs on mobile */
   .cp-tabbar .cp-navlink:nth-child(n+6) { display: none; }
 }
@@ -295,6 +306,8 @@ html[data-lbtheme="dark"] h2, html[data-lbtheme="dark"] h3, html[data-lbtheme="d
 html[data-lbtheme="dark"] .cp-btn.ghost, html[data-lbtheme="dark"] .cp-btn.sec
  { background: rgba(255,255,255,.07); color: #e2e8f0; border-color: rgba(255,255,255,.14); }
 html[data-lbtheme="dark"] .cp-tabbar { background: #0e1830; border-top-color: rgba(255,255,255,.08); }
+html[data-lbtheme="dark"] .cp-tabbar .cp-navlink { color: #6B7F9C; }
+html[data-lbtheme="dark"] .cp-tabbar .cp-navlink.active { background: rgba(8,131,247,.15); color: #4FA9FF; }
 html[data-lbtheme="dark"] .cp-tag { background: rgba(8,131,247,.16); color: #93c5fd; }
 html[data-lbtheme="dark"] .cp-row { border-color: rgba(255,255,255,.07); }
 

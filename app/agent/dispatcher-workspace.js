@@ -211,7 +211,7 @@ const CSS = `
 /* rail mode (.cp-shell--rail) shrinks navlinks to 46x44 and hides their spans - undo that inside our bar */
 .cp-tabbar.dw-bar .cp-navlink{width:auto!important;height:auto!important;padding:6px 4px!important;gap:3px!important}
 .cp-tabbar.dw-bar .cp-navlink>span{display:inline-flex!important}
-.cp-tabbar.dw-bar .cp-navlink.active:before{content:'';position:absolute;top:-6px;left:30%;right:30%;height:3px;border-radius:0 0 4px 4px;background:#0883F7}
+/* bl_ui_0387 — the top rail is gone; the dispatcher bar now uses the same pill active state as the carrier, broker and shipper bars (see .cp-tabbar rules in app/carrier/carrier.css). */
 .cp-tabbar.dw-bar .dw-ic{line-height:0}
 }
 @media(max-width:760px){
