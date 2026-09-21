@@ -363,43 +363,61 @@
   }
   .cc-shell.cc-nav-open .cc-nav-scrim{opacity:1;pointer-events:auto}
 
+  /* bl_ui_0393 — the CC bar gets the same material as the portals: translucent + blurred so
+     the table under it stays visible while it scrolls past, a hairline drawn as an inset
+     shadow (1 device pixel on a 3x screen), and a solid fallback where blur is unsupported. */
   .cc-tabbar{
     display:flex;position:fixed;left:0;right:0;bottom:0;z-index:71;
-    background:#0e1830;border-top:1px solid rgba(150,180,225,.16);
-    padding:7px 4px calc(9px + env(safe-area-inset-bottom,0px));
-    justify-content:space-around;box-shadow:0 -8px 24px -16px rgba(2,6,23,.6);
+    background:rgba(14,24,48,.86);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+    border-top:0;
+    padding:7px 4px calc(9px + env(safe-area-inset-bottom,0px));min-height:58px;
+    justify-content:space-around;box-shadow:inset 0 1px 0 rgba(150,180,225,.15),0 -10px 30px -20px rgba(0,0,0,.8);
+  }
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+    .cc-tabbar{background:#0e1830}
   }
   .cc-tab{
     flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;
     padding:6px 2px;border-radius:12px;position:relative;cursor:pointer;border:0;background:none;
-    color:#6B7F9C;font:700 .63rem/1.2 inherit;text-align:center;text-decoration:none;
-    transition:background-color .16s ease,color .16s ease;
+    color:#6B7F9C;font:700 .63rem/1.2 inherit;letter-spacing:.012em;text-align:center;text-decoration:none;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .2s cubic-bezier(.2,.8,.3,1),color .2s cubic-bezier(.2,.8,.3,1),transform .13s ease;
   }
   .cc-tab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-  .cc-tab svg{flex:none}
-  .cc-tab.active{background:rgba(8,131,247,.15);color:#4FA9FF}
-  .cc-tab:active{transform:scale(.96)}
+  .cc-tab svg{flex:none;transition:stroke-width .2s ease,transform .2s cubic-bezier(.2,.8,.3,1)}
+  .cc-tab.active{background:rgba(8,131,247,.18);color:#4FA9FF}
+  .cc-tab.active svg{stroke-width:2.35;transform:translateY(-1px)}
+  .cc-tab.active span:not(.cc-tab-badge){font-weight:800}
+  .cc-tab:active{transform:scale(.94)}
   .cc-tab:focus-visible{outline:2px solid #0883F7;outline-offset:-2px}
   /* on a screen that is not one of the bar's routes, More is where the user came from */
   .cc-shell.cc-tab-other .cc-tab-more{color:#4FA9FF}
   /* bl_ui_0392 — variant C: the raised centre action (Post a load). The disc is pulled up out
      of the bar, so .cc-tabbar must never get overflow:hidden. */
+  .cc-fab{color:#8298b8}
   .cc-fab .cc-fab-in{
-    width:50px;height:50px;margin-top:-21px;margin-bottom:-7px;border-radius:50%;display:flex;align-items:center;
-    justify-content:center;background:linear-gradient(135deg,#0883F7,#0967d2);color:#fff;
-    border:3px solid #0e1830;box-shadow:0 10px 22px -8px rgba(8,131,247,.75);
-    transition:transform .16s ease;
+    width:52px;height:52px;margin-top:-22px;margin-bottom:-7px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;color:#fff;
+    background:radial-gradient(120% 120% at 50% 0%,#3AA0FF 0%,#0883F7 48%,#0568CD 100%);
+    border:3px solid #0e1830;
+    box-shadow:0 10px 22px -8px rgba(8,131,247,.85),0 2px 5px -1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.35);
+    transition:transform .13s cubic-bezier(.2,.8,.3,1),box-shadow .13s ease;
   }
-  .cc-fab:active .cc-fab-in{transform:scale(.94)}
+  .cc-fab:active .cc-fab-in{transform:translateY(2px) scale(.93);box-shadow:0 4px 10px -6px rgba(8,131,247,.9),inset 0 1px 0 rgba(255,255,255,.25)}
   .cc-fab.active,.cc-fab:hover{background:none}
+  .cc-fab svg{stroke-width:2.4}
   .cc-tab-badge{
     position:absolute;top:1px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 5px;
-    border-radius:999px;background:#FC5305;color:#fff;font-size:.6rem;font-weight:700;
+    border-radius:999px;background:#FC5305;color:#fff;font-size:.6rem;font-weight:800;
     display:grid;place-items:center;border:2px solid #0e1830;font-variant-numeric:tabular-nums;
+    box-shadow:0 2px 6px -2px rgba(252,83,5,.75);animation:lb-badge-in .22s cubic-bezier(.2,1.5,.4,1);
   }
+  @keyframes lb-badge-in{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
 }
 @media(prefers-reduced-motion:reduce){
-  .cc-side,.cc-nav-scrim,.cc-tab,.cc-fab .cc-fab-in{transition:none}
+  .cc-side,.cc-nav-scrim,.cc-tab,.cc-tab svg,.cc-fab .cc-fab-in{transition:none}
+  .cc-tab-badge{animation:none}
+  .cc-tab.active svg{transform:none}
   .cc-tab:active,.cc-fab:active .cc-fab-in{transform:none}
 }
 

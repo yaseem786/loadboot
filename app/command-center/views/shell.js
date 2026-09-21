@@ -232,6 +232,7 @@ export function renderShell(root, user, flags) {
     const b = el('button', { class: 'cc-tab cc-fab', type: 'button', 'aria-label': 'Post a load' },
       [el('span', { class: 'cc-fab-in' }, [icon('plus', 24)]), el('span', null, 'Post')]);
     b.addEventListener('click', () => {
+      try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {}   // bl_ui_0393
       if ((location.hash || '').replace('#', '') === '/loads' && typeof window.__lbCCNewLoad === 'function') { window.__lbCCNewLoad(); return; }
       window.__lbCCNewLoadPending = true;          // loads.js opens the wizard as it mounts
       location.hash = '#/loads';
@@ -322,7 +323,8 @@ export function renderShell(root, user, flags) {
   function setActive(path) {
     FLAT.forEach(n => { const a = linkEls[n.path]; if (a) a.classList.toggle('active', n.path === path); });
     const _pw = childParent[path]; if (_pw) _pw.classList.add('open');
-    TAB_PATHS.forEach((p9) => { const t = tabEls[p9]; if (t) t.classList.toggle('active', p9 === path); });
+    TAB_PATHS.forEach((p9) => { const t = tabEls[p9]; if (!t) return; const on9 = (p9 === path); t.classList.toggle('active', on9);
+      if (on9) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });   // bl_ui_0393
     shell.classList.toggle('cc-tab-other', !TAB_PATHS.includes(path));
     shell.classList.remove('cc-nav-open');
     const item = FLAT.find(n => n.path === path);

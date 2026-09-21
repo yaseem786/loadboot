@@ -176,31 +176,49 @@ textarea.cp-in { resize: vertical; }
   .cp-kpis { grid-template-columns: 1fr 1fr; }
   .cp-grid { grid-template-columns: 1fr; }
   .cp-col2 { grid-column: span 1; }
-  .cp-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff; border-top: 1px solid var(--lb-border, #e6ebf3); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); justify-content: space-around; box-shadow: 0 -8px 24px -16px rgba(2,6,23,.3); }
-  .cp-tabbar .cp-navlink { flex-direction: column; gap: 3px; padding: 6px 4px; font-size: .64rem; font-weight: 700; color: #64748b; background: none; flex: 1; text-align: center; border-radius: 10px; }
-  .cp-tabbar .cp-navlink span { white-space: nowrap; }
+  /* bl_ui_0393 — the bar is real material, not a white strip: content passes UNDER a
+     translucent, blurred surface (the iOS / Amazon / Uber treatment) with a hairline drawn
+     as an inset shadow so it stays 1 device pixel on a 3x screen. Solid-white fallback below for
+     engines without backdrop-filter — the bar must never turn see-through-unreadable. */
+  .cp-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: rgba(255,255,255,.82); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: 0; box-shadow: inset 0 1px 0 rgba(16,34,59,.10), 0 -10px 30px -20px rgba(2,6,23,.45); padding: 7px 4px calc(7px + env(safe-area-inset-bottom)); justify-content: space-around; min-height: 58px; }
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .cp-tabbar { background: #fff; }
+  }
+  .cp-tabbar .cp-navlink { flex-direction: column; gap: 3px; padding: 6px 4px; font-size: .64rem; font-weight: 700; letter-spacing: .012em; color: #64748b; background: none; flex: 1; min-width: 0; text-align: center; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+  .cp-tabbar .cp-navlink span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   /* bl_ui_0387 — variant B, the Uber/Amazon pattern: the active tab sits in a soft pill so
      the touch target reads as a real object. Presentational only — no tab, route or count
      changes. The dispatcher bar (.dw-bar) overrides this with its own rule in
      app/agent/dispatcher-workspace.js; that override is removed there so all four portals
      share one active state. */
-  .cp-tabbar .cp-navlink { transition: background-color .16s ease, color .16s ease; }
+  .cp-tabbar .cp-navlink { transition: background-color .2s cubic-bezier(.2,.8,.3,1), color .2s cubic-bezier(.2,.8,.3,1), transform .13s ease; }
   .cp-tabbar .cp-navlink.active { background: rgba(8,131,247,.11); color: var(--lb-blue, #0883F7); box-shadow: none; }
-  .cp-tabbar .cp-navlink:active { transform: scale(.96); }
+  /* bl_ui_0393 — what separates a premium bar from a coloured one: the active icon gains
+     weight and lifts a pixel, the label goes heavier, and the pill settles with a spring.
+     The stroke-width override works because every portal icon is a stroked 24x24 svg. */
+  .cp-tabbar .cp-navlink svg { transition: stroke-width .2s ease, transform .2s cubic-bezier(.2,.8,.3,1); }
+  .cp-tabbar .cp-navlink.active svg { stroke-width: 2.35; transform: translateY(-1px); }
+  .cp-tabbar .cp-navlink.active span:not(.cp-tab-badge) { font-weight: 800; }
+  .cp-tabbar .cp-navlink:active { transform: scale(.94); }
   @media (prefers-reduced-motion: reduce) {
-    .cp-tabbar .cp-navlink { transition: none; }
+    .cp-tabbar .cp-navlink, .cp-tabbar .cp-navlink svg { transition: none; }
     .cp-tabbar .cp-navlink:active { transform: none; }
+    .cp-tabbar .cp-navlink.active svg { transform: none; }
   }
   /* bl_ui_0392 — variant C: the raised centre action. The bar is 4 destinations + one
      create action, the pattern Instagram/X/Uber Driver all use. .cp-fab is a real
      <button> (not a link — it opens a form in place, it is not a route), so it needs its
      own sizing: the .cp-navlink rules above only cover the four tabs. The disc is pulled
      up out of the bar, which is why .cp-tabbar must never get overflow:hidden. */
-  .cp-tabbar .cp-fab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border: 0; background: none; cursor: pointer; font: 700 .64rem/1.2 inherit; color: #64748b; text-align: center; }
-  .cp-tabbar .cp-fab .cp-fab-in { width: 50px; height: 50px; margin-top: -21px; margin-bottom: -7px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0883F7, #0967d2); color: #fff; border: 3px solid #fff; box-shadow: 0 10px 22px -8px rgba(8,131,247,.75); transition: transform .16s ease; }
+  .cp-tabbar .cp-fab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border: 0; background: none; cursor: pointer; font: 700 .64rem/1.2 inherit; letter-spacing: .012em; color: #475569; text-align: center; -webkit-tap-highlight-color: transparent; }
+  /* bl_ui_0393 — the disc is lit, not flat: a top highlight inside the gradient, a coloured
+     ambient shadow under it and a ring in the bar's own colour so it reads as cut into the
+     bar rather than stuck on top. It presses DOWN (scale + the shadow collapsing), which is
+     the cue that tells a thumb the tap registered. */
+  .cp-tabbar .cp-fab .cp-fab-in { width: 52px; height: 52px; margin-top: -22px; margin-bottom: -7px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; background: radial-gradient(120% 120% at 50% 0%, #3AA0FF 0%, #0883F7 48%, #0568CD 100%); border: 3px solid #fff; box-shadow: 0 10px 20px -8px rgba(8,131,247,.75), 0 2px 5px -1px rgba(2,6,23,.28), inset 0 1px 0 rgba(255,255,255,.45); transition: transform .13s cubic-bezier(.2,.8,.3,1), box-shadow .13s ease; }
   .cp-tabbar .cp-fab span:not(.cp-fab-in):not(.cp-ic) { white-space: nowrap; }
-  .cp-tabbar .cp-fab:active .cp-fab-in { transform: scale(.94); }
-  .cp-tabbar .cp-fab:focus-visible { outline: 2px solid #0883F7; outline-offset: -2px; border-radius: 10px; }
+  .cp-tabbar .cp-fab:active .cp-fab-in { transform: translateY(2px) scale(.93); box-shadow: 0 4px 10px -6px rgba(8,131,247,.8), inset 0 1px 0 rgba(255,255,255,.3); }
+  .cp-tabbar .cp-fab:focus-visible { outline: 2px solid #0883F7; outline-offset: -2px; border-radius: 12px; }
   @media (prefers-reduced-motion: reduce) { .cp-tabbar .cp-fab .cp-fab-in { transition: none; } .cp-tabbar .cp-fab:active .cp-fab-in { transform: none; } }
   /* show only the 5 most important tabs on mobile */
   .cp-tabbar .cp-navlink:nth-child(n+6) { display: none; }
@@ -316,11 +334,15 @@ html[data-lbtheme="dark"] .cp-row-t, html[data-lbtheme="dark"] .cp-load-lane b, 
 html[data-lbtheme="dark"] h2, html[data-lbtheme="dark"] h3, html[data-lbtheme="dark"] .cp-stat-v { color: #f1f5f9; }
 html[data-lbtheme="dark"] .cp-btn.ghost, html[data-lbtheme="dark"] .cp-btn.sec
  { background: rgba(255,255,255,.07); color: #e2e8f0; border-color: rgba(255,255,255,.14); }
-html[data-lbtheme="dark"] .cp-tabbar { background: #0e1830; border-top-color: rgba(255,255,255,.08); }
+html[data-lbtheme="dark"] .cp-tabbar { background: rgba(14,24,48,.86); box-shadow: inset 0 1px 0 rgba(150,180,225,.14), 0 -10px 30px -20px rgba(0,0,0,.8); }
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  html[data-lbtheme="dark"] .cp-tabbar { background: #0e1830; }
+}
 html[data-lbtheme="dark"] .cp-tabbar .cp-navlink { color: #6B7F9C; }
-html[data-lbtheme="dark"] .cp-tabbar .cp-navlink.active { background: rgba(8,131,247,.15); color: #4FA9FF; }
-html[data-lbtheme="dark"] .cp-tabbar .cp-fab { color: #6B7F9C; }
-html[data-lbtheme="dark"] .cp-tabbar .cp-fab .cp-fab-in { border-color: #0e1830; }
+html[data-lbtheme="dark"] .cp-tabbar .cp-navlink.active { background: rgba(8,131,247,.18); color: #4FA9FF; }
+html[data-lbtheme="dark"] .cp-tabbar .cp-fab { color: #8298b8; }
+html[data-lbtheme="dark"] .cp-tabbar .cp-fab .cp-fab-in { border-color: #0e1830; box-shadow: 0 10px 22px -8px rgba(8,131,247,.85), 0 2px 5px -1px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.35); }
+html[data-lbtheme="dark"] .cp-tab-badge { border-color: #0e1830; }
 html[data-lbtheme="dark"] .cp-tag { background: rgba(8,131,247,.16); color: #93c5fd; }
 html[data-lbtheme="dark"] .cp-row { border-color: rgba(255,255,255,.07); }
 
@@ -712,7 +734,12 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 .cpx-fav{background:none;border:0;cursor:pointer;font-size:20px;line-height:1;padding:2px 4px;margin-left:auto;color:#94a3b8;flex:none;min-width:32px;min-height:32px}
 .cpx-fav.on{color:#f59e0b}
 .cp-navlink{position:relative}
-.cp-tab-badge{position:absolute;top:2px;right:calc(50% - 18px);min-width:16px;height:16px;border-radius:99px;background:#FC5305;color:#fff;font:800 10px/16px system-ui,sans-serif;text-align:center;padding:0 4px}
+/* bl_ui_0393 — a count reads as a count: tabular figures so 1 and 7 are the same width, a
+   ring in the bar's colour so it sits ON the icon, and one pop when it first appears (it is
+   reused, not re-created, on every refresh — so the pop fires once, not every two minutes). */
+.cp-tab-badge{position:absolute;top:1px;right:calc(50% - 19px);min-width:17px;height:17px;border-radius:99px;background:#FC5305;color:#fff;font:800 10px/15px system-ui,sans-serif;font-variant-numeric:tabular-nums;text-align:center;padding:0 4px;border:2px solid #fff;box-shadow:0 2px 6px -2px rgba(252,83,5,.7);animation:lb-badge-in .22s cubic-bezier(.2,1.5,.4,1)}
+@keyframes lb-badge-in{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion: reduce){.cp-tab-badge{animation:none}}
 
 /* Reduced motion — blanket guard (WCAG): kill all animation for users who ask for it */
 @media (prefers-reduced-motion: reduce){

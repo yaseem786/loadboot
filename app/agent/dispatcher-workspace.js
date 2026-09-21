@@ -655,7 +655,7 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
         // The centre action is the one the whole workspace is built around: a booking the
         // dispatcher just closed on the phone. It is the same openLogForm the Bookings tab
         // opens, reached through the deep link that already exists (#bookings/new).
-        const fab = h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Log a booking', onClick: () => dwGo('bookings', 'new') }, [
+        const fab = h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Log a booking', onClick: () => { try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {} dwGo('bookings', 'new'); } }, [
           h('span', { class: 'cp-fab-in' }, ic('plus', 24)), h('span', null, 'Log'),
         ]);
         shellBar.classList.add('dw-bar');

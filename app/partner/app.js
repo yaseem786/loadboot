@@ -4555,7 +4555,9 @@ function packetAgreementCards(skipPacket) {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => bgo(id) }, [icon(it[2], 20), h('span', null, it[1])]);
     (bLinks[id] = bLinks[id] || []).push(a); return a;
   });
-  bTabKids.splice(2, 0, h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Post a load', onClick: () => openPostFromBar() }, [
+  // bl_ui_0393 — one short haptic on the centre action (no-op where the browser has none).
+  const bTapBuzz = () => { try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {} };
+  bTabKids.splice(2, 0, h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Post a load', onClick: () => { bTapBuzz(); openPostFromBar(); } }, [
     h('span', { class: 'cp-fab-in' }, icon('plus', 24)), h('span', null, 'Post'),
   ]));
   const bTabbar = h('nav', { class: 'cp-tabbar' }, bTabKids);
@@ -4910,7 +4912,10 @@ function packetAgreementCards(skipPacket) {
   }
   function bgo(id) {
     btab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
-    Object.keys(bLinks).forEach((k) => bLinks[k].forEach((a) => a.classList.toggle('active', k === btab)));
+    Object.keys(bLinks).forEach((k) => bLinks[k].forEach((a) => {
+      const on9 = (k === btab); a.classList.toggle('active', on9);
+      if (on9) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');   // bl_ui_0393
+    }));
     const it = BNAV.find((n) => n[0] === btab); bTitle.textContent = it ? it[1] : 'Dashboard';
     brender();
   }
@@ -4923,17 +4928,21 @@ function packetAgreementCards(skipPacket) {
   // the tab and the rows inside it can never disagree: claims from cc_partner_claims (broker_status
   // pending), requests from cc_book_requests_queue('pending') — the exact query bookRequestsCard
   // uses. A failed call leaves the old badge alone rather than showing a made-up zero.
-  function paintBadge9(id9, n9) {
+  function paintBadge9(id9, n9, noun9) {
     (bLinks[id9] || []).forEach((a9) => {
       let b9 = a9.querySelector('.cp-tab-badge');
-      if (n9 > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(n9 > 9 ? '9+' : n9); }
-      else if (b9) b9.remove();
+      // bl_ui_0393 — reused, not re-created, so the pop fires once; labelled for screen readers.
+      if (n9 > 0) {
+        if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); }
+        b9.textContent = String(n9 > 9 ? '9+' : n9);
+        b9.setAttribute('aria-label', n9 + ' ' + (noun9 || 'waiting'));
+      } else if (b9) b9.remove();
     });
   }
   async function refreshTabBadges9() {
     let cls9 = null, req9 = null;
-    try { cls9 = ((await partnerClaims()) || []).filter((c9) => String(c9.broker_status || 'pending') === 'pending').length; paintBadge9('claims', cls9); } catch (_) {}
-    try { req9 = ((await bookRequestsQueue('pending')) || []).length; paintBadge9('requests', req9); } catch (_) {}
+    try { cls9 = ((await partnerClaims()) || []).filter((c9) => String(c9.broker_status || 'pending') === 'pending').length; paintBadge9('claims', cls9, 'claims waiting on you'); } catch (_) {}
+    try { req9 = ((await bookRequestsQueue('pending')) || []).length; paintBadge9('requests', req9, 'booking requests waiting on you'); } catch (_) {}
     try { if (cls9 != null || req9 != null) setAppBadge((cls9 || 0) + (req9 || 0)); } catch (_) {}
   }
   refreshTabBadges9(); setInterval(refreshTabBadges9, 120000);

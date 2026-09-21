@@ -2236,7 +2236,10 @@ async function appView(user) {
       else if (++n9 > 60) clearInterval(t9);
     }, 100);
   }
-  const fabEl = () => h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Post your truck availability', onClick: openAvailFromBar }, [
+  // bl_ui_0393 — one short haptic on the centre action (Android/Chrome; iOS Safari has no
+  // Vibration API and simply does nothing, which is why it is wrapped and never awaited).
+  function tapBuzz() { try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {} }
+  const fabEl = () => h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Post your truck availability', onClick: () => { tapBuzz(); openAvailFromBar(); } }, [
     h('span', { class: 'cp-fab-in' }, icon('plus', 24)), h('span', null, 'Post'),
   ]);
   const sideNav = (mobile) => {
@@ -2267,11 +2270,17 @@ async function appView(user) {
   // "📨 Requests" tab counts with (cc_carrier_offers, status sent/viewed, not past expiry) — the
   // number on the tab and the number inside the tab can never disagree. No other carrier tab has
   // a real "needs you" count, so no other tab gets a badge.
-  function paintTabBadge(tabId, n9) {
+  function paintTabBadge(tabId, n9, noun9) {
     (navLinks[tabId] || []).forEach(a9 => {
       let b9 = a9.querySelector('.cp-tab-badge');
-      if (n9 > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(n9 > 9 ? '9+' : n9); }
-      else if (b9) b9.remove();
+      // bl_ui_0393 — the badge is REUSED, never re-created, so its pop animation fires once
+      // when the count appears and not again on every two-minute refresh. A screen reader
+      // hears "3 open requests", not a bare "3".
+      if (n9 > 0) {
+        if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); }
+        b9.textContent = String(n9 > 9 ? '9+' : n9);
+        b9.setAttribute('aria-label', n9 + ' ' + (noun9 || 'waiting'));
+      } else if (b9) b9.remove();
     });
   }
   async function refreshOfferBadge() {
@@ -2279,7 +2288,7 @@ async function appView(user) {
     try {
       const os9 = (await carrierOffers(50)) || [];
       const now9 = new Date();
-      paintTabBadge('loads', os9.filter(o9 => (o9.status === 'sent' || o9.status === 'viewed') && (!o9.expiry_at || new Date(o9.expiry_at) > now9)).length);
+      paintTabBadge('loads', os9.filter(o9 => (o9.status === 'sent' || o9.status === 'viewed') && (!o9.expiry_at || new Date(o9.expiry_at) > now9)).length, 'open booking requests');
     } catch (_) { /* leave the badge as it is — never guess a number */ }
   }
   refreshOfferBadge(); setInterval(refreshOfferBadge, 120000);
@@ -2416,7 +2425,10 @@ async function appView(user) {
   function go(id) {
     if (id !== 'loads') { try { window.__lbOpenAvail = null; } catch (_) {} }  // bl_ui_0392 — the hook belongs to the mounted Load Board view only
     tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);  // replace, not push — keeps Back working / no hash pile-up
-    Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => a.classList.toggle('active', k === tab)));
+    Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => {
+      const on9 = (k === tab); a.classList.toggle('active', on9);
+      if (on9) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');   // bl_ui_0393
+    }));
     const item = NAV.find(n => n[0] === tab);
     titleEl.textContent = item ? item[1] : ({ notifications: 'Notifications', onboarding: 'Onboarding', settings: 'Settings', reinstate: 'Account reinstatement' }[tab] || 'Dashboard');
     render();
