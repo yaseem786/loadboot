@@ -225,3 +225,76 @@ Add it to the end of the production apply order in §6.
 
 If any of these fails at Telnyx rather than in the browser, the reason is on the bubble — `wa_messages.error` —
 and the raw event is in `app_private.wa_webhook_log`.
+
+---
+
+## 9. 21 Sep 2026, evening — PRODUCTION apply (done) and what is still the owner's
+
+**The database half of §6 step 4 is DONE on production (`rwscphuhpjoudvljvmdk`).**
+
+| Checked after the apply | Result |
+|---|---|
+| `bl_wa_0367` … `0379` + `0377a` in the ledger | **14 rows** |
+| WhatsApp functions on prod vs staging | **identical sets**, name for name |
+| anon-executable SECURITY DEFINER surface | **33**, and the NAMES diff both ways is empty — nothing opened |
+| `dialer_config.wa_enabled` | **false** — nothing can send yet |
+| `wa_number` / `wa_waba_id` / `wa_phone_number_id` | **null** — deliberately not set |
+
+How it was applied: `0367` and `0377` through the migration tool; `0368`–`0376`, `0377a`, `0378`, `0379`
+pasted by the owner in the prod SQL editor. The SQL editor does not write the ledger, so those twelve were
+recorded afterwards with a statement saying exactly that — the ledger now matches reality, and each row names
+the file that is the source of truth.
+
+**Two things were found on the way and are worth keeping:**
+
+1. **`bl_wa_0377a` had no file.** It had been applied to staging ad hoc. It was recovered from the staging
+   ledger and written to `migrations/bl_wa_0377a_sync_missing_note.sql`. Note that `bl_wa_0377` on disk already
+   contains the same fix, so applying `0377` alone is enough on a fresh database.
+2. **`0377` was skipped in the paste run while `0377a` went in.** That left `cc_wa_templates_sync` on prod
+   calling `app_private.wa_tpl_vars()` and writing columns that did not exist — it would have failed on the
+   first sync. `0377` was then applied and the function set matches staging. If a run like this is ever done
+   again, check by OBJECT (does `wa_tpl_vars` exist, does `wa_templates` have `meta_id`) rather than by
+   "the editor said Success".
+
+**Edge functions deployed to prod:**
+
+```
+telnyx-wa-media      v1   verify_jwt = true
+telnyx-whatsapp      v1   verify_jwt = true
+telnyx-wa-templates  v1   verify_jwt = true
+telnyx-hook          v4   verify_jwt = false   (was the pre-WhatsApp build; now the v6 source)
+```
+
+`telnyx-hook` was checked against prod before deploying: `dialer_hook_event`, `dialer_sms_hook`,
+`dialer_wait_expired`, `cc_push_targets` and `wa_hook` all exist there, so the SMS and WhatsApp branches
+have somewhere to land. Calls and SMS are untouched by the change.
+
+### Still the owner's, in order
+
+1. CC → The line: set the WhatsApp number, WABA id and phone-number id on **prod**.
+2. **Repoint the Telnyx messaging profile webhook** from the staging `telnyx-hook` to the prod one.
+   This is the real cut-over: the moment it moves, inbound WhatsApp stops arriving on staging. Do the
+   staging testing first.
+3. Switch sending on (`wa_enabled`), then one inbound and one outbound test on prod.
+4. Rollback at any moment: `update app_private.dialer_config set wa_enabled = false;`
+
+### Frontend — NOT on prod yet
+
+`bl_wa_0383`–`0389` are on disk, uncommitted, and are the owner's to push:
+
+- `0383` attachment preview + caption before send (dock and CC)
+- `0384` voice notes: webm/opus is preferred over mp4 so the Ogg remux can run — Meta only accepts Ogg/Opus
+  with `voice: true`. Proven on staging: `audio/ogg`, status `read`.
+- `0385` attachments open again (Chrome blocks `window.open` on a blob URL with `noopener`) + the WhatsApp-style
+  recorder pill
+- `0386` the message list updates incrementally instead of being re-mounted, + pause/listen before sending
+- `0387`–`0389` scroll position across repaints
+
+**Open, not fixed:** the thread still jumps when the composer repaints (attach / send / record / pause).
+Four causes were found and fixed; a fifth remains. Next step is a console diagnostic logging
+`scrollTop`/`scrollHeight` on every event rather than another guess.
+
+**Also open:** an image send failed once with Telnyx `40008` "The recipient carrier did not accept the message"
+(0.05 MB PNG, signed link valid, window open, same shape as three that succeeded). Telnyx forwarded no reason
+from Meta. Untested guess: an extreme aspect-ratio screenshot. Retry the same file plus a normal photo to tell
+content-specific from transient.

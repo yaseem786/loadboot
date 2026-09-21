@@ -57,6 +57,29 @@ const CSS = `
 .wl-kv b{font:600 13.5px ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
 `;
 
+// bl_wa_0385 — Chrome blocks window.open on a blob: URL opened with 'noopener' (the blob belongs to the
+// document that created it, and 'noopener' severs that), so attachments appeared not to open at all. A photo
+// gets an in-page overlay; anything else is opened through an anchor click, which keeps the tie.
+function waOpenBlob(url, name) {
+  const a = document.createElement('a');
+  a.href = url; a.target = '_blank'; a.download = name || '';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function waLightbox(url) {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(3,8,20,.93);display:grid;place-items:center;cursor:zoom-out';
+  const im = document.createElement('img');
+  im.src = url; im.alt = 'Photo';
+  im.style.cssText = 'max-width:92vw;max-height:92vh;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.6)';
+  im.onclick = (e) => e.stopPropagation();
+  box.appendChild(im);
+  const esc = (e) => { if (e.key === 'Escape') shut(); };
+  function shut() { document.removeEventListener('keydown', esc); box.remove(); }
+  box.onclick = shut;
+  document.addEventListener('keydown', esc);
+  document.body.appendChild(box);
+}
+
 export async function renderWhatsappLive(host) {
   if (!document.getElementById('wl-css')) { const s = document.createElement('style'); s.id = 'wl-css'; s.textContent = CSS; document.head.appendChild(s); }
   const root = el('div', { class: 'wl' });
@@ -73,19 +96,51 @@ export async function renderWhatsappLive(host) {
       const up = await waUploadMedia(threadId, file);
       const r = await waSend({ thread_id: threadId, media: { ...up, voice: !!voice, caption: voice ? '' : draft } });
       if (!r || !r.ok) throw new Error((r && r.error) || 'That attachment could not be sent.');
-      draft = '';
+      draft = ''; clearPend();
       sending = false;
       await loadThread(open, true); await load(true);
     } catch (e) { sending = false; toast(humanizeError(e)); paintThread(); }
+  }
+  // bl_wa_0383 — the picked file waits in a preview strip and the reply box becomes its caption,
+  // the way WhatsApp itself does it. Same behaviour as the dispatcher dock.
+  let pend = null;
+  function clearPend() {
+    if (pend && pend.url) { try { URL.revokeObjectURL(pend.url); } catch (_) {} }
+    pend = null;
+  }
+  const fsize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+  function pendStrip() {
+    if (!pend) return null;
+    const isImg = /^image\//.test(pend.type || '');
+    return el('div', { class: 'wl-row', style: 'align-items:center;gap:10px;padding:8px;border:1px solid rgba(255,255,255,.14);border-radius:10px;margin-bottom:8px' }, [
+      isImg
+        ? el('img', { src: pend.url, alt: '', style: 'width:48px;height:48px;object-fit:cover;border-radius:8px;flex:none' })
+        : el('div', { style: 'width:48px;height:48px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.10);font-size:11px;font-weight:800' },
+            ((pend.name.split('.').pop() || 'file').slice(0, 4)).toUpperCase()),
+      el('div', { style: 'flex:1;min-width:0' }, [
+        el('div', { style: 'font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, pend.name),
+        el('span', { class: 'hint' }, fsize(pend.size) + ' · add a caption, then Send'),
+      ]),
+      el('button', { class: 'wl-btn', disabled: sending, onClick: () => { clearPend(); paintThread(); } }, 'Remove'),
+    ]);
   }
   function pickFile(threadId) {
     const inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt';
-    inp.onchange = () => { const f = inp.files && inp.files[0]; inp.value = ''; if (f) sendFile(threadId, f, false); };
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0]; inp.value = '';
+      if (!f) return;
+      if (f.size > 16 * 1024 * 1024) { toast('That file is larger than 16 MB.'); return; }
+      clearPend();
+      pend = { file: f, name: f.name || 'file', size: f.size, type: f.type || '', url: URL.createObjectURL(f) };
+      paintThread();
+    };
     inp.click();
   }
-  const recMime = () => ['audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm']
+  // bl_wa_0384 — webm/opus before mp4: only those packets can be remuxed to the Ogg/Opus that Meta
+  // requires for a voice message. Chrome now offers audio/mp4, which the carrier refuses with voice:true.
+  const recMime = () => ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
     .find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
   async function toggleRec(threadId) {
     if (rec) { try { rec.stop(); } catch (_) {} return; }
@@ -105,7 +160,12 @@ export async function renderWhatsappLive(host) {
         // bl_wa_0378 - WhatsApp refuses audio/webm, which is all Chrome can record. The Opus packets are
         // moved into an Ogg container (no re-encode); if that fails the original goes out as before.
         const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
-        await sendFile(threadId, await waVoiceFile(blob, 'voice-note.' + ext), true);
+        const f = await waVoiceFile(blob, 'voice-note.' + ext);
+        // bl_wa_0384 - not Ogg/Opus means it cannot be a voice message; it still goes, as an audio file,
+        // and the sender is told rather than the send failing silently at the carrier.
+        const isOgg = /ogg/i.test(f.type || '');
+        if (!isOgg) toast('This browser cannot record a WhatsApp voice note, so it went as an audio file.');
+        await sendFile(threadId, f, isOgg);
       };
       rec.start(); paintThread();
     } catch (_) { rec = null; toast('Microphone permission is needed to record.'); }
@@ -148,7 +208,7 @@ export async function renderWhatsappLive(host) {
     const kind = m.media_kind || '', mime = m.mime || '';
     if (kind === 'image' || kind === 'sticker' || mime.startsWith('image/')) {
       const img = el('img', { class: 'wl-img', alt: 'Photo', loading: 'lazy' });
-      mediaUrl(m.id).then((u) => { img.src = u; img.onclick = () => window.open(u, '_blank', 'noopener'); })
+      mediaUrl(m.id).then((u) => { img.src = u; img.onclick = () => waLightbox(u); })
         .catch((e) => img.replaceWith(el('div', { class: 'wl-ph' }, (e && e.message) || 'Photo unavailable')));
       return img;
     }
@@ -165,7 +225,7 @@ export async function renderWhatsappLive(host) {
     const name = m.file_name || (kind === 'document' ? 'Document' : 'Attachment');
     return el('button', { class: 'wl-doc', type: 'button', onClick: async (e) => {
       const b = e.currentTarget; b.disabled = true;
-      try { window.open(await mediaUrl(m.id), '_blank', 'noopener'); } catch (err) { toast(humanizeError(err)); }
+      try { waOpenBlob(await mediaUrl(m.id), m.file_name || 'attachment'); } catch (err) { toast(humanizeError(err)); }
       b.disabled = false;
     } }, [icon('doc', 16), el('span', null, [name, el('small', null, (mime || 'file').split(';')[0])])]);
   }
@@ -355,12 +415,15 @@ export async function renderWhatsappLive(host) {
       el('h3', null, (t.contact_name || pretty(t.number)) + ' · ' + t.number),
       el('p', { class: 'hint' }, [t.owner ? 'Owner: ' + t.owner : 'Unassigned', ' · ', t.window_open ? 'replies open for ' + (left(t.window_ends) || 'a moment') : 'window closed — approved template only'].join('')),
       el('div', { class: 'wl-msgs' }, msgRows(thr.messages)),
-      t.window_open ? el('div', { class: 'wl-row' }, [
-        el('input', { class: 'wl-in', style: 'flex:1;min-width:240px', placeholder: 'Reply as LoadBoot staff…', value: draft, onInput: (e) => { draft = e.target.value; } }),
-        el('button', { class: 'wl-btn', disabled: sending, onClick: () => pickFile(t.id) }, [icon('upload', 15), 'Attach']),
-        el('button', { class: 'wl-btn', disabled: sending, onClick: () => toggleRec(t.id) }, rec ? 'Stop & send' : 'Record voice'),
-        el('button', { class: 'wl-btn pri', disabled: sending, onClick: () => { if (draft.trim()) send({ thread_id: t.id, body: draft }); } }, sending ? 'Sending…' : 'Send'),
-        el('button', { class: 'wl-btn', onClick: () => { open = null; thr = null; paintThread(); } }, 'Close panel'),
+      t.window_open ? el('div', null, [
+        pendStrip(),
+        el('div', { class: 'wl-row' }, [
+          el('input', { class: 'wl-in', style: 'flex:1;min-width:240px', placeholder: pend ? 'Add a caption… (optional)' : 'Reply as LoadBoot staff…', value: draft, onInput: (e) => { draft = e.target.value; } }),
+          el('button', { class: 'wl-btn', disabled: sending, onClick: () => pickFile(t.id) }, [icon('upload', 15), pend ? 'Replace' : 'Attach']),
+          pend ? null : el('button', { class: 'wl-btn', disabled: sending, onClick: () => toggleRec(t.id) }, rec ? 'Stop & send' : 'Record voice'),
+          el('button', { class: 'wl-btn pri', disabled: sending, onClick: () => { if (pend) sendFile(t.id, pend.file, false); else if (draft.trim()) send({ thread_id: t.id, body: draft }); } }, sending ? 'Sending…' : (pend ? 'Send file' : 'Send')),
+          el('button', { class: 'wl-btn', onClick: () => { clearPend(); open = null; thr = null; paintThread(); } }, 'Close panel'),
+        ]),
       ]) : el('div', null, [
         !approved.length
           ? el('div', { class: 'wl-note' }, 'The window is closed and no template is approved at Meta yet, so nothing can be sent to this person until they message first.')

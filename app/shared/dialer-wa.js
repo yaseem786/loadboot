@@ -30,6 +30,23 @@ export function createWaPanel(ctx) {
 .lbdwa-img{max-width:230px;max-height:280px;border-radius:12px;display:block;cursor:zoom-in;object-fit:cover}
 .lbdwa-ph{width:200px;height:110px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#9fb3d6;font-size:11.5px}
 .lbdwa-aud{width:238px;height:36px;margin:2px 0}
+.lbdwa-img.pend{min-height:140px;min-width:170px;background:rgba(255,255,255,.06)}
+.lbdwa-lb{position:fixed;inset:0;z-index:99999;background:rgba(3,8,20,.93);display:grid;place-items:center;cursor:zoom-out}
+.lbdwa-lb img{max-width:92vw;max-height:92vh;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+.lbdwa-lb .x{position:absolute;top:14px;right:18px;color:#cbd7ee;font:700 22px Inter,system-ui,sans-serif;background:none;border:0;cursor:pointer}
+.lbdwa-rec{display:flex;align-items:center;gap:10px;margin-top:8px;padding:7px 9px;border-radius:26px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13)}
+.lbdwa-recbtn{background:none;border:0;color:#9fb3d6;cursor:pointer;padding:5px;display:flex;flex:none}
+.lbdwa-recbtn:hover{color:#fff}
+.lbdwa-recdot{width:9px;height:9px;border-radius:50%;background:#ef4444;flex:none;animation:lbdwaBlink 1s steps(2,start) infinite}
+.lbdwa-rect{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;color:#e8eefc;min-width:36px;flex:none}
+.lbdwa-wave{display:flex;align-items:center;gap:2px;flex:1;height:22px;overflow:hidden;min-width:0}
+.lbdwa-wave i{display:block;width:3px;border-radius:2px;background:#9fb3d6;height:6px;animation:lbdwaWave .9s ease-in-out infinite}
+.lbdwa-recdot.off{animation:none;opacity:.35}
+.lbdwa-prev{flex:1;min-width:0;height:32px}
+.lbdwa-recsend{width:36px;height:36px;border-radius:50%;border:0;background:var(--bl);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+@keyframes lbdwaBlink{50%{opacity:.25}}
+@keyframes lbdwaWave{0%,100%{height:6px}50%{height:20px}}
 .lbdwa-doc{display:flex;gap:9px;align-items:center;background:rgba(255,255,255,.12);border:0;border-radius:10px;
   padding:9px 11px;cursor:pointer;min-width:170px;color:inherit;font:600 12.5px Inter,system-ui,sans-serif;text-align:left}
 .lbdwa-doc small{display:block;font-weight:500;opacity:.75;margin-top:2px;font-size:10.5px}
@@ -61,6 +78,26 @@ export function createWaPanel(ctx) {
   }
 
   const mediaCache = new Map();            // message id -> object URL
+  // bl_wa_0385 - a blob: URL cannot be handed to window.open with 'noopener'. An anchor click keeps the
+  // opener tie, so the file really opens; images skip this and use the overlay below.
+  const mediaDims = new Map();
+  function openBlob(url, name) {
+    const a2 = document.createElement('a');
+    a2.href = url; a2.target = '_blank'; a2.download = name || '';
+    document.body.appendChild(a2); a2.click(); a2.remove();
+  }
+  function lightbox(url) {
+    const esc = (e) => { if (e.key === 'Escape') shut(); };
+    const box = h('div', { class: 'lbdwa-lb', onClick: () => shut() }, [
+      h('button', { class: 'x', type: 'button', 'aria-label': 'Close' }, '\u2715'),
+      h('img', { src: url, alt: 'Photo', onClick: (e) => e.stopPropagation() }),
+    ]);
+    function shut() { document.removeEventListener('keydown', esc); box.remove(); }
+    box.querySelector('.x').onclick = shut;
+    document.addEventListener('keydown', esc);
+    document.body.appendChild(box);
+  }
+
   async function mediaUrl(id) {
     if (mediaCache.has(id)) return mediaCache.get(id);
     const blob = await api.waMediaBlob(id);
@@ -88,9 +125,21 @@ export function createWaPanel(ctx) {
     const kind = m.media_kind || '';
     const mime = m.mime || '';
     if (kind === 'image' || kind === 'sticker' || mime.startsWith('image/')) {
-      const img = h('img', { class: 'lbdwa-img', alt: 'Photo', loading: 'lazy' });
-      mediaUrl(m.id).then((u) => { img.src = u; img.onclick = () => window.open(u, '_blank', 'noopener'); })
-        .catch((e) => { img.replaceWith(h('div', { class: 'lbdwa-ph' }, (e && e.message) || 'Photo unavailable')); });
+      // bl_wa_0385 - window.open(blobUrl, '_blank', 'noopener') is blocked by Chrome: a blob URL is tied to
+      // the document that made it and 'noopener' cuts that tie, so the tab opened blank and the photo
+      // "would not open". It shows in an overlay inside the panel instead, which is what WhatsApp does too.
+      const d = mediaDims.get(m.id);
+      const img = h('img', { class: 'lbdwa-img' + (d ? '' : ' pend'), alt: 'Photo', loading: 'lazy' });
+      if (d) { img.style.width = d.w + 'px'; img.style.height = d.h + 'px'; }
+      mediaUrl(m.id).then((u) => {
+        img.onclick = () => lightbox(u);
+        img.addEventListener('load', () => {
+          img.classList.remove('pend');
+          if (img.clientWidth && img.clientHeight) mediaDims.set(m.id, { w: img.clientWidth, h: img.clientHeight });
+          img.style.width = ''; img.style.height = '';
+        }, { once: true });
+        img.src = u;
+      }).catch((e) => { img.replaceWith(h('div', { class: 'lbdwa-ph' }, (e && e.message) || 'Photo unavailable')); });
       return img;
     }
     if (kind === 'audio' || kind === 'voice' || mime.startsWith('audio/')) {
@@ -106,7 +155,7 @@ export function createWaPanel(ctx) {
     const name = m.file_name || (kind === 'document' ? 'Document' : 'Attachment');
     return h('button', { class: 'lbdwa-doc', type: 'button', onClick: async (e) => {
       const btn = e.currentTarget; btn.disabled = true;
-      try { const u = await mediaUrl(m.id); window.open(u, '_blank', 'noopener'); }
+      try { const u = await mediaUrl(m.id); openBlob(u, m.file_name || 'attachment'); }
       catch (err) { toast((err && err.message) || 'Could not open that file.'); }
       btn.disabled = false;
     } }, [ic('msg', 16), h('span', null, [name, h('small', null, (mime || 'file').split(';')[0])])]);
@@ -127,7 +176,7 @@ export function createWaPanel(ctx) {
     } catch (_) {}
   }
 
-  function close() { if (timer) { clearInterval(timer); timer = null; } S.waId = null; S.waThread = null; S.waDraft = ''; S.waTpl = null; S.waVars = []; }
+  function close() { if (timer) { clearInterval(timer); timer = null; } S.waId = null; S.waThread = null; S.waDraft = ''; S.waTpl = null; S.waVars = []; clearPend(); msgsBox = null; waTop = 0; waAtEnd = true; }
 
   async function loadThread(quiet) {
     if (!S.waId) return;
@@ -170,12 +219,46 @@ export function createWaPanel(ctx) {
     return h('div', { class: 'lbd-bub' + (m.direction === 'outbound' ? ' out' : '') + (failed ? ' fail' : '') }, [
       media,
       m.body ? h('div', { class: media ? 'lbdwa-cap' : '' }, m.body) : null,
-      h('small', null, [
-        m.kind === 'template' ? h('span', null, 'Template \u00b7 ') : null,
-        h('span', null, clock(m.at)),
-        failed ? h('span', null, ' \u00b7 Not sent' + (m.error ? ' \u2014 ' + m.error : '')) : null,
-        tick(m),
-      ]),
+      metaLine(m),
+    ]);
+  }
+
+  // bl_wa_0386 - the whole list used to be re-mounted on every poll, so each status tick (sent - delivered
+  // - read) threw away every bubble and every loaded photo and rebuilt them. That is what pulled the view
+  // to the top. Bubbles are kept and reused now; only a changed meta line is swapped, and only genuinely
+  // new rows are inserted. Nothing the reader is looking at is touched, so nothing moves.
+  const rowCache = new Map();
+  let listFor = null;
+  // bl_wa_0387 - attaching, sending, recording and pausing all call paint(), which builds a brand new
+  // message box; a fresh box starts at scrollTop 0 and the old code then forced it to the very bottom.
+  // The reader's position is tracked here instead and put back after every repaint.
+  let waTop = 0, waAtEnd = true, waLock = false, waRepaint = false;
+  // bl_wa_0389 - paint() rebuilds the whole dialer panel, so the message box used to be a NEW empty
+  // element every time: it reported scrollHeight 0, the tracker believed the reader had jumped to the
+  // top, and that wrong position was then restored. One node is kept and re-parented instead, and every
+  // scroll event fired during a repaint is ignored - only the reader's own scrolling is recorded.
+  let msgsBox = null;
+  function msgsNode() {
+    if (!msgsBox) msgsBox = h('div', { class: 'lbd-msgs', 'data-walist': '1', role: 'log', 'aria-live': 'polite' });
+    waRepaint = true;
+    return msgsBox;
+  }
+  // bl_wa_0388 - setting scrollTop fires a scroll event of its own. Without this lock the tracker read
+  // back the value the browser had just clamped (a freshly mounted box is still 0 high, so the clamp is
+  // 0) and overwrote the remembered position with it - which is why the list kept ending up at the top.
+  function setScroll(box, v) {
+    waLock = true;
+    box.scrollTop = v;
+    requestAnimationFrame(() => requestAnimationFrame(() => { waLock = false; }));
+  }
+
+  function metaLine(m) {
+    const failed = m.status === 'failed';
+    return h('small', null, [
+      m.kind === 'template' ? h('span', null, 'Template \u00b7 ') : null,
+      h('span', null, clock(m.at)),
+      failed ? h('span', null, ' \u00b7 Not sent' + (m.error ? ' \u2014 ' + m.error : '')) : null,
+      tick(m),
     ]);
   }
 
@@ -183,16 +266,65 @@ export function createWaPanel(ctx) {
     const root = rootOf();
     const box = root && root.querySelector('[data-walist]'); if (!box) return;
     const ms = (S.waThread && S.waThread.messages) || [];
-    const near = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    if (listFor !== S.waId) { rowCache.clear(); box.textContent = ''; listFor = S.waId; waTop = 0; waAtEnd = true; }
+    if (!box.__waScroll) {                    // a repainted panel brings a new box; re-arm the tracker
+      box.__waScroll = true;
+      box.addEventListener('scroll', () => {
+        if (waLock || waRepaint) return;      // our own restore or a repaint, not the reader
+        waTop = box.scrollTop;
+        waAtEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+      }, { passive: true });
+    }
+    if (!ms.length) {
+      rowCache.clear();
+      mount(box, h('div', { class: 'lbd-empty' }, S.waThread ? 'No messages yet.' : 'Loading...'));
+      return;
+    }
+    const want = [], keep = new Set(), fresh = [];
     let day = '';
-    const rows = [];
     ms.forEach((m) => {                       // a separator whenever the date changes, like WhatsApp
       const d = dayLabel(m.at);
-      if (d !== day) { day = d; rows.push(h('div', { class: 'lbdwa-day' }, d)); }
-      rows.push(bubble(m));
+      if (d !== day) {
+        day = d;
+        const k = 'day:' + d; keep.add(k);
+        let c = rowCache.get(k);
+        if (!c) { c = { el: h('div', { class: 'lbdwa-day' }, d) }; rowCache.set(k, c); }
+        want.push(c.el);
+      }
+      keep.add(m.id);
+      const sig = [m.status, m.error || '', m.body || '', m.has_media ? 1 : 0].join('|');
+      let c = rowCache.get(m.id);
+      if (!c) { c = { el: bubble(m), sig: sig }; rowCache.set(m.id, c); fresh.push(c.el); }
+      else if (c.sig !== sig) {               // a tick moved: swap the one line, never the photo above it
+        const small = c.el.querySelector(':scope > small');
+        const nw = metaLine(m);
+        if (small) c.el.replaceChild(nw, small); else c.el.appendChild(nw);
+        c.el.classList.toggle('fail', m.status === 'failed');
+        c.sig = sig;
+      }
+      want.push(c.el);
     });
-    mount(box, rows.length ? rows : h('div', { class: 'lbd-empty' }, S.waThread ? 'No messages yet.' : 'Loading...'));
-    if (toEnd || near) box.scrollTop = box.scrollHeight;
+    rowCache.forEach((_v, k) => { if (!keep.has(k)) rowCache.delete(k); });
+    want.forEach((elx, i) => { if (box.children[i] !== elx) box.insertBefore(elx, box.children[i] || null); });
+    while (box.children.length > want.length) box.removeChild(box.lastChild);
+    // The box has usually not been laid out yet on the frame a repaint mounts it, so the first write can
+    // be clamped to 0. It is applied again on the next frame, once the real height exists.
+    const target = () => (toEnd || waAtEnd) ? box.scrollHeight : waTop;
+    setScroll(box, target());
+    requestAnimationFrame(() => {
+      if (Math.abs(box.scrollTop - target()) > 2) setScroll(box, target());
+      requestAnimationFrame(() => { waRepaint = false; });
+    });
+    // a photo in a brand-new bubble still lands late and grows the list; only those are anchored.
+    fresh.forEach((elx) => {
+      const im = elx.tagName === 'IMG' ? elx : elx.querySelector && elx.querySelector('img.lbdwa-img');
+      if (!im || im.complete) return;
+      const t0 = box.scrollTop, h0 = box.scrollHeight;
+      const atEnd = waAtEnd;
+      im.addEventListener('load', () => {
+        setScroll(box, atEnd ? box.scrollHeight : t0 + (box.scrollHeight - h0));
+      }, { once: true });
+    });
   }
 
   async function send(payload) {
@@ -237,25 +369,112 @@ export function createWaPanel(ctx) {
     try {
       const up = await api.waUploadMedia(threadId, file);
       const r = await api.waSend({ thread_id: threadId, media: { ...up, voice: !!voice, caption: voice ? '' : (S.waDraft || '') } });
-      if (r && r.ok) S.waDraft = '';
+      if (r && r.ok) { S.waDraft = ''; clearPend(); }
       else toast((r && r.error) || 'That attachment could not be sent.');
     } catch (e) { toast((e && e.message) || 'That attachment could not be sent.'); }
     S.waBusy = false;
     await loadThread(false);
   }
 
+  // bl_wa_0383 — a picked file no longer flies off on the spot. It waits in a preview strip and the
+  // message box becomes its caption, the way WhatsApp itself does it. The caption still travels as
+  // S.waDraft, so the send path above is unchanged.
+  function clearPend() {
+    if (S.waPend && S.waPend.url) { try { URL.revokeObjectURL(S.waPend.url); } catch (_) {} }
+    S.waPend = null;
+  }
+  const fsize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+
+  const PAUSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+  const TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
+  // bl_wa_0385 - the recorder now reads the way WhatsApp's does: bin on the left to throw the take away,
+  // a blinking dot and a running clock, a moving wave, and one round button to stop and send.
+  function recStrip() {
+    if (!rec) return null;
+    const bars = [];
+    for (let i = 0; i < 18; i++) bars.push(h('i', { style: recPaused ? 'animation:none;height:6px' : 'animation-delay:' + (i * 60) + 'ms' }));
+    return h('div', { class: 'lbdwa-rec' }, [
+      h('button', { class: 'lbdwa-recbtn', type: 'button', 'aria-label': 'Delete recording', title: 'Delete recording',
+        onClick: cancelRec, html: TRASH }),
+      h('span', { class: 'lbdwa-recdot' + (recPaused ? ' off' : '') }),
+      h('span', { class: 'lbdwa-rect', 'data-warecs': '1' }, mmss(recSecs)),
+      recPaused && recPrevUrl
+        ? h('audio', { class: 'lbdwa-prev', controls: 'controls', src: recPrevUrl })
+        : h('span', { class: 'lbdwa-wave' }, bars),
+      h('button', { class: 'lbdwa-recbtn', type: 'button', 'aria-label': recPaused ? 'Resume recording' : 'Pause and listen',
+        title: recPaused ? 'Resume recording' : 'Pause and listen', onClick: pauseRec, html: recPaused ? MIC : PAUSE }),
+      h('button', { class: 'lbdwa-recsend', type: 'button', 'aria-label': 'Send voice note', title: 'Send voice note',
+        onClick: stopAndSend }, ic('send', 17)),
+    ]);
+  }
+
+  function pendStrip() {
+    const p = S.waPend;
+    if (!p) return null;
+    const isImg = /^image\//.test(p.type || '');
+    return h('div', { style: 'display:flex;gap:10px;align-items:center;margin-top:8px;padding:8px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.05)' }, [
+      isImg
+        ? h('img', { src: p.url, alt: '', style: 'width:52px;height:52px;object-fit:cover;border-radius:8px;flex:none' })
+        : h('div', { style: 'width:52px;height:52px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.10);font-size:11px;font-weight:800;letter-spacing:.5px' },
+            ((p.name.split('.').pop() || 'file').slice(0, 4)).toUpperCase()),
+      h('div', { style: 'flex:1;min-width:0' }, [
+        h('div', { style: 'font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, p.name),
+        h('div', { style: 'font-size:11px;color:var(--mu)' }, fsize(p.size) + ' · add a caption, then Send'),
+      ]),
+      h('button', { class: 'lbd-send', type: 'button', 'aria-label': 'Remove attachment', title: 'Remove attachment',
+        style: 'background:rgba(255,255,255,.10);flex:none', disabled: S.waBusy,
+        onClick: () => { clearPend(); paint(); } }, '✕'),
+    ]);
+  }
+
   function pickFile(threadId) {
     const inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt';
-    inp.onchange = () => { const f = inp.files && inp.files[0]; inp.value = ''; if (f) sendFile(threadId, f, false); };
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0]; inp.value = '';
+      if (!f) return;
+      if (f.size > 16 * 1024 * 1024) { toast('That file is larger than 16 MB.'); return; }
+      clearPend();
+      S.waPend = { file: f, name: f.name || 'file', size: f.size, type: f.type || '', url: URL.createObjectURL(f) };
+      paint();
+      const box = rootOf().querySelector('#lbd-wa');
+      if (box) { try { box.focus({ preventScroll: true }); } catch (_) { box.focus(); } }   // bl_wa_0389
+    };
     inp.click();
   }
 
   // WhatsApp voice notes are OGG/Opus. Chrome usually records webm/opus instead, so the best supported type is
   // chosen here and, if Meta refuses it, the reason lands on the bubble rather than being swallowed.
-  let rec = null, recChunks = [], recTimer = null;
-  const recMime = () => ['audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm']
+  let rec = null, recChunks = [], recTimer = null, recSecs = 0, recCancel = false, recPaused = false, recPrevUrl = '';
+  const mmss = (n) => Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+  function dropPrev() { if (recPrevUrl) { try { URL.revokeObjectURL(recPrevUrl); } catch (_) {} recPrevUrl = ''; } }
+  function cancelRec() { if (!rec) return; recCancel = true; try { rec.stop(); } catch (_) {} }
+  // bl_wa_0386 - pause keeps the recorder alive and hands back what is on tape so far, so the take can be
+  // listened to before it goes. Resume carries on into the same chunk list; nothing recorded is lost.
+  function pauseRec() {
+    if (!rec) return;
+    if (recPaused) { dropPrev(); recPaused = false; try { rec.resume(); } catch (_) {} paint(); return; }
+    try { rec.pause(); } catch (_) {}
+    recPaused = true;
+    try {
+      rec.requestData();
+      setTimeout(() => {
+        if (!recPaused || !recChunks.length) return;
+        dropPrev();
+        recPrevUrl = URL.createObjectURL(new Blob(recChunks, { type: (rec && rec.mimeType) || 'audio/webm' }));
+        paint();
+      }, 120);
+    } catch (_) {}
+    paint();
+  }
+  function stopAndSend() { if (!rec) return; recCancel = false; try { rec.stop(); } catch (_) {} }
+  // bl_wa_0384 — a WhatsApp VOICE message must be Ogg/Opus; Meta refuses anything else with voice:true.
+  // Chrome on Windows now reports audio/mp4 as supported, and mp4/AAC cannot be remuxed to Ogg/Opus — so it
+  // used to be picked here and the send failed at the carrier. webm/opus comes first: wa-opus.js moves those
+  // packets into an Ogg container with no re-encode. mp4 stays last, as a plain audio file of last resort.
+  const recMime = () => ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
     .find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
   async function toggleRec(threadId) {
     if (rec) { try { rec.stop(); } catch (_) {} return; }
@@ -264,39 +483,59 @@ export function createWaPanel(ctx) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mt = recMime();
       rec = new MediaRecorder(stream, mt ? { mimeType: mt } : undefined);
-      recChunks = [];
+      recChunks = []; recSecs = 0; recCancel = false; recPaused = false; dropPrev();
       rec.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
       rec.onstop = async () => {
         clearInterval(recTimer); recTimer = null;
         stream.getTracks().forEach((tr) => tr.stop());
         const type = (rec && rec.mimeType) || mt || 'audio/webm';
         const blob = new Blob(recChunks, { type });
-        rec = null; recChunks = []; paint();
+        const cancelled = recCancel;
+        rec = null; recChunks = []; recSecs = 0; recCancel = false; recPaused = false; dropPrev(); paint();
+        if (cancelled) return;
         if (blob.size < 1200) { toast('That recording was too short.'); return; }
         // bl_wa_0378 - WhatsApp refuses audio/webm, which is all Chrome can record. The Opus packets are
         // moved into an Ogg container (no re-encode); if that fails the original goes out as before.
         const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
-        await sendFile(threadId, await waVoiceFile(blob, 'voice-note.' + ext), true);
+        const f = await waVoiceFile(blob, 'voice-note.' + ext);
+        // bl_wa_0384 - if it could not be made Ogg/Opus it still goes, but as a plain audio file rather
+        // than a voice message, and the dispatcher is told. The old silent pass-through made Meta refuse
+        // the whole message and the bubble only said the carrier did not accept it.
+        const isOgg = /ogg/i.test(f.type || '');
+        if (!isOgg) toast('This browser cannot record a WhatsApp voice note, so it went as an audio file.');
+        await sendFile(threadId, f, isOgg);
       };
       rec.start();
       paint();
-      recTimer = setInterval(() => { const b = rootOf().querySelector('[data-warec]'); if (b) b.title = 'Stop and send'; }, 1000);
+      recTimer = setInterval(() => { if (recPaused) return; recSecs += 1; const l = rootOf().querySelector('[data-warecs]'); if (l) l.textContent = mmss(recSecs); }, 1000);
     } catch (e) { toast('Microphone permission is needed to record.'); rec = null; }
   }
 
   function composer(wa, t) {
     const tpls = wa.templates || [];
     if (t.thread.window_open) {
-      return h('div', { class: 'lbd-comp' }, [
-        iconBtn(CLIP, 'Attach a file', () => pickFile(t.thread.id)),
-        h('button', { class: 'lbd-send', type: 'button', 'data-warec': '1', 'aria-label': rec ? 'Stop and send' : 'Record a voice note',
-          title: rec ? 'Stop and send' : 'Record a voice note', style: rec ? 'background:var(--or)' : 'background:rgba(255,255,255,.10)',
-          onClick: () => toggleRec(t.thread.id), html: rec ? STOP : MIC }),
-        h('textarea', { class: 'lbd-in', id: 'lbd-wa', rows: '2', maxlength: '3000', placeholder: 'Write a WhatsApp message…', 'aria-label': 'Message',
-          onInput: (e) => { S.waDraft = e.target.value; const b = rootOf().querySelector('[data-wasend]'); if (b) b.disabled = S.waBusy || !e.target.value.trim(); },
-          onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if ((S.waDraft || '').trim()) send({ thread_id: t.thread.id, body: S.waDraft }); } } }, S.waDraft),
-        h('button', { class: 'lbd-send', 'data-wasend': '1', 'aria-label': 'Send WhatsApp message', disabled: S.waBusy || !(S.waDraft || '').trim(),
-          onClick: () => send({ thread_id: t.thread.id, body: S.waDraft }) }, ic('send', 17)),
+      // bl_wa_0383 — one Send for both: a waiting attachment goes with the box as its caption,
+      // otherwise the box is the message. An empty caption is allowed; an empty message is not.
+      const goSend = () => {
+        if (S.waBusy) return;
+        if (S.waPend) sendFile(t.thread.id, S.waPend.file, false);
+        else if ((S.waDraft || '').trim()) send({ thread_id: t.thread.id, body: S.waDraft });
+      };
+      if (rec) return recStrip();                   // bl_wa_0385 - the pill replaces the whole composer
+      return h('div', null, [
+        pendStrip(),
+        h('div', { class: 'lbd-comp' }, [
+          rec ? null : iconBtn(CLIP, S.waPend ? 'Replace the attachment' : 'Attach a file', () => pickFile(t.thread.id)),
+          S.waPend ? null : h('button', { class: 'lbd-send', type: 'button', 'data-warec': '1', 'aria-label': rec ? 'Stop and send' : 'Record a voice note',
+            title: rec ? 'Stop and send' : 'Record a voice note', style: rec ? 'background:var(--or)' : 'background:rgba(255,255,255,.10)',
+            onClick: () => toggleRec(t.thread.id), html: rec ? STOP : MIC }),
+          h('textarea', { class: 'lbd-in', id: 'lbd-wa', rows: '2', maxlength: '3000',
+            placeholder: S.waPend ? 'Add a caption… (optional)' : 'Write a WhatsApp message…', 'aria-label': S.waPend ? 'Caption' : 'Message',
+            onInput: (e) => { S.waDraft = e.target.value; const b = rootOf().querySelector('[data-wasend]'); if (b) b.disabled = S.waBusy || (!S.waPend && !e.target.value.trim()); },
+            onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goSend(); } } }, S.waDraft),
+          h('button', { class: 'lbd-send', 'data-wasend': '1', 'aria-label': S.waPend ? 'Send attachment' : 'Send WhatsApp message',
+            disabled: S.waBusy || (!S.waPend && !(S.waDraft || '').trim()), onClick: goSend }, ic('send', 17)),
+        ]),
       ]);
     }
     // window closed → template only
@@ -349,10 +588,10 @@ export function createWaPanel(ctx) {
           'Nobody has taken this carrier\u2019s conversation yet. ',
           h('button', { class: 'lbd-btn ghost sm', onClick: () => claim(th.id) }, 'Take it'),
         ]) : null,
-        h('div', { class: 'lbd-msgs', 'data-walist': '1', role: 'log', 'aria-live': 'polite' }),
+        msgsNode(),
         th && wa.enabled ? composer(wa, t) : (th ? h('div', { class: 'lbd-note', style: 'margin:8px 0 0' }, 'Sending is switched off.') : null),
       ]);
-      setTimeout(() => paintMsgs(true), 0);
+      setTimeout(() => paintMsgs(listFor !== S.waId), 0);   // bl_wa_0387 - only a new thread jumps to the end
       return h('div', null, [off, view2]);
     }
 
