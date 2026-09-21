@@ -14,6 +14,8 @@
 //     Outside it, only an APPROVED Utility template goes out. The server refuses anything else — this screen only
 //     shows the state honestly (countdown, or the template picker).
 //   * Templates are approved by Meta, not by us. Until Meta approves them the picker is empty and says so.
+import { waVoiceFile } from './wa-opus.js';   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
+
 export function createWaPanel(ctx) {
   const { h, mount, ic, ago, pretty, digits, toast, paint, rootOf, S, api, onCall } = ctx;
   let timer = null;
@@ -271,8 +273,10 @@ export function createWaPanel(ctx) {
         const blob = new Blob(recChunks, { type });
         rec = null; recChunks = []; paint();
         if (blob.size < 1200) { toast('That recording was too short.'); return; }
+        // bl_wa_0378 - WhatsApp refuses audio/webm, which is all Chrome can record. The Opus packets are
+        // moved into an Ogg container (no re-encode); if that fails the original goes out as before.
         const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
-        await sendFile(threadId, new File([blob], 'voice-note.' + ext, { type: type.split(';')[0] }), true);
+        await sendFile(threadId, await waVoiceFile(blob, 'voice-note.' + ext), true);
       };
       rec.start();
       paint();

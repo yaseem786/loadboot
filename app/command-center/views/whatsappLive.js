@@ -10,6 +10,7 @@
 import { el, mount } from '../../shared/ui/dom.js';
 import { icon } from '../../shared/ui/icons.js';
 import { sectionHead } from '../../shared/ui/components.js';
+import { waVoiceFile } from '../../shared/wa-opus.js';   // bl_wa_0378 - Chrome records webm; WhatsApp needs ogg
 import { ccWaOverview, ccWaAssign, ccWaThreadSet, ccWaTemplateSet, ccWaTemplatesSync, ccWaTemplateSubmit, ccWaNotifyAssigned, ccDialerConfigSet, waThread, waSend, waMediaBlob, waStart, waUploadMedia } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 
@@ -101,8 +102,10 @@ export async function renderWhatsappLive(host) {
         const blob = new Blob(recChunks, { type });
         rec = null; recChunks = []; paintThread();
         if (blob.size < 1200) { toast('That recording was too short.'); return; }
+        // bl_wa_0378 - WhatsApp refuses audio/webm, which is all Chrome can record. The Opus packets are
+        // moved into an Ogg container (no re-encode); if that fails the original goes out as before.
         const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
-        await sendFile(threadId, new File([blob], 'voice-note.' + ext, { type: type.split(';')[0] }), true);
+        await sendFile(threadId, await waVoiceFile(blob, 'voice-note.' + ext), true);
       };
       rec.start(); paintThread();
     } catch (_) { rec = null; toast('Microphone permission is needed to record.'); }
