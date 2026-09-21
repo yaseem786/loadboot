@@ -520,6 +520,8 @@ HEADX = HEADX + _BEACON
 # The built HTML always ships the PHONE version, so search engines and the schema.org markup keep seeing the
 # number exactly as they do today. This script only rewrites the links when the live setting says "whatsapp",
 # and every element it touches carries its own replacement markup in data-lb-wa-* — the script never has to
+# On "both" (bl_wa_0391) the phone link is LEFT ALONE and a second anchor is added beside it with
+# createElement + textContent — still no markup is built from a string, so nothing can be broken.
 # build the label itself and writes it with textContent, so no markup can be broken by it. If the fetch
 # fails, is slow, or JavaScript is off, the page simply stays on
 # the phone version, which is the correct fallback rather than a broken one.
@@ -531,10 +533,21 @@ _CONTACT_SWITCH = ("<script>(function(){"
         "footer:function(d){return '\\uD83D\\uDCAC '+d+' \\u00b7 WhatsApp';},"
         "inline:function(d){return d+' on WhatsApp';}};"
   "function apply(c){try{"
-    "if(!c||c.channel!=='whatsapp'||!c.whatsapp||!c.whatsapp.url)return;"
+    "if(!c||!c.whatsapp||!c.whatsapp.url)return;"
+    "if(c.channel!=='whatsapp'&&c.channel!=='both')return;"
+    "var both=c.channel==='both';"
     "var d=c.whatsapp.display||'',u=c.whatsapp.url;"
     "var els=document.querySelectorAll('[data-lb-contact]');"
     "for(var i=0;i<els.length;i++){var e=els[i];var f=L[e.getAttribute('data-lb-contact')]||L.inline;"
+      "if(both){"
+        "if(e.getAttribute('data-lb-wa-added'))continue;"
+        "var a2=document.createElement('a');"
+        "a2.setAttribute('href',u);a2.setAttribute('rel','noopener');a2.setAttribute('target','_blank');"
+        "a2.className=e.className;a2.textContent=f(d);"
+        "e.setAttribute('data-lb-wa-added','1');"
+        "if(e.parentNode){e.parentNode.insertBefore(document.createTextNode(' '),e.nextSibling);"
+          "e.parentNode.insertBefore(a2,e.nextSibling);}"
+        "continue;}"
       "e.setAttribute('href',u);e.setAttribute('rel','noopener');e.setAttribute('target','_blank');"
       "e.textContent=f(d);}"
   "}catch(e){}}"

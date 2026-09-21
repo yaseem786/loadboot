@@ -3,7 +3,7 @@
 // allowlisted get_setting / set_setting RPCs. Only known, typed keys are exposed;
 // the server validates type + bounds and audits every change.
 import { el, mount } from '../../shared/ui/dom.js';
-import { getSetting, setSetting, adminUserUpdate, adminNote } from '../../shared/api.js';
+import { getSetting, setSetting, adminUserUpdate, adminNote, getContactChannel, setContactChannel } from '../../shared/api.js';
 import { showLoading, showError } from '../../shared/loading.js';
 import { humanizeError, toast } from '../../shared/errors.js';
 import { icon } from '../../shared/ui/icons.js';
@@ -72,12 +72,58 @@ export async function renderSettings(host) {
     el('div', { class: 'cc-sub', style: 'margin-bottom:10px' }, 'Change any user\u2019s login email or reset their password (support cases: lost email access, locked out). Staff-only \u2014 every change is audited under your name.'),
     uaEmail, uaNewEmail, uaNewPass, uaMsg, uaBtn,
   ]);
+  // bl_wa_0391 — the contact switch. One setting, every surface: the marketing site, the automatic
+  // carrier e-mails, the outreach drip and the e-mail signature all read it at send time.
+  const chanHost = el('div');
+  const chanCard = card([
+    el('h3', { class: 'cc-card-title' }, 'How carriers reach us'),
+    el('div', { class: 'cc-sub', style: 'margin-bottom:12px' },
+      'Sets the contact shown on loadboot.com, in every automatic e-mail, in the outreach drip and in the signature. Changing it here changes all of them \u2014 nothing is hard-coded any more.'),
+    chanHost,
+  ]);
   mount(host, el('div', null, [
     sectionHead('Settings', 'Typed, validated system settings. Every change is audited.'),
     profileCard,
+    chanCard,
     userAdminCard,
     body,
   ]));
+  (async () => {
+    const CH = [
+      { v: 'phone',    t: 'Call',     d: 'Phone number only' },
+      { v: 'whatsapp', t: 'WhatsApp', d: 'WhatsApp number only' },
+      { v: 'both',     t: 'Both',     d: 'WhatsApp shown beside the phone' },
+    ];
+    async function paint() {
+      let c = null;
+      try { c = await getContactChannel(); } catch (e) { mount(chanHost, el('div', { class: 'cc-sub' }, humanizeError(e))); return; }
+      const cur = (c && c.channel) || 'phone';
+      const row = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, CH.map((x) =>
+        el('button', {
+          class: 'cc-btn' + (x.v === cur ? ' pri' : ''),
+          title: x.d,
+          onClick: async (ev) => {
+            if (x.v === cur) return;
+            const b2 = ev.currentTarget; b2.disabled = true;
+            try {
+              const r = await setContactChannel(x.v, null);
+              if (r && r.ok === false) throw new Error(r.error || 'Could not change it.');
+              toast('Carriers now see: ' + x.t);
+              await paint();
+            } catch (e) { toast(humanizeError(e)); b2.disabled = false; }
+          },
+        }, x.t)));
+      const wa = (c && c.whatsapp) || {}, ph = (c && c.phone) || {};
+      mount(chanHost, el('div', null, [
+        row,
+        el('div', { class: 'cc-sub', style: 'margin-top:12px;line-height:1.7' }, [
+          el('div', null, 'WhatsApp  ' + (wa.display || '\u2014')),
+          el('div', null, 'Phone  ' + (ph.display || '\u2014')),
+        ]),
+      ]));
+    }
+    paint();
+  })();
   (async () => { let u = null; try { u = await getUser(); } catch (_) {} try { mountAvatarEditor(profileHost, { name: (u && u.email) || 'Staff' }); } catch (_) {} })();
   showLoading(body, 'Loading settings…');
   try {

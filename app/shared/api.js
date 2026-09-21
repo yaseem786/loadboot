@@ -68,6 +68,11 @@ export const setFeatureFlag = (key, enabled, opts = {}) =>
 export const getSetting = (key) => rpc('get_setting', { p_key: key });
 export const setSetting = (key, value) => rpc('set_setting', { p_key: key, p_value: value });
 
+// bl_wa_0391 — how carriers reach LoadBoot. One setting drives the website, every automatic
+// e-mail, the outreach drip and the signature; 'both' shows the WhatsApp number next to the phone.
+export const getContactChannel = () => rpc('lb_contact_channel', {});
+export const setContactChannel = (channel, note) => rpc('cc_set_contact_channel', { p_channel: channel, p_note: note || null });
+
 // ---- Command Center V1 operator reads (migration cc_v1_0030_operator_surface) ----
 // Reviewed, RBAC-gated, audited RPC surface. The deferred experimental modules
 // (web analytics, content/blog, page builder, fleet, matching, settlements, messages,
@@ -1357,6 +1362,13 @@ export async function dialerSmsSend(to, body) {
   return data;
 }
 export const ccDialerSms = (p) => rpc('cc_dialer_sms', { p: p ?? {} });
+// bl_dial_0390 — SMS consent registry. A number cannot be texted until it has a live consent row;
+// the rule is a trigger on dialer_messages, so these RPCs are the UI's way to see and create one.
+export const dialerSmsConsentState  = (number) => rpc('dialer_sms_consent_state',  { p: { number } });
+export const dialerSmsConsentRecord = (p) => rpc('dialer_sms_consent_record', { p: p ?? {} });
+export const dialerSmsConsentRevoke = (number) => rpc('dialer_sms_consent_revoke', { p: { number } });
+// Carrier portal: lifts the signup checkbox into the same registry. Idempotent, safe to call on boot.
+export const smsConsentSelfSync = () => rpc('sms_consent_self_sync', {});
 // bl_wa_0367 — WhatsApp inbox. ONE shared WABA number, one OWNER per conversation; the 24-hour window and the
 // approved-template rule are enforced server-side (wa_send_prepare). Sending goes through the telnyx-whatsapp edge function.
 export const waInbox = () => rpc('wa_inbox', {});
