@@ -13,8 +13,8 @@
 // Exports: REASONS (catalog — shared with the CC reject dialog), deriveReasons(prof), reapplyGate().
 
 export const REASONS = [
-  ['no_own_board', 'No usable load-board access / no loads booked independently'],
-  ['board_unknown', 'Load-board access unclear — ask (legacy application)'],
+  ['no_own_board', 'Cannot find and book loads independently'],
+  ['board_unknown', 'How they find loads is unclear — ask (legacy application)'],
   ['no_booking_proof', 'Cannot show loads booked independently'],
   ['experience', 'Not enough US dispatch experience'],
   ['english', 'English not strong enough for broker calls'],
@@ -34,12 +34,16 @@ export function deriveReasons(prof) {
   // carrier's login counts, as long as they can log in and book loads themselves (owner rule,
   // 21 Sep 2026). Only "none", "will buy before trial" and "still learning" are a gap.
   const own = Array.isArray(s.own_board_access) ? s.own_board_access : [];
-  const hasBoard = ['own_paid', 'employer'].includes(s.board_status) || own.some((x) => /(own|employer) login/i.test(String(x)));
+  // bl_disp_0381 — how they SOURCE loads is the test; a board is one route of several. When the
+  // application answered the sourcing question, that answer decides.
+  const ch = Array.isArray(s.sourcing_channels) ? s.sourcing_channels : null;
+  const hasBoard = ch ? (ch.length > 0 && !ch.some((x) => /^not yet/i.test(String(x))))
+    : (['own_paid', 'employer'].includes(s.board_status) || own.some((x) => /(own|employer) login/i.test(String(x))));
   const out = [];
   // Legacy applications (before bl_disp_0319) only ever asked about a board in the candidate's OWN
   // name — someone on an employer's login had to tick "No own access". We cannot conclude they have
   // no board, only that we never asked. board_unknown says so, and asks.
-  const legacy = !s.board_status;
+  const legacy = !ch && !s.board_status;
   if (!hasBoard) out.push(legacy && s.can_source_loads !== 'learning' ? 'board_unknown' : 'no_own_board');
   if (['basic', 'conversational'].includes(String(prof && prof.english_level || ''))) out.push('english');
   if (Number((prof && prof.years_exp) || 0) < 1) out.push('experience');
@@ -64,36 +68,34 @@ export function reapplyGate({ h, prof, form }) {
   const tx = (ph) => h('input', { type: 'text', style: INPUT, placeholder: ph });
   const cb = () => h('input', { type: 'checkbox', style: 'margin-top:3px;flex:none' });
 
-  const boardWho = tx('Which board, and the login you use on it — e.g. "DAT — dispatch@acmecarrier.com"');
+  const boardWho = tx('Where exactly — the board, group or brokers, and the login or handle you use there');
   const proof = ta('Two loads you booked yourself — lane, broker, month and the rate for each.', 60);
   const englishAck = cb();
   const accurateAck = cb();
   const reply = ta('What has changed since your last application? Answer the note above directly.', 120);
 
+  // shared by board_unknown and no_own_board — one rule, stated once
+  const srcPass = () => (typeof form.channelsOk === 'function' ? form.channelsOk() : true)
+    && boardWho.value.trim().length >= 6 && proof.value.trim().length >= 60;
+  const srcFail = () => ((typeof form.channelsOk === 'function' && !form.channelsOk())
+    ? 'Section 2: tick how you find loads yourself — a board, freight groups, brokers you know, direct shippers.'
+    : boardWho.value.trim().length < 6 ? 'Say where exactly — which board, group or brokers, and the login or handle you use there.'
+      : 'Describe two loads you sourced and booked yourself — lane, broker, month and rate.');
   const DEF = {
+    // bl_disp_0381 — both board gaps now test the same thing: can this person FIND a load, by
+    // whatever route, and BOOK it themselves. A load board is one route; Facebook/WhatsApp freight
+    // groups, brokers they already know, direct shippers and broker e-mail blasts all count.
     board_unknown: {
-      title: 'Which load board you can log into',
-      what: 'When you applied, our form only asked about a board in your OWN name. It does not have to be — an employer’s or a carrier’s login is fine. Tell us which board, which login, and two loads you booked on it.',
-      extra: h('div', null, [boardWho, proof]), key: 'board',
-      test: () => ['own_paid', 'employer'].includes(form.board()) && form.ownBoards().length > 0
-        && boardWho.value.trim().length >= 6 && proof.value.trim().length >= 60,
-      fail: () => (!['own_paid', 'employer'].includes(form.board())
-        ? 'Section 2: pick your own paid subscription, or an employer’s / carrier’s login you can use today.'
-        : !form.ownBoards().length ? 'Section 2: tick which board(s) you can log into.'
-          : boardWho.value.trim().length < 6 ? 'Name the board and the login you use on it.'
-            : 'Describe two loads you sourced and booked yourself — lane, broker, month and rate.'),
+      title: 'How you find loads — and two you booked yourself',
+      what: 'When you applied, our form only asked whether you had a load board in your OWN name, so there was no way to tell us how you really source. Tick every route you actually use in section 2, say where exactly, and name two loads you booked.',
+      extra: h('div', null, [boardWho, proof]), key: 'channels',
+      test: () => srcPass(), fail: () => srcFail(),
     },
     no_own_board: {
-      title: 'Load-board access, and loads you booked yourself',
-      what: 'The subscription does not have to be in your name — an employer’s or a carrier’s login is fine — but you must be able to log in today and book loads yourself.',
-      extra: h('div', null, [boardWho, proof]), key: 'board',
-      test: () => ['own_paid', 'employer'].includes(form.board()) && form.ownBoards().length > 0
-        && boardWho.value.trim().length >= 6 && proof.value.trim().length >= 60,
-      fail: () => (!['own_paid', 'employer'].includes(form.board())
-        ? 'Section 2: pick your own paid subscription, or an employer’s / carrier’s login you can use today.'
-        : !form.ownBoards().length ? 'Section 2: tick which board(s) you can log into.'
-          : boardWho.value.trim().length < 6 ? 'Name the board and the login you use on it.'
-            : 'Describe two loads you sourced and booked yourself — lane, broker, month and rate.'),
+      title: 'How you find loads — and two you booked yourself',
+      what: 'It does not have to be a load board in your own name. An employer’s or a carrier’s login, Facebook or WhatsApp freight groups, brokers you already know, direct shippers — any route counts, as long as you find the load and book it yourself.',
+      extra: h('div', null, [boardWho, proof]), key: 'channels',
+      test: () => srcPass(), fail: () => srcFail(),
     },
     no_booking_proof: {
       title: 'Loads you booked yourself',
@@ -218,6 +220,7 @@ export function reapplyGate({ h, prof, form }) {
   refresh();
   return { node, codes, explicit: explicit.length > 0, refresh, check,
     answers: () => ({ codes, explicit: explicit.length > 0, board_access: boardWho.value.trim() || null,
+      channels: (typeof form.channels === 'function' ? form.channels() : null),
       booking_proof: proof.value.trim() || null, english_ack: !!englishAck.checked,
       accurate_ack: !!accurateAck.checked, reply: reply.value.trim() || null, closed_at: new Date().toISOString() }) };
 }

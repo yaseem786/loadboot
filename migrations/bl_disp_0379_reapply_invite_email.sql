@@ -1,5 +1,9 @@
 -- bl_disp_0379 — "you can apply again, and here is exactly what to close" e-mail.
--- APPLIED staging 21 Sep 2026 (as 0379 + fixes 0379a/b/c/d, all merged here). PRODUCTION: owner applies.
+-- APPLIED staging 21 Sep 2026 (as 0379 + 0379a/b/c/d + 0381, all merged here). PRODUCTION: owner applies.
+-- Owner rule, 21 Sep 2026: the test is HOW the candidate finds loads, not whose name the load-board
+-- login is in. A board is one route; Facebook/WhatsApp freight groups, brokers they already know,
+-- direct shippers and broker e-mail blasts all count, as long as they find the load and book it
+-- themselves. The application asks this directly (skills.sourcing_channels, multi-select).
 --
 -- bl_disp_0378 gave the portal a gated re-application, but the applicants already rejected never
 -- learn that it exists. This sends each of them ONE premium e-mail naming their OWN gap and their
@@ -29,16 +33,27 @@ stable
 security definer
 set search_path to 'app_private, public'
 as $function$
-declare d record; v text[] := '{}'; v_boards text; v_legacy boolean; v_has boolean;
+declare d record; v text[] := '{}'; v_boards text; v_ch jsonb; v_legacy boolean; v_has boolean;
 begin
   select * into d from app_private.dispatcher_profiles where user_id = p_user;
   if not found then return v; end if;
   if d.reject_reasons is not null and array_length(d.reject_reasons, 1) > 0 then return d.reject_reasons; end if;
 
   v_boards := coalesce((d.skills->'own_board_access')::text, '');
-  v_legacy := coalesce(d.skills->>'board_status', '') = '';
-  v_has    := coalesce(d.skills->>'board_status','') in ('own_paid','employer') or v_boards ~* '(own|employer) login';
+  v_ch     := case when jsonb_typeof(d.skills->'sourcing_channels') = 'array' then d.skills->'sourcing_channels' else null end;
+  v_legacy := v_ch is null and coalesce(d.skills->>'board_status', '') = '';
 
+  if v_ch is not null then
+    -- the candidate answered the sourcing question: that answer decides
+    v_has := jsonb_array_length(v_ch) > 0
+             and not exists (select 1 from jsonb_array_elements_text(v_ch) x where x ~* '^not yet');
+  else
+    v_has := coalesce(d.skills->>'board_status','') in ('own_paid','employer') or v_boards ~* '(own|employer) login';
+  end if;
+
+  -- Legacy rows (before bl_disp_0319) were never asked how they source, only whether the board was
+  -- in their OWN name. We cannot conclude they cannot source, only that we never asked: board_unknown
+  -- says so, and asks. NOTE: append with array[...]; `text[] || 'literal'` throws.
   if not v_has then
     if v_legacy and coalesce(d.skills->>'can_source_loads','') <> 'learning' then v := v || array['board_unknown'];
     else v := v || array['no_own_board']; end if;
@@ -59,8 +74,8 @@ language sql
 immutable
 as $function$
   select case p_code
-    when 'board_unknown'    then 'Which load board you can actually log into today. When you applied, our form only asked about a board in <b>your own name</b> — so if you work on an employer''s or a carrier''s DAT, Truckstop or 123Loadboard login, we never gave you a way to tell us. <b>It does not have to be in your name.</b> Tell us which board, which login, and two loads you booked on it.'
-    when 'no_own_board'     then 'Working access to a load board — DAT, Truckstop or 123Loadboard. <b>It does not have to be in your own name</b>: an employer''s or a carrier''s login is fine, as long as you can log in today and book loads yourself. Tell us which board, which login, and two loads you booked on it.'
+    when 'board_unknown'    then 'How you find loads yourself. When you applied, our form only asked whether you had a load board in <b>your own name</b> — it never asked how you actually source. <b>Any route counts</b>: a board (your own login or an employer''s or carrier''s), Facebook or WhatsApp freight groups, brokers you already know, direct shippers. Tell us which routes you use, where exactly, and two loads you booked.'
+    when 'no_own_board'     then 'Finding a load and booking it <b>yourself</b>. It does not have to be a load board in your own name — an employer''s or a carrier''s login, Facebook or WhatsApp freight groups, brokers you already know or direct shippers all count. Tell us which routes you use, where exactly, and two loads you booked.'
     when 'no_booking_proof' then 'Loads you sourced and booked <b>yourself</b>. We ask for two: the lane, the broker, the month and the rate.'
     when 'experience'       then 'US dispatch experience on the record — the carriers and lanes you have run, and how many trucks you kept loaded.'
     when 'english'          then 'English strong enough to <b>negotiate with US brokers by phone</b>. The next round includes a short spoken broker role-play.'
@@ -139,7 +154,7 @@ begin
     || '<p style="margin:0 0 18px"><a href="https://loadboot.com/app/agent/" style="display:inline-block;background:#0883F7;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:8px">Open my application</a></p>'
     || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e9f0;border-radius:12px;margin:0 0 18px"><tr><td style="padding:14px 16px">'
     || '<div style="font-size:11px;letter-spacing:.12em;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px">Already closed it?</div>'
-    || '<div style="color:#334155">If the point above is already behind you — for example you can log into a DAT, Truckstop or 123Loadboard account today, whether it is your own or one your employer or carrier gives you — <b>reply to this e-mail</b> or write to <a href="mailto:hello@loadboot.com" style="color:#0883F7">hello@loadboot.com</a> and tell us what changed. We will look at it again.</div>'
+    || '<div style="color:#334155">If the point above is already behind you — for example you are already booking loads off a board, out of freight groups or through brokers you know — <b>reply to this e-mail</b> or write to <a href="mailto:hello@loadboot.com" style="color:#0883F7">hello@loadboot.com</a> and tell us what changed. We will look at it again.</div>'
     || '</td></tr></table>'
     || '<p style="margin:0 0 4px">We would genuinely like to see a stronger application from you.</p>'
     || '<p style="margin:0 0 16px"><b>LoadBoot Dispatch</b><br><span style="color:#64748b">Recruiting</span></p>'

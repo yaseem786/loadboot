@@ -972,7 +972,7 @@ async function agentPortal(user) {
     };
     // bl_disp_0378 — display labels for the reason codes staff tick in the CC reject dialog.
     // Kept in sync with REASONS in app/agent/dispatcher-gaps.js (that module owns the gate itself).
-    const REJ_LABEL = { no_own_board: 'Load-board access + loads booked yourself', board_unknown: 'Which load board you can log into', no_booking_proof: 'Loads booked independently', experience: 'US dispatch experience', english: 'English for broker calls', availability: 'Hours / US overlap', no_cv: 'CV / résumé', no_id: 'Government photo ID', inconsistent: 'Contradictory answers', other: 'See the note above' };
+    const REJ_LABEL = { no_own_board: 'How you find loads + loads booked yourself', board_unknown: 'How you find loads yourself', no_booking_proof: 'Loads booked independently', experience: 'US dispatch experience', english: 'English for broker calls', availability: 'Hours / US overlap', no_cv: 'CV / résumé', no_id: 'Government photo ID', inconsistent: 'Contradictory answers', other: 'See the note above' };
     const inp = (ph, type) => h('input', { class: 'cp-in', placeholder: ph, type: type || 'text' });
     const sel = (opts) => h('select', { class: 'cp-in' }, opts.map(([v9, l9]) => h('option', { value: v9 }, l9)));
     // bl_disp_0305: `exclusive` marks an option that cannot be true together with the others —
@@ -1060,6 +1060,13 @@ async function agentPortal(user) {
       const boardSync = () => { const v9 = f.can_source.value; ownWrap.hidden = !boardOk9(v9); boardWarn.hidden = !v9 || boardOk9(v9); if (!boardOk9(v9)) Object.values(ownBoards.map).forEach((c9) => { c9.checked = false; }); };
       f.can_source.addEventListener('change', boardSync);
       const boardLegacy = () => { const v9 = f.can_source.value; return { can: boardOk9(v9) ? 'yes_independent' : v9 === 'learning' ? 'learning' : 'yes_with_board', own: boardOk9(v9) ? ownBoards.values().map((b9) => b9 + (v9 === 'own_paid' ? ' (own login)' : ' (employer login)')) : ['No own access'] }; };
+      // bl_disp_0381 — the real question is not whose name the load-board login is in, it is HOW the
+      // candidate finds loads. A board is one route; Facebook/WhatsApp freight groups, brokers they
+      // already know, direct shippers and broker e-mail blasts are all real routes too.
+      const SRC_NONE = 'Not yet — I have not sourced a load myself';
+      const sources = checks(['Load board (DAT / Truckstop / 123Loadboard / Relay)', 'Facebook or WhatsApp freight groups',
+        'Brokers I already know (my own network)', 'Direct shipper contacts', 'Broker e-mail blasts', SRC_NONE], SRC_NONE);
+      const srcOk9 = () => { const v9 = sources.values(); return v9.length > 0 && !v9.includes(SRC_NONE); };
       const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck']);
       // ---- CV / résumé + optional ID document upload ----
       const ps9 = (prof && prof.skills) || {};
@@ -1091,6 +1098,7 @@ async function agentPortal(user) {
         if (ps9.board_status) set9(f.can_source, ps9.board_status);
         (Array.isArray(prof.load_boards) ? prof.load_boards : []).forEach((b9) => { if (boards.map[b9]) boards.map[b9].checked = true; });
         (Array.isArray(ps9.equipment) ? ps9.equipment : []).forEach((e9) => { if (equip.map[e9]) equip.map[e9].checked = true; });
+        (Array.isArray(ps9.sourcing_channels) ? ps9.sourcing_channels : []).forEach((c9) => { if (sources.map[c9]) sources.map[c9].checked = true; });
         (Array.isArray(ps9.own_board_access) ? ps9.own_board_access : []).forEach((o9) => { const k9 = String(o9).replace(' (own login)', ''); if (ownBoards.map[k9]) ownBoards.map[k9].checked = true; });
         if (Array.isArray(prof.refs) && prof.refs.length) f.refs.value = prof.refs.join('\n');
         boardSync();
@@ -1107,7 +1115,8 @@ async function agentPortal(user) {
           gate9 = gm9.reapplyGate({ h, prof, form: {
             board: () => f.can_source.value, ownBoards: () => ownBoards.values(), english: () => f.english.value,
             years: () => f.years.value, trucks: () => f.trucks.value, hours: () => f.hours.value,
-            overlap: () => f.us_overlap.checked, note: () => f.note.value, cv: () => docState.cv, id: () => docState.idd } });
+            overlap: () => f.us_overlap.checked, note: () => f.note.value, cv: () => docState.cv, id: () => docState.idd,
+            channels: () => sources.values(), channelsOk: () => srcOk9(), focusChannels: () => { try { sources.box.scrollIntoView({ block: 'center' }); } catch (_) {} } } });
         } catch (e9) { try { console.warn('[dispatcher-gaps] failed to load', e9); } catch (_) {} gate9 = null; }
       }
       const msg = h('div', { class: 'cp-err' });
@@ -1120,10 +1129,11 @@ async function agentPortal(user) {
         if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value || !f.can_source.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, load-sourcing ability, payout.'; return; }
         if (gate9) { const g9 = gate9.check(); if (g9) { msg.textContent = g9.msg; return; } }
         if (boardOk9(f.can_source.value) && !ownBoards.values().length) { msg.textContent = 'Please tick which load board(s) you can log into.'; ownWrap.scrollIntoView({ block: 'center' }); return; }
+        if (!sources.values().length) { msg.textContent = 'Section 2: tick how you find loads yourself.'; sources.box.scrollIntoView({ block: 'center' }); return; }
         if (!boardWarn.hidden && !boardAck.checked) { msg.textContent = 'Please confirm the load-board notice (section 2) before submitting.'; boardWarn.scrollIntoView({ block: 'center' }); return; }
         if (!docState.cv) { msg.textContent = 'Please upload your CV / résumé before submitting.'; return; }
         b9.disabled = true; b9.textContent = 'Submitting…';
-        const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), can_source_loads: boardLegacy().can, own_board_access: boardLegacy().own, board_status: f.can_source.value, board_ack: boardAck.checked, network_desc: f.network.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
+        const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), can_source_loads: boardLegacy().can, own_board_access: boardLegacy().own, board_status: f.can_source.value, board_ack: boardAck.checked, sourcing_channels: sources.values(), network_desc: f.network.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
         if (gate9) skills.reapply_gap = gate9.answers();
         const refs = f.refs.value.split('\n').map((x9) => x9.trim()).filter(Boolean);
         const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.values(), skills: skills, refs: refs };
@@ -1143,6 +1153,7 @@ async function agentPortal(user) {
           fsec('2 · Experience & skills', false, [
             grp('Years of US dispatch experience', f.years), grp('Most trucks managed at once', f.trucks),
             grp('Your load-board access *', h('div', null, [f.can_source, ownWrap, boardWarn])),
+            grp('How do you find loads yourself? Tick every route you actually use *', sources.box),
             grp('Load boards you can operate', boards.box),
             grp('Existing freight network (brokers/shippers)', f.network),
             grp('Equipment you know', equip.box),
