@@ -177,3 +177,51 @@ every Telnyx call it tried and how many rows came back.
   payload and rewrite `wa_hook` around it — not to guess a shape and not to type the message in by hand.
 - An edge function should return **200 `{ error: "..." }`** for a refusal it wrote itself. supabase-js turns any
   non-2xx into its own generic error and the real sentence never reaches the screen — that cost a round trip here.
+
+---
+
+## 8. 21 Sep, later that day — what was PROVEN in the database, and bl_wa_0379
+
+The outbound-media path was still listed above as "code that has been read". The database half of it has
+now been **executed** on staging, inside a transaction that was rolled back, so nothing was sent, no row
+survived and no object was written (`wa_messages` still 7, `queued` 0, `wa-media` objects 0):
+
+| What was run as the thread's owning dispatcher | Result |
+|---|---|
+| `wa_send_prepare` with a voice note (`audio/ogg`, `voice: true`) | `ok`, queued row written, payload `{"type":"audio","audio":{}}` for the edge function to fill with the signed link |
+| `wa_media_ref` on that new outbound row | `{ok, bucket: "wa-media", path: "wa/<thread>/…", mime, kind}` — **the bl_wa_0378 fault is really fixed**; before it, this answered "That message has no attachment." |
+| `wa_media_ref` on the same row as a different user | `{"error":"Not allowed."}` |
+| `wa_can_write_object` — own thread / another thread / a hand-made path | `true` / `false` / `false` (the bl_wa_0378 bucket lockdown) |
+
+The browser builds the upload path as `wa/<thread_id>/<uuid>.<ext>` (`api.js` → `waUploadMedia`), which is
+exactly the two-segment shape `wa_can_write_object` accepts — checked, not assumed.
+
+**What is still unproven is only the last hop:** Telnyx fetching the 15-minute signed link, and the phone
+rendering the Ogg as a playable voice message. Nothing in LoadBoot can prove that; it needs one real send.
+
+### bl_wa_0379 — the double-send guard now covers attachments
+
+Found while reading the same path: bl_wa_0371's 15-second guard begins `if md is null`, so it never applied
+to a file. It compares message bodies and a voice note has none — so a dispatcher who tapped Send twice, or
+whose browser retried, sent the same photo twice. A file's identity is its uploaded object path, which the
+browser mints fresh (`crypto.randomUUID`) for every upload, so a genuinely different file is never refused.
+
+`migrations/bl_wa_0379_wa_media_no_double_send.sql` — **applied on staging**, verified in a rolled-back
+transaction: same path twice → *"That file just went out a moment ago."*, a different file → accepted.
+Add it to the end of the production apply order in §6.
+
+### The three-minute test to run tomorrow (in this order)
+
+1. Dispatcher dock → Texts → WhatsApp → the open thread → **attach a photo with a caption**. Expect: bubble,
+   tick, and **tap your own bubble — the photo must open** (that is the bl_wa_0378 fix; before it this said
+   "Photo unavailable").
+2. Tap Send on the same photo twice quickly → the second must be refused with *"That file just went out a
+   moment ago."* (bl_wa_0379).
+3. **Record a voice note in Chrome** and send it. On the phone it must appear as a playable voice message,
+   not a file. If it arrives unplayable, the Ogg remux (`app/shared/wa-opus.js`) is the place to look — the
+   console will show no error, because the fallback to the original webm is silent by design.
+4. Repeat 1 and 3 from Command Center → Team → WhatsApp.
+5. Send a **PDF**: the filename must survive to the phone.
+
+If any of these fails at Telnyx rather than in the browser, the reason is on the bubble — `wa_messages.error` —
+and the raw event is in `app_private.wa_webhook_log`.
