@@ -579,7 +579,7 @@ RELATED = {
  'how-it-works.html':       [('services.html','All Services'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier'),('faq.html','FAQ'),('truck-dispatcher-vs-freight-broker.html','Dispatcher vs Broker')],
  'partners.html':           [('brokers.html','For Brokers'),('shipper-solutions.html','Shipper Solutions'),('security.html','Security & Trust'),('contact.html','Contact'),('agents.html','Referral Program')],
  'referral.html':           [('carriers.html','For Carriers'),('carrier-application.html','Apply as Carrier'),('pricing.html','Pricing'),('contact.html','Contact'),('faq.html','FAQ')],
- 'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
+ 'tools.html':              [('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('truckload-freight-rates.html','Truckload Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('load-score.html','Load Score'),('oversize-load-rates-per-mile.html','Oversize Load Rates Per Mile'),('resources.html','Resources'),('carriers.html','For Carriers'),('pricing.html','Pricing'),('carrier-application.html','Apply as Carrier')],
  'carrier-application.html':[('carriers.html','For Carriers'),('pricing.html','Pricing'),('how-it-works.html','How It Works'),('faq.html','FAQ'),('new-authority-dispatch.html','New Authority')],
  'case-studies.html':       [('carriers.html','For Carriers'),('services.html','All Services'),('carrier-application.html','Apply as Carrier'),('tools.html','Free Trucking Tools'),('pricing.html','Pricing')],
  'authority-dot-setup.html':[('new-authority-dispatch.html','New Authority Dispatch'),('boc3-ucr.html','BOC-3 / UCR Guide'),('form-2290-hvut.html','Form 2290 (HVUT)'),('ifta-fuel-tax.html','IFTA Guide'),('carrier-application.html','Apply as Carrier')],
@@ -2148,6 +2148,7 @@ PUB_DATES = {
  'oversize-load-rates-per-mile.html':'2026-07-28',
  'should-i-buy-a-truck-before-2027-epa-rule.html':'2026-08-01',
  'spot-market-freight-rates.html':'2026-09-18',
+ 'truckload-freight-rates.html':'2026-09-21',
 }
 
 def rich_article(fname,title,desc,eyebrow,h1,deck,read_min,hero,hero_alt,toc,body_html,faqs,feat_svg='',pub='2026-06-27'):
@@ -3699,7 +3700,7 @@ BLOGPOSTS += [
   'Fuel surcharge explained: the (diesel &minus; peg) &divide; MPG formula, the DOE weekly index, what FSC pays per mile in 2026, and why it never covers all your fuel.',
   'The fuel surcharge has exactly three inputs &mdash; and the peg alone can swing $0.22 a mile. Here is the formula, the index, and the gap that quietly eats owner-operators.', ''),
 ]
-RELATED['fuel-surcharge-trucking.html'] = [('market-rates.html','Market Rates Per Mile'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('how-to-avoid-cheap-freight.html','How to Avoid Cheap Freight'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('carrier-application.html','Apply as Carrier')]
+RELATED['fuel-surcharge-trucking.html'] = [('market-rates.html','Market Rates Per Mile'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('how-to-avoid-cheap-freight.html','How to Avoid Cheap Freight'),('ifta-fuel-tax.html','IFTA Fuel Tax'),('carrier-application.html','Apply as Carrier')]
 rich_article('fuel-surcharge-trucking.html',
  'Fuel Surcharge in Trucking 2026: How to Calculate FSC Per Mile',
  'How to calculate a fuel surcharge: (diesel price &minus; peg) &divide; MPG. 2026 examples — $0.23–$0.47 per mile depending on peg and divisor, the DOE weekly index, all-in vs linehaul + FSC, and why FSC never covers all your fuel.',
@@ -3843,7 +3844,7 @@ BLOGPOSTS += [
   'What a spot rate is, how truckload spot rates differ from contract rates, where they sit in 2026 by equipment, what moves them, and where to find spot rates for loads.',
   'The spot rate is the price of one truck, on one lane, this week &mdash; the number every load board and rate con is really about. Here is what it is, what moves it, and how carriers, brokers and shippers should negotiate against it.', ''),
 ]
-RELATED['spot-market-freight-rates.html'] = [('market-rates.html','Live Market Rates Per Mile'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('freight-market-reports.html','Weekly Market Reports'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('carrier-application.html','Apply as Carrier')]
+RELATED['spot-market-freight-rates.html'] = [('market-rates.html','Live Market Rates Per Mile'),('truckload-freight-rates.html','Truckload Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('how-to-read-a-rate-confirmation.html','How to Read a Rate Con'),('freight-market-reports.html','Weekly Market Reports'),('ghost-loads-load-board-problems.html','Ghost Loads Explained'),('carrier-application.html','Apply as Carrier')]
 rich_article('spot-market-freight-rates.html',
  'Spot Market Freight Rates 2026: Trucking Spot Rates vs Contract &amp; Where to Find Them | LoadBoot',
  'Spot market freight rates explained for 2026: what a trucking spot rate is, how truckload spot rates differ from contract rates, where they sit right now by equipment, what moves them week to week, where to find spot rates for loads, and how carriers, brokers and shippers negotiate against them.',
@@ -3853,6 +3854,189 @@ rich_article('spot-market-freight-rates.html',
  SPOT_TOC, SPOT_BODY, SPOT_FAQ, feat_svg=SPOT_FEAT)
 THUMBS['spot-market-freight-rates.html']=SPOT_FEAT
 READTIME['spot-market-freight-rates.html']=10
+
+# ===== ARTICLE : Truckload (FTL) freight rates per mile 2026 =====
+PREMIUM_ARTICLES.add('truckload-freight-rates.html')
+TLR_FEAT=('<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tlrg" x1="0" y1="0" x2="1" y2="1">'
+ '<stop offset="0" stop-color="#10223B"/><stop offset="1" stop-color="#0883F7"/></linearGradient></defs>'
+ '<rect width="400" height="200" fill="url(#tlrg)"/>'
+ '<text x="200" y="40" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#93c5fd">FULL TRUCKLOAD RATES PER MILE</text>'
+ '<rect x="46" y="78" width="118" height="26" rx="5" fill="#FC5305"/>'
+ '<text x="105" y="96" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#fff">CARRIER</text>'
+ '<rect x="46" y="116" width="164" height="26" rx="5" fill="#fff" opacity=".92"/>'
+ '<text x="128" y="134" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#10223B">SHIPPER</text>'
+ '<text x="232" y="98" font-family="Arial,sans-serif" font-size="12" fill="#e2e8f0">what the truck is paid</text>'
+ '<text x="232" y="136" font-family="Arial,sans-serif" font-size="12" fill="#e2e8f0">what the load is sold for</text>'
+ '<text x="200" y="180" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8">one truck &#183; one shipment &#183; door to door &#183; 2026</text></svg>')
+
+TLR_TOC=[('what','What a truckload rate actually is'),
+ ('now','Full truckload rates per mile right now (2026)'),
+ ('built','How a truckload rate is built: linehaul, fuel, accessorials'),
+ ('spot','Truckload spot rates vs contract rates'),
+ ('cost','What a full truckload costs on a real lane'),
+ ('moves','What moves truckload rates week to week'),
+ ('ltl','FTL vs LTL vs partial &mdash; when truckload is the wrong buy'),
+ ('negotiate','How each side should negotiate a truckload rate')]
+
+TLR_BODY=(
+'<h2 id="what">What a truckload rate actually is</h2>'
+'<p>A <b>truckload rate</b> is the price of one truck carrying one shipment from one origin to one destination. '
+'Full truckload &mdash; FTL &mdash; means the shipment occupies the trailer for the whole trip: it is picked up, it is driven, '
+'it is delivered, and nothing else rides with it. That single fact is what separates truckload pricing from every other kind of '
+'freight pricing, because the shipper is not buying space, weight or pallets. The shipper is buying a truck and a driver for a '
+'block of time and distance.</p>'
+'<p>Truckload rates are quoted two ways, and confusing them is the most expensive mistake in the business:</p>'
+'<ul>'
+'<li><b>Per mile (RPM).</b> A rate per loaded mile &mdash; $2.97 a mile, say. This is how carriers, brokers and dispatchers talk to '
+'each other, because it is the only number that compares a 300-mile run with an 1,100-mile run.</li>'
+'<li><b>Flat / all-in / linehaul.</b> One number for the whole move &mdash; $2,376 for the load. This is how most shippers and most '
+'load board postings talk. It is the same rate wearing different clothes: divide by the loaded miles and you are back to RPM.</li>'
+'</ul>'
+'<p>Neither number means anything until you know whether it is <b>all-in</b> (linehaul plus fuel surcharge, sometimes plus '
+'accessorials) or <b>linehaul only</b>. An all-in $3.40 a mile with a $0.43 '
+'<a href="fuel-surcharge-trucking.html">fuel surcharge</a> buried inside it is a $2.97 linehaul, and the two are completely '
+'different businesses. Ask the question out loud before you compare two quotes.</p>'
++svc_banner('Check your lane before you answer the phone',
+  'Live truckload rates per mile by equipment &mdash; what the carrier is paid, what brokers buy and sell at, what shippers pay.',
+  'See live market rates','market-rates.html')+
+'<h2 id="now">Full truckload rates per mile right now (2026)</h2>'
+'<p>Below is the national truckload benchmark LoadBoot publishes and keeps current on the '
+'<a href="market-rates.html">live market rates page</a> &mdash; a September 2026 snapshot. Two columns matter: what the '
+'<b>carrier</b> is paid for the truck, and what the <b>shipper</b> pays to have the load moved. The gap between them is the '
+'broker&rsquo;s gross margin, which on this benchmark runs about 15%.</p>'
+'<table class="cmp"><thead><tr><th>Equipment</th><th>Carrier RPM</th><th>Shipper RPM</th><th>Typical range</th></tr></thead><tbody>'
+'<tr><td><a href="dry-van-freight-rates.html">Dry van</a></td><td><b>$2.97</b></td><td>$3.42</td><td>$2.38&ndash;$3.56</td></tr>'
+'<tr><td><a href="reefer-freight-rates.html">Reefer</a></td><td><b>$3.56</b></td><td>$4.09</td><td>$2.85&ndash;$4.27</td></tr>'
+'<tr><td><a href="flatbed-freight-rates.html">Flatbed</a></td><td><b>$3.54</b></td><td>$4.07</td><td>$2.83&ndash;$4.25</td></tr>'
+'<tr><td><a href="step-deck-freight-rates.html">Step deck</a></td><td><b>$3.59</b></td><td>$4.13</td><td>$2.87&ndash;$4.31</td></tr>'
+'<tr><td><a href="conestoga-freight-rates.html">Conestoga</a></td><td><b>$3.64</b></td><td>$4.19</td><td>$2.91&ndash;$4.37</td></tr>'
+'<tr><td><a href="power-only-freight-rates.html">Power only</a></td><td><b>$2.52</b></td><td>$2.90</td><td>$1.80&ndash;$3.50</td></tr>'
+'<tr><td><a href="box-truck-freight-rates.html">Box truck</a></td><td><b>$2.52</b></td><td>$2.90</td><td>$2.02&ndash;$3.02</td></tr>'
+'<tr><td><a href="hotshot-freight-rates.html">Hotshot</a></td><td><b>$2.35</b></td><td>$2.70</td><td>$1.80&ndash;$3.50</td></tr>'
+'</tbody></table>'
+'<p style="color:var(--muted);font-size:.95rem">National benchmarks, September 2026 snapshot. Lane, season, reload density and how badly the load needs to move '
+'will push a real quote anywhere inside &mdash; and sometimes outside &mdash; the range. Always check the '
+'<a href="market-rates.html">live page</a> rather than a number you wrote down last month.</p>'
+'<p>One line to hold onto: the American Transportation Research Institute puts the average marginal cost of operating a truck at '
+'roughly <b>$2.20&ndash;$2.30 a mile</b>. Put that next to the dry van carrier column and the shape of the business is obvious &mdash; '
+'a $2.97 all-in dry van rate is not a $2.97 profit. Run your own number in the '
+'<a href="cost-per-mile-calculator.html">cost per mile calculator</a> before you decide what a load is worth to you.</p>'
+'<h2 id="built">How a truckload rate is built: linehaul, fuel, accessorials</h2>'
+'<p>Every truckload rate, however it is quoted, is three things stacked on top of each other.</p>'
+'<ol>'
+'<li><b>Linehaul.</b> The price of the truck, the trailer and the driver for the distance. This is the part that is actually '
+'negotiable, and the part that moves with supply and demand.</li>'
+'<li><b>Fuel surcharge.</b> A formula, not an opinion: (diesel price &minus; a pegged base) &divide; assumed MPG. At around $3.85 a '
+'gallon that lands near <b>$0.23&ndash;$0.47 a mile</b> depending on the peg and the MPG assumption. It is designed to move when '
+'diesel moves, which is exactly why it should be stated separately &mdash; see the '
+'<a href="fuel-surcharge-trucking.html">fuel surcharge guide</a>.</li>'
+'<li><b>Accessorials.</b> The money that gets earned after the linehaul is agreed and lost after the invoice is sent: '
+'<a href="detention-pay-policy.html">detention</a>, <a href="layover-policy.html">layover</a>, '
+'<a href="lumper-policy.html">lumpers</a>, <a href="tonu-policy.html">TONU</a>, driver assist. On a thin truckload move these are '
+'not extras. They are the margin.</li>'
+'</ol>'
+'<p>This is why the <a href="how-to-read-a-rate-confirmation.html">rate confirmation</a> matters more than the phone call. If the '
+'rate con does not name the detention rate, the free time, the layover day and the TONU in numbers, then those things are not '
+'priced &mdash; they are a hope. On LoadBoot a load cannot be posted without its accessorial rate card attached, and the standards '
+'ride every posting: <b>$60 an hour detention after 2 free hours</b>, <b>$250 TONU</b>, both claimable straight from the trip '
+'record with the GPS evidence already attached.</p>'
+'<h2 id="spot">Truckload spot rates vs contract rates</h2>'
+'<p>Truckload freight is bought in two markets, and the same lane can carry two very different prices on the same day.</p>'
+'<ul>'
+'<li><b>Truckload spot rates</b> are one-off: one truck, one lane, this week, priced by whatever supply and demand look like right '
+'now. They move fast, they can be very good and they can be terrible. Most owner-operators and small fleets live here.</li>'
+'<li><b>Contract rates</b> are committed volume over a season or a year at a fixed per-mile price. They are steadier and usually '
+'sit below a hot spot market and above a cold one &mdash; the shipper is paying for certainty, and the carrier is selling some '
+'upside to get it.</li>'
+'</ul>'
+'<p>The practical rule: when the spot market is tight, contract freight looks underpaid and carriers chase spot. When it is loose, '
+'contract freight looks like a gift and everybody wants it back. Neither is a strategy on its own &mdash; a healthy small fleet '
+'usually runs a base of contract or dedicated volume with spot on top. The deeper mechanics, including where to find real spot '
+'numbers rather than asking rates, are in the <a href="spot-market-freight-rates.html">spot market freight rates guide</a>, and the '
+'week-by-week direction is tracked in the <a href="freight-market-reports.html">weekly freight market reports</a>.</p>'
+'<h2 id="cost">What a full truckload costs on a real lane</h2>'
+'<p>Numbers beat adjectives. Here is an 800-mile dry van full truckload at the September 2026 benchmark, with a realistic 12% '
+'deadhead to get to the pickup.</p>'
+'<table class="cmp"><thead><tr><th>Line</th><th>Amount</th></tr></thead><tbody>'
+'<tr><td>Shipper pays (800 mi &times; $3.42)</td><td><b>$2,736</b></td></tr>'
+'<tr><td>Carrier is paid (800 mi &times; $2.97)</td><td><b>$2,376</b></td></tr>'
+'<tr><td>Broker gross margin</td><td>$360 (13.2%)</td></tr>'
+'<tr><td>Carrier cost, 896 mi incl. deadhead @ $2.25</td><td>&minus;$2,016</td></tr>'
+'<tr><td><b>Carrier gross before fixed costs</b></td><td><b>$360</b></td></tr>'
+'<tr><td>One unpaid 3-hour detention @ $60/hr</td><td>&minus;$180</td></tr>'
+'</tbody></table>'
+'<p>Read the last two rows together. On an average lane, at an average rate, with an ordinary amount of deadhead, a single unpaid '
+'detention event takes <b>half</b> the gross on the whole trip. A cancelled load with no '
+'<a href="tonu-policy.html">TONU</a> clause takes all of it and the day as well. This is the entire argument for treating '
+'accessorials as priced terms rather than favours &mdash; and for knowing your own cost per mile before the phone rings, not after '
+'the load is delivered.</p>'
+'<h2 id="moves">What moves truckload rates week to week</h2>'
+'<ul>'
+'<li><b>Truck supply.</b> The largest single lever. Carriers exiting after a long soft market tightens capacity and lifts rates '
+'faster than any demand story.</li>'
+'<li><b>Diesel.</b> It moves the all-in quote directly through the <a href="fuel-surcharge-trucking.html">fuel surcharge</a>, and '
+'the linehaul indirectly &mdash; carriers who cannot cover fuel park trucks, which tightens supply again.</li>'
+'<li><b>Season.</b> Produce season lifts <a href="reefer-freight-rates.html">reefer</a>, construction lifts '
+'<a href="flatbed-freight-rates.html">flatbed</a>, retail peak lifts <a href="dry-van-freight-rates.html">dry van</a>. These are '
+'regional and they are predictable enough to plan around.</li>'
+'<li><b>Lane balance.</b> A lane with freight going one way and nothing coming back carries a deadhead penalty that someone pays. '
+'Usually the carrier, unless they priced it in.</li>'
+'<li><b>Weather and disruption.</b> A closed interstate or a hurricane re-prices a whole region inside 48 hours.</li>'
+'</ul>'
+'<h2 id="ltl">FTL vs LTL vs partial &mdash; when truckload is the wrong buy</h2>'
+'<p>Full truckload is not automatically the right answer. A rough guide:</p>'
+'<ul>'
+'<li><b>Under ~6 pallets or ~5,000 lb:</b> LTL is usually cheaper, because you pay for space rather than the whole trailer.</li>'
+'<li><b>Roughly 6&ndash;12 pallets:</b> partial truckload or volume LTL often wins &mdash; fewer touches than LTL, less than a full '
+'trailer price.</li>'
+'<li><b>12+ pallets, a full trailer, time-critical, fragile or high-value freight:</b> truckload. One truck, one driver, no '
+'terminal handling, no cross-docking, and a single point of accountability.</li>'
+'</ul>'
+'<p>The hidden argument for truckload is damage and time, not price per pound: LTL freight is handled at every terminal it passes '
+'through, and each touch is a chance for a claim and a delay. The longer comparison lives in '
+'<a href="full-truckload-vs-ltl.html">full truckload vs LTL</a>.</p>'
+'<h2 id="negotiate">How each side should negotiate a truckload rate</h2>'
+'<p><b>Carriers and owner-operators.</b> Know your cost per mile before you answer the phone, and quote all-in with the accessorial '
+'terms named. Never accept a rate con that leaves detention, layover or TONU blank. If deadhead to the pickup is significant, it is '
+'part of your cost and it belongs in your number. See what loads are posting at on the '
+'<a href="load-board.html">live load board</a> &mdash; every posting carries its rate card.</p>'
+'<p><b>Brokers.</b> The gap between your buy and your sell is not the whole story; the loads that kill a month are the ones where '
+'the accessorials were never priced and the carrier invoices for them anyway. Post the rate card with the load and the argument '
+'never happens. Benchmarks for both sides of your book are on the <a href="market-rates.html">market rates page</a>.</p>'
+'<p><b>Shippers.</b> The cheapest truckload quote is frequently the most expensive shipment, because a rate below the carrier&rsquo;s '
+'cost gets re-brokered, covered late or not covered at all. Price against a published benchmark, not against last year&rsquo;s '
+'invoice &mdash; or skip the spread entirely and '
+'<a href="ship-direct-to-carrier.html">post direct to verified carriers</a>.</p>'
+'<p><b>Freight agents.</b> Shippers who ship full truckloads regularly are the most valuable introductions in this business, '
+'because the volume repeats. LoadBoot pays <a href="agents.html">1% on referred freight</a>, for as long as it moves.</p>'
++svc_banner('Get truckload freight, priced in writing before you roll',
+  'Flat 5%, no contracts, and every load posted with its detention, layover and TONU rate card attached.',
+  'Apply as a carrier','carrier-application.html'))
+
+TLR_FAQ=[
+ ('What is the average truckload rate per mile in 2026?','It depends entirely on equipment. On the September 2026 national benchmark the carrier is paid about $2.97 a mile on dry van, $3.56 on reefer, $3.54 on flatbed, $3.59 on step deck and $2.52 on power only, with shipper-side rates running roughly 15% higher. Ranges are wide &mdash; dry van alone spans about $2.38 to $3.56 &mdash; because lane, season and reload density move a real quote more than the national average does. Check the live market rates page for the current figure rather than an average you read once.'),
+ ('How much does a full truckload cost?','Multiply the loaded miles by the shipper rate per mile for your equipment. An 800-mile dry van full truckload at the September 2026 benchmark of $3.42 a mile costs about $2,736 all-in; the carrier moving it is typically paid around $2,376. Accessorials sit on top of that &mdash; detention after free time, lumper fees, layover if the load is held overnight &mdash; which is why they should be named as numbers on the rate confirmation before the truck moves.'),
+ ('What is the difference between a truckload rate and an LTL rate?','A truckload rate buys the whole trailer for one shipment, priced per mile or as one flat amount for the move. An LTL rate buys space on a trailer shared with other shippers, priced on weight, freight class, density and the number of terminals the shipment passes through. Under roughly 6 pallets LTL is usually cheaper; past about 12 pallets, or when the freight is fragile, high-value or time-critical, truckload usually wins on total cost because there is no terminal handling and no cross-docking.'),
+ ('Are truckload spot rates higher than contract rates?','Sometimes. Truckload spot rates are priced for one truck on one lane this week, so they rise above contract rates when capacity is tight and fall below them when it is loose. Contract rates trade some of that upside for certainty on both sides. Neither is reliably higher over a full cycle, which is why most stable small fleets run a base of contract or dedicated volume and take spot freight on top of it.'),
+ ('Does the truckload rate include fuel?','Only if the quote is all-in, and you should always ask. Most spot truckload quotes bundle the linehaul and the fuel surcharge into one number per mile. At around $3.85 a gallon the fuel component is roughly $0.23 to $0.47 a mile depending on the pegged base and the assumed MPG, so an all-in $3.40 a mile can be a $2.97 linehaul. Comparing an all-in quote with a linehaul-only quote is the most common way carriers underprice a load.'),
+ ('Who pays detention on a truckload shipment?','The party that booked the truck &mdash; normally the broker or the shipper &mdash; pays detention once free time expires, but only if the rate confirmation says so and only if the wait is documented. Two hours of free time per stop is the common standard, with billing after that; LoadBoot&rsquo;s published standard is $60 an hour after 2 free hours, pre-agreed on every posting and claimable from the trip record with GPS arrive and depart stamps already attached. Without a written clause and timestamped evidence, most detention invoices are simply never paid.')]
+
+BLOGPOSTS += [
+ ('truckload-freight-rates.html',
+  'Truckload Freight Rates 2026: Full Truckload (FTL) Rates Per Mile &amp; Truckload Spot Rates',
+  'What a truckload rate is, full truckload rates per mile by equipment in 2026, how an FTL rate is built, truckload spot vs contract rates, and what a full truckload actually costs.',
+  'A truckload rate is the price of one truck carrying one shipment, door to door. Here is what full truckload rates per mile look like in 2026, how the number is built, and what a full truck really costs on a real lane.', ''),
+]
+RELATED['truckload-freight-rates.html'] = [('market-rates.html','Live Market Rates Per Mile'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('dry-van-freight-rates.html','Dry Van Freight Rates'),('cost-per-mile-calculator.html','Cost Per Mile Calculator'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('full-truckload-vs-ltl.html','Full Truckload vs LTL'),('carrier-application.html','Apply as Carrier')]
+rich_article('truckload-freight-rates.html',
+ 'Truckload Freight Rates 2026 — Full Truckload (FTL) Rates Per Mile, Truckload Spot Rates & What a Full Truck Costs | LoadBoot',
+ 'Truckload freight rates explained for 2026: what a truckload rate is, full truckload rates per mile by equipment right now, how an FTL rate is built from linehaul, fuel surcharge and accessorials, truckload spot rates vs contract rates, what a full truckload costs on a real 800-mile lane, and how carriers, brokers and shippers should negotiate one.',
+ 'Freight Rates & Truckload','Truckload Freight Rates 2026: Full Truckload (FTL) Rates Per Mile, Spot Rates & What a Full Truck Really Costs',
+ 'A truckload rate is the price of one truck carrying one shipment from one door to another. It is the most quoted and least understood number in freight. Here is where full truckload rates per mile sit in 2026, how the number is actually built, and what a full truck costs once deadhead and accessorials are in the math.',
+ 11,'truckload-freight-rates-hero.jpg','Dry van tractor-trailer on a US interstate illustrating full truckload freight rates per mile in 2026',
+ TLR_TOC, TLR_BODY, TLR_FAQ, feat_svg=TLR_FEAT)
+THUMBS['truckload-freight-rates.html']=TLR_FEAT
+READTIME['truckload-freight-rates.html']=11
 
 # ===== ARTICLE : Should an owner-operator buy a truck before the 2027 EPA rule? =====
 PREMIUM_ARTICLES.add('should-i-buy-a-truck-before-2027-epa-rule.html')
@@ -4123,7 +4307,7 @@ CPMC_BODY_MID = ('<section class="bg-soft"><div class="wrap" style="max-width:88
  '<p><b>1. Kill deadhead</b> &mdash; empty miles carry full cost and zero revenue; one round-trip lane plan can cut CPM more than any fuel card. <b>2. Slow down 3&ndash;5 mph</b> &mdash; typically worth 0.5+ MPG, which is $0.04&ndash;$0.06/mi at today&rsquo;s diesel prices. <b>3. Shop insurance yearly</b> &mdash; renewals drift up; quotes pull them back. <b>4. Run more of the miles you already pay for</b> &mdash; fixed costs per mile fall as monthly miles rise. <b>5. Take the per diem deduction</b> &mdash; it does not change CPM, but <a href="truck-driver-per-diem-2026.html">$64 per night away</a> changes what you keep. <b>6. Stop paying for load-hunting time</b> &mdash; hours on load boards are unpaid work; a <a href="how-much-does-a-truck-dispatcher-cost.html">flat-fee dispatcher</a> costs 5% and gives you those hours back.</p>'
  '</div></div></section>')
 
-RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier')]
+RELATED['cost-per-mile-calculator.html'] = [('tools.html','All Free Trucking Calculators'),('truckload-freight-rates.html','Truckload Freight Rates'),('spot-market-freight-rates.html','Spot Market Freight Rates'),('fuel-surcharge-trucking.html','Fuel Surcharge Guide'),('market-rates.html','Market Rates Per Mile'),('how-much-does-a-truck-dispatcher-cost.html','Dispatcher Cost Guide'),('truck-driver-per-diem-2026.html','Per Diem 2026 Guide'),('carrier-application.html','Apply as Carrier')]
 
 _cpmc_faq_html, _cpmc_faq_sch = faq_block([
  ('What is a good cost per mile for a trucking company in 2026?',
@@ -4786,10 +4970,10 @@ _ftl_faq_html, _ftl_faq_sch = faq_block([
  ('How do I post a partial load as a broker or shipper?', 'The posting wizard requires a load size (Full or Partial). For partials you add pallets, weight and dims, and the rate card (detention, TONU, layover) prints on the posting like every LoadBoot load.'),
 ])
 ftl += _ftl_faq_html + final_cta()
+RELATED['full-truckload-vs-ltl.html'] = [('truckload-freight-rates.html','Truckload Freight Rates'),('box-truck-dispatch.html','Box Truck Dispatch'),('hotshot-dispatch.html','Hotshot Dispatch'),('load-board.html','Live Load Board'),('us-truck-dispatcher.html','US Truck Dispatch'),('market-rates.html','Market Rates'),('carriers.html','For Carriers')]
 page('full-truckload-vs-ltl.html', 'FTL vs LTL vs Partial Truckload — Key Differences | LoadBoot',
  'FTL vs LTL vs partial truckload explained: what each mode is, when partials pay better, and how LoadBoot matches full and partial loads by truck size.',
  'resources.html', ftl, _ftl_faq_sch)
-RELATED['full-truckload-vs-ltl.html'] = [('box-truck-dispatch.html','Box Truck Dispatch'),('hotshot-dispatch.html','Hotshot Dispatch'),('load-board.html','Live Load Board'),('us-truck-dispatcher.html','US Truck Dispatch'),('market-rates.html','Market Rates'),('carriers.html','For Carriers')]
 
 # ---- Unsubscribe (outreach emails one-click) ----
 _unsub_js = ('<script>(function(){var q=new URLSearchParams(location.search);var e=q.get("e"),t=q.get("t");var el=document.getElementById("unsubMsg");'
@@ -8183,8 +8367,8 @@ _ACC_SEO = {
         ('\u201cDetention wasn\u2019t on the rate con\u201d','If you signed a rate con without a detention clause, that load is lost \u2014 negotiate BEFORE accepting. On LoadBoot every posting carries a written detention rate; a load cannot post without one.'),
         ('\u201cSubmit within 24 hours or forget it\u201d','Late paperwork dies in an inbox. LoadBoot builds the claim from trip data and files it the moment you tap submit.')]),
  'tonu-policy': dict(
-   title='TONU Meaning in Trucking 2026: $250 Truck Ordered Not Used Fee &amp; How Much the Charge Is | LoadBoot',
-   desc='TONU meaning in trucking: Truck Ordered Not Used is the cancellation fee owed to the carrier \u2014 typically $150\u2013$350 (LoadBoot standard $250) plus deadhead. How much a TONU charge is, who pays, how to invoice a TONU, the evidence you need, and what to do when a broker refuses \u2014 on LoadBoot the TONU is pre-agreed in writing and auto-paid on late cancels.',
+   title='TONU Meaning in Trucking 2026 \u2014 What Does TONU Mean? TONU Definition, Fee &amp; How Much the $250 Truck Ordered Not Used Charge Is | LoadBoot',
+   desc='What does TONU mean in trucking? TONU meaning and definition: Truck Ordered Not Used is the cancellation fee owed to the carrier \u2014 typically $150\u2013$350 (LoadBoot standard $250) plus deadhead. How much a TONU charge is, who pays, how to invoice a TONU, the evidence you need, and what to do when a broker refuses \u2014 on LoadBoot the TONU is pre-agreed in writing and auto-paid on late cancels.',
    ev=['The signed rate confirmation with the TONU clause \u2014 without it in WRITING, a TONU is nearly unenforceable',
        'Proof of dispatch: when the truck was assigned and rolling (LoadBoot trip record)',
        'GPS trail showing deadhead miles already driven toward the pickup',
@@ -8195,8 +8379,8 @@ _ACC_SEO = {
         ('\u201cYou hadn\u2019t left yet\u201d','TONU eligibility timing must be in the clause. LoadBoot\u2019s standard: a committed, dispatched load that dies late owes the posted TONU \u2014 measured from the trip record, not memory.'),
         ('Broker simply ghosts the invoice','Escalation path: written demand \u2192 BMC-84 bond claim \u2192 small claims. On LoadBoot you skip all three: settlement runs through the platform.')]),
  'layover-policy': dict(
-   title='Layover Pay in Trucking 2026: How Much Truck Drivers &amp; Owner Operators Get \u2014 $150\u2013$350/Day Rates &amp; How to Claim | LoadBoot',
-   desc='How much is layover pay? Truck drivers and owner operators typically get $150\u2013$350/day (LoadBoot standard: $250/day) when a hold crosses overnight. 2026 rates, layover vs detention, the documentation that gets it paid, and how LoadBoot pre-agrees layover on every load.',
+   title='Layover Pay for Truckers 2026 \u2014 What Is Layover Pay in Trucking, How Much Truck Drivers &amp; Owner Operators Get Per Day | LoadBoot',
+   desc='What is layover pay in trucking? Layover pay for truckers is a per-day fee owed when a load is held overnight. How much layover pay truck drivers and owner operators get \u2014 typically $150\u2013$350/day (LoadBoot standard: $250/day) \u2014 plus 2026 layover fees and charges, layover vs detention, the documentation that gets it paid, and how LoadBoot pre-agrees layover on every load.',
    ev=['Detention record for the same stop \u2014 layover usually begins where detention maxes out',
        'GPS trail proving the truck stayed at/near the facility overnight',
        'Written instruction (or refusal to release) from the facility or broker \u2014 screenshot everything',
@@ -8206,8 +8390,8 @@ _ACC_SEO = {
         ('\u201cDetention already covers it\u201d','Industry standard: layover applies ON TOP of earned detention once the hold crosses overnight. LoadBoot\u2019s standard says exactly that, in writing, on every load.'),
         ('\u201cNo layover in the agreement\u201d','Then it does not exist for that load. On LoadBoot a load cannot post without a layover rate.')]),
  'lumper-policy': dict(
-   title='What Is a Lumper Fee in Trucking? Fees, Receipts \u0026 Reimbursement 2026 | LoadBoot',
-   desc='What is a lumper fee? The charge for third-party dock labor that unloads your trailer \u2014 $75\u2013$600 typical, and a PASS-THROUGH cost you are meant to get back. The lumper receipt rules that guarantee reimbursement, and how LoadBoot makes lumper repayment automatic.',
+   title='What Is a Lumper Fee in Trucking? Lumper Meaning, Lumper Fee Definition, Fees, Receipts \u0026 Reimbursement 2026 | LoadBoot',
+   desc='What is a lumper fee in trucking, and what is a lumper? Lumper fee meaning and definition: the charge for third-party dock labor that unloads your trailer \u2014 $75\u2013$600 typical, and a PASS-THROUGH cost you are meant to get back. The lumper receipt rules that guarantee reimbursement, and how LoadBoot makes lumper repayment automatic.',
    ev=['The lumper RECEIPT \u2014 non-negotiable: name of service, amount, date, load/PO reference',
        'Photo of the receipt uploaded from the dock BEFORE you leave (LoadBoot stop-proof upload)',
        'Payment proof if you paid card/EFS (statement line)',
