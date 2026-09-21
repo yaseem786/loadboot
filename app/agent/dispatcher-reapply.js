@@ -55,7 +55,7 @@ export function reapplyCard({ h, api, prof, onReopened }) {
         meter(r.available_at),
         h('div', { style: 'margin-top:14px;border-radius:12px;padding:12px 14px;background:rgba(2,8,20,.4);border:1px solid rgba(130,165,225,.2)' }, [
           h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#fdba74;margin-bottom:6px' }, 'USE THE TIME FOR THIS'),
-          h('div', { class: 'cp-row-s', style: 'line-height:1.75' }, 'Close the points named above. For most applicants that means your own active load-board login (DAT, Truckstop or 123Loadboard) in your own name, and two loads you sourced and booked yourself.'),
+          h('div', { class: 'cp-row-s', style: 'line-height:1.75' }, 'Close the points named above. The load board does not have to be in your own name, and you do not need a board at all \u2014 an employer\u2019s or a carrier\u2019s login, Facebook or WhatsApp freight groups, brokers you already work with, or direct shippers all count. What we need is two loads you found and booked yourself: the lane, the broker, the month and the rate.'),
         ]),
       ]);
     }
