@@ -12,17 +12,20 @@ import ENV from '../../shared/env.js';
 import { signOut } from '../../shared/session.js';
 
 const NAV = [
+  // bl_ui_0386 — one icon per destination. 19 of these 21 used to share six glyphs
+  // (doc x6, bell x4, trend x3, grid/truck/refresh x2), so the sidebar read as a wall of
+  // repeats. Every name below exists in app/shared/ui/icons.js.
   // CC CUT, 2 Sep 2026 (docs/CC-AUDIT-2026-09-02.md): 73 items / 12 groups → 21 items / 6 groups.
   // Every retired route still works as a deep link; the merged screens live on as tabs
   // (see app.js TABBED). Hidden screens sit on tables with 0 rows in production.
   { group: 'Home', items: [
-    { path: '/', label: 'Today', icon: 'grid', perm: null },
+    { path: '/', label: 'Today', icon: 'home', perm: null },
     { path: '/automation', label: 'Task queue', icon: 'refresh', perm: null, flag: 'automation' },
   ] },
   { group: 'Loads', items: [
-    { path: '/loads', label: 'Loads & trips', icon: 'list', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view,dispatch.view' },
-    { path: '/market-rates', label: 'Market rates', icon: 'doc' },
-    { path: '/rate-standards', label: 'Rate standards', icon: 'grid', perm: 'any:dispatch.manage,settings.manage' },
+    { path: '/loads', label: 'Loads & trips', icon: 'package', perm: 'any:loads.create,loads.assign,loads.publish,carriers.view,dispatch.view' },
+    { path: '/market-rates', label: 'Market rates', icon: 'dollar' },
+    { path: '/rate-standards', label: 'Rate standards', icon: 'target', perm: 'any:dispatch.manage,settings.manage' },
   ] },
   { group: 'Carriers', items: [
     { path: '/carriers', label: 'Carriers', icon: 'truck', perm: 'any:carriers.view,carriers.edit,carriers.approve' },
@@ -31,23 +34,23 @@ const NAV = [
     { path: '/carrier-reminders', label: 'Carrier reminders', icon: 'bell', perm: 'any:content.view,comm.view,comm.send' },
   ] },
   { group: 'Partners & People', items: [
-    { path: '/partners', label: 'Brokers & shippers', icon: 'users', perm: 'partners.view', flag: 'partners' },
-    { path: '/partner-intake', label: 'Partner intake', icon: 'doc', perm: 'partners.view', flag: 'partners' },
-    { path: '/dispatchers', label: 'Dispatchers & agents', icon: 'truck', perm: 'carriers.approve' },
+    { path: '/partners', label: 'Brokers & shippers', icon: 'handshake', perm: 'partners.view', flag: 'partners' },
+    { path: '/partner-intake', label: 'Partner intake', icon: 'clipboard', perm: 'partners.view', flag: 'partners' },
+    { path: '/dispatchers', label: 'Dispatchers & agents', icon: 'users', perm: 'carriers.approve' },
   ] },
   { group: 'Money & Customers', items: [
-    { path: '/finance', label: 'Finance', icon: 'doc', perm: 'finance.view', flag: 'finance' },
-    { path: '/live-chat', label: 'Live chat', icon: 'bell', perm: 'any:comm.view,support.view,dispatch.manage' },
-    { path: '/mailbox', label: 'Mailbox', icon: 'doc', perm: 'comm.view' },
-    { path: '/support', label: 'Support tickets', icon: 'bell', perm: 'support.view', flag: 'support' },
-    { path: '/crm', label: 'CRM & outreach', icon: 'trend', perm: 'crm.view', flag: 'crm' },
-    { path: '/forms', label: 'Forms', icon: 'bell', perm: 'forms.view', flag: 'forms' },
+    { path: '/finance', label: 'Finance', icon: 'bank', perm: 'finance.view', flag: 'finance' },
+    { path: '/live-chat', label: 'Live chat', icon: 'chat', perm: 'any:comm.view,support.view,dispatch.manage' },
+    { path: '/mailbox', label: 'Mailbox', icon: 'mail', perm: 'comm.view' },
+    { path: '/support', label: 'Support tickets', icon: 'flag', perm: 'support.view', flag: 'support' },
+    { path: '/crm', label: 'CRM & outreach', icon: 'send', perm: 'crm.view', flag: 'crm' },
+    { path: '/forms', label: 'Forms', icon: 'pen', perm: 'forms.view', flag: 'forms' },
   ] },
   { group: 'Insights & Admin', items: [
     { path: '/bi', label: 'Business', icon: 'trend', perm: 'any:analytics.view,reports.view' },
-    { path: '/web-analytics', label: 'Website & marketing', icon: 'trend', perm: 'analytics.view', flag: 'webAnalytics' },
-    { path: '/templates', label: 'Templates', icon: 'doc', perm: 'content.view' },
-    { path: '/integrations', label: 'Integrations', icon: 'refresh', perm: 'integrations.view', flag: 'integrations' },
+    { path: '/web-analytics', label: 'Website & marketing', icon: 'globe', perm: 'analytics.view', flag: 'webAnalytics' },
+    { path: '/templates', label: 'Templates', icon: 'copy', perm: 'content.view' },
+    { path: '/integrations', label: 'Integrations', icon: 'link', perm: 'integrations.view', flag: 'integrations' },
     { path: '/settings', label: 'Settings', icon: 'cog', perm: 'any:settings.manage,users.manage,roles.manage,flags.manage,audit.view' },
   ] },
 ];

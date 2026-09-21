@@ -4357,14 +4357,17 @@ function packetAgreementCards(skipPacket) {
   const BNAV = [
     ['dashboard', 'Dashboard', 'dash'],
     ['loads', 'My Loads', 'loads'],
-    ['claims', 'Claims', 'finance'],
+    // bl_ui_0386 — five of these shared three icons and two ('user', 'dock') had no path at
+    // all, so Network / Agents / Account drew nothing and Claims and Invoices — both on the
+    // phone bar — were the same glyph. One icon per destination now.
+    ['claims', 'Claims', 'alert'],
     ['requests', 'Requests', 'clock'],
-    ['carriers', 'Carriers', 'loads'],
-    ['rates', 'Market Rates', 'finance'],
-    ['network', 'Network', 'user'],
-    ...(ov.kind === 'broker' ? [['agents', 'Agents & team', 'user']] : []),
-    ['onboarding', 'Documents', 'dock'],
-    ['invoices', 'Invoices', 'finance'],
+    ['carriers', 'Carriers', 'truck'],
+    ['rates', 'Market Rates', 'tag'],
+    ['network', 'Network', 'building'],
+    ...(ov.kind === 'broker' ? [['agents', 'Agents & team', 'users']] : []),
+    ['onboarding', 'Documents', 'docs'],
+    ['invoices', 'Invoices', 'receipt'],
     ['developers', 'API & Keys', 'zap'],
     ['account', 'Account', 'user'],
   ];

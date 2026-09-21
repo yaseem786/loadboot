@@ -458,6 +458,14 @@ const ic = (name) => ({
   zap: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
   tools: 'M14.7 6.3a4 4 0 01-5 5L3 18l3 3 6.7-6.7a4 4 0 005-5l-2.1 2.1-2.9-.8-.8-2.9 2.1-2.1z',
   chart: 'M3 3v18h18M7 15l3-4 3 2 4-6',
+  // bl_ui_0386 — these five were referenced by NAV/AGNAV but had no path, so they drew an
+  // EMPTY <path> (a blank gap in the bar). The shared set app/shared/ui/icons.js has richer
+  // versions; these are the portal-local equivalents, same 24-box stroke style.
+  user: 'M12 12a4 4 0 100-8 4 4 0 000 8M4.5 20.5a7.5 7.5 0 0115 0',
+  idcard: 'M3 5h18v14H3zM8.5 12a2 2 0 100-4 2 2 0 000 4M5.5 16.5a3.2 3.2 0 016 0M14.5 9.5h4M14.5 13h4',
+  support: 'M12 21a9 9 0 100-18 9 9 0 000 18M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7M5.6 5.6l3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9',
+  wallet: 'M3 7a2 2 0 012-2h12v4M3 7v10a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2H5a2 2 0 01-2-2M17 13h.01',
+  tag: 'M12.6 2.6l8.8 8.8a2 2 0 010 2.8l-6.2 6.2a2 2 0 01-2.8 0L3.6 11.6V3.6a1 1 0 011-1zM8 8h.01',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 // Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.
@@ -802,7 +810,7 @@ async function agentPortal(user) {
   const obProfile = (ob && ob.profile) || null;
   const obStatus = (obProfile && obProfile.status) || 'draft';
   const isVerified = obStatus === 'approved'; // profile approval is the ONLY verification truth (legacy referrer flags don't count)
-  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'user'], ['chain', 'My Referrals', 'user'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['verify', 'Verification', 'shield'], ['settings', 'Settings', 'cog']];
+  const AGNAV = [['dashboard', 'Dashboard', 'dash'], ['referral', 'Referral (1%)', 'zap'], ['chain', 'My Referrals', 'users'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'wallet'], ['verify', 'Verification', 'shield'], ['settings', 'Settings', 'cog']];
   let tab = (location.hash || '').replace('#', '') || 'dashboard';
   if (!AGNAV.some((n) => n[0] === tab)) tab = 'dashboard';
   const titleEl = h('h1', { class: 'cp-title' }, 'Dashboard');
@@ -815,7 +823,7 @@ async function agentPortal(user) {
   // Mobile bottom tab bar — same pattern as the carrier shell (.cp-tabbar shows <=900px,
   // sidebar hides). Without this the agent portal had NO navigation on phones.
   const tabLinks = {};
-  const MOBTABS = [['dashboard', 'Home', 'dash'], ['chain', 'Referrals', 'user'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'finance'], ['verify', 'Verify', 'shield']];
+  const MOBTABS = [['dashboard', 'Home', 'dash'], ['chain', 'Referrals', 'users'], ['earnings', 'Earnings', 'finance'], ['payouts', 'Payouts', 'wallet'], ['verify', 'Verify', 'shield']];
   const tabbar = h('nav', { class: 'cp-tabbar' }, MOBTABS.map(([id, label, ic]) => {
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: (e) => { e.preventDefault(); go(id); } }, [icon(ic, 20), h('span', null, label)]);
     tabLinks[id] = a; return a;
@@ -2157,7 +2165,7 @@ function notCarrier() {
 let NAV = [
   ['dashboard', 'Dashboard', 'dash'], ['health', 'Ratings', 'shield'], ['loads', 'Load Board', 'loads'], ['trips', 'My Loads', 'trips'],
   ['profile', 'My Profile', 'idcard'], ['fleet', 'Fleet', 'truck'], ['finance', 'Finance', 'finance'], ['documents', 'Documents', 'docs'],
-  ['rates', 'Market Rates', 'finance'],
+  ['rates', 'Market Rates', 'tag'],
   ['notifications', 'Alerts', 'bell'],
   ['support', 'Support', 'support'], ['safety', 'Safety', 'sos'], ['account', 'Account', 'user'],
 ];
