@@ -19,15 +19,24 @@ import { ccDispatcher360, ccDispatcherDecide, ccDispatcherAssign, ccDispatcherSo
          ccDispatcherTestInvite, ccDispatcherTestReview, dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead,
          ccDispatcherKpis, ccDispatcherActivity } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
+import { ccDispatcherSetRejectReasons } from '../../shared/api.js';
+import { REASONS } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { renderTestPanel } from './dispatcher-test.js';
 
 const ET = 'America/New_York';
 const et = (v) => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString('en-US', { timeZone: ET, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; };
-const dShort = (v) => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+// A bare YYYY-MM-DD (trial_start/trial_end are Postgres `date`) carries NO time zone, and new Date()
+// reads it as UTC midnight. West of UTC that is the PREVIOUS local day, which made dates render a day
+// early AND made getDay() test the wrong weekday — the trial window counted 8 working days instead of 9.
+// dAt() builds those as a local date; full timestamps still go through Date() untouched.
+const dAt = (v) => { const m = typeof v === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(v); };
+const dShort = (v) => { if (!v) return '—'; const d = dAt(v);
+  return isNaN(d) ? String(v) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
 const ago = (v) => { if (!v) return '—'; const s = Math.max(0, (Date.now() - new Date(v).getTime()) / 1000); if (s < 3600) return Math.max(1, Math.round(s / 60)) + ' min ago'; if (s < 86400) return Math.round(s / 3600) + ' h ago'; return Math.round(s / 86400) + ' d ago'; };
-const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
-const workingDays = (a, b) => { let n = 0; const x = new Date(a); const e = new Date(b); while (x <= e) { const d = x.getDay(); if (d !== 0 && d !== 6) n++; x.setDate(x.getDate() + 1); } return n; };
+const daysBetween = (a, b) => Math.round((dAt(b) - dAt(a)) / 86400000);
+const workingDays = (a, b) => { let n = 0; const x = dAt(a); const e = dAt(b); while (x <= e) { const d = x.getDay(); if (d !== 0 && d !== 6) n++; x.setDate(x.getDate() + 1); } return n; };
 const initials = (n) => { const p = String(n || '').trim().split(/\s+/).filter(Boolean).slice(0, 2); return p.length ? p.map((w) => w[0]).join('').toUpperCase() : '?'; };
 const hue = (k) => { let h = 0; const s = String(k || ''); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return ['#7c3aed', '#0e7490', '#b45309', '#0f766e', '#9333ea', '#1d4ed8'][h % 6]; };
 const STL = { applied: ['Applied', 'violet'], screening: ['Screening', 'amber'], skills_test: ['Skills test', 'amber'], trial: ['Trial', 'blue'], verified: ['Verified', 'green'], active: ['Active', 'green'], suspended: ['Suspended', 'red'], rejected: ['Rejected', 'red'], withdrawn: ['Withdrawn', 'violet'] };
@@ -37,7 +46,9 @@ const stPill = (st) => { const m = STL[st] || [st || '—', '']; return pill(m[0
 const lnk = (href, label) => el('a', { class: 'd3-lnk', href, title: href }, [icon('link', 12), label || href.replace(/^#\/dispatcher\?id=[^&]+&tab=/, '#/dispatcher/…/').replace(/^#/, '')]);
 const kbd = (k) => el('kbd', null, k);
 const btn = (label, onClick, tone, ic, extra) => el('button', Object.assign({ class: 'd3-btn ' + (tone || ''), type: 'button', onClick }, extra || {}), [ic ? icon(ic, 15) : '', label]);
-const addWorkingDays = (d, n) => { const x = new Date(d); let c = 0; while (c < n) { x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) c++; } return x.toISOString().slice(0, 10); };
+const addWorkingDays = (d, n) => { const x = dAt(d); let c = 0;
+  while (c < n) { x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) c++; }
+  return [x.getFullYear(), String(x.getMonth() + 1).padStart(2, '0'), String(x.getDate()).padStart(2, '0')].join('-'); };
 
 function style() {
   if (document.getElementById('d360-css')) return;
@@ -293,7 +304,16 @@ export async function renderDispatcher360(host, query) {
   async function act(action, confirmMsg, body, danger) {
     if (confirmMsg && !(await askConfirm(confirmMsg, { body, danger }))) return;
     let note = null;
-    if (action === 'reject' || action === 'suspend') { note = await askReason(action === 'reject' ? 'Reason for rejecting — this text IS the e-mail the applicant receives' : 'Reason for suspending (the dispatcher sees this)'); if (note === null) return; }
+        if (action === 'reject') {
+          // bl_disp_0378 — the reject dialog collects BOTH the candidate-facing note (which IS the
+          // e-mail body) and the machine-readable gaps. The gaps are stored first, so the portal
+          // already has them by the time the applicant opens the rejection.
+          const r9 = await askReason('Reason for rejecting — this text IS the e-mail the applicant receives', { reasons: REASONS });
+          if (!r9) return;
+          note = r9.note;
+          const sr9 = await ccDispatcherSetRejectReasons(id, r9.reasons).catch((e) => ({ error: humanizeError(e) }));
+          if (sr9 && sr9.error) { toast('Reasons not saved: ' + sr9.error); return; }
+        } else if (action === 'suspend') { note = await askReason('Reason for suspending (the dispatcher sees this)'); if (note === null) return; }
     decide(action, note);
   }
   // Move to trial = terms first (commission % + working-day window). No 0% trials by accident.

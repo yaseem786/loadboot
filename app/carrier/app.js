@@ -970,6 +970,9 @@ async function agentPortal(user) {
       suspended: ['#f87171', '⏸ Suspended — contact the team'],
       rejected: ['#f87171', '✕ Not approved at this time'],
     };
+    // bl_disp_0378 — display labels for the reason codes staff tick in the CC reject dialog.
+    // Kept in sync with REASONS in app/agent/dispatcher-gaps.js (that module owns the gate itself).
+    const REJ_LABEL = { no_own_board: 'Own paid load-board subscription', no_booking_proof: 'Loads booked independently', experience: 'US dispatch experience', english: 'English for broker calls', availability: 'Hours / US overlap', no_cv: 'CV / résumé', no_id: 'Government photo ID', inconsistent: 'Contradictory answers', other: 'See the note above' };
     const inp = (ph, type) => h('input', { class: 'cp-in', placeholder: ph, type: type || 'text' });
     const sel = (opts) => h('select', { class: 'cp-in' }, opts.map(([v9, l9]) => h('option', { value: v9 }, l9)));
     // bl_disp_0305: `exclusive` marks an option that cannot be true together with the others —
@@ -1056,9 +1059,11 @@ async function agentPortal(user) {
       const boardLegacy = () => { const v9 = f.can_source.value; return { can: v9 === 'own_paid' ? 'yes_independent' : v9 === 'learning' ? 'learning' : 'yes_with_board', own: v9 === 'own_paid' ? ownBoards.values().map((b9) => b9 + ' (own login)') : ['No own access'] }; };
       const equip = checks(['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Power Only', 'Hotshot', 'Box Truck']);
       // ---- CV / résumé + optional ID document upload ----
-      const docState = { cv: null, cvName: null, idd: null, iddName: null };
+      const ps9 = (prof && prof.skills) || {};
+      const docState = { cv: ps9.cv_doc || null, cvName: ps9.cv_name || null, idd: ps9.id_doc || null, iddName: ps9.id_name || null };
       const mkUpload = (type9, key9, nameKey9) => {
-        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:#94a3b8' }, 'PDF, DOC or image · up to 25 MB');
+        const on9 = docState[nameKey9];
+        const st9 = h('div', { class: 'cp-row-s', style: 'margin-top:3px;color:' + (on9 ? '#4ade80' : '#94a3b8') }, on9 ? '✓ ' + on9 + ' — already on file (upload again to replace)' : 'PDF, DOC or image · up to 25 MB');
         const inp9 = h('input', { type: 'file', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', class: 'cp-in', onChange: async (e9) => {
           const file9 = e9.target.files && e9.target.files[0]; if (!file9) return;
           st9.style.color = '#94a3b8'; st9.textContent = 'Uploading…';
@@ -1069,6 +1074,39 @@ async function agentPortal(user) {
       };
       const cvUp = mkUpload('dispatcher_cv', 'cv', 'cvName');
       const idUp = mkUpload('dispatcher_id', 'idd', 'iddName');
+      // bl_disp_0318 told re-applicants "your previous answers are kept", but nothing ever read them
+      // back — the form opened blank. bl_disp_0378 fills it from the profile the server returns.
+      (function prefill9() {
+        if (!prof) return;
+        const set9 = (el9, v9) => { if (el9 && v9 !== null && v9 !== undefined && v9 !== '') el9.value = String(v9); };
+        set9(f.full_name, prof.full_name); set9(f.phone, prof.phone); set9(f.country, prof.country); set9(f.city, prof.city);
+        set9(f.english, prof.english_level); set9(f.years, prof.years_exp); set9(f.trucks, ps9.trucks_handled);
+        set9(f.timezone, ps9.timezone); set9(f.hours, ps9.availability_hours); set9(f.negotiation, ps9.negotiation);
+        set9(f.fmcsa, ps9.fmcsa_hos); set9(f.geography, ps9.us_geography); set9(f.tools, ps9.tools);
+        set9(f.network, ps9.network_desc); set9(f.payout, ps9.payout_pref); set9(f.note, ps9.note); set9(f.linkedin, ps9.linkedin);
+        f.us_overlap.checked = !!ps9.us_hours_overlap;
+        if (ps9.board_status) set9(f.can_source, ps9.board_status);
+        (Array.isArray(prof.load_boards) ? prof.load_boards : []).forEach((b9) => { if (boards.map[b9]) boards.map[b9].checked = true; });
+        (Array.isArray(ps9.equipment) ? ps9.equipment : []).forEach((e9) => { if (equip.map[e9]) equip.map[e9].checked = true; });
+        (Array.isArray(ps9.own_board_access) ? ps9.own_board_access : []).forEach((o9) => { const k9 = String(o9).replace(' (own login)', ''); if (ownBoards.map[k9]) ownBoards.map[k9].checked = true; });
+        if (Array.isArray(prof.refs) && prof.refs.length) f.refs.value = prof.refs.join('\n');
+        boardSync();
+      })();
+      // bl_disp_0378 — THE RE-APPLICATION GATE. A candidate who was rejected and re-opened their
+      // application (dispatcher_reapply) must close the reason they were closed for before Submit
+      // fires. Reasons come from dispatcher_profiles.reject_reasons (ticked by staff in CC), or are
+      // derived from the closed application when the file carries none.
+      const reapplying9 = !!(prof && prof.status === 'applied' && Number(prof.reapply_count || 0) > 0);
+      let gate9 = null;
+      if (reapplying9) {
+        try {
+          const gm9 = await import('../agent/dispatcher-gaps.js');
+          gate9 = gm9.reapplyGate({ h, prof, form: {
+            board: () => f.can_source.value, ownBoards: () => ownBoards.values(), english: () => f.english.value,
+            years: () => f.years.value, trucks: () => f.trucks.value, hours: () => f.hours.value,
+            overlap: () => f.us_overlap.checked, note: () => f.note.value, cv: () => docState.cv, id: () => docState.idd } });
+        } catch (e9) { try { console.warn('[dispatcher-gaps] failed to load', e9); } catch (_) {} gate9 = null; }
+      }
       const msg = h('div', { class: 'cp-err' });
       const grp = (label, node) => h('div', { style: 'margin-bottom:2px' }, [h('label', { class: 'cp-row-s', style: 'display:block;margin:8px 0 2px' }, label), node]);
       const fsec = (title, open, kids) => h('details', Object.assign({ style: 'border:1px solid rgba(130,165,225,.16);border-radius:13px;margin-top:10px;background:rgba(255,255,255,.02);overflow:hidden' }, open ? { open: '' } : {}), [
@@ -1077,21 +1115,23 @@ async function agentPortal(user) {
       const submit = h('button', { class: 'cp-btn cp-btn-lg', onClick: async (ev) => {
         const b9 = ev.currentTarget;
         if (!f.full_name.value.trim() || !f.english.value || !f.country.value.trim() || !f.hours.value || !f.payout.value || !f.can_source.value) { msg.textContent = 'Please fill the required (*) fields: name, country, hours, English, load-sourcing ability, payout.'; return; }
+        if (gate9) { const g9 = gate9.check(); if (g9) { msg.textContent = g9.msg; return; } }
         if (f.can_source.value === 'own_paid' && !ownBoards.values().length) { msg.textContent = 'Please tick which load board(s) you pay for yourself.'; ownWrap.scrollIntoView({ block: 'center' }); return; }
         if (!boardWarn.hidden && !boardAck.checked) { msg.textContent = 'Please confirm the load-board notice (section 2) before submitting.'; boardWarn.scrollIntoView({ block: 'center' }); return; }
         if (!docState.cv) { msg.textContent = 'Please upload your CV / résumé before submitting.'; return; }
         b9.disabled = true; b9.textContent = 'Submitting…';
         const skills = { availability_hours: f.hours.value, timezone: f.timezone.value.trim(), us_hours_overlap: f.us_overlap.checked, trucks_handled: f.trucks.value || null, equipment: equip.values(), negotiation: f.negotiation.value, fmcsa_hos: f.fmcsa.value, us_geography: f.geography.value, tools: f.tools.value.trim(), can_source_loads: boardLegacy().can, own_board_access: boardLegacy().own, board_status: f.can_source.value, board_ack: boardAck.checked, network_desc: f.network.value.trim(), payout_pref: f.payout.value, note: f.note.value.trim(), linkedin: f.linkedin.value.trim(), cv_doc: docState.cv, cv_name: docState.cvName, id_doc: docState.idd, id_name: docState.iddName };
+        if (gate9) skills.reapply_gap = gate9.answers();
         const refs = f.refs.value.split('\n').map((x9) => x9.trim()).filter(Boolean);
         const payload = { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), country: f.country.value.trim(), city: f.city.value.trim(), english_level: f.english.value, years_exp: f.years.value || null, load_boards: boards.values(), skills: skills, refs: refs };
         const r = await dispatcherApply(payload, true).catch((e9) => ({ error: (e9 && e9.message) || 'error' }));
         if (r && r.error) { msg.textContent = r.error; b9.disabled = false; b9.textContent = 'Submit application'; return; }
         go('dashboard');
-      } }, 'Submit application');
-      mount(host, h('div', null, [
-        dHero(),
-        agCard('🧑‍✈️ Apply to become a LoadBoot Dispatcher', [
-          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:4px' }, 'This is a SALARIED role dispatching for assigned US carriers — base + per-active-truck + performance bonus, starting when a carrier is assigned. Strict screening (skills test + paid trial) before hiring. Fill each section below.'),
+      } }, reapplying9 ? 'Submit my re-application' : 'Submit application');
+      const card9 = agCard(reapplying9 ? '🧑‍✈️ Your re-application' : '🧑‍✈️ Apply to become a LoadBoot Dispatcher', [
+          h('div', { class: 'cp-row-s', style: 'line-height:1.8;margin-bottom:4px' }, reapplying9
+            ? 'Your previous answers are already filled in below — update what has changed, close the points at the top, then submit. Re-application ' + (Number(prof.reapply_count || 1)) + ' of 3.'
+            : 'This is a SALARIED role dispatching for assigned US carriers — base + per-active-truck + performance bonus, starting when a carrier is assigned. Strict screening (skills test + paid trial) before hiring. Fill each section below.'),
           fsec('1 · About you', true, [
             grp('Full name *', f.full_name), h('div', { style: 'display:flex;gap:8px' }, [grp('Country *', f.country), grp('City', f.city)]), grp('Phone / WhatsApp', f.phone),
             grp('Timezone', f.timezone), grp('Hours available per week *', f.hours),
@@ -1116,12 +1156,17 @@ async function agentPortal(user) {
             grp('Government ID (optional — speeds up hiring)', idUp),
           ]),
           msg, submit,
-        ]),
+        ]);
+      const wrap9 = h('div', null, [
+        gate9 ? gate9.node : dHero(),
+        card9,
         dSteps(null),
         dSalary(),
         dWhat(),
         dAcademy(),
-      ]));
+      ]);
+      if (gate9) { wrap9.addEventListener('input', gate9.refresh); wrap9.addEventListener('change', gate9.refresh); }
+      mount(host, wrap9);
       return;
     }
 
@@ -1173,7 +1218,23 @@ async function agentPortal(user) {
         file, st,
       ]);
     })();
-    const cards = [agCard('🧑‍✈️ Your dispatcher status', [
+    // bl_disp_0378 — a rejected applicant gets a premium panel, not a flat status card: the decision,
+    // the team's own note, and the named points to close, in that order.
+    const rejPanel9 = () => {
+      const rr9 = (Array.isArray(prof.reject_reasons) ? prof.reject_reasons : []).filter(Boolean);
+      return h('div', { style: 'border-radius:20px;padding:20px 20px 18px;margin-bottom:14px;background:linear-gradient(150deg,#22100c 0%,#152236 58%,#0b1f3d 100%);border:1.5px solid rgba(248,113,113,.45);box-shadow:0 18px 40px -26px rgba(248,113,113,.6)' }, [
+        h('div', { style: 'font-size:.7rem;font-weight:900;letter-spacing:.14em;color:#fca5a5' }, 'LOADBOOT DISPATCH · APPLICATION STATUS'),
+        h('div', { style: 'font-size:1.32rem;font-weight:900;color:#fff;margin:7px 0 4px;line-height:1.18' }, 'Not approved at this time'),
+        h('div', { class: 'cp-row-s', style: 'line-height:1.65' }, 'Your account stays open and every answer you gave is saved. This is not the end of the road — close the points below, then apply again.'),
+        prof.review_note ? h('div', { style: 'margin-top:12px;border-radius:12px;padding:12px 14px;background:rgba(2,8,20,.45);border-left:3px solid rgba(248,113,113,.8);font-size:.87rem;color:#e6edf9;line-height:1.7;white-space:pre-wrap' }, [
+          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#fca5a5;margin-bottom:5px' }, 'NOTE FROM THE TEAM'), prof.review_note]) : '',
+        rr9.length ? h('div', { style: 'margin-top:13px' }, [
+          h('div', { style: 'font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#fdba74;margin-bottom:7px' }, 'WHAT TO CLOSE BEFORE YOU APPLY AGAIN'),
+          h('div', { style: 'display:flex;gap:7px;flex-wrap:wrap' }, rr9.map((c9) => h('span', { class: 'cp-pill', style: 'background:rgba(252,83,5,.12);border:1px solid rgba(252,83,5,.45);color:#fdba74;font-weight:700' }, REJ_LABEL[c9] || c9))),
+        ]) : '',
+      ]);
+    };
+    const cards = prof.status === 'rejected' ? [rejPanel9()] : [agCard('🧑‍✈️ Your dispatcher status', [
       h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' }, [h('span', { class: 'cp-pill', style: 'font-weight:800;color:' + st9[0] }, st9[1])]),
       prof.review_note ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Note from the team: ' + prof.review_note) : '',
       prof.base_salary ? h('div', { class: 'cp-row-s', style: 'margin-top:8px' }, 'Salary terms: base ' + (prof.currency || 'PKR') + ' ' + Number(prof.base_salary).toLocaleString() + ' + ' + (prof.currency || 'PKR') + ' ' + Number(prof.per_truck || 0).toLocaleString() + ' per active truck + performance bonus.') : '',
@@ -1183,7 +1244,7 @@ async function agentPortal(user) {
     if (prof.status === 'rejected') {
       const slot9 = h('div', null, []); cards.push(slot9); // synchronous slot: no dependence on mount timing
       import('../agent/dispatcher-reapply.js').then((m9) => {
-        const rc9 = m9.reapplyCard({ h, api: { dispatcherReapply }, onReopened: () => location.reload() });
+        const rc9 = m9.reapplyCard({ h, api: { dispatcherReapply }, prof: prof, onReopened: () => location.reload() });
         slot9.replaceChildren(rc9);
       }).catch(() => {});
     }
@@ -1244,7 +1305,7 @@ async function agentPortal(user) {
     } else if (prof.status === 'active' || prof.status === 'verified') {
       cards.push(agCard('🚚 Assigned carriers', [h('div', { class: 'cp-muted' }, 'No carrier assigned yet — you’ll be notified the moment the Command Center assigns one.')]));
     }
-    cards.push(agCard('⚖️ Compliance rules — never break these', [h('div', { class: 'cp-row-s', style: 'line-height:1.9' }, [
+    if (prof.status !== 'rejected') cards.push(agCard('⚖️ Compliance rules — never break these', [h('div', { class: 'cp-row-s', style: 'line-height:1.9' }, [
       h('div', null, '✓ Book every load under the CARRIER’s own authority (rate con names the carrier, not you or LoadBoot).'),
       h('div', null, '✓ Source loads only within your assigned SCOPE for each carrier — never take a load two of your carriers could both haul.'),
       h('div', null, '✓ Go through a broker for freight — never solicit shippers directly.'),

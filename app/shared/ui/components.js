@@ -9,10 +9,17 @@ export function money(n, dp = 0) {
   const v = Number(n || 0);
   return '$' + v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
 }
+// A bare YYYY-MM-DD (a Postgres `date`: trial_start, trial_end, expiry dates) carries NO time zone.
+// new Date('2026-09-21') parses it as UTC midnight, which renders as "Sep 20" for anyone west of UTC —
+// the trial window read a day early for every US viewer. Build those as a LOCAL date instead.
+// Full timestamps still go through Date() untouched.
 export function fmtDate(ts) {
   if (!ts) return '—';
-  try { return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
-  catch (_) { return String(ts); }
+  try {
+    const m = typeof ts === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(ts);
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(ts);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (_) { return String(ts); }
 }
 export function fmtDateTime(ts) {
   if (!ts) return '—';
@@ -204,15 +211,29 @@ export function askReason(title, opts = {}) {
     const ta = el('textarea', { class: 'cc-input', rows: String(opts.rows || 4), placeholder: opts.placeholder || 'Type the reason…' });
     if (opts.value) ta.value = opts.value;
     const err = el('div', { class: 'cc-sub', style: 'color:#dc2626;min-height:18px;margin-top:4px' });
+    // bl_disp_0378 — opts.reasons: [[code, label], …]. Ticked codes are machine-readable and drive
+    // the re-application gate in the applicant's portal. With reasons requested the promise
+    // resolves { note, reasons } instead of a bare string (still null on cancel).
+    const rmap = {};
+    const rbox = Array.isArray(opts.reasons) && opts.reasons.length ? el('div', { style: 'margin-bottom:10px' }, [
+      el('div', { class: 'cc-sub', style: 'font-weight:700;margin-bottom:5px' }, opts.reasonsLabel || 'Which gaps? (the applicant must close these to re-apply)'),
+      el('div', { style: 'display:flex;flex-direction:column;gap:5px' }, opts.reasons.map(([c, l]) => {
+        const cb = el('input', { type: 'checkbox' }); rmap[c] = cb;
+        return el('label', { style: 'display:flex;gap:7px;align-items:center;font-size:.88rem;cursor:pointer' }, [cb, l]);
+      })),
+    ]) : null;
+    const pickedReasons = () => Object.keys(rmap).filter((c) => rmap[c].checked);
     const done = (v) => { if (settled) return; settled = true; resolve(v); try { drawer.close(); } catch (_) {} };
     const submit = el('button', { class: 'lb-btn lb-btn-primary', onClick: () => {
       const v = ta.value.trim();
       if (!v && !opts.optional) { err.textContent = 'A reason is required — the other side sees this.'; return; }
-      done(v || null);
+      if (rbox && !pickedReasons().length) { err.textContent = 'Tick at least one gap — this is what the applicant has to close.'; return; }
+      done(rbox ? { note: v || null, reasons: pickedReasons() } : (v || null));
     } }, opts.submitLabel || 'Confirm');
     const cancel = el('button', { class: 'lb-btn', onClick: () => done(null) }, 'Cancel');
     const drawer = openDrawer(title, el('div', { class: 'cc-form' }, [
       opts.note ? el('div', { class: 'cc-sub', style: 'margin-bottom:8px' }, opts.note) : '',
+      rbox || '',
       ta, err,
       el('div', { style: 'display:flex;gap:8px;margin-top:12px;flex-wrap:wrap' }, [submit, cancel]),
     ]), { subtitle: opts.subtitle || 'This is recorded and shared with the counterparty' });

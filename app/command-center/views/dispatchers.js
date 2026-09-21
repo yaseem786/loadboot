@@ -23,6 +23,8 @@ import { ccDispatchersList, ccDispatcher360, ccDispatcherDecide, ccDispatcherAss
         ccDispatcherTestSendScore,
          dispatcherThreadList, dispatcherThreadSend, dispatcherThreadMarkRead, ccDispatcherKpis } from '../../shared/api.js';
 import { humanizeError, toast } from '../../shared/errors.js';
+import { ccDispatcherSetRejectReasons } from '../../shared/api.js';
+import { REASONS } from '../../agent/dispatcher-gaps.js';
 import { signedDocumentUrl } from '../../shared/storage.js';
 import { dispatchLiveJoin } from '../../shared/dispatch-live.js';
 import { renderRoster } from './dispatchers-roster.js';           // bl_disp_0313 — paged roster
@@ -696,7 +698,16 @@ export function renderDispatchers(host) {
       return el('button', { class: 'lb-btn ' + (tone || 'lb-btn-ghost'), style: 'margin:4px 6px 0 0', onClick: async () => {
         if (confirmMsg && !(await askConfirm(confirmMsg, { body, danger: tone === 'lb-btn-danger' }))) return;
         let note = null;
-        if (action === 'reject' || action === 'suspend') { note = await askReason(action === 'reject' ? 'Reason for rejecting (the applicant sees this)' : 'Reason for suspending (the dispatcher sees this)'); if (note === null) return; }
+        if (action === 'reject') {
+          // bl_disp_0378 — the reject dialog collects BOTH the candidate-facing note (which IS the
+          // e-mail body) and the machine-readable gaps. The gaps are stored first, so the portal
+          // already has them by the time the applicant opens the rejection.
+          const r9 = await askReason('Reason for rejecting — this text IS the e-mail the applicant receives', { reasons: REASONS });
+          if (!r9) return;
+          note = r9.note;
+          const sr9 = await ccDispatcherSetRejectReasons(x.user_id, r9.reasons).catch((e) => ({ error: humanizeError(e) }));
+          if (sr9 && sr9.error) { toast('Reasons not saved: ' + sr9.error); return; }
+        } else if (action === 'suspend') { note = await askReason('Reason for suspending (the dispatcher sees this)'); if (note === null) return; }
         decide(action, note);
       } }, label);
     }

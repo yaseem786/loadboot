@@ -441,6 +441,9 @@ export const ccDispatcherPayouts = (status, limit) => rpc('cc_dispatcher_payouts
 export const ccDispatcherActivity = (user, limit) => rpc('cc_dispatcher_activity', { p_user: user, p_limit: limit || 40 });   // bl_disp_0317 — Dispatcher 360 timeline
 export const ccDispatcher360 = (user) => rpc('cc_dispatcher_360', { p_user: user });
 export const ccDispatcherDecide = (user, action, note) => rpc('cc_dispatcher_decide', { p_user: user, p_action: action, p_note: note ?? null });
+// bl_disp_0378 — structured reject reasons. Called BEFORE decide('reject'): cc_dispatcher_decide
+// keeps its 3-argument signature, so CC and the DB can be deployed in either order.
+export const ccDispatcherSetRejectReasons = (user, reasons) => rpc('cc_dispatcher_set_reject_reasons', { p_user: user, p_reasons: Array.isArray(reasons) ? reasons : [] });
 export const ccDispatcherAssign = (dispatcher, carrierOrg, sop) => rpc('cc_dispatcher_assign', { p_dispatcher: dispatcher, p_carrier_org: carrierOrg, p_sop: sop ?? {} });
 export const ccDispatcherSop = (assignment, sop) => rpc('cc_dispatcher_sop', { p_assignment: assignment, p_sop: sop ?? {} });
 export const ccDispatcherUnassign = (assignment, reason, pause) => rpc('cc_dispatcher_unassign', { p_assignment: assignment, p_reason: reason ?? null, p_pause: !!pause });
@@ -1354,6 +1357,68 @@ export async function dialerSmsSend(to, body) {
   return data;
 }
 export const ccDialerSms = (p) => rpc('cc_dialer_sms', { p: p ?? {} });
+// bl_wa_0367 — WhatsApp inbox. ONE shared WABA number, one OWNER per conversation; the 24-hour window and the
+// approved-template rule are enforced server-side (wa_send_prepare). Sending goes through the telnyx-whatsapp edge function.
+export const waInbox = () => rpc('wa_inbox', {});
+export const waThread = (id, before) => rpc('wa_thread', { p_id: id, p_before: before ?? null });
+export const waClaim = (id) => rpc('wa_claim', { p_id: id });
+export const waStart = (number, name) => rpc('wa_start', { p_number: number, p_contact_name: name ?? null });
+export async function waSend(body) {                       // { thread_id | to, body } or { thread_id | to, template: { name, vars } }
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('telnyx-whatsapp', { body: body || {} });
+  if (error) throw await _fnError(error, 'Could not send that WhatsApp message');
+  return data;
+}
+export const ccWaOverview = (p) => rpc('cc_wa_overview', { p: p ?? {} });
+export const ccWaAssign = (id, userId) => rpc('cc_wa_assign', { p_id: id, p_user: userId ?? null });
+export const ccWaThreadSet = (p) => rpc('cc_wa_thread_set', { p: p ?? {} });
+export const ccWaTemplateSet = (p) => rpc('cc_wa_template_set', { p: p ?? {} });
+export const ccWaNotifyAssigned = (userId) => rpc('cc_wa_notify_assigned', { p_user: userId });
+// bl_wa_0377 - the templates' REAL status, read from Meta through Telnyx (the account that owns the WABA).
+// { action: 'sync' } reads them all and writes them into wa_templates; { action: 'submit', name } sends one
+// drafted template off for Meta's approval. Staff only - the edge function calls the RPCs as the caller.
+export async function ccWaTemplatesSync(body) {
+  const sb = await getClient();
+  const { data, error } = await sb.functions.invoke('telnyx-wa-templates', { body: body || { action: 'sync' } });
+  if (error) throw await _fnError(error, 'Could not read the templates from Meta');
+  // v3: the function reports every Telnyx call it tried and how many rows came back. When a sync finds nothing,
+  // that list is the whole diagnosis, so it goes to the console instead of being thrown away.
+  if (data && data.probe) { try { console.log('[wa templates probe]', JSON.stringify(data.probe)); } catch (_) {} }
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+export const ccWaTemplateSubmit = (name) => ccWaTemplatesSync({ action: 'submit', name });
+// bl_wa_0372 — one WhatsApp attachment, streamed through the edge function so the Telnyx URL never reaches the
+// browser and only the conversation's owner (or staff) can open it. Binary: functions.invoke would corrupt it.
+// bl_wa_0375 — a file on its way OUT: straight into the private wa-media bucket. The browser never makes a
+// public link; telnyx-whatsapp signs a 15-minute one at send time.
+export async function waUploadMedia(threadId, file) {
+  const sb = await getClient();
+  const mime = (file.type || 'application/octet-stream').split(';')[0];
+  const fromName = (file.name || '').includes('.') ? (file.name.split('.').pop() || '').toLowerCase().slice(0, 8) : '';
+  const ext = fromName || (mime.split('/')[1] || 'bin').replace(/[^a-z0-9]/g, '').slice(0, 8);
+  const rand = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
+  const path = 'wa/' + threadId + '/' + rand + '.' + ext;
+  const { error } = await sb.storage.from('wa-media').upload(path, file, { contentType: mime, upsert: false });
+  if (error) throw new Error((error && error.message) || 'That file could not be uploaded.');
+  const kind = mime.startsWith('image/') ? 'image' : mime.startsWith('audio/') ? 'audio' : mime.startsWith('video/') ? 'video' : 'document';
+  return { path, mime, kind, file_name: file.name || '' };
+}
+export async function waMediaBlob(messageId) {
+  const sb = await getClient();
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch(sb.supabaseUrl + '/functions/v1/telnyx-wa-media', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: sb.supabaseKey, Authorization: 'Bearer ' + ((session && session.access_token) || '') },
+    body: JSON.stringify({ message_id: messageId }),
+  });
+  const ct = r.headers.get('content-type') || '';
+  if (!r.ok || ct.includes('application/json')) {
+    let m = 'Attachment not available'; try { m = (await r.json()).error || m; } catch (_) {}
+    throw new Error(m);
+  }
+  return await r.blob();
+}
 export const ccDialerLineUpsert = (p) => rpc('cc_dialer_line_upsert', { p: p ?? {} });
 export const ccDialerLineRelease = (lineId) => rpc('cc_dialer_line_release', { p_line: lineId });
 export const ccDialerConfigSet = (p) => rpc('cc_dialer_config_set', { p: p ?? {} });
