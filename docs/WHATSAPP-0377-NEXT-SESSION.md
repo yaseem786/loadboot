@@ -41,13 +41,15 @@ All of that is enforced in **Postgres**, not in the browser.
 | Outgoing media / voice notes | `bl_wa_0375_wa_send_media.sql` | applied |
 | "Your WhatsApp conversations are ready" e-mail | `bl_wa_0376_wa_assigned_email.sql` | applied |
 | Template sync + `dispatcher_assigned` draft | `bl_wa_0377_wa_template_sync.sql` (+ `0377a` amendment inside it) | applied |
+| **Outbound-media read + bucket lockdown + Chrome voice notes** | `bl_wa_0378_wa_outbound_media_read.sql` | applied |
 
 Edge functions on staging: `telnyx-hook` v6 (routes WhatsApp events to `wa_hook`, Ed25519-verified),
-`telnyx-whatsapp` v2 (sends, signs 15-minute links for outgoing files), `telnyx-wa-media` v1 (streams one
-attachment after the DB authorises it), `telnyx-wa-templates` **v3** (template sync + submit).
+`telnyx-whatsapp` v2 (sends, signs 15-minute links for outgoing files), `telnyx-wa-media` **v2** (streams one
+attachment after the DB authorises it — inbound from Telnyx, outbound from our own bucket), `telnyx-wa-templates` **v3** (template sync + submit).
 
 Frontend: `app/shared/dialer-wa.js` (dispatcher dock panel, WhatsApp-style bubbles, day separators, delivery
 ticks, attach / record, full-screen), `app/shared/dialer.js` (channel chips + unread badge),
+`app/shared/wa-opus.js` (WebM→Ogg Opus remux so Chrome voice notes are accepted, bl_wa_0378),
 `app/command-center/views/whatsappLive.js` (the line, KPIs, conversations, thread panel, templates, webhook log,
 New conversation, Email dispatcher), `app/shared/api.js` (all calls).
 
@@ -86,11 +88,44 @@ through Telnyx under a **new name** (Meta will not accept the same name and lang
 
 ---
 
+## 3a. bl_wa_0378 — three faults in the outbound-media path, fixed 21 Sep before anything was sent
+
+The whole outbound chain (browser → private `wa-media` bucket → 15-minute signed link → Telnyx) was read line
+by line. Three faults. None of them raised an error; all three would have looked like the feature working.
+
+1. **An outbound attachment could never be opened again.** `wa_media_ref` (bl_wa_0372) reads the file's
+   location from `media->:type->'url'` — Telnyx's storage, where an *inbound* file lives. bl_wa_0375 stores an
+   outbound file as `media->:type->'path'`, an object in our own bucket; there is no `url`. So every outbound
+   photo, voice note and document answered *"That message has no attachment."* — a dispatcher could send a rate
+   confirmation and never see it again, and his own bubble read "Photo unavailable". `wa_media_ref` now returns
+   either a `url` (inbound) or `bucket` + `path` (outbound) and `telnyx-wa-media` **v2** fetches whichever it is
+   handed, with the service role for our own bucket.
+2. **Every dispatcher could read every carrier's attachments.** bl_wa_0374's `"wa media read"` policy let ANY
+   wa actor `select` ANY object in `wa-media`. The paths are random, but `storage.list()` enumerates them — one
+   dispatcher could have listed and downloaded every WhatsApp file LoadBoot ever sent. The browser never reads
+   this bucket (it only uploads), so the policy bought nothing; it is now staff-only, and uploads are pinned to
+   a thread the uploader may actually write to instead of any path under `wa/`.
+3. **No voice note recorded in Chrome could ever have been delivered.** WhatsApp takes `audio/ogg` (Opus),
+   `aac`, `mp4`, `mpeg`, `amr`. It does **not** take `audio/webm`, and webm is all Chrome's MediaRecorder can
+   produce — `isTypeSupported('audio/ogg;codecs=opus')` is false there. `app/shared/wa-opus.js` lifts the Opus
+   packets out of the WebM blocks and writes them into an Ogg container: no decode, no resample, a few
+   milliseconds. It fails by returning `null`, in which case the original blob goes out exactly as before —
+   a bug in the remuxer can only cost the improvement, never the feature. Firefox and Safari are untouched.
+   Tested with ffmpeg, not assumed: mono 3.7 s and stereo 62 s (long enough to cross the 255-segment page
+   boundary) remuxed and read back with ffprobe — ogg/opus, right channels, right duration — and the decoded
+   PCM is byte-identical to the source over the common region (~13 ms more leading audio, WebM CodecDelay is
+   not applied).
+
+Staging state after this: `bl_wa_0378` applied, `telnyx-wa-media` at **v2**, anon-executable SECURITY DEFINER
+surface in `public` still reads **32**.
+
+---
+
 ## 4. What is still untested
 
-- **Outbound media and voice notes from the portal.** The code path exists end to end (browser → private
-  `wa-media` bucket → 15-minute signed link → Telnyx) but no outbound media row has ever been created. Nobody
-  has confirmed Meta accepts Chrome's `webm/opus` voice note either — `audio/ogg;codecs=opus` is tried first.
+- **Outbound media and voice notes from the portal.** Everything above is code that has been read and, for the
+  remuxer, tested offline — but **no outbound media row has ever been created** and nothing has gone through
+  Telnyx. That is still the first test to run.
 - **The dispatcher dock in a real browser.** Command Center has been exercised; the dock panel has not.
 - **A template send.** Blocked until Meta approves something.
 - **Production.** Nothing has been applied or deployed there.
@@ -118,13 +153,16 @@ every Telnyx call it tried and how many rows came back.
 ## 6. Next steps, in order
 
 1. **Send a file and a voice note** from the dispatcher dock and from CC, inside an open 24-hour window. Confirm
-   the row, the bubble, the tick, and that the recipient actually receives it. This is the last unproven engine.
+   the row, the bubble, the tick, **that your own bubble can re-open the file** (that is the bl_wa_0378 fix), and
+   that the recipient actually receives it. For the voice note, check the phone shows a playable voice message —
+   if it arrives as an unplayable file, the Ogg remux is the place to look, and the console will have no error
+   because the fallback is silent by design. This is the last unproven engine.
 2. **Test the dock** (Texts → WhatsApp) as a dispatcher whose carrier has written in. A number that is not a
    carrier must NOT appear for him — that is correct behaviour, not a bug.
 3. When Meta answers: press **Sync from Meta** for `dispatcher_assigned`; use **Override** for the other three.
    Then send one template into a closed window and watch what Telnyx does with a Meta-Manager template.
 4. **Only then production**, in this order: apply `bl_wa_0367` → `0368` → `0369` → `0370` → `0371` → `0372` →
-   `0373` → `0374` → `0375` → `0376` → `0377` in the prod SQL editor; deploy `telnyx-hook`, `telnyx-whatsapp`,
+   `0373` → `0374` → `0375` → `0376` → `0377` → `0378` in the prod SQL editor; deploy `telnyx-hook`, `telnyx-whatsapp`,
    `telnyx-wa-media`, `telnyx-wa-templates`; set the number and ids in CC → The line; switch sending on; repeat
    one inbound and one outbound test on prod.
    The migrations are additive and inert — `wa_enabled` defaults to false, so applying them changes nothing until

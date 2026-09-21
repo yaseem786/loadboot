@@ -13,7 +13,8 @@
 // Exports: REASONS (catalog — shared with the CC reject dialog), deriveReasons(prof), reapplyGate().
 
 export const REASONS = [
-  ['no_own_board', 'No own paid load-board subscription'],
+  ['no_own_board', 'No usable load-board access / no loads booked independently'],
+  ['board_unknown', 'Load-board access unclear — ask (legacy application)'],
   ['no_booking_proof', 'Cannot show loads booked independently'],
   ['experience', 'Not enough US dispatch experience'],
   ['english', 'English not strong enough for broker calls'],
@@ -29,10 +30,17 @@ export const REASON_LABEL = REASONS.reduce((m, r) => { m[r[0]] = r[1]; return m;
 // capped at 3 so the candidate gets a checklist, not a wall.
 export function deriveReasons(prof) {
   const s = (prof && prof.skills) || {};
+  // The subscription does NOT have to be in the candidate's own name — an employer's or a
+  // carrier's login counts, as long as they can log in and book loads themselves (owner rule,
+  // 21 Sep 2026). Only "none", "will buy before trial" and "still learning" are a gap.
   const own = Array.isArray(s.own_board_access) ? s.own_board_access : [];
-  const hasOwn = s.board_status === 'own_paid' || own.some((x) => /own login/i.test(String(x)));
+  const hasBoard = ['own_paid', 'employer'].includes(s.board_status) || own.some((x) => /(own|employer) login/i.test(String(x)));
   const out = [];
-  if (!hasOwn) out.push('no_own_board');
+  // Legacy applications (before bl_disp_0319) only ever asked about a board in the candidate's OWN
+  // name — someone on an employer's login had to tick "No own access". We cannot conclude they have
+  // no board, only that we never asked. board_unknown says so, and asks.
+  const legacy = !s.board_status;
+  if (!hasBoard) out.push(legacy && s.can_source_loads !== 'learning' ? 'board_unknown' : 'no_own_board');
   if (['basic', 'conversational'].includes(String(prof && prof.english_level || ''))) out.push('english');
   if (Number((prof && prof.years_exp) || 0) < 1) out.push('experience');
   if (!s.id_doc) out.push('no_id');
@@ -56,21 +64,36 @@ export function reapplyGate({ h, prof, form }) {
   const tx = (ph) => h('input', { type: 'text', style: INPUT, placeholder: ph });
   const cb = () => h('input', { type: 'checkbox', style: 'margin-top:3px;flex:none' });
 
-  const boardLogin = tx('E-mail or username on that load-board account');
+  const boardWho = tx('Which board, and the login you use on it — e.g. "DAT — dispatch@acmecarrier.com"');
   const proof = ta('Two loads you booked yourself — lane, broker, month and the rate for each.', 60);
   const englishAck = cb();
   const accurateAck = cb();
   const reply = ta('What has changed since your last application? Answer the note above directly.', 120);
 
   const DEF = {
+    board_unknown: {
+      title: 'Which load board you can log into',
+      what: 'When you applied, our form only asked about a board in your OWN name. It does not have to be — an employer’s or a carrier’s login is fine. Tell us which board, which login, and two loads you booked on it.',
+      extra: h('div', null, [boardWho, proof]), key: 'board',
+      test: () => ['own_paid', 'employer'].includes(form.board()) && form.ownBoards().length > 0
+        && boardWho.value.trim().length >= 6 && proof.value.trim().length >= 60,
+      fail: () => (!['own_paid', 'employer'].includes(form.board())
+        ? 'Section 2: pick your own paid subscription, or an employer’s / carrier’s login you can use today.'
+        : !form.ownBoards().length ? 'Section 2: tick which board(s) you can log into.'
+          : boardWho.value.trim().length < 6 ? 'Name the board and the login you use on it.'
+            : 'Describe two loads you sourced and booked yourself — lane, broker, month and rate.'),
+    },
     no_own_board: {
-      title: 'Your OWN paid load-board subscription',
-      what: 'In section 2 pick “My OWN paid subscription”, tick the board(s) you pay for, and give the login on that account.',
-      extra: boardLogin, key: 'board',
-      test: () => form.board() === 'own_paid' && form.ownBoards().length > 0 && /.+@.+\..+|^.{3,}$/.test(boardLogin.value.trim()) && boardLogin.value.trim().length >= 3,
-      fail: () => (form.board() !== 'own_paid' ? 'Section 2: choose “My OWN paid subscription, in my name”.'
-        : !form.ownBoards().length ? 'Section 2: tick which board(s) you pay for yourself.'
-          : 'Give the login e-mail or username on your load-board account.'),
+      title: 'Load-board access, and loads you booked yourself',
+      what: 'The subscription does not have to be in your name — an employer’s or a carrier’s login is fine — but you must be able to log in today and book loads yourself.',
+      extra: h('div', null, [boardWho, proof]), key: 'board',
+      test: () => ['own_paid', 'employer'].includes(form.board()) && form.ownBoards().length > 0
+        && boardWho.value.trim().length >= 6 && proof.value.trim().length >= 60,
+      fail: () => (!['own_paid', 'employer'].includes(form.board())
+        ? 'Section 2: pick your own paid subscription, or an employer’s / carrier’s login you can use today.'
+        : !form.ownBoards().length ? 'Section 2: tick which board(s) you can log into.'
+          : boardWho.value.trim().length < 6 ? 'Name the board and the login you use on it.'
+            : 'Describe two loads you sourced and booked yourself — lane, broker, month and rate.'),
     },
     no_booking_proof: {
       title: 'Loads you booked yourself',
@@ -136,6 +159,9 @@ export function reapplyGate({ h, prof, form }) {
     },
   };
 
+  // no_own_board already carries the booking proof — a second row would re-mount the same node.
+  if (codes.includes('no_own_board') && codes.includes('board_unknown')) { codes.splice(codes.indexOf('board_unknown'), 1); }
+  if (codes.includes('no_own_board') || codes.includes('board_unknown')) { const i = codes.indexOf('no_booking_proof'); if (i >= 0) codes.splice(i, 1); }
   const rows = codes.map((c) => {
     const g = DEF[c]; if (!g) return null;
     const chip = h('span', { style: 'flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:.78rem;border:1.5px solid rgba(252,83,5,.55);background:rgba(252,83,5,.12);color:#fdba74' }, '!');
@@ -191,7 +217,7 @@ export function reapplyGate({ h, prof, form }) {
 
   refresh();
   return { node, codes, explicit: explicit.length > 0, refresh, check,
-    answers: () => ({ codes, explicit: explicit.length > 0, board_login: boardLogin.value.trim() || null,
+    answers: () => ({ codes, explicit: explicit.length > 0, board_access: boardWho.value.trim() || null,
       booking_proof: proof.value.trim() || null, english_ack: !!englishAck.checked,
       accurate_ack: !!accurateAck.checked, reply: reply.value.trim() || null, closed_at: new Date().toISOString() }) };
 }

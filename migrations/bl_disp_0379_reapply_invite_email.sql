@@ -1,5 +1,5 @@
 -- bl_disp_0379 — "you can apply again, and here is exactly what to close" e-mail.
--- APPLIED staging 21 Sep 2026 (as 0379 + fix 0379a, merged here). PRODUCTION: owner applies.
+-- APPLIED staging 21 Sep 2026 (as 0379 + fixes 0379a/b/c/d, all merged here). PRODUCTION: owner applies.
 --
 -- bl_disp_0378 gave the portal a gated re-application, but the applicants already rejected never
 -- learn that it exists. This sends each of them ONE premium e-mail naming their OWN gap and their
@@ -16,6 +16,12 @@ comment on column app_private.dispatcher_profiles.reapply_invite_at is
 -- The reason codes staff ticked (bl_disp_0378), or — for anyone rejected before that — derived
 -- from the closed application. Mirrors deriveReasons() in app/agent/dispatcher-gaps.js. Capped at 3.
 -- NOTE: append with array[...]; `text[] || 'literal'` parses the literal as an array and throws.
+-- Owner rule 21 Sep 2026: the subscription need NOT be in the candidate's own name — an employer's
+-- or a carrier's login counts, as long as they can log in today and book loads themselves.
+-- Legacy applications (before bl_disp_0319) only ever asked about a board in the candidate's OWN
+-- name, so someone on an employer's login had to tick "No own access". We cannot conclude they have
+-- no board, only that we never asked: board_unknown says so, and asks.
+-- NOTE: append with array[...]; `text[] || 'literal'` parses the literal as an array and throws.
 create or replace function app_private.disp_gap_codes(p_user uuid)
 returns text[]
 language plpgsql
@@ -23,13 +29,20 @@ stable
 security definer
 set search_path to 'app_private, public'
 as $function$
-declare d record; v text[] := '{}';
+declare d record; v text[] := '{}'; v_boards text; v_legacy boolean; v_has boolean;
 begin
   select * into d from app_private.dispatcher_profiles where user_id = p_user;
   if not found then return v; end if;
   if d.reject_reasons is not null and array_length(d.reject_reasons, 1) > 0 then return d.reject_reasons; end if;
-  if coalesce(d.skills->>'board_status','') <> 'own_paid'
-     and coalesce((d.skills->'own_board_access')::text,'') not ilike '%own login%' then v := v || array['no_own_board']; end if;
+
+  v_boards := coalesce((d.skills->'own_board_access')::text, '');
+  v_legacy := coalesce(d.skills->>'board_status', '') = '';
+  v_has    := coalesce(d.skills->>'board_status','') in ('own_paid','employer') or v_boards ~* '(own|employer) login';
+
+  if not v_has then
+    if v_legacy and coalesce(d.skills->>'can_source_loads','') <> 'learning' then v := v || array['board_unknown'];
+    else v := v || array['no_own_board']; end if;
+  end if;
   if d.english_level in ('basic','conversational') then v := v || array['english']; end if;
   if coalesce(d.years_exp, 0) < 1 then v := v || array['experience']; end if;
   if (d.skills->>'id_doc') is null then v := v || array['no_id']; end if;
@@ -46,7 +59,8 @@ language sql
 immutable
 as $function$
   select case p_code
-    when 'no_own_board'     then 'Your <b>own active load-board subscription in your own name</b> — DAT, Truckstop or 123Loadboard. An employer''s or a carrier''s login does not count.'
+    when 'board_unknown'    then 'Which load board you can actually log into today. When you applied, our form only asked about a board in <b>your own name</b> — so if you work on an employer''s or a carrier''s DAT, Truckstop or 123Loadboard login, we never gave you a way to tell us. <b>It does not have to be in your name.</b> Tell us which board, which login, and two loads you booked on it.'
+    when 'no_own_board'     then 'Working access to a load board — DAT, Truckstop or 123Loadboard. <b>It does not have to be in your own name</b>: an employer''s or a carrier''s login is fine, as long as you can log in today and book loads yourself. Tell us which board, which login, and two loads you booked on it.'
     when 'no_booking_proof' then 'Loads you sourced and booked <b>yourself</b>. We ask for two: the lane, the broker, the month and the rate.'
     when 'experience'       then 'US dispatch experience on the record — the carriers and lanes you have run, and how many trucks you kept loaded.'
     when 'english'          then 'English strong enough to <b>negotiate with US brokers by phone</b>. The next round includes a short spoken broker role-play.'
@@ -125,7 +139,7 @@ begin
     || '<p style="margin:0 0 18px"><a href="https://loadboot.com/app/agent/" style="display:inline-block;background:#0883F7;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:8px">Open my application</a></p>'
     || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e9f0;border-radius:12px;margin:0 0 18px"><tr><td style="padding:14px 16px">'
     || '<div style="font-size:11px;letter-spacing:.12em;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px">Already closed it?</div>'
-    || '<div style="color:#334155">If the point above is already behind you — for example you now pay for your own DAT, Truckstop or 123Loadboard account — <b>reply to this e-mail</b> or write to <a href="mailto:hello@loadboot.com" style="color:#0883F7">hello@loadboot.com</a> and tell us what changed. We will look at it again.</div>'
+    || '<div style="color:#334155">If the point above is already behind you — for example you can log into a DAT, Truckstop or 123Loadboard account today, whether it is your own or one your employer or carrier gives you — <b>reply to this e-mail</b> or write to <a href="mailto:hello@loadboot.com" style="color:#0883F7">hello@loadboot.com</a> and tell us what changed. We will look at it again.</div>'
     || '</td></tr></table>'
     || '<p style="margin:0 0 4px">We would genuinely like to see a stronger application from you.</p>'
     || '<p style="margin:0 0 16px"><b>LoadBoot Dispatch</b><br><span style="color:#64748b">Recruiting</span></p>'
@@ -183,3 +197,28 @@ $function$;
 
 revoke all on function public.cc_dispatcher_reapply_invite(uuid[], boolean) from public, anon;
 grant execute on function public.cc_dispatcher_reapply_invite(uuid[], boolean) to authenticated;
+
+-- bl_disp_0378's validator did not know about board_unknown. Widen it here.
+create or replace function public.cc_dispatcher_set_reject_reasons(p_user uuid, p_reasons text[])
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'app_private, public'
+as $function$
+declare
+  c_codes constant text[] := array['no_own_board','board_unknown','no_booking_proof','experience','english','availability','no_cv','no_id','inconsistent','other'];
+  v_ok text[]; v_name text;
+begin
+  if not app_private.disp_is_staff() then return jsonb_build_object('error','not authorized'); end if;
+  select array(select x from unnest(coalesce(p_reasons, '{}'::text[])) x where x = any (c_codes)) into v_ok;
+  update app_private.dispatcher_profiles
+     set reject_reasons = nullif(v_ok, '{}'::text[]), updated_at = now()
+   where user_id = p_user
+  returning full_name into v_name;
+  if not found then return jsonb_build_object('error','not a dispatcher'); end if;
+  perform app_private.disp_audit('dispatcher.reject_reasons', 'dispatcher', p_user::text, null,
+    coalesce(v_name,'dispatcher') || ': reject reasons set (' || coalesce(array_to_string(v_ok, ', '), 'cleared') || ')',
+    jsonb_build_object('reasons', v_ok));
+  return jsonb_build_object('ok', true, 'reasons', v_ok);
+end;
+$function$;
