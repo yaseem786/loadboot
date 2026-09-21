@@ -466,6 +466,13 @@ const ic = (name) => ({
   support: 'M12 21a9 9 0 100-18 9 9 0 000 18M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7M5.6 5.6l3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9',
   wallet: 'M3 7a2 2 0 012-2h12v4M3 7v10a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2H5a2 2 0 01-2-2M17 13h.01',
   tag: 'M12.6 2.6l8.8 8.8a2 2 0 010 2.8l-6.2 6.2a2 2 0 01-2.8 0L3.6 11.6V3.6a1 1 0 011-1zM8 8h.01',
+  // bl_ui_0388 — four more names called by icon() with no path behind them, so they drew
+  // nothing: Sign out, the numbered stop pins, every 'Post a load' / 'Create a key' /
+  // 'Request a shipment' card head, and the shipper's My shipments card.
+  logout: 'M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l-5-5 5-5M5 12h11',
+  pin: 'M12 21s6.5-6 6.5-10.5a6.5 6.5 0 10-13 0C5.5 15 12 21 12 21zM12 12.6a2.4 2.4 0 100-4.8 2.4 2.4 0 000 4.8',
+  plus: 'M12 5v14M5 12h14',
+  ship: 'M4 7h16v13H4zM4 7l2-3h12l2 3M9.5 11h5',
 }[name] || '');
 const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + ic(name) + '"/></svg>' });
 // Official LoadBoot mark (the "L" + orange arrow), same as the marketing site.

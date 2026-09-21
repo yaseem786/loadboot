@@ -4211,7 +4211,7 @@ function packetDocRow(it, onAction) {
   ]);
 }
 function brokerOnboardingWizard() {
-  const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, (window.__lbKindLabel || 'Broker') + ' onboarding — step by step')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
+  const card = h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, (window.__lbKindLabel || 'Broker') + ' onboarding — step by step')]), h('div', { class: 'cp-sub' }, 'Loading…')]);
   (async () => {
     let pk = { items: [] }; try { pk = await myOnboardingPacket() || { items: [] }; } catch (_) {}
     let prof = {}; try { prof = await partnerGetProfile() || {}; } catch (_) {}
@@ -4312,7 +4312,7 @@ function brokerOnboardingWizard() {
       }
       mount(body, h('div', null, kids));
     }
-    mount(card, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Broker onboarding' + (pk.complete ? ' — complete ✓' : ''))]), chrome]);
+    mount(card, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Broker onboarding' + (pk.complete ? ' — complete ✓' : ''))]), chrome]);
     draw();
   })();
   return card;
@@ -4922,7 +4922,7 @@ function packetAgreementCards(skipPacket) {
           const menu = h('div', { class: 'cp-menu', hidden: true, style: 'position:absolute;right:0;top:46px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 18px 44px -14px rgba(15,23,42,.28);min-width:230px;z-index:90;padding:10px 0' }, [
             h('div', { style: 'padding:6px 16px 10px;border-bottom:1px solid #f1f5f9' }, [h('div', { style: 'font-weight:800' }, ov.company || 'Broker'), h('div', { class: 'cp-sub' }, (user && user.email) || '')]),
             h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:600', onClick: () => { menu.hidden = true; bgo('account'); } }, [icon('user', 16), 'Account & settings']),
-            h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:600', onClick: () => { menu.hidden = true; bgo('onboarding'); } }, [icon('dock', 16), 'Documents']),
+            h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:600', onClick: () => { menu.hidden = true; bgo('onboarding'); } }, [icon('docs', 16), 'Documents']),
             h('button', { class: 'cp-menu-item', style: 'display:flex;gap:10px;align-items:center;width:100%;padding:10px 16px;background:none;border:0;cursor:pointer;font-weight:700;color:#dc2626', onClick: async () => { await signOut(); location.reload(); } }, [icon('logout', 16), 'Sign out']),
           ]);
           const btn = h('button', { class: 'cp-avatar', 'aria-haspopup': 'menu', title: (user && user.email) || '', onClick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; },
@@ -5166,7 +5166,7 @@ async function facilityDash(user, ov) {
     } catch (e) { mount(listHost, h('div', { class: 'lb-state lb-error' }, (e && e.message) || 'Could not load.')); }
   }
   const weekCard = h('div', { class: 'cp-card', style: 'margin-bottom:16px' }, [h('div', { class: 'cp-cardhead' }, [icon('clock', 18), h('h3', null, 'This week')]), weekHost]);
-  mount(root, shell(user, 'facility', ov.company, kpis, h('div', null, [weekCard, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('dock', 18), h('h3', null, 'Appointments')]), listHost])]), invoicesCard(), accountCard()])));
+  mount(root, shell(user, 'facility', ov.company, kpis, h('div', null, [weekCard, h('div', { class: 'cp-grid2' }, [form, h('div', { class: 'cp-card' }, [h('div', { class: 'cp-cardhead' }, [icon('docs', 18), h('h3', null, 'Appointments')]), listHost])]), invoicesCard(), accountCard()])));
   root.setAttribute('aria-busy', 'false');
   loadList();
 }
