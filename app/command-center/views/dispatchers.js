@@ -454,7 +454,7 @@ export function renderDispatchers(host) {
           kv('Availability', (s.availability_hours || '—') + ' hrs/wk · ' + (s.timezone || '') + (s.us_hours_overlap ? ' · US-hours overlap' : ' · ⚠ no US-hours overlap stated')),
           kv('Can source loads', s.can_source_loads === 'yes_independent' ? 'Yes — independently' : s.can_source_loads === 'yes_with_board' ? 'Yes — needs board access' : s.can_source_loads === 'learning' ? 'Not yet — learning' : '—'),
           kv('Load boards', (pp.load_boards || []).join(', ')),
-          kv('Own board access', (s.own_board_access || []).join(', ') || '⚠ none — dispatcher must bring their own DAT/Truckstop'),
+          kv('Board access', (s.own_board_access || []).join(', ') || '⚠ none stated \u2014 ask how they source loads (any route counts)'),
           kv('Freight network', s.network_desc),
           kv('Equipment', (s.equipment || []).join(', ')),
           kv('Skills', 'negotiation ' + (s.negotiation || '—') + ' · FMCSA/HOS ' + (s.fmcsa_hos || '—') + ' · geography ' + (s.us_geography || '—')),

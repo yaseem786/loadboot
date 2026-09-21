@@ -648,7 +648,7 @@ export async function renderDispatcher360(host, query) {
     else if (t.state === 'scored' || t.state === 'submitted') F(true, 'Test integrity clean', (ig.pastes || 0) + ' pastes · ' + (ig.blur || 0) + ' tab leaves', 'eye');
     if (s.us_hours_overlap) F(true, 'US-hours overlap', (s.availability_hours || '—') + ' hrs/wk' + (s.timezone ? ' · ' + s.timezone : '')); else F(false, 'No US-hours overlap stated', 'Brokers work ET; confirm his working window before a trial.');
     const boards = (s.own_board_access || []).filter((b) => !/^no\b/i.test(String(b)));
-    if (boards.length) F(true, 'Own board access', boards.join(', ')); else F(false, 'No own load-board access', 'Dispatcher must bring their own DAT / Truckstop login.');
+    if (boards.length) F(true, 'Board access', boards.join(', ')); else F(false, 'No load-sourcing route on file', 'Owner rule 21 Sep 2026: the board need not be in their name. Any route counts — a board login (their own, an employer\u2019s or a carrier\u2019s), Facebook/WhatsApp freight groups, their own brokers or direct shippers. Ask how they find and book loads.');
     if (!s.id_doc) F(false, 'No government ID on file', 'Identity and country unverified.', 'id');
     return card('Signals & risk', 'Auto-detected from the test, the profile and the bookings', 'shield', el('div', { class: 'd3-pad', style: 'padding-top:4px' }, rows.length ? rows : el('div', { class: 'd3-empty' }, 'Nothing flagged.')));
   }
@@ -792,7 +792,7 @@ export async function renderDispatcher360(host, query) {
       kv('English', pp.english_level), kv('Experience', (pp.years_exp || 0) + ' yrs · trucks handled: ' + (s.trucks_handled || '—')),
       kv('Availability', (s.availability_hours || '—') + ' hrs/wk · ' + (s.timezone || '') + (s.us_hours_overlap ? ' · US-hours overlap' : ' · no US-hours overlap stated')),
       kv('Can source loads', s.can_source_loads === 'yes_independent' ? 'Yes — independently' : s.can_source_loads === 'yes_with_board' ? 'Yes — needs board access' : s.can_source_loads === 'learning' ? 'Not yet — learning' : '—'),
-      kv('Load boards', (pp.load_boards || []).join(', ')), kv('Own board access', (s.own_board_access || []).join(', ') || 'none — must bring their own DAT/Truckstop'),
+      kv('Load boards', (pp.load_boards || []).join(', ')), kv('Board access', (s.own_board_access || []).join(', ') || 'none stated \u2014 ask how they source loads (any route counts)'),
       kv('Freight network', s.network_desc), kv('Equipment', (s.equipment || []).join(', ')),
       kv('Skills', 'negotiation ' + (s.negotiation || '—') + ' · FMCSA/HOS ' + (s.fmcsa_hos || '—') + ' · geography ' + (s.us_geography || '—')),
       kv('Tools', s.tools), kv('Payout pref', s.payout_pref), kv('LinkedIn', s.linkedin), kv('References', (pp.refs || []).join('  |  ')), s.note ? kv('Why hire', s.note) : '',

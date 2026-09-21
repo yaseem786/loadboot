@@ -1,5 +1,7 @@
 -- bl_disp_0379 — "you can apply again, and here is exactly what to close" e-mail.
--- APPLIED staging 21 Sep 2026 (as 0379 + 0379a/b/c/d + 0381, all merged here). PRODUCTION: owner applies.
+-- APPLIED staging 21 Sep 2026 (as 0379 + 0379a/b/c/d + 0381 + 0382, all merged here). PRODUCTION: owner applies.
+-- Tone (bl_disp_0382): the e-mail does NOT recount the earlier decision or apologise for the old
+-- form. It states that the application is open again, what we need to see, and by when.
 -- Owner rule, 21 Sep 2026: the test is HOW the candidate finds loads, not whose name the load-board
 -- login is in. A board is one route; Facebook/WhatsApp freight groups, brokers they already know,
 -- direct shippers and broker e-mail blasts all count, as long as they find the load and book it
@@ -74,16 +76,16 @@ language sql
 immutable
 as $function$
   select case p_code
-    when 'board_unknown'    then 'How you find loads yourself. When you applied, our form only asked whether you had a load board in <b>your own name</b> — it never asked how you actually source. <b>Any route counts</b>: a board (your own login or an employer''s or carrier''s), Facebook or WhatsApp freight groups, brokers you already know, direct shippers. Tell us which routes you use, where exactly, and two loads you booked.'
-    when 'no_own_board'     then 'Finding a load and booking it <b>yourself</b>. It does not have to be a load board in your own name — an employer''s or a carrier''s login, Facebook or WhatsApp freight groups, brokers you already know or direct shippers all count. Tell us which routes you use, where exactly, and two loads you booked.'
-    when 'no_booking_proof' then 'Loads you sourced and booked <b>yourself</b>. We ask for two: the lane, the broker, the month and the rate.'
-    when 'experience'       then 'US dispatch experience on the record — the carriers and lanes you have run, and how many trucks you kept loaded.'
-    when 'english'          then 'English strong enough to <b>negotiate with US brokers by phone</b>. The next round includes a short spoken broker role-play.'
-    when 'availability'     then '40+ hours a week, with real overlap with US business hours.'
-    when 'no_cv'            then 'A CV we can open and read.'
-    when 'no_id'            then 'A government photo ID on file — every LoadBoot dispatcher is verified before a carrier''s account is handed over.'
-    when 'inconsistent'     then 'Answers that agree with each other — your last application contradicted itself on load-board access.'
-    when 'other'            then 'The point raised in the note we sent you.'
+    when 'board_unknown'    then '<b>How you find loads.</b> Any route counts — a load board (your own login, or one your employer or carrier provides), Facebook or WhatsApp freight groups, brokers you already work with, or direct shippers. Please tell us which routes you use, where exactly, and two loads you have booked.'
+    when 'no_own_board'     then '<b>How you find loads, and two you booked yourself.</b> Any route counts — a load board (your own login, or one your employer or carrier provides), Facebook or WhatsApp freight groups, brokers you already work with, or direct shippers. Please name the routes, where exactly, and two loads you booked.'
+    when 'no_booking_proof' then '<b>Two loads you booked yourself</b> — the lane, the broker, the month and the rate for each.'
+    when 'experience'       then '<b>Your US dispatch experience</b> — the carriers and lanes you have run, and how many trucks you kept loaded.'
+    when 'english'          then '<b>English for broker calls.</b> The next stage includes a short spoken role-play with a broker, so please confirm your level is professional or fluent.'
+    when 'availability'     then '<b>Your availability</b> — 40+ hours a week, with overlap with US business hours.'
+    when 'no_cv'            then '<b>A CV we can open and read.</b>'
+    when 'no_id'            then '<b>A government photo ID.</b> Every LoadBoot dispatcher is verified before a carrier''s account is handed over.'
+    when 'inconsistent'     then '<b>A consistent set of answers</b> — please re-read your application before you submit it.'
+    when 'other'            then '<b>The point raised in our earlier note.</b>'
     else null end;
 $function$;
 
@@ -98,7 +100,7 @@ declare
   c_cool constant interval := interval '14 days';
   d record; v_mail text; v_when timestamptz; v_open boolean;
   v_codes text[]; v_items text := ''; v_plain text := ''; c text; t text;
-  v_html text; v_text text; v_subj text; v_whenline text; v_whenplain text;
+  v_html text; v_text text; v_subj text; v_whenline text; v_whenplain text; v_greet text;
 begin
   select * into d from app_private.dispatcher_profiles where user_id = p_user;
   if not found then return jsonb_build_object('ok', false, 'reason', 'no application'); end if;
@@ -108,8 +110,9 @@ begin
   select u.email into v_mail from auth.users u where u.id = p_user;
   if v_mail is null then return jsonb_build_object('ok', false, 'reason', 'no email'); end if;
 
-  v_when := coalesce(d.reviewed_at, now() - c_cool) + c_cool;
-  v_open := v_when <= now();
+  v_greet := coalesce(nullif(btrim(coalesce(d.full_name,'')),''), 'Applicant');
+  v_when  := coalesce(d.reviewed_at, now() - c_cool) + c_cool;
+  v_open  := v_when <= now();
 
   v_codes := app_private.disp_gap_codes(p_user);
   foreach c in array coalesce(v_codes, '{}'::text[]) loop
@@ -122,51 +125,49 @@ begin
   end loop;
   if v_items = '' then
     v_items := '<tr><td style="padding:0 0 10px 0;vertical-align:top;width:22px;color:#FC5305;font-weight:800">&#9656;</td>'
-            || '<td style="padding:0 0 10px 0;color:#334155">The point raised in the decision we sent you.</td></tr>';
-    v_plain := E'  - The point raised in the decision we sent you.\n';
+            || '<td style="padding:0 0 10px 0;color:#334155"><b>The point raised in our earlier note.</b></td></tr>';
+    v_plain := E'  - The point raised in our earlier note.\n';
   end if;
 
   if v_open then
-    v_whenline := 'Your application is <b>open now</b> — it reopens pre-filled with everything you told us last time.';
-    v_whenplain := 'Your application is open now - it reopens pre-filled with everything you told us last time.';
+    v_whenline  := 'Your application is <b>open now</b>. It reopens pre-filled with your previous answers, so you need only update what has changed.';
+    v_whenplain := 'Your application is open now. It reopens pre-filled with your previous answers, so you need only update what has changed.';
+    v_subj      := 'Your LoadBoot dispatcher application is open again';
   else
-    v_whenline := 'You can apply again from <b>' || to_char(v_when, 'FMDay, FMDD FMMonth YYYY') || '</b>. Your account and all your answers are kept until then.';
-    v_whenplain := 'You can apply again from ' || to_char(v_when, 'FMDay, FMDD FMMonth YYYY') || '. Your account and all your answers are kept until then.';
+    v_whenline  := 'Your application opens on <b>' || to_char(v_when, 'FMDay, FMDD FMMonth YYYY') || '</b>. Your account and your previous answers are kept until then, and the form reopens pre-filled.';
+    v_whenplain := 'Your application opens on ' || to_char(v_when, 'FMDay, FMDD FMMonth YYYY') || '. Your account and your previous answers are kept until then, and the form reopens pre-filled.';
+    v_subj      := 'Your LoadBoot dispatcher application opens on ' || to_char(v_when, 'FMDD FMMonth');
   end if;
-
-  v_subj := case when v_open then 'You can apply again — LoadBoot dispatcher'
-                 else 'Your LoadBoot dispatcher application reopens ' || to_char(v_when, 'FMDD FMMonth') end;
 
   v_html :=
     '<div style="font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;font-size:15px;line-height:1.65">'
     || '<div style="font-size:11px;letter-spacing:.16em;font-weight:700;color:#0883F7;text-transform:uppercase;margin-bottom:6px">LoadBoot Dispatch &middot; Recruiting</div>'
-    || '<div style="font-size:22px;font-weight:800;color:#10223B;letter-spacing:-.01em;margin:0 0 14px">You can apply again — and this time we tell you exactly what to close</div>'
-    || '<p style="margin:0 0 12px">Dear ' || coalesce(nullif(btrim(coalesce(d.full_name,'')),''), 'Applicant') || ',</p>'
-    || '<p style="margin:0 0 14px">We closed your dispatcher application earlier, and we know that a decision with no clear next step is a frustrating thing to receive. We have rebuilt how this works: your previous answers are saved, your application reopens <b>pre-filled</b>, and we now name plainly what stood in the way.</p>'
+    || '<div style="font-size:22px;font-weight:800;color:#10223B;letter-spacing:-.01em;margin:0 0 14px">Your dispatcher application is open again</div>'
+    || '<p style="margin:0 0 12px">Dear ' || v_greet || ',</p>'
+    || '<p style="margin:0 0 14px">Thank you again for your interest in dispatching with LoadBoot. We are inviting a number of earlier applicants to submit an updated application, and we would be glad to consider yours.</p>'
     || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-left:3px solid #FC5305;background:#fff8f2;border-radius:0 10px 10px 0;margin:0 0 16px"><tr><td style="padding:14px 16px">'
-    || '<div style="font-size:11px;letter-spacing:.12em;font-weight:700;color:#b45309;text-transform:uppercase;margin-bottom:9px">What to close before you apply again</div>'
+    || '<div style="font-size:11px;letter-spacing:.12em;font-weight:700;color:#b45309;text-transform:uppercase;margin-bottom:9px">What we need to see</div>'
     || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' || v_items || '</table>'
     || '</td></tr></table>'
     || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e9f0;border-radius:12px;margin:0 0 16px"><tr><td style="padding:14px 16px">'
     || '<div style="font-size:11px;letter-spacing:.12em;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px">When</div>'
-    || '<div style="color:#334155">' || v_whenline || '</div>'
-    || '</td></tr></table>'
+    || '<div style="color:#334155">' || v_whenline || '</div></td></tr></table>'
     || '<p style="margin:0 0 18px"><a href="https://loadboot.com/app/agent/" style="display:inline-block;background:#0883F7;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:8px">Open my application</a></p>'
     || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e9f0;border-radius:12px;margin:0 0 18px"><tr><td style="padding:14px 16px">'
-    || '<div style="font-size:11px;letter-spacing:.12em;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px">Already closed it?</div>'
-    || '<div style="color:#334155">If the point above is already behind you — for example you are already booking loads off a board, out of freight groups or through brokers you know — <b>reply to this e-mail</b> or write to <a href="mailto:hello@loadboot.com" style="color:#0883F7">hello@loadboot.com</a> and tell us what changed. We will look at it again.</div>'
+    || '<div style="font-size:11px;letter-spacing:.12em;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px">If you already meet these</div>'
+    || '<div style="color:#334155">Reply to this e-mail, or write to <a href="mailto:hello@loadboot.com" style="color:#0883F7">hello@loadboot.com</a> with the details, and we will review your file.</div>'
     || '</td></tr></table>'
-    || '<p style="margin:0 0 4px">We would genuinely like to see a stronger application from you.</p>'
-    || '<p style="margin:0 0 16px"><b>LoadBoot Dispatch</b><br><span style="color:#64748b">Recruiting</span></p>'
-    || '<p style="color:#8ea2c3;font-size:12px;margin:0">You are receiving this because you submitted a dispatcher application at loadboot.com. If you would rather not hear from us again, reply with the word STOP.</p>'
+    || '<p style="margin:0 0 4px">We look forward to receiving your updated application.</p>'
+    || '<p style="margin:0 0 16px">Kind regards,<br><b>LoadBoot Dispatch</b><br><span style="color:#64748b">Recruiting</span></p>'
+    || '<p style="color:#8ea2c3;font-size:12px;margin:0">You are receiving this because you applied for a dispatcher role at loadboot.com. If you would prefer not to receive further updates, please reply with the word STOP.</p>'
     || '</div>';
 
-  v_text := 'Dear ' || coalesce(nullif(btrim(coalesce(d.full_name,'')),''), 'Applicant') || E',\n\n'
-    || E'We closed your dispatcher application earlier. We have rebuilt how re-applying works: your previous answers are saved, your application reopens pre-filled, and we now name plainly what stood in the way.\n\n'
-    || E'WHAT TO CLOSE BEFORE YOU APPLY AGAIN\n' || v_plain || E'\n'
+  v_text := 'Dear ' || v_greet || E',\n\n'
+    || E'Thank you again for your interest in dispatching with LoadBoot. We are inviting a number of earlier applicants to submit an updated application, and we would be glad to consider yours.\n\n'
+    || E'WHAT WE NEED TO SEE\n' || v_plain || E'\n'
     || v_whenplain || E'\n\nOpen your application: https://loadboot.com/app/agent/\n\n'
-    || E'Already closed it? Reply to this e-mail or write to hello@loadboot.com and tell us what changed - we will look again.\n\n'
-    || E'LoadBoot Dispatch - Recruiting';
+    || E'If you already meet these, reply to this e-mail or write to hello@loadboot.com with the details and we will review your file.\n\n'
+    || E'We look forward to receiving your updated application.\n\nKind regards,\nLoadBoot Dispatch - Recruiting';
 
   if p_dry then
     return jsonb_build_object('ok', true, 'dry', true, 'to', v_mail, 'name', d.full_name,
