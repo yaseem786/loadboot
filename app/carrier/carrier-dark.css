@@ -137,6 +137,8 @@ h1, h2, h3, h4 { color: #eaf1fb; }
   .cp-tabbar { background: #0c1628; border-top-color: rgba(255,255,255,.09); box-shadow: 0 -8px 24px -16px rgba(0,0,0,.7); }
   .cp-tabbar .cp-navlink { color: #8ea2c3; }
   .cp-tabbar .cp-navlink.active { color: #3b9dff; }
+  .cp-tabbar .cp-fab { color: #8ea2c3; }
+  .cp-tabbar .cp-fab .cp-fab-in { border-color: #0c1628; }
 }
 
 /* ============================================================================

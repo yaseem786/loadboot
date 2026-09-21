@@ -197,4 +197,9 @@ export function renderLoads(host, focusId) {
   mount(host, el('div', null, [header(), listHost]));
   load().finally(() => { timer = setTimeout(tick, 30000); });
   if (focusId) openLoad(focusId);
+  // bl_ui_0392 — the phone bar's raised centre action opens THIS view's wizard, so the board
+  // refreshes itself when the load is posted. The shell only raises a flag / calls the hook;
+  // the permission is re-checked here and again server-side in cc_post_load.
+  window.__lbCCNewLoad = () => { if (can('loads.create')) openLoadWizard({ onDone: () => load() }); };
+  if (window.__lbCCNewLoadPending) { window.__lbCCNewLoadPending = false; window.__lbCCNewLoad(); }
 }

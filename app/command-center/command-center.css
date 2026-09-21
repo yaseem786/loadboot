@@ -380,8 +380,18 @@
   .cc-tab.active{background:rgba(8,131,247,.15);color:#4FA9FF}
   .cc-tab:active{transform:scale(.96)}
   .cc-tab:focus-visible{outline:2px solid #0883F7;outline-offset:-2px}
-  /* on a screen that is not one of the four, More is where the user came from */
+  /* on a screen that is not one of the bar's routes, More is where the user came from */
   .cc-shell.cc-tab-other .cc-tab-more{color:#4FA9FF}
+  /* bl_ui_0392 — variant C: the raised centre action (Post a load). The disc is pulled up out
+     of the bar, so .cc-tabbar must never get overflow:hidden. */
+  .cc-fab .cc-fab-in{
+    width:50px;height:50px;margin-top:-21px;margin-bottom:-7px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;background:linear-gradient(135deg,#0883F7,#0967d2);color:#fff;
+    border:3px solid #0e1830;box-shadow:0 10px 22px -8px rgba(8,131,247,.75);
+    transition:transform .16s ease;
+  }
+  .cc-fab:active .cc-fab-in{transform:scale(.94)}
+  .cc-fab.active,.cc-fab:hover{background:none}
   .cc-tab-badge{
     position:absolute;top:1px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 5px;
     border-radius:999px;background:#FC5305;color:#fff;font-size:.6rem;font-weight:700;
@@ -389,8 +399,8 @@
   }
 }
 @media(prefers-reduced-motion:reduce){
-  .cc-side,.cc-nav-scrim,.cc-tab{transition:none}
-  .cc-tab:active{transform:none}
+  .cc-side,.cc-nav-scrim,.cc-tab,.cc-fab .cc-fab-in{transition:none}
+  .cc-tab:active,.cc-fab:active .cc-fab-in{transform:none}
 }
 
 /* ===== Command Center V1 supplemental layout (overview, carriers, loads, dispatch, documents) ===== */

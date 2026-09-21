@@ -80,6 +80,9 @@ const P = {
   book: '<path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h12"/>',
   keyboard: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
   sparkle: '<path d="m12 3 2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
+  // bl_ui_0392 — the Command Center's centre action button needs a plus; there was none in
+  // this map, so icon('plus') drew an empty <svg> (the same silent blank bl_ui_0388 fixed).
+  plus: '<path d="M12 5v14M5 12h14"/>',
 };
 
 export function icon(name, size = 18) {

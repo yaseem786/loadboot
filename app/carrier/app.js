@@ -2216,20 +2216,43 @@ async function appView(user) {
   const navLinks = {};
 
   // ---- Customizable bottom tab bar: the carrier picks their own 5 shortcuts (Settings → Customize).
-  const TABBAR_DEFAULT = DRV ? DM.DRIVER_TABBAR : ['dashboard', 'health', 'loads', 'trips', 'fleet'];
+  // bl_ui_0392 — variant C. The owner's bar is 4 destinations + the raised centre action, so
+  // the shortcut list is 4 (was 5) and a carrier who already saved 5 keeps the first four.
+  // The driver has no availability to post, so driver mode keeps its own 5-tab bar.
+  const FAB_ON = !DRV;
+  const TAB_MAX = FAB_ON ? 4 : 5;
+  const TABBAR_DEFAULT = DRV ? DM.DRIVER_TABBAR : ['dashboard', 'loads', 'trips', 'fleet'];
   function tabPrefs() {
-    try { const v = JSON.parse(localStorage.getItem('lb_tabs') || 'null'); if (Array.isArray(v) && v.length) { const ok = v.filter(id => NAV.some(n => n[0] === id)).slice(0, 5); if (ok.length) return ok; } } catch (_) {}
+    try { const v = JSON.parse(localStorage.getItem('lb_tabs') || 'null'); if (Array.isArray(v) && v.length) { const ok = v.filter(id => NAV.some(n => n[0] === id)).slice(0, TAB_MAX); if (ok.length) return ok; } } catch (_) {}
     return TABBAR_DEFAULT;
   }
-  const sideNav = (mobile) => h('nav', { class: mobile ? 'cp-tabbar' : 'cp-nav' }, (mobile ? tabPrefs().map(id => NAV.find(n => n[0] === id)).filter(Boolean) : NAV).map(([id, label, iconName]) => {
-    const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => go(id) }, [icon(iconName, mobile ? 22 : 20), h('span', null, label)]);
-    (navLinks[id] = navLinks[id] || []).push(a); return a;
-  }));
+  // The availability form lives inside the Load Board view (openPostingForm), so the hook only
+  // exists while that view is mounted. go() clears it; the button navigates, then waits for it.
+  function openAvailFromBar() {
+    if (typeof window.__lbOpenAvail === 'function') { window.__lbOpenAvail(); return; }
+    go('loads');
+    let n9 = 0; const t9 = setInterval(() => {
+      if (typeof window.__lbOpenAvail === 'function') { clearInterval(t9); window.__lbOpenAvail(); }
+      else if (++n9 > 60) clearInterval(t9);
+    }, 100);
+  }
+  const fabEl = () => h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Post your truck availability', onClick: openAvailFromBar }, [
+    h('span', { class: 'cp-fab-in' }, icon('plus', 24)), h('span', null, 'Post'),
+  ]);
+  const sideNav = (mobile) => {
+    const kids = (mobile ? tabPrefs().map(id => NAV.find(n => n[0] === id)).filter(Boolean) : NAV).map(([id, label, iconName]) => {
+      const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => go(id) }, [icon(iconName, mobile ? 22 : 20), h('span', null, label)]);
+      (navLinks[id] = navLinks[id] || []).push(a); return a;
+    });
+    if (mobile && FAB_ON) kids.splice(Math.ceil(kids.length / 2), 0, fabEl());
+    return h('nav', { class: mobile ? 'cp-tabbar' : 'cp-nav' }, kids);
+  };
   let mobileBar = null;
   function refreshTabbar() {
     if (!mobileBar) return;
     const nu = sideNav(true); mobileBar.replaceWith(nu); mobileBar = nu;
     Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => a.classList.toggle('active', k === tab)));
+    try { refreshOfferBadge(); refreshUnread(); } catch (_) {}   // bl_ui_0392 — the new links carry no badge yet
   }
 
   const titleEl = h('h1', { class: 'cp-top-title' }, 'Dashboard');
@@ -2239,6 +2262,27 @@ async function appView(user) {
     setAppBadge(u);
     (navLinks['notifications'] || []).forEach(a9 => { let b9 = a9.querySelector('.cp-tab-badge'); if (u > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(u > 9 ? '9+' : u); } else if (b9) b9.remove(); });
   } catch (_) {} }
+  // bl_ui_0392 — the ONE real count the carrier bar can carry: direct booking requests a broker
+  // sent to this carrier and that are still open. Same source and same filter the Load Board's
+  // "📨 Requests" tab counts with (cc_carrier_offers, status sent/viewed, not past expiry) — the
+  // number on the tab and the number inside the tab can never disagree. No other carrier tab has
+  // a real "needs you" count, so no other tab gets a badge.
+  function paintTabBadge(tabId, n9) {
+    (navLinks[tabId] || []).forEach(a9 => {
+      let b9 = a9.querySelector('.cp-tab-badge');
+      if (n9 > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(n9 > 9 ? '9+' : n9); }
+      else if (b9) b9.remove();
+    });
+  }
+  async function refreshOfferBadge() {
+    if (DRV) return;                       // a driver never receives offers
+    try {
+      const os9 = (await carrierOffers(50)) || [];
+      const now9 = new Date();
+      paintTabBadge('loads', os9.filter(o9 => (o9.status === 'sent' || o9.status === 'viewed') && (!o9.expiry_at || new Date(o9.expiry_at) > now9)).length);
+    } catch (_) { /* leave the badge as it is — never guess a number */ }
+  }
+  refreshOfferBadge(); setInterval(refreshOfferBadge, 120000);
   // ---- Availability (Online/Offline) — REAL state stored in dispatch preferences ----
   const availPill = h('button', { class: 'cpx-avail on cpx-desktop', title: 'Your availability for new loads', onClick: () => toggleAvail() }, '…');
   let _dp = null, _dashK = null;
@@ -2370,6 +2414,7 @@ async function appView(user) {
   try { attachPullToRefresh(content, async () => { render(); refreshUnread(); }); } catch (_) {}
 
   function go(id) {
+    if (id !== 'loads') { try { window.__lbOpenAvail = null; } catch (_) {} }  // bl_ui_0392 — the hook belongs to the mounted Load Board view only
     tab = id; if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);  // replace, not push — keeps Back working / no hash pile-up
     Object.keys(navLinks).forEach(k => navLinks[k].forEach(a => a.classList.toggle('active', k === tab)));
     const item = NAV.find(n => n[0] === tab);
@@ -3075,16 +3120,17 @@ async function appView(user) {
         h('div', { style: 'margin-left:auto;display:flex;gap:8px;align-items:center' }, [cpmIn, cpmSave]),
       ]),
     ]);
-    // Customize — the carrier picks their own 5 bottom-bar shortcuts. Persisted, applies instantly.
+    // Customize — the carrier picks their own bottom-bar shortcuts. Persisted, applies instantly.
+    // bl_ui_0392: 4, not 5 — the fifth slot is the raised Post button.
     const tabsCard = (() => {
       const sel = tabPrefs().slice();
-      const hint = h('div', { class: 'cpx-set-s', style: 'margin-top:6px' }, sel.length + '/5 selected — tap to change, applies instantly.');
+      const hint = h('div', { class: 'cpx-set-s', style: 'margin-top:6px' }, sel.length + '/' + TAB_MAX + ' selected — tap to change, applies instantly.');
       const wrap = h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px' }, NAV.map(([id, label]) => {
         const b = h('button', { class: 'cpx-tabpick' + (sel.includes(id) ? ' on' : ''), onClick: () => {
           const i = sel.indexOf(id);
           if (i >= 0) { if (sel.length <= 1) { hint.textContent = 'Keep at least 1 shortcut.'; return; } sel.splice(i, 1); b.classList.remove('on'); }
-          else { if (sel.length >= 5) { hint.textContent = 'Max 5 — unselect one first.'; return; } sel.push(id); b.classList.add('on'); }
-          hint.textContent = sel.length + '/5 selected — saved ✓';
+          else { if (sel.length >= TAB_MAX) { hint.textContent = 'Max ' + TAB_MAX + ' — unselect one first.'; return; } sel.push(id); b.classList.add('on'); }
+          hint.textContent = sel.length + '/' + TAB_MAX + ' selected — saved ✓';
           try { localStorage.setItem('lb_tabs', JSON.stringify(sel)); } catch (_) {}
           refreshTabbar();
         } }, label);
@@ -4027,6 +4073,10 @@ async function appView(user) {
             })); }
           }, 60);
       };
+
+    // bl_ui_0392 — the global opener the raised centre button on the phone bar calls, the same
+    // pattern as the broker's window.__lbOpenPost. go() nulls it when the board is left.
+    window.__lbOpenAvail = (kind9) => openPostingForm(null, kind9 || 'empty');
 
     // 5 Sep 2026 — the availability status card sits above the postings list on the board too,
     // so the carrier reads the same "dispatcher working / paused" verdict here as on the Dashboard.

@@ -213,6 +213,9 @@ const CSS = `
 .cp-tabbar.dw-bar .cp-navlink>span{display:inline-flex!important}
 /* bl_ui_0387 — the top rail is gone; the dispatcher bar now uses the same pill active state as the carrier, broker and shipper bars (see .cp-tabbar rules in app/carrier/carrier.css). */
 .cp-tabbar.dw-bar .dw-ic{line-height:0}
+/* bl_ui_0392 — the raised centre action. The .dw-bar overrides above are !important and only
+   target .cp-navlink, so the fab keeps the shared look from app/carrier/carrier.css. */
+.cp-tabbar.dw-bar .cp-fab{min-height:50px}
 }
 @media(max-width:760px){
 .dw-clock{flex-wrap:nowrap;gap:12px;font-size:.72rem;margin:0 0 8px;padding:0 2px;white-space:nowrap;overflow:hidden}
@@ -623,8 +626,12 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
     try { if (headEl) { headEl.classList.remove('dw-head'); headEl.removeEventListener('click', onBurger, true); } if (avaEl) avaEl.remove(); document.querySelectorAll('.dw-dr,.dw-dr-scrim').forEach((x) => x.remove()); } catch (_) {}
     headEl = null; avaEl = null;
   }
+  // bl_ui_0392 — variant C. One list decides both what the bar carries and what More holds, so
+  // a tab can never be in neither. Messages moved behind More when the centre action took a
+  // slot: its unread count still shows, because More sums every count it holds.
+  const DW_MAIN = ['today', 'board', 'bookings'];
   function openMore(TABS) {
-    const rest = TABS.filter(([id]) => !['today', 'board', 'bookings', 'messages'].includes(id));
+    const rest = TABS.filter(([id]) => !DW_MAIN.includes(id));
     let m = null;
     const row = (icn, label, n, fn) => h('button', { class: 'dw-more-row', onClick: () => { if (m) m.close(); fn(); } }, [h('span', { class: 'i' }, ic(icn, 20)), h('span', { class: 't' }, label), n ? h('span', { class: 'n' }, String(n)) : null, h('span', { class: 'c' }, '›')]);
     const portal = (shellBarKids || []).filter((k) => k && k.nodeType === 1 && !/^(Home|Dashboard)$/i.test((k.textContent || '').trim()));
@@ -642,12 +649,20 @@ export async function mountDispatcherWorkspace(host, opts = {}) {
       if (shellBar) {
         if (!shellBarKids) shellBarKids = Array.from(shellBar.childNodes);
         const by = {}; TABS.forEach((t) => { by[t[0]] = t; });
-        const moreN = TABS.filter(([id]) => !['today', 'board', 'bookings', 'messages'].includes(id)).reduce((s0, t) => s0 + Number(t[3] || 0), 0);
+        const moreN = TABS.filter(([id]) => !DW_MAIN.includes(id)).reduce((s0, t) => s0 + Number(t[3] || 0), 0);
         const item = (id, label, icn, n, fn, on) => h('a', { class: 'cp-navlink' + (on ? ' active' : ''), href: '#' + id, 'aria-current': on ? 'page' : null, onClick: (e) => { e.preventDefault(); fn(); } }, [ic(icn, 21), h('span', null, label), n ? h('i', { class: 'dw-bn', 'aria-label': n + ' items' }, n > 9 ? '9+' : String(n)) : null]);
-        const main = ['today', 'board', 'bookings', 'messages'];
+        const main = DW_MAIN;
+        // The centre action is the one the whole workspace is built around: a booking the
+        // dispatcher just closed on the phone. It is the same openLogForm the Bookings tab
+        // opens, reached through the deep link that already exists (#bookings/new).
+        const fab = h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Log a booking', onClick: () => dwGo('bookings', 'new') }, [
+          h('span', { class: 'cp-fab-in' }, ic('plus', 24)), h('span', null, 'Log'),
+        ]);
         shellBar.classList.add('dw-bar');
-        shellBar.replaceChildren(...main.map((id) => item(id, by[id][1], by[id][2], by[id][3], () => setTab(id), tab === id)),
-          item('more', 'More', 'more', moreN, () => openMore(TABS), !main.includes(tab)));
+        const kids = main.map((id) => item(id, by[id][1], by[id][2], by[id][3], () => setTab(id), tab === id));
+        kids.splice(2, 0, fab);
+        kids.push(item('more', 'More', 'more', moreN, () => openMore(TABS), !main.includes(tab)));
+        shellBar.replaceChildren(...kids);
       }
       lastTabs = TABS;
       if (!headEl) { headEl = document.querySelector('.cp-top'); if (headEl) { headEl.classList.add('dw-head'); headEl.addEventListener('click', onBurger, true); const right = headEl.querySelector('.cp-top-right'); if (right) { const nm0 = ((feed && feed.profile && feed.profile.full_name) || 'D').trim(); avaEl = h('button', { class: 'dw-ava', 'aria-label': 'Open menu', onClick: () => openDrawer() }, nm0.split(/\s+/).slice(0, 2).map((x) => x.charAt(0).toUpperCase()).join('')); right.appendChild(avaEl); } } }

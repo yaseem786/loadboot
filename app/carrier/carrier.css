@@ -191,6 +191,17 @@ textarea.cp-in { resize: vertical; }
     .cp-tabbar .cp-navlink { transition: none; }
     .cp-tabbar .cp-navlink:active { transform: none; }
   }
+  /* bl_ui_0392 — variant C: the raised centre action. The bar is 4 destinations + one
+     create action, the pattern Instagram/X/Uber Driver all use. .cp-fab is a real
+     <button> (not a link — it opens a form in place, it is not a route), so it needs its
+     own sizing: the .cp-navlink rules above only cover the four tabs. The disc is pulled
+     up out of the bar, which is why .cp-tabbar must never get overflow:hidden. */
+  .cp-tabbar .cp-fab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border: 0; background: none; cursor: pointer; font: 700 .64rem/1.2 inherit; color: #64748b; text-align: center; }
+  .cp-tabbar .cp-fab .cp-fab-in { width: 50px; height: 50px; margin-top: -21px; margin-bottom: -7px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0883F7, #0967d2); color: #fff; border: 3px solid #fff; box-shadow: 0 10px 22px -8px rgba(8,131,247,.75); transition: transform .16s ease; }
+  .cp-tabbar .cp-fab span:not(.cp-fab-in):not(.cp-ic) { white-space: nowrap; }
+  .cp-tabbar .cp-fab:active .cp-fab-in { transform: scale(.94); }
+  .cp-tabbar .cp-fab:focus-visible { outline: 2px solid #0883F7; outline-offset: -2px; border-radius: 10px; }
+  @media (prefers-reduced-motion: reduce) { .cp-tabbar .cp-fab .cp-fab-in { transition: none; } .cp-tabbar .cp-fab:active .cp-fab-in { transform: none; } }
   /* show only the 5 most important tabs on mobile */
   .cp-tabbar .cp-navlink:nth-child(n+6) { display: none; }
 }
@@ -308,6 +319,8 @@ html[data-lbtheme="dark"] .cp-btn.ghost, html[data-lbtheme="dark"] .cp-btn.sec
 html[data-lbtheme="dark"] .cp-tabbar { background: #0e1830; border-top-color: rgba(255,255,255,.08); }
 html[data-lbtheme="dark"] .cp-tabbar .cp-navlink { color: #6B7F9C; }
 html[data-lbtheme="dark"] .cp-tabbar .cp-navlink.active { background: rgba(8,131,247,.15); color: #4FA9FF; }
+html[data-lbtheme="dark"] .cp-tabbar .cp-fab { color: #6B7F9C; }
+html[data-lbtheme="dark"] .cp-tabbar .cp-fab .cp-fab-in { border-color: #0e1830; }
 html[data-lbtheme="dark"] .cp-tag { background: rgba(8,131,247,.16); color: #93c5fd; }
 html[data-lbtheme="dark"] .cp-row { border-color: rgba(255,255,255,.07); }
 

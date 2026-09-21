@@ -218,20 +218,40 @@ export function renderShell(root, user, flags) {
 
   // bl_ui_0389 — Command Center had NO phone navigation. At <=780px the sidebar collapses
   // into 21 ungrouped chips that wrap across the top, so a phone user scrolls past the whole
-  // menu before reaching any content. These five are real routes; More opens the full menu as
-  // a drawer, so nothing is lost. Desktop is untouched — the bar only exists under 780px.
-  const TAB_PATHS = ['/', '/carriers', '/live-chat', '/finance'];
+  // menu before reaching any content. Every entry below is a real route; More opens the full
+  // menu as a drawer, so nothing is lost. Desktop is untouched — the bar only exists under 780px.
+  // bl_ui_0392 — variant C on the CC bar too: three destinations + the raised centre action
+  // + More. Finance left the bar for the drawer — it is a desk screen with no count on it,
+  // and Document review (the one badged route) keeps showing its count on More either way.
+  const TAB_PATHS = ['/', '/carriers', '/live-chat'];
   const tabEls = {};
   const moreBadge = el('span', { class: 'cc-tab-badge', hidden: true });
+  // The centre action is the wizard the Loads & trips screen already posts through, and it is
+  // shown only to staff who may actually post. cc_post_load re-checks the permission server-side.
+  const ccFab = can('loads.create') ? (() => {
+    const b = el('button', { class: 'cc-tab cc-fab', type: 'button', 'aria-label': 'Post a load' },
+      [el('span', { class: 'cc-fab-in' }, [icon('plus', 24)]), el('span', null, 'Post')]);
+    b.addEventListener('click', () => {
+      if ((location.hash || '').replace('#', '') === '/loads' && typeof window.__lbCCNewLoad === 'function') { window.__lbCCNewLoad(); return; }
+      window.__lbCCNewLoadPending = true;          // loads.js opens the wizard as it mounts
+      location.hash = '#/loads';
+    });
+    return b;
+  })() : '';
+  // five items on a 360px phone: 'Live chat' ellipsised to 'Live c…', so the bar carries a
+  // short label where the sidebar's full one does not fit. Same route, same icon.
+  const TAB_SHORT = { '/live-chat': 'Chat' };
+  const tabItems = TAB_PATHS.map((path) => {
+    const it = FLAT.find((n) => n.path === path);
+    if (!it) return '';
+    const a = el('a', { href: '#' + path, class: 'cc-tab', dataset: { path } },
+      [icon(it.icon, 21), el('span', null, TAB_SHORT[path] || it.label)]);
+    tabEls[path] = a;
+    return a;
+  }).filter(Boolean);
+  if (ccFab) tabItems.splice(Math.min(2, tabItems.length), 0, ccFab);
   const tabbar = el('nav', { class: 'cc-tabbar', 'aria-label': 'Main' }, [
-    ...TAB_PATHS.map((path) => {
-      const it = FLAT.find((n) => n.path === path);
-      if (!it) return '';
-      const a = el('a', { href: '#' + path, class: 'cc-tab', dataset: { path } },
-        [icon(it.icon, 21), el('span', null, it.label)]);
-      tabEls[path] = a;
-      return a;
-    }),
+    ...tabItems,
     (() => {
       const b = el('button', { class: 'cc-tab cc-tab-more', type: 'button' },
         [icon('more', 21), el('span', null, 'More'), moreBadge]);

@@ -134,6 +134,10 @@ const ic = (name) => ({
   ship: 'M3 7h13v10H3zM16 10h3l2 3v4h-5', dock: 'M3 21V9l9-6 9 6v12M9 21v-6h6v6', bell: 'M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9',
   user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8', logout: 'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9',
   plus: 'M12 5v14M5 12h14', clock: 'M12 7v5l3 3M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  // bl_ui_0392 — BNAV's Market Rates asks for 'tag' and this private map had no such key, so
+  // that row drew an empty <svg> in the sidebar and the drawer (the same silent blank bl_ui_0388
+  // cleared elsewhere). Path copied from the carrier map so both portals draw one glyph.
+  tag: 'M12.6 2.6l8.8 8.8a2 2 0 010 2.8l-6.2 6.2a2 2 0 01-2.8 0L3.6 11.6V3.6a1 1 0 011-1zM8 8h.01',
   finance: 'M12 1v22M5 5h11a3 3 0 010 6H8a3 3 0 000 6h11',
   bank: 'M3 21h18M5 10h14M5 10l7-5 7 5M6 10v9M18 10v9M10 10v9M14 10v9',
   building: 'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01',
@@ -4541,12 +4545,20 @@ function packetAgreementCards(skipPacket) {
   }));
   // MOBILE NAV (audit 2026-07-21): .cp-side is hidden <=900px, so the broker/shipper shell
   // had no navigation on phones. Bottom tab bar mirrors the carrier pattern (5 primary tabs).
-  const BTABS = ['dashboard', 'loads', 'claims', 'invoices', 'account'];
-  const bTabbar = h('nav', { class: 'cp-tabbar' }, BTABS.map((id) => {
+  // bl_ui_0392 — variant C: four destinations + the raised centre action (post a load).
+  // Requests replaces Invoices here because it is the only other tab with a real, timed
+  // count on it (a carrier's booking request expires), and Account/Invoices both stay one
+  // tap away in the burger drawer below. Revert = put the old five ids back on this line.
+  const BTABS = ['dashboard', 'loads', 'requests', 'claims'];
+  const bTabKids = BTABS.map((id) => {
     const it = BNAV.find((n) => n[0] === id) || [id, id, 'dash'];
     const a = h('a', { class: 'cp-navlink', href: '#' + id, onClick: () => bgo(id) }, [icon(it[2], 20), h('span', null, it[1])]);
     (bLinks[id] = bLinks[id] || []).push(a); return a;
-  }));
+  });
+  bTabKids.splice(2, 0, h('button', { class: 'cp-fab', type: 'button', 'aria-label': 'Post a load', onClick: () => openPostFromBar() }, [
+    h('span', { class: 'cp-fab-in' }, icon('plus', 24)), h('span', null, 'Post'),
+  ]));
+  const bTabbar = h('nav', { class: 'cp-tabbar' }, bTabKids);
   const bTitle = h('h1', { class: 'cp-top-title' }, 'Dashboard');
   const bContent = h('div', { class: 'cp-content' });
   // ---- MOBILE DRAWER (carrier-style: scrim + cpx-drawer, full nav + sign out) ----
@@ -4772,7 +4784,16 @@ function packetAgreementCards(skipPacket) {
     return el;
   };
   bgoHook = (id) => bgo(id);
-  window.__lbOpenPost = () => { postFoldOpen = true; brender(); setTimeout(() => { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
+  // bl_ui_0392 — one opener for every entry point: the hero button, the carrier cards'
+  // "post to this carrier", the #post deep link and the bar's centre action. If the partner
+  // is not cleared to post yet, #bd-postload holds the gate card and they land on that —
+  // which is the honest answer, not a dead button.
+  function openPostFromBar() {
+    postFoldOpen = true;
+    if (btab !== 'dashboard') bgo('dashboard'); else brender();
+    setTimeout(() => { const f = document.getElementById('bd-postload'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
+  }
+  window.__lbOpenPost = () => openPostFromBar();
   // ---------- Developers: self-serve API keys ----------
   // Without this every partner key had to be minted by hand, which is the same
   // bottleneck that left a broker pending for 22 days. A syndication partner
@@ -4898,12 +4919,22 @@ function packetAgreementCards(skipPacket) {
   initBackNav({ goHome: () => { if (btab !== 'dashboard') { bgo('dashboard'); return true; } return false; } });
   try { attachPullToRefresh(bContent, async () => { brender(); }); } catch (_) {}
   // 2026-08 audit: pending-claims badge on the tab bar + OS app-icon badge.
+  // bl_ui_0392 — badges paint from the SAME call the tab itself renders from, so the number on
+  // the tab and the rows inside it can never disagree: claims from cc_partner_claims (broker_status
+  // pending), requests from cc_book_requests_queue('pending') — the exact query bookRequestsCard
+  // uses. A failed call leaves the old badge alone rather than showing a made-up zero.
+  function paintBadge9(id9, n9) {
+    (bLinks[id9] || []).forEach((a9) => {
+      let b9 = a9.querySelector('.cp-tab-badge');
+      if (n9 > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(n9 > 9 ? '9+' : n9); }
+      else if (b9) b9.remove();
+    });
+  }
   async function refreshTabBadges9() {
-    try {
-      const cls9 = ((await partnerClaims()) || []).filter((c9) => String(c9.broker_status || 'pending') === 'pending').length;
-      (bLinks['claims'] || []).forEach((a9) => { let b9 = a9.querySelector('.cp-tab-badge'); if (cls9 > 0) { if (!b9) { b9 = h('span', { class: 'cp-tab-badge' }); a9.appendChild(b9); } b9.textContent = String(cls9 > 9 ? '9+' : cls9); } else if (b9) b9.remove(); });
-      setAppBadge(cls9);
-    } catch (_) {}
+    let cls9 = null, req9 = null;
+    try { cls9 = ((await partnerClaims()) || []).filter((c9) => String(c9.broker_status || 'pending') === 'pending').length; paintBadge9('claims', cls9); } catch (_) {}
+    try { req9 = ((await bookRequestsQueue('pending')) || []).length; paintBadge9('requests', req9); } catch (_) {}
+    try { if (cls9 != null || req9 != null) setAppBadge((cls9 || 0) + (req9 || 0)); } catch (_) {}
   }
   refreshTabBadges9(); setInterval(refreshTabBadges9, 120000);
   const bShell = h('div', { class: 'cp-shell' }, [
