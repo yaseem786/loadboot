@@ -1,15 +1,34 @@
 # dispatch@ — reply drafts for the 36 re-apply invitations (21 Sep 2026)
 
-**Where these replies are.** They are NOT in the database. `app_private.mail_messages` only ingests
-`loads@` — `supabase/functions/inbound-mail` routes on `rcpts.some(t => t.startsWith("loads@"))`, and
-nothing forwards `dispatch@` to that webhook. So replies to the invitations sit in the Namecheap
-PrivateEmail mailbox for `dispatch@loadboot.com` and have to be read there.
+**Where these replies are — CORRECTED 21 Sep 2026 (the paragraph that used to sit here was wrong).**
+They are in the Namecheap PrivateEmail mailbox for `dispatch@loadboot.com`, and they have to be read
+there for now. But the reason is NOT that the code only ingests `loads@`.
 
-**To get them into the CC instead** (one-time, your side + a one-line code change): add `dispatch@` to
-the inbound route that already points `loads@` at the `inbound-mail` function, and widen that one
-`startsWith` test to accept `dispatch@` with `mailbox = 'dispatch@loadboot.com'`. Say the word and
-the code half is a ten-minute change — but it also pulls carrier and broker mail sent to `dispatch@`
-into the CC inbox, so it is your call, not mine.
+Verified from source on 21 Sep:
+
+- `supabase/functions/inbound-mail` routes `loads@` to `load-mail` and **falls through to
+  `cc_mail_ingest` for every other recipient** — there is no allow-list.
+- `app_private.cc_mail_ingest` files whatever `to_email` it is handed: `mailbox := lower(to_email)`,
+  no mailbox check (only `from`/`to` must be non-empty).
+- `bl_mail_0335` already ships the dispatch side: the `(mailbox, created_at desc)` index,
+  `cc_mail_list`'s mailbox filter, `cc_mail_stats`' mailbox list (built from whatever mailboxes
+  exist, so `dispatch@` appears by itself), and `cc_mail_reply`'s `dispatch@% -> dispatch.mail.reply`
+  notification branch.
+- Prod `app_private.mail_messages` has exactly one inbound mailbox: `loads@loadboot.com`, 67 rows.
+  Nothing else has ever reached the webhook.
+
+**So the CC needs no code change and no migration.** The only missing piece is provider-side: the
+inbound route that points `loads@loadboot.com` at the `inbound-mail` function has never been given
+`dispatch@loadboot.com`. Add `dispatch@` to that same route (Cloudflare/Resend dashboard — the same
+place `loads@` was set up; `INBOUND_SECRET` and the URL stay as they are) and replies start filing
+under `mailbox = 'dispatch@loadboot.com'` on the next mail, with the CC mailbox filter picking it up
+automatically. It does also pull carrier and broker mail sent to `dispatch@` into the CC inbox —
+that is the intended trade, since today none of it is visible to the CC at all.
+
+One code change WAS needed for that route to file correctly, and is on disk (`inbound-mail` v5,
+21 Sep): `to_email` was `tos[0] || rcpts[0]`, so a Bcc'd or forwarded copy — exactly how a forwarded
+`dispatch@` arrives — would have filed under whatever address sat in `To`, polluting the mailbox
+filter. It now prefers the `@loadboot.com` recipient. Not yet deployed to prod.
 
 **The rule these drafts apply** (21 Sep 2026): the load board does **not** have to be in the
 applicant's name, and they do not need a board at all. The test is whether *they themselves* find and

@@ -1,4 +1,4 @@
-// inbound-mail v4 (PROD) — Resend/Cloudflare inbound webhook. Emails addressed to loads@*
+// inbound-mail v5 — Resend/Cloudflare inbound webhook. Emails addressed to loads@*
 // route to the load-mail parser (email load ingestion); everything else files into the
 // CC Mailbox via cc_mail_ingest. Optional ?secret= gate via INBOUND_SECRET.
 //
@@ -11,6 +11,10 @@
 //
 // v4 (2026-08-02): loads@ routing now matches ANY recipient field (to/cc/bcc/envelope/
 // delivered-to/headers), not just To — brokers Cc or Bcc us on their carrier blasts.
+//
+// v5 (2026-09-21): non-loads@ mail now files under OUR recipient (the @loadboot.com address in
+// any recipient field), not tos[0] — a Bcc'd or forwarded copy leaves a stranger's address in
+// To, which would have become mail_messages.mailbox. Needed before dispatch@ is forwarded here.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const pick = (v: unknown): string => (typeof v === "string" ? v : "");
@@ -77,6 +81,11 @@ Deno.serve(async (req) => {
     }
   }
 
+  // v5 (2026-09-21): which of OUR addresses this mail was for. A Bcc'd or forwarded copy leaves
+  // someone else's address in To, and mail_messages.mailbox (the CC inbox filter) is built from
+  // to_email — so prefer the loadboot.com recipient and fall back to To only if there is none.
+  const ourBox = rcpts.find((t) => t.endsWith("@loadboot.com"));
+
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
 
   // Honor "reply to unsubscribe" before filing the mail.
@@ -88,7 +97,7 @@ Deno.serve(async (req) => {
   }
 
   const { data, error } = await sb.rpc("cc_mail_ingest", { p: {
-    from_email: from.email, from_name: from.name, to_email: tos[0] || rcpts[0],
+    from_email: from.email, from_name: from.name, to_email: ourBox || tos[0] || rcpts[0],
     subject: (unsubscribed ? "[unsubscribe] " : "") + subjectRaw, body_text: pick(d.text), body_html: pick(d.html),
     message_id: pick(d.message_id) || pick((d.headers as Record<string, unknown> | undefined)?.["message-id"]),
     in_reply_to: pick((d.headers as Record<string, unknown> | undefined)?.["in-reply-to"]),
