@@ -526,14 +526,9 @@ function authScreen() {
   const ccSel = h('select', { class: 'cp-in', style: 'width:112px;flex:none' }, CC_LIST.map(([n9, c9]) => h('option', { value: c9, title: n9 }, c9 + '  ' + n9.split(' ')[0])));
   ccSel.value = '+1';
   const phone = h('input', { class: 'cp-in', type: 'tel', placeholder: 'Mobile number', autocomplete: 'tel' });
-  // 10DLC / TCR: SMS consent is a SEPARATE, OPTIONAL, UNCHECKED box. The mobile number itself is used for
-  // voice dispatch and is required; texting only ever happens if the carrier ticks this box themselves.
-  const smsOk = h('input', { type: 'checkbox', style: 'margin:2px 0 0;flex:none;width:16px;height:16px;accent-color:#0883F7' });
   const extra = h('div', { style: 'display:none' }, [h('label', { class: 'cp-lbl' }, window.__LB_AGENT ? 'Agency / company (optional)' : 'Company'), company, h('label', { class: 'cp-lbl' }, 'Your name'), name, h('label', { class: 'cp-lbl' }, 'Mobile number'), h('div', { style: 'display:flex;gap:8px' }, [ccSel, phone]),
-    // 10DLC opt-in: an OPTIONAL, unchecked checkbox sits next to the disclosure (Telnyx/TCR requirement).
-    // Leaving it unticked does not block account creation and we never text that number.
-    h('label', { style: 'display:flex;gap:9px;align-items:flex-start;margin:9px 0 0;cursor:pointer' }, [smsOk,
-      h('span', { style: 'font-size:11.5px;line-height:1.45;opacity:.8' }, ['Optional \u2014 tick to agree to receive text messages from LoadBoot at the mobile number above about your loads and account (dispatch updates, check calls, paperwork requests). Consent is not a condition of creating an account or of purchasing anything. Message frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. See our ', h('a', { href: '/terms.html#s11', target: '_blank', rel: 'noopener' }, 'Terms'), ' and ', h('a', { href: '/privacy.html#sms', target: '_blank', rel: 'noopener' }, 'Privacy Policy'), '.'])])]);
+    // 10DLC opt-in disclosure: shown where the mobile number is collected (create-account only)
+    h('p', { style: 'margin:6px 0 0;font-size:11.5px;line-height:1.45;opacity:.75' }, ['By giving your mobile number you agree to receive text messages from LoadBoot about your loads and account (dispatch updates, check calls, paperwork). Message frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. See our ', h('a', { href: '/terms.html#s11', target: '_blank', rel: 'noopener' }, 'Terms'), ' and ', h('a', { href: '/privacy.html#sms', target: '_blank', rel: 'noopener' }, 'Privacy Policy'), '.'])]);
   const err = h('div', { class: 'cp-err' });
   // bl_drv_0344f: the same login serves drivers (invited by a carrier, role=driver). A driver arrives with ?role=driver
   // (Driver App links, welcome email, sign-out) or with the hint we store once they have joined. In driver mode the
@@ -612,7 +607,7 @@ function authScreen() {
     btn.disabled = true; btn.textContent = signup ? 'Creating…' : 'Signing in…';
     try {
       if (signup) {
-        const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()), sms_consent: !!smsOk.checked, sms_consent_at: (smsOk.checked ? new Date().toISOString() : null), sms_consent_source: 'carrier_portal_signup_checkbox' }, window.__LB_AGENT ? { role: 'agent' } : {}));
+        const { data, error } = await signUp(em, pw, Object.assign({ company: company.value.trim(), name: name.value.trim(), phone: (ccSel.value + ' ' + phone.value.trim()) }, window.__LB_AGENT ? { role: 'agent' } : {}));
         if (error) throw error;
         // Supabase returns success with an empty identities array when the address is
         // already registered — it will not error, and no email is sent. Without this the
@@ -628,7 +623,7 @@ function authScreen() {
         // Phone OTP verification — active the moment an SMS provider (Twilio) is configured; graceful otherwise.
         try {
           const phv = (ccSel.value + phone.value.trim()).replace(/[^\d+]/g, '');
-          if (smsOk.checked && phv && phv.replace(/\D/g, '').length >= 7) {
+          if (phv && phv.replace(/\D/g, '').length >= 7) {
             const { getClient } = await import('../shared/supabaseClient.js');
             const sb = await getClient();
             const { error: pErr } = await sb.auth.updateUser({ phone: phv });

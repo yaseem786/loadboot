@@ -745,7 +745,30 @@ function createDialer() {
 
   // ------------------------------------------------------------ paint
   let wasOpen = false;
+  // bl_wa_0389 - paint() throws away the dock's whole DOM and builds it again. While the old tree is
+  // gone the page and any scrolling ancestor lose that height for an instant, so the browser clamps
+  // their scrollTop - and a clamp at the top is exactly what "the button jumps to the top" looks like.
+  // Every scrolling ancestor is read before the rebuild and put back after it, twice: once straight
+  // away and once on the next frame, when the real heights are back.
+  function scrollKeep(el) {
+    const out = [];
+    for (let n = el && el.parentElement; n; n = n.parentElement) {
+      let ov = ''; try { ov = getComputedStyle(n).overflowY; } catch (_) {}
+      if ((ov === 'auto' || ov === 'scroll') && n.scrollHeight > n.clientHeight + 1) out.push([n, n.scrollTop]);
+    }
+    const doc = document.scrollingElement || document.documentElement;
+    if (doc) out.push([doc, doc.scrollTop]);
+    return out;
+  }
   function paint() {
+    const keep = scrollKeep(root);
+    paintDock();
+    const put = () => keep.forEach((k) => { if (k[0].scrollTop !== k[1]) k[0].scrollTop = k[1]; });
+    put();
+    requestAnimationFrame(put);
+  }
+
+  function paintDock() {
     const b = S.boot;
     if (!b || b.reason === 'off' || b.reason === 'not_active') { mount(root, null); root.className = 'lbd'; return; }
     root.className = 'lbd' + (S.open ? ' open' : '');
