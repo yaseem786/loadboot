@@ -249,7 +249,7 @@ export async function renderPremiumAccount(host, ctx) {
     +   '<div style="margin-top:9px"><button class="btn sec sm block" id="acx-autopay">' + (autopay && autopay.enabled ? 'Turn auto-pay off' : 'Set up auto-pay') + '</button></div>'
     +   '<div style="margin-top:11px;display:flex;flex-direction:column;gap:8px"><button class="btn sm block" id="acx-addpay">' + (pay && pay.exists ? 'Update payout details' : 'Add payout details') + '</button><button class="btn sec sm block" data-go="finance">Open finance &amp; statements</button></div></div>'
     + '<div class="card" id="s-support"><div class="sec-h"><div class="sec-ico ic-slate">' + sic('headset') + '</div><div class="sec-t">Support</div></div><div class="sec-s">Real people, fast replies.</div>'
-    +   '<a class="btn block" style="text-decoration:none;margin-bottom:9px" href="https://wa.me/19283936198" target="_blank" rel="noopener">&#128172; WhatsApp us</a>'
+    +   '<a class="btn block" style="text-decoration:none;margin-bottom:9px" href="https://wa.me/18153651168" target="_blank" rel="noopener">&#128172; WhatsApp us</a>'
     +   '<div class="grid2"><a class="btn sec sm block" style="text-decoration:none" href="mailto:hello@loadboot.com">&#9993; Email support</a><a class="btn sec sm block" style="text-decoration:none" href="mailto:dispatch@loadboot.com">&#128667; Dispatch desk</a></div></div>'
     + '<div class="card" id="s-legal"><div class="sec-h"><div class="sec-ico ic-navy">' + sic('file') + '</div><div class="sec-t">Legal &amp; policies</div></div>'
     +   '<a class="pol" href="/privacy.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="rt">Privacy Policy</span><span class="go">&rsaquo;</span></a>'

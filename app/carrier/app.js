@@ -480,7 +480,7 @@ const icon = (name, size = 20) => h('span', { class: 'cp-ic', html: '<svg width=
 // in E.164 digits (e.g. '15551234567') — the chat button stays HIDDEN until it is set,
 // so no fake/unreachable contact is ever shown.
 // Carrier support WhatsApp. Digits only — wa.me rejects punctuation.
-const WHATSAPP_NUMBER = '19283936198';
+const WHATSAPP_NUMBER = '18153651168';
 const LOGO_SVG = '<img src="/icon-512.png" width="34" height="34" alt="LoadBoot" style="border-radius:22%;display:block">';
 const TAGLINE = 'The Operating System for Trucking';
 const brandMark = (dark) => h('span', { class: 'cp-logo', html: '<img src="' + (dark ? '/logo-icon-dark.png' : '/icon-512.png') + '" width="34" height="34" alt="LoadBoot" style="display:block">' });

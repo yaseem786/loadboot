@@ -1,7 +1,7 @@
 # LinkedIn posts — copy/paste ready (22 Aug 2026)
 
 Tarteeb: **1 → 2 → 3**. Company page pehle, phir Asim, phir aap ka repost.
-Carrier ka naam, MC, DOT, phone, email — **kisi mein nahi**. Sirf LoadBoot ka contact — WhatsApp (928) 393-6198 + dispatch@loadboot.com. Retell wala (469) number posts mein nahi.
+Carrier ka naam, MC, DOT, phone, email — **kisi mein nahi**. Sirf LoadBoot ka contact — WhatsApp (815) 365-1168 + dispatch@loadboot.com. Retell wala (469) number posts mein nahi.
 
 **Image:** company page wali post ke sath `dispatch/capacity-card-munster-aug24.png` lagayein.
 **Asim aur aap ki personal post par image NAHI** — wahan sirf text zyada asar karta hai.
@@ -52,7 +52,7 @@ What we check on your side before we book, every time: broker authority active o
 
 We'd rather work with fewer verified brokers repeatedly than chase whoever posts loudest.
 
-dispatch@loadboot.com | WhatsApp (928) 393-6198
+dispatch@loadboot.com | WhatsApp (815) 365-1168
 
 #hotshottrucking #flatbed #freightbrokers #logistics #ohiofreight
 
@@ -72,7 +72,7 @@ One thing worth saying plainly: we only work with verified brokers. Authority ac
 
 If you've got something, message me — MC, DOT, COI and W-9 come straight back.
 
-dispatch@loadboot.com | WhatsApp (928) 393-6198
+dispatch@loadboot.com | WhatsApp (815) 365-1168
 
 #freight #hotshot #brokers
 
@@ -98,7 +98,7 @@ Equipment: 30 ft gooseneck (25+5), 102 in wide, 34 in deck height, 9,000 lbs max
 Send the load details — origin, destination, pickup window, weight, dimensions and your rate — and I'll confirm or pass within the hour. Rate confirmation in the carrier's name.
 
 LoadBoot Dispatch
-WhatsApp (928) 393-6198 · dispatch@loadboot.com
+WhatsApp (815) 365-1168 · dispatch@loadboot.com
 
 > **DM bhejne se pehle 3-gate:** (1) `fmcsa-verify` se broker authority — `liDockets[].broker = "A"` dekhna,
 > top-level `authority` nahi. (2) 123LB credit 35+ din / D grade. (3) Truckstop factoring se credit approval.

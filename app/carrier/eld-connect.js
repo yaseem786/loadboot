@@ -94,7 +94,7 @@ export async function mountEldCard(host, opts = {}) {
       h('b', null, 'Nothing received yet'), ' — the webhook address exists, but your telematics platform has never sent us a position, so nothing is tracking.',
       h('div', { style: 'margin-top:7px' }, [
         h('a', { class: 'cp-btn cp-btn-sm', style: 'background:#25D366;color:#0b1526;font-weight:800;text-decoration:none;display:inline-block',
-          href: 'https://wa.me/19283936198?text=' + encodeURIComponent('Hi LoadBoot — I set up the ELD webhook in LoadBoot but no positions are arriving. Can you help me finish it?'),
+          href: 'https://wa.me/18153651168?text=' + encodeURIComponent('Hi LoadBoot — I set up the ELD webhook in LoadBoot but no positions are arriving. Can you help me finish it?'),
           target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp us — 10 minutes to finish it'),
       ]),
     ]);
@@ -146,7 +146,7 @@ export async function mountEldCard(host, opts = {}) {
     // So "connect your ELD and you never post availability again" would be a lie. An ELD knows
     // where a truck IS; it cannot know where you WANT to go next, or when you want to be home.
     // Say what is true and the carrier trusts the rest of the product.
-    const WA_NUMBER = '19283936198';
+    const WA_NUMBER = '18153651168';
     const waHref = (msg) => 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
 
     const benefitBox = () => h('div', { style: 'border:1px solid rgba(74,222,128,.25);background:rgba(74,222,128,.05);border-radius:12px;padding:11px 13px;margin-bottom:10px;font-size:.84rem;line-height:1.65' }, [

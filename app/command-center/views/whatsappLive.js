@@ -356,7 +356,7 @@ export async function renderWhatsappLive(host) {
         } }, [icon('mail', 15), 'Email dispatcher']) : null,
       ]),
       newOpen ? el('div', { class: 'wl-row', style: 'margin:0 0 12px' }, [
-        el('input', { class: 'wl-in', id: 'wl-newnum', placeholder: 'Number with country code, e.g. +19283936198', style: 'min-width:280px',
+        el('input', { class: 'wl-in', id: 'wl-newnum', placeholder: 'Number with country code, e.g. +14695550100', style: 'min-width:280px',
           onKeydown: (e) => { if (e.key === 'Enter') startNew(); } }),
         el('button', { class: 'wl-btn pri', onClick: () => startNew() }, 'Open conversation'),
         el('span', { class: 'hint' }, 'Opening one sends nothing. Outside the 24-hour window only an approved template can go out.'),

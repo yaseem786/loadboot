@@ -6,7 +6,7 @@
 |---|---|
 | Logo | `https://loadboot.com/logo-full.png` — wohi jo website ke header par hai (live hai, abhi kaam karta hai) |
 | Dispatch | (469) 253-7575 |
-| WhatsApp | (928) 393-6198 → `wa.me/19283936198` |
+| WhatsApp | (815) 365-1168 → `wa.me/18153651168` |
 | Email | dispatch@loadboot.com |
 | Web | loadboot.com |
 
@@ -51,7 +51,7 @@ Settings → Identities → apni identity → **HTML signature** ka checkbox ON 
 ```
 LoadBoot — Dispatch Team
 Dispatch   (469) 253-7575
-WhatsApp   (928) 393-6198
+WhatsApp   (815) 365-1168
 Email      dispatch@loadboot.com
 Web        loadboot.com
 

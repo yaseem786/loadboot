@@ -98,7 +98,7 @@ We dispatch. We do not re-broker.
 
 MC, DOT, COI and W-9 sent in DM once we're talking about a real load.
 
-💬 WhatsApp (928) 393-6198
+💬 WhatsApp (815) 365-1168
 ✉️ dispatch@loadboot.com
 
 LoadBoot — The Operating System for Trucking.
@@ -125,7 +125,7 @@ truck under freight it can't legally carry — that's the whole point of vetting
 Brokers — send me a message and I'll come back with MC, DOT, COI and W-9 the same hour.
 The rate confirmation goes in the carrier's name. We dispatch; we don't re-broker.
 
-dispatch@loadboot.com | WhatsApp (928) 393-6198
+dispatch@loadboot.com | WhatsApp (815) 365-1168
 
 #hotshottrucking #flatbed #freightbrokers #logistics #ohiofreight
 ```
@@ -154,7 +154,7 @@ OH/KY/IN/TN Tuesday. Partials and machinery welcome. No NY, no CA.
 
 If you've got something, message me — MC, DOT, COI and W-9 come straight back.
 
-dispatch@loadboot.com | WhatsApp (928) 393-6198
+dispatch@loadboot.com | WhatsApp (815) 365-1168
 ```
 
 ---
@@ -192,7 +192,7 @@ and I'll confirm or pass within the hour. Rate confirmation in the carrier's nam
 
 [NAME]
 LoadBoot Dispatch
-WhatsApp (928) 393-6198 · dispatch@loadboot.com
+WhatsApp (815) 365-1168 · dispatch@loadboot.com
 ```
 
 ### DM bhejne se pehle 3-GATE (kabhi skip nahi)
@@ -361,7 +361,7 @@ Aakhri jumla jaan boojh kar likha hai — isi se pata chalega ke DAT ka koi disp
 2. **"Verified brokers only" ka block posts mein add ho gaya.** Jo 5 FB posts 22 Aug ko ja chuki
    hain un mein ye block **nahi** hai — agli baar wali posts mein hai. Purani posts edit karne ki
    zarurat nahi (edit karne se approval dobara pending ho sakti hai).
-3. **Contact ab sirf WhatsApp (928) 393-6198 + dispatch@loadboot.com.** Retell wala
+3. **Contact ab sirf WhatsApp (815) 365-1168 + dispatch@loadboot.com.** Retell wala
    **(469) 253-7575 posts se hata diya gaya** (owner ka faisla). ⚠️ Jo 5 FB posts ja chuki hain un
    mein (469) abhi bhi mojood hai — wo Retell inbound Riley par jayega, jo theek hai, magar
    agli posts mein sirf WhatsApp hai.
