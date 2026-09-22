@@ -41,6 +41,10 @@ promises vs zero loads), F15 (leaked-password protection is a **Supabase dashboa
 of leaked passwords" — Yaseen must flip it; also set OTP expiry ≤ 1h), retention periods (`RETENTION-PROPOSAL-2026-09-20.md`),
 F17 (capacity).
 OPEN — technical (the DB ones are Claude's, the frontend/measurement ones are yours — see WORK-SPLIT):
+- NEW (yours, 22 Sep): CC "Account deletion review" screen on the live RPCs `cc_erasure_items(request_id)` (items + per-item
+  suggestion + `classes`), `cc_erasure_decide(request_id,item_key,'remove'|'hold',class,retain_until,note)`, edge `erasure-purge`
+  (POST {request_id, dry_run}) then `cc_account_deletion_process(id,'complete')`. Dry-run button first, real purge behind a confirm.
+  Both RPCs/edge are LIVE on staging AND prod; build against staging.
 - F25: DONE 22 Sep by Claude (0359/0361/0362 on both envs). Re-run the performance advisor once and record the residual list.
 - Anon-surface rule for YOUR new functions: Postgres grants EXECUTE to PUBLIC by default — every new RPC needs an explicit
   `revoke all ... from public, anon` unless it is meant for guests (the SMS-consent lane tripped this on staging; fixed by 0360).
