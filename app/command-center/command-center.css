@@ -379,7 +379,11 @@
   .cc-tab{
     flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;
     padding:6px 2px;border-radius:12px;position:relative;cursor:pointer;border:0;background:none;
-    color:#6B7F9C;font:700 .63rem/1.2 inherit;letter-spacing:.012em;text-align:center;text-decoration:none;
+    color:#6B7F9C;letter-spacing:.012em;text-align:center;text-decoration:none;
+    /* bl_ui_0395 — was `font:700 .63rem/1.2 inherit`, which is invalid (a CSS-wide keyword cannot
+       be a component of the shorthand) and was therefore dropped whole: every label on this bar
+       rendered at the inherited 16px, and More — a <button> — in Arial. Set separately now. */
+    font-family:inherit;font-size:.63rem;font-weight:700;line-height:1.2;
     -webkit-tap-highlight-color:transparent;
     transition:background-color .2s cubic-bezier(.2,.8,.3,1),color .2s cubic-bezier(.2,.8,.3,1),transform .13s ease;
   }

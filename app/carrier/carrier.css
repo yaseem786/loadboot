@@ -210,7 +210,11 @@ textarea.cp-in { resize: vertical; }
      <button> (not a link — it opens a form in place, it is not a route), so it needs its
      own sizing: the .cp-navlink rules above only cover the four tabs. The disc is pulled
      up out of the bar, which is why .cp-tabbar must never get overflow:hidden. */
-  .cp-tabbar .cp-fab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border: 0; background: none; cursor: pointer; font: 700 .64rem/1.2 inherit; letter-spacing: .012em; color: #475569; text-align: center; -webkit-tap-highlight-color: transparent; }
+  /* bl_ui_0395 — font-family/size/weight are set separately on purpose: `font: 700 .64rem/1.2
+     inherit` is invalid CSS (a CSS-wide keyword cannot sit inside the shorthand), so the whole
+     declaration was dropped and this <button> fell back to the UA default — Arial 13.3px/400,
+     next to Manrope 10.2px/700 on the four tabs beside it. */
+  .cp-tabbar .cp-fab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: .64rem; font-weight: 700; line-height: 1.2; letter-spacing: .012em; color: #475569; text-align: center; -webkit-tap-highlight-color: transparent; }
   /* bl_ui_0393 — the disc is lit, not flat: a top highlight inside the gradient, a coloured
      ambient shadow under it and a ring in the bar's own colour so it reads as cut into the
      bar rather than stuck on top. It presses DOWN (scale + the shadow collapsing), which is
