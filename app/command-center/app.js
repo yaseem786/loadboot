@@ -360,6 +360,7 @@ async function boot() {
     // it. Own nav item under Carriers now.
     '/carrier-reminders': () => { setActive('/carrier-reminders'); guard(['content.view', 'comm.view', 'comm.send'], () => renderCarrierReminders(content))(); },
     '/delivery': tabbed('crm', 'delivery'),
+    '/email-catalog': tabbed('crm', 'emailCatalog'),   // bl_comm_0391: the tab existed, the route did not
     '/account-health': tabbed('compliance', 'health'),
     '/marketing-intel': tabbed('web', 'intel'),
     '/outreach': () => { setActive('/crm'); if (can('marketing.view') || can('carriers.approve') || can('dispatch.manage')) renderOutreach(content); else denied(); },

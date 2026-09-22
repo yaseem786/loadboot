@@ -116,3 +116,32 @@ pastes that into the new session. Never make him reconstruct context from memory
 Roman Urdu mixed with English. Match it. Be direct — he would rather be told a thing is
 wrong than be managed. When you are guessing, say you are guessing; he has asked before
 whether an answer was searched or assumed, and he was right to.
+
+---
+
+## 6. Email rule — every email lives in the catalog (set 22 Sep 2026)
+
+There is now one registry for every email LoadBoot can send: `app_private.email_catalog`
+(behind Command Center → CRM & outreach → **Email catalog**, `#/email-catalog`).
+
+**When the owner asks for a new email — a reminder, a notice, a nudge, anything that
+leaves the system — it is created THROUGH the catalog, never as a loose template or a
+hard-coded `sys_email` call with a brand-new key nobody registered.** In practice:
+
+1. Pick a key in the existing convention (`area.thing`, lower case, dots — never a new
+   underscore family) and check `email_catalog` first so you are not re-inventing a key
+   that already exists (`document.reviewed.valid`, not `document.reviewed`).
+2. Give it a row: name, purpose, class (T/O/P/M/S), audience, trigger type + the exact
+   function that fires it, cadence, cap, stop condition, preference group, unsub allowed,
+   and the CC deep link where it belongs. `public.cc_email_template_new(...)` does the
+   template and the catalog row in one step; a code-fired email gets its row in the
+   migration that adds the sender.
+3. `app_private.sys_email` reads the catalog at send time: the category, the preference
+   group it must honour, and any active override. A key that is not in the catalog is
+   filed as `undocumented` on first use and shows up in the CC screen — that is a bug to
+   fix, not a normal state.
+4. Preference groups are the only opt-out mechanism. `account_critical` and
+   `staff_internal` can never be blocked; everything else must be opt-out-able.
+
+Docs: `claude/EMAIL-AUDIT-0391.md` (the audit) and `claude/EMAIL-CATALOG-PROD-0395.md`
+(what is live, and what is left).

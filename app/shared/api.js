@@ -1474,3 +1474,5 @@ export const emailSave = (key, patch) => rpc('cc_email_save', { p_key: key, p_pa
 export const emailOverrideSave = (key, subject, html, active) => rpc('cc_email_override_save', { p_key: key, p_subject: subject, p_html: html, p_active: !!active });
 export const emailPreview = (key, subject, html) => rpc('cc_email_preview', { p_key: key, p_subject: subject || null, p_html: html || null });
 export const emailTemplateNew = (p) => rpc('cc_email_template_new', p);
+// bl_comm_0396: who actually got one email — sends and preference blocks in one timeline
+export const emailSends = (key, o = {}) => rpc('cc_email_sends', { p_key: key, p_status: o.status || null, p_q: o.q || null, p_limit: o.limit || 50, p_offset: o.offset || 0 });
