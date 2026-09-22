@@ -1466,3 +1466,11 @@ export const ccDmailAccountSave = (p) => rpc('cc_dmail_account_save', { p: p ?? 
 export const ccDmailAssign = (account, user, name) => rpc('cc_dmail_assign', { p_account: account, p_user: user ?? null, p_name: name ?? null });   // bl_dmail_0359: assigning also sets From name + brand signature
 export const ccDmailIdentityApply = (account, name) => rpc('cc_dmail_identity_apply', { p_account: account, p_name: name ?? null });
 export const ccDmailSetStatus = (account, status) => rpc('cc_dmail_set_status', { p_account: account, p_status: status });
+
+// --- Email catalog (bl_comm_0391-0394): one registry for every email we can send ---
+export const emailCatalog = (status, q) => rpc('cc_email_catalog', { p_status: status || null, p_q: q || null });
+export const emailDetail = (key) => rpc('cc_email_detail', { p_key: key });
+export const emailSave = (key, patch) => rpc('cc_email_save', { p_key: key, p_patch: patch });
+export const emailOverrideSave = (key, subject, html, active) => rpc('cc_email_override_save', { p_key: key, p_subject: subject, p_html: html, p_active: !!active });
+export const emailPreview = (key, subject, html) => rpc('cc_email_preview', { p_key: key, p_subject: subject || null, p_html: html || null });
+export const emailTemplateNew = (p) => rpc('cc_email_template_new', p);

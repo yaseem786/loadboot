@@ -44,6 +44,7 @@ import { renderAudiences } from './views/audiences.js';
 import { renderCampaignManager } from './views/campaignManager.js';
 import { renderCarrierReminders } from './views/carrierReminders.js';
 import { renderDeliveryHealth } from './views/deliveryHealth.js';
+import { renderEmailCatalog } from './views/emailCatalog.js';
 import { renderMarketingIntel } from './views/marketingIntel.js';
 import { renderOutreach } from './views/outreach.js';
 import { renderLiveChat } from './views/liveChat.js';
@@ -275,6 +276,7 @@ async function boot() {
     ] },
     crm: { nav: '/crm', tabs: [
       { id: 'crm', label: 'CRM & outreach', path: '/crm', allowed: () => crmEnabled && can('crm.view'), render: (h) => renderCRM(h) },
+      { id: 'emailCatalog', label: 'Email catalog', path: '/email-catalog', allowed: () => can('comm.view') || can('comm.manage') || can('content.view') || can('settings.manage'), render: (h) => renderEmailCatalog(h) },
       { id: 'delivery', label: 'Deliverability', path: '/delivery', allowed: () => can('content.view') || can('content.manage') || can('settings.manage'), render: (h) => renderDeliveryHealth(h) },
     ] },
     forms: { nav: '/forms', tabs: [
