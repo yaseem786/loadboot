@@ -862,7 +862,7 @@ export const pocketSaveProfile = (p = {}) => rpc('update_my_carrier_profile', {
 export const carrierUploadDocument = async ({ type, fileName, filePath, aiVerdict = null }) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
-  const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath, ...(aiVerdict && typeof aiVerdict === 'object' && !Array.isArray(aiVerdict) ? { ai_verdict: aiVerdict } : {}) });
+  const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath, ...(aiVerdict && typeof aiVerdict === 'object' && !Array.isArray(aiVerdict) ? { ai_verdict: { ...aiVerdict, overridden: aiVerdict.verdict === 'reject' } } : {}) });
   if (error) throw new Error(error.message || 'Could not save the document.');
   return true;
 };
