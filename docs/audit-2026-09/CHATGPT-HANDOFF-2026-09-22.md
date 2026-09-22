@@ -25,25 +25,25 @@ Nothing of yours is missing from the repo except possibly doc text on those thre
 bl_audit_0352 reconcile report · 0353 relink · 0354 remove-candidates + edge `lc-doc-purge` (nothing deleted yet) · lc-doc-check v12
 (cleanup at source) · 0355 erasure inventory finds guest chat uploads + Storage prefix · 0356 upload freeze while a deletion request
 is open · 0357 session/refresh-token revoke on completed deletion · 0358 (22 Sep) dropped the blanket Storage policy
-`staff read documents` (F10 — every active staff could read every document; `doc_read` + `documents.view` now governs).
+`staff read documents` (F10) · 0359/0361/0362 (F25: FK indexes, RLS initplan, dup indexes) · 0360 anon drift fix · 0363 (F14: search_path
+pinned on every invoker function) · 0364 (deletion clears push/device/notification/preference/emergency-contact rows + chat contact data).
+Parity check 22 Sep: bl_audit_0352…0364 present on BOTH staging and prod; anon SECDEF names unchanged (staging 32 / prod 33).
 Tests: `tests/bl_audit_035x_rollback_test.sql`, `tests/lc_doc_purge_contract_test.mjs`, `tests/lc_doc_check_contract_test.mjs`.
 Rollbacks: `ROLLBACK-*-2026-09-20.sql`, `ROLLBACK-STORAGE-STAFF-2026-09-22.sql`. **Order rule:** your two erasure rollbacks
 (13/15 Sep) check OLD hashes of `capture_account_erasure_inventory` / `cc_account_deletion_process` — run Claude's 0355/0357
 rollbacks first if those are ever needed.
 
 ## 3. Finding-by-finding status (F01–F33) — what is still open
-CLOSED on prod: F01, F02, F05, F06 (RPC drift, 0322), F07, F08, F09, F10, F14 (both retell instances + lc key floors), F18,
+CLOSED on prod: F01, F02, F05, F06 (RPC drift, 0322), F07, F08, F09, F10, F14 (retell + lc key floors + search_path pins), F18, F25,
 F30, F31, F32, F33 (recorded), F34, F36, plus the erasure slices above.
 OPEN — needs a decision from Yaseen (do not guess): F04 (broker vs direct wording), F12 (5% fee wording vs agreement), F13 (marketing
 promises vs zero loads), F15 (leaked-password protection is a **Supabase dashboard toggle**: Auth → Providers → Email → "Prevent use
 of leaked passwords" — Yaseen must flip it; also set OTP expiry ≤ 1h), retention periods (`RETENTION-PROPOSAL-2026-09-20.md`),
 F17 (capacity).
-OPEN — technical, no decision needed, do these next (staging first, rollback-txn test, then prod):
+OPEN — technical (the DB ones are Claude's, the frontend/measurement ones are yours — see WORK-SPLIT):
 - F25: DONE 22 Sep by Claude (0359/0361/0362 on both envs). Re-run the performance advisor once and record the residual list.
 - Anon-surface rule for YOUR new functions: Postgres grants EXECUTE to PUBLIC by default — every new RPC needs an explicit
   `revoke all ... from public, anon` unless it is meant for guests (the SMS-consent lane tripped this on staging; fixed by 0360).
-- F14 remainder: 100 SECURITY INVOKER functions callable by `authenticated` with a mutable search_path — pin `set search_path`
-  only where the body uses unqualified names safely; do it in batches with a per-batch test, never blind.
 - Erasure: real Storage removal with per-file evidence (pattern = `lc-doc-purge`), blocked on retention decision; frozen-user UI
   message in the carrier Documents page and chat ("uploads paused while your deletion request is open"); deletion-flow browser
   check with a throwaway account (Yaseen logs in).
