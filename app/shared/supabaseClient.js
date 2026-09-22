@@ -26,6 +26,7 @@ function portalName() {
   if (p.indexOf('/app/partner/') === 0) return 'partner';
   if (p.indexOf('/app/carrier/') === 0) return 'carrier';
   if (p.indexOf('/app/command-center/') === 0) return 'command-center';
+  if (p.indexOf('/app/investor/') === 0) return 'investor';
   return 'site';
 }
 

@@ -37,6 +37,7 @@ import { renderTrips } from './views/trips.js';
 import { renderComms } from './views/comms.js';
 import { renderFinance } from './views/finance.js';
 import { renderFeeApprovals } from './views/feeApprovals.js';
+import { renderInvestors } from './views/investors.js';  // bl_inv_0401 investor capital desk
 import { renderFinanceAnalytics } from './views/financeAnalytics.js';
 import { renderSystemHealth } from './views/systemHealth.js';
 import { renderTemplates } from './views/templates.js';
@@ -273,6 +274,7 @@ async function boot() {
       { id: 'invoices', label: 'Invoices & settlements', path: '/finance', allowed: () => financeEnabled && can('finance.view'), render: (h, q) => renderFinance(h, q.get('id')) },
       { id: 'approvals', label: 'Fee approvals', path: '/fee-approvals', allowed: () => financeEnabled && can('finance.view'), render: (h) => renderFeeApprovals(h) },
       { id: 'analytics', label: 'Finance analytics', path: '/finance-analytics', allowed: () => financeEnabled && can('finance.view'), render: (h) => renderFinanceAnalytics(h) },
+      { id: 'investors', label: 'Investors', path: '/investors', allowed: () => can('finance.view'), render: (h) => renderInvestors(h) },
     ] },
     crm: { nav: '/crm', tabs: [
       { id: 'crm', label: 'CRM & outreach', path: '/crm', allowed: () => crmEnabled && can('crm.view'), render: (h) => renderCRM(h) },

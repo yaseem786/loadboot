@@ -1478,3 +1478,25 @@ export const emailTemplateNew = (p) => rpc('cc_email_template_new', p);
 // bl_comm_0398: the Live / Test / Off switch on one email
 export const emailMode = (key, mode, testTo, note) => rpc('cc_email_mode', { p_key: key, p_mode: mode, p_test_to: testTo || null, p_note: note || null });
 export const emailSends = (key, o = {}) => rpc('cc_email_sends', { p_key: key, p_status: o.status || null, p_q: o.q || null, p_limit: o.limit || 50, p_offset: o.offset || 0 });
+
+// ---- investor capital module (bl_inv_0401) ----
+// Investor side (portal). Read-only except declaring a payment / confirming a payout.
+export const invMe             = () => rpc('inv_me');
+export const invMyRequests     = (agreementId) => rpc('inv_my_requests', { p_agreement: agreementId });
+export const invDeclarePayment = (p) => rpc('inv_declare_payment', { p });
+export const invLedger         = (agreementId) => rpc('inv_ledger', { p_agreement: agreementId });
+export const invStatements     = (agreementId) => rpc('inv_statements', { p_agreement: agreementId });
+export const invConfirmPayout  = (payoutId) => rpc('inv_confirm_payout', { p_payout: payoutId });
+// Staff side (Command Center). finance.view to read, finance.manage to write.
+export const ccInvList           = () => rpc('cc_inv_list');
+export const ccInvSaveInvestor   = (p) => rpc('cc_inv_save_investor', { p });
+export const ccInvLinkUser       = (investorId, email) => rpc('cc_inv_link_user', { p_investor: investorId, p_email: email });
+export const ccInvSaveAgreement  = (p) => rpc('cc_inv_save_agreement', { p });
+export const ccInvRequest        = (p) => rpc('cc_inv_request', { p });
+export const ccInvConfirmReceipt = (p) => rpc('cc_inv_confirm_receipt', { p });
+export const ccInvReverseReceipt = (id, reason) => rpc('cc_inv_reverse_receipt', { p_receipt: id, p_reason: reason });
+export const ccInvExpense        = (p) => rpc('cc_inv_expense', { p });
+export const ccInvReverseExpense = (id, reason) => rpc('cc_inv_reverse_expense', { p_expense: id, p_reason: reason });
+export const ccInvPublishMonth   = (p) => rpc('cc_inv_publish_month', { p });
+export const ccInvPay            = (p) => rpc('cc_inv_pay', { p });
+export const ccInvDetail         = (agreementId) => rpc('cc_inv_detail', { p_agreement: agreementId });
