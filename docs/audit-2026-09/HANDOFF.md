@@ -121,8 +121,16 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    + documents.view existing; 4/4 and 6/6 rollback-txn tests incl. "a plain active staff sees zero real documents" and "the owner still
    reads a real one"; prod has 1 active staff = owner with documents.view via role → zero change for anyone). Rollback file written.
    Full per-finding status + the ChatGPT instruction sheet: `CHATGPT-HANDOFF-2026-09-22.md` (read it first).
-   Remaining gates: complete erasure (upload freeze, retention/removal
-   evidence, revocation — must list the Storage prefix, see design doc); F10 role/type decision; notification/edge parity;
+   F25 CLOSED 22 Sep (all staging then prod, dynamic migrations, zero fixtures): bl_audit_0359 FK indexes (staging 64 / prod 59
+   created, 0 unindexed FKs left, ~2 MB of tables so plain CREATE INDEX); bl_audit_0361 RLS initplan rewrite auth.uid() ->
+   (select auth.uid()) (staging 18 / prod 21 policies re-created from their own catalog text; rehearsed in a rollback txn on BOTH
+   envs first: policy count unchanged, own-doc visible, others hidden, owner still reads Storage + documents); bl_audit_0362
+   duplicate indexes dropped (3 on prod, constraint-backed one kept). Rollbacks: ROLLBACK-FK-INDEXES / ROLLBACK-RLS-INITPLAN-2026-09-22.sql.
+   Anon-surface DRIFT caught: the SMS-consent lane (staging only) created 6 functions with default EXECUTE-to-PUBLIC (staging anon
+   SECDEF 32 -> 38); every body refuses when auth.uid() is null, so not exploitable; bl_audit_0360 revoked PUBLIC+anon (no-op on prod,
+   where they do not exist yet) -> staging back to 32 / 6a7bd230…, prod 33 / 8736b2d7…. When that lane reaches prod, 0360 must go with it.
+   Remaining gates: complete erasure (retention decision + real removal with evidence, frozen-user UI message, deletion-flow browser
+   check; freeze/revocation/prefix DONE 20 Sep); F10 DONE; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
 
 ## LOG  (append one line per turn; newest last)
@@ -196,3 +204,4 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-20 — Claude:** Erasure gate slice: bl_audit_0355 on staging then prod — erasure inventory now finds guest chat uploads by typed email / visitor_key and lists the whole lc-onboarding/<key>/ Storage prefix (orphans included). 9/9 on both envs, identical body md5 3e252812…, byte-exact rollback rehearsed, anon names unchanged. Gate remains open (upload freeze, real removal, session revocation, UI). No push, no messages, nothing deleted.
 - **2026-09-20 — Claude:** Erasure gate: bl_audit_0356 upload freeze (13/13) and bl_audit_0357 session revoke on completion (7/7) applied staging then prod, bodies identical across envs, anon names unchanged, zero fixtures; rollbacks written; retention PROPOSAL written (no removal). Gate still open: real removal + retention decision, deletion-flow browser check, frozen-user UI message. No push, no messages, no real account touched.
 - **2026-09-22 — Claude:** Re-sync: all 19–20 Sep audit commits are on origin/main (pushed by Yaseen); working tree is on another lane's branch, so audit files are committed to main via plumbing without touching that tree. F10 closed (0358, both envs). Wrote CHATGPT-HANDOFF-2026-09-22.md: Codex's work is on main/prod except 0342/0343 (staging-only by their own header) and three unmerged 6-Sep doc branches. No push, no messages, nothing deleted.
+- **2026-09-22 — Claude:** F25 closed on both envs (0359 FK indexes, 0361 RLS initplan, 0362 dup indexes); anon drift from the SMS lane fixed on staging (0360). All committed to main via plumbing (working tree belongs to another lane). No push, no messages, nothing deleted.

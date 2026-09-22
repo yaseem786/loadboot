@@ -39,9 +39,9 @@ promises vs zero loads), F15 (leaked-password protection is a **Supabase dashboa
 of leaked passwords" — Yaseen must flip it; also set OTP expiry ≤ 1h), retention periods (`RETENTION-PROPOSAL-2026-09-20.md`),
 F17 (capacity).
 OPEN — technical, no decision needed, do these next (staging first, rollback-txn test, then prod):
-- F25 unindexed foreign keys (53 prod / 58 staging) — additive `create index concurrently` per FK, one statement each (cannot be
-  wrapped in a txn); verify with the performance advisor after.
-- F25 auth RLS initplans (wrap `auth.uid()` as `(select auth.uid())` in the 15/12 flagged policies) + drop the 2/3 duplicate indexes.
+- F25: DONE 22 Sep by Claude (0359/0361/0362 on both envs). Re-run the performance advisor once and record the residual list.
+- Anon-surface rule for YOUR new functions: Postgres grants EXECUTE to PUBLIC by default — every new RPC needs an explicit
+  `revoke all ... from public, anon` unless it is meant for guests (the SMS-consent lane tripped this on staging; fixed by 0360).
 - F14 remainder: 100 SECURITY INVOKER functions callable by `authenticated` with a mutable search_path — pin `set search_path`
   only where the body uses unqualified names safely; do it in batches with a per-batch test, never blind.
 - Erasure: real Storage removal with per-file evidence (pattern = `lc-doc-purge`), blocked on retention decision; frozen-user UI
