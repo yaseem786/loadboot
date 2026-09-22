@@ -154,9 +154,10 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    default, ≤25/call, no caller paths) deletes decided objects via the Storage API and writes evidence (`erasure_removal_mark`,
    service-only), and the processor completes only when undecided=0 and pending_removal=0, recording files_removed/files_held.
    Tests: 12/12 DB workflow on staging (rollback txn), edge contract 22/22, live anon → 403 with zero rows written, anon names
-   unchanged (32). Rollback rehearsed byte-exact (gate). **PROD NOT APPLIED — needs Yaseen's retention decision (the class names
-   staff will type are his), then "apply to prod".** No CC screen calls these yet (ChatGPT lane, after prod). Processor md5 now
-   2adb39bb… on staging vs 1fb9c012… on prod — expected until promotion.
+   unchanged (32). Rollback rehearsed byte-exact (gate). **RETENTION APPROVED by Yaseen 22 Sep → bl_audit_0366 (six classes table, class validation, per-item SUGGESTION from live
+   paid/hauled facts; 7/7 on staging) and 0365 + edge erasure-purge PROMOTED TO PROD the same day: prod workflow test 13/13 in a
+   rollback txn, 0 fixtures, 0 decision rows, anon names unchanged (33), processor md5 2adb39bb… identical on both envs, erasure-purge
+   prod slot 1 ezbr 460c3994…. No CC screen calls these yet (ChatGPT lane).**
    Remaining gates: complete erasure (retention decision + real removal with evidence, frozen-user UI message, deletion-flow browser
    check; freeze/revocation/prefix DONE 20 Sep); F10 DONE; notification/edge parity;
    Retell real-signature proof; password/recovery/legal. SEO/F33/WhatsApp stay outside this lane. Outreach stays enabled.
@@ -236,3 +237,4 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
 - **2026-09-22 — Claude:** F14 closed on both envs (0363 search_path pin, before/after error profile identical on prod). Work split written (WORK-SPLIT-2026-09-22.md) with the ChatGPT prompt. Prod now: anon SECDEF 33 unchanged, mutable search_path 0/0, unindexed FKs 0, dup indexes 0. No push, no messages, nothing deleted.
 - **2026-09-22 — Claude:** bl_audit_0364 on staging+prod (deletion now clears push/device/notification/preference/emergency-contact rows and chat contact data; 8/8 both envs; rollback byte-exact). ChatGPT reported it cannot see WORK-SPLIT / CHATGPT-HANDOFF: they are on Yaseen's LOCAL main only (8 commits ahead of origin) — Yaseen must push. No push from here, no messages, nothing deleted.
 - **2026-09-22 — Claude:** Built the erasure removal workflow on STAGING only (bl_audit_0365 decisions table + 4 RPCs + processor gate patch, edge erasure-purge v1): 12/12 DB, 22/22 edge contract, live anon 403, rollback rehearsed. Prod untouched — waits for Yaseen's retention decision. No push, no messages, nothing deleted.
+- **2026-09-22 — Claude:** Yaseen approved the retention table → bl_audit_0366 built (staging 7/7), then 0365 + 0366 + edge erasure-purge applied to PROD (13/13 rollback-txn workflow test, zero residue, anon unchanged). The erasure gate's DB/edge side is now complete; remaining for that gate: CC review screen (ChatGPT), deletion-flow browser check (needs a throwaway login). No push, no messages, nothing deleted.

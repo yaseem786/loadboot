@@ -1,6 +1,6 @@
 # Retention proposal for account erasure — 20 Sep 2026 (Claude) — PROPOSAL ONLY, nothing is deleted by this document
 
-Status: **NOT approved, NOT implemented.** Claude is not a lawyer; the periods below are the commonly cited US figures and must be
+Status: **APPROVED by Yaseen 22 Sep 2026 ("apni suggestion implement karo") and IMPLEMENTED as bl_audit_0365 + 0366 on staging AND prod.** Original text kept below for the record. Claude is not a lawyer; the periods below are the commonly cited US figures and must be
 confirmed by Yaseen (ideally with a US accountant/attorney) before any removal code is written. Until then an erasure request that
 has files stays at `ERASURE_REVIEW_REQUIRED` and a human decides case by case — that is the safe default and it is live today.
 
@@ -21,3 +21,9 @@ Implementation sketch once approved (separate package, staging first): a `retent
 set by staff in the review screen; removal runs only for items whose class says delete-now, through the Storage API, logged per file
 (same pattern as lc-doc-purge: dry-run default, DB decides, cap per call); a request completes only when every item is either
 removed (with evidence) or held with a class + date.
+
+## Implementation record (22 Sep 2026)
+- `app_private.retention_classes` holds the six classes (A_money 7y, B_tax 4y after last 1099 year, C_qualification 3y after last load, D_unused, E_marketing, F_audit_log 2y); `cc_retention_classes()` lists them to staff.
+- `cc_erasure_items(request_id)` shows every inventory item with its decision AND an advisory suggestion computed from live facts: ever paid (fin_settlements paid / settlements paid_at on orgs the user owns), last delivered load (trips delivered/invoiced). Never paid + never hauled ⇒ D_unused/remove; paid ⇒ W-9 held as B_tax; hauled ⇒ COI/authority/agreement held as C_qualification; money docs ⇒ A_money.
+- `cc_erasure_decide` validates the class; `erasure-purge` (edge, both envs) deletes decided objects with evidence; the processor completes only when nothing is undecided or pending.
+- Decisions Yaseen has NOT made yet (defaults in force): "hauled" = trip status delivered/invoiced; hold approvers = staff with carriers.approve or finance.approve; the confirmation email to the user is not automated (Yaseen sends it).
