@@ -12,19 +12,31 @@
 // export, and honest screens for the situations that happen: commitment closed
 // early, agreement wound down, month with no profit, rejected payment.
 import { getSession, signInWithPassword, signOut, onAuthChange, resetPassword,
-         mfaRequired, mfaVerify, mfaListFactors, mfaEnrollTotp } from '../shared/session.js';
+         mfaVerify, mfaListFactors, mfaEnrollTotp, mfaEnrollPhone, mfaChallenge, mfaVerifyChallenge, mfaRequiredAny } from '../shared/session.js';
 import { el, mount } from '../shared/ui/dom.js';
 import { invMe, invMyRequests, invDeclarePayment, invLedger, invStatements, invConfirmPayout,
-         invSetLang, invFlag, invMyFlags } from '../shared/api.js';
+         invSetLang, invFlag, invMyFlags, invSettings, invCurrentDoc, invSignDoc, invGrowth, invProjection,
+         invUploadProof, invProofUrl } from '../shared/api.js';
+import { mdToHtml } from './agreement-template.js';
 import { t, setLang, getLang, LANGS } from './i18n.js';
 
 const root = document.getElementById('lb-app');
-const S = { me: null, agreements: [], agr: null, tab: 'home', ledger: null, requests: null, statements: null, flags: null };
+const S = { me: null, agreements: [], agr: null, tab: 'home', ledger: null, requests: null, statements: null, flags: null, settings: null, growth: null, proj: null, doc: null };
 
 // ---------- formatting (PKR uses lakh/crore grouping) ----------
 const nfIN = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
 const nfIN2 = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const money = (n, cur) => (cur || (S.agr && S.agr.currency) || 'PKR') + ' ' + (Number(n || 0) % 1 ? nfIN2 : nfIN).format(Number(n || 0));
+function usdLine(n) {
+  const fx = S.settings && S.settings.fx; if (!fx || !Number(fx.pkr_per_usd) || (S.agr && S.agr.currency !== 'PKR')) return null;
+  return el('span', { class: 'iv-usd' }, '≈ USD ' + Number(Number(n || 0) / Number(fx.pkr_per_usd)).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' · ' + t('usd_hint', fx.pkr_per_usd, fx.as_of || ''));
+}
+async function proofLink(ref, label) {
+  if (!ref) return null;
+  const a = el('a', { class: 'iv-btn block', href: '#', target: '_blank', rel: 'noopener' }, label);
+  a.onclick = async (e) => { e.preventDefault(); try { const u = await invProofUrl(ref); window.open(u, '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } };
+  return a;
+}
 const pct = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%';
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('none');
 const fmtMonth = (d) => d ? new Date(d).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : t('none');
@@ -89,11 +101,10 @@ function skeleton() {
   ]);
 }
 function langSwitch() {
-  return el('div', { class: 'iv-lang', role: 'group', 'aria-label': t('language') }, LANGS.map(([code, label]) =>
-    el('button', { class: code === getLang() ? 'on' : '', type: 'button', 'aria-pressed': code === getLang() ? 'true' : 'false', onClick: async () => {
-      setLang(code); try { localStorage.setItem('lb-inv-lang', code); } catch (_) {}
-      if (S.me) { try { await invSetLang(code); } catch (_) {} renderShell(); } else renderLogin();
-    } }, label)));
+  return el('select', { class: 'iv-select', id: 'iv-lang', 'aria-label': t('sel_lang'), title: t('sel_lang'), onChange: async (e) => {
+    const code = e.target.value; setLang(code); try { localStorage.setItem('lb-inv-lang', code); } catch (_) {}
+    if (S.me) { try { await invSetLang(code); } catch (_) {} renderShell(); } else renderLogin();
+  } }, LANGS.map(([code, label]) => el('option', { value: code, selected: code === getLang() }, label)));
 }
 
 // ---------- login + 2FA ----------
@@ -127,19 +138,21 @@ function renderLogin(msg) {
     el('p', { class: 'iv-muted', style: 'margin:12px 0 0;text-align:center' }, t('lg_private')),
   ]));
 }
-function renderMfaGate(factorId) {
+function renderMfaGate(factor) {
+  const factorId = factor.id; let challengeId = null;
   const code = inp('iv-otp', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 6, pattern: '[0-9]{6}', required: true, placeholder: '000000', style: 'letter-spacing:.3em;font-size:1.3rem;text-align:center' });
   const note = el('div'); const btn = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('sec_verify'));
   loginFrame(el('form', { onSubmit: async (e) => {
     e.preventDefault(); btn.disabled = true; mount(note, '');
-    try { await mfaVerify(factorId, code.value); await refresh(); }
+    try { if (factor.type === 'phone') await mfaVerifyChallenge(factorId, challengeId, code.value); else await mfaVerify(factorId, code.value); await refresh(); }
     catch (ex) { mount(note, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; }
   } }, [
-    el('h3', { style: 'margin:0 0 4px' }, t('sec_gate_t')), el('p', { class: 'iv-muted' }, t('sec_gate_s')),
+    el('h3', { style: 'margin:0 0 4px' }, t('sec_gate_t')), el('p', { class: 'iv-muted' }, factor.type === 'phone' ? t('sec_phone_s') : t('sec_gate_s')),
     note, field(t('sec_code'), code), btn,
     el('div', { class: 'iv-actions', style: 'justify-content:center' }, el('button', { class: 'iv-btn sm', type: 'button', onClick: async () => { await signOut(); renderLogin(); } }, t('sign_out'))),
   ]));
   setTimeout(() => code.focus(), 50);
+  if (factor.type === 'phone') mfaChallenge(factorId).then(c => { challengeId = c.id; }).catch(ex => mount(note, el('div', { class: 'iv-err' }, err(ex))));
 }
 function renderNotLinked() {
   loginFrame(el('div', null, [
@@ -196,7 +209,7 @@ function renderHome(host) {
     stateBanner(p),
     el('div', { class: 'iv-card hero' }, [
       el('p', { class: 'iv-eyebrow' }, t('h_funded')),
-      el('div', { class: 'iv-big' }, [money(p.funded), el('small', null, t('of') + ' ' + money(p.commitment_cap))]),
+      el('div', { class: 'iv-big' }, [money(p.funded), el('small', null, t('of') + ' ' + money(p.commitment_cap))]), usdLine(p.funded),
       el('div', { class: 'iv-prog' }, [
         el('div', { class: 'row' }, [el('span', null, t('h_commit_used')), el('b', null, pct(p.funded_pct))]),
         el('div', { class: 'bar' }, el('i', { style: 'width:' + Math.min(100, Number(p.funded_pct || 0)) + '%' })),
@@ -225,6 +238,7 @@ function renderHome(host) {
       recovering ? el('p', { class: 'iv-muted', style: 'margin:10px 0 0' }, t('h_note_recovering', pct(p.payback_rate_pct), pct(p.effective_share_pct))) : null,
     ]),
     open.length ? el('div', { class: 'iv-open' }, [el('b', null, t('h_open')), el('ul', null, open.map(q => el('li', null, t('oq_' + q, pct(p.permanent_share_pct)))))]) : null,
+    projectionCard(), growthCard(),
     el('button', { class: 'iv-row', onClick: () => showAgreement() }, [
       el('div', { class: 'ic' }, icon('doc')),
       el('div', null, [el('div', { class: 't' }, t('h_agreement')), el('div', { class: 's' }, S.agr.signed_date ? t('h_signed', fmtDate(S.agr.signed_date)) : t('h_draft'))]),
@@ -237,10 +251,11 @@ function renderHome(host) {
     ]),
     el('div', { class: 'iv-actions', style: 'justify-content:center;margin-top:20px' }, el('button', { class: 'iv-btn sm', onClick: async () => { await signOut(); renderLogin(); } }, t('sign_out'))),
   ]);
-  mfaListFactors().then(f => { const on = (f.totp || []).some(x => x.status === 'verified'); const s = document.getElementById('iv-sec-sub'); if (s) s.textContent = on ? t('sec_on') : t('sec_off'); }).catch(() => {});
+  mfaListFactors().then(f => { const on = (f.all || []).concat(f.totp || [], f.phone || []).some(x => x.status === 'verified'); const s = document.getElementById('iv-sec-sub'); if (s) s.textContent = on ? t('sec_on') : t('sec_off'); }).catch(() => {});
 }
 
-function showAgreement() {
+function showAgreement() { return agreementV3(); }
+function showTermsSummary() {
   const a = S.agr, p = a.position || {};
   const row = (k, v) => [k, v || t('h_undecided')];
   openSheet(t('h_agreement'), el('div', null, [
@@ -264,30 +279,8 @@ function showAgreement() {
   ]));
 }
 
-// ---------- security (2FA enrollment) ----------
-async function showSecurity() {
-  const body = el('div', null, el('div', { class: 'iv-empty' }, t('loading')));
-  const close = openSheet(t('sec_title'), body);
-  let f; try { f = await mfaListFactors(); } catch (e) { mount(body, el('div', { class: 'iv-err' }, err(e))); return; }
-  const on = (f.totp || []).some(x => x.status === 'verified');
-  if (on) { mount(body, [el('div', { class: 'iv-ok' }, t('sec_on')), el('p', { class: 'iv-muted' }, t('sec_why'))]); return; }
-  const start = el('button', { class: 'iv-btn primary block', onClick: async () => {
-    start.disabled = true;
-    let en; try { en = await mfaEnrollTotp(); } catch (e) { mount(body, el('div', { class: 'iv-err' }, err(e))); return; }
-    const qr = el('div', { class: 'iv-qr' }); qr.innerHTML = (en.totp && en.totp.qr_code) || '';
-    const code = inp('iv-otp2', { type: 'text', inputmode: 'numeric', maxlength: 6, pattern: '[0-9]{6}', required: true, placeholder: '000000', style: 'letter-spacing:.3em;text-align:center;font-size:1.2rem' });
-    const msg = el('div'); const v = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('sec_verify'));
-    mount(body, el('form', { onSubmit: async (e) => { e.preventDefault(); v.disabled = true;
-      try { await mfaVerify(en.id, code.value); mount(body, el('div', { class: 'iv-ok' }, t('sec_done'))); renderShell(); setTimeout(close, 900); }
-      catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); v.disabled = false; } } }, [
-      el('p', { class: 'iv-muted' }, t('sec_scan')), qr,
-      en.totp && en.totp.secret ? el('p', { class: 'iv-muted', style: 'word-break:break-all;font-family:monospace' }, en.totp.secret) : null,
-      msg, field(t('sec_code'), code), v,
-    ]));
-  } }, t('sec_enable'));
-  mount(body, [el('div', { class: 'iv-banner stop' }, [icon('alert'), el('span', null, t('sec_off'))]), el('p', { class: 'iv-muted' }, t('sec_why')), start,
-    el('div', { class: 'iv-actions', style: 'justify-content:center' }, el('button', { class: 'iv-btn sm', onClick: close }, t('sec_skip')))]);
-}
+// ---------- security (2FA enrollment) — see securityV3 below ----------
+async function showSecurity() { return securityV3(); }
 
 // ---------- flags (question an entry) ----------
 function flagButton(kind, refId) {
@@ -336,6 +329,7 @@ function openRequest(r) {
   let close;
   close = openSheet(t('r_request') + ' #' + r.seq, el('div', null, [
     dl([[t('amount'), money(r.amount)], [t('r_for'), r.reason], [t('r_category'), catName(r.category)], [t('r_needed_by'), fmtDate(r.needed_by)], [t('r_raised'), fmtDate(r.requested_at)], [t('r_funded_so_far'), money(r.funded)]]),
+    r.status === 'pending' ? payTo() : null,
     r.status === 'pending' ? el('button', { class: 'iv-btn primary block', onClick: () => { close(); declareForm(r); } }, t('r_mark_paid')) : null,
     r.status === 'declared' ? el('div', { class: 'iv-ok' }, t('r_declared')) : null,
     flagButton('other', r.id),
@@ -348,19 +342,27 @@ function declareForm(r) {
   const method = el('select', { id: 'iv-method', name: 'iv-method' }, ['bank', 'easypaisa', 'jazzcash', 'cash', 'other'].map(m => el('option', { value: m }, m.charAt(0).toUpperCase() + m.slice(1))));
   const ref = inp('iv-ref', { type: 'text', placeholder: 'TXN-…' });
   const proof = inp('iv-proof', { type: 'url', placeholder: 'https://…' });
+  const file = el('input', { type: 'file', id: 'iv-file', accept: 'image/jpeg,image/png,image/webp,application/pdf' });
+  const drop = el('label', { class: 'iv-drop', for: 'iv-file' }, [file, el('span', null, t('up_drop'))]);
+  file.onchange = () => { const f = file.files && file.files[0]; drop.classList.toggle('has', !!f); drop.lastChild.textContent = f ? t('up_has', f.name) : t('up_drop'); };
   const note = el('textarea', { id: 'iv-note', name: 'iv-note', rows: 2 });
   const msg = el('div'); const btn = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('d_btn'));
   close = openSheet(r ? t('d_title', r.seq) : t('d_title_free'), el('form', { onSubmit: async (e) => {
     e.preventDefault(); btn.disabled = true; mount(msg, '');
     try {
-      await invDeclarePayment({ agreement_id: S.agr.id, request_id: r ? r.id : null, amount: amount.value, received_date: date.value, method: method.value, reference: ref.value, proof_url: proof.value, note: note.value });
+      let proofRef = proof.value;
+      const f = file.files && file.files[0];
+      if (f) { if (f.size > 10 * 1024 * 1024) throw new Error('File is larger than 10 MB'); btn.textContent = '…'; proofRef = await invUploadProof(S.agr.id, f); }
+      await invDeclarePayment({ agreement_id: S.agr.id, request_id: r ? r.id : null, amount: amount.value, received_date: date.value, method: method.value, reference: ref.value, proof_url: proofRef, note: note.value });
       mount(msg, el('div', { class: 'iv-ok' }, t('d_ok'))); btn.textContent = t('done'); S.requests = S.ledger = null;
       setTimeout(() => { close(); refresh(); }, 900);
     } catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; }
   } }, [
     msg, el('p', { class: 'iv-muted' }, r ? ('#' + r.seq + ' · ' + r.reason) : t('d_free')),
+    r ? null : payTo(),
     field(t('amount'), amount), field(t('d_sent'), date), field(t('method'), method), field(t('reference'), ref),
-    field(t('proof'), proof, t('d_proof_hint')), field(t('note'), note), btn,
+    el('div', { class: 'iv-field' }, [el('label', null, t('proof')), drop, el('span', { class: 'hint' }, t('up_hint'))]),
+    field(t('up_or'), proof, t('d_proof_hint')), field(t('note'), note), btn,
     el('p', { class: 'iv-muted' }, t('d_two')),
   ]));
 }
@@ -385,7 +387,7 @@ async function renderLedger(host) {
   const expSheet = (x) => openSheet(catName(x.category), el('div', null, [
     dl([[t('amount'), money(x.amount)], [t('date'), fmtDate(x.date)], [t('l_vendor'), x.vendor], [t('l_details'), x.description],
         [t('l_paid_from'), x.tranche ? t('l_tranche', fmtDate(x.tranche)) : null], [t('l_recurring'), x.recurring ? t('l_yes') : t('l_no')]]),
-    x.receipt_url ? el('a', { class: 'iv-btn block', href: x.receipt_url, target: '_blank', rel: 'noopener' }, t('view') + ' ' + t('receipt')) : el('p', { class: 'iv-muted' }, t('l_no_receipt')),
+    x.receipt_url ? el('a', { class: 'iv-btn block', href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(x.receipt_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view') + ' ' + t('receipt')) : el('p', { class: 'iv-muted' }, t('l_no_receipt')),
     flagButton('expense', x.id),
   ]));
   mount(host, [
@@ -415,7 +417,7 @@ async function renderPayments(host) {
     dl([[t('amount'), money(r.amount)], [t('date'), fmtDate(r.received_date)], [t('method'), r.method], [t('reference'), r.reference],
         [t('p_you_declared'), r.declared_at ? fmtDate(r.declared_at) : null], [t('p_lb_confirmed'), r.confirmed_at ? fmtDate(r.confirmed_at) : t('not_yet')],
         r.rejected_reason ? [t('p_rejected_why'), r.rejected_reason] : [t('note'), r.note],
-        [t('proof'), r.proof_url ? el('a', { href: r.proof_url, target: '_blank', rel: 'noopener' }, t('view')) : null]]),
+        [t('proof'), r.proof_url ? el('a', { href: '#', onClick: async (e) => { e.preventDefault(); try { window.open(await invProofUrl(r.proof_url), '_blank', 'noopener'); } catch (ex) { alert(err(ex)); } } }, t('view')) : null]]),
     flagButton('receipt', r.id),
   ]));
   mount(host, [
@@ -477,15 +479,17 @@ async function renderStatements(host) {
 // ---------- boot ----------
 async function refresh() {
   try {
-    const gate = await mfaRequired(); if (gate) { renderMfaGate(gate); return; }
+    const gate = await mfaRequiredAny(); if (gate) { renderMfaGate(gate); return; }
     const me = await invMe();
     if (!me || me.ok === false) { renderNotLinked(); return; }
     S.me = me.investor; S.agreements = me.agreements || [];
+    try { localStorage.setItem('lb_last_portal', '/app/investor/'); } catch (_) {}
     if (!S.agreements.length) { renderNotLinked(); return; }
     let saved = null; try { saved = localStorage.getItem('lb-inv-lang'); } catch (_) {}
     setLang(saved || S.me.lang || 'en');
     S.agr = S.agreements.find(a => S.agr && a.id === S.agr.id) || S.agreements[0];
     if (!S.requests) { try { S.requests = (await invMyRequests(S.agr.id)).requests || []; } catch (_) { S.requests = []; } }
+    if (!S.settings) { try { S.settings = await invSettings(); } catch (_) { S.settings = {}; } }
     renderShell();
   } catch (e) { renderLogin(err(e)); }
 }
@@ -498,3 +502,210 @@ async function boot() {
 }
 onAuthChange((ev) => { if (ev === 'SIGNED_OUT') renderLogin(); });
 boot();
+
+// ============================================================================
+// v3 — payment instructions, projection, growth, security (app + SMS), e-sign
+// ============================================================================
+function copyBtn(text) {
+  const b = el('button', { class: 'copy', type: 'button' }, t('pay_copy'));
+  b.onclick = async () => { try { await navigator.clipboard.writeText(String(text)); b.textContent = t('pay_copied'); setTimeout(() => { b.textContent = t('pay_copy'); }, 1500); } catch (_) {} };
+  return b;
+}
+const PAY_KEYS = [['bank_name', 'Bank'], ['account_title', 'Title'], ['account_number', 'Account #'], ['iban', 'IBAN'], ['branch', 'Branch'], ['easypaisa', 'Easypaisa'], ['jazzcash', 'JazzCash']];
+function payTo() {
+  const pi = S.settings && S.settings.payment_instructions;
+  const has = pi && Object.values(pi).some(v => v && String(v).trim());
+  if (!has) return el('div', { class: 'iv-pay' }, el('p', { class: 'iv-muted', style: 'margin:0' }, t('pay_none')));
+  const pairs = [];
+  PAY_KEYS.forEach(([k, label]) => { if (pi[k]) pairs.push([label, el('b', null, [String(pi[k]), copyBtn(pi[k])])]); });
+  Object.keys(pi).forEach(k => { if (!PAY_KEYS.some(([kk]) => kk === k) && k !== 'note' && pi[k]) pairs.push([k, el('b', null, [String(pi[k]), copyBtn(pi[k])])]); });
+  return el('div', { class: 'iv-pay' }, [
+    el('p', { class: 'iv-eyebrow', style: 'margin:0' }, t('pay_to')), dl(pairs),
+    pi.note ? el('p', { class: 'iv-muted', style: 'margin:8px 0 0' }, pi.note) : null,
+  ]);
+}
+
+function projectionCard() {
+  const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('proj')), el('div', { class: 'iv-sk', style: 'height:14px;width:60%' })]);
+  const p = S.agr.position || {};
+  const paint = (pr) => {
+    const f = pr.forecast || {};
+    const monthsTo = pr.months_to_recovery;
+    const firstMonth = f.first_payout_month ? fmtMonth(f.first_payout_month) : null;
+    const rows = [];
+    if (pr.source === 'actual') {
+      rows.push(kv(t('proj_avg'), money(pr.avg_monthly_profit)), kv(t('proj_pay'), money(pr.est_monthly_payback)), kv(t('proj_share'), money(pr.est_monthly_share)));
+      if (monthsTo != null && p.phase === 'recovering') rows.push(kv(t('proj_months'), String(monthsTo)));
+    } else if (f.expected_monthly_profit) {
+      rows.push(kv(t('proj_avg'), money(f.expected_monthly_profit)), kv(t('proj_pay'), money(pr.est_monthly_payback)));
+      if (monthsTo != null && p.phase === 'recovering') rows.push(kv(t('proj_months'), String(monthsTo)));
+    }
+    if (firstMonth) rows.push(kv(t('proj_first'), firstMonth, 'ok'));
+    mount(box, [
+      el('p', { class: 'iv-eyebrow' }, t('proj')),
+      rows.length ? el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, pr.source === 'actual' ? t('proj_actual', pr.months_used) : t('proj_owner')) : null,
+      rows.length ? el('div', { class: 'iv-kv' }, rows) : el('p', { class: 'iv-muted', style: 'margin:0' }, t('proj_none')),
+      f.note ? el('p', { class: 'iv-muted', style: 'margin:8px 0 0' }, f.note) : null,
+      rows.length ? el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.75rem' }, t('proj_note')) : null,
+    ]);
+  };
+  const load = S.proj && S.proj.agr === S.agr.id ? Promise.resolve(S.proj.data) : invProjection(S.agr.id).then(d => { S.proj = { agr: S.agr.id, data: d }; return d; });
+  load.then(paint).catch(ex => mount(box, [el('p', { class: 'iv-eyebrow' }, t('proj')), el('p', { class: 'iv-muted' }, err(ex))]));
+  return box;
+}
+
+function growthCard() {
+  const box = el('div', { class: 'iv-card' }, [el('p', { class: 'iv-eyebrow' }, t('growth')), el('div', { class: 'iv-sk', style: 'height:14px;width:70%' })]);
+  const tile = (n, l) => el('div', null, [el('div', { class: 'n' }, String(Number(n || 0).toLocaleString('en-US'))), el('div', { class: 'l' }, l)]);
+  const bars = (series, label) => {
+    if (!series || !series.length) return null;
+    const max = Math.max(1, ...series.map(s => Number(s.n || 0)));
+    return el('div', { class: 'iv-bars-wrap' }, [
+      el('p', { class: 'iv-muted', style: 'margin:12px 0 0;font-size:.78rem' }, label),
+      el('div', { class: 'iv-bars' }, series.map(s => el('div', { style: 'height:' + Math.max(5, Math.round(100 * Number(s.n || 0) / max)) + '%', title: s.n }, el('span', null, new Date(s.month).toLocaleDateString('en-GB', { month: 'short' }))))),
+    ]);
+  };
+  const paint = (g) => mount(box, [
+    el('p', { class: 'iv-eyebrow' }, t('growth')), el('p', { class: 'iv-muted', style: 'margin:0' }, t('growth_sub')),
+    el('div', { class: 'iv-growth' }, [
+      tile(g.carriers_total, t('g_carriers')), tile(g.carriers_active, t('g_active')), tile(g.carriers_in_review, t('g_review')),
+      tile(g.trucks_active, t('g_trucks')), tile(g.dispatcher_assignments_active, t('g_assigned')), tile(g.brokers_total, t('g_brokers')),
+      tile(g.loads_booked, t('g_loads')), tile(g.trips_delivered, t('g_delivered')), tile(g.trips_delivered_30d, t('g_del30')),
+    ]),
+    el('div', { class: 'iv-kv', style: 'margin-top:10px' }, [kv(t('g_fees'), money(g.fees_collected_total, 'USD')), kv(t('g_fees30'), money(g.fees_collected_30d, 'USD'))]),
+    bars(g.carriers_by_month, t('g_new_carriers')),
+    el('p', { class: 'iv-muted', style: 'margin:10px 0 0;font-size:.72rem' }, t('g_as_of') + ' ' + new Date(g.as_of).toLocaleString('en-GB')),
+  ]);
+  (S.growth ? Promise.resolve(S.growth) : invGrowth().then(g => { S.growth = g; return g; })).then(paint)
+    .catch(ex => mount(box, [el('p', { class: 'iv-eyebrow' }, t('growth')), el('p', { class: 'iv-muted' }, err(ex))]));
+  return box;
+}
+
+// ---------- security: authenticator app (guided) or phone SMS ----------
+async function securityV3() {
+  let f = { totp: [], phone: [] }; try { f = await mfaListFactors(); } catch (_) {}
+  const all = (f.all || []).concat(f.totp || [], f.phone || []);
+  const on = all.filter(x => x.status === 'verified');
+  const body = el('div');
+  const close = openSheet(t('sec_title'), body);
+  const done = () => { mount(body, [el('div', { class: 'iv-ok' }, t('sec_done')), el('button', { class: 'iv-btn primary block', onClick: () => { close(); renderShell(); } }, t('done'))]); };
+  const codeField = () => inp('iv-otp2', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 6, pattern: '[0-9]{6}', required: true, placeholder: '000000', style: 'letter-spacing:.3em;font-size:1.3rem;text-align:center' });
+
+  const chooser = () => mount(body, [
+    el('p', { class: 'iv-muted' }, t('sec_why')),
+    on.length ? el('div', { class: 'iv-ok' }, t('sec_on') + ' · ' + on.map(x => (x.factor_type || x.type) === 'phone' ? t('sec_phone') : t('sec_app')).join(', ')) : el('div', { class: 'iv-warn' }, t('sec_off')),
+    el('p', { class: 'iv-eyebrow', style: 'margin:14px 0 0' }, t('sec_choose')),
+    el('div', { class: 'iv-choice' }, [
+      el('button', { type: 'button', onClick: appFlow }, [icon('shield'), t('sec_app'), el('small', null, t('sec_app_s'))]),
+      el('button', { type: 'button', onClick: phoneFlow }, [icon('shield'), t('sec_phone'), el('small', null, t('sec_phone_s'))]),
+    ]),
+    el('p', { class: 'iv-muted', style: 'font-size:.78rem' }, t('sec_recover')),
+    el('div', { class: 'iv-actions' }, el('button', { class: 'iv-btn sm', onClick: () => close() }, t('sec_skip'))),
+  ]);
+
+  async function appFlow() {
+    mount(body, skeleton());
+    let en; try { en = await mfaEnrollTotp(); } catch (ex) { mount(body, [el('div', { class: 'iv-err' }, err(ex)), el('button', { class: 'iv-btn sm', onClick: chooser }, '‹')]); return; }
+    const code = codeField(); const msg = el('div'); const btn = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('sec_verify'));
+    const guide = el('div', { class: 'iv-guide' }, ['sec_g1', 'sec_g2', 'sec_g3', 'sec_g4', 'sec_g5'].map(k => { const d = el('div'); d.innerHTML = '<span>' + t(k) + '</span>'; return d; }));
+    const qr = el('div', { class: 'iv-qr' }, el('img', { src: en.totp.qr_code, alt: 'QR', width: 200, height: 200 }));
+    const secret = el('div', { class: 'iv-pay' }, [el('span', { class: 'iv-muted', style: 'font-size:.75rem' }, 'Secret (manual entry)'), el('b', { style: 'display:block;word-break:break-all;font-family:monospace;font-size:.85rem' }, [en.totp.secret, copyBtn(en.totp.secret)])]);
+    mount(body, el('form', { onSubmit: async (e) => { e.preventDefault(); btn.disabled = true; mount(msg, '');
+      try { await mfaVerify(en.id, code.value); done(); } catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; } } }, [
+      guide, el('div', { style: 'text-align:center' }, qr), secret, msg, field(t('sec_code'), code), btn,
+      el('div', { class: 'iv-actions' }, el('button', { class: 'iv-btn sm', type: 'button', onClick: chooser }, '‹ ' + t('sec_choose'))),
+    ]));
+    setTimeout(() => code.focus(), 50);
+  }
+
+  async function phoneFlow() {
+    const phone = inp('iv-phone', { type: 'tel', inputmode: 'tel', placeholder: '+92 3xx xxxxxxx', required: true, autocomplete: 'tel' });
+    const msg = el('div'); const btn = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('sec_send'));
+    mount(body, el('form', { onSubmit: async (e) => { e.preventDefault(); btn.disabled = true; mount(msg, '');
+      try {
+        const en = await mfaEnrollPhone(phone.value.replace(/[\s-]/g, ''));
+        const ch = await mfaChallenge(en.id);
+        const code = codeField(); const msg2 = el('div'); const btn2 = el('button', { class: 'iv-btn primary block', type: 'submit' }, t('sec_verify'));
+        mount(body, el('form', { onSubmit: async (e2) => { e2.preventDefault(); btn2.disabled = true; mount(msg2, '');
+          try { await mfaVerifyChallenge(en.id, ch.id, code.value); done(); } catch (ex) { mount(msg2, el('div', { class: 'iv-err' }, err(ex))); btn2.disabled = false; } } }, [
+          el('div', { class: 'iv-ok' }, t('sec_sent', phone.value)), msg2, field(t('sec_code'), code), btn2,
+          el('div', { class: 'iv-actions' }, el('button', { class: 'iv-btn sm', type: 'button', onClick: chooser }, '‹ ' + t('sec_choose'))),
+        ]));
+        setTimeout(() => code.focus(), 50);
+      } catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; } } }, [
+      el('p', { class: 'iv-muted' }, t('sec_phone_s')), msg, field(t('sec_phone_no'), phone), btn,
+      el('div', { class: 'iv-actions' }, el('button', { class: 'iv-btn sm', type: 'button', onClick: chooser }, '‹ ' + t('sec_choose'))),
+    ]));
+    setTimeout(() => phone.focus(), 50);
+  }
+  chooser();
+}
+
+// ---------- agreement: published document + in-portal e-signature ----------
+function sigPad() {
+  const c = el('canvas', { class: 'iv-sigpad', width: 640, height: 220 });
+  const ctx = c.getContext('2d'); let drawing = false, drew = false, last = null;
+  ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#10223B';
+  const pos = (e) => { const r = c.getBoundingClientRect(); const p = e.touches ? e.touches[0] : e; return { x: (p.clientX - r.left) * c.width / r.width, y: (p.clientY - r.top) * c.height / r.height }; };
+  const start = (e) => { drawing = true; last = pos(e); e.preventDefault(); };
+  const move = (e) => { if (!drawing) return; const p = pos(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; drew = true; e.preventDefault(); };
+  const end = () => { drawing = false; };
+  c.addEventListener('pointerdown', start); c.addEventListener('pointermove', move); window.addEventListener('pointerup', end);
+  const clr = el('button', { class: 'clr', type: 'button', onClick: () => { ctx.clearRect(0, 0, c.width, c.height); drew = false; } }, t('doc_clear'));
+  return { node: el('div', { class: 'iv-sigwrap' }, [c, clr]), hasInk: () => drew, png: () => c.toDataURL('image/png') };
+}
+async function agreementV3() {
+  const a = S.agr;
+  let res; try { res = await invCurrentDoc(a.id); } catch (ex) { alert(err(ex)); return; }
+  const doc = res && res.doc;
+  if (!doc) { showTermsSummary(); return; }
+  const lang = doc.lang || 'en';
+  const mine = (doc.signatures || []).find(s => s.party === 'investor');
+  const co = (doc.signatures || []).find(s => s.party === 'company');
+  const ph = /class="ph"/.test(doc.body_md) || /\[[A-Z][A-Za-z ]+\]/.test(doc.body_md);
+  const view = el('div', { class: 'iv-doc' + (lang === 'ur' ? ' rtl' : '') });
+  view.innerHTML = mdToHtml(doc.body_md);
+  const sigStatus = el('div', null, [
+    mine ? el('div', { class: 'iv-signed' }, [icon('check', ''), el('div', null, [el('b', null, t('doc_signed_you')), ' · ', mine.signer_name, ' · ', fmtDate(mine.signed_at)])]) : null,
+    co ? el('div', { class: 'iv-signed' }, [icon('check', ''), el('div', null, [el('b', null, t('doc_signed_co')), ' · ', co.signer_name + (co.signer_title ? ', ' + co.signer_title : ''), ' · ', fmtDate(co.signed_at)])]) : null,
+    doc.fully_signed ? el('div', { class: 'iv-ok' }, t('doc_done')) : mine && !co ? el('div', { class: 'iv-warn' }, t('doc_await_co')) : !mine ? el('div', { class: 'iv-warn' }, t('doc_await_you')) : null,
+  ]);
+  const body = el('div');
+  const close = openSheet(t('doc_title'), body);
+  const signBlock = () => {
+    if (mine) return null;
+    if (ph) return el('div', { class: 'iv-warn' }, t('doc_ph'));
+    const name = inp('iv-sig-name', { type: 'text', required: true, autocomplete: 'name', placeholder: S.me && S.me.name ? S.me.name : '' });
+    const pad = sigPad();
+    const consent = el('input', { type: 'checkbox', id: 'iv-consent', required: true });
+    const msg = el('div'); const btn = el('button', { class: 'iv-btn primary block', type: 'submit', disabled: true }, t('doc_read'));
+    const gate = el('div', null);
+    let reached = false;
+    view.addEventListener('scroll', () => { if (!reached && view.scrollTop + view.clientHeight >= view.scrollHeight - 24) { reached = true; btn.disabled = false; btn.textContent = t('doc_sign'); } });
+    setTimeout(() => { if (view.scrollHeight <= view.clientHeight + 8) { reached = true; btn.disabled = false; btn.textContent = t('doc_sign'); } }, 100);
+    return el('form', { onSubmit: async (e) => {
+      e.preventDefault(); if (!reached) return; btn.disabled = true; mount(msg, '');
+      try {
+        await invSignDoc({ doc_id: doc.id, signer_name: name.value, hash: doc.hash, consent: true, consent_text: t('doc_consent'), signature_png: pad.hasInk() ? pad.png() : null, user_agent: navigator.userAgent });
+        S.doc = null; close(); await refresh(); setTimeout(() => showAgreement(), 300);
+      } catch (ex) { mount(msg, el('div', { class: 'iv-err' }, err(ex))); btn.disabled = false; }
+    } }, [
+      el('div', { class: 'iv-sect' }, el('h2', null, t('doc_sign'))), msg, gate,
+      field(t('doc_name'), name),
+      el('div', { class: 'iv-field' }, [el('label', null, t('doc_draw')), pad.node]),
+      el('label', { class: 'iv-check', for: 'iv-consent' }, [consent, el('span', null, t('doc_consent'))]),
+      btn,
+    ]);
+  };
+  mount(body, [
+    el('p', { class: 'iv-muted', style: 'margin:0 0 8px' }, [el('b', null, doc.title), ' · ', t('doc_v', doc.version), ' · ', fmtDate(doc.published_at)]),
+    sigStatus, view,
+    el('p', { class: 'iv-muted', style: 'margin:8px 0 0;font-size:.72rem' }, t('doc_hash')), el('div', { class: 'iv-hash' }, doc.hash),
+    signBlock(),
+    el('div', { class: 'iv-actions', style: 'margin-top:12px' }, [
+      el('button', { class: 'iv-btn sm', type: 'button', onClick: () => { const w = window.open('', '_blank'); if (!w) return; w.document.write('<!doctype html><title>' + doc.title + '</title><style>body{font-family:Georgia,serif;max-width:760px;margin:30px auto;padding:0 20px;line-height:1.6}' + (lang === 'ur' ? 'body{direction:rtl}' : '') + '.ph{background:#FEF3C7}</style>' + mdToHtml(doc.body_md) + '<hr><p style="font-family:monospace;font-size:11px">SHA-256 ' + doc.hash + '</p>' + (doc.signatures || []).map(s => '<p>' + (s.party === 'investor' ? 'Investor' : 'Company') + ': ' + s.signer_name + ' — ' + new Date(s.signed_at).toLocaleString() + '</p>').join('')); w.document.close(); } }, t('doc_download')),
+      el('button', { class: 'iv-btn sm', type: 'button', onClick: () => { close(); showTermsSummary(); } }, t('h_agreement')),
+    ]),
+    flagButton('agreement', a.id),
+  ]);
+}

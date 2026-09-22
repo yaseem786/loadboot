@@ -12,7 +12,9 @@
       if (nav && nav.type === 'back_forward') return;
     } catch (_) {}
     var p = localStorage.getItem('lb_last_portal');
-    var OK = ['/app/carrier/', '/app/partner/', '/app/agent/', '/app/developer/', '/app/command-center/'];
+    // '/app/investor/' is unlisted (no tile on the chooser) but remembered like the others,
+    // so the Play app / PWA re-opens straight into the investor portal after first login.
+    var OK = ['/app/carrier/', '/app/partner/', '/app/agent/', '/app/developer/', '/app/command-center/', '/app/investor/'];
     if (p && OK.indexOf(p) !== -1) location.replace(p);
   } catch (_) {}
 })();

@@ -374,6 +374,7 @@ export const tripStopsProgress = (trip) => rpc('cc_trip_stops_progress', { p_tri
 export const agentCarrierDirectory = () => rpc('cc_agent_carrier_directory');
 export const agentChainStatus = () => rpc('agent_chain_status', {});
 export const agentFeed = () => rpc('agent_feed', {});
+export const agentReferralActivity = (limit) => rpc('agent_referral_activity', { p_limit: limit || 40 });  // bl_agent_0403
 export const agentOnboardingStatus = () => rpc('agent_onboarding_status', {});
 export const agentSaveOnboarding = (p, submit) => rpc('agent_save_onboarding', { p, p_submit: !!submit });
 export const ccAgentsQueue = () => rpc('cc_agents_queue', {});
@@ -862,7 +863,7 @@ export const pocketSaveProfile = (p = {}) => rpc('update_my_carrier_profile', {
 export const carrierUploadDocument = async ({ type, fileName, filePath, aiVerdict = null }) => {
   const { getClient } = await import('./supabaseClient.js');
   const sb = await getClient();
-  const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath, ...(aiVerdict && typeof aiVerdict === 'object' && !Array.isArray(aiVerdict) ? { ai_verdict: aiVerdict } : {}) });
+  const { error } = await sb.from('documents').insert({ type, file_name: fileName, file_path: filePath, ...(aiVerdict && typeof aiVerdict === 'object' && !Array.isArray(aiVerdict) ? { ai_verdict: { ...aiVerdict, overridden: aiVerdict.verdict === 'reject' } } : {}) });
   if (error) throw new Error(error.message || 'Could not save the document.');
   return true;
 };
@@ -1513,3 +1514,29 @@ export const ccInvCloseCommitment = (agreementId, reason) => rpc('cc_inv_close_c
 export const ccInvReopenCommitment = (agreementId, newCap) => rpc('cc_inv_reopen_commitment', { p_agreement: agreementId, p_new_cap: newCap });
 export const ccInvWindDown       = (p) => rpc('cc_inv_wind_down', { p });
 export const ccInvAnswerFlag     = (id, answer, resolve = true) => rpc('cc_inv_answer_flag', { p_flag: id, p_answer: answer, p_resolve: resolve });
+// bl_inv_0403 — settings, e-sign, growth, projection, proofs
+export const invSettings        = () => rpc('inv_settings');
+export const invCurrentDoc      = (agreementId) => rpc('inv_current_doc', { p_agreement: agreementId });
+export const invSignDoc         = (p) => rpc('inv_sign_doc', { p });
+export const invGrowth          = () => rpc('inv_growth');
+export const invProjection      = (agreementId) => rpc('inv_projection', { p_agreement: agreementId });
+export const ccInvSettingsGet   = () => rpc('cc_inv_settings_get');
+export const ccInvSettingsSet   = (key, value) => rpc('cc_inv_settings_set', { p_key: key, p_value: value });
+export const ccInvPublishDoc    = (p) => rpc('cc_inv_publish_doc', { p });
+export const ccInvCountersign   = (p) => rpc('cc_inv_countersign', { p });
+// Private proofs bucket. Path = <agreement_id>/<timestamp>-<safe name>. Returns 'storage:<path>'.
+export async function invUploadProof(agreementId, file) {
+  const sb = await getClient();
+  const safe = String(file.name || 'proof').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80);
+  const path = agreementId + '/' + Date.now() + '-' + safe;
+  const { error } = await sb.storage.from('investor-proofs').upload(path, file, { upsert: false, contentType: file.type || undefined });
+  if (error) throw error;
+  return 'storage:' + path;
+}
+export async function invProofUrl(ref, seconds = 600) {
+  if (!ref || ref.indexOf('storage:') !== 0) return ref || null;
+  const sb = await getClient();
+  const { data, error } = await sb.storage.from('investor-proofs').createSignedUrl(ref.slice(8), seconds);
+  if (error) throw error;
+  return data.signedUrl;
+}

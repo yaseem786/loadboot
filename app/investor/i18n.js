@@ -153,6 +153,60 @@ D.ur = {
   nl_title: 'یہ اکاؤنٹ ابھی کسی سرمایہ کاری سے جڑا نہیں', nl_body: 'لوڈ بوٹ کو بتائیں آپ نے کس ای میل سے سائن اِن کیا — وہ کمانڈ سینٹر سے لنک کر دیں گے۔',
   err_generic: 'کچھ غلط ہو گیا',
 };
+
+// ---- v3 additions ----
+Object.assign(D.en, {
+  sel_lang: 'Select language', growth: 'LoadBoot progress', growth_sub: 'Live counts from the business — this is what your money is building.',
+  g_carriers: 'Carriers', g_active: 'Active carriers', g_review: 'In review', g_trucks: 'Trucks', g_assigned: 'Dispatcher assignments', g_brokers: 'Brokers',
+  g_loads: 'Loads booked', g_delivered: 'Trips delivered', g_del30: 'Delivered · 30 days', g_fees: 'Fees collected', g_fees30: 'Fees · 30 days', g_new_carriers: 'New carriers per month', g_as_of: 'as of',
+  proj: 'When does your money come back?', proj_actual: 'Based on the last {0} real months', proj_owner: 'LoadBoot’s forecast (not yet proven)', proj_none: 'Not enough months yet — the first Statement starts the estimate.',
+  proj_avg: 'Avg monthly profit', proj_pay: 'Est. monthly recovery', proj_share: 'Est. monthly share', proj_months: 'Months to full recovery', proj_first: 'First payout expected', proj_note: 'Estimate only. Payouts come from actual profit each month.',
+  pay_to: 'Send money to', pay_copy: 'Copy', pay_copied: 'Copied', pay_none: 'Payment details have not been set yet — ask LoadBoot before sending.',
+  up_drop: 'Tap to attach a bank slip or screenshot', up_has: 'Attached: {0}', up_hint: 'JPG, PNG, WebP or PDF · up to 10 MB · stored privately', up_or: 'or paste a link',
+  sec_choose: 'Choose a second factor', sec_app: 'Authenticator app', sec_app_s: 'Google Authenticator, Authy, Microsoft Authenticator', sec_phone: 'Phone (SMS)', sec_phone_s: 'A code by text message', sec_phone_no: 'Phone number', sec_send: 'Send code', sec_sent: 'Code sent to {0}',
+  sec_g1: 'Install <b>Google Authenticator</b> (Play Store / App Store).', sec_g2: 'Open it, tap <b>+</b>, choose <b>Scan a QR code</b>.', sec_g3: 'Scan the code below.', sec_g4: 'Type the 6-digit number it shows and tap Verify.', sec_g5: 'From now on, sign-in asks for that number. It changes every 30 seconds.',
+  sec_recover: 'Lost your phone? LoadBoot can reset 2FA after confirming your identity.',
+  doc_title: 'Agreement document', doc_none: 'The signed document has not been published yet. The terms summary below is what LoadBoot has entered.', doc_v: 'Version {0}', doc_hash: 'Document fingerprint (SHA-256)',
+  doc_read: 'Read to the end to sign', doc_sign: 'Sign this agreement', doc_name: 'Your full name (as signature)', doc_draw: 'Draw your signature', doc_clear: 'Clear', doc_consent: 'I have read the whole document and I sign it electronically. I understand this binds me to its terms.',
+  doc_signed_you: 'Signed by you', doc_signed_co: 'Signed by LoadBoot', doc_await_co: 'Awaiting LoadBoot’s signature', doc_await_you: 'Awaiting your signature', doc_done: 'Signed. Both signatures are on the current version.', doc_download: 'Download signed copy',
+  doc_ph: 'This version still has open points marked in yellow. It can be read but not signed until LoadBoot fills them.',
+  usd_hint: 'approx., at {0} PKR/USD on {1}',
+});
+Object.assign(D.ur_roman, {
+  sel_lang: 'Zubaan chunein', growth: 'LoadBoot ki taraqqi', growth_sub: 'Kaarobar ki live ginti — aap ka paisa yehi bana raha hai.',
+  g_carriers: 'Carriers', g_active: 'Active carriers', g_review: 'Review mein', g_trucks: 'Trucks', g_assigned: 'Dispatcher assignments', g_brokers: 'Brokers',
+  g_loads: 'Loads booked', g_delivered: 'Trips deliver', g_del30: 'Deliver · 30 din', g_fees: 'Fee wasool', g_fees30: 'Fee · 30 din', g_new_carriers: 'Har mahine naye carriers', g_as_of: 'tak',
+  proj: 'Aap ka paisa kab wapis aayega?', proj_actual: 'Pichle {0} asli mahinon par', proj_owner: 'LoadBoot ka andaza (abhi sabit nahi)', proj_none: 'Abhi kaafi mahine nahi — pehla Statement andaza shuru karega.',
+  proj_avg: 'Ausat mahana munafa', proj_pay: 'Andazan mahana wapsi', proj_share: 'Andazan mahana hissa', proj_months: 'Poori wapsi mein mahine', proj_first: 'Pehla payout andazan', proj_note: 'Sirf andaza. Payout har mahine ke asli munafay se aata hai.',
+  pay_to: 'Paisa yahan bhejein', pay_copy: 'Copy', pay_copied: 'Copy ho gaya', pay_none: 'Payment details abhi set nahi — bhejne se pehle LoadBoot se poochein.',
+  up_drop: 'Bank slip ya screenshot lagane ke liye tap karein', up_has: 'Laga diya: {0}', up_hint: 'JPG, PNG, WebP ya PDF · 10 MB tak · private storage', up_or: 'ya link paste karein',
+  sec_choose: 'Doosra factor chunein', sec_app: 'Authenticator app', sec_app_s: 'Google Authenticator, Authy, Microsoft Authenticator', sec_phone: 'Phone (SMS)', sec_phone_s: 'Message par code', sec_phone_no: 'Phone number', sec_send: 'Code bhejein', sec_sent: 'Code {0} par bhej diya',
+  sec_g1: '<b>Google Authenticator</b> install karein (Play Store / App Store).', sec_g2: 'Kholein, <b>+</b> dabayein, <b>Scan a QR code</b> chunein.', sec_g3: 'Neeche wala code scan karein.', sec_g4: 'Jo 6 hindson ka number aaye wo likh kar Tasdeeq dabayein.', sec_g5: 'Ab se sign-in par wo number poocha jayega. Har 30 second badalta hai.',
+  sec_recover: 'Phone kho gaya? LoadBoot aap ki shanakht confirm kar ke 2FA reset kar dega.',
+  doc_title: 'Agreement document', doc_none: 'Sign hone wala document abhi publish nahi hua. Neeche ka khulasa wo hai jo LoadBoot ne darj kiya.', doc_v: 'Version {0}', doc_hash: 'Document ka fingerprint (SHA-256)',
+  doc_read: 'Sign karne ke liye aakhir tak parhein', doc_sign: 'Is agreement par sign karein', doc_name: 'Aap ka poora naam (bataur dastakhat)', doc_draw: 'Apna signature banayein', doc_clear: 'Saaf', doc_consent: 'Maine poora document parh liya hai aur electronic tor par sign karta hoon. Main samajhta hoon ke ye mujhe is ki sharton ka paband karta hai.',
+  doc_signed_you: 'Aap ne sign kiya', doc_signed_co: 'LoadBoot ne sign kiya', doc_await_co: 'LoadBoot ke sign ka intezaar', doc_await_you: 'Aap ke sign ka intezaar', doc_done: 'Sign ho gaya. Dono dastakhat mojooda version par hain.', doc_download: 'Sign shuda copy download',
+  doc_ph: 'Is version mein abhi peele nishan wale khule sawal hain. Parh sakte hain, lekin LoadBoot ke bharne tak sign nahi ho sakta.',
+  usd_hint: 'andazan, {1} ko {0} PKR/USD par',
+});
+Object.assign(D.ur, {
+  sel_lang: 'زبان چنیں', growth: 'لوڈ بوٹ کی ترقی', growth_sub: 'کاروبار کی لائیو گنتی — آپ کا پیسہ یہی بنا رہا ہے۔',
+  g_carriers: 'کیریئرز', g_active: 'فعال کیریئرز', g_review: 'جائزے میں', g_trucks: 'ٹرک', g_assigned: 'ڈسپیچر تفویض', g_brokers: 'بروکرز',
+  g_loads: 'بُک شدہ لوڈز', g_delivered: 'ڈیلیور ٹرپس', g_del30: 'ڈیلیور · 30 دن', g_fees: 'وصول فیس', g_fees30: 'فیس · 30 دن', g_new_carriers: 'ہر مہینے نئے کیریئرز', g_as_of: 'تک',
+  proj: 'آپ کا پیسہ کب واپس آئے گا؟', proj_actual: 'پچھلے {0} اصل مہینوں پر', proj_owner: 'لوڈ بوٹ کا اندازہ (ابھی ثابت نہیں)', proj_none: 'ابھی کافی مہینے نہیں — پہلا حساب اندازہ شروع کرے گا۔',
+  proj_avg: 'اوسط ماہانہ منافع', proj_pay: 'اندازاً ماہانہ واپسی', proj_share: 'اندازاً ماہانہ حصہ', proj_months: 'پوری واپسی میں مہینے', proj_first: 'پہلا پے آؤٹ اندازاً', proj_note: 'صرف اندازہ۔ پے آؤٹ ہر مہینے کے اصل منافع سے آتا ہے۔',
+  pay_to: 'پیسہ یہاں بھیجیں', pay_copy: 'کاپی', pay_copied: 'کاپی ہو گیا', pay_none: 'ادائیگی کی تفصیلات ابھی طے نہیں — بھیجنے سے پہلے لوڈ بوٹ سے پوچھیں۔',
+  up_drop: 'بینک سلپ یا اسکرین شاٹ لگانے کے لیے ٹیپ کریں', up_has: 'لگا دیا: {0}', up_hint: 'JPG, PNG, WebP یا PDF · 10 MB تک · نجی اسٹوریج', up_or: 'یا لنک پیسٹ کریں',
+  sec_choose: 'دوسرا فیکٹر چنیں', sec_app: 'آتھینٹیکیٹر ایپ', sec_app_s: 'گوگل آتھینٹیکیٹر، Authy، مائیکروسافٹ آتھینٹیکیٹر', sec_phone: 'فون (SMS)', sec_phone_s: 'میسج پر کوڈ', sec_phone_no: 'فون نمبر', sec_send: 'کوڈ بھیجیں', sec_sent: 'کوڈ {0} پر بھیج دیا',
+  sec_g1: '<b>Google Authenticator</b> انسٹال کریں (Play Store / App Store)۔', sec_g2: 'کھولیں، <b>+</b> دبائیں، <b>Scan a QR code</b> چنیں۔', sec_g3: 'نیچے والا کوڈ اسکین کریں۔', sec_g4: 'جو 6 ہندسوں کا نمبر آئے وہ لکھ کر تصدیق دبائیں۔', sec_g5: 'اب سے سائن اِن پر وہ نمبر پوچھا جائے گا۔ ہر 30 سیکنڈ بدلتا ہے۔',
+  sec_recover: 'فون کھو گیا؟ لوڈ بوٹ آپ کی شناخت کنفرم کر کے 2FA ری سیٹ کر دے گا۔',
+  doc_title: 'معاہدے کی دستاویز', doc_none: 'دستخط والی دستاویز ابھی شائع نہیں ہوئی۔ نیچے کا خلاصہ وہ ہے جو لوڈ بوٹ نے درج کیا۔', doc_v: 'ورژن {0}', doc_hash: 'دستاویز کا فنگر پرنٹ (SHA-256)',
+  doc_read: 'دستخط کے لیے آخر تک پڑھیں', doc_sign: 'اس معاہدے پر دستخط کریں', doc_name: 'آپ کا پورا نام (بطور دستخط)', doc_draw: 'اپنا دستخط بنائیں', doc_clear: 'صاف', doc_consent: 'میں نے پوری دستاویز پڑھ لی ہے اور الیکٹرانک طور پر دستخط کرتا ہوں۔ میں سمجھتا ہوں کہ یہ مجھے اس کی شرائط کا پابند کرتا ہے۔',
+  doc_signed_you: 'آپ نے دستخط کیے', doc_signed_co: 'لوڈ بوٹ نے دستخط کیے', doc_await_co: 'لوڈ بوٹ کے دستخط کا انتظار', doc_await_you: 'آپ کے دستخط کا انتظار', doc_done: 'دستخط ہو گئے۔ دونوں دستخط موجودہ ورژن پر ہیں۔', doc_download: 'دستخط شدہ کاپی ڈاؤن لوڈ',
+  doc_ph: 'اس ورژن میں ابھی پیلے نشان والے کھلے سوال ہیں۔ پڑھ سکتے ہیں، لیکن لوڈ بوٹ کے بھرنے تک دستخط نہیں ہو سکتے۔',
+  usd_hint: 'اندازاً، {1} کو {0} PKR/USD پر',
+});
+
 export const LANGS = [['en', 'English'], ['ur_roman', 'Roman Urdu'], ['ur', 'اردو']];
 let cur = 'en';
 export function setLang(l) {

@@ -138,7 +138,7 @@ a{color:var(--iv-blue2)}
 .iv-urdu body,.iv-urdu .iv-shell,.iv-urdu .iv-login,.iv-urdu .iv-sheet{font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Manrope,system-ui,sans-serif;line-height:1.9}
 .iv-urdu .iv-h1{line-height:1.6}
 .iv-urdu .iv-big,.iv-urdu .iv-kv .v,.iv-urdu .iv-row .amt,.iv-urdu .iv-dl b{font-family:Manrope,system-ui,sans-serif;line-height:1.2}
-[dir="rtl"] .iv-row{grid-template-columns:auto 1fr 38px;direction:rtl}
+[dir="rtl"] .iv-row{direction:rtl;text-align:right}
 [dir="rtl"] .iv-row .amt{text-align:left}
 [dir="rtl"] .band.lb{border-left:0;border-right:3px solid var(--iv-blue);padding-left:0;padding-right:16px}
 [dir="rtl"] .iv-sheet .close{float:left}
@@ -167,3 +167,51 @@ a{color:var(--iv-blue2)}
 .iv-empty svg{width:40px;height:40px;stroke:var(--iv-ink3);fill:none;stroke-width:1.5;margin:0 auto 8px;display:block}
 .iv-tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:360px){.iv-lang button{padding:5px 7px;font-size:.68rem}}
+
+/* ---------- v3: language select, guides, upload, sign, growth ---------- */
+.iv-select{background:#0C1A2E;border:1px solid var(--iv-line2);color:var(--iv-ink);border-radius:10px;padding:8px 10px;font:inherit;font-size:.8rem;font-weight:700;min-height:36px}
+.iv-guide{counter-reset:g;display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.iv-guide div{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;font-size:.9rem;color:var(--iv-ink2)}
+.iv-guide div:before{counter-increment:g;content:counter(g);width:26px;height:26px;border-radius:50%;background:rgba(8,131,247,.15);color:var(--iv-blue2);font-weight:800;font-size:.8rem;display:grid;place-items:center}
+.iv-guide b{color:var(--iv-ink)}
+.iv-qr img{width:100%;height:auto;display:block}
+.iv-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.iv-choice button{background:var(--iv-bg3);border:1px solid var(--iv-line2);border-radius:12px;padding:14px 12px;color:var(--iv-ink);font:inherit;font-weight:700;cursor:pointer;text-align:start;display:flex;flex-direction:column;gap:4px;min-height:44px}
+.iv-choice button:hover,.iv-choice button:focus-visible{border-color:var(--iv-blue2);outline:none}
+.iv-choice small{font-weight:500;color:var(--iv-ink3);font-size:.78rem}
+.iv-pay{background:rgba(8,131,247,.08);border:1px solid rgba(8,131,247,.35);border-radius:var(--iv-r2);padding:12px 14px;margin:12px 0}
+.iv-pay .iv-dl{margin:6px 0 0;grid-template-columns:100px 1fr}
+.iv-pay .copy{background:none;border:0;color:var(--iv-blue2);font:inherit;font-size:.75rem;font-weight:700;cursor:pointer;padding:0 0 0 8px}
+.iv-drop{border:1.5px dashed var(--iv-line2);border-radius:12px;padding:16px;text-align:center;color:var(--iv-ink3);font-size:.88rem;cursor:pointer;background:rgba(255,255,255,.02)}
+.iv-drop.has{border-style:solid;border-color:var(--iv-green);color:var(--iv-green)}
+.iv-drop input{display:none}
+.iv-doc{background:#fff;color:#10223B;border-radius:12px;padding:18px 16px;max-height:52dvh;overflow:auto;font-family:Georgia,"Times New Roman",serif;font-size:.92rem;line-height:1.6}
+.iv-doc h1{font-size:1.15rem;margin:0 0 8px;font-family:Manrope,sans-serif}
+.iv-doc h2{font-size:.98rem;margin:16px 0 4px;font-family:Manrope,sans-serif;border-top:1px solid #E1E7F0;padding-top:10px}
+.iv-doc p,.iv-doc li{margin:4px 0}
+.iv-doc table{border-collapse:collapse;width:100%;font-size:.85rem;margin:6px 0}
+.iv-doc td,.iv-doc th{border:1px solid #D4DEEA;padding:4px 8px;text-align:left}
+.iv-doc.rtl{direction:rtl;text-align:right;font-family:"Noto Nastaliq Urdu",serif;line-height:1.9}
+.iv-doc .ph{color:#B45309;background:#FEF3C7;padding:0 4px;border-radius:3px}
+.iv-sigpad{background:#fff;border-radius:10px;border:1px solid var(--iv-line2);touch-action:none;width:100%;height:140px;display:block}
+.iv-sig-row{display:flex;justify-content:space-between;align-items:center;margin:6px 0 12px;font-size:.78rem;color:var(--iv-ink3)}
+.iv-sig-row button{background:none;border:0;color:var(--iv-blue2);font:inherit;font-weight:700;cursor:pointer}
+.iv-hash{font-family:monospace;font-size:.7rem;color:var(--iv-ink3);word-break:break-all}
+.iv-growth{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.iv-growth div{background:rgba(255,255,255,.03);border:1px solid var(--iv-line);border-radius:10px;padding:10px}
+.iv-growth .n{font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.iv-growth .l{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--iv-ink3);margin-top:3px}
+.iv-bars{display:flex;align-items:flex-end;gap:6px;height:56px;margin-top:12px}
+.iv-bars div{flex:1;background:linear-gradient(180deg,var(--iv-blue2),var(--iv-blue));border-radius:4px 4px 0 0;min-height:3px;position:relative}
+.iv-bars div span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:.62rem;color:var(--iv-ink3)}
+.iv-bars-wrap{padding-bottom:20px}
+.iv-usd{display:block;font-size:.72rem;font-weight:600;color:var(--iv-ink3)}
+.iv-signed{display:flex;gap:10px;align-items:center;background:rgba(46,209,138,.1);border:1px solid rgba(46,209,138,.35);border-radius:10px;padding:10px 12px;font-size:.85rem;margin-bottom:8px}
+.iv-signed img{height:34px;background:#fff;border-radius:6px;padding:2px}
+@media (max-width:360px){.iv-growth{grid-template-columns:1fr 1fr}}
+.iv-warn{background:rgba(245,185,66,.1);border:1px solid rgba(245,185,66,.35);color:#FFD98A;border-radius:10px;padding:10px 12px;font-size:.88rem;margin-bottom:12px}
+.iv-sigwrap{position:relative}
+.iv-sigwrap .clr{position:absolute;top:6px;right:8px;background:rgba(0,0,0,.06);border:0;border-radius:6px;font:inherit;font-size:.72rem;font-weight:700;color:#10223B;padding:3px 8px;cursor:pointer}
+.iv-hash{font-family:monospace;font-size:.68rem;word-break:break-all;color:var(--iv-ink3)}
+.iv-check{display:flex;gap:10px;align-items:flex-start;font-size:.86rem;color:var(--iv-ink2);margin:12px 0}
+.iv-check input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--iv-blue2)}
