@@ -39,6 +39,9 @@ import {
 import { uploadDocument, uploadPodDocument, uploadTripDoc, signedDocumentUrl } from '../shared/storage.js';
 import { setPostingHos } from '../shared/api.js';
 import { formProgressPing, formProgressDone } from '../shared/api.js';
+// bl_dial_0390 — lifts the signup SMS checkbox into the dispatcher-side consent registry, so a
+// dispatcher can text a carrier who already agreed without logging anything by hand. Idempotent.
+import { smsConsentSelfSync } from '../shared/api.js';
 import { payInstructions, payMarkSent, payConfirmReceived, payMyTransfers, payDueItems, payDispute, payRequestReminder, ccLoadStops } from '../shared/api.js';
 import { enablePush, isPushEnabled, pushSupported, ensurePushHealthy } from '../shared/push.js';
 import { imagesToPdf, downloadBlob } from '../shared/ui/scanner.js';
@@ -8483,6 +8486,9 @@ async function boot() {
   try { session = await getSession(); } catch (_) {}
   if (!session) { authScreen(); return; }
   _hadSession = true; watchAuth();
+  try { smsConsentSelfSync().catch(() => {}); } catch (_) {}
+  // Carriers from before the signup checkbox never gave an answer — ask them once, in their own portal.
+  try { import('./sms-optin.js').then((m) => m.maybeAskSmsOptIn()).catch(() => {}); } catch (_) {}
   try { mountOfflineBanner(); } catch (_) {}
   try { initInstallPrompt(); } catch (_) {}
   try { ensurePushHealthy('Carrier portal'); } catch (_) {}

@@ -1369,6 +1369,9 @@ export const dialerSmsConsentRecord = (p) => rpc('dialer_sms_consent_record', { 
 export const dialerSmsConsentRevoke = (number) => rpc('dialer_sms_consent_revoke', { p: { number } });
 // Carrier portal: lifts the signup checkbox into the same registry. Idempotent, safe to call on boot.
 export const smsConsentSelfSync = () => rpc('sms_consent_self_sync', {});
+// Carriers who signed up before the checkbox existed: the portal asks them once (app/carrier/sms-optin.js).
+export const smsConsentSelfState = () => rpc('sms_consent_self_state', {});
+export const smsConsentSetSelf = (consent) => rpc('sms_consent_set_self', { p: { consent: !!consent } });
 // bl_wa_0367 — WhatsApp inbox. ONE shared WABA number, one OWNER per conversation; the 24-hour window and the
 // approved-template rule are enforced server-side (wa_send_prepare). Sending goes through the telnyx-whatsapp edge function.
 export const waInbox = () => rpc('wa_inbox', {});

@@ -19,6 +19,7 @@ import {
   dialerBootstrap, dialerHeartbeat, dialerLookup, dialerCallStart, dialerCallUpdate, dialerCallTag,
   dialerCallbackSet, dialerHistory, dialerToken, dialerClaimWaiting, dialerRecordingBlob,
  dialerForwardSet, dialerSmsThreads, dialerSmsThread, dialerSmsSend,
+ dialerSmsConsentState, dialerSmsConsentRecord,
   waInbox, waThread, waClaim, waStart, waSend, waMediaBlob, waUploadMedia,
 } from './api.js';
 import { createWaPanel } from './dialer-wa.js';
@@ -220,7 +221,7 @@ function createDialer() {
     call: null,                                                      // { sdk, row, dir, state, muted, held, pad, since, note, name, number, ctx }
     wrap: null,                                                      // after-call disposition { row, outcome, note, … }
     terms: null, termsTick: false, termsBusy: false,                 // bl_dial_0362: LoadBoot Phone Terms gate { version, required, accepted, points, consent }
-    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false,
+    history: null, histQ: '', micId: localStorage.getItem('lbd_mic') || '', mics: [], showSettings: false, pushOn: null, sms: null, smsTo: null, smsThread: null, smsDraft: '', smsBusy: false, smsConsent: null, smsConsentBusy: false, smsConsentMethod: 'verbal', smsEvidence: '',
     chan: 'sms', wa: null, waId: null, waThread: null, waDraft: '', waBusy: false, waTpl: null, waVars: [],   // bl_wa_0367
   };
   let client = null, SDK = null, hbTimer = null, tickTimer = null, retry = 0, retryTimer = null, lockRelease = null;
@@ -607,8 +608,58 @@ function createDialer() {
   function openThread(number, name) {
     closeThread();
     S.tab = 'texts'; S.open = true; S.showSettings = false; S.smsTo = number; S.smsName = name || ''; S.smsThread = null; S.smsDraft = '';
+    // bl_dial_0390 — before a composer is shown at all, find out whether this number ever agreed to texts.
+    S.smsConsent = null; S.smsConsentMethod = 'verbal'; S.smsEvidence = '';
+    dialerSmsConsentState(number).then((r) => { if (S.smsTo === number) { S.smsConsent = r || null; paint(); } }).catch(() => {});
     paint(); loadThread(false);
     smsTimer = setInterval(() => { if (S.open && S.tab === 'texts' && S.smsTo && document.visibilityState === 'visible') loadThread(true); }, 8000);
+  }
+  // bl_dial_0390 — shown INSTEAD of the composer when a number has no consent on file. The reason is
+  // spelled out, because the usual mistake is assuming a number off a load board is fair game.
+  async function saveConsent() {
+    if (S.smsConsentBusy || !S.smsTo) return;
+    const ev = (S.smsEvidence || '').trim();
+    if (!ev) { toast(S.smsConsentMethod === 'verbal' ? 'Say which call they agreed on.' : 'Quote what their greeting or site actually says.'); return; }
+    S.smsConsentBusy = true; paint();
+    try {
+      const r = await dialerSmsConsentRecord({ number: S.smsTo, method: S.smsConsentMethod, evidence: ev, contact_name: S.smsName || null });
+      if (r && r.ok) { S.smsEvidence = ''; S.smsConsent = await dialerSmsConsentState(S.smsTo).catch(() => null); }
+      else toast((r && r.error) || 'Could not record that.');
+    } catch (e) { toast((e && e.message) || 'Could not record that.'); }
+    S.smsConsentBusy = false; paint();
+  }
+  function vConsent() {
+    const c = S.smsConsent;
+    if (!c) return h('div', { class: 'lbd-note', style: 'margin:6px 0 0' }, 'Checking whether this number agreed to texts…');
+    const verbal = S.smsConsentMethod === 'verbal';
+    const tab = (id, label) => h('button', { type: 'button', class: 'lbd-chip' + (S.smsConsentMethod === id ? ' on' : ''),
+      onClick: () => { S.smsConsentMethod = id; S.smsEvidence = ''; paint(); } }, label);
+    return h('div', { style: 'margin:6px 0 0;display:flex;flex-direction:column;gap:8px' }, [
+      h('div', { class: 'lbd-note' }, [
+        h('b', null, 'You cannot text this number yet.'), ' ',
+        'There is no record that they agreed to receive texts from LoadBoot. A number taken from a load board, a rate confirmation or an email signature is not permission \u2014 texting it can get the LoadBoot number blocked and the messaging campaign shut down.',
+      ]),
+      h('div', { class: 'lbd-tpl', role: 'tablist' }, [tab('verbal', 'They said yes on a call'), tab('published_cta', 'Their greeting says to text')]),
+      verbal
+        ? h('div', null, [
+            h('div', { class: 'lbd-note', style: 'margin:0 0 6px' }, 'Read this out, word for word, and only continue if they say yes:'),
+            h('div', { class: 'lbd-quote', style: 'font-style:italic;padding:8px 10px;border-left:3px solid var(--bl,#0883F7);background:rgba(8,131,247,.07);border-radius:6px;font-size:12.5px;line-height:1.5' }, c.script || ''),
+          ])
+        : h('div', { class: 'lbd-note' }, 'Only if their own recorded greeting, IVR or website tells people to text this number. Quote it exactly \u2014 "I think they said so" is not evidence.'),
+      h('input', { class: 'lbd-in', type: 'text', maxlength: '500', value: S.smsEvidence,
+        placeholder: verbal ? 'Which call? e.g. call with Dan, 21 Sep 3:10pm' : 'Quote it, e.g. "or text us at this number"',
+        'aria-label': verbal ? 'Which call they agreed on' : 'What their greeting says',
+        onInput: (e) => { S.smsEvidence = e.target.value; } }),
+      h('button', { class: 'lbd-btn', disabled: S.smsConsentBusy, onClick: saveConsent },
+        S.smsConsentBusy ? 'Saving\u2026' : (verbal ? 'They said yes \u2014 let me text them' : 'Log this and let me text them')),
+      h('details', { style: 'margin-top:2px' }, [
+        h('summary', { style: 'cursor:pointer;font-size:12.5px;font-weight:700;color:#dbe6fb' }, 'They did not pick up \u2014 what now?'),
+        h('div', { class: 'lbd-note', style: 'margin:8px 0 0;opacity:.9' }, 'A call is not a text, so there is nothing stopping you calling again or leaving a voicemail. Ask them to text YOU back on this line \u2014 the moment they do, that is their permission and this thread opens by itself.'),
+        h('div', { style: 'font-style:italic;padding:8px 10px;margin-top:6px;border-left:3px solid var(--or,#FC5305);background:rgba(252,83,5,.08);border-radius:6px;font-size:12.5px;line-height:1.5' },
+          'Hi, this is LoadBoot dispatch calling about your load. You can call me back on this number, or if it is easier just text this same number and I will send you the details straight away. Thanks.'),
+        h('div', { class: 'lbd-note', style: 'margin:6px 0 0;opacity:.75' }, 'Email works too \u2014 email is not covered by these rules. Or send them loadboot.com/text-us, which tells them how to start a text thread themselves.'),
+      ]),
+    ]);
   }
   function bubble(m) {
     const st = m.direction === 'outbound' ? ({ queued: 'Sending…', sent: 'Sent', delivered: 'Delivered', failed: 'Not sent' + (m.error ? ' — ' + m.error : '') })[m.status] || '' : '';
@@ -658,7 +709,8 @@ function createDialer() {
         ]),
         off,
         h('div', { class: 'lbd-msgs', 'data-smslist': '1', role: 'log', 'aria-live': 'polite' }),
-        out ? h('div', { class: 'lbd-note', style: 'margin:6px 0 0' }, 'This number replied STOP. It cannot be texted until it sends START.') : [
+        out ? h('div', { class: 'lbd-note', style: 'margin:6px 0 0' }, 'This number replied STOP. It cannot be texted until it sends START.')
+        : !(S.smsConsent && S.smsConsent.consented) ? vConsent() : [
           h('div', { class: 'lbd-tpl' }, SMS_TPL.map((x) => h('button', { type: 'button', onClick: () => { S.smsDraft = (S.smsDraft ? S.smsDraft.replace(/\s*$/, ' ') : '') + x; const ta = root.querySelector('#lbd-sms'); if (ta) { ta.value = S.smsDraft; ta.focus(); } paintSend(); } }, x.length > 34 ? x.slice(0, 32) + '…' : x))),
           h('div', { class: 'lbd-comp' }, [
             h('textarea', { class: 'lbd-in', id: 'lbd-sms', rows: '2', maxlength: '1000', placeholder: 'Write a text…', 'aria-label': 'Message', onInput: (e) => { S.smsDraft = e.target.value; paintSend(); }, onKeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } } }, S.smsDraft),
