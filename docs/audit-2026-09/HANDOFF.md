@@ -116,7 +116,18 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    Rollbacks: ROLLBACK-ERASURE-UPLOAD-FREEZE / -REVOKE-SESSIONS-2026-09-20.sql (freeze one rehearsed on staging, byte-exact; the
    sessions one NOT rehearsed). Codex's two erasure rollbacks check OLD hashes — run these three 20-Sep rollbacks first.
    **Retention:** `RETENTION-PROPOSAL-2026-09-20.md` — proposal only, not legal advice, nothing removed; real file removal stays blocked
-   on Yaseen's decisions there. Browser check of the deletion flow: NOT done (needs a throwaway account and Yaseen's login).
+   on Yaseen's decisions there. Browser check of the deletion flow: DONE 22 Sep on PROD with test carrier
+   muhammadyaseenhakeem786@gmail.com (request 11): Settings card → request → 'Deletion requested… You can still cancel' card;
+   confirmation mail `account.deletion_requested` delivered via Resend; `my_uploads_frozen()` = true; documents INSERT 403
+   (erasure_freeze_documents); Storage POST 403 (RLS); inventory 15 items (7 documents rows + 1 document_files + 7 storage objects);
+   `cc_erasure_items` shows facts + suggestion (C_qualification, hold to 2029-07-01 — test data has a paid settlement);
+   `cc_account_deletion_process(11,'complete')` refused ERASURE_REVIEW_REQUIRED undecided=15 (rolled back). Two findings:
+   (a) Documents page still shows Upload buttons and no frozen message (ChatGPT's frontend item, unchanged);
+   (b) every file appeared TWICE (documents row + storage object, same bucket+path) — a purge of one twin would have left the
+   other 'remove' with no evidence and off the candidate list → gate never completes. FIXED as bl_audit_0368 (both envs, 9/9
+   rollback-txn test on staging AND prod, rollback rehearsed byte-exact): one decision covers all twins (`applied_to`), one purge
+   candidate per object, 'removed' evidence lands on all twins, failure results never overwrite evidence. Request 11 left OPEN
+   for Yaseen to cancel from the portal (no processing).
 6. F10 CLOSED 22 Sep: bl_audit_0358 dropped the blanket Storage policy `staff read documents` on staging AND prod (guarded on `doc_read`
    + documents.view existing; 4/4 and 6/6 rollback-txn tests incl. "a plain active staff sees zero real documents" and "the owner still
    reads a real one"; prod has 1 active staff = owner with documents.view via role → zero change for anyone). Rollback file written.
@@ -167,8 +178,8 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
    = loses net._http_response + touches 40 cron jobs → ACCEPTED, not worth the risk); auth_leaked_password_protection = the
    dashboard toggle only Yaseen can flip (F15). → 22 Sep: the toggle is Pro-plan only (org on Free); F15 = plan-gated, NOT flippable;
    min password length / character rules on the same screen are the free-plan substitute (Yaseen's call).
-   Remaining gates: complete erasure (retention decision + real removal with evidence, frozen-user UI message, deletion-flow browser
-   check; freeze/revocation/prefix DONE 20 Sep); F10 DONE; notification/edge parity;
+   Remaining gates: complete erasure (frozen-user UI message + CC review screen = ChatGPT; DB/edge side DONE incl. 0368 twins;
+   deletion-flow browser check DONE 22 Sep; freeze/revocation/prefix DONE 20 Sep); F10 DONE; notification/edge parity;
    Retell real-signature proof (22 Sep status: prod retell_hook_log holds ONE real `call_started signature_ok` and ONE `call_inbound
    inbound:signature_ok` from 7 Sep = the HMAC format matches Retell at least once, but the same day also logged `digest_mismatch`,
    and every inbound delivery since 8 Sep passed on the URL token with the signature verdict unrecorded; no call-event delivery since
@@ -260,3 +271,7 @@ Prod newest migration (20 Sep): bl_audit_0353_lc_doc_relink (before it: 20260919
   since (no credit); shipped retell-inbound-hook v3 (sig-reason logging on token fallback) staging v13 + prod v6, both fail-closed smoke 401.
   Deletion-flow browser check pending: Chrome is signed in as the owner account, test carrier muhammadyaseenhakeem786@gmail.com (7 objects,
   no open request) needs Yaseen's login first.
+- **2026-09-22 — Claude:** Deletion-flow browser check DONE on prod (test carrier, request 11, read-only + rolled-back gate probe): request
+  card, confirmation mail, upload freeze (documents 403 + Storage 403), inventory 15, cc_erasure_items suggestions, gate refusal all PASS.
+  Found the twin-item trap (documents row + storage object per file) → bl_audit_0368 on staging+prod (9/9 both, rollback byte-exact,
+  anon 32/33 unchanged, zero residue). ChatGPT sheet: CC screen may show `applied_to`; frozen-message item still open. Request 11 open.

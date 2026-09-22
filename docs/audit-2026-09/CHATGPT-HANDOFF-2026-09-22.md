@@ -45,6 +45,10 @@ OPEN — technical (the DB ones are Claude's, the frontend/measurement ones are 
   suggestion + `classes`), `cc_erasure_decide(request_id,item_key,'remove'|'hold',class,retain_until,note)`, edge `erasure-purge`
   (POST {request_id, dry_run}) then `cc_account_deletion_process(id,'complete')`. Dry-run button first, real purge behind a confirm.
   Both RPCs/edge are LIVE on staging AND prod; build against staging.
+  22 Sep addendum (bl_audit_0368, live both envs): a file can appear twice in `items` (source 'documents' and source 'storage',
+  same bucket+path). Deciding EITHER now decides both (`cc_erasure_decide` returns `applied_to`), so group rows by bucket+path in
+  the screen and show one decision per file. Also: the carrier Documents page shows Upload buttons with NO frozen message while a
+  deletion request is open (verified on prod 22 Sep: uploads get a raw 403) — your frozen-user message item covers this page too.
 - F25: DONE 22 Sep by Claude (0359/0361/0362 on both envs). Re-run the performance advisor once and record the residual list.
 - Anon-surface rule for YOUR new functions: Postgres grants EXECUTE to PUBLIC by default — every new RPC needs an explicit
   `revoke all ... from public, anon` unless it is meant for guests (the SMS-consent lane tripped this on staging; fixed by 0360).
