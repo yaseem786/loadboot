@@ -779,9 +779,15 @@ input[type="file"]:not([hidden])::file-selector-button:hover{background:#e2e8f2}
 .cp-shell--rail .cp-side .cp-brandrow .cc-brandrow > span + span { display: none !important; }   /* wordmark + descriptor (inline style) */
 .cp-shell--rail .cp-side .cp-brandrow .cc-brandrow > span:first-child svg { width: 26px; height: 27px; }
 .cp-shell--rail .cp-nav { order: 2; width: 100%; align-items: center; margin-top: 4px; }
-.cp-shell--rail .cp-navlink { width: 46px; height: 44px; padding: 0; justify-content: center; gap: 0; border-radius: 12px; }
-.cp-shell--rail .cp-navlink > span:not(.cp-ic):not(.cc-ico):not(.cp-tab-badge) { display: none; }
-.cp-shell--rail .cp-navlink .cp-tab-badge { top: 4px; right: 4px; }
+/* bl_ui_0397 — these three are scoped to .cp-nav, the SIDEBAR's nav, on purpose. Unscoped they
+   also matched .cp-tabbar .cp-navlink, and the rail auto-collapses under 1279px — which every
+   phone is — so the bottom bar lost its labels and its items became 46x44 icon squares on every
+   phone, in the carrier, agent and broker portals. (The dispatcher bar had been patched around
+   it locally with !important in dispatcher-workspace.js; that is why only IT looked right.)
+   The rail is a desktop sidebar layout and must never reach the bottom bar. */
+.cp-shell--rail .cp-nav .cp-navlink { width: 46px; height: 44px; padding: 0; justify-content: center; gap: 0; border-radius: 12px; }
+.cp-shell--rail .cp-nav .cp-navlink > span:not(.cp-ic):not(.cc-ico):not(.cp-tab-badge) { display: none; }
+.cp-shell--rail .cp-nav .cp-navlink .cp-tab-badge { top: 4px; right: 4px; }
 .cp-shell--rail .cp-side-foot { order: 3; width: 100%; display: flex; flex-direction: column; align-items: center; padding-top: 12px; }
 .cp-shell--rail .cp-side-foot .cp-carrier { display: none; }
 .cp-shell--rail .cp-side-out { width: 46px; height: 42px; padding: 0; margin-top: 0; border-radius: 12px; }
