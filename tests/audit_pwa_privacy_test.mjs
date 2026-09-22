@@ -61,7 +61,7 @@ test('actual document insert includes AI verdict and propagates DB refusal',asyn
  const source=await read('app/shared/api.js');const start=source.indexOf('export const carrierUploadDocument'),end=source.indexOf('export const carrierListDocuments',start);let row,error=null;
  const context=vm.createContext({});const dep=new vm.SyntheticModule(['getClient'],function(){this.setExport('getClient',async()=>({from:()=>({insert:async r=>{row=r;return {error};}})}));},{context});await dep.link(()=>{});await dep.evaluate();
  const m=new vm.SourceTextModule(source.slice(start,end),{context,importModuleDynamically:()=>dep});await m.link(()=>{});await m.evaluate();
- const verdict={verdict:'warning',issues:['synthetic']};await m.namespace.carrierUploadDocument({type:'coi',fileName:'test',filePath:'owner/test',aiVerdict:verdict});assert.equal(row.ai_verdict,verdict);
+ const verdict={verdict:'warning',issues:['synthetic']};await m.namespace.carrierUploadDocument({type:'coi',fileName:'test',filePath:'owner/test',aiVerdict:verdict});assert.deepEqual(JSON.parse(JSON.stringify(row.ai_verdict)),{...verdict,overridden:false});
  await m.namespace.carrierUploadDocument({type:'other',fileName:'test',filePath:'owner/test'});assert.equal('ai_verdict' in row,false);
  error={message:'denied'};await assert.rejects(m.namespace.carrierUploadDocument({type:'coi',aiVerdict:verdict}),/denied/);
 });
